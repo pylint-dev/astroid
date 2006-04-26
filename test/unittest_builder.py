@@ -1,0 +1,314 @@
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 2 of the License, or (at your option) any later
+# version.
+
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc.,
+# 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+"""tests for the astng builder module
+
+Copyright (c) 2003-2005 LOGILAB S.A. (Paris, FRANCE).
+http://www.logilab.fr/ -- mailto:contact@logilab.fr
+"""
+
+__revision__ = "$Id: unittest_builder.py,v 1.20 2006-04-19 14:31:41 syt Exp $"
+
+import unittest
+from os.path import join, abspath
+
+from logilab.common.testlib import TestCase, unittest_main
+
+from logilab.astng import builder, nodes, Module
+
+import data
+from data import module as test_module
+
+
+class BuilderTC(TestCase):
+        
+    def setUp(self):
+        self.builder = builder.ASTNGBuilder()
+        
+    def test_border_cases(self):
+        """check that a file with no trailing new line is parseable"""
+        self.builder.file_build('data/noendingnewline.py', 'data.noendingnewline')
+        self.assertRaises(builder.ASTNGBuildingException,
+                          self.builder.file_build, 'data/inexistant.py', 'whatever')
+        
+    def test_inspect_build(self):
+        """test astng tree build from a living object"""
+        import __builtin__
+        builtin_astng = self.builder.inspect_build(__builtin__)
+        fclass = builtin_astng['file']
+        self.assert_('name' in fclass)
+        self.assert_('mode' in fclass)
+        self.assert_('read' in fclass)
+        self.assert_(fclass.newstyle)
+        self.assert_(isinstance(fclass['read'], nodes.Function))
+        self.assert_(isinstance(fclass['__doc__'], nodes.Const), fclass['__doc__'])
+        # check builtin function has argnames == None
+        dclass = builtin_astng['dict']
+        self.assertEquals(dclass['has_key'].argnames, None)
+        # just check type and object are there
+        builtin_astng.getattr('type')
+        builtin_astng.getattr('object')
+        # check property has __init__
+        pclass = builtin_astng['property']
+        self.assert_('__init__' in pclass)
+        # 
+        import time
+        time_astng = self.builder.module_build(time)
+        self.assert_(time_astng)
+        #
+        unittest_astng = self.builder.inspect_build(unittest)
+        self.failUnless(isinstance(builtin_astng['None'], nodes.Const), builtin_astng['None'])
+        self.failUnless(isinstance(builtin_astng['Exception'], nodes.From), builtin_astng['Exception'])
+        self.failUnless(isinstance(builtin_astng['NotImplementedError'], nodes.From))
+
+        
+    def test_inspect_build2(self):
+        """test astng tree build from a living object"""
+        try:
+            from mx import DateTime
+        except ImportError:
+            self.skip('test skipped: mxDateTime is not available')
+        else:
+            dt_astng = self.builder.inspect_build(DateTime)
+            dt_astng.getattr('DateTime')
+            # this one is failing since DateTimeType.__module__ = 'builtins' !
+            #dt_astng.getattr('DateTimeType')
+
+    def test_inspect_build_instance(self):
+        """test astng tree build from a living object"""
+        import exceptions
+        builtin_astng = self.builder.inspect_build(exceptions)
+        fclass = builtin_astng['OSError']
+        self.assert_('errno' in fclass.instance_attrs)
+        self.assert_('strerror' in fclass.instance_attrs)
+        self.assert_('filename' in fclass.instance_attrs)
+            
+    def test_package_name(self):
+        """test base properties and method of a astng module"""
+        datap = self.builder.file_build('data/__init__.py', 'data')
+        self.assertEquals(datap.name, 'data')
+        self.assertEquals(datap.package, 1)
+        datap = self.builder.file_build('data/__init__.py', 'data.__init__')
+        self.assertEquals(datap.name, 'data')
+        self.assertEquals(datap.package, 1)
+
+    def test_object(self):
+        obj_astng = self.builder.inspect_build(object)
+        self.failUnless('__setattr__' in obj_astng)
+
+    def test_newstyle_detection(self):
+        data = '''
+class A:
+    "old style"
+        
+class B(A):
+    "old style"
+        
+class C(object):
+    "new style"
+        
+class D(C):
+    "new style"
+
+__metaclass__ = type
+
+class E(A):
+    "old style"
+    
+class F:
+    "new style"
+'''
+        mod_astng = self.builder.string_build(data, __name__, __file__)
+        self.failIf(mod_astng['A'].newstyle)
+        self.failIf(mod_astng['B'].newstyle)
+        self.failUnless(mod_astng['C'].newstyle)
+        self.failUnless(mod_astng['D'].newstyle)
+        self.failIf(mod_astng['E'].newstyle)
+        self.failUnless(mod_astng['F'].newstyle)
+
+    def test_globals(self):
+        data = '''
+CSTE = 1
+
+def update_global():
+    global CSTE
+    CSTE += 1
+
+def global_no_effect():
+    global CSTE2
+    print CSTE
+'''        
+        astng = self.builder.string_build(data, __name__, __file__)
+        self.failUnlessEqual(len(astng.getattr('CSTE')), 2)
+        self.failUnlessEqual(astng.getattr('CSTE')[0].source_line(), 2)
+        self.failUnlessEqual(astng.getattr('CSTE')[1].source_line(), 6)
+        self.assertRaises(nodes.NotFoundError,
+                          astng.getattr, 'CSTE2')
+        self.assertRaises(nodes.InferenceError,
+                          astng['global_no_effect'].ilookup('CSTE2').next)
+
+    def test_socket_build(self):
+        import socket
+        astng = self.builder.module_build(socket)
+        for fclass in astng.igetattr('socket'):
+            print fclass.root().name, fclass.name, fclass.lineno
+            self.assert_('connect' in fclass)
+            self.assert_('send' in fclass)
+            self.assert_('close' in fclass)
+                        
+        
+class FileBuildTC(TestCase):
+
+    def setUp(self):
+        abuilder = builder.ASTNGBuilder()
+        self.module = abuilder.file_build('data/module.py', 'data.module')
+
+    def test_module_base_props(self):
+        """test base properties and method of a astng module"""
+        module = self.module
+        self.assertEquals(module.name, 'data.module')
+        self.assertEquals(module.doc, "test module for astng\n")
+        self.assertEquals(module.source_line(), 0)
+        self.assertEquals(module.parent, None)
+        self.assertEquals(module.frame(), module)
+        self.assertEquals(module.root(), module)
+        self.assertEquals(module.file, join(abspath(data.__path__[0]), 'module.py'))
+        self.assertEquals(module.pure_python, 1)
+        self.assertEquals(module.package, 0)
+        self.assert_(not module.is_statement())
+        self.assertEquals(module.statement(), module)
+        self.assertEquals(module.node.statement(), module)
+        
+    def test_module_locals(self):
+        """test the 'locals' dictionary of a astng module"""
+        module = self.module
+        _locals = module.locals
+        self.assertEquals(len(_locals), 17)
+        self.assert_(_locals is module.globals)
+        keys = _locals.keys()
+        keys.sort()
+        self.assertEquals(keys, ['MY_DICT', 'YO', 'YOUPI', '__dict__', 
+                                 '__doc__', '__file__', '__name__', '__revision__',
+                                 'clean', 'cvrtr', 'debuild', 'global_access',
+                                 'modutils', 'nested_args', 'os', 'redirect',
+                                 'spawn'])
+
+    def test_function_base_props(self):
+        """test base properties and method of a astng function"""
+        module = self.module
+        function = module['global_access']
+        self.assertEquals(function.name, 'global_access')
+        self.assertEquals(function.doc, 'function test')
+        self.assertEquals(function.source_line(), 14)
+        self.assert_(function.parent)
+        self.assertEquals(function.frame(), function)
+        self.assertEquals(function.parent.frame(), module)
+        self.assertEquals(function.root(), module)
+        self.assertEquals(function.argnames, ['key', 'val'])
+        self.assertEquals(function.type, 'function')
+
+    def test_function_locals(self):
+        """test the 'locals' dictionary of a astng function"""
+        _locals = self.module['global_access'].locals
+        self.assertEquals(len(_locals), 4)
+        keys = _locals.keys()
+        keys.sort()
+        self.assertEquals(keys, ['i', 'key', 'local', 'val'])
+        
+    def test_class_base_props(self):
+        """test base properties and method of a astng class"""
+        module = self.module
+        klass = module['YO']
+        self.assertEquals(klass.name, 'YO')
+        self.assertEquals(klass.doc, 'hehe')
+        self.assertEquals(klass.source_line(), 27)
+        self.assert_(klass.parent)
+        self.assertEquals(klass.frame(), klass)
+        self.assertEquals(klass.parent.frame(), module)
+        self.assertEquals(klass.root(), module)
+        self.assertEquals(klass.basenames, [])
+        self.assertEquals(klass.newstyle, False)
+        self.failUnless(isinstance(klass['__doc__'], nodes.Const))
+                        
+    def test_class_locals(self):
+        """test the 'locals' dictionary of a astng class"""
+        module = self.module
+        klass1 = module['YO']
+        klass2 = module['YOUPI']
+        locals1 = klass1.locals
+        locals2 = klass2.locals
+        keys = locals1.keys()
+        keys.sort()
+        self.assertEquals(keys, ['__dict__', '__doc__', '__init__', '__module__', '__name__',
+                                 'a'])
+        keys = locals2.keys()
+        keys.sort()
+        self.assertEquals(keys, ['__dict__', '__doc__', '__init__', '__module__', '__name__',
+                                 'class_attr',
+                                 'class_method', 'method', 'static_method'])
+
+    def test_class_instance_attrs(self):
+        module = self.module
+        klass1 = module['YO']
+        klass2 = module['YOUPI']
+        self.assertEquals(klass1.instance_attrs.keys(), ['yo'])
+        self.assertEquals(klass2.instance_attrs.keys(), ['member'])
+
+    def test_class_basenames(self):
+        module = self.module
+        klass1 = module['YO']
+        klass2 = module['YOUPI']
+        self.assertEquals(klass1.basenames, [])
+        self.assertEquals(klass2.basenames, ['YO'])
+        
+    def test_method_base_props(self):
+        """test base properties and method of a astng method"""
+        klass2 = self.module['YOUPI']
+        # "normal" method
+        method = klass2['method']
+        self.assertEquals(method.name, 'method')
+        self.assertEquals(method.argnames, ['self'])
+        self.assertEquals(method.doc, 'method test')
+        self.assertEquals(method.source_line(), 47)
+        self.assertEquals(method.type, 'method')
+        # class method
+        method = klass2['class_method']
+        self.assertEquals(method.argnames, ['cls'])
+        self.assertEquals(method.type, 'classmethod')
+        # static method
+        method = klass2['static_method']
+        self.assertEquals(method.argnames, [])
+        self.assertEquals(method.type, 'staticmethod')
+
+    def test_method_locals(self):
+        """test the 'locals' dictionary of a astng method"""
+        klass2 = self.module['YOUPI']
+        method = klass2['method']
+        _locals = method.locals
+        self.assertEquals(len(_locals), 5)
+        keys = _locals.keys()
+        keys.sort()
+        self.assertEquals(keys, ['a', 'autre', 'b', 'local', 'self'])
+
+        
+class ModuleBuildTC(FileBuildTC):
+
+    def setUp(self):
+        abuilder = builder.ASTNGBuilder()
+        self.module = abuilder.module_build(test_module)
+
+
+__all__ = ('BuilderModuleBuildTC', 'BuilderFileBuildTC', 'BuilderTC')
+
+if __name__ == '__main__':
+    # unittest.main()
+    unittest_main()

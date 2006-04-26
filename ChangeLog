@@ -1,0 +1,124 @@
+Change log for the astng package
+================================
+
+2006-04-19  --  0.16.0
+    * fix living object building to consider classes such as property as
+      a class instead of a data descriptor
+	
+    * fix multiple assignment inference which was discarding some solutions
+	
+    * added some line manipulation methods to handle pylint's block messages
+      control feature (Node.last_source_line(), None.block_range(lineno)
+	
+	
+2006-03-10  --  0.15.1
+    * fix avoiding to load everything from living objects... Thanks Amaury!
+    
+    * fix a possible NameError in Instance.infer_call_result
+
+
+2006-03-06  --  0.15.0
+    * fix possible infinite recursion on global statements (close #10342)
+      and in various other cases...
+	
+    * fix locals/globals interactions when the global statement is used
+      (close #10434)
+
+    * multiple inference related bug fixes
+    
+    * associate List, Tuple and Dict and Const nodes to their respective
+      classes 
+	
+    * new .ass_type method on assignment related node, returning the
+      assigment type node (Assign, For, ListCompFor, GenExprFor,
+      TryExcept)
+	
+    * more API refactoring... .resolve method has disappeared, now you
+      have .ilookup on every nodes and .getattr/.igetattr on node
+      supporting the attribute protocol
+	
+    * introduced a YES object that may be returned when there is ambiguity
+      on an inference path (typically function call when we don't know
+      arguments value)
+	
+    * builder try to instantiate builtin exceptions subclasses to get their
+      instance attribute
+
+
+2006-01-10  --  0.14.0
+    * some major inference improvments and refactoring ! The drawback is
+      the introduction of some non backward compatible change in the API 
+      but it's imho much cleaner and powerful now :)
+	
+    * new boolean property .newstyle on Class nodes (implements #10073)
+	
+    * new .import_module method on Module node to help in .resolve
+      refactoring 
+      
+    * .instance_attrs has list of assignments to instance attribute
+      dictionary as value instead of one
+	
+    * added missing GenExprIf and GenExprInner nodes, and implements
+      as_string for each generator expression related nodes
+
+    * specifically catch KeyboardInterrupt to reraise it in some places
+
+    * fix so that module names are always absolute
+
+    * fix .resolve on package where a subpackage is imported in the
+      __init__ file
+
+    * fix a bug regarding construction of Function node from living object
+      with realier version of python 2.4
+	
+    * fix a NameError on Import and From self_resolve method
+
+    * fix a bug occuring when building an astng from a living object with
+      a property
+	
+    * lint fixes
+
+
+2005-11-07  --  0.13.1
+    * fix bug on building from living module the same object in
+      encountered more than once time (eg builtins.object) (close #10069)
+
+    * fix bug in Class.ancestors() regarding inner classes (close #10072)
+
+    * fix .self_resolve() on From and Module nodes to handle package
+      precedence over module (close #10066)
+
+    * locals dict for package contains __path__ definition (close #10065)
+	
+    * astng provide GenExpr and GenExprFor nodes with python >= 2.4
+      (close #10063)
+
+    * fix python2.2 compatibility (close #9922)
+
+    * link .__contains__ to .has_key on scoped node to speed up execution
+
+    * remove no more necessary .module_object() method on From and Module
+      nodes
+
+    * normalize parser.ParserError to SyntaxError with python 2.2
+
+	
+2005-10-21  --  0.13.0
+    * .locals  and .globals on scoped node handle now a list of references
+       to each assigment statements instead of a single reference to the
+       first assigment statement.
+
+    * fix bug with manager.astng_from_module_name when a context file is
+      given (notably fix ZODB 3.4 crash with pylint/pyreverse)
+	
+    * fix Compare.as_string method
+	
+    * fix bug with lambda object missing the "type" attribute
+
+    * some minor refactoring
+	
+    * This package has been extracted from the logilab-common package, which
+      will be kept for some time for backward compatibility but will no
+      longer be maintained (this explains that this package is starting with
+      the 0.13 version number, since the fork occurs with the version
+      released in logilab-common 0.12).

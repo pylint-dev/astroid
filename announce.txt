@@ -1,0 +1,23 @@
+What's new ?
+------------
+%CHANGELOG%
+
+
+What is %SOURCEPACKAGE% ?
+------------------------
+%LONG_DESC%
+
+
+Home page
+---------
+%WEB%
+
+Download
+--------
+%FTP%
+
+Mailing list
+------------
+%MAILINGLIST%
+
+%ADDITIONAL_DESCR%

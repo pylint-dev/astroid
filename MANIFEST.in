@@ -1,0 +1,8 @@
+include ChangeLog
+include README
+include COPYING 
+include DEPENDS
+include test/fulltest.sh
+recursive-include test/data *.py
+recursive-include test/data2 *.py
+recursive-include test/regrtest_data *.py

@@ -1,0 +1,51 @@
+logilab-astng (0.16.0-1) unstable; urgency=low
+
+  * new upstream release
+
+ -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Wed, 19 Apr 2006 17:13:42 +0200
+
+logilab-astng (0.15.1-1) unstable; urgency=low
+
+  * new upstream release
+
+ -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Fri, 10 Mar 2006 10:15:49 +0100
+
+logilab-astng (0.15.0-1) unstable; urgency=low
+
+  * new upstream release (closes: #352889)
+
+ -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Mon,  6 Mar 2006 09:18:47 +0100
+
+logilab-astng (0.14.0-2) unstable; urgency=low
+
+  * removed packaging bug 
+  * upload to Debian
+
+ -- Alexandre Fayolle <afayolle@debian.org>  Fri, 10 Feb 2006 15:29:00 +0100
+
+logilab-astng (0.14.0-1) unstable; urgency=low
+
+  * new upstream support
+  * reorganization to install into site-python, removing the need for 
+    pythonX.X- packages
+
+ -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Tue, 10 Jan 2006 14:18:38 +0100
+
+logilab-astng (0.13.1-2) unstable; urgency=low
+
+  * Dropped python2.2 support, and removed -test package, as suggested by ftpmaster
+
+ -- Alexandre Fayolle <afayolle@debian.org>  Mon, 21 Nov 2005 10:14:38 +0100
+
+logilab-astng (0.13.1-1) unstable; urgency=low
+
+  * new upstream release (closes: #337960)
+
+ -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Mon,  7 Nov 2005 15:38:42 +0100
+
+logilab-astng (0.13.0-1) unstable; urgency=low
+
+  * initial upstream/debian release
+
+ -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Fri, 21 Oct 2005 15:51:17 +0200
+
