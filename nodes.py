@@ -237,12 +237,15 @@ extend_class(Node, NodeNG)
 
 # block range overrides #######################################################
 
-def function_block_range(node, lineno):
-    """handle block line numbers range for function statements
+def object_block_range(node, lineno):
+    """handle block line numbers range for function/class statements:
+
+    start from the "def" or "class" position whatever the given lineno
     """
     return node.source_line(), node.last_source_line()
 
-Function.block_range = function_block_range
+Function.block_range = object_block_range
+Class.block_range = object_block_range
 
 def if_block_range(node, lineno):
     """handle block line numbers range for if/elif statements
