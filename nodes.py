@@ -246,6 +246,7 @@ def object_block_range(node, lineno):
 
 Function.block_range = object_block_range
 Class.block_range = object_block_range
+Module.block_range = object_block_range
 
 def if_block_range(node, lineno):
     """handle block line numbers range for if/elif statements
