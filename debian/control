@@ -1,10 +1,10 @@
 Source: logilab-astng
 Section: python
 Priority: optional
-Maintainer: Sylvain Thenault <sylvain.thenault@logilab.fr>
+Maintainer: Sylvain Thénault <sylvain.thenault@logilab.fr>
 Uploader: Alexandre Fayolle <afayolle@debian.org> 
-Build-Depends: debhelper (>= 4.0.0), python-dev
-Standards-Version: 3.6.2
+Build-Depends: debhelper (>= 5.0.0), python-dev
+Standards-Version: 3.7.2
 
 Package: python-logilab-astng
 Architecture: all
