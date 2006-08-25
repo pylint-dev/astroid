@@ -4,6 +4,7 @@ Change log for the astng package
  --
     * fix [Class|Module].block_range method (this fixes pylint's inline 
       disabling of messages on classes/modules)
+    * handle class.__bases__ and class.__mro__
 	  
 2006-04-19  --  0.16.0
     * fix living object building to consider classes such as property as

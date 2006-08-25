@@ -325,7 +325,7 @@ class ASTNGBuilder:
                             continue
         elif (isinstance(node.nodes[0], nodes.AssName)
               and node.nodes[0].name == '__metaclass__'): # XXX check more...
-            self._metaclass[-1] = 'type'
+            self._metaclass[-1] = 'type' # XXX get the actual metaclass
 
     def visit_assname(self, node):
         """visit a stmt.AssName node -> add name to locals

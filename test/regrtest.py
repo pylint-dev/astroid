@@ -33,6 +33,39 @@ class NonRegressionTC(unittest.TestCase):
         builder._module = sys.modules[__name__]
         builder.object_build(build_module('module_name', ''), Whatever)
 
+    def test_new_style_class_detection(self):
+        builder = ASTNGBuilder()
+        data = """
+import pygtk
+pygtk.require("2.6")
+import gobject
+
+class A(gobject.GObject):
+    def __init__(self, val):
+        gobject.GObject.__init__(self)
+        self._val = val
+
+    def _get_val(self):
+        print "get"
+        return self._val
+
+    def _set_val(self, val):
+        print "set"
+        self._val = val
+
+    val = property(_get_val, _set_val)
+
+if __name__ == "__main__":
+    print gobject.GObject.__bases__
+    a = A(7)
+    print a.val
+    a.val = 6
+    print a.val
+        
+"""
+        astng = builder.string_build(data, __name__, __file__)
+        a = astng['A']
+        self.assert_(a.newstyle)
         
 class Whatever(object):
     a = property(lambda x: x, lambda x: x)

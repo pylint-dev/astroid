@@ -546,6 +546,11 @@ class ClassNG(object):
         """
         if name in self.locals:
             return self.locals[name]
+        if name == '__bases__':
+            return tuple(self.ancestors(recurs=False))
+        # XXX need proper meta class handling + MRO implementation
+        if name == '__mro__':
+            return tuple(self.ancestors(recurs=True))
         for classnode in self.ancestors(recurs=False, path=path):
             try:
                 return classnode.getattr(name, path)
