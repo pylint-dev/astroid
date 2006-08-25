@@ -1,28 +1,25 @@
 Source: logilab-astng
 Section: python
 Priority: optional
-Maintainer: Sylvain Thenault <sylvain.thenault@logilab.fr>
-Uploader: Alexandre Fayolle <afayolle@debian.org> 
-Build-Depends: debhelper (>= 4.0.0), python-dev
-Standards-Version: 3.6.2
+Maintainer: Sylvain Thénault <sylvain.thenault@logilab.fr>
+Uploaders: Alexandre Fayolle <afayolle@debian.org> 
+Build-Depends: debhelper (>= 5.0.37.1), python-dev (>=2.3.5-7), python (>=2.3.5-7), python-central
+XS-Python-Version: all
+Standards-Version: 3.7.2
 
 Package: python-logilab-astng
 Architecture: all
-Depends: python, python-logilab-common
-Provides: python2.2-logilab-astng, python2.3-logilab-astng, python2.4-logilab-astng
-Conflicts: python2.2-logilab-astng, python2.3-logilab-astng, python2.4-logilab-astng
-Replaces: python2.2-logilab-astng, python2.3-logilab-astng, python2.4-logilab-astng
+Depends: ${python:Depends}, python-logilab-common (>= 0.16.1-2)
+XB-Python-Version: ${python:Versions}
 Description: extend python's abstract syntax tree
  The aim of this module is to provide a common base representation of
- python source code for projects such as pychecker, pyreverse,
- pylint... Well, actually the development of this library is essentialy
- governed by pylint's needs.
+ python source code for projects such as pyreverse or pylint. 
  .
- It extends class defined in the compiler.ast [1] module with some
+ It extends classes defined in the compiler.ast module with some
  additional methods and attributes. Instance attributes are added by a
  builder object, which can either generate extended ast (let's call
- them astng ;) by visiting an existant ast tree or by inspecting living
- object. Methods are added by monkey patching ast classes.
+ them astng ;) by visiting an existant ast tree or by inspecting
+ living object. Methods are added by monkey patching ast classes.
  .
  Homepage: http://www.logilab.org/projects/astng
 

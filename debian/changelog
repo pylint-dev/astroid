@@ -1,3 +1,12 @@
+logilab-astng (0.16.0-2) unstable; urgency=low
+
+  * Updated standards to 3.7.2
+  * use debhelper 5
+  * fixed encoding of maintainer name in debian/control
+  * updated to new python policy (closes: #373458)
+
+ -- Alexandre Fayolle <afayolle@debian.org>  Wed, 14 Jun 2006 17:59:54 +0200
+
 logilab-astng (0.16.0-1) unstable; urgency=low
 
   * new upstream release
