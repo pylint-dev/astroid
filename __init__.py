@@ -42,10 +42,8 @@ Main modules are:
 :copyright: 2003-2006 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
-
 from __future__ import generators
 
-__revision__ = "$Id: __init__.py,v 1.24 2006-04-20 07:37:28 syt Exp $"
 __doctype__ = "restructuredtext en"
 
 from logilab.common.compat import chain, imap
@@ -205,3 +203,4 @@ def Const_getattr(self, name, path=None, lookupclass=None):
         self._proxied = MANAGER.astng_from_class(self.value.__class__)
     return self._proxied.getattr(name, path)
 Const.getattr = Const_getattr
+Const.has_dynamic_getattr = lambda x: False

@@ -25,10 +25,8 @@ below.
 :copyright: 2003-2006 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
-
 from __future__ import generators
 
-__revision__ = "$Id: scoped_nodes.py,v 1.28 2006-04-20 07:37:28 syt Exp $"
 __doctype__ = "restructuredtext en"
 
 import sys
