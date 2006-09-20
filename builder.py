@@ -37,12 +37,7 @@ from parser import ParserError
 from compiler import parse
 from inspect import isfunction, ismethod, ismethoddescriptor, isclass, \
      isbuiltin
-try: # python 2.2 inspect module doesn't have the isdatadescriptor function
-    from inspect import isdatadescriptor
-except ImportError:
-    def isdatadescriptor(_):
-        """fake isdatadescriptor function, always returning False"""
-        return False
+from inspect import isdatadescriptor
 
 from logilab.common.fileutils import norm_read
 from logilab.common.modutils import modpath_from_file
@@ -126,15 +121,8 @@ class ASTNGBuilder:
     
     def string_build(self, data, modname='', path=None):
         """build astng from a source code stream (i.e. from an ast)"""
-        try:
-            return self.ast_build(parse(data + '\n'), modname, path)
-        except ParserError, ex:
-            # compiler.parse with python <= 2.2 raise ParserError instead of
-            # SyntaxError
-            ex = SyntaxError('invalid syntax')
-            ex.lineno = 1 # dummy line number
-            raise ex
-        
+        return self.ast_build(parse(data + '\n'), modname, path)
+       
     def ast_build(self, node, modname=None, path=None):
         """recurse on the ast (soon ng) to add some arguments et method
         """
@@ -325,7 +313,7 @@ class ASTNGBuilder:
                             continue
         elif (isinstance(node.nodes[0], nodes.AssName)
               and node.nodes[0].name == '__metaclass__'): # XXX check more...
-            self._metaclass[-1] = 'type'
+            self._metaclass[-1] = 'type' # XXX get the actual metaclass
 
     def visit_assname(self, node):
         """visit a stmt.AssName node -> add name to locals

@@ -551,7 +551,9 @@ def no_conjugate_member(magic_flag):
         astng = builder.string_build(data, __name__, __file__)
         self.failUnlessEqual([i.value for i in astng['no_conjugate_member'].ilookup('something')],
                              [1.0, 1.0j])
-        
+        self.failUnlessEqual([i.value for i in get_name_node(astng, 'something', -1).infer()],
+                             [1.0, 1.0j])
+                
 if __name__ == '__main__':
     from logilab.common.testlib import unittest_main
     unittest_main()
