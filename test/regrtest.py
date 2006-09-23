@@ -1,6 +1,5 @@
-__revision__ = '$Id: regrtest.py,v 1.8 2006-01-24 19:52:08 syt Exp $'
 
-import unittest
+from logilab.common.testlib import unittest_main, TestCase
 
 from logilab.astng import ResolveError, MANAGER as m
 from logilab.astng.builder import ASTNGBuilder, build_module
@@ -9,7 +8,7 @@ import sys
 from os.path import abspath
 sys.path.insert(1, abspath('regrtest_data'))
 
-class NonRegressionTC(unittest.TestCase):
+class NonRegressionTC(TestCase):
 
 ##     def test_resolve1(self):
 ##         mod = m.astng_from_module_name('data.nonregr')
@@ -34,8 +33,13 @@ class NonRegressionTC(unittest.TestCase):
         builder.object_build(build_module('module_name', ''), Whatever)
 
     def test_new_style_class_detection(self):
-        builder = ASTNGBuilder()
-        data = """
+        try:
+            import pygtk
+        except ImportError:
+            self.skip('test skipped: pygtk is not available')
+        else:
+            builder = ASTNGBuilder()
+            data = """
 import pygtk
 pygtk.require("2.6")
 import gobject
@@ -61,14 +65,13 @@ if __name__ == "__main__":
     print a.val
     a.val = 6
     print a.val
-        
 """
-        astng = builder.string_build(data, __name__, __file__)
-        a = astng['A']
-        self.assert_(a.newstyle)
+            astng = builder.string_build(data, __name__, __file__)
+            a = astng['A']
+            self.assert_(a.newstyle)
         
 class Whatever(object):
     a = property(lambda x: x, lambda x: x)
     
 if __name__ == '__main__':
-    unittest.main()
+    unittest_main()

@@ -1,4 +1,4 @@
-# Copyright (c) 2000-2002 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -16,8 +16,6 @@
 """
 unittest for the visitors.diadefs module
 """
-
-__revision__ = "$Id: unittest_inspector.py,v 1.4 2006-01-26 00:12:59 syt Exp $"
 
 import unittest
 import sys

@@ -24,8 +24,7 @@ This module has been imported from pyreverse
 :contact:   mailto:thenault@gmail.com
 """
 
-__revision__ = "$Id: inspector.py,v 1.6 2006-01-24 19:52:07 syt Exp $"
-__doctype__ = "restructuredtext en"
+__docformat__ = "restructuredtext en"
 
 from os.path import dirname
 

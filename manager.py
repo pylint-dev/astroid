@@ -22,8 +22,7 @@ from various source and using a cache of built modules)
 :contact:   mailto:thenault@gmail.com
 """
 
-__revision__ = "$Id: manager.py,v 1.49 2006-03-08 15:52:30 syt Exp $"
-__doctype__ = "restructuredtext en"
+__docformat__ = "restructuredtext en"
 
 import sys
 import os
@@ -77,6 +76,7 @@ class ASTNGManager(OptionsProviderMixIn):
             self._cache = None
             self._mod_file_cache = None
             self.set_cache_size(200)
+            self.load_defaults()
             
     def set_cache_size(self, cache_size):
         """set the cache size (flush it as a side effect!)"""
