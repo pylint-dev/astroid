@@ -16,9 +16,8 @@ Copyright (c) 2003-2005 LOGILAB S.A. (Paris, FRANCE).
 http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
-__revision__ = "$Id: unittest_builder.py,v 1.20 2006-04-19 14:31:41 syt Exp $"
-
 import unittest
+import sys
 from os.path import join, abspath
 
 from logilab.common.testlib import TestCase, unittest_main
@@ -88,9 +87,15 @@ class BuilderTC(TestCase):
         import exceptions
         builtin_astng = self.builder.inspect_build(exceptions)
         fclass = builtin_astng['OSError']
-        self.assert_('errno' in fclass.instance_attrs)
-        self.assert_('strerror' in fclass.instance_attrs)
-        self.assert_('filename' in fclass.instance_attrs)
+        # things like OSError.strerror are now (2.5) data descriptors on the
+        # class instead of entries in the __dict__ of an instance
+        if sys.version_info < (2, 5):
+            container = fclass.instance_attrs
+        else:
+            container = fclass
+        self.assert_('errno' in container)
+        self.assert_('strerror' in container)
+        self.assert_('filename' in container)
             
     def test_package_name(self):
         """test base properties and method of a astng module"""

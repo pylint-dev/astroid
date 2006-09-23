@@ -16,8 +16,7 @@ Copyright (c) 2005-2006 LOGILAB S.A. (Paris, FRANCE).
 http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
-__revision__ = "$Id: unittest_inference.py,v 1.20 2006-04-19 15:17:41 syt Exp $"
-
+import sys
 from os.path import join, abspath
 
 from logilab.astng import builder, nodes, inference, utils, YES, Instance
@@ -309,7 +308,10 @@ def f():
         nie = names.next().infer().next()
         self.failUnless(isinstance(nie, nodes.Class))
         nie_ancestors = [c.name for c in nie.ancestors()]
-        self.failUnlessEqual(nie_ancestors, ['RuntimeError', 'StandardError', 'Exception'])
+        if sys.version_info < (2, 5):
+            self.failUnlessEqual(nie_ancestors, ['RuntimeError', 'StandardError', 'Exception'])
+        else:
+            self.failUnlessEqual(nie_ancestors, ['RuntimeError', 'StandardError', 'Exception', 'BaseException', 'object'])
 
     def test_except_inference(self):
         data = '''
@@ -434,6 +436,13 @@ class Warning(Warning):
         ancestor = ancestors.next()
         self.failUnlessEqual(ancestor.name, 'Exception')
         self.failUnlessEqual(ancestor.root().name, 'exceptions')
+        if sys.version_info >= (2, 5):
+            ancestor = ancestors.next()
+            self.failUnlessEqual(ancestor.name, 'BaseException')
+            self.failUnlessEqual(ancestor.root().name, 'exceptions')
+            ancestor = ancestors.next()
+            self.failUnlessEqual(ancestor.name, 'object')
+            self.failUnlessEqual(ancestor.root().name, '__builtin__')
         self.failUnlessRaises(StopIteration, ancestors.next)
         
     def test_qqch(self):

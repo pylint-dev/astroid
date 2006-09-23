@@ -19,12 +19,10 @@
 logilab.astng packaging information
 """
 
-__revision__ = "$Id: __pkginfo__.py,v 1.12 2006-04-19 14:31:37 syt Exp $"
-
 modname = 'astng'
 numversion = (0, 16, 0)
 version = '.'.join([str(num) for num in numversion])
-pyversions = ["2.3", "2.4"]
+pyversions = ["2.3", "2.4", "2.5"]
 
 license = 'GPL'
 copyright = '''Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE).

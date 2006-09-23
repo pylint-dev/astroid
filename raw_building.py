@@ -21,8 +21,7 @@
 :contact:   mailto:thenault@gmail.com
 """
 
-__revision__ = "$Id: raw_building.py,v 1.12 2006-03-05 14:44:15 syt Exp $"
-__doctype__ = "restructuredtext en"
+__docformat__ = "restructuredtext en"
 
 import sys
 from inspect import getargspec
@@ -46,13 +45,23 @@ def attach_const_node(node, name, value):
     node with the specified name
     """
     _attach_local_node(node, nodes.Const(value), name)
-    
-def attach_import_node(node, modname, membername):
-    """create a From node and register it in the locals of the given
-    node with the specified name
-    """
-    _attach_local_node(node, nodes.From(modname, ( (membername, None), ) ),
-                       membername)
+
+if sys.version_info < (2, 5):
+    def attach_import_node(node, modname, membername):
+        """create a From node and register it in the locals of the given
+        node with the specified name
+        """
+        _attach_local_node(node,
+                           nodes.From(modname, ( (membername, None), ) ),
+                           membername)
+else:
+    def attach_import_node(node, modname, membername):
+        """create a From node and register it in the locals of the given
+        node with the specified name
+        """
+        _attach_local_node(node,
+                           nodes.From(modname, ( (membername, None), ), 0),
+                           membername)
     
 def _attach_local_node(parent, node, name):
     node.name = name # needed by add_local_node
@@ -134,9 +143,14 @@ def build_attr_assign(name, value, attr='self'):
     return nodes.Assign([nodes.AssAttr(nodes.Name(attr), name, 'OP_ASSIGN')],
                         nodes.Const(value))
 
-def build_from_import(fromname, names):
-    """create and intialize an astng From import statement"""
-    return nodes.From(fromname, [(name, None) for name in names])
+if sys.version_info < (2, 5):
+    def build_from_import(fromname, names):
+        """create and intialize an astng From import statement"""
+        return nodes.From(fromname, [(name, None) for name in names])
+else:
+    def build_from_import(fromname, names):
+        """create and intialize an astng From import statement"""
+        return nodes.From(fromname, [(name, None) for name in names], 0)
 
 def register_arguments(node, args):
     """add given arguments to local
