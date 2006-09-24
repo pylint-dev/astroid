@@ -233,6 +233,12 @@ class ASTNGBuilder:
         node.locals = {}
         register_arguments(node, node.argnames)
         
+    def visit_genexpr(self, node):
+        """visit a stmt.GenExpr node -> init node locals
+        """
+        self.visit_default(node)
+        node.locals = {}
+        
     def visit_global(self, node):
         """visit a stmt.Global node -> add declared names to locals
         """

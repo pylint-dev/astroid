@@ -21,8 +21,9 @@ import sys
 from os.path import join, abspath
 
 from logilab.common.testlib import TestCase, unittest_main
+from unittest_inference import get_name_node
 
-from logilab.astng import builder, nodes, Module
+from logilab.astng import builder, nodes, Module, YES
 
 import data
 from data import module as test_module
@@ -173,6 +174,18 @@ def global_no_effect():
             self.assert_('send' in fclass)
             self.assert_('close' in fclass)
             break
+
+    def test_gen_expr_var_scope(self):
+        data = 'l = list(n for n in range(10))\n'
+        astng = self.builder.string_build(data, __name__, __file__)
+        # n unvailable touside gen expr scope
+        self.failIf('n' in astng)
+        # test n is inferable anyway
+        n = get_name_node(astng, 'n')
+        self.failIf(n.scope() is astng)
+        self.failUnlessEqual([i.__class__ for i in n.infer()],
+                             [YES.__class__])
+        
         
 class FileBuildTC(TestCase):
 
@@ -318,5 +331,4 @@ class ModuleBuildTC(FileBuildTC):
 __all__ = ('BuilderModuleBuildTC', 'BuilderFileBuildTC', 'BuilderTC')
 
 if __name__ == '__main__':
-    # unittest.main()
     unittest_main()

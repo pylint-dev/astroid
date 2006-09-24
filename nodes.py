@@ -41,8 +41,7 @@ on From and Import :
 
 from __future__ import generators
 
-__revision__ = "$Id: nodes.py,v 1.103 2006-04-19 14:31:38 syt Exp $"
-__doctype__ = "restructuredtext en"
+__docformat__ = "restructuredtext en"
 
 from compiler.ast import Assign, Add, And, AssAttr, AssList, AssName, \
      AssTuple, Assert, Assign, AugAssign, \
@@ -56,6 +55,7 @@ from compiler.ast import Assign, Add, And, AssAttr, AssList, AssName, \
      Sliceobj, Stmt, Sub, Subscript, TryExcept, TryFinally, Tuple, UnaryAdd, \
      UnarySub, While, Yield
 try:
+    # introduced in python 2.4
     from compiler.ast import GenExpr, GenExprFor, GenExprIf, GenExprInner
 except:
     class GenExpr:
@@ -117,10 +117,15 @@ class NodeNG:
         return self.parent.statement()
 
     def frame(self):
-        """return the first node defining a new local scope (i.e. Module,
-        Function, Lambda or Class)
+        """return the first parent frame node (i.e. Module, Function or Class)
         """
         return self.parent.frame()
+
+    def scope(self):
+        """return the first node defining a new scope (i.e. Module,
+        Function, Class, Lambda but also GenExpr)
+        """
+        return self.parent.scope()
 
     def root(self):
         """return the root node of the tree, (i.e. a Module)

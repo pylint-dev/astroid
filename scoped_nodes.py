@@ -30,8 +30,8 @@ from __future__ import generators
 __doctype__ = "restructuredtext en"
 
 import sys
-from compiler.ast import Module, Class, Function, Lambda, Dict, Tuple, Raise, \
-     Pass, Raise, Yield, Name, Const
+from compiler.ast import Class, Const, Dict, Function, GenExpr, Lambda, \
+     Module, Name, Pass, Raise, Tuple, Yield
 
 from logilab.common.compat import chain        
 
@@ -59,10 +59,14 @@ class LocalsDictMixIn(object):
     # value    
     locals = None
     
-    
     def frame(self):
-        """return the first node defining a new local scope (i.e. Module,
-        Function or Class)
+        """return the first parent frame node (i.e. Module, Function or Class)
+        """
+        return self
+    
+    def scope(self):
+        """return the first node defining a new scope (i.e. Module,
+        Function, Class, Lambda but also GenExpr)
         """
         return self
     
@@ -147,6 +151,12 @@ extend_class(Module, LocalsDictMixIn)
 extend_class(Class, LocalsDictMixIn)
 extend_class(Function, LocalsDictMixIn)
 extend_class(Lambda, LocalsDictMixIn)
+# GenExpr has it's own locals but isn't a frame
+extend_class(GenExpr, LocalsDictMixIn)
+def frame(self):
+    return self.parent.frame()
+GenExpr.frame = frame
+
 
 class GetattrMixIn(object):
     def getattr(self, name, path=None):

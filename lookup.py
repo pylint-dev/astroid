@@ -16,7 +16,7 @@ Function...) nodes:
 * .lookup(name)
 * .ilookup(name)
 
-Be careful, lookup is kinda internal and return a tuple (frame, [stmts]), while
+Be careful, lookup is kinda internal and return a tuple (scope, [stmts]), while
 ilookup return an iterator on infered values
 
 :version:   $Revision: 1.6 $  
@@ -29,8 +29,7 @@ ilookup return an iterator on infered values
 
 from __future__ import generators
 
-__revision__ = "$Id: lookup.py,v 1.6 2006-03-06 08:57:53 syt Exp $"
-__doctype__ = "restructuredtext en"
+__docformat__ = "restructuredtext en"
 
 import __builtin__
 
@@ -41,50 +40,47 @@ from logilab.astng import MANAGER, _infer_stmts
 def lookup(self, name):
     """lookup a variable name
 
-    return the frame and the list of assignments associated to the given name
-    according to the scope where it has been found (locals, globals or builtin)
+    return the scoope node and the list of assignments associated to the given
+    name according to the scope where it has been found (locals, globals or
+    builtin)
 
-    The lookup is starting from self's frame. If self is not a frame itself and
+    The lookup is starting from self's scope. If self is not a frame itself and
     the name is found in the inner frame locals, statements will be filtered
     to remove ignorable statements according to self's location
     """
     #assert ID_RGX.match(name), '%r is not a valid identifier' % name
-    frame = self.frame()
-    offset = 0
-    # adjust frame for class'ancestors and function"s arguments
-    if isinstance(frame, Class):
-        if self in frame.bases:
-            #print 'frame swaping'
-            frame = frame.parent.frame()
-            # line offset to avoid that class A(A) resolve the ancestor to
-            # the defined class
-            offset = -1
-    elif isinstance(frame, (Function, Lambda)):
-        if self in frame.defaults:
-            frame = frame.parent.frame()
-            # line offset to avoid that def func(f=func) resolve the default
-            # value to the defined function
-            offset = -1
-    #print 'lookup', self.__class__, getattr(self, 'name', 'noname'), name
-    # resolve name into locals scope
-    try:
-        stmts = self._filter_stmts(frame.locals[name], frame, offset)
-    except KeyError:
-        stmts = []
-    # lookup name into globals if we were not already at the module level
-    if not stmts and frame.parent is not None:
-        try:
-            frame = frame.root()
-            stmts = self._filter_stmts(frame.locals[name], frame, 0)
-            #stmts = frame.locals[name]
-        except KeyError:
-            pass
-    # lookup name into builtins
-    if not stmts:
-        frame, stmts = builtin_lookup(name)
-    #print 'return', name, frame.name, [(stmt.__class__.__name__, getattr(stmt, 'name', '???')) for stmt in stmts]
-    return frame, stmts
+    return self.scope().scope_lookup(self, name)
 
+def scope_lookup(self, node, name, offset=0):
+    try:
+        stmts = node._filter_stmts(self.locals[name], self, offset)
+    except KeyError:
+        stmts = ()
+    if stmts:
+        return self, stmts
+    if self.parent:
+        return self.parent.scope().scope_lookup(node, name)
+    return builtin_lookup(name)
+def class_scope_lookup(self, node, name, offset=0):
+    if node in self.bases:
+        #print 'frame swaping'
+        frame = self.parent.frame()
+        # line offset to avoid that class A(A) resolve the ancestor to
+        # the defined class
+        offset = -1
+    else:
+        frame = self
+    return scope_lookup(frame, node, name, offset)
+def function_scope_lookup(self, node, name, offset=0):
+    if node in self.defaults:
+        frame = self.parent.frame()
+        # line offset to avoid that def func(f=func) resolve the default
+        # value to the defined function
+        offset = -1
+    else:
+        frame = self
+    return scope_lookup(frame, node, name, offset)
+    
 def builtin_lookup(name):
     """lookup a name into the builtin module
     return the list of matching statements and the astng for the builtin
@@ -202,6 +198,7 @@ def _filter_stmts(self, stmts, frame, offset):
     stmts = _stmts
     return stmts
 
+
 def _decorate(astmodule):
     """add this module functionalities to necessary nodes"""
     for klass in (astmodule.Name, astmodule.Module, astmodule.Class,
@@ -209,6 +206,11 @@ def _decorate(astmodule):
         klass.ilookup = ilookup
         klass.lookup = lookup
         klass._filter_stmts = _filter_stmts
+    astmodule.Class.scope_lookup = class_scope_lookup
+    astmodule.Function.scope_lookup = function_scope_lookup
+    astmodule.Lambda.scope_lookup = function_scope_lookup
+    astmodule.Module.scope_lookup = scope_lookup
+    astmodule.GenExpr.scope_lookup = scope_lookup
     for name in ('Class', 'Function', 'Lambda',
                  'For', 'ListCompFor', 'GenExprFor',
                  'AssName', 'Name', 'Const'):

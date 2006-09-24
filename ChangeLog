@@ -8,6 +8,8 @@ Change log for the astng package
     * handle class.__bases__ and class.__mro__ (proper metaclass handling
       still needed though)
     * drop python2.2 support: remove code that was working around python2.2
+    * fixed generator expression scope bug
+	
 	
 2006-04-19  --  0.16.0
     * fix living object building to consider classes such as property as
