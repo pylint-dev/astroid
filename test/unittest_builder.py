@@ -12,7 +12,7 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """tests for the astng builder module
 
-Copyright (c) 2003-2005 LOGILAB S.A. (Paris, FRANCE).
+Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE).
 http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
@@ -21,14 +21,124 @@ import sys
 from os.path import join, abspath
 
 from logilab.common.testlib import TestCase, unittest_main
+from logilab.common.astutils import cvrtr
 from unittest_inference import get_name_node
-
+from pprint import pprint
+        
 from logilab.astng import builder, nodes, Module, YES
 
 import data
 from data import module as test_module
 
+class TransformerTC(TestCase):
+        
+    def setUp(self):
+        transformer = builder.ASTNGTransformer()
+        self.astng = transformer.parsesuite(open('data/format.py').read())
 
+    def test_callfunc_lineno(self):
+        stmts = self.astng.getChildNodes()[0].nodes
+        # on line 4:
+        #    function('aeozrijz\
+        #    earzer', hop)
+        discard = stmts[0]
+        self.assertIsInstance(discard, nodes.Discard)
+        self.assertEquals(discard.fromlineno, 4)
+        self.assertEquals(discard.tolineno, 5)
+        callfunc = discard.expr
+        self.assertIsInstance(callfunc, nodes.CallFunc)
+        self.assertEquals(callfunc.fromlineno, 4)
+        self.assertEquals(callfunc.tolineno, 5)
+        name = callfunc.node
+        self.assertIsInstance(name, nodes.Name)
+        self.assertEquals(name.fromlineno, 4)
+        self.assertEquals(name.tolineno, 4)
+        strarg = callfunc.args[0]
+        self.assertIsInstance(strarg, nodes.Const)
+        self.assertEquals(strarg.fromlineno, 5) # no way for this one (is 4 actually)
+        self.assertEquals(strarg.tolineno, 5)
+        namearg = callfunc.args[1]
+        self.assertIsInstance(namearg, nodes.Name)
+        self.assertEquals(namearg.fromlineno, 5)
+        self.assertEquals(namearg.tolineno, 5)
+        # on line 10:
+        #    fonction(1,
+        #             2,
+        #             3,
+        #             4)
+        discard = stmts[2]
+        self.assertIsInstance(discard, nodes.Discard)
+        self.assertEquals(discard.fromlineno, 10)
+        self.assertEquals(discard.tolineno, 13)
+        callfunc = discard.expr
+        self.assertIsInstance(callfunc, nodes.CallFunc)
+        self.assertEquals(callfunc.fromlineno, 10)
+        self.assertEquals(callfunc.tolineno, 13)
+        name = callfunc.node
+        self.assertIsInstance(name, nodes.Name)
+        self.assertEquals(name.fromlineno, 10)
+        self.assertEquals(name.tolineno, 10)
+        for i, arg in enumerate(callfunc.args):
+            self.assertIsInstance(arg, nodes.Const)
+            self.assertEquals(arg.fromlineno, 10+i)
+            self.assertEquals(arg.tolineno, 10+i)
+
+    def test_function_lineno(self):
+        stmts = self.astng.getChildNodes()[0].nodes
+        # on line 15:
+        #    def definition(a,
+        #                   b,
+        #                   c):
+        #        return a + b + c
+        function = stmts[3]
+        self.assertIsInstance(function, nodes.Function)
+        self.assertEquals(function.fromlineno, 15)
+        self.assertEquals(function.tolineno, 17)
+        code = function.code
+        self.assertIsInstance(code, nodes.Stmt)
+##         self.assertEquals(code.fromlineno, 18)
+##         self.assertEquals(code.tolineno, 18)
+        return_ = code.nodes[0]
+        self.assertIsInstance(return_, nodes.Return)
+        self.assertEquals(return_.fromlineno, 18)
+        self.assertEquals(return_.tolineno, 18)
+
+    def test_class_lineno(self):
+        stmts = self.astng.getChildNodes()[0].nodes
+        # on line 20:
+        #    class debile(dict,
+        #                 object):
+        #       pass
+        class_ = stmts[4]
+        self.assertIsInstance(class_, nodes.Class)
+        self.assertEquals(class_.fromlineno, 20)
+        self.assertEquals(class_.tolineno, 21)
+        code = class_.code
+        self.assertIsInstance(code, nodes.Stmt)
+##         self.assertEquals(code.fromlineno, 18)
+##         self.assertEquals(code.tolineno, 18)
+        pass_ = code.nodes[0]
+        self.assertIsInstance(pass_, nodes.Pass)
+        self.assertEquals(pass_.fromlineno, 22)
+        self.assertEquals(pass_.tolineno, 22)
+
+    def test_if_lineno(self):
+        stmts = self.astng.getChildNodes()[0].nodes
+        # on line 20:
+        #    if aaaa: pass
+        #    else:
+        #        aaaa,bbbb = 1,2
+        #        aaaa,bbbb = bbbb,aaaa
+        if_ = stmts[5]
+        self.assertIsInstance(if_, nodes.If)
+        self.assertEquals(if_.fromlineno, 24)
+        self.assertEquals(if_.tolineno, 24)
+        else_ = if_.else_
+        self.assertIsInstance(else_, nodes.Stmt)
+        self.assertEquals(else_.fromlineno, 25)
+        self.assertEquals(else_.tolineno, 27)
+
+        
 class BuilderTC(TestCase):
         
     def setUp(self):

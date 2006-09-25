@@ -34,9 +34,9 @@ class ASTNGManagerTC(unittest.TestCase):
         
     def test_package_node(self):
         obj = self.manager.from_directory('data')
-        expected_short = ['SSL1', '__init__', 'all', 'appl', 'module', 'module2',
+        expected_short = ['SSL1', '__init__', 'all', 'appl', 'format', 'module', 'module2',
                           'noendingnewline', 'nonregr', 'notall']
-        expected_long = ['SSL1', 'data', 'data.all', 'appl', 'data.module',
+        expected_long = ['SSL1', 'data', 'data.all', 'appl', 'data.format', 'data.module',
                          'data.module2', 'data.noendingnewline', 'data.nonregr',
                          'data.notall']
         self.assertEquals(obj.keys(), expected_short)

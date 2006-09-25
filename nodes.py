@@ -237,7 +237,6 @@ class NodeNG:
             return name
         return None
     
-
 extend_class(Node, NodeNG)
 
 # block range overrides #######################################################

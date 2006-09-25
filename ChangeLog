@@ -9,6 +9,7 @@ Change log for the astng package
       still needed though)
     * drop python2.2 support: remove code that was working around python2.2
     * fixed generator expression scope bug
+    * patch transformer to extract correct line information
 	
 	
 2006-04-19  --  0.16.0
