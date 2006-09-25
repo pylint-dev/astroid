@@ -21,8 +21,7 @@ extract information from it
 :contact:   mailto:thenault@gmail.com
 """
 
-__revision__ = "$Id: utils.py,v 1.18 2006-01-03 15:51:41 syt Exp $"
-__doctype__ = "restructuredtext en"
+__docformat__ = "restructuredtext en"
 
 from logilab.common.compat import enumerate
 from logilab.astng._exceptions import IgnoreChild

@@ -1,9 +1,9 @@
 Change log for the astng package
 ================================
 
- --
+2006-09-25  --  0.16.1
     * python 2.5 support, patch provided by Marien Zwart
-    * fix [Class|Module].block_range method (this fixes pylint's inline 
+    * fix [Class|Module].block_range method (this fixes pylint's inline
       disabling of messages on classes/modules)
     * handle class.__bases__ and class.__mro__ (proper metaclass handling
       still needed though)
