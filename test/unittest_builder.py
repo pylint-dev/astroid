@@ -285,16 +285,17 @@ def global_no_effect():
             self.assert_('close' in fclass)
             break
 
-    def test_gen_expr_var_scope(self):
-        data = 'l = list(n for n in range(10))\n'
-        astng = self.builder.string_build(data, __name__, __file__)
-        # n unvailable touside gen expr scope
-        self.failIf('n' in astng)
-        # test n is inferable anyway
-        n = get_name_node(astng, 'n')
-        self.failIf(n.scope() is astng)
-        self.failUnlessEqual([i.__class__ for i in n.infer()],
-                             [YES.__class__])
+    if sys.version_info >= (2, 4):
+        def test_gen_expr_var_scope(self):
+            data = 'l = list(n for n in range(10))\n'
+            astng = self.builder.string_build(data, __name__, __file__)
+            # n unvailable touside gen expr scope
+            self.failIf('n' in astng)
+            # test n is inferable anyway
+            n = get_name_node(astng, 'n')
+            self.failIf(n.scope() is astng)
+            self.failUnlessEqual([i.__class__ for i in n.infer()],
+                                 [YES.__class__])
         
         
 class FileBuildTC(TestCase):

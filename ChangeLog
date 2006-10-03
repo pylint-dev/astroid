@@ -1,6 +1,10 @@
 Change log for the astng package
 ================================
 
+ --
+    * grrr, fixed python 2.3 incompatibility introduced by generator expression
+      scope handling
+
 2006-09-25  --  0.16.1
     * python 2.5 support, patch provided by Marien Zwart
     * fix [Class|Module].block_range method (this fixes pylint's inline

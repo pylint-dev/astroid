@@ -30,15 +30,15 @@ from __future__ import generators
 __doctype__ = "restructuredtext en"
 
 import sys
-from compiler.ast import Class, Const, Dict, Function, GenExpr, Lambda, \
-     Module, Name, Pass, Raise, Tuple, Yield
 
 from logilab.common.compat import chain        
 
 from logilab.astng._exceptions import NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
 from logilab.astng.utils import extend_class
-from logilab.astng import YES, MANAGER, Instance, unpack_infer, _infer_stmts
+from logilab.astng import YES, MANAGER, Instance, unpack_infer, _infer_stmts, \
+     Class, Const, Dict, Function, GenExpr, Lambda, \
+     Module, Name, Pass, Raise, Tuple, Yield
 
 # module class dict/iterator interface ########################################
     
