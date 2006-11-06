@@ -1,3 +1,3 @@
 version=2
-ftp://ftp.logilab.org/pub/astng/astng-(.*)\.tar\.gz debian uupdate
+ftp://ftp.logilab.org/pub/astng/logilab-astng-(.*)\.tar\.gz debian uupdate
 
