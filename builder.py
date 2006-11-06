@@ -66,7 +66,7 @@ def to_lineno(asttuple):
     return asttuple[2]
 
 def fix_lineno(node, fromast, toast=None):
-    if hasattr(node, 'fromlineno'):
+    if 'fromlineno' in node.__dict__:
         return node    
     #print 'fixing', id(node), id(node.__dict__), node.__dict__.keys(), repr(node)
     if isinstance(node, nodes.Stmt):

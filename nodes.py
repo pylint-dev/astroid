@@ -86,7 +86,8 @@ class NodeNG:
     """
     
     # attributes below are set by the builder module or by raw factories
-
+    fromlineno = None
+    tolineno = None
     # parent node in the tree
     parent = None
 
