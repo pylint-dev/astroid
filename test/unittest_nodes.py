@@ -12,11 +12,9 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """tests for specific behaviour of astng nodes
 
-Copyright (c) 2003-2005 LOGILAB S.A. (Paris, FRANCE).
+Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE).
 http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
-
-__revision__ = "$Id: unittest_nodes.py,v 1.6 2005-12-28 14:56:21 syt Exp $"
 
 import unittest
 
@@ -38,17 +36,17 @@ class ImportNodeTC(unittest.TestCase):
         self.failUnlessEqual(myos.name, 'os')
 
     def test_from_self_resolve(self):
-        from_ = MODULE['modutils']
+        from_ = MODULE['spawn']
         spawn = from_.infer('spawn').next()
         self.failUnless(isinstance(spawn, nodes.Class), spawn)
-        self.failUnlessEqual(spawn.root().name, 'logilab.common')
+        self.failUnlessEqual(spawn.root().name, 'logilab.common.shellutils')
         from_ = MODULE2['abspath']
         abspath = from_.infer('abspath').next()
         self.failUnless(isinstance(abspath, nodes.Function), abspath)
         self.failUnlessEqual(abspath.root().name, 'os.path')
 
     def test_real_name(self):
-        from_ = MODULE['modutils']
+        from_ = MODULE['spawn']
         self.assertEquals(from_.real_name('spawn'), 'Execute')
         imp_ = MODULE['os']
         self.assertEquals(imp_.real_name('os'), 'os')
@@ -62,7 +60,9 @@ class ImportNodeTC(unittest.TestCase):
 
     def test_as_string(self):
         ast = MODULE['modutils']
-        self.assertEquals(ast.as_string(), "from logilab.common import modutils, Execute as spawn")
+        self.assertEquals(ast.as_string(), "from logilab.common import modutils")
+        ast = MODULE['spawn']
+        self.assertEquals(ast.as_string(), "from logilab.common.shellutils import Execute as spawn")
         ast = MODULE['os']
         self.assertEquals(ast.as_string(), "import os.path")
 

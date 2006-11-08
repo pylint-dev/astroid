@@ -17,8 +17,6 @@ Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE).
 http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
-__revision__ = "$Id: unittest_scoped_nodes.py,v 1.12 2006-03-05 14:44:15 syt Exp $"
-
 import unittest
 import sys
 
@@ -113,7 +111,7 @@ class FunctionNodeTC(unittest.TestCase):
         last = r_sibling.next_sibling().next_sibling().next_sibling()
         self.assert_(isinstance(last, nodes.Assign))
         self.assertEquals(last.next_sibling(), None)
-        first = l_sibling.previous_sibling().previous_sibling().previous_sibling().previous_sibling()
+        first = l_sibling.previous_sibling().previous_sibling().previous_sibling().previous_sibling().previous_sibling()
         self.assertEquals(first.previous_sibling(), None)
 
     def test_nested_args(self):
