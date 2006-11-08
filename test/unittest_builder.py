@@ -21,10 +21,10 @@ import sys
 from os.path import join, abspath
 
 from logilab.common.testlib import TestCase, unittest_main
-from logilab.common.astutils import cvrtr
 from unittest_inference import get_name_node
 from pprint import pprint
         
+from logilab.astng.astutils import cvrtr
 from logilab.astng import builder, nodes, Module, YES
 
 import data

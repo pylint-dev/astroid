@@ -45,11 +45,11 @@ from logilab.astng import nodes
 from logilab.astng.utils import ASTWalker
 from logilab.astng._exceptions import ASTNGBuildingException
 from logilab.astng.raw_building import *
+from logilab.astng.astutils import cvrtr
 
 import token
 from compiler import transformer, consts
 from types import TupleType
-from logilab.common.astutils import cvrtr
 
 def fromto_lineno(asttuple):
     """return the minimum and maximum line number of the given ast tuple"""
