@@ -1,9 +1,12 @@
 Change log for the astng package
 ================================
 
- --
+2006-11-15  --  0.16.2
     * grrr, fixed python 2.3 incompatibility introduced by generator expression
       scope handling
+    * upgrade to avoid warnings with logilab-common 0.21.0 (on which now
+      depends so)
+    * backported astutils module from logilab-common
 
 2006-09-25  --  0.16.1
     * python 2.5 support, patch provided by Marien Zwart

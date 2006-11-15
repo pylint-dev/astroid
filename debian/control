@@ -9,7 +9,7 @@ Standards-Version: 3.7.2
 
 Package: python-logilab-astng
 Architecture: all
-Depends: ${python:Depends}, python-logilab-common (>= 0.16.1-2)
+Depends: ${python:Depends}, python-logilab-common (>= 0.21.0-1)
 XB-Python-Version: ${python:Versions}
 Description: extend python's abstract syntax tree
  The aim of this module is to provide a common base representation of
