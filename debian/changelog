@@ -1,3 +1,12 @@
+logilab-astng (0.16.2-2) unstable; urgency=low
+
+  * Debian upload
+  * The new release fixes has_dynamic_getattr crash in pylint (closes: #395126)
+  * cleanup upstream source tarball to remove uncleaned debian/ directory
+  * added debian/compat and removed DH_COMPAT from debian/rules to get a proper dh_clean behavior
+
+ -- Alexandre Fayolle <afayolle@debian.org>  Tue, 21 Nov 2006 13:50:22 +0100
+
 logilab-astng (0.16.2-1) unstable; urgency=low
 
   * new upstream release
