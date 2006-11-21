@@ -47,7 +47,7 @@ them astng ;) by visiting an existant ast tree or by inspecting living
 object. Methods are added by monkey patching ast classes."""
 
 
-web = "http://www.logilab.org/projects/%s" % modname
+web = "http://www.logilab.org/Project/name/%s" % distname
 ftp = "ftp://ftp.logilab.org/pub/%s" % modname
 mailinglist = "mailto://python-projects@lists.logilab.org"
 
