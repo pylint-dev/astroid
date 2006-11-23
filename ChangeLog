@@ -1,8 +1,8 @@
 Change log for the astng package
 ================================
 
- --
-    * enhance inference for the subscription notation (motivated by a patch from Amaury) 
+2006-11-23  --  0.16.3
+    * enhance inference for the subscription notation (motivated by a patch from Amaury)
       and for unary sub/add
 	
 2006-11-15  --  0.16.2
