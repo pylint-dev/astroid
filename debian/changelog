@@ -1,3 +1,9 @@
+logilab-astng (0.16.3-1) unstable; urgency=low
+
+  * new upstream release
+
+ -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Thu, 23 Nov 2006 16:04:14 +0100
+
 logilab-astng (0.16.2-2) unstable; urgency=low
 
   * Debian upload

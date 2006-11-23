@@ -35,7 +35,6 @@ Main modules are:
 * builder contains the class responsible to build astng trees
 
 
-:version:   $Revision: 1.24 $  
 :author:    Sylvain Thenault
 :copyright: 2003-2006 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
