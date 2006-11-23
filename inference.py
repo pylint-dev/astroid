@@ -396,7 +396,11 @@ def _resolve_looppart(parts, asspath, path):
     asspath = asspath[:]
     index = asspath.pop(0)
     for part in parts:
-        for stmt in part.iter():
+        if part is YES:
+            continue
+        if not hasattr(part, 'iter_stmts'):
+            continue
+        for stmt in part.iter_stmts():
             try:
                 assigned = stmt.getitem(index)
             except (AttributeError, IndexError):
@@ -465,10 +469,10 @@ def tl_getitem(self, index):
 nodes.List.getitem = tl_getitem
 nodes.Tuple.getitem = tl_getitem
         
-def tl_iter(self):
+def tl_iter_stmts(self):
     return self.nodes
-nodes.List.iter = tl_iter
-nodes.Tuple.iter = tl_iter
+nodes.List.iter_stmts = tl_iter_stmts
+nodes.Tuple.iter_stmts = tl_iter_stmts
 #Dict.getitem = getitem XXX
 
 def for_loop_node(self):
