@@ -1,6 +1,10 @@
 Change log for the astng package
 ================================
 
+ --
+    * enhance inference for the subscription notation (motivated by a patch from Amaury) 
+      and for unary sub/add
+	
 2006-11-15  --  0.16.2
     * grrr, fixed python 2.3 incompatibility introduced by generator expression
       scope handling

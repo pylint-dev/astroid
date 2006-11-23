@@ -562,6 +562,60 @@ def no_conjugate_member(magic_flag):
                              [1.0, 1.0j])
         self.failUnlessEqual([i.value for i in get_name_node(astng, 'something', -1).infer()],
                              [1.0, 1.0j])
+
+    def test_simple_subscript(self):
+        data = '''
+a = [1, 2, 3][0]
+b = (1, 2, 3)[1]
+c = (1, 2, 3)[-1]
+d = a + b + c
+print d
+        '''
+        astng = builder.string_build(data, __name__, __file__)
+        self.failUnlessEqual([i.value for i in get_name_node(astng, 'a', -1).infer()],
+                             [1])
+        self.failUnlessEqual([i.value for i in get_name_node(astng, 'b', -1).infer()],
+                             [2])
+        self.failUnlessEqual([i.value for i in get_name_node(astng, 'c', -1).infer()],
+                             [3])
+        # kill me
+        #self.failUnlessEqual([i.value for i in get_name_node(astng, 'd', -1).infer()],
+        #                     [6])
+
+    def test_simple_for(self):
+        data = '''
+for a in [1, 2, 3]:
+    print a
+for b,c in [(1,2), (3,4)]:
+    print b
+    print c
+
+print [(d,e) for e,d in ([1,2], [3,4])]
+        '''
+        astng = builder.string_build(data, __name__, __file__)
+        self.failUnlessEqual([i.value for i in get_name_node(astng, 'a', -1).infer()],
+                             [1, 2, 3])
+        self.failUnlessEqual([i.value for i in get_name_node(astng, 'b', -1).infer()],
+                             [1, 3])
+        self.failUnlessEqual([i.value for i in get_name_node(astng, 'c', -1).infer()],
+                             [2, 4])
+        self.failUnlessEqual([i.value for i in get_name_node(astng, 'd', -1).infer()],
+                             [2, 4])
+        self.failUnlessEqual([i.value for i in get_name_node(astng, 'e', -1).infer()],
+                             [1, 3])
+
+
+    def test_simple_for_genexpr(self):
+        if sys.version_info < (2, 4):
+            return
+        data = '''
+print ((d,e) for e,d in ([1,2], [3,4]))
+        '''
+        astng = builder.string_build(data, __name__, __file__)
+        self.failUnlessEqual([i.value for i in get_name_node(astng, 'd', -1).infer()],
+                             [2, 4])
+        self.failUnlessEqual([i.value for i in get_name_node(astng, 'e', -1).infer()],
+                             [1, 3])
                 
 if __name__ == '__main__':
     from logilab.common.testlib import unittest_main

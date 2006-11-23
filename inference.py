@@ -12,7 +12,6 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """this module contains a set of functions to handle inference on astng trees
 
-:version:   $Revision: 1.25 $  
 :author:    Sylvain Thenault
 :copyright: 2003-2006 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
@@ -22,8 +21,9 @@
 
 from __future__ import generators
 
-__revision__ = "$Id: inference.py,v 1.25 2006-04-20 07:37:28 syt Exp $"
 __doctype__ = "restructuredtext en"
+
+from copy import copy
 
 from logilab.common.compat import imap
 
@@ -241,9 +241,40 @@ def infer_global(self, name=None, path=None):
     try:
         return _infer_stmts(self.root().getattr(name), name, path)
     except NotFoundError:
-        raise InferenceError()
+        raise InferenceError(name)
 nodes.Global.infer = path_wrapper(infer_global)
 
+
+def infer_subscript(self, name=None, path=None):
+    """infer simple subscription such as [1,2,3][0] or (1,2,3)[-1]
+    """
+    if len(self.subs) == 1:
+        index = self.subs[0].infer().next()
+        try:
+            # suppose it's a constant node (attribute error else)
+            assigned = self.expr.getitem(index.value)
+        except (AttributeError, IndexError):
+            raise InferenceError(name)
+        for infered in assigned.infer(name, path):
+            yield infered
+    else:
+        raise InferenceError(name)
+nodes.Subscript.infer = infer_subscript
+
+def infer_unarysub(self, name=None, path=None):
+    try:
+        value = -self.expr.value
+    except (TypeError, AttributeError):
+        raise InferenceError(name)
+    node = copy(self.expr)
+    node.value = value
+    yield node
+nodes.UnarySub.infer = infer_unarysub
+
+def infer_unaryadd(self, name=None, path=None):
+    return self.expr.infer()
+nodes.UnaryAdd.infer = infer_unaryadd
+    
 # .infer_call_result method ###################################################
 def callable_default(self):
     return False
@@ -278,7 +309,16 @@ nodes.Class.infer_call_result = infer_call_result_class
 
 
 # Assignment related nodes ####################################################
+"""the assigned_stmts method is responsible to return the assigned statement
+(eg not infered) according to the assignment type.
 
+The `path` argument is used to record the lhs path of the original node.
+For instance if we want assigned statements for 'c' in 'a, (b,c)', path
+will be [1, 1] once arrived to the Assign node.
+
+The `inf_path` argument is the current inference path which should be given
+to any intermediary inference necessary.
+"""
 def assend_assigned_stmts(self, inf_path=None):
     # only infer *real* assignments
     if self.flags == 'OP_DELETE':
@@ -349,13 +389,53 @@ def tryexcept_assigned_stmts(self, node, path=None, inf_path=None):
     if not found:
         raise InferenceError()
 nodes.TryExcept.assigned_stmts = tryexcept_assigned_stmts
-    
-def XXX_assigned_stmts(self, node, path=None, inf_path=None):
-    raise InferenceError()
-nodes.For.assigned_stmts = XXX_assigned_stmts
-nodes.ListCompFor.assigned_stmts = XXX_assigned_stmts
-nodes.GenExprFor.assigned_stmts = XXX_assigned_stmts
 
+
+def _resolve_looppart(parts, asspath, path):
+    """recursive function to resolve multiple assignments on loops"""
+    asspath = asspath[:]
+    index = asspath.pop(0)
+    for part in parts:
+        for stmt in part.iter():
+            try:
+                assigned = stmt.getitem(index)
+            except (AttributeError, IndexError):
+                continue
+            if not asspath:
+                # we acheived to resolved the assigment path,
+                # don't infer the last part
+                found = True
+                yield assigned
+            elif assigned is YES:
+                break
+            else:
+                # we are not yet on the last part of the path
+                # search on each possibly infered value
+                try:
+                    for infered in _resolve_looppart(assigned.infer(path=path), asspath, path):
+                        yield infered
+                except InferenceError:
+                    break
+
+def for_assigned_stmts(self, node, path=None, inf_path=None):
+    found = False
+    if path is None:
+        for lst in self.loop_node().infer(path=inf_path):
+            if isinstance(lst, (nodes.Tuple, nodes.List)):
+                for item in lst.nodes:
+                    found = True
+                    yield item
+    else:
+        for infered in _resolve_looppart(self.loop_node().infer(path=inf_path), path, inf_path):
+            found = True
+            yield infered
+    if not found:
+        raise InferenceError()
+nodes.For.assigned_stmts = for_assigned_stmts
+nodes.ListCompFor.assigned_stmts = for_assigned_stmts
+nodes.GenExprFor.assigned_stmts = for_assigned_stmts
+
+    
 def end_ass_type(self):
     return self
 nodes.For.ass_type = end_ass_type
@@ -380,9 +460,22 @@ nodes.AssAttr.ass_type = assend_ass_type
 
 # subscription protocol #######################################################
         
-def getitem(self, index):
+def tl_getitem(self, index):
     return self.nodes[index]
-nodes.List.getitem = getitem
-nodes.Tuple.getitem = getitem
+nodes.List.getitem = tl_getitem
+nodes.Tuple.getitem = tl_getitem
+        
+def tl_iter(self):
+    return self.nodes
+nodes.List.iter = tl_iter
+nodes.Tuple.iter = tl_iter
 #Dict.getitem = getitem XXX
 
+def for_loop_node(self):
+    return self.list
+nodes.For.loop_node = for_loop_node
+nodes.ListCompFor.loop_node = for_loop_node
+
+def gen_loop_nodes(self):
+    return self.iter
+nodes.GenExprFor.loop_node = gen_loop_nodes
