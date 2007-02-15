@@ -12,7 +12,7 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """tests for the astng inference capabilities
 
-Copyright (c) 2005-2006 LOGILAB S.A. (Paris, FRANCE).
+Copyright (c) 2005-2007 LOGILAB S.A. (Paris, FRANCE).
 http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
@@ -96,7 +96,7 @@ a, b= b, a # Gasp !
         self.failUnlessEqual(obj.root().name, __name__)
         self.failUnlessRaises(StopIteration, infered.next)
 
-    def test_name_inference(self):
+    def test_builtin_name_inference(self):
         infered = self.astng['C']['meth1']['var'].infer()
         var = infered.next()
         self.failUnlessEqual(var.name, 'object')
@@ -616,6 +616,17 @@ print ((d,e) for e,d in ([1,2], [3,4]))
                              [2, 4])
         self.failUnlessEqual([i.value for i in get_name_node(astng, 'e', -1).infer()],
                              [1, 3])
+
+
+    def test_help_function(self):
+        data = '''
+help()
+        '''
+        astng = builder.string_build(data, __name__, __file__)
+        node = get_name_node(astng, 'help', -1)
+        infered = [repr(inf) for inf in node.infer()]
+        self.failUnlessEqual(infered,
+                             ['Instance of site._Helper'])
                 
 if __name__ == '__main__':
     from logilab.common.testlib import unittest_main

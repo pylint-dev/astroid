@@ -13,11 +13,10 @@
 """this module contains a set of functions to create astng trees from scratch
 (build_* functions) or from living object (object_build_* functions)
 
-:version:   $Revision: 1.12 $  
 :author:    Sylvain Thenault
-:copyright: 2003-2005 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2005 Sylvain Thenault
+:copyright: 2003-2007 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 
@@ -33,13 +32,19 @@ def attach___dict__(node):
     dictn = nodes.Dict([])
     dictn.parent = node
     node.locals['__dict__'] = [dictn]
-    
-def attach_dummy_node(node, name):
+
+_marker = object()
+
+def attach_dummy_node(node, name, object=_marker):
     """create a dummy node and register it in the locals of the given
     node with the specified name
     """
-    _attach_local_node(node, nodes.EmptyNode(), name)
-    
+    enode = nodes.EmptyNode()
+    enode.object = object
+    _attach_local_node(node, enode, name)
+
+nodes.EmptyNode.has_underlying_object = lambda self: self.object is not _marker
+
 def attach_const_node(node, name, value):
     """create a Const node and register it in the locals of the given
     node with the specified name
@@ -213,8 +218,9 @@ def _base_class_object_build(node, member, basenames, name=None):
     except:
         pass
     else:
-        for name in instdict.keys():
+        for name, obj in instdict.items():
             valnode = nodes.EmptyNode()
+            valnode.object = obj
             valnode.parent = klass
             valnode.lineno = 1
             klass.instance_attrs[name] = [valnode]

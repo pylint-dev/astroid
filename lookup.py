@@ -61,6 +61,7 @@ def scope_lookup(self, node, name, offset=0):
     if self.parent:
         return self.parent.scope().scope_lookup(node, name)
     return builtin_lookup(name)
+
 def class_scope_lookup(self, node, name, offset=0):
     if node in self.bases:
         #print 'frame swaping'
@@ -71,6 +72,7 @@ def class_scope_lookup(self, node, name, offset=0):
     else:
         frame = self
     return scope_lookup(frame, node, name, offset)
+
 def function_scope_lookup(self, node, name, offset=0):
     if node in self.defaults:
         frame = self.parent.frame()

@@ -14,11 +14,10 @@
 possible by providing a class responsible to get astng representation
 from various source and using a cache of built modules)
 
-:version:   $Revision: 1.49 $  
 :author:    Sylvain Thenault
-:copyright: 2003-2005 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2005 Sylvain Thenault
+:copyright: 2003-2007 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 
@@ -34,7 +33,7 @@ from logilab.common.modutils import NoSourceFile, is_python_source, \
      get_module_files, get_source_file
 from logilab.common.configuration import OptionsProviderMixIn
 
-from logilab.astng._exceptions import ASTNGBuildingException
+from logilab.astng import ASTNGBuildingException, Instance
 
 def astng_wrapper(func, modname):
     """wrapper to give to ASTNGManager.project_from_files"""
@@ -182,10 +181,34 @@ class ASTNGManager(OptionsProviderMixIn):
                 modname = klass.__module__
             except AttributeError:
                 raise ASTNGBuildingException(
-                    'Unable to get module for class %s' % klass)
+                    'Unable to get module for class %r' % klass)
         modastng = self.astng_from_module_name(modname)
         return modastng.getattr(klass.__name__)[0] # XXX
 
+            
+    def astng_from_something(self, obj, modname=None):
+        """get astng for the given class"""
+        if hasattr(obj, '__class__') and not isinstance(obj, type):
+            klass = obj.__class__
+        else:
+            klass = obj
+        if modname is None:
+            try:
+                modname = klass.__module__
+            except AttributeError:
+                raise ASTNGBuildingException(
+                    'Unable to get module for object %r' % obj)
+        try:
+            name = klass.__name__
+        except AttributeError:
+            raise ASTNGBuildingException(
+                'Unable to get module for object %r' % obj)
+        modastng = self.astng_from_module_name(modname)
+        astng = modastng.getattr(name)[0] # XXX
+        if klass is not obj:
+            astng = Instance(astng)
+        return astng
+    
     def project_from_files(self, files, func_wrapper=astng_wrapper,
                            project_name=None, black_list=None):
         """return a Project from a list of files or modules"""

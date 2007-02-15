@@ -20,11 +20,10 @@ TODO:
    (imported modules ? use dis.dis ?)
 
 
-:version:   $Revision: 1.54 $  
 :author:    Sylvain Thenault
-:copyright: 2003-2005 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2005 Sylvain Thenault
+:copyright: 2003-2007 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 
@@ -523,7 +522,7 @@ class ASTNGBuilder:
             if isfunction(member):
                 # verify this is not an imported function
                 if member.func_code.co_filename != modfile:
-                    attach_dummy_node(node, name)
+                    attach_dummy_node(node, name, member)
                     continue
                 object_build_function(node, member)
             elif isbuiltin(member):
@@ -554,7 +553,7 @@ class ASTNGBuilder:
                 attach_const_node(node, name, member)
             else:
                 # create an empty node so that the name is actually defined
-                attach_dummy_node(node, name)
+                attach_dummy_node(node, name, member)
 
     def _member_module(self, member):
         modname = getattr(member, '__module__', None)
@@ -571,7 +570,7 @@ def imported_member(node, member, name):
     try:
         getattr(sys.modules[member_module], name)
     except (KeyError, AttributeError):
-        attach_dummy_node(node, name)
+        attach_dummy_node(node, name, member)
     else:
         attach_import_node(node, member_module, name)
     

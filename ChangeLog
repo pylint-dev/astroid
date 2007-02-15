@@ -1,6 +1,10 @@
 Change log for the astng package
 ================================
 
+ --
+    * slightly better inference on astng built from living object by trying to infer 
+      dummy nodes (able to infer 'help' builtin for instance)
+
 2006-11-23  --  0.16.3
     * enhance inference for the subscription notation (motivated by a patch from Amaury)
       and for unary sub/add

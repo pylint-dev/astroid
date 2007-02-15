@@ -13,9 +13,9 @@
 """this module contains a set of functions to handle inference on astng trees
 
 :author:    Sylvain Thenault
-:copyright: 2003-2006 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2006 Sylvain Thenault
+:copyright: 2003-2007 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 
@@ -27,7 +27,7 @@ from copy import copy
 
 from logilab.common.compat import imap
 
-from logilab.astng import YES, Instance, Generator, \
+from logilab.astng import MANAGER, YES, Instance, Generator, \
      unpack_infer, _infer_stmts, nodes
 from logilab.astng import InferenceError, UnresolvableName, \
      NoDefault, NotFoundError, ASTNGBuildingException
@@ -76,6 +76,16 @@ nodes.Tuple.infer = infer_end
 nodes.Dict.infer = infer_end
 nodes.Const.infer = infer_end
 
+def infer_empty_node(self, name=None, path=None):
+    if not self.has_underlying_object():
+        yield YES
+        return
+    try:
+        yield MANAGER.astng_from_something(self.object)
+    except ASTNGBuildingException, ex:
+        yield YES
+nodes.EmptyNode.infer = infer_empty_node
+    
 
 def infer_function(self, name=None, path=None):
     """infer on Function nodes must be take with care since it

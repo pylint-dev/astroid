@@ -31,11 +31,10 @@ on From and Import :
 
  [1] http://docs.python.org/lib/module-compiler.ast.html
 
-:version:   $Revision: 1.103 $  
 :author:    Sylvain Thenault
-:copyright: 2003-2006 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2006 Sylvain Thenault
+:copyright: 2003-2007 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 

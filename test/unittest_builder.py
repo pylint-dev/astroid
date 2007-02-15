@@ -12,7 +12,7 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """tests for the astng builder module
 
-Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE).
+Copyright (c) 2003-2007 LOGILAB S.A. (Paris, FRANCE).
 http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
@@ -167,6 +167,8 @@ class BuilderTC(TestCase):
         # just check type and object are there
         builtin_astng.getattr('type')
         builtin_astng.getattr('object')
+        # check 'help' is there (defined dynamically by site.py)
+        builtin_astng.getattr('help')
         # check property has __init__
         pclass = builtin_astng['property']
         self.assert_('__init__' in pclass)

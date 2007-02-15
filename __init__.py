@@ -36,9 +36,9 @@ Main modules are:
 
 
 :author:    Sylvain Thenault
-:copyright: 2003-2006 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2006 Sylvain Thenault
+:copyright: 2003-2007 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 from __future__ import generators
@@ -90,7 +90,7 @@ def _infer_stmts(stmts, name=None, path=None, frame=None):
 
 class Yes(object):
     """a yes object"""
-    def __str__(self):
+    def __repr__(self):
         return 'YES'
     def __getattribute__(self, name):
         return self
@@ -150,7 +150,8 @@ class Instance(Proxy):
             raise InferenceError()
 
     def __repr__(self):
-        return 'Instance of %s' % self._proxied.name
+        return 'Instance of %s.%s' % (self._proxied.root().name,
+                                      self._proxied.name)
 
     def callable(self):
         try:
