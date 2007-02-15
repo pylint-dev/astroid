@@ -152,7 +152,8 @@ class Instance(Proxy):
     def __repr__(self):
         return 'Instance of %s.%s' % (self._proxied.root().name,
                                       self._proxied.name)
-
+    __str__ = __repr__
+    
     def callable(self):
         try:
             self._proxied.getattr('__call__')

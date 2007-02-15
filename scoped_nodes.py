@@ -80,10 +80,10 @@ class LocalsDictMixIn(object):
         
     __setitem__ = set_local
     
-    def add_local_node(self, child_node):
+    def add_local_node(self, child_node, name=None):
         """append a child which should alter locals to the given node"""
         self._append_node(child_node)
-        self.set_local(child_node.name, child_node)
+        self.set_local(name or child_node.name, child_node)
 
     def _append_node(self, child_node):
         """append a child, linking it in the tree"""

@@ -618,15 +618,28 @@ print ((d,e) for e,d in ([1,2], [3,4]))
                              [1, 3])
 
 
-    def test_help_function(self):
+    def test_builtin_help(self):
         data = '''
 help()
         '''
         astng = builder.string_build(data, __name__, __file__)
         node = get_name_node(astng, 'help', -1)
-        infered = [repr(inf) for inf in node.infer()]
-        self.failUnlessEqual(infered,
-                             ['Instance of site._Helper'])
+        infered = list(node.infer())
+        self.failUnlessEqual(len(infered), 1)
+        self.assertIsInstance(infered[0], Instance)
+        self.failUnlessEqual(str(infered[0]),
+                             'Instance of site._Helper')
+        
+    def test_builtin_open(self):
+        data = '''
+open("toto.txt")
+        '''
+        astng = builder.string_build(data, __name__, __file__)
+        node = get_name_node(astng, 'open', -1)
+        infered = list(node.infer())
+        self.failUnlessEqual(len(infered), 1)
+        self.assertIsInstance(infered[0], nodes.Class)
+        self.failUnlessEqual(infered[0].name, 'file')
                 
 if __name__ == '__main__':
     from logilab.common.testlib import unittest_main

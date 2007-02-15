@@ -167,6 +167,8 @@ class BuilderTC(TestCase):
         # just check type and object are there
         builtin_astng.getattr('type')
         builtin_astng.getattr('object')
+        # check open file alias
+        builtin_astng.getattr('open')
         # check 'help' is there (defined dynamically by site.py)
         builtin_astng.getattr('help')
         # check property has __init__

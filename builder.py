@@ -538,7 +538,7 @@ class ASTNGBuilder:
                     continue
                 if member in self._done:
                     class_node = self._done[member]
-                    node.add_local_node(class_node)
+                    node.add_local_node(class_node, name)
                 else:
                     class_node = object_build_class(node, member)
                 # recursion
