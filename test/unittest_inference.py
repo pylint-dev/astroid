@@ -11,16 +11,14 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """tests for the astng inference capabilities
-
-Copyright (c) 2005-2007 LOGILAB S.A. (Paris, FRANCE).
-http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
 import sys
 from os.path import join, abspath
 
-from logilab.astng import builder, nodes, inference, utils, YES, Instance
 from logilab.common.testlib import TestCase, unittest_main
+
+from logilab.astng import builder, nodes, inference, utils, YES, Instance, InferenceContext
 
 def get_name_node(start_from, name, index=0):
     return [n for n in start_from.nodes_of_class(nodes.Name) if n.name == name][index]
@@ -181,7 +179,7 @@ a, b= b, a # Gasp !
         self.failUnlessRaises(StopIteration, infered.next)
         
     def test_getattr_inference1(self):
-        infered = self.astng['ex'].infer(path=[])
+        infered = self.astng['ex'].infer()
         exc = infered.next()
         self.failUnless(isinstance(exc, inference.Instance))
         self.failUnlessEqual(exc.name, 'Exception')
@@ -228,7 +226,7 @@ a, b= b, a # Gasp !
         self.failUnlessRaises(StopIteration, infered.next)
 
     def test_args_default_inference2(self):
-        infered = self.astng['C']['meth3']['d'].infer(name='d')
+        infered = self.astng['C']['meth3'].ilookup('d')
         obj1 = infered.next()
         self.failUnless(isinstance(obj1, nodes.Const))
         self.failUnlessEqual(obj1.value, 4)
@@ -295,7 +293,6 @@ a = f()
         a = astng['a']
         a_infer = a.infer()
         self.failUnlessEqual(a_infer.next().value, 1)
-        self.failUnlessEqual(a_infer.next(), YES)
         self.failUnlessRaises(StopIteration, a_infer.next)
         
     def test_exc_ancestors(self):
@@ -641,6 +638,50 @@ open("toto.txt")
         self.assertIsInstance(infered[0], nodes.Class)
         self.failUnlessEqual(infered[0].name, 'file')
                 
+    def test_callfunc_context_inference(self):
+        data = '''
+def mirror(arg=None):
+    return arg
+
+un = mirror(1)
+        '''
+        astng = builder.string_build(data, __name__, __file__)
+        infered = list(astng.igetattr('un'))
+        self.failUnlessEqual(len(infered), 1)
+        self.assertIsInstance(infered[0], nodes.Const)
+        self.failUnlessEqual(infered[0].value, 1)
+                
+    def test_callfunc_context_inference_lambda(self):
+        data = '''
+mirror = lambda x=None: x
+
+un = mirror(1)
+        '''
+        astng = builder.string_build(data, __name__, __file__)
+        infered = list(astng.igetattr('un'))
+        self.failUnlessEqual(len(infered), 1)
+        self.assertIsInstance(infered[0], nodes.Const)
+        self.failUnlessEqual(infered[0].value, 1)
+        
+    def test_factory_method(self):
+        data = '''
+class Super(object):
+      @classmethod
+      def instance(cls):
+              return cls()
+
+class Sub(Super):
+      def method(self):
+              print 'method called'
+
+sub = Sub.instance()
+        '''
+        astng = builder.string_build(data, __name__, __file__)
+        infered = list(astng.igetattr('sub', InferenceContext(1)))
+        self.failUnlessEqual(len(infered), 1)
+        self.assertIsInstance(infered[0], Instance)
+        self.failUnlessEqual(infered[0]._proxied.name, 'Sub')
+        
 if __name__ == '__main__':
     from logilab.common.testlib import unittest_main
     unittest_main()

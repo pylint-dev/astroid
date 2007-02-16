@@ -19,11 +19,10 @@ Function...) nodes:
 Be careful, lookup is kinda internal and return a tuple (scope, [stmts]), while
 ilookup return an iterator on infered values
 
-:version:   $Revision: 1.6 $  
 :author:    Sylvain Thenault
-:copyright: 2003-2006 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2006 Sylvain Thenault
+:copyright: 2003-2007 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 
@@ -34,7 +33,7 @@ __docformat__ = "restructuredtext en"
 import __builtin__
 
 from logilab.astng.utils import are_exclusive
-from logilab.astng import MANAGER, _infer_stmts
+from logilab.astng import MANAGER, _infer_stmts, copy_context
 
 
 def lookup(self, name):
@@ -95,14 +94,16 @@ def builtin_lookup(name):
         stmts = ()
     return builtinastng, stmts
 
-def ilookup(self, name, path=None):
+def ilookup(self, name, context=None):
     """infered lookup
     
     return an iterator on infered values of the statements returned by
     the lookup method
     """
     frame, stmts = self.lookup(name)
-    return _infer_stmts(stmts, name, path, frame)
+    context = copy_context(context)
+    context.lookupname = name
+    return _infer_stmts(stmts, context, frame)
 
 
 def _filter_stmts(self, stmts, frame, offset):
@@ -151,8 +152,6 @@ def _filter_stmts(self, stmts, frame, offset):
                 if not isinstance(ass_type, (ListCompFor,  GenExprFor)):
                     #print 'break now2', self, ass_type
                     break
-                #print list(ass_type.assigned_stmts())
-                #if ass_type.assigned_stmts()
                 if isinstance(self, (Const, Name)):
                     _stmts = [self]
                     #print 'break now', ass_type, self, node

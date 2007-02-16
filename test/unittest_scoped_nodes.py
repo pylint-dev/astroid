@@ -12,16 +12,12 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """tests for specific behaviour of astng scoped nodes (ie module, class and
 function)
-
-Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE).
-http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
-import unittest
 import sys
 
+from logilab.common.testlib import TestCase, unittest_main
 from logilab.common.compat import sorted
-
 from logilab.astng import builder, nodes, scoped_nodes, \
      InferenceError, NotFoundError
 
@@ -39,20 +35,20 @@ def _test_dict_interface(self, node, test_attr):
     iter(node)
 
 
-class ModuleNodeTC(unittest.TestCase):
+class ModuleNodeTC(TestCase):
 
     def test_dict_interface(self):
         _test_dict_interface(self, MODULE, 'YO')
         
     def test_getattr(self):
         yo = MODULE.getattr('YO')[0]
-        self.assert_(isinstance(yo, nodes.Class))
+        self.assertIsInstance(yo, nodes.Class)
         self.assertEquals(yo.name, 'YO')
         red = MODULE.igetattr('redirect').next()
-        self.assert_(isinstance(red, nodes.Function))
+        self.assertIsInstance(red, nodes.Function)
         self.assertEquals(red.name, 'nested_args')
         spawn = MODULE.igetattr('spawn').next()
-        self.assert_(isinstance(spawn, nodes.Class))
+        self.assertIsInstance(spawn, nodes.Class)
         self.assertEquals(spawn.name, 'Execute')
         # resolve packageredirection
         sys.path.insert(1, 'data')
@@ -83,33 +79,33 @@ class ModuleNodeTC(unittest.TestCase):
         self.assert_(MODULE2.as_string())
         
         
-class FunctionNodeTC(unittest.TestCase):
+class FunctionNodeTC(TestCase):
 
     def test_dict_interface(self):
         _test_dict_interface(self, MODULE['global_access'], 'local')
         
     def test_default_value(self):
         func = MODULE2['make_class']
-        self.assert_(isinstance(func.default_value('base'), nodes.Getattr))
+        self.assertIsInstance(func.default_value('base'), nodes.Getattr)
         self.assertRaises(scoped_nodes.NoDefault, func.default_value, 'args')
         self.assertRaises(scoped_nodes.NoDefault, func.default_value, 'kwargs')
         self.assertRaises(scoped_nodes.NoDefault, func.default_value, 'any')
-        self.assert_(isinstance(func.mularg_class('args'), nodes.Tuple))
-        self.assert_(isinstance(func.mularg_class('kwargs'), nodes.Dict))
+        self.assertIsInstance(func.mularg_class('args'), nodes.Tuple)
+        self.assertIsInstance(func.mularg_class('kwargs'), nodes.Dict)
         self.assertEquals(func.mularg_class('base'), None)
 
     def test_navigation(self):
         function = MODULE['global_access']
         self.assertEquals(function.statement(), function)
         l_sibling = function.previous_sibling()
-        self.assert_(isinstance(l_sibling, nodes.Assign))
+        self.assertIsInstance(l_sibling, nodes.Assign)
         self.assert_(l_sibling is function.getChildNodes()[0].previous_sibling())
         r_sibling = function.next_sibling()
-        self.assert_(isinstance(r_sibling, nodes.Class))
+        self.assertIsInstance(r_sibling, nodes.Class)
         self.assertEquals(r_sibling.name, 'YO')
         self.assert_(r_sibling is function.getChildNodes()[0].next_sibling())
         last = r_sibling.next_sibling().next_sibling().next_sibling()
-        self.assert_(isinstance(last, nodes.Assign))
+        self.assertIsInstance(last, nodes.Assign)
         self.assertEquals(last.next_sibling(), None)
         first = l_sibling.previous_sibling().previous_sibling().previous_sibling().previous_sibling().previous_sibling()
         self.assertEquals(first.previous_sibling(), None)
@@ -149,7 +145,7 @@ class FunctionNodeTC(unittest.TestCase):
 ##                           ["Const('toto')", "Const(None)"])
 
         
-class ClassNodeTC(unittest.TestCase):
+class ClassNodeTC(TestCase):
 
     def test_dict_interface(self):
         _test_dict_interface(self, MODULE['YOUPI'], 'method')
@@ -161,14 +157,14 @@ class ClassNodeTC(unittest.TestCase):
         self.assert_(isinstance(l_sibling, nodes.Function), l_sibling)
         self.assertEquals(l_sibling.name, 'global_access')
         r_sibling = klass.next_sibling()
-        self.assert_(isinstance(r_sibling, nodes.Class))
+        self.assertIsInstance(r_sibling, nodes.Class)
         self.assertEquals(r_sibling.name, 'YOUPI')
         
     def test_local_attr_ancestors(self):
         klass2 = MODULE['YOUPI']
         it = klass2.local_attr_ancestors('__init__')
         anc_klass = it.next()
-        self.assert_(isinstance(anc_klass, nodes.Class))
+        self.assertIsInstance(anc_klass, nodes.Class)
         self.assertEquals(anc_klass.name, 'YO')
         self.assertRaises(StopIteration, it.next)
         it = klass2.local_attr_ancestors('method')
@@ -178,7 +174,7 @@ class ClassNodeTC(unittest.TestCase):
         klass2 = MODULE['YOUPI']
         it = klass2.instance_attr_ancestors('yo')
         anc_klass = it.next()
-        self.assert_(isinstance(anc_klass, nodes.Class))
+        self.assertIsInstance(anc_klass, nodes.Class)
         self.assertEquals(anc_klass.name, 'YO')
         self.assertRaises(StopIteration, it.next)
         klass2 = MODULE['YOUPI']
@@ -208,10 +204,10 @@ class ClassNodeTC(unittest.TestCase):
         
     #def test_rhs(self):
     #    my_dict = MODULE['MY_DICT']
-    #    self.assert_(isinstance(my_dict.rhs(), nodes.Dict))
+    #    self.assertIsInstance(my_dict.rhs(), nodes.Dict)
     #    a = MODULE['YO']['a']
     #    value = a.rhs()
-    #    self.assert_(isinstance(value, nodes.Const))
+    #    self.assertIsInstance(value, nodes.Const)
     #    self.assertEquals(value.value, 1)
         
     def test_ancestors(self):
@@ -267,4 +263,4 @@ class WebAppObject(object):
 __all__ = ('ModuleNodeTC', 'ImportNodeTC', 'FunctionNodeTC', 'ClassNodeTC')
         
 if __name__ == '__main__':
-    unittest.main()
+    unittest_main()

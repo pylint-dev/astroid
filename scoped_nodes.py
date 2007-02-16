@@ -32,12 +32,13 @@ import sys
 
 from logilab.common.compat import chain        
 
-from logilab.astng._exceptions import NotFoundError, NoDefault, \
-     ASTNGBuildingException, InferenceError
 from logilab.astng.utils import extend_class
-from logilab.astng import YES, MANAGER, Instance, unpack_infer, _infer_stmts, \
+from logilab.astng import YES, MANAGER, Instance, copy_context, \
+     unpack_infer, _infer_stmts, \
      Class, Const, Dict, Function, GenExpr, Lambda, \
      Module, Name, Pass, Raise, Tuple, Yield
+from logilab.astng import NotFoundError, NoDefault, \
+     ASTNGBuildingException, InferenceError
 
 # module class dict/iterator interface ########################################
     
@@ -158,16 +159,20 @@ GenExpr.frame = frame
 
 
 class GetattrMixIn(object):
-    def getattr(self, name, path=None):
+    def getattr(self, name, context=None):
         try:
             return self.locals[name]
         except KeyError:
             raise NotFoundError(name)
         
-    def igetattr(self, name, path=None):
+    def igetattr(self, name, context=None):
         """infered getattr"""
+        # set lookup name since this is necessary to infer on import nodes for
+        # instance
+        context = copy_context(context)
+        context.lookupname = name
         try:
-            return _infer_stmts(self.getattr(name, path), name, frame=self, path=path)
+            return _infer_stmts(self.getattr(name, context), context, frame=self)
         except NotFoundError:
             raise InferenceError(name)
 extend_class(Module, GetattrMixIn)
@@ -197,7 +202,7 @@ class ModuleNG(object):
     # as value
     globals = None
   
-    def getattr(self, name, path=None):
+    def getattr(self, name, context=None):
         try:
             return self.locals[name]
         except KeyError:
@@ -469,7 +474,7 @@ class ClassNG(object):
     # in the class definition)
     basenames = None
 
-    def ancestors(self, recurs=True, path=None):
+    def ancestors(self, recurs=True, context=None):
         """return an iterator on the node base classes in a prefixed
         depth first order
         
@@ -478,17 +483,15 @@ class ClassNG(object):
           ancestors only
         """
         # FIXME: should be possible to choose the resolution order
-        if path is None:
-            path = []
         for stmt in self.bases:
             try:
-                for baseobj in stmt.infer(path=path):
+                for baseobj in stmt.infer(context):
                     if not isinstance(baseobj, Class):
                         # duh ?
                         continue
                     yield baseobj
                     if recurs:
-                        for grandpa in baseobj.ancestors(True, path):
+                        for grandpa in baseobj.ancestors(True, context):
                             yield grandpa
             except InferenceError:
                 #import traceback
@@ -496,23 +499,23 @@ class ClassNG(object):
                 # XXX log error ?
                 continue
             
-    def local_attr_ancestors(self, name, path=None):
+    def local_attr_ancestors(self, name, context=None):
         """return an iterator on astng representation of parent classes
         which have <name> defined in their locals
         """
-        for astng in self.ancestors(path=path):
+        for astng in self.ancestors(context):
             if astng.locals.has_key(name):
                 yield astng
 
-    def instance_attr_ancestors(self, name, path=None):
+    def instance_attr_ancestors(self, name, context=None):
         """return an iterator on astng representation of parent classes
         which have <name> defined in their instance attribute dictionary
         """
-        for astng in self.ancestors(path=path):
+        for astng in self.ancestors(context):
             if astng.instance_attrs.has_key(name):
                 yield astng
 
-    def local_attr(self, name, path=None):
+    def local_attr(self, name, context=None):
         """return the astng associated to name in this class locals or
         in its parents
 
@@ -524,11 +527,11 @@ class ClassNG(object):
             return self[name]
         except KeyError:
             # get if from the first parent implementing it if any
-            for class_node in self.local_attr_ancestors(name, path):
+            for class_node in self.local_attr_ancestors(name, context):
                 return class_node[name]
         raise NotFoundError(name)
         
-    def instance_attr(self, name, path=None):
+    def instance_attr(self, name, context=None):
         """return the astng nodes associated to name in this class instance
         attributes dictionary or in its parents
 
@@ -540,11 +543,11 @@ class ClassNG(object):
             return self.instance_attrs[name]
         except KeyError:
             # get if from the first parent implementing it if any
-            for class_node in self.instance_attr_ancestors(name, path):
+            for class_node in self.instance_attr_ancestors(name, context):
                 return class_node.instance_attrs[name]
         raise NotFoundError(name)
 
-    def getattr(self, name, path=None):
+    def getattr(self, name, context=None):
         """this method doesn't look in the instance_attrs dictionary since it's
         done by an Instance proxy at inference time.
         
@@ -558,24 +561,28 @@ class ClassNG(object):
         # XXX need proper meta class handling + MRO implementation
         if name == '__mro__':
             return tuple(self.ancestors(recurs=True))
-        for classnode in self.ancestors(recurs=False, path=path):
+        for classnode in self.ancestors(recurs=False, context=context):
             try:
-                return classnode.getattr(name, path)
+                return classnode.getattr(name, context)
             except NotFoundError:
                 continue
         raise NotFoundError(name)
 
-    def igetattr(self, name, path=None):
+    def igetattr(self, name, context=None):
         """infered getattr, need special treatment in class to handle
         descriptors
         """
+        # set lookup name since this is necessary to infer on import nodes for
+        # instance
+        context = copy_context(context)
+        context.lookupname = name
         try:
-            for infered in _infer_stmts(self.getattr(name, path), name,
-                                        frame=self, path=path):
+            for infered in _infer_stmts(self.getattr(name, context), context,
+                                        frame=self):
                 # yield YES object instead of descriptors when necessary
                 if not isinstance(infered, Const) and isinstance(infered, Instance):
                     try:
-                        infered._proxied.getattr('__get__', path)
+                        infered._proxied.getattr('__get__', context)
                     except NotFoundError:
                         yield infered
                     else:
@@ -583,13 +590,13 @@ class ClassNG(object):
                 else:
                     yield infered
         except NotFoundError:
-            if not name.startswith('__') and self.has_dynamic_getattr(path):
+            if not name.startswith('__') and self.has_dynamic_getattr(context):
                 # class handle some dynamic attributes, return a YES object
                 yield YES
             else:
                 raise InferenceError(name)
         
-    def has_dynamic_getattr(self, path=None):
+    def has_dynamic_getattr(self, context=None):
         """return True if the class has a custom __getattr__ or
         __getattribute__ method
         """
@@ -597,12 +604,12 @@ class ClassNG(object):
         if self.name == 'Values' and self.root().name == 'optparse':
             return True
         try:
-            self.getattr('__getattr__', path)
+            self.getattr('__getattr__', context)
             return True
         except NotFoundError:
             if self.newstyle:
-                try: 
-                    getattribute = self.getattr('__getattribute__', path)[0]
+                try:
+                    getattribute = self.getattr('__getattribute__', context)[0]
                     if getattribute.root().name != '__builtin__':
                         # class has a custom __getattribute__ defined
                         return True

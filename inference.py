@@ -27,35 +27,31 @@ from copy import copy
 
 from logilab.common.compat import imap
 
-from logilab.astng import MANAGER, YES, Instance, Generator, \
+from logilab.astng import MANAGER, YES, InferenceContext, Instance, Generator, \
      unpack_infer, _infer_stmts, nodes
 from logilab.astng import InferenceError, UnresolvableName, \
      NoDefault, NotFoundError, ASTNGBuildingException
 
+    
 def path_wrapper(func):
     """return the given infer function wrapped to handle the path"""
-    def wrapped(node, name=None, path=None, _func=func, **kwargs):
-        """wrapper function handling path"""
-        if path is None:
-            path = [(node, name)]
-        else:
-            if (node, name) in path:
-                raise StopIteration()
-            path.append( (node, name) )
-        #print '--'*len(path),_func.__name__[6:], getattr(path[-1][0], 'name', ''), name
+    def wrapped(node, context=None, _func=func, **kwargs):
+        """wrapper function handling context"""
+        if context is None:
+            context = InferenceContext(node)
+        context.push(node)
         try:
-            for res in _func(node, name, path, **kwargs):
-                #print '--'*len(path), _func.__name__[6:], '-->', res
+            for res in _func(node, context, **kwargs):
                 yield res
-            path.pop()
+            context.pop()
         except:
-            path.pop()
+            context.pop()
             raise
     return wrapped
 
 # .infer method ###############################################################
 
-def infer_default(self, name=None, path=None):
+def infer_default(self, context=None):
     """we don't know how to resolve a statement by default"""
     #print 'inference error', self, name, path
     raise InferenceError(self.__class__.__name__)
@@ -64,7 +60,7 @@ def infer_default(self, name=None, path=None):
 nodes.Node.infer = infer_default
 
 
-def infer_end(self, name=None, path=None):
+def infer_end(self, context=None):
     """inference's end for node such as Module, Class, Function, Const...
     """
     yield self
@@ -76,25 +72,114 @@ nodes.Tuple.infer = infer_end
 nodes.Dict.infer = infer_end
 nodes.Const.infer = infer_end
 
-def infer_empty_node(self, name=None, path=None):
+def infer_empty_node(self, context=None):
     if not self.has_underlying_object():
         yield YES
-        return
-    try:
-        yield MANAGER.astng_from_something(self.object)
-    except ASTNGBuildingException, ex:
-        yield YES
+    else:
+        try:
+            yield MANAGER.astng_from_something(self.object)
+        except ASTNGBuildingException, ex:
+            yield YES
 nodes.EmptyNode.infer = infer_empty_node
     
 
-def infer_function(self, name=None, path=None):
+
+class CallContext:
+    """when infering a function call, this class is used to remember values
+    given as argument
+    """
+    def __init__(self, args, starargs, dstarargs):
+        self.args = []
+        self.nargs = {}
+        for arg in args:
+            if isinstance(arg, nodes.Keyword):
+                self.nargs[arg.name] = arg.expr
+            else:
+                self.args.append(arg)
+        self.starargs = starargs
+        self.dstarargs = dstarargs
+
+    def infer_argument(self, funcnode, name, context):
+        """infer a function argument value according the the call context"""
+        # 1. search in named keywords
+        try:
+            return self.nargs[name].infer(context)
+        except KeyError:
+            # Function.argnames can be None in astng (means that we don't have
+            # information on argnames)
+            if funcnode.argnames is not None:
+                try:
+                    argindex = funcnode.argnames.index(name)
+                except ValueError:
+                    pass
+                else:
+                    # 2. first argument of instance/class method
+                    if argindex == 0 and funcnode.type in ('method', 'classmethod'):
+                        if context.boundnode is not None:
+                            boundnode = context.boundnode
+                        else:
+                            # XXX can do better ?
+                            boundnode = funcnode.parent.frame()
+                        if funcnode.type == 'method':
+                            return iter((Instance(boundnode),))
+                        if funcnode.type == 'classmethod':
+                            return iter((boundnode,))                            
+                    # 2. search arg index
+                    try:
+                        return self.args[argindex].infer(context)
+                    except IndexError:
+                        pass
+                    # 3. search in *args (.starargs)
+                    if self.starargs is not None:
+                        its = []
+                        for infered in self.starargs.infer(context):
+                            try:
+                                its.append(infered.getitem(argindex).infer(context))
+                            except (InferenceError, AttributeError):
+                                its.append((YES,))
+                            except IndexError:
+                                continue
+                        if its:
+                            return chain(*its)
+        # 4. XXX search in **kwargs (.dstarargs)
+        if self.dstarargs is not None:
+            its = []
+            for infered in self.dstarargs.infer(context):
+                try:
+                    its.append(infered.getitem(name).infer(context))
+                except (InferenceError, AttributeError):
+                    its.append((YES,))
+                except IndexError:
+                    continue
+            if its:
+                return chain(*its)
+        # 5. */** argument, (Tuple or Dict)
+        mularg = funcnode.mularg_class(name)
+        if mularg is not None: 
+            # XXX should be able to compute values inside
+            return iter((mularg,))
+        # 6. return default value if any
+        try:
+            return funcnode.default_value(name).infer(context)
+        except NoDefault:
+            raise InferenceError(name)
+        
+        
+def infer_function(self, context=None):
     """infer on Function nodes must be take with care since it
     may be called to infer one of it's argument (in which case <name>
     should be given)
     """
+    name = context.lookupname
     # no name is given, we are infering the function itself
     if name is None:
         yield self
+        return
+    if context.callcontext:
+        # reset call context/name
+        for infered in context.callcontext.infer_argument(self, name, context):
+            yield infered
+        context.callcontext = None
         return
     # Function.argnames can be None in astng (means that we don't have
     # information on argnames), in which case we can't do anything more
@@ -118,7 +203,7 @@ def infer_function(self, name=None, path=None):
     # if there is a default value, yield it. And then yield YES to reflect
     # we can't guess given argument value
     try:
-        for infered in self.default_value(name).infer(name, path):
+        for infered in self.default_value(name).infer(context):
             yield infered
         yield YES
     except NoDefault:
@@ -128,48 +213,52 @@ nodes.Function.infer = path_wrapper(infer_function)
 nodes.Lambda.infer = path_wrapper(infer_function)
 
 
-def infer_name(self, name=None, path=None):
+def infer_name(self, context=None):
     """infer a Name: use name lookup rules"""
+    context = context.clone()
+    context.lookupname = self.name
     frame, stmts = self.lookup(self.name)
     if not stmts:
-        raise UnresolvableName(name)
-    return _infer_stmts(stmts, self.name, path, frame)
+        raise UnresolvableName(self.name)
+    return _infer_stmts(stmts, context, frame)
 
 nodes.Name.infer = path_wrapper(infer_name)
 
 
-def infer_assname(self, name=None, path=None):
+def infer_assname(self, context=None):
     """infer a AssName/AssAttr: need to inspect the RHS part of the
     assign node
     """
-    stmts = self.assigned_stmts(inf_path=path)
-    return _infer_stmts(stmts, self.name, path)
+    stmts = self.assigned_stmts(context=context)
+    return _infer_stmts(stmts, context)
     
 nodes.AssName.infer = path_wrapper(infer_assname)
 
 
-def infer_assattr(self, name=None, path=None):
+def infer_assattr(self, context=None):
     """infer a AssName/AssAttr: need to inspect the RHS part of the
     assign node
     """
-    stmts = self.assigned_stmts(inf_path=path)
-    return _infer_stmts(stmts, self.attrname, path)
+    stmts = self.assigned_stmts(context=context)
+    return _infer_stmts(stmts, context)
     
 nodes.AssAttr.infer = path_wrapper(infer_assattr)
 
-
-def infer_callfunc(self, name=None, path=None):
+        
+def infer_callfunc(self, context=None):
     """infer a CallFunc node by trying to guess what's the function is
     returning
     """
     one_infered = False
-    for callee in self.node.infer(name, path):
+    context = context.clone()
+    context.callcontext = CallContext(self.args, self.star_args, self.dstar_args)
+    for callee in self.node.infer(context):
         if callee is YES:
             yield callee
             one_infered = True
             continue
         try:
-            for infered in callee.infer_call_result(self, path):
+            for infered in callee.infer_call_result(self, context):
                 yield infered
                 one_infered = True
         except (AttributeError, InferenceError):
@@ -181,19 +270,23 @@ def infer_callfunc(self, name=None, path=None):
 nodes.CallFunc.infer = path_wrapper(infer_callfunc)
 
 
-def infer_getattr(self, name=None, path=None):
+def infer_getattr(self, context=None):
     """infer a Getattr node by using getattr on the associated object
     """
-    one_infered = False    
-    for owner in self.expr.infer(name, path):
+    one_infered = False
+    # XXX
+    #context = context.clone()
+    for owner in self.expr.infer(context):
         if owner is YES:
             yield owner
             one_infered = True
             continue
         try:
-            for obj in owner.igetattr(self.attrname, path=path):
+            context.boundnode = owner
+            for obj in owner.igetattr(self.attrname, context):
                 yield obj
                 one_infered = True
+            context.boundnode = None
         except (NotFoundError, InferenceError):
             continue
         except AttributeError:
@@ -221,10 +314,11 @@ def _imported_module_astng(node, modname):
     except (ASTNGBuildingException, SyntaxError):
         raise InferenceError(modname)
         
-def infer_import(self, name, path=None, asname=True):
+def infer_import(self, context=None, asname=True):
     """self resolve on From / Import nodes return the imported module/object"""
+    name = context.lookupname
     if name is None:
-        infer_default(self, name, path)
+        raise InferenceError()
     if asname:
         yield _imported_module_astng(self, self.real_name(name))
     else:
@@ -232,57 +326,60 @@ def infer_import(self, name, path=None, asname=True):
     
 nodes.Import.infer = path_wrapper(infer_import)
 
-def infer_from(self, name, path=None, asname=True):
+def infer_from(self, context=None, asname=True):
     """self resolve on From / Import nodes return the imported module/object"""
+    name = context.lookupname
     if name is None:
-        infer_default(self, name, path)
+        raise InferenceError()
     module = _imported_module_astng(self, self.modname)
     if asname:
         name = self.real_name(name)
     try:
-        return _infer_stmts(module.getattr(name), name, path)
+        return _infer_stmts(module.getattr(name), context)
     except NotFoundError:
         raise InferenceError(name)
 
 nodes.From.infer = path_wrapper(infer_from)
 
 
-def infer_global(self, name=None, path=None):
+def infer_global(self, context=None):
     try:
-        return _infer_stmts(self.root().getattr(name), name, path)
+        return _infer_stmts(self.root().getattr(name), context)
     except NotFoundError:
-        raise InferenceError(name)
+        raise InferenceError()
 nodes.Global.infer = path_wrapper(infer_global)
 
 
-def infer_subscript(self, name=None, path=None):
+def infer_subscript(self, context=None):
     """infer simple subscription such as [1,2,3][0] or (1,2,3)[-1]
     """
     if len(self.subs) == 1:
-        index = self.subs[0].infer().next()
+        index = self.subs[0].infer(context).next()
         try:
-            # suppose it's a constant node (attribute error else)
+            # suppose it's a Tuple/List node (attribute error else)
             assigned = self.expr.getitem(index.value)
         except (AttributeError, IndexError):
-            raise InferenceError(name)
-        for infered in assigned.infer(name, path):
+            raise InferenceError()
+        for infered in assigned.infer(context):
             yield infered
     else:
-        raise InferenceError(name)
+        raise InferenceError()
 nodes.Subscript.infer = infer_subscript
 
-def infer_unarysub(self, name=None, path=None):
-    try:
-        value = -self.expr.value
-    except (TypeError, AttributeError):
-        raise InferenceError(name)
-    node = copy(self.expr)
-    node.value = value
-    yield node
+def infer_unarysub(self, context=None):
+    for infered in self.expr.infer(context):
+        try:
+            value = -infered.value
+        except (TypeError, AttributeError):
+            yield YES
+            continue
+        node = copy(self.expr)
+        node.value = value
+        yield node
 nodes.UnarySub.infer = infer_unarysub
 
-def infer_unaryadd(self, name=None, path=None):
-    return self.expr.infer()
+def infer_unaryadd(self, context=None):
+    return self.expr.infer(context)
 nodes.UnaryAdd.infer = infer_unaryadd
     
 # .infer_call_result method ###################################################
@@ -295,23 +392,26 @@ nodes.Function.callable = callable_true
 nodes.Lambda.callable = callable_true
 nodes.Class.callable = callable_true
 
-def infer_call_result_function(self, caller, inf_path=None):
-    """infer what's a function is returning wen called"""
+def infer_call_result_function(self, caller, context=None):
+    """infer what's a function is returning when called"""
     if self.is_generator():
         yield Generator(self)
         return
     returns = self.nodes_of_class(nodes.Return, skip_klass=nodes.Function)
-    #for infered in _infer_stmts(imap(lambda n:n.value, returns), path=inf_path):
-    #    yield infered
     for returnnode in returns:
         try:
-            for infered in returnnode.value.infer(path=inf_path):
+            for infered in returnnode.value.infer(context):
                 yield infered
         except InferenceError:
             yield YES
 nodes.Function.infer_call_result = infer_call_result_function
 
-def infer_call_result_class(self, caller, inf_path=None):
+def infer_call_result_lambda(self, caller, context=None):
+    """infer what's a function is returning when called"""
+    return self.code.infer(context)
+nodes.Lambda.infer_call_result = infer_call_result_lambda
+
+def infer_call_result_class(self, caller, context=None):
     """infer what's a class is returning when called"""
     yield Instance(self)
 
@@ -322,38 +422,37 @@ nodes.Class.infer_call_result = infer_call_result_class
 """the assigned_stmts method is responsible to return the assigned statement
 (eg not infered) according to the assignment type.
 
-The `path` argument is used to record the lhs path of the original node.
-For instance if we want assigned statements for 'c' in 'a, (b,c)', path
+The `asspath` argument is used to record the lhs path of the original node.
+For instance if we want assigned statements for 'c' in 'a, (b,c)', asspath
 will be [1, 1] once arrived to the Assign node.
 
-The `inf_path` argument is the current inference path which should be given
+The `context` argument is the current inference context which should be given
 to any intermediary inference necessary.
 """
-def assend_assigned_stmts(self, inf_path=None):
+def assend_assigned_stmts(self, context=None):
     # only infer *real* assignments
     if self.flags == 'OP_DELETE':
         raise InferenceError()
-    return self.parent.assigned_stmts(self, inf_path=inf_path)
+    return self.parent.assigned_stmts(self, context=context)
     
 nodes.AssName.assigned_stmts = assend_assigned_stmts
 nodes.AssAttr.assigned_stmts = assend_assigned_stmts
 
-def mulass_assigned_stmts(self, node, path=None, inf_path=None):
-    if path is None:
-        path = []
+def mulass_assigned_stmts(self, node, context=None, asspath=None):
+    if asspath is None:
+        asspath = []
     node_idx = self.nodes.index(node)
-    path.insert(0, node_idx)
-    return self.parent.assigned_stmts(self, path, inf_path)
+    asspath.insert(0, node_idx)
+    return self.parent.assigned_stmts(self, context, asspath)
 nodes.AssTuple.assigned_stmts = mulass_assigned_stmts
 nodes.AssList.assigned_stmts = mulass_assigned_stmts
 
-def assign_assigned_stmts(self, node, path=None, inf_path=None):
-    """WARNING here `path` is a list of index to follow"""
-    if not path:
+def assign_assigned_stmts(self, node, context=None, asspath=None):
+    if not asspath:
         yield self.expr 
         return
     found = False
-    for infered in _resolve_asspart(self.expr.infer(path=inf_path), path, inf_path):
+    for infered in _resolve_asspart(self.expr.infer(context), asspath, context):
         found = True
         yield infered
     if not found:
@@ -361,7 +460,7 @@ def assign_assigned_stmts(self, node, path=None, inf_path=None):
 
 nodes.Assign.assigned_stmts = assign_assigned_stmts
 
-def _resolve_asspart(parts, asspath, path):
+def _resolve_asspart(parts, asspath, context):
     """recursive function to resolve multiple assignments"""
     asspath = asspath[:]
     index = asspath.pop(0)
@@ -381,12 +480,12 @@ def _resolve_asspart(parts, asspath, path):
             # we are not yet on the last part of the path
             # search on each possibly infered value
             try:
-                for infered in _resolve_asspart(assigned.infer(path=path), asspath, path):
+                for infered in _resolve_asspart(assigned.infer(context), asspath, context):
                     yield infered
             except InferenceError:
                 return
     
-def tryexcept_assigned_stmts(self, node, path=None, inf_path=None):
+def tryexcept_assigned_stmts(self, node, context=None, asspath=None):
     found = False
     for exc_type, exc_obj, body in self.handlers:
         if node is exc_obj:
@@ -401,7 +500,7 @@ def tryexcept_assigned_stmts(self, node, path=None, inf_path=None):
 nodes.TryExcept.assigned_stmts = tryexcept_assigned_stmts
 
 
-def _resolve_looppart(parts, asspath, path):
+def _resolve_looppart(parts, asspath, context):
     """recursive function to resolve multiple assignments on loops"""
     asspath = asspath[:]
     index = asspath.pop(0)
@@ -426,21 +525,21 @@ def _resolve_looppart(parts, asspath, path):
                 # we are not yet on the last part of the path
                 # search on each possibly infered value
                 try:
-                    for infered in _resolve_looppart(assigned.infer(path=path), asspath, path):
+                    for infered in _resolve_looppart(assigned.infer(context), asspath, context):
                         yield infered
                 except InferenceError:
                     break
 
-def for_assigned_stmts(self, node, path=None, inf_path=None):
+def for_assigned_stmts(self, node, context=None, asspath=None):
     found = False
-    if path is None:
-        for lst in self.loop_node().infer(path=inf_path):
+    if asspath is None:
+        for lst in self.loop_node().infer(context):
             if isinstance(lst, (nodes.Tuple, nodes.List)):
                 for item in lst.nodes:
                     found = True
                     yield item
     else:
-        for infered in _resolve_looppart(self.loop_node().infer(path=inf_path), path, inf_path):
+        for infered in _resolve_looppart(self.loop_node().infer(context), asspath, context):
             found = True
             yield infered
     if not found:
@@ -464,7 +563,7 @@ nodes.AssName.ass_type = parent_ass_type
 nodes.AssAttr.ass_type = parent_ass_type
 nodes.AssTuple.ass_type = parent_ass_type
 nodes.AssList.ass_type = parent_ass_type
-def assend_ass_type(self, inf_path=None):
+def assend_ass_type(self, context=None):
     # only infer *real* assignments
     if self.flags == 'OP_DELETE':
         return self
@@ -483,7 +582,24 @@ def tl_iter_stmts(self):
     return self.nodes
 nodes.List.iter_stmts = tl_iter_stmts
 nodes.Tuple.iter_stmts = tl_iter_stmts
+
 #Dict.getitem = getitem XXX
+        
+def dict_getitem(self, key):
+    for i in xrange(0, len(self.items), 2):
+        for inferedkey in self.items[i].infer():
+            if inferedkey is YES:
+                continue
+            if inferedkey.eq(key):
+                return self.items[i+1]
+    raise IndexError(key)
+
+nodes.Dict.getitem = dict_getitem
+        
+def dict_iter_stmts(self):
+    return self.items[::2]
+nodes.Dict.iter_stmts = dict_iter_stmts
+
 
 def for_loop_node(self):
     return self.list

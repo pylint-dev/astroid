@@ -52,38 +52,82 @@ from logilab.common.compat import chain, imap
 from logilab.astng._exceptions import *
 
 
-def unpack_infer(stmt, path=None):
+class InferenceContext(object):
+    __slots__ = ('startingfrom', 'path', 'lookupname', 'callcontext', 'boundnode')
+    
+    def __init__(self, node=None, path=None):
+        self.startingfrom = node # XXX useful ?
+        if path is None:
+            self.path = []
+        else:
+            self.path = path
+        self.lookupname = None
+        self.callcontext = None
+        self.boundnode = None
+
+    def push(self, node):
+        name = self.lookupname
+        if (node, name) in self.path:
+            raise StopIteration()
+        self.path.append( (node, name) )
+
+    def pop(self):
+        return self.path.pop()
+
+    def clone(self):
+        # XXX copy lookupname/callcontext ?
+        clone = InferenceContext(self.startingfrom, self.path)
+        clone.callcontext = self.callcontext
+        clone.boundnode = self.boundnode
+        return clone
+
+
+def unpack_infer(stmt, context=None):
     """return an iterator on nodes infered by the given statement
     if the infered value is a list or a tuple, recurse on it to
     get values infered by its content
     """
     if isinstance(stmt, (List, Tuple)):
+        # XXX loosing context
         return chain(*imap(unpack_infer, stmt.nodes))
-    infered = stmt.infer(path=path).next()
+    infered = stmt.infer(context).next()
     if infered is stmt:
         return iter( (stmt,) )
-    return chain(*imap(unpack_infer, stmt.infer(path=path)))
+    return chain(*imap(unpack_infer, stmt.infer(context)))
 
-def _infer_stmts(stmts, name=None, path=None, frame=None):
+def copy_context(context):
+    if context is not None:
+        return context.clone()
+    else:
+        return InferenceContext()
+    
+def _infer_stmts(stmts, context, frame=None):
     """return an iterator on statements infered by each statement in <stmts>
     """
     stmt = None
-    one_infered = False
+    infered = False
+    if context is not None:
+        name = context.lookupname
+        context = context.clone()
+    else:
+        name = None
+        context = InferenceContext()
     for stmt in stmts:
         if stmt is YES:
             yield stmt
-            one_infered = True
+            infered = True
             continue
+        context.lookupname = stmt._infer_name(frame, name)
         try:
-            for infered in stmt.infer(stmt._infer_name(frame, name), path):
+            for infered in stmt.infer(context):
                 yield infered
-                one_infered = True
+                infered = True
         except UnresolvableName:
             continue
         except InferenceError:
             yield YES
-            one_infered = True
-    if not one_infered:
+            infered = True
+    if not infered:
         raise InferenceError(str(stmt))
 
 # special inference objects ###################################################
@@ -106,14 +150,14 @@ class Proxy:
     def __getattr__(self, name):
         return getattr(self._proxied, name)
 
-    def infer(self, name=None, path=None):
+    def infer(self, context=None):
         yield self
 
 class Instance(Proxy):
     """a special node representing a class instance"""
-    def getattr(self, name, path=None, lookupclass=True):
+    def getattr(self, name, context=None, lookupclass=True):
         try:
-            return self._proxied.instance_attr(name, path)
+            return self._proxied.instance_attr(name, context)
         except NotFoundError:
             if name == '__class__':
                 return [self._proxied]
@@ -122,31 +166,35 @@ class Instance(Proxy):
                 # instances but not on class objects
                 raise NotFoundError(name)
             if lookupclass:
-                return self._proxied.getattr(name, path)
+                return self._proxied.getattr(name, context)
         raise NotFoundError(name)
 
-    def igetattr(self, name, path=None):
+    def igetattr(self, name, context=None):
         """infered getattr"""
+        # set lookup name since this is necessary to infer on import nodes for
+        # instance
+        context = copy_context(context)
+        context.lookupname = name        
         try:
             # XXX frame should be self._proxied, or not ?
-            return _infer_stmts(self.getattr(name, path, lookupclass=False), name,
-                                frame=self, path=path)
+            return _infer_stmts(self.getattr(name, context, lookupclass=False), context,
+                                frame=self)
         except NotFoundError:
             try:
                 # fallback to class'igetattr since it has some logic to handle
                 # descriptors
-                return self._proxied.igetattr(name, path=path)
+                return self._proxied.igetattr(name, context)
             except NotFoundError:
                 raise InferenceError(name)
         
-    def infer_call_result(self, caller, inf_path=None):
+    def infer_call_result(self, caller, context=None):
         """infer what's a class instance is returning when called"""
-        one_infered = False
-        for node in self._proxied.igetattr('__call__', inf_path):
-            for res in node.infer_call_result(caller, inf_path):
-                one_infered = True
+        infered = False
+        for node in self._proxied.igetattr('__call__', context):
+            for res in node.infer_call_result(caller, context):
+                infered = True
                 yield res
-        if not one_infered:
+        if not infered:
             raise InferenceError()
 
     def __repr__(self):
@@ -197,11 +245,11 @@ def Const___getattr__(self, name):
         self._proxied = MANAGER.astng_from_class(self.value.__class__)
     return getattr(self._proxied, name)
 Const.__getattr__ = Const___getattr__
-def Const_getattr(self, name, path=None, lookupclass=None):
+def Const_getattr(self, name, context=None, lookupclass=None):
     if self.value is None:
         raise NotFoundError(name)
     if self._proxied is None:
         self._proxied = MANAGER.astng_from_class(self.value.__class__)
-    return self._proxied.getattr(name, path)
+    return self._proxied.getattr(name, context)
 Const.getattr = Const_getattr
 Const.has_dynamic_getattr = lambda x: False

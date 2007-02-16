@@ -11,9 +11,6 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """tests for specific behaviour of astng nodes
-
-Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE).
-http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
 import unittest
@@ -30,18 +27,15 @@ MODULE2 = abuilder.file_build('data/module2.py', 'data.module2')
 class ImportNodeTC(unittest.TestCase):
     
     def test_import_self_resolve(self):
-        import_ = MODULE2['myos']
-        myos = import_.infer('myos').next()
+        myos = MODULE2.igetattr('myos').next()
         self.failUnless(isinstance(myos, nodes.Module), myos)
         self.failUnlessEqual(myos.name, 'os')
 
     def test_from_self_resolve(self):
-        from_ = MODULE['spawn']
-        spawn = from_.infer('spawn').next()
+        spawn = MODULE.igetattr('spawn').next()
         self.failUnless(isinstance(spawn, nodes.Class), spawn)
         self.failUnlessEqual(spawn.root().name, 'logilab.common.shellutils')
-        from_ = MODULE2['abspath']
-        abspath = from_.infer('abspath').next()
+        abspath = MODULE2.igetattr('abspath').next()
         self.failUnless(isinstance(abspath, nodes.Function), abspath)
         self.failUnlessEqual(abspath.root().name, 'os.path')
 

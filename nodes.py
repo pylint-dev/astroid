@@ -236,8 +236,13 @@ class NodeNG:
                  isinstance(self, (Function, Lambda)) and self is frame):
             return name
         return None
+
+    def eq(self, value):
+        return False
     
 extend_class(Node, NodeNG)
+
+Const.eq = lambda self, value: self.value == value
 
 # block range overrides #######################################################
 
