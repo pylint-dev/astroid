@@ -503,7 +503,7 @@ class ClassNG(object):
         """return an iterator on astng representation of parent classes
         which have <name> defined in their locals
         """
-        for astng in self.ancestors(context):
+        for astng in self.ancestors(context=context):
             if astng.locals.has_key(name):
                 yield astng
 
