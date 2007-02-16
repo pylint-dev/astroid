@@ -677,7 +677,7 @@ class Sub(Super):
 sub = Sub.instance()
         '''
         astng = builder.string_build(data, __name__, __file__)
-        infered = list(astng.igetattr('sub', InferenceContext(1)))
+        infered = list(astng.igetattr('sub'))
         self.failUnlessEqual(len(infered), 1)
         self.assertIsInstance(infered[0], Instance)
         self.failUnlessEqual(infered[0]._proxied.name, 'Sub')
