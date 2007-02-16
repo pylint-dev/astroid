@@ -66,6 +66,13 @@ except:
     class GenExprInner: 
         """dummy GenExprInner node, shouldn't be used since py < 2.4"""
 
+try:
+    # introduced in python 2.4
+    from compiler.ast import Decorators
+except:
+    class Decorators:
+        """dummy Decorators node, shouldn't be used since py < 2.4"""
+
 from logilab.astng._exceptions import NotFoundError, InferenceError
 from logilab.astng.utils import extend_class
 
@@ -243,6 +250,11 @@ class NodeNG:
 extend_class(Node, NodeNG)
 
 Const.eq = lambda self, value: self.value == value
+
+def decorators_scope(self):
+    # skip the function node to go directly to the upper level scope
+    return self.parent.parent.scope()
+Decorators.scope = decorators_scope
 
 # block range overrides #######################################################
 

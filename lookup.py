@@ -33,7 +33,7 @@ __docformat__ = "restructuredtext en"
 import __builtin__
 
 from logilab.astng.utils import are_exclusive
-from logilab.astng import MANAGER, _infer_stmts, copy_context
+from logilab.astng import nodes, MANAGER, _infer_stmts, copy_context
 
 
 def lookup(self, name):
@@ -58,7 +58,12 @@ def scope_lookup(self, node, name, offset=0):
     if stmts:
         return self, stmts
     if self.parent:
-        return self.parent.scope().scope_lookup(node, name)
+        # nested scope: if parent scope is a function, that's fine
+        # else jump to the module
+        pscope = self.parent.scope()
+        if not isinstance(pscope, nodes.Function):
+            pscope = pscope.root()
+        return pscope.scope_lookup(node, name)
     return builtin_lookup(name)
 
 def class_scope_lookup(self, node, name, offset=0):
@@ -79,6 +84,7 @@ def function_scope_lookup(self, node, name, offset=0):
         # value to the defined function
         offset = -1
     else:
+        # check this is not used in function decorators
         frame = self
     return scope_lookup(frame, node, name, offset)
     

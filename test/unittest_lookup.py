@@ -11,19 +11,15 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """tests for the astng variable lookup capabilities
-
-Copyright (c) 2005-2006 LOGILAB S.A. (Paris, FRANCE).
-http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
-__revision__ = "$Id: unittest_lookup.py,v 1.2 2006-03-03 09:29:50 syt Exp $"
-
 from os.path import join, abspath
+from logilab.common.testlib import TestCase, unittest_main
 
 from logilab.astng import builder, nodes, scoped_nodes, \
      InferenceError, NotFoundError
-#from logilab.astng import builder, nodes, inference, utils, YES
-from logilab.common.testlib import TestCase, unittest_main
+
+from unittest_inference import get_name_node
 
 builder = builder.ASTNGBuilder()
 MODULE = builder.file_build('data/module.py', 'data.module')
@@ -65,7 +61,7 @@ def func():
         none = astng.ilookup('None').next()
         self.assertEquals(none.value, None)
         obj = astng.ilookup('object').next()
-        self.assert_(isinstance(obj, nodes.Class))
+        self.assertIsInstance(obj, nodes.Class)
         self.assertEquals(obj.name, 'object')
         self.assertRaises(InferenceError, astng.ilookup('YOAA').next)
 
@@ -106,17 +102,55 @@ class A(A):
         klass = MODULE['YOUPI']
         #print klass.getattr('MY_DICT')
         my_dict = klass.ilookup('MY_DICT').next()
-        self.assert_(isinstance(my_dict, nodes.Dict))
+        self.assertIsInstance(my_dict, nodes.Dict)
         none = klass.ilookup('None').next()
         self.assertEquals(none.value, None)
         obj = klass.ilookup('object').next()
-        self.assert_(isinstance(obj, nodes.Class))
+        self.assertIsInstance(obj, nodes.Class)
         self.assertEquals(obj.name, 'object')
         self.assertRaises(InferenceError, klass.ilookup('YOAA').next)
 
     def test_inner_classes(self):
         ccc = NONREGR['Ccc']
         self.assertEquals(ccc.ilookup('Ddd').next().name, 'Ddd')
+        
+    def test_nonregr_method_lookup(self):
+        data = '''
+class FileA:
+    @staticmethod
+    def funcA():
+        return 4
+
+
+class Test:
+    FileA = [1,2,3]
+    
+    def __init__(self):
+        print FileA.funcA()
+        '''
+        astng = builder.string_build(data, __name__, __file__)
+        it = astng['Test']['__init__'].ilookup('FileA')
+        obj = it.next()
+        self.assertIsInstance(obj, nodes.Class)
+        self.assertRaises(StopIteration, it.next)
+        
+    def test_nonregr_decorator_member_lookup(self):
+        data = '''
+class FileA:
+    def decorator(bla):
+        return bla
+    
+    @decorator
+    def funcA():
+        return 4
+        '''
+        astng = builder.string_build(data, __name__, __file__)
+        decname = get_name_node(astng['FileA'], 'decorator')
+        it = decname.infer()
+        obj = it.next()
+        self.assertIsInstance(obj, nodes.Function)
+        self.assertRaises(StopIteration, it.next)
+        
         
 if __name__ == '__main__':
     unittest_main()

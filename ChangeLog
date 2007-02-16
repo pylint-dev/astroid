@@ -7,6 +7,9 @@ Change log for the astng package
     * api change to be able to infer using a context (used to infer function call 
       result only for now)
     * fix a living object astng building bug, which was making "open" uninferable
+    * fix lookup of name in method bug (#3289)
+    * fix decorator lookup bug (#3261)
+
 	
 2006-11-23  --  0.16.3
     * enhance inference for the subscription notation (motivated by a patch from Amaury)
