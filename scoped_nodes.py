@@ -30,7 +30,7 @@ __doctype__ = "restructuredtext en"
 
 import sys
 
-from logilab.common.compat import chain        
+from logilab.common.compat import chain, set
 
 from logilab.astng.utils import extend_class
 from logilab.astng import YES, MANAGER, Instance, copy_context, \
@@ -483,15 +483,21 @@ class ClassNG(object):
           ancestors only
         """
         # FIXME: should be possible to choose the resolution order
+        # XXX inference make infinite loops possible here (see BaseTransformer
+        # manipulation in the builder module for instance !)
         for stmt in self.bases:
             try:
                 for baseobj in stmt.infer(context):
                     if not isinstance(baseobj, Class):
                         # duh ?
                         continue
+                    if baseobj is self:
+                        continue # cf xxx above
                     yield baseobj
                     if recurs:
                         for grandpa in baseobj.ancestors(True, context):
+                            if baseobj is self:
+                                continue # cf xxx above
                             yield grandpa
             except InferenceError:
                 #import traceback
