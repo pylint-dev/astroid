@@ -357,8 +357,10 @@ nodes.From.infer = path_wrapper(infer_from)
 
 
 def infer_global(self, context=None):
+    if context.lookupname is None:
+        raise InferenceError()
     try:
-        return _infer_stmts(self.root().getattr(name), context)
+        return _infer_stmts(self.root().getattr(context.lookupname), context)
     except NotFoundError:
         raise InferenceError()
 nodes.Global.infer = path_wrapper(infer_global)
