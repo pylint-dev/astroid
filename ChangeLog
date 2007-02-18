@@ -2,10 +2,10 @@ Change log for the astng package
 ================================
 
  --
-    * slightly better inference on astng built from living object by trying to infer 
-      dummy nodes (able to infer 'help' builtin for instance)
     * api change to be able to infer using a context (used to infer function call 
       result only for now)
+    * slightly better inference on astng built from living object by trying to infer 
+      dummy nodes (able to infer 'help' builtin for instance)
     * fix a living object astng building bug, which was making "open" uninferable
     * fix lookup of name in method bug (#3289)
     * fix decorator lookup bug (#3261)

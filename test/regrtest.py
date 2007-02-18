@@ -1,7 +1,7 @@
 
 from logilab.common.testlib import unittest_main, TestCase
 
-from logilab.astng import ResolveError, MANAGER as m
+from logilab.astng import ResolveError, MANAGER as m, Instance, YES
 from logilab.astng.builder import ASTNGBuilder, build_module
 
 import sys
@@ -69,6 +69,24 @@ if __name__ == "__main__":
             astng = builder.string_build(data, __name__, __file__)
             a = astng['A']
             self.assert_(a.newstyle)
+
+
+    def test_pylint_config_attr(self):
+        mod = m.astng_from_module_name('pylint.lint')
+        pylinter = mod['PyLinter']
+        self.assertEquals([c.name for c in pylinter.ancestors()],
+                          ['OptionsManagerMixIn', 'object', 'MessagesHandlerMixIn',
+                           'ReportsHandlerMixIn', 'BaseRawChecker', 'BaseChecker',
+                           'OptionsProviderMixIn', 'ASTWalker'])
+        
+        self.assert_(list(Instance(pylinter).getattr('config')))
+        infered = list(Instance(pylinter).igetattr('config'))
+        self.assertEquals(len(infered), 2)
+        infered = [c for c in infered if not c is YES]
+        self.assertEquals(len(infered), 1)
+        self.assertEquals(infered[0].root().name, 'optparse')
+        self.assertEquals(infered[0].name, 'Values')
+
         
 class Whatever(object):
     a = property(lambda x: x, lambda x: x)

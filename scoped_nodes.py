@@ -511,7 +511,7 @@ class ClassNG(object):
         """return an iterator on astng representation of parent classes
         which have <name> defined in their instance attribute dictionary
         """
-        for astng in self.ancestors(context):
+        for astng in self.ancestors(context=context):
             if astng.instance_attrs.has_key(name):
                 yield astng
 
@@ -572,7 +572,7 @@ class ClassNG(object):
         """infered getattr, need special treatment in class to handle
         descriptors
         """
-        # set lookup name since this is necessary to infer on import nodes for
+        # set lookoup name since this is necessary to infer on import nodes for
         # instance
         context = copy_context(context)
         context.lookupname = name

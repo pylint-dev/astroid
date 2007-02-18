@@ -451,7 +451,7 @@ xxx = load_module_from_name('__pkginfo__')
         xxx = astng['xxx']
         infered = list(xxx.infer())
         self.failUnlessEqual([n.__class__ for n in infered],
-                             [nodes.Const, YES.__class__, YES.__class__])
+                             [nodes.Const, YES.__class__])
 
     def test_method_argument(self):
         data = '''

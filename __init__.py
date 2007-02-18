@@ -171,10 +171,6 @@ class Instance(Proxy):
 
     def igetattr(self, name, context=None):
         """infered getattr"""
-        # set lookup name since this is necessary to infer on import nodes for
-        # instance
-        context = copy_context(context)
-        context.lookupname = name        
         try:
             # XXX frame should be self._proxied, or not ?
             return _infer_stmts(self.getattr(name, context, lookupclass=False), context,

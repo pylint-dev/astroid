@@ -11,14 +11,11 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """tests for the astng builder module
-
-Copyright (c) 2003-2007 LOGILAB S.A. (Paris, FRANCE).
-http://www.logilab.fr/ -- mailto:contact@logilab.fr
 """
 
 import unittest
 import sys
-from os.path import join, abspath
+from os.path import join, abspath, dirname
 
 from logilab.common.testlib import TestCase, unittest_main
 from unittest_inference import get_name_node
@@ -443,7 +440,22 @@ class ModuleBuildTC(FileBuildTC):
         self.module = abuilder.module_build(test_module)
 
 
-__all__ = ('BuilderModuleBuildTC', 'BuilderFileBuildTC', 'BuilderTC')
+class InferedBuildTC(TestCase):
+
+    def test(self):
+        from logilab import astng
+        import compiler
+        sn = astng.MANAGER.astng_from_file(join(astng.__path__[0], 'scoped_nodes.py'))
+        astastng = astng.MANAGER.astng_from_file(join(compiler.__path__[0], 'ast.py'))
+        # check monkey patching of the compiler module has been infered
+        lclass = list(astastng.igetattr('Lambda'))
+        self.assertEquals(len(lclass), 1)
+        lclass = lclass[0]
+        self.assert_('as_string' in lclass.locals, lclass.locals.keys())
+        self.assert_('format_args' in lclass.locals, lclass.locals.keys())
+        self.assert_('type' in lclass.locals.keys())
+        
+#__all__ = ('BuilderModuleBuildTC', 'BuilderFileBuildTC', 'BuilderTC')
 
 if __name__ == '__main__':
     unittest_main()

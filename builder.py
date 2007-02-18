@@ -40,9 +40,9 @@ from inspect import isdatadescriptor
 from logilab.common.fileutils import norm_read
 from logilab.common.modutils import modpath_from_file
 
-from logilab.astng import nodes
+from logilab.astng import nodes, YES, Instance
 from logilab.astng.utils import ASTWalker
-from logilab.astng._exceptions import ASTNGBuildingException
+from logilab.astng._exceptions import ASTNGBuildingException, InferenceError
 from logilab.astng.raw_building import *
 from logilab.astng.astutils import cvrtr
 
@@ -152,7 +152,10 @@ class ASTNGBuilder:
     """provide astng building methods
     """
     
-    def __init__(self): # XXX _ was the manager, keep for bw compat
+    def __init__(self, manager=None):
+        if manager is None:
+            from logilab.astng import MANAGER as manager
+        self._manager = manager
         self._module = None
         self._file = None
         self._done = None
@@ -160,6 +163,7 @@ class ASTNGBuilder:
         self._metaclass = None        
         self._walker = ASTWalker(self)
         self._dyn_modname_map = {'gtk': 'gtk._gtk'}
+        self._delayed = []
         
     def module_build(self, module, modname=None):
         """build an astng from a living module instance
@@ -185,6 +189,8 @@ class ASTNGBuilder:
         self._module = module
         node = build_module(modname or module.__name__, module.__doc__)
         node.file = node.path = path and abspath(path) or path
+        if self._manager is not None:
+            self._manager._cache[node.file] = self._manager._cache[node.name] = node
         node.package = hasattr(module, '__path__')
         attach___dict__(node)
         self._done = {}
@@ -216,6 +222,7 @@ class ASTNGBuilder:
         finally:
             self._file = None
             sys.path.pop(0)
+        
         return node
     
     def string_build(self, data, modname='', path=None):
@@ -236,7 +243,14 @@ class ASTNGBuilder:
             node.package = path and path.find('__init__.py') > -1 or False
         node.name = modname 
         node.pure_python = True
+        if self._manager is not None:
+            self._manager._cache[node.file] = node
+            if self._file:
+                self._manager._cache[abspath(self._file)] = node
         self._walker.walk(node)
+        while self._delayed:
+            dnode = self._delayed.pop(0)
+            getattr(self, 'delayed_visit_%s' % dnode.__class__.__name__.lower())(dnode)
         return node
 
     # callbacks to build from an existing compiler.ast tree ###################
@@ -441,41 +455,43 @@ class ASTNGBuilder:
             node.parent.set_local(name, node)
         
     def visit_assattr(self, node):
+        """visit a stmt.AssAttr node -> delay it to handle members
+        definition later
+        """
+        self.visit_default(node)
+        self._delayed.append(node)
+    
+    def delayed_visit_assattr(self, node):
         """visit a stmt.AssAttr node -> add name to locals, handle members
         definition
         """
-        self.visit_default(node)
-        frame = node.frame()
-        if isinstance(frame, nodes.Function) and frame.type != 'function':
-            klass = frame.parent.frame()
-            # are we assigning to a (new ?) instance attribute ?
-            try:
-                _self = frame.argnames[0]
-            except IndexError:
-                # first argument is missing !
-                return
-            if isinstance(node.expr, nodes.Name) and node.expr.name == _self:
-                # unittest_scoped_nodes.ClassNodeTC.test_classmethod_attributes
-                #
-                # if frame.type == 'classmethod': XXX at this point we may have
-                # not encountered the classmethod decorator, so we havn't yet
-                # the correct type
-                # hack according to the argument name
-                if _self == 'self': 
-                    iattrs = klass.instance_attrs
+        try:
+            frame = node.frame()
+            for infered in node.expr.infer():
+                if infered is YES:
+                    continue
+                try:
+                    if infered.__class__ is Instance:
+                        infered = infered._proxied
+                        iattrs = infered.instance_attrs
+                    else:
+                        iattrs = infered.locals
+                except AttributeError:
+                    continue
+                values = iattrs.setdefault(node.attrname, [])
+                if node in values:
+                    continue
+                # get assign in __init__ first XXX useful ?
+                if frame.name == '__init__' and values and not \
+                       values[0].frame().name == '__init__':
+                    values.insert(0, node)
                 else:
-                    iattrs = klass.locals
-                # assign if not yet existant in others
-                if not iattrs.has_key(node.attrname):
-                    iattrs[node.attrname] = [node]
-                # but always assign in __init__, except if previous assigment
-                # already come from __init__
-                elif frame.name == '__init__' and not \
-                         iattrs[node.attrname][0].frame().name == '__init__':
-                    iattrs[node.attrname].insert(0, node)
-                else:
-                    iattrs[node.attrname].append(node)
-                    
+                    values.append(node)
+                #print node.attrname, infered, values
+        except InferenceError:
+            #print frame, node
+            pass
+        
     def visit_default(self, node):
         """default visit method, handle the parent attribute
         """

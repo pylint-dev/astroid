@@ -25,10 +25,10 @@ __doctype__ = "restructuredtext en"
 
 from copy import copy
 
-from logilab.common.compat import imap
+from logilab.common.compat import imap, chain, set
 
 from logilab.astng import MANAGER, YES, InferenceContext, Instance, Generator, \
-     unpack_infer, _infer_stmts, nodes
+     unpack_infer, _infer_stmts, nodes, copy_context
 from logilab.astng import InferenceError, UnresolvableName, \
      NoDefault, NotFoundError, ASTNGBuildingException
 
@@ -40,9 +40,17 @@ def path_wrapper(func):
         if context is None:
             context = InferenceContext(node)
         context.push(node)
+        yielded = set()
         try:
             for res in _func(node, context, **kwargs):
-                yield res
+                # unproxy only true instance, not const, tuple, dict...
+                if res.__class__ is Instance:
+                    ares = res._proxied
+                else:
+                    ares = res
+                if not ares in yielded:
+                    yield res
+                    yielded.add(ares)
             context.pop()
         except:
             context.pop()
@@ -80,7 +88,7 @@ def infer_empty_node(self, context=None):
             yield MANAGER.astng_from_something(self.object)
         except ASTNGBuildingException, ex:
             yield YES
-nodes.EmptyNode.infer = infer_empty_node
+nodes.EmptyNode.infer = path_wrapper(infer_empty_node)
     
 
 
@@ -133,6 +141,9 @@ class CallContext:
                     if self.starargs is not None:
                         its = []
                         for infered in self.starargs.infer(context):
+                            if infered is YES:
+                                its.append((YES,))
+                                continue
                             try:
                                 its.append(infered.getitem(argindex).infer(context))
                             except (InferenceError, AttributeError):
@@ -145,6 +156,9 @@ class CallContext:
         if self.dstarargs is not None:
             its = []
             for infered in self.dstarargs.infer(context):
+                if infered is YES:
+                    its.append((YES,))
+                    continue
                 try:
                     its.append(infered.getitem(name).infer(context))
                 except (InferenceError, AttributeError):
