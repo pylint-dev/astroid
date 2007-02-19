@@ -33,7 +33,7 @@ import sys
 from logilab.common.compat import chain, set
 
 from logilab.astng.utils import extend_class
-from logilab.astng import YES, MANAGER, Instance, copy_context, \
+from logilab.astng import YES, MANAGER, Instance, InferenceContext, copy_context, \
      unpack_infer, _infer_stmts, \
      Class, Const, Dict, Function, GenExpr, Lambda, \
      Module, Name, Pass, Raise, Tuple, Yield
@@ -430,19 +430,6 @@ def _class_type(klass):
         klass._type = 'class'
     return klass._type
 
-def _class_newstyle(klass):
-    """return a if the given class is new-style or not
-    """
-    if klass._newstyle is not None:
-        return klass._newstyle
-    for base in klass.ancestors(recurs=False):
-        if base.newstyle:
-            klass._newstyle = base.newstyle
-            break
-    if klass._newstyle is None:
-        klass._newstyle = False
-    return klass._newstyle
-
 def _iface_hdlr(iface_node):
     """a handler function used by interfaces to handle suspicious
     interface nodes
@@ -461,8 +448,20 @@ class ClassNG(object):
                     doc="class'type, possible values are 'class' | "
                     "'metaclass' | 'interface' | 'exception'")
     
+    def _newstyle_impl(self, context=None):
+        context = context or InferenceContext()
+        if self._newstyle is not None:
+            return self._newstyle
+        for base in self.ancestors(recurs=False, context=context):
+            if base._newstyle_impl(context):
+                self._newstyle = True
+                break
+        if self._newstyle is None:
+            self._newstyle = False
+        return self._newstyle
+
     _newstyle = None
-    newstyle = property(_class_newstyle,
+    newstyle = property(_newstyle_impl,
                         doc="boolean indicating if it's a new style class"
                         "or not")
     
@@ -485,6 +484,7 @@ class ClassNG(object):
         # FIXME: should be possible to choose the resolution order
         # XXX inference make infinite loops possible here (see BaseTransformer
         # manipulation in the builder module for instance !)
+        context = context or InferenceContext()
         for stmt in self.bases:
             try:
                 for baseobj in stmt.infer(context):
@@ -496,7 +496,7 @@ class ClassNG(object):
                     yield baseobj
                     if recurs:
                         for grandpa in baseobj.ancestors(True, context):
-                            if baseobj is self:
+                            if grandpa is self:
                                 continue # cf xxx above
                             yield grandpa
             except InferenceError:
@@ -613,14 +613,14 @@ class ClassNG(object):
             self.getattr('__getattr__', context)
             return True
         except NotFoundError:
-            if self.newstyle:
-                try:
-                    getattribute = self.getattr('__getattribute__', context)[0]
-                    if getattribute.root().name != '__builtin__':
-                        # class has a custom __getattribute__ defined
-                        return True
-                except NotFoundError:
-                    pass
+            #if self.newstyle: XXX cause an infinite recursion error
+            try:
+                getattribute = self.getattr('__getattribute__', context)[0]
+                if getattribute.root().name != '__builtin__':
+                    # class has a custom __getattribute__ defined
+                    return True
+            except NotFoundError:
+                pass
         return False
     
     def methods(self):
