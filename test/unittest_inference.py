@@ -682,6 +682,66 @@ sub = Sub.instance()
         self.assertIsInstance(infered[0], Instance)
         self.failUnlessEqual(infered[0]._proxied.name, 'Sub')
         
+    def test_base_operator(self):
+        data = '''
+a = "*" * 80
+b = 1 / 2.
+c = b - 1
+d = [[]]*3
+
+class myarray:
+    def __init__(self, array):
+        self.array = array
+
+    def __mul__(self, x):
+        return myarray([2,4,6])
+
+    def astype(self):
+        return "ASTYPE"
+
+def randint(maximum):
+    if maximum is not None:
+        return myarray([1,2,3]) * 2
+    else:
+        return int(5)
+
+x = randint(1)
+        '''
+        astng = builder.string_build(data, __name__, __file__)
+        # a
+        infered = list(astng.igetattr('a'))
+        self.failUnlessEqual(len(infered), 1)
+        value = infered[0]
+        self.assertIsInstance(value, nodes.Const)
+        self.failUnlessEqual(value._proxied.name, 'str')
+        # hey...
+        self.failUnlessEqual(value.value, '********************************************************************************')
+        # b
+        infered = list(astng.igetattr('b'))
+        self.failUnlessEqual(len(infered), 1)
+        value = infered[0]
+        self.assertIsInstance(value, nodes.Const)
+        self.failUnlessEqual(value._proxied.name, 'float')
+        self.failUnlessEqual(value.value, 1/2.)
+        # c
+        infered = list(astng.igetattr('c'))
+        self.failUnlessEqual(len(infered), 1)
+        value = infered[0]
+        self.assertIsInstance(value, nodes.Const)
+        self.failUnlessEqual(value._proxied.name, 'float')
+        self.failUnlessEqual(value.value, 1/2.-1)
+        # d
+        infered = list(astng.igetattr('d'))
+        self.failUnlessEqual(len(infered), 1, infered)
+        value = infered[0]
+        self.assertIsInstance(value, nodes.List)
+        # x
+        infered = list(astng.igetattr('x'))
+        self.failUnlessEqual(len(infered), 2)
+        value = [str(v) for v in infered]
+        self.assertEquals(value, ['Instance of __main__.Yyarray',
+                                 'Instance of __builtin__.int'])
+        
 if __name__ == '__main__':
     from logilab.common.testlib import unittest_main
     unittest_main()

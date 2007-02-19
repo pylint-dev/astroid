@@ -29,7 +29,7 @@ from logilab.common.compat import imap, chain, set
 
 from logilab.astng import MANAGER, YES, InferenceContext, Instance, Generator, \
      unpack_infer, _infer_stmts, nodes, copy_context
-from logilab.astng import InferenceError, UnresolvableName, \
+from logilab.astng import ASTNGError, InferenceError, UnresolvableName, \
      NoDefault, NotFoundError, ASTNGBuildingException
 
     
@@ -86,7 +86,7 @@ def infer_empty_node(self, context=None):
     else:
         try:
             yield MANAGER.astng_from_something(self.object)
-        except ASTNGBuildingException, ex:
+        except ASTNGError:
             yield YES
 nodes.EmptyNode.infer = path_wrapper(infer_empty_node)
     
@@ -380,7 +380,7 @@ def infer_subscript(self, context=None):
             yield infered
     else:
         raise InferenceError()
-nodes.Subscript.infer = infer_subscript
+nodes.Subscript.infer = path_wrapper(infer_subscript)
 
 def infer_unarysub(self, context=None):
     for infered in self.expr.infer(context):
@@ -392,11 +392,79 @@ def infer_unarysub(self, context=None):
         node = copy(self.expr)
         node.value = value
         yield node
-nodes.UnarySub.infer = infer_unarysub
+nodes.UnarySub.infer = path_wrapper(infer_unarysub)
 
 def infer_unaryadd(self, context=None):
     return self.expr.infer(context)
 nodes.UnaryAdd.infer = infer_unaryadd
+
+def _py_value(node):
+    try:
+        return node.value
+    except AttributeError:
+        # not a constant
+        if isinstance(node, nodes.Dict):
+            return {}
+        if isinstance(node, nodes.List):
+            return []
+        if isinstance(node, nodes.Tuple):
+            return ()
+    raise ValueError()
+
+def _infer_operator(self, context=None, impl=None, meth='__method__'):
+    for lhs in self.left.infer(context):
+        try:
+            lhsvalue = _py_value(lhs)
+        except ValueError:
+            # not a constant
+            try:
+                # XXX just suppose if the type implement meth, returned type
+                # will be the same
+                lhs.getattr(meth)
+                yield lhs
+            except:
+                yield YES
+            continue
+        for rhs in self.right.infer(context):
+            try:
+                rhsvalue = _py_value(rhs)
+            except ValueError:
+                try:
+                    # XXX just suppose if the type implement meth, returned type
+                    # will be the same
+                    rhs.getattr(meth)
+                    yield rhs
+                except:
+                    yield YES
+                continue
+            try:
+                value = impl(lhsvalue, rhsvalue)
+            except TypeError:
+                yield YES
+                continue
+            if type(value) is type(lhsvalue):
+                node = copy(lhs)
+            else:
+                node = copy(rhs)
+            # XXX may be dict, tuple...
+            node.value = value
+            yield node
+
+def infer_sub(self, context=None):
+    return _infer_operator(self, context=context, impl=lambda a,b: a-b, meth='__sub__')
+nodes.Sub.infer = path_wrapper(infer_sub)
+
+def infer_add(self, context=None):
+    return _infer_operator(self, context=context, impl=lambda a,b: a+b, meth='__add__')
+nodes.Add.infer = path_wrapper(infer_add)
+
+def infer_mul(self, context=None):
+    return _infer_operator(self, context=context, impl=lambda a,b: a*b, meth='__mul__')
+nodes.Mul.infer = path_wrapper(infer_mul)
+
+def infer_div(self, context=None):
+    return _infer_operator(self, context=context, impl=lambda a,b: a/b, meth='__div__')
+nodes.Div.infer = path_wrapper(infer_div)
     
 # .infer_call_result method ###################################################
 def callable_default(self):
