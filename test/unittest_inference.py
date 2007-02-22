@@ -741,6 +741,32 @@ x = randint(1)
         value = [str(v) for v in infered]
         self.assertEquals(value, ['Instance of %s.myarray' % __name__,
                                  'Instance of __builtin__.int'])
+
+        
+    def test_import_as(self):
+        data = '''
+import os.path as osp
+print osp.dirname(__file__)
+
+from os.path import exists as e
+assert e(__file__)
+
+from new import code as make_code
+print make_code
+        '''
+        astng = builder.string_build(data, __name__, __file__)
+        infered = list(astng.igetattr('osp'))
+        self.failUnlessEqual(len(infered), 1)
+        self.assertIsInstance(infered[0], nodes.Module)
+        self.failUnlessEqual(infered[0].name, 'os.path')
+        infered = list(astng.igetattr('e'))
+        self.failUnlessEqual(len(infered), 1)
+        self.assertIsInstance(infered[0], nodes.Function)
+        self.failUnlessEqual(infered[0].name, 'exists')
+        infered = list(astng.igetattr('make_code'))
+        self.failUnlessEqual(len(infered), 1)
+        self.assertIsInstance(infered[0], Instance)
+        self.failUnlessEqual(str(infered[0]), 'Instance of __builtin__.type')
         
 if __name__ == '__main__':
     from logilab.common.testlib import unittest_main

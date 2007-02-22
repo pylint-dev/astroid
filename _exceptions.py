@@ -12,15 +12,13 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """this module contains exceptions used in the astng library
 
-:version:   $Revision: 1.4 $  
 :author:    Sylvain Thenault
-:copyright: 2003-2006 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2006 Sylvain Thenault
+:copyright: 2003-2007 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 
-__revision__ = "$Id: _exceptions.py,v 1.4 2006-03-06 08:57:52 syt Exp $"
 __doctype__ = "restructuredtext en"
 
 class ASTNGError(Exception):

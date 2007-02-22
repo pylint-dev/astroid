@@ -345,10 +345,12 @@ def infer_from(self, context=None, asname=True):
     name = context.lookupname
     if name is None:
         raise InferenceError()
-    module = _imported_module_astng(self, self.modname)
     if asname:
         name = self.real_name(name)
+    module = _imported_module_astng(self, self.modname)
     try:
+        context = copy_context(context)
+        context.lookupname = name
         return _infer_stmts(module.getattr(name), context)
     except NotFoundError:
         raise InferenceError(name)
