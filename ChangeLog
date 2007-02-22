@@ -1,11 +1,14 @@
 Change log for the astng package
 ================================
 
- --
-    * api change to be able to infer using a context (used to infer function call 
+2007-02-22  --  0.17.0
+    * api change to be able to infer using a context (used to infer function call
       result only for now)
-    * slightly better inference on astng built from living object by trying to infer 
+    * slightly better inference on astng built from living object by trying to infer
       dummy nodes (able to infer 'help' builtin for instance)
+    * external attribute definition support
+    * basic math operation inference
+    * new pytype method on possibly infered node (eg module, classes, const...)
     * fix a living object astng building bug, which was making "open" uninferable
     * fix lookup of name in method bug (#3289)
     * fix decorator lookup bug (#3261)

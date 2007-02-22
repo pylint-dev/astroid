@@ -127,6 +127,8 @@ class FunctionNodeTC(TestCase):
     def test_is_abstract(self):
         method = MODULE2['AbstractClass']['to_override']
         self.assert_(method.is_abstract(pass_is_abstract=False))
+        self.failUnlessEqual(method.qname(), 'data.module2.AbstractClass.to_override')
+        self.failUnlessEqual(method.pytype(), '__builtin__.instancemethod')
         method = MODULE2['AbstractClass']['return_something']
         self.assert_(not method.is_abstract(pass_is_abstract=False))
         # non regression : test raise "string" doesn't cause an exception in is_abstract

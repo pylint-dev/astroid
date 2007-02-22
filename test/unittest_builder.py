@@ -156,6 +156,7 @@ class BuilderTC(TestCase):
         self.assert_('mode' in fclass)
         self.assert_('read' in fclass)
         self.assert_(fclass.newstyle)
+        self.assert_(fclass.pytype(), '__builtin__.type')
         self.assert_(isinstance(fclass['read'], nodes.Function))
         self.assert_(isinstance(fclass['__doc__'], nodes.Const), fclass['__doc__'])
         # check builtin function has argnames == None

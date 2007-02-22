@@ -30,14 +30,20 @@ class ImportNodeTC(unittest.TestCase):
         myos = MODULE2.igetattr('myos').next()
         self.failUnless(isinstance(myos, nodes.Module), myos)
         self.failUnlessEqual(myos.name, 'os')
+        self.failUnlessEqual(myos.qname(), 'os')
+        self.failUnlessEqual(myos.pytype(), '__builtin__.module')
 
     def test_from_self_resolve(self):
         spawn = MODULE.igetattr('spawn').next()
         self.failUnless(isinstance(spawn, nodes.Class), spawn)
         self.failUnlessEqual(spawn.root().name, 'logilab.common.shellutils')
+        self.failUnlessEqual(spawn.qname(), 'logilab.common.shellutils.Execute')
+        self.failUnlessEqual(spawn.pytype(), '__builtin__.classobj')
         abspath = MODULE2.igetattr('abspath').next()
         self.failUnless(isinstance(abspath, nodes.Function), abspath)
         self.failUnlessEqual(abspath.root().name, 'os.path')
+        self.failUnlessEqual(abspath.qname(), 'os.path.abspath')
+        self.failUnlessEqual(abspath.pytype(), '__builtin__.function')
 
     def test_real_name(self):
         from_ = MODULE['spawn']

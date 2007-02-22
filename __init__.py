@@ -204,11 +204,17 @@ class Instance(Proxy):
             return True
         except NotFoundError:
             return False
-        
+
+    def pytype(self):
+        return self._proxied.qname()
+    
 class Generator(Proxy): 
     """a special node representing a generator"""
     def callable(self):
         return True
+    
+    def pytype(self):
+        return '__builtin__.generator'
 
 # imports #####################################################################
 
@@ -224,11 +230,15 @@ lookup._decorate(nodes)
 
 List._proxied = MANAGER.astng_from_class(list)
 List.__bases__ += (inference.Instance,)
+List.pytype = lambda x: '__builtin__.list'
+
 Tuple._proxied = MANAGER.astng_from_class(tuple)
 Tuple.__bases__ += (inference.Instance,)
-Dict._proxied = MANAGER.astng_from_class(dict)
+Tuple.pytype = lambda x: '__builtin__.tuple'
+
 Dict.__bases__ += (inference.Instance,)
 Dict._proxied = MANAGER.astng_from_class(dict)
+Dict.pytype = lambda x: '__builtin__.dict'
 
 builtin_astng = Dict._proxied.root()
 
@@ -249,3 +259,11 @@ def Const_getattr(self, name, context=None, lookupclass=None):
     return self._proxied.getattr(name, context)
 Const.getattr = Const_getattr
 Const.has_dynamic_getattr = lambda x: False
+
+def Const_pytype(self):
+    if self.value is None:
+        return '__builtin__.NoneType'
+    if self._proxied is None:
+        self._proxied = MANAGER.astng_from_class(self.value.__class__)
+    return self._proxied.qname()
+Const.pytype = Const_pytype

@@ -58,7 +58,15 @@ class LocalsDictMixIn(object):
     # dictionary of locals with name as key and node defining the local as
     # value    
     locals = None
-    
+
+    def qname(self):
+        """return the 'qualified' name of the node, eg module.name,
+        module.class.name ...
+        """
+        if self.parent is None:
+            return self.name
+        return '%s.%s' % (self.parent.frame().qname(), self.name)
+        
     def frame(self):
         """return the first parent frame node (i.e. Module, Function or Class)
         """
@@ -201,7 +209,10 @@ class ModuleNG(object):
     # dictionary of globals with name as key and node defining the global
     # as value
     globals = None
-  
+
+    def pytype(self):
+        return '__builtin__.module'
+    
     def getattr(self, name, context=None):
         try:
             return self.locals[name]
@@ -302,6 +313,11 @@ class FunctionNG(object):
     # list of argument names. MAY BE NONE on some builtin functions where
     # arguments are unknown
     argnames = None
+
+    def pytype(self):
+        if 'method' in self.type:
+            return '__builtin__.instancemethod'
+        return '__builtin__.function'
 
     def is_method(self):
         """return true if the function node should be considered as a method"""
@@ -464,6 +480,11 @@ class ClassNG(object):
     newstyle = property(_newstyle_impl,
                         doc="boolean indicating if it's a new style class"
                         "or not")
+
+    def pytype(self):
+        if self.newstyle:
+            return '__builtin__.type'
+        return '__builtin__.classobj'
     
     # attributes below are set by the builder module or by raw factories
     
