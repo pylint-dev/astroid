@@ -635,8 +635,14 @@ open("toto.txt")
         node = get_name_node(astng, 'open', -1)
         infered = list(node.infer())
         self.failUnlessEqual(len(infered), 1)
-        self.assertIsInstance(infered[0], nodes.Class)
-        self.failUnlessEqual(infered[0].name, 'file')
+        if open is file:
+            # On python < 2.5 open and file are the same thing.
+            self.assertIsInstance(infered[0], nodes.Class)
+            self.failUnlessEqual(infered[0].name, 'file')
+        else:
+            # On python >= 2.5 open is a builtin function.
+            self.assertIsInstance(infered[0], nodes.Function)
+            self.failUnlessEqual(infered[0].name, 'open')
                 
     def test_callfunc_context_inference(self):
         data = '''
