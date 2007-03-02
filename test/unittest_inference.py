@@ -635,8 +635,14 @@ open("toto.txt")
         node = get_name_node(astng, 'open', -1)
         infered = list(node.infer())
         self.failUnlessEqual(len(infered), 1)
-        self.assertIsInstance(infered[0], nodes.Class)
-        self.failUnlessEqual(infered[0].name, 'file')
+        if open is file:
+            # On python < 2.5 open and file are the same thing.
+            self.assertIsInstance(infered[0], nodes.Class)
+            self.failUnlessEqual(infered[0].name, 'file')
+        else:
+            # On python >= 2.5 open is a builtin function.
+            self.assertIsInstance(infered[0], nodes.Function)
+            self.failUnlessEqual(infered[0].name, 'open')
                 
     def test_callfunc_context_inference(self):
         data = '''
@@ -739,7 +745,14 @@ x = randint(1)
         infered = list(astng.igetattr('x'))
         self.failUnlessEqual(len(infered), 2)
         value = [str(v) for v in infered]
+<<<<<<< /home/syt/cvs_work/public/logilab/astng/test/unittest_inference.py
         self.assertEquals(value, ['Instance of %s.myarray' % __name__,
+=======
+        # The __name__ trick here makes it work when invoked directly
+        # (__name__ == '__main__') and through pytest (__name__ ==
+        # 'unittest_inference')
+        self.assertEquals(value, ['Instance of %s.myarray' % (__name__,),
+>>>>>>> /tmp/unittest_inference.py~other.JFAzem
                                  'Instance of __builtin__.int'])
 
         
