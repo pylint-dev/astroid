@@ -745,7 +745,10 @@ x = randint(1)
         infered = list(astng.igetattr('x'))
         self.failUnlessEqual(len(infered), 2)
         value = [str(v) for v in infered]
-        self.assertEquals(value, ['Instance of __main__.Yyarray',
+        # The __name__ trick here makes it work when invoked directly
+        # (__name__ == '__main__') and through pytest (__name__ ==
+        # 'unittest_inference')
+        self.assertEquals(value, ['Instance of %s.myarray' % (__name__,),
                                  'Instance of __builtin__.int'])
         
 if __name__ == '__main__':
