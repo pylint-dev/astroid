@@ -1,6 +1,10 @@
 Change log for the astng package
 ================================
 
+ --
+    * fixed bug with chained "import as"
+    * include patch from Marien Zwart fixing some test / py 2.5
+
 2007-02-22  --  0.17.0
     * api change to be able to infer using a context (used to infer function call
       result only for now)
