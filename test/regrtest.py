@@ -72,6 +72,10 @@ if __name__ == "__main__":
 
 
     def test_pylint_config_attr(self):
+        try:
+            from pylint import lint
+        except ImportError:
+            self.skip('pylint not available')
         mod = m.astng_from_module_name('pylint.lint')
         pylinter = mod['PyLinter']
         self.assertEquals([c.name for c in pylinter.ancestors()],
