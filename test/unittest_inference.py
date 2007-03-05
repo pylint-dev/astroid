@@ -745,15 +745,11 @@ x = randint(1)
         infered = list(astng.igetattr('x'))
         self.failUnlessEqual(len(infered), 2)
         value = [str(v) for v in infered]
-<<<<<<< /home/syt/cvs_work/public/logilab/astng/test/unittest_inference.py
-        self.assertEquals(value, ['Instance of %s.myarray' % __name__,
-=======
         # The __name__ trick here makes it work when invoked directly
         # (__name__ == '__main__') and through pytest (__name__ ==
         # 'unittest_inference')
         self.assertEquals(value, ['Instance of %s.myarray' % (__name__,),
->>>>>>> /tmp/unittest_inference.py~other.JFAzem
-                                 'Instance of __builtin__.int'])
+                                  'Instance of __builtin__.int'])
 
         
     def test_import_as(self):
