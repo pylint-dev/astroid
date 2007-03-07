@@ -376,11 +376,17 @@ def infer_subscript(self, context=None):
     """
     if len(self.subs) == 1:
         index = self.subs[0].infer(context).next()
+        if index is YES:
+            yield YES
+            return
         try:
             # suppose it's a Tuple/List node (attribute error else)
             assigned = self.expr.getitem(index.value)
-        except (AttributeError, IndexError):
+        except AttributeError:
             raise InferenceError()
+        except IndexError:
+            yield YES
+            return
         for infered in assigned.infer(context):
             yield infered
     else:
@@ -663,6 +669,7 @@ nodes.AssAttr.ass_type = assend_ass_type
 # subscription protocol #######################################################
         
 def tl_getitem(self, index):
+    print self, index
     return self.nodes[index]
 nodes.List.getitem = tl_getitem
 nodes.Tuple.getitem = tl_getitem

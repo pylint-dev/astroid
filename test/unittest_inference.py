@@ -786,6 +786,16 @@ def f(g = lambda: None):
         self.failUnlessEqual(len(infered), 1)
         self.assertIsInstance(infered[0], nodes.Const)
         self.failUnlessEqual(infered[0].value, None)
+
+    def test_nonregr_getitem_empty_tuple(self):
+        data = '''
+def f(x):
+        a = ()[x]
+        '''
+        astng = builder.string_build(data, __name__, __file__)
+        infered = list(astng['f'].ilookup('a'))
+        self.failUnlessEqual(len(infered), 1)
+        self.failUnlessEqual(infered[0], YES)
         
 if __name__ == '__main__':
     unittest_main()
