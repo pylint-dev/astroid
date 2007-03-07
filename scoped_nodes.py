@@ -378,7 +378,10 @@ class FunctionNG(object):
         if self.argnames is None: # information is missing
             raise NoDefault()
         args, kwargs, last, defaultidx = self._pos_information()
-        i = self.argnames.index(argname)
+        try:
+            i = self.argnames.index(argname)
+        except ValueError:
+            raise NoDefault() # XXX
         if i >= defaultidx and (i - defaultidx) < len(self.defaults):
             return self.defaults[i - defaultidx]
         raise NoDefault()
@@ -388,7 +391,10 @@ class FunctionNG(object):
         a Tuple or Dict instance, else return None
         """
         args, kwargs, last, defaultidx = self._pos_information()
-        i = self.argnames.index(argname)
+        try:
+            i = self.argnames.index(argname)
+        except ValueError:
+            return None # XXX
         if i == last and kwargs:
             valnode = Dict([])
             valnode.parent = self

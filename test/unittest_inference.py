@@ -14,11 +14,9 @@
 """
 
 import sys
-from os.path import join, abspath
-
 from logilab.common.testlib import TestCase, unittest_main
 
-from logilab.astng import builder, nodes, inference, utils, YES, Instance, InferenceContext
+from logilab.astng import builder, nodes, inference, YES, Instance
 
 def get_name_node(start_from, name, index=0):
     return [n for n in start_from.nodes_of_class(nodes.Name) if n.name == name][index]
@@ -776,7 +774,18 @@ print make_code
         self.failUnlessEqual(len(infered), 1)
         self.assertIsInstance(infered[0], Instance)
         self.failUnlessEqual(str(infered[0]), 'Instance of __builtin__.type')
+
+    def test_nonregr_lambda_arg(self):
+        data = '''
+def f(g = lambda: None):
+        g().x
+'''
+        astng = builder.string_build(data, __name__, __file__)
+        callfuncnode = astng['f'].code.nodes[0].expr.expr
+        infered = list(callfuncnode.infer())
+        self.failUnlessEqual(len(infered), 1)
+        self.assertIsInstance(infered[0], nodes.Const)
+        self.failUnlessEqual(infered[0].value, None)
         
 if __name__ == '__main__':
-    from logilab.common.testlib import unittest_main
     unittest_main()

@@ -191,9 +191,11 @@ def infer_function(self, context=None):
         return
     if context.callcontext:
         # reset call context/name
-        for infered in context.callcontext.infer_argument(self, name, context):
-            yield infered
+        callcontext = context.callcontext
+        context = copy_context(context)
         context.callcontext = None
+        for infered in callcontext.infer_argument(self, name, context):
+            yield infered
         return
     # Function.argnames can be None in astng (means that we don't have
     # information on argnames), in which case we can't do anything more
@@ -217,6 +219,7 @@ def infer_function(self, context=None):
     # if there is a default value, yield it. And then yield YES to reflect
     # we can't guess given argument value
     try:
+        context = copy_context(context)
         for infered in self.default_value(name).infer(context):
             yield infered
         yield YES
