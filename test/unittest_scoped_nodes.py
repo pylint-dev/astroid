@@ -146,6 +146,14 @@ class FunctionNodeTC(TestCase):
 ##         self.assertEquals([str(term) for term in method.returns()],
 ##                           ["Const('toto')", "Const(None)"])
 
+    def test_lambda_pytype(self):
+        data = '''
+def f():
+        g = lambda: None
+        '''
+        astng = abuilder.string_build(data, __name__, __file__)
+        g = list(astng['f'].ilookup('g'))[0]
+        self.failUnlessEqual(g.pytype(), '__builtin__.function')
         
 class ClassNodeTC(TestCase):
 

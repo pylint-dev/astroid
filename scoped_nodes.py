@@ -428,6 +428,7 @@ Lambda.format_args = FunctionNG.format_args.im_func
 Lambda.default_value = FunctionNG.default_value.im_func
 Lambda.mularg_class = FunctionNG.mularg_class.im_func
 Lambda.type = 'function'
+Lambda.pytype = FunctionNG.pytype.im_func
 
 # Class ######################################################################
 
