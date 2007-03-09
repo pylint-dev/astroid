@@ -3,7 +3,7 @@
 if [ $@ ] ; then
     PYVERSIONS=$@
 else
-    PYVERSIONS="2.3 2.4"
+    PYVERSIONS="2.3 2.4 2.5"
 fi
 
 for ver in $PYVERSIONS; do  

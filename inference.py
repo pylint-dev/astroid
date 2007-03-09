@@ -669,7 +669,6 @@ nodes.AssAttr.ass_type = assend_ass_type
 # subscription protocol #######################################################
         
 def tl_getitem(self, index):
-    print self, index
     return self.nodes[index]
 nodes.List.getitem = tl_getitem
 nodes.Tuple.getitem = tl_getitem
