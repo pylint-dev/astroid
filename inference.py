@@ -85,7 +85,8 @@ def infer_empty_node(self, context=None):
         yield YES
     else:
         try:
-            yield MANAGER.astng_from_something(self.object)
+            for infered in MANAGER.infer_astng_from_something(self.object):
+                yield infered
         except ASTNGError:
             yield YES
 nodes.EmptyNode.infer = path_wrapper(infer_empty_node)

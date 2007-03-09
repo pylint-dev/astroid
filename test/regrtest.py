@@ -1,7 +1,7 @@
 
 from logilab.common.testlib import unittest_main, TestCase
 
-from logilab.astng import ResolveError, MANAGER as m, Instance, YES
+from logilab.astng import ResolveError, MANAGER as m, Instance, YES, InferenceError
 from logilab.astng.builder import ASTNGBuilder, build_module
 
 import sys
@@ -90,6 +90,23 @@ if __name__ == "__main__":
         self.assertEquals(len(infered), 1)
         self.assertEquals(infered[0].root().name, 'optparse')
         self.assertEquals(infered[0].name, 'Values')
+        
+    def test_numpy_crash(self):
+        try:
+            import numpy
+        except ImportError:
+            self.skip('test skipped: numpy is not available')
+        else:
+            builder = ASTNGBuilder()
+            data = """
+from numpy import multiply
+
+multiply(1, 2, 3)
+"""
+            astng = builder.string_build(data, __name__, __file__)
+            callfunc = astng.node.nodes[1].expr
+            # well, InferenceError instead of a crash is better
+            self.assertRaises(InferenceError, list, callfunc.infer())
 
         
 class Whatever(object):

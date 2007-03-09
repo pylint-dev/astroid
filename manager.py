@@ -33,7 +33,7 @@ from logilab.common.modutils import NoSourceFile, is_python_source, \
      get_module_files, get_source_file
 from logilab.common.configuration import OptionsProviderMixIn
 
-from logilab.astng import ASTNGBuildingException, Instance
+from logilab.astng import ASTNGBuildingException, Instance, nodes
 
 def astng_wrapper(func, modname):
     """wrapper to give to ASTNGManager.project_from_files"""
@@ -186,8 +186,8 @@ class ASTNGManager(OptionsProviderMixIn):
         return modastng.getattr(klass.__name__)[0] # XXX
 
             
-    def astng_from_something(self, obj, modname=None):
-        """get astng for the given class"""
+    def infer_astng_from_something(self, obj, modname=None):
+        """infer astng for the given class"""
         if hasattr(obj, '__class__') and not isinstance(obj, type):
             klass = obj.__class__
         else:
@@ -203,12 +203,13 @@ class ASTNGManager(OptionsProviderMixIn):
         except AttributeError:
             raise ASTNGBuildingException(
                 'Unable to get module for object %r' % obj)
+        # take care, on living object __module__ is regularly wrong :(
         modastng = self.astng_from_module_name(modname)
-        astng = modastng.getattr(name)[0] # XXX
-        if klass is not obj:
-            astng = Instance(astng)
-        return astng
-    
+        for infered in modastng.igetattr(name):
+            if klass is not obj and isinstance(infered, nodes.Class):
+                infered = Instance(infered)
+            yield infered
+            
     def project_from_files(self, files, func_wrapper=astng_wrapper,
                            project_name=None, black_list=None):
         """return a Project from a list of files or modules"""

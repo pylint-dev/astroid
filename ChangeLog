@@ -2,11 +2,13 @@ Change log for the astng package
 ================================
 
  --
-    * fixed bug with chained "import as"
-    * include patch from Marien Zwart fixing some test / py 2.5
     * fix #3651: crash when callable as defaut arg
     * fix #3670: subscription inference crash in some cases
     * fix #3673: Lambda instance has no attribute 'pytype'
+    * fix crash with chained "import as"
+    * fix crash on numpy
+    * fix potential InfiniteRecursion error with builtin objects
+    * include patch from Marien Zwart fixing some test / py 2.5
 	
 2007-02-22  --  0.17.0
     * api change to be able to infer using a context (used to infer function call
