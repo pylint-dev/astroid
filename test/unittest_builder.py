@@ -209,7 +209,29 @@ class BuilderTC(TestCase):
         self.assert_('errno' in container)
         self.assert_('strerror' in container)
         self.assert_('filename' in container)
+
+    def test_inspect_build_type_object(self):
+        import __builtin__
+        builtin_astng = self.builder.inspect_build(__builtin__)
+        
+        infered = list(builtin_astng.igetattr('object'))
+        self.assertEquals(len(infered), 1)
+        infered = infered[0]
+        self.assertEquals(infered.name, 'object')
+        try:
+            infered.as_string()
+        except:
+            print repr(infered)
             
+        infered = list(builtin_astng.igetattr('type'))
+        self.assertEquals(len(infered), 1)
+        infered = infered[0]
+        self.assertEquals(infered.name, 'type')
+        try:
+            infered.as_string()
+        except:
+            print repr(infered)
+        
     def test_package_name(self):
         """test base properties and method of a astng module"""
         datap = self.builder.file_build('data/__init__.py', 'data')
