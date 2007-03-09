@@ -91,7 +91,9 @@ class LocalsDictMixIn(object):
     
     def add_local_node(self, child_node, name=None):
         """append a child which should alter locals to the given node"""
-        self._append_node(child_node)
+        if name != '__class__':
+            # add __class__ node as a child will cause infinite recursion later!
+            self._append_node(child_node)
         self.set_local(name or child_node.name, child_node)
 
     def _append_node(self, child_node):
