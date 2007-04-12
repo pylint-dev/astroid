@@ -12,7 +12,7 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """tests for the astng variable lookup capabilities
 """
-
+import sys
 from os.path import join, abspath
 from logilab.common.testlib import TestCase, unittest_main
 
@@ -115,6 +115,8 @@ class A(A):
         self.assertEquals(ccc.ilookup('Ddd').next().name, 'Ddd')
         
     def test_nonregr_method_lookup(self):
+        if sys.version_info < (2, 4):
+            self.skip('this test require python >= 2.4')
         data = '''
 class FileA:
     @staticmethod
@@ -135,6 +137,8 @@ class Test:
         self.assertRaises(StopIteration, it.next)
         
     def test_nonregr_decorator_member_lookup(self):
+        if sys.version_info < (2, 4):
+            self.skip('this test require python >= 2.4')
         data = '''
 class FileA:
     def decorator(bla):

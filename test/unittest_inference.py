@@ -668,6 +668,8 @@ un = mirror(1)
         self.failUnlessEqual(infered[0].value, 1)
         
     def test_factory_method(self):
+        if sys.version_info < (2, 4):
+            self.skip('this test require python >= 2.4')
         data = '''
 class Super(object):
       @classmethod
