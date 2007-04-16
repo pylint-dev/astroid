@@ -186,7 +186,7 @@ class ASTNGManager(OptionsProviderMixIn):
         return modastng.getattr(klass.__name__)[0] # XXX
 
             
-    def infer_astng_from_something(self, obj, modname=None):
+    def infer_astng_from_something(self, obj, modname=None, context=None):
         """infer astng for the given class"""
         if hasattr(obj, '__class__') and not isinstance(obj, type):
             klass = obj.__class__
@@ -205,7 +205,7 @@ class ASTNGManager(OptionsProviderMixIn):
                 'Unable to get module for object %r' % obj)
         # take care, on living object __module__ is regularly wrong :(
         modastng = self.astng_from_module_name(modname)
-        for infered in modastng.igetattr(name):
+        for infered in modastng.igetattr(name, context):
             if klass is not obj and isinstance(infered, nodes.Class):
                 infered = Instance(infered)
             yield infered
