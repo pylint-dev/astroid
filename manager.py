@@ -48,7 +48,12 @@ def astng_wrapper(func, modname):
         import traceback
         traceback.print_exc()
 
-
+def safe_repr(obj):
+    try:
+        return repr(obj)
+    except:
+        return '???'
+    
 class ASTNGManager(OptionsProviderMixIn):
     """the astng manager, responsible to build astng from files
      or modules.
@@ -181,7 +186,7 @@ class ASTNGManager(OptionsProviderMixIn):
                 modname = klass.__module__
             except AttributeError:
                 raise ASTNGBuildingException(
-                    'Unable to get module for class %r' % klass)
+                    'Unable to get module for class %s' % safe_repr(klass))
         modastng = self.astng_from_module_name(modname)
         return modastng.getattr(klass.__name__)[0] # XXX
 
@@ -197,12 +202,20 @@ class ASTNGManager(OptionsProviderMixIn):
                 modname = klass.__module__
             except AttributeError:
                 raise ASTNGBuildingException(
-                    'Unable to get module for object %r' % obj)
+                    'Unable to get module for %s' % safe_repr(klass))
+            except Exception, ex:
+                raise ASTNGBuildingException(
+                    'Unexpected error while retreiving module for %s: %s'
+                    % (safe_repr(klass), ex))
         try:
             name = klass.__name__
         except AttributeError:
             raise ASTNGBuildingException(
-                'Unable to get module for object %r' % obj)
+                'Unable to get name for %s' % safe_repr(klass))
+        except Exception, ex:
+            raise ASTNGBuildingException(
+                'Unexpected error while retreiving name for %s: %s'
+                % (safe_repr(klass), ex))
         # take care, on living object __module__ is regularly wrong :(
         modastng = self.astng_from_module_name(modname)
         for infered in modastng.igetattr(name, context):
