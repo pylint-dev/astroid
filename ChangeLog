@@ -1,7 +1,7 @@
 Change log for the astng package
 ================================
 
- --
+2007-06-07  --  0.17.1
     * fix #3651: crash when callable as defaut arg
     * fix #3670: subscription inference crash in some cases
     * fix #3673: Lambda instance has no attribute 'pytype'
