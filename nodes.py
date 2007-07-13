@@ -235,7 +235,7 @@ class NodeNG:
         for child_node in self.getChildNodes():
             if skip_klass is not None and isinstance(child_node, skip_klass):
                 continue
-            for matching in child_node.nodes_of_class(klass):
+            for matching in child_node.nodes_of_class(klass, skip_klass):
                 yield matching
 
     def _infer_name(self, frame, name):
