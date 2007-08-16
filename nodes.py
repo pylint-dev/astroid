@@ -75,6 +75,7 @@ except:
 
 from logilab.astng._exceptions import NotFoundError, InferenceError
 from logilab.astng.utils import extend_class
+from logilab.astng import InferenceContext
 
 import re
 ID_RGX = re.compile('^[a-zA-Z_][a-zA-Z_0-9]*$')
@@ -334,6 +335,11 @@ def real_name(node, asname):
 From.real_name = real_name
 Import.real_name = real_name
 
+def infer_name_module(node, name):
+    context = InferenceContext(node)
+    context.lookupname = name
+    return node.infer(context, asname=False)
+Import.infer_name_module = infer_name_module
 
 # as_string ###################################################################
 
