@@ -324,6 +324,10 @@ class FunctionNG(object):
     def is_method(self):
         """return true if the function node should be considered as a method"""
         return self.type != 'function'
+    
+    def is_bound(self):
+        """return true if the function is bound to an Instance or a class"""
+        return self.type == 'classmethod'
 
     def is_abstract(self, pass_is_abstract=True):
         """return true if the method is abstract

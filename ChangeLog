@@ -4,6 +4,8 @@ Change log for the astng package
  --
     * fixed recursion arguments in nodes_of_class method as notified by
       Dave Borowitz 
+    * new InstanceMethod node introduced to wrap bound method (eg Function
+      node), patch provided by Dave Borowitz
 	
 2007-06-07  --  0.17.1
     * fix #3651: crash when callable as defaut arg
