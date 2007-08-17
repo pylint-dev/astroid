@@ -16,7 +16,8 @@
 import sys
 from logilab.common.testlib import TestCase, unittest_main
 
-from logilab.astng import builder, nodes, inference, YES, Instance
+from logilab.astng import builder, nodes, inference, YES, Instance, \
+     InstanceMethod
 
 def get_name_node(start_from, name, index=0):
     return [n for n in start_from.nodes_of_class(nodes.Name) if n.name == name][index]
@@ -60,6 +61,8 @@ class C(object):
     
 ex = exceptions.Exception("msg")
 v = C().meth1(1)
+m_unbound = C.meth1
+m_bound = C().meth1
 a, b, c = ex, 1, "bonjour"
 [d, e, f] = [ex, 1.0, ("bonjour", v)]
 g, h = f
@@ -211,6 +214,22 @@ a, b= b, a # Gasp !
         self.failUnless(isinstance(meth1, inference.Instance))
         self.failUnlessEqual(meth1.name, 'object')
         self.failUnlessEqual(meth1.root().name, '__builtin__')
+        self.failUnlessRaises(StopIteration, infered.next)
+
+    def test_unbound_method_inference(self):
+        infered = self.astng['m_unbound'].infer()
+        meth1 = infered.next()
+        self.failUnless(isinstance(meth1, nodes.Function))
+        self.failUnlessEqual(meth1.name, 'meth1')
+        self.failUnlessEqual(meth1.parent.frame().name, 'C')
+        self.failUnlessRaises(StopIteration, infered.next)
+
+    def test_bound_method_inference(self):
+        infered = self.astng['m_bound'].infer()
+        meth1 = infered.next()
+        self.failUnless(isinstance(meth1, InstanceMethod))
+        self.failUnlessEqual(meth1.name, 'meth1')
+        self.failUnlessEqual(meth1.parent.frame().name, 'C')
         self.failUnlessRaises(StopIteration, infered.next)
 
     def test_args_default_inference1(self):
