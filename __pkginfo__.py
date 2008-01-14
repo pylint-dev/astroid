@@ -1,6 +1,6 @@
 # pylint: disable-msg=W0622
 #
-# Copyright (c) 2003-2007 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2003-2008 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -21,12 +21,12 @@ logilab.astng packaging information
 
 modname = 'astng'
 distname = 'logilab-astng'
-numversion = (0, 17, 1)
+numversion = (0, 17, 2)
 version = '.'.join([str(num) for num in numversion])
 pyversions = ["2.3", "2.4", "2.5"]
 
 license = 'GPL'
-copyright = '''Copyright (c) 2003-2007 LOGILAB S.A. (Paris, FRANCE).
+copyright = '''Copyright (c) 2003-2008 LOGILAB S.A. (Paris, FRANCE).
 http://www.logilab.fr/ -- mailto:contact@logilab.fr'''
 
 author = 'Sylvain Thenault'
