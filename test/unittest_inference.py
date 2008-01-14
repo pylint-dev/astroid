@@ -467,8 +467,8 @@ xxx = load_module_from_name('__pkginfo__')
         astng = builder.string_build(data, __name__, __file__)
         xxx = astng['xxx']
         infered = list(xxx.infer())
-        self.failUnlessEqual([n.__class__ for n in infered],
-                             [nodes.Const, YES.__class__])
+        self.failUnlessEqual(sorted([n.__class__ for n in infered]),
+                             sorted([nodes.Const, YES.__class__]))
 
     def test_method_argument(self):
         data = '''
@@ -636,6 +636,8 @@ print ((d,e) for e,d in ([1,2], [3,4]))
         data = '''
 help()
         '''
+        # XXX failing with python > 2.3 since __builtin__.help assigment has
+        #     been moved into a function...
         astng = builder.string_build(data, __name__, __file__)
         node = get_name_node(astng, 'help', -1)
         infered = list(node.infer())

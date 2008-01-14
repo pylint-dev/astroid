@@ -13,9 +13,9 @@
 """this module contains a set of functions to handle inference on astng trees
 
 :author:    Sylvain Thenault
-:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2007 Sylvain Thenault
+:copyright: 2003-2008 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 
