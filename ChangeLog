@@ -2,6 +2,7 @@ Change log for the astng package
 ================================
 
  --
+    * "with" statement support, patch provided by Brian Hawthorne 
     * fixed recursion arguments in nodes_of_class method as notified by
       Dave Borowitz 
     * new InstanceMethod node introduced to wrap bound method (eg Function

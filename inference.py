@@ -645,9 +645,24 @@ nodes.For.assigned_stmts = for_assigned_stmts
 nodes.ListCompFor.assigned_stmts = for_assigned_stmts
 nodes.GenExprFor.assigned_stmts = for_assigned_stmts
 
+def with_assigned_stmts(self, node, context=None, asspath=None):
+    found = False
+    if asspath is None:
+        for lst in self.vars.infer(context):
+            if isinstance(lst, (nodes.Tuple, nodes.List)):
+                for item in lst.nodes:
+                    found = True
+                    yield item
+    else:
+        raise InferenceError()
+    if not found:
+        raise InferenceError()
+nodes.With.assigned_stmts = with_assigned_stmts
+
     
 def end_ass_type(self):
     return self
+nodes.With.ass_type = end_ass_type
 nodes.For.ass_type = end_ass_type
 nodes.ListCompFor.ass_type = end_ass_type
 nodes.GenExprFor.ass_type = end_ass_type

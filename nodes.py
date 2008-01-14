@@ -73,6 +73,13 @@ except:
     class Decorators:
         """dummy Decorators node, shouldn't be used since py < 2.4"""
 
+try:
+    # introduced in python 2.5
+    from compiler.ast import With
+except:
+    class With:
+        """dummy With node, shouldn't be used since py < 2.5"""
+
 from logilab.astng._exceptions import NotFoundError, InferenceError
 from logilab.astng.utils import extend_class
 from logilab.astng import InferenceContext
@@ -776,6 +783,14 @@ def while_as_string(node):
         whiles = '%s\nelse:\n    %s' % (whiles, node.else_.as_string())
     return whiles
 While.as_string = while_as_string
+
+def with_as_string(node):
+    """return an ast.With node as string"""
+    withs = 'with (%s) as (%s):\n    %s' % (node.expr.as_string(),
+                                      node.vars.as_string(),
+                                      node.body.as_string())
+    return withs
+With.as_string = with_as_string
 
 def yield_as_string(node):
     """yield an ast.Yield node as string"""
