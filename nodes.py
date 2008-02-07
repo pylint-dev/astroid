@@ -84,6 +84,9 @@ from logilab.astng._exceptions import NotFoundError, InferenceError
 from logilab.astng.utils import extend_class
 from logilab.astng import InferenceContext
 
+# introduced in python 2.5
+From.level = 0 # will be overiden by instance attribute with py>=2.5
+
 import re
 ID_RGX = re.compile('^[a-zA-Z_][a-zA-Z_0-9]*$')
 del re
