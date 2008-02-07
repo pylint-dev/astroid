@@ -38,6 +38,8 @@ class NonRegressionTC(TestCase):
         except ImportError:
             self.skip('test skipped: pygtk is not available')
         else:
+            # XXX may fail on some pygtk version, because objects in
+            # gobject._gobject have __module__ set to gobject :(
             builder = ASTNGBuilder()
             data = """
 import pygtk
@@ -48,16 +50,14 @@ class A(gobject.GObject):
     def __init__(self, val):
         gobject.GObject.__init__(self)
         self._val = val
-
     def _get_val(self):
         print "get"
         return self._val
-
     def _set_val(self, val):
         print "set"
         self._val = val
-
     val = property(_get_val, _set_val)
+
 
 if __name__ == "__main__":
     print gobject.GObject.__bases__
@@ -68,7 +68,7 @@ if __name__ == "__main__":
 """
             astng = builder.string_build(data, __name__, __file__)
             a = astng['A']
-            self.assert_(a.newstyle)
+            self.failUnless(a.newstyle)
 
 
     def test_pylint_config_attr(self):
