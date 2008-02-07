@@ -1,6 +1,8 @@
 Change log for the astng package
 ================================
-
+ --
+    * fix bug w/ loop assigment in .lookup
+	
 2008-01-14  --  0.17.2
     * "with" statement support, patch provided by Brian Hawthorne
     * fixed recursion arguments in nodes_of_class method as notified by

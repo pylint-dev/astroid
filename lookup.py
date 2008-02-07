@@ -20,9 +20,9 @@ Be careful, lookup is kinda internal and return a tuple (scope, [stmts]), while
 ilookup return an iterator on infered values
 
 :author:    Sylvain Thenault
-:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2007 Sylvain Thenault
+:copyright: 2003-2008 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 
@@ -137,7 +137,7 @@ def _filter_stmts(self, stmts, frame, offset):
         mylineno = mystmt.source_line() + offset
     else:
         # disabling lineno filtering
-        print 'disabling lineno filtering'
+        #print 'disabling lineno filtering'
         mylineno = 0
     _stmts = []
     _stmt_parents = []
@@ -164,9 +164,13 @@ def _filter_stmts(self, stmts, frame, offset):
                     break
         except AttributeError:
             ass_type = None
-        # a loop assigment is hidding previous assigment
-        if isinstance(ass_type, (For, ListCompFor,  GenExprFor)) and \
-               ass_type.parent_of(self):
+        # on loop assignment types, assignment won't necessarily be done
+        # if the loop has no iteration, so we don't want to clear previous
+        # assigments if any
+        optional_assign = isinstance(ass_type, (For, ListCompFor,  GenExprFor))
+        if optional_assign and ass_type.parent_of(self):
+            # we are inside a loop, loop var assigment is hidding previous
+            # assigment
             _stmts = [node]
             _stmt_parents = [stmt.parent]
             continue
@@ -177,17 +181,17 @@ def _filter_stmts(self, stmts, frame, offset):
         else:
             try:
                 if ass_type and _stmts[pindex].ass_type().parent_of(ass_type):
-                    # print 'skipping', node, node.source_line()
+                    #print 'skipping', node, node.source_line()
                     continue
             except AttributeError:
                 pass # name from Import, Function, Class...
-            if not are_exclusive(self, node):
+            if not (optional_assign or are_exclusive(self, node)):
                 ###print 'PARENT', stmt.parent
                 #print 'removing', _stmts[pindex]
                 del _stmt_parents[pindex]
                 del _stmts[pindex]
         if isinstance(node, AssName):
-            if stmt.parent is mystmt.parent:
+            if not optional_assign and stmt.parent is mystmt.parent:
                 #print 'assign clear'
                 _stmts = []
                 _stmt_parents = []
@@ -196,7 +200,6 @@ def _filter_stmts(self, stmts, frame, offset):
                 _stmts = []
                 _stmt_parents = []
                 continue
-                
         if not are_exclusive(self, node):
             #print 'append', node, node.source_line()
             _stmts.append(node)

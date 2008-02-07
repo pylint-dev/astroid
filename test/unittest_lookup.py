@@ -113,6 +113,22 @@ class A(A):
     def test_inner_classes(self):
         ccc = NONREGR['Ccc']
         self.assertEquals(ccc.ilookup('Ddd').next().name, 'Ddd')
+
+    def test_loopvar_hiding(self):
+        astng = builder.string_build("""
+x = 10
+for x in range(5):
+    print x
+   
+if x > 0:
+    print '#' * x        
+        """, __name__, __file__)
+        xnames = [n for n in astng.nodes_of_class(nodes.Name) if n.name == 'x']
+        # inside the loop, only one possible assigment
+        self.assertEquals(len(xnames[0].lookup('x')[1]), 1)
+        # outside the loop, two possible assigments
+        self.assertEquals(len(xnames[1].lookup('x')[1]), 2)
+        self.assertEquals(len(xnames[2].lookup('x')[1]), 2)
         
     def test_nonregr_method_lookup(self):
         if sys.version_info < (2, 4):
