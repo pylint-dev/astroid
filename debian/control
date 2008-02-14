@@ -1,11 +1,12 @@
 Source: logilab-astng
 Section: python
 Priority: optional
+Homepage: http://www.logilab.org/project/logilab-astng
 Maintainer: Sylvain Thénault <sylvain.thenault@logilab.fr>
 Uploaders: Alexandre Fayolle <afayolle@debian.org> 
 Build-Depends: debhelper (>= 5.0.37.2), python (>=2.3.5-7), python-central (>=0.5)
 XS-Python-Version: all
-Standards-Version: 3.7.2
+Standards-Version: 3.7.3
 
 Package: python-logilab-astng
 Architecture: all
@@ -20,6 +21,6 @@ Description: extend python's abstract syntax tree
  builder object, which can either generate extended ast (let's call
  them astng ;) by visiting an existant ast tree or by inspecting
  living object. Methods are added by monkey patching ast classes.
- .
- Homepage: http://www.logilab.org/Project/name/logilab-astng
+
+ 
 
