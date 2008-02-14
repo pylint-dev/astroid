@@ -12,9 +12,9 @@ Package: python-logilab-astng
 Architecture: all
 Depends: ${python:Depends}, python-logilab-common (>= 0.21.0-1)
 XB-Python-Version: ${python:Versions}
-Description: extend python's abstract syntax tree
+Description: extend Python's abstract syntax tree
  The aim of this module is to provide a common base representation of
- python source code for projects such as pyreverse or pylint. 
+ Python source code for projects such as pyreverse or pylint. 
  .
  It extends classes defined in the compiler.ast module with some
  additional methods and attributes. Instance attributes are added by a
