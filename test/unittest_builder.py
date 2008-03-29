@@ -21,8 +21,8 @@ from logilab.common.testlib import TestCase, unittest_main
 from unittest_inference import get_name_node
 from pprint import pprint
         
-from logilab.astng.astutils import cvrtr
-from logilab.astng import builder, nodes, Module, YES
+from logilab.astng import builder, nodes, patchcomptransformer
+from logilab.astng import Module, YES, InferenceError
 
 import data
 from data import module as test_module
@@ -30,7 +30,7 @@ from data import module as test_module
 class TransformerTC(TestCase):
         
     def setUp(self):
-        transformer = builder.ASTNGTransformer()
+        transformer = patchcomptransformer.ASTNGTransformer()
         self.astng = transformer.parsesuite(open('data/format.py').read())
 
     def test_callfunc_lineno(self):
@@ -293,7 +293,7 @@ def global_no_effect():
         self.failUnlessEqual(astng.getattr('CSTE')[1].source_line(), 6)
         self.assertRaises(nodes.NotFoundError,
                           astng.getattr, 'CSTE2')
-        self.assertRaises(nodes.InferenceError,
+        self.assertRaises(InferenceError,
                           astng['global_no_effect'].ilookup('CSTE2').next)
 
     def test_socket_build(self):

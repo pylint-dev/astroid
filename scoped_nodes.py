@@ -96,10 +96,6 @@ class LocalsDictMixIn(object):
             self._append_node(child_node)
         self.set_local(name or child_node.name, child_node)
 
-    def _append_node(self, child_node):
-        """append a child, linking it in the tree"""
-        self.code.nodes.append(child_node)
-        child_node.parent = self
     
     def __getitem__(self, item):
         """method from the `dict` interface returning the first node
@@ -226,12 +222,7 @@ class ModuleNG(object):
                     raise
                 except:
                     pass
-            raise NotFoundError(name)
-        
-    def _append_node(self, child_node):
-        """append a child version specific to Module node"""
-        self.node.nodes.append(child_node)
-        child_node.parent = self
+            raise NotFoundError(name)        
         
     def source_line(self):
         """return the source line number, 0 on a module"""

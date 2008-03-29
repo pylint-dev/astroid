@@ -131,6 +131,30 @@ def _infer_stmts(stmts, context, frame=None):
     if not infered:
         raise InferenceError(str(stmt))
 
+def path_wrapper(func):
+    """return the given infer function wrapped to handle the path"""
+    def wrapped(node, context=None, _func=func, **kwargs):
+        """wrapper function handling context"""
+        if context is None:
+            context = InferenceContext(node)
+        context.push(node)
+        yielded = set()
+        try:
+            for res in _func(node, context, **kwargs):
+                # unproxy only true instance, not const, tuple, dict...
+                if res.__class__ is Instance:
+                    ares = res._proxied
+                else:
+                    ares = res
+                if not ares in yielded:
+                    yield res
+                    yielded.add(ares)
+            context.pop()
+        except:
+            context.pop()
+            raise
+    return wrapped
+
 # special inference objects ###################################################
 
 class Yes(object):

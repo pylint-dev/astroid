@@ -32,9 +32,9 @@ on From and Import :
  [1] http://docs.python.org/lib/module-compiler.ast.html
 
 :author:    Sylvain Thenault
-:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2007 Sylvain Thenault
+:copyright: 2003-2008 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 
@@ -42,56 +42,24 @@ from __future__ import generators
 
 __docformat__ = "restructuredtext en"
 
-from compiler.ast import Assign, Add, And, AssAttr, AssList, AssName, \
-     AssTuple, Assert, Assign, AugAssign, \
-     Backquote, Bitand, Bitor, Bitxor, Break, CallFunc, Class, \
-     Compare, Const, Continue, Dict, Discard, Div, FloorDiv, \
-     Ellipsis, EmptyNode, Exec, \
-     For, From, Function, Getattr, Global, \
-     If, Import, Invert, Keyword, Lambda, LeftShift, \
-     List, ListComp, ListCompFor, ListCompIf, Mod, Module, Mul, Name, Node, \
-     Not, Or, Pass, Power, Print, Printnl, Raise, Return, RightShift, Slice, \
-     Sliceobj, Stmt, Sub, Subscript, TryExcept, TryFinally, Tuple, UnaryAdd, \
-     UnarySub, While, Yield
 try:
-    # introduced in python 2.4
-    from compiler.ast import GenExpr, GenExprFor, GenExprIf, GenExprInner
+    from logilab.astng._nodes_ast import *
+    AST_MODE = '_ast'
 except:
-    class GenExpr:
-        """dummy GenExpr node, shouldn't be used since py < 2.4"""
-    class GenExprFor: 
-        """dummy GenExprFor node, shouldn't be used since py < 2.4"""
-    class GenExprIf: 
-        """dummy GenExprIf node, shouldn't be used since py < 2.4"""
-    class GenExprInner: 
-        """dummy GenExprInner node, shouldn't be used since py < 2.4"""
+    from logilab.astng._nodes_compiler import *            
+    AST_MODE = 'compiler'
 
-try:
-    # introduced in python 2.4
-    from compiler.ast import Decorators
-except:
-    class Decorators:
-        """dummy Decorators node, shouldn't be used since py < 2.4"""
 
-try:
-    # introduced in python 2.5
-    from compiler.ast import With
-except:
-    class With:
-        """dummy With node, shouldn't be used since py < 2.5"""
-
-from logilab.astng._exceptions import NotFoundError, InferenceError
-from logilab.astng.utils import extend_class
 from logilab.astng import InferenceContext
+from logilab.astng._exceptions import NotFoundError
+from logilab.astng.utils import extend_class
 
-# introduced in python 2.5
-From.level = 0 # will be overiden by instance attribute with py>=2.5
+INFER_NEED_NAME_STMTS = (From, Import, Global, TryExcept)
 
 import re
 ID_RGX = re.compile('^[a-zA-Z_][a-zA-Z_0-9]*$')
 del re
 
-INFER_NEED_NAME_STMTS = (From, Import, Global, TryExcept)
 
 # Node  ######################################################################
 
@@ -260,12 +228,8 @@ class NodeNG:
     
 extend_class(Node, NodeNG)
 
-Const.eq = lambda self, value: self.value == value
-
-def decorators_scope(self):
-    # skip the function node to go directly to the upper level scope
-    return self.parent.parent.scope()
-Decorators.scope = decorators_scope
+Module.fromlineno = 0
+Module.tolineno = 0
 
 # block range overrides #######################################################
 
@@ -363,33 +327,6 @@ def and_as_string(node):
     return ' and '.join(['(%s)' % n.as_string() for n in node.nodes])
 And.as_string = and_as_string
     
-def assattr_as_string(node):
-    """return an ast.AssAttr node as string"""
-    if node.flags == 'OP_DELETE':
-        return 'del %s.%s' % (node.expr.as_string(), node.attrname)
-    return '%s.%s' % (node.expr.as_string(), node.attrname)
-AssAttr.as_string = assattr_as_string
-
-def asslist_as_string(node):
-    """return an ast.AssList node as string"""
-    string = ', '.join([n.as_string() for n in node.nodes])
-    return '[%s]' % string
-AssList.as_string = asslist_as_string
-
-def assname_as_string(node):
-    """return an ast.AssName node as string"""
-    if node.flags == 'OP_DELETE':
-        return 'del %s' % node.name
-    return node.name
-AssName.as_string = assname_as_string
-    
-def asstuple_as_string(node):
-    """return an ast.AssTuple node as string"""
-    string = ', '.join([n.as_string() for n in node.nodes])
-    # fix for del statement
-    return string.replace(', del ', ', ')
-AssTuple.as_string = asstuple_as_string
-
 def assert_as_string(node):
     """return an ast.Assert node as string"""
     if node.fail:
@@ -460,11 +397,6 @@ def compare_as_string(node):
     return '%s %s' % (node.expr.as_string(), rhs_str)
 Compare.as_string = compare_as_string
 
-def const_as_string(node):
-    """return an ast.Const node as string"""
-    return repr(node.value)
-Const.as_string = const_as_string
-
 def continue_as_string(node):
     """return an ast.Continue node as string"""
     return 'continue'
@@ -475,11 +407,6 @@ def dict_as_string(node):
     return '{%s}' % ', '.join(['%s: %s' % (key.as_string(), value.as_string())
                                for key, value in node.items])
 Dict.as_string = dict_as_string
-
-def discard_as_string(node):
-    """return an ast.Discard node as string"""
-    return node.expr.as_string()
-Discard.as_string = discard_as_string
 
 def div_as_string(node):
     """return an ast.Div node as string"""
@@ -495,10 +422,6 @@ def ellipsis_as_string(node):
     """return an ast.Ellipsis node as string"""
     return '...'
 Ellipsis.as_string = ellipsis_as_string
-
-def empty_as_string(node):
-    return ''
-EmptyNode.as_string = empty_as_string
 
 def exec_as_string(node):
     """return an ast.Exec node as string"""
@@ -524,6 +447,7 @@ For.as_string = for_as_string
 
 def from_as_string(node):
     """return an ast.From node as string"""
+    # XXX level
     return 'from %s import %s' % (node.modname, _import_string(node.names))
 From.as_string = from_as_string
 
@@ -539,29 +463,6 @@ def genexpr_as_string(node):
     """return an ast.GenExpr node as string"""
     return '(%s)' % node.code.as_string()
 GenExpr.as_string = genexpr_as_string
-
-def genexprinner_as_string(node):
-    """return an ast.GenExpr node as string"""
-    return '%s %s' % (node.expr.as_string(), ' '.join([n.as_string()
-                                                       for n in node.quals]))
-GenExprInner.as_string = genexprinner_as_string
-
-def genexprfor_as_string(node):
-    """return an ast.GenExprFor node as string"""
-    return 'for %s in %s %s' % (node.assign.as_string(),
-                                node.iter.as_string(),
-                                ' '.join([n.as_string() for n in node.ifs]))
-GenExprFor.as_string = genexprfor_as_string
-
-def genexprif_as_string(node):
-    """return an ast.GenExprIf node as string"""
-    return 'if %s' % node.test.as_string()
-GenExprIf.as_string = genexprif_as_string
-
-def getattr_as_string(node):
-    """return an ast.Getattr node as string"""
-    return '%s.%s' % (node.expr.as_string(), node.attrname)
-Getattr.as_string = getattr_as_string
 
 def global_as_string(node):
     """return an ast.Global node as string"""
@@ -589,11 +490,6 @@ def invert_as_string(node):
     return '~%s' % node.expr.as_string()
 Invert.as_string = invert_as_string
 
-def keyword_as_string(node):
-    """return an ast.Keyword node as string"""
-    return '%s=%s' % (node.name, node.expr.as_string())
-Keyword.as_string = keyword_as_string
-
 def lambda_as_string(node):
     """return an ast.Lambda node as string"""
     return 'lambda %s: %s' % (node.format_args(), node.code.as_string())
@@ -614,18 +510,6 @@ def listcomp_as_string(node):
     return '[%s %s]' % (node.expr.as_string(), ' '.join([n.as_string()
                                                          for n in node.quals]))
 ListComp.as_string = listcomp_as_string
-
-def listcompfor_as_string(node):
-    """return an ast.ListCompFor node as string"""
-    return 'for %s in %s %s' % (node.assign.as_string(),
-                                node.list.as_string(),
-                                ' '.join([n.as_string() for n in node.ifs]))
-ListCompFor.as_string = listcompfor_as_string
-
-def listcompif_as_string(node):
-    """return an ast.ListCompIf node as string"""
-    return 'if %s' % node.test.as_string()
-ListCompIf.as_string = listcompif_as_string
 
 def mod_as_string(node):
     """return an ast.Mod node as string"""
@@ -676,14 +560,6 @@ def print_as_string(node):
     return 'print %s,' % nodes
 Print.as_string = print_as_string
 
-def printnl_as_string(node):
-    """return an ast.Printnl node as string"""
-    nodes = ', '.join([n.as_string() for n in node.nodes])
-    if node.dest:
-        return 'print >> %s, %s' % (node.dest.as_string(), nodes)
-    return 'print %s' % nodes
-Printnl.as_string = printnl_as_string
-
 def raise_as_string(node):
     """return an ast.Raise node as string"""
     if node.expr1:
@@ -715,19 +591,6 @@ def slice_as_string(node):
     upper = node.upper and node.upper.as_string() or ''
     return '%s[%s:%s]' % (node.expr.as_string(), lower, upper)
 Slice.as_string = slice_as_string
-
-def sliceobj_as_string(node):
-    """return an ast.Sliceobj node as string"""
-    return ':'.join([n.as_string() for n in node.nodes])
-Sliceobj.as_string = sliceobj_as_string
-
-def stmt_as_string(node):
-    """return an ast.Stmt node as string"""
-    stmts = '\n'.join([n.as_string() for n in node.nodes])
-    if isinstance(node.parent, Module):
-        return stmts
-    return stmts.replace('\n', '\n    ')
-Stmt.as_string = stmt_as_string
 
 def sub_as_string(node):
     """return an ast.Sub node as string"""
@@ -812,6 +675,3 @@ def _import_string(names):
             _names.append(name)
     return  ', '.join(_names)
 
-# to backport into compiler ###################################################
-
-EmptyNode.getChildNodes = lambda self: ()

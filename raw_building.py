@@ -14,9 +14,9 @@
 (build_* functions) or from living object (object_build_* functions)
 
 :author:    Sylvain Thenault
-:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2007 Sylvain Thenault
+:copyright: 2003-2008 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 
@@ -27,9 +27,16 @@ from inspect import getargspec
 
 from logilab.astng import nodes
 
+    
+def _attach_local_node(parent, node, name):
+    node.name = name # needed by add_local_node
+    node.parent = parent
+    node.lineno = 1
+    parent.add_local_node(node)
+
 def attach___dict__(node):
     """attach the __dict__ attribute to Class and Module objects"""
-    dictn = nodes.Dict([])
+    dictn = nodes.dict_factory()
     dictn.parent = node
     node.locals['__dict__'] = [dictn]
 
@@ -49,36 +56,19 @@ def attach_const_node(node, name, value):
     """create a Const node and register it in the locals of the given
     node with the specified name
     """
-    _attach_local_node(node, nodes.Const(value), name)
+    _attach_local_node(node, nodes.const_factory(value), name)
 
-if sys.version_info < (2, 5):
-    def attach_import_node(node, modname, membername):
-        """create a From node and register it in the locals of the given
-        node with the specified name
-        """
-        _attach_local_node(node,
-                           nodes.From(modname, ( (membername, None), ) ),
-                           membername)
-else:
-    def attach_import_node(node, modname, membername):
-        """create a From node and register it in the locals of the given
-        node with the specified name
-        """
-        _attach_local_node(node,
-                           nodes.From(modname, ( (membername, None), ), 0),
-                           membername)
-    
-def _attach_local_node(parent, node, name):
-    node.name = name # needed by add_local_node
-    node.parent = parent
-    node.lineno = 1
-    parent.add_local_node(node)
+def attach_import_node(node, modname, membername):
+    """create a From node and register it in the locals of the given
+    node with the specified name
+    """
+    _attach_local_node(node, nodes.import_from_factory(modname, membername),
+                       membername)
 
 
 def build_module(name, doc=None):
     """create and initialize a astng Module node"""
-    node = nodes.Module(doc, nodes.Stmt([]))
-    node.node.parent = node
+    node = nodes.module_factory(doc)
     node.name = name
     node.pure_python = False
     node.package = False

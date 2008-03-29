@@ -14,9 +14,9 @@
 extract information from it
 
 :author:    Sylvain Thenault
-:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2007 Sylvain Thenault
+:copyright: 2003-2008 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 
@@ -30,10 +30,15 @@ def extend_class(original, addons):
     class
     """
     brain = addons.__dict__.copy()
-    for special_key in ('__doc__', '__module__'):
+    for special_key in ('__doc__', '__module__', '__dict__'):
         if special_key in addons.__dict__:
             del brain[special_key]
-    original.__dict__.update(brain)
+    try:
+        original.__dict__.update(brain)
+    except AttributeError:
+        # dictproxy object
+        for k, v in brain.iteritems():
+            setattr(original, k, v)
         
 class ASTWalker:
     """a walker visiting a tree in preorder, calling on the handler:
@@ -171,3 +176,14 @@ def _try_except_from_branch(node, stmt):
     for i, block_nodes in enumerate(node.handlers):
         if stmt in block_nodes:
             return 'except', i
+
+
+# inference utilities #########################################################
+
+def infer_end(self, context=None):
+    """inference's end for node such as Module, Class, Function, Const...
+    """
+    yield self
+
+def end_ass_type(self):
+    return self

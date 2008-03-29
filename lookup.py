@@ -222,6 +222,10 @@ def _decorate(astmodule):
     astmodule.Module.scope_lookup = scope_lookup
     astmodule.GenExpr.scope_lookup = scope_lookup
     for name in ('Class', 'Function', 'Lambda',
-                 'For', 'ListCompFor', 'GenExprFor',
-                 'AssName', 'Name', 'Const'):
+                 'For', 'Name', 'Const'):
         globals()[name] = getattr(astmodule, name)
+    if hasattr(astmodule, 'ListCompFor'):
+        for name in ('ListCompFor', 'GenExprFor', 'AssName',):
+            globals()[name] = getattr(astmodule, name)
+    #else: XXX
+        
