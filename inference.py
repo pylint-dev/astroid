@@ -27,12 +27,24 @@ from copy import copy
 
 from logilab.common.compat import imap, chain, set
 
-from logilab.astng import MANAGER, YES, InferenceContext, Instance, Generator, \
+from logilab.astng import MANAGER, InferenceContext, \
      unpack_infer, _infer_stmts, nodes, copy_context, path_wrapper
 from logilab.astng import ASTNGError, InferenceError, UnresolvableName, \
      NoDefault, NotFoundError, ASTNGBuildingException
-from logilab.astng.utils import infer_end, end_ass_type
+from logilab.astng.utils import YES, Instance, Generator, infer_end, end_ass_type
     
+nodes.List._proxied = MANAGER.astng_from_class(list)
+nodes.List.__bases__ += (Instance,)
+nodes.List.pytype = lambda x: '__builtin__.list'
+nodes.Tuple._proxied = MANAGER.astng_from_class(tuple)
+nodes.Tuple.__bases__ += (Instance,)
+nodes.Tuple.pytype = lambda x: '__builtin__.tuple'
+nodes.Dict.__bases__ += (Instance,)
+nodes.Dict._proxied = MANAGER.astng_from_class(dict)
+nodes.Dict.pytype = lambda x: '__builtin__.dict'
+
+builtin_astng = nodes.Dict._proxied.root()
+
 
 # .infer method ###############################################################
 
@@ -548,3 +560,5 @@ nodes.For.loop_node = for_loop_node
 
 if nodes.AST_MODE == 'compiler':
     from logilab.astng._inference_compiler import *
+else: #nodes.AST_MODE == '_ast'
+    from logilab.astng._inference_ast import *

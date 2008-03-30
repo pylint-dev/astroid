@@ -166,21 +166,20 @@ class ASTNGBuilder:
         self._par_stack = [node]
         self._metaclass = ['']
         self._global_names = []
-        node.parent = None
         node.globals = node.locals = {}
+        nodes.init_module(node)
         for name, value in ( ('__name__', node.name),
                              ('__file__', node.path),
                              ('__doc__', node.doc) ):
-            const = nodes.Const(value)
+            const = nodes.const_factory(value)
             const.parent = node
             node.locals[name] = [const]
-        attach___dict__(node)
         if node.package:
             # FIXME: List(Const())
-            const = nodes.Const(dirname(node.path))
+            const = const_factory(value)
             const.parent = node
             node.locals['__path__'] = [const]
-            
+        attach___dict__(node)
 
     def leave_module(self, _):
         """leave a stmt.Module node -> pop the last item on the stack and check
@@ -200,14 +199,16 @@ class ASTNGBuilder:
         node.instance_attrs = {}
         node.basenames = [b_node.as_string() for b_node in node.bases]
         self._push(node)
+        nodes.init_class(node)
         for name, value in ( ('__name__', node.name),
                              ('__module__', node.root().name),
                              ('__doc__', node.doc) ):
-            const = nodes.Const(value)
+            const = nodes.const_factory(value)
             const.parent = node
             node.locals[name] = [const]
         attach___dict__(node)
         self._metaclass.append(self._metaclass[-1])
+    visit_classdef = visit_class
         
     def leave_class(self, node):
         """leave a stmt.Class node -> pop the last item on the stack
@@ -219,6 +220,7 @@ class ASTNGBuilder:
             # no base classes, detect new / style old style according to
             # current scope
             node._newstyle = metaclass == 'type'
+    leave_classdef = leave_class
         
     def visit_function(self, node):
         """visit a stmt.Function node -> init node and push the corresponding
@@ -227,19 +229,22 @@ class ASTNGBuilder:
         self.visit_default(node)
         self._global_names.append({})
         node.argnames = list(node.argnames)
+        nodes.init_function(node)
         if isinstance(node.parent.frame(), nodes.Class):
             node.type = 'method'
             if node.name == '__new__':
                 node.type = 'classmethod'
         self._push(node)
         register_arguments(node, node.argnames)
-        
+    visit_funcdef = visit_function
+    
     def leave_function(self, node):
         """leave a stmt.Function node -> pop the last item on the stack
         """
         self.leave_default(node)
         self._stack.pop()
         self._global_names.pop()
+    leave_funcdef = leave_function
         
     def visit_lambda(self, node):
         """visit a stmt.Lambda node -> init node locals
@@ -254,7 +259,8 @@ class ASTNGBuilder:
         """
         self.visit_default(node)
         node.locals = {}
-        
+    visit_generatorexp = visit_genexpr
+    
     def visit_global(self, node):
         """visit a stmt.Global node -> add declared names to locals
         """
@@ -273,6 +279,7 @@ class ASTNGBuilder:
         """visit a stmt.Import node -> add imported names to locals
         """
         self.visit_default(node)
+        nodes.init_import(node)
         for (name, asname) in node.names:
             name = asname or name
             node.parent.set_local(name.split('.')[0], node)
@@ -318,23 +325,21 @@ class ASTNGBuilder:
         klass = node.parent.frame()
         #print node
         if isinstance(klass, nodes.Class) and \
-            isinstance(node.expr, nodes.CallFunc) and \
-            isinstance(node.expr.node, nodes.Name):
-            func_name = node.expr.node.name
+            isinstance(node.value, nodes.CallFunc) and \
+            isinstance(node.value.node, nodes.Name):
+            func_name = node.value.node.name
             if func_name in ('classmethod', 'staticmethod'):
                 for ass_node in node.nodes:
-                    if isinstance(ass_node, nodes.AssName):
-                        try:
-                            meth = klass[ass_node.name]
-                            if isinstance(meth, nodes.Function):
-                                meth.type = func_name
-                            #else:
-                            #    print >> sys.stderr, 'FIXME 1', meth
-                        except KeyError:
-                            #print >> sys.stderr, 'FIXME 2', ass_node.name
-                            continue
-        elif (isinstance(node.nodes[0], nodes.AssName)
-              and node.nodes[0].name == '__metaclass__'): # XXX check more...
+                    try:
+                        meth = klass[ass_node.name]
+                        if isinstance(meth, nodes.Function):
+                            meth.type = func_name
+                        #else:
+                        #    print >> sys.stderr, 'FIXME 1', meth
+                    except (AttributeError, KeyError):
+                        #print >> sys.stderr, 'FIXME 2', ass_node.name
+                        continue
+        elif getattr(node.targets[0], 'name', None) == '__metaclass__': # XXX check more...
             self._metaclass[-1] = 'type' # XXX get the actual metaclass
 
     def visit_assname(self, node):

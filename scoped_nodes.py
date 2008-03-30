@@ -19,9 +19,9 @@ below.
 
 
 :author:    Sylvain Thenault
-:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2007 Sylvain Thenault
+:copyright: 2003-2008 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 from __future__ import generators
@@ -32,13 +32,13 @@ import sys
 
 from logilab.common.compat import chain, set
 
-from logilab.astng.utils import extend_class
-from logilab.astng import YES, MANAGER, Instance, InferenceContext, copy_context, \
+from logilab.astng import MANAGER, InferenceContext, copy_context, \
      unpack_infer, _infer_stmts, \
      Class, Const, Dict, Function, GenExpr, Lambda, \
      Module, Name, Pass, Raise, Tuple, Yield
 from logilab.astng import NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
+from logilab.astng.utils import YES, extend_class, Instance
 
 # module class dict/iterator interface ########################################
     

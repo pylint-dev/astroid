@@ -45,7 +45,7 @@ __docformat__ = "restructuredtext en"
 try:
     from logilab.astng._nodes_ast import *
     AST_MODE = '_ast'
-except:
+except ImportError:
     from logilab.astng._nodes_compiler import *            
     AST_MODE = 'compiler'
 

@@ -51,7 +51,7 @@ def attach_dummy_node(node, name, object=_marker):
     _attach_local_node(node, enode, name)
 
 nodes.EmptyNode.has_underlying_object = lambda self: self.object is not _marker
-
+    
 def attach_const_node(node, name, value):
     """create a Const node and register it in the locals of the given
     node with the specified name
@@ -78,55 +78,27 @@ def build_module(name, doc=None):
 
 def build_class(name, basenames=None, doc=None):
     """create and initialize a astng Class node"""
-    klass = nodes.Class(name, [], doc, nodes.Stmt([]))
-    bases = [nodes.Name(base) for base in basenames]
-    for base in bases:
-        base.parent = klass
-    klass.basenames = basenames
-    klass.bases = bases
-    klass.code.parent = klass
-    klass.locals = {}
-    klass.instance_attrs = {}
+    node = nodes.class_factory(name, basenames, doc)
+    node.basenames = basenames
+    node.locals = {}
+    node.instance_attrs = {}
     for name, value in ( ('__name__', name),
                          #('__module__', node.root().name),
                          ):
-        const = nodes.Const(value)
-        const.parent = klass
-        klass.locals[name] = [const]
-    return klass
+        const = nodes.const_factory(value)
+        const.parent = node
+        node.locals[name] = [const]
+    return node
 
-# introduction of decorators has changed the Function initializer arguments
-if sys.version_info >= (2, 4):
-    try:
-        from compiler.ast import Decorators as BaseDecorators
-        class Decorators(BaseDecorators):
-            def __init__(self):
-                BaseDecorators.__init__(self, [], 0)
-    except ImportError:
-        Decorators = list
-        
-    def build_function(name, args=None, defaults=None, flag=0, doc=None):
-        """create and initialize a astng Function node"""
-        args, defaults = args or [], defaults or []
-        # first argument is now a list of decorators
-        func = nodes.Function(Decorators(), name, args, defaults, flag, doc,
-                              nodes.Stmt([]))
-        func.code.parent = func
-        func.locals = {}
-        if args:
-            register_arguments(func, args)
-        return func
-    
-else:    
-    def build_function(name, args=None, defaults=None, flag=0, doc=None):
-        """create and initialize a astng Function node"""
-        args, defaults = args or [], defaults or []
-        func = nodes.Function(name, args, defaults, flag, doc, nodes.Stmt([]))
-        func.code.parent = func
-        func.locals = {}
-        if args:
-            register_arguments(func, args)
-        return func
+def build_function(name, args=None, defaults=None, flag=0, doc=None):
+    """create and initialize a astng Function node"""
+    args, defaults = args or [], defaults or []
+    # first argument is now a list of decorators
+    func = nodes.function_factory(name, args, defaults, flag, doc)
+    func.locals = {}
+    if args:
+        register_arguments(func, args)
+    return func
 
 
 def build_name_assign(name, value):

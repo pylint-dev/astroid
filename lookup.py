@@ -55,6 +55,9 @@ def scope_lookup(self, node, name, offset=0):
         stmts = node._filter_stmts(self.locals[name], self, offset)
     except KeyError:
         stmts = ()
+    except :
+        print self, self.locals
+        raise
     if stmts:
         return self, stmts
     if self.parent:

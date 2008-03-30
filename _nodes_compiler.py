@@ -18,10 +18,9 @@
 :copyright: 2008 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
+from __future__ import generators
 
 __docformat__ = "restructuredtext en"
-
-from __future__ import generators
 
 import sys
 from compiler.ast import Add, And, AssAttr, AssList, AssName, \
@@ -191,13 +190,33 @@ def _append_node(self, child_node):
 Class._append_node = _append_node
 Function._append_node = _append_node
 
+#
+def init_module(node):
+    return node
+
+def init_function(node):
+    return node
+
+def init_class(node):
+    return node
+
+def init_import(node):
+    return node
+
+def init_assign(node):
+    node.value = node.expr
+    node.targets = node.nodes
+    return node
+
 # raw building ################################################################
+
+from logilab.astng.utils import NoneType, Bool
 
 def module_factory(doc):
     node = Module(doc, Stmt([]))
     node.node.parent = node
     return node
-
+    
 def dict_factory():
     return Dict([])
 
@@ -209,4 +228,48 @@ else:
         return From(modname, ( (membername, None), ), 0)
 
 def const_factory(value):
-    return Const(value)    
+    if value is None:
+        nodecls = NoneType
+    elif value is True:
+        nodecls = Bool
+    elif value is False:
+        nodecls = Bool
+    else:
+        nodecls = Const
+    return nodecls(value)    
+
+# introduction of decorators has changed the Function initializer arguments
+if sys.version_info >= (2, 4):
+    def function_factory(name, args, defaults, flag=0, doc=None):
+        """create and initialize a astng Function node"""
+        # first argument is now a list of decorators
+        func = Function(Decorators([]), name, args, defaults, flag, doc,
+                        Stmt([]))
+        func.code.parent = func
+        return func
+    
+else:    
+    def function_factory(name, args, defaults, flag=0, doc=None):
+        """create and initialize a astng Function node"""
+        func = Function(name, args, defaults, flag, doc, Stmt([]))
+        func.code.parent = func
+        return func
+
+def class_factory(name, basenames=None, doc=None):
+    """create and initialize a astng Class node"""
+    klass = Class(name, [], doc, Stmt([]))
+    bases = [Name(base) for base in basenames]
+    for base in bases:
+        base.parent = klass
+    klass.basenames = basenames
+    klass.bases = bases
+    klass.code.parent = klass
+    klass.locals = {}
+    klass.instance_attrs = {}
+    for name, value in ( ('__name__', name),
+                         #('__module__', node.root().name),
+                         ):
+        const = Const(value)
+        const.parent = klass
+        klass.locals[name] = [const]
+    return klass

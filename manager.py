@@ -33,7 +33,8 @@ from logilab.common.modutils import NoSourceFile, is_python_source, \
      get_module_files, get_source_file
 from logilab.common.configuration import OptionsProviderMixIn
 
-from logilab.astng import ASTNGBuildingException, Instance, nodes
+from logilab.astng import ASTNGBuildingException, nodes
+from logilab.astng.utils import Instance
 
 def astng_wrapper(func, modname):
     """wrapper to give to ASTNGManager.project_from_files"""
