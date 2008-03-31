@@ -34,7 +34,6 @@ from logilab.common.modutils import NoSourceFile, is_python_source, \
 from logilab.common.configuration import OptionsProviderMixIn
 
 from logilab.astng import ASTNGBuildingException, nodes
-from logilab.astng.utils import Instance
 
 def astng_wrapper(func, modname):
     """wrapper to give to ASTNGManager.project_from_files"""
@@ -221,7 +220,7 @@ class ASTNGManager(OptionsProviderMixIn):
         modastng = self.astng_from_module_name(modname)
         for infered in modastng.igetattr(name, context):
             if klass is not obj and isinstance(infered, nodes.Class):
-                infered = Instance(infered)
+                infered = nodes.Instance(infered)
             yield infered
             
     def project_from_files(self, files, func_wrapper=astng_wrapper,

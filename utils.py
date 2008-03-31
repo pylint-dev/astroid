@@ -22,8 +22,10 @@ extract information from it
 
 __docformat__ = "restructuredtext en"
 
+from itertools import imap
 from logilab.common.compat import enumerate
-from logilab.astng._exceptions import IgnoreChild
+from logilab.astng._exceptions import IgnoreChild, UnresolvableName, \
+     NotFoundError, InferenceError
 
 def extend_class(original, addons):
     """add methods and attribute defined in the addons class to the original
@@ -66,9 +68,10 @@ class ASTWalker:
         except IgnoreChild:
             pass
         else:
-            print 'visit', node, id(node)
+            #print 'visit', node, id(node)
             try:
                 for child_node in node.getChildNodes():
+                    self.handler.set_context(node, child_node)
                     assert child_node is not node
                     self.walk(child_node, _done)
             except AttributeError:
@@ -189,139 +192,3 @@ def _try_except_from_branch(node, stmt):
         if stmt in block_nodes:
             return 'except', i
 
-
-# special inference objects ###################################################
-
-class Yes(object):
-    """a yes object"""
-    def __repr__(self):
-        return 'YES'
-    def __getattribute__(self, name):
-        return self
-    def __call__(self, *args, **kwargs):
-        return self
-
-YES = Yes()
-
-class Proxy:
-    """a simple proxy object"""
-    def __init__(self, proxied):
-        self._proxied = proxied
-
-    def __getattr__(self, name):
-        return getattr(self._proxied, name)
-
-    def infer(self, context=None):
-        yield self
-
-
-class InstanceMethod(Proxy):
-    """a special node representing a function bound to an instance"""
-    def __repr__(self):
-        instance = self._proxied.parent.frame()
-        return 'Bound method %s of %s.%s' % (self._proxied.name,
-                                             instance.root().name,
-                                             instance.name)
-    __str__ = __repr__
-
-    def is_bound(self):
-        return True
-
-
-class Instance(Proxy):
-    """a special node representing a class instance"""
-    def getattr(self, name, context=None, lookupclass=True):
-        try:
-            return self._proxied.instance_attr(name, context)
-        except NotFoundError:
-            if name == '__class__':
-                return [self._proxied]
-            if name == '__name__':
-                # access to __name__ gives undefined member on class
-                # instances but not on class objects
-                raise NotFoundError(name)
-            if lookupclass:
-                return self._proxied.getattr(name, context)
-        raise NotFoundError(name)
-
-    def igetattr(self, name, context=None):
-        """infered getattr"""
-        try:
-            # XXX frame should be self._proxied, or not ?
-            return _infer_stmts(
-                self._wrap_attr(self.getattr(name, context, lookupclass=False)),
-                                context, frame=self)
-        except NotFoundError:
-            try:
-                # fallback to class'igetattr since it has some logic to handle
-                # descriptors
-                return self._wrap_attr(self._proxied.igetattr(name, context))
-            except NotFoundError:
-                raise InferenceError(name)
-            
-    def _wrap_attr(self, attrs):
-        """wrap bound methods of attrs in a InstanceMethod proxies"""
-        # Guess which attrs are used in inference.
-        def wrap(attr):
-            if isinstance(attr, Function) and attr.type == 'method':
-                return InstanceMethod(attr)
-            else:
-                return attr
-        return imap(wrap, attrs)
-        
-    def infer_call_result(self, caller, context=None):
-        """infer what's a class instance is returning when called"""
-        infered = False
-        for node in self._proxied.igetattr('__call__', context):
-            for res in node.infer_call_result(caller, context):
-                infered = True
-                yield res
-        if not infered:
-            raise InferenceError()
-
-    def __repr__(self):
-        return 'Instance of %s.%s' % (self._proxied.root().name,
-                                      self._proxied.name)
-    __str__ = __repr__
-    
-    def callable(self):
-        try:
-            self._proxied.getattr('__call__')
-            return True
-        except NotFoundError:
-            return False
-
-    def pytype(self):
-        return self._proxied.qname()
-    
-class Generator(Proxy): 
-    """a special node representing a generator"""
-    def callable(self):
-        return True
-    
-    def pytype(self):
-        return '__builtin__.generator'
-
-# additional nodes  ##########################################################
-
-class NoneType(Instance):
-    """None value (instead of Name('None')"""
-    
-NONE = NoneType(None)
-
-class Bool(Instance):
-    """None value (instead of Name('True') / Name('False')"""
-    def __init__(self, value):
-        self.value = value
-TRUE = Bool(True)
-FALSE = Bool(True)
-
-# inference utilities #########################################################
-
-def infer_end(self, context=None):
-    """inference's end for node such as Module, Class, Function, Const...
-    """
-    yield self
-
-def end_ass_type(self):
-    return self

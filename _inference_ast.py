@@ -1,8 +1,7 @@
-from logilab.astng import MANAGER, YES, ASTNGError, Instance, _infer_stmts, path_wrapper
 from logilab.astng import nodes
-from logilab.astng.utils import infer_end, end_ass_type
+from logilab.astng import MANAGER
 
-nodes.Num.__bases__ += (Instance,)
+nodes.Num.__bases__ += (nodes.Instance,)
 nodes.Num._proxied = None
 nodes.Num.has_dynamic_getattr = lambda x: False
 def _Num_value_proxy(node):
@@ -12,7 +11,7 @@ def _Num_value_proxy(node):
 nodes.Num._value_proxy = _Num_value_proxy
 
 
-nodes.Str.__bases__ += (Instance,)
+nodes.Str.__bases__ += (nodes.Instance,)
 nodes.Str._proxied = None
 nodes.Str.has_dynamic_getattr = lambda x: False
 def _Str_value_proxy(node):
@@ -42,5 +41,5 @@ nodes.Num.pytype = Const_pytype
 nodes.Str.pytype = Const_pytype
 
 
-nodes.Num.infer = infer_end
-nodes.Str.infer = infer_end
+nodes.Num.infer = nodes.infer_end
+nodes.Str.infer = nodes.infer_end

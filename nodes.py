@@ -12,7 +12,7 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """
 on all nodes :
- .is_statement(), returning true if the node should be considered as a
+ .is_statement, returning true if the node should be considered as a
   statement node
  .root(), returning the root node of the tree (i.e. a Module)
  .previous_sibling(), returning previous sibling statement node
@@ -42,16 +42,20 @@ from __future__ import generators
 
 __docformat__ = "restructuredtext en"
 
+from itertools import imap
+
+from logilab.astng._nodes_ast import *
 try:
     from logilab.astng._nodes_ast import *
+    from logilab.astng._nodes_ast import _const_factory
     AST_MODE = '_ast'
 except ImportError:
     from logilab.astng._nodes_compiler import *            
+    from logilab.astng._nodes_compiler import _const_factory
     AST_MODE = 'compiler'
 
 
-from logilab.astng import InferenceContext
-from logilab.astng._exceptions import NotFoundError
+from logilab.astng._exceptions import UnresolvableName, NotFoundError, InferenceError
 from logilab.astng.utils import extend_class
 
 INFER_NEED_NAME_STMTS = (From, Import, Global, TryExcept)
@@ -88,17 +92,10 @@ class NodeNG:
             parent = parent.parent
         return False
 
-    def is_statement(self):
-        """return true if the node should be considered as statement node
-        """
-        if isinstance(self.parent, Stmt):
-            return self
-        return None
-
     def statement(self):
         """return the first parent node marked as statement node
         """
-        if self.is_statement():
+        if self.is_statement:
             return self
         return self.parent.statement()
 
@@ -123,7 +120,7 @@ class NodeNG:
     def next_sibling(self):
         """return the previous sibling statement 
         """
-        while not self.is_statement(): 
+        while not self.is_statement: 
             self = self.parent
         index = self.parent.nodes.index(self)
         try:
@@ -134,7 +131,7 @@ class NodeNG:
     def previous_sibling(self):
         """return the next sibling statement 
         """
-        while not self.is_statement(): 
+        while not self.is_statement: 
             self = self.parent
         index = self.parent.nodes.index(self)
         if index > 0:
@@ -230,6 +227,15 @@ extend_class(Node, NodeNG)
 
 Module.fromlineno = 0
 Module.tolineno = 0
+
+
+def const_factory(value):
+    try:
+        cls, value = CONST_VALUE_TRANSFORMS[value]
+        node = cls(value)
+    except KeyError:
+        node = _const_factory(value)
+    return node
 
 # block range overrides #######################################################
 
@@ -674,4 +680,224 @@ def _import_string(names):
         else:
             _names.append(name)
     return  ', '.join(_names)
+
+
+# special inference objects ###################################################
+
+class Yes(object):
+    """a yes object"""
+    def __repr__(self):
+        return 'YES'
+    def __getattribute__(self, name):
+        return self
+    def __call__(self, *args, **kwargs):
+        return self
+
+YES = Yes()
+
+class Proxy(object):
+    """a simple proxy object"""
+    def __init__(self, proxied=None):
+        self._proxied = proxied
+
+    def __getattr__(self, name):
+        if name == '_proxied':
+            return getattr(self.__class__, '_proxied')
+        #assert self._proxied is not self
+        #assert getattr(self._proxied, name) is not self
+        return getattr(self._proxied, name)
+
+    def infer(self, context=None):
+        yield self
+
+
+class InstanceMethod(Proxy):
+    """a special node representing a function bound to an instance"""
+    def __repr__(self):
+        instance = self._proxied.parent.frame()
+        return 'Bound method %s of %s.%s' % (self._proxied.name,
+                                             instance.root().name,
+                                             instance.name)
+    __str__ = __repr__
+
+    def is_bound(self):
+        return True
+
+
+class Instance(Proxy):
+    """a special node representing a class instance"""
+    def getattr(self, name, context=None, lookupclass=True):
+        try:
+            return self._proxied.instance_attr(name, context)
+        except NotFoundError:
+            if name == '__class__':
+                return [self._proxied]
+            if name == '__name__':
+                # access to __name__ gives undefined member on class
+                # instances but not on class objects
+                raise NotFoundError(name)
+            if lookupclass:
+                return self._proxied.getattr(name, context)
+        raise NotFoundError(name)
+
+    def igetattr(self, name, context=None):
+        """infered getattr"""
+        try:
+            # XXX frame should be self._proxied, or not ?
+            return _infer_stmts(
+                self._wrap_attr(self.getattr(name, context, lookupclass=False)),
+                                context, frame=self)
+        except NotFoundError:
+            try:
+                # fallback to class'igetattr since it has some logic to handle
+                # descriptors
+                return self._wrap_attr(self._proxied.igetattr(name, context))
+            except NotFoundError:
+                raise InferenceError(name)
+            
+    def _wrap_attr(self, attrs):
+        """wrap bound methods of attrs in a InstanceMethod proxies"""
+        # Guess which attrs are used in inference.
+        def wrap(attr):
+            if isinstance(attr, Function) and attr.type == 'method':
+                return InstanceMethod(attr)
+            else:
+                return attr
+        return imap(wrap, attrs)
+        
+    def infer_call_result(self, caller, context=None):
+        """infer what's a class instance is returning when called"""
+        infered = False
+        for node in self._proxied.igetattr('__call__', context):
+            for res in node.infer_call_result(caller, context):
+                infered = True
+                yield res
+        if not infered:
+            raise InferenceError()
+
+    def __repr__(self):
+        print self.__class__, self._proxied
+        return 'Instance of %s.%s' % (self._proxied.root().name,
+                                      self._proxied.name)
+    __str__ = __repr__
+    
+    def callable(self):
+        try:
+            self._proxied.getattr('__call__')
+            return True
+        except NotFoundError:
+            return False
+
+    def pytype(self):
+        return self._proxied.qname()
+    
+class Generator(Proxy): 
+    """a special node representing a generator"""
+    def callable(self):
+        return True
+    
+    def pytype(self):
+        return '__builtin__.generator'
+
+# additional nodes  ##########################################################
+
+class NoneType(Instance, NodeNG):
+    """None value (instead of Name('None')"""
+    _proxied_class = None.__class__
+    _proxied = None
+    def __init__(self, value):
+        self.value = value
+    def __repr__(self):
+        return 'None'
+    def getChildNodes(self):
+        return ()
+    __str__ = as_string = __repr__
+    
+class Bool(Instance, NodeNG):
+    """None value (instead of Name('True') / Name('False')"""
+    _proxied_class = bool
+    _proxied = None
+    def __init__(self, value):
+        self.value = value
+    def __repr__(self):
+        return str(self.value)
+    def getChildNodes(self):
+        return ()
+    __str__ = as_string = __repr__
+
+CONST_NAME_TRANSFORMS = {'None': (NoneType, None),
+                         'True': (Bool, True),
+                         'False': (Bool, False)}
+CONST_VALUE_TRANSFORMS = {None: (NoneType, None),
+                          True: (Bool, True),
+                          False: (Bool, False)}
+
+
+# inference utilities #########################################################
+
+class InferenceContext(object):
+    __slots__ = ('startingfrom', 'path', 'lookupname', 'callcontext', 'boundnode')
+    
+    def __init__(self, node=None, path=None):
+        self.startingfrom = node # XXX useful ?
+        if path is None:
+            self.path = []
+        else:
+            self.path = path
+        self.lookupname = None
+        self.callcontext = None
+        self.boundnode = None
+
+    def push(self, node):
+        name = self.lookupname
+        if (node, name) in self.path:
+            raise StopIteration()
+        self.path.append( (node, name) )
+
+    def pop(self):
+        return self.path.pop()
+
+    def clone(self):
+        # XXX copy lookupname/callcontext ?
+        clone = InferenceContext(self.startingfrom, self.path)
+        clone.callcontext = self.callcontext
+        clone.boundnode = self.boundnode
+        return clone
+
+def _infer_stmts(stmts, context, frame=None):
+    """return an iterator on statements infered by each statement in <stmts>
+    """
+    stmt = None
+    infered = False
+    if context is not None:
+        name = context.lookupname
+        context = context.clone()
+    else:
+        name = None
+        context = InferenceContext()
+    for stmt in stmts:
+        if stmt is YES:
+            yield stmt
+            infered = True
+            continue
+        context.lookupname = stmt._infer_name(frame, name)
+        try:
+            for infered in stmt.infer(context):
+                yield infered
+                infered = True
+        except UnresolvableName:
+            continue
+        except InferenceError:
+            yield YES
+            infered = True
+    if not infered:
+        raise InferenceError(str(stmt))
+
+def infer_end(self, context=None):
+    """inference's end for node such as Module, Class, Function, Const...
+    """
+    yield self
+
+def end_ass_type(self):
+    return self
 

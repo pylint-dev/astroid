@@ -22,7 +22,7 @@ from unittest_inference import get_name_node
 from pprint import pprint
         
 from logilab.astng import builder, nodes, patchcomptransformer
-from logilab.astng import Module, YES, InferenceError
+from logilab.astng import Module, YES, InferenceError, NoneType, Bool
 
 import data
 from data import module as test_module
@@ -344,7 +344,7 @@ class FileBuildTC(TestCase):
         self.assertEquals(module.file, join(abspath(data.__path__[0]), 'module.py'))
         self.assertEquals(module.pure_python, 1)
         self.assertEquals(module.package, 0)
-        self.assert_(not module.is_statement())
+        self.assert_(not module.is_statement)
         self.assertEquals(module.statement(), module)
         self.assertEquals(module.node.statement(), module)
         

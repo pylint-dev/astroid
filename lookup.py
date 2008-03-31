@@ -32,8 +32,8 @@ __docformat__ = "restructuredtext en"
 
 import __builtin__
 
+from logilab.astng import nodes, MANAGER, copy_context
 from logilab.astng.utils import are_exclusive
-from logilab.astng import nodes, MANAGER, _infer_stmts, copy_context
 
 
 def lookup(self, name):
@@ -112,7 +112,7 @@ def ilookup(self, name, context=None):
     frame, stmts = self.lookup(name)
     context = copy_context(context)
     context.lookupname = name
-    return _infer_stmts(stmts, context, frame)
+    return nodes._infer_stmts(stmts, context, frame)
 
 
 def _filter_stmts(self, stmts, frame, offset):

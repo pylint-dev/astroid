@@ -53,35 +53,6 @@ from logilab.common.compat import chain, imap
 from logilab.astng._exceptions import *
 
 
-class InferenceContext(object):
-    __slots__ = ('startingfrom', 'path', 'lookupname', 'callcontext', 'boundnode')
-    
-    def __init__(self, node=None, path=None):
-        self.startingfrom = node # XXX useful ?
-        if path is None:
-            self.path = []
-        else:
-            self.path = path
-        self.lookupname = None
-        self.callcontext = None
-        self.boundnode = None
-
-    def push(self, node):
-        name = self.lookupname
-        if (node, name) in self.path:
-            raise StopIteration()
-        self.path.append( (node, name) )
-
-    def pop(self):
-        return self.path.pop()
-
-    def clone(self):
-        # XXX copy lookupname/callcontext ?
-        clone = InferenceContext(self.startingfrom, self.path)
-        clone.callcontext = self.callcontext
-        clone.boundnode = self.boundnode
-        return clone
-
 
 def unpack_infer(stmt, context=None):
     """return an iterator on nodes infered by the given statement
@@ -102,35 +73,6 @@ def copy_context(context):
     else:
         return InferenceContext()
     
-def _infer_stmts(stmts, context, frame=None):
-    """return an iterator on statements infered by each statement in <stmts>
-    """
-    stmt = None
-    infered = False
-    if context is not None:
-        name = context.lookupname
-        context = context.clone()
-    else:
-        name = None
-        context = InferenceContext()
-    for stmt in stmts:
-        if stmt is YES:
-            yield stmt
-            infered = True
-            continue
-        context.lookupname = stmt._infer_name(frame, name)
-        try:
-            for infered in stmt.infer(context):
-                yield infered
-                infered = True
-        except UnresolvableName:
-            continue
-        except InferenceError:
-            yield YES
-            infered = True
-    if not infered:
-        raise InferenceError(str(stmt))
-
 def path_wrapper(func):
     """return the given infer function wrapped to handle the path"""
     def wrapped(node, context=None, _func=func, **kwargs):
@@ -158,14 +100,13 @@ def path_wrapper(func):
 
 # imports #####################################################################
 
+from logilab.common.decorators import classproperty
+
 from logilab.astng.manager import ASTNGManager, Project, Package
 MANAGER = ASTNGManager()
 
 from logilab.astng.nodes import *
-from logilab.astng import nodes
 from logilab.astng.scoped_nodes import *
 from logilab.astng import inference
 from logilab.astng import lookup
 lookup._decorate(nodes)
-
-from logilab.astng.utils import Instance, InstanceMethod, YES, NONE, TRUE, FALSE

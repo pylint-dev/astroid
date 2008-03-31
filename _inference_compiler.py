@@ -1,8 +1,7 @@
 
 from logilab.astng import nodes
-from logilab.astng import (MANAGER, YES, ASTNGError, InferenceError, Instance,
-                           _infer_stmts, path_wrapper)
-from logilab.astng.utils import infer_end, end_ass_type
+from logilab.astng import MANAGER, YES, ASTNGError, InferenceError, \
+     NotFoundError, Instance, path_wrapper
 
 nodes.Const.__bases__ += (Instance,)
 nodes.Const._proxied = None
@@ -31,7 +30,7 @@ def Const_pytype(self):
 nodes.Const.pytype = Const_pytype
 
 
-nodes.Const.infer = infer_end
+nodes.Const.infer = nodes.infer_end
 
 def infer_empty_node(self, context=None):
     if not self.has_underlying_object():
@@ -51,7 +50,7 @@ def infer_assname(self, context=None):
     assign node
     """
     stmts = self.assigned_stmts(context=context)
-    return _infer_stmts(stmts, context)
+    return nodes._infer_stmts(stmts, context)
 nodes.AssName.infer = path_wrapper(infer_assname)
 
 
@@ -60,7 +59,7 @@ def infer_assattr(self, context=None):
     assign node
     """
     stmts = self.assigned_stmts(context=context)
-    return _infer_stmts(stmts, context)
+    return nodes._infer_stmts(stmts, context)
 nodes.AssAttr.infer = path_wrapper(infer_assattr)
 
 
@@ -158,8 +157,8 @@ nodes.For.assigned_stmts = for_assigned_stmts
 nodes.ListCompFor.assigned_stmts = for_assigned_stmts
 nodes.GenExprFor.assigned_stmts = for_assigned_stmts
 
-nodes.ListCompFor.ass_type = end_ass_type
-nodes.GenExprFor.ass_type = end_ass_type
+nodes.ListCompFor.ass_type = nodes.end_ass_type
+nodes.GenExprFor.ass_type = nodes.end_ass_type
 def parent_ass_type(self):
     return self.parent.ass_type()
 nodes.AssName.ass_type = parent_ass_type

@@ -22,8 +22,6 @@
 
 __docformat__ = "restructuredtext en"
 
-from logilab.astng.utils import infer_end, NoneType, Bool
-
 from _ast import (Add, And, Assert, Assign, AugAssign,
                   Break,
                   Compare, Continue,
@@ -34,7 +32,7 @@ from _ast import (Add, And, Assert, Assign, AugAssign,
                   If, Import, Invert,
                   Lambda, List, ListComp, 
                   Mod, Module, 
-                  Not,
+                  Name, Not,
                   Or,
                   Pass, Print,
                   Raise, Return,
@@ -59,9 +57,8 @@ from _ast import (AST as Node,
                   RShift as RightShift,
                   UAdd as UnaryAdd,
                   USub as UnarySub,
-
-                  Name,
                   )
+
 # XXX : AugLoad, AugStore, Attribute
 #       BinOp, BoolOp
 #       Del, Delete
@@ -75,6 +72,23 @@ from _ast import (AST as Node,
 #       UnaryOp
 from _ast import Num, Str, Eq, Expr, alias, arguments, comprehension
 Const = (Num, Str)
+
+Node.is_statement = False
+Expr.is_statement = True
+If.is_statement = True
+TryExcept.is_statement = True
+TryFinally.is_statement = True
+While.is_statement = True
+For.is_statement = True
+With.is_statement = True
+Import.is_statement = True
+From.is_statement = True
+Class.is_statement = True
+Function.is_statement = True
+Yield.is_statement = True
+Return.is_statement = True
+Continue.is_statement = True
+Break.is_statement = True
 
 class EmptyNode(Node): pass
 
@@ -94,12 +108,9 @@ Getattr.getChildNodes = _get_children_value
 def _get_children_nochildren(self):
     return ()
 Import.getChildNodes = _get_children_nochildren
-print 'patching', Name, id(Name)
 Name.getChildNodes = _get_children_nochildren
 Str.getChildNodes = _get_children_nochildren
 Num.getChildNodes = _get_children_nochildren
-NoneType.getChildNodes = _get_children_nochildren
-Bool.getChildNodes = _get_children_nochildren
 Pass.getChildNodes = _get_children_nochildren
 Eq.getChildNodes = _get_children_nochildren
 
@@ -170,17 +181,25 @@ def _init_set_doc(node):
         node.doc = node.body[0].value.s
     print 'set doc', node
     return node
-init_module = init_function = init_class = _init_set_doc
+init_module = init_class = _init_set_doc
 
+def init_function(node):
+    _init_set_doc(node)
+    node.argnames = [n.id for n in node.args.args]
+    node.defaults = node.args.defaults
+    if node.args.vararg:
+        node.argnames.append(node.args.vararg)
+    if node.args.kwarg:
+        node.argnames.append(node.args.kwarg)
+    
 def init_import(node):
     node.names = [(alias.name, alias.asname) for alias in node.names]
     return node
 
 def init_assign(node):
     return node
-    
+
 # raw building ################################################################
-from logilab.astng.utils import NoneType, Bool
 
 def _add_docstring(node, doc):
     node.doc = doc
@@ -213,14 +232,8 @@ def import_from_factory(modname, membername):
     node.names = [aliasnode]
     return node
 
-def const_factory(value):
-    if value is None:
-        node = NoneType(None)
-    elif value is True:
-        node = Bool(False)
-    elif value is False:
-        node = Bool(True)
-    elif isinstance(value, (int, long, complex)):
+def _const_factory(value):
+    if isinstance(value, (int, long, complex)):
         node = Num()
     elif isinstance(value, basestring):
         node = Str()

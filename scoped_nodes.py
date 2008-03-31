@@ -33,12 +33,12 @@ import sys
 from logilab.common.compat import chain, set
 
 from logilab.astng import MANAGER, InferenceContext, copy_context, \
-     unpack_infer, _infer_stmts, \
-     Class, Const, Dict, Function, GenExpr, Lambda, \
+     unpack_infer, Class, Const, Dict, Function, GenExpr, Lambda, \
      Module, Name, Pass, Raise, Tuple, Yield
 from logilab.astng import NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
-from logilab.astng.utils import YES, extend_class, Instance
+from logilab.astng.utils import extend_class
+from logilab.astng.nodes import YES, Instance, _infer_stmts
 
 # module class dict/iterator interface ########################################
     
@@ -85,6 +85,7 @@ class LocalsDictMixIn(object):
 
         if the name is already defined, ignore it
         """
+        assert self.locals is not None, (self, id(self))
         self.locals.setdefault(name, []).append(stmt)
         
     __setitem__ = set_local

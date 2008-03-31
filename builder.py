@@ -36,9 +36,9 @@ from inspect import isdatadescriptor
 from logilab.common.fileutils import norm_read
 from logilab.common.modutils import modpath_from_file
 
-from logilab.astng import nodes, YES, Instance
-from logilab.astng.utils import ASTWalker
+from logilab.astng import nodes
 from logilab.astng._exceptions import ASTNGBuildingException, InferenceError
+from logilab.astng.utils import ASTWalker
 from logilab.astng.raw_building import *
 
 try:
@@ -133,8 +133,7 @@ class ASTNGBuilder:
         return self.ast_build(parse(data + '\n'), modname, path)
        
     def ast_build(self, node, modname=None, path=None):
-        """recurse on the ast (soon ng) to add some arguments et method
-        """
+        """recurse on the ast (soon ng) to add some arguments et method"""
         if path is not None:
             node.file = node.path = abspath(path)
         else:
@@ -146,6 +145,7 @@ class ASTNGBuilder:
             node.package = path and path.find('__init__.py') > -1 or False
         node.name = modname 
         node.pure_python = True
+        self._asscontext = None
         if self._manager is not None:
             self._manager._cache[node.file] = node
             if self._file:
@@ -157,16 +157,50 @@ class ASTNGBuilder:
         return node
 
     # callbacks to build from an existing compiler.ast tree ###################
+    if nodes.AST_MODE == '_ast':
+        def set_context(self, node, childnode):
+            if isinstance(node, nodes.Assign):
+                if childnode in node.targets:
+                    self._asscontext = node
+                else:
+                    self._asscontext = None
+            elif isinstance(node, nodes.AugAssign):
+                if childnode is node.target:
+                    self._asscontext = node
+                else:
+                    self._asscontext = None
+    else:
+        def set_context(self, node, childnode):
+            pass
 
+        def visit_augassign(self, node):
+            """visit a stmt.AugAssign node -> add name to locals"""
+            self.visit_default(node)
+            if not isinstance(node.node, nodes.Name):
+                return  # XXX
+            self._add_local(node, node.node.name)
+        
+    def visit_default(self, node):
+        """default visit method, handle the parent attribute"""
+        node.parent = self._par_stack[-1]
+        assert node.parent is not node
+        self._par_stack.append(node)
+
+    def leave_default(self, _):       
+        """default leave method, handle the parent attribute"""
+        self._par_stack.pop()             
+                
     def visit_module(self, node):
         """visit a stmt.Module node -> init node and push the corresponding
         object or None on the top of the stack
         """
+        
         self._stack = [self._module]
         self._par_stack = [node]
         self._metaclass = ['']
         self._global_names = []
         node.globals = node.locals = {}
+        print nodes.init_module
         nodes.init_module(node)
         for name, value in ( ('__name__', node.name),
                              ('__file__', node.path),
@@ -176,7 +210,7 @@ class ASTNGBuilder:
             node.locals[name] = [const]
         if node.package:
             # FIXME: List(Const())
-            const = const_factory(value)
+            const = nodes.const_factory(value)
             const.parent = node
             node.locals['__path__'] = [const]
         attach___dict__(node)
@@ -228,15 +262,15 @@ class ASTNGBuilder:
         """
         self.visit_default(node)
         self._global_names.append({})
-        node.argnames = list(node.argnames)
         nodes.init_function(node)
         if isinstance(node.parent.frame(), nodes.Class):
-            node.type = 'method'
             if node.name == '__new__':
                 node.type = 'classmethod'
+            else:
+                node.type = 'method'
         self._push(node)
         register_arguments(node, node.argnames)
-    visit_funcdef = visit_function
+    visit_functiondef = visit_function
     
     def leave_function(self, node):
         """leave a stmt.Function node -> pop the last item on the stack
@@ -244,7 +278,7 @@ class ASTNGBuilder:
         self.leave_default(node)
         self._stack.pop()
         self._global_names.pop()
-    leave_funcdef = leave_function
+    leave_functiondef = leave_function
         
     def visit_lambda(self, node):
         """visit a stmt.Lambda node -> init node locals
@@ -305,23 +339,14 @@ class ASTNGBuilder:
                     node.parent.set_local(name, node)
             else:
                 node.parent.set_local(asname or name, node)
-
-    def leave_decorators(self, node):
-        """python >= 2.4
-        visit a stmt.Decorator node -> check for classmethod and staticmethod
-        """
-        func = node.parent
-        for decorator_expr in node.nodes:
-            if isinstance(decorator_expr, nodes.Name) and \
-                   decorator_expr.name in ('classmethod', 'staticmethod'):
-                func.type = decorator_expr.name
-        self.leave_default(node)
-        
+    visit_importfrom = visit_from
+    
     def visit_assign(self, node):
         """visit a stmt.Assign node -> check for classmethod and staticmethod
         + __metaclass__
         """
         self.visit_default(node)
+        nodes.init_assign(node)
         klass = node.parent.frame()
         #print node
         if isinstance(klass, nodes.Class) and \
@@ -341,27 +366,50 @@ class ASTNGBuilder:
                         continue
         elif getattr(node.targets[0], 'name', None) == '__metaclass__': # XXX check more...
             self._metaclass[-1] = 'type' # XXX get the actual metaclass
-
-    def visit_assname(self, node):
-        """visit a stmt.AssName node -> add name to locals
-        """
+        
+    def visit_name(self, node):
+        try:
+            cls, value = nodes.CONST_NAME_TRANSFORMS[node.name]
+            node.__class__ = cls
+            node.value = value
+        except KeyError:
+            pass        
         self.visit_default(node)
-        self._add_local(node, node.name)
-
-    def visit_augassign(self, node):
-        """visit a stmt.AssName node -> add name to locals
-        """
-        self.visit_default(node)
-        if not isinstance(node.node, nodes.Name):
-            return  # XXX
-        self._add_local(node, node.node.name)
-
+        if self._asscontext is not None:
+            self._add_local(node, node.name)
+        
     def _add_local(self, node, name):
         if self._global_names and name in self._global_names[-1]:
             node.root().set_local(name, node)
         else:
             node.parent.set_local(name, node)
+
+    def _push(self, node):
+        """update the stack and init some parts of the Function or Class node
+        """
+        obj = getattr(self._stack[-1], node.name, None)
+        self._stack.append(obj)
+        node.locals = {}
+        node.parent.frame().set_local(node.name, node)
         
+    # py2.4 (compiler mode) only callbacks ####################################
+
+    def leave_decorators(self, node):
+        """python >= 2.4
+        visit a stmt.Decorator node -> check for classmethod and staticmethod
+        """
+        func = node.parent
+        for decorator_expr in node.nodes:
+            if isinstance(decorator_expr, nodes.Name) and \
+                   decorator_expr.name in ('classmethod', 'staticmethod'):
+                func.type = decorator_expr.name
+        self.leave_default(node)
+            
+    def visit_assname(self, node):
+        """visit a stmt.AssName node -> add name to locals"""
+        self.visit_default(node)
+        self._add_local(node, node.name)
+
     def visit_assattr(self, node):
         """visit a stmt.AssAttr node -> delay it to handle members
         definition later
@@ -373,18 +421,21 @@ class ASTNGBuilder:
         """visit a stmt.AssAttr node -> add name to locals, handle members
         definition
         """
+        #print 'delayted', node, node.attrname
         try:
             frame = node.frame()
             for infered in node.expr.infer():
-                if infered is YES:
+                if infered is nodes.YES:
                     continue
                 try:
-                    if infered.__class__ is Instance:
+                    if infered.__class__ is nodes.Instance:
                         infered = infered._proxied
                         iattrs = infered.instance_attrs
                     else:
                         iattrs = infered.locals
                 except AttributeError:
+                    import traceback
+                    traceback.print_exc()
                     continue
                 values = iattrs.setdefault(node.attrname, [])
                 if node in values:
@@ -400,25 +451,57 @@ class ASTNGBuilder:
             #print frame, node
             pass
         
-    def visit_default(self, node):
-        """default visit method, handle the parent attribute
-        """
-        node.parent = self._par_stack[-1]
-        assert node.parent is not node
-        self._par_stack.append(node)
+    # py2.5 (ast mode) only callbacks #########################################
 
-    def leave_default(self, _):       
-        """default leave method, handle the parent attribute
+    def visit_attribute(self, node):
+        """visit a stmt.Attribute node under a Assign -> delay it to handle
+        members definition later
         """
-        self._par_stack.pop()             
+        self.visit_default(node)
+        if self._asscontext is not None:
+            self._delayed.append(node)
+    
+    def visit_str(self, node):
+        node.value = node.s
+        self.visit_default(node)
+        
+    def visit_num(self, node):
+        node.value = node.n
+        self.visit_default(node)
 
-    def _push(self, node):
-        """update the stack and init some parts of the Function or Class node
+    def delayed_visit_attribute(self, node):
+        """visit a stmt.AssAttr node -> add name to locals, handle members
+        definition
         """
-        obj = getattr(self._stack[-1], node.name, None)
-        self._stack.append(obj)
-        node.locals = {}
-        node.parent.frame().set_local(node.name, node)
+        #print 'delayted', node, node.attrname
+        try:
+            frame = node.frame()
+            for infered in node.value.infer():
+                if infered is nodes.YES:
+                    continue
+                try:
+                    if infered.__class__ is nodes.Instance:
+                        infered = infered._proxied
+                        iattrs = infered.instance_attrs
+                    else:
+                        iattrs = infered.locals
+                except AttributeError:
+                    import traceback
+                    traceback.print_exc()
+                    continue
+                values = iattrs.setdefault(node.attr, [])
+                if node in values:
+                    continue
+                # get assign in __init__ first XXX useful ?
+                if frame.name == '__init__' and values and not \
+                       values[0].frame().name == '__init__':
+                    values.insert(0, node)
+                else:
+                    values.append(node)
+                #print node.attrname, infered, values
+        except InferenceError:
+            #print frame, node
+            pass
 
     # astng from living objects ###############################################
     #

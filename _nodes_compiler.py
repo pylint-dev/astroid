@@ -61,6 +61,14 @@ except:
         """dummy With node, shouldn't be used since py < 2.5"""
 
 
+def is_statement(self):
+    """return true if the node should be considered as statement node
+    """
+    if isinstance(self.parent, Stmt):
+        return self
+    return None
+Node.is_statement = property(is_statement)
+
 def assattr_as_string(node):
     """return an ast.AssAttr node as string"""
     if node.flags == 'OP_DELETE':
@@ -195,6 +203,7 @@ def init_module(node):
     return node
 
 def init_function(node):
+    node.argnames = list(node.argnames)
     return node
 
 def init_class(node):
@@ -209,8 +218,6 @@ def init_assign(node):
     return node
 
 # raw building ################################################################
-
-from logilab.astng.utils import NoneType, Bool
 
 def module_factory(doc):
     node = Module(doc, Stmt([]))
@@ -227,16 +234,8 @@ else:
     def import_from_factory(modname, membername):
         return From(modname, ( (membername, None), ), 0)
 
-def const_factory(value):
-    if value is None:
-        nodecls = NoneType
-    elif value is True:
-        nodecls = Bool
-    elif value is False:
-        nodecls = Bool
-    else:
-        nodecls = Const
-    return nodecls(value)    
+def _const_factory(value):
+    return Const(value)    
 
 # introduction of decorators has changed the Function initializer arguments
 if sys.version_info >= (2, 4):
@@ -261,15 +260,12 @@ def class_factory(name, basenames=None, doc=None):
     bases = [Name(base) for base in basenames]
     for base in bases:
         base.parent = klass
-    klass.basenames = basenames
     klass.bases = bases
     klass.code.parent = klass
-    klass.locals = {}
-    klass.instance_attrs = {}
     for name, value in ( ('__name__', name),
                          #('__module__', node.root().name),
                          ):
-        const = Const(value)
+        const = const_factory(value)
         const.parent = klass
         klass.locals[name] = [const]
     return klass
