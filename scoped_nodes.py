@@ -89,6 +89,11 @@ class LocalsDictMixIn(object):
         self.locals.setdefault(name, []).append(stmt)
         
     __setitem__ = set_local
+
+    def _append_node(self, child):
+        """append a child, linking it in the tree"""
+        self.body.append(child)
+        child.parent = self
     
     def add_local_node(self, child_node, name=None):
         """append a child which should alter locals to the given node"""
@@ -194,6 +199,9 @@ class ModuleNG(object):
     (see below the class definition)
     """
         
+
+    Module.fromlineno = 0
+    Module.tolineno = 0
     # attributes below are set by the builder module or by raw factories
 
     # the file from which as been extracted the astng representation. It may
@@ -360,7 +368,7 @@ class FunctionNG(object):
                 name = '(%s)' % ','.join(name)
             if i == last and kwargs:
                 name = '**%s' % name
-            elif args and i == last or (kwargs and i == last - 1):
+            elif args and (i == last or (kwargs and i == last - 1)):
                 name = '*%s' % name
             elif i >= default_idx:
                 default_str = self.defaults[i - default_idx].as_string()

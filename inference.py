@@ -44,7 +44,8 @@ nodes.Tuple.pytype = lambda x: '__builtin__.tuple'
 nodes.Dict.__bases__ += (Instance,)
 nodes.Dict._proxied = MANAGER.astng_from_class(dict)
 nodes.Dict.pytype = lambda x: '__builtin__.dict'
-nodes.NoneType._proxied = MANAGER.astng_from_class(dict)
+nodes.NoneType._proxied = MANAGER.astng_from_module_name('types').getattr('NoneType')
+print nodes.NoneType._proxied
 nodes.NoneType.pytype = lambda x: 'types.NoneType'
 nodes.Bool._proxied = MANAGER.astng_from_class(bool)
 
@@ -389,21 +390,23 @@ def _infer_operator(self, context=None, impl=None, meth='__method__'):
             node.value = value
             yield node
 
-def infer_sub(self, context=None):
-    return _infer_operator(self, context=context, impl=lambda a,b: a-b, meth='__sub__')
-nodes.Sub.infer = path_wrapper(infer_sub)
-
-def infer_add(self, context=None):
-    return _infer_operator(self, context=context, impl=lambda a,b: a+b, meth='__add__')
-nodes.Add.infer = path_wrapper(infer_add)
-
-def infer_mul(self, context=None):
-    return _infer_operator(self, context=context, impl=lambda a,b: a*b, meth='__mul__')
-nodes.Mul.infer = path_wrapper(infer_mul)
-
-def infer_div(self, context=None):
-    return _infer_operator(self, context=context, impl=lambda a,b: a/b, meth='__div__')
-nodes.Div.infer = path_wrapper(infer_div)
+BIN_OP_IMPL = {'+':  (lambda a,b: a+b, '__add__'),
+               '-':  (lambda a,b: a-b, '__sub__'),
+               '/':  (lambda a,b: a/b, '__div__'),
+               '//': (lambda a,b: a//b, '__floordiv__'),
+               '*':  (lambda a,b: a*b, '__mul__'),
+               '**': (lambda a,b: a**b, '__power__'),
+               '%':  (lambda a,b: a%b, '__mod__'),
+               '&':  (lambda a,b: a&b, '__and__'),
+               '|':  (lambda a,b: a|b, '__or__'),
+               '^':  (lambda a,b: a^b, '__xor__'),
+               '<<':  (lambda a,b: a^b, '__lshift__'),
+               '>>':  (lambda a,b: a^b, '__rshift__'),
+               }
+def infer_binop(self, context=None):
+    impl, meth = BIN_OP_IMPL[self.op]
+    return _infer_operator(self, context=context, impl=impl, meth=meth)
+nodes.BinOp.infer = path_wrapper(infer_sub)
     
 # .infer_call_result method ###################################################
 def callable_default(self):
@@ -532,12 +535,12 @@ nodes.AugAssign.ass_type = end_ass_type
 # subscription protocol #######################################################
         
 def tl_getitem(self, index):
-    return self.nodes[index]
+    return self.elts[index]
 nodes.List.getitem = tl_getitem
 nodes.Tuple.getitem = tl_getitem
         
 def tl_iter_stmts(self):
-    return self.nodes
+    return self.elts
 nodes.List.iter_stmts = tl_iter_stmts
 nodes.Tuple.iter_stmts = tl_iter_stmts
 

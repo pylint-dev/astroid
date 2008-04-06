@@ -157,14 +157,11 @@ nodes.For.assigned_stmts = for_assigned_stmts
 nodes.ListCompFor.assigned_stmts = for_assigned_stmts
 nodes.GenExprFor.assigned_stmts = for_assigned_stmts
 
-nodes.ListCompFor.ass_type = nodes.end_ass_type
-nodes.GenExprFor.ass_type = nodes.end_ass_type
 def parent_ass_type(self):
     return self.parent.ass_type()
-nodes.AssName.ass_type = parent_ass_type
-nodes.AssAttr.ass_type = parent_ass_type
 nodes.AssTuple.ass_type = parent_ass_type
 nodes.AssList.ass_type = parent_ass_type
+
 def assend_ass_type(self, context=None):
     # only infer *real* assignments
     if self.flags == 'OP_DELETE':
@@ -173,7 +170,8 @@ def assend_ass_type(self, context=None):
 nodes.AssName.ass_type = assend_ass_type
 nodes.AssAttr.ass_type = assend_ass_type
 
-
+nodes.ListCompFor.ass_type = nodes.end_ass_type
+nodes.GenExprFor.ass_type = nodes.end_ass_type
 
 def for_loop_node(self):
     return self.list

@@ -10,12 +10,15 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-"""python < 2.5 compiler package compatibility module
+"""python < 2.5 compiler package compatibility module [1]
+
+
+ [1] http://docs.python.org/lib/module-compiler.ast.html
 
 :author:    Sylvain Thenault
-:copyright: 2008 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2008 Sylvain Thenault
+:copyright: 2003-2008 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 from __future__ import generators
@@ -23,17 +26,19 @@ from __future__ import generators
 __docformat__ = "restructuredtext en"
 
 import sys
-from compiler.ast import Add, And, AssAttr, AssList, AssName, \
+from compiler.ast import AssAttr, AssList, AssName, \
      AssTuple, Assert, Assign, AugAssign, \
-     Backquote, Bitand, Bitor, Bitxor, Break, CallFunc, Class, \
-     Compare, Const, Continue, Dict, Discard, Div, \
-     Ellipsis, EmptyNode, Exec, FloorDiv, \
+     Backquote, Break, CallFunc, Class, \
+     Compare, Const, Continue, Dict, Discard, \
+     Ellipsis, EmptyNode, Exec, \
      For, From, Function, Getattr, Global, \
-     If, Import, Invert, Keyword, Lambda, LeftShift, \
-     List, ListComp, ListCompFor, ListCompIf, Mod, Module, Mul, Name, Node, \
-     Not, Or, Pass, Power, Print, Printnl, Raise, Return, RightShift, Slice, \
-     Sliceobj, Stmt, Sub, Subscript, TryExcept, TryFinally, Tuple, UnaryAdd, \
-     UnarySub, While, Yield
+     If, Import, Invert, Keyword, Lambda, \
+     List, ListComp, ListCompFor, ListCompIf, Module, Name, Node, \
+     Pass, Print, Raise, Return, Slice, \
+     Sliceobj, Stmt, Subscript, TryExcept, TryFinally, Tuple, \
+     While, Yield
+
+
 try:
     # introduced in python 2.4
     from compiler.ast import GenExpr, GenExprFor, GenExprIf, GenExprInner
@@ -60,14 +65,79 @@ except:
     class With:
         """dummy With node, shouldn't be used since py < 2.5"""
 
+# additional nodes
 
-def is_statement(self):
-    """return true if the node should be considered as statement node
-    """
-    if isinstance(self.parent, Stmt):
-        return self
-    return None
-Node.is_statement = property(is_statement)
+class ExceptHandler(Node):
+    _fields = ['type', 'name', 'body']
+    def __init__(self, type, name, body, lineno):
+        self.type = type
+        self.name = name
+        self.body = body
+        self.lineno = lineno
+
+class BinOp(Node):
+    """replace Add, Div, FloorDiv, Mod, Mul, Power, Sub nodes"""
+    from compiler.ast import Add, Div, FloorDiv, Mod, Mul, Power, Sub
+    from compiler.ast import Bitand, Bitor, Bitxor, LeftShift, RightShift
+    OP_CLASSES = {Add: '+',
+                  Div: '/',
+                  FloorDiv: '//',
+                  Mod: '%',
+                  Mul: '*',
+                  Power: '**',
+                  Sub: '-',
+                  Bitand: '&',
+                  Bitor: '|',
+                  Bitxor: '^',
+                  LeftShift: '<<',
+                  RightShift: '>>'}
+    _fields = ['left', 'right']
+    
+class BoolOp(Node):
+    """replace And, Or"""
+    from compiler.ast import And, Or
+    OP_CLASSES = {And: 'and',
+                  Or: 'or'}
+    _fields = ['values']
+    
+class UnaryOp(Node):
+    """replace UnaryAdd, UnarySub, Not"""
+    from compiler.ast import UnaryAdd, UnarySub, Not
+    OP_CLASSES = {UnaryAdd: '+',
+                  UnarySub: '-',
+                  Not: 'not'}
+    _fields = ['operand']
+
+    
+###############################################################################
+        
+Assign._fields = ['targets', 'value']
+AugAssign._fields = ['target', 'value']
+Break._fields = []
+Continue._fields = []
+Discard._fields = ['value']
+From._fields = []
+Exec._fields = ['expr', 'globals', 'locals']
+For._fields = ['target', 'iter', 'body', 'orelse']
+Global._fields = []
+Import._fields = []
+Module._fields = ['body']
+Name._fields = []
+Pass._fields = []
+Print._fields = ['dest', 'values']
+Return._fields = ['value']
+TryExcept._fields = ['body', 'handlers', 'orelse']
+TryFinally._fields = ['body', 'finalbody']
+While._fields = ['test', 'body', 'orelse']
+Yield._fields = ['value']
+
+
+If._fields = ['test', 'body', 'orelse']
+Class._fields = ['body']
+Function._fields = ['body']
+Lambda._fields = ['body']
+
+COMPREHENSIONS_SCOPES = (GenExprFor, ListCompFor)
 
 def assattr_as_string(node):
     """return an ast.AssAttr node as string"""
@@ -107,11 +177,6 @@ def decorators_scope(self):
     # skip the function node to go directly to the upper level scope
     return self.parent.parent.scope()
 Decorators.scope = decorators_scope
-
-def discard_as_string(node):
-    """return an ast.Discard node as string"""
-    return node.expr.as_string()
-Discard.as_string = discard_as_string
 
 def empty_as_string(node):
     return ''
@@ -162,66 +227,139 @@ def listcompif_as_string(node):
     return 'if %s' % node.test.as_string()
 ListCompIf.as_string = listcompif_as_string
 
-def printnl_as_string(node):
-    """return an ast.Printnl node as string"""
-    nodes = ', '.join([n.as_string() for n in node.nodes])
-    if node.dest:
-        return 'print >> %s, %s' % (node.dest.as_string(), nodes)
-    return 'print %s' % nodes
-Printnl.as_string = printnl_as_string
-
 def sliceobj_as_string(node):
     """return an ast.Sliceobj node as string"""
     return ':'.join([n.as_string() for n in node.nodes])
 Sliceobj.as_string = sliceobj_as_string
 
-def stmt_as_string(node):
-    """return an ast.Stmt node as string"""
-    stmts = '\n'.join([n.as_string() for n in node.nodes])
-    if isinstance(node.parent, Module):
-        return stmts
-    return stmts.replace('\n', '\n    ')
-Stmt.as_string = stmt_as_string
-
 # scoped nodes ################################################################
 
-def module_append_node(self, child_node):
-    """append a child version specific to Module node"""
-    self.node.nodes.append(child_node)
-    child_node.parent = self
-Module._append_node = module_append_node
-
-def _append_node(self, child_node):
-    """append a child, linking it in the tree"""
-    self.code.nodes.append(child_node)
-    child_node.parent = self
-Class._append_node = _append_node
-Function._append_node = _append_node
-
-#
-def init_module(node):
-    return node
-
 def init_function(node):
+    # remove Stmt node
+    node.body = node.code.nodes
+    del node.code
     node.argnames = list(node.argnames)
-    return node
+init_lambda = init_function
 
 def init_class(node):
-    return node
+    # remove Stmt node
+    node.body = node.code.nodes
+    del node.code
 
-def init_import(node):
-    return node
+def init_if(node):
+    node.test =
+    node.body =
+    node.orelse = 
+
+# validated
 
 def init_assign(node):
     node.value = node.expr
+    del node.expr
     node.targets = node.nodes
-    return node
+    del node.nodes
 
+def init_augassign(node):
+    node.value = node.expr
+    del node.expr
+    node.target = node.node
+    del node.node
+
+def init_binop(node):
+    node.op = BinOp.OP_CLASSES[node.__class__]
+    node.__class__ = BinOp
+
+def init_boolop(node):
+    node.op = BoolOp.OP_CLASSES[node.__class__]
+    node.__class__ = BoolOp
+    node.values = node.nodes
+    del node.nodes
+
+def init_compare(node):
+    node.left = node.expr
+    del node.expr
+
+def init_dict(node):
+    pass
+    
+def init_discard(node):
+    node.value = node.expr
+    del node.expr
+
+def init_exec(node):
+    pass
+
+def init_for(node):
+    node.target = node.assign
+    del node.assign
+    node.iter = node.list
+    del node.list
+    node.body = node.body.nodes
+    node.orelse = node.else_
+    del node.else_
+    
+def init_import(node):
+    pass
+
+def init_import_from(node):
+    pass
+
+def init_list(node):
+    node.elts = node.nodes
+    del node.nodes
+    
+def init_module(node):
+    # remove Stmt node
+    node.body = node.node.nodes
+    del node.node
+
+def init_name(node):
+    pass
+
+def init_print(node, nl=False):
+    node.values = node.nodes
+    del node.nodes
+    node.nl = nl
+
+def init_printnl(node):
+    node.__class__ = Print
+    init_print(node, True)
+
+def init_try_except(node):
+    node.body = node.body.nodes
+    node.handlers = [ExceptHandler(exctype, excobj, body, node.lineno)
+                     for exctype, excobj, body in node.handlers]
+    if node.else_:
+        node.orelse = node.else_.nodes
+    else:
+        node.orelse = []
+
+def init_try_finally(node):
+    node.body = node.body.nodes
+    node.finalbody = node.final
+    del node.final
+
+init_tuple = init_list
+
+def init_unaryop(node):
+    node.op = UnaryOp.OP_CLASSES[node.__class__]
+    node.__class__ = UnaryOp
+    node.operand = node.expr
+    del node.expr
+
+def init_while(node):
+    node.body = node.body.nodes
+    del node.body
+    node.orelse = node.else_
+    del node.else_
+
+        
 # raw building ################################################################
 
 def module_factory(doc):
-    node = Module(doc, Stmt([]))
-    node.node.parent = node
+    node = Module(doc, None)
+    del node.node
+    node.body = []
     return node
     
 def dict_factory():
@@ -242,30 +380,28 @@ if sys.version_info >= (2, 4):
     def function_factory(name, args, defaults, flag=0, doc=None):
         """create and initialize a astng Function node"""
         # first argument is now a list of decorators
-        func = Function(Decorators([]), name, args, defaults, flag, doc,
-                        Stmt([]))
-        func.code.parent = func
+        func = Function(Decorators([]), name, args, defaults, flag, doc, None)
+        del func.code
+        func.body = []
         return func
     
 else:    
     def function_factory(name, args, defaults, flag=0, doc=None):
         """create and initialize a astng Function node"""
-        func = Function(name, args, defaults, flag, doc, Stmt([]))
-        func.code.parent = func
+        func = Function(name, args, defaults, flag, doc, None)
+        del func.code
+        func.body = []
         return func
 
 def class_factory(name, basenames=None, doc=None):
     """create and initialize a astng Class node"""
-    klass = Class(name, [], doc, Stmt([]))
+    node = Class(name, [], doc, None)
+    del node.code
+    node.body = []
     bases = [Name(base) for base in basenames]
     for base in bases:
-        base.parent = klass
-    klass.bases = bases
-    klass.code.parent = klass
-    for name, value in ( ('__name__', name),
-                         #('__module__', node.root().name),
-                         ):
-        const = const_factory(value)
-        const.parent = klass
-        klass.locals[name] = [const]
-    return klass
+        base.parent = node
+    node.bases = bases
+    return node
+
+class Proxy_: pass

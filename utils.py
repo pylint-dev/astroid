@@ -51,17 +51,41 @@ class ASTWalker:
     * leave_<class name> on leaving a node, where class name is the class of
     the node in lower case
     """
+    REDIRECT = {'Expr': 'Discard',
+                'ImportFrom': 'From',
+
+                'Add': 'BinOp',
+                'Bitand': 'BinOp',
+                'Bitor': 'BinOp',
+                'Bitxor': 'BinOp',
+                'Div': 'BinOp',
+                'FloorDiv': 'BinOp',
+                'LeftShift': 'BinOp',
+                'Mod': 'BinOp',
+                'Mul': 'BinOp',
+                'Power': 'BinOp',
+                'RightShift': 'BinOp',
+                'Sub': 'BinOp',
+
+                'And': 'BoolOp',
+                'Or': 'BoolOp',
+                
+                'UnaryAdd': 'UnaryOp',
+                'UnarySub': 'UnaryOp',
+                'Not': 'UnaryOp',
+                }
+    
     def __init__(self, handler):
         self.handler = handler
         self._cache = {}
         
     def walk(self, node, _done=None):
-        """walk on the tree from <node>, getting callbacks from handler
-        """
+        """walk on the tree from <node>, getting callbacks from handler"""
+        print 'walking on', node, id(node)
         if _done is None:
             _done = set()
         if node in _done:
-            raise AssertionError((id(node), node.parent))
+            raise AssertionError((id(node), node, node.parent))
         _done.add(node)
         try:            
             self.visit(node)
@@ -70,7 +94,7 @@ class ASTWalker:
         else:
             #print 'visit', node, id(node)
             try:
-                for child_node in node.getChildNodes():
+                for child_node in node.get_children():
                     self.handler.set_context(node, child_node)
                     assert child_node is not node
                     self.walk(child_node, _done)
@@ -81,13 +105,12 @@ class ASTWalker:
         assert node.parent is not node
 
     def get_callbacks(self, node):
-        """get callbacks from handler for the visited node
-        """
+        """get callbacks from handler for the visited node"""
         klass = node.__class__
         methods = self._cache.get(klass)
         if methods is None:
             handler = self.handler
-            kid = klass.__name__.lower()
+            kid = self.REDIRECT.get(klass.__name__, klass.__name__).lower()
             e_method = getattr(handler, 'visit_%s' % kid,
                                getattr(handler, 'visit_default', None))
             l_method = getattr(handler, 'leave_%s' % kid, 

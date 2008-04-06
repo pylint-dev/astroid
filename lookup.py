@@ -55,6 +55,7 @@ def scope_lookup(self, node, name, offset=0):
         stmts = node._filter_stmts(self.locals[name], self, offset)
     except KeyError:
         stmts = ()
+        print 'hargs', name
     except :
         print self, self.locals
         raise
@@ -146,22 +147,24 @@ def _filter_stmts(self, stmts, frame, offset):
     _stmt_parents = []
     #print '-'*60
     #print 'filtering', stmts, mylineno
+    print self, mystmt
     for node in stmts:
         stmt = node.statement()
+        print node, stmt
         # line filtering is on and we have reached our location, break
         if mylineno > 0 and stmt.source_line() > mylineno:
             #print 'break', mylineno, stmt.source_line()
             break
-        if isinstance(node, Class) and self in node.bases:
+        if isinstance(node, nodes.Class) and self in node.bases:
             #print 'breaking on', self, node.bases            
             break
         try:
             ass_type = node.ass_type()
             if ass_type is mystmt:
-                if not isinstance(ass_type, (ListCompFor,  GenExprFor)):
+                if not isinstance(ass_type, nodes.COMPREHENSIONS_SCOPES):
                     #print 'break now2', self, ass_type
                     break
-                if isinstance(self, (Const, Name)):
+                if isinstance(self, (nodes.Const, nodes.Name)):
                     _stmts = [self]
                     #print 'break now', ass_type, self, node
                     break
@@ -170,7 +173,7 @@ def _filter_stmts(self, stmts, frame, offset):
         # on loop assignment types, assignment won't necessarily be done
         # if the loop has no iteration, so we don't want to clear previous
         # assigments if any
-        optional_assign = isinstance(ass_type, (For, ListCompFor,  GenExprFor))
+        optional_assign = isinstance(ass_type, nodes.LOOP_SCOPES)
         if optional_assign and ass_type.parent_of(self):
             # we are inside a loop, loop var assigment is hidding previous
             # assigment
@@ -193,7 +196,7 @@ def _filter_stmts(self, stmts, frame, offset):
                 #print 'removing', _stmts[pindex]
                 del _stmt_parents[pindex]
                 del _stmts[pindex]
-        if isinstance(node, AssName):
+        if isinstance(stmt, nodes.Assign):#isinstance(node, AssName):
             if not optional_assign and stmt.parent is mystmt.parent:
                 #print 'assign clear'
                 _stmts = []
@@ -203,6 +206,7 @@ def _filter_stmts(self, stmts, frame, offset):
                 _stmts = []
                 _stmt_parents = []
                 continue
+        print self, node
         if not are_exclusive(self, node):
             #print 'append', node, node.source_line()
             _stmts.append(node)
@@ -224,11 +228,4 @@ def _decorate(astmodule):
     astmodule.Lambda.scope_lookup = function_scope_lookup
     astmodule.Module.scope_lookup = scope_lookup
     astmodule.GenExpr.scope_lookup = scope_lookup
-    for name in ('Class', 'Function', 'Lambda',
-                 'For', 'Name', 'Const'):
-        globals()[name] = getattr(astmodule, name)
-    if hasattr(astmodule, 'ListCompFor'):
-        for name in ('ListCompFor', 'GenExprFor', 'AssName',):
-            globals()[name] = getattr(astmodule, name)
-    #else: XXX
         

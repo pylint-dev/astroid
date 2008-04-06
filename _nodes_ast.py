@@ -22,18 +22,17 @@
 
 __docformat__ = "restructuredtext en"
 
-from _ast import (Add, And, Assert, Assign, AugAssign,
+from _ast import (Assert, Assign, AugAssign,
                   Break,
                   Compare, Continue,
-                  Dict, Div, 
+                  Dict, 
                   Ellipsis, Exec, 
-                  FloorDiv, For,
+                  For,
                   Global, 
                   If, Import, Invert,
                   Lambda, List, ListComp, 
-                  Mod, Module, 
-                  Name, Not,
-                  Or,
+                  Module, 
+                  Name
                   Pass, Print,
                   Raise, Return,
                   Slice, Sub, Subscript, 
@@ -41,176 +40,278 @@ from _ast import (Add, And, Assert, Assign, AugAssign,
                   While, With,
                   Yield,
                   )
-
+                  
 from _ast import (AST as Node,
                   Attribute as Getattr,
-                  BitAnd as Bitand, BitOr as Bitor, BitXor as Bitxor,
                   Call as CallFunc,
                   ClassDef as Class,
                   FunctionDef as Function,
                   GeneratorExp as GenExpr,
-                  ImportFrom as From,
-                  LShift as LeftShift,
-                  Mult as Mul,
                   Repr as Backquote,
-                  Pow as Power,
-                  RShift as RightShift,
-                  UAdd as UnaryAdd,
-                  USub as UnarySub,
+                  
+                  Expr as Discard, 
+                  ImportFrom as From,
+                  excepthandler as ExceptHandler,
                   )
 
 # XXX : AugLoad, AugStore, Attribute
-#       BinOp, BoolOp
+#       BoolOp
 #       Del, Delete
-#       Eq, Expr, Expression, ExtSlice
-#       Gt, GtE
-#       IfExp, In, Index, Interactive, Is, IsNot
-#       Load, Lt, LtE
-#       NotEq, NotIn, Num
+#       Expr, Expression, ExtSlice
+#       IfExp, Index, Interactive, 
+#       Load, 
 #       Param
-#       Store, Str, Suite
+#       Store, Suite
 #       UnaryOp
-from _ast import Num, Str, Eq, Expr, alias, arguments, comprehension
+from _ast import Num, Str, Eq, alias, arguments, comprehension
+
+COMPREHENSIONS_SCOPES = (comprehension,)
 Const = (Num, Str)
 
-Node.is_statement = False
-Expr.is_statement = True
-If.is_statement = True
-TryExcept.is_statement = True
-TryFinally.is_statement = True
-While.is_statement = True
-For.is_statement = True
-With.is_statement = True
-Import.is_statement = True
-From.is_statement = True
-Class.is_statement = True
-Function.is_statement = True
-Yield.is_statement = True
-Return.is_statement = True
-Continue.is_statement = True
-Break.is_statement = True
-
-class EmptyNode(Node): pass
-
-def Name__init__(self, name):
-    self.id = name
-Name.__init__ = Name__init__
-
-def Name_get_name(self):
-    return self.id
-Name.name = property(Name_get_name)
-
-def _get_children_value(self):
-    return (self.value,)
-Expr.getChildNodes = _get_children_value
-Getattr.getChildNodes = _get_children_value
-
-def _get_children_nochildren(self):
-    return ()
-Import.getChildNodes = _get_children_nochildren
-Name.getChildNodes = _get_children_nochildren
-Str.getChildNodes = _get_children_nochildren
-Num.getChildNodes = _get_children_nochildren
-Pass.getChildNodes = _get_children_nochildren
-Eq.getChildNodes = _get_children_nochildren
-
-def _get_children_call(self):
-    children = [self.func]
-    children.extend(self.args)
-    children.extend(self.keywords)
-    if self.starargs:
-        children.extend(self.starargs)
-    if self.kwargs:
-        children.extend(self.kwargs)
-    return children
-CallFunc.getChildNodes = _get_children_call
-
-        
-def _get_children_assign(self):
-    return self.targets + [self.value]
-Assign.getChildNodes = _get_children_assign
-
-def _get_children_if(self):
-    return [self.test] + self.body + self.orelse
-If.getChildNodes = _get_children_if
-
-def _get_children_print(self):
-    if self.dest:
-        return [self.dest] + self.values
-    return self.values
-Print.getChildNodes = _get_children_print
-
-def _get_children_compare(self):
-    return [self.left] + self.ops + self.comparators
-Compare.getChildNodes = _get_children_compare
-
-def _get_children_generatorexp(self):
-    return [self.elt] + self.generators
-GenExpr.getChildNodes = _get_children_generatorexp
-
-def _get_children_comprehension(self):
-    return [self.target] + [self.iter] + self.ifs
-comprehension.getChildNodes = _get_children_comprehension
+from _ast import (Add as _Add, Div as _Div, FloorDiv as _FloorDiv,
+                  Mod as _Mod, Mult as _Mult, Pow as _Pow, Sub as _Sub,
+                  BitAnd as _BitAnd, BitOr as _BitOr, BitXor as _BitXor,
+                  LShift as _LShift, RShift as _RShift)
+BIN_OP_CLASSES = {_Add: '+',
+                  _BitAnd: '&',
+                  _BitOr: '|',
+                  _BitXor: '^',
+                  _Div: '/',
+                  _FloorDiv: '//',
+                  _Mod: '%',
+                  _Mul: '*',
+                  _Power: '**',
+                  _Sub: '-',
+                  _LShift: '<<',
+                  _RShift: '>>'}
 
 
-def getattr_as_string(node):
-    """return an ast.Getattr node as string"""
-    return '%s.%s' % (node.value.as_string(), node.attr)
-Getattr.as_string = getattr_as_string
+from _ast import And as _And, Or as _Or
+BOOL_OP_CLASSES = {_And: 'and',
+                   _Or: 'or'}
+
+from _ast import UAdd as _UAdd, USub as _USub, Not as _Not
+UNARY_OP_CLASSES = {_UAdd: '+',
+                    _USub: '-',
+                    _Not: 'not'}
+
+from _ast import (Eq as _Eq, Gt as _Gt, GtE as _GtE, In as _In, Is as _Is,
+                  IsNot as _IsNot, Lt as _Lt, LtE as _LtE, NotEq as _NotEq,
+                  NotIn as _NotIt)
+CMP_OP_CLASSES = {_Eq: '==',
+                  _Gt: '>',
+                  _GtE: '>=',
+                  _In: 'in',
+                  _Is: 'is',
+                  _IsNot: 'is not',
+                  _Lt: '<',
+                  _LtE: '<=',
+                  _NotEq: '!=',
+                  _NotIn: 'not in',
+                  }
+
+# def Name__init__(self, name):
+#     self.name = name
+# Name.__init__ = Name__init__
+
+# def _get_children_value(self):
+#     return (self.value,)
+# Expr.getChildNodes = _get_children_value
+# Getattr.getChildNodes = _get_children_value
+
+# Global.getChildNodes = _get_children_nochildren
+# Import.getChildNodes = _get_children_nochildren
+# From.getChildNodes = _get_children_nochildren
+# Name.getChildNodes = _get_children_nochildren
+# Str.getChildNodes = _get_children_nochildren
+# Num.getChildNodes = _get_children_nochildren
+# Pass.getChildNodes = _get_children_nochildren
+# Eq.getChildNodes = _get_children_nochildren
+
+# def _get_children_call(self):
+#     children = [self.func]
+#     children.extend(self.args)
+#     children.extend(self.keywords)
+#     if self.starargs:
+#         children.extend(self.starargs)
+#     if self.kwargs:
+#         children.extend(self.kwargs)
+#     return children
+# CallFunc.getChildNodes = _get_children_call
+
+# def _get_children_tryexcept(self):
+#     return self.body + self.handlers + self.orelse
+# TryExcept.getChildNodes = _get_children_tryexcept
+
+# def _get_children_excepthandler(self):
+#     children = []
+#     if self.name is not None:
+#         children.append(self.name)
+#     if self.type is not None:
+#         children.append(self.type)
+#     children += self.body
+#     return self.body
+# excepthandler.getChildNodes = _get_children_excepthandler
+
+# def _get_children_assign(self):
+#     return self.targets + [self.value]
+# Assign.getChildNodes = _get_children_assign
+
+# def _get_children_augassign(self):
+#     return [self.target, self.value]
+# AugAssign.getChildNodes = _get_children_augassign
+
+# def _get_children_if(self):
+#     return [self.test] + self.body + self.orelse
+# If.getChildNodes = _get_children_if
+
+# def _get_children_print(self):
+#     if self.dest:
+#         return [self.dest] + self.values
+#     return self.values
+# Print.getChildNodes = _get_children_print
+
+# def _get_children_compare(self):
+#     return [self.left] + self.ops + self.comparators
+# Compare.getChildNodes = _get_children_compare
+
+# def _get_children_generatorexp(self):
+#     return [self.elt] + self.generators
+# GenExpr.getChildNodes = _get_children_generatorexp
+
+# def _get_children_comprehension(self):
+#     return [self.target] + [self.iter] + self.ifs
+# comprehension.getChildNodes = _get_children_comprehension
+
+
+# def getattr_as_string(node):
+#     """return an ast.Getattr node as string"""
+#     return '%s.%s' % (node.value.as_string(), node.attr)
+# Getattr.as_string = getattr_as_string
 
 # scoped nodes ################################################################
 
-def _get_children_body(self):
-    return self.body
-Module.getChildNodes = _get_children_body
-Class.getChildNodes = _get_children_body
-Function.getChildNodes = _get_children_body
+# def _get_children_body(self):
+#     return self.body
+# Module.getChildNodes = _get_children_body
 
-def _append_node(self, child_node):
-    """append a child, linking it in the tree"""
-    self.body.append(child_node)
-    child_node.parent = self
-Module._append_node = _append_node
-Class._append_node = _append_node
-Function._append_node = _append_node
+# def _get_children_class(self):
+#     return self.bases + self.body
+# Class.getChildNodes = _get_children_class
+
+# def _get_children_function(self):
+#     return [self.defaults] + self.body
+# Function.getChildNodes = _get_children_function
+# Lambda.getChildNodes = _get_children_function
 
 #
 def _init_set_doc(node):
     node.doc = None
-    if isinstance(node.body[0], Expr) and isinstance(node.body[0].value, Str):
-        node.doc = node.body[0].value.s
-    print 'set doc', node
-    return node
-init_module = init_class = _init_set_doc
+    try:
+        if isinstance(node.body[0], Expr) and isinstance(node.body[0].value, Str):
+            node.doc = node.body[0].value.s
+    except IndexError:
+        pass # ast built from scratch
 
-def init_function(node):
-    _init_set_doc(node)
+def _init_function(node):
+    # XXX tuple
     node.argnames = [n.id for n in node.args.args]
     node.defaults = node.args.defaults
     if node.args.vararg:
         node.argnames.append(node.args.vararg)
     if node.args.kwarg:
         node.argnames.append(node.args.kwarg)
+
+init_class = _init_set_doc
+
+def init_function(node):
+    _init_set_doc(node)
+    _init_function(node)
     
-def init_import(node):
-    node.names = [(alias.name, alias.asname) for alias in node.names]
-    return node
+def init_lambda(node):
+    _init_function(node)
+    
+    
+# validated
 
 def init_assign(node):
-    return node
+    pass
+
+def init_augassign(node):
+    pass
+
+def init_binop(node):
+    node.op = BIN_OP_CLASSES[node.op.__class__]
+    
+def init_boolop(node):
+    node.op = BOOL_OP_CLASSES[node.op.__class__]
+    
+def init_compare(node):
+    node.ops = [(CMP_OP_CLASSES[op.__class__], expr)
+                for op, expr in zip(node.ops, node.comparators)]
+    del node.ops, node.comparators
+    
+def init_dict(node):
+    node.items = zip(node.keys, node.values)
+    del node.keys, node.values
+    
+def init_discard(node):
+    pass
+
+def init_exec(node):
+    node.expr = node.body
+    del node.body
+
+def init_for(node):
+    pass
+
+def init_import(node):
+    node.names = [(alias.name, alias.asname) for alias in node.names]
+
+def init_import_from(node):
+    init_import(node)
+    node.modname = node.module
+    del node.module
+
+def init_list(node):
+    pass    
+
+init_module = _init_set_doc
+
+def init_name(node):
+    node.name = node.id
+    del node.id
+
+def init_print(node):
+    pass
+
+def init_try_except(node):
+    pass
+
+def init_try_finally(node):
+    pass
+
+def init_tuple(node):
+    pass    
+    
+def init_unaryop(node):
+    node.op = UNARY_OP_CLASSES[node.op.__class__]
+
+def init_while(node):
+    pass
 
 # raw building ################################################################
 
 def _add_docstring(node, doc):
     node.doc = doc
-    if doc:
-        expr = Expr()
-        node.body.append(expr)
-        expr.parent = None
-        docstr = Str()
-        docstr.s = doc
-        expr.value = docstr
-        docstr.parent = expr
+#     if doc:
+#         expr = Expr()
+#         node.body.append(expr)
+#         expr.parent = None
+#         docstr = Str()
+#         docstr.s = doc
+#         expr.value = docstr
+#         docstr.parent = expr
     
 def module_factory(doc):
     node = Module()
@@ -250,7 +351,8 @@ def function_factory(name, args, defaults, flag=0, doc=None):
     argsnode = arguments()
     argsnode.args = []
     for arg in args:
-        argsnode.args.append(Name(arg))
+        argsnode.args.append(Name())
+        argsnode.args[-1].name = arg
         argsnode.args[-1].parent = argsnode
     argsnode.defaults = []
     for default in defaults:
@@ -272,8 +374,11 @@ def class_factory(name, basenames=None, doc=None):
     # XXX to check
     node.bases = []
     for base in basenames:
-        basenode = Name(base)
+        basenode = Name()
+        basenode.name = base
         node.bases.append(basenode)
         basenode.parent = node
     _add_docstring(node, doc)
     return node
+
+class Proxy_(object): pass

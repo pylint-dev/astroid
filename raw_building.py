@@ -101,14 +101,14 @@ def build_function(name, args=None, defaults=None, flag=0, doc=None):
     return func
 
 
-def build_name_assign(name, value):
-    """create and initialize an astng Assign for a name assignment"""
-    return nodes.Assign([nodes.AssName(name, 'OP_ASSIGN')], nodes.Const(value))
+# def build_name_assign(name, value):
+#     """create and initialize an astng Assign for a name assignment"""
+#     return nodes.Assign([nodes.AssName(name, 'OP_ASSIGN')], nodes.Const(value))
 
-def build_attr_assign(name, value, attr='self'):
-    """create and initialize an astng Assign for an attribute assignment"""
-    return nodes.Assign([nodes.AssAttr(nodes.Name(attr), name, 'OP_ASSIGN')],
-                        nodes.Const(value))
+# def build_attr_assign(name, value, attr='self'):
+#     """create and initialize an astng Assign for an attribute assignment"""
+#     return nodes.Assign([nodes.AssAttr(nodes.Name(attr), name, 'OP_ASSIGN')],
+#                         nodes.Const(value))
 
 if sys.version_info < (2, 5):
     def build_from_import(fromname, names):
