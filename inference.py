@@ -24,7 +24,6 @@ from __future__ import generators
 __doctype__ = "restructuredtext en"
 
 from copy import copy
-import sys
 
 from logilab.common.compat import imap, chain, set
 
@@ -33,10 +32,7 @@ from logilab.astng import MANAGER, YES, InferenceContext, Instance, Generator, \
 from logilab.astng import ASTNGError, InferenceError, UnresolvableName, \
      NoDefault, NotFoundError, ASTNGBuildingException
 
-if sys.version_info < (2, 5):
-    class GeneratorExit(Exception):
-        pass
-    
+
 def path_wrapper(func):
     """return the given infer function wrapped to handle the path"""
     def wrapped(node, context=None, _func=func, **kwargs):
@@ -61,6 +57,11 @@ def path_wrapper(func):
             raise
     return wrapped
 
+try:
+    GeneratorExit # py >= 2.5
+except:
+    class GeneratorExit(Exception): pass
+    
 # .infer method ###############################################################
 
 def infer_default(self, context=None):
@@ -460,7 +461,7 @@ def _infer_operator(self, context=None, impl=None, meth='__method__'):
                 continue
             try:
                 value = impl(lhsvalue, rhsvalue)
-            except TypeError:
+            except: # TypeError:
                 yield YES
                 continue
             if type(value) is type(lhsvalue):
