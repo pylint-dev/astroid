@@ -57,6 +57,11 @@ def path_wrapper(func):
             raise
     return wrapped
 
+try:
+    GeneratorExit # py >= 2.5
+except:
+    class GeneratorExit: pass
+    
 # .infer method ###############################################################
 
 def infer_default(self, context=None):
@@ -435,6 +440,8 @@ def _infer_operator(self, context=None, impl=None, meth='__method__'):
                 # will be the same
                 lhs.getattr(meth)
                 yield lhs
+            except GeneratorExit:
+                raise                
             except:
                 yield YES
             continue
@@ -447,6 +454,8 @@ def _infer_operator(self, context=None, impl=None, meth='__method__'):
                     # will be the same
                     rhs.getattr(meth)
                     yield rhs
+                except GeneratorExit:
+                    raise
                 except:
                     yield YES
                 continue
