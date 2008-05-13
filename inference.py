@@ -452,7 +452,7 @@ def _infer_operator(self, context=None, impl=None, meth='__method__'):
                 continue
             try:
                 value = impl(lhsvalue, rhsvalue)
-            except TypeError:
+            except: # TypeError:
                 yield YES
                 continue
             if type(value) is type(lhsvalue):
