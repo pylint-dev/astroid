@@ -24,6 +24,7 @@ from __future__ import generators
 __doctype__ = "restructuredtext en"
 
 from copy import copy
+import sys
 
 from logilab.common.compat import imap, chain, set
 
@@ -32,6 +33,9 @@ from logilab.astng import MANAGER, YES, InferenceContext, Instance, Generator, \
 from logilab.astng import ASTNGError, InferenceError, UnresolvableName, \
      NoDefault, NotFoundError, ASTNGBuildingException
 
+if sys.version_info < (2, 5):
+    class GeneratorExit(Exception):
+        pass
     
 def path_wrapper(func):
     """return the given infer function wrapped to handle the path"""
@@ -435,6 +439,8 @@ def _infer_operator(self, context=None, impl=None, meth='__method__'):
                 # will be the same
                 lhs.getattr(meth)
                 yield lhs
+            except GeneratorExit:
+                raise
             except:
                 yield YES
             continue
@@ -447,6 +453,8 @@ def _infer_operator(self, context=None, impl=None, meth='__method__'):
                     # will be the same
                     rhs.getattr(meth)
                     yield rhs
+                except GeneratorExit:
+                    raise
                 except:
                     yield YES
                 continue

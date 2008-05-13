@@ -14,6 +14,7 @@
 """
 
 import sys
+from StringIO import StringIO
 from logilab.common.testlib import TestCase, unittest_main
 
 from logilab.astng import builder, nodes, inference, YES, Instance, \
@@ -819,6 +820,18 @@ def f(x):
         infered = list(astng['f'].ilookup('a'))
         self.failUnlessEqual(len(infered), 1)
         self.failUnlessEqual(infered[0], YES)
+
+    def test_python25_generator_exit(self):
+        sys.stderr = StringIO()
+        data = "b = {}[str(0)+''].a"
+
+        astng = builder.string_build(data, __name__, __file__)
+        list(astng['b'].infer())
+        output = sys.stderr.getvalue()
+        # I have no idea how to test for this in another way...
+        self.failIf("RuntimeError" in output, "Exception exceptions.RuntimeError: 'generator ignored GeneratorExit' in <generator object> ignored")
+        sys.stderr = sys.__stderr__
+
         
 if __name__ == '__main__':
     unittest_main()
