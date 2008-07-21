@@ -134,7 +134,7 @@ Yield._fields = ['value']
 
 If._fields = ['test', 'body', 'orelse']
 Class._fields = ['body']
-Function._fields = ['body']
+Function._fields = ['decorators', 'body']
 Lambda._fields = ['body']
 
 COMPREHENSIONS_SCOPES = (GenExprFor, ListCompFor)

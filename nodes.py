@@ -927,9 +927,10 @@ def repr_tree(node, indent='', _done=None):
     if _done is None:
         _done = set()
     if node in _done:
-        raise Exception('loop in tree: %r (%s)' % (node, node.lineno))
+        print ('loop in tree: %r (%s)' % (node, node.lineno))
+        return
     _done.add(node)
     print indent + repr(node)
     indent += ' '
-    for child in node.getChildNodes():
+    for child in node.get_children():
         repr_tree(child, indent, _done)

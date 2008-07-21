@@ -110,6 +110,21 @@ CMP_OP_CLASSES = {_Eq: '==',
                   _NotIn: 'not in',
                   }
 
+Class._fields = ('body',) # name, bases
+ExceptHandler._fields = ('type', 'name', 'body') # XXX lineno & co inside _fields instead of _attributes
+Getattr._fields = ('value',) # attr, ctx
+Function._fields = ('decorators', 'body')
+List._fields = ('elts',)  # ctx
+Name._fields = () # id, ctx
+Num._fields = ()
+Pass._fields = ()
+Str._fields = ()
+Subscript._fields = ('value', 'slice')
+Tuple._fields = ('elts',)  # ctx
+
+#from _ast import Load, Store, Del
+#Load.lineno = Store.lineno = 0 # XXX
+
 # def Name__init__(self, name):
 #     self.name = name
 # Name.__init__ = Name__init__
@@ -208,7 +223,7 @@ CMP_OP_CLASSES = {_Eq: '==',
 def _init_set_doc(node):
     node.doc = None
     try:
-        if isinstance(node.body[0], Expr) and isinstance(node.body[0].value, Str):
+        if isinstance(node.body[0], Discard) and isinstance(node.body[0].value, Str):
             node.doc = node.body[0].value.s
     except IndexError:
         pass # ast built from scratch
@@ -265,6 +280,7 @@ def init_exec(node):
 def init_for(node):
     pass
 
+Import._fields = ()
 def init_import(node):
     node.names = [(alias.name, alias.asname) for alias in node.names]
 
@@ -278,6 +294,7 @@ def init_list(node):
 
 init_module = _init_set_doc
 
+Name._fields = ()
 def init_name(node):
     node.name = node.id
     del node.id
