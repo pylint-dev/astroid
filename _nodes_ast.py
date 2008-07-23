@@ -110,14 +110,17 @@ CMP_OP_CLASSES = {_Eq: '==',
                   _NotIn: 'not in',
                   }
 
-Class._fields = ('body',) # name, bases
+Compare._fields = ('left', 'ops')
+Class._fields = ('bases', 'body',) # name
+Eq._fields = () # Eq nodes should disappears after astng builder
 ExceptHandler._fields = ('type', 'name', 'body') # XXX lineno & co inside _fields instead of _attributes
-Getattr._fields = ('value',) # attr, ctx
+Getattr._fields = ('expr',) # (former value), attr (now attrname), ctx
 Function._fields = ('decorators', 'body')
 List._fields = ('elts',)  # ctx
 Name._fields = () # id, ctx
 Num._fields = ()
 Pass._fields = ()
+Print._fields = ('dest', 'values') # nl
 Str._fields = ()
 Subscript._fields = ('value', 'slice')
 Tuple._fields = ('elts',)  # ctx
@@ -264,7 +267,7 @@ def init_boolop(node):
 def init_compare(node):
     node.ops = [(CMP_OP_CLASSES[op.__class__], expr)
                 for op, expr in zip(node.ops, node.comparators)]
-    del node.ops, node.comparators
+    del node.comparators
     
 def init_dict(node):
     node.items = zip(node.keys, node.values)
@@ -277,6 +280,11 @@ def init_exec(node):
     node.expr = node.body
     del node.body
 
+def init_getattr(node):
+    node.attrname = node.attr
+    node.expr = node.value
+    del node.attr, node.value
+    
 def init_for(node):
     pass
 

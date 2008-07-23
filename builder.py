@@ -138,7 +138,6 @@ class ASTNGBuilder:
        
     def ast_build(self, node, modname=None, path=None):
         """recurse on the ast (soon ng) to add some arguments et method"""
-        nodes.repr_tree(node)
         if path is not None:
             node.file = node.path = abspath(path)
         else:
@@ -159,6 +158,7 @@ class ASTNGBuilder:
         while self._delayed:
             dnode = self._delayed.pop(0)
             getattr(self, 'delayed_visit_%s' % dnode.__class__.__name__.lower())(dnode)
+        nodes.repr_tree(node)
         return node
 
     # callbacks to build from an existing compiler.ast tree ###################
@@ -224,15 +224,15 @@ class ASTNGBuilder:
         self._add_local(node, node.node.name)
 
     def visit_binop(self, node):
-        node.visit_default(node)
+        self.visit_default(node)
         nodes.init_binop(node)
 
     def visit_boolop(self, node):
-        node.visit_default(node)
+        self.visit_default(node)
         nodes.init_boolop(node)
 
     def visit_compare(self, node):
-        node.visit_default(node)
+        self.visit_default(node)
         nodes.init_compare(node)
 
     def visit_discard(self, node): 
@@ -246,6 +246,10 @@ class ASTNGBuilder:
     def visit_exec(self, node):
         self.visit_default(node)
         nodes.init_exec(node)
+
+    def visit_getattr(self, node): 
+        self.visit_default(node)
+        nodes.init_getattr(node)
 
     def visit_import(self, node):
         """visit a Import node -> add imported names to locals"""
@@ -289,7 +293,6 @@ class ASTNGBuilder:
         """visit a Module node -> init node and push the corresponding
         object or None on the top of the stack
         """
-        
         self._stack = [self._module]
         self._par_stack = [node]
         self._metaclass = ['']
@@ -348,7 +351,7 @@ class ASTNGBuilder:
         nodes.init_tuple(node)
 
     def visit_unaryop(self, node):
-        node.visit_default(node)
+        self.visit_default(node)
         nodes.init_unaryop(node)
 
     def visit_while(self, node):
@@ -365,7 +368,6 @@ class ASTNGBuilder:
         """
         self.visit_default(node)
         node.instance_attrs = {}
-        node.basenames = [bnode.as_string() for bnode in node.bases]
         self._push(node)
         nodes.init_class(node)
         for name, value in ( ('__name__', node.name),
@@ -387,6 +389,7 @@ class ASTNGBuilder:
             # no base classes, detect new / style old style according to
             # current scope
             node._newstyle = metaclass == 'type'
+        node.basenames = [bnode.as_string() for bnode in node.bases]
     leave_classdef = leave_class
         
     def visit_function(self, node):

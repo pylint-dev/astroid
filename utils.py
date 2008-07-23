@@ -55,6 +55,7 @@ class ASTWalker:
                 'ImportFrom': 'From',
 
                 'Add': 'BinOp',
+                'Attribute': 'Getattr',
                 'Bitand': 'BinOp',
                 'Bitor': 'BinOp',
                 'Bitxor': 'BinOp',

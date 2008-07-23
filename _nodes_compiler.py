@@ -205,11 +205,6 @@ def genexprif_as_string(node):
     return 'if %s' % node.test.as_string()
 GenExprIf.as_string = genexprif_as_string
 
-def getattr_as_string(node):
-    """return an ast.Getattr node as string"""
-    return '%s.%s' % (node.expr.as_string(), node.attrname)
-Getattr.as_string = getattr_as_string
-
 def keyword_as_string(node):
     """return an ast.Keyword node as string"""
     return '%s=%s' % (node.name, node.expr.as_string())
@@ -297,6 +292,9 @@ def init_for(node):
     node.body = node.body.nodes
     node.orelse = node.else_
     del node.else_
+    
+def init_getattr(node):
+    pass
     
 def init_import(node):
     pass

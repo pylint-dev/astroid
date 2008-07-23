@@ -48,6 +48,7 @@ Dict
 Discard / Expr
 Exec
 For
+Getattr / (Attribute)
 Global
 Import
 From / ImportFrom
@@ -544,6 +545,11 @@ def genexpr_as_string(node):
     """return an ast.GenExpr node as string"""
     return '(%s)' % node.code.as_string()
 GenExpr.as_string = genexpr_as_string
+
+def getattr_as_string(node):
+    """return an ast.Getattr node as string"""
+    return '%s.%s' % (node.expr.as_string(), node.attrname)
+Getattr.as_string = getattr_as_string
 
 def global_as_string(node):
     """return an ast.Global node as string"""

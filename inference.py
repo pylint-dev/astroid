@@ -45,7 +45,6 @@ nodes.Dict.__bases__ += (Instance,)
 nodes.Dict._proxied = MANAGER.astng_from_class(dict)
 nodes.Dict.pytype = lambda x: '__builtin__.dict'
 nodes.NoneType._proxied = MANAGER.astng_from_module_name('types').getattr('NoneType')
-print nodes.NoneType._proxied
 nodes.NoneType.pytype = lambda x: 'types.NoneType'
 nodes.Bool._proxied = MANAGER.astng_from_class(bool)
 
@@ -322,36 +321,71 @@ def infer_subscript(self, context=None):
         raise InferenceError()
 nodes.Subscript.infer = path_wrapper(infer_subscript)
 
-def infer_unarysub(self, context=None):
-    for infered in self.expr.infer(context):
+# def infer_unarysub(self, context=None):
+#     for infered in self.expr.infer(context):
+#         try:
+#             value = -infered.value
+#         except (TypeError, AttributeError):
+#             yield YES
+#             continue
+#         node = copy(self.expr)
+#         node.value = value
+#         yield node
+# nodes.UnarySub.infer = path_wrapper(infer_unarysub)
+
+# def infer_unaryadd(self, context=None):
+#     return self.expr.infer(context)
+# nodes.UnaryAdd.infer = infer_unaryadd
+
+# def _py_value(node):
+#     try:
+#         return node.value
+#     except AttributeError:
+#         # not a constant
+#         if isinstance(node, nodes.Dict):
+#             return {}
+#         if isinstance(node, nodes.List):
+#             return []
+#         if isinstance(node, nodes.Tuple):
+#             return ()
+#     raise ValueError()
+
+def _infer_unary_operator(self, context=None, impl=None, meth=None):
+    for operand in self.operand.infer(context):
         try:
-            value = -infered.value
-        except (TypeError, AttributeError):
+            value = _py_value(operand)
+        except ValueError:
+            # not a constant
+            if meth is None:
+                yield YES
+                continue
+            try:
+                # XXX just suppose if the type implement meth, returned type
+                # will be the same
+                operand.getattr(meth)
+                yield operand
+            except GeneratorExit:
+                raise
+            except:
+                yield YES
+            continue
+        try:
+            value = impl(value)
+        except: # TypeError:
             yield YES
             continue
-        node = copy(self.expr)
-        node.value = value
-        yield node
-nodes.UnarySub.infer = path_wrapper(infer_unarysub)
+        yield const_factory(value)
 
-def infer_unaryadd(self, context=None):
-    return self.expr.infer(context)
-nodes.UnaryAdd.infer = infer_unaryadd
+UNARY_OP_IMPL = {'+':  (lambda a: +a, '__pos__'),
+                 '-':  (lambda a: -a, '__neg__'),
+                 'not':  (lambda a: not a, None), # XXX not '__nonzero__'
+                 }
+def infer_unaryop(self, context=None):
+    impl, meth = UNARY_OP_IMPL[self.op]
+    return _infer_unary_operator(self, context=context, impl=impl, meth=meth)
+nodes.UnaryOp.infer = path_wrapper(infer_unaryop)
 
-def _py_value(node):
-    try:
-        return node.value
-    except AttributeError:
-        # not a constant
-        if isinstance(node, nodes.Dict):
-            return {}
-        if isinstance(node, nodes.List):
-            return []
-        if isinstance(node, nodes.Tuple):
-            return ()
-    raise ValueError()
-
-def _infer_operator(self, context=None, impl=None, meth='__method__'):
+def _infer_binary_operator(self, context=None, impl=None, meth='__method__'):
     for lhs in self.left.infer(context):
         try:
             lhsvalue = _py_value(lhs)
@@ -382,13 +416,7 @@ def _infer_operator(self, context=None, impl=None, meth='__method__'):
             except TypeError:
                 yield YES
                 continue
-            if type(value) is type(lhsvalue):
-                node = copy(lhs)
-            else:
-                node = copy(rhs)
-            # XXX may be dict, tuple...
-            node.value = value
-            yield node
+            yield const_factory(value)
 
 BIN_OP_IMPL = {'+':  (lambda a,b: a+b, '__add__'),
                '-':  (lambda a,b: a-b, '__sub__'),
@@ -405,8 +433,8 @@ BIN_OP_IMPL = {'+':  (lambda a,b: a+b, '__add__'),
                }
 def infer_binop(self, context=None):
     impl, meth = BIN_OP_IMPL[self.op]
-    return _infer_operator(self, context=context, impl=impl, meth=meth)
-nodes.BinOp.infer = path_wrapper(infer_sub)
+    return _infer_binary_operator(self, context=context, impl=impl, meth=meth)
+nodes.BinOp.infer = path_wrapper(infer_binop)
     
 # .infer_call_result method ###################################################
 def callable_default(self):
