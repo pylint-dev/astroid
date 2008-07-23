@@ -23,7 +23,7 @@ extract information from it
 __docformat__ = "restructuredtext en"
 
 from logilab.common.compat import enumerate
-from logilab.astng._exceptions import IgnoreChild
+from logilab.astng import Instance, IgnoreChild
 
 def extend_class(original, addons):
     """add methods and attribute defined in the addons class to the original
@@ -34,24 +34,24 @@ def extend_class(original, addons):
         if special_key in addons.__dict__:
             del brain[special_key]
     original.__dict__.update(brain)
-        
+
 class ASTWalker:
     """a walker visiting a tree in preorder, calling on the handler:
-    
+
     * visit_<class name> on entering a node, where class name is the class of
     the node in lower case
-    
+
     * leave_<class name> on leaving a node, where class name is the class of
     the node in lower case
     """
     def __init__(self, handler):
         self.handler = handler
         self._cache = {}
-        
+
     def walk(self, node):
         """walk on the tree from <node>, getting callbacks from handler
         """
-        try:            
+        try:
             self.visit(node)
         except IgnoreChild:
             pass
@@ -68,21 +68,22 @@ class ASTWalker:
         if methods is None:
             handler = self.handler
             kid = klass.__name__.lower()
+            # enter, leave
             e_method = getattr(handler, 'visit_%s' % kid,
                                getattr(handler, 'visit_default', None))
-            l_method = getattr(handler, 'leave_%s' % kid, 
+            l_method = getattr(handler, 'leave_%s' % kid,
                                getattr(handler, 'leave_default', None))
             self._cache[klass] = (e_method, l_method)
         else:
             e_method, l_method = methods
         return e_method, l_method
-    
+
     def visit(self, node):
         """walk on the tree from <node>, getting callbacks from handler"""
         method = self.get_callbacks(node)[0]
         if method is not None:
             method(node)
-            
+
     def leave(self, node):
         """walk on the tree from <node>, getting callbacks from handler"""
         method = self.get_callbacks(node)[1]
@@ -95,7 +96,7 @@ class LocalsVisitor(ASTWalker):
     def __init__(self):
         ASTWalker.__init__(self, self)
         self._visited = {}
-        
+
     def visit(self, node):
         """launch the visit starting from the given node"""
         if self._visited.has_key(node):
@@ -109,8 +110,8 @@ class LocalsVisitor(ASTWalker):
             except IgnoreChild:
                 recurse = 0
         if recurse:
-            if hasattr(node, 'locals'):
-                for local_node in node.values():
+            if hasattr(node, 'locals') and not isinstance(node, Instance):
+                for name, local_node in node.items():
                     self.visit(local_node)
         if methods[1] is not None:
             return methods[1](node)
