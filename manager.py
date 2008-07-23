@@ -53,13 +53,14 @@ def safe_repr(obj):
         return repr(obj)
     except:
         return '???'
-    
+
 class ASTNGManager(OptionsProviderMixIn):
     """the astng manager, responsible to build astng from files
      or modules.
 
     Use the Borg pattern.
     """
+
     name = 'astng loader'
     options = (("ignore",
                 {'type' : "csv", 'metavar' : "<file>",
@@ -72,7 +73,7 @@ class ASTNGManager(OptionsProviderMixIn):
                  'metavar' : '<project name>',
                  'help' : 'set the project name.'}),
                )
-    brain = {}    
+    brain = {}
     def __init__(self):
         self.__dict__ = ASTNGManager.brain
         if not self.__dict__:
@@ -81,7 +82,7 @@ class ASTNGManager(OptionsProviderMixIn):
             self._mod_file_cache = None
             self.set_cache_size(200)
             self.load_defaults()
-            
+
     def set_cache_size(self, cache_size):
         """set the cache size (flush it as a side effect!)"""
         self._cache = {} #Cache(cache_size)
@@ -122,9 +123,9 @@ class ASTNGManager(OptionsProviderMixIn):
                                              filepath)
         self._cache[filepath] = astng
         return astng
-    
+
     from_file = astng_from_file # backward compat
-    
+
     def astng_from_module_name(self, modname, context_file=None):
         """given a module name, return the astng object"""
         old_cwd = os.getcwd()
@@ -134,7 +135,7 @@ class ASTNGManager(OptionsProviderMixIn):
             filepath = self.file_from_module_name(modname, context_file)
             if filepath is None or not is_python_source(filepath):
                 try:
-                    module = load_module_from_name(modname) 
+                    module = load_module_from_name(modname)
                 except ImportError, ex:
                     msg = 'Unable to load module %s (%s)' % (modname, ex)
                     raise ASTNGBuildingException(msg)
@@ -142,7 +143,7 @@ class ASTNGManager(OptionsProviderMixIn):
             return self.astng_from_file(filepath, modname, fallback=False)
         finally:
             os.chdir(old_cwd)
-            
+
     def file_from_module_name(self, modname, contextfile):
         try:
             value = self._mod_file_cache[(modname, contextfile)]
@@ -157,7 +158,7 @@ class ASTNGManager(OptionsProviderMixIn):
         if isinstance(value, ASTNGBuildingException):
             raise value
         return value
-        
+
     def astng_from_module(self, module, modname=None):
         """given an imported module, return the astng object"""
         modname = modname or module.__name__
@@ -178,7 +179,7 @@ class ASTNGManager(OptionsProviderMixIn):
             # same (.pyc pb))
             self._cache[filepath] = self._cache[astng.file] = astng
             return astng
-            
+
     def astng_from_class(self, klass, modname=None):
         """get astng for the given class"""
         if modname is None:
@@ -190,7 +191,7 @@ class ASTNGManager(OptionsProviderMixIn):
         modastng = self.astng_from_module_name(modname)
         return modastng.getattr(klass.__name__)[0] # XXX
 
-            
+
     def infer_astng_from_something(self, obj, modname=None, context=None):
         """infer astng for the given class"""
         if hasattr(obj, '__class__') and not isinstance(obj, type):
@@ -222,7 +223,7 @@ class ASTNGManager(OptionsProviderMixIn):
             if klass is not obj and isinstance(infered, nodes.Class):
                 infered = Instance(infered)
             yield infered
-            
+
     def project_from_files(self, files, func_wrapper=astng_wrapper,
                            project_name=None, black_list=None):
         """return a Project from a list of files or modules"""
@@ -259,7 +260,7 @@ class ASTNGManager(OptionsProviderMixIn):
             return project
         finally:
             sys.path.pop(0)
-    
+
 
 
 class Package:
@@ -267,7 +268,7 @@ class Package:
 
     load submodules lazily, as they are needed
     """
-    
+
     def __init__(self, path, name, manager):
         self.name = name
         self.path = abspath(path)
@@ -284,7 +285,7 @@ class Package:
         if self.parent is None:
             return self.name
         return '%s.%s' % (self.parent.fullname(), self.name)
-    
+
     def get_subobject(self, name):
         """method used to get sub-objects lazily : sub package or module are
         only build once they are requested
@@ -306,7 +307,7 @@ class Package:
                 obj = self.manager.astng_from_file(objpath + '.py', modname)
             self.__subobjects[name] = obj
         return obj
-    
+
     def get_module(self, modname):
         """return the Module or Package object with the given name if any
         """
@@ -317,7 +318,7 @@ class Package:
         for part in path[1:]:
             obj = obj.get_subobject(part)
         return obj
-    
+
     def keys(self):
         if self.__keys is None:
             self.__keys = []
@@ -330,29 +331,29 @@ class Package:
                     self.__keys.append(fname)
             self.__keys.sort()
         return self.__keys[:]
-    
+
     def values(self):
         return [self.get_subobject(name) for name in self.keys()]
-        
+
     def items(self):
         return zip(self.keys(), self.values())
-    
+
     def has_key(self, name):
         return bool(self.get(name))
-    
+
     def get(self, name, default=None):
         try:
             return self.get_subobject(name)
         except KeyError:
             return default
-        
+
     def __getitem__(self, name):
-        return self.get_subobject(name)        
+        return self.get_subobject(name)
     def __contains__(self, name):
         return self.has_key(name)
     def __iter__(self):
         return iter(self.keys())
-    
+
 
 class Project:
     """a project handle a set of modules / packages"""
@@ -365,15 +366,16 @@ class Project:
         self.__iter__ = self.locals.__iter__
         self.values = self.locals.values
         self.keys = self.locals.keys
+        self.items = self.locals.items
         self.has_key = self.locals.has_key
-        
+
     def add_module(self, node):
         self.locals[node.name] = node
         self.modules.append(node)
-        
+
     def get_module(self, name):
         return self.locals[name]
-    
+
     def getChildNodes(self):
         return self.modules
 
