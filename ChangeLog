@@ -2,6 +2,8 @@ Change log for the astng package
 ================================
  --
     * fix bug w/ loop assigment in .lookup
+    * apply Maarten patch fixing a crash on TryFinalaly.block_range and fixing
+      'else'/'final' block line detection
 	
 2008-01-14  --  0.17.2
     * "with" statement support, patch provided by Brian Hawthorne
