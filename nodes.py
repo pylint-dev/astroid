@@ -311,13 +311,11 @@ def try_except_block_range(node, lineno):
 TryExcept.block_range = try_except_block_range
 
 def try_finally_block_range(node, lineno, last=None):
-    """handle block line numbers range for try/finally, for and while
-    statements
-    """
+    """handle block line numbers range for try/finally"""
     if lineno == node.source_line():
         return lineno, lineno
     if node.final:
-        if lineno > node.body.last_source_line():
+        if lineno > node.final.fromlineno:
             return lineno, node.final.last_source_line()
         return lineno, node.final.source_line() - 1
     return lineno, last or node.last_source_line()
@@ -325,13 +323,11 @@ def try_finally_block_range(node, lineno, last=None):
 TryFinally.block_range = try_finally_block_range
 
 def elsed_block_range(node, lineno, last=None):
-    """handle block line numbers range for try/finally, for and while
-    statements
-    """
+    """handle block line numbers range for if, for and while statements"""
     if lineno == node.source_line():
         return lineno, lineno
     if node.else_:
-        if lineno > node.body.last_source_line():
+        if lineno > node.else_.fromlineno:
             return lineno, node.else_.last_source_line()
         return lineno, node.else_.source_line() - 1
     return lineno, last or node.last_source_line()
