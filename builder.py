@@ -138,6 +138,9 @@ class ASTNGBuilder:
        
     def ast_build(self, node, modname=None, path=None):
         """recurse on the ast (soon ng) to add some arguments et method"""
+        print '*'*80
+        print modname, path
+        nodes.native_repr_tree(node)
         if path is not None:
             node.file = node.path = abspath(path)
         else:
@@ -158,7 +161,6 @@ class ASTNGBuilder:
         while self._delayed:
             dnode = self._delayed.pop(0)
             getattr(self, 'delayed_visit_%s' % dnode.__class__.__name__.lower())(dnode)
-        nodes.repr_tree(node)
         return node
 
     # callbacks to build from an existing compiler.ast tree ###################
@@ -196,7 +198,7 @@ class ASTNGBuilder:
         self.visit_default(node)
         nodes.init_assign(node)
         klass = node.parent.frame()
-        #print node
+        print node
         if isinstance(klass, nodes.Class) and \
             isinstance(node.value, nodes.CallFunc) and \
             isinstance(node.value.node, nodes.Name):
@@ -329,7 +331,9 @@ class ASTNGBuilder:
             node.__class__ = cls
             node.value = value
         except KeyError:
-            pass        
+            pass
+        if node.name == 'NoneType':
+            print 'yoooooooooooo', node.name, self._asscontext
         self.visit_default(node)
         if self._asscontext is not None:
             self._add_local(node, node.name)
@@ -435,6 +439,10 @@ class ASTNGBuilder:
             return
         for name in node.names:
             self._global_names[-1].setdefault(name, []).append(node)
+        
+    def visit_subscript(self, node):
+        self.visit_default(node)
+        nodes.init_subscript(node)
         
     def _add_local(self, node, name):
         if self._global_names and name in self._global_names[-1]:

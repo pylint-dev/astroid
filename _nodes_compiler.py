@@ -68,7 +68,6 @@ except:
 # additional nodes
 
 class ExceptHandler(Node):
-    _fields = ['type', 'name', 'body']
     def __init__(self, type, name, body, lineno):
         self.type = type
         self.name = name
@@ -91,14 +90,12 @@ class BinOp(Node):
                   Bitxor: '^',
                   LeftShift: '<<',
                   RightShift: '>>'}
-    _fields = ['left', 'right']
     
 class BoolOp(Node):
     """replace And, Or"""
     from compiler.ast import And, Or
     OP_CLASSES = {And: 'and',
                   Or: 'or'}
-    _fields = ['values']
     
 class UnaryOp(Node):
     """replace UnaryAdd, UnarySub, Not"""
@@ -106,36 +103,10 @@ class UnaryOp(Node):
     OP_CLASSES = {UnaryAdd: '+',
                   UnarySub: '-',
                   Not: 'not'}
-    _fields = ['operand']
 
     
 ###############################################################################
         
-Assign._fields = ['targets', 'value']
-AugAssign._fields = ['target', 'value']
-Break._fields = []
-Continue._fields = []
-Discard._fields = ['value']
-From._fields = []
-Exec._fields = ['expr', 'globals', 'locals']
-For._fields = ['target', 'iter', 'body', 'orelse']
-Global._fields = []
-Import._fields = []
-Module._fields = ['body']
-Name._fields = []
-Pass._fields = []
-Print._fields = ['dest', 'values']
-Return._fields = ['value']
-TryExcept._fields = ['body', 'handlers', 'orelse']
-TryFinally._fields = ['body', 'finalbody']
-While._fields = ['test', 'body', 'orelse']
-Yield._fields = ['value']
-
-
-If._fields = ['test', 'body', 'orelse']
-Class._fields = ['body']
-Function._fields = ['decorators', 'body']
-Lambda._fields = ['body']
 
 COMPREHENSIONS_SCOPES = (GenExprFor, ListCompFor)
 
@@ -322,6 +293,9 @@ def init_print(node, nl=False):
 def init_printnl(node):
     node.__class__ = Print
     init_print(node, True)
+    
+def init_subscript(node):
+    pass
 
 def init_try_except(node):
     node.body = node.body.nodes

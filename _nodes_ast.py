@@ -110,20 +110,9 @@ CMP_OP_CLASSES = {_Eq: '==',
                   _NotIn: 'not in',
                   }
 
-Compare._fields = ('left', 'ops')
-Class._fields = ('bases', 'body',) # name
-Eq._fields = () # Eq nodes should disappears after astng builder
-ExceptHandler._fields = ('type', 'name', 'body') # XXX lineno & co inside _fields instead of _attributes
-Getattr._fields = ('expr',) # (former value), attr (now attrname), ctx
-Function._fields = ('decorators', 'body')
-List._fields = ('elts',)  # ctx
-Name._fields = () # id, ctx
-Num._fields = ()
-Pass._fields = ()
-Print._fields = ('dest', 'values') # nl
-Str._fields = ()
-Subscript._fields = ('value', 'slice')
-Tuple._fields = ('elts',)  # ctx
+#Eq._astng_fields = () # Eq nodes should disappears after astng builder
+Num._astng_fields = ()
+Str._astng_fields = ()
 
 #from _ast import Load, Store, Del
 #Load.lineno = Store.lineno = 0 # XXX
@@ -288,7 +277,7 @@ def init_getattr(node):
 def init_for(node):
     pass
 
-Import._fields = ()
+Import._astng_fields = ()
 def init_import(node):
     node.names = [(alias.name, alias.asname) for alias in node.names]
 
@@ -302,7 +291,7 @@ def init_list(node):
 
 init_module = _init_set_doc
 
-Name._fields = ()
+Name._astng_fields = ()
 def init_name(node):
     node.name = node.id
     del node.id
@@ -310,6 +299,15 @@ def init_name(node):
 def init_print(node):
     pass
 
+def init_subscript(node):
+    node.expr = node.value
+    del node.value
+    if hasattr(node.slice.value, 'elts'):
+        node.subs = node.slice.value.elts
+    else:
+        node.subs = [node.slice.value]
+    del node.slice
+    
 def init_try_except(node):
     pass
 
@@ -407,3 +405,41 @@ def class_factory(name, basenames=None, doc=None):
     return node
 
 class Proxy_(object): pass
+
+
+
+from _ast import Load as _Load, Store as _Store, Del as _Del
+def native_repr_tree(node, indent='', _done=None):
+    if _done is None:
+        _done = set()
+    if node in _done:
+        print ('loop in tree: %r (%s)' % (node, getattr(node, 'lineno', None)))
+        return
+    _done.add(node)
+    print indent + repr(node)
+    indent += '  '
+    d = node.__dict__
+    if hasattr(node, '_attributes'):
+        for a in node._attributes:
+            attr = d[a]
+            if attr is None:
+                continue
+            print indent + a, repr(attr)
+    for f in node._fields or ():
+        attr = d[f]
+        if attr is None:
+            continue
+        if type(attr) is list:
+            if not attr: continue
+            print indent + f + ' ['
+            for elt in attr:
+                native_repr_tree(elt, indent, _done)
+            print indent + ']'
+            continue
+        if isinstance(attr, (_Load, _Store, _Del)):
+            continue
+        if isinstance(attr, Node):
+            print indent + f
+            native_repr_tree(attr, indent, _done)
+        else:
+            print indent + f, repr(attr)

@@ -91,6 +91,49 @@ import re
 ID_RGX = re.compile('^[a-zA-Z_][a-zA-Z_0-9]*$')
 del re
 
+# astng fields definition ####################################################
+
+Assign._astng_fields = ('targets', 'value',)
+AugAssign._astng_fields = ('target', 'value',)
+BinOp._astng_fields = ('left', 'right',)
+BoolOp._astng_fields = ('values',)
+UnaryOp._astng_fields = ('operand',)
+
+Break._astng_fields = ()
+CallFunc._astng_fields = ('func', 'args', 'keywords', 'starargs', 'kwargs')
+Class._astng_fields = ('bases', 'body',) # name
+Compare._astng_fields = ('left', 'ops',)
+Continue._astng_fields = ()
+Discard._astng_fields = ('value',)
+From._astng_fields = ()
+ExceptHandler._astng_fields = ('type', 'name', 'body',) # XXX lineno & co inside._astng_fields instead of _attributes
+Exec._astng_fields = ('expr', 'globals', 'locals',)
+Function._astng_fields = ('decorators', 'body',)
+For._astng_fields = ('target', 'iter', 'body', 'orelse',)
+Getattr._astng_fields = ('expr',) # (former value), attr (now attrname), ctx
+Global._astng_fields = ()
+Import._astng_fields = ()
+List._astng_fields = ('elts',)  # ctx
+Module._astng_fields = ('body',)
+Name._astng_fields = () # id, ctx
+Pass._astng_fields = ()
+Print._astng_fields = ('dest', 'values',) # nl
+Raise._astng_fields = ('type', 'inst', 'tback')
+Return._astng_fields = ('value',)
+Subscript._astng_fields = ('expr', 'subs',) # value, slice
+TryExcept._astng_fields = ('body', 'handlers', 'orelse',)
+TryFinally._astng_fields = ('body', 'finalbody',)
+Tuple._astng_fields = ('elts',)  # ctx
+While._astng_fields = ('test', 'body', 'orelse',)
+Yield._astng_fields = ('value',)
+
+
+If._astng_fields = ('test', 'body', 'orelse',)
+Class._astng_fields = ('body',)
+Function._astng_fields = ('decorators', 'body',)
+Lambda._astng_fields = ('body',)
+
+print 'HGOP', Module, Module._astng_fields
 
 # Node  ######################################################################
 
@@ -100,7 +143,6 @@ class NodeNG:
     original class from the compiler.ast module using its dictionnary
     (see below the class definition)
     """
-    _fields = []
     is_statement = False
     # attributes below are set by the builder module or by raw factories
     fromlineno = None
@@ -114,7 +156,7 @@ class NodeNG:
 
     def get_children(self):
         d = self.__dict__
-        for f in self._fields:
+        for f in self._astng_fields:
             try:
                 attr = d[f]
             except:
@@ -314,7 +356,7 @@ def _get_children_nochildren(self):
 
 #class EmptyNode(object):
 #    is_statement = False
-#    _fields = []
+#   ._astng_fields = []
 
 # block range overrides #######################################################
 
@@ -837,7 +879,7 @@ class NoneType(Instance, NodeNG):
         self.value = value
     def __repr__(self):
         return 'None'
-    def getChildNodes(self):
+    def get_children(self):
         return ()
     __str__ = as_string = __repr__
     
@@ -849,7 +891,7 @@ class Bool(Instance, NodeNG):
         self.value = value
     def __repr__(self):
         return str(self.value)
-    def getChildNodes(self):
+    def get_children(self):
         return ()
     __str__ = as_string = __repr__
 
