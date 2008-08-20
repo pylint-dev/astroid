@@ -41,6 +41,7 @@ Main modules are:
 :copyright: 2003-2007 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
+
 from __future__ import generators
 
 __doctype__ = "restructuredtext en"
