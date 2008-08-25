@@ -32,7 +32,7 @@ from _ast import (Assert, Assign, AugAssign,
                   If, Import, Invert,
                   Lambda, List, ListComp, 
                   Module, 
-                  Name
+                  Name,
                   Pass, Print,
                   Raise, Return,
                   Slice, Sub, Subscript, 
@@ -79,8 +79,8 @@ BIN_OP_CLASSES = {_Add: '+',
                   _Div: '/',
                   _FloorDiv: '//',
                   _Mod: '%',
-                  _Mul: '*',
-                  _Power: '**',
+                  _Mult: '*',
+                  _Pow: '**',
                   _Sub: '-',
                   _LShift: '<<',
                   _RShift: '>>'}
@@ -97,7 +97,7 @@ UNARY_OP_CLASSES = {_UAdd: '+',
 
 from _ast import (Eq as _Eq, Gt as _Gt, GtE as _GtE, In as _In, Is as _Is,
                   IsNot as _IsNot, Lt as _Lt, LtE as _LtE, NotEq as _NotEq,
-                  NotIn as _NotIt)
+                  NotIn as _NotIn)
 CMP_OP_CLASSES = {_Eq: '==',
                   _Gt: '>',
                   _GtE: '>=',
