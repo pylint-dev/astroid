@@ -142,7 +142,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
         node.instance_attrs_type = {}
         for assattrs in node.instance_attrs.values():
             for assattr in assattrs:
-                self.visit_assattr(assattr, node)
+                self.handle_assattr_type(assattr, node)
         # resolve implemented interface
         try:
             node.implements = list(node.interfaces(self.inherited_interfaces))
@@ -183,8 +183,8 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
                 frame.locals_type[node.name] = values
         except astng.InferenceError:
             pass
-        
-    def visit_assattr(self, node, parent):
+
+    def handle_assattr_type(self, node, parent):
         """visit an astng.AssAttr node
 
         handle instance_attrs_type

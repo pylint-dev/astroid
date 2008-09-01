@@ -112,10 +112,7 @@ class LocalsVisitor(ASTWalker):
         if recurse:
             if hasattr(node, 'locals') and not isinstance(node, Instance):
                 for name, local_node in node.items():
-                    if local_node.__class__.__name__ == 'AssAttr':
-                        self.visit_assattr(local_node, node)
-                    else:
-                        self.visit(local_node)
+                    self.visit(local_node)
         if methods[1] is not None:
             return methods[1](node)
 
