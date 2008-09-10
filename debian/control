@@ -6,7 +6,7 @@ Maintainer: Sylvain Thénault <sylvain.thenault@logilab.fr>
 Uploaders: Alexandre Fayolle <afayolle@debian.org> 
 Build-Depends: debhelper (>= 5.0.37.2), python (>=2.3.5-7), python-central (>=0.5)
 XS-Python-Version: all
-Standards-Version: 3.7.3
+Standards-Version: 3.8.0
 
 Package: python-logilab-astng
 Architecture: all

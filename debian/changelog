@@ -1,3 +1,9 @@
+logilab-astng (0.17.3-1) unstable; urgency=low
+
+  * new upstream release
+ 
+ -- Emile Anclin <emile.anclin@logilab.fr>  Wed, 10 Sep 2008 13:42:06 +0100
+
 logilab-astng (0.17.2-2) unstable; urgency=low
 
   * Updated standards version (no changes required)

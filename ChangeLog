@@ -1,6 +1,8 @@
 Change log for the astng package
 ================================
- --
+
+2008-09-10  --  0.17.3
+    * fix #5889: astng crash on certain pyreverse projects
     * fix bug w/ loop assigment in .lookup
     * apply Maarten patch fixing a crash on TryFinalaly.block_range and fixing
       'else'/'final' block line detection
