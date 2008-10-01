@@ -136,7 +136,9 @@ class CallContext:
                             # XXX can do better ?
                             boundnode = funcnode.parent.frame()
                         if funcnode.type == 'method':
-                            return iter((Instance(boundnode),))
+                            if not isinstance(boundnode, Instance):
+                                boundnode = Instance(boundnode)
+                            return iter((boundnode,))
                         if funcnode.type == 'classmethod':
                             return iter((boundnode,))                            
                     # 2. search arg index
