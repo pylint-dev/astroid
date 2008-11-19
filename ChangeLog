@@ -1,6 +1,10 @@
 Change log for the astng package
 ================================
 
+ --
+    * fix #6015: filter statements bug triggering W0631 false positive in pylint
+    * fix #5571: Function.is_method() should return False on module level
+      functions decorated by staticmethod/classmethod
 2008-09-10  --  0.17.3
     * fix #5889: astng crash on certain pyreverse projects
     * fix bug w/ loop assigment in .lookup

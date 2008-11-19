@@ -323,7 +323,9 @@ class FunctionNG(object):
 
     def is_method(self):
         """return true if the function node should be considered as a method"""
-        return self.type != 'function'
+        # isinstance to avoid returning True on functions decorated by
+        # [static|class]method at the module level
+        return self.type != 'function' and isinstance(self.parent.frame(), Class)
     
     def is_bound(self):
         """return true if the function is bound to an Instance or a class"""

@@ -154,6 +154,34 @@ def f():
         astng = abuilder.string_build(data, __name__, __file__)
         g = list(astng['f'].ilookup('g'))[0]
         self.failUnlessEqual(g.pytype(), '__builtin__.function')
+
+    def test_is_method(self):
+        if sys.version_info < (2, 4):
+            self.skip('this test require python >= 2.4')
+        data = '''
+class A:
+    def meth1(self):
+        return 1
+    @classmethod
+    def meth2(cls):
+        return 2
+    @staticmethod
+    def meth3():
+        return 3
+    
+def function():
+    return 0
+
+@staticmethod
+def sfunction():
+    return -1
+        '''
+        astng = abuilder.string_build(data, __name__, __file__)
+        self.failUnless(astng['A']['meth1'].is_method())
+        self.failUnless(astng['A']['meth2'].is_method())
+        self.failUnless(astng['A']['meth3'].is_method())
+        self.failIf(astng['function'].is_method())
+        self.failIf(astng['sfunction'].is_method())
         
 class ClassNodeTC(TestCase):
 
