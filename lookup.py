@@ -141,27 +141,25 @@ def _filter_stmts(self, stmts, frame, offset):
         mylineno = 0
     _stmts = []
     _stmt_parents = []
-    #print '-'*60
-    #print 'filtering', stmts, mylineno
     for node in stmts:
         stmt = node.statement()
         # line filtering is on and we have reached our location, break
         if mylineno > 0 and stmt.source_line() > mylineno:
-            #print 'break', mylineno, stmt.source_line()
             break
         if isinstance(node, Class) and self in node.bases:
-            #print 'breaking on', self, node.bases            
             break
         try:
             ass_type = node.ass_type()
             if ass_type is mystmt:
                 if not isinstance(ass_type, (ListCompFor,  GenExprFor)):
-                    #print 'break now2', self, ass_type
                     break
                 if isinstance(self, (Const, Name)):
                     _stmts = [self]
-                    #print 'break now', ass_type, self, node
                     break
+            elif ass_type.statement() is mystmt:
+                # original node's statement is the assignment, only keeps current node
+                _stmts = [node]
+                break
         except AttributeError:
             ass_type = None
         # on loop assignment types, assignment won't necessarily be done

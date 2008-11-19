@@ -129,7 +129,24 @@ if x > 0:
         # outside the loop, two possible assigments
         self.assertEquals(len(xnames[1].lookup('x')[1]), 2)
         self.assertEquals(len(xnames[2].lookup('x')[1]), 2)
-        
+
+    def test_list_comps(self):
+        if sys.version_info < (2, 4):
+            self.skip('this test require python >= 2.4')
+        astng = builder.string_build("""
+print [ i for i in range(10) ]
+print [ i for i in range(10) ]
+print list( i for i in range(10) )
+        """, __name__, __file__)
+        xnames = [n for n in astng.nodes_of_class(nodes.Name) if n.name == 'i']
+        self.assertEquals(len(xnames[0].lookup('i')[1]), 1)
+        self.assertEquals(xnames[0].lookup('i')[1][0].lineno, 2)
+        self.assertEquals(len(xnames[1].lookup('i')[1]), 1)
+        self.assertEquals(xnames[1].lookup('i')[1][0].lineno, 3)
+        self.assertEquals(len(xnames[2].lookup('i')[1]), 1)
+        self.assertEquals(xnames[2].lookup('i')[1][0].lineno, 4)
+
+
     def test_nonregr_method_lookup(self):
         if sys.version_info < (2, 4):
             self.skip('this test require python >= 2.4')
