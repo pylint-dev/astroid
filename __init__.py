@@ -273,7 +273,10 @@ def Const___getattr__(self, name):
     if self.value is None:
         raise AttributeError(name)
     if self._proxied is None:
-        self._proxied = MANAGER.astng_from_class(self.value.__class__)
+        try:
+            self._proxied = MANAGER.astng_from_class(self.value.__class__)
+        except NotFoundError:
+            raise AttributeError(name)
     return getattr(self._proxied, name)
 Const.__getattr__ = Const___getattr__
 def Const_getattr(self, name, context=None, lookupclass=None):
