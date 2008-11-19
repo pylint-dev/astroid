@@ -824,7 +824,6 @@ def f(x):
     def test_python25_generator_exit(self):
         sys.stderr = StringIO()
         data = "b = {}[str(0)+''].a"
-
         astng = builder.string_build(data, __name__, __file__)
         list(astng['b'].infer())
         output = sys.stderr.getvalue()
@@ -853,6 +852,31 @@ def f(x):
 #         # failed to import unittest_lookup since absolute_import is activated
 #         self.failUnless(infered is YES)
 
-        
+#     def test_mechanize_open(self):
+#         try:
+#             import mechanize
+#         except ImportError:
+#             self.skip('require mechanize installed')
+#         data = '''from mechanize import Browser
+# print Browser
+# b = Browser()
+# print b
+# '''
+#         astng = builder.string_build(data, __name__, __file__)
+#         browser = get_name_node(astng, 'Browser').infer().next()
+#         self.assertIsInstance(browser, nodes.Class)
+#         print '*'*80
+#         bopen = list(browser.igetattr('open'))
+#         self.assertEquals(len(bopen), 1)
+#         self.assertIsInstance(bopen[0], nodes.Function)
+#         self.failUnless(bopen[0].callable())
+#         print '*'*80
+#         b = get_name_node(astng, 'b').infer().next()
+#         self.assertIsInstance(b, Instance)
+#         bopen = list(b.igetattr('open'))
+#         self.assertEquals(len(bopen), 1)
+#         self.assertIsInstance(bopen[0], InstanceMethod)
+#         self.failUnless(bopen[0].callable())
+    
 if __name__ == '__main__':
     unittest_main()
