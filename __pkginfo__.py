@@ -21,7 +21,7 @@ logilab.astng packaging information
 
 modname = 'astng'
 distname = 'logilab-astng'
-numversion = (0, 17, 3)
+numversion = (0, 17, 4)
 version = '.'.join([str(num) for num in numversion])
 pyversions = ["2.3", "2.4", "2.5"]
 
