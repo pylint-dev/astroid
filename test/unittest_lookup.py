@@ -168,7 +168,32 @@ class Test:
         obj = it.next()
         self.assertIsInstance(obj, nodes.Class)
         self.assertRaises(StopIteration, it.next)
-        
+
+    def test_decorator_arguments_lookup(self):
+        if sys.version_info < (2, 4):
+            self.skip('this test require python >= 2.4')
+        data = '''
+def decorator(value):
+   def wrapper(function):
+        return function
+   return wrapper
+
+class foo:
+  member = 10
+
+  @decorator(member) #This will cause pylint to complain
+  def test(self):
+       pass
+        ''' 
+        astng = builder.string_build(data, __name__, __file__)
+        member = get_name_node(astng['foo'], 'member')
+        print 'oop', member.lineno
+        it = member.infer()
+        obj = it.next()
+        self.assertIsInstance(obj, nodes.Const)
+        self.assertEquals(obj.value, 10)
+        self.assertRaises(StopIteration, it.next)
+       
     def test_nonregr_decorator_member_lookup(self):
         if sys.version_info < (2, 4):
             self.skip('this test require python >= 2.4')
