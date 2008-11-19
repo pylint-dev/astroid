@@ -332,11 +332,12 @@ def _imported_module_astng(node, modname):
     # on relative imports
     # XXX: no more needed ?
     mymodule = node.root()
-    if mymodule.relative_name(modname) == mymodule.name:
+    level = getattr(node, 'level', None) # Import as no level
+    if mymodule.relative_name(modname, level) == mymodule.name:
         # FIXME: I don't know what to do here...
         raise InferenceError(modname)
     try:
-        return mymodule.import_module(modname)
+        return mymodule.import_module(modname, level=level)
     except (ASTNGBuildingException, SyntaxError):
         raise InferenceError(modname)
         

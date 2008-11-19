@@ -35,7 +35,7 @@ from logilab.common.compat import chain, set
 from logilab.astng.utils import extend_class
 from logilab.astng import YES, MANAGER, Instance, InferenceContext, copy_context, \
      unpack_infer, _infer_stmts, \
-     Class, Const, Dict, Function, GenExpr, Lambda, \
+     Class, Const, Dict, Function, GenExpr, Lambda, From, \
      Module, Name, Pass, Raise, Tuple, Yield
 from logilab.astng import NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
@@ -249,20 +249,34 @@ class ModuleNG(object):
         """
         return self
 
-    def import_module(self, modname, relative_only=False):
+    def absolute_import_activated(self):
+        for stmt in self.locals.get('absolute_import', ()):
+            if isinstance(stmt, From) and stmt.modname == '__future__':
+                return True
+        return False
+    
+    def import_module(self, modname, relative_only=False, level=None):
         """import the given module considering self as context"""
         try:
-            return MANAGER.astng_from_module_name(self.relative_name(modname))
+            return MANAGER.astng_from_module_name(self.relative_name(modname, level))
         except ASTNGBuildingException:
             if relative_only:
                 raise
         module = MANAGER.astng_from_module_name(modname)
         return module
 
-    def relative_name(self, modname):
-        if self.package:
-            return '%s.%s' % (self.name, modname)
-        package_name = '.'.join(self.name.split('.')[:-1])
+    def relative_name(self, modname, level):
+        if self.absolute_import_activated() and not level:
+            return modname
+        if level:
+            parts = self.name.split('.')
+            if self.package:
+                parts.append('__init__')
+            package_name = '.'.join(parts[:-level])
+        elif self.package:
+            package_name = self.name
+        else:
+            package_name = '.'.join(self.name.split('.')[:-1])
         if package_name:
             return '%s.%s' % (package_name, modname)
         return modname

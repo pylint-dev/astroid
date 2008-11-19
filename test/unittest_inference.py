@@ -831,6 +831,27 @@ def f(x):
         # I have no idea how to test for this in another way...
         self.failIf("RuntimeError" in output, "Exception exceptions.RuntimeError: 'generator ignored GeneratorExit' in <generator object> ignored")
         sys.stderr = sys.__stderr__
+        
+    def test_python25_relative_import(self):
+        data = "from ...common import date; print date"
+        astng = builder.string_build(data, 'logilab.astng.test.unittest_inference', __file__)
+        infered = get_name_node(astng, 'date').infer().next()
+        self.assertIsInstance(infered, nodes.Module)
+        self.assertEquals(infered.name, 'logilab.common.date')
+
+    def test_python25_no_relative_import(self):
+        data = 'import unittest_lookup; print unittest_lookup'
+        astng = builder.string_build(data, 'logilab.astng.test.unittest_inference', __file__)
+        self.failIf(astng.absolute_import_activated())
+#         infered = get_name_node(astng, 'unittest_lookup').infer().next()
+#         self.assertIsInstance(infered, nodes.Module)
+        # failed to import unittest_lookup since absolute_import is activated
+        data = 'from __future__ import absolute_import; import unittest_lookup; print unittest_lookup'
+        astng = builder.string_build(data, 'logilab.astng.test.unittest_inference', __file__)
+        self.failUnless(astng.absolute_import_activated(), True)
+#         infered = get_name_node(astng, 'unittest_lookup').infer().next()
+#         # failed to import unittest_lookup since absolute_import is activated
+#         self.failUnless(infered is YES)
 
         
 if __name__ == '__main__':
