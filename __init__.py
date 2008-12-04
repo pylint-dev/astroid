@@ -175,12 +175,14 @@ class Instance(Proxy):
         except NotFoundError:
             if name == '__class__':
                 return [self._proxied]
-            if name == '__name__':
-                # access to __name__ gives undefined member on class
-                # instances but not on class objects
-                raise NotFoundError(name)
             if lookupclass:
-                return self._proxied.getattr(name, context)
+                values = self._proxied.getattr(name, context)
+                # access to __name__ gives undefined member on class
+                # instances, though take care of explicit definition
+                if name == '__name__':
+                    values = [n for n in values if n.lineno is not None]
+                if values:
+                    return values
         raise NotFoundError(name)
 
     def igetattr(self, name, context=None):

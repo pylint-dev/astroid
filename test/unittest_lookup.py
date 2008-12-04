@@ -147,6 +147,27 @@ print list( i for i in range(10) )
         self.assertEquals(xnames[2].lookup('i')[1][0].lineno, 4)
 
 
+    def test_explicit___name__(self):
+        data = '''
+class Pouet:
+    __name__ = "pouet"
+p1 = Pouet()
+
+class PouetPouet(Pouet): pass
+p2 = Pouet()
+
+class NoName: pass
+p3 = NoName()
+'''
+        astng = builder.string_build(data, __name__, __file__)
+        p1 = astng['p1'].infer().next()
+        self.failUnless(p1.getattr('__name__'))
+        p2 = astng['p2'].infer().next()
+        self.failUnless(p2.getattr('__name__'))
+        self.failUnless(astng['NoName'].getattr('__name__'))
+        p3 = astng['p3'].infer().next()
+        self.assertRaises(NotFoundError, p3.getattr, '__name__')
+        
     def test_nonregr_method_lookup(self):
         if sys.version_info < (2, 4):
             self.skip('this test require python >= 2.4')
