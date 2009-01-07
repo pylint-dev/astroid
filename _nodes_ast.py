@@ -412,7 +412,7 @@ class Proxy_(object): pass
 class EmptyNode(object):
     """dummy class for some situations"""
     is_statement = False
-    ._astng_fields = ()
+    _astng_fields = ()
 
 from _ast import Load as _Load, Store as _Store, Del as _Del
 def native_repr_tree(node, indent='', _done=None):
