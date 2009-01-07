@@ -381,3 +381,32 @@ class Proxy_: pass
 
 def native_repr_tree(node, indent='', _done=None):
     """enhanced compiler.ast tree representation"""
+    if _done is None:
+        _done = set()
+    if node in _done:
+        print ('loop in tree: %r (%s)' % (node, getattr(node, 'lineno', None)))
+        return
+    _done.add(node)
+    print indent + "<%s>" % node.__class__
+    indent += '    '
+    if not hasattr(node, "__dict__"): # XXX
+        return
+    for field, attr in node.__dict__.items():
+        if attr is None:
+            continue
+        if type(attr) is list:
+            if not attr: continue
+            print indent + field + ' ['
+            for elt in attr:
+                if type(elt) is tuple:
+                    for val in elt:
+                        native_repr_tree(val, indent, _done)
+                else:
+                    native_repr_tree(elt, indent, _done)
+            print indent + ']'
+            continue
+        if isinstance(attr, Node):
+            print indent + field
+            native_repr_tree(attr, indent, _done)
+        else:
+            print indent + field,  repr(attr)
