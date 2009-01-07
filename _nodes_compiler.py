@@ -212,10 +212,10 @@ def init_class(node):
     node.body = node.code.nodes
     del node.code
 
-def init_if(node):
-    node.test =
-    node.body =
-    node.orelse = 
+#XXX def init_if(node):
+    #node.test =
+    #node.body =
+    #node.orelse = 
 
 # validated
 
@@ -377,3 +377,7 @@ def class_factory(name, basenames=None, doc=None):
     return node
 
 class Proxy_: pass
+
+
+def native_repr_tree(node, indent='', _done=None):
+    """enhanced compiler.ast tree representation"""

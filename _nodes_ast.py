@@ -95,6 +95,8 @@ UNARY_OP_CLASSES = {_UAdd: '+',
                     _USub: '-',
                     _Not: 'not'}
 
+from _ast import BinOp, BoolOp, UnaryOp
+
 from _ast import (Eq as _Eq, Gt as _Gt, GtE as _GtE, In as _In, Is as _Is,
                   IsNot as _IsNot, Lt as _Lt, LtE as _LtE, NotEq as _NotEq,
                   NotIn as _NotIn)
@@ -110,7 +112,7 @@ CMP_OP_CLASSES = {_Eq: '==',
                   _NotIn: 'not in',
                   }
 
-#Eq._astng_fields = () # Eq nodes should disappears after astng builder
+#Eq._astng_fields = () # Eq nodes should disappear after astng builder
 Num._astng_fields = ()
 Str._astng_fields = ()
 
@@ -407,6 +409,10 @@ def class_factory(name, basenames=None, doc=None):
 class Proxy_(object): pass
 
 
+class EmptyNode(object):
+    """dummy class for some situations"""
+    is_statement = False
+    ._astng_fields = ()
 
 from _ast import Load as _Load, Store as _Store, Del as _Del
 def native_repr_tree(node, indent='', _done=None):

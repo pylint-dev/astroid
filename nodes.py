@@ -444,11 +444,6 @@ Import.infer_name_module = infer_name_module
 
 # as_string ###################################################################
 
-def and_as_string(node):
-    """return an ast.And node as string"""
-    return ' and '.join(['(%s)' % n.as_string() for n in node.nodes])
-And.as_string = and_as_string
-    
 def assert_as_string(node):
     """return an ast.Assert node as string"""
     if node.fail:
