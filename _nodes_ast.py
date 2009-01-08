@@ -213,7 +213,7 @@ Str._astng_fields = ()
 # Function.getChildNodes = _get_children_function
 # Lambda.getChildNodes = _get_children_function
 
-#
+
 def _init_set_doc(node):
     node.doc = None
     try:
@@ -258,11 +258,37 @@ def init_binop(node):
     
 def init_boolop(node):
     node.op = BOOL_OP_CLASSES[node.op.__class__]
-    
+
+
+def _compare_get_children(node):
+    """override get_children for zipped fields"""
+    print "+ cmp node = " , node
+    dct = node.__dict__
+    for field in node._astng_fields: # left, ops
+        try:
+            attr = dct[field]
+        except:
+            print node, field
+            raise
+        if attr is None:
+            continue
+        if type(attr) is list:
+            for elt in attr:
+                if type(elt) is tuple:
+                    yield elt[1] # we want the comparators, not the 'ops'
+                else:
+                    yield elt
+        else:
+            yield attr
+
+
+Compare.get_children = _compare_get_children
+
 def init_compare(node):
     node.ops = [(CMP_OP_CLASSES[op.__class__], expr)
                 for op, expr in zip(node.ops, node.comparators)]
     del node.comparators
+
 
 def init_dict(node):
     node.items = zip(node.keys, node.values)
@@ -426,8 +452,8 @@ def native_repr_tree(node, indent='', _done=None):
         print ('loop in tree: %r (%s)' % (node, getattr(node, 'lineno', None)))
         return
     _done.add(node)
-    print indent + repr(node)
-    indent += '  '
+    print indent + str(node)
+    indent += '    '
     d = node.__dict__
     if hasattr(node, '_attributes'):
         for a in node._attributes:
