@@ -104,6 +104,7 @@ CallFunc._astng_fields = ('func', 'args', 'keywords', 'starargs', 'kwargs')
 Class._astng_fields = ('bases', 'body',) # name
 Compare._astng_fields = ('left', 'ops',)
 Continue._astng_fields = ()
+Dict._astng_fields = ('items',)
 Discard._astng_fields = ('value',)
 From._astng_fields = ()
 ExceptHandler._astng_fields = ('type', 'name', 'body',) # XXX lineno & co inside._astng_fields instead of _attributes
@@ -140,9 +141,9 @@ print 'HGOP', Module, Module._astng_fields
 # Node  ######################################################################
 
 class NodeNG:
-    """/!\ this class should not be used directly /!\ it's
-    only used as a methods and attribute container, and update the
-    original class from the compiler.ast module using its dictionnary
+    """/!\ this class should not be used directly /!\
+    It is used as method and attribute container, and updates the
+    original class from the compiler.ast / _ast module using its dictionnary
     (see below the class definition)
     """
     is_statement = False
