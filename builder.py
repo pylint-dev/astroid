@@ -237,7 +237,11 @@ class ASTNGBuilder:
         self.visit_default(node)
         nodes.init_compare(node)
 
-    def visit_discard(self, node): 
+    def visit_delete(self, node):
+        self.visit_default(node)
+        nodes.init_delete(node)
+
+    def visit_discard(self, node):
         self.visit_default(node)
         nodes.init_discard(node)
 
