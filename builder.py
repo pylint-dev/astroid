@@ -136,7 +136,7 @@ class ASTNGBuilder:
         """build astng from a source code stream (i.e. from an ast)"""
         return self.ast_build(parse(data + '\n'), modname, path)
        
-    def ast_build(self, node, modname=None, path=None):
+    def ast_build(self, node, modname='', path=None):
         """recurse on the ast (soon ng) to add some arguments et method"""
         print '*'*80
         print modname, path
