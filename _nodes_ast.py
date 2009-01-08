@@ -25,7 +25,7 @@ __docformat__ = "restructuredtext en"
 from _ast import (Assert, Assign, AugAssign,
                   Break,
                   Compare, Continue,
-                  Dict, 
+                  Delete, Dict, 
                   Ellipsis, Exec, 
                   For,
                   Global, 
@@ -240,7 +240,11 @@ def init_function(node):
 def init_lambda(node):
     _init_function(node)
     
-    
+ 
+def init_delete(node):
+    pass
+
+   
 # validated
 
 def init_assign(node):
@@ -259,7 +263,7 @@ def init_compare(node):
     node.ops = [(CMP_OP_CLASSES[op.__class__], expr)
                 for op, expr in zip(node.ops, node.comparators)]
     del node.comparators
-    
+
 def init_dict(node):
     node.items = zip(node.keys, node.values)
     del node.keys, node.values

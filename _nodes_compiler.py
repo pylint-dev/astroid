@@ -104,7 +104,11 @@ class UnaryOp(Node):
                   UnarySub: '-',
                   Not: 'not'}
 
-    
+
+class Delete(Node):
+    """represent del statements"""
+
+
 ###############################################################################
         
 
@@ -212,6 +216,11 @@ def init_class(node):
     node.body = node.code.nodes
     del node.code
 
+def init_delete(node):
+    node.targets = node.nodes
+    node.__class__ = Delete
+    del node.nodes
+
 #XXX def init_if(node):
     #node.test =
     #node.body =
@@ -240,6 +249,7 @@ def init_boolop(node):
     node.__class__ = BoolOp
     node.values = node.nodes
     del node.nodes
+
 
 def init_compare(node):
     node.left = node.expr
@@ -325,7 +335,7 @@ def init_while(node):
     node.orelse = node.else_
     del node.else_
 
-        
+
 # raw building ################################################################
 
 def module_factory(doc):

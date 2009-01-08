@@ -133,6 +133,8 @@ Class._astng_fields = ('body',)
 Function._astng_fields = ('decorators', 'body',)
 Lambda._astng_fields = ('body',)
 
+Delete._astng_fields = ('targets', ) # XXX ?
+
 print 'HGOP', Module, Module._astng_fields
 
 # Node  ######################################################################
@@ -513,6 +515,10 @@ def continue_as_string(node):
     """return an ast.Continue node as string"""
     return 'continue'
 Continue.as_string = continue_as_string
+
+def delete_as_string(node): # XXX check if correct
+    """return an ast.Delete node as string"""
+    return 'del %s' % ', '.join([child.as_string() for child in node.targets])
 
 def dict_as_string(node):
     """return an ast.Dict node as string"""
