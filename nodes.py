@@ -130,11 +130,9 @@ Yield._astng_fields = ('value',)
 
 
 If._astng_fields = ('test', 'body', 'orelse',)
-Class._astng_fields = ('body',)
-Function._astng_fields = ('decorators', 'body',)
 Lambda._astng_fields = ('body',)
 
-Delete._astng_fields = ('targets', ) # XXX ?
+Delete._astng_fields = ('targets', )
 
 print 'HGOP', Module, Module._astng_fields
 
