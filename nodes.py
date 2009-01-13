@@ -129,6 +129,10 @@ While._astng_fields = ('test', 'body', 'orelse',)
 Yield._astng_fields = ('value',)
 
 
+ListComp._astng_fields = ('elt', 'generators')
+ListCompFor._astng_fields = ('iter', 'ifs')
+
+
 If._astng_fields = ('test', 'body', 'orelse',)
 Lambda._astng_fields = ('body',)
 

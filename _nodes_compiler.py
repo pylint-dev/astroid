@@ -286,7 +286,20 @@ def init_import_from(node):
 def init_list(node):
     node.elts = node.nodes
     del node.nodes
-    
+
+def init_listcomp(node):
+    node.elt = node.expr
+    node.generators = node.qual
+    del node.expr, node.quals
+
+def init_listcompfor(node):
+    node.iter = node.list
+    del node.list
+    node.target = node.assign
+    node.target.__class__ = Name
+    del node.assign, node.list
+
+
 def init_module(node):
     # remove Stmt node
     node.body = node.node.nodes

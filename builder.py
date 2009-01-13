@@ -171,7 +171,7 @@ class ASTNGBuilder:
                 self._asscontext = node
             else:
                 self._asscontext = None
-        elif isinstance(node, (nodes.AugAssign, nodes.comprehension)):
+        elif isinstance(node, (nodes.AugAssign, nodes.ListCompFor)):
             if childnode is node.target:
                 self._asscontext = node
             else:
@@ -268,6 +268,14 @@ class ASTNGBuilder:
     def visit_list(self, node): 
         self.visit_default(node)
         nodes.init_list(node)
+
+    def visit_listcomp(self, node):
+        self.visit_default(node)
+        nodes.init_listcomp(node)
+
+    def visit_listcompfor(self, node):
+        self.visit_default(node)
+        nodes.init_listcompfor(node)
 
     def visit_for(self, node):
         self.visit_default(node)

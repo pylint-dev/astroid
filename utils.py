@@ -53,9 +53,10 @@ class ASTWalker:
     """
     REDIRECT = {'Expr': 'Discard',
                 'ImportFrom': 'From',
+                'Attribute': 'Getattr',
+                'comprehension': "ListCompFor",
 
                 'Add': 'BinOp',
-                'Attribute': 'Getattr',
                 'Bitand': 'BinOp',
                 'Bitor': 'BinOp',
                 'Bitxor': 'BinOp',

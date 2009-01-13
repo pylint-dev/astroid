@@ -52,6 +52,7 @@ from _ast import (AST as Node,
                   Expr as Discard, 
                   ImportFrom as From,
                   excepthandler as ExceptHandler,
+                  comprehension as ListCompFor
                   )
 
 # XXX : AugLoad, AugStore, Attribute
@@ -303,6 +304,13 @@ def init_import_from(node):
 
 def init_list(node):
     pass    
+
+def init_listcomp(node):
+    pass
+
+def init_listcompfor(node):
+    pass
+
 
 init_module = _init_set_doc
 
