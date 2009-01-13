@@ -436,6 +436,8 @@ def native_repr_tree(node, indent='', _done=None):
         return
     _done.add(node)
     print indent + str(node)
+    if type(node) is str: # XXX crash on Globals
+        return
     indent += '    '
     d = node.__dict__
     if hasattr(node, '_attributes'):
