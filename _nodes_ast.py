@@ -262,26 +262,9 @@ def init_boolop(node):
 
 def _compare_get_children(node):
     """override get_children for zipped fields"""
-    print "+ cmp node = " , node
-    dct = node.__dict__
-    for field in node._astng_fields: # left, ops
-        try:
-            attr = dct[field]
-        except:
-            print node, field
-            raise
-        if attr is None:
-            continue
-        if type(attr) is list:
-            for elt in attr:
-                if type(elt) is tuple:
-                    yield elt[1] # we want the comparators, not the 'ops'
-                else:
-                    yield elt
-        else:
-            yield attr
-
-
+    yield node.left
+    for ops, comparators in node.ops:
+        yield comparators # we don't want the 'ops'
 Compare.get_children = _compare_get_children
 
 def init_compare(node):
