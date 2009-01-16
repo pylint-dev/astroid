@@ -94,10 +94,13 @@ def builtin_lookup(name):
     module
     """
     builtinastng = MANAGER.astng_from_module(__builtin__)
-    try:
-        stmts = builtinastng.locals[name]
-    except KeyError:
+    if name == '__dict__': # XXX __doc__, __name__, etc added by astng
         stmts = ()
+    else:
+        try:
+            stmts = builtinastng.locals[name]
+        except KeyError:
+            stmts = ()
     return builtinastng, stmts
 
 def ilookup(self, name, context=None):
