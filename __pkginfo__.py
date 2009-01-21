@@ -58,3 +58,5 @@ include_dirs = [join('test', 'regrtest_data'),
                 join('test', 'data'), join('test', 'data2')]
 
 debian_uploader = 'Alexandre Fayolle <afayolle@debian.org>'
+
+install_requires = ['logilab-common']

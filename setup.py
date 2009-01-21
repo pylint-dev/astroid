@@ -1,33 +1,27 @@
 #!/usr/bin/env python
-# pylint: disable-msg=W0142,W0403,W0404,E0611,W0613,W0622,W0622,W0704,R0904
-#
-# Copyright (c) 2003 LOGILAB S.A. (Paris, FRANCE).
-# http://www.logilab.fr/ -- mailto:contact@logilab.fr
-#
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the GNU General Public License as published by the Free Software
-# Foundation; either version 2 of the License, or (at your option) any later
-# version.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License along with
-# this program; if not, write to the Free Software Foundation, Inc.,
-# 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-""" Generic Setup script, takes package info from __pkginfo__.py file """
+# pylint: disable-msg=W0404,W0622,W0704,W0613,W0152
+"""Generic Setup script, takes package info from __pkginfo__.py file.
 
-from __future__ import nested_scopes
-
-__revision__ = '$Id: setup.py,v 1.3 2006-01-03 14:30:39 syt Exp $'
+:copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+:contact: http://www.logilab.fr/ -- mailto:contact@logilab.fr
+:license: General Public License version 2 - http://www.gnu.org/licenses
+"""
+__docformat__ = "restructuredtext en"
 
 import os
 import sys
 import shutil
-from distutils.core import setup
-from distutils.command import install_lib
 from os.path import isdir, exists, join, walk
+
+try:
+    from setuptools import setup
+    from setuptools.command import install_lib
+    USE_SETUPTOOLS = 1
+except ImportError:    
+    from distutils.core import setup
+    from distutils.command import install_lib
+    USE_SETUPTOOLS = 0
+    
 
 # import required features
 from __pkginfo__ import modname, version, license, short_desc, long_desc, \
@@ -57,9 +51,15 @@ try:
     from __pkginfo__ import ext_modules
 except ImportError:
     ext_modules = None
+try:
+    from __pkginfo__ import install_requires
+except ImportError:
+    install_requires = None
 
-BASE_BLACKLIST = ('CVS', 'debian', 'dist', 'build', '__buildlog', '.svn')
-IGNORED_EXTENSIONS = ('.pyc', '.pyo', '.elc')
+STD_BLACKLIST = ('CVS', '.svn', '.hg', 'debian', 'dist', 'build')
+
+IGNORED_EXTENSIONS = ('.pyc', '.pyo', '.elc', '~')
+
     
 
 def ensure_scripts(linux_scripts):
@@ -92,7 +92,7 @@ def get_packages(directory, prefix):
     return result
 
 def export(from_dir, to_dir,
-           blacklist=BASE_BLACKLIST,
+           blacklist=STD_BLACKLIST,
            ignore_ext=IGNORED_EXTENSIONS):
     """make a mirror of from_dir in to_dir, omitting directories and files
     listed in the black list
@@ -130,7 +130,12 @@ def export(from_dir, to_dir,
     walk(from_dir, make_mirror, None)
 
 
-EMPTY_FILE = '"""generated file, don\'t modify or your data will be lost"""\n'
+EMPTY_FILE = '''"""generated file, don\'t modify or your data will be lost"""
+try:
+    __import__('pkg_resources').declare_namespace(__name__)
+except ImportError:
+    pass
+'''
 
 class MyInstallLib(install_lib.install_lib):
     """extend install_lib command to handle  package __init__.py and
@@ -163,22 +168,26 @@ def install(**kwargs):
         package = subpackage_of + '.' + modname
         kwargs['package_dir'] = {package : '.'}
         packages = [package] + get_packages(os.getcwd(), package)
+        if USE_SETUPTOOLS:
+            kwargs['namespace_packages'] = [subpackage_of]
     else:
         kwargs['package_dir'] = {modname : '.'}
         packages = [modname] + get_packages(os.getcwd(), modname)
+    if USE_SETUPTOOLS and install_requires:
+        kwargs['install_requires'] = install_requires
     kwargs['packages'] = packages
     return setup(name = distname,
                  version = version,
-                 license =license,
+                 license = license,
                  description = short_desc,
                  long_description = long_desc,
                  author = author,
                  author_email = author_email,
                  url = web,
                  scripts = ensure_scripts(scripts),
-                 data_files=data_files,
-                 ext_modules=ext_modules,
-                 cmdclass={'install_lib': MyInstallLib},
+                 data_files = data_files,
+                 ext_modules = ext_modules,
+                 cmdclass = {'install_lib': MyInstallLib},
                  **kwargs
                  )
             
