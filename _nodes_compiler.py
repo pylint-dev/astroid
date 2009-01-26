@@ -209,7 +209,11 @@ def init_function(node):
     node.body = node.code.nodes
     del node.code
     node.argnames = list(node.argnames)
-init_lambda = init_function
+
+def init_lambda(node):
+     node.body = node.code
+     node.argnames = list(node.argnames)
+     del node.code
 
 def init_class(node):
     # remove Stmt node
