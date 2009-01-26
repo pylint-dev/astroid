@@ -297,7 +297,6 @@ def init_getattr(node):
 def init_for(node):
     pass
 
-Import._astng_fields = ()
 def init_import(node):
     node.names = [(alias.name, alias.asname) for alias in node.names]
 
@@ -318,7 +317,6 @@ def init_listcompfor(node):
 
 init_module = _init_set_doc
 
-Name._astng_fields = ()
 def init_name(node):
     node.name = node.id
     del node.id
@@ -437,7 +435,7 @@ class Proxy_(object): pass
 class EmptyNode(object):
     """dummy class for some situations"""
     is_statement = False
-    _astng_fields = ()
+
 
 from _ast import Load as _Load, Store as _Store, Del as _Del
 def native_repr_tree(node, indent='', _done=None):
