@@ -253,6 +253,11 @@ def init_boolop(node):
     node.values = node.nodes
     del node.nodes
 
+def init_callfunc(node):
+    node.func = node.node
+    node.starargs = node.star_args
+    node.kwargs = node.dstar_args
+    del node.node, node.star_args, node.dstar_args
 
 def init_compare(node):
     node.left = node.expr

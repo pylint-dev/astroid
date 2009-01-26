@@ -233,6 +233,10 @@ class ASTNGBuilder:
         self.visit_default(node)
         nodes.init_boolop(node)
 
+    def visit_callfunc(self, node):
+        self.visit_default(node)
+        nodes.init_callfunc(node)
+
     def visit_compare(self, node):
         self.visit_default(node)
         nodes.init_compare(node)

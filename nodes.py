@@ -100,7 +100,7 @@ BoolOp._astng_fields = ('values',)
 UnaryOp._astng_fields = ('operand',)
 
 Break._astng_fields = ()
-CallFunc._astng_fields = ('func', 'args', 'keywords', 'starargs', 'kwargs')
+CallFunc._astng_fields = ('func', 'args', 'starargs', 'kwargs')
 Class._astng_fields = ('bases', 'body',) # name
 Compare._astng_fields = ('left', 'ops',)
 Continue._astng_fields = ()

@@ -52,7 +52,8 @@ from _ast import (AST as Node,
                   Expr as Discard, 
                   ImportFrom as From,
                   excepthandler as ExceptHandler,
-                  comprehension as ListCompFor
+                  comprehension as ListCompFor,
+                  keyword as Keyword
                   )
 
 # XXX : AugLoad, AugStore, Attribute
@@ -237,15 +238,14 @@ init_class = _init_set_doc
 def init_function(node):
     _init_set_doc(node)
     _init_function(node)
-    
+
 def init_lambda(node):
     _init_function(node)
-    
- 
+
 def init_delete(node):
     pass
 
-   
+
 # validated
 
 def init_assign(node):
@@ -260,6 +260,10 @@ def init_binop(node):
 def init_boolop(node):
     node.op = BOOL_OP_CLASSES[node.op.__class__]
 
+
+def init_callfunc(node):
+    node.args.extend(node.keywords)
+    del node.keywords
 
 def _compare_get_children(node):
     """override get_children for zipped fields"""
