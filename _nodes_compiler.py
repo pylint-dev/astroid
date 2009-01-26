@@ -330,12 +330,15 @@ def init_subscript(node):
 
 def init_try_except(node):
     node.body = node.body.nodes
-    node.handlers = [ExceptHandler(exctype, excobj, body, node.lineno)
+    # remove Stmt node
+    node.handlers = [ExceptHandler(exctype, excobj, body.nodes, node.lineno)
                      for exctype, excobj, body in node.handlers]
     if node.else_:
         node.orelse = node.else_.nodes
+        del node.else_
     else:
         node.orelse = []
+
 
 def init_try_finally(node):
     node.body = node.body.nodes
