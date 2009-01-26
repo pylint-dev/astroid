@@ -232,7 +232,10 @@ def init_assign(node):
     node.value = node.expr
     del node.expr
     node.targets = node.nodes
+    for target in node.targets:
+        target.__class__ = Name
     del node.nodes
+
 
 def init_augassign(node):
     node.value = node.expr
