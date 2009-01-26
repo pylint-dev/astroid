@@ -76,7 +76,7 @@ try:
     from logilab.astng._nodes_ast import _const_factory
     AST_MODE = '_ast'
 except ImportError:
-    from logilab.astng._nodes_compiler import *            
+    from logilab.astng._nodes_compiler import *
     from logilab.astng._nodes_compiler import _const_factory
     AST_MODE = 'compiler'
 
@@ -104,6 +104,7 @@ CallFunc._astng_fields = ('func', 'args', 'starargs', 'kwargs')
 Class._astng_fields = ('bases', 'body',) # name
 Compare._astng_fields = ('left', 'ops',)
 Continue._astng_fields = ()
+Delete._astng_fields = ('targets', )
 Dict._astng_fields = ('items',)
 Discard._astng_fields = ('value',)
 From._astng_fields = ()
@@ -113,8 +114,12 @@ Function._astng_fields = ('decorators', 'body',)
 For._astng_fields = ('target', 'iter', 'body', 'orelse',)
 Getattr._astng_fields = ('expr',) # (former value), attr (now attrname), ctx
 Global._astng_fields = ()
+If._astng_fields = ('test', 'body', 'orelse',)
 Import._astng_fields = ()
+Lambda._astng_fields = ('body',)
 List._astng_fields = ('elts',)  # ctx
+ListComp._astng_fields = ('elt', 'generators')
+ListCompFor._astng_fields = ('iter', 'ifs')
 Module._astng_fields = ('body',)
 Name._astng_fields = () # id, ctx
 Pass._astng_fields = ()
@@ -128,17 +133,6 @@ Tuple._astng_fields = ('elts',)  # ctx
 While._astng_fields = ('test', 'body', 'orelse',)
 Yield._astng_fields = ('value',)
 
-
-ListComp._astng_fields = ('elt', 'generators')
-ListCompFor._astng_fields = ('iter', 'ifs')
-
-
-If._astng_fields = ('test', 'body', 'orelse',)
-Lambda._astng_fields = ('body',)
-
-Delete._astng_fields = ('targets', )
-
-print 'HGOP', Module, Module._astng_fields
 
 # Node  ######################################################################
 
@@ -174,7 +168,7 @@ class NodeNG:
                     yield elt
             else:
                 yield attr
-    
+
     def parent_of(self, node):
         """return true if i'm a parent of the given node"""
         parent = node.parent
@@ -251,7 +245,7 @@ class NodeNG:
                 nearest = node, lineno
         # FIXME: raise an exception if nearest is None ?
         return nearest[0]
-    
+
     def source_line(self):
         """return the line number where the given node appears
 
@@ -318,28 +312,14 @@ class NodeNG:
 
     def eq(self, value):
         return False
-    
+
 extend_class(Node, NodeNG)
 
-Discard.is_statement = True
-ExceptHandler.is_statement = True
-From.is_statement = True
-Global.is_statement = True
-Import.is_statement = True
-TryExcept.is_statement = True
-TryFinally.is_statement = True
-While.is_statement = True
-Return.is_statement = True
-Yield.is_statement = True
+for klass in Break, Class, Continue, Discard, ExceptHandler, For, From, \
+             Function, Global, If, Import, Return, \
+             TryExcept, TryFinally, While, With, Yield:
+    klass.is_statement = True
 
-
-If.is_statement = True
-For.is_statement = True
-With.is_statement = True
-Class.is_statement = True
-Function.is_statement = True
-Continue.is_statement = True
-Break.is_statement = True
 
 def const_factory(value):
     try:
@@ -359,9 +339,6 @@ def stmts_as_string(node, attr='body'):
 def _get_children_nochildren(self):
     return ()
 
-#class EmptyNode(object):
-#    is_statement = False
-#   ._astng_fields = []
 
 # block range overrides #######################################################
 
