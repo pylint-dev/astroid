@@ -336,7 +336,13 @@ def init_print(node, nl=False):
 def init_printnl(node):
     node.__class__ = Print
     init_print(node, True)
-    
+
+def init_raise(node):
+    node.type = node.expr1
+    node.inst = node.expr2
+    node.tback = node.expr3
+    del node.expr1, node.expr2, node.expr3
+
 def init_subscript(node):
     pass
 

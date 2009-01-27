@@ -339,6 +339,9 @@ def init_str(node):
 def init_print(node):
     pass
 
+def init_raise(node):
+    pass
+
 def init_subscript(node):
     node.expr = node.value
     del node.value

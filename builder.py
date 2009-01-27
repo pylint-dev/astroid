@@ -365,7 +365,11 @@ class ASTNGBuilder:
     def visit_print(self, node):
         self.visit_default(node)
         nodes.init_print(node)
-        
+
+    def visit_raise(self, node):
+        self.visit_default(node)
+        nodes.init_raise(node)
+
     def visit_tryexcept(self, node):
         self.visit_default(node)
         nodes.init_try_except(node)
