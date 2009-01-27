@@ -558,17 +558,6 @@ class ASTNGBuilder:
         self.visit_default(node)
         if self._asscontext is not None:
             self._delayed.append(node)
-    
-    def visit_str(self, node):
-        try:
-            node.value = node.s
-        except AttributeError:
-            assert node.value
-        self.visit_default(node)
-        
-    def visit_num(self, node):
-        node.value = node.n
-        self.visit_default(node)
 
     def delayed_visit_attribute(self, node):
         """visit a AssAttr node -> add name to locals, handle members definition
