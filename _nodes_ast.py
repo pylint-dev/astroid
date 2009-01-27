@@ -245,6 +245,8 @@ def init_lambda(node):
 def init_assname(node):
     pass
 
+def init_asstuple(node):
+    pass
 
 # validated
 

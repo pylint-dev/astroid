@@ -221,7 +221,6 @@ def init_class(node):
     del node.code
 
 def init_assname(node):
-    print "  * * init_assname \n"
     if node.flags == 'OP_DELETE':
         node.targets = [Name(node.name)]
         node.__class__ = Delete
@@ -231,10 +230,13 @@ def init_assname(node):
         print "AssName flags:", node.flags
         raise
 
-#XXX def init_if(node):
-    #node.test =
-    #node.body =
-    #node.orelse = 
+def init_asstuple(node):
+    if node.nodes[0].flags  == 'OP_DELETE':
+        node.__class__ = Delete
+        node.targets = [Name(item.name) for item in node.nodes]
+    else:
+        print "Uncatched AssTuple", node
+        raise
 
 # validated
 

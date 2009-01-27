@@ -486,6 +486,10 @@ class ASTNGBuilder:
         self.visit_default(node)
         self._delayed.append(node)
 
+    def visit_asstuple(self, node):
+        self.visit_default(node)
+        nodes.init_asstuple(node)
+
     def visit_printnl(self, node):
         self.visit_default(node)
         nodes.init_printnl(node)
