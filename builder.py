@@ -189,7 +189,8 @@ class ASTNGBuilder:
 
     def leave_default(self, _):       
         """default leave method, handle the parent attribute"""
-        self._par_stack.pop()             
+        self._par_stack.pop()
+
 
     def visit_assign(self, node):
         """visit a Assign node -> check for classmethod and staticmethod
@@ -198,7 +199,6 @@ class ASTNGBuilder:
         self.visit_default(node)
         nodes.init_assign(node)
         klass = node.parent.frame()
-        print node
         if isinstance(klass, nodes.Class) and \
             isinstance(node.value, nodes.CallFunc) and \
             isinstance(node.value.node, nodes.Name):
@@ -209,10 +209,7 @@ class ASTNGBuilder:
                         meth = klass[ass_node.name]
                         if isinstance(meth, nodes.Function):
                             meth.type = func_name
-                        #else:
-                        #    print >> sys.stderr, 'FIXME 1', meth
                     except (AttributeError, KeyError):
-                        #print >> sys.stderr, 'FIXME 2', ass_node.name
                         continue
         elif getattr(node.targets[0], 'name', None) == '__metaclass__': # XXX check more...
             self._metaclass[-1] = 'type' # XXX get the actual metaclass
@@ -237,58 +234,51 @@ class ASTNGBuilder:
         self.visit_default(node)
         nodes.init_callfunc(node)
 
+    def visit_class(self, node):
+        """visit a Class node -> init node and push the corresponding
+        object or None on the top of the stack
+        """
+        self.visit_default(node)
+        node.instance_attrs = {}
+        self._push(node)
+        nodes.init_class(node)
+        for name, value in ( ('__name__', node.name),
+                             ('__module__', node.root().name),
+                             ('__doc__', node.doc) ):
+            const = nodes.const_factory(value)
+            const.parent = node
+            node.locals[name] = [const]
+        attach___dict__(node)
+        self._metaclass.append(self._metaclass[-1])
+    visit_classdef = visit_class
+
+    def leave_class(self, node):
+        """leave a Class node -> pop the last item on the stack"""
+        self.leave_default(node)
+        self._stack.pop()
+        metaclass = self._metaclass.pop()
+        if not node.bases:
+            # no base classes, detect new / style old style according to
+            # current scope
+            node._newstyle = metaclass == 'type'
+        node.basenames = [bnode.as_string() for bnode in node.bases]
+    leave_classdef = leave_class
+
     def visit_compare(self, node):
         self.visit_default(node)
         nodes.init_compare(node)
-
-
-    def visit_discard(self, node):
-        self.visit_default(node)
-        nodes.init_discard(node)
 
     def visit_dict(self, node): 
         self.visit_default(node)
         nodes.init_dict(node)
 
+    def visit_discard(self, node):
+        self.visit_default(node)
+        nodes.init_discard(node)
+
     def visit_exec(self, node):
         self.visit_default(node)
         nodes.init_exec(node)
-
-    def visit_getattr(self, node): 
-        self.visit_default(node)
-        nodes.init_getattr(node)
-
-    def visit_import(self, node):
-        """visit a Import node -> add imported names to locals"""
-        self.visit_default(node)
-        nodes.init_import(node)
-        for (name, asname) in node.names:
-            name = asname or name
-            node.parent.set_local(name.split('.')[0], node)
-
-    def visit_list(self, node): 
-        self.visit_default(node)
-        nodes.init_list(node)
-
-    def visit_listcomp(self, node):
-        self.visit_default(node)
-        nodes.init_listcomp(node)
-
-    def visit_listcompfor(self, node):
-        self.visit_default(node)
-        nodes.init_listcompfor(node)
-
-    def visit_for(self, node):
-        self.visit_default(node)
-        nodes.init_for(node)
-
-    def visit_num(self, node):
-        self.visit_default(node)
-        nodes.init_num(node)
-
-    def visit_str(self, node):
-        self.visit_default(node)
-        nodes.init_str(node)
 
     def visit_from(self, node):
         """visit a From node -> add imported names to locals"""
@@ -300,18 +290,84 @@ class ASTNGBuilder:
                 try:
                     imported = node.root().import_module(node.modname)
                 except ASTNGBuildingException:
-                    #import traceback
-                    #traceback.print_exc()
                     continue
-                    # FIXME: log error
-                    #print >> sys.stderr, \
-                    #      'Unable to get imported names for %r line %s"' % (
-                    #    node.modname, node.lineno)
                 for name in imported.wildcard_import_names():
                     node.parent.set_local(name, node)
             else:
                 node.parent.set_local(asname or name, node)
-                
+
+    def visit_for(self, node):
+        self.visit_default(node)
+        nodes.init_for(node)
+
+    def visit_function(self, node):
+        """visit a Function node -> init node and push the corresponding
+        object or None on the top of the stack
+        """
+        self.visit_default(node)
+        self._global_names.append({})
+        nodes.init_function(node)
+        if isinstance(node.parent.frame(), nodes.Class):
+            if node.name == '__new__':
+                node.type = 'classmethod'
+            else:
+                node.type = 'method'
+        self._push(node)
+        register_arguments(node, node.argnames)
+    visit_functiondef = visit_function
+
+    def leave_function(self, node):
+        """leave a Function node -> pop the last item on the stack"""
+        self.leave_default(node)
+        self._stack.pop()
+        self._global_names.pop()
+    leave_functiondef = leave_function
+
+    def visit_genexpr(self, node):
+        """visit a GenExpr node -> init node locals"""
+        self.visit_default(node)
+        node.locals = {}
+    visit_generatorexp = visit_genexpr
+
+    def visit_getattr(self, node): 
+        self.visit_default(node)
+        nodes.init_getattr(node)
+
+    def visit_global(self, node):
+        """visit a Global node -> add declared names to locals"""
+        self.visit_default(node)
+        if not self._global_names: # global at the module level, no effect
+            return
+        for name in node.names:
+            self._global_names[-1].setdefault(name, []).append(node)
+
+    def visit_import(self, node):
+        """visit a Import node -> add imported names to locals"""
+        self.visit_default(node)
+        nodes.init_import(node)
+        for (name, asname) in node.names:
+            name = asname or name
+            node.parent.set_local(name.split('.')[0], node)
+
+    def visit_lambda(self, node):
+        """visit a Lambda node -> init node locals"""
+        self.visit_default(node)
+        nodes.init_lambda(node)
+        node.locals = {}
+        register_arguments(node, node.argnames)
+
+    def visit_list(self, node):
+        self.visit_default(node)
+        nodes.init_list(node)
+
+    def visit_listcomp(self, node):
+        self.visit_default(node)
+        nodes.init_listcomp(node)
+
+    def visit_listcompfor(self, node):
+        self.visit_default(node)
+        nodes.init_listcompfor(node)
+
     def visit_module(self, node):
         """visit a Module node -> init node and push the corresponding
         object or None on the top of the stack
@@ -344,7 +400,7 @@ class ASTNGBuilder:
         self._par_stack.pop()
         assert not self._par_stack, \
                'Parent stack is not empty : %s' % self._par_stack
-                    
+
     def visit_name(self, node):
         nodes.init_name(node)
         try:
@@ -353,12 +409,10 @@ class ASTNGBuilder:
             node.value = value
         except KeyError:
             pass
-        if node.name == 'NoneType':
-            print 'yoooooooooooo', node.name, self._asscontext
         self.visit_default(node)
         if self._asscontext is not None:
             self._add_local(node, node.name)
-            
+
     def visit_print(self, node):
         self.visit_default(node)
         nodes.init_print(node)
@@ -366,6 +420,10 @@ class ASTNGBuilder:
     def visit_raise(self, node):
         self.visit_default(node)
         nodes.init_raise(node)
+
+    def visit_subscript(self, node):
+        self.visit_default(node)
+        nodes.init_subscript(node)
 
     def visit_tryexcept(self, node):
         self.visit_default(node)
@@ -388,87 +446,6 @@ class ASTNGBuilder:
         nodes.init_while(node)
 
 
-
-
-        
-    def visit_class(self, node):
-        """visit a Class node -> init node and push the corresponding
-        object or None on the top of the stack
-        """
-        self.visit_default(node)
-        node.instance_attrs = {}
-        self._push(node)
-        nodes.init_class(node)
-        for name, value in ( ('__name__', node.name),
-                             ('__module__', node.root().name),
-                             ('__doc__', node.doc) ):
-            const = nodes.const_factory(value)
-            const.parent = node
-            node.locals[name] = [const]
-        attach___dict__(node)
-        self._metaclass.append(self._metaclass[-1])
-    visit_classdef = visit_class
-        
-    def leave_class(self, node):
-        """leave a Class node -> pop the last item on the stack"""
-        self.leave_default(node)
-        self._stack.pop()
-        metaclass = self._metaclass.pop()
-        if not node.bases:
-            # no base classes, detect new / style old style according to
-            # current scope
-            node._newstyle = metaclass == 'type'
-        node.basenames = [bnode.as_string() for bnode in node.bases]
-    leave_classdef = leave_class
-        
-    def visit_function(self, node):
-        """visit a Function node -> init node and push the corresponding
-        object or None on the top of the stack
-        """
-        self.visit_default(node)
-        self._global_names.append({})
-        nodes.init_function(node)
-        if isinstance(node.parent.frame(), nodes.Class):
-            if node.name == '__new__':
-                node.type = 'classmethod'
-            else:
-                node.type = 'method'
-        self._push(node)
-        register_arguments(node, node.argnames)
-    visit_functiondef = visit_function
-    
-    def leave_function(self, node):
-        """leave a Function node -> pop the last item on the stack"""
-        self.leave_default(node)
-        self._stack.pop()
-        self._global_names.pop()
-    leave_functiondef = leave_function
-        
-    def visit_lambda(self, node):
-        """visit a Lambda node -> init node locals"""
-        self.visit_default(node)
-        nodes.init_lambda(node)
-        node.locals = {}
-        register_arguments(node, node.argnames)
-        
-    def visit_genexpr(self, node):
-        """visit a GenExpr node -> init node locals"""
-        self.visit_default(node)
-        node.locals = {}
-    visit_generatorexp = visit_genexpr
-    
-    def visit_global(self, node):
-        """visit a Global node -> add declared names to locals"""
-        self.visit_default(node)
-        if not self._global_names: # global at the module level, no effect
-            return
-        for name in node.names:
-            self._global_names[-1].setdefault(name, []).append(node)
-        
-    def visit_subscript(self, node):
-        self.visit_default(node)
-        nodes.init_subscript(node)
-        
     def _add_local(self, node, name):
         if self._global_names and name in self._global_names[-1]:
             node.root().set_local(name, node)
@@ -517,7 +494,6 @@ class ASTNGBuilder:
         """visit a AssAttr node -> add name to locals, handle members
         definition
         """
-        #print 'delayted', node, node.attrname
         try:
             frame = node.frame()
             for infered in node.expr.infer():
@@ -542,9 +518,7 @@ class ASTNGBuilder:
                     values.insert(0, node)
                 else:
                     values.append(node)
-                #print node.attrname, infered, values
         except InferenceError:
-            #print frame, node
             pass
         
     # py2.5 (ast mode) only callbacks #########################################
@@ -557,10 +531,17 @@ class ASTNGBuilder:
         if self._asscontext is not None:
             self._delayed.append(node)
 
+    def visit_num(self, node):
+        self.visit_default(node)
+        nodes.init_num(node)
+
+    def visit_str(self, node):
+        self.visit_default(node)
+        nodes.init_str(node)
+
     def delayed_visit_attribute(self, node):
         """visit a AssAttr node -> add name to locals, handle members definition
         """
-        #print 'delayted', node, node.attrname
         try:
             frame = node.frame()
             for infered in node.value.infer():
@@ -585,9 +566,7 @@ class ASTNGBuilder:
                     values.insert(0, node)
                 else:
                     values.append(node)
-                #print node.attrname, infered, values
         except InferenceError:
-            #print frame, node
             pass
 
     # astng from living objects ###############################################
