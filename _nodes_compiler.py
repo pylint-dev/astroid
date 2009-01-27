@@ -296,7 +296,7 @@ def init_import_from(node):
     pass
 
 def init_list(node):
-    node.elts = node.nodes
+    node.elts = list(node.nodes) # tuple if empty list
     del node.nodes
 
 def init_listcomp(node):
