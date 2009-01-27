@@ -220,10 +220,16 @@ def init_class(node):
     node.body = node.code.nodes
     del node.code
 
-def init_delete(node):
-    node.targets = node.nodes
-    node.__class__ = Delete
-    del node.nodes
+def init_assname(node):
+    print "  * * init_assname \n"
+    if node.flags == 'OP_DELETE':
+        node.targets = [Name(node.name)]
+        node.__class__ = Delete
+    elif node.flags == 'OP_ASSIGN':
+        node.__class__ = Name
+    elif node.flags not in ('OP_DELETE', 'OP_ASSIGN'):
+        print "AssName flags:", node.flags
+        raise
 
 #XXX def init_if(node):
     #node.test =

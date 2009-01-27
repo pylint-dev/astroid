@@ -242,7 +242,7 @@ def init_function(node):
 def init_lambda(node):
     _init_function(node)
 
-def init_delete(node):
+def init_assname(node):
     pass
 
 
