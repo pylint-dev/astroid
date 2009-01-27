@@ -68,7 +68,6 @@ from _ast import (AST as Node,
 from _ast import Num, Str, Eq, alias, arguments, comprehension
 
 COMPREHENSIONS_SCOPES = (comprehension,)
-Const = (Num, Str)
 
 from _ast import (Add as _Add, Div as _Div, FloorDiv as _FloorDiv,
                   Mod as _Mod, Mult as _Mult, Pow as _Pow, Sub as _Sub,
@@ -115,6 +114,7 @@ CMP_OP_CLASSES = {_Eq: '==',
                   }
 
 #Eq._astng_fields = () # Eq nodes should disappear after astng builder
+# FIXME : can't replace totally by Const : Str needed in _init_set_doc
 Num._astng_fields = ()
 Str._astng_fields = ()
 
@@ -321,6 +321,21 @@ def init_name(node):
     node.name = node.id
     del node.id
 
+class Const(Node):
+    """represent a Str or Num node"""
+
+def init_num(node):
+    node.__class__ = Const
+    node.value = node.n
+    del node.n
+
+def init_str(node):
+    node.__class__ = Const
+    node.value = node.s
+    del node.s
+
+
+
 def init_print(node):
     pass
 
@@ -382,10 +397,8 @@ def import_from_factory(modname, membername):
     return node
 
 def _const_factory(value):
-    if isinstance(value, (int, long, complex)):
-        node = Num()
-    elif isinstance(value, basestring):
-        node = Str()
+    if isinstance(value, (int, long, complex, basestring)):
+        node = Const()
     else:
         raise Exception(repr(value))
     node.value = value

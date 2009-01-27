@@ -320,6 +320,14 @@ def init_module(node):
 def init_name(node):
     pass
 
+
+def init_num(node):
+    pass
+
+def init_str(node):
+    pass
+
+
 def init_print(node, nl=False):
     node.values = node.nodes
     del node.nodes
@@ -383,7 +391,7 @@ else:
         return From(modname, ( (membername, None), ), 0)
 
 def _const_factory(value):
-    return Const(value)    
+    return Const(value)
 
 # introduction of decorators has changed the Function initializer arguments
 if sys.version_info >= (2, 4):

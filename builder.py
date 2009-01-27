@@ -284,7 +284,15 @@ class ASTNGBuilder:
     def visit_for(self, node):
         self.visit_default(node)
         nodes.init_for(node)
-            
+
+    def visit_num(self, node):
+        self.visit_default(node)
+        nodes.init_num(node)
+
+    def visit_str(self, node):
+        self.visit_default(node)
+        nodes.init_str(node)
+
     def visit_from(self, node):
         """visit a From node -> add imported names to locals"""
         self.visit_default(node)
