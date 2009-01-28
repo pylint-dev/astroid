@@ -349,6 +349,10 @@ class ASTNGBuilder:
             name = asname or name
             node.parent.set_local(name.split('.')[0], node)
 
+    def visit_keyword(self, node):
+        self.visit_default(node)
+        nodes.init_keyword(node)
+
     def visit_lambda(self, node):
         """visit a Lambda node -> init node locals"""
         self.visit_default(node)

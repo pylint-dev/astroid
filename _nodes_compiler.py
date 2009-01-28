@@ -315,6 +315,10 @@ def init_list(node):
     node.elts = list(node.nodes) # tuple if empty list
     del node.nodes
 
+def init_keyword(node):
+    node.value = node.expr
+    del node.expr
+
 def init_listcomp(node):
     node.elt = node.expr
     node.generators = node.quals

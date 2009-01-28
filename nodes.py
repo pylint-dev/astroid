@@ -118,6 +118,7 @@ Getattr._astng_fields = ('expr',) # (former value), attr (now attrname), ctx
 Global._astng_fields = ()
 If._astng_fields = ('test', 'body', 'orelse',)
 Import._astng_fields = ()
+Keyword._astng_fields = ('value',)
 Lambda._astng_fields = ('body',)
 List._astng_fields = ('elts',)  # ctx
 ListComp._astng_fields = ('elt', 'generators')

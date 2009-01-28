@@ -307,6 +307,10 @@ def init_import_from(node):
     node.modname = node.module
     del node.module
 
+def init_keyword(node):
+    node.name = node.arg
+    del node.arg
+
 def init_list(node):
     pass    
 
