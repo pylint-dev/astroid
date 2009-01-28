@@ -375,8 +375,9 @@ def init_try_except(node):
 
 
 def init_try_finally(node):
+    # remove Stmt nodes
     node.body = node.body.nodes
-    node.finalbody = node.final
+    node.finalbody = node.final.nodes
     del node.final
 
 init_tuple = init_list
