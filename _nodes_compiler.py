@@ -317,12 +317,11 @@ def init_list(node):
 
 def init_listcomp(node):
     node.elt = node.expr
-    node.generators = node.qual
+    node.generators = node.quals
     del node.expr, node.quals
 
 def init_listcompfor(node):
     node.iter = node.list
-    del node.list
     node.target = node.assign
     node.target.__class__ = Name
     del node.assign, node.list
