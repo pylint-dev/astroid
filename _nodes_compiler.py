@@ -247,12 +247,13 @@ def init_assign(node):
     del node.expr
     node.targets = node.nodes
     for target in node.targets:
-        assert target.__class__.__name__ in ("AssName", "AssTuple")
         if isinstance(target, AssName):
             target.__class__ = Name
             del target.flags
-        if isinstance(target, AssTuple):
+        elif isinstance(target, AssTuple):
             target.__class__ = Tuple
+        elif isinstance(target, AssAttr):
+            target.__class__ = Getattr
     del node.nodes
 
 
@@ -283,8 +284,8 @@ def init_compare(node):
     del node.expr
 
 def init_dict(node):
-    pass
-    
+    node.items = list(node.items)
+
 def init_discard(node):
     node.value = node.expr
     del node.expr
