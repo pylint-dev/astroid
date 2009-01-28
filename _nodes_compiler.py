@@ -229,11 +229,13 @@ def init_assname(node):
     elif node.flags not in ('OP_DELETE', 'OP_ASSIGN'):
         print "AssName flags:", node.flags
         raise
+    del node.flags
 
 def init_asstuple(node):
     if node.nodes[0].flags  == 'OP_DELETE':
         node.__class__ = Delete
         node.targets = [Name(item.name) for item in node.nodes]
+        del node.nodes
     else:
         print "Uncatched AssTuple", node
         raise
@@ -245,7 +247,12 @@ def init_assign(node):
     del node.expr
     node.targets = node.nodes
     for target in node.targets:
-        target.__class__ = Name
+        assert target.__class__.__name__ in ("AssName", "AssTuple")
+        if isinstance(target, AssName):
+            target.__class__ = Name
+            del target.flags
+        if isinstance(target, AssTuple):
+            target.__class__ = Tuple
     del node.nodes
 
 
@@ -452,7 +459,7 @@ def native_repr_tree(node, indent='', _done=None):
     if not hasattr(node, "__dict__"): # XXX
         return
     for field, attr in node.__dict__.items():
-        if attr is None:
+        if attr is None or field == "_proxied":
             continue
         if type(attr) is list:
             if not attr: continue
