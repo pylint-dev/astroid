@@ -251,7 +251,7 @@ class NodeNG:
     def source_line(self):
         """return the line number where the given node appears
 
-        we need this method since not all nodes as the lineno attribute
+        we need this method since not all nodes have the lineno attribute
         correctly set...
         """
         line = self.lineno
@@ -341,6 +341,14 @@ def stmts_as_string(node, attr='body'):
 def _get_children_nochildren(self):
     return ()
 
+#  get_children overrides  ####################################################
+
+def _dict_get_children(node): # XXX : distinguish key and value ?
+    """override get_children for Dict"""
+    for key, value in node.items:
+        yield key
+        yield value
+Dict.get_children = _dict_get_children
 
 # block range overrides #######################################################
 
