@@ -191,6 +191,9 @@ class ASTNGBuilder:
         """default leave method, handle the parent attribute"""
         self._par_stack.pop()
 
+    def visit_assert(self, node):
+        self.visit_default(node)
+        nodes.init_assert(node)
 
     def visit_assign(self, node):
         """visit a Assign node -> check for classmethod and staticmethod

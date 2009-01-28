@@ -242,6 +242,10 @@ def init_function(node):
 def init_lambda(node):
     _init_function(node)
 
+def init_assert(node):
+    node.fail = node.msg
+    del node.msg
+
 def init_assname(node):
     pass
 

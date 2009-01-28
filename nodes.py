@@ -93,6 +93,7 @@ del re
 
 # astng fields definition ####################################################
 
+Assert._astng_fields = ('test', 'fail',)
 Assign._astng_fields = ('targets', 'value',)
 AugAssign._astng_fields = ('target', 'value',)
 BinOp._astng_fields = ('left', 'right',)

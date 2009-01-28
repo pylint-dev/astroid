@@ -220,6 +220,9 @@ def init_class(node):
     node.body = node.code.nodes
     del node.code
 
+def init_assert(node):
+    pass
+
 def init_assname(node):
     if node.flags == 'OP_DELETE':
         node.targets = [Name(node.name)]
