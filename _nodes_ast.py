@@ -354,11 +354,13 @@ class Const(Node):
 def init_num(node):
     node.__class__ = Const
     node.value = node.n
+    node.name = "int" # compiler compat
     del node.n
 
 def init_str(node):
     node.__class__ = Const
     node.value = node.s
+    node.name = "str" # compiler compat
     del node.s
 
 
