@@ -342,6 +342,8 @@ def init_listcompfor(node):
     node.iter = node.list
     node.target = node.assign
     node.target.__class__ = Name
+    if node.ifs:
+        node.ifs = node.ifs[0].test
     del node.assign, node.list
 
 
