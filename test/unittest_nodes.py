@@ -22,6 +22,19 @@ from data import module as test_module
 abuilder = builder.ASTNGBuilder()
 
 IF_CODE = """
+if 0:
+    print
+
+if True:
+    print
+else:
+    pass
+
+if "":
+    print
+elif []:
+    raise
+
 if 1:
     print
 elif True:
@@ -33,6 +46,18 @@ else:
 """
 
 IF_STR_REPR = """Module()
+    If()
+        Const(int)
+        Print()
+    If()
+        True
+        Print()
+        Pass()
+    If()
+        Const(str)
+        Print()
+        List(list)
+        Raise()
     If()
         Const(int)
         Print()
@@ -69,7 +94,6 @@ class IfNodeTC(unittest.TestCase):
         """test transformation for If node"""
         astng_tree = abuilder.string_build(IF_CODE)
         astng_repr = get_repr_tree(astng_tree)
-        print astng_repr
         self.assertEqual(IF_STR_REPR, astng_repr)
 
 
