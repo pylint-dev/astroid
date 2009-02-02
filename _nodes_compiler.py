@@ -302,9 +302,12 @@ def init_for(node):
     node.iter = node.list
     del node.list
     node.body = node.body.nodes
-    node.orelse = node.else_
+    if node.else_:
+        node.orelse = node.else_.nodes
+    else:
+        node.orelse = []
     del node.else_
-    
+
 def init_getattr(node):
     pass
 
@@ -314,6 +317,7 @@ def init_if(node):
         node.orelse = node.else_.nodes
     else:
         node.orelse = []
+    del node.else_
 
 def init_import(node):
     pass
