@@ -19,7 +19,61 @@ from logilab.astng import builder, nodes, NotFoundError
 
 from data import module as test_module
 
-abuilder = builder.ASTNGBuilder() 
+abuilder = builder.ASTNGBuilder()
+
+IF_CODE = """
+if 1:
+    print
+elif True:
+    print
+elif func():
+    pass
+else:
+    raise
+"""
+
+IF_STR_REPR = """Module()
+    If()
+        Const(int)
+        Print()
+        True
+        Print()
+        CallFunc()
+            Name(func)
+        Pass()
+        Raise()"""
+
+
+def repr_tree(node, result, indent='', _done=None):
+    if _done is None:
+        _done = set()
+    if node in _done:
+        result.append('loop in tree: %r (%s)' % (node, node.lineno))
+        return
+    _done.add(node)
+    result.append( indent + str(node) )
+    indent += '    '
+    for child in node.get_children():
+        repr_tree(child, result, indent, _done)
+
+def get_repr_tree(node):
+    result = []
+    repr_tree(node, result)
+    return "\n".join(result)
+
+
+class IfNodeTC(unittest.TestCase):
+    """test Transformations of If Node"""
+
+    def test_if_elif_else_node(self):
+        """test transformation for If node"""
+        astng_tree = abuilder.string_build(IF_CODE)
+        astng_repr = get_repr_tree(astng_tree)
+        print astng_repr
+        self.assertEqual(IF_STR_REPR, astng_repr)
+
+
+
 MODULE = abuilder.module_build(test_module)
 MODULE2 = abuilder.file_build('data/module2.py', 'data.module2')
 
@@ -71,7 +125,7 @@ class CmpNodeTC(unittest.TestCase):
         ast = abuilder.string_build("a == 2")
         self.assertEquals(ast.as_string(), "a == 2")
         
-__all__ = ('ImportNodeTC',)
+__all__ = ('IfNodeTC', 'ImportNodeTC',)
         
 if __name__ == '__main__':
     unittest.main()
