@@ -344,6 +344,10 @@ class ASTNGBuilder:
         for name in node.names:
             self._global_names[-1].setdefault(name, []).append(node)
 
+    def visit_if(self, node):
+        self.visit_default(node)
+        nodes.init_if(node)
+
     def visit_import(self, node):
         """visit a Import node -> add imported names to locals"""
         self.visit_default(node)

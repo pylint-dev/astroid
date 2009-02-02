@@ -252,6 +252,23 @@ def init_assname(node):
 def init_asstuple(node):
     pass
 
+def _recurse_if(node, child):
+    orelse = child[0]
+    if isinstance(orelse, If):
+        node.tests.append( (orelse.test, orelse.body) )
+        _recurse_if(node, orelse.orelse)
+    else:
+        node.orelse = child
+    del orelse
+
+def init_if(node):
+    node.tests = [(node.test, node.body)]
+    del node.test, node.body
+    if not hasattr(node, "orelse"):
+        return
+    _recurse_if(node, node.orelse)
+
+
 # validated
 
 def init_assign(node):

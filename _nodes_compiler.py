@@ -307,7 +307,14 @@ def init_for(node):
     
 def init_getattr(node):
     pass
-    
+
+def init_if(node):
+    node.tests = [(cond, expr.nodes) for cond, expr in node.tests]
+    if node.else_:
+        node.orelse = node.else_.nodes
+    else:
+        node.orelse = []
+
 def init_import(node):
     pass
 
