@@ -284,6 +284,7 @@ def init_callfunc(node):
 
 def init_compare(node):
     node.left = node.expr
+    node.ops = [op[1] for op in node.ops] # we dont want the operators
     del node.expr
 
 def init_dict(node):
