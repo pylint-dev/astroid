@@ -231,6 +231,10 @@ class ASTNGBuilder:
         else:
             self._add_local(node, node.target.id)
 
+    def visit_backquote(self, node):
+        self.visit_default(node)
+        nodes.init_backquote(node)
+
     def visit_binop(self, node):
         self.visit_default(node)
         nodes.init_binop(node)

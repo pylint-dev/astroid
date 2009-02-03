@@ -285,6 +285,10 @@ def init_augassign(node):
     node.target = node.node
     del node.node
 
+def init_backquote(node):
+    node.value = node.expr
+    del node.expr
+
 def init_binop(node):
     node.op = BinOp.OP_CLASSES[node.__class__]
     node.__class__ = BinOp

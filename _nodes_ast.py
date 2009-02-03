@@ -263,6 +263,8 @@ def init_assname(node):
 def init_asstuple(node):
     pass
 
+def init_backquote(node):
+    pass
 
 def _recurse_if(ifnode, tests, orelse):
     """recurse on nested If nodes"""
