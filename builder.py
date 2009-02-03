@@ -223,7 +223,12 @@ class ASTNGBuilder:
         nodes.init_augassign(node)
         if not isinstance(node.target, nodes.Name):
             return  # XXX
-        self._add_local(node, node.node.name)
+        # XXX quick fix : _ast.Name not yet visited
+        target = node.target
+        if hasattr(target, "name"):
+            self._add_local(node, node.target.name)
+        else:
+            self._add_local(node, node.target.id)
 
     def visit_binop(self, node):
         self.visit_default(node)
