@@ -225,8 +225,13 @@ def _init_set_doc(node):
         pass # ast built from scratch
 
 def _init_function(node):
-    # XXX tuple
-    node.argnames = [n.id for n in node.args.args]
+    argnames = []
+    for arg in node.args.args:
+        if isinstance(arg, Name):
+            argnames.append(arg.id )
+        elif isinstance(arg, Tuple):
+            argnames.extend( elt.id for elt in arg.elts )
+    node.argnames = argnames
     node.defaults = node.args.defaults
     if node.args.vararg:
         node.argnames.append(node.args.vararg)
