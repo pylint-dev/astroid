@@ -223,41 +223,60 @@ def init_class(node):
 def init_assert(node):
     pass
 
+def init_assattr(node):
+    print "init AssAttr", repr(node)
+    if node.flags == 'OP_ASSIGN':
+        node.__class__ = Getattr
+        node.attr = node.attrname
+    elif node.flags == 'OP_DELETE':
+        node.__class__ = Delete
+        node.targets = [Getattr(node.expr, node.attrname)]
+    else:
+        raise "Error on node %s " % repr(node)
+    del node.attrname, node.flags
+    print "old assAttr node :", node, node.__class__
+
+
 def init_assname(node):
-    if node.flags == 'OP_DELETE':
+    if node.flags == 'OP_ASSIGN':
+        node.__class__ = Name
+    elif node.flags == 'OP_DELETE':
         node.targets = [Name(node.name)]
         node.__class__ = Delete
-    elif node.flags == 'OP_ASSIGN':
-        node.__class__ = Name
-    elif node.flags not in ('OP_DELETE', 'OP_ASSIGN'):
-        print "AssName flags:", node.flags
-        raise
+    else:
+        msg = "Error on node %s " % repr(node)
+        raise msg
     del node.flags
 
-def init_asstuple(node):
+def init_asslist(node):
     if node.nodes[0].flags  == 'OP_DELETE':
         node.__class__ = Delete
         node.targets = [Name(item.name) for item in node.nodes]
         del node.nodes
     else:
-        print "Uncatched AssTuple", node
-        raise
+        raise "Error on node %s " % repr(node)
+
+init_asstuple = init_asslist
 
 # validated
 
 def init_assign(node):
     node.value = node.expr
-    del node.expr
     node.targets = node.nodes
+    del node.nodes, node.expr
     for target in node.targets:
-        if isinstance(target, AssName):
+        if isinstance(target, AssAttr):
+            pass # node will be handled by init_assattr
+        elif isinstance(target, AssName):
             target.__class__ = Name
             del target.flags
         elif isinstance(target, AssTuple):
             target.__class__ = Tuple
-        elif isinstance(target, AssAttr):
-            target.__class__ = Getattr
-    del node.nodes
+        elif isinstance(target, AssList):
+            target.__class__ = List
+        else:
+            print "Assign node.target is no 'Ass*'", node
+            raise Error
 
 
 def init_augassign(node):

@@ -160,7 +160,8 @@ class ASTNGBuilder:
         self._walker.walk(node)
         while self._delayed:
             dnode = self._delayed.pop(0)
-            getattr(self, 'delayed_visit_%s' % dnode.__class__.__name__.lower())(dnode)
+            node_name = dnode.__class__.__name__.lower()
+            getattr(self, 'delayed_visit_%s' % node_name)(dnode)
         return node
 
     # callbacks to build from an existing compiler.ast tree ###################
@@ -492,15 +493,20 @@ class ASTNGBuilder:
     def visit_assname(self, node):
         """visit a AssName node -> add name to locals"""
         self.visit_default(node)
-        nodes.init_assname(node)
         self._add_local(node, node.name)
+        nodes.init_assname(node)
 
     def visit_assattr(self, node):
         """visit a AssAttr node -> delay it to handle members
         definition later
         """
         self.visit_default(node)
-        self._delayed.append(node)
+        nodes.init_assattr(node)
+        #self._delayed.append(node) XXX move to visit_getattr ?
+
+    def visit_asslist(self, node):
+        self.visit_default(node)
+        nodes.init_asslist(node)
 
     def visit_asstuple(self, node):
         self.visit_default(node)
@@ -540,7 +546,7 @@ class ASTNGBuilder:
                     values.append(node)
         except InferenceError:
             pass
-        
+
     # py2.5 (ast mode) only callbacks #########################################
 
     def visit_attribute(self, node):
@@ -558,6 +564,8 @@ class ASTNGBuilder:
     def visit_str(self, node):
         self.visit_default(node)
         nodes.init_str(node)
+
+    delayed_visit_attribute = delayed_visit_assattr # ???
 
     def delayed_visit_attribute(self, node):
         """visit a AssAttr node -> add name to locals, handle members definition

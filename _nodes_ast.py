@@ -247,9 +247,15 @@ def init_function(node):
 def init_lambda(node):
     _init_function(node)
 
+def init_assattr(node):
+    pass
+
 def init_assert(node):
     node.fail = node.msg
     del node.msg
+
+def init_asslist(node):
+    pass
 
 def init_assname(node):
     pass
@@ -259,6 +265,7 @@ def init_asstuple(node):
 
 
 def _recurse_if(ifnode, tests, orelse):
+    """recurse on nested If nodes"""
     tests.append( (ifnode.test, ifnode.body) )
     del ifnode.test, ifnode.body
     if ifnode.orelse:
