@@ -294,6 +294,14 @@ def init_discard(node):
     node.value = node.expr
     del node.expr
 
+def _init_else_node(node):
+    # remove Stmt node if exists
+    if node.else_:
+        node.orelse = node.else_.nodes
+    else:
+        node.orelse = []
+    del node.else_
+
 def init_exec(node):
     pass
 
@@ -303,22 +311,14 @@ def init_for(node):
     node.iter = node.list
     del node.list
     node.body = node.body.nodes
-    if node.else_:
-        node.orelse = node.else_.nodes
-    else:
-        node.orelse = []
-    del node.else_
+    _init_else_node(node)
 
 def init_getattr(node):
     pass
 
 def init_if(node):
     node.tests = [(cond, expr.nodes) for cond, expr in node.tests]
-    if node.else_:
-        node.orelse = node.else_.nodes
-    else:
-        node.orelse = []
-    del node.else_
+    _init_else_node(node)
 
 def init_import(node):
     pass
@@ -387,11 +387,7 @@ def init_try_except(node):
     # remove Stmt node
     node.handlers = [ExceptHandler(exctype, excobj, body.nodes, node.lineno)
                      for exctype, excobj, body in node.handlers]
-    if node.else_:
-        node.orelse = node.else_.nodes
-        del node.else_
-    else:
-        node.orelse = []
+    _init_else_node(node)
 
 
 def init_try_finally(node):
@@ -410,9 +406,7 @@ def init_unaryop(node):
 
 def init_while(node):
     node.body = node.body.nodes
-    del node.body
-    node.orelse = node.else_
-    del node.else_
+    _init_else_node(node)
 
 
 # raw building ################################################################
