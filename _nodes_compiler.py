@@ -292,6 +292,9 @@ def init_backquote(node):
 def init_binop(node):
     node.op = BinOp.OP_CLASSES[node.__class__]
     node.__class__ = BinOp
+    if node.op in ('&', '|', '^'):
+        node.left, node.right = node.nodes
+        del node.nodes
 
 def init_boolop(node):
     node.op = BoolOp.OP_CLASSES[node.__class__]
