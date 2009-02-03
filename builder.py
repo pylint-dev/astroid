@@ -204,10 +204,10 @@ class ASTNGBuilder:
         klass = node.parent.frame()
         if isinstance(klass, nodes.Class) and \
             isinstance(node.value, nodes.CallFunc) and \
-            isinstance(node.value.node, nodes.Name):
-            func_name = node.value.node.name
+            isinstance(node.value, nodes.Name):
+            func_name = node.value.name
             if func_name in ('classmethod', 'staticmethod'):
-                for ass_node in node.nodes:
+                for ass_node in node.targets:
                     try:
                         meth = klass[ass_node.name]
                         if isinstance(meth, nodes.Function):
