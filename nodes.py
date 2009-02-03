@@ -618,11 +618,6 @@ def import_as_string(node):
     return 'import %s' % _import_string(node.names)
 Import.as_string = import_as_string
 
-def invert_as_string(node):
-    """return an ast.Invert node as string"""
-    return '~%s' % node.expr.as_string()
-Invert.as_string = invert_as_string
-
 def lambda_as_string(node):
     """return an ast.Lambda node as string"""
     return 'lambda %s: %s' % (node.format_args(), node.code.as_string())

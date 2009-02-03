@@ -29,7 +29,7 @@ from _ast import (Assert, Assign, AugAssign,
                   Ellipsis, Exec, 
                   For,
                   Global, 
-                  If, Import, Invert,
+                  If, Import,
                   Lambda, List, ListComp, 
                   Module, 
                   Name,
@@ -91,10 +91,11 @@ from _ast import And as _And, Or as _Or
 BOOL_OP_CLASSES = {_And: 'and',
                    _Or: 'or'}
 
-from _ast import UAdd as _UAdd, USub as _USub, Not as _Not
+from _ast import UAdd as _UAdd, USub as _USub, Not as _Not, Invert as _Invert
 UNARY_OP_CLASSES = {_UAdd: '+',
                     _USub: '-',
-                    _Not: 'not'}
+                    _Not: 'not',
+                    _Invert: '~'}
 
 from _ast import BinOp, BoolOp, UnaryOp
 
@@ -293,7 +294,7 @@ def init_augassign(node):
 
 def init_binop(node):
     node.op = BIN_OP_CLASSES[node.op.__class__]
-    
+
 def init_boolop(node):
     node.op = BOOL_OP_CLASSES[node.op.__class__]
 

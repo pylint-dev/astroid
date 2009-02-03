@@ -75,6 +75,7 @@ class ASTWalker:
                 'UnaryAdd': 'UnaryOp',
                 'UnarySub': 'UnaryOp',
                 'Not': 'UnaryOp',
+                'Invert': 'UnaryOp'
                 }
     
     def __init__(self, handler):

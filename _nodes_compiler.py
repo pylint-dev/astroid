@@ -32,7 +32,7 @@ from compiler.ast import AssAttr, AssList, AssName, \
      Compare, Const, Continue, Dict, Discard, \
      Ellipsis, EmptyNode, Exec, \
      For, From, Function, Getattr, Global, \
-     If, Import, Invert, Keyword, Lambda, \
+     If, Import, Keyword, Lambda, \
      List, ListComp, ListCompFor, ListCompIf, Module, Name, Node, \
      Pass, Print, Raise, Return, Slice, \
      Sliceobj, Stmt, Subscript, TryExcept, TryFinally, Tuple, \
@@ -99,10 +99,11 @@ class BoolOp(Node):
     
 class UnaryOp(Node):
     """replace UnaryAdd, UnarySub, Not"""
-    from compiler.ast import UnaryAdd, UnarySub, Not
+    from compiler.ast import UnaryAdd, UnarySub, Not, Invert
     OP_CLASSES = {UnaryAdd: '+',
                   UnarySub: '-',
-                  Not: 'not'}
+                  Not: 'not',
+                  Invert: '~'}
 
 
 class Delete(Node):
