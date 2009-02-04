@@ -236,7 +236,8 @@ def init_assattr(node):
         node.__class__ = Delete
         node.targets = [Getattr(node.expr, node.attrname)]
     else:
-        raise "Error on node %s " % repr(node)
+        msg = "Error on node %s " % repr(node)
+        raise msg
     del node.attrname, node.flags
 
 def init_assert(node):
@@ -258,13 +259,20 @@ def init_assign(node):
             msg = "Error : Assign node.targets %s" % target
             assert isinstance(target, (AssAttr, Subscript, Slice)), msg
 
-def init_asslist(node):
+def _init_ass_more(node, more_class ):
     if node.nodes[0].flags  == 'OP_DELETE':
         node.__class__ = Delete
         node.targets = [Name(item.name) for item in node.nodes]
-        del node.nodes
+    elif node.nodes[0].flags  == 'OP_ASSIGN':
+        node.__class__ = more_class
+        node.elts = node.nodes
     else:
-        raise "Error on node %s " % repr(node)
+        msg = "Error on node %s " % repr(node)
+        raise msg
+    del node.nodes
+
+def init_asslist(node):
+     _init_ass_more(node, List)
 
 def init_assname(node):
     if node.flags == 'OP_ASSIGN':
@@ -277,7 +285,9 @@ def init_assname(node):
         raise msg
     del node.flags
 
-init_asstuple = init_asslist
+
+def init_asstuple(node):
+     _init_ass_more(node, Tuple)
 
 def init_augassign(node):
     node.value = node.expr
