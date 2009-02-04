@@ -276,6 +276,9 @@ def init_assign(node):
         else:
             msg = "Error : Assign node.targets %s" % target
             assert isinstance(target, (AssAttr, Subscript)), msg
+    if isinstance(node.value, Slice):
+        node.value.__class__ = Subscript
+
 
 def init_augassign(node):
     node.value = node.expr
@@ -404,7 +407,11 @@ def init_raise(node):
     del node.expr1, node.expr2, node.expr3
 
 def init_subscript(node):
-    pass
+    if hasattr(node, "lower"): # Slice
+        node.subs = [node.lower, node.upper]
+        del node.lower, node.upper
+    elif hasattr(node.subs[0], "nodes"): # Sliceobj
+        node.subs = node.subs[0].nodes
 
 def init_try_except(node):
     node.body = node.body.nodes

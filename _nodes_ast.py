@@ -389,12 +389,12 @@ def init_raise(node):
 def init_subscript(node):
     node.expr = node.value
     del node.value
-    if hasattr(node.slice.value, 'elts'):
-        node.subs = node.slice.value.elts
-    else:
+    if hasattr(node.slice, 'value'): # Index
         node.subs = [node.slice.value]
+    if hasattr(node.slice, 'lower'): # Slice
+        node.subs = [node.slice.lower, node.slice.upper, node.slice.step]
     del node.slice
-    
+
 def init_try_except(node):
     pass
 

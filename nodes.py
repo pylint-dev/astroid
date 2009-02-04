@@ -354,6 +354,7 @@ def _dict_get_children(node): # XXX : distinguish key and value ?
 Dict.get_children = _dict_get_children
 
 def _if_get_children(node):
+    """get children looping into body lists"""
     for cond, stmts in node.tests:
         yield cond
         for stmt in stmts:
@@ -362,6 +363,15 @@ def _if_get_children(node):
         yield stmt
 
 If.get_children = _if_get_children
+
+def _subscript_get_children(node):
+    """get_children by removing None children"""
+    yield node.expr
+    for sub in node.subs:
+        if sub:
+            yield sub
+
+Subscript.get_children = _subscript_get_children
 
 # block range overrides #######################################################
 
