@@ -226,14 +226,14 @@ def init_module(node):
 def init_assattr(node):
     if node.flags == 'OP_ASSIGN':
         node.__class__ = Getattr
-        node.attr = node.attrname
     elif node.flags == 'OP_DELETE':
         node.__class__ = Delete
         node.targets = [Getattr(node.expr, node.attrname)]
+        del node.attrname, node.expr
     else:
         msg = "Error on node %s " % repr(node)
         raise msg
-    del node.attrname, node.flags
+    del node.flags
 
 def init_assert(node):
     pass

@@ -341,9 +341,13 @@ class ASTNGBuilder:
         node.locals = {}
     visit_generatorexp = visit_genexpr
 
-    def visit_getattr(self, node): 
+    def visit_getattr(self, node):
+        """visit a Attribute node under a Assign -> delay it to handle
+        members definition later
+        """
         self.visit_default(node)
         nodes.init_getattr(node)
+        self._delayed.append(node)
 
     def visit_global(self, node):
         """visit a Global node -> add declared names to locals"""
@@ -483,7 +487,7 @@ class ASTNGBuilder:
         self._stack.append(obj)
         node.locals = {}
         node.parent.frame().set_local(node.name, node)
-        
+
     # py2.4 (compiler mode) only callbacks ####################################
 
     def leave_decorators(self, node):
@@ -496,7 +500,7 @@ class ASTNGBuilder:
                    decorator_expr.name in ('classmethod', 'staticmethod'):
                 func.type = decorator_expr.name
         self.leave_default(node)
-       
+
     def visit_assname(self, node):
         """visit a AssName node -> add name to locals"""
         self.visit_default(node)
@@ -504,12 +508,10 @@ class ASTNGBuilder:
         nodes.init_assname(node)
 
     def visit_assattr(self, node):
-        """visit a AssAttr node -> delay it to handle members
-        definition later
-        """
         self.visit_default(node)
         nodes.init_assattr(node)
-        #self._delayed.append(node) XXX move to visit_getattr ?
+        if node.__class__ == nodes.Getattr:
+            self._delayed.append(node)
 
     def visit_asslist(self, node):
         self.visit_default(node)
@@ -522,8 +524,8 @@ class ASTNGBuilder:
     def visit_printnl(self, node):
         self.visit_default(node)
         nodes.init_printnl(node)
-        
-    def delayed_visit_assattr(self, node):
+
+    def delayed_visit_getattr(self, node):
         """visit a AssAttr node -> add name to locals, handle members
         definition
         """
@@ -556,14 +558,6 @@ class ASTNGBuilder:
 
     # py2.5 (ast mode) only callbacks #########################################
 
-    def visit_attribute(self, node):
-        """visit a Attribute node under a Assign -> delay it to handle
-        members definition later
-        """
-        self.visit_default(node)
-        if self._asscontext is not None:
-            self._delayed.append(node)
-
     def visit_num(self, node):
         self.visit_default(node)
         nodes.init_num(node)
@@ -572,37 +566,8 @@ class ASTNGBuilder:
         self.visit_default(node)
         nodes.init_str(node)
 
-    delayed_visit_attribute = delayed_visit_assattr # ???
+    delayed_visit_attribute = delayed_visit_getattr
 
-    def delayed_visit_attribute(self, node):
-        """visit a AssAttr node -> add name to locals, handle members definition
-        """
-        try:
-            frame = node.frame()
-            for infered in node.value.infer():
-                if infered is nodes.YES:
-                    continue
-                try:
-                    if infered.__class__ is nodes.Instance:
-                        infered = infered._proxied
-                        iattrs = infered.instance_attrs
-                    else:
-                        iattrs = infered.locals
-                except AttributeError:
-                    import traceback
-                    traceback.print_exc()
-                    continue
-                values = iattrs.setdefault(node.attr, [])
-                if node in values:
-                    continue
-                # get assign in __init__ first XXX useful ?
-                if frame.name == '__init__' and values and not \
-                       values[0].frame().name == '__init__':
-                    values.insert(0, node)
-                else:
-                    values.append(node)
-        except InferenceError:
-            pass
 
     # astng from living objects ###############################################
     #
