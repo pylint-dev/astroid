@@ -114,107 +114,20 @@ CMP_OP_CLASSES = {_Eq: '==',
                   _NotIn: 'not in',
                   }
 
-#Eq._astng_fields = () # Eq nodes should disappear after astng builder
 # FIXME : can't replace totally by Const : Str needed in _init_set_doc
 Num._astng_fields = ()
 Str._astng_fields = ()
 
-#from _ast import Load, Store, Del
-#Load.lineno = Store.lineno = 0 # XXX
-
-# def Name__init__(self, name):
-#     self.name = name
-# Name.__init__ = Name__init__
-
-# def _get_children_value(self):
-#     return (self.value,)
-# Expr.getChildNodes = _get_children_value
-# Getattr.getChildNodes = _get_children_value
-
-# Global.getChildNodes = _get_children_nochildren
-# Import.getChildNodes = _get_children_nochildren
-# From.getChildNodes = _get_children_nochildren
-# Name.getChildNodes = _get_children_nochildren
-# Str.getChildNodes = _get_children_nochildren
-# Num.getChildNodes = _get_children_nochildren
-# Pass.getChildNodes = _get_children_nochildren
-# Eq.getChildNodes = _get_children_nochildren
-
-# def _get_children_call(self):
-#     children = [self.func]
-#     children.extend(self.args)
-#     children.extend(self.keywords)
-#     if self.starargs:
-#         children.extend(self.starargs)
-#     if self.kwargs:
-#         children.extend(self.kwargs)
-#     return children
-# CallFunc.getChildNodes = _get_children_call
-
-# def _get_children_tryexcept(self):
-#     return self.body + self.handlers + self.orelse
-# TryExcept.getChildNodes = _get_children_tryexcept
-
-# def _get_children_excepthandler(self):
-#     children = []
-#     if self.name is not None:
-#         children.append(self.name)
-#     if self.type is not None:
-#         children.append(self.type)
-#     children += self.body
-#     return self.body
-# excepthandler.getChildNodes = _get_children_excepthandler
-
-# def _get_children_assign(self):
-#     return self.targets + [self.value]
-# Assign.getChildNodes = _get_children_assign
-
-# def _get_children_augassign(self):
-#     return [self.target, self.value]
-# AugAssign.getChildNodes = _get_children_augassign
-
-# def _get_children_if(self):
-#     return [self.test] + self.body + self.orelse
-# If.getChildNodes = _get_children_if
-
-# def _get_children_print(self):
-#     if self.dest:
-#         return [self.dest] + self.values
-#     return self.values
-# Print.getChildNodes = _get_children_print
-
-# def _get_children_compare(self):
-#     return [self.left] + self.ops + self.comparators
-# Compare.getChildNodes = _get_children_compare
-
-# def _get_children_generatorexp(self):
-#     return [self.elt] + self.generators
-# GenExpr.getChildNodes = _get_children_generatorexp
-
-# def _get_children_comprehension(self):
-#     return [self.target] + [self.iter] + self.ifs
-# comprehension.getChildNodes = _get_children_comprehension
 
 
-# def getattr_as_string(node):
-#     """return an ast.Getattr node as string"""
-#     return '%s.%s' % (node.value.as_string(), node.attr)
-# Getattr.as_string = getattr_as_string
+class Const(Node):
+    """represent a Str or Num node"""
+
+class EmptyNode(Node):
+    """represent a Empty node for compatibility"""
+
 
 # scoped nodes ################################################################
-
-# def _get_children_body(self):
-#     return self.body
-# Module.getChildNodes = _get_children_body
-
-# def _get_children_class(self):
-#     return self.bases + self.body
-# Class.getChildNodes = _get_children_class
-
-# def _get_children_function(self):
-#     return [self.defaults] + self.body
-# Function.getChildNodes = _get_children_function
-# Lambda.getChildNodes = _get_children_function
 
 
 def _init_set_doc(node):
@@ -248,6 +161,10 @@ def init_function(node):
 def init_lambda(node):
     _init_function(node)
 
+init_module = _init_set_doc
+
+##  init_<node> functions #####################################################
+
 def init_assattr(node):
     pass
 
@@ -255,6 +172,8 @@ def init_assert(node):
     node.fail = node.msg
     del node.msg
 
+def init_assign(node):
+    pass
 def init_asslist(node):
     pass
 
@@ -264,7 +183,51 @@ def init_assname(node):
 def init_asstuple(node):
     pass
 
+def init_augassign(node):
+    pass
+
 def init_backquote(node):
+    pass
+
+def init_binop(node):
+    node.op = BIN_OP_CLASSES[node.op.__class__]
+
+def init_boolop(node):
+    node.op = BOOL_OP_CLASSES[node.op.__class__]
+
+def init_callfunc(node):
+    node.args.extend(node.keywords)
+    del node.keywords
+
+def _compare_get_children(node):
+    """override get_children for zipped fields"""
+    yield node.left
+    for ops, comparators in node.ops:
+        yield comparators # we don't want the 'ops'
+Compare.get_children = _compare_get_children
+
+def init_compare(node):
+    node.ops = [(CMP_OP_CLASSES[op.__class__], expr)
+                for op, expr in zip(node.ops, node.comparators)]
+    del node.comparators
+
+def init_dict(node):
+    node.items = zip(node.keys, node.values)
+    del node.keys, node.values
+
+def init_discard(node):
+    pass
+
+def init_exec(node):
+    node.expr = node.body
+    del node.body
+
+def init_getattr(node):
+    node.attrname = node.attr
+    node.expr = node.value
+    del node.attr, node.value
+
+def init_for(node):
     pass
 
 def _recurse_if(ifnode, tests, orelse):
@@ -283,57 +246,6 @@ def init_if(node):
     tests, orelse = _recurse_if(node, [], [])
     node.tests = tests
     node.orelse = orelse
-
-# validated
-
-def init_assign(node):
-    pass
-
-def init_augassign(node):
-    pass
-
-def init_binop(node):
-    node.op = BIN_OP_CLASSES[node.op.__class__]
-
-def init_boolop(node):
-    node.op = BOOL_OP_CLASSES[node.op.__class__]
-
-
-def init_callfunc(node):
-    node.args.extend(node.keywords)
-    del node.keywords
-
-def _compare_get_children(node):
-    """override get_children for zipped fields"""
-    yield node.left
-    for ops, comparators in node.ops:
-        yield comparators # we don't want the 'ops'
-Compare.get_children = _compare_get_children
-
-def init_compare(node):
-    node.ops = [(CMP_OP_CLASSES[op.__class__], expr)
-                for op, expr in zip(node.ops, node.comparators)]
-    del node.comparators
-
-
-def init_dict(node):
-    node.items = zip(node.keys, node.values)
-    del node.keys, node.values
-    
-def init_discard(node):
-    pass
-
-def init_exec(node):
-    node.expr = node.body
-    del node.body
-
-def init_getattr(node):
-    node.attrname = node.attr
-    node.expr = node.value
-    del node.attr, node.value
-    
-def init_for(node):
-    pass
 
 def init_import(node):
     node.names = [(alias.name, alias.asname) for alias in node.names]
@@ -356,15 +268,9 @@ def init_listcomp(node):
 def init_listcompfor(node):
     pass
 
-
-init_module = _init_set_doc
-
 def init_name(node):
     node.name = node.id
     del node.id
-
-class Const(Node):
-    """represent a Str or Num node"""
 
 def init_num(node):
     node.__class__ = Const
@@ -372,19 +278,17 @@ def init_num(node):
     node.name = "int" # compiler compat
     del node.n
 
-def init_str(node):
-    node.__class__ = Const
-    node.value = node.s
-    node.name = "str" # compiler compat
-    del node.s
-
-
-
 def init_print(node):
     pass
 
 def init_raise(node):
     pass
+
+def init_str(node):
+    node.__class__ = Const
+    node.value = node.s
+    node.name = "str" # compiler compat
+    del node.s
 
 def init_subscript(node):
     node.expr = node.value
@@ -490,11 +394,6 @@ def class_factory(name, basenames=None, doc=None):
     return node
 
 class Proxy_(object): pass
-
-
-class EmptyNode(object):
-    """dummy class for some situations"""
-    is_statement = False
 
 
 from _ast import Load as _Load, Store as _Store, Del as _Del

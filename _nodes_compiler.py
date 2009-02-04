@@ -221,11 +221,14 @@ def init_class(node):
     node.body = node.code.nodes
     del node.code
 
-def init_assert(node):
-    pass
+def init_module(node):
+    # remove Stmt node
+    node.body = node.node.nodes
+    del node.node
+
+##  init_<node> functions #####################################################
 
 def init_assattr(node):
-    print "init AssAttr", repr(node)
     if node.flags == 'OP_ASSIGN':
         node.__class__ = Getattr
         node.attr = node.attrname
@@ -235,31 +238,9 @@ def init_assattr(node):
     else:
         raise "Error on node %s " % repr(node)
     del node.attrname, node.flags
-    print "old assAttr node :", node, node.__class__
 
-
-def init_assname(node):
-    if node.flags == 'OP_ASSIGN':
-        node.__class__ = Name
-    elif node.flags == 'OP_DELETE':
-        node.targets = [Name(node.name)]
-        node.__class__ = Delete
-    else:
-        msg = "Error on node %s " % repr(node)
-        raise msg
-    del node.flags
-
-def init_asslist(node):
-    if node.nodes[0].flags  == 'OP_DELETE':
-        node.__class__ = Delete
-        node.targets = [Name(item.name) for item in node.nodes]
-        del node.nodes
-    else:
-        raise "Error on node %s " % repr(node)
-
-init_asstuple = init_asslist
-
-# validated
+def init_assert(node):
+    pass
 
 def init_assign(node):
     node.value = node.expr
@@ -279,6 +260,26 @@ def init_assign(node):
     if isinstance(node.value, Slice):
         node.value.__class__ = Subscript
 
+def init_asslist(node):
+    if node.nodes[0].flags  == 'OP_DELETE':
+        node.__class__ = Delete
+        node.targets = [Name(item.name) for item in node.nodes]
+        del node.nodes
+    else:
+        raise "Error on node %s " % repr(node)
+
+def init_assname(node):
+    if node.flags == 'OP_ASSIGN':
+        node.__class__ = Name
+    elif node.flags == 'OP_DELETE':
+        node.targets = [Name(node.name)]
+        node.__class__ = Delete
+    else:
+        msg = "Error on node %s " % repr(node)
+        raise msg
+    del node.flags
+
+init_asstuple = init_asslist
 
 def init_augassign(node):
     node.value = node.expr
@@ -374,22 +375,11 @@ def init_listcompfor(node):
         node.ifs = node.ifs[0].test
     del node.assign, node.list
 
-
-def init_module(node):
-    # remove Stmt node
-    node.body = node.node.nodes
-    del node.node
-
 def init_name(node):
     pass
 
-
 def init_num(node):
     pass
-
-def init_str(node):
-    pass
-
 
 def init_print(node, nl=False):
     node.values = node.nodes
@@ -406,6 +396,9 @@ def init_raise(node):
     node.tback = node.expr3
     del node.expr1, node.expr2, node.expr3
 
+def init_str(node):
+    pass
+
 def init_subscript(node):
     if hasattr(node, "lower"): # Slice
         node.subs = [node.lower, node.upper]
@@ -419,7 +412,6 @@ def init_try_except(node):
     node.handlers = [ExceptHandler(exctype, excobj, body.nodes, node.lineno)
                      for exctype, excobj, body in node.handlers]
     _init_else_node(node)
-
 
 def init_try_finally(node):
     # remove Stmt nodes
