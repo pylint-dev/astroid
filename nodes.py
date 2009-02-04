@@ -373,6 +373,14 @@ def _subscript_get_children(node):
 
 Subscript.get_children = _subscript_get_children
 
+
+def _compare_get_children(node):
+    """override get_children for tuple fields"""
+    yield node.left
+    for op, comparator in node.ops:
+        yield comparator # we don't want the 'op'
+Compare.get_children = _compare_get_children
+
 # block range overrides #######################################################
 
 def object_block_range(node, lineno):
@@ -524,6 +532,11 @@ def compare_as_string(node):
     return '%s %s' % (node.left.as_string(), rhs_str)
 Compare.as_string = compare_as_string
 
+def const_as_string(node):
+    """return an ast.Const node as string"""
+    return repr(node.value)
+Const.as_string = const_as_string
+
 def continue_as_string(node):
     """return an ast.Continue node as string"""
     return 'continue'
@@ -541,7 +554,7 @@ Dict.as_string = dict_as_string
 
 def discard_as_string(node):
     """return an ast.Discard node as string"""
-    return node.expr.as_string()
+    return node.value.as_string()
 Discard.as_string = discard_as_string
 
 def excepthandler_as_string(node):

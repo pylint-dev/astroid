@@ -123,6 +123,7 @@ Str._astng_fields = ()
 class Const(Node):
     """represent a Str or Num node"""
 
+
 class EmptyNode(Node):
     """represent a Empty node for compatibility"""
 
@@ -198,13 +199,6 @@ def init_boolop(node):
 def init_callfunc(node):
     node.args.extend(node.keywords)
     del node.keywords
-
-def _compare_get_children(node):
-    """override get_children for zipped fields"""
-    yield node.left
-    for ops, comparators in node.ops:
-        yield comparators # we don't want the 'ops'
-Compare.get_children = _compare_get_children
 
 def init_compare(node):
     node.ops = [(CMP_OP_CLASSES[op.__class__], expr)

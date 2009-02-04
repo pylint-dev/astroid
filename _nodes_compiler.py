@@ -144,11 +144,6 @@ AssTuple.as_string = asstuple_as_string
 
 Const.eq = lambda self, value: self.value == value
 
-def const_as_string(node):
-    """return an ast.Const node as string"""
-    return repr(node.value)
-Const.as_string = const_as_string
-
 def decorators_scope(self):
     # skip the function node to go directly to the upper level scope
     return self.parent.parent.scope()
@@ -320,7 +315,6 @@ def init_callfunc(node):
 
 def init_compare(node):
     node.left = node.expr
-    node.ops = [op[1] for op in node.ops] # we dont want the operators
     del node.expr
 
 def init_dict(node):
