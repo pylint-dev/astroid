@@ -266,9 +266,7 @@ def init_assign(node):
     node.targets = node.nodes
     del node.nodes, node.expr
     for target in node.targets:
-        if isinstance(target, AssAttr):
-            pass # node will be handled by init_assattr
-        elif isinstance(target, AssName):
+        if isinstance(target, AssName):
             target.__class__ = Name
             del target.flags
         elif isinstance(target, AssTuple):
@@ -276,9 +274,8 @@ def init_assign(node):
         elif isinstance(target, AssList):
             target.__class__ = List
         else:
-            print "Assign node.target is no 'Ass*'", node
-            raise Error
-
+            msg = "Error : Assign node.targets %s" % target
+            assert isinstance(target, (AssAttr, Subscript)), msg
 
 def init_augassign(node):
     node.value = node.expr
