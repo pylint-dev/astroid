@@ -140,7 +140,6 @@ class ASTNGBuilder:
         """recurse on the ast (soon ng) to add some arguments et method"""
         print '*'*80
         print modname, path
-        nodes.native_repr_tree(node)
         if path is not None:
             node.file = node.path = abspath(path)
         else:
@@ -185,7 +184,7 @@ class ASTNGBuilder:
         except:
             print node, self._par_stack[-1]
             raise
-        #assert node.parent is not node
+        assert node.parent is not node
         self._par_stack.append(node)
 
     def leave_default(self, _):       
@@ -441,6 +440,10 @@ class ASTNGBuilder:
     def visit_raise(self, node):
         self.visit_default(node)
         nodes.init_raise(node)
+
+    def visit_slice(self, node):
+        self.visit_default(node)
+        nodes.init_slice(node)
 
     def visit_subscript(self, node):
         self.visit_default(node)

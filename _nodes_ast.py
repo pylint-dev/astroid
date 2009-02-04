@@ -284,6 +284,9 @@ def init_print(node):
 def init_raise(node):
     pass
 
+def init_slice(node):
+    pass
+
 def init_str(node):
     node.__class__ = Const
     node.value = node.s

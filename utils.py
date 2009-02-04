@@ -84,18 +84,16 @@ class ASTWalker:
         
     def walk(self, node, _done=None):
         """walk on the tree from <node>, getting callbacks from handler"""
-        print 'walking on', node, id(node)
         if _done is None:
             _done = set()
         if node in _done:
             raise AssertionError((id(node), node, node.parent))
         _done.add(node)
-        try:            
+        try:
             self.visit(node)
         except IgnoreChild:
             pass
         else:
-            #print 'visit', node, id(node)
             try:
                 for child_node in node.get_children():
                     self.handler.set_context(node, child_node)

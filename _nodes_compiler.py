@@ -256,9 +256,7 @@ def init_assign(node):
             target.__class__ = List
         else:
             msg = "Error : Assign node.targets %s" % target
-            assert isinstance(target, (AssAttr, Subscript)), msg
-    if isinstance(node.value, Slice):
-        node.value.__class__ = Subscript
+            assert isinstance(target, (AssAttr, Subscript, Slice)), msg
 
 def init_asslist(node):
     if node.nodes[0].flags  == 'OP_DELETE':
@@ -396,14 +394,16 @@ def init_raise(node):
     node.tback = node.expr3
     del node.expr1, node.expr2, node.expr3
 
+def init_slice(node):
+    node.__class__ = Subscript
+    node.subs = [node.lower, node.upper]
+    del node.lower, node.upper
+
 def init_str(node):
     pass
 
 def init_subscript(node):
-    if hasattr(node, "lower"): # Slice
-        node.subs = [node.lower, node.upper]
-        del node.lower, node.upper
-    elif hasattr(node.subs[0], "nodes"): # Sliceobj
+    if hasattr(node.subs[0], "nodes"): # Sliceobj
         node.subs = node.subs[0].nodes
 
 def init_try_except(node):
