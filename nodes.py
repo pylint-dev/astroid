@@ -334,13 +334,6 @@ def const_factory(value):
         node = _const_factory(value)
     return node
 
-def stmts_as_string(node, attr='body'):
-    """return an ast.Stmt node as string"""
-    stmts = '\n'.join([n.as_string() for n in getattr(node, attr)])
-    if isinstance(node, Module):
-        return stmts
-    return '    ' + stmts.replace('\n', '\n    ')
-
 def _get_children_nochildren(self):
     return ()
 
@@ -466,6 +459,13 @@ def infer_name_module(node, name):
 Import.infer_name_module = infer_name_module
 
 # as_string ###################################################################
+
+def stmts_as_string(node, attr='body'):
+    """return an ast.Stmt node as string"""
+    stmts = '\n'.join([n.as_string() for n in getattr(node, attr)])
+    if isinstance(node, Module):
+        return stmts
+    return '    ' + stmts.replace('\n', '\n    ')
 
 def assert_as_string(node):
     """return an ast.Assert node as string"""
@@ -593,7 +593,7 @@ def for_as_string(node):
                                   node.iter.as_string(),
                                   stmts_as_string(node))
     if node.orelse:
-        fors = '%s\nelse:\n    %s' % (fors, node.orelse.as_string())
+        fors = '%s\nelse:\n%s' % (fors, stmts_as_string(node, "orelse"))
     return fors
 For.as_string = for_as_string
 
@@ -608,7 +608,7 @@ def function_as_string(node):
     fargs = node.format_args()
     docs = node.doc and '\n    """%s"""' % node.doc or ''
     return 'def %s(%s):%s\n    %s' % (node.name, fargs, docs,
-                                      node.body.as_string())
+                                      stmts_as_string(node))
 Function.as_string = function_as_string
 
 def genexpr_as_string(node):
@@ -626,14 +626,18 @@ def global_as_string(node):
     return 'global %s' % ', '.join(node.names)
 Global.as_string = global_as_string
 
+def _nodes_as_string(stmts):
+    """return a list of stmt nodes to string"""
+    return '\n    '.join([n.as_string() for n in stmts])
+
 def if_as_string(node):
     """return an ast.If node as string"""
     cond, body = node.tests[0]
-    ifs = ['if %s:\n    %s' % (cond.as_string(), body.as_string())]
+    ifs = ['if %s:\n    %s' % (cond.as_string(),_nodes_as_string(body))]
     for cond, body in node.tests[1:]:
-        ifs.append('elif %s:\n    %s' % (cond.as_string(), body.as_string()))
+        ifs.append('elif %s:\n    %s' % (cond.as_string(), _nodes_as_string(body)))
     if node.orelse:
-        ifs.append('else:\n    %s' % node.orelse.as_string())
+        ifs.append('else:\n%s' % stmts_as_string(node, "orelse") )
     return '\n'.join(ifs)
 If.as_string = if_as_string
 
