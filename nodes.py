@@ -507,12 +507,12 @@ Break.as_string = break_as_string
 
 def callfunc_as_string(node):
     """return an ast.CallFunc node as string"""
-    expr_str = node.node.as_string()
+    expr_str = node.func.as_string()
     args = ', '.join([arg.as_string() for arg in node.args])
-    if node.star_args:
-        args += ', *%s' % node.star_args.as_string()
-    if node.dstar_args:
-        args += ', **%s' % node.dstar_args.as_string()
+    if node.starargs:
+        args += ', *%s' % node.starargs.as_string()
+    if node.kwargs:
+        args += ', **%s' % node.kwargs.as_string()
     return '%s(%s)' % (expr_str, args)
 CallFunc.as_string = callfunc_as_string
 
@@ -522,7 +522,7 @@ def class_as_string(node):
     bases = bases and '(%s)' % bases or ''
     docs = node.doc and '\n    """%s"""' % node.doc or ''
     return 'class %s%s:%s\n    %s\n' % (node.name, bases, docs,
-                                        node.code.as_string())
+                                        node.body.as_string())
 Class.as_string = class_as_string
 
 def compare_as_string(node):
@@ -545,6 +545,7 @@ Continue.as_string = continue_as_string
 def delete_as_string(node): # XXX check if correct
     """return an ast.Delete node as string"""
     return 'del %s' % ', '.join([child.as_string() for child in node.targets])
+Delete.as_string = delete_as_string
 
 def dict_as_string(node):
     """return an ast.Dict node as string"""
@@ -607,7 +608,7 @@ def function_as_string(node):
     fargs = node.format_args()
     docs = node.doc and '\n    """%s"""' % node.doc or ''
     return 'def %s(%s):%s\n    %s' % (node.name, fargs, docs,
-                                      node.code.as_string())
+                                      node.body.as_string())
 Function.as_string = function_as_string
 
 def genexpr_as_string(node):
@@ -631,8 +632,8 @@ def if_as_string(node):
     ifs = ['if %s:\n    %s' % (cond.as_string(), body.as_string())]
     for cond, body in node.tests[1:]:
         ifs.append('elif %s:\n    %s' % (cond.as_string(), body.as_string()))
-    if node.else_:
-        ifs.append('else:\n    %s' % node.else_.as_string())
+    if node.orelse:
+        ifs.append('else:\n    %s' % node.orelse.as_string())
     return '\n'.join(ifs)
 If.as_string = if_as_string
 
@@ -643,7 +644,7 @@ Import.as_string = import_as_string
 
 def lambda_as_string(node):
     """return an ast.Lambda node as string"""
-    return 'lambda %s: %s' % (node.format_args(), node.code.as_string())
+    return 'lambda %s: %s' % (node.format_args(), node.body.as_string())
 Lambda.as_string = lambda_as_string
 
 def list_as_string(node):
@@ -653,9 +654,11 @@ List.as_string = list_as_string
 
 def listcomp_as_string(node):
     """return an ast.ListComp node as string"""
-    return '[%s %s]' % (node.expr.as_string(), ' '.join([n.as_string()
-                                                         for n in node.quals]))
+    return '[%s %s]' % (node.elt.as_string(), ' '.join([n.as_string()
+                                                         for n in node.generators]))
 ListComp.as_string = listcomp_as_string
+
+# TODO ? listcompfor_as_string
 
 def module_as_string(node):
     """return an ast.Module node as string"""
@@ -683,15 +686,15 @@ Print.as_string = print_as_string
 
 def raise_as_string(node):
     """return an ast.Raise node as string"""
-    if node.expr1:
-        if node.expr2:
-            if node.expr3:
-                return 'raise %s, %s, %s' % (node.expr1.as_string(),
-                                             node.expr2.as_string(),
-                                             node.expr3.as_string())
-            return 'raise %s, %s' % (node.expr1.as_string(),
-                                     node.expr2.as_string())
-        return 'raise %s' % node.expr1.as_string()
+    if node.type:
+        if node.inst:
+            if node.tback:
+                return 'raise %s, %s, %s' % (node.type.as_string(),
+                                             node.inst.as_string(),
+                                             node.tback.as_string())
+            return 'raise %s, %s' % (node.type.as_string(),
+                                     node.inst.as_string())
+        return 'raise %s' % node.type.as_string()
     return 'raise'
 Raise.as_string = raise_as_string
 
@@ -700,6 +703,7 @@ def return_as_string(node):
     return 'return %s' % node.value.as_string()
 Return.as_string = return_as_string
 
+# FIXME : slice_as_string, subscript_as_string
 def slice_as_string(node):
     """return an ast.Slice node as string"""
     # FIXME: use flags
@@ -738,7 +742,7 @@ Tuple.as_string = tuple_as_string
 
 def unaryop_as_string(node):
     """return an ast.UnaryOp node as string"""
-    return '%s%s' % (node.op, node.operant.as_string())
+    return '%s%s' % (node.op, node.operand.as_string())
 UnaryOp.as_string = unaryop_as_string
 
 def while_as_string(node):
