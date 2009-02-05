@@ -363,7 +363,6 @@ def _subscript_get_children(node):
     for sub in node.subs:
         if sub:
             yield sub
-
 Subscript.get_children = _subscript_get_children
 
 
@@ -714,20 +713,14 @@ def return_as_string(node):
     return 'return %s' % node.value.as_string()
 Return.as_string = return_as_string
 
-# FIXME : slice_as_string, subscript_as_string
-def slice_as_string(node):
-    """return an ast.Slice node as string"""
-    # FIXME: use flags
-    lower = node.lower and node.lower.as_string() or ''
-    upper = node.upper and node.upper.as_string() or ''
-    return '%s[%s:%s]' % (node.expr.as_string(), lower, upper)
-Slice.as_string = slice_as_string
-
 def subscript_as_string(node):
     """return an ast.Subscript node as string"""
-    # FIXME: flags ?
-    return '%s[%s]' % (node.expr.as_string(), ','.join([n.as_string()
-                                                        for n in node.subs]))
+    if node.sliceflag == 'index':
+        index = ','.join([n.as_string() for n in node.subs])
+    else: # sliceflag == 'slice':
+        slist = [sub and sub.as_string() or '' for sub in node.subs]
+        index = ':'.join(slist)
+    return '%s[%s]' % (node.expr.as_string(), index)
 Subscript.as_string = subscript_as_string
 
 def tryexcept_as_string(node):

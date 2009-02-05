@@ -289,12 +289,16 @@ def init_str(node):
 
 def init_subscript(node):
     node.expr = node.value
-    del node.value
-    if hasattr(node.slice, 'value'): # Index
-        node.subs = [node.slice.value]
-    if hasattr(node.slice, 'lower'): # Slice
-        node.subs = [node.slice.lower, node.slice.upper, node.slice.step]
-    del node.slice
+    slices = node.slice
+    if hasattr(slices, 'value'): # Index
+        node.subs = [slices.value]
+        node.sliceflag = 'index'
+    elif hasattr(slices, 'lower'): # Slice
+        node.subs = [slices.lower, slices.upper]
+        if slices.step:
+            node.subs.append(slices.step)
+        node.sliceflag = 'slice'
+    del node.slice, node.value
 
 def init_try_except(node):
     pass

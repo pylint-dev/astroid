@@ -388,14 +388,24 @@ def init_raise(node):
 def init_slice(node):
     node.__class__ = Subscript
     node.subs = [node.lower, node.upper]
+    node.sliceflag = 'slice'
     del node.lower, node.upper
 
 def init_str(node):
     pass
 
+def _remove_none(sub): # XXX
+    if isinstance(sub, Const) and sub.value == None:
+        return None
+    return sub
+
 def init_subscript(node):
     if hasattr(node.subs[0], "nodes"): # Sliceobj
-        node.subs = node.subs[0].nodes
+        subs = [_remove_none(sub) for sub in node.subs[0].nodes]
+        node.subs = subs
+        node.sliceflag = 'slice'
+    else:
+        node.sliceflag = 'index'
 
 def init_try_except(node):
     node.body = node.body.nodes
