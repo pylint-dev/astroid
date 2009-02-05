@@ -181,18 +181,6 @@ def keyword_as_string(node):
     return '%s=%s' % (node.name, node.expr.as_string())
 Keyword.as_string = keyword_as_string
 
-def listcompfor_as_string(node):
-    """return an ast.ListCompFor node as string"""
-    return 'for %s in %s %s' % (node.assign.as_string(),
-                                node.list.as_string(),
-                                ' '.join([n.as_string() for n in node.ifs]))
-ListCompFor.as_string = listcompfor_as_string
-
-def listcompif_as_string(node):
-    """return an ast.ListCompIf node as string"""
-    return 'if %s' % node.test.as_string()
-ListCompIf.as_string = listcompif_as_string
-
 def sliceobj_as_string(node):
     """return an ast.Sliceobj node as string"""
     return ':'.join([n.as_string() for n in node.nodes])
@@ -372,9 +360,8 @@ def init_listcomp(node):
 def init_listcompfor(node):
     node.iter = node.list
     node.target = node.assign
-    node.target.__class__ = Name
     if node.ifs:
-        node.ifs = node.ifs[0].test
+        node.ifs = [iff.test for iff in node.ifs ]
     del node.assign, node.list
 
 def init_name(node):

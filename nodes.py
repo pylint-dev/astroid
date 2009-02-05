@@ -124,7 +124,7 @@ Keyword._astng_fields = ('value',)
 Lambda._astng_fields = ('body',)
 List._astng_fields = ('elts',)  # ctx
 ListComp._astng_fields = ('elt', 'generators')
-ListCompFor._astng_fields = ('iter', 'ifs')
+ListCompFor._astng_fields = ('target', 'iter' ,'ifs')
 Module._astng_fields = ('body',)
 Name._astng_fields = () # id, ctx
 Pass._astng_fields = ()
@@ -659,10 +659,15 @@ List.as_string = list_as_string
 def listcomp_as_string(node):
     """return an ast.ListComp node as string"""
     return '[%s %s]' % (node.elt.as_string(), ' '.join([n.as_string()
-                                                         for n in node.generators]))
+                                                    for n in node.generators]))
 ListComp.as_string = listcomp_as_string
 
-# TODO ? listcompfor_as_string
+def listcompfor_as_string(node):
+    """return an ast.ListCompFor node as string"""
+    ifs = ''.join([ ' if %s' % n.as_string() for n in node.ifs])
+    return 'for %s in %s%s' % (node.target.as_string(),
+                                node.iter.as_string(), ifs )
+ListCompFor.as_string = listcompfor_as_string
 
 def module_as_string(node):
     """return an ast.Module node as string"""
