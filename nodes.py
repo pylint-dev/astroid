@@ -522,7 +522,7 @@ def class_as_string(node):
     bases = bases and '(%s)' % bases or ''
     docs = node.doc and '\n    """%s"""' % node.doc or ''
     return 'class %s%s:%s\n    %s\n' % (node.name, bases, docs,
-                                        node.body.as_string())
+                                        stmts_as_string(node))
 Class.as_string = class_as_string
 
 def compare_as_string(node):
@@ -688,9 +688,11 @@ Pass.as_string = pass_as_string
 def print_as_string(node):
     """return an ast.Print node as string"""
     nodes = ', '.join([n.as_string() for n in node.values])
+    if not node.nl:
+        nodes = '%s,' % nodes
     if node.dest:
-        return 'print >> %s, %s,' % (node.dest.as_string(), nodes)
-    return 'print %s,' % nodes
+        return 'print >> %s, %s' % (node.dest.as_string(), nodes)
+    return 'print %s' % nodes
 Print.as_string = print_as_string
 
 def raise_as_string(node):

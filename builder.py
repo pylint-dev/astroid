@@ -529,6 +529,7 @@ class ASTNGBuilder:
         """visit a AssAttr node -> add name to locals, handle members
         definition
         """
+        return # TODO
         try:
             frame = node.frame()
             for infered in node.expr.infer():

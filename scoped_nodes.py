@@ -163,7 +163,7 @@ extend_class(Module, LocalsDictMixIn)
 extend_class(Class, LocalsDictMixIn)
 extend_class(Function, LocalsDictMixIn)
 extend_class(Lambda, LocalsDictMixIn)
-# GenExpr has it's own locals but isn't a frame
+# GenExpr has its own locals but isn't a frame
 extend_class(GenExpr, LocalsDictMixIn)
 def frame(self):
     return self.parent.frame()
