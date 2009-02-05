@@ -250,8 +250,7 @@ def init_import_from(node):
     del node.module
 
 def init_keyword(node):
-    node.name = node.arg
-    del node.arg
+    pass
 
 def init_list(node):
     pass    

@@ -645,6 +645,11 @@ def import_as_string(node):
     return 'import %s' % _import_string(node.names)
 Import.as_string = import_as_string
 
+def keyword_as_string(node):
+    """return an ast.Keyword node as string"""
+    return '%s=%s' % (node.arg, node.value.as_string())
+Keyword.as_string = keyword_as_string
+
 def lambda_as_string(node):
     """return an ast.Lambda node as string"""
     return 'lambda %s: %s' % (node.format_args(), node.body.as_string())

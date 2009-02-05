@@ -176,16 +176,6 @@ def genexprif_as_string(node):
     return 'if %s' % node.test.as_string()
 GenExprIf.as_string = genexprif_as_string
 
-def keyword_as_string(node):
-    """return an ast.Keyword node as string"""
-    return '%s=%s' % (node.name, node.expr.as_string())
-Keyword.as_string = keyword_as_string
-
-def sliceobj_as_string(node):
-    """return an ast.Sliceobj node as string"""
-    return ':'.join([n.as_string() for n in node.nodes])
-Sliceobj.as_string = sliceobj_as_string
-
 # scoped nodes ################################################################
 
 def init_function(node):
@@ -350,7 +340,8 @@ def init_list(node):
 
 def init_keyword(node):
     node.value = node.expr
-    del node.expr
+    node.arg = node.name
+    del node.expr, node.name
 
 def init_listcomp(node):
     node.elt = node.expr
