@@ -90,7 +90,8 @@ class BinOp(Node):
                   Bitxor: '^',
                   LeftShift: '<<',
                   RightShift: '>>'}
-    
+    BIT_CLASSES = {'&': Bitand, '|': Bitor, '^': Bitxor}
+
 class BoolOp(Node):
     """replace And, Or"""
     from compiler.ast import And, Or
@@ -258,7 +259,6 @@ def init_assname(node):
         raise msg
     del node.flags
 
-
 def init_asstuple(node):
      _init_ass_more(node, Tuple)
 
@@ -272,11 +272,19 @@ def init_backquote(node):
     node.value = node.expr
     del node.expr
 
+def _init_bitop(node):
+    node.right = node.nodes[-1]
+    bitop = BinOp.BIT_CLASSES[node.op]
+    if len(node.nodes) > 2:
+        node.left = bitop(node.nodes[:-1])
+    else:
+        node.left = node.nodes[0]
+
 def init_binop(node):
     node.op = BinOp.OP_CLASSES[node.__class__]
     node.__class__ = BinOp
     if node.op in ('&', '|', '^'):
-        node.left, node.right = node.nodes
+        _init_bitop(node)
         del node.nodes
 
 def init_boolop(node):
