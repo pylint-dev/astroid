@@ -139,6 +139,8 @@ def _init_set_doc(node):
     except IndexError:
         pass # ast built from scratch
 
+init_class = _init_set_doc
+
 def _init_function(node):
     argnames = []
     for arg in node.args.args:
@@ -152,8 +154,13 @@ def _init_function(node):
         node.argnames.append(node.args.vararg)
     if node.args.kwarg:
         node.argnames.append(node.args.kwarg)
-
-init_class = _init_set_doc
+    flags = 0
+    if node.args.vararg:
+        flags += 4
+    if node.args.kwarg:
+        flags += 8
+    node.flags = flags
+    del node.args
 
 def init_function(node):
     _init_set_doc(node)
