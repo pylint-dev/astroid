@@ -576,13 +576,13 @@ Ellipsis.as_string = ellipsis_as_string
 
 def exec_as_string(node):
     """return an ast.Exec node as string"""
-    if node.locals:
-        return 'exec %s in %s, %s' % (node.expr.as_string(),
-                                      node.globals.as_string(),
-                                      node.locals.as_string())
     if node.globals:
+        return 'exec %s in %s, %s' % (node.expr.as_string(),
+                                      node.locals.as_string(),
+                                      node.globals.as_string())
+    if node.locals:
         return 'exec %s in %s' % (node.expr.as_string(),
-                                  node.globals.as_string())
+                                  node.locals.as_string())
     return 'exec %s' % node.expr.as_string()
 Exec.as_string = exec_as_string
 

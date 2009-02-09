@@ -221,6 +221,7 @@ def init_discard(node):
 
 def init_exec(node):
     node.expr = node.body
+    node.globals, node.locals = node.locals, node.globals # XXX ?
     del node.body
 
 def init_getattr(node):
