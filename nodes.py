@@ -486,7 +486,7 @@ AugAssign.as_string = augassign_as_string
 
 def backquote_as_string(node):
     """return an ast.Backquote node as string"""
-    return '`%s`' % node.expr.as_string()
+    return '`%s`' % node.value.as_string()
 Backquote.as_string = backquote_as_string
 
 def binop_as_string(node):
@@ -573,6 +573,12 @@ def ellipsis_as_string(node):
     """return an ast.Ellipsis node as string"""
     return '...'
 Ellipsis.as_string = ellipsis_as_string
+
+
+def empty_as_string(node):
+    """return an Empty node as string"""
+    return ''
+EmptyNode.as_string = empty_as_string
 
 def exec_as_string(node):
     """return an ast.Exec node as string"""
@@ -715,7 +721,10 @@ Raise.as_string = raise_as_string
 
 def return_as_string(node):
     """return an ast.Return node as string"""
-    return 'return %s' % node.value.as_string()
+    if node.value:
+        return 'return %s' % node.value.as_string()
+    else:
+        return 'return'
 Return.as_string = return_as_string
 
 def subscript_as_string(node):

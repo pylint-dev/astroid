@@ -150,10 +150,6 @@ def decorators_scope(self):
     return self.parent.parent.scope()
 Decorators.scope = decorators_scope
 
-def empty_as_string(node):
-    return ''
-EmptyNode.as_string = empty_as_string
-
 EmptyNode.getChildNodes = lambda self: ()
 
 # introduced in python 2.5
