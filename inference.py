@@ -224,8 +224,8 @@ def infer_callfunc(self, context=None):
     """
     one_infered = False
     context = context.clone()
-    context.callcontext = CallContext(self.args, self.star_args, self.dstar_args)
-    for callee in self.node.infer(context):
+    context.callcontext = CallContext(self.args, self.starargs, self.kwargs)
+    for callee in self.func.infer(context):
         if callee is YES:
             yield callee
             one_infered = True
