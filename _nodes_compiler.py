@@ -178,12 +178,14 @@ GenExprIf.as_string = genexprif_as_string
 def init_function(node):
     # remove Stmt node
     node.body = node.code.nodes
-    del node.code
     node.argnames = list(node.argnames)
+    node.defaults = list(node.defaults)
+    del node.code
 
 def init_lambda(node):
      node.body = node.code
      node.argnames = list(node.argnames)
+     node.defaults = list(node.defaults)
      del node.code
 
 def init_class(node):
