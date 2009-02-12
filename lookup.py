@@ -55,9 +55,9 @@ def scope_lookup(self, node, name, offset=0):
         stmts = node._filter_stmts(self.locals[name], self, offset)
     except KeyError:
         stmts = ()
-        print 'hargs', name
-    except :
-        print self, self.locals
+    except:
+        print "scope_lookup Error"
+        print "%s(%s)" % (repr(self.__class__.name), repr(self.name))
         raise
     if stmts:
         return self, stmts
@@ -72,7 +72,6 @@ def scope_lookup(self, node, name, offset=0):
 
 def class_scope_lookup(self, node, name, offset=0):
     if node in self.bases:
-        #print 'frame swaping'
         frame = self.parent.frame()
         # line offset to avoid that class A(A) resolve the ancestor to
         # the defined class
@@ -134,39 +133,29 @@ def _filter_stmts(self, stmts, frame, offset):
         myframe = self.frame()
     if not myframe is frame or self is frame:
         return stmts
-    #print self.name, frame.name
     mystmt = self.statement()
     # line filtering if we are in the same frame
     if myframe is frame:
         mylineno = mystmt.source_line() + offset
     else:
         # disabling lineno filtering
-        #print 'disabling lineno filtering'
         mylineno = 0
     _stmts = []
     _stmt_parents = []
-    #print '-'*60
-    #print 'filtering', stmts, mylineno
-    print self, mystmt
     for node in stmts:
         stmt = node.statement()
-        print node, stmt
         # line filtering is on and we have reached our location, break
         if mylineno > 0 and stmt.source_line() > mylineno:
-            #print 'break', mylineno, stmt.source_line()
             break
         if isinstance(node, nodes.Class) and self in node.bases:
-            #print 'breaking on', self, node.bases            
             break
         try:
             ass_type = node.ass_type()
             if ass_type is mystmt:
                 if not isinstance(ass_type, nodes.COMPREHENSIONS_SCOPES):
-                    #print 'break now2', self, ass_type
                     break
                 if isinstance(self, (nodes.Const, nodes.Name)):
                     _stmts = [self]
-                    #print 'break now', ass_type, self, node
                     break
         except AttributeError:
             ass_type = None
@@ -187,31 +176,23 @@ def _filter_stmts(self, stmts, frame, offset):
         else:
             try:
                 if ass_type and _stmts[pindex].ass_type().parent_of(ass_type):
-                    #print 'skipping', node, node.source_line()
                     continue
             except AttributeError:
                 pass # name from Import, Function, Class...
             if not (optional_assign or are_exclusive(self, node)):
-                ###print 'PARENT', stmt.parent
-                #print 'removing', _stmts[pindex]
                 del _stmt_parents[pindex]
                 del _stmts[pindex]
         if isinstance(stmt, nodes.Assign):#isinstance(node, AssName):
             if not optional_assign and stmt.parent is mystmt.parent:
-                #print 'assign clear'
                 _stmts = []
                 _stmt_parents = []
             if node.flags == 'OP_DELETE':
-                #print 'delete clear'
                 _stmts = []
                 _stmt_parents = []
                 continue
-        print self, node
         if not are_exclusive(self, node):
-            #print 'append', node, node.source_line()
             _stmts.append(node)
             _stmt_parents.append(stmt.parent)
-    #print '->', _stmts
     stmts = _stmts
     return stmts
 
