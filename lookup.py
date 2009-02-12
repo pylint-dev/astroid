@@ -57,7 +57,7 @@ def scope_lookup(self, node, name, offset=0):
         stmts = ()
     except:
         print "scope_lookup Error"
-        print "%s(%s)" % (repr(self.__class__.name), repr(self.name))
+        print "%s(%s)" % (repr(self.__class__), repr(self.name))
         raise
     if stmts:
         return self, stmts

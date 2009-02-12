@@ -44,7 +44,6 @@ nodes.Tuple.pytype = lambda x: '__builtin__.tuple'
 nodes.Dict.__bases__ += (Instance,)
 nodes.Dict._proxied = MANAGER.astng_from_class(dict)
 nodes.Dict.pytype = lambda x: '__builtin__.dict'
-nodes.NoneType._proxied = MANAGER.astng_from_module_name('types').getattr('NoneType')
 nodes.NoneType.pytype = lambda x: 'types.NoneType'
 nodes.Bool._proxied = MANAGER.astng_from_class(bool)
 
@@ -598,3 +597,5 @@ if nodes.AST_MODE == 'compiler':
     from logilab.astng._inference_compiler import *
 else: #nodes.AST_MODE == '_ast'
     from logilab.astng._inference_ast import *
+
+nodes.NoneType._proxied = MANAGER.astng_from_module_name('types').getattr('NoneType')

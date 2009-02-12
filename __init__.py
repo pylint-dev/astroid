@@ -107,6 +107,8 @@ MANAGER = ASTNGManager()
 
 from logilab.astng.nodes import *
 from logilab.astng.scoped_nodes import *
-from logilab.astng import inference
+
 from logilab.astng import lookup
 lookup._decorate(nodes)
+
+from logilab.astng import inference
