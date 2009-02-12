@@ -25,7 +25,7 @@ __docformat__ = "restructuredtext en"
 from itertools import imap
 from logilab.common.compat import enumerate
 from logilab.astng._exceptions import IgnoreChild, UnresolvableName, \
-     NotFoundError, InferenceError
+     NotFoundError, InferenceError, ASTNGError
 
 def extend_class(original, addons):
     """add methods and attribute defined in the addons class to the original
@@ -160,7 +160,7 @@ class LocalsVisitor(ASTWalker):
             return methods[1](node)
 
 def are_exclusive(stmt1, stmt2):
-    """return true if the two given statement are mutually exclusive
+    """return true if the two given statements are mutually exclusive
 
     algorithm :
      1) index stmt1's parents
@@ -192,15 +192,9 @@ def are_exclusive(stmt1, stmt2):
             elif isinstance(node, TryExcept):
                 stmt1_previous = children[node]
                 if not previous is stmt1_previous:
-                    stmt1_branch, stmt1_num = _try_except_from_branch(node, stmt1_previous)
-                    stmt2_branch, stmt2_num = _try_except_from_branch(node, previous)
-                    if stmt1_branch != stmt1_branch:
-                        if not ((stmt2_branch == 'body' and stmt1_branch == 'else') or
-                                (stmt1_branch == 'body' and stmt2_branch == 'else') or
-                                (stmt2_branch == 'body' and stmt1_branch == 'except') or
-                                (stmt1_branch == 'body' and stmt2_branch == 'except')):
-                            return True
-                    elif stmt1_num != stmt2_num:
+                    values1 = _try_except_from_branch(node, stmt1_previous)
+                    values2 = _try_except_from_branch(node, previous)
+                    if _are_from_exclusive_nodes(values1, values2):
                         return True
             return False
         previous = node
@@ -208,11 +202,26 @@ def are_exclusive(stmt1, stmt2):
     return False
 
 def _try_except_from_branch(node, stmt):
-    if stmt is node.body:
+    """returns values to compare to nodes"""
+    if stmt in node.body:
         return 'body', 1
-    if stmt is node.else_:
+    if stmt is node.orelse:
         return 'else', 1
-    for i, block_nodes in enumerate(node.handlers):
-        if stmt in block_nodes:
+    for i, handler in enumerate(node.handlers):
+        if stmt in handler.body:
             return 'except', i
+    raise ASTNGError, "comparing try_except nodes '%s' '%s'" % (node, stmt)
 
+
+def _are_from_exclusive_nodes(values1, values2):
+    """return true if values from two nodes are exclusive"""
+    stmt1_branch, stmt1_num = values1
+    stmt2_branch, stmt2_num = values2
+    if stmt1_branch != stmt2_branch:
+        if not ((stmt2_branch == 'body' and stmt1_branch == 'else') or
+                (stmt1_branch == 'body' and stmt2_branch == 'else') or
+                (stmt2_branch == 'body' and stmt1_branch == 'except') or
+                (stmt1_branch == 'body' and stmt2_branch == 'except')):
+            return True
+    else:
+        return stmt1_num != stmt2_num
