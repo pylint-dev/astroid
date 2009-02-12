@@ -520,7 +520,7 @@ def class_as_string(node):
     bases =  ', '.join([n.as_string() for n in node.bases])
     bases = bases and '(%s)' % bases or ''
     docs = node.doc and '\n    """%s"""' % node.doc or ''
-    return 'class %s%s:%s\n    %s\n' % (node.name, bases, docs,
+    return 'class %s%s:%s\n%s\n' % (node.name, bases, docs,
                                         stmts_as_string(node))
 Class.as_string = class_as_string
 
@@ -612,7 +612,7 @@ def function_as_string(node):
     """return an ast.Function node as string"""
     fargs = node.format_args()
     docs = node.doc and '\n    """%s"""' % node.doc or ''
-    return 'def %s(%s):%s\n    %s' % (node.name, fargs, docs,
+    return 'def %s(%s):%s\n%s' % (node.name, fargs, docs,
                                       stmts_as_string(node))
 Function.as_string = function_as_string
 
@@ -633,14 +633,15 @@ Global.as_string = global_as_string
 
 def _nodes_as_string(stmts):
     """return a list of stmt nodes to string"""
-    return '\n    '.join([n.as_string() for n in stmts])
+    stmts = '\n'.join([n.as_string() for n in stmts])
+    return '    ' + stmts.replace('\n', '\n    ')
 
 def if_as_string(node):
     """return an ast.If node as string"""
     cond, body = node.tests[0]
-    ifs = ['if %s:\n    %s' % (cond.as_string(),_nodes_as_string(body))]
+    ifs = ['if %s:\n%s' % (cond.as_string(),_nodes_as_string(body))]
     for cond, body in node.tests[1:]:
-        ifs.append('elif %s:\n    %s' % (cond.as_string(), _nodes_as_string(body)))
+        ifs.append('elif %s:\n%s' % (cond.as_string(), _nodes_as_string(body)))
     if node.orelse:
         ifs.append('else:\n%s' % stmts_as_string(node, "orelse") )
     return '\n'.join(ifs)
@@ -773,9 +774,9 @@ While.as_string = while_as_string
 
 def with_as_string(node):
     """return an ast.With node as string"""
-    withs = 'with (%s) as (%s):\n    %s' % (node.expr.as_string(),
-                                      node.vars.as_string(),
-                                      node.body.as_string())
+    withs = 'with (%s) as (%s):\n%s' % (node.context_expr.as_string(),
+                                      node.optional_vars.as_string(),
+                                      stmts_as_string(node))
     return withs
 With.as_string = with_as_string
 

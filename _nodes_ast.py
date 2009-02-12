@@ -118,6 +118,8 @@ CMP_OP_CLASSES = {_Eq: '==',
 Num._astng_fields = ()
 Str._astng_fields = ()
 
+With._astng_fields = ('context_expr', 'optional_vars', 'body')
+With.is_statement = True
 
 
 class Const(Node):
