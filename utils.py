@@ -205,9 +205,11 @@ def _try_except_from_branch(node, stmt):
     """returns values to compare to nodes"""
     if stmt in node.body:
         return 'body', 1
-    if stmt is node.orelse:
+    if stmt in node.orelse:
         return 'else', 1
     for i, handler in enumerate(node.handlers):
+        if stmt is handler:
+            return 'except', i 
         if stmt in handler.body:
             return 'except', i
     raise ASTNGError, "comparing try_except nodes '%s' '%s'" % (node, stmt)
