@@ -80,7 +80,7 @@ def path_wrapper(func):
         if context is None:
             context = InferenceContext(node)
         context.push(node)
-        yielded = set()
+        yielded = []
         try:
             for res in _func(node, context, **kwargs):
                 # unproxy only true instance, not const, tuple, dict...
@@ -90,7 +90,7 @@ def path_wrapper(func):
                     ares = res
                 if not ares in yielded:
                     yield res
-                    yielded.add(ares)
+                    yielded.append(ares)
             context.pop()
         except:
             context.pop()
