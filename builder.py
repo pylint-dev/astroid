@@ -339,6 +339,7 @@ class ASTNGBuilder:
         """visit a GenExpr node -> init node locals"""
         self.visit_default(node)
         node.locals = {}
+        nodes.init_genexpr(node)
     visit_generatorexp = visit_genexpr
 
     def visit_getattr(self, node):

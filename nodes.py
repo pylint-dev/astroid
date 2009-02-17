@@ -89,6 +89,7 @@ Exec._astng_fields = ('expr', 'globals', 'locals',)
 Function._astng_fields = ('decorators', 'defaults', 'body') # XXX argnames ?
 For._astng_fields = ('target', 'iter', 'body', 'orelse',)
 Getattr._astng_fields = ('expr',) # (former value), attr (now attrname), ctx
+GenExpr._astng_fields = ('elt', 'generators')
 Global._astng_fields = ()
 If._astng_fields = ('tests', 'orelse',)
 Import._astng_fields = ()
@@ -589,8 +590,9 @@ def function_as_string(node):
 Function.as_string = function_as_string
 
 def genexpr_as_string(node):
-    """return an astng.GenExpr node as string"""
-    return '(%s)' % node.code.as_string()
+    """return an astng.ListComp node as string"""
+    return '(%s %s)' % (node.elt.as_string(), ' '.join([n.as_string()
+                                                    for n in node.generators]))
 GenExpr.as_string = genexpr_as_string
 
 def getattr_as_string(node):

@@ -155,23 +155,6 @@ EmptyNode.getChildNodes = lambda self: ()
 # introduced in python 2.5
 From.level = 0 # will be overiden by instance attribute with py>=2.5
 
-def genexprinner_as_string(node):
-    """return an astng.GenExpr node as string"""
-    return '%s %s' % (node.expr.as_string(), ' '.join([n.as_string()
-                                                       for n in node.quals]))
-GenExprInner.as_string = genexprinner_as_string
-
-def genexprfor_as_string(node):
-    """return an astng.GenExprFor node as string"""
-    return 'for %s in %s %s' % (node.assign.as_string(),
-                                node.iter.as_string(),
-                                ' '.join([n.as_string() for n in node.ifs]))
-GenExprFor.as_string = genexprfor_as_string
-
-def genexprif_as_string(node):
-    """return an astng.GenExprIf node as string"""
-    return 'if %s' % node.test.as_string()
-GenExprIf.as_string = genexprif_as_string
 
 # scoped nodes ################################################################
 
@@ -326,6 +309,15 @@ def init_for(node):
     del node.list
     node.body = node.body.nodes
     _init_else_node(node)
+
+def init_genexpr(node):
+    # remove GenExprInner node
+    node.elt = node.code.expr
+    node.generators = node.code.quals
+    for gen in node.generators:
+        gen.__class__ = ListCompFor # XXX _ast.comprehension
+        gen.list = gen.iter # XXX
+    del node.code
 
 def init_getattr(node):
     pass

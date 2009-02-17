@@ -226,6 +226,9 @@ def init_exec(node):
     node.globals, node.locals = node.locals, node.globals # XXX ?
     del node.body
 
+def init_genexpr(node):
+    pass
+
 def init_getattr(node):
     node.attrname = node.attr
     node.expr = node.value
