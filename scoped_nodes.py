@@ -170,26 +170,6 @@ def frame(self):
 GenExpr.frame = frame
 
 
-class GetattrMixIn(object):
-    def getattr(self, name, context=None):
-        try:
-            return self.locals[name]
-        except KeyError:
-            raise NotFoundError(name)
-        
-    def igetattr(self, name, context=None):
-        """infered getattr"""
-        # set lookup name since this is necessary to infer on import nodes for
-        # instance
-        context = copy_context(context)
-        context.lookupname = name
-        try:
-            return _infer_stmts(self.getattr(name, context), context, frame=self)
-        except NotFoundError:
-            raise InferenceError(name)
-extend_class(Module, GetattrMixIn)
-extend_class(Class, GetattrMixIn)
-
 # Module  #####################################################################
 
 class ModuleNG(object):
@@ -232,7 +212,18 @@ class ModuleNG(object):
                 except:
                     pass
             raise NotFoundError(name)        
-        
+
+    def igetattr(self, name, context=None):
+        """infered getattr"""
+        # set lookup name since this is necessary to infer on import nodes for
+        # instance
+        context = copy_context(context)
+        context.lookupname = name
+        try:
+            return _infer_stmts(self.getattr(name, context), context, frame=self)
+        except NotFoundError:
+            raise InferenceError(name)
+
     def source_line(self):
         """return the source line number, 0 on a module"""
         return 0
