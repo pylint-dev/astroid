@@ -35,34 +35,6 @@ on From and Import :
 :copyright: 2003-2008 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 
-DONE:
-Assign
-AugAssign
-BinOp / (Add,Div,FloorDiv,Mod,Mul/Mult,Power/Pow,Sub,,Bitand,Bitor,Bitxor,
-         LeftShift/LShift,RightShift/RShift)
-BoolOp / (And,Or)
-Break
-Compare
-Continue
-Dict
-Discard / Expr
-Exec
-For
-Getattr / (Attribute)
-Global
-Import
-From / ImportFrom
-List
-Module
-Name
-Pass
-Print
-Return
-TryExcept
-TryFinally
-Tuple
-UnaryOp / (UnaryAdd,UnarySub,Not)
-Yield
 """
 
 from __future__ import generators
@@ -460,52 +432,52 @@ Import.infer_name_module = infer_name_module
 # as_string ###################################################################
 
 def stmts_as_string(node, attr='body'):
-    """return an ast.Stmt node as string"""
+    """return astng node stmts as string"""
     stmts = '\n'.join([n.as_string() for n in getattr(node, attr)])
     if isinstance(node, Module):
         return stmts
     return '    ' + stmts.replace('\n', '\n    ')
 
 def assert_as_string(node):
-    """return an ast.Assert node as string"""
+    """return an astng.Assert node as string"""
     if node.fail:
         return 'assert %s, %s' % (node.test.as_string(), node.fail.as_string())
     return 'assert %s' % node.test.as_string()
 Assert.as_string = assert_as_string
 
 def assign_as_string(node):
-    """return an ast.Assign node as string"""
+    """return an astng.Assign node as string"""
     lhs = ' = '.join([n.as_string() for n in node.targets])
     return '%s = %s' % (lhs, node.value.as_string())
 Assign.as_string = assign_as_string
 
 def augassign_as_string(node):
-    """return an ast.AugAssign node as string"""
+    """return an astng.AugAssign node as string"""
     return '%s %s %s' % (node.target.as_string(), node.op, node.value.as_string())
 AugAssign.as_string = augassign_as_string
 
 def backquote_as_string(node):
-    """return an ast.Backquote node as string"""
+    """return an astng.Backquote node as string"""
     return '`%s`' % node.value.as_string()
 Backquote.as_string = backquote_as_string
 
 def binop_as_string(node):
-    """return an ast.BinOp node as string"""
+    """return an astng.BinOp node as string"""
     return '(%s) %s (%s)' % (node.left.as_string(), node.op, node.right.as_string())
 BinOp.as_string = binop_as_string
 
 def boolop_as_string(node):
-    """return an ast.BoolOp node as string"""
+    """return an astng.BoolOp node as string"""
     return (' %s ' % node.op).join(['(%s)' % n.as_string() for n in node.values])
 BoolOp.as_string = boolop_as_string
 
 def break_as_string(node):
-    """return an ast.Break node as string"""
+    """return an astng.Break node as string"""
     return 'break'
 Break.as_string = break_as_string
 
 def callfunc_as_string(node):
-    """return an ast.CallFunc node as string"""
+    """return an astng.CallFunc node as string"""
     expr_str = node.func.as_string()
     args = ', '.join([arg.as_string() for arg in node.args])
     if node.starargs:
@@ -516,7 +488,7 @@ def callfunc_as_string(node):
 CallFunc.as_string = callfunc_as_string
 
 def class_as_string(node):
-    """return an ast.Class node as string"""
+    """return an astng.Class node as string"""
     bases =  ', '.join([n.as_string() for n in node.bases])
     bases = bases and '(%s)' % bases or ''
     docs = node.doc and '\n    """%s"""' % node.doc or ''
@@ -525,35 +497,35 @@ def class_as_string(node):
 Class.as_string = class_as_string
 
 def compare_as_string(node):
-    """return an ast.Compare node as string"""
+    """return an astng.Compare node as string"""
     rhs_str = ' '.join(['%s %s' % (op, expr.as_string())
                         for op, expr in node.ops])
     return '%s %s' % (node.left.as_string(), rhs_str)
 Compare.as_string = compare_as_string
 
 def const_as_string(node):
-    """return an ast.Const node as string"""
+    """return an astng.Const node as string"""
     return repr(node.value)
 Const.as_string = const_as_string
 
 def continue_as_string(node):
-    """return an ast.Continue node as string"""
+    """return an astng.Continue node as string"""
     return 'continue'
 Continue.as_string = continue_as_string
 
 def delete_as_string(node): # XXX check if correct
-    """return an ast.Delete node as string"""
+    """return an astng.Delete node as string"""
     return 'del %s' % ', '.join([child.as_string() for child in node.targets])
 Delete.as_string = delete_as_string
 
 def dict_as_string(node):
-    """return an ast.Dict node as string"""
+    """return an astng.Dict node as string"""
     return '{%s}' % ', '.join(['%s: %s' % (key.as_string(), value.as_string())
                                for key, value in node.items])
 Dict.as_string = dict_as_string
 
 def discard_as_string(node):
-    """return an ast.Discard node as string"""
+    """return an astng.Discard node as string"""
     return node.value.as_string()
 Discard.as_string = discard_as_string
 
@@ -570,7 +542,7 @@ def excepthandler_as_string(node):
 ExceptHandler.as_string = excepthandler_as_string
 
 def ellipsis_as_string(node):
-    """return an ast.Ellipsis node as string"""
+    """return an astng.Ellipsis node as string"""
     return '...'
 Ellipsis.as_string = ellipsis_as_string
 
@@ -581,7 +553,7 @@ def empty_as_string(node):
 EmptyNode.as_string = empty_as_string
 
 def exec_as_string(node):
-    """return an ast.Exec node as string"""
+    """return an astng.Exec node as string"""
     if node.globals:
         return 'exec %s in %s, %s' % (node.expr.as_string(),
                                       node.locals.as_string(),
@@ -593,7 +565,7 @@ def exec_as_string(node):
 Exec.as_string = exec_as_string
 
 def for_as_string(node):
-    """return an ast.For node as string"""
+    """return an astng.For node as string"""
     fors = 'for %s in %s:\n%s' % (node.target.as_string(),
                                   node.iter.as_string(),
                                   stmts_as_string(node))
@@ -603,13 +575,13 @@ def for_as_string(node):
 For.as_string = for_as_string
 
 def from_as_string(node):
-    """return an ast.From node as string"""
+    """return an astng.From node as string"""
     # XXX level
     return 'from %s import %s' % (node.modname, _import_string(node.names))
 From.as_string = from_as_string
 
 def function_as_string(node):
-    """return an ast.Function node as string"""
+    """return an astng.Function node as string"""
     fargs = node.format_args()
     docs = node.doc and '\n    """%s"""' % node.doc or ''
     return 'def %s(%s):%s\n%s' % (node.name, fargs, docs,
@@ -617,17 +589,17 @@ def function_as_string(node):
 Function.as_string = function_as_string
 
 def genexpr_as_string(node):
-    """return an ast.GenExpr node as string"""
+    """return an astng.GenExpr node as string"""
     return '(%s)' % node.code.as_string()
 GenExpr.as_string = genexpr_as_string
 
 def getattr_as_string(node):
-    """return an ast.Getattr node as string"""
+    """return an astng.Getattr node as string"""
     return '%s.%s' % (node.expr.as_string(), node.attrname)
 Getattr.as_string = getattr_as_string
 
 def global_as_string(node):
-    """return an ast.Global node as string"""
+    """return an astng.Global node as string"""
     return 'global %s' % ', '.join(node.names)
 Global.as_string = global_as_string
 
@@ -637,7 +609,7 @@ def _nodes_as_string(stmts):
     return '    ' + stmts.replace('\n', '\n    ')
 
 def if_as_string(node):
-    """return an ast.If node as string"""
+    """return an astng.If node as string"""
     cond, body = node.tests[0]
     ifs = ['if %s:\n%s' % (cond.as_string(),_nodes_as_string(body))]
     for cond, body in node.tests[1:]:
@@ -648,56 +620,56 @@ def if_as_string(node):
 If.as_string = if_as_string
 
 def import_as_string(node):
-    """return an ast.Import node as string"""
+    """return an astng.Import node as string"""
     return 'import %s' % _import_string(node.names)
 Import.as_string = import_as_string
 
 def keyword_as_string(node):
-    """return an ast.Keyword node as string"""
+    """return an astng.Keyword node as string"""
     return '%s=%s' % (node.arg, node.value.as_string())
 Keyword.as_string = keyword_as_string
 
 def lambda_as_string(node):
-    """return an ast.Lambda node as string"""
+    """return an astng.Lambda node as string"""
     return 'lambda %s: %s' % (node.format_args(), node.body.as_string())
 Lambda.as_string = lambda_as_string
 
 def list_as_string(node):
-    """return an ast.List node as string"""
+    """return an astng.List node as string"""
     return '[%s]' % ', '.join([child.as_string() for child in node.elts])
 List.as_string = list_as_string
 
 def listcomp_as_string(node):
-    """return an ast.ListComp node as string"""
+    """return an astng.ListComp node as string"""
     return '[%s %s]' % (node.elt.as_string(), ' '.join([n.as_string()
                                                     for n in node.generators]))
 ListComp.as_string = listcomp_as_string
 
 def listcompfor_as_string(node):
-    """return an ast.ListCompFor node as string"""
+    """return an astng.ListCompFor node as string"""
     ifs = ''.join([ ' if %s' % n.as_string() for n in node.ifs])
     return 'for %s in %s%s' % (node.target.as_string(),
                                 node.iter.as_string(), ifs )
 ListCompFor.as_string = listcompfor_as_string
 
 def module_as_string(node):
-    """return an ast.Module node as string"""
+    """return an astng.Module node as string"""
     docs = node.doc and '"""%s"""\n' % node.doc or ''
     return '%s%s' % (docs, stmts_as_string(node))
 Module.as_string = module_as_string
 
 def name_as_string(node):
-    """return an ast.Name node as string"""
+    """return an astng.Name node as string"""
     return node.name
 Name.as_string = name_as_string
 
 def pass_as_string(node):
-    """return an ast.Pass node as string"""
+    """return an astng.Pass node as string"""
     return 'pass'
 Pass.as_string = pass_as_string
 
 def print_as_string(node):
-    """return an ast.Print node as string"""
+    """return an astng.Print node as string"""
     nodes = ', '.join([n.as_string() for n in node.values])
     if not node.nl:
         nodes = '%s,' % nodes
@@ -707,7 +679,7 @@ def print_as_string(node):
 Print.as_string = print_as_string
 
 def raise_as_string(node):
-    """return an ast.Raise node as string"""
+    """return an astng.Raise node as string"""
     if node.type:
         if node.inst:
             if node.tback:
@@ -721,7 +693,7 @@ def raise_as_string(node):
 Raise.as_string = raise_as_string
 
 def return_as_string(node):
-    """return an ast.Return node as string"""
+    """return an astng.Return node as string"""
     if node.value:
         return 'return %s' % node.value.as_string()
     else:
@@ -729,7 +701,7 @@ def return_as_string(node):
 Return.as_string = return_as_string
 
 def subscript_as_string(node):
-    """return an ast.Subscript node as string"""
+    """return an astng.Subscript node as string"""
     if node.sliceflag == 'index':
         index = ','.join([n.as_string() for n in node.subs])
     else: # sliceflag == 'slice':
@@ -739,7 +711,7 @@ def subscript_as_string(node):
 Subscript.as_string = subscript_as_string
 
 def tryexcept_as_string(node):
-    """return an ast.TryExcept node as string"""
+    """return an astng.TryExcept node as string"""
     trys = ['try:\n%s' % stmts_as_string(node)]
     for handler in node.handlers:
         trys.append(handler.as_string())
@@ -749,23 +721,23 @@ def tryexcept_as_string(node):
 TryExcept.as_string = tryexcept_as_string
 
 def tryfinally_as_string(node):
-    """return an ast.TryFinally node as string"""
+    """return an astng.TryFinally node as string"""
     return 'try:\n%s\nfinally:\n%s' % (stmts_as_string(node),
                                        stmts_as_string(node, 'finalbody'))
 TryFinally.as_string = tryfinally_as_string
 
 def tuple_as_string(node):
-    """return an ast.Tuple node as string"""
+    """return an astng.Tuple node as string"""
     return '(%s)' % ', '.join([child.as_string() for child in node.elts])
 Tuple.as_string = tuple_as_string
 
 def unaryop_as_string(node):
-    """return an ast.UnaryOp node as string"""
+    """return an astng.UnaryOp node as string"""
     return '%s%s' % (node.op, node.operand.as_string())
 UnaryOp.as_string = unaryop_as_string
 
 def while_as_string(node):
-    """return an ast.While node as string"""
+    """return an astng.While node as string"""
     whiles = 'while %s:\n%s' % (node.test.as_string(), stmts_as_string(node))
     if node.orelse:
         whiles = '%s\nelse:\n%s' % (whiles, stmts_as_string(node, 'orelse'))
@@ -773,7 +745,7 @@ def while_as_string(node):
 While.as_string = while_as_string
 
 def with_as_string(node):
-    """return an ast.With node as string"""
+    """return an astng.With node as string"""
     withs = 'with (%s) as (%s):\n%s' % (node.context_expr.as_string(),
                                       node.optional_vars.as_string(),
                                       stmts_as_string(node))

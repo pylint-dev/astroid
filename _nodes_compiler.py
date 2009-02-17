@@ -117,27 +117,27 @@ class Delete(Node):
 COMPREHENSIONS_SCOPES = (GenExprFor, ListCompFor)
 
 def assattr_as_string(node):
-    """return an ast.AssAttr node as string"""
+    """return an astng.AssAttr node as string"""
     if node.flags == 'OP_DELETE':
         return 'del %s.%s' % (node.expr.as_string(), node.attrname)
     return '%s.%s' % (node.expr.as_string(), node.attrname)
 AssAttr.as_string = assattr_as_string
 
 def asslist_as_string(node):
-    """return an ast.AssList node as string"""
+    """return an astng.AssList node as string"""
     string = ', '.join([n.as_string() for n in node.nodes])
     return '[%s]' % string
 AssList.as_string = asslist_as_string
 
 def assname_as_string(node):
-    """return an ast.AssName node as string"""
+    """return an astng.AssName node as string"""
     if node.flags == 'OP_DELETE':
         return 'del %s' % node.name
     return node.name
 AssName.as_string = assname_as_string
 
 def asstuple_as_string(node):
-    """return an ast.AssTuple node as string"""
+    """return an astng.AssTuple node as string"""
     string = ', '.join([n.as_string() for n in node.nodes])
     # fix for del statement
     return string.replace(', del ', ', ')
@@ -156,20 +156,20 @@ EmptyNode.getChildNodes = lambda self: ()
 From.level = 0 # will be overiden by instance attribute with py>=2.5
 
 def genexprinner_as_string(node):
-    """return an ast.GenExpr node as string"""
+    """return an astng.GenExpr node as string"""
     return '%s %s' % (node.expr.as_string(), ' '.join([n.as_string()
                                                        for n in node.quals]))
 GenExprInner.as_string = genexprinner_as_string
 
 def genexprfor_as_string(node):
-    """return an ast.GenExprFor node as string"""
+    """return an astng.GenExprFor node as string"""
     return 'for %s in %s %s' % (node.assign.as_string(),
                                 node.iter.as_string(),
                                 ' '.join([n.as_string() for n in node.ifs]))
 GenExprFor.as_string = genexprfor_as_string
 
 def genexprif_as_string(node):
-    """return an ast.GenExprIf node as string"""
+    """return an astng.GenExprIf node as string"""
     return 'if %s' % node.test.as_string()
 GenExprIf.as_string = genexprif_as_string
 
