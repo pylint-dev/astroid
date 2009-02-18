@@ -16,6 +16,7 @@
 import unittest
 
 from logilab.astng import builder, nodes, NotFoundError
+from logilab.astng.nodes_as_string import as_string
 
 from data import module as test_module
 
@@ -138,16 +139,18 @@ class ImportNodeTC(unittest.TestCase):
 
     def test_as_string(self):
         ast = MODULE['modutils']
-        self.assertEquals(ast.as_string(), "from logilab.common import modutils")
+        self.assertEquals(as_string(ast), "from logilab.common import modutils")
         ast = MODULE['spawn']
-        self.assertEquals(ast.as_string(), "from logilab.common.shellutils import Execute as spawn")
+        self.assertEquals(as_string(ast), "from logilab.common.shellutils import Execute as spawn")
         ast = MODULE['os']
-        self.assertEquals(ast.as_string(), "import os.path")
+        self.assertEquals(as_string(ast), "import os.path")
+
+        
 
 class CmpNodeTC(unittest.TestCase):
     def test_as_string(self):
         ast = abuilder.string_build("a == 2")
-        self.assertEquals(ast.as_string(), "a == 2")
+        self.assertEquals(as_string(ast), "a == 2")
         
 __all__ = ('IfNodeTC', 'ImportNodeTC',)
         

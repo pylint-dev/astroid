@@ -20,9 +20,10 @@ from os.path import join, abspath, dirname
 from logilab.common.testlib import TestCase, unittest_main
 from unittest_inference import get_name_node
 from pprint import pprint
-        
+
 from logilab.astng import builder, nodes, patchcomptransformer
 from logilab.astng import Module, YES, InferenceError, NoneType, Bool
+from logilab.astng.nodes_as_string import as_string
 
 import data
 from data import module as test_module
@@ -223,7 +224,7 @@ class BuilderTC(TestCase):
         infered = infered[0]
         self.assertEquals(infered.name, 'object')
         try:
-            infered.as_string()
+            as_string(infered)
         except:
             print repr(infered)
             
@@ -232,7 +233,7 @@ class BuilderTC(TestCase):
         infered = infered[0]
         self.assertEquals(infered.name, 'type')
         try:
-            infered.as_string()
+            as_string(infered)
         except:
             print repr(infered)
         
