@@ -325,10 +325,13 @@ class AsStringVisitor(ASTNGVisitor):
     visit_importfrom = visit_from
     visit_repr = visit_backquote
 
-    # special noneType
+    # special ASTNG NoneType and Bool nodes
     def visit_nonetype(self, node):
         """return None for ans ASTNG NoneType node"""
         return 'None'
+
+    def visit_bool(self, node):
+        return str(node.value)
 
 # this visitor is stateless, thus it can be reused
 as_string = AsStringVisitor()
