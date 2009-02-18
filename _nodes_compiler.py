@@ -116,32 +116,6 @@ class Delete(Node):
 
 COMPREHENSIONS_SCOPES = (GenExprFor, ListCompFor)
 
-def assattr_as_string(node):
-    """return an astng.AssAttr node as string"""
-    if node.flags == 'OP_DELETE':
-        return 'del %s.%s' % (node.expr.as_string(), node.attrname)
-    return '%s.%s' % (node.expr.as_string(), node.attrname)
-AssAttr.as_string = assattr_as_string
-
-def asslist_as_string(node):
-    """return an astng.AssList node as string"""
-    string = ', '.join([n.as_string() for n in node.nodes])
-    return '[%s]' % string
-AssList.as_string = asslist_as_string
-
-def assname_as_string(node):
-    """return an astng.AssName node as string"""
-    if node.flags == 'OP_DELETE':
-        return 'del %s' % node.name
-    return node.name
-AssName.as_string = assname_as_string
-
-def asstuple_as_string(node):
-    """return an astng.AssTuple node as string"""
-    string = ', '.join([n.as_string() for n in node.nodes])
-    # fix for del statement
-    return string.replace(', del ', ', ')
-AssTuple.as_string = asstuple_as_string
 
 Const.eq = lambda self, value: self.value == value
 
