@@ -130,6 +130,10 @@ class NodeNG:
     def __str__(self):
         return '%s(%s)' % (self.__class__.__name__, getattr(self, 'name', ''))
 
+    def accept(self, visitor):
+        name = self.__class__.__name__
+        func = getattr(visitor, "visit_" + name.lower() )
+        return func(self)
 
     def get_children(self):
         d = self.__dict__
