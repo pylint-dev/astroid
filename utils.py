@@ -41,7 +41,165 @@ def extend_class(original, addons):
         # dictproxy object
         for k, v in brain.iteritems():
             setattr(original, k, v)
-        
+
+
+class ASTVisitor(object):
+    """Abstract Base Class for Python AST Visitors.
+    
+    Visitors inheritating from ASTVisitors could visit
+    compiler.ast, _ast or astng trees.
+    
+    Not all methods will have to be implemented;
+    so some methods are just empty interfaces for catching
+    cases where we don't want to do anything on the
+    concerned node.
+    """
+
+    def visit_assert(self, node):
+        """dummy method for visiting an Assert node"""
+
+    def visit_assign(self, node):
+        """dummy method for visiting an Assign node"""
+
+    def visit_augassign(self, node):
+        """dummy method for visiting an AugAssign node"""
+
+    def visit_backquote(self, node):
+        """dummy method for visiting an Backquote node"""
+
+    def visit_binop(self, node):
+        """dummy method for visiting an BinOp node"""
+
+    def visit_boolop(self, node):
+        """dummy method for visiting an BoolOp node"""
+
+    def visit_break(self, node):
+        """dummy method for visiting an Break node"""
+
+    def visit_callfunc(self, node):
+        """dummy method for visiting an CallFunc node"""
+
+    def visit_class(self, node):
+        """dummy method for visiting an Class node"""
+
+    def visit_compare(self, node):
+        """dummy method for visiting an Compare node"""
+
+    def visit_const(self, node):
+        """dummy method for visiting an Const node"""
+
+    def visit_continue(self, node):
+        """dummy method for visiting an Continue node"""
+
+    def visit_delete(self, node):
+        """dummy method for visiting an Delete node"""
+
+    def visit_dict(self, node):
+        """dummy method for visiting an Dict node"""
+
+    def visit_discard(self, node):
+        """dummy method for visiting an Discard node"""
+
+    def visit_excepthandler(self, node):
+        """dummy method for visiting an ExceptHandler node"""
+
+    def visit_ellipsis(self, node):
+        """dummy method for visiting an Ellipsis node"""
+
+    def visit_empty(self, node):
+        """dummy method for visiting an Empty node"""
+
+    def visit_exec(self, node):
+        """dummy method for visiting an Exec node"""
+
+    def visit_for(self, node):
+        """dummy method for visiting an For node"""
+
+    def visit_from(self, node):
+        """dummy method for visiting an From node"""
+
+    def visit_function(self, node):
+        """dummy method for visiting an Function node"""
+
+    def visit_genexpr(self, node):
+        """dummy method for visiting an ListComp node"""
+
+    def visit_getattr(self, node):
+        """dummy method for visiting an Getattr node"""
+
+    def visit_global(self, node):
+        """dummy method for visiting an Global node"""
+
+    def visit_if(self, node):
+        """dummy method for visiting an If node"""
+
+    def visit_import(self, node):
+        """dummy method for visiting an Import node"""
+
+    def visit_keyword(self, node):
+        """dummy method for visiting an Keyword node"""
+
+    def visit_lambda(self, node):
+        """dummy method for visiting an Lambda node"""
+
+    def visit_list(self, node):
+        """dummy method for visiting an List node"""
+
+    def visit_listcomp(self, node):
+        """dummy method for visiting an ListComp node"""
+
+    def visit_listcompfor(self, node):
+        """dummy method for visiting an ListCompFor node"""
+
+    def visit_module(self, node):
+        """dummy method for visiting an Module node"""
+
+    def visit_name(self, node):
+        """dummy method for visiting an Name node"""
+
+    def visit_pass(self, node):
+        """dummy method for visiting an Pass node"""
+
+    def visit_print(self, node):
+        """dummy method for visiting an Print node"""
+
+    def visit_raise(self, node):
+        """dummy method for visiting an Raise node"""
+
+    def visit_return(self, node):
+        """dummy method for visiting an Return node"""
+
+    def visit_subscript(self, node):
+        """dummy method for visiting an Subscript node"""
+
+    def visit_tryexcept(self, node):
+        """dummy method for visiting an TryExcept node"""
+
+    def visit_tryfinally(self, node):
+        """dummy method for visiting an TryFinally node"""
+
+    def visit_tuple(self, node):
+        """dummy method for visiting an Tuple node"""
+
+    def visit_unaryop(self, node):
+        """dummy method for visiting an UnaryOp node"""
+
+    def visit_while(self, node):
+        """dummy method for visiting an While node"""
+
+    def visit_with(self, node):
+        """dummy method for visiting an With node"""
+
+    def visit_yield(self, node):
+        """dummy method for visiting an Yield node"""
+
+    def visit_nonetype(self, node):
+        """dummy method for visiting an NoneType node"""
+
+    def visit_bool(self, node):
+        """dummy method for visiting an Bool node"""
+
+
 class ASTWalker:
     """a walker visiting a tree in preorder, calling on the handler:
     
@@ -227,3 +385,5 @@ def _are_from_exclusive_nodes(values1, values2):
             return True
     else:
         return stmt1_num != stmt2_num
+
+
