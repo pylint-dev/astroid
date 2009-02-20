@@ -39,6 +39,7 @@ from logilab.astng import NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
 from logilab.astng.utils import extend_class
 from logilab.astng.nodes import YES, Instance, _infer_stmts
+from logilab.astng.nodes_as_string import as_string
 
 # module class dict/iterator interface ########################################
     
@@ -362,7 +363,7 @@ class FunctionNG(object):
             elif args and (i == last or (kwargs and i == last - 1)):
                 name = '*%s' % name
             elif i >= default_idx:
-                default_str = self.defaults[i - default_idx].as_string()
+                default_str = as_string(self.defaults[i - default_idx])
                 name = '%s=%s' % (name, default_str)
             result.append(name)
         return ', '.join(result)

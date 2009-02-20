@@ -138,13 +138,19 @@ class ImportNodeTC(unittest.TestCase):
         self.assertRaises(NotFoundError, imp_.real_name, 'data')
 
     def test_as_string(self):
+        
         ast = MODULE['modutils']
         self.assertEquals(as_string(ast), "from logilab.common import modutils")
         ast = MODULE['spawn']
         self.assertEquals(as_string(ast), "from logilab.common.shellutils import Execute as spawn")
         ast = MODULE['os']
         self.assertEquals(as_string(ast), "import os.path")
-
+    
+    def test_module_as_string(self):
+        """just check as_string on a whole module doesn't raise an exception
+        """
+        self.assert_(as_string(MODULE))
+        self.assert_(as_string(MODULE2))
         
 
 class CmpNodeTC(unittest.TestCase):

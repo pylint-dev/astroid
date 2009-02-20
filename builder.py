@@ -39,6 +39,7 @@ from logilab.common.modutils import modpath_from_file
 from logilab.astng import nodes
 from logilab.astng._exceptions import ASTNGBuildingException, InferenceError
 from logilab.astng.utils import ASTWalker
+from logilab.astng.nodes_as_string import as_string
 from logilab.astng.raw_building import *
 
 try:
@@ -273,7 +274,7 @@ class ASTNGBuilder:
             # no base classes, detect new / style old style according to
             # current scope
             node._newstyle = metaclass == 'type'
-        node.basenames = [bnode.as_string() for bnode in node.bases]
+        node.basenames = [as_string(bnode) for bnode in node.bases]
     leave_classdef = leave_class
 
     def visit_compare(self, node):
@@ -527,7 +528,7 @@ class ASTNGBuilder:
         nodes.init_printnl(node)
 
     def delayed_visit_getattr(self, node):
-        """visit a AssAttr node -> add name to locals, handle members
+        """visit a AssAttr/ GetAttr node -> add name to locals, handle members
         definition
         """
         try:

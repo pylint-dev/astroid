@@ -20,7 +20,6 @@ from logilab.common.testlib import TestCase, unittest_main
 from logilab.common.compat import sorted
 from logilab.astng import builder, nodes, scoped_nodes, \
      InferenceError, NotFoundError
-from logilab.astng.nodes_as_string import as_string
 
 abuilder = builder.ASTNGBuilder() 
 MODULE = abuilder.file_build('data/module.py', 'data.module')
@@ -72,14 +71,8 @@ class ModuleNodeTC(TestCase):
         res = m.wildcard_import_names()
         res.sort()
         self.assertEquals(res, ['Aaa', 'func', 'name', 'other'])
-        
-    def test_as_string(self):
-        """just check as_string on a whole module doesn't raise an exception
-        """
-        self.assert_(as_string(MODULE))
-        self.assert_(as_string(MODULE2))
-        
-        
+
+
 class FunctionNodeTC(TestCase):
 
     def test_dict_interface(self):
