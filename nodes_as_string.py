@@ -1,12 +1,12 @@
 #
+"""This module renders ASTNG nodes to string representation.
+It will problably not work on compiler.ast or _ast trees.
+"""
 
-from nodes import Module # XXX
 
-INDENT = '    ' # keep indentation variable
+from logilab.astng.utils import ASTVisitor
 
-
-class ASTNGVisitor(object):
-    """Base ASTNG Visitor"""
+INDENT = '    ' # 4 spaces ; keep indentation variable
 
 
 def _import_string(names):
@@ -20,21 +20,20 @@ def _import_string(names):
     return  ', '.join(_names)
 
 
-class AsStringVisitor(ASTNGVisitor):
+class AsStringVisitor(ASTVisitor):
     """Visitor to render an ASTNG node as string """
 
     def __call__(self, node):
         """Makes this visitor behave as a simple function"""
         return node.accept(self)
-
-    def visit_stmts(self, node, attr='body'):
-        """return astng node stmts as string"""
-        stmts = '\n'.join([n.accept(self) for n in getattr(node, attr)])
-        if isinstance(node, Module):
-            return stmts
-        return INDENT + stmts.replace('\n', '\n'+INDENT)
     
-    # general_visit <node> methods
+    def _stmt_list(self, stmts):
+        """return a list of nodes to string"""
+        stmts = '\n'.join([n.accept(self) for n in stmts])
+        return INDENT + stmts.replace('\n', '\n'+INDENT)
+
+    
+    ## visit_<node> methods ###########################################
     
     def visit_assert(self, node):
         """return an astng.Assert node as string"""
@@ -85,7 +84,7 @@ class AsStringVisitor(ASTNGVisitor):
         bases = bases and '(%s)' % bases or ''
         docs = node.doc and '\n    """%s"""' % node.doc or ''
         return 'class %s%s:%s\n%s\n' % (node.name, bases, docs,
-                                            self.visit_stmts( node))
+                                            self._stmt_list( node.body))
     
     def visit_compare(self, node):
         """return an astng.Compare node as string"""
@@ -108,8 +107,8 @@ class AsStringVisitor(ASTNGVisitor):
     
     def visit_dict(self, node):
         """return an astng.Dict node as string"""
-        return '{%s}' % ', '.join(['%s: %s' % (key.accept(self), value.accept(self))
-                                for key, value in node.items])
+        return '{%s}' % ', '.join(['%s: %s' % (key.accept(self), 
+                            value.accept(self)) for key, value in node.items])
     
     def visit_discard(self, node):
         """return an astng.Discard node as string"""
@@ -124,7 +123,7 @@ class AsStringVisitor(ASTNGVisitor):
                 excs = 'except %s' % node.type.accept(self)
         else:
             excs = 'except'
-        return '%s:\n%s' % (excs, self.visit_stmts( node))
+        return '%s:\n%s' % (excs, self._stmt_list(node.body))
     
     def visit_ellipsis(self, node):
         """return an astng.Ellipsis node as string"""
@@ -149,9 +148,9 @@ class AsStringVisitor(ASTNGVisitor):
         """return an astng.For node as string"""
         fors = 'for %s in %s:\n%s' % (node.target.accept(self),
                                     node.iter.accept(self),
-                                    self.visit_stmts( node))
+                                    self._stmt_list( node.body))
         if node.orelse:
-            fors = '%s\nelse:\n%s' % (fors, self.visit_stmts(node, "orelse"))
+            fors = '%s\nelse:\n%s' % (fors, self._stmt_list(node.orelse))
         return fors
     
     def visit_from(self, node):
@@ -164,12 +163,12 @@ class AsStringVisitor(ASTNGVisitor):
         fargs = node.format_args()
         docs = node.doc and '\n    """%s"""' % node.doc or ''
         return 'def %s(%s):%s\n%s' % (node.name, fargs, docs,
-                                        self.visit_stmts(node))
+                                        self._stmt_list(node.body))
     
     def visit_genexpr(self, node):
         """return an astng.ListComp node as string"""
         return '(%s %s)' % (node.elt.accept(self), ' '.join([n.accept(self)
-                                                        for n in node.generators]))
+                                                    for n in node.generators]))
     
     def visit_getattr(self, node):
         """return an astng.Getattr node as string"""
@@ -179,20 +178,15 @@ class AsStringVisitor(ASTNGVisitor):
         """return an astng.Global node as string"""
         return 'global %s' % ', '.join(node.names)
     
-    def _nodes_if(self, stmts):
-        """return a list of stmt nodes to string"""
-        stmts = '\n'.join([n.accept(self) for n in stmts])
-        return INDENT + stmts.replace('\n', '\n'+INDENT)
-    
     def visit_if(self, node):
         """return an astng.If node as string"""
         cond, body = node.tests[0]
-        ifs = ['if %s:\n%s' % (cond.accept(self), self._nodes_if(body))]
+        ifs = ['if %s:\n%s' % (cond.accept(self), self._stmt_list(body))]
         for cond, body in node.tests[1:]:
             ifs.append('elif %s:\n%s' % (cond.accept(self), 
-                                         self._nodes_if(body)))
+                                         self._stmt_list(body)))
         if node.orelse:
-            ifs.append('else:\n%s' % self.visit_stmts(node, "orelse") )
+            ifs.append('else:\n%s' % self._stmt_list(node.orelse) )
         return '\n'.join(ifs)
     
     def visit_import(self, node):
@@ -214,7 +208,7 @@ class AsStringVisitor(ASTNGVisitor):
     def visit_listcomp(self, node):
         """return an astng.ListComp node as string"""
         return '[%s %s]' % (node.elt.accept(self), ' '.join([n.accept(self)
-                                                    for n in node.generators]))
+                                                for n in node.generators]))
     
     def visit_listcompfor(self, node):
         """return an astng.ListCompFor node as string"""
@@ -225,7 +219,8 @@ class AsStringVisitor(ASTNGVisitor):
     def visit_module(self, node):
         """return an astng.Module node as string"""
         docs = node.doc and '"""%s"""\n' % node.doc or ''
-        return '%s%s' % (docs, self.visit_stmts( node))
+        stmts = '\n'.join([n.accept(self) for n in node.body])
+        return docs + '\n'.join([n.accept(self) for n in node.body])
     
     def visit_name(self, node):
         """return an astng.Name node as string"""
@@ -275,17 +270,17 @@ class AsStringVisitor(ASTNGVisitor):
     
     def visit_tryexcept(self, node):
         """return an astng.TryExcept node as string"""
-        trys = ['try:\n%s' % self.visit_stmts( node)]
+        trys = ['try:\n%s' % self._stmt_list( node.body)]
         for handler in node.handlers:
             trys.append(handler.accept(self))
         if node.orelse:
-            trys.append('else:\n%s' % self.visit_stmts(node, 'orelse'))
+            trys.append('else:\n%s' % self._stmt_list(node.orelse))
         return '\n'.join(trys)
     
     def visit_tryfinally(self, node):
         """return an astng.TryFinally node as string"""
-        return 'try:\n%s\nfinally:\n%s' % (self.visit_stmts( node),
-                                        self.visit_stmts(node, 'finalbody'))
+        return 'try:\n%s\nfinally:\n%s' % (self._stmt_list( node.body),
+                                        self._stmt_list(node.finalbody))
     
     def visit_tuple(self, node):
         """return an astng.Tuple node as string"""
@@ -297,16 +292,17 @@ class AsStringVisitor(ASTNGVisitor):
     
     def visit_while(self, node):
         """return an astng.While node as string"""
-        whiles = 'while %s:\n%s' % (node.test.accept(self), self.visit_stmts(node))
+        whiles = 'while %s:\n%s' % (node.test.accept(self),
+                                    self._stmt_list(node.body))
         if node.orelse:
-            whiles = '%s\nelse:\n%s' % (whiles, self.visit_stmts(node, 'orelse'))
+            whiles = '%s\nelse:\n%s' % (whiles, self._stmt_list(node.orelse))
         return whiles
     
-    def visit_with(self, node):
+    def visit_with(self, node): # XXX 'with' without 'as' is possible
         """return an astng.With node as string"""
         withs = 'with (%s) as (%s):\n%s' % (node.context_expr.accept(self),
                                         node.optional_vars.accept(self),
-                                        self.visit_stmts( node))
+                                        self._stmt_list( node.body))
         return withs
     
     def visit_yield(self, node):
