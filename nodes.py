@@ -51,7 +51,8 @@ except ImportError:
     AST_MODE = 'compiler'
 
 
-from logilab.astng._exceptions import UnresolvableName, NotFoundError, InferenceError
+from logilab.astng._exceptions import UnresolvableName, NotFoundError, \
+                                        InferenceError, ASTNGError
 from logilab.astng.utils import extend_class
 
 INFER_NEED_NAME_STMTS = (From, Import, Global, TryExcept)
@@ -133,6 +134,10 @@ class NodeNG:
         func = getattr(visitor, "visit_" + name.lower() )
         return func(self)
 
+    def repr(self):# FIXME : how disable compiler's Node.__repr__ ?
+        """simple node representation""" 
+        return "<%s %s>" % (self.__class__.__name__, hex(id(self)))
+
     def get_children(self):
         d = self.__dict__
         for f in self._astng_fields:
@@ -187,26 +192,27 @@ class NodeNG:
             return self.parent.root()
         return self
 
-    def next_sibling(self):
-        """return the previous sibling statement 
-        """
-        while not self.is_statement: 
-            self = self.parent
-        index = self.parent.nodes.index(self)
-        try:
-            return self.parent.nodes[index+1]
-        except IndexError:
-            return
 
-    def previous_sibling(self):
+    def next_sibling(self, attr = "body"):
+        """return the previous sibling statement
+        """
+        while not self.parent.is_statement:
+            self = self.parent
+        stmts = getattr(self.parent, attr)
+        for k, stmt in enumerate(stmts[:-1]):
+            if self is stmt:
+                return stmts[k+1]
+
+
+    def previous_sibling(self, attr = "body"):
         """return the next sibling statement 
         """
-        while not self.is_statement: 
+        while not self.parent.is_statement:
             self = self.parent
-        index = self.parent.nodes.index(self)
-        if index > 0:
-            return self.parent.nodes[index-1]
-        return
+        stmts = getattr(self.parent, attr)
+        for k, stmt in enumerate(stmts[1:]):
+            if self is stmt:
+                return stmts[k]
 
     def nearest(self, nodes):
         """return the node which is the nearest before this one in the
@@ -296,10 +302,11 @@ class NodeNG:
 extend_class(Node, NodeNG)
 
 for klass in Break, Class, Continue, Discard, ExceptHandler, For, From, \
-             Function, Global, If, Import, Return, \
+             Function, Global, If, Import, Module, Return, \
              TryExcept, TryFinally, While, With, Yield:
     klass.is_statement = True
 
+assert Module.is_statement
 
 def const_factory(value):
     try:
