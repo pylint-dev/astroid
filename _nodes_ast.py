@@ -390,7 +390,7 @@ class TreeRebuilder(ASTVisitor):
     def visit_import(self, node):
         node.names = [(alias.name, alias.asname) for alias in node.names]
     
-    def visit_import_from(self, node):
+    def visit_importfrom(self, node):
         init_import(node)
         node.modname = node.module
         del node.module

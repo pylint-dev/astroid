@@ -193,12 +193,41 @@ class ASTVisitor(object):
     def visit_yield(self, node):
         """dummy method for visiting an Yield node"""
 
+    # # # # # compatibility methods  # # # # # # # # # # # # # # # # # # # #
+
     def visit_nonetype(self, node):
         """dummy method for visiting an NoneType node"""
 
     def visit_bool(self, node):
         """dummy method for visiting an Bool node"""
 
+REDIRECT = {'Expr': 'Discard',
+            'ImportFrom': 'From',
+            'Attribute': 'Getattr',
+            'comprehension': "ListCompFor",
+            'Repr': 'Backquote',
+
+            'Add': 'BinOp',
+            'Bitand': 'BinOp',
+            'Bitor': 'BinOp',
+            'Bitxor': 'BinOp',
+            'Div': 'BinOp',
+            'FloorDiv': 'BinOp',
+            'LeftShift': 'BinOp',
+            'Mod': 'BinOp',
+            'Mul': 'BinOp',
+            'Power': 'BinOp',
+            'RightShift': 'BinOp',
+            'Sub': 'BinOp',
+
+            'And': 'BoolOp',
+            'Or': 'BoolOp',
+
+            'UnaryAdd': 'UnaryOp',
+            'UnarySub': 'UnaryOp',
+            'Not': 'UnaryOp',
+            'Invert': 'UnaryOp'
+            }
 
 class ASTWalker:
     """a walker visiting a tree in preorder, calling on the handler:
@@ -209,32 +238,7 @@ class ASTWalker:
     * leave_<class name> on leaving a node, where class name is the class of
     the node in lower case
     """
-    REDIRECT = {'Expr': 'Discard',
-                'ImportFrom': 'From',
-                'Attribute': 'Getattr',
-                'comprehension': "ListCompFor",
-
-                'Add': 'BinOp',
-                'Bitand': 'BinOp',
-                'Bitor': 'BinOp',
-                'Bitxor': 'BinOp',
-                'Div': 'BinOp',
-                'FloorDiv': 'BinOp',
-                'LeftShift': 'BinOp',
-                'Mod': 'BinOp',
-                'Mul': 'BinOp',
-                'Power': 'BinOp',
-                'RightShift': 'BinOp',
-                'Sub': 'BinOp',
-
-                'And': 'BoolOp',
-                'Or': 'BoolOp',
-                
-                'UnaryAdd': 'UnaryOp',
-                'UnarySub': 'UnaryOp',
-                'Not': 'UnaryOp',
-                'Invert': 'UnaryOp'
-                }
+    REDIRECTION = REDIRECT
     
     def __init__(self, handler):
         self.handler = handler
@@ -269,7 +273,7 @@ class ASTWalker:
         methods = self._cache.get(klass)
         if methods is None:
             handler = self.handler
-            kid = self.REDIRECT.get(klass.__name__, klass.__name__).lower()
+            kid = self.REDIRECTION.get(klass.__name__, klass.__name__).lower()
             e_method = getattr(handler, 'visit_%s' % kid,
                                getattr(handler, 'visit_default', None))
             l_method = getattr(handler, 'leave_%s' % kid, 
