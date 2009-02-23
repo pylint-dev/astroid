@@ -201,10 +201,17 @@ class ASTVisitor(object):
     def visit_bool(self, node):
         """dummy method for visiting an Bool node"""
 
-REDIRECT = {'Expr': 'Discard',
-            'ImportFrom': 'From',
+REDIRECT = {
             'Attribute': 'Getattr',
+            'Call': 'CallFunc',
+            'ClassDef': 'Class',
             'comprehension': "ListCompFor",
+            'excepthandler': 'ExceptHandler',
+            'Expr': 'Discard',
+            'FunctionDef': 'Function',
+            'GeneratorExp': 'GenExpr',
+            'ImportFrom': 'From',
+            'keyword': 'Keyword',
             'Repr': 'Backquote',
 
             'Add': 'BinOp',

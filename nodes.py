@@ -53,7 +53,7 @@ except ImportError:
 
 from logilab.astng._exceptions import UnresolvableName, NotFoundError, \
                                         InferenceError, ASTNGError
-from logilab.astng.utils import extend_class
+from logilab.astng.utils import extend_class, REDIRECT
 
 INFER_NEED_NAME_STMTS = (From, Import, Global, TryExcept)
 LOOP_SCOPES = COMPREHENSIONS_SCOPES + (For,)
@@ -130,13 +130,9 @@ class NodeNG:
         return '%s(%s)' % (self.__class__.__name__, getattr(self, 'name', ''))
 
     def accept(self, visitor):
-        name = self.__class__.__name__
-        func = getattr(visitor, "visit_" + name.lower() )
+        klass = self.__class__.__name__
+        func = getattr(visitor, "visit_" + REDIRECT.get(klass, klass).lower() )
         return func(self)
-
-    def repr(self):# FIXME : how disable compiler's Node.__repr__ ?
-        """simple node representation""" 
-        return "<%s %s>" % (self.__class__.__name__, hex(id(self)))
 
     def get_children(self):
         d = self.__dict__
@@ -301,10 +297,17 @@ class NodeNG:
 
 extend_class(Node, NodeNG)
 
+def generic__repr__(self): # TODO : override __repr__ on all node Classes
+    """simple representation method to override compiler.ast's methods"""
+    return "<%s %s>" % (self.__class__.__name__, hex(id(self)))
+
+
 for klass in Break, Class, Continue, Discard, ExceptHandler, For, From, \
              Function, Global, If, Import, Module, Return, \
              TryExcept, TryFinally, While, With, Yield:
     klass.is_statement = True
+    klass.__repr__ = generic__repr__
+
 
 assert Module.is_statement
 

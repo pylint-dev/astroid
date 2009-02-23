@@ -390,8 +390,9 @@ class TreeRebuilder(ASTVisitor):
     def visit_import(self, node):
         node.names = [(alias.name, alias.asname) for alias in node.names]
     
-    def visit_importfrom(self, node):
-        init_import(node)
+    def visit_from(self, node):
+        print "_ast visit_from"
+        node.names = [(alias.name, alias.asname) for alias in node.names]
         node.modname = node.module
         del node.module
 
@@ -426,11 +427,6 @@ class TreeRebuilder(ASTVisitor):
 
     def visit_unaryop(self, node):
         node.op = UNARY_OP_CLASSES[node.op.__class__]
-
-    visit_attribute = visit_getattr
-    visit_call = visit_callfunc
-    visit_classdef = visit_class
-    visit_functiondef = visit_function
 
 
 
