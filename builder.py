@@ -39,6 +39,7 @@ from logilab.common.modutils import modpath_from_file
 from logilab.astng import nodes
 from logilab.astng._exceptions import ASTNGBuildingException, InferenceError
 from logilab.astng.utils import ASTWalker
+from logilab.astng.rebuilder import RebuildVisitor
 from logilab.astng.nodes_as_string import as_string
 from logilab.astng.raw_building import *
 
@@ -66,6 +67,7 @@ class ASTNGBuilder:
         self._stack, self._par_stack = None, None
         self._metaclass = None        
         self._walker = ASTWalker(self)
+        self.rebuilder = RebuildVisitor()
         self._dyn_modname_map = {'gtk': 'gtk._gtk'}
         self._delayed = []
         
@@ -157,11 +159,12 @@ class ASTNGBuilder:
             self._manager._cache[node.file] = node
             if self._file:
                 self._manager._cache[abspath(self._file)] = node
-        self._walker.walk(node)
-        while self._delayed:
-            dnode = self._delayed.pop(0)
+        self.rebuilder.walk(node)
+        delayed = self.rebuilder._delayed
+        while delayed: # TODO : delayed nodes
+            dnode = delayed.pop(0)
             node_name = dnode.__class__.__name__.lower()
-            getattr(self, 'delayed_visit_%s' % node_name)(dnode)
+            #getattr(self.rebuilder, 'delayed_visit_%s' % node_name)(dnode)
         return node
 
     # callbacks to build from an existing compiler.ast tree ###################
@@ -531,6 +534,7 @@ class ASTNGBuilder:
         """visit a AssAttr/ GetAttr node -> add name to locals, handle members
         definition
         """
+        return # XXX
         try:
             frame = node.frame()
             for infered in node.expr.infer():
