@@ -16,7 +16,6 @@ class RebuildVisitor(ASTVisitor):
     def __init__(self):
         self._asscontext = None
         self._module = None
-        self._done = None
         self._stack = None
         self._metaclass = None
         self._delayed = []
