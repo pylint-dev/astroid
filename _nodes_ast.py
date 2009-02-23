@@ -114,6 +114,8 @@ CMP_OP_CLASSES = {_Eq: '==',
                   _NotIn: 'not in',
                   }
 
+from logilab.astng.utils import ASTVisitor
+
 # FIXME : can't replace totally by Const : Str needed in _init_set_doc
 Num._astng_fields = ()
 Str._astng_fields = ()
@@ -327,6 +329,110 @@ def init_unaryop(node):
 
 def init_while(node):
     pass
+
+
+class TreeRebuilder(ASTVisitor):
+    """REbuilds the _ast tree to become an ASTNG tree"""
+    
+    def visit_class(self, node):
+        _init_set_doc(node)
+
+    def visit_function(self, node):
+        _init_set_doc(node)
+        _init_function(node)
+    
+    def visit_lambda(self, node):
+        _init_function(node)
+    
+    def visit_module(self, node):
+        _init_set_doc(node)
+
+    # #  visit_<node> methods  # # ##########################################
+
+    def visit_assert(self, node):
+        node.fail = node.msg
+        del node.msg
+
+    def visit_binop(self, node):
+        node.op = BIN_OP_CLASSES[node.op.__class__]
+    
+    def visit_boolop(self, node):
+        node.op = BOOL_OP_CLASSES[node.op.__class__]
+    
+    def visit_callfunc(self, node):
+        node.args.extend(node.keywords)
+        del node.keywords
+    
+    def visit_compare(self, node):
+        node.ops = [(CMP_OP_CLASSES[op.__class__], expr)
+                    for op, expr in zip(node.ops, node.comparators)]
+        del node.comparators
+    
+    def visit_dict(self, node):
+        node.items = zip(node.keys, node.values)
+        del node.keys, node.values
+
+    def visit_exec(self, node):
+        node.expr = node.body
+        node.globals, node.locals = node.locals, node.globals # XXX ?
+        del node.body
+
+    def visit_getattr(self, node):
+        node.attrname = node.attr
+        node.expr = node.value
+        del node.attr, node.value
+
+    def visit_if(self, node):
+        tests, orelse = _recurse_if(node, [], [])
+        node.tests = tests
+        node.orelse = orelse
+    
+    def visit_import(self, node):
+        node.names = [(alias.name, alias.asname) for alias in node.names]
+    
+    def visit_import_from(self, node):
+        init_import(node)
+        node.modname = node.module
+        del node.module
+
+    def visit_name(self, node):
+        node.name = node.id
+        del node.id
+    
+    def visit_num(self, node):
+        node.__class__ = Const
+        node.value = node.n
+        node.name = "int" # compiler compat
+        del node.n
+
+    def visit_str(self, node):
+        node.__class__ = Const
+        node.value = node.s
+        node.name = "str" # compiler compat
+        del node.s
+    
+    def visit_subscript(self, node):
+        node.expr = node.value
+        slices = node.slice
+        if hasattr(slices, 'value'): # Index
+            node.subs = [slices.value]
+            node.sliceflag = 'index'
+        elif hasattr(slices, 'lower'): # Slice
+            node.subs = [slices.lower, slices.upper]
+            if slices.step:
+                node.subs.append(slices.step)
+            node.sliceflag = 'slice'
+        del node.slice, node.value
+
+    def visit_unaryop(self, node):
+        node.op = UNARY_OP_CLASSES[node.op.__class__]
+
+    visit_attribute = visit_getattr
+    visit_call = visit_callfunc
+    visit_classdef = visit_class
+    visit_functiondef = visit_function
+
+
 
 # raw building ################################################################
 
