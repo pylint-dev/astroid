@@ -107,6 +107,9 @@ class UnaryOp(Node):
                   Invert: '~'}
 
 
+from logilab.astng.utils import ASTVisitor
+
+
 class Delete(Node):
     """represent del statements"""
 
@@ -395,6 +398,226 @@ def init_while(node):
     node.body = node.body.nodes
     _init_else_node(node)
 
+
+class TreeRebuilder(ASTVisitor):
+    """Rebuilds the compiler tree to become an ASTNG tree"""
+
+    # scoped nodes ################################################################
+    
+    def visit_function(self, node):
+        # remove Stmt node
+        node.body = node.code.nodes
+        node.argnames = list(node.argnames)
+        node.defaults = list(node.defaults)
+        del node.code
+    
+    def visit_lambda(self, node):
+        node.body = node.code
+        node.argnames = list(node.argnames)
+        node.defaults = list(node.defaults)
+        del node.code
+    
+    def visit_class(self, node):
+        # remove Stmt node
+        node.body = node.code.nodes
+        del node.code
+    
+    def visit_module(self, node):
+        # remove Stmt node
+        node.body = node.node.nodes
+        del node.node
+    
+    ##  init_<node> functions #####################################################
+    
+    def visit_assattr(self, node):
+        if node.flags == 'OP_ASSIGN':
+            node.__class__ = Getattr
+        elif node.flags == 'OP_DELETE':
+            node.__class__ = Delete
+            node.targets = [Getattr(node.expr, node.attrname)]
+            del node.attrname, node.expr
+        else:
+            msg = "Error on node %s " % repr(node)
+            raise msg
+        del node.flags
+
+    def visit_assign(self, node):
+        node.value = node.expr
+        node.targets = node.nodes
+        del node.nodes, node.expr
+        for target in node.targets:
+            if isinstance(target, AssName):
+                target.__class__ = Name
+                del target.flags
+            elif isinstance(target, AssTuple):
+                target.__class__ = Tuple
+            elif isinstance(target, AssList):
+                target.__class__ = List
+            else:
+                msg = "Error : Assign node.targets %s" % target
+                assert isinstance(target, (AssAttr, Subscript, Slice)), msg
+    
+    def visit_asslist(self, node):
+        _init_ass_more(node, List)
+    
+    def visit_assname(self, node):
+        if node.flags == 'OP_ASSIGN':
+            node.__class__ = Name
+        elif node.flags == 'OP_DELETE':
+            node.targets = [Name(node.name)]
+            node.__class__ = Delete
+        else:
+            msg = "Error on node %s " % repr(node)
+            raise msg
+        del node.flags
+    
+    def visit_asstuple(self, node):
+        _init_ass_more(node, Tuple)
+    
+    def visit_augassign(self, node):
+        node.value = node.expr
+        del node.expr
+        node.target = node.node
+        del node.node
+    
+    def visit_backquote(self, node):
+        node.value = node.expr
+        del node.expr
+    
+    def visit_binop(self, node):
+        node.op = BinOp.OP_CLASSES[node.__class__]
+        node.__class__ = BinOp
+        if node.op in ('&', '|', '^'):
+            node.right = node.nodes[-1]
+            bitop = BinOp.BIT_CLASSES[node.op]
+            if len(node.nodes) > 2:
+                node.left = bitop(node.nodes[:-1])
+            else:
+                node.left = node.nodes[0]
+            del node.nodes
+    
+    def visit_boolop(self, node):
+        node.op = BoolOp.OP_CLASSES[node.__class__]
+        node.__class__ = BoolOp
+        node.values = node.nodes
+        del node.nodes
+    
+    def visit_callfunc(self, node):
+        node.func = node.node
+        node.starargs = node.star_args
+        node.kwargs = node.dstar_args
+        del node.node, node.star_args, node.dstar_args
+    
+    def visit_compare(self, node):
+        node.left = node.expr
+        del node.expr
+    
+    def visit_dict(self, node):
+        node.items = list(node.items)
+    
+    def visit_discard(self, node):
+        node.value = node.expr
+        del node.expr
+    
+    def visit_for(self, node):
+        node.target = node.assign
+        del node.assign
+        node.iter = node.list
+        del node.list
+        node.body = node.body.nodes
+        _init_else_node(node)
+    
+    def visit_genexpr(self, node):
+        # remove GenExprInner node
+        node.elt = node.code.expr
+        node.generators = node.code.quals
+        for gen in node.generators:
+            gen.__class__ = ListCompFor # XXX _ast.comprehension
+            gen.list = gen.iter # XXX
+        del node.code
+    
+    def visit_if(self, node):
+        node.tests = [(cond, expr.nodes) for cond, expr in node.tests]
+        _init_else_node(node)
+    
+    def visit_list(self, node):
+        node.elts = list(node.nodes) # tuple if empty list
+        del node.nodes
+    
+    def visit_keyword(self, node):
+        node.value = node.expr
+        node.arg = node.name
+        del node.expr, node.name
+    
+    def visit_listcomp(self, node):
+        node.elt = node.expr
+        node.generators = node.quals
+        del node.expr, node.quals
+    
+    def visit_listcompfor(self, node):
+        node.iter = node.list
+        node.target = node.assign
+        if node.ifs:
+            node.ifs = [iff.test for iff in node.ifs ]
+        del node.assign, node.list
+
+    def visit_print(self, node):
+        node.values = node.nodes
+        del node.nodes
+        node.nl = False
+    
+    def visit_printnl(self, node):
+        node.__class__ = Print
+        node.values = node.nodes
+        del node.nodes
+        node.nl = True
+
+    def visit_raise(self, node):
+        node.type = node.expr1
+        node.inst = node.expr2
+        node.tback = node.expr3
+        del node.expr1, node.expr2, node.expr3
+    
+    def visit_slice(self, node):
+        node.__class__ = Subscript
+        node.subs = [node.lower, node.upper]
+        node.sliceflag = 'slice'
+        del node.lower, node.upper
+    
+    def visit_subscript(self, node):
+        if hasattr(node.subs[0], "nodes"): # Sliceobj
+            subs = [_remove_none(sub) for sub in node.subs[0].nodes]
+            node.subs = subs
+            node.sliceflag = 'slice'
+        else:
+            node.sliceflag = 'index'
+    
+    visit_tuple = visit_list
+    
+    def visit_tryexcept(self, node):
+        node.body = node.body.nodes
+        # remove Stmt node
+        node.handlers = [ExceptHandler(exctype, excobj, body.nodes, node.lineno)
+                        for exctype, excobj, body in node.handlers]
+        _init_else_node(node)
+    
+    def visit_tryfinally(self, node):
+        # remove Stmt nodes
+        node.body = node.body.nodes
+        node.finalbody = node.final.nodes
+        del node.final
+
+    init_tuple = init_list
+
+    def visit_unaryop(self, node):
+        node.op = UnaryOp.OP_CLASSES[node.__class__]
+        node.__class__ = UnaryOp
+        node.operand = node.expr
+        del node.expr
+
+    def visit_while(self, node):
+        node.body = node.body.nodes
+        _init_else_node(node)
 
 # raw building ################################################################
 
