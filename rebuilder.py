@@ -4,11 +4,10 @@ or _ast tree in order to get a single ASTNG representation
 """
 from logilab.astng.utils import ASTVisitor
 from logilab.astng.raw_building import *
-
+from logilab.astng._exceptions import ASTNGBuildingException, InferenceError
 from logilab.astng.nodes import TreeRebuilder
 from logilab.astng import nodes
-from nodes_as_string import as_string
-
+from logilab.astng.nodes_as_string import as_string
 
 
 class RebuildVisitor(ASTVisitor):

@@ -132,8 +132,19 @@ class EmptyNode(Node):
     """represent a Empty node for compatibility"""
 
 
-# scoped nodes ################################################################
+##  some auxiliary functions ##########################
 
+def _recurse_if(ifnode, tests, orelse):
+    """recurse on nested If nodes"""
+    tests.append( (ifnode.test, ifnode.body) )
+    del ifnode.test, ifnode.body
+    if ifnode.orelse:
+        if isinstance( ifnode.orelse[0], If):
+            tests, orelse =  _recurse_if(ifnode.orelse[0], tests, orelse)
+            del ifnode.orelse[0]
+        else:
+            orelse = ifnode.orelse
+    return tests, orelse
 
 def _init_set_doc(node):
     node.doc = None
@@ -144,7 +155,6 @@ def _init_set_doc(node):
     except IndexError:
         pass # ast built from scratch
 
-init_class = _init_set_doc
 
 def _init_function(node):
     argnames = []
@@ -166,170 +176,6 @@ def _init_function(node):
         flags += 8
     node.flags = flags
     del node.args
-
-def init_function(node):
-    _init_set_doc(node)
-    _init_function(node)
-
-def init_lambda(node):
-    _init_function(node)
-
-init_module = _init_set_doc
-
-##  init_<node> functions #####################################################
-
-def init_assattr(node):
-    pass
-
-def init_assert(node):
-    node.fail = node.msg
-    del node.msg
-
-def init_assign(node):
-    pass
-def init_asslist(node):
-    pass
-
-def init_assname(node):
-    pass
-
-def init_asstuple(node):
-    pass
-
-def init_augassign(node):
-    pass
-
-def init_backquote(node):
-    pass
-
-def init_binop(node):
-    node.op = BIN_OP_CLASSES[node.op.__class__]
-
-def init_boolop(node):
-    node.op = BOOL_OP_CLASSES[node.op.__class__]
-
-def init_callfunc(node):
-    node.args.extend(node.keywords)
-    del node.keywords
-
-def init_compare(node):
-    node.ops = [(CMP_OP_CLASSES[op.__class__], expr)
-                for op, expr in zip(node.ops, node.comparators)]
-    del node.comparators
-
-def init_dict(node):
-    node.items = zip(node.keys, node.values)
-    del node.keys, node.values
-
-def init_discard(node):
-    pass
-
-def init_exec(node):
-    node.expr = node.body
-    node.globals, node.locals = node.locals, node.globals # XXX ?
-    del node.body
-
-def init_genexpr(node):
-    pass
-
-def init_getattr(node):
-    node.attrname = node.attr
-    node.expr = node.value
-    del node.attr, node.value
-
-def init_for(node):
-    pass
-
-def _recurse_if(ifnode, tests, orelse):
-    """recurse on nested If nodes"""
-    tests.append( (ifnode.test, ifnode.body) )
-    del ifnode.test, ifnode.body
-    if ifnode.orelse:
-        if isinstance( ifnode.orelse[0], If):
-            tests, orelse =  _recurse_if(ifnode.orelse[0], tests, orelse)
-            del ifnode.orelse[0]
-        else:
-            orelse = ifnode.orelse
-    return tests, orelse
-
-def init_if(node):
-    tests, orelse = _recurse_if(node, [], [])
-    node.tests = tests
-    node.orelse = orelse
-
-def init_import(node):
-    node.names = [(alias.name, alias.asname) for alias in node.names]
-
-def init_import_from(node):
-    init_import(node)
-    node.modname = node.module
-    del node.module
-
-def init_keyword(node):
-    pass
-
-def init_list(node):
-    pass    
-
-def init_listcomp(node):
-    pass
-
-def init_listcompfor(node):
-    pass
-
-def init_name(node):
-    node.name = node.id
-    del node.id
-
-def init_num(node):
-    node.__class__ = Const
-    node.value = node.n
-    node.name = "int" # compiler compat
-    del node.n
-
-def init_print(node):
-    pass
-
-def init_raise(node):
-    pass
-
-def init_slice(node):
-    pass
-
-def init_str(node):
-    node.__class__ = Const
-    node.value = node.s
-    node.name = "str" # compiler compat
-    del node.s
-
-def init_subscript(node):
-    node.expr = node.value
-    slices = node.slice
-    if hasattr(slices, 'value'): # Index
-        node.subs = [slices.value]
-        node.sliceflag = 'index'
-    elif hasattr(slices, 'lower'): # Slice
-        node.subs = [slices.lower, slices.upper]
-        if slices.step:
-            node.subs.append(slices.step)
-        node.sliceflag = 'slice'
-    del node.slice, node.value
-
-def init_try_except(node):
-    pass
-
-def init_try_finally(node):
-    pass
-
-def init_tuple(node):
-    pass    
-    
-def init_unaryop(node):
-    node.op = UNARY_OP_CLASSES[node.op.__class__]
-
-def init_while(node):
-    pass
-
 
 class TreeRebuilder(ASTVisitor):
     """REbuilds the _ast tree to become an ASTNG tree"""
@@ -391,7 +237,6 @@ class TreeRebuilder(ASTVisitor):
         node.names = [(alias.name, alias.asname) for alias in node.names]
     
     def visit_from(self, node):
-        print "_ast visit_from"
         node.names = [(alias.name, alias.asname) for alias in node.names]
         node.modname = node.module
         del node.module
