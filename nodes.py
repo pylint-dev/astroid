@@ -78,6 +78,7 @@ Class._astng_fields = ('bases', 'body',) # name
 Compare._astng_fields = ('left', 'ops',)
 Const._astng_fields = ()
 Continue._astng_fields = ()
+Decorators._astng_fields = ('items',)
 Delete._astng_fields = ('targets', )
 Dict._astng_fields = ('items',)
 Discard._astng_fields = ('value',)
@@ -308,8 +309,6 @@ for klass in Break, Class, Continue, Discard, ExceptHandler, For, From, \
     klass.is_statement = True
     klass.__repr__ = generic__repr__
 
-
-assert Module.is_statement
 
 def const_factory(value):
     try:

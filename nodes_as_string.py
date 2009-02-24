@@ -82,7 +82,7 @@ class AsStringVisitor(ASTVisitor):
         """return an astng.Class node as string"""
         bases =  ', '.join([n.accept(self) for n in node.bases])
         bases = bases and '(%s)' % bases or ''
-        docs = node.doc and '\n    """%s"""' % node.doc or ''
+        docs = node.doc and '\n%s"""%s"""' % (INDENT, node.doc) or ''
         return 'class %s%s:%s\n%s\n' % (node.name, bases, docs,
                                             self._stmt_list( node.body))
     
@@ -104,7 +104,11 @@ class AsStringVisitor(ASTVisitor):
         """return an astng.Delete node as string"""
         return 'del %s' % ', '.join([child.accept(self) 
                                 for child in node.targets])
-    
+
+    def visit_decorators(self, node):
+        """return an astng.Decorators node as string"""
+        return '@%s\n' % '\n@'.join(item.accept(self) for item in node.items)
+
     def visit_dict(self, node):
         """return an astng.Dict node as string"""
         return '{%s}' % ', '.join(['%s: %s' % (key.accept(self), 
@@ -161,8 +165,9 @@ class AsStringVisitor(ASTVisitor):
     def visit_function(self, node):
         """return an astng.Function node as string"""
         fargs = node.format_args()
-        docs = node.doc and '\n    """%s"""' % node.doc or ''
-        return 'def %s(%s):%s\n%s' % (node.name, fargs, docs,
+        decorate = node.decorators and node.decorators.accept(self)  or ''
+        docs = node.doc and '\n%s"""%s"""' % (INDENT, node.doc) or ''
+        return '%sdef %s(%s):%s\n%s' % (decorate, node.name, fargs, docs,
                                         self._stmt_list(node.body))
     
     def visit_genexpr(self, node):

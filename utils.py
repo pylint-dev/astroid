@@ -91,6 +91,9 @@ class ASTVisitor(object):
     def visit_continue(self, node):
         """dummy method for visiting an Continue node"""
 
+    def visit_decorators(self, node):
+        """dummy method for visiting an Decorators node"""
+
     def visit_delete(self, node):
         """dummy method for visiting an Delete node"""
 

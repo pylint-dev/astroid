@@ -272,7 +272,11 @@ class TreeRebuilder(ASTVisitor):
     def visit_compare(self, node):
         node.left = node.expr
         del node.expr
-    
+
+    def visit_decorators(self, node):
+        node.items = node.nodes
+        del node.nodes
+
     def visit_dict(self, node):
         node.items = list(node.items)
     

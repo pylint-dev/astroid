@@ -131,6 +131,10 @@ class Const(Node):
 class EmptyNode(Node):
     """represent a Empty node for compatibility"""
 
+class Decorators(Node):
+    """represent a Decorator node"""
+    def __init__(self, items):
+        self.items = items
 
 ##  some auxiliary functions ##########################
 
@@ -179,19 +183,6 @@ def _init_function(node):
 
 class TreeRebuilder(ASTVisitor):
     """REbuilds the _ast tree to become an ASTNG tree"""
-    
-    def visit_class(self, node):
-        _init_set_doc(node)
-
-    def visit_function(self, node):
-        _init_set_doc(node)
-        _init_function(node)
-    
-    def visit_lambda(self, node):
-        _init_function(node)
-    
-    def visit_module(self, node):
-        _init_set_doc(node)
 
     # #  visit_<node> methods  # # ##########################################
 
@@ -208,12 +199,15 @@ class TreeRebuilder(ASTVisitor):
     def visit_callfunc(self, node):
         node.args.extend(node.keywords)
         del node.keywords
-    
+
+    def visit_class(self, node):
+        _init_set_doc(node)
+
     def visit_compare(self, node):
         node.ops = [(CMP_OP_CLASSES[op.__class__], expr)
                     for op, expr in zip(node.ops, node.comparators)]
         del node.comparators
-    
+
     def visit_dict(self, node):
         node.items = zip(node.keys, node.values)
         del node.keys, node.values
@@ -222,6 +216,11 @@ class TreeRebuilder(ASTVisitor):
         node.expr = node.body
         node.globals, node.locals = node.locals, node.globals # XXX ?
         del node.body
+
+    def visit_function(self, node):
+        _init_set_doc(node)
+        _init_function(node)
+        node.decorators = Decorators(node.decorators)
 
     def visit_getattr(self, node):
         node.attrname = node.attr
@@ -240,6 +239,12 @@ class TreeRebuilder(ASTVisitor):
         node.names = [(alias.name, alias.asname) for alias in node.names]
         node.modname = node.module
         del node.module
+
+    def visit_lambda(self, node):
+        _init_function(node)
+
+    def visit_module(self, node):
+        _init_set_doc(node)
 
     def visit_name(self, node):
         node.name = node.id
@@ -272,7 +277,6 @@ class TreeRebuilder(ASTVisitor):
 
     def visit_unaryop(self, node):
         node.op = UNARY_OP_CLASSES[node.op.__class__]
-
 
 
 # raw building ################################################################

@@ -56,7 +56,6 @@ class RebuildVisitor(ASTVisitor):
             self.set_context(node, child)
             self.walk(child, node)
         if handle_leave:
-            self._stack.pop()
             leave = getattr(self, "leave_" + node.__class__.__name__.lower() )
             leave(node)
 
@@ -109,6 +108,7 @@ class RebuildVisitor(ASTVisitor):
 
     def leave_class(self, node):
         """leave a Class node -> pop the last item on the stack"""
+        self._stack.pop()
         metaclass = self._metaclass.pop()
         if not node.bases:
             # no base classes, detect new / style old style according to
@@ -117,6 +117,20 @@ class RebuildVisitor(ASTVisitor):
         node.basenames = [as_string(bnode) for bnode in node.bases]
     
     leave_classdef = leave_class
+
+    def visit_decorators(self, node):
+        """visiting an Decorators node: return True for leaving"""
+        return True
+
+    def leave_decorators(self, node): # TODO : visit_decorators
+        """python >= 2.4
+        visit a Decorator node -> check for classmethod and staticmethod
+        """
+        func = node.parent
+        for decorator_expr in node.items:
+            if isinstance(decorator_expr, nodes.Name) and \
+                   decorator_expr.name in ('classmethod', 'staticmethod'):
+                func.type = decorator_expr.name
 
     def visit_from(self, node):
         """visit an From node to become astng"""
@@ -148,6 +162,7 @@ class RebuildVisitor(ASTVisitor):
 
     def leave_function(self, node):
         """leave a Function node -> pop the last item on the stack"""
+        self._stack.pop()
         self._global_names.pop()
     leave_functiondef = leave_function
 
@@ -202,6 +217,7 @@ class RebuildVisitor(ASTVisitor):
         """leave a Module node -> pop the last item on the stack and check
         the stack is empty
         """
+        self._stack.pop()
         assert not self._stack, 'Stack is not empty : %s' % self._stack
 
     def visit_name(self, node):
@@ -215,26 +231,8 @@ class RebuildVisitor(ASTVisitor):
         if self._asscontext is not None:
             self._add_local(node, node.name)
 
-    # py2.4 (compiler mode) only callbacks ####################################
+    # # delayed methods
 
-    def leave_decorators(self, node): # TODO : visit_decorators
-        """python >= 2.4
-        visit a Decorator node -> check for classmethod and staticmethod
-        """
-        func = node.parent
-        for decorator_expr in node.nodes:
-            if isinstance(decorator_expr, nodes.Name) and \
-                   decorator_expr.name in ('classmethod', 'staticmethod'):
-                func.type = decorator_expr.name
-
-    def visit_assname(self, node):
-        """visit a AssName node -> add name to locals"""
-        self._add_local(node, node.name)
-
-    def visit_assattr(self, node):# FIXME : why only assattr delayed ?
-        """visit_assattr: append to delayed """
-        if node.__class__ == nodes.Getattr:
-            self._delayed.append(node)
 
     def delayed_visit_getattr(self, node):
         """visit a AssAttr/ GetAttr node -> add name to locals, handle members
