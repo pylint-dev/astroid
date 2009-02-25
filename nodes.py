@@ -190,23 +190,19 @@ class NodeNG:
         return self
 
 
-    def next_sibling(self, attr = "body"):
+    def next_sibling(self, attr = "body"):# FIXME : what do we want ?
         """return the previous sibling statement
         """
-        while not self.parent.is_statement:
-            self = self.parent
-        stmts = getattr(self.parent, attr)
+        stmts = getattr(self.statement(), attr)
         for k, stmt in enumerate(stmts[:-1]):
             if self is stmt:
                 return stmts[k+1]
 
 
-    def previous_sibling(self, attr = "body"):
+    def previous_sibling(self, attr = "body"): # FIXME : what do we want ?
         """return the next sibling statement 
         """
-        while not self.parent.is_statement:
-            self = self.parent
-        stmts = getattr(self.parent, attr)
+        stmts = getattr(self.statement(), attr)
         for k, stmt in enumerate(stmts[1:]):
             if self is stmt:
                 return stmts[k]
@@ -300,7 +296,7 @@ extend_class(Node, NodeNG)
 
 
 for klass in Break, Class, Continue, Discard, ExceptHandler, For, From, \
-             Function, Global, If, Import, Module, Return, \
+             Function, Global, If, Import, Return, \
              TryExcept, TryFinally, While, With, Yield:
     klass.is_statement = True
 
