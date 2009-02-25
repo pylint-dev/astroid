@@ -298,17 +298,11 @@ class NodeNG:
 
 extend_class(Node, NodeNG)
 
-def generic__repr__(self): # TODO : override __repr__ on all node Classes
-    """simple representation method to override compiler.ast's methods"""
-    return "<%s %s>" % (self.__class__.__name__, hex(id(self)))
-
 
 for klass in Break, Class, Continue, Discard, ExceptHandler, For, From, \
              Function, Global, If, Import, Module, Return, \
              TryExcept, TryFinally, While, With, Yield:
     klass.is_statement = True
-    klass.__repr__ = generic__repr__
-
 
 def const_factory(value):
     try:

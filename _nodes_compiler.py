@@ -38,6 +38,20 @@ from compiler.ast import AssAttr, AssList, AssName, \
      Sliceobj, Stmt, Subscript, TryExcept, TryFinally, Tuple, \
      While, Yield
 
+# modify __repr__ of all Nodes as they are not compatible with ASTNG
+
+def generic__repr__(self):
+    """simple representation method to override compiler.ast's methods"""
+    return "<%s at 0x%x>" % (self.__class__.__name__, id(self))
+
+from compiler import ast
+for name, value in ast.__dict__.items():
+    try:
+        if issubclass(value, ast.Node):
+            value.__repr__ = generic__repr__
+    except:
+        pass
+del ast
 
 try:
     # introduced in python 2.4

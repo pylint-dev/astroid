@@ -39,7 +39,7 @@ from logilab.astng.utils import are_exclusive
 def lookup(self, name):
     """lookup a variable name
 
-    return the scoope node and the list of assignments associated to the given
+    return the scope node and the list of assignments associated to the given
     name according to the scope where it has been found (locals, globals or
     builtin)
 
