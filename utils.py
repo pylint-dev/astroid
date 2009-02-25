@@ -24,8 +24,7 @@ __docformat__ = "restructuredtext en"
 
 from itertools import imap
 from logilab.common.compat import enumerate
-from logilab.astng._exceptions import IgnoreChild, UnresolvableName, \
-     NotFoundError, InferenceError, ASTNGError
+from logilab.astng._exceptions import *
 
 def extend_class(original, addons):
     """add methods and attribute defined in the addons class to the original
@@ -400,4 +399,6 @@ def _are_from_exclusive_nodes(values1, values2):
     else:
         return stmt1_num != stmt2_num
 
+__all__ = ('REDIRECT', 'LocalsVisitor', 'ASTWalker', 'ASTVisitor', 
+        'are_exclusive', 'extend_class')
 

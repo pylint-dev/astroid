@@ -100,7 +100,6 @@ class A(A):
 
     def test_class(self):
         klass = MODULE['YOUPI']
-        #print klass.getattr('MY_DICT')
         my_dict = klass.ilookup('MY_DICT').next()
         self.assertIsInstance(my_dict, nodes.Dict)
         none = klass.ilookup('None').next()
