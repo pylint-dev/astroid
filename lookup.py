@@ -209,4 +209,4 @@ def _decorate(astmodule):
     astmodule.Lambda.scope_lookup = function_scope_lookup
     astmodule.Module.scope_lookup = scope_lookup
     astmodule.GenExpr.scope_lookup = scope_lookup
-        
+

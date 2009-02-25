@@ -37,7 +37,7 @@ if nodes.AST_MODE == 'compiler':
             self.astng = transformer.parsesuite(open('data/format.py').read())
 
         def test_callfunc_lineno(self):
-            stmts = self.astng.getChildNodes()[0].nodes
+            stmts = self.astng.body
             # on line 4:
             #    function('aeozrijz\
             #    earzer', hop)
@@ -84,7 +84,7 @@ if nodes.AST_MODE == 'compiler':
                 self.assertEquals(arg.tolineno, 10+i)
 
         def test_function_lineno(self):
-            stmts = self.astng.getChildNodes()[0].nodes
+            stmts = self.astng.body
             # on line 15:
             #    def definition(a,
             #                   b,
@@ -104,7 +104,7 @@ if nodes.AST_MODE == 'compiler':
             self.assertEquals(return_.tolineno, 18)
 
         def test_class_lineno(self):
-            stmts = self.astng.getChildNodes()[0].nodes
+            stmts = self.astng.body
             # on line 20:
             #    class debile(dict,
             #                 object):
@@ -123,7 +123,7 @@ if nodes.AST_MODE == 'compiler':
             self.assertEquals(pass_.tolineno, 22)
 
         def test_if_lineno(self):
-            stmts = self.astng.getChildNodes()[0].nodes
+            stmts = self.astng.body
             # on line 20:
             #    if aaaa: pass
             #    else:
@@ -479,7 +479,6 @@ class InferedBuildTC(TestCase):
         lclass = list(astastng.igetattr('Lambda'))
         self.assertEquals(len(lclass), 1)
         lclass = lclass[0]
-        self.assert_('as_string' in lclass.locals, lclass.locals.keys())
         self.assert_('format_args' in lclass.locals, lclass.locals.keys())
         self.assert_('type' in lclass.locals.keys())
         

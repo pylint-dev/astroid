@@ -373,9 +373,6 @@ class Project:
         
     def get_module(self, name):
         return self.locals[name]
-    
-    def getChildNodes(self):
-        return self.modules
 
     def __repr__(self):
         return '<Project %r at %s (%s modules)>' % (self.name, id(self),

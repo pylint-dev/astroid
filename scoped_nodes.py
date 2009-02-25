@@ -326,10 +326,10 @@ class FunctionNG(object):
         It's considered as abstract if the only statement is a raise of
         NotImplementError, or, if pass_is_abstract, a pass statement
         """
-        for child_node in self.code.getChildNodes():
+        for child_node in self.body:
             if isinstance(child_node, Raise) and child_node.expr1:
                 try:
-                    name = child_node.expr1.nodes_of_class(Name).next()
+                    name = child_node.type.nodes_of_class(Name).next()
                     if name.name == 'NotImplementedError':
                         return True
                 except StopIteration:

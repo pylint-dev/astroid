@@ -261,9 +261,8 @@ a, b= b, a # Gasp !
         data = '''
 del undefined_attr
         '''
-        astng = builder.string_build(data, __name__, __file__)
-        self.failUnlessRaises(inference.InferenceError,
-                              astng.node.getChildNodes()[0].infer().next)
+        delete = builder.string_build(data, __name__, __file__).body[0]
+        self.failUnlessRaises(inference.InferenceError, delete.infer().next)
         
     def test_ancestors_inference(self):
         data = '''

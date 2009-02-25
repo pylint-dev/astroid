@@ -141,7 +141,6 @@ def decorators_scope(self):
     return self.parent.parent.scope()
 Decorators.scope = decorators_scope
 
-EmptyNode.getChildNodes = lambda self: ()
 
 # introduced in python 2.5
 From.level = 0 # will be overiden by instance attribute with py>=2.5
