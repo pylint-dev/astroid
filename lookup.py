@@ -11,20 +11,12 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """name lookup methods, available on Name and scoped nodes (Module, Class,
-Function, Lambda, GenExpr ...):
-
-The lookup methods return the scope node and the list of assignments associated
-to the given name according to the scope where it has been found (locals,
-globals or builtin)
-
-The lookup is starting from self's scope. If self is not a frame itself and
-the name is found in the inner frame locals, statements will be filtered
-to remove ignorable statements according to self's location.
+Function, Lambda, GenExpr...):
 
 * .lookup(name)
 * .ilookup(name)
 
-Be careful, lookup is internal and returns a tuple (scope, [stmts]), while
+Be careful, lookup is nternal and returns a tuple (scope, [stmts]), while
 ilookup returns an iterator on infered values.
 
 :author:    Sylvain Thenault
@@ -44,9 +36,18 @@ from logilab.astng import nodes, MANAGER, copy_context
 from logilab.astng.utils import are_exclusive
 
 
-def name_lookup(self, name):
-    """lookup up in the scope node"""
-    return self.scope().lookup(self, name)
+def lookup(self, name):
+    """lookup a variable name
+
+    return the scope node and the list of assignments associated to the given
+    name according to the scope where it has been found (locals, globals or
+    builtin)
+
+    The lookup is starting from self's scope. If self is not a frame itself and
+    the name is found in the inner frame locals, statements will be filtered
+    to remove ignorable statements according to self's location
+    """
+    return self.scope().scope_lookup(self, name)
 
 def scope_lookup(self, node, name, offset=0):
     try:
@@ -200,11 +201,11 @@ def _decorate(astmodule):
     for klass in (astmodule.Name, astmodule.Module, astmodule.Class,
                   astmodule.Function, astmodule.Lambda):
         klass.ilookup = ilookup
+        klass.lookup = lookup
         klass._filter_stmts = _filter_stmts
-    astmodule.Name.lookup = name_lookup
-    astmodule.Class.lookup = class_scope_lookup
-    astmodule.Function.lookup = function_scope_lookup
-    astmodule.Lambda.lookup = function_scope_lookup
-    astmodule.Module.lookup = scope_lookup
-    astmodule.GenExpr.lookup = scope_lookup
-
+    astmodule.Class.scope_lookup = class_scope_lookup
+    astmodule.Function.scope_lookup = function_scope_lookup
+    astmodule.Lambda.scope_lookup = function_scope_lookup
+    astmodule.Module.scope_lookup = scope_lookup
+    astmodule.GenExpr.scope_lookup = scope_lookup
+        
