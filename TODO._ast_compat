@@ -5,7 +5,7 @@ ASTNG Motor
 ===========
 * Num + Str vs Const : check how to unify both nodes
 * index : the method 'index' for the compiler.ast Nodes is used
-on several places in astng but not available in _ast
+  on several places in astng but not available in _ast
 
 Inference
 ---------
@@ -23,6 +23,10 @@ Tests:
 _newstyle
 ---------
 unittest_builder : test_newstyle_detection
+
+are_exclusive
+-------------
+* more are_exclusive tests ... : we had a big unseen bug !
 
 
 Pylint
