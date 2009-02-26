@@ -35,17 +35,19 @@ class RebuildVisitor(ASTVisitor):
         node.locals = {}
         node.parent.frame().set_local(node.name, node)
 
-    def set_context(self, node, childnode): # XXX move code to Assign etc.
+    def set_context(self, node, childnode):
         if isinstance(node, nodes.Assign):
             if childnode in node.targets:
                 self._asscontext = node
             else:
                 self._asscontext = None
-        elif isinstance(node, (nodes.AugAssign, nodes.ListCompFor)):
+        elif isinstance(node, (nodes.AugAssign, nodes.ListCompFor, nodes.For)):
             if childnode is node.target:
                 self._asscontext = node
             else:
                 self._asscontext = None
+        elif isinstance(node, nodes.Subscript):
+            self._asscontext = None # XXX disable _asscontext on subscripts ?
 
     def walk(self, node, parent=None):
         """default visit method, handle the parent attribute"""
@@ -109,15 +111,14 @@ class RebuildVisitor(ASTVisitor):
         """visiting an Decorators node: return True for leaving"""
         return True
 
-    def leave_decorators(self, node): # TODO : visit_decorators
+    def leave_decorators(self, node):
         """python >= 2.4
         visit a Decorator node -> check for classmethod and staticmethod
         """
-        func = node.parent
         for decorator_expr in node.items:
             if isinstance(decorator_expr, nodes.Name) and \
                    decorator_expr.name in ('classmethod', 'staticmethod'):
-                func.type = decorator_expr.name
+                node.parent.type = decorator_expr.name
 
     def visit_from(self, node):
         """visit an From node to become astng"""

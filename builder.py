@@ -149,7 +149,6 @@ class ASTNGBuilder:
             node.package = path and path.find('__init__.py') > -1 or False
         node.name = modname 
         node.pure_python = True
-        self._asscontext = None
         if self._manager is not None:
             self._manager._cache[node.file] = node
             if self._file:
