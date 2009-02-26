@@ -218,8 +218,7 @@ nodes.Name.infer = path_wrapper(infer_name)
 
         
 def infer_callfunc(self, context=None):
-    """infer a CallFunc node by trying to guess what's the function is
-    returning
+    """infer a CallFunc node by trying to guess what the function returns
     """
     one_infered = False
     context = context.clone()
@@ -259,7 +258,7 @@ def _imported_module_astng(node, modname):
         raise InferenceError(modname)
         
 def infer_import(self, context=None, asname=True):
-    """self resolve on From / Import nodes return the imported module/object"""
+    """infer an Import node: return the imported module/object"""
     name = context.lookupname
     if name is None:
         raise InferenceError()
@@ -271,7 +270,7 @@ def infer_import(self, context=None, asname=True):
 nodes.Import.infer = path_wrapper(infer_import)
 
 def infer_from(self, context=None, asname=True):
-    """self resolve on From / Import nodes return the imported module/object"""
+    """infer a From nodes: return the imported module/object"""
     name = context.lookupname
     if name is None:
         raise InferenceError()
