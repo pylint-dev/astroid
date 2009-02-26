@@ -79,16 +79,6 @@ class RebuildVisitor(ASTVisitor):
         elif getattr(node.targets[0], 'name', None) == '__metaclass__': # XXX check more...
             self._metaclass[-1] = 'type' # XXX get the actual metaclass
 
-    def visit_augassign(self, node):
-        """visit an AugAssign node to become astng"""
-        if not isinstance(node.target, nodes.Name):
-            return  # XXX
-        # XXX quick fix : _ast.Name not yet visited
-        if hasattr(node.target, "name"):
-            self._add_local(node, node.target.name)
-        else:
-            self._add_local(node, node.target.id)
-
     def visit_class(self, node):
         """visit an Class node to become astng"""
         node.instance_attrs = {}
@@ -222,7 +212,7 @@ class RebuildVisitor(ASTVisitor):
         except KeyError:
             pass
         if self._asscontext is not None:
-            self._add_local(node, node.name)
+            self._add_local(self._asscontext, node.name)
 
     # # delayed methods
 
