@@ -72,12 +72,6 @@ except:
     class Decorators:
         """dummy Decorators node, shouldn't be used with py < 2.4"""
 
-try:
-    # introduced in python 2.5
-    from compiler.ast import With
-except:
-    class With:
-        """dummy With node, shouldn't be used since py < 2.5"""
 
 # additional nodes
 
