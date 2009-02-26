@@ -108,6 +108,7 @@ Subscript._astng_fields = ('expr', 'subs',) # value, slice
 TryExcept._astng_fields = ('body', 'handlers', 'orelse',)
 TryFinally._astng_fields = ('body', 'finalbody',)
 Tuple._astng_fields = ('elts',)  # ctx
+With._astng_fields = ('expr', 'vars', 'body')
 While._astng_fields = ('test', 'body', 'orelse',)
 Yield._astng_fields = ('value',)
 

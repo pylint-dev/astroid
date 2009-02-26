@@ -120,9 +120,6 @@ from logilab.astng.utils import ASTVisitor
 Num._astng_fields = ()
 Str._astng_fields = ()
 
-With._astng_fields = ('context_expr', 'optional_vars', 'body')
-With.is_statement = True
-
 
 class Const(Node):
     """represent a Str or Num node"""
@@ -278,6 +275,11 @@ class TreeRebuilder(ASTVisitor):
     def visit_unaryop(self, node):
         node.op = UNARY_OP_CLASSES[node.op.__class__]
 
+    def visit_with(self, node):
+        """build compiler like node """
+        node.vars = node.optional_vars
+        node.expr = node.context_expr
+        del node.optional_vars, node.context_expr
 
 # raw building ################################################################
 

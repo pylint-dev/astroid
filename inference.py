@@ -54,10 +54,8 @@ builtin_astng = nodes.Dict._proxied.root()
 
 def infer_default(self, context=None):
     """we don't know how to resolve a statement by default"""
-    #print 'inference error', self, name, path
     raise InferenceError(self.__class__.__name__)
 
-#infer_default = infer_default
 nodes.Node.infer = infer_default
 
 #infer_end = path_wrapper(infer_end)
@@ -156,7 +154,7 @@ class CallContext:
         
 def infer_function(self, context=None):
     """infer on Function nodes must be take with care since it
-    may be called to infer one of it's argument (in which case <name>
+    may be called to infer one of its argument (in which case <name>
     should be given)
     """
     name = context.lookupname
@@ -484,10 +482,10 @@ to any intermediary inference necessary.
 
 def assign_assigned_stmts(self, node, context=None, asspath=None):
     if not asspath:
-        yield self.expr 
+        yield self.value
         return
     found = False
-    for infered in _resolve_asspart(self.expr.infer(context), asspath, context):
+    for infered in _resolve_asspart(self.value.infer(context), asspath, context):
         found = True
         yield infered
     if not found:
@@ -515,7 +513,8 @@ def _resolve_asspart(parts, asspath, context):
             # we are not yet on the last part of the path
             # search on each possibly infered value
             try:
-                for infered in _resolve_asspart(assigned.infer(context), asspath, context):
+                for infered in _resolve_asspart(assigned.infer(context), 
+                                                asspath, context):
                     yield infered
             except InferenceError:
                 return
@@ -533,7 +532,6 @@ def tryexcept_assigned_stmts(self, node, context=None, asspath=None):
     if not found:
         raise InferenceError()
 nodes.TryExcept.assigned_stmts = tryexcept_assigned_stmts
-
 
 
 

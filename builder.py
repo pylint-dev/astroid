@@ -156,10 +156,10 @@ class ASTNGBuilder:
         self.rebuilder._module = self._module
         self.rebuilder.walk(node)
         delayed = self.rebuilder._delayed
-        while delayed: # TODO : delayed nodes
+        while delayed:
             dnode = delayed.pop(0)
             node_name = dnode.__class__.__name__.lower()
-            #getattr(self.rebuilder, 'delayed_visit_%s' % node_name)(dnode)
+            self.rebuilder.delayed_visit_getattr(dnode)
         return node
 
 
