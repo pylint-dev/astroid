@@ -84,9 +84,8 @@ class RebuildVisitor(ASTVisitor):
         if not isinstance(node.target, nodes.Name):
             return  # XXX
         # XXX quick fix : _ast.Name not yet visited
-        target = node.target
-        if hasattr(target, "name"):
-            self._add_local(node, node.target.name) ## _add_local 
+        if hasattr(node.target, "name"):
+            self._add_local(node, node.target.name)
         else:
             self._add_local(node, node.target.id)
 
@@ -103,8 +102,6 @@ class RebuildVisitor(ASTVisitor):
         attach___dict__(node)
         self._metaclass.append(self._metaclass[-1])
         return True
-    
-    visit_classdef = visit_class
 
     def leave_class(self, node):
         """leave a Class node -> pop the last item on the stack"""
@@ -157,8 +154,6 @@ class RebuildVisitor(ASTVisitor):
         self._push(node)
         register_arguments(node, node.argnames)
         return True
-    
-    visit_functiondef = visit_function
 
     def leave_function(self, node):
         """leave a Function node -> pop the last item on the stack"""
@@ -169,8 +164,6 @@ class RebuildVisitor(ASTVisitor):
     def visit_genexpr(self, node):
         """visit an ListComp node to become astng"""
         node.locals = {}
-    
-    visit_generatorexp = visit_genexpr
 
     def visit_getattr(self, node):
         """visit an Getattr node to become astng"""
