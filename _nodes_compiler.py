@@ -72,6 +72,10 @@ except:
     class Decorators:
         """dummy Decorators node, shouldn't be used with py < 2.4"""
 
+class With:
+    """dummy With node: if we are using py >= 2.5 we will use _ast;
+    but we need it for the other astng modules
+    """
 
 # additional nodes
 
