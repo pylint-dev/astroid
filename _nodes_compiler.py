@@ -179,14 +179,14 @@ class TreeRebuilder(ASTVisitor):
     def visit_function(self, node):
         # remove Stmt node
         node.body = node.code.nodes
-        node.argnames = list(node.argnames)
-        node.defaults = list(node.defaults)
+        node.argnames = node.argnames
+        node.defaults = node.defaults
         del node.code
     
     def visit_lambda(self, node):
         node.body = node.code
-        node.argnames = list(node.argnames)
-        node.defaults = list(node.defaults)
+        node.argnames = node.argnames
+        node.defaults = node.defaults
         del node.code
     
     def visit_class(self, node):
@@ -289,7 +289,7 @@ class TreeRebuilder(ASTVisitor):
         del node.nodes
 
     def visit_dict(self, node):
-        node.items = list(node.items)
+        node.items = node.items
     
     def visit_discard(self, node):
         node.value = node.expr
@@ -317,7 +317,7 @@ class TreeRebuilder(ASTVisitor):
         _init_else_node(node)
     
     def visit_list(self, node):
-        node.elts = list(node.nodes) # tuple if empty list
+        node.elts = node.nodes
         del node.nodes
     
     def visit_keyword(self, node):

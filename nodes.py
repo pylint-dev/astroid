@@ -146,7 +146,7 @@ class NodeNG:
                 raise
             if attr is None:
                 continue
-            if type(attr) is list:
+            if isinstance(attr, (list, tuple)):
                 for elt in attr:
                     yield elt
             else:
