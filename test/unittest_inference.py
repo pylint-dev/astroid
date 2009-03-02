@@ -80,7 +80,7 @@ a, b= b, a # Gasp !
         self.failUnlessEqual(obj.name, __name__)
         self.failUnlessEqual(obj.root().name, __name__)
         self.failUnlessRaises(StopIteration, infered.next)
-        
+
     def test_class_inference(self):
         infered = self.astng['C'].infer()
         obj = infered.next()
@@ -96,8 +96,14 @@ a, b= b, a # Gasp !
         self.failUnlessRaises(StopIteration, infered.next)
 
     def test_builtin_name_inference(self):
-        infered = self.astng['C']['meth1']['var'].infer()
+        C = self.astng['C']
+        print " __getitems__ :"
+        print "C", C
+        print "meth1", C['meth1']
+        print "var", C['meth1']['var']
+        infered = C['meth1']['var'].infer()
         var = infered.next()
+        print "var", var 
         self.failUnlessEqual(var.name, 'object')
         self.failUnlessEqual(var.root().name, '__builtin__')
         self.failUnlessRaises(StopIteration, infered.next)
@@ -257,13 +263,6 @@ a, b= b, a # Gasp !
         self.failUnless(obj1 is YES)
         self.failUnlessRaises(StopIteration, infered.next)
 
-    def test_del(self):
-        data = '''
-del undefined_attr
-        '''
-        delete = builder.string_build(data, __name__, __file__).body[0]
-        self.failUnlessRaises(inference.InferenceError, delete.infer().next)
-        
     def test_ancestors_inference(self):
         data = '''
 class A:
@@ -353,7 +352,14 @@ except Exception, ex:
         self.failUnlessEqual(ex2.name, 'Exception')
         self.failUnlessRaises(StopIteration, ex2_infer.next)
 
-    def test_del(self):
+    def test_del1(self):
+        data = '''
+del undefined_attr
+        '''
+        delete = builder.string_build(data, __name__, __file__).body[0]
+        self.failUnlessRaises(inference.InferenceError, delete.infer().next)
+        
+    def test_del2(self):
         data = '''
 a = 1
 b = a
