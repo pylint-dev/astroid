@@ -62,14 +62,17 @@ class RebuildVisitor(ASTVisitor):
             leave(node)
 
     # general visit_<node> methods ############################################
-
+    
     def visit_assign(self, node):
-        """visit an Assign node to become astng"""
+        return True
+    
+    def leave_assign(self, node):
+        """leave an Assign node to become astng"""
         klass = node.parent.frame()
         if isinstance(klass, nodes.Class) and \
             isinstance(node.value, nodes.CallFunc) and \
-            isinstance(node.value, nodes.Name):
-            func_name = node.value.name
+            isinstance(node.value.func, nodes.Name):
+            func_name = node.value.func.name
             if func_name in ('classmethod', 'staticmethod'):
                 for ass_node in node.targets:
                     try:
