@@ -1,4 +1,3 @@
-
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
 # Foundation; either version 2 of the License, or (at your option) any later
@@ -56,16 +55,7 @@ from _ast import (AST as Node,
                   keyword as Keyword
                   )
 
-# XXX : AugLoad, AugStore, Attribute
-#       BoolOp
-#       Del, Delete
-#       Expr, Expression, ExtSlice
-#       IfExp, Index, Interactive, 
-#       Load, 
-#       Param
-#       Store, Suite
-#       UnaryOp
-from _ast import Num, Str, Eq, alias, arguments, comprehension
+from _ast import Num, Str, Eq, alias, arguments
 
 from _ast import (Add as _Add, Div as _Div, FloorDiv as _FloorDiv,
                   Mod as _Mod, Mult as _Mult, Pow as _Pow, Sub as _Sub,
@@ -113,10 +103,6 @@ CMP_OP_CLASSES = {_Eq: '==',
                   }
 
 from logilab.astng.utils import ASTVisitor
-
-# FIXME : can't replace totally by Const : Str needed in _init_set_doc
-Num._astng_fields = ()
-Str._astng_fields = ()
 
 
 class AssAttr(Node):
@@ -270,13 +256,11 @@ class TreeRebuilder(ASTVisitor):
     def visit_num(self, node):
         node.__class__ = Const
         node.value = node.n
-        node.name = "int" # compiler compat
         del node.n
 
     def visit_str(self, node):
         node.__class__ = Const
         node.value = node.s
-        node.name = "str" # compiler compat
         del node.s
     
     def visit_subscript(self, node):
@@ -326,19 +310,15 @@ def dict_factory():
 def import_from_factory(modname, membername):
     node = From()
     node.level = 0
-    node.module = modname
-    aliasnode = alias()
-    aliasnode.parent = node
-    aliasnode.name = membername
-    aliasnode.asname = None
-    node.names = [aliasnode]
+    node.modname = modname
+    node.names = [(membername, None)]
     return node
 
 def _const_factory(value):
-    if isinstance(value, (int, long, complex, basestring)):
+    if isinstance(value, (int, long, complex, float, basestring)):
         node = Const()
     else:
-        raise Exception(repr(value))
+        raise Exception(type(value))
     node.value = value
     return node
         
