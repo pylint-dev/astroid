@@ -151,18 +151,6 @@ From.level = 0 # will be overiden by instance attribute with py>=2.5
 
 ##  some auxiliary functions ##########################
 
-def _init_ass_more(node, more_class ):
-    if node.nodes[0].flags  == 'OP_DELETE':
-        node.__class__ = Delete
-        node.targets = [Name(item.name) for item in node.nodes]
-    elif node.nodes[0].flags  == 'OP_ASSIGN':
-        node.__class__ = more_class
-        node.elts = node.nodes
-    else:
-        msg = "Error on node %s " % repr(node)
-        raise msg
-    del node.nodes
-
 def _init_else_node(node):
     # remove Stmt node if exists
     if node.else_:
@@ -210,50 +198,31 @@ class TreeRebuilder(ASTVisitor):
     ##  init_<node> functions #####################################################
     
     def visit_assattr(self, node):
-        if node.flags == 'OP_ASSIGN':
-            node.__class__ = Getattr
-        elif node.flags == 'OP_DELETE':
-            node.__class__ = Delete
-            node.targets = [Getattr(node.expr, node.attrname)]
-            del node.attrname, node.expr
-        else:
-            msg = "Error on node %s " % repr(node)
-            raise msg
+        if node.flags == 'OP_DELETE':
+            node.__class__ = DelAttr
         del node.flags
 
     def visit_assign(self, node):
         node.value = node.expr
         node.targets = node.nodes
         del node.nodes, node.expr
-        for target in node.targets:
-            if isinstance(target, AssName):
-                target.__class__ = Name
-                del target.flags
-            elif isinstance(target, AssTuple):
-                target.__class__ = Tuple
-            elif isinstance(target, AssList):
-                target.__class__ = List
-            else:
-                msg = "Error : Assign node.targets %s" % target
-                assert isinstance(target, (AssAttr, Subscript, Slice)), msg
-    
+
     def visit_asslist(self, node):
-        _init_ass_more(node, List)
-    
-    def visit_assname(self, node):
-        if node.flags == 'OP_ASSIGN':
-            node.__class__ = Name
-        elif node.flags == 'OP_DELETE':
-            node.targets = [Name(node.name)]
-            node.__class__ = Delete
-        else:
-            msg = "Error on node %s " % repr(node)
-            raise msg
-        del node.flags
+        node.__class__ = List
+        self.visit_list(node)
     
     def visit_asstuple(self, node):
-        _init_ass_more(node, Tuple)
+        node.__class__ = Tuple
+        self.visit_tuple(node)
     
+    def visit_assname(self, node):
+        if node.flags == 'OP_DELETE':
+            node.__class__ = DelName
+        del node.flags
+    
+    def visit_delete(self, node):
+        raise "Should be no Delete nodes ; %s " % node
+
     def visit_augassign(self, node):
         node.value = node.expr
         del node.expr
