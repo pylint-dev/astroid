@@ -221,11 +221,11 @@ class TreeRebuilder(ASTVisitor):
         node.attrname = node.attr
         node.expr = node.value
         del node.attr, node.value
-        if isinstance(self.visitor.asscontext, Assign):
-            node.__class__ = AssAttr
-        elif isinstance(self.visitor.asscontext, Delete):
+        if isinstance(self.visitor.asscontext, Delete):
             node.__class__ = DelAttr
-
+        elif self.visitor.asscontext is not None:
+            node.__class__ = AssAttr
+        
     def visit_if(self, node):
         tests, orelse = _recurse_if(node, [], [])
         node.tests = tests
@@ -248,11 +248,11 @@ class TreeRebuilder(ASTVisitor):
     def visit_name(self, node):
         node.name = node.id
         del node.id
-        if isinstance(self.visitor.asscontext,  Assign):
-            node.__class__ = AssName
-        elif isinstance(self.visitor.asscontext, Delete):
+        if isinstance(self.visitor.asscontext, Delete):
             node.__class__ = DelName
-
+        elif self.visitor.asscontext is not None:
+            node.__class__ = AssName
+            
     def visit_num(self, node):
         node.__class__ = Const
         node.value = node.n
