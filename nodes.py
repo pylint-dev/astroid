@@ -127,6 +127,7 @@ class NodeNG:
     """
     is_statement = False
     # attributes below are set by the builder module or by raw factories
+    lineno = None
     fromlineno = None
     tolineno = None
     # parent node in the tree
@@ -143,11 +144,7 @@ class NodeNG:
     def get_children(self):
         d = self.__dict__
         for f in self._astng_fields:
-            try:
-                attr = d[f]
-            except:
-                print self, f
-                raise
+            attr = d[f]
             if attr is None:
                 continue
             if isinstance(attr, (list, tuple)):
@@ -300,9 +297,10 @@ class NodeNG:
 extend_class(Node, NodeNG)
 
 
-for klass in Break, Class, Continue, Discard, ExceptHandler, For, From, \
-             Function, Global, If, Import, Return, \
-             TryExcept, TryFinally, While, With, Yield:
+for klass in (Assign, Break, Class, Continue, Delete, Discard, ExceptHandler, 
+              For, From, 
+              Function, Global, If, Import, Return, 
+              TryExcept, TryFinally, While, With, Yield):
     klass.is_statement = True
 
 def const_factory(value):
@@ -534,7 +532,9 @@ class Instance(Proxy):
         return '<Instance of %s.%s at 0x%s>' % (self._proxied.root().name,
                                                 self._proxied.name,
                                                 id(self))
-    __str__ = __repr__
+    def __str__(self):
+        return 'Instance of %s.%s' % (self._proxied.root().name,
+                                      self._proxied.name)
     
     def callable(self):
         try:
