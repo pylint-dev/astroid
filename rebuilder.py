@@ -5,7 +5,6 @@ or _ast tree in order to get a single ASTNG representation
 from logilab.astng.utils import ASTVisitor
 from logilab.astng.raw_building import *
 from logilab.astng._exceptions import ASTNGBuildingException, InferenceError
-from logilab.astng.nodes import TreeRebuilder
 from logilab.astng import nodes
 from logilab.astng.nodes_as_string import as_string
 
@@ -18,7 +17,7 @@ class RebuildVisitor(ASTVisitor):
         self._metaclass = None
         self._global_names = None
         self._delayed = []
-        self.rebuilder = TreeRebuilder(self)
+        self.rebuilder = nodes.TreeRebuilder(self)
 
     def _add_local(self, node, name):
         if self._global_names and name in self._global_names[-1]:
