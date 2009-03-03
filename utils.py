@@ -54,11 +54,17 @@ class ASTVisitor(object):
     concerned node.
     """
 
+    def visit_assattr(self, node):
+        """dummy method for visiting an AssAttr node"""
+
     def visit_assert(self, node):
         """dummy method for visiting an Assert node"""
 
     def visit_assign(self, node):
         """dummy method for visiting an Assign node"""
+
+    def visit_assname(self, node):
+        """dummy method for visiting an AssName node"""
 
     def visit_augassign(self, node):
         """dummy method for visiting an AugAssign node"""
@@ -93,8 +99,14 @@ class ASTVisitor(object):
     def visit_decorators(self, node):
         """dummy method for visiting an Decorators node"""
 
+    def visit_delattr(self, node):
+        """dummy method for visiting an DelAttr node"""
+
     def visit_delete(self, node):
         """dummy method for visiting an Delete node"""
+
+    def visit_delname(self, node):
+        """dummy method for visiting an DelName node"""
 
     def visit_dict(self, node):
         """dummy method for visiting an Dict node"""

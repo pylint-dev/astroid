@@ -63,9 +63,11 @@ ID_RGX = re.compile('^[a-zA-Z_][a-zA-Z_0-9]*$')
 del re
 
 # astng fields definition ####################################################
-
+AssAttr._astng_fields = ('expr',)
 Assert._astng_fields = ('test', 'fail',)
 Assign._astng_fields = ('targets', 'value',)
+AssName._astng_fields = ()
+
 AugAssign._astng_fields = ('target', 'value',)
 BinOp._astng_fields = ('left', 'right',)
 BoolOp._astng_fields = ('values',)
@@ -80,6 +82,8 @@ Const._astng_fields = ()
 Continue._astng_fields = ()
 Decorators._astng_fields = ('items',)
 Delete._astng_fields = ('targets', )
+DelAttr._astng_fields = ('expr',)
+DelName._astng_fields = ()
 Dict._astng_fields = ('items',)
 Discard._astng_fields = ('value',)
 From._astng_fields = ()

@@ -125,6 +125,11 @@ from logilab.astng.utils import ASTVisitor
 class Delete(Node):
     """represent del statements"""
 
+class DelAttr(Node):
+    """represent del attribute statements"""
+
+class DelName(Node):
+    """represent del statements"""
 
 ###############################################################################
         

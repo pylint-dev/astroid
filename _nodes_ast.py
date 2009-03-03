@@ -121,9 +121,20 @@ Num._astng_fields = ()
 Str._astng_fields = ()
 
 
+class AssAttr(Node):
+    """represent Attribute Assignment statements"""
+
+class AssName(Node):
+    """represent AssName statements"""
+
 class Const(Node):
     """represent a Str or Num node"""
 
+class DelAttr(Node):
+    """represent del attribute statements"""
+
+class DelName(Node):
+    """represent del statements"""
 
 class EmptyNode(Node):
     """represent a Empty node for compatibility"""
