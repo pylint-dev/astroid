@@ -48,8 +48,8 @@ class RebuildVisitor(ASTVisitor):
             else:
                 self.asscontext = None
         elif isinstance(node, nodes.Subscript):
-            self.asscontext = None # XXX disable asscontext on subscripts ?
-
+           self.asscontext = None # disable asscontext on subscripts to skip d[x] = y (item assigment)
+        
     def walk(self, node):
         self._walk(node)
         delayed = self._delayed
