@@ -13,9 +13,9 @@
 """this module contains a set of functions to handle inference on astng trees
 
 :author:    Sylvain Thenault
-:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2008 Sylvain Thenault
+:copyright: 2003-2009 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 
@@ -235,10 +235,11 @@ def infer_callfunc(self, context=None):
             one_infered = True
             continue
         try:
-            for infered in callee.infer_call_result(self, context):
-                yield infered
-                one_infered = True
-        except (AttributeError, InferenceError):
+            if hasattr(callee, 'infer_call_result'):
+                for infered in callee.infer_call_result(self, context):
+                    yield infered
+                    one_infered = True
+        except InferenceError:
             ## XXX log error ?
             continue
     if not one_infered:
@@ -341,18 +342,18 @@ nodes.Subscript.infer = path_wrapper(infer_subscript)
 #     return self.expr.infer(context)
 # nodes.UnaryAdd.infer = infer_unaryadd
 
-# def _py_value(node):
-#     try:
-#         return node.value
-#     except AttributeError:
-#         # not a constant
-#         if isinstance(node, nodes.Dict):
-#             return {}
-#         if isinstance(node, nodes.List):
-#             return []
-#         if isinstance(node, nodes.Tuple):
-#             return ()
-#     raise ValueError()
+def _py_value(node):
+    try:
+        return node.value
+    except AttributeError:
+        # not a constant
+        if isinstance(node, nodes.Dict):
+            return {}
+        if isinstance(node, nodes.List):
+            return []
+        if isinstance(node, nodes.Tuple):
+            return ()
+    raise ValueError()
 
 def _infer_unary_operator(self, context=None, impl=None, meth=None):
     for operand in self.operand.infer(context):
@@ -378,7 +379,7 @@ def _infer_unary_operator(self, context=None, impl=None, meth=None):
         except: # TypeError:
             yield YES
             continue
-        yield const_factory(value)
+        yield nodes.const_factory(value)
 
 UNARY_OP_IMPL = {'+':  (lambda a: +a, '__pos__'),
                  '-':  (lambda a: -a, '__neg__'),
@@ -420,7 +421,8 @@ def _infer_binary_operator(self, context=None, impl=None, meth='__method__'):
             except TypeError:
                 yield YES
                 continue
-            yield const_factory(value)
+            print repr(value)
+            yield nodes.const_factory(value)
 
 BIN_OP_IMPL = {'+':  (lambda a,b: a+b, '__add__'),
                '-':  (lambda a,b: a-b, '__sub__'),
@@ -466,7 +468,7 @@ nodes.Function.infer_call_result = infer_call_result_function
 
 def infer_call_result_lambda(self, caller, context=None):
     """infer what's a function is returning when called"""
-    return self.code.infer(context)
+    return self.body.infer(context)
 nodes.Lambda.infer_call_result = infer_call_result_lambda
 
 def infer_call_result_class(self, caller, context=None):
@@ -545,7 +547,36 @@ nodes.AssAttr.ass_type = parent_ass_type
 nodes.DelName.ass_type = parent_ass_type
 nodes.DelAttr.ass_type = parent_ass_type
 
+nodes.Class.ass_type = end_ass_type
+nodes.Function.ass_type = end_ass_type
+nodes.Import.ass_type = end_ass_type
+nodes.ExceptHandler.ass_type = end_ass_type
+nodes.From.ass_type = end_ass_type
 nodes.Comprehension.ass_type = end_ass_type
+
+
+nodes.Const.__bases__ += (Instance,)
+
+def _set_proxied(const):
+    if const.value is None:
+        raise Exception('bad const')
+    if not hasattr(const, '__proxied'):
+        const.__proxied = MANAGER.astng_from_class(const.value.__class__)
+    return const.__proxied
+        
+nodes.Const._proxied = property(_set_proxied)
+
+def Const_getattr(self, name, context=None, lookupclass=None):
+    return self._proxied.getattr(name, context)
+nodes.Const.getattr = Const_getattr
+nodes.Const.has_dynamic_getattr = lambda x: False
+
+def Const_pytype(self):
+    return self._proxied.qname()
+nodes.Const.pytype = Const_pytype
+
+nodes.Const.infer = infer_end
+
 
 # Assignment related nodes ####################################################
 """the assigned_stmts method is responsible to return the assigned statement
@@ -631,40 +662,38 @@ def _resolve_asspart(parts, asspath, context):
     asspath = asspath[:]
     index = asspath.pop(0)
     for part in parts:
-        try:
-            assigned = part.getitem(index)
-        except (AttributeError, IndexError):
-            return
-        if not asspath:
-            # we acheived to resolved the assigment path,
-            # don't infer the last part
-            found = True
-            yield assigned
-        elif assigned is YES:
-            return
-        else:
-            # we are not yet on the last part of the path
-            # search on each possibly infered value
+        if hasattr(part, 'getitem'):
             try:
-                for infered in _resolve_asspart(assigned.infer(context), 
-                                                asspath, context):
-                    yield infered
-            except InferenceError:
+                assigned = part.getitem(index)
+            except IndexError:# XXX getitem could raise a specific exception to avoid potential hiding of unexpected exception
                 return
-    
-def tryexcept_assigned_stmts(self, node, context=None, asspath=None):
-    found = False
-    for exc_type, exc_obj, body in self.handlers:
-        if node is exc_obj:
-            for assigned in unpack_infer(exc_type):
-                if isinstance(assigned, nodes.Class):
-                    assigned = Instance(assigned)
-                yield assigned
+            if not asspath:
+                # we acheived to resolved the assigment path,
+                # don't infer the last part
                 found = True
-            break
+                yield assigned
+            elif assigned is YES:
+                return
+            else:
+                # we are not yet on the last part of the path
+                # search on each possibly infered value
+                try:
+                    for infered in _resolve_asspart(assigned.infer(context), 
+                                                    asspath, context):
+                        yield infered
+                except InferenceError:
+                    return
+    
+def excepthandler_assigned_stmts(self, node, context=None, asspath=None):
+    found = False
+    for assigned in unpack_infer(self.type):
+        if isinstance(assigned, nodes.Class):
+            assigned = Instance(assigned)
+        yield assigned
+        found = True
     if not found:
         raise InferenceError()
-nodes.TryExcept.assigned_stmts = tryexcept_assigned_stmts
+nodes.ExceptHandler.assigned_stmts = excepthandler_assigned_stmts
 
 
 
@@ -719,10 +748,5 @@ def dict_iter_stmts(self):
     return self.items[::2]
 nodes.Dict.iter_stmts = dict_iter_stmts
 
-
-if nodes.AST_MODE == 'compiler':
-    from logilab.astng._inference_compiler import *
-else: #nodes.AST_MODE == '_ast'
-    from logilab.astng._inference_ast import *
 
 nodes.NoneType._proxied = MANAGER.astng_from_module_name('types').getattr('NoneType')
