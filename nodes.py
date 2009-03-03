@@ -303,7 +303,20 @@ for klass in (Assign, Break, Class, Continue, Delete, Discard, ExceptHandler,
               TryExcept, TryFinally, While, With, Yield):
     klass.is_statement = True
 
+CONST_CLS = {
+    list: List,
+    tuple: Tuple,
+    dict: Dict,
+    }
+    
 def const_factory(value):
+    """return an astng node for a python value"""
+    try:
+        # if value is of class list, tuple, dict use specific class, not Const
+        cls = CONST_CLS[value.__class__]
+        return cls()
+    except KeyError:
+        pass
     try:
         cls, value = CONST_VALUE_TRANSFORMS[value]
         node = cls(value)
