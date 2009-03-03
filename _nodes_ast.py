@@ -326,22 +326,25 @@ def _const_factory(value):
 def function_factory(name, args, defaults, flag=0, doc=None):
     """create and initialize a astng Function node"""
     node = Function()
+    node.decorators = []
     node.body = []
     node.name = name
-    argsnode = arguments()
-    argsnode.args = []
+    # XXX ensure we get a compatible representation
+    #argsnode = arguments()
+    node.args = args = []
     for arg in args:
-        argsnode.args.append(Name())
-        argsnode.args[-1].name = arg
-        argsnode.args[-1].parent = argsnode
-    argsnode.defaults = []
+        args.append(Name())
+        args.args[-1].name = arg
+        args.args[-1].parent = argsnode
+    #argsnode.defaults = []
+    node.defaults = defaults = []
     for default in defaults:
-        argsnode.defaults.append(const_factory(default))
-        argsnode.defaults[-1].parent = argsnode
-    argsnode.kwarg = None # XXX
-    argsnode.vararg = None # XXX
-    argsnode.parent = node
-    node.args = argsnode
+        defaults.append(const_factory(default))
+        defaults[-1].parent = argsnode
+    #argsnode.kwarg = None # XXX
+    #argsnode.vararg = None # XXX
+    #argsnode.parent = node
+    #node.args = argsnode
     _add_docstring(node, doc)
     return node
 
