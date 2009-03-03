@@ -294,7 +294,7 @@ def global_no_effect():
 '''        
         astng = self.builder.string_build(data, __name__, __file__)
         self.failUnlessEqual(len(astng.getattr('CSTE')), 2)
-        self.failUnless(isinstance(astng.getattr('CSTE')[0], nodes.Assign))
+        self.failUnless(isinstance(astng.getattr('CSTE')[0], nodes.AssName))
         self.failUnlessEqual(astng.getattr('CSTE')[0].source_line(), 2)
         self.failUnlessEqual(astng.getattr('CSTE')[1].source_line(), 6)
         self.assertRaises(nodes.NotFoundError,
