@@ -179,6 +179,9 @@ def _remove_none(sub): # XXX
 class TreeRebuilder(ASTVisitor):
     """Rebuilds the compiler tree to become an ASTNG tree"""
 
+    def __init__(self, rebuild_visitor):
+        self.visitor = rebuild_visitor
+
     # scoped nodes #######################################################
     
     def visit_function(self, node):

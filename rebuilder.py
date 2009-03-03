@@ -19,7 +19,7 @@ class RebuildVisitor(ASTVisitor):
         #self._stack = None
         self._metaclass = None
         self._delayed = []
-        self.rebuilder = TreeRebuilder()
+        self.rebuilder = TreeRebuilder(self)
 
     def _add_local(self, node, name):
         if self._global_names and name in self._global_names[-1]:

@@ -194,6 +194,9 @@ class TreeRebuilder(ASTVisitor):
 
     # #  visit_<node> methods  # # ##########################################
 
+    def __init__(self, rebuild_visitor):
+        self.visitor = rebuild_visitor
+
     def visit_assert(self, node):
         node.fail = node.msg
         del node.msg
