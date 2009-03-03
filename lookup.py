@@ -60,10 +60,6 @@ def scope_lookup(self, node, name, offset=0):
         stmts = node._filter_stmts(self.locals[name], self, offset)
     except KeyError:
         stmts = ()
-    except:
-        print "scope_lookup Error"
-        print "%s(%s)" % (repr(self.__class__), repr(self.name))
-        raise
     if stmts:
         return self, stmts
     if self.parent:
@@ -174,6 +170,7 @@ def _filter_stmts(self, stmts, frame, offset):
             _stmts = [node]
             _stmt_parents = [stmt.parent]
             continue
+        # XXX comment various branches below!!!
         try:
             pindex = _stmt_parents.index(stmt.parent)
         except ValueError:
