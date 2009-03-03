@@ -42,6 +42,11 @@ class RebuildVisitor(ASTVisitor):
                 self.asscontext = node
             else:
                 self.asscontext = None
+        elif isinstance(node, nodes.ExceptHandler):
+            if childnode is node.name:
+                self.asscontext = node
+            else:
+                self.asscontext = None
         elif isinstance(node, nodes.Subscript):
             self.asscontext = None # XXX disable asscontext on subscripts ?
 
