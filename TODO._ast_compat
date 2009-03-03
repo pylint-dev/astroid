@@ -3,26 +3,23 @@ List of things to do for _ast_compability :
 
 ASTNG Motor
 ===========
-* Num + Str vs Const : check how to unify both nodes
-* index : the method 'index' for the compiler.ast Nodes is used
-  on several places in astng but not available in _ast
-
-Inference
----------
-* Assign / Ass<something> : as all Ass<something> has been removed, 
-all there infer method will have to be handled on the Assign node
-
 
 Representation
 --------------
 * have a common representation for both _ast and compiler
-* this should be exactly the same to make the IfNodeTC work
+
+* introduce Delete node for _nodes_compiler
+
+* handle as_string for Ass/Del
+
+* introduce arguments nodes (present in _ast) to trash some lambda weirdness
+
+* ensure compatible representation for _nodes_ast function_factory
 
 Tests:
 ======
-_newstyle
----------
-unittest_builder : test_newstyle_detection
+
+make the IfNodeTC work : don't use string representation
 
 are_exclusive
 -------------

@@ -227,7 +227,6 @@ class RebuildVisitor(ASTVisitor):
         """visit a AssAttr node -> add name to locals, handle members
         definition
         """
-        return # XXX
         try:
             frame = node.frame()
             for infered in node.expr.infer():
