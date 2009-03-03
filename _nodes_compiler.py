@@ -135,12 +135,6 @@ class DelName(Node):
 
 Const.eq = lambda self, value: self.value == value
 
-def decorators_scope(self):
-    # skip the function node to go directly to the upper level scope
-    return self.parent.parent.scope()
-Decorators.scope = decorators_scope
-
-
 # introduced in python 2.5
 From.level = 0 # will be overiden by instance attribute with py>=2.5
 
