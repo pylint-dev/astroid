@@ -463,8 +463,11 @@ YES = Yes()
 
 class Proxy(Proxy_):
     """a simple proxy object"""
+    _proxied = None
+    
     def __init__(self, proxied=None):
-        self._proxied = proxied
+        if proxied is not None:
+            self._proxied = proxied
 
     def __getattr__(self, name):
         if name == '_proxied':
