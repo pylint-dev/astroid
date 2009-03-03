@@ -547,11 +547,15 @@ nodes.AssAttr.ass_type = parent_ass_type
 nodes.DelName.ass_type = parent_ass_type
 nodes.DelAttr.ass_type = parent_ass_type
 
+# XXX if you add ass_type to a class, you should probably modify lookup.filter_stmts around line ::
+# if ass_type is mystmt and not isinstance(ass_type, (nodes.Class, nodes.Function, nodes.Import, nodes.From, nodes.Lambda)):
 nodes.Class.ass_type = end_ass_type
 nodes.Function.ass_type = end_ass_type
+nodes.Lambda.ass_type = end_ass_type
 nodes.Import.ass_type = end_ass_type
-nodes.ExceptHandler.ass_type = end_ass_type
 nodes.From.ass_type = end_ass_type
+
+nodes.ExceptHandler.ass_type = end_ass_type
 nodes.Comprehension.ass_type = end_ass_type
 
 

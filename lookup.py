@@ -137,7 +137,13 @@ def _filter_stmts(self, stmts, frame, offset):
     mystmt = self.statement()
     # line filtering if we are in the same frame
     if myframe is frame:
-        mylineno = mystmt.source_line() + offset
+        try:
+            mylineno = mystmt.source_line() + offset
+        except TypeError, ex:
+            # node has no lineno information (this is the case for nodes
+            # inserted for living objects for instance)
+            # disabling lineno filtering
+            mylineno = 0
     else:
         # disabling lineno filtering
         mylineno = 0
@@ -150,19 +156,14 @@ def _filter_stmts(self, stmts, frame, offset):
             break
         if isinstance(node, nodes.Class) and self in node.bases:
             break
-        try:
-            ass_type = node.ass_type()
-            if ass_type is mystmt:
-                if not isinstance(ass_type, nodes.Comprehension):
-                    break
-                if isinstance(self, (nodes.Const, nodes.Name)):
-                    _stmts = [self]
-                    break
-        except AttributeError:
-            ass_type = None
-        # on loop assignment types, assignment won't necessarily be done
-        # if the loop has no iteration, so we don't want to clear previous
-        # assigments if any
+        ass_type = node.ass_type()
+        if ass_type is mystmt and not isinstance(ass_type, (nodes.Class,
+                 nodes.Function, nodes.Import, nodes.From, nodes.Lambda)):
+            if not isinstance(ass_type, nodes.Comprehension):
+                break
+            if isinstance(self, (nodes.Const, nodes.Name)):
+                _stmts = [self]
+                break
         optional_assign = isinstance(ass_type, nodes.LOOP_SCOPES)
         if optional_assign and ass_type.parent_of(self):
             # we are inside a loop, loop var assigment is hidding previous
@@ -176,22 +177,46 @@ def _filter_stmts(self, stmts, frame, offset):
         except ValueError:
             pass
         else:
-            try:
-                if ass_type and _stmts[pindex].ass_type().parent_of(ass_type):
-                    continue
-            except AttributeError:
-                pass # name from Import, Function, Class...
-            if not (optional_assign or are_exclusive(self, node)):
+            # we got a parent index, this means the currently visited node
+            # is at the same block level as a previously visited node
+            if _stmts[pindex].ass_type().parent_of(ass_type):
+                # both statements are not at the same block level
+                continue
+            # if currently visited node is following previously considered 
+            # assignement and both are not exclusive, we can drop the previous
+            # one. For instance in the following code ::
+            # 
+            #   if a:
+            #     x = 1
+            #   else:
+            #     x = 2
+            #   print x
+            #
+            # we can't remove neither x = 1 nor x = 2 when looking for 'x' of 
+            # 'print x'; while in the following ::
+            #
+            #   x = 1
+            #   x = 2
+            #   print x
+            #
+            # we can remove x = 1 when we see x = 2
+            #
+            # moreover, on loop assignment types, assignment won't necessarily
+            # be done if the loop has no iteration, so we don't want to clear
+            # previous assigments if any (hence the test on optional_assign)
+
+            if not (optional_assign or are_exclusive(_stmts[pindex], node)):
                 del _stmt_parents[pindex]
                 del _stmts[pindex]
-        if isinstance(stmt, nodes.Assign):#isinstance(node, AssName):
+            else:
+        if isinstance(node, nodes.AssName):
             if not optional_assign and stmt.parent is mystmt.parent:
                 _stmts = []
                 _stmt_parents = []
-            if node.flags == 'OP_DELETE':
-                _stmts = []
-                _stmt_parents = []
-                continue
+        elif isinstance(node, nodes.DelName):
+            _stmts = []
+            _stmt_parents = []
+            continue
         if not are_exclusive(self, node):
             _stmts.append(node)
             _stmt_parents.append(stmt.parent)
