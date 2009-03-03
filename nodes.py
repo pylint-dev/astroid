@@ -56,7 +56,7 @@ from logilab.astng._exceptions import UnresolvableName, NotFoundError, \
 from logilab.astng.utils import extend_class, REDIRECT
 
 INFER_NEED_NAME_STMTS = (From, Import, Global, TryExcept)
-LOOP_SCOPES = COMPREHENSIONS_SCOPES + (For,)
+LOOP_SCOPES = (Comprehension, For,)
 
 import re
 ID_RGX = re.compile('^[a-zA-Z_][a-zA-Z_0-9]*$')
@@ -78,6 +78,7 @@ Break._astng_fields = ()
 CallFunc._astng_fields = ('func', 'args', 'starargs', 'kwargs')
 Class._astng_fields = ('bases', 'body',) # name
 Compare._astng_fields = ('left', 'ops',)
+Comprehension._astng_fields = ('target', 'iter' ,'ifs')
 Const._astng_fields = ()
 Continue._astng_fields = ()
 Decorators._astng_fields = ('items',)
@@ -101,7 +102,6 @@ Keyword._astng_fields = ('value',)
 Lambda._astng_fields = ('body',)
 List._astng_fields = ('elts',)  # ctx
 ListComp._astng_fields = ('elt', 'generators')
-ListCompFor._astng_fields = ('target', 'iter' ,'ifs')
 Module._astng_fields = ('body',)
 Name._astng_fields = () # id, ctx
 Pass._astng_fields = ()
@@ -647,14 +647,6 @@ def _infer_stmts(stmts, context, frame=None):
             infered = True
     if not infered:
         raise InferenceError(str(stmt))
-
-def infer_end(self, context=None):
-    """inference's end for node such as Module, Class, Function, Const...
-    """
-    yield self
-
-def end_ass_type(self):
-    return self
 
 def repr_tree(node, indent='', _done=None):
     if _done is None:

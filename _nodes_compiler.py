@@ -33,7 +33,7 @@ from compiler.ast import AssAttr, AssList, AssName, \
      Ellipsis, EmptyNode, Exec, \
      For, From, Function, Getattr, Global, \
      If, Import, Keyword, Lambda, \
-     List, ListComp, ListCompFor, ListCompIf, Module, Name, Node, \
+     List, ListComp, ListCompFor as Comprehension, ListCompIf, Module, Name, Node, \
      Pass, Print, Raise, Return, Slice, \
      Sliceobj, Stmt, Subscript, TryExcept, TryFinally, Tuple, \
      While, Yield
@@ -55,15 +55,13 @@ del ast
 
 try:
     # introduced in python 2.4
-    from compiler.ast import GenExpr, GenExprFor, GenExprIf, GenExprInner
+    from compiler.ast import GenExpr, GenExprIf, GenExprInner
 except:
     class GenExpr:
         """dummy GenExpr node, shouldn't be used with py < 2.4"""
-    class GenExprFor: 
-        """dummy GenExprFor node, shouldn't be used with py < 2.4"""
     class GenExprIf: 
         """dummy GenExprIf node, shouldn't be used with py < 2.4"""
-    class GenExprInner: 
+    class GenExprInner:
         """dummy GenExprInner node, shouldn't be used with py < 2.4"""
 try:
     # introduced in python 2.4
@@ -133,8 +131,6 @@ class DelName(Node):
 
 ###############################################################################
         
-
-COMPREHENSIONS_SCOPES = (GenExprFor, ListCompFor)
 
 
 Const.eq = lambda self, value: self.value == value
@@ -284,9 +280,6 @@ class TreeRebuilder(ASTVisitor):
         # remove GenExprInner node
         node.elt = node.code.expr
         node.generators = node.code.quals
-        for gen in node.generators:
-            gen.__class__ = ListCompFor # XXX _ast.comprehension
-            gen.list = gen.iter # XXX
         del node.code
     
     def visit_if(self, node):
@@ -307,12 +300,17 @@ class TreeRebuilder(ASTVisitor):
         node.generators = node.quals
         del node.expr, node.quals
     
-    def visit_listcompfor(self, node):
-        node.iter = node.list
+    def visit_comprehension(self, node):
+        if hasattr(node, "list"):
+            # ListCompFor
+            node.iter = node.list
+            del node.list
+        else: # GenExprFor
+            node.__class__ = Comprehension
         node.target = node.assign
         if node.ifs:
             node.ifs = [iff.test for iff in node.ifs ]
-        del node.assign, node.list
+        del node.assign
 
     def visit_print(self, node):
         node.values = node.nodes

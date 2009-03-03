@@ -151,7 +151,7 @@ def _filter_stmts(self, stmts, frame, offset):
         try:
             ass_type = node.ass_type()
             if ass_type is mystmt:
-                if not isinstance(ass_type, nodes.COMPREHENSIONS_SCOPES):
+                if not isinstance(ass_type, nodes.Comprehension):
                     break
                 if isinstance(self, (nodes.Const, nodes.Name)):
                     _stmts = [self]

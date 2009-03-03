@@ -52,7 +52,7 @@ from _ast import (AST as Node,
                   Expr as Discard, 
                   ImportFrom as From,
                   excepthandler as ExceptHandler,
-                  comprehension as ListCompFor,
+                  comprehension as Comprehension,
                   keyword as Keyword
                   )
 
@@ -66,8 +66,6 @@ from _ast import (AST as Node,
 #       Store, Suite
 #       UnaryOp
 from _ast import Num, Str, Eq, alias, arguments, comprehension
-
-COMPREHENSIONS_SCOPES = (comprehension,)
 
 from _ast import (Add as _Add, Div as _Div, FloorDiv as _FloorDiv,
                   Mod as _Mod, Mult as _Mult, Pow as _Pow, Sub as _Sub,

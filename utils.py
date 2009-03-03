@@ -162,7 +162,7 @@ class ASTVisitor(object):
     def visit_listcomp(self, node):
         """dummy method for visiting an ListComp node"""
 
-    def visit_listcompfor(self, node):
+    def visit_comprehension(self, node):
         """dummy method for visiting an ListCompFor node"""
 
     def visit_module(self, node):
@@ -219,7 +219,8 @@ REDIRECT = {
             'Attribute': 'Getattr',
             'Call': 'CallFunc',
             'ClassDef': 'Class',
-            'comprehension': "ListCompFor",
+            "ListCompFor": 'Comprehension',
+            "GenExprFor": 'Comprehension',
             'excepthandler': 'ExceptHandler',
             'Expr': 'Discard',
             'FunctionDef': 'Function',

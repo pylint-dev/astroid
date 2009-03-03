@@ -215,8 +215,8 @@ class AsStringVisitor(ASTVisitor):
         return '[%s %s]' % (node.elt.accept(self), ' '.join([n.accept(self)
                                                 for n in node.generators]))
     
-    def visit_listcompfor(self, node):
-        """return an astng.ListCompFor node as string"""
+    def visit_comprehension(self, node):
+        """return an astng.Comprehension node as string"""
         ifs = ''.join([ ' if %s' % n.accept(self) for n in node.ifs])
         return 'for %s in %s%s' % (node.target.accept(self),
                                     node.iter.accept(self), ifs )
@@ -316,15 +316,14 @@ class AsStringVisitor(ASTVisitor):
 
     # XXX compat methods
 
-    visit_attribute = visit_getattr
-    visit_call = visit_callfunc
-    visit_classdef = visit_class
-    visit_comprehension = visit_listcompfor
-    visit_expr = visit_discard
-    visit_functiondef = visit_function
-    visit_generatorexp = visit_genexpr
-    visit_importfrom = visit_from
-    visit_repr = visit_backquote
+    #visit_attribute = visit_getattr
+    #visit_call = visit_callfunc
+    #visit_classdef = visit_class
+    #visit_expr = visit_discard
+    #visit_functiondef = visit_function
+    #visit_generatorexp = visit_genexpr
+    #visit_importfrom = visit_from
+    #visit_repr = visit_backquote
 
     # special ASTNG NoneType and Bool nodes
     def visit_nonetype(self, node):

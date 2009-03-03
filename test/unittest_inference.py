@@ -96,14 +96,8 @@ a, b= b, a # Gasp !
         self.failUnlessRaises(StopIteration, infered.next)
 
     def test_builtin_name_inference(self):
-        C = self.astng['C']
-        print " __getitems__ :"
-        print "C", C
-        print "meth1", C['meth1']
-        print "var", C['meth1']['var']
-        infered = C['meth1']['var'].infer()
+        infered = self.astng['C']['meth1']['var'].infer()
         var = infered.next()
-        print "var", var 
         self.failUnlessEqual(var.name, 'object')
         self.failUnlessEqual(var.root().name, '__builtin__')
         self.failUnlessRaises(StopIteration, infered.next)
@@ -117,7 +111,7 @@ a, b= b, a # Gasp !
         self.failUnlessRaises(StopIteration, infered.next)
         infered = self.astng['b'].infer()
         const = infered.next()
-        self.failUnless(isinstance(const, nodes.Const))
+        self.assertIsInstance(const, nodes.Const)
         self.failUnlessEqual(const.value, 1)
         self.failUnlessRaises(StopIteration, infered.next)
         infered = self.astng['c'].infer()

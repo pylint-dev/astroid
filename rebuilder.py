@@ -18,6 +18,7 @@ class RebuildVisitor(ASTVisitor):
         #self._module = None
         #self._stack = None
         self._metaclass = None
+        self._global_names = None
         self._delayed = []
         self.rebuilder = TreeRebuilder(self)
 
@@ -41,7 +42,7 @@ class RebuildVisitor(ASTVisitor):
                 self.asscontext = node
             else:
                 self.asscontext = None
-        elif isinstance(node, (nodes.AugAssign, nodes.ListCompFor, nodes.For)):
+        elif isinstance(node, (nodes.AugAssign, nodes.Comprehension, nodes.For)):
             if childnode is node.target:
                 self.asscontext = node
             else:
@@ -228,7 +229,7 @@ class RebuildVisitor(ASTVisitor):
 
     def visit_assname(self, node):
         if self.asscontext is not None:
-            self._add_local(self.asscontext, node.name)
+            self._add_local(node, node.name)
     visit_delname = visit_assname
     
     # # delayed methods

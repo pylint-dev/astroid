@@ -32,8 +32,17 @@ from logilab.astng import nodes, MANAGER, \
 from logilab.astng import ASTNGError, InferenceError, UnresolvableName, \
      NoDefault, NotFoundError, ASTNGBuildingException
 from logilab.astng.nodes import _infer_stmts, YES, InferenceContext, Instance, \
-     Generator, infer_end, end_ass_type
+     Generator
      
+
+def infer_end(self, context=None):
+    """inference's end for node such as Module, Class, Function, Const...
+    """
+    yield self
+
+def end_ass_type(self):
+    return self
+    
     
 nodes.List._proxied = MANAGER.astng_from_class(list)
 nodes.List.__bases__ += (Instance,)
@@ -48,7 +57,6 @@ nodes.NoneType.pytype = lambda x: 'types.NoneType'
 nodes.Bool._proxied = MANAGER.astng_from_class(bool)
 
 builtin_astng = nodes.Dict._proxied.root()
-
 
 # .infer method ###############################################################
 
@@ -467,6 +475,77 @@ def infer_call_result_class(self, caller, context=None):
 
 nodes.Class.infer_call_result = infer_call_result_class
 
+def infer_empty_node(self, context=None):
+    if not self.has_underlying_object():
+        yield YES
+    else:
+        try:
+            for infered in MANAGER.infer_astng_from_something(self.object,
+                                                              context=context):
+                yield infered
+        except ASTNGError:
+            yield YES
+nodes.EmptyNode.infer = path_wrapper(infer_empty_node)
+
+
+
+def _resolve_looppart(parts, asspath, context):
+    """recursive function to resolve multiple assignments on loops"""
+    asspath = asspath[:]
+    index = asspath.pop(0)
+    for part in parts:
+        if part is YES:
+            continue
+        if not hasattr(part, 'iter_stmts'):
+            continue
+        for stmt in part.iter_stmts():
+            try:
+                assigned = stmt.getitem(index)
+            except (AttributeError, IndexError):
+                continue
+            if not asspath:
+                # we acheived to resolved the assigment path,
+                # don't infer the last part
+                found = True
+                yield assigned
+            elif assigned is YES:
+                break
+            else:
+                # we are not yet on the last part of the path
+                # search on each possibly infered value
+                try:
+                    for infered in _resolve_looppart(assigned.infer(context), asspath, context):
+                        yield infered
+                except InferenceError:
+                    break
+
+def for_assigned_stmts(self, node, context=None, asspath=None):
+    found = False
+    if asspath is None:
+        for lst in self.iter.infer(context):
+            if isinstance(lst, (nodes.Tuple, nodes.List)):
+                for item in lst.nodes:
+                    found = True
+                    yield item
+    else:
+        for infered in _resolve_looppart(self.iter.infer(context), asspath, context):
+            found = True
+            yield infered
+    if not found:
+        raise InferenceError()
+nodes.For.assigned_stmts = for_assigned_stmts
+nodes.Comprehension.assigned_stmts = for_assigned_stmts
+
+def parent_ass_type(self, context=None):
+    return self.parent.ass_type()
+nodes.Tuple.ass_type = parent_ass_type
+nodes.List.ass_type = parent_ass_type
+nodes.AssName.ass_type = parent_ass_type
+nodes.AssAttr.ass_type = parent_ass_type
+nodes.DelName.ass_type = parent_ass_type
+nodes.DelAttr.ass_type = parent_ass_type
+
+nodes.Comprehension.ass_type = end_ass_type
 
 # Assignment related nodes ####################################################
 """the assigned_stmts method is responsible to return the assigned statement
@@ -479,6 +558,60 @@ will be [1, 1] once arrived to the Assign node.
 The `context` argument is the current inference context which should be given
 to any intermediary inference necessary.
 """
+
+def infer_ass(self, context=None):
+    """infer a AssName/AssAttr: need to inspect the RHS part of the
+    assign node
+    """
+    stmts = self.assigned_stmts(context=context)
+    return nodes._infer_stmts(stmts, context)
+nodes.AssName.infer = path_wrapper(infer_ass)
+nodes.AssAttr.infer = path_wrapper(infer_ass)
+# no infer method on DelName and DelAttr (expected InferenceError)
+
+
+def mulass_assigned_stmts(self, node, context=None, asspath=None):
+    if asspath is None:
+        asspath = []
+    node_idx = self.elts.index(node)
+    asspath.insert(0, node_idx)
+    return self.parent.assigned_stmts(self, context, asspath)
+nodes.Tuple.assigned_stmts = mulass_assigned_stmts
+nodes.List.assigned_stmts = mulass_assigned_stmts
+
+
+def assend_assigned_stmts(self, context=None):
+    return self.parent.assigned_stmts(self, context=context)    
+nodes.AssName.assigned_stmts = assend_assigned_stmts
+nodes.AssAttr.assigned_stmts = assend_assigned_stmts
+
+
+def infer_getattr(self, context=None):
+    """infer a Getattr node by using getattr on the associated object
+    """
+    one_infered = False
+    # XXX
+    #context = context.clone()
+    for owner in self.expr.infer(context):
+        if owner is YES:
+            yield owner
+            one_infered = True
+            continue
+        try:
+            context.boundnode = owner
+            for obj in owner.igetattr(self.attrname, context):
+                yield obj
+                one_infered = True
+            context.boundnode = None
+        except (NotFoundError, InferenceError):
+            continue
+        except AttributeError:
+            # XXX method / function
+            continue
+    if not one_infered:
+        raise InferenceError()
+nodes.Getattr.infer = path_wrapper(infer_getattr)
+
 
 def assign_assigned_stmts(self, node, context=None, asspath=None):
     if not asspath:
@@ -554,6 +687,7 @@ nodes.With.ass_type = end_ass_type
 nodes.For.ass_type = end_ass_type
 nodes.TryExcept.ass_type = end_ass_type
 nodes.Assign.ass_type = end_ass_type
+nodes.Delete.ass_type = end_ass_type
 nodes.AugAssign.ass_type = end_ass_type
 
 # subscription protocol #######################################################
@@ -585,10 +719,6 @@ def dict_iter_stmts(self):
     return self.items[::2]
 nodes.Dict.iter_stmts = dict_iter_stmts
 
-
-def for_loop_node(self):
-    return self.list
-nodes.For.loop_node = for_loop_node
 
 if nodes.AST_MODE == 'compiler':
     from logilab.astng._inference_compiler import *
