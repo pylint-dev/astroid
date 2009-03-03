@@ -14,9 +14,9 @@ class RebuildVisitor(ASTVisitor):
     """Visitor to transform an AST to an ASTNG
     """
     def __init__(self):
-        self._asscontext = None
-        self._module = None
-        self._stack = None
+        self.asscontext = None
+        #self._module = None
+        #self._stack = None
         self._metaclass = None
         self._delayed = []
         self.rebuilder = TreeRebuilder()
@@ -30,24 +30,24 @@ class RebuildVisitor(ASTVisitor):
     def _push(self, node):
         """update the stack and init some parts of the Function or Class node
         """
-        obj = getattr(self._stack[-1], node.name, None)
-        self._stack.append(obj)
+        #obj = getattr(self._stack[-1], node.name, None)
+        #self._stack.append(obj)
         node.locals = {}
         node.parent.frame().set_local(node.name, node)
 
     def set_context(self, node, childnode):
-        if isinstance(node, nodes.Assign):
+        if isinstance(node, (nodes.Delete, nodes.Assign)):
             if childnode in node.targets:
-                self._asscontext = node
+                self.asscontext = node
             else:
-                self._asscontext = None
+                self.asscontext = None
         elif isinstance(node, (nodes.AugAssign, nodes.ListCompFor, nodes.For)):
             if childnode is node.target:
-                self._asscontext = node
+                self.asscontext = node
             else:
-                self._asscontext = None
+                self.asscontext = None
         elif isinstance(node, nodes.Subscript):
-            self._asscontext = None # XXX disable _asscontext on subscripts ?
+            self.asscontext = None # XXX disable asscontext on subscripts ?
 
     def walk(self, node):
         self._walk(node)
@@ -68,6 +68,7 @@ class RebuildVisitor(ASTVisitor):
         if handle_leave:
             leave = getattr(self, "leave_" + node.__class__.__name__.lower() )
             leave(node)
+        
 
     # general visit_<node> methods ############################################
     
@@ -108,7 +109,7 @@ class RebuildVisitor(ASTVisitor):
 
     def leave_class(self, node):
         """leave a Class node -> pop the last item on the stack"""
-        self._stack.pop()
+        #self._stack.pop()
         metaclass = self._metaclass.pop()
         if not node.bases:
             # no base classes, detect new / style old style according to
@@ -159,7 +160,7 @@ class RebuildVisitor(ASTVisitor):
 
     def leave_function(self, node):
         """leave a Function node -> pop the last item on the stack"""
-        self._stack.pop()
+        #self._stack.pop()
         self._global_names.pop()
     leave_functiondef = leave_function
 
@@ -167,10 +168,11 @@ class RebuildVisitor(ASTVisitor):
         """visit an ListComp node to become astng"""
         node.locals = {}
 
-    def visit_getattr(self, node):
+    def visit_assattr(self, node):
         """visit an Getattr node to become astng"""
         self._delayed.append(node) # FIXME
-
+    visit_delattr = visit_assattr
+    
     def visit_global(self, node):
         """visit an Global node to become astng"""
         if not self._global_names: # global at the module level, no effect
@@ -191,7 +193,7 @@ class RebuildVisitor(ASTVisitor):
 
     def visit_module(self, node):
         """visit an Module node to become astng"""
-        self._stack = [self._module]
+        #self._stack = [self._module]
         self._metaclass = ['']
         self._global_names = []
         node.globals = node.locals = {}
@@ -212,8 +214,8 @@ class RebuildVisitor(ASTVisitor):
         """leave a Module node -> pop the last item on the stack and check
         the stack is empty
         """
-        self._stack.pop()
-        assert not self._stack, 'Stack is not empty : %s' % self._stack
+        #self._stack.pop()
+        #assert not self._stack, 'Stack is not empty : %s' % self._stack
 
     def visit_name(self, node):
         """visit an Name node to become astng"""
@@ -223,14 +225,16 @@ class RebuildVisitor(ASTVisitor):
             node.value = value
         except KeyError:
             pass
-        if self._asscontext is not None:
-            self._add_local(self._asscontext, node.name)
 
+    def visit_assname(self, node):
+        if self.asscontext is not None:
+            self._add_local(self.asscontext, node.name)
+    visit_delname = visit_assname
+    
     # # delayed methods
 
-
-    def delayed_visit_getattr(self, node):
-        """visit a AssAttr/ GetAttr node -> add name to locals, handle members
+    def delayed_visit_assattr(self, node):
+        """visit a AssAttr node -> add name to locals, handle members
         definition
         """
         return # XXX
