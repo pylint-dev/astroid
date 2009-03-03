@@ -20,9 +20,9 @@ Be careful, lookup is nternal and returns a tuple (scope, [stmts]), while
 ilookup returns an iterator on infered values.
 
 :author:    Sylvain Thenault
-:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2008 Sylvain Thenault
+:copyright: 2003-2009 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 
@@ -34,6 +34,12 @@ import __builtin__
 
 from logilab.astng import nodes, MANAGER, copy_context
 from logilab.astng.utils import are_exclusive
+
+
+def decorators_scope(self):
+    # skip the function node to go directly to the upper level scope
+    return self.parent.parent.scope()
+nodes.Decorators.scope = decorators_scope
 
 
 def lookup(self, name):
