@@ -15,8 +15,6 @@ class RebuildVisitor(ASTVisitor):
     """
     def __init__(self):
         self.asscontext = None
-        #self._module = None
-        #self._stack = None
         self._metaclass = None
         self._global_names = None
         self._delayed = []
@@ -31,8 +29,6 @@ class RebuildVisitor(ASTVisitor):
     def _push(self, node):
         """update the stack and init some parts of the Function or Class node
         """
-        #obj = getattr(self._stack[-1], node.name, None)
-        #self._stack.append(obj)
         node.locals = {}
         node.parent.frame().set_local(node.name, node)
 
@@ -110,7 +106,6 @@ class RebuildVisitor(ASTVisitor):
 
     def leave_class(self, node):
         """leave a Class node -> pop the last item on the stack"""
-        #self._stack.pop()
         metaclass = self._metaclass.pop()
         if not node.bases:
             # no base classes, detect new / style old style according to
@@ -161,7 +156,6 @@ class RebuildVisitor(ASTVisitor):
 
     def leave_function(self, node):
         """leave a Function node -> pop the last item on the stack"""
-        #self._stack.pop()
         self._global_names.pop()
     leave_functiondef = leave_function
 
@@ -194,7 +188,6 @@ class RebuildVisitor(ASTVisitor):
 
     def visit_module(self, node):
         """visit an Module node to become astng"""
-        #self._stack = [self._module]
         self._metaclass = ['']
         self._global_names = []
         node.globals = node.locals = {}
@@ -209,14 +202,6 @@ class RebuildVisitor(ASTVisitor):
             const = nodes.const_factory(value)
             const.parent = node
             node.locals['__path__'] = [const]
-        return True
-
-    def leave_module(self, _):
-        """leave a Module node -> pop the last item on the stack and check
-        the stack is empty
-        """
-        #self._stack.pop()
-        #assert not self._stack, 'Stack is not empty : %s' % self._stack
 
     def visit_name(self, node):
         """visit an Name node to become astng"""

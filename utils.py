@@ -90,6 +90,9 @@ class ASTVisitor(object):
     def visit_compare(self, node):
         """dummy method for visiting an Compare node"""
 
+    def visit_comprehension(self, node):
+        """dummy method for visiting an Comprehension node"""
+
     def visit_const(self, node):
         """dummy method for visiting an Const node"""
 
@@ -161,9 +164,6 @@ class ASTVisitor(object):
 
     def visit_listcomp(self, node):
         """dummy method for visiting an ListComp node"""
-
-    def visit_comprehension(self, node):
-        """dummy method for visiting an ListCompFor node"""
 
     def visit_module(self, node):
         """dummy method for visiting an Module node"""

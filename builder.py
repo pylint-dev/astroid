@@ -153,7 +153,6 @@ class ASTNGBuilder:
             self._manager._cache[node.file] = node
             if self._file:
                 self._manager._cache[abspath(self._file)] = node
-        #self.rebuilder._module = self._module
         self.rebuilder.walk(node)
         return node
 
