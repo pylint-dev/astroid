@@ -49,14 +49,22 @@ class RebuildVisitor(ASTVisitor):
         elif isinstance(node, nodes.Subscript):
             self._asscontext = None # XXX disable _asscontext on subscripts ?
 
-    def walk(self, node, parent=None):
+    def walk(self, node):
+        self._walk(node)
+        delayed = self._delayed
+        while delayed:
+            dnode = delayed.pop(0)
+            node_name = dnode.__class__.__name__.lower()
+            self.delayed_visit_assattr(dnode)
+
+    def _walk(self, node, parent=None):
         """default visit method, handle the parent attribute"""
         node.parent = parent
         node.accept(self.rebuilder)
         handle_leave = node.accept(self)
         for child in node.get_children():
             self.set_context(node, child)
-            self.walk(child, node)
+            self._walk(child, node)
         if handle_leave:
             leave = getattr(self, "leave_" + node.__class__.__name__.lower() )
             leave(node)
