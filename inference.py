@@ -526,7 +526,7 @@ def for_assigned_stmts(self, node, context=None, asspath=None):
     if asspath is None:
         for lst in self.iter.infer(context):
             if isinstance(lst, (nodes.Tuple, nodes.List)):
-                for item in lst.nodes:
+                for item in lst.elts:
                     found = True
                     yield item
     else:

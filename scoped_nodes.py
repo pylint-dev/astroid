@@ -327,7 +327,7 @@ class FunctionNG(object):
         NotImplementError, or, if pass_is_abstract, a pass statement
         """
         for child_node in self.body:
-            if isinstance(child_node, Raise) and child_node.expr1:
+            if isinstance(child_node, Raise) and child_node.type:
                 try:
                     name = child_node.type.nodes_of_class(Name).next()
                     if name.name == 'NotImplementedError':

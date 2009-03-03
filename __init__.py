@@ -61,7 +61,7 @@ def unpack_infer(stmt, context=None):
     """
     if isinstance(stmt, (List, Tuple)):
         # XXX loosing context
-        return chain(*imap(unpack_infer, stmt.nodes))
+        return chain(*imap(unpack_infer, stmt.elts))
     infered = stmt.infer(context).next()
     if infered is stmt:
         return iter( (stmt,) )
