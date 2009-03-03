@@ -293,13 +293,16 @@ class NodeNG:
 
     def eq(self, value):
         return False
-
+    
+    def as_string(self):
+        from logilab.astng.nodes_as_string import as_string
+        return as_string(self)
+        
 extend_class(Node, NodeNG)
 
 
-for klass in (Assign, Break, Class, Continue, Delete, Discard, ExceptHandler, 
-              For, From, 
-              Function, Global, If, Import, Return, 
+for klass in (Assign, Break, Class, Continue, Delete, Discard, ExceptHandler,
+              For, From, Function, Global, If, Import, Print, Return,
               TryExcept, TryFinally, While, With, Yield):
     klass.is_statement = True
 
