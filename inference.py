@@ -718,7 +718,7 @@ nodes.With.assigned_stmts = with_assigned_stmts
     
 nodes.With.ass_type = end_ass_type
 nodes.For.ass_type = end_ass_type
-nodes.TryExcept.ass_type = end_ass_type
+nodes.ExceptHandler.ass_type = end_ass_type
 nodes.Assign.ass_type = end_ass_type
 nodes.Delete.ass_type = end_ass_type
 nodes.AugAssign.ass_type = end_ass_type

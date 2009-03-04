@@ -119,7 +119,6 @@ class UnaryOp(Node):
 
 from logilab.astng.utils import ASTVisitor
 
-
 class Delete(Node):
     """represent del statements"""
 
@@ -180,14 +179,10 @@ class TreeRebuilder(ASTVisitor):
     def visit_function(self, node):
         # remove Stmt node
         node.body = node.code.nodes
-        node.argnames = node.argnames
-        node.defaults = node.defaults
         del node.code
     
     def visit_lambda(self, node):
         node.body = node.code
-        node.argnames = node.argnames
-        node.defaults = node.defaults
         del node.code
     
     def visit_class(self, node):
@@ -228,9 +223,6 @@ class TreeRebuilder(ASTVisitor):
         if node.flags == 'OP_DELETE':
             node.__class__ = DelName
         del node.flags
-    
-    def visit_delete(self, node):
-        raise "Should be no Delete nodes ; %s " % node
 
     def visit_augassign(self, node):
         node.value = node.expr
@@ -274,9 +266,6 @@ class TreeRebuilder(ASTVisitor):
         node.items = node.nodes
         del node.nodes
 
-    def visit_dict(self, node):
-        node.items = node.items
-    
     def visit_discard(self, node):
         node.value = node.expr
         del node.expr

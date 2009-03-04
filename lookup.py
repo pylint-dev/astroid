@@ -208,7 +208,6 @@ def _filter_stmts(self, stmts, frame, offset):
             if not (optional_assign or are_exclusive(_stmts[pindex], node)):
                 del _stmt_parents[pindex]
                 del _stmts[pindex]
-            else:
         if isinstance(node, nodes.AssName):
             if not optional_assign and stmt.parent is mystmt.parent:
                 _stmts = []

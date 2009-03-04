@@ -280,7 +280,7 @@ class ModuleNG(object):
         # else lookup the astng
         #
         # We separate the different steps of lookup in try/excepts
-        # to avoid catching to many Exceptions
+        # to avoid catching too many Exceptions
         # However, we can not analyse dynamically constructed __all__
         try:
             all = self['__all__']

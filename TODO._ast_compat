@@ -10,7 +10,7 @@ Representation
 
 * introduce Delete node for _nodes_compiler
 
-* handle as_string for Ass/Del
+* handle as_string for Ass/Del; fix decorators_as_string
 
 * introduce arguments nodes (present in _ast) to trash some lambda weirdness
 
