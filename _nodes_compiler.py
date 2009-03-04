@@ -79,7 +79,7 @@ except:
 try:
     # introduced in python 2.4
     from compiler.ast import Decorators
-except:
+except ImportError:
     class Decorators:
         """dummy Decorators node, shouldn't be used with py < 2.4"""
         def __init__(self, nodes=None):
@@ -165,33 +165,33 @@ def _init_else_node(node):
     del node.else_
 
 
-def _remove_none(sub): # XXX
-    if isinstance(sub, Const) and sub.value == None:
-        return None
-    return sub
-
-def check_delete_node(node):
-    """insert a Delete node if necessary -- else return True"""
-    assign_nodes = (Assign, With, For, ExceptHandler, Delete, AugAssign)
-    if isinstance(node.parent, assign_nodes) or not (node.parent.is_statement
-                                           or isinstance(node.parent, Module)):
-        return True
-    if isinstance(node, AssTuple): # replace node by Delete
-        node.__class__ = Delete
-        node.targets = node.nodes
-    else: # introduce new Delete node
-        delete = Delete()
-        node.parent.replace(node, delete)
-        delete.lineno = node.lineno
-        node.parent = delete
-        delete.targets = [node]
-
 class TreeRebuilder(ASTVisitor):
     """Rebuilds the compiler tree to become an ASTNG tree"""
 
     def __init__(self, rebuild_visitor):
         self.visitor = rebuild_visitor
 
+    
+    def check_delete_node(self, node):
+        """insert a Delete node if necessary -- else return True"""
+        assign_nodes = (Assign, With, For, ExceptHandler, Delete, AugAssign)
+        if isinstance(node.parent, assign_nodes) or not (node.parent.is_statement
+                                            or isinstance(node.parent, Module)):
+            return False
+        if isinstance(node, AssTuple): # replace node by Delete
+            node.__class__ = Delete
+            node.targets = node.nodes
+            del node.nodes
+            delete = node
+        else: # introduce new Delete node
+            delete = Delete()
+            node.parent.replace(node, delete)
+            delete.lineno = node.lineno
+            node.parent = delete
+            delete.targets = [node]
+        self.visitor.asscontext = delete
+        return True
+        
     # scoped nodes #######################################################
     
     def visit_function(self, node):
@@ -216,7 +216,7 @@ class TreeRebuilder(ASTVisitor):
     ##  init_<node> functions #####################################################
     
     def visit_assattr(self, node):
-        check_delete_node(node)
+        self.check_delete_node(node)
         if node.flags == 'OP_DELETE':
             node.__class__ = DelAttr
         del node.flags
@@ -227,17 +227,17 @@ class TreeRebuilder(ASTVisitor):
         del node.nodes, node.expr
 
     def visit_asslist(self, node):
-        check_delete_node(node)
+        self.check_delete_node(node)
         node.__class__ = List
         self.visit_list(node)
 
     def visit_asstuple(self, node):
-        if check_delete_node(node):
+        if not self.check_delete_node(node):
             node.__class__ = Tuple
             self.visit_tuple(node)
 
     def visit_assname(self, node):
-        check_delete_node(node)
+        self.check_delete_node(node)
         if node.flags == 'OP_DELETE':
             node.__class__ = DelName
         del node.flags
