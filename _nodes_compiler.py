@@ -280,10 +280,6 @@ class TreeRebuilder(ASTVisitor):
         node.left = node.expr
         del node.expr
 
-    def visit_decorators(self, node):
-        node.items = node.nodes
-        del node.nodes
-
     def visit_discard(self, node):
         node.value = node.expr
         del node.expr
@@ -368,7 +364,8 @@ class TreeRebuilder(ASTVisitor):
     
     def visit_subscript(self, node):
         if hasattr(node.subs[0], "nodes"): # Sliceobj
-            subs = [_remove_none(sub) for sub in node.subs[0].nodes]
+            subs = [sub for sub in node.subs[0].nodes
+                    if isinstance(sub, Const) and sub.value is None]
             node.subs = subs
             node.sliceflag = 'slice'
         else:
