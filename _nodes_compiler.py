@@ -53,6 +53,19 @@ for name, value in ast.__dict__.items():
         pass
 del ast
 
+def init_noargs(self, *args, **kwargs):
+    if not (args or kwargs):
+        self._orig_init([])
+    else:
+        self._orig_init(*args, **kwargs)
+# we have to be able to instantiate Tuple, Dict and List without any argument
+Tuple._orig_init = Tuple.__init__
+Tuple.__init__ = init_noargs
+List._orig_init = List.__init__
+List.__init__ = init_noargs
+Dict._orig_init = Dict.__init__
+Dict.__init__ = init_noargs
+
 try:
     # introduced in python 2.4
     from compiler.ast import GenExpr, GenExprIf, GenExprInner

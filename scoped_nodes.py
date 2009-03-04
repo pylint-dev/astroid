@@ -401,11 +401,11 @@ class FunctionNG(object):
         except ValueError:
             return None # XXX
         if i == last and kwargs:
-            valnode = Dict([])
+            valnode = Dict()
             valnode.parent = self
             return valnode
         if args and (i == last or (kwargs and i == last - 1)):
-            valnode = Tuple([])
+            valnode = Tuple()
             valnode.parent = self
             return valnode
         return None
