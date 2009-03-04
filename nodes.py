@@ -301,16 +301,29 @@ class NodeNG:
 extend_class(Node, NodeNG)
 
 
-def body_replace(self, child, newchild):
+def _get_child_sequence(self, child):
+    """search for the right sequence where the child lies in"""
+    for field in self._astng_fields:
+        sequence = getattr(self, field)
+        # /!\ compiler.ast Nodes have an __iter__ walking over child nodes
+        if isinstance(sequence, (tuple, list)) and child in sequence:
+            return sequence
+    else:
+        msg = 'Could not found %s in %s\'s children' % (child,  self)
+        raise ASTNGError(msg)
+
+def replace_child(self, child, newchild):
+    sequence = _get_child_sequence(self, child)
     newchild.parent = self
     child.parent = None
-    self.body[self.body.index(child)] = newchild
-    
+    sequence[sequence.index(child)] = newchild
+
 for klass in (Assign, Break, Class, Continue, Delete, Discard, ExceptHandler,
               For, From, Function, Global, If, Import, Print, Return,
               TryExcept, TryFinally, While, With, Yield):
     klass.is_statement = True
-    klass.replace = body_replace
+    klass.replace = replace_child
+Module.replace = replace_child
 
 CONST_CLS = {
     list: List,
