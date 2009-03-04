@@ -327,6 +327,10 @@ class TreeRebuilder(ASTVisitor):
         node.generators = node.quals
         del node.expr, node.quals
     
+    def visit_name(self, node):
+        if isinstance(self.visitor.asscontext, AugAssign):
+            node.__class__ = AssName
+            
     def visit_comprehension(self, node):
         if hasattr(node, "list"):
             # ListCompFor
