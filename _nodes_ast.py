@@ -154,11 +154,11 @@ def _init_set_doc(node):
 
 def _init_function(node):
     argnames = []
-    for arg in node.args.args:
+    for arg in node.args.args: # XXX flattening argnames is wrong !
         if isinstance(arg, Name):
-            argnames.append(arg.id )
+            argnames.append(arg.id)
         elif isinstance(arg, Tuple):
-            argnames.extend( elt.id for elt in arg.elts )
+            argnames.append( tuple(elt.id for elt in arg.elts) )
     node.argnames = argnames
     node.defaults = node.args.defaults
     if node.args.vararg:
@@ -215,7 +215,8 @@ class TreeRebuilder(ASTVisitor):
     def visit_function(self, node):
         _init_set_doc(node)
         _init_function(node)
-        node.decorators = Decorators(node.decorators)
+        if node.decorators:
+            node.decorators = Decorators(node.decorators)
 
     def visit_getattr(self, node):
         node.attrname = node.attr
