@@ -13,8 +13,7 @@
 """tests for specific behaviour of astng nodes
 """
 
-import unittest
-
+from logilab.common import testlib
 from logilab.astng import builder, nodes, NotFoundError
 from logilab.astng.nodes_as_string import as_string
 
@@ -46,7 +45,7 @@ else:
     raise
 """
 
-class IfNodeTC(unittest.TestCase):
+class IfNodeTC(testlib.TestCase):
     """test transformation of If Node"""
 
     def test_if_elif_else_node(self):
@@ -55,7 +54,6 @@ class IfNodeTC(unittest.TestCase):
         self.assertEquals(len(module.body), 4)
         for stmt in module.body:
             self.assertIsInstance( stmt, nodes.If)
-        print "orelse ?", repr(module.body[0].orelse)
         self.assert_(not module.body[0].orelse) # simple If
         self.assertIsInstance(module.body[1].orelse[0], nodes.Pass) # If / else
         self.assertIsInstance(module.body[2].orelse[0], nodes.If) # If / elif
@@ -65,7 +63,7 @@ MODULE = abuilder.module_build(test_module)
 MODULE2 = abuilder.file_build('data/module2.py', 'data.module2')
 
 
-class ImportNodeTC(unittest.TestCase):
+class ImportNodeTC(testlib.TestCase):
     
     def test_import_self_resolve(self):
         myos = MODULE2.igetattr('myos').next()
@@ -115,7 +113,7 @@ class ImportNodeTC(unittest.TestCase):
         self.assert_(as_string(MODULE2))
         
 
-class CmpNodeTC(unittest.TestCase):
+class CmpNodeTC(testlib.TestCase):
     def test_as_string(self):
         ast = abuilder.string_build("a == 2")
         self.assertEquals(as_string(ast), "a == 2")
@@ -123,4 +121,4 @@ class CmpNodeTC(unittest.TestCase):
 __all__ = ('IfNodeTC', 'ImportNodeTC',)
         
 if __name__ == '__main__':
-    unittest.main()
+    testlib.unittest_main()
