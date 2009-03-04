@@ -14,9 +14,9 @@
 (build_* functions) or from living object (object_build_* functions)
 
 :author:    Sylvain Thenault
-:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2008 Sylvain Thenault
+:copyright: 2003-2009 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 

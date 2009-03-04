@@ -13,9 +13,9 @@
 """python 2.5 builtin _ast compatibility module
 
 :author:    Sylvain Thenault
-:copyright: 2008 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2008-2009 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2008 Sylvain Thenault
+:copyright: 2008-2009 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 

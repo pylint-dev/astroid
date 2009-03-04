@@ -1,4 +1,24 @@
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 2 of the License, or (at your option) any later
+# version.
 #
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc.,
+# 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+"""this module contains exceptions used in the astng library
+
+:author:    Sylvain Thenault
+:copyright: 2008-2009 LOGILAB S.A. (Paris, FRANCE)
+:contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
+:copyright: 2008-2009 Sylvain Thenault
+:contact:   mailto:thenault@gmail.com
+"""
+
 """this module contains utilities for rebuilding a compiler.ast
 or _ast tree in order to get a single ASTNG representation
 """

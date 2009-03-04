@@ -13,33 +13,31 @@
 """this module contains exceptions used in the astng library
 
 :author:    Sylvain Thenault
-:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2007 Sylvain Thenault
+:copyright: 2003-2009 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 
 __doctype__ = "restructuredtext en"
 
 class ASTNGError(Exception):
-    """base exception class for all astng related exceptions
-    """
+    """base exception class for all astng related exceptions"""
 
 class ASTNGBuildingException(ASTNGError):
-    """exception class when we are not able to build an astng representation"""
+    """exception class when we are unable to build an astng representation"""
 
 class ResolveError(ASTNGError):
     """base class of astng resolution/inference error"""
 
 class NotFoundError(ResolveError):
-    """raised when we are unabled to resolve a name"""
+    """raised when we are unable to resolve a name"""
 
 class InferenceError(ResolveError):
-    """raised when we are unabled to infer a node"""
+    """raised when we are unable to infer a node"""
 
 class UnresolvableName(InferenceError):
-    """raised when we are unabled to resolve a name"""
-
+    """raised when we are unable to resolve a name"""
 
 class NoDefault(ASTNGError):
     """raised by function's `default_value` method when an argument has

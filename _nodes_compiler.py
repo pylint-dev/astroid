@@ -16,9 +16,9 @@
  [1] http://docs.python.org/lib/module-compiler.ast.html
 
 :author:    Sylvain Thenault
-:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2008-2009 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2008 Sylvain Thenault
+:copyright: 2008-2009 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 from __future__ import generators
