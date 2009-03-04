@@ -278,16 +278,23 @@ class ModuleNG(object):
                 return [name for name in living.__dict__.keys()
                         if not name.startswith('_')]
         # else lookup the astng
+        #
+        # We separate the different steps of lookup in try/excepts
+        # to avoid catching to many Exceptions
+        # However, we can not analyse dynamically constructed __all__
         try:
-            explicit = self['__all__'].assigned_stmts().next()
-            # should be a tuple of constant string
-            return [const.value for const in explicit.nodes]
-        except (KeyError, AttributeError, InferenceError):
-            # XXX should admit we have lost if there is something like
-            # __all__ that we've not been able to analyse (such as
-            # dynamically constructed __all__)
-            return [name for name in self.keys()
-                    if not name.startswith('_')]
+            all = self['__all__']
+        except KeyError:
+            return [name for name in self.keys() if not name.startswith('_')]
+        try:
+            explicit = all.assigned_stmts().next()
+        except InferenceError:
+            return [name for name in self.keys() if not name.startswith('_')]
+        try:
+            # should be a Tuple/List of constant string / 1 string not allowed
+            return [const.value for const in explicit.elts]
+        except AttributeError:
+            return [name for name in self.keys() if not name.startswith('_')]
 
 extend_class(Module, ModuleNG)
 
