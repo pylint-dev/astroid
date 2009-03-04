@@ -307,7 +307,7 @@ def body_replace(self, child, newchild):
     self.body[self.body.index(child)] = newchild
     
 for klass in (Assign, Break, Class, Continue, Delete, Discard, ExceptHandler,
-              For, From, Function, Global, If, Import, Module, Print, Return,
+              For, From, Function, Global, If, Import, Print, Return,
               TryExcept, TryFinally, While, With, Yield):
     klass.is_statement = True
     klass.replace = body_replace

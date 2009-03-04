@@ -168,8 +168,9 @@ def _remove_none(sub): # XXX
 
 def check_delete_node(node):
     """insert a Delete node if necessary -- else return True"""
-    if (not node.parent.is_statement) or isinstance(node.parent, 
-                        (Assign, With, For, ExceptHandler, Delete, AugAssign)):
+    assign_nodes = (Assign, With, For, ExceptHandler, Delete, AugAssign)
+    if isinstance(node.parent, assign_nodes) or not (node.parent.is_statement
+                                           or isinstance(node.parent, Module)):
         return True
     if isinstance(node, AssTuple): # replace node by Delete
         node.__class__ = Delete
