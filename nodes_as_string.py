@@ -34,14 +34,21 @@ class AsStringVisitor(ASTVisitor):
 
     
     ## visit_<node> methods ###########################################
-    
+    def visit_assattr(self, node):
+        """return an astng.AssAttr node as string"""
+        return self.visit_getattr(node)
+
     def visit_assert(self, node):
         """return an astng.Assert node as string"""
         if node.fail:
             return 'assert %s, %s' % (node.test.accept(self),
                                         node.fail.accept(self))
         return 'assert %s' % node.test.accept(self)
-    
+
+    def visit_assname(self, node):
+        """return an astng.AssName node as string"""
+        return node.name
+
     def visit_assign(self, node):
         """return an astng.Assign node as string"""
         lhs = ' = '.join([n.accept(self) for n in node.targets])
@@ -91,7 +98,13 @@ class AsStringVisitor(ASTVisitor):
         rhs_str = ' '.join(['%s %s' % (op, expr.accept(self))
                             for op, expr in node.ops])
         return '%s %s' % (node.left.accept(self), rhs_str)
-    
+
+    def visit_comprehension(self, node):
+        """return an astng.Comprehension node as string"""
+        ifs = ''.join([ ' if %s' % n.accept(self) for n in node.ifs])
+        return 'for %s in %s%s' % (node.target.accept(self),
+                                    node.iter.accept(self), ifs )
+
     def visit_const(self, node):
         """return an astng.Const node as string"""
         return repr(node.value)
@@ -104,6 +117,14 @@ class AsStringVisitor(ASTVisitor):
         """return an astng.Delete node as string"""
         return 'del %s' % ', '.join([child.accept(self) 
                                 for child in node.targets])
+
+    def visit_delattr(self, node):
+        """return an astng.DelAttr node as string"""
+        return self.visit_getattr(node)
+
+    def visit_delname(self, node):
+        """return an astng.DelName node as string"""
+        return node.name
 
     def visit_decorators(self, node):
         """return an astng.Decorators node as string"""
@@ -214,13 +235,7 @@ class AsStringVisitor(ASTVisitor):
         """return an astng.ListComp node as string"""
         return '[%s %s]' % (node.elt.accept(self), ' '.join([n.accept(self)
                                                 for n in node.generators]))
-    
-    def visit_comprehension(self, node):
-        """return an astng.Comprehension node as string"""
-        ifs = ''.join([ ' if %s' % n.accept(self) for n in node.ifs])
-        return 'for %s in %s%s' % (node.target.accept(self),
-                                    node.iter.accept(self), ifs )
-    
+
     def visit_module(self, node):
         """return an astng.Module node as string"""
         docs = node.doc and '"""%s"""\n' % node.doc or ''
