@@ -46,59 +46,21 @@ else:
     raise
 """
 
-IF_STR_REPR = """Module()
-    If()
-        Const(int)
-        Print()
-    If()
-        True
-        Print()
-        Pass()
-    If()
-        Const(str)
-        Print()
-        List(list)
-        Raise()
-    If()
-        Const(int)
-        Print()
-        True
-        Print()
-        CallFunc()
-            Name(func)
-        Pass()
-        Raise()"""
-
-
-def repr_tree(node, result, indent='', _done=None):
-    if _done is None:
-        _done = set()
-    if node in _done:
-        result.append('loop in tree: %r (%s)' % (node, node.lineno))
-        return
-    _done.add(node)
-    result.append( indent + str(node) )
-    indent += '    '
-    for child in node.get_children():
-        repr_tree(child, result, indent, _done)
-
-def get_repr_tree(node):
-    result = []
-    repr_tree(node, result)
-    return "\n".join(result)
-
-
 class IfNodeTC(unittest.TestCase):
-    """test Transformations of If Node"""
+    """test transformation of If Node"""
 
     def test_if_elif_else_node(self):
         """test transformation for If node"""
-        astng_tree = abuilder.string_build(IF_CODE)
-        astng_repr = get_repr_tree(astng_tree)
-        self.assertEqual(IF_STR_REPR, astng_repr)
-
-
-
+        module = abuilder.string_build(IF_CODE)
+        self.assertEquals(len(module.body), 4)
+        for stmt in module.body:
+            self.assertIsInstance( stmt, nodes.If)
+        print "orelse ?", repr(module.body[0].orelse)
+        self.assert_(not module.body[0].orelse) # simple If
+        self.assertIsInstance(module.body[1].orelse[0], nodes.Pass) # If / else
+        self.assertIsInstance(module.body[2].orelse[0], nodes.If) # If / elif
+        self.assertIsInstance(module.body[3].orelse[0].orelse[0], nodes.If)
+        
 MODULE = abuilder.module_build(test_module)
 MODULE2 = abuilder.file_build('data/module2.py', 'data.module2')
 
