@@ -82,7 +82,9 @@ try:
 except:
     class Decorators:
         """dummy Decorators node, shouldn't be used with py < 2.4"""
-
+        def __init__(self, nodes=None):
+            self.nodes = nodes
+            
 class With:
     """dummy With node: if we are using py >= 2.5 we will use _ast;
     but we need it for the other astng modules
@@ -153,13 +155,15 @@ From.level = 0 # will be overiden by instance attribute with py>=2.5
 
 ##  some auxiliary functions ##########################
 
+
 def _init_else_node(node):
-    # remove Stmt node if exists
+    """remove Stmt node if exists"""
     if node.else_:
         node.orelse = node.else_.nodes
     else:
         node.orelse = []
     del node.else_
+
 
 def _remove_none(sub): # XXX
     if isinstance(sub, Const) and sub.value == None:
@@ -297,7 +301,7 @@ class TreeRebuilder(ASTVisitor):
         node.elt = node.code.expr
         node.generators = node.code.quals
         del node.code
-    
+
     def visit_if(self, node):
         node.test, body = node.tests[0]
         node.body = body.nodes

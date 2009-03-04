@@ -125,8 +125,8 @@ class EmptyNode(Node):
 
 class Decorators(Node):
     """represent a Decorator node"""
-    def __init__(self, items):
-        self.items = items
+    def __init__(self, nodes):
+        self.nodes = nodes
 
 ##  some auxiliary functions ##########################
 
