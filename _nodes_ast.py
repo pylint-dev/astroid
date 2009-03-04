@@ -227,12 +227,7 @@ class TreeRebuilder(ASTVisitor):
         elif self.visitor.asscontext is not None:
             node.__class__ = AssAttr
         self.visitor.asscontext = None # disable asscontext on 'Name' childnode
-        
-    def visit_if(self, node):
-        tests, orelse = _recurse_if(node, [], [])
-        node.tests = tests
-        node.orelse = orelse
-    
+
     def visit_import(self, node):
         node.names = [(alias.name, alias.asname) for alias in node.names]
     

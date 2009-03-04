@@ -96,7 +96,7 @@ For._astng_fields = ('target', 'iter', 'body', 'orelse',)
 Getattr._astng_fields = ('expr',) # (former value), attr (now attrname), ctx
 GenExpr._astng_fields = ('elt', 'generators')
 Global._astng_fields = ()
-If._astng_fields = ('tests', 'orelse',)
+If._astng_fields = ('test', 'body', 'orelse')
 Import._astng_fields = ()
 Keyword._astng_fields = ('value',)
 Lambda._astng_fields = ('body',)
@@ -345,16 +345,6 @@ def _dict_get_children(node): # XXX : distinguish key and value ?
         yield value
 Dict.get_children = _dict_get_children
 
-def _if_get_children(node):
-    """get children looping into body lists"""
-    for cond, stmts in node.tests:
-        yield cond
-        for stmt in stmts:
-            yield stmt
-    for stmt in node.orelse:
-        yield stmt
-
-If.get_children = _if_get_children
 
 def _subscript_get_children(node):
     """get_children by removing None children"""

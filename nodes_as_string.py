@@ -226,11 +226,7 @@ class AsStringVisitor(ASTVisitor):
     
     def visit_if(self, node):
         """return an astng.If node as string"""
-        cond, body = node.tests[0]
-        ifs = ['if %s:\n%s' % (cond.accept(self), self._stmt_list(body))]
-        for cond, body in node.tests[1:]:
-            ifs.append('elif %s:\n%s' % (cond.accept(self), 
-                                         self._stmt_list(body)))
+        ifs = ['if %s:\n%s' % (node.test.accept(self), self._stmt_list(node.body))]
         if node.orelse:
             ifs.append('else:\n%s' % self._stmt_list(node.orelse) )
         return '\n'.join(ifs)

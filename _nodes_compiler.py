@@ -299,9 +299,16 @@ class TreeRebuilder(ASTVisitor):
         del node.code
     
     def visit_if(self, node):
-        node.tests = [(cond, expr.nodes) for cond, expr in node.tests]
-        _init_else_node(node)
-    
+        node.test, body = node.tests[0]
+        node.body = body.nodes
+        if node.tests[1:]: # create If node and put it in orelse
+            subnode = If( node.tests[1:], node.else_ )
+            del node.else_
+            node.orelse = [subnode]
+        else: # handle orelse
+            _init_else_node(node)
+        del node.tests
+
     def visit_list(self, node):
         node.elts = node.nodes
         del node.nodes
