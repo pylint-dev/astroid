@@ -147,7 +147,7 @@ class RebuildVisitor(ASTVisitor):
         """python >= 2.4
         visit a Decorator node -> check for classmethod and staticmethod
         """
-        for decorator_expr in node.items:
+        for decorator_expr in node.nodes:
             if isinstance(decorator_expr, nodes.Name) and \
                    decorator_expr.name in ('classmethod', 'staticmethod'):
                 node.parent.type = decorator_expr.name
