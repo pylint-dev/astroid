@@ -154,6 +154,21 @@ def _remove_none(sub): # XXX
         return None
     return sub
 
+def check_delete_node(node):
+    """insert a Delete node if necessary -- else return True"""
+    if (not node.parent.is_statement) or isinstance(node.parent, 
+                        (Assign, With, For, ExceptHandler, Delete, AugAssign)):
+        return True
+    if isinstance(node, AssTuple): # replace node by Delete
+        node.__class__ = Delete
+        node.targets = node.nodes
+    else: # introduce new Delete node
+        delete = Delete()
+        node.parent.replace(node, delete)
+        delete.lineno = node.lineno
+        node.parent = delete
+        delete.targets = [node]
+
 class TreeRebuilder(ASTVisitor):
     """Rebuilds the compiler tree to become an ASTNG tree"""
 
@@ -188,6 +203,7 @@ class TreeRebuilder(ASTVisitor):
     ##  init_<node> functions #####################################################
     
     def visit_assattr(self, node):
+        check_delete_node(node)
         if node.flags == 'OP_DELETE':
             node.__class__ = DelAttr
         del node.flags
@@ -198,14 +214,17 @@ class TreeRebuilder(ASTVisitor):
         del node.nodes, node.expr
 
     def visit_asslist(self, node):
+        check_delete_node(node)
         node.__class__ = List
         self.visit_list(node)
-    
+
     def visit_asstuple(self, node):
-        node.__class__ = Tuple
-        self.visit_tuple(node)
-    
+        if check_delete_node(node):
+            node.__class__ = Tuple
+            self.visit_tuple(node)
+
     def visit_assname(self, node):
+        check_delete_node(node)
         if node.flags == 'OP_DELETE':
             node.__class__ = DelName
         del node.flags

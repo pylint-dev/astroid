@@ -301,10 +301,16 @@ class NodeNG:
 extend_class(Node, NodeNG)
 
 
+def body_replace(self, child, newchild):
+    newchild.parent = self
+    child.parent = None
+    self.body[self.body.index(child)] = newchild
+    
 for klass in (Assign, Break, Class, Continue, Delete, Discard, ExceptHandler,
-              For, From, Function, Global, If, Import, Print, Return,
+              For, From, Function, Global, If, Import, Module, Print, Return,
               TryExcept, TryFinally, While, With, Yield):
     klass.is_statement = True
+    klass.replace = body_replace
 
 CONST_CLS = {
     list: List,
