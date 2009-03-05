@@ -49,7 +49,7 @@ class AsStringVisitor(ASTVisitor):
     
     def _stmt_list(self, stmts):
         """return a list of nodes to string"""
-        stmts = '\n'.join([n.accept(self) for n in stmts])
+        stmts = '\n'.join([nstr for nstr in (n.accept(self) for n in stmts) if nstr])
         return INDENT + stmts.replace('\n', '\n'+INDENT)
 
     
