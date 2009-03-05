@@ -117,6 +117,9 @@ class ASTVisitor(object):
     def visit_discard(self, node):
         """dummy method for visiting an Discard node"""
 
+    def visit_emptynode(self, node):
+        """dummy method for visiting an EmptyNode node"""
+        
     def visit_excepthandler(self, node):
         """dummy method for visiting an ExceptHandler node"""
 
