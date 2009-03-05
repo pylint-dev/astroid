@@ -223,19 +223,13 @@ class BuilderTC(TestCase):
         self.assertEquals(len(infered), 1)
         infered = infered[0]
         self.assertEquals(infered.name, 'object')
-        try:
-            as_string(infered)
-        except:
-            print repr(infered)
+        as_string(infered)
             
         infered = list(builtin_astng.igetattr('type'))
         self.assertEquals(len(infered), 1)
         infered = infered[0]
         self.assertEquals(infered.name, 'type')
-        try:
-            as_string(infered)
-        except:
-            print repr(infered)
+        as_string(infered)
         
     def test_package_name(self):
         """test base properties and method of a astng module"""
@@ -354,11 +348,11 @@ class FileBuildTC(TestCase):
         """test the 'locals' dictionary of a astng module"""
         module = self.module
         _locals = module.locals
-        self.assertEquals(len(_locals), 19)
+        self.assertEquals(len(_locals), 20)
         self.assert_(_locals is module.globals)
         keys = _locals.keys()
         keys.sort()
-        should = ['MY_DICT', 'YO', 'YOUPI', '__doc__', '__file__', '__name__',
+        should = ['MY_DICT', 'YO', 'YOUPI', '__dict__', '__doc__', '__file__', '__name__',
                 '__revision__',  'global_access','modutils', 'nested_args',
                  'os', 'redirect', 'spawn', 'REDIRECT', 'LocalsVisitor', 
                 'ASTWalker', 'ASTVisitor',  'are_exclusive', 'extend_class']

@@ -22,10 +22,10 @@
 """this module contains utilities for rebuilding a compiler.ast
 or _ast tree in order to get a single ASTNG representation
 """
+from logilab.astng import ASTNGBuildingException, InferenceError
+from logilab.astng import nodes
 from logilab.astng.utils import ASTVisitor
 from logilab.astng.raw_building import *
-from logilab.astng._exceptions import ASTNGBuildingException, InferenceError
-from logilab.astng import nodes
 from logilab.astng.nodes_as_string import as_string
 
 
@@ -221,8 +221,8 @@ class RebuildVisitor(ASTVisitor):
             const = nodes.const_factory(value)
             const.parent = node
             node.locals[name] = [const]
+        attach___dict__(node)
         if node.package:
-            # FIXME: List(Const())
             const = nodes.const_factory(value)
             const.parent = node
             node.locals['__path__'] = [const]
