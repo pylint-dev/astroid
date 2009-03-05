@@ -21,7 +21,22 @@ from data import module as test_module
 
 abuilder = builder.ASTNGBuilder()
 
-IF_CODE = """
+class _NodeTC(testlib.TestCase):
+    """test transformation of If Node"""
+    CODE = None
+    @property
+    def astng(self):
+        try:
+            return self.__class__.__dict__['CODE_ASTNG']
+        except KeyError:
+            astng = abuilder.string_build(self.CODE)
+            self.__class__.CODE_ASTNG = astng
+            return astng
+
+
+class IfNodeTC(_NodeTC):
+    """test transformation of If Node"""
+    CODE = """
 if 0:
     print
 
@@ -43,21 +58,50 @@ elif func():
     pass
 else:
     raise
-"""
-
-class IfNodeTC(testlib.TestCase):
-    """test transformation of If Node"""
-
+    """
+        
     def test_if_elif_else_node(self):
         """test transformation for If node"""
-        module = abuilder.string_build(IF_CODE)
-        self.assertEquals(len(module.body), 4)
-        for stmt in module.body:
+        self.assertEquals(len(self.astng.body), 4)
+        for stmt in self.astng.body:
             self.assertIsInstance( stmt, nodes.If)
-        self.assert_(not module.body[0].orelse) # simple If
-        self.assertIsInstance(module.body[1].orelse[0], nodes.Pass) # If / else
-        self.assertIsInstance(module.body[2].orelse[0], nodes.If) # If / elif
-        self.assertIsInstance(module.body[3].orelse[0].orelse[0], nodes.If)
+        self.failIf(self.astng.body[0].orelse) # simple If
+        self.assertIsInstance(self.astng.body[1].orelse[0], nodes.Pass) # If / else
+        self.assertIsInstance(self.astng.body[2].orelse[0], nodes.If) # If / elif
+        self.assertIsInstance(self.astng.body[3].orelse[0].orelse[0], nodes.If)
+
+    def test_block_range(self):
+        # XXX ensure expected values
+        self.assertEquals(self.astng.block_range(1), (0, 22))
+        self.assertEquals(self.astng.block_range(10), (0, 22)) # XXX (10, 22) ?
+        self.assertEquals(self.astng.body[1].block_range(5), (5, 6))
+        self.assertEquals(self.astng.body[1].block_range(6), (6, 6))
+        self.assertEquals(self.astng.body[1].orelse[0].block_range(0), (0, 8))
+        self.assertEquals(self.astng.body[1].orelse[0].block_range(7), (7, 8))
+        self.assertEquals(self.astng.body[1].orelse[0].block_range(8), (8, 8))
+
+class TryExceptNodeTC(_NodeTC):
+    CODE = """
+try:
+    print 'pouet'
+except IOError:
+    pass
+except UnicodeError:
+    print
+else:
+    print
+    """
+    def test_block_range(self):
+        # XXX ensure expected values
+        self.assertEquals(self.astng.body[0].block_range(0), (0, 8))
+        self.assertEquals(self.astng.body[0].block_range(1), (1, 8))
+        self.assertEquals(self.astng.body[0].block_range(2), (2, 2))
+        self.assertEquals(self.astng.body[0].block_range(3), (3, 8))
+        self.assertEquals(self.astng.body[0].block_range(4), (4, 4))
+        self.assertEquals(self.astng.body[0].block_range(5), (5, 5))
+        self.assertEquals(self.astng.body[0].block_range(6), (6, 6))
+        self.assertEquals(self.astng.body[0].block_range(7), (7, 7))
+        self.assertEquals(self.astng.body[0].block_range(8), (8, 8))
         
 MODULE = abuilder.module_build(test_module)
 MODULE2 = abuilder.file_build('data/module2.py', 'data.module2')

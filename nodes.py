@@ -390,17 +390,12 @@ Module.block_range = object_block_range
 
 # XXX only if compiler mode ?
 def if_block_range(node, lineno):
-    """handle block line numbers range for if/elif statements
-    """
-    last = None
-    for test, testbody in node.tests[1:]:
-        if lineno == testbody.source_line():
-            return lineno, lineno
-        if lineno <= testbody.last_source_line():
-            return lineno, testbody.last_source_line()
-        if last is None:
-            last = testbody.source_line() - 1
-    return elsed_block_range(node, lineno, last)
+    """handle block line numbers range for if/elif statements"""
+    if lineno == node.body[0].source_line():
+        return lineno, lineno
+    if lineno <= node.body[-1].last_source_line():
+        return lineno, node.body[-1].last_source_line()
+    return elsed_block_range(node, lineno, node.body[0].source_line() - 1)
 
 If.block_range = if_block_range
 
@@ -408,13 +403,13 @@ def try_except_block_range(node, lineno):
     """handle block line numbers range for try/except statements
     """
     last = None
-    for excls, exinst, exbody in node.handlers:
-        if excls and lineno == excls.source_line():
+    for exhandler in node.handlers:
+        if exhandler.type and lineno == exhandler.type.source_line():
             return lineno, lineno
-        if exbody.source_line() <= lineno <= exbody.last_source_line():
-            return lineno, exbody.last_source_line()
+        if exhandler.body[0].source_line() <= lineno <= exhandler.body[-1].last_source_line():
+            return lineno, exhandler.body[-1].last_source_line()
         if last is None:
-            last = exbody.source_line() - 1
+            last = exhandler.body[0].source_line() - 1
     return elsed_block_range(node, lineno, last)
 
 TryExcept.block_range = try_except_block_range
@@ -425,10 +420,10 @@ def elsed_block_range(node, lineno, last=None):
     """
     if lineno == node.source_line():
         return lineno, lineno
-    if node.else_:
-        if lineno >= node.else_.source_line():
-            return lineno, node.else_.last_source_line()
-        return lineno, node.else_.source_line() - 1
+    if node.orelse:
+        if lineno >= node.orelse[0].source_line():
+            return lineno, node.orelse[-1].last_source_line()
+        return lineno, node.orelse[0].source_line() - 1
     return lineno, last or node.last_source_line()
 
 TryFinally.block_range = elsed_block_range
