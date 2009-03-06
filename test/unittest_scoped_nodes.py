@@ -92,8 +92,9 @@ class FunctionNodeTC(TestCase):
         function = MODULE['global_access']
         self.assertEquals(function.statement(), function)
         l_sibling = function.previous_sibling()
+        # check taking parent if child is not a stmt
         self.assertIsInstance(l_sibling, nodes.Assign)
-        child = function.body[0] # XXX what do we want ?
+        child = function.args.args[0]
         self.assert_(l_sibling is child.previous_sibling())
         r_sibling = function.next_sibling()
         self.assertIsInstance(r_sibling, nodes.Class)

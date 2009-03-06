@@ -191,22 +191,28 @@ class NodeNG:
         return self
 
 
-    def next_sibling(self, attr = "body"):# FIXME : what do we want ?
+    def next_sibling(self):
         """return the previous sibling statement
         """
-        stmts = getattr(self.statement(), attr)
-        for k, stmt in enumerate(stmts[:-1]):
-            if self is stmt:
-                return stmts[k+1]
+        while not self.is_statement or isinstance(self, Module):
+            self = self.parent
+        stmts = _get_child_sequence(self.parent, self)
+        index = stmts.index(self)
+        try:
+            return stmts[index +1]
+        except IndexError:
+            pass
 
-
-    def previous_sibling(self, attr = "body"): # FIXME : what do we want ?
+    def previous_sibling(self):
         """return the next sibling statement 
         """
-        stmts = getattr(self.statement(), attr)
-        for k, stmt in enumerate(stmts[1:]):
-            if self is stmt:
-                return stmts[k]
+        while not self.is_statement or isinstance(self, Module):
+            self = self.parent
+        stmts = _get_child_sequence(self.parent, self)
+        index = stmts.index(self)
+        if index >= 1:
+            return stmts[index -1]
+        return
 
     def nearest(self, nodes):
         """return the node which is the nearest before this one in the
@@ -291,7 +297,7 @@ class NodeNG:
     def as_string(self):
         from logilab.astng.nodes_as_string import as_string
         return as_string(self)
-        
+
 extend_class(Node, NodeNG)
 
 
@@ -324,7 +330,7 @@ CONST_CLS = {
     tuple: Tuple,
     dict: Dict,
     }
-    
+
 def const_factory(value):
     """return an astng node for a python value"""
     try:
@@ -576,6 +582,8 @@ class Generator(Proxy):
         return '__builtin__.generator'
 
 # additional nodes  ##########################################################
+
+# XXX why not using Const node ? Or reintroduce Num / Str
 
 class NoneType(Instance, NodeNG):
     """None value (instead of Name('None')"""
