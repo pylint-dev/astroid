@@ -25,8 +25,6 @@ from compiler import transformer
 
 from logilab.astng import nodes
 
-from logilab.astng.astutils import cvrtr
-
 def fromto_lineno(asttuple):
     """return the minimum and maximum line number of the given ast tuple"""
     return from_lineno(asttuple), to_lineno(asttuple)
