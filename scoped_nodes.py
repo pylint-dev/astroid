@@ -168,7 +168,7 @@ class ModuleNG(object):
     original class from the compiler.ast module using its dictionnary
     (see below the class definition)
     """
-    Module.lineno = 0
+    fromlineno = 0
 
     # attributes below are set by the builder module or by raw factories
 

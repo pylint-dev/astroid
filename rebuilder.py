@@ -38,6 +38,7 @@ class RebuildVisitor(ASTVisitor):
         self._global_names = None
         self._delayed = []
         self.rebuilder = nodes.TreeRebuilder(self)
+        self.set_line_info = nodes.AST_MODE == '_ast'
 
     def _add_local(self, node, name):
         if self._global_names and name in self._global_names[-1]:
@@ -86,7 +87,6 @@ class RebuildVisitor(ASTVisitor):
 
     def _walk(self, node, parent=None):
         """default visit method, handle the parent attribute"""
-        node.fromlineno = node.lineno
         node.parent = parent
         node.accept(self.rebuilder)
         handle_leave = node.accept(self)
@@ -96,9 +96,10 @@ class RebuildVisitor(ASTVisitor):
             self._walk(child, node)
             if self.asscontext is child:
                 self.asscontext = None
-        node.set_line_info(child)
+        if self.set_line_info:
+            node.set_line_info(child)
         if handle_leave:
-            leave = getattr(self, "leave_" + node.__class__.__name__.lower() )
+            leave = getattr(self, "leave_" + node.__class__.__name__.lower())
             leave(node)
         
 

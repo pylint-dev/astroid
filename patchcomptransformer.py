@@ -20,9 +20,12 @@
 """
 
 from types import TupleType
+from token import NEWLINE, DEDENT
 from compiler import transformer
 
 from logilab.astng import nodes
+
+from logilab.astng.astutils import cvrtr
 
 def fromto_lineno(asttuple):
     """return the minimum and maximum line number of the given ast tuple"""
@@ -30,51 +33,58 @@ def fromto_lineno(asttuple):
 
 def from_lineno(asttuple):
     """return the minimum line number of the given ast tuple"""
-    if type(asttuple[1]) is TupleType:
-        return from_lineno(asttuple[1])
+    while type(asttuple[1]) is TupleType:
+        asttuple = asttuple[1]
     return asttuple[2]
 
 def to_lineno(asttuple):
     """return the maximum line number of the given ast tuple"""
-    if type(asttuple[-1]) is TupleType:
-        return to_lineno(asttuple[-1])
+    while type(asttuple[1]) is TupleType:
+        for i in xrange(len(asttuple) - 1, 0, -1):
+            if asttuple[i][0] != DEDENT:
+                asttuple = asttuple[i]
+                break
+        else:
+            raise Exception()
     return asttuple[2]
 
-def fix_lineno(node, fromast, toast=None):
-    if 'fromlineno' in node.__dict__:
-        return node    
-    #print 'fixing', id(node), id(node.__dict__), node.__dict__.keys(), repr(node)
-    if isinstance(node, nodes.Stmt):
-        node.fromlineno = from_lineno(fromast)#node.nodes[0].fromlineno
-        node.tolineno = node.nodes[-1].tolineno
+def fix_lineno(node, fromast, toast=None, blockast=None):
+    if getattr(node, 'fromlineno', None) is not None:
         return node
-    if toast is None:
+    if isinstance(node, nodes.Stmt):
+        return node
+    if toast is None or toast is fromast:
         node.fromlineno, node.tolineno = fromto_lineno(fromast)
     else:
         node.fromlineno, node.tolineno = from_lineno(fromast), to_lineno(toast)
-    #print 'fixed', id(node)
+    if blockast:
+        node.blockstart_tolineno = to_lineno(blockast)
     return node
 
 BaseTransformer = transformer.Transformer
 
 COORD_MAP = {
     # if: test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
-    'if': (0, 0),
+    'if': 0,
     # 'while' test ':' suite ['else' ':' suite]
-    'while': (0, 1),
+    'while': 1,
     # 'for' exprlist 'in' exprlist ':' suite ['else' ':' suite]
-    'for': (0, 3),
+    'for': 3,
     # 'try' ':' suite (except_clause ':' suite)+ ['else' ':' suite]
-    'try': (0, 0),
+    'try': 0,
     # | 'try' ':' suite 'finally' ':' suite
-    
+    # XXX with
     }
 
 def fixlineno_wrap(function, stype):
     def fixlineno_wrapper(self, nodelist):
-        node = function(self, nodelist)            
-        idx1, idx2 = COORD_MAP.get(stype, (0, -1))
-        return fix_lineno(node, nodelist[idx1], nodelist[idx2])
+        node = function(self, nodelist)
+        try:
+            blockstart_idx = COORD_MAP[stype]
+        except KeyError:
+            return fix_lineno(node, nodelist[0], nodelist[-1])
+        else:
+            return fix_lineno(node, nodelist[0], nodelist[-1], nodelist[blockstart_idx])
     return fixlineno_wrapper
 
 class ASTNGTransformer(BaseTransformer):
@@ -88,29 +98,41 @@ class ASTNGTransformer(BaseTransformer):
         # added, without "physical" reference in the source
         n = nodes.Discard(nodes.Const(None))
         n.fromlineno = n.tolineno = lineno
-        return n    
+        return n
+    
     def com_node(self, node):
         res = self._dispatch[node[0]](node[1:])
         return fix_lineno(res, node)
+    
     def com_assign(self, node, assigning):
         res = BaseTransformer.com_assign(self, node, assigning)
         return fix_lineno(res, node)
+    
     def com_apply_trailer(self, primaryNode, nodelist):
         node = BaseTransformer.com_apply_trailer(self, primaryNode, nodelist)
         return fix_lineno(node, nodelist)
     
-##     def atom(self, nodelist):
-##         node = BaseTransformer.atom(self, nodelist)
-##         return fix_lineno(node, nodelist[0], nodelist[-1])
-    
     def funcdef(self, nodelist):
         node = BaseTransformer.funcdef(self, nodelist)
         # XXX decorators
-        return fix_lineno(node, nodelist[-5], nodelist[-3])
+        return fix_lineno(node, nodelist[-5], nodelist[-1], nodelist[-3])
+    
+    def lambdef(self, nodelist):
+        node = BaseTransformer.lambdef(self, nodelist)
+        return fix_lineno(node, nodelist[1], nodelist[-1])
+    
     def classdef(self, nodelist):
         node = BaseTransformer.classdef(self, nodelist)
-        return fix_lineno(node, nodelist[0], nodelist[-2])
-            
+        return fix_lineno(node, nodelist[0], nodelist[-1], nodelist[-2])
+
+    def file_input(self, nodelist):
+        node = BaseTransformer.file_input(self, nodelist)
+        if node.node.nodes:
+            node.tolineno = node.node.nodes[-1].tolineno
+        else:
+            node.tolineno = 0
+        return node
+    
 # wrap *_stmt methods
 for name in dir(BaseTransformer):
     if name.endswith('_stmt') and not (name in ('com_stmt',

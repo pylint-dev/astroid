@@ -171,15 +171,19 @@ def _init_else_node(node):
         node.orelse = []
     del node.else_
 
-def _nodify_args(values):
+def _nodify_args(parent, values):
     res = []
     for arg in values:
         if isinstance(arg, (tuple, list)):
             n = Tuple()
-            n.elts = _nodify_args(arg)
+            # set .nodes, not .elts since this will be visited as a node coming
+            # from compiler tree
+            n.nodes = _nodify_args(n, arg)
         else:
             n = AssName(None, None)
             n.name = arg
+        n.parent = parent
+        n.lineno = parent.lineno
         res.append(n)
     return res
 
@@ -189,12 +193,12 @@ def args_compiler_to_ast(node):
         kwarg = node.argnames.pop()
     else:
         kwarg = None
-    if node.flags & 8:
+    if node.flags & 4:
         vararg = node.argnames.pop()
     else:
         vararg = None
     del node.flags
-    args = _nodify_args(node.argnames)
+    args = _nodify_args(node, node.argnames)
     del node.argnames
     node.args = Arguments(args, node.defaults, vararg, kwarg)
     del node.defaults
@@ -221,7 +225,8 @@ class TreeRebuilder(ASTVisitor):
         else: # introduce new Delete node
             delete = Delete()
             node.parent.replace(node, delete)
-            delete.lineno = node.lineno
+            delete.fromlineno = node.fromlineno
+            delete.tolineno = node.tolineno
             node.parent = delete
             delete.targets = [node]
         self.visitor.asscontext = delete
@@ -249,7 +254,8 @@ class TreeRebuilder(ASTVisitor):
         # remove Stmt node
         node.body = node.node.nodes
         del node.node
-    
+        return True
+        
     ##  init_<node> functions #####################################################
     
     def visit_assattr(self, node):
@@ -320,7 +326,10 @@ class TreeRebuilder(ASTVisitor):
     def visit_discard(self, node):
         node.value = node.expr
         del node.expr
-    
+        if node.lineno is None:
+            # dummy Const(None) introducted when statement is ended by a semi-colon
+            node.lineno = node.value.lineno = node.previous_sibling().lineno
+            
     def visit_for(self, node):
         node.target = node.assign
         del node.assign
@@ -334,6 +343,10 @@ class TreeRebuilder(ASTVisitor):
         node.elt = node.code.expr
         node.generators = node.code.quals
         del node.code
+
+    def visit_getattr(self, node):
+        if isinstance(self.visitor.asscontext, AugAssign):
+            self.visitor.asscontext = None
 
     def visit_if(self, node):
         node.test, body = node.tests[0]
