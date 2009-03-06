@@ -126,7 +126,6 @@ class FromToLineNoTC(TestCase):
         self.assertEquals(if_.blockstart_tolineno, 24)
         self.assertEquals(if_.orelse[0].fromlineno, 26)
         self.assertEquals(if_.orelse[1].tolineno, 27)
-
         
 class BuilderTC(TestCase):
         
@@ -309,14 +308,6 @@ def global_no_effect():
             self.failIf(n.scope() is astng)
             self.failUnlessEqual([i.__class__ for i in n.infer()],
                                  [YES.__class__])
-
-    def test_augassign_attr(self):
-        astng = self.builder.string_build("""class Counter:
-    v = 0
-    def inc(self):
-        self.v += 1
-        """, __name__, __file__)
-        # Check self.v += 1 generate AugAssign(AssAttr(...)), not AugAssign(GetAttr(AssName...))
         
 class FileBuildTC(TestCase):
 
@@ -460,16 +451,20 @@ class ModuleBuildTC(FileBuildTC):
         self.module = abuilder.module_build(test_module)
 
 
-class InferedBuildTC(TestCase):
-    code = '''class A: pass
+class MoreTC(TestCase):
+        
+    def setUp(self):
+        self.builder = builder.ASTNGBuilder()
+        
+    def test_infered_build(self):
+        code = '''class A: pass
 A.type = "class"
 
 def A_ass_type(self):
     print self
 A.ass_type = A_ass_type
     '''
-    def test_0(self):
-        astng = builder.ASTNGBuilder().string_build(self.code)
+        astng = self.builder.string_build(code)
         lclass = list(astng.igetattr('A'))
         self.assertEquals(len(lclass), 1)
         lclass = lclass[0]
@@ -486,8 +481,17 @@ A.ass_type = A_ass_type
 #         self.assertEquals(len(lclass), 1)
 #         lclass = lclass[0]
 #         self.assert_('ass_type' in lclass.locals, lclass.locals.keys())
-        
-#__all__ = ('BuilderModuleBuildTC', 'BuilderFileBuildTC', 'BuilderTC')
 
+    def test_augassign_attr(self):
+        astng = self.builder.string_build("""class Counter:
+    v = 0
+    def inc(self):
+        self.v += 1
+        """, __name__, __file__)
+        # Check self.v += 1 generate AugAssign(AssAttr(...)), not AugAssign(GetAttr(AssName...))
+
+    def test_dumb_module(self):
+        astng = self.builder.string_build("pouet")
+        
 if __name__ == '__main__':
     unittest_main()
