@@ -8,18 +8,12 @@ Representation
 --------------
 * have a common representation for both _ast and compiler
 
-* introduce Delete node for _nodes_compiler
-
-* handle as_string for Ass/Del; fix decorators_as_string
-
 * introduce arguments nodes (present in _ast) to trash some lambda weirdness
 
 * ensure compatible representation for _nodes_ast function_factory
 
 Tests:
 ======
-
-make the IfNodeTC work : don't use string representation
 
 are_exclusive
 -------------
@@ -29,9 +23,16 @@ are_exclusive
 Pylint
 ======
 * change all node attributes
-* remove getChildNodes callings
-* find solution for sibling
 
+* remove / handle compiler.consts imports
 
+* design_analysis . visit_if :
+    len(node.tests) doesn't work anymore with astng2 / elif becomes else:if
+
+* pylint.__init__ : why  
+        ASTWalker.__init__(self, self)
+  ? ASTWalker is no more used in astng
+
+* checkers.rpython : We have no more Slice and SliceObj nodes
 
 
