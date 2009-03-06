@@ -309,7 +309,14 @@ def global_no_effect():
             self.failIf(n.scope() is astng)
             self.failUnlessEqual([i.__class__ for i in n.infer()],
                                  [YES.__class__])
-        
+
+    def test_augassign_attr(self):
+        astng = self.builder.string_build("""class Counter:
+    v = 0
+    def inc(self):
+        self.v += 1
+        """, __name__, __file__)
+        # Check self.v += 1 generate AugAssign(AssAttr(...)), not AugAssign(GetAttr(AssName...))
         
 class FileBuildTC(TestCase):
 
