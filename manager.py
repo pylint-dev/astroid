@@ -107,7 +107,7 @@ class ASTNGManager(OptionsProviderMixIn):
                 try:
                     from logilab.astng.builder import ASTNGBuilder
                     astng = ASTNGBuilder(self).file_build(filepath, modname)
-                except SyntaxError:
+                except (SyntaxError, KeyboardInterrupt, SystemExit):
                     raise
                 except Exception, ex:
                     if __debug__:
