@@ -176,12 +176,12 @@ def _nodify_args(values):
     for arg in values:
         if isinstance(arg, (tuple, list)):
             n = Tuple()
-            n.elts = _nodify(arg)
+            n.elts = _nodify_args(arg)
         else:
-            n = Name()
-            n.id = arg
+            n = AssName(None, None)
+            n.name = arg
         res.append(n)
-    return n
+    return res
 
 def args_compiler_to_ast(node):
     # insert Arguments node
@@ -235,7 +235,10 @@ class TreeRebuilder(ASTVisitor):
         del node.code
         args_compiler_to_ast(node)
         
-    visit_lambda = visit_function
+    def visit_lambda(self, node):
+        node.body = node.code
+        del node.code
+        args_compiler_to_ast(node)
     
     def visit_class(self, node):
         # remove Stmt node

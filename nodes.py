@@ -587,7 +587,7 @@ class NoneType(Instance, NodeNG):
     def __repr__(self):
         return 'None'
     def get_children(self):
-        return ()
+        return iter(())
     __str__ = __repr__
     
 class Bool(Instance, NodeNG):
@@ -600,7 +600,7 @@ class Bool(Instance, NodeNG):
     def __repr__(self):
         return str(self.value)
     def get_children(self):
-        return ()
+        return iter(())
     __str__ = __repr__
 
 CONST_NAME_TRANSFORMS = {'None': (NoneType, None),

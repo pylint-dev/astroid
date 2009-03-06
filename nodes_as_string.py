@@ -153,7 +153,7 @@ class AsStringVisitor(ASTVisitor):
 
     def visit_decorators(self, node):
         """return an astng.Decorators node as string"""
-        return '@%s\n' % '\n@'.join(item.accept(self) for item in node.items)
+        return '@%s\n' % '\n@'.join(item.accept(self) for item in node.nodes)
 
     def visit_dict(self, node):
         """return an astng.Dict node as string"""

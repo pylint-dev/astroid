@@ -88,7 +88,7 @@ class LocalsDictMixIn(object):
         if the name is already defined, ignore it
         """
         assert self.locals is not None, (self, id(self))
-        assert not stmt in self.locals.get(name, ()), (self, stmt)
+        #assert not stmt in self.locals.get(name, ()), (self, stmt)
         self.locals.setdefault(name, []).append(stmt)
         
     __setitem__ = set_local
