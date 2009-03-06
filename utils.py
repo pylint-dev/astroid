@@ -54,6 +54,9 @@ class ASTVisitor(object):
     concerned node.
     """
 
+    def visit_arguments(self, node):
+        """dummy method for visiting an Arguments node"""
+        
     def visit_assattr(self, node):
         """dummy method for visiting an AssAttr node"""
 

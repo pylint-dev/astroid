@@ -143,6 +143,13 @@ class DelAttr(Node):
 class DelName(Node):
     """represent del statements"""
 
+class Arguments(Node):
+    def __init__(self, args=None, defaults=None, vararg=None, kwarg=None):
+        self.args = args
+        self.defaults = defaults
+        self.vararg = vararg
+        self.kwarg = kwarg
+        
 ###############################################################################
         
 
@@ -164,7 +171,35 @@ def _init_else_node(node):
         node.orelse = []
     del node.else_
 
+def _nodify_args(values):
+    res = []
+    for arg in values:
+        if isinstance(arg, (tuple, list)):
+            n = Tuple()
+            n.elts = _nodify(arg)
+        else:
+            n = Name()
+            n.id = arg
+        res.append(n)
+    return n
 
+def args_compiler_to_ast(node):
+    # insert Arguments node
+    if node.flags & 8:
+        kwarg = node.argnames.pop()
+    else:
+        kwarg = None
+    if node.flags & 8:
+        vararg = node.argnames.pop()
+    else:
+        vararg = None
+    del node.flags
+    args = _nodify_args(node.argnames)
+    del node.argnames
+    node.args = Arguments(args, node.defaults, vararg, kwarg)
+    del node.defaults
+
+    
 class TreeRebuilder(ASTVisitor):
     """Rebuilds the compiler tree to become an ASTNG tree"""
 
@@ -193,15 +228,14 @@ class TreeRebuilder(ASTVisitor):
         return True
         
     # scoped nodes #######################################################
-    
+        
     def visit_function(self, node):
         # remove Stmt node
         node.body = node.code.nodes
         del node.code
-    
-    def visit_lambda(self, node):
-        node.body = node.code
-        del node.code
+        args_compiler_to_ast(node)
+        
+    visit_lambda = visit_function
     
     def visit_class(self, node):
         # remove Stmt node
@@ -425,6 +459,7 @@ if sys.version_info >= (2, 4):
         func = Function(Decorators([]), name, args, defaults, flag, doc, None)
         del func.code
         func.body = []
+        args_compiler_to_ast(func)
         return func
     
 else:    
@@ -433,6 +468,7 @@ else:
         func = Function(name, args, defaults, flag, doc, None)
         del func.code
         func.body = []
+        args_compiler_to_ast(func)
         return func
 
 def class_factory(name, basenames=None, doc=None):

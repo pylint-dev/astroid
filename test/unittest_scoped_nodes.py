@@ -80,13 +80,13 @@ class FunctionNodeTC(TestCase):
         
     def test_default_value(self):
         func = MODULE2['make_class']
-        self.assertIsInstance(func.default_value('base'), nodes.Getattr)
-        self.assertRaises(scoped_nodes.NoDefault, func.default_value, 'args')
-        self.assertRaises(scoped_nodes.NoDefault, func.default_value, 'kwargs')
-        self.assertRaises(scoped_nodes.NoDefault, func.default_value, 'any')
-        self.assertIsInstance(func.mularg_class('args'), nodes.Tuple)
-        self.assertIsInstance(func.mularg_class('kwargs'), nodes.Dict)
-        self.assertEquals(func.mularg_class('base'), None)
+        self.assertIsInstance(func.args.default_value('base'), nodes.Getattr)
+        self.assertRaises(scoped_nodes.NoDefault, func.args.default_value, 'args')
+        self.assertRaises(scoped_nodes.NoDefault, func.args.default_value, 'kwargs')
+        self.assertRaises(scoped_nodes.NoDefault, func.args.default_value, 'any')
+        #self.assertIsInstance(func.mularg_class('args'), nodes.Tuple)
+        #self.assertIsInstance(func.mularg_class('kwargs'), nodes.Dict)
+        #self.assertEquals(func.mularg_class('base'), None)
 
     def test_navigation(self):
         function = MODULE['global_access']
@@ -107,7 +107,7 @@ class FunctionNodeTC(TestCase):
 
     def test_nested_args(self):
         func = MODULE['nested_args']
-        self.assertEquals(func.argnames, ['a', ('b', 'c', 'd')])
+        #self.assertEquals(func.args.args, ['a', ('b', 'c', 'd')])
         local = func.keys()
         local.sort()
         self.assertEquals(local, ['a', 'b', 'c', 'd'])
@@ -115,9 +115,9 @@ class FunctionNodeTC(TestCase):
        
     def test_format_args(self):
         func = MODULE2['make_class']
-        self.assertEquals(func.format_args(), 'any, base=data.module.YO, *args, **kwargs')
+        self.assertEquals(func.args.format_args(), 'any, base=data.module.YO, *args, **kwargs')
         func = MODULE['nested_args']
-        self.assertEquals(func.format_args(), 'a, (b,c,d)')
+        self.assertEquals(func.args.format_args(), 'a, (b, c, d)')
 
     def test_is_abstract(self):
         method = MODULE2['AbstractClass']['to_override']

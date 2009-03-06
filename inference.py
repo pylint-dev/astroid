@@ -67,7 +67,9 @@ def infer_default(self, context=None):
 nodes.Node.infer = infer_default
 
 #infer_end = path_wrapper(infer_end)
-nodes.Module.infer = nodes.Class.infer = infer_end
+nodes.Module.infer = nodes.Class.infer = infer_end        
+nodes.Function.infer = infer_end
+nodes.Lambda.infer = infer_end
 nodes.List.infer = infer_end
 nodes.Tuple.infer = infer_end
 nodes.Dict.infer = infer_end
@@ -96,43 +98,39 @@ class CallContext:
         except KeyError:
             # Function.argnames can be None in astng (means that we don't have
             # information on argnames)
-            if funcnode.argnames is not None:
+            argindex, argnode = funcnode.args.find_argname(name)
+            if argindex is not None:
+                # 2. first argument of instance/class method
+                if argindex == 0 and funcnode.type in ('method', 'classmethod'):
+                    if context.boundnode is not None:
+                        boundnode = context.boundnode
+                    else:
+                        # XXX can do better ?
+                        boundnode = funcnode.parent.frame()
+                    if funcnode.type == 'method':
+                        return iter((Instance(boundnode),))
+                    if funcnode.type == 'classmethod':
+                        return iter((boundnode,))                            
+                # 2. search arg index
                 try:
-                    argindex = funcnode.argnames.index(name)
-                except ValueError:
+                    return self.args[argindex].infer(context)
+                except IndexError:
                     pass
-                else:
-                    # 2. first argument of instance/class method
-                    if argindex == 0 and funcnode.type in ('method', 'classmethod'):
-                        if context.boundnode is not None:
-                            boundnode = context.boundnode
-                        else:
-                            # XXX can do better ?
-                            boundnode = funcnode.parent.frame()
-                        if funcnode.type == 'method':
-                            return iter((Instance(boundnode),))
-                        if funcnode.type == 'classmethod':
-                            return iter((boundnode,))                            
-                    # 2. search arg index
-                    try:
-                        return self.args[argindex].infer(context)
-                    except IndexError:
-                        pass
-                    # 3. search in *args (.starargs)
-                    if self.starargs is not None:
-                        its = []
-                        for infered in self.starargs.infer(context):
-                            if infered is YES:
-                                its.append((YES,))
-                                continue
-                            try:
-                                its.append(infered.getitem(argindex).infer(context))
-                            except (InferenceError, AttributeError):
-                                its.append((YES,))
-                            except IndexError:
-                                continue
-                        if its:
-                            return chain(*its)
+                # 3. search in *args (.starargs)
+                if self.starargs is not None:
+                    its = []
+                    for infered in self.starargs.infer(context):
+                        if infered is YES:
+                            its.append((YES,))
+                            continue
+                        try:
+                            its.append(infered.getitem(argindex).infer(context))
+                        except (InferenceError, AttributeError):
+                            its.append((YES,))
+                        except IndexError:
+                            continue
+                    if its:
+                        return chain(*its)
         # 4. XXX search in **kwargs (.dstarargs)
         if self.dstarargs is not None:
             its = []
@@ -149,66 +147,16 @@ class CallContext:
             if its:
                 return chain(*its)
         # 5. */** argument, (Tuple or Dict)
-        mularg = funcnode.mularg_class(name)
-        if mularg is not None: 
-            # XXX should be able to compute values inside
-            return iter((mularg,))
+        if name == funcnode.args.vararg:
+            return iter((nodes.Tuple(),))
+        if name == funcnode.args.kwarg:
+            return iter((nodes.Dict(),))
         # 6. return default value if any
         try:
-            return funcnode.default_value(name).infer(context)
+            return funcnode.args.default_value(name).infer(context)
         except NoDefault:
             raise InferenceError(name)
         
-        
-def infer_function(self, context=None):
-    """infer on Function nodes must be take with care since it
-    may be called to infer one of its argument (in which case <name>
-    should be given)
-    """
-    name = context.lookupname
-    # no name is given, we are infering the function itself
-    if name is None:
-        yield self
-        return
-    if context.callcontext:
-        # reset call context/name
-        callcontext = context.callcontext
-        context = copy_context(context)
-        context.callcontext = None
-        for infered in callcontext.infer_argument(self, name, context):
-            yield infered
-        return
-    # Function.argnames can be None in astng (means that we don't have
-    # information on argnames), in which case we can't do anything more
-    if self.argnames is None:
-        yield YES
-        return
-    if not name in self.argnames:
-        raise InferenceError()
-    # first argument of instance/class method
-    if name == self.argnames[0]:
-        if self.type == 'method':
-            yield Instance(self.parent.frame())
-            return
-        if self.type == 'classmethod':
-            yield self.parent.frame()
-            return
-    mularg = self.mularg_class(name)
-    if mularg is not None: # */** argument, no doubt it's a Tuple or Dict
-        yield mularg
-        return
-    # if there is a default value, yield it. And then yield YES to reflect
-    # we can't guess given argument value
-    try:
-        context = copy_context(context)
-        for infered in self.default_value(name).infer(context):
-            yield infered
-        yield YES
-    except NoDefault:
-        yield YES
-
-nodes.Function.infer = path_wrapper(infer_function)
-nodes.Lambda.infer = path_wrapper(infer_function)
 
 
 def infer_name(self, context=None):
@@ -441,6 +389,13 @@ def infer_binop(self, context=None):
     impl, meth = BIN_OP_IMPL[self.op]
     return _infer_binary_operator(self, context=context, impl=impl, meth=meth)
 nodes.BinOp.infer = path_wrapper(infer_binop)
+
+def infer_arguments(self, context=None):
+    name = context.lookupname
+    if name is None:
+        raise InferenceError()
+    return _arguments_infer_argname(self, name, context)
+nodes.Arguments.infer = infer_arguments
     
 # .infer_call_result method ###################################################
 def callable_default(self):
@@ -620,33 +575,51 @@ def assend_assigned_stmts(self, context=None):
 nodes.AssName.assigned_stmts = assend_assigned_stmts
 nodes.AssAttr.assigned_stmts = assend_assigned_stmts
 
+def arguments_assigned_stmts(self, node, context, asspath=None):
+    if context.callcontext:
+        # reset call context/name
+        callcontext = context.callcontext
+        context = copy_context(context)
+        context.callcontext = None
+        for infered in callcontext.infer_argument(self.parent, node.name, context):
+            yield infered
+        return
+    for infered in _arguments_infer_argname(self, node.name, context):
+        yield infered
+        
+nodes.Arguments.assigned_stmts = arguments_assigned_stmts
 
-def infer_getattr(self, context=None):
-    """infer a Getattr node by using getattr on the associated object
-    """
-    one_infered = False
-    # XXX
-    #context = context.clone()
-    for owner in self.expr.infer(context):
-        if owner is YES:
-            yield owner
-            one_infered = True
-            continue
-        try:
-            context.boundnode = owner
-            for obj in owner.igetattr(self.attrname, context):
-                yield obj
-                one_infered = True
-            context.boundnode = None
-        except (NotFoundError, InferenceError):
-            continue
-        except AttributeError:
-            # XXX method / function
-            continue
-    if not one_infered:
-        raise InferenceError()
-nodes.Getattr.infer = path_wrapper(infer_getattr)
-
+def _arguments_infer_argname(self, name, context):
+    # arguments informmtion may be missing, in which case we can't do anything
+    # more
+    if not (self.args or self.vararg or self.kwarg):
+        yield YES
+        return
+    # first argument of instance/class method
+    if name == getattr(self.args[0], 'name', None):
+        functype = self.parent.type
+        if functype == 'method':
+            yield Instance(self.parent.parent.frame())
+            return
+        if functype == 'classmethod':
+            yield self.parent.parent.frame()
+            return
+    if name == self.vararg:
+        yield nodes.Tuple()
+        return
+    if name == self.kwarg:
+        yield nodes.Dict()
+        return
+    # if there is a default value, yield it. And then yield YES to reflect
+    # we can't guess given argument value
+    try:
+        context = copy_context(context)
+        for infered in self.default_value(name).infer(context):
+            yield infered
+        yield YES
+    except NoDefault:
+        yield YES
+        
 
 def assign_assigned_stmts(self, node, context=None, asspath=None):
     if not asspath:
@@ -658,7 +631,6 @@ def assign_assigned_stmts(self, node, context=None, asspath=None):
         yield infered
     if not found:
         raise InferenceError()
-
 nodes.Assign.assigned_stmts = assign_assigned_stmts
 
 def _resolve_asspart(parts, asspath, context):

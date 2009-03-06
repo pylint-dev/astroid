@@ -97,7 +97,7 @@ def build_function(name, args=None, defaults=None, flag=0, doc=None):
     func = nodes.function_factory(name, args, defaults, flag, doc)
     func.locals = {}
     if args:
-        register_arguments(func, args)
+        register_arguments(func)
     return func
 
 
@@ -119,17 +119,23 @@ else:
         """create and intialize an astng From import statement"""
         return nodes.From(fromname, [(name, None) for name in names], 0)
 
-def register_arguments(node, args):
+def register_arguments(func, args=None):
     """add given arguments to local
     
     args is a list that may contains nested lists
     (i.e. def func(a, (b, c, d)): ...)
     """
+    if args is None:
+        args = func.args.args
+        if func.args.vararg:
+            func.set_local(func.args.vararg, func.args)
+        if func.args.kwarg:
+            func.set_local(func.args.kwarg, func.args)
     for arg in args:
-        if type(arg) is type(''):
-            node.set_local(arg, node)
+        if isinstance(arg, nodes.Name):
+            func.set_local(arg.id, arg)
         else:
-            register_arguments(node, arg)
+            register_arguments(func, arg.elts)
 
 
 def object_build_class(node, member):

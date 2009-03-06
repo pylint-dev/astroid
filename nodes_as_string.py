@@ -54,6 +54,11 @@ class AsStringVisitor(ASTVisitor):
 
     
     ## visit_<node> methods ###########################################
+
+    def visit_arguments(self, node):
+        """return an astng.Function node as string"""
+        return node.format_args()
+
     def visit_assattr(self, node):
         """return an astng.AssAttr node as string"""
         return self.visit_getattr(node)
@@ -205,11 +210,10 @@ class AsStringVisitor(ASTVisitor):
     
     def visit_function(self, node):
         """return an astng.Function node as string"""
-        fargs = node.format_args()
         decorate = node.decorators and node.decorators.accept(self)  or ''
         docs = node.doc and '\n%s"""%s"""' % (INDENT, node.doc) or ''
-        return '%sdef %s(%s):%s\n%s' % (decorate, node.name, fargs, docs,
-                                        self._stmt_list(node.body))
+        return '%sdef %s(%s):%s\n%s' % (decorate, node.name, node.args.accept(self),
+                                        docs, self._stmt_list(node.body))
     
     def visit_genexpr(self, node):
         """return an astng.ListComp node as string"""
@@ -241,7 +245,7 @@ class AsStringVisitor(ASTVisitor):
     
     def visit_lambda(self, node):
         """return an astng.Lambda node as string"""
-        return 'lambda %s: %s' % (node.format_args(), node.body.accept(self))
+        return 'lambda %s: %s' % (node.args.accept(self), node.body.accept(self))
     
     def visit_list(self, node):
         """return an astng.List node as string"""

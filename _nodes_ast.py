@@ -55,7 +55,7 @@ from _ast import (AST as Node,
                   keyword as Keyword
                   )
 
-from _ast import Num, Str, Eq, alias, arguments
+from _ast import Num, Str, Eq, alias, arguments as Arguments
 
 from _ast import (Add as _Add, Div as _Div, FloorDiv as _FloorDiv,
                   Mod as _Mod, Mult as _Mult, Pow as _Pow, Sub as _Sub,
@@ -152,27 +152,6 @@ def _init_set_doc(node):
         pass # ast built from scratch
 
 
-def _init_function(node):
-    argnames = []
-    for arg in node.args.args: # XXX flattening argnames is wrong !
-        if isinstance(arg, Name):
-            argnames.append(arg.id)
-        elif isinstance(arg, Tuple):
-            argnames.append( tuple(elt.id for elt in arg.elts) )
-    node.argnames = argnames
-    node.defaults = node.args.defaults
-    if node.args.vararg:
-        node.argnames.append(node.args.vararg)
-    if node.args.kwarg:
-        node.argnames.append(node.args.kwarg)
-    flags = 0
-    if node.args.vararg:
-        flags += 4
-    if node.args.kwarg:
-        flags += 8
-    node.flags = flags
-    del node.args
-
 class TreeRebuilder(ASTVisitor):
     """REbuilds the _ast tree to become an ASTNG tree"""
 
@@ -214,7 +193,6 @@ class TreeRebuilder(ASTVisitor):
 
     def visit_function(self, node):
         _init_set_doc(node)
-        _init_function(node)
         if node.decorators:
             node.decorators = Decorators(node.decorators)
 
@@ -235,9 +213,6 @@ class TreeRebuilder(ASTVisitor):
         node.names = [(alias.name, alias.asname) for alias in node.names]
         node.modname = node.module
         del node.module
-
-    def visit_lambda(self, node):
-        _init_function(node)
 
     def visit_module(self, node):
         _init_set_doc(node)
@@ -326,21 +301,19 @@ def function_factory(name, args, defaults, flag=0, doc=None):
     node.body = []
     node.name = name
     # XXX ensure we get a compatible representation
-    #argsnode = arguments()
-    node.args = args = []
+    node.args = argsnode = Arguments()
+    argsnode.args = []
     for arg in args:
-        args.append(Name())
-        args.args[-1].name = arg
-        args.args[-1].parent = argsnode
-    #argsnode.defaults = []
-    node.defaults = defaults = []
+        argsnode.args.append(Name())
+        argsnode.args[-1].name = arg
+        argsnode.args[-1].parent = argsnode
+    argsnode.defaults = []
     for default in defaults:
-        defaults.append(const_factory(default))
-        defaults[-1].parent = argsnode
-    #argsnode.kwarg = None # XXX
-    #argsnode.vararg = None # XXX
-    #argsnode.parent = node
-    #node.args = argsnode
+        argsnode.defaults.append(const_factory(default))
+        argsnode.defaults[-1].parent = argsnode
+    argsnode.kwarg = None
+    argsnode.vararg = None
+    argsnode.parent = node
     _add_docstring(node, doc)
     return node
 

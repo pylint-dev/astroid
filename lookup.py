@@ -82,7 +82,7 @@ def class_scope_lookup(self, node, name, offset=0):
     return scope_lookup(frame, node, name, offset)
 
 def function_scope_lookup(self, node, name, offset=0):
-    if node in self.defaults:
+    if node in self.args.defaults:
         frame = self.parent.frame()
         # line offset to avoid that def func(f=func) resolve the default
         # value to the defined function

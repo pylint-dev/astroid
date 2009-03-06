@@ -63,6 +63,7 @@ ID_RGX = re.compile('^[a-zA-Z_][a-zA-Z_0-9]*$')
 del re
 
 # astng fields definition ####################################################
+Arguments._astng_fields = ('args', 'defaults')
 AssAttr._astng_fields = ('expr',)
 Assert._astng_fields = ('test', 'fail',)
 Assign._astng_fields = ('targets', 'value',)
@@ -91,7 +92,7 @@ From._astng_fields = ()
 EmptyNode._astng_fields = ()
 ExceptHandler._astng_fields = ('type', 'name', 'body',) # XXX lineno & co inside._astng_fields instead of _attributes
 Exec._astng_fields = ('expr', 'globals', 'locals',)
-Function._astng_fields = ('decorators', 'defaults', 'body') # XXX argnames ?
+Function._astng_fields = ('decorators', 'args', 'body')
 For._astng_fields = ('target', 'iter', 'body', 'orelse',)
 Getattr._astng_fields = ('expr',) # (former value), attr (now attrname), ctx
 GenExpr._astng_fields = ('elt', 'generators')
@@ -99,7 +100,7 @@ Global._astng_fields = ()
 If._astng_fields = ('test', 'body', 'orelse')
 Import._astng_fields = ()
 Keyword._astng_fields = ('value',)
-Lambda._astng_fields = ('body',)
+Lambda._astng_fields = ('args', 'body',)
 List._astng_fields = ('elts',)  # ctx
 ListComp._astng_fields = ('elt', 'generators')
 Module._astng_fields = ('body',)
@@ -287,7 +288,7 @@ class NodeNG:
 
     def _infer_name(self, frame, name):
         if isinstance(self, INFER_NEED_NAME_STMTS) or (
-                 isinstance(self, (Function, Lambda)) and self is frame):
+                 isinstance(self, Arguments) and self.parent is frame):
             return name
         return None
 

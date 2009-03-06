@@ -62,6 +62,12 @@ class RebuildVisitor(ASTVisitor):
                 self.asscontext = node
             else:
                 self.asscontext = None
+        elif isinstance(node, nodes.Arguments):# and isinstance(node.parent, (nodes.Function, nodes.Lambda)):
+            if childnode in node.args:
+                self.asscontext = node
+            else:
+                self.asscontext = None
+                
         elif isinstance(node, nodes.ExceptHandler):
             if childnode is node.name:
                 self.asscontext = node
@@ -69,7 +75,7 @@ class RebuildVisitor(ASTVisitor):
                 self.asscontext = None
         elif isinstance(node, nodes.Subscript):
            self.asscontext = None # disable asscontext on subscripts to skip d[x] = y (item assigment)
-        
+    
     def walk(self, node):
         self._walk(node)
         delayed = self._delayed
@@ -92,7 +98,13 @@ class RebuildVisitor(ASTVisitor):
         
 
     # general visit_<node> methods ############################################
-    
+
+    def visit_arguments(self, node):
+        if node.vararg:
+            node.parent.set_local(node.vararg, node)
+        if node.kwarg:
+            node.parent.set_local(node.kwarg, node)
+        
     def visit_assign(self, node):
         return True
     
@@ -175,7 +187,6 @@ class RebuildVisitor(ASTVisitor):
             else:
                 node.type = 'method'
         self._push(node)
-        register_arguments(node, node.argnames)
         return True
 
     def leave_function(self, node):
@@ -208,7 +219,6 @@ class RebuildVisitor(ASTVisitor):
     def visit_lambda(self, node):
         """visit an Keyword node to become astng"""
         node.locals = {}
-        register_arguments(node, node.argnames)
 
     def visit_module(self, node):
         """visit an Module node to become astng"""

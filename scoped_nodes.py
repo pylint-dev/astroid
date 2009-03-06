@@ -31,9 +31,10 @@ __doctype__ = "restructuredtext en"
 import sys
 
 from logilab.common.compat import chain, set
+from logilab.common.decorators import monkeypatch
 
 from logilab.astng import MANAGER, InferenceContext, copy_context, \
-     unpack_infer, Class, Const, Dict, Function, GenExpr, Lambda, \
+     unpack_infer, Arguments, Class, Const, Dict, Function, GenExpr, Lambda, \
      Module, Name, Pass, Raise, Tuple, Yield
 from logilab.astng import NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
@@ -428,12 +429,61 @@ class FunctionNG(object):
 extend_class(Function, FunctionNG)
 
 # lambda nodes may also need some of the function members
-Lambda._pos_information = FunctionNG._pos_information.im_func
-Lambda.format_args = FunctionNG.format_args.im_func
-Lambda.default_value = FunctionNG.default_value.im_func
-Lambda.mularg_class = FunctionNG.mularg_class.im_func
 Lambda.type = 'function'
 Lambda.pytype = FunctionNG.pytype.im_func
+
+
+@monkeypatch(Arguments)    
+def format_args(self):
+    """return arguments formatted as string"""
+    result = [_format_args(self.args, self.defaults)]
+    if self.vararg:
+        result.append('*%s' % self.vararg)
+    if self.kwarg:
+        result.append('**%s' % self.kwarg)
+    return ', '.join(result)
+
+@monkeypatch(Arguments)    
+def default_value(self, argname):
+    """return the default value for an argument
+
+    :raise `NoDefault`: if there is no default value defined
+    """
+    i, arg = _find_arg(argname, self.args)
+    if i is not None:
+        idx = i - (len(self.args) - len(self.defaults))
+        if idx >= 0:
+            return self.defaults[idx]
+    raise NoDefault()
+
+@monkeypatch(Arguments)    
+def find_argname(self, argname, rec=False):
+    return _find_arg(argname, self.args, rec)
+
+
+def _find_arg(argname, args, rec=False):
+    for i, arg in enumerate(args):
+        if isinstance(arg, Tuple):
+            if rec:
+                found = _find_arg(argname, arg.elts)
+                if found[0] is not None:
+                    return found
+        elif arg.name == argname:
+            return i, arg
+    return None, None
+
+def _format_args(args, defaults=None):
+    values = []
+    if defaults is not None:
+        default_offset = len(args) - len(defaults)
+    for i, arg in enumerate(args):
+        if isinstance(arg, Tuple):
+            values.append('(%s)' % _format_args(arg.elts))
+        else:
+            values.append(arg.name)
+            if defaults is not None and i >= default_offset:
+                values[-1] += '=' + defaults[i-default_offset].as_string()
+    return ', '.join(values)
 
 # Class ######################################################################
 
