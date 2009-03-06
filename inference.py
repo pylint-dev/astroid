@@ -39,9 +39,6 @@ def infer_end(self, context=None):
     """inference's end for node such as Module, Class, Function, Const...
     """
     yield self
-
-def end_ass_type(self):
-    return self
     
     
 nodes.List._proxied = MANAGER.astng_from_class(list)
@@ -161,11 +158,11 @@ class CallContext:
 
 def infer_name(self, context=None):
     """infer a Name: use name lookup rules"""
-    context = context.clone()
-    context.lookupname = self.name
     frame, stmts = self.lookup(self.name)
     if not stmts:
         raise UnresolvableName(self.name)
+    context = context.clone()
+    context.lookupname = self.name
     return _infer_stmts(stmts, context, frame)
 
 nodes.Name.infer = path_wrapper(infer_name)
@@ -240,6 +237,33 @@ def infer_from(self, context=None, asname=True):
         raise InferenceError(name)
 
 nodes.From.infer = path_wrapper(infer_from)
+    
+
+def infer_getattr(self, context=None):
+    """infer a Getattr node by using getattr on the associated object
+    """
+    one_infered = False
+    # XXX
+    #context = context.clone()
+    for owner in self.expr.infer(context):
+        if owner is YES:
+            yield owner
+            one_infered = True
+            continue
+        try:
+            context.boundnode = owner
+            for obj in owner.igetattr(self.attrname, context):
+                yield obj
+                one_infered = True
+            context.boundnode = None
+        except (NotFoundError, InferenceError):
+            continue
+        except AttributeError:
+            # XXX method / function
+            continue
+    if not one_infered:
+        raise InferenceError()
+nodes.Getattr.infer = path_wrapper(infer_getattr)
 
 
 def infer_global(self, context=None):
@@ -445,6 +469,50 @@ def infer_empty_node(self, context=None):
 nodes.EmptyNode.infer = path_wrapper(infer_empty_node)
 
 
+nodes.Const.__bases__ += (Instance,)
+
+def _set_proxied(const):
+    if const.value is None:
+        raise Exception('bad const')
+    if not hasattr(const, '__proxied'):
+        const.__proxied = MANAGER.astng_from_class(const.value.__class__)
+    return const.__proxied
+        
+nodes.Const._proxied = property(_set_proxied)
+
+def Const_getattr(self, name, context=None, lookupclass=None):
+    return self._proxied.getattr(name, context)
+nodes.Const.getattr = Const_getattr
+nodes.Const.has_dynamic_getattr = lambda x: False
+
+def Const_pytype(self):
+    return self._proxied.qname()
+nodes.Const.pytype = Const_pytype
+
+nodes.Const.infer = infer_end
+
+
+# Assignment related nodes ####################################################
+"""the assigned_stmts method is responsible to return the assigned statement
+(eg not infered) according to the assignment type.
+
+The `asspath` argument is used to record the lhs path of the original node.
+For instance if we want assigned statements for 'c' in 'a, (b,c)', asspath
+will be [1, 1] once arrived to the Assign node.
+
+The `context` argument is the current inference context which should be given
+to any intermediary inference necessary.
+"""
+
+def infer_ass(self, context=None):
+    """infer a AssName/AssAttr: need to inspect the RHS part of the
+    assign node
+    """
+    stmts = list(self.assigned_stmts(context=context))
+    return nodes._infer_stmts(stmts, context)
+nodes.AssName.infer = path_wrapper(infer_ass)
+nodes.AssAttr.infer = path_wrapper(infer_ass)
+# no infer method on DelName and DelAttr (expected InferenceError)
 
 def _resolve_looppart(parts, asspath, context):
     """recursive function to resolve multiple assignments on loops"""
@@ -493,78 +561,11 @@ def for_assigned_stmts(self, node, context=None, asspath=None):
 nodes.For.assigned_stmts = for_assigned_stmts
 nodes.Comprehension.assigned_stmts = for_assigned_stmts
 
-def parent_ass_type(self, context=None):
-    return self.parent.ass_type()
-nodes.Tuple.ass_type = parent_ass_type
-nodes.List.ass_type = parent_ass_type
-nodes.AssName.ass_type = parent_ass_type
-nodes.AssAttr.ass_type = parent_ass_type
-nodes.DelName.ass_type = parent_ass_type
-nodes.DelAttr.ass_type = parent_ass_type
-
-# XXX if you add ass_type to a class, you should probably modify lookup.filter_stmts around line ::
-# if ass_type is mystmt and not isinstance(ass_type, (nodes.Class, nodes.Function, nodes.Import, nodes.From, nodes.Lambda)):
-nodes.Class.ass_type = end_ass_type
-nodes.Function.ass_type = end_ass_type
-nodes.Lambda.ass_type = end_ass_type
-nodes.Import.ass_type = end_ass_type
-nodes.From.ass_type = end_ass_type
-
-nodes.ExceptHandler.ass_type = end_ass_type
-nodes.Comprehension.ass_type = end_ass_type
-
-
-nodes.Const.__bases__ += (Instance,)
-
-def _set_proxied(const):
-    if const.value is None:
-        raise Exception('bad const')
-    if not hasattr(const, '__proxied'):
-        const.__proxied = MANAGER.astng_from_class(const.value.__class__)
-    return const.__proxied
-        
-nodes.Const._proxied = property(_set_proxied)
-
-def Const_getattr(self, name, context=None, lookupclass=None):
-    return self._proxied.getattr(name, context)
-nodes.Const.getattr = Const_getattr
-nodes.Const.has_dynamic_getattr = lambda x: False
-
-def Const_pytype(self):
-    return self._proxied.qname()
-nodes.Const.pytype = Const_pytype
-
-nodes.Const.infer = infer_end
-
-
-# Assignment related nodes ####################################################
-"""the assigned_stmts method is responsible to return the assigned statement
-(eg not infered) according to the assignment type.
-
-The `asspath` argument is used to record the lhs path of the original node.
-For instance if we want assigned statements for 'c' in 'a, (b,c)', asspath
-will be [1, 1] once arrived to the Assign node.
-
-The `context` argument is the current inference context which should be given
-to any intermediary inference necessary.
-"""
-
-def infer_ass(self, context=None):
-    """infer a AssName/AssAttr: need to inspect the RHS part of the
-    assign node
-    """
-    stmts = self.assigned_stmts(context=context)
-    return nodes._infer_stmts(stmts, context)
-nodes.AssName.infer = path_wrapper(infer_ass)
-nodes.AssAttr.infer = path_wrapper(infer_ass)
-# no infer method on DelName and DelAttr (expected InferenceError)
-
 
 def mulass_assigned_stmts(self, node, context=None, asspath=None):
     if asspath is None:
         asspath = []
-    node_idx = self.elts.index(node)
-    asspath.insert(0, node_idx)
+    asspath.insert(0, self.elts.index(node))
     return self.parent.assigned_stmts(self, context, asspath)
 nodes.Tuple.assigned_stmts = mulass_assigned_stmts
 nodes.List.assigned_stmts = mulass_assigned_stmts
@@ -687,13 +688,35 @@ def with_assigned_stmts(self, node, context=None, asspath=None):
         raise InferenceError()
 nodes.With.assigned_stmts = with_assigned_stmts
 
+
+
+def parent_ass_type(self, context=None):
+    return self.parent.ass_type()
     
-nodes.With.ass_type = end_ass_type
-nodes.For.ass_type = end_ass_type
-nodes.ExceptHandler.ass_type = end_ass_type
+nodes.Tuple.ass_type = parent_ass_type
+nodes.List.ass_type = parent_ass_type
+nodes.AssName.ass_type = parent_ass_type
+nodes.AssAttr.ass_type = parent_ass_type
+nodes.DelName.ass_type = parent_ass_type
+nodes.DelAttr.ass_type = parent_ass_type
+
+def end_ass_type(self):
+    return self
+
+# XXX if you add ass_type to a class, you should probably modify lookup.filter_stmts around line ::
+# if ass_type is mystmt and not isinstance(ass_type, (nodes.Class, nodes.Function, nodes.Import, nodes.From, nodes.Lambda)):
+nodes.Arguments.ass_type = end_ass_type
 nodes.Assign.ass_type = end_ass_type
-nodes.Delete.ass_type = end_ass_type
 nodes.AugAssign.ass_type = end_ass_type
+nodes.Class.ass_type = end_ass_type
+nodes.Comprehension.ass_type = end_ass_type
+nodes.Delete.ass_type = end_ass_type
+nodes.ExceptHandler.ass_type = end_ass_type
+nodes.For.ass_type = end_ass_type
+nodes.From.ass_type = end_ass_type
+nodes.Function.ass_type = end_ass_type
+nodes.Import.ass_type = end_ass_type
+nodes.With.ass_type = end_ass_type
 
 # subscription protocol #######################################################
         
