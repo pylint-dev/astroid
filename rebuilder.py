@@ -242,14 +242,6 @@ class RebuildVisitor(ASTVisitor):
             const = nodes.const_factory(value)
             const.parent = node
             node.locals['__path__'] = [const]
-
-    def visit_const(self, node):
-        """visit an Name node to become astng"""
-        try:
-            cls, value = nodes.CONST_VALUE_TRANSFORMS[node.value]
-            node.__class__ = cls
-        except KeyError:
-            pass
         
     def visit_name(self, node):
         """visit an Name node to become astng"""

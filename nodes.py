@@ -340,8 +340,7 @@ def const_factory(value):
     except KeyError:
         pass
     try:
-        cls, value = CONST_VALUE_TRANSFORMS[value]
-        node = cls(value)
+        node = Const(value)
     except KeyError:
         node = _const_factory(value)
     return node
@@ -585,38 +584,38 @@ class Generator(Proxy):
 
 # XXX why not using Const node ? Or reintroduce Num / Str
 
-class NoneType(Instance, NodeNG):
-    """None value (instead of Name('None')"""
-    _astng_fields = ()
-    _proxied_class = None.__class__
-    _proxied = None
-    def __init__(self, value):
-        self.value = value
-    def __repr__(self):
-        return 'None'
-    def get_children(self):
-        return iter(())
-    __str__ = __repr__
+# class NoneType(Instance, NodeNG):
+#     """None value (instead of Name('None')"""
+#     _astng_fields = ()
+#     _proxied_class = None.__class__
+#     _proxied = None
+#     def __init__(self, value):
+#         self.value = value
+#     def __repr__(self):
+#         return 'None'
+#     def get_children(self):
+#         return iter(())
+#     __str__ = __repr__
     
-class Bool(Instance, NodeNG):
-    """None value (instead of Name('True') / Name('False')"""
-    _astng_fields = ()
-    _proxied_class = bool
-    _proxied = None
-    def __init__(self, value):
-        self.value = value
-    def __repr__(self):
-        return str(self.value)
-    def get_children(self):
-        return iter(())
-    __str__ = __repr__
+# class Bool(Instance, NodeNG):
+#     """None value (instead of Name('True') / Name('False')"""
+#     _astng_fields = ()
+#     _proxied_class = bool
+#     _proxied = None
+#     def __init__(self, value):
+#         self.value = value
+#     def __repr__(self):
+#         return str(self.value)
+#     def get_children(self):
+#         return iter(())
+#     __str__ = __repr__
 
-CONST_NAME_TRANSFORMS = {'None': (NoneType, None),
-                         'True': (Bool, True),
-                         'False': (Bool, False)}
-CONST_VALUE_TRANSFORMS = {None: (NoneType, None),
-                          True: (Bool, True),
-                          False: (Bool, False)}
+CONST_NAME_TRANSFORMS = {'None': (Const, None),
+                         'True': (Const, True),
+                         'False': (Const, False)}
+# CONST_VALUE_TRANSFORMS = {None: (NoneType, None),
+#                           True: (Bool, True),
+#                           False: (Bool, False)}
 
 
 # inference utilities #########################################################

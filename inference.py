@@ -50,8 +50,8 @@ nodes.Tuple.pytype = lambda x: '__builtin__.tuple'
 nodes.Dict.__bases__ += (Instance,)
 nodes.Dict._proxied = MANAGER.astng_from_class(dict)
 nodes.Dict.pytype = lambda x: '__builtin__.dict'
-nodes.NoneType.pytype = lambda x: 'types.NoneType'
-nodes.Bool._proxied = MANAGER.astng_from_class(bool)
+# nodes.NoneType.pytype = lambda x: 'types.NoneType'
+# nodes.Bool._proxied = MANAGER.astng_from_class(bool)
 
 builtin_astng = nodes.Dict._proxied.root()
 
@@ -470,13 +470,22 @@ nodes.EmptyNode.infer = path_wrapper(infer_empty_node)
 
 nodes.Const.__bases__ += (Instance,)
 
+from types import NoneType
+
+_CONST_PROXY = {
+    NoneType: MANAGER.astng_from_class(NoneType, 'types'),
+    bool: MANAGER.astng_from_class(bool),
+    int: MANAGER.astng_from_class(int),
+    float: MANAGER.astng_from_class(float),
+    complex: MANAGER.astng_from_class(complex),
+    str: MANAGER.astng_from_class(str),
+    unicode: MANAGER.astng_from_class(unicode),
+    }
+
 def _set_proxied(const):
-    if const.value is None:
-        raise Exception('bad const')
     if not hasattr(const, '__proxied'):
-        const.__proxied = MANAGER.astng_from_class(const.value.__class__)
+        const.__proxied = _CONST_PROXY[const.value.__class__]
     return const.__proxied
-        
 nodes.Const._proxied = property(_set_proxied)
 
 def Const_getattr(self, name, context=None, lookupclass=None):
@@ -746,5 +755,3 @@ def dict_iter_stmts(self):
     return self.items[::2]
 nodes.Dict.iter_stmts = dict_iter_stmts
 
-
-nodes.NoneType._proxied = MANAGER.astng_from_module_name('types').getattr('NoneType')

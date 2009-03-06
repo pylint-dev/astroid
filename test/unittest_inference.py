@@ -464,7 +464,7 @@ xxx = load_module_from_name('__pkginfo__')
         xxx = astng['xxx']
         infered = list(xxx.infer())
         self.failUnlessEqual(sorted([n.__class__ for n in infered]),
-                             sorted([nodes.NoneType, YES.__class__]))
+                             sorted([nodes.Const, YES.__class__]))
 
     def test_method_argument(self):
         data = '''
@@ -553,7 +553,7 @@ if __name__ == '__main__':
                              3)
         self.failUnlessEqual([str(infered).replace('FunctionDef', 'Function')
                               for infered in astng['fct'].infer()],
-                              ['Function(first_word)', 'Function(last_word)', 'None'])
+                              ['Function(first_word)', 'Function(last_word)', 'Const(None)'])
 
     def test_float_complex_ambiguity(self):
         data = '''
@@ -820,7 +820,7 @@ def f(g = lambda: None):
         callfuncnode = astng['f'].body[0].value.expr
         infered = list(callfuncnode.infer())
         self.failUnlessEqual(len(infered), 1)
-        self.assertIsInstance(infered[0], nodes.NoneType)
+        self.assertIsInstance(infered[0], nodes.Const)
         self.failUnlessEqual(infered[0].value, None)
 
     def test_nonregr_getitem_empty_tuple(self):

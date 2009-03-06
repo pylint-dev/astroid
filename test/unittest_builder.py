@@ -21,7 +21,7 @@ from unittest_inference import get_name_node
 from pprint import pprint
 
 from logilab.astng import builder, nodes, patchcomptransformer
-from logilab.astng import Module, YES, InferenceError, NoneType, Bool
+from logilab.astng import Module, YES, InferenceError
 from logilab.astng.nodes_as_string import as_string
 
 import data
@@ -170,9 +170,9 @@ class BuilderTC(TestCase):
         self.assert_(time_astng)
         #
         unittest_astng = self.builder.inspect_build(unittest)
-        self.failUnless(isinstance(builtin_astng['None'], NoneType), builtin_astng['None'])
-        self.failUnless(isinstance(builtin_astng['True'], Bool), builtin_astng['True'])
-        self.failUnless(isinstance(builtin_astng['False'], Bool), builtin_astng['False'])
+        self.failUnless(isinstance(builtin_astng['None'], nodes.Const), builtin_astng['None'])
+        self.failUnless(isinstance(builtin_astng['True'], nodes.Const), builtin_astng['True'])
+        self.failUnless(isinstance(builtin_astng['False'], nodes.Const), builtin_astng['False'])
         self.failUnless(isinstance(builtin_astng['Exception'], nodes.From), builtin_astng['Exception'])
         self.failUnless(isinstance(builtin_astng['NotImplementedError'], nodes.From))
 
