@@ -169,6 +169,7 @@ class ModuleNG(object):
     (see below the class definition)
     """
     fromlineno = 0
+    lineno = 0
 
     # attributes below are set by the builder module or by raw factories
 
