@@ -579,6 +579,7 @@ class Generator(Proxy):
 
 class NoneType(Instance, NodeNG):
     """None value (instead of Name('None')"""
+    _astng_fields = ()
     _proxied_class = None.__class__
     _proxied = None
     def __init__(self, value):
@@ -591,6 +592,7 @@ class NoneType(Instance, NodeNG):
     
 class Bool(Instance, NodeNG):
     """None value (instead of Name('True') / Name('False')"""
+    _astng_fields = ()
     _proxied_class = bool
     _proxied = None
     def __init__(self, value):
