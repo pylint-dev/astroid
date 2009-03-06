@@ -113,7 +113,10 @@ class AssName(Node):
 
 class Const(Node):
     """represent a Str or Num node"""
-
+    def __init__(self, value=None):
+        super(Const, self).__init__()
+        self.value = value
+        
 class DelAttr(Node):
     """represent del attribute statements"""
 
