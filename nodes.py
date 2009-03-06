@@ -92,7 +92,7 @@ Dict._astng_fields = ('items',)
 Discard._astng_fields = ('value',)
 From._astng_fields = ()
 EmptyNode._astng_fields = ()
-ExceptHandler._astng_fields = ('type', 'name', 'body',) # XXX lineno & co inside._astng_fields instead of _attributes
+ExceptHandler._astng_fields = ('type', 'name', 'body',)
 Exec._astng_fields = ('expr', 'globals', 'locals',)
 Function._astng_fields = ('decorators', 'args', 'body')
 For._astng_fields = ('target', 'iter', 'body', 'orelse',)
@@ -181,11 +181,7 @@ class NodeNG:
         """return the first node defining a new scope (i.e. Module,
         Function, Class, Lambda but also GenExpr)
         """
-        try:
-            return self.parent.scope()
-        except AttributeError:
-            print self, self.parent
-            raise
+        return self.parent.scope()
 
     def root(self):
         """return the root node of the tree, (i.e. a Module)
@@ -267,10 +263,9 @@ class NodeNG:
         return lineno, self.tolineno
 
     def set_local(self, name, stmt):
-        """delegate to a scoped parent handling a locals dictionary
-        """
+        """delegate to a scoped parent handling a locals dictionary"""
         self.parent.set_local(name, stmt)
-
+        
     def nodes_of_class(self, klass, skip_klass=None):
         """return an iterator on nodes which are instance of the given class(es)
 
@@ -405,8 +400,7 @@ def set_line_info(self, lastchild):
     self.blockstart_tolineno = self.test.tolineno
 
 def try_except_block_range(node, lineno):
-    """handle block line numbers range for try/except statements
-    """
+    """handle block line numbers range for try/except statements"""
     last = None
     for exhandler in node.handlers:
         if exhandler.type and lineno == exhandler.type.fromlineno:
@@ -484,12 +478,11 @@ class Proxy(Proxy_):
     def __getattr__(self, name):
         if name == '_proxied':
             return getattr(self.__class__, '_proxied')
-        #assert self._proxied is not self
-        #assert getattr(self._proxied, name) is not self
         return getattr(self._proxied, name)
 
     def infer(self, context=None):
         yield self
+
 
 class InstanceMethod(Proxy):
     """a special node representing a function bound to an instance"""

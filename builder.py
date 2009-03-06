@@ -87,8 +87,6 @@ class ASTNGBuilder:
         this is used when there is no python source code available (either
         because it's a built-in module or because the .py is not available)
         """
-        print '*'*80
-        print 'inspect build', module, modname
         self._module = module
         node = build_module(modname or module.__name__, module.__doc__)
         node.file = node.path = path and abspath(path) or path
@@ -105,8 +103,6 @@ class ASTNGBuilder:
 
         path is expected to be a python source file
         """
-        print '*'*80
-        print 'file build', path, modname
         try:
             data = norm_read(path)
         except IOError, ex:
@@ -136,8 +132,6 @@ class ASTNGBuilder:
        
     def ast_build(self, node, modname='', path=None):
         """recurse on the ast (soon ng) to add some arguments et method"""
-        print '*'*80
-        print modname, path
         if path is not None:
             node.file = node.path = abspath(path)
         else:
@@ -201,8 +195,8 @@ class ASTNGBuilder:
                     node.add_local_node(class_node, name)
                 else:
                     class_node = object_build_class(node, member)
-                # recursion
-                self.object_build(class_node, member)
+                    # recursion
+                    self.object_build(class_node, member)
             elif ismethoddescriptor(member):
                 assert isinstance(member, object)
                 object_build_methoddescriptor(node, member)

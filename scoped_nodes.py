@@ -126,19 +126,6 @@ class LocalsDictMixIn(object):
         locally defined names
         """
         return self.locals.keys()
-##         associated to nodes which are instance of `Function` or
-##         `Class`
-##         """
-##         # FIXME: sort keys according to line number ?
-##         try:
-##             return self.__keys
-##         except AttributeError:
-##             keys = [member.name for member in self.locals.values()
-##                     if (isinstance(member, Function)
-##                         or isinstance(member, Class))
-##                         and member.parent.frame() is self]
-##             self.__keys = tuple(keys)
-##             return keys
 
     def values(self):
         """method from the `dict` interface returning a tuple containing
@@ -353,80 +340,11 @@ class FunctionNG(object):
 
     def is_generator(self):
         """return true if this is a generator function"""
+        # XXX should be flagged, not computed
         try:
             return self.nodes_of_class(Yield, skip_klass=Function).next()
         except StopIteration:
             return False
-        
-    def format_args(self):
-        """return arguments formatted as string"""
-        if self.argnames is None: # information is missing
-            return ''
-        result = []
-        args, kwargs, last, default_idx = self._pos_information()
-        for i in range(len(self.argnames)):
-            name = self.argnames[i]
-            if type(name) is type(()):
-                name = '(%s)' % ','.join(name)
-            if i == last and kwargs:
-                name = '**%s' % name
-            elif args and (i == last or (kwargs and i == last - 1)):
-                name = '*%s' % name
-            elif i >= default_idx:
-                default_str = as_string(self.defaults[i - default_idx])
-                name = '%s=%s' % (name, default_str)
-            result.append(name)
-        return ', '.join(result)
-
-    def default_value(self, argname):
-        """return the default value for an argument
-
-        :raise `NoDefault`: if there is no default value defined
-        """
-        if self.argnames is None: # information is missing
-            raise NoDefault()
-        args, kwargs, last, defaultidx = self._pos_information()
-        try:
-            i = self.argnames.index(argname)
-        except ValueError:
-            raise NoDefault() # XXX
-        if i >= defaultidx and (i - defaultidx) < len(self.defaults):
-            return self.defaults[i - defaultidx]
-        raise NoDefault()
-
-    def mularg_class(self, argname):
-        """if the given argument is a * or ** argument, return respectivly
-        a Tuple or Dict instance, else return None
-        """
-        args, kwargs, last, defaultidx = self._pos_information()
-        try:
-            i = self.argnames.index(argname)
-        except ValueError:
-            return None # XXX
-        if i == last and kwargs:
-            valnode = Dict()
-            valnode.parent = self
-            return valnode
-        if args and (i == last or (kwargs and i == last - 1)):
-            valnode = Tuple()
-            valnode.parent = self
-            return valnode
-        return None
-
-    def _pos_information(self):
-        """return a 4-uple with positional information about arguments:
-        (true if * is used,
-         true if ** is used,
-         index of the last argument,
-         index of the first argument having a default value)
-        """
-        args = self.flags & 4
-        kwargs = self.flags & 8
-        last = len(self.argnames) - 1
-        defaultidx = len(self.argnames) - (len(self.defaults) +
-                                           (args and 1 or 0) +
-                                           (kwargs and 1 or 0))
-        return args, kwargs, last, defaultidx
 
 extend_class(Function, FunctionNG)
 
@@ -592,8 +510,6 @@ class ClassNG(object):
                                 continue # cf xxx above
                             yield grandpa
             except InferenceError:
-                #import traceback
-                #traceback.print_exc()
                 # XXX log error ?
                 continue
             

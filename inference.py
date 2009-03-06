@@ -393,7 +393,6 @@ def _infer_binary_operator(self, context=None, impl=None, meth='__method__'):
             except TypeError:
                 yield YES
                 continue
-            print repr(value)
             yield nodes.const_factory(value)
 
 BIN_OP_IMPL = {'+':  (lambda a,b: a+b, '__add__'),

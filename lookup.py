@@ -217,8 +217,7 @@ def _filter_stmts(self, stmts, frame, offset):
         if not are_exclusive(self, node):
             _stmts.append(node)
             _stmt_parents.append(stmt.parent)
-    stmts = _stmts
-    return stmts
+    return _stmts
 
 
 def _decorate(astmodule):

@@ -274,6 +274,7 @@ class RebuildVisitor(ASTVisitor):
                     else:
                         iattrs = infered.locals
                 except AttributeError:
+                    # XXX
                     import traceback
                     traceback.print_exc()
                     continue

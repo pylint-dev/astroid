@@ -673,7 +673,7 @@ open("toto.txt")
             self.assertIsInstance(infered[0], nodes.Function)
             self.failUnlessEqual(infered[0].name, 'open')
                 
-    def test_callfunc_context_inference(self):
+    def test_callfunc_context_func(self):
         data = '''
 def mirror(arg=None):
     return arg
@@ -686,13 +686,16 @@ un = mirror(1)
         self.assertIsInstance(infered[0], nodes.Const)
         self.failUnlessEqual(infered[0].value, 1)
                 
-    def test_callfunc_context_inference_lambda(self):
+    def test_callfunc_context_lambda(self):
         data = '''
 mirror = lambda x=None: x
 
 un = mirror(1)
         '''
         astng = builder.string_build(data, __name__, __file__)
+        infered = list(astng.igetattr('mirror'))
+        self.failUnlessEqual(len(infered), 1)
+        self.assertIsInstance(infered[0], nodes.Lambda)
         infered = list(astng.igetattr('un'))
         self.failUnlessEqual(len(infered), 1)
         self.assertIsInstance(infered[0], nodes.Const)
