@@ -154,6 +154,7 @@ def _filter_stmts(self, stmts, frame, offset):
             break
         if isinstance(node, nodes.Class) and self in node.bases:
             break
+        assert hasattr(node, 'ass_type'), (node, node.scope(), node.scope().locals)
         ass_type = node.ass_type()
         if ass_type is mystmt and not isinstance(ass_type, (nodes.Class,
                  nodes.Function, nodes.Import, nodes.From, nodes.Lambda)):
