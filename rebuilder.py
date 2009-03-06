@@ -86,12 +86,17 @@ class RebuildVisitor(ASTVisitor):
 
     def _walk(self, node, parent=None):
         """default visit method, handle the parent attribute"""
+        node.fromlineno = node.lineno
         node.parent = parent
         node.accept(self.rebuilder)
         handle_leave = node.accept(self)
+        child = None
         for child in node.get_children():
             self.set_context(node, child)
             self._walk(child, node)
+            if self.asscontext is child:
+                self.asscontext = None
+        node.set_line_info(child)
         if handle_leave:
             leave = getattr(self, "leave_" + node.__class__.__name__.lower() )
             leave(node)

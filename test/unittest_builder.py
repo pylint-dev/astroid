@@ -10,8 +10,7 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-"""tests for the astng builder module
-"""
+"""tests for the astng builder and rebuilder module"""
 
 import unittest
 import sys
@@ -28,115 +27,105 @@ from logilab.astng.nodes_as_string import as_string
 import data
 from data import module as test_module
 
-if nodes.AST_MODE == 'compiler':
+class FromToLineNoTC(TestCase):
 
-    class TransformerTC(TestCase):
+    def setUp(self):
+        self.astng = builder.ASTNGBuilder().file_build('data/format.py')
 
-        def setUp(self):
-            transformer = patchcomptransformer.ASTNGTransformer()
-            self.astng = transformer.parsesuite(open('data/format.py').read())
+    def test_callfunc_lineno(self):
+        stmts = self.astng.body
+        # on line 4:
+        #    function('aeozrijz\
+        #    earzer', hop)
+        discard = stmts[0]
+        self.assertIsInstance(discard, nodes.Discard)
+        self.assertEquals(discard.fromlineno, 4)
+        self.assertEquals(discard.tolineno, 5)
+        callfunc = discard.value
+        self.assertIsInstance(callfunc, nodes.CallFunc)
+        self.assertEquals(callfunc.fromlineno, 4)
+        self.assertEquals(callfunc.tolineno, 5)
+        name = callfunc.func
+        self.assertIsInstance(name, nodes.Name)
+        self.assertEquals(name.fromlineno, 4)
+        self.assertEquals(name.tolineno, 4)
+        strarg = callfunc.args[0]
+        self.assertIsInstance(strarg, nodes.Const)
+        self.assertEquals(strarg.fromlineno, 5) # no way for this one (is 4 actually)
+        self.assertEquals(strarg.tolineno, 5)
+        namearg = callfunc.args[1]
+        self.assertIsInstance(namearg, nodes.Name)
+        self.assertEquals(namearg.fromlineno, 5)
+        self.assertEquals(namearg.tolineno, 5)
+        # on line 10:
+        #    fonction(1,
+        #             2,
+        #             3,
+        #             4)
+        discard = stmts[2]
+        self.assertIsInstance(discard, nodes.Discard)
+        self.assertEquals(discard.fromlineno, 10)
+        self.assertEquals(discard.tolineno, 13)
+        callfunc = discard.value
+        self.assertIsInstance(callfunc, nodes.CallFunc)
+        self.assertEquals(callfunc.fromlineno, 10)
+        self.assertEquals(callfunc.tolineno, 13)
+        name = callfunc.func
+        self.assertIsInstance(name, nodes.Name)
+        self.assertEquals(name.fromlineno, 10)
+        self.assertEquals(name.tolineno, 10)
+        for i, arg in enumerate(callfunc.args):
+            self.assertIsInstance(arg, nodes.Const)
+            self.assertEquals(arg.fromlineno, 10+i)
+            self.assertEquals(arg.tolineno, 10+i)
 
-        def test_callfunc_lineno(self):
-            stmts = self.astng.getChildNodes()[0].nodes
-            # on line 4:
-            #    function('aeozrijz\
-            #    earzer', hop)
-            discard = stmts[0]
-            self.assertIsInstance(discard, nodes.Discard)
-            self.assertEquals(discard.fromlineno, 4)
-            self.assertEquals(discard.tolineno, 5)
-            callfunc = discard.expr
-            self.assertIsInstance(callfunc, nodes.CallFunc)
-            self.assertEquals(callfunc.fromlineno, 4)
-            self.assertEquals(callfunc.tolineno, 5)
-            name = callfunc.node
-            self.assertIsInstance(name, nodes.Name)
-            self.assertEquals(name.fromlineno, 4)
-            self.assertEquals(name.tolineno, 4)
-            strarg = callfunc.args[0]
-            self.assertIsInstance(strarg, nodes.Const)
-            self.assertEquals(strarg.fromlineno, 5) # no way for this one (is 4 actually)
-            self.assertEquals(strarg.tolineno, 5)
-            namearg = callfunc.args[1]
-            self.assertIsInstance(namearg, nodes.Name)
-            self.assertEquals(namearg.fromlineno, 5)
-            self.assertEquals(namearg.tolineno, 5)
-            # on line 10:
-            #    fonction(1,
-            #             2,
-            #             3,
-            #             4)
-            discard = stmts[2]
-            self.assertIsInstance(discard, nodes.Discard)
-            self.assertEquals(discard.fromlineno, 10)
-            self.assertEquals(discard.tolineno, 13)
-            callfunc = discard.expr
-            self.assertIsInstance(callfunc, nodes.CallFunc)
-            self.assertEquals(callfunc.fromlineno, 10)
-            self.assertEquals(callfunc.tolineno, 13)
-            name = callfunc.node
-            self.assertIsInstance(name, nodes.Name)
-            self.assertEquals(name.fromlineno, 10)
-            self.assertEquals(name.tolineno, 10)
-            for i, arg in enumerate(callfunc.args):
-                self.assertIsInstance(arg, nodes.Const)
-                self.assertEquals(arg.fromlineno, 10+i)
-                self.assertEquals(arg.tolineno, 10+i)
+    def test_function_lineno(self):
+        stmts = self.astng.body
+        # on line 15:
+        #    def definition(a,
+        #                   b,
+        #                   c):
+        #        return a + b + c
+        function = stmts[3]
+        self.assertIsInstance(function, nodes.Function)
+        self.assertEquals(function.fromlineno, 15)
+        self.assertEquals(function.tolineno, 18)
+        self.assertEquals(function.blockstart_tolineno, 17)
+        return_ = function.body[0]
+        self.assertIsInstance(return_, nodes.Return)
+        self.assertEquals(return_.fromlineno, 18)
+        self.assertEquals(return_.tolineno, 18)
 
-        def test_function_lineno(self):
-            stmts = self.astng.getChildNodes()[0].nodes
-            # on line 15:
-            #    def definition(a,
-            #                   b,
-            #                   c):
-            #        return a + b + c
-            function = stmts[3]
-            self.assertIsInstance(function, nodes.Function)
-            self.assertEquals(function.fromlineno, 15)
-            self.assertEquals(function.tolineno, 17)
-            code = function.code
-            self.assertIsInstance(code, nodes.Stmt)
-    ##         self.assertEquals(code.fromlineno, 18)
-    ##         self.assertEquals(code.tolineno, 18)
-            return_ = code.nodes[0]
-            self.assertIsInstance(return_, nodes.Return)
-            self.assertEquals(return_.fromlineno, 18)
-            self.assertEquals(return_.tolineno, 18)
+    def test_class_lineno(self):
+        stmts = self.astng.body
+        # on line 20:
+        #    class debile(dict,
+        #                 object):
+        #       pass
+        class_ = stmts[4]
+        self.assertIsInstance(class_, nodes.Class)
+        self.assertEquals(class_.fromlineno, 20)
+        self.assertEquals(class_.tolineno, 22)
+        self.assertEquals(class_.blockstart_tolineno, 21)
+        pass_ = class_.body[0]
+        self.assertIsInstance(pass_, nodes.Pass)
+        self.assertEquals(pass_.fromlineno, 22)
+        self.assertEquals(pass_.tolineno, 22)
 
-        def test_class_lineno(self):
-            stmts = self.astng.getChildNodes()[0].nodes
-            # on line 20:
-            #    class debile(dict,
-            #                 object):
-            #       pass
-            class_ = stmts[4]
-            self.assertIsInstance(class_, nodes.Class)
-            self.assertEquals(class_.fromlineno, 20)
-            self.assertEquals(class_.tolineno, 21)
-            code = class_.code
-            self.assertIsInstance(code, nodes.Stmt)
-    ##         self.assertEquals(code.fromlineno, 18)
-    ##         self.assertEquals(code.tolineno, 18)
-            pass_ = code.nodes[0]
-            self.assertIsInstance(pass_, nodes.Pass)
-            self.assertEquals(pass_.fromlineno, 22)
-            self.assertEquals(pass_.tolineno, 22)
-
-        def test_if_lineno(self):
-            stmts = self.astng.getChildNodes()[0].nodes
-            # on line 20:
-            #    if aaaa: pass
-            #    else:
-            #        aaaa,bbbb = 1,2
-            #        aaaa,bbbb = bbbb,aaaa
-            if_ = stmts[5]
-            self.assertIsInstance(if_, nodes.If)
-            self.assertEquals(if_.fromlineno, 24)
-            self.assertEquals(if_.tolineno, 24)
-            else_ = if_.else_
-            self.assertIsInstance(else_, nodes.Stmt)
-            self.assertEquals(else_.fromlineno, 25)
-            self.assertEquals(else_.tolineno, 27)
+    def test_if_lineno(self):
+        stmts = self.astng.body
+        # on line 20:
+        #    if aaaa: pass
+        #    else:
+        #        aaaa,bbbb = 1,2
+        #        aaaa,bbbb = bbbb,aaaa
+        if_ = stmts[5]
+        self.assertIsInstance(if_, nodes.If)
+        self.assertEquals(if_.fromlineno, 24)
+        self.assertEquals(if_.tolineno, 27)
+        self.assertEquals(if_.blockstart_tolineno, 24)
+        self.assertEquals(if_.orelse[0].fromlineno, 26)
+        self.assertEquals(if_.orelse[1].tolineno, 27)
 
         
 class BuilderTC(TestCase):
@@ -289,8 +278,8 @@ def global_no_effect():
         astng = self.builder.string_build(data, __name__, __file__)
         self.failUnlessEqual(len(astng.getattr('CSTE')), 2)
         self.failUnless(isinstance(astng.getattr('CSTE')[0], nodes.AssName))
-        self.failUnlessEqual(astng.getattr('CSTE')[0].source_line(), 2)
-        self.failUnlessEqual(astng.getattr('CSTE')[1].source_line(), 6)
+        self.failUnlessEqual(astng.getattr('CSTE')[0].fromlineno, 2)
+        self.failUnlessEqual(astng.getattr('CSTE')[1].fromlineno, 6)
         self.assertRaises(nodes.NotFoundError,
                           astng.getattr, 'CSTE2')
         self.assertRaises(InferenceError,
@@ -333,7 +322,7 @@ class FileBuildTC(TestCase):
         module = self.module
         self.assertEquals(module.name, 'data.module')
         self.assertEquals(module.doc, "test module for astng\n")
-        self.assertEquals(module.source_line(), 0)
+        self.assertEquals(module.fromlineno, 0)
         self.assertEquals(module.parent, None)
         self.assertEquals(module.frame(), module)
         self.assertEquals(module.root(), module)
@@ -365,12 +354,12 @@ class FileBuildTC(TestCase):
         function = module['global_access']
         self.assertEquals(function.name, 'global_access')
         self.assertEquals(function.doc, 'function test')
-        self.assertEquals(function.source_line(), 15)
+        self.assertEquals(function.fromlineno, 15)
         self.assert_(function.parent)
         self.assertEquals(function.frame(), function)
         self.assertEquals(function.parent.frame(), module)
         self.assertEquals(function.root(), module)
-        self.assertEquals(function.argnames, ['key', 'val'])
+        self.assertEquals([n.name for n in function.args.args], ['key', 'val'])
         self.assertEquals(function.type, 'function')
 
     def test_function_locals(self):
@@ -387,7 +376,7 @@ class FileBuildTC(TestCase):
         klass = module['YO']
         self.assertEquals(klass.name, 'YO')
         self.assertEquals(klass.doc, 'hehe')
-        self.assertEquals(klass.source_line(), 28)
+        self.assertEquals(klass.fromlineno, 28)
         self.assert_(klass.parent)
         self.assertEquals(klass.frame(), klass)
         self.assertEquals(klass.parent.frame(), module)
@@ -433,17 +422,17 @@ class FileBuildTC(TestCase):
         # "normal" method
         method = klass2['method']
         self.assertEquals(method.name, 'method')
-        self.assertEquals(method.argnames, ['self'])
+        self.assertEquals([n.name for n in method.args.args], ['self'])
         self.assertEquals(method.doc, 'method test')
-        self.assertEquals(method.source_line(), 48)
+        self.assertEquals(method.fromlineno, 48)
         self.assertEquals(method.type, 'method')
         # class method
         method = klass2['class_method']
-        self.assertEquals(method.argnames, ['cls'])
+        self.assertEquals([n.name for n in method.args.args], ['cls'])
         self.assertEquals(method.type, 'classmethod')
         # static method
         method = klass2['static_method']
-        self.assertEquals(method.argnames, [])
+        self.assertEquals(method.args.args, [])
         self.assertEquals(method.type, 'staticmethod')
 
     def test_method_locals(self):
@@ -465,18 +454,31 @@ class ModuleBuildTC(FileBuildTC):
 
 
 class InferedBuildTC(TestCase):
+    code = '''class A: pass
+A.type = "class"
 
-    def test(self):
-        from logilab import astng
-        import compiler
-        sn = astng.MANAGER.astng_from_file(join(astng.__path__[0], 'scoped_nodes.py'))
-        astastng = astng.MANAGER.astng_from_file(join(compiler.__path__[0], 'ast.py'))
-        # check monkey patching of the compiler module has been infered
-        lclass = list(astastng.igetattr('Lambda'))
+def A_ass_type(self):
+    print self
+A.ass_type = A_ass_type
+    '''
+    def test_0(self):
+        astng = builder.ASTNGBuilder().string_build(self.code)
+        lclass = list(astng.igetattr('A'))
         self.assertEquals(len(lclass), 1)
         lclass = lclass[0]
-        self.assert_('format_args' in lclass.locals, lclass.locals.keys())
+        self.assert_('ass_type' in lclass.locals, lclass.locals.keys())
         self.assert_('type' in lclass.locals.keys())
+        
+#     def test_1(self):
+#         from logilab import astng
+#         import compiler
+#         sn = astng.MANAGER.astng_from_file(join(astng.__path__[0], 'inference.py'))
+#         astastng = astng.MANAGER.astng_from_file(join(compiler.__path__[0], 'ast.py'))
+#         # check monkey patching of the compiler module has been infered
+#         lclass = list(astastng.igetattr('Function'))
+#         self.assertEquals(len(lclass), 1)
+#         lclass = lclass[0]
+#         self.assert_('ass_type' in lclass.locals, lclass.locals.keys())
         
 #__all__ = ('BuilderModuleBuildTC', 'BuilderFileBuildTC', 'BuilderTC')
 

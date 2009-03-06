@@ -312,9 +312,11 @@ class FunctionNG(object):
 
     # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
     type = 'function'
-    # list of argument names. MAY BE NONE on some builtin functions where
-    # arguments are unknown
-    argnames = None
+    
+    def set_line_info(self, lastchild):
+        self.fromlineno = self.lineno
+        self.tolineno = lastchild.tolineno
+        self.blockstart_tolineno = self.args.tolineno
 
     def pytype(self):
         if 'method' in self.type:
@@ -542,7 +544,14 @@ class ClassNG(object):
     newstyle = property(_newstyle_impl,
                         doc="boolean indicating if it's a new style class"
                         "or not")
-
+    
+    def set_line_info(self, lastchild):
+        self.fromlineno = self.lineno
+        self.blockstart_tolineno = self.bases and self.bases[-1].tolineno or self.fromlineno
+        if lastchild is not None:
+            self.tolineno = lastchild.tolineno
+        # else this is a class with only a docstring, then tolineno is (should be) already ok
+        
     def pytype(self):
         if self.newstyle:
             return '__builtin__.type'

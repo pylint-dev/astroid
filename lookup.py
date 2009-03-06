@@ -136,14 +136,12 @@ def _filter_stmts(self, stmts, frame, offset):
         return stmts
     mystmt = self.statement()
     # line filtering if we are in the same frame
-    if myframe is frame:
-        try:
-            mylineno = mystmt.source_line() + offset
-        except TypeError, ex:
-            # node has no lineno information (this is the case for nodes
-            # inserted for living objects for instance)
-            # disabling lineno filtering
-            mylineno = 0
+    #
+    # take care node may be missing lineno information (this is the case for
+    # nodes inserted for living objects)
+    if myframe is frame and mystmt.fromlineno is not None:
+        assert mystmt.fromlineno is not None, mystmt
+        mylineno = mystmt.fromlineno + offset
     else:
         # disabling lineno filtering
         mylineno = 0
@@ -152,7 +150,7 @@ def _filter_stmts(self, stmts, frame, offset):
     for node in stmts:
         stmt = node.statement()
         # line filtering is on and we have reached our location, break
-        if mylineno > 0 and stmt.source_line() > mylineno:
+        if mylineno > 0 and stmt.fromlineno > mylineno:
             break
         if isinstance(node, nodes.Class) and self in node.bases:
             break

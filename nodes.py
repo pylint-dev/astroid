@@ -41,6 +41,8 @@ __docformat__ = "restructuredtext en"
 
 from itertools import imap
 
+from logilab.common.decorators import monkeypatch
+
 try:
     from logilab.astng._nodes_ast import *
     from logilab.astng._nodes_ast import _const_factory
@@ -215,58 +217,54 @@ class NodeNG:
         given list of nodes
         """
         myroot = self.root()
-        mylineno = self.source_line()
+        mylineno = self.fromlineno
         nearest = None, 0
         for node in nodes:
             assert node.root() is myroot, \
                    'not from the same module %s' % (self, node)
-            lineno = node.source_line()
-            if node.source_line() > mylineno:
+            lineno = node.fromlineno
+            if node.fromlineno > mylineno:
                 break
             if lineno > nearest[1]:
                 nearest = node, lineno
         # FIXME: raise an exception if nearest is None ?
         return nearest[0]
 
-    def source_line(self):
+    def set_line_info(self, lastchild):
+        if self.lineno is None:
+            self.fromlineno = self._fixed_source_line()
+        else:
+            self.fromlineno = self.lineno
+        if lastchild is None:
+            self.tolineno = self.fromlineno
+        else:
+            self.tolineno = lastchild.tolineno
+        assert self.fromlineno is not None, self
+        assert self.tolineno is not None, self
+        
+    def _fixed_source_line(self):
         """return the line number where the given node appears
 
         we need this method since not all nodes have the lineno attribute
         correctly set...
         """
         line = self.lineno
-        if line is None:
-            _node = self
-            try:
-                while line is None:
-                    _node = _node.get_children().next()
-                    line = _node.lineno
-            except StopIteration:
-                _node = self.parent
-                while _node and line is None:
-                    line = _node.lineno
-                    _node = _node.parent
-            self.lineno = line
+        _node = self
+        try:
+            while line is None:
+                _node = _node.get_children().next()
+                line = _node.lineno
+        except StopIteration:
+            _node = self.parent
+            while _node and line is None:
+                line = _node.lineno
+                _node = _node.parent
         return line
     
-    def last_source_line(self):
-        """return the last block line number for this node (i.e. including
-        children)
-        """
-        try:
-            return self.__dict__['_cached_last_source_line']
-        except KeyError:
-            line = self.source_line()
-            # XXX the latest children would be enough, no ?
-            for node in self.get_children():
-                line = max(line, node.last_source_line())
-            self._cached_last_source_line = line
-            return line
-
     def block_range(self, lineno):
         """handle block line numbers range for non block opening statements
         """
-        return lineno, self.last_source_line()
+        return lineno, self.tolineno
 
     def set_local(self, name, stmt):
         """delegate to a scoped parent handling a locals dictionary
@@ -383,7 +381,7 @@ def object_block_range(node, lineno):
 
     start from the "def" or "class" position whatever the given lineno
     """
-    return node.source_line(), node.last_source_line()
+    return node.fromlineno, node.tolineno
 
 Function.block_range = object_block_range
 Class.block_range = object_block_range
@@ -392,25 +390,31 @@ Module.block_range = object_block_range
 # XXX only if compiler mode ?
 def if_block_range(node, lineno):
     """handle block line numbers range for if/elif statements"""
-    if lineno == node.body[0].source_line():
+    if lineno == node.body[0].fromlineno:
         return lineno, lineno
-    if lineno <= node.body[-1].last_source_line():
-        return lineno, node.body[-1].last_source_line()
-    return elsed_block_range(node, lineno, node.body[0].source_line() - 1)
+    if lineno <= node.body[-1].tolineno:
+        return lineno, node.body[-1].tolineno
+    return elsed_block_range(node, lineno, node.body[0].fromlineno - 1)
 
 If.block_range = if_block_range
+
+@monkeypatch(If)
+def set_line_info(self, lastchild):
+    self.fromlineno = self.lineno
+    self.tolineno = lastchild.tolineno
+    self.blockstart_tolineno = self.test.tolineno
 
 def try_except_block_range(node, lineno):
     """handle block line numbers range for try/except statements
     """
     last = None
     for exhandler in node.handlers:
-        if exhandler.type and lineno == exhandler.type.source_line():
+        if exhandler.type and lineno == exhandler.type.fromlineno:
             return lineno, lineno
-        if exhandler.body[0].source_line() <= lineno <= exhandler.body[-1].last_source_line():
-            return lineno, exhandler.body[-1].last_source_line()
+        if exhandler.body[0].fromlineno <= lineno <= exhandler.body[-1].tolineno:
+            return lineno, exhandler.body[-1].tolineno
         if last is None:
-            last = exhandler.body[0].source_line() - 1
+            last = exhandler.body[0].fromlineno - 1
     return elsed_block_range(node, lineno, last)
 
 TryExcept.block_range = try_except_block_range
@@ -419,13 +423,13 @@ def elsed_block_range(node, lineno, last=None):
     """handle block line numbers range for try/finally, for and while
     statements
     """
-    if lineno == node.source_line():
+    if lineno == node.fromlineno:
         return lineno, lineno
     if node.orelse:
-        if lineno >= node.orelse[0].source_line():
-            return lineno, node.orelse[-1].last_source_line()
-        return lineno, node.orelse[0].source_line() - 1
-    return lineno, last or node.last_source_line()
+        if lineno >= node.orelse[0].fromlineno:
+            return lineno, node.orelse[-1].tolineno
+        return lineno, node.orelse[0].fromlineno - 1
+    return lineno, last or node.tolineno
 
 TryFinally.block_range = elsed_block_range
 While.block_range = elsed_block_range

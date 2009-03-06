@@ -146,6 +146,7 @@ def _init_set_doc(node):
     node.doc = None
     try:
         if isinstance(node.body[0], Discard) and isinstance(node.body[0].value, Str):
+            node.tolineno = node.body[0].lineno
             node.doc = node.body[0].value.s
             node.body = node.body[1:]
     except IndexError:
