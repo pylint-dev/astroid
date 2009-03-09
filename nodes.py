@@ -194,7 +194,9 @@ class NodeNG:
     def next_sibling(self):
         """return the previous sibling statement
         """
-        while not self.is_statement or isinstance(self, Module):
+        if isinstance(self, Module):
+            return
+        while not (self.is_statement or isinstance(self, Module)):
             self = self.parent
         stmts = _get_child_sequence(self.parent, self)
         index = stmts.index(self)
@@ -206,7 +208,9 @@ class NodeNG:
     def previous_sibling(self):
         """return the next sibling statement 
         """
-        while not self.is_statement or isinstance(self, Module):
+        if isinstance(self, Module):
+            return
+        while not (self.is_statement or isinstance(self, Module)):
             self = self.parent
         stmts = _get_child_sequence(self.parent, self)
         index = stmts.index(self)
@@ -309,8 +313,9 @@ def _get_child_sequence(self, child):
         if isinstance(sequence, (tuple, list)) and child in sequence:
             return sequence
     else:
-        msg = 'Could not found %s line %d in %s\'s children line %d'
-        raise ASTNGError(msg % (child, child.lineno, self, self.lineno))
+        print "\nchildren = ", [repr(child) for child in self.get_children()]
+        msg = 'Could not found %s line %s in %s\'s children line %s'
+        raise ASTNGError(msg % ( repr(child), child.lineno, repr(self), self.lineno))
 
 def replace_child(self, child, newchild):
     sequence = _get_child_sequence(self, child)
@@ -319,7 +324,7 @@ def replace_child(self, child, newchild):
     sequence[sequence.index(child)] = newchild
 
 for klass in (Assign, Break, Class, Continue, Delete, Discard, ExceptHandler,
-              For, From, Function, Global, If, Import, Print, Return,
+              For, From, Function, Global, If, Import, Print, Raise, Return,
               TryExcept, TryFinally, While, With, Yield):
     klass.is_statement = True
     klass.replace = replace_child
