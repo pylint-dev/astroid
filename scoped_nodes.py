@@ -213,10 +213,6 @@ class ModuleNG(object):
         except NotFoundError:
             raise InferenceError(name)
 
-    def source_line(self):
-        """return the source line number, 0 on a module"""
-        return 0
-
     def fully_defined(self):
         """return True if this module has been built from a .py file
         and so contains a complete representation including the code
