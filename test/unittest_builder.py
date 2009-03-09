@@ -150,9 +150,9 @@ class BuilderTC(TestCase):
         self.assert_(fclass.pytype(), '__builtin__.type')
         self.assert_(isinstance(fclass['read'], nodes.Function))
         self.assert_(isinstance(fclass['__doc__'], nodes.Const), fclass['__doc__'])
-        # check builtin function has argnames == None
+        # check builtin function has args.args == None
         dclass = builtin_astng['dict']
-        self.assertEquals(dclass['has_key'].argnames, None)
+        self.assertEquals(dclass['has_key'].args.args, None)
         # just check type and object are there
         builtin_astng.getattr('type')
         builtin_astng.getattr('object')

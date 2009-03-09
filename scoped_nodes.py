@@ -392,6 +392,8 @@ def _format_args(args, defaults=None):
     values = []
     if defaults is not None:
         default_offset = len(args) - len(defaults)
+    if args is None:
+        return ''
     for i, arg in enumerate(args):
         if isinstance(arg, Tuple):
             values.append('(%s)' % _format_args(arg.elts))

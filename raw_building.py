@@ -162,9 +162,14 @@ def object_build_methoddescriptor(node, member):
     """create astng for a living method descriptor object"""
     # FIXME get arguments ?
     func = build_function(member.__name__, doc=member.__doc__)
-    # set argnames to None to notice that we have no information, not
+    # set node's arguments to None to notice that we have no information, not
     # and empty argument list
-    func.argnames = None 
+    func.args = nodes.Arguments()
+    # arg values are not defined on an _ast node
+    func.args.args = None
+    func.args.defaults = None
+    func.args.vararg = None
+    func.args.kwarg = None
     node.add_local_node(func)
 
 def _base_class_object_build(node, member, basenames, name=None):

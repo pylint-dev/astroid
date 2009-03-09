@@ -93,7 +93,7 @@ class CallContext:
         try:
             return self.nargs[name].infer(context)
         except KeyError:
-            # Function.argnames can be None in astng (means that we don't have
+            # Function.args.args can be None in astng (means that we don't have
             # information on argnames)
             argindex, argnode = funcnode.args.find_argname(name)
             if argindex is not None:
