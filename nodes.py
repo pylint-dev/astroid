@@ -309,8 +309,8 @@ def _get_child_sequence(self, child):
         if isinstance(sequence, (tuple, list)) and child in sequence:
             return sequence
     else:
-        msg = 'Could not found %s in %s\'s children' % (child,  self)
-        raise ASTNGError(msg)
+        msg = 'Could not found %s line %d in %s\'s children line %d'
+        raise ASTNGError(msg % (child, child.lineno, self, self.lineno))
 
 def replace_child(self, child, newchild):
     sequence = _get_child_sequence(self, child)

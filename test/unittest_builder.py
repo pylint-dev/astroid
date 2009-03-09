@@ -228,6 +228,19 @@ class BuilderTC(TestCase):
         self.assertEquals(datap.name, 'data')
         self.assertEquals(datap.package, 1)
 
+    def test_yield_parent(self):
+        """check if we removed occasional discard nodes as yield parent"""
+        data = """
+def yiell():
+    yield 0
+    if noe:
+        yield more
+"""
+        func = self.builder.string_build(data).body[0]
+        self.assertIsInstance(func, nodes.Function)
+        yill = func.body[0]
+        self.assertIsInstance(yill, nodes.Yield)
+        self.assertIsInstance(func.body[1].body[0], nodes.Yield)
     def test_object(self):
         obj_astng = self.builder.inspect_build(object)
         self.failUnless('__setattr__' in obj_astng)

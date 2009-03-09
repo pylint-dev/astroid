@@ -261,6 +261,13 @@ class TreeRebuilder(ASTVisitor):
         node.expr = node.context_expr
         del node.optional_vars, node.context_expr
 
+    def visit_yield(self, node):
+        """visit yield : remove parent Discard node"""
+        if isinstance(node.parent, Discard):
+            parent = node.parent
+            node.parent.parent.replace(parent, node)
+            del parent
+
 # raw building ################################################################
 
 def _add_docstring(node, doc):
