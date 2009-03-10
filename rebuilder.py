@@ -81,7 +81,7 @@ class RebuildVisitor(ASTVisitor):
                 self.asscontext = None
         elif isinstance(node, nodes.Subscript):
            self.asscontext = None # disable asscontext on subscripts to skip d[x] = y (item assigment)
-    
+
     def walk(self, node):
         self._walk(node)
         delayed = self._delayed
@@ -115,10 +115,10 @@ class RebuildVisitor(ASTVisitor):
             node.parent.set_local(node.vararg, node)
         if node.kwarg:
             node.parent.set_local(node.kwarg, node)
-        
+
     def visit_assign(self, node):
         return True
-    
+
     def leave_assign(self, node):
         """leave an Assign node to become astng"""
         klass = node.parent.frame()

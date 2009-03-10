@@ -349,24 +349,6 @@ class AsStringVisitor(ASTVisitor):
         """yield an ast.Yield node as string"""
         return 'yield %s' % node.value.accept(self)
 
-    # XXX compat methods
-
-    #visit_attribute = visit_getattr
-    #visit_call = visit_callfunc
-    #visit_classdef = visit_class
-    #visit_expr = visit_discard
-    #visit_functiondef = visit_function
-    #visit_generatorexp = visit_genexpr
-    #visit_importfrom = visit_from
-    #visit_repr = visit_backquote
-
-    # special ASTNG NoneType and Bool nodes
-    def visit_nonetype(self, node):
-        """return None for ans ASTNG NoneType node"""
-        return 'None'
-
-    def visit_bool(self, node):
-        return str(node.value)
 
 # this visitor is stateless, thus it can be reused
 as_string = AsStringVisitor()

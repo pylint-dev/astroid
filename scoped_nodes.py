@@ -358,6 +358,19 @@ Lambda.type = 'function'
 Lambda.pytype = FunctionNG.pytype.im_func
 Lambda.argnames = FunctionNG.argnames.im_func
 
+# XXX need to cleanup these args / arguments methods
+
+def _get_names(args, names=None):
+    """return a list of all argument names"""
+    if names is None:
+        names = []
+    for arg in args:
+        if isinstance(arg, Tuple):
+            _get_names(arg.elts, names)
+        else:
+            names.append(arg.name)
+    return names
+
 @monkeypatch(Arguments)
 def format_args(self):
     """return arguments formatted as string"""
@@ -381,18 +394,11 @@ def default_value(self, argname):
             return self.defaults[idx]
     raise NoDefault()
 
-@monkeypatch(Arguments)    
-def find_argname(self, argname, rec=False):
-    return _find_arg(argname, self.args, rec)
 
-def _get_names(args, names=[]):
-    """return a list of all argument names"""
-    for arg in args:
-        if isinstance(arg, Tuple):
-            _get_names(arg.elts, names)
-        else:
-            names.append(arg.name)
-    return names
+@monkeypatch(Arguments)
+def find_argname(self, argname, rec=False):
+    """return index and Name node with given name"""
+    return _find_arg(argname, self.args, rec)
 
 def _find_arg(argname, args, rec=False):
     for i, arg in enumerate(args):
