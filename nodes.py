@@ -191,6 +191,17 @@ class NodeNG:
         return self
 
 
+    def child_sequence(self, child):
+        """search for the right sequence where the child lies in"""
+        for field in self._astng_fields:
+            sequence = getattr(self, field)
+            # /!\ compiler.ast Nodes have an __iter__ walking over child nodes
+            if isinstance(sequence, (tuple, list)) and child in sequence:
+                return sequence
+        else:
+            msg = 'Could not found %s in %s\'s children line %s'
+            raise ASTNGError(msg % (repr(child), child.lineno, repr(self)))
+
     def next_sibling(self):
         """return the previous sibling statement
         """
@@ -198,7 +209,7 @@ class NodeNG:
             return
         while not (self.is_statement or isinstance(self, Module)):
             self = self.parent
-        stmts = _get_child_sequence(self.parent, self)
+        stmts = self.parent.child_sequence(self)
         index = stmts.index(self)
         try:
             return stmts[index +1]
@@ -212,7 +223,7 @@ class NodeNG:
             return
         while not (self.is_statement or isinstance(self, Module)):
             self = self.parent
-        stmts = _get_child_sequence(self.parent, self)
+        stmts = self.parent.child_sequence(self)
         index = stmts.index(self)
         if index >= 1:
             return stmts[index -1]
@@ -305,20 +316,9 @@ class NodeNG:
 extend_class(Node, NodeNG)
 
 
-def _get_child_sequence(self, child):
-    """search for the right sequence where the child lies in"""
-    for field in self._astng_fields:
-        sequence = getattr(self, field)
-        # /!\ compiler.ast Nodes have an __iter__ walking over child nodes
-        if isinstance(sequence, (tuple, list)) and child in sequence:
-            return sequence
-    else:
-        print "\nchildren = ", [repr(child) for child in self.get_children()]
-        msg = 'Could not found %s line %s in %s\'s children line %s'
-        raise ASTNGError(msg % ( repr(child), child.lineno, repr(self), self.lineno))
 
 def replace_child(self, child, newchild):
-    sequence = _get_child_sequence(self, child)
+    sequence = self.child_sequence(child)
     newchild.parent = self
     child.parent = None
     sequence[sequence.index(child)] = newchild
