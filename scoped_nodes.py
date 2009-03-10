@@ -315,7 +315,8 @@ class FunctionNG(object):
         if not self.args.args: # can be None for builtins
             return []
         else:
-            return [arg.name for arg in self.args.args]
+            #return [arg.name for arg in self.args.args]
+            return _get_names(self.args.args)
 
     def is_bound(self):
         """return true if the function is bound to an Instance or a class"""
@@ -351,12 +352,13 @@ class FunctionNG(object):
 
 extend_class(Function, FunctionNG)
 
+
 # lambda nodes may also need some of the function members
 Lambda.type = 'function'
 Lambda.pytype = FunctionNG.pytype.im_func
+Lambda.argnames = FunctionNG.argnames.im_func
 
-
-@monkeypatch(Arguments)    
+@monkeypatch(Arguments)
 def format_args(self):
     """return arguments formatted as string"""
     result = [_format_args(self.args, self.defaults)]
@@ -383,6 +385,14 @@ def default_value(self, argname):
 def find_argname(self, argname, rec=False):
     return _find_arg(argname, self.args, rec)
 
+def _get_names(args, names=[]):
+    """return a list of all argument names"""
+    for arg in args:
+        if isinstance(arg, Tuple):
+            _get_names(arg.elts, names)
+        else:
+            names.append(arg.name)
+    return names
 
 def _find_arg(argname, args, rec=False):
     for i, arg in enumerate(args):
