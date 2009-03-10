@@ -309,7 +309,14 @@ class FunctionNG(object):
     def is_method(self):
         """return true if the function node should be considered as a method"""
         return self.type != 'function'
-    
+
+    def argnames(self):
+        """return argument names if there are any arguments"""
+        if not self.args.args: # can be None for builtins
+            return []
+        else:
+            return [arg.name for arg in self.args.args]
+
     def is_bound(self):
         """return true if the function is bound to an Instance or a class"""
         return self.type == 'classmethod'
