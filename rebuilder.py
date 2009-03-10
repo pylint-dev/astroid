@@ -53,6 +53,7 @@ class RebuildVisitor(ASTVisitor):
         node.parent.frame().set_local(node.name, node)
 
     def set_context(self, node, childnode):
+        """set assignment /delete context needed later on by the childnode"""
         if isinstance(node, (nodes.Delete, nodes.Assign)):
             if childnode in node.targets:
                 self.asscontext = node
@@ -63,12 +64,16 @@ class RebuildVisitor(ASTVisitor):
                 self.asscontext = node
             else:
                 self.asscontext = None
-        elif isinstance(node, nodes.Arguments):# and isinstance(node.parent, (nodes.Function, nodes.Lambda)):
+        elif isinstance(node, nodes.Arguments):
             if childnode in node.args:
                 self.asscontext = node
             else:
                 self.asscontext = None
-                
+        elif isinstance(node, nodes.With):
+            if childnode is node.vars:
+                self.asscontext = node
+            else:
+                self.asscontext = None
         elif isinstance(node, nodes.ExceptHandler):
             if childnode is node.name:
                 self.asscontext = node

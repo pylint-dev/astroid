@@ -338,10 +338,10 @@ class AsStringVisitor(ASTVisitor):
             whiles = '%s\nelse:\n%s' % (whiles, self._stmt_list(node.orelse))
         return whiles
     
-    def visit_with(self, node): # XXX 'with' without 'as' is possible
+    def visit_with(self, node): # 'with' without 'as' is possible
         """return an astng.With node as string"""
-        withs = 'with (%s) as (%s):\n%s' % (node.context_expr.accept(self),
-                                        node.optional_vars.accept(self),
+        as_var = node.vars and " as (%s)" % (node.vars.accept(self)) or ""
+        withs = 'with (%s)%s:\n%s' % (node.expr.accept(self), as_var,
                                         self._stmt_list( node.body))
         return withs
     
