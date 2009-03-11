@@ -81,7 +81,7 @@ class CallContext:
         self.nargs = {}
         for arg in args:
             if isinstance(arg, nodes.Keyword):
-                self.nargs[arg.name] = arg.expr
+                self.nargs[arg.arg] = arg.value
             else:
                 self.args.append(arg)
         self.starargs = starargs
