@@ -594,7 +594,6 @@ c = (1, 2, 3)[-1]
 d = a + b + c
 print d
         '''
-        print "test subscript"
         astng = builder.string_build(data, __name__, __file__)
         self.failUnlessEqual([i.value for i in 
                                 get_name_node(astng, 'a', -1).infer()], [1])
@@ -602,9 +601,19 @@ print d
                                 get_name_node(astng, 'b', -1).infer()], [2])
         self.failUnlessEqual([i.value for i in
                                 get_name_node(astng, 'c', -1).infer()], [3])
-        # kill me
-        #self.failUnlessEqual([i.value for i in 
-                                #get_name_node(astng, 'd', -1).infer()], [6])
+        self.failUnlessEqual([i.value for i in 
+                                get_name_node(astng, 'd', -1).infer()], [6])
+
+    #def test_simple_tuple(self):
+        #"""test case for a simple tuple value"""
+        ## XXX tuple inference is not implemented ...
+        #data = """
+#a = (1,)
+#b = (22,)
+#some = a + b
+#"""
+        #astng = builder.string_build(data, __name__, __file__)
+        #self.failUnlessEqual(astng['some'].infer.next().as_string(), "(1, 22)")
 
     def test_simple_for(self):
         data = '''
