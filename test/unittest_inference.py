@@ -547,13 +547,12 @@ if __name__ == '__main__':
             fct(a_line)
 '''
         astng = builder.string_build(data, __name__, __file__)
-        self.failUnlessEqual(len(list(astng['process_line'].infer_call_result(None))),
-                             3)
-        self.failUnlessEqual(len(list(astng['tupletest'].infer())),
-                             3)
+        self.failUnlessEqual(len(list(astng['process_line'].infer_call_result(
+                                                                None))), 3)
+        self.failUnlessEqual(len(list(astng['tupletest'].infer())), 3)
+        values = ['Function(first_word)', 'Function(last_word)', 'Const(None)']
         self.failUnlessEqual([str(infered).replace('FunctionDef', 'Function')
-                              for infered in astng['fct'].infer()],
-                              ['Function(first_word)', 'Function(last_word)', 'Const(None)'])
+                              for infered in astng['fct'].infer()], values)
 
     def test_float_complex_ambiguity(self):
         data = '''
@@ -568,10 +567,10 @@ def no_conjugate_member(magic_flag):
     return something.conjugate()
         '''
         astng = builder.string_build(data, __name__, __file__)
-        self.failUnlessEqual([i.value for i in astng['no_conjugate_member'].ilookup('something')],
-                             [1.0, 1.0j])
-        self.failUnlessEqual([i.value for i in get_name_node(astng, 'something', -1).infer()],
-                             [1.0, 1.0j])
+        self.failUnlessEqual([i.value for i in
+            astng['no_conjugate_member'].ilookup('something')], [1.0, 1.0j])
+        self.failUnlessEqual([i.value for i in 
+                get_name_node(astng, 'something', -1).infer()], [1.0, 1.0j])
 
     def test_lookup_cond_branches(self):
         data = '''
@@ -583,8 +582,8 @@ def no_conjugate_member(magic_flag):
     return something.conjugate()
         '''
         astng = builder.string_build(data, __name__, __file__)
-        self.failUnlessEqual([i.value for i in get_name_node(astng, 'something', -1).infer()],
-                             [1.0, 1.0j])
+        self.failUnlessEqual([i.value for i in
+                get_name_node(astng, 'something', -1).infer()], [1.0, 1.0j])
 
 
     def test_simple_subscript(self):
@@ -595,16 +594,17 @@ c = (1, 2, 3)[-1]
 d = a + b + c
 print d
         '''
+        print "test subscript"
         astng = builder.string_build(data, __name__, __file__)
-        self.failUnlessEqual([i.value for i in get_name_node(astng, 'a', -1).infer()],
-                             [1])
-        self.failUnlessEqual([i.value for i in get_name_node(astng, 'b', -1).infer()],
-                             [2])
-        self.failUnlessEqual([i.value for i in get_name_node(astng, 'c', -1).infer()],
-                             [3])
+        self.failUnlessEqual([i.value for i in 
+                                get_name_node(astng, 'a', -1).infer()], [1])
+        self.failUnlessEqual([i.value for i in 
+                                get_name_node(astng, 'b', -1).infer()], [2])
+        self.failUnlessEqual([i.value for i in
+                                get_name_node(astng, 'c', -1).infer()], [3])
         # kill me
-        #self.failUnlessEqual([i.value for i in get_name_node(astng, 'd', -1).infer()],
-        #                     [6])
+        #self.failUnlessEqual([i.value for i in 
+                                #get_name_node(astng, 'd', -1).infer()], [6])
 
     def test_simple_for(self):
         data = '''
@@ -617,16 +617,16 @@ for b,c in [(1,2), (3,4)]:
 print [(d,e) for e,d in ([1,2], [3,4])]
         '''
         astng = builder.string_build(data, __name__, __file__)
-        self.failUnlessEqual([i.value for i in get_name_node(astng, 'a', -1).infer()],
-                             [1, 2, 3])
-        self.failUnlessEqual([i.value for i in get_name_node(astng, 'b', -1).infer()],
-                             [1, 3])
-        self.failUnlessEqual([i.value for i in get_name_node(astng, 'c', -1).infer()],
-                             [2, 4])
-        self.failUnlessEqual([i.value for i in get_name_node(astng, 'd', -1).infer()],
-                             [2, 4])
-        self.failUnlessEqual([i.value for i in get_name_node(astng, 'e', -1).infer()],
-                             [1, 3])
+        self.failUnlessEqual([i.value for i in
+                            get_name_node(astng, 'a', -1).infer()], [1, 2, 3])
+        self.failUnlessEqual([i.value for i in
+                            get_name_node(astng, 'b', -1).infer()], [1, 3])
+        self.failUnlessEqual([i.value for i in 
+                            get_name_node(astng, 'c', -1).infer()], [2, 4])
+        self.failUnlessEqual([i.value for i in 
+                            get_name_node(astng, 'd', -1).infer()], [2, 4])
+        self.failUnlessEqual([i.value for i in 
+                            get_name_node(astng, 'e', -1).infer()], [1, 3])
 
 
     def test_simple_for_genexpr(self):
@@ -636,10 +636,10 @@ print [(d,e) for e,d in ([1,2], [3,4])]
 print ((d,e) for e,d in ([1,2], [3,4]))
         '''
         astng = builder.string_build(data, __name__, __file__)
-        self.failUnlessEqual([i.value for i in get_name_node(astng, 'd', -1).infer()],
-                             [2, 4])
-        self.failUnlessEqual([i.value for i in get_name_node(astng, 'e', -1).infer()],
-                             [1, 3])
+        self.failUnlessEqual([i.value for i in
+                            get_name_node(astng, 'd', -1).infer()], [2, 4])
+        self.failUnlessEqual([i.value for i in
+                            get_name_node(astng, 'e', -1).infer()], [1, 3])
 
 
     def test_builtin_help(self):
