@@ -8,9 +8,14 @@ Representation
 --------------
 * have a common representation for both _ast and compiler
 
-* introduce arguments nodes (present in _ast) to trash some lambda weirdness
-
 * ensure compatible representation for _nodes_ast function_factory
+
+* step forward to have more _ast like representation
+
+Refactoring
+===========
+* InferenceVisitor
+* func / arguments : cleanup methods
 
 Tests:
 ======
@@ -18,21 +23,4 @@ Tests:
 are_exclusive
 -------------
 * more are_exclusive tests ... : we had a big unseen bug !
-
-
-Pylint
-======
-* change all node attributes
-
-* remove / handle compiler.consts imports
-
-* design_analysis . visit_if :
-    len(node.tests) doesn't work anymore with astng2 / elif becomes else:if
-
-* pylint.__init__ : why  
-        ASTWalker.__init__(self, self)
-  ? ASTWalker is no more used in astng
-
-* checkers.rpython : We have no more Slice and SliceObj nodes
-
 
