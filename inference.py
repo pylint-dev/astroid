@@ -608,7 +608,7 @@ def _arguments_infer_argname(self, name, context):
         yield YES
         return
     # first argument of instance/class method
-    if name == getattr(self.args[0], 'name', None):
+    if self.args and getattr(self.args[0], 'name', None):
         functype = self.parent.type
         if functype == 'method':
             yield Instance(self.parent.parent.frame())
