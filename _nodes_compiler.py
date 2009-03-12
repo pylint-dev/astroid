@@ -405,7 +405,12 @@ class TreeRebuilder(ASTVisitor):
         node.inst = node.expr2
         node.tback = node.expr3
         del node.expr1, node.expr2, node.expr3
-    
+
+    def visit_return(self, node):
+        """visit Return: remove Const node if its value is None"""
+        if isinstance(node.value, Const) and node.value.value is None:
+            node.value = None
+
     def visit_slice(self, node):
         node.__class__ = Subscript
         node.subs = [node.lower, node.upper]

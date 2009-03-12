@@ -437,11 +437,14 @@ def infer_call_result_function(self, caller, context=None):
         return
     returns = self.nodes_of_class(nodes.Return, skip_klass=nodes.Function)
     for returnnode in returns:
-        try:
-            for infered in returnnode.value.infer(context):
-                yield infered
-        except InferenceError:
-            yield YES
+        if returnnode.value is None:
+            yield None
+        else:
+            try:
+                for infered in returnnode.value.infer(context):
+                    yield infered
+            except InferenceError:
+                yield YES
 nodes.Function.infer_call_result = infer_call_result_function
 
 def infer_call_result_lambda(self, caller, context=None):
