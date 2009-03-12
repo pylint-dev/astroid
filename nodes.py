@@ -323,9 +323,9 @@ def replace_child(self, child, newchild):
     child.parent = None
     sequence[sequence.index(child)] = newchild
 
-for klass in (Assign, Break, Class, Continue, Delete, Discard, ExceptHandler,
-              For, From, Function, Global, If, Import, Print, Raise, Return,
-              TryExcept, TryFinally, While, With, Yield):
+for klass in (Assign, AugAssign, Break, Class, Continue, Delete, Discard, 
+              ExceptHandler, For, From, Function, Global, If, Import, Pass,
+              Print, Raise, Return, TryExcept, TryFinally, While, With, Yield):
     klass.is_statement = True
     klass.replace = replace_child
 Module.replace = replace_child
