@@ -93,11 +93,18 @@ class With:
 # additional nodes
 
 class ExceptHandler(Node):
-    def __init__(self, type, name, body, lineno):
-        self.type = type
+    def __init__(self, exc_type, name, body, parent):
+        self.type = exc_type
         self.name = name
-        self.body = body
-        self.lineno = lineno
+        self.body = body.nodes
+        # XXX parent.lineno is wrong, cant't catch the right line ...
+        if exc_type and exc_type.lineno:
+                self.lineno = exc_type.lineno
+        else:
+            self.lineno = int((parent.body[-1].tolineno +
+                                            self.body[0].fromlineno )/2)
+        self.fromlineno =  self.lineno
+        self.tolineno = self.body[-1].tolineno
 
 class BinOp(Node):
     """replace Add, Div, FloorDiv, Mod, Mul, Power, Sub nodes"""
@@ -429,7 +436,7 @@ class TreeRebuilder(ASTVisitor):
     def visit_tryexcept(self, node):
         node.body = node.body.nodes
         # remove Stmt node
-        node.handlers = [ExceptHandler(exctype, excobj, body.nodes, node.lineno)
+        node.handlers = [ExceptHandler(exctype, excobj, body, node)
                         for exctype, excobj, body in node.handlers]
         _init_else_node(node)
     
