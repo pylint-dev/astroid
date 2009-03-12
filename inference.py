@@ -431,7 +431,7 @@ nodes.Lambda.callable = callable_true
 nodes.Class.callable = callable_true
 
 def infer_call_result_function(self, caller, context=None):
-    """infer what's a function is returning when called"""
+    """infer what a function is returning when called"""
     if self.is_generator():
         yield Generator(self)
         return
@@ -445,12 +445,12 @@ def infer_call_result_function(self, caller, context=None):
 nodes.Function.infer_call_result = infer_call_result_function
 
 def infer_call_result_lambda(self, caller, context=None):
-    """infer what's a function is returning when called"""
+    """infer what a function is returning when called"""
     return self.body.infer(context)
 nodes.Lambda.infer_call_result = infer_call_result_lambda
 
 def infer_call_result_class(self, caller, context=None):
-    """infer what's a class is returning when called"""
+    """infer what a class is returning when called"""
     yield Instance(self)
 
 nodes.Class.infer_call_result = infer_call_result_class
