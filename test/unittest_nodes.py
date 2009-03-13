@@ -161,8 +161,38 @@ class CmpNodeTC(testlib.TestCase):
     def test_as_string(self):
         ast = abuilder.string_build("a == 2")
         self.assertEquals(as_string(ast), "a == 2")
+
+
+class ConstNodeTC(testlib.TestCase):
+    
+    def _test(self, value):
+        node = nodes.const_factory(value)
+        self.assertIsInstance(node._proxied, nodes.Class)
+        self.assertEquals(node._proxied.name, value.__class__.__name__)
+        self.assertIs(node.value, value)
+        self.failUnless(node._proxied.parent)
+        self.assertEquals(node._proxied.root().name, value.__class__.__module__)
         
-__all__ = ('IfNodeTC', 'ImportNodeTC',)
+    def test_none(self):
+        self._test(None)
+        
+    def test_bool(self):
+        self._test(True)
+        
+    def test_int(self):
+        self._test(1)
+        
+    def test_float(self):
+        self._test(1.0)
+        
+    def test_complex(self):
+        self._test(1.0j)
+        
+    def test_str(self):
+        self._test('a')
+        
+    def test_unicode(self):
+        self._test(u'a')
         
 if __name__ == '__main__':
     testlib.unittest_main()

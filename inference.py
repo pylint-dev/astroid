@@ -28,7 +28,7 @@ from types import NoneType
 
 from logilab.common.compat import imap, chain, set
 
-from logilab.astng import nodes, MANAGER, \
+from logilab.astng import nodes, raw_building, MANAGER, \
      unpack_infer, copy_context, path_wrapper, raise_if_nothing_infered
 from logilab.astng import ASTNGError, InferenceError, UnresolvableName, \
      NoDefault, NotFoundError, ASTNGBuildingException
@@ -37,7 +37,7 @@ from logilab.astng.nodes import _infer_stmts, YES, InferenceContext, Instance, \
 from logilab.astng.protocols import _arguments_infer_argname
 
 _CONST_PROXY = {
-    NoneType: MANAGER.astng_from_class(NoneType, 'types'),
+    NoneType: raw_building.build_class('NoneType'),
     bool: MANAGER.astng_from_class(bool),
     int: MANAGER.astng_from_class(int),
     float: MANAGER.astng_from_class(float),
@@ -45,6 +45,7 @@ _CONST_PROXY = {
     str: MANAGER.astng_from_class(str),
     unicode: MANAGER.astng_from_class(unicode),
     }
+_CONST_PROXY[NoneType].parent = _CONST_PROXY[bool].parent
 
 def _set_proxied(const):
     if not hasattr(const, '__proxied'):
