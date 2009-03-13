@@ -98,6 +98,8 @@ def builtin_lookup(name):
     module
     """
     builtinastng = MANAGER.astng_from_module(__builtin__)
+    if name == '__dict__':
+        return builtinastng, ()
     try:
         stmts = builtinastng.locals[name]
     except KeyError:

@@ -16,7 +16,7 @@ import sys
 from os.path import join, abspath
 from logilab.common.testlib import TestCase, unittest_main
 
-from logilab.astng import builder, nodes, scoped_nodes, \
+from logilab.astng import builder, nodes, scoped_nodes, lookup, \
      InferenceError, NotFoundError
 
 from unittest_inference import get_name_node
@@ -98,6 +98,7 @@ class A(A):
         self.assertEquals(base.name, 'YO')
         self.assertEquals(base.root().name, 'data.module')
 
+
     def test_class(self):
         klass = MODULE['YOUPI']
         my_dict = klass.ilookup('MY_DICT').next()
@@ -109,9 +110,11 @@ class A(A):
         self.assertEquals(obj.name, 'object')
         self.assertRaises(InferenceError, klass.ilookup('YOAA').next)
 
+
     def test_inner_classes(self):
         ccc = NONREGR['Ccc']
         self.assertEquals(ccc.ilookup('Ddd').next().name, 'Ddd')
+
 
     def test_loopvar_hiding(self):
         astng = builder.string_build("""
@@ -128,6 +131,16 @@ if x > 0:
         # outside the loop, two possible assigments
         self.assertEquals(len(xnames[1].lookup('x')[1]), 2)
         self.assertEquals(len(xnames[2].lookup('x')[1]), 2)
+
+
+    def test_builtin_lookup(self):
+        self.assertEquals(lookup.builtin_lookup('__dict__')[1], ())
+        intstmts = lookup.builtin_lookup('int')[1]
+        self.assertEquals(len(intstmts), 1)
+        self.assertIsInstance(intstmts[0], nodes.Class)
+        self.assertEquals(intstmts[0].name, 'int')
+        self.assertIs(intstmts[0], nodes.const_factory(1)._proxied)
+
         
     def test_nonregr_method_lookup(self):
         if sys.version_info < (2, 4):
