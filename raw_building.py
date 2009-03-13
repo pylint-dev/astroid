@@ -74,7 +74,7 @@ def build_module(name, doc=None):
     node.globals = node.locals = {}
     return node
 
-def build_class(name, basenames=None, doc=None):
+def build_class(name, basenames=(), doc=None):
     """create and initialize a astng Class node"""
     node = nodes.class_factory(name, basenames, doc)
     node.locals = {}

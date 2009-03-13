@@ -496,7 +496,7 @@ else:
         args_compiler_to_ast(func)
         return func
 
-def class_factory(name, basenames=None, doc=None):
+def class_factory(name, basenames=(), doc=None):
     """create and initialize a astng Class node"""
     node = Class(name, [], doc, None)
     del node.code

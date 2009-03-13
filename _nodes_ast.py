@@ -326,7 +326,7 @@ def function_factory(name, args, defaults, flag=0, doc=None):
     return node
 
 
-def class_factory(name, basenames=None, doc=None):
+def class_factory(name, basenames=(), doc=None):
     """create and initialize a astng Class node"""
     node = Class()
     node.body = []
