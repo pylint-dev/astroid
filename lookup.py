@@ -223,7 +223,8 @@ def _filter_stmts(self, stmts, frame, offset):
 
 def _decorate(astmodule):
     """add this module functionalities to necessary nodes"""
-    for klass in (astmodule.Name, astmodule.Module, astmodule.Class,
+    for klass in (astmodule.Name, astmodule.AssName, astmodule.DelName,
+                  astmodule.Module, astmodule.Class,
                   astmodule.Function, astmodule.Lambda):
         klass.ilookup = ilookup
         klass.lookup = lookup
