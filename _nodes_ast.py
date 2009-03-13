@@ -287,9 +287,6 @@ def module_factory(doc):
     _add_docstring(node, doc)
     return node
 
-def dict_factory():
-    return Dict()
-
 def import_from_factory(modname, membername):
     node = From()
     node.level = 0

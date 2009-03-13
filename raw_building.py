@@ -36,7 +36,7 @@ def _attach_local_node(parent, node, name):
 
 def attach___dict__(node):
     """attach the __dict__ attribute to Class and Module objects"""
-    dictn = nodes.dict_factory()
+    dictn = nodes.const_factory({})
     dictn.parent = node
     node.locals['__dict__'] = [dictn]
 

@@ -465,9 +465,6 @@ def module_factory(doc):
     del node.node
     node.body = []
     return node
-    
-def dict_factory():
-    return Dict([])
 
 if sys.version_info < (2, 5):
     def import_from_factory(modname, membername):
