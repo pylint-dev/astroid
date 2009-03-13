@@ -505,6 +505,21 @@ A.ass_type = A_ass_type
 
     def test_dumb_module(self):
         astng = self.builder.string_build("pouet")
+
+    def test_infered_dont_pollute(self):
+        code = '''
+def func(a=None):
+    a.custom_attr = 0
+def func2(a={}):
+    a.custom_attr = 0
+    '''
+        astng = self.builder.string_build(code)
+        nonetype = nodes.const_factory(None)
+        self.failIf('custom_attr' in nonetype.locals)
+        self.failIf('custom_attr' in nonetype.instance_attrs)
+        nonetype = nodes.const_factory({})
+        self.failIf('custom_attr' in nonetype.locals)
+        self.failIf('custom_attr' in nonetype.instance_attrs)
         
 if __name__ == '__main__':
     unittest_main()

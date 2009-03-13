@@ -158,7 +158,6 @@ class RebuildVisitor(ASTVisitor):
             # no base classes, detect new / style old style according to
             # current scope
             node._newstyle = metaclass == 'type'
-        node.basenames = [as_string(bnode) for bnode in node.bases]
     
     leave_classdef = leave_class
 
@@ -262,8 +261,6 @@ class RebuildVisitor(ASTVisitor):
             self._add_local(node, node.name)
     visit_delname = visit_assname
     
-    # # delayed methods
-
     def delayed_visit_assattr(self, node):
         """visit a AssAttr node -> add name to locals, handle members
         definition
@@ -277,6 +274,10 @@ class RebuildVisitor(ASTVisitor):
                     if infered.__class__ is nodes.Instance:
                         infered = infered._proxied
                         iattrs = infered.instance_attrs
+                    elif isinstance(infered, nodes.Instance):
+                        # Const, Tuple, ... we may be wrong, may be not, but
+                        # anyway we don't want to pollute builtin's namespace
+                        continue
                     else:
                         iattrs = infered.locals
                 except AttributeError:
