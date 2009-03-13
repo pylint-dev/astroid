@@ -323,7 +323,7 @@ def replace_child(self, child, newchild):
     child.parent = None
     sequence[sequence.index(child)] = newchild
 
-for klass in (Assign, AugAssign, Break, Class, Continue, Delete, Discard, 
+for klass in (Assign, AugAssign, Assert, Break, Class, Continue, Delete, Discard, 
               ExceptHandler, For, From, Function, Global, If, Import, Pass,
               Print, Raise, Return, TryExcept, TryFinally, While, With, Yield):
     klass.is_statement = True
