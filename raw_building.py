@@ -30,8 +30,6 @@ from logilab.astng import nodes
     
 def _attach_local_node(parent, node, name):
     node.name = name # needed by add_local_node
-    node.parent = parent
-    node.lineno = 1
     parent.add_local_node(node)
 
 def attach___dict__(node):
