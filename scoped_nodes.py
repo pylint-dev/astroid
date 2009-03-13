@@ -308,7 +308,9 @@ class FunctionNG(object):
 
     def is_method(self):
         """return true if the function node should be considered as a method"""
-        return self.type != 'function'
+        # check we are defined in a Class, because this is usually expected
+        # (eg pylint...) when is_method() return True
+        return self.type != 'function' and isinstance(self.parent.frame(), Class)
 
     def argnames(self):
         """return argument names if there are any arguments"""
