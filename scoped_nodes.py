@@ -500,9 +500,12 @@ class ClassNG(object):
     
     # a dictionary of class instances attributes
     instance_attrs = None
+    
     # list of parent class as a list of string (ie names as they appears
-    # in the class definition)
-    basenames = None
+    # in the class definition) XXX bw compat
+    @property
+    def basenames(self):
+        return [as_string(bnode) for bnode in self.bases]
 
     def ancestors(self, recurs=True, context=None):
         """return an iterator on the node base classes in a prefixed

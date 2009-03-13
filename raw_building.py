@@ -77,7 +77,6 @@ def build_module(name, doc=None):
 def build_class(name, basenames=None, doc=None):
     """create and initialize a astng Class node"""
     node = nodes.class_factory(name, basenames, doc)
-    node.basenames = basenames
     node.locals = {}
     node.instance_attrs = {}
     for name, value in ( ('__name__', name),
