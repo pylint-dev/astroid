@@ -162,8 +162,6 @@ class ASTNGBuilder:
         if self._done.has_key(obj):
             return self._done[obj]
         self._done[obj] = node
-        modname = self._module.__name__
-        modfile = getattr(self._module, '__file__', None)
         for name in dir(obj):
             try:
                 member = getattr(obj, name)
@@ -175,19 +173,19 @@ class ASTNGBuilder:
                 member = member.im_func
             if isfunction(member):
                 # verify this is not an imported function
-                if member.func_code.co_filename != modfile:
+                if member.func_code.co_filename != getattr(self._module, '__file__', None):
                     attach_dummy_node(node, name, member)
                     continue
                 object_build_function(node, member)
             elif isbuiltin(member):
                 # verify this is not an imported member
-                if self._member_module(member) != modname:
+                if self._member_module(member) != self._module.__name__:
                     imported_member(node, member, name)
                     continue
                 object_build_methoddescriptor(node, member)                
             elif isclass(member):
                 # verify this is not an imported class
-                if self._member_module(member) != modname:
+                if self._member_module(member) != self._module.__name__:
                     imported_member(node, member, name)
                     continue
                 if member in self._done:
@@ -213,7 +211,8 @@ class ASTNGBuilder:
     def _member_module(self, member):
         modname = getattr(member, '__module__', None)
         return self._dyn_modname_map.get(modname, modname)
-        
+
+
 def imported_member(node, member, name):
     """consider a class/builtin member where __module__ != current module name
 
