@@ -55,9 +55,9 @@ from logilab.astng._exceptions import *
 
 
 def unpack_infer(stmt, context=None):
-    """return an iterator on nodes infered by the given statement
-    if the infered value is a list or a tuple, recurse on it to
-    get values infered by its content
+    """return an iterator on nodes infered by the given statement if the infered
+    value is a list or a tuple, recurse on it to get values infered by its
+    content
     """
     if isinstance(stmt, (List, Tuple)):
         # XXX loosing context
@@ -72,7 +72,9 @@ def copy_context(context):
         return context.clone()
     else:
         return InferenceContext()
-    
+
+# decorators ##################################################################
+
 def path_wrapper(func):
     """return the given infer function wrapped to handle the path"""
     def wrapped(node, context=None, _func=func, **kwargs):
@@ -96,6 +98,26 @@ def path_wrapper(func):
             context.pop()
             raise
     return wrapped
+
+def yes_if_nothing_infered(func):
+    def wrapper(*args, **kwargs):
+        infered = False
+        for node in func(*args, **kwargs):
+            infered = True
+            yield node
+        if not infered:
+            yield YES
+    return wrapper
+
+def raise_if_nothing_infered(func):
+    def wrapper(*args, **kwargs):
+        infered = False
+        for node in func(*args, **kwargs):
+            infered = True
+            yield node
+        if not infered:
+            raise InferenceError()
+    return wrapper
 
 
 # imports #####################################################################
