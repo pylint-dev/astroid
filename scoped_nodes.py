@@ -36,8 +36,8 @@ from logilab.common.decorators import monkeypatch
 from logilab.astng import MANAGER, InferenceContext, copy_context, \
      unpack_infer, Arguments, Class, Const, Dict, Function, GenExpr, Lambda, \
      Module, Name, Pass, Raise, Tuple, Yield
-from logilab.astng import NotFoundError, NoDefault, \
-     ASTNGBuildingException, InferenceError
+from logilab.astng import NotFoundError, NoDefault, ASTNGBuildingException, \
+     InferenceError
 from logilab.astng.utils import extend_class
 from logilab.astng.nodes import YES, Instance, _infer_stmts
 from logilab.astng.nodes_as_string import as_string
@@ -690,13 +690,5 @@ class ClassNG(object):
                 yield iface
         if not oneinf:
             raise InferenceError()
-##         if hasattr(implements, 'nodes'):
-##             implements = implements.nodes
-##         else:
-##             implements = (implements,)
-##         for iface in implements:
-##             # let the handler function take care of this....
-##             for iface in handler_func(iface):
-##                 yield iface
-
+    
 extend_class(Class, ClassNG)

@@ -341,13 +341,16 @@ def const_factory(value):
     try:
         # if value is of class list, tuple, dict use specific class, not Const
         cls = CONST_CLS[value.__class__]
-        return cls()
+        node = cls()
+        if isinstance(node, Dict):
+            node.items = ()
+        else:
+            node.elts = ()
     except KeyError:
-        pass
-    try:
-        node = Const(value)
-    except KeyError:
-        node = _const_factory(value)
+        try:
+            node = Const(value)
+        except KeyError:
+            node = _const_factory(value)
     return node
 
 def _get_children_nochildren(self):
@@ -488,6 +491,8 @@ class Proxy(Proxy_):
     def __getattr__(self, name):
         if name == '_proxied':
             return getattr(self.__class__, '_proxied')
+        if name in self.__dict__:
+            return self.__dict__[name]
         return getattr(self._proxied, name)
 
     def infer(self, context=None):
@@ -621,6 +626,7 @@ class InferenceContext(object):
         clone.boundnode = self.boundnode
         return clone
 
+
 def _infer_stmts(stmts, context, frame=None):
     """return an iterator on statements infered by each statement in <stmts>
     """
@@ -649,6 +655,7 @@ def _infer_stmts(stmts, context, frame=None):
             infered = True
     if not infered:
         raise InferenceError(str(stmt))
+
 
 def repr_tree(node, indent='', _done=None):
     if _done is None:

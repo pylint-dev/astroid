@@ -244,6 +244,26 @@ class ClassNodeTC(TestCase):
             klass = MODULE2[klass]
             self.assertEquals([i.name for i in klass.interfaces()],
                               interfaces)
+            
+    def test_concat_interfaces(self):
+        astng = abuilder.string_build('''
+class IMachin: pass
+
+class Correct2:
+    """docstring"""
+    __implements__ = (IMachin,)
+    
+class BadArgument:
+    """docstring"""
+    __implements__ = (IMachin,)
+
+class InterfaceCanNowBeFound:
+    """docstring"""
+    __implements__ = BadArgument.__implements__ + Correct2.__implements__
+
+        ''')
+        self.assertEquals([i.name for i in astng['InterfaceCanNowBeFound'].interfaces()],
+                          ['IMachin', 'IMachin'])
         
     def test_inner_classes(self):
         eee = NONREGR['Ccc']['Eee']
