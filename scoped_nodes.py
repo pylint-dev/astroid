@@ -681,14 +681,14 @@ class ClassNG(object):
             return
         if not herited and not implements.frame() is self:
             return
-        oneinf = False
+        found = set()
         for iface in unpack_infer(implements):
             if iface is YES:
                 continue
-            if handler_func(iface):
-                oneinf = True
+            if not iface in found and handler_func(iface):
+                found.add(iface)
                 yield iface
-        if not oneinf:
+        if not found:
             raise InferenceError()
     
 extend_class(Class, ClassNG)

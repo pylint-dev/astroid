@@ -263,7 +263,7 @@ class InterfaceCanNowBeFound:
 
         ''')
         self.assertEquals([i.name for i in astng['InterfaceCanNowBeFound'].interfaces()],
-                          ['IMachin', 'IMachin'])
+                          ['IMachin'])
         
     def test_inner_classes(self):
         eee = NONREGR['Ccc']['Eee']
