@@ -81,6 +81,8 @@ def const_infer_binary_op(self, operator, other, context):
             except TypeError:
                 # XXX log TypeError
                 continue
+        elif other is YES:
+            yield other
         else:
             try:
                 for val in other.infer_binary_op(operator, self, context):
