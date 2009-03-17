@@ -195,6 +195,8 @@ class ModuleNG(object):
     # as value
     globals = None
 
+    scope_attrs = ('__name__', '__doc__', '__file__', '__path__')
+    
     def pytype(self):
         return '__builtin__.module'
     

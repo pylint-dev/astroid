@@ -69,6 +69,15 @@ def scope_lookup(self, node, name, offset=0):
         return pscope.scope_lookup(node, name)
     return builtin_lookup(name)
 
+def module_scope_lookup(self, node, name, offset=0):
+    # module's __dict__ not accessible through name lookup
+    if name in nodes.Module.scope_attrs and not name in self.locals:
+        try:
+            return self, self.getattr(name)
+        except NotFoundError:
+            return self, ()
+    return scope_lookup(self, node, name, offset)
+
 def class_scope_lookup(self, node, name, offset=0):
     if node in self.bases:
         frame = self.parent.frame()
@@ -230,6 +239,6 @@ for klass in (nodes.Name, nodes.AssName, nodes.DelName,
 nodes.Class.scope_lookup = class_scope_lookup
 nodes.Function.scope_lookup = function_scope_lookup
 nodes.Lambda.scope_lookup = function_scope_lookup
-nodes.Module.scope_lookup = scope_lookup
+nodes.Module.scope_lookup = module_scope_lookup
 nodes.GenExpr.scope_lookup = scope_lookup
         
