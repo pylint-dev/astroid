@@ -399,26 +399,9 @@ def object_block_range(node, lineno):
     start from the "def" or "class" position whatever the given lineno
     """
     return node.fromlineno, node.tolineno
-
 Function.block_range = object_block_range
 Class.block_range = object_block_range
 Module.block_range = object_block_range
-
-# XXX only if compiler mode ?
-def if_block_range(node, lineno):
-    """handle block line numbers range for if/elif statements"""
-    if lineno == node.body[0].fromlineno:
-        return lineno, lineno
-    if lineno <= node.body[-1].tolineno:
-        return lineno, node.body[-1].tolineno
-    return elsed_block_range(node, lineno, node.body[0].fromlineno - 1)
-If.block_range = if_block_range
-
-def if_set_line_info(self, lastchild):
-    self.fromlineno = self.lineno
-    self.tolineno = lastchild.tolineno
-    self.blockstart_tolineno = self.test.tolineno
-If.set_line_info = if_set_line_info
 
 
 def _elsed_block_range(node, lineno, orelse, last=None):
@@ -434,6 +417,23 @@ def _elsed_block_range(node, lineno, orelse, last=None):
     return lineno, last or node.tolineno
 
 
+def if_block_range(node, lineno):
+    """handle block line numbers range for if/elif statements"""
+    if lineno == node.body[0].fromlineno:
+        return lineno, lineno
+    if lineno <= node.body[-1].tolineno:
+        return lineno, node.body[-1].tolineno
+    return _elsed_block_range(node, lineno, node.orelse, node.body[0].fromlineno - 1)
+If.block_range = if_block_range
+
+
+def if_set_line_info(self, lastchild):
+    self.fromlineno = self.lineno
+    self.tolineno = lastchild.tolineno
+    self.blockstart_tolineno = self.test.tolineno
+If.set_line_info = if_set_line_info
+
+
 def try_except_block_range(node, lineno):
     """handle block line numbers range for try/except statements"""
     last = None
@@ -444,21 +444,22 @@ def try_except_block_range(node, lineno):
             return lineno, exhandler.body[-1].tolineno
         if last is None:
             last = exhandler.body[0].fromlineno - 1
-    return _elsed_block_range(node, lineno, node.orelse, last=None)
+    return _elsed_block_range(node, lineno, node.orelse, last)
 TryExcept.block_range = try_except_block_range
 
 
-def elsed_block_range(node, lineno, last=None):
+def elsed_block_range(node, lineno):
     """handle block line numbers range for for and while statements"""
-    return _elsed_block_range(node, lineno, node.orelse, last=None)
+    return _elsed_block_range(node, lineno, node.orelse)
 While.block_range = elsed_block_range
 For.block_range = elsed_block_range
 
 
-def try_finalbody_block_range(node, lineno, last=None):
+def try_finalbody_block_range(node, lineno):
     """handle block line numbers range for try/finally statements"""
-    return _elsed_block_range(node, lineno, node.finalbody, last=None)
+    return _elsed_block_range(node, lineno, node.finalbody)
 TryFinally.block_range = try_finalbody_block_range
+
 
 # From and Import #############################################################
 
