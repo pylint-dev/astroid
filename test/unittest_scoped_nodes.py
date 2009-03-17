@@ -286,6 +286,45 @@ class WebAppObject(object):
                           ['__dict__', '__doc__', '__module__', '__name__',
                            'appli', 'config', 'registered', 'schema'])
         
+        
+    def test_module_getattr(self):
+        data = '''
+appli = application
+appli += 2
+del appli
+        '''
+        astng = abuilder.string_build(data, __name__, __file__)
+        # test del statement not returned by getattr
+        self.assertEquals(len(astng.getattr('appli')), 2,
+                          astng.getattr('appli'))
+        
+
+    def test_class_getattr(self):
+        data =         '''
+class WebAppObject(object):
+    appli = application
+    appli += 2
+    del self.appli
+        '''
+        astng = abuilder.string_build(data, __name__, __file__)
+        cls = astng['WebAppObject']
+        # test del statement not returned by getattr
+        self.assertEquals(len(cls.getattr('appli')), 2)
+
+
+    def test_instance_getattr(self):
+        data =         '''
+class WebAppObject(object):
+    def __init__(self, application):
+        self.appli = application
+        self.appli += 2
+        del self.appli
+         '''
+        astng = abuilder.string_build(data, __name__, __file__)
+        cls = astng['WebAppObject']
+        # test del statement not returned by getattr
+        self.assertEquals(len(nodes.Instance(cls).getattr('appli')), 2)
+
 __all__ = ('ModuleNodeTC', 'ImportNodeTC', 'FunctionNodeTC', 'ClassNodeTC')
         
 if __name__ == '__main__':
