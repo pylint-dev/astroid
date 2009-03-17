@@ -40,6 +40,7 @@ _CONST_PROXY = {
     NoneType: raw_building.build_class('NoneType'),
     bool: MANAGER.astng_from_class(bool),
     int: MANAGER.astng_from_class(int),
+    long: MANAGER.astng_from_class(long),
     float: MANAGER.astng_from_class(float),
     complex: MANAGER.astng_from_class(complex),
     str: MANAGER.astng_from_class(str),
