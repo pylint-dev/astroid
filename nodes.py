@@ -415,11 +415,11 @@ def if_block_range(node, lineno):
 
 If.block_range = if_block_range
 
-def set_line_info(self, lastchild):
+def if_set_line_info(self, lastchild):
     self.fromlineno = self.lineno
     self.tolineno = lastchild.tolineno
     self.blockstart_tolineno = self.test.tolineno
-If.set_line_info
+If.set_line_info = if_set_line_info
 
 def try_except_block_range(node, lineno):
     """handle block line numbers range for try/except statements"""
