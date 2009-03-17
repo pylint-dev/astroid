@@ -345,7 +345,7 @@ nodes.Class.callable = callable_true
 def infer_call_result_function(self, caller, context=None):
     """infer what a function is returning when called"""
     if self.is_generator():
-        yield Generator(self)
+        yield nodes.Generator(self)
         return
     returns = self.nodes_of_class(nodes.Return, skip_klass=nodes.Function)
     for returnnode in returns:
