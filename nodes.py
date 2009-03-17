@@ -190,7 +190,6 @@ class NodeNG:
             return self.parent.root()
         return self
 
-
     def child_sequence(self, child):
         """search for the right sequence where the child lies in"""
         for field in self._astng_fields:
@@ -199,8 +198,20 @@ class NodeNG:
             if isinstance(sequence, (tuple, list)) and child in sequence:
                 return sequence
         else:
-            msg = 'Could not found %s in %s\'s children line %s'
-            raise ASTNGError(msg % (repr(child), child.lineno, repr(self)))
+            msg = 'Could not found %s in %s\'s children'
+            raise ASTNGError(msg % (repr(child), repr(self)))
+
+    def locate_child(self, child):
+        """return a 2-uple (child attribute name, sequence or node)"""
+        for field in self._astng_fields:
+            sequence = getattr(self, field)
+            # /!\ compiler.ast Nodes have an __iter__ walking over child nodes
+            if child is sequence:
+                return field, child
+            if isinstance(sequence, (tuple, list)) and child in sequence:
+                return field, sequence
+        msg = 'Could not found %s in %s\'s children'
+        raise ASTNGError(msg % (repr(child), repr(self)))
 
     def next_sibling(self):
         """return the previous sibling statement
