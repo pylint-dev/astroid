@@ -243,9 +243,8 @@ class Instance(Proxy):
         except NotFoundError:
             if name == '__class__':
                 return [self._proxied]
-            if name == '__name__':
-                # access to __name__ gives undefined member on class
-                # instances but not on class objects
+            # class attributes not available through the instance
+            if name in ('__name__', '__bases__', '__mro__'):
                 raise NotFoundError(name)
             if lookupclass:
                 return self._proxied.getattr(name, context)

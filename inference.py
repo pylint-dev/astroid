@@ -56,9 +56,9 @@ def Const_pytype(self):
     return self._proxied.qname()
 nodes.Const.pytype = Const_pytype
 
-def Const_getattr(self, name, context=None, lookupclass=None):
-    return self._proxied.getattr(name, context)
-nodes.Const.getattr = Const_getattr
+# def Const_getattr(self, name, context=None, lookupclass=None):
+#     return self._proxied.getattr(name, context)
+# nodes.Const.getattr = Const_getattr
 nodes.Const.has_dynamic_getattr = lambda x: False
 
     

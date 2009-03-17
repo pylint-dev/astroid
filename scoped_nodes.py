@@ -35,7 +35,8 @@ from logilab.common.compat import chain, set
 from logilab.astng import MANAGER, NotFoundError, NoDefault, ASTNGBuildingException, \
      InferenceError
 from logilab.astng.nodes import Arguments, Class, Const, Function, GenExpr, \
-     Lambda, Module, Name, Pass, Raise, Tuple, Yield, DelAttr, DelName
+     Lambda, Module, Name, Pass, Raise, Tuple, List, Dict, Yield, DelAttr, DelName, \
+     const_factory as cf
 from logilab.astng.utils import extend_class
 from logilab.astng.infutils import YES, InferenceContext, Instance, copy_context, \
      unpack_infer, _infer_stmts
@@ -201,6 +202,16 @@ class ModuleNG(object):
         try:
             return self.locals[name]
         except KeyError:
+            if name == '__name__':
+                return [cf(self.name)]
+            if name == '__doc__':
+                return [cf(self.doc)]
+            if name == '__file__':
+                return [cf(self.file)]
+            if name == '__dict__':
+                return [Dict()]
+            if name == '__path__' and self.package:
+                return [List()]
             if self.package:
                 try:
                     return [self.import_module(name, relative_only=True)]
@@ -315,6 +326,21 @@ class FunctionNG(object):
             return '__builtin__.instancemethod'
         return '__builtin__.function'
 
+    def getattr(self, name, context=None):
+        """this method doesn't look in the instance_attrs dictionary since it's
+        done by an Instance proxy at inference time.
+        
+        It may return a YES object if the attribute has not been actually
+        found but a __getattr__ or __getattribute__ method is defined
+        """
+        if name == '__name__':
+            return [cf(self.name)]
+        if name == '__doc__':
+            return [cf(self.doc)]
+        if name == '__dict__':
+            return [Dict()]
+        raise NotFoundError(name)
+    
     def is_method(self):
         """return true if the function node should be considered as a method"""
         # check we are defined in a Class, because this is usually expected
@@ -466,6 +492,7 @@ def _iface_hdlr(iface_node):
     """
     return True
 
+
 class ClassNG(object):
     """/!\ this class should not be used directly /!\ it's
     only used as a methods and attribute container, and update the
@@ -609,11 +636,19 @@ class ClassNG(object):
         """
         if name in self.locals:
             return self.locals[name]
+        if name == '__name__':
+            return [cf(self.name)]
+        if name == '__doc__':
+            return [cf(self.doc)]
+        if name == '__dict__':
+            return [Dict()]
         if name == '__bases__':
-            return tuple(self.ancestors(recurs=False, context=context))
+            return [cf(tuple(self.ancestors(recurs=False, context=context)))]
+        if name == '__module__':
+            return [cf(self.root().qname())]
         # XXX need proper meta class handling + MRO implementation
-        if name == '__mro__':
-            return tuple(self.ancestors(recurs=True, context=context))
+        if name == '__mro__' and self.newstyle:
+            return [cf(tuple(self.ancestors(recurs=True, context=context)))]
         for classnode in self.ancestors(recurs=False, context=context):
             try:
                 return classnode.getattr(name, context)

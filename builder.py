@@ -91,7 +91,6 @@ class ASTNGBuilder:
         if self._manager is not None:
             self._manager._cache[node.file] = self._manager._cache[node.name] = node
         node.package = hasattr(module, '__path__')
-        attach___dict__(node)
         self._done = {}
         self.object_build(node, module)
         return node

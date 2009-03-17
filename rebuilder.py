@@ -24,7 +24,6 @@ from logilab.astng import ASTNGBuildingException, InferenceError, NodeRemoved
 from logilab.astng import nodes
 from logilab.astng.utils import ASTVisitor
 from logilab.astng.infutils import YES, Instance
-from logilab.astng import raw_building as rb
 
 
 CONST_NAME_TRANSFORMS = {'None':  (nodes.Const, None),
@@ -149,13 +148,6 @@ class RebuildVisitor(ASTVisitor):
         """visit an Class node to become astng"""
         node.instance_attrs = {}
         self._push(node)
-        for name, value in ( ('__name__', node.name),
-                             ('__module__', node.root().name),
-                             ('__doc__', node.doc) ):
-            const = nodes.const_factory(value)
-            const.parent = node
-            node.locals[name] = [const]
-        rb.attach___dict__(node)
         self._metaclass.append(self._metaclass[-1])
         return True
 
@@ -243,17 +235,6 @@ class RebuildVisitor(ASTVisitor):
         self._metaclass = ['']
         self._global_names = []
         node.globals = node.locals = {}
-        for name, value in ( ('__name__', node.name),
-                             ('__file__', node.path),
-                             ('__doc__', node.doc) ):
-            const = nodes.const_factory(value)
-            const.parent = node
-            node.locals[name] = [const]
-        rb.attach___dict__(node)
-        if node.package:
-            const = nodes.const_factory(value)
-            const.parent = node
-            node.locals['__path__'] = [const]
         
     def visit_name(self, node):
         """visit an Name node to become astng"""

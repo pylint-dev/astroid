@@ -32,12 +32,6 @@ def _attach_local_node(parent, node, name):
     node.name = name # needed by add_local_node
     parent.add_local_node(node)
 
-def attach___dict__(node):
-    """attach the __dict__ attribute to Class and Module objects"""
-    dictn = nodes.const_factory({})
-    dictn.parent = node
-    node.locals['__dict__'] = [dictn]
-
 _marker = object()
 
 def attach_dummy_node(node, name, object=_marker):
@@ -79,12 +73,6 @@ def build_class(name, basenames=(), doc=None):
     node = nodes.class_factory(name, basenames, doc)
     node.locals = {}
     node.instance_attrs = {}
-    for name, value in ( ('__name__', name),
-                         #('__module__', node.root().name),
-                         ):
-        const = nodes.const_factory(value)
-        const.parent = node
-        node.locals[name] = [const]
     return node
 
 def build_function(name, args=None, defaults=None, flag=0, doc=None):
@@ -200,5 +188,5 @@ def _base_class_object_build(node, member, basenames, name=None):
 __all__ = ('register_arguments',  'build_module', 
            'object_build_class', 'object_build_function', 
            'object_build_datadescriptor', 'object_build_methoddescriptor',
-           'attach___dict__', 'attach_dummy_node',
+           'attach_dummy_node',
            'attach_const_node', 'attach_import_node')
