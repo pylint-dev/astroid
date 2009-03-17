@@ -479,7 +479,8 @@ class ClassNG(object):
                     "'metaclass' | 'interface' | 'exception'")
     
     def _newstyle_impl(self, context=None):
-        context = context or InferenceContext()
+        if context is None:
+            context = InferenceContext()
         if self._newstyle is not None:
             return self._newstyle
         for base in self.ancestors(recurs=False, context=context):
@@ -529,7 +530,8 @@ class ClassNG(object):
         # FIXME: should be possible to choose the resolution order
         # XXX inference make infinite loops possible here (see BaseTransformer
         # manipulation in the builder module for instance !)
-        context = context or InferenceContext()
+        if context is None:
+            context = InferenceContext()
         for stmt in self.bases:
             try:
                 for baseobj in stmt.infer(context):
@@ -608,10 +610,10 @@ class ClassNG(object):
         if name in self.locals:
             return self.locals[name]
         if name == '__bases__':
-            return tuple(self.ancestors(recurs=False))
+            return tuple(self.ancestors(recurs=False, context=context))
         # XXX need proper meta class handling + MRO implementation
         if name == '__mro__':
-            return tuple(self.ancestors(recurs=True))
+            return tuple(self.ancestors(recurs=True, context=context))
         for classnode in self.ancestors(recurs=False, context=context):
             try:
                 return classnode.getattr(name, context)
