@@ -211,6 +211,8 @@ def args_compiler_to_ast(node):
     del node.defaults
 
     
+from logilab.astng._exceptions import NodeRemoved
+
 class TreeRebuilder(ASTVisitor):
     """Rebuilds the compiler tree to become an ASTNG tree"""
 
@@ -335,7 +337,8 @@ class TreeRebuilder(ASTVisitor):
         del node.expr
         if node.lineno is None:
             # dummy Const(None) introducted when statement is ended by a semi-colon
-            node.lineno = node.value.lineno = node.previous_sibling().lineno
+            node.parent.child_sequence(node).remove(node)
+            raise NodeRemoved
             
     def visit_for(self, node):
         node.target = node.assign

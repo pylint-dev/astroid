@@ -22,7 +22,7 @@
 """this module contains utilities for rebuilding a compiler.ast
 or _ast tree in order to get a single ASTNG representation
 """
-from logilab.astng import ASTNGBuildingException, InferenceError
+from logilab.astng import ASTNGBuildingException, InferenceError, NodeRemoved
 from logilab.astng import nodes
 from logilab.astng.utils import ASTVisitor
 from logilab.astng.raw_building import *
@@ -93,10 +93,15 @@ class RebuildVisitor(ASTVisitor):
     def _walk(self, node, parent=None):
         """default visit method, handle the parent attribute"""
         node.parent = parent
-        node.accept(self.rebuilder)
+        try:
+            node.accept(self.rebuilder)
+        except NodeRemoved:
+            return
         handle_leave = node.accept(self)
         child = None
-        for child in node.get_children():
+        # XXX tuple necessary since node removal may modify children
+        #     find a trick to avoid tuple() or make get_children() returning a list)
+        for child in tuple(node.get_children()):
             self.set_context(node, child)
             self._walk(child, node)
             if self.asscontext is child:
