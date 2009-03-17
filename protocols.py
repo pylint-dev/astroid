@@ -250,6 +250,7 @@ def assign_assigned_stmts(self, node, context=None, asspath=None):
     for infered in _resolve_asspart(self.value.infer(context), asspath, context):
         yield infered
 nodes.Assign.assigned_stmts = raise_if_nothing_infered(assign_assigned_stmts)
+nodes.AugAssign.assigned_stmts = raise_if_nothing_infered(assign_assigned_stmts)
 
 
 def _resolve_asspart(parts, asspath, context):
