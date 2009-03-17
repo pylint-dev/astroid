@@ -20,7 +20,7 @@ from logilab.common.testlib import TestCase, unittest_main
 from unittest_inference import get_name_node
 from pprint import pprint
 
-from logilab.astng import builder, nodes, patchcomptransformer
+from logilab.astng import builder, nodes, patchcomptransformer, MANAGER
 from logilab.astng import Module, YES, InferenceError
 from logilab.astng.nodes_as_string import as_string
 
@@ -140,8 +140,7 @@ class BuilderTC(TestCase):
         
     def test_inspect_build(self):
         """test astng tree build from a living object"""
-        import __builtin__
-        builtin_astng = self.builder.inspect_build(__builtin__)
+        builtin_astng = MANAGER.astng_from_module_name('__builtin__')
         fclass = builtin_astng['file']
         self.assert_('name' in fclass)
         self.assert_('mode' in fclass)
@@ -163,17 +162,16 @@ class BuilderTC(TestCase):
         # check property has __init__
         pclass = builtin_astng['property']
         self.assert_('__init__' in pclass)
-        # 
-        import time
-        time_astng = self.builder.module_build(time)
-        self.assert_(time_astng)
-        #
-        unittest_astng = self.builder.inspect_build(unittest)
         self.failUnless(isinstance(builtin_astng['None'], nodes.Const), builtin_astng['None'])
         self.failUnless(isinstance(builtin_astng['True'], nodes.Const), builtin_astng['True'])
         self.failUnless(isinstance(builtin_astng['False'], nodes.Const), builtin_astng['False'])
         self.failUnless(isinstance(builtin_astng['Exception'], nodes.From), builtin_astng['Exception'])
         self.failUnless(isinstance(builtin_astng['NotImplementedError'], nodes.From))
+       
+        # 
+        time_astng = MANAGER.astng_from_module_name('time')
+        self.assert_(time_astng)
+        unittest_astng = self.builder.inspect_build(unittest)
 
         
     def test_inspect_build2(self):
@@ -204,8 +202,7 @@ class BuilderTC(TestCase):
         self.assert_('filename' in container)
 
     def test_inspect_build_type_object(self):
-        import __builtin__
-        builtin_astng = self.builder.inspect_build(__builtin__)
+        builtin_astng = MANAGER.astng_from_module_name('__builtin__')
         
         infered = list(builtin_astng.igetattr('object'))
         self.assertEquals(len(infered), 1)
