@@ -23,15 +23,13 @@ from __future__ import generators
 
 __doctype__ = "restructuredtext en"
 
-from copy import copy
-
-from logilab.common.compat import imap, chain, set
+from logilab.common.compat import chain
 
 from logilab.astng import MANAGER, nodes, raw_building
 from logilab.astng import ASTNGError, InferenceError, UnresolvableName, \
      NoDefault, NotFoundError, ASTNGBuildingException
-from logilab.astng.infutils import YES, Instance, Generator, InferenceContext, \
-     _infer_stmts, unpack_infer, copy_context, path_wrapper, raise_if_nothing_infered
+from logilab.astng.infutils import YES, Instance, InferenceContext, \
+     _infer_stmts, copy_context, path_wrapper, raise_if_nothing_infered
 from logilab.astng.protocols import _arguments_infer_argname
 
 _CONST_PROXY = {
@@ -98,7 +96,7 @@ class CallContext:
         except KeyError:
             # Function.args.args can be None in astng (means that we don't have
             # information on argnames)
-            argindex, argnode = funcnode.args.find_argname(name)
+            argindex = funcnode.args.find_argname(name)[0]
             if argindex is not None:
                 # 2. first argument of instance/class method
                 if argindex == 0 and funcnode.type in ('method', 'classmethod'):
@@ -324,7 +322,7 @@ def infer_unaryop(self, context=None):
             yield operand.infer_unary_op(self.op)
         except TypeError:
             continue
-        except AttributeError, ex:
+        except AttributeError:
             meth = UNARY_OP_METHOD[self.op]
             if meth is None:
                 yield YES

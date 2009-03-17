@@ -387,7 +387,7 @@ Subscript.get_children = _subscript_get_children
 def _compare_get_children(node):
     """override get_children for tuple fields"""
     yield node.left
-    for op, comparator in node.ops:
+    for _, comparator in node.ops:
         yield comparator # we don't want the 'op'
 Compare.get_children = _compare_get_children
 
@@ -490,3 +490,4 @@ def repr_tree(node, indent='', _done=None):
     indent += '    '
     for child in node.get_children():
         repr_tree(child, indent, _done)
+        

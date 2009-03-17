@@ -36,10 +36,8 @@ from inspect import isdatadescriptor
 from logilab.common.fileutils import norm_read
 from logilab.common.modutils import modpath_from_file
 
-from logilab.astng import nodes
-from logilab.astng._exceptions import ASTNGBuildingException, InferenceError
+from logilab.astng._exceptions import ASTNGBuildingException
 from logilab.astng.rebuilder import RebuildVisitor
-from logilab.astng.nodes_as_string import as_string
 from logilab.astng.raw_building import *
 
 try:

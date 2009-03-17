@@ -22,9 +22,7 @@ extract information from it
 
 __docformat__ = "restructuredtext en"
 
-from itertools import imap
-from logilab.common.compat import enumerate
-from logilab.astng._exceptions import *
+from logilab.astng._exceptions import IgnoreChild
 
 def extend_class(original, addons):
     """add methods and attribute defined in the addons class to the original
@@ -349,53 +347,6 @@ class LocalsVisitor(ASTWalker):
         if methods[1] is not None:
             return methods[1](node)
 
-def are_exclusive(stmt1, stmt2):
-    """return true if the two given statements are mutually exclusive
-
-    algorithm :
-     1) index stmt1's parents
-     2) climb among stmt2's parents until we find a common parent
-     3) if the common parent is a If or TryExcept statement, look if nodes are
-        in exclusive branchs
-    """
-    from logilab.astng.nodes import If, TryExcept
-    # index stmt1's parents
-    stmt1_parents = {}
-    children = {}
-    node = stmt1.parent
-    previous = stmt1
-    while node:
-        stmt1_parents[node] = 1
-        children[node] = previous
-        previous = node
-        node = node.parent
-    # climb among stmt2's parents until we find a common parent
-    node = stmt2.parent
-    previous = stmt2
-    while node:
-        if stmt1_parents.has_key(node):
-            # if the common parent is a If or TryExcept statement, look if
-            # nodes are in exclusive branchs
-            if isinstance(node, If):
-                if (node.locate_child(previous)[1]
-                    is not node.locate_child(children[node])[1]):
-                    return True
-            elif isinstance(node, TryExcept):
-                c2attr, c2node = node.locate_child(previous)
-                c1attr, c1node = node.locate_child(children[node])
-                if c1node is not c2node:
-                    if ((c2attr == 'body' and c1attr == 'handlers') or
-                        (c2attr == 'handlers' and c1attr == 'body') or
-                        (c2attr == 'handlers' and c1attr == 'orelse') or
-                        (c2attr == 'orelse' and c1attr == 'handlers')):
-                        return True
-                elif c2attr == 'handlers' and c1attr == 'handlers':
-                    return previous is not children[node]
-            return False
-        previous = node
-        node = node.parent
-    return False
-
 __all__ = ('REDIRECT', 'LocalsVisitor', 'ASTWalker', 'ASTVisitor', 
-        'are_exclusive', 'extend_class')
+           'extend_class')
 

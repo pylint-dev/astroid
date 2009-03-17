@@ -34,7 +34,7 @@ from logilab.common.compat import chain, set
 
 from logilab.astng import MANAGER, NotFoundError, NoDefault, ASTNGBuildingException, \
      InferenceError
-from logilab.astng.nodes import Arguments, Class, Const, Dict, Function, GenExpr, \
+from logilab.astng.nodes import Arguments, Class, Const, Function, GenExpr, \
      Lambda, Module, Name, Pass, Raise, Tuple, Yield, DelAttr, DelName
 from logilab.astng.utils import extend_class
 from logilab.astng.infutils import YES, InferenceContext, Instance, copy_context, \

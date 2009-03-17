@@ -60,18 +60,18 @@ nodes.Const.infer_unary_op = const_infer_unary_op
 
 # binary operations ###########################################################
 
-BIN_OP_IMPL = {'+':  lambda a,b: a+b,
-               '-':  lambda a,b: a-b,
-               '/':  lambda a,b: a/b,
-               '//': lambda a,b: a//b,
-               '*':  lambda a,b: a*b,
-               '**': lambda a,b: a**b,
-               '%':  lambda a,b: a%b,
-               '&':  lambda a,b: a&b,
-               '|':  lambda a,b: a|b,
-               '^':  lambda a,b: a^b,
-               '<<': lambda a,b: a^b,
-               '>>': lambda a,b: a^b,
+BIN_OP_IMPL = {'+':  lambda a,b: a + b,
+               '-':  lambda a,b: a - b,
+               '/':  lambda a,b: a / b,
+               '//': lambda a,b: a // b,
+               '*':  lambda a,b: a * b,
+               '**': lambda a,b: a ** b,
+               '%':  lambda a,b: a % b,
+               '&':  lambda a,b: a & b,
+               '|':  lambda a,b: a | b,
+               '^':  lambda a,b: a ^ b,
+               '<<': lambda a,b: a ^ b,
+               '>>': lambda a,b: a ^ b,
                }
 
 def const_infer_binary_op(self, operator, other, context):
@@ -417,7 +417,7 @@ def dict_getitem(self, key):
         for inferedkey in self.items[i].infer():
             if inferedkey is YES:
                 continue
-            if isinstance(inferedkey, Const) and inferekey.value == key:
+            if isinstance(inferedkey, Const) and inferedkey.value == key:
                 return self.items[i+1]
     raise IndexError(key)
 nodes.Dict.getitem = dict_getitem

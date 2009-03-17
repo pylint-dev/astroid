@@ -20,7 +20,7 @@
 """
 
 from types import TupleType
-from token import NEWLINE, DEDENT
+from token import DEDENT
 from compiler import transformer
 
 from logilab.astng import nodes

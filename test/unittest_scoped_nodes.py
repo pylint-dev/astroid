@@ -1,15 +1,3 @@
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the GNU General Public License as published by the Free Software
-# Foundation; either version 2 of the License, or (at your option) any later
-# version.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License along with
-# this program; if not, write to the Free Software Foundation, Inc.,
-# 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """tests for specific behaviour of astng scoped nodes (ie module, class and
 function)
 """
@@ -73,6 +61,17 @@ class ModuleNodeTC(TestCase):
         res = m.wildcard_import_names()
         res.sort()
         self.assertEquals(res, ['Aaa', 'func', 'name', 'other'])
+                
+    def test_module_getattr(self):
+        data = '''
+appli = application
+appli += 2
+del appli
+        '''
+        astng = abuilder.string_build(data, __name__, __file__)
+        # test del statement not returned by getattr
+        self.assertEquals(len(astng.getattr('appli')), 2,
+                          astng.getattr('appli'))
 
 
 class FunctionNodeTC(TestCase):
@@ -152,6 +151,7 @@ def f():
         astng = abuilder.string_build(data, __name__, __file__)
         g = list(astng['f'].ilookup('g'))[0]
         self.failUnlessEqual(g.pytype(), '__builtin__.function')
+
         
 class ClassNodeTC(TestCase):
 
@@ -167,7 +167,7 @@ class ClassNodeTC(TestCase):
         r_sibling = klass.next_sibling()
         self.assertIsInstance(r_sibling, nodes.Class)
         self.assertEquals(r_sibling.name, 'YOUPI')
-        
+
     def test_local_attr_ancestors(self):
         klass2 = MODULE['YOUPI']
         it = klass2.local_attr_ancestors('__init__')
@@ -290,18 +290,6 @@ class WebAppObject(object):
                           ['__dict__', '__doc__', '__module__', '__name__',
                            'appli', 'config', 'registered', 'schema'])
         
-        
-    def test_module_getattr(self):
-        data = '''
-appli = application
-appli += 2
-del appli
-        '''
-        astng = abuilder.string_build(data, __name__, __file__)
-        # test del statement not returned by getattr
-        self.assertEquals(len(astng.getattr('appli')), 2,
-                          astng.getattr('appli'))
-        
 
     def test_class_getattr(self):
         data =         '''
@@ -314,7 +302,7 @@ class WebAppObject(object):
         cls = astng['WebAppObject']
         # test del statement not returned by getattr
         self.assertEquals(len(cls.getattr('appli')), 2)
-
+        
 
     def test_instance_getattr(self):
         data =         '''

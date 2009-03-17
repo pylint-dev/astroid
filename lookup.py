@@ -31,8 +31,7 @@ __docformat__ = "restructuredtext en"
 import __builtin__
 
 from logilab.astng import MANAGER, nodes
-from logilab.astng.utils import are_exclusive
-from logilab.astng.infutils import copy_context, _infer_stmts
+from logilab.astng.infutils import are_exclusive, copy_context, _infer_stmts
 
 
 def decorators_scope(self):

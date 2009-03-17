@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# pylint: disable-msg=W0142,W0403,W0404,E0611,W0613,W0622,W0622,W0704,R0904
+# pylint: disable-msg=W0704,R0904
 #
 # Copyright (c) 2003 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
@@ -19,8 +19,6 @@
 """ Generic Setup script, takes package info from __pkginfo__.py file """
 
 from __future__ import nested_scopes
-
-__revision__ = '$Id: setup.py,v 1.3 2006-01-03 14:30:39 syt Exp $'
 
 import os
 import sys

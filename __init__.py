@@ -59,3 +59,7 @@ from logilab.astng.nodes import *
 
 # trigger extra monkey-patching
 from logilab.astng import scoped_nodes, lookup, inference
+
+# more stuff available
+from logilab.astng import raw_building
+from logilab.astng.infutils import YES, Instance, InstanceMethod

@@ -24,7 +24,7 @@ from logilab.astng import ASTNGBuildingException, InferenceError, NodeRemoved
 from logilab.astng import nodes
 from logilab.astng.utils import ASTVisitor
 from logilab.astng.infutils import YES, Instance
-from logilab.astng.raw_building import *
+from logilab.astng import raw_building as rb
 
 
 CONST_NAME_TRANSFORMS = {'None':  (nodes.Const, None),
@@ -83,7 +83,7 @@ class RebuildVisitor(ASTVisitor):
             else:
                 self.asscontext = None
         elif isinstance(node, nodes.Subscript):
-           self.asscontext = None # disable asscontext on subscripts to skip d[x] = y (item assigment)
+            self.asscontext = None # disable asscontext on subscripts to skip d[x] = y (item assigment)
 
     def walk(self, node):
         self._walk(node)
@@ -155,7 +155,7 @@ class RebuildVisitor(ASTVisitor):
             const = nodes.const_factory(value)
             const.parent = node
             node.locals[name] = [const]
-        attach___dict__(node)
+        rb.attach___dict__(node)
         self._metaclass.append(self._metaclass[-1])
         return True
 
@@ -249,7 +249,7 @@ class RebuildVisitor(ASTVisitor):
             const = nodes.const_factory(value)
             const.parent = node
             node.locals[name] = [const]
-        attach___dict__(node)
+        rb.attach___dict__(node)
         if node.package:
             const = nodes.const_factory(value)
             const.parent = node

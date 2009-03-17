@@ -77,7 +77,6 @@ from _ast import (
 
 from logilab.astng.utils import ASTVisitor
 
-
 Proxy_ = object
 
 BIN_OP_CLASSES = {_Add: '+',
@@ -333,6 +332,8 @@ def _const_factory(value):
         
 def function_factory(name, args, defaults, flag=0, doc=None):
     """create and initialize a astng Function node"""
+    # XXX local import necessary due to cyclic deps
+    from logilab.astng.nodes import const_factory
     node = Function()
     node.decorators = []
     node.body = []

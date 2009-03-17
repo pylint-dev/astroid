@@ -347,14 +347,13 @@ class FileBuildTC(TestCase):
         """test the 'locals' dictionary of a astng module"""
         module = self.module
         _locals = module.locals
-        self.assertEquals(len(_locals), 20)
         self.assert_(_locals is module.globals)
         keys = _locals.keys()
         keys.sort()
         should = ['MY_DICT', 'YO', 'YOUPI', '__dict__', '__doc__', '__file__', '__name__',
                 '__revision__',  'global_access','modutils', 'nested_args',
                  'os', 'redirect', 'spawn', 'REDIRECT', 'LocalsVisitor', 
-                'ASTWalker', 'ASTVisitor',  'are_exclusive', 'extend_class']
+                'ASTWalker', 'ASTVisitor',  'extend_class']
         should.sort()
         self.assertEquals(keys, should)
 

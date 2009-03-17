@@ -15,9 +15,9 @@ possible by providing a class responsible to get astng representation
 from various source and using a cache of built modules)
 
 :author:    Sylvain Thenault
-:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2007 Sylvain Thenault
+:copyright: 2003-2009 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 
@@ -27,7 +27,6 @@ import sys
 import os
 from os.path import dirname, basename, abspath, join, isdir, exists
 
-from logilab.common.cache import Cache
 from logilab.common.modutils import NoSourceFile, is_python_source, \
      file_from_modpath, load_module_from_name, \
      get_module_files, get_source_file
