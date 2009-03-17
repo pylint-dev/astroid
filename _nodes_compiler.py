@@ -99,10 +99,9 @@ class ExceptHandler(Node):
         self.body = body.nodes
         # XXX parent.lineno is wrong, cant't catch the right line ...
         if exc_type and exc_type.lineno:
-                self.lineno = exc_type.lineno
+            self.lineno = exc_type.lineno
         else:
-            self.lineno = int((parent.body[-1].tolineno +
-                                            self.body[0].fromlineno )/2)
+            self.lineno = self.body[0].fromlineno - 1
         self.fromlineno =  self.lineno
         self.tolineno = self.body[-1].tolineno
 
@@ -362,8 +361,14 @@ class TreeRebuilder(ASTVisitor):
     def visit_if(self, node):
         node.test, body = node.tests[0]
         node.body = body.nodes
-        if node.tests[1:]: # create If node and put it in orelse
-            subnode = If( node.tests[1:], node.else_ )
+        if node.tests[1:]: 
+            # create If node and put it in orelse
+            # rely on the fact that the new If node will be visited
+            # as well until no more tests remains
+            subnode = If(node.tests[1:], node.else_ )
+            subnode.fromlineno = node.tests[1][0].fromlineno
+            subnode.tolineno = node.tests[1][1].nodes[-1].tolineno
+            subnode.blockstart_tolineno = node.tests[1][0].tolineno
             del node.else_
             node.orelse = [subnode]
         else: # handle orelse
