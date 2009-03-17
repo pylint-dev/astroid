@@ -356,7 +356,7 @@ BIN_OP_METHOD = {'+':  '__add__',
 
 def _infer_binop(operator, operand1, operand2, context, failures=None):
     if operand1 is YES:
-        yield lhs
+        yield operand1
     try:
         for valnode in operand1.infer_binary_op(operator, operand2, context):
             yield valnode

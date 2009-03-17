@@ -250,6 +250,8 @@ class TreeRebuilder(ASTVisitor):
             if slices.step:
                 node.subs.append(slices.step)
             node.sliceflag = 'slice'
+        else:
+            node.subs = []
         del node.slice, node.value
 
     def visit_unaryop(self, node):
