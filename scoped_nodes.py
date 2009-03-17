@@ -31,7 +31,6 @@ __doctype__ = "restructuredtext en"
 import sys
 
 from logilab.common.compat import chain, set
-from logilab.common.decorators import monkeypatch
 
 from logilab.astng import MANAGER, InferenceContext, copy_context, \
      unpack_infer, Arguments, Class, Const, Dict, Function, GenExpr, Lambda, \
@@ -373,7 +372,6 @@ def _get_names(args, names=None):
             names.append(arg.name)
     return names
 
-@monkeypatch(Arguments)
 def format_args(self):
     """return arguments formatted as string"""
     result = [_format_args(self.args, self.defaults)]
@@ -382,8 +380,8 @@ def format_args(self):
     if self.kwarg:
         result.append('**%s' % self.kwarg)
     return ', '.join(result)
+Arguments.format_args = format_args
 
-@monkeypatch(Arguments)    
 def default_value(self, argname):
     """return the default value for an argument
 
@@ -395,12 +393,12 @@ def default_value(self, argname):
         if idx >= 0:
             return self.defaults[idx]
     raise NoDefault()
+Arguments.default_value = default_value
 
-
-@monkeypatch(Arguments)
 def find_argname(self, argname, rec=False):
     """return index and Name node with given name"""
     return _find_arg(argname, self.args, rec)
+Arguments.find_argname = find_argname
 
 def _find_arg(argname, args, rec=False):
     for i, arg in enumerate(args):

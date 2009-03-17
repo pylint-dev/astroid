@@ -41,8 +41,6 @@ __docformat__ = "restructuredtext en"
 
 from itertools import imap
 
-from logilab.common.decorators import monkeypatch
-
 try:
     from logilab.astng._nodes_ast import *
     from logilab.astng._nodes_ast import _const_factory
@@ -417,11 +415,11 @@ def if_block_range(node, lineno):
 
 If.block_range = if_block_range
 
-@monkeypatch(If)
 def set_line_info(self, lastchild):
     self.fromlineno = self.lineno
     self.tolineno = lastchild.tolineno
     self.blockstart_tolineno = self.test.tolineno
+If.set_line_info
 
 def try_except_block_range(node, lineno):
     """handle block line numbers range for try/except statements"""
