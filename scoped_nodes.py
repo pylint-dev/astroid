@@ -34,12 +34,21 @@ from logilab.common.compat import chain, set
 
 from logilab.astng import MANAGER, InferenceContext, copy_context, \
      unpack_infer, Arguments, Class, Const, Dict, Function, GenExpr, Lambda, \
-     Module, Name, Pass, Raise, Tuple, Yield
+     Module, Name, Pass, Raise, Tuple, Yield, DelAttr, DelName
 from logilab.astng import NotFoundError, NoDefault, ASTNGBuildingException, \
      InferenceError
 from logilab.astng.utils import extend_class
 from logilab.astng.nodes import YES, Instance, _infer_stmts
 from logilab.astng.nodes_as_string import as_string
+
+
+def remove_nodes(func, cls):
+    def wrapper(*args, **kwargs):
+        nodes = [n for n in func(*args, **kwargs) if not isinstance(n, cls)]
+        if not nodes:
+            raise NotFoundError()
+        return nodes
+    return wrapper
 
 # module class dict/iterator interface ########################################
     
@@ -200,7 +209,8 @@ class ModuleNG(object):
                 except:
                     pass
             raise NotFoundError(name)        
-
+    getattr = remove_nodes(getattr, DelName)
+    
     def igetattr(self, name, context=None):
         """infered getattr"""
         # set lookup name since this is necessary to infer on import nodes for
@@ -411,6 +421,7 @@ def _find_arg(argname, args, rec=False):
             return i, arg
     return None, None
 
+
 def _format_args(args, defaults=None):
     values = []
     if defaults is not None:
@@ -568,7 +579,8 @@ class ClassNG(object):
             for class_node in self.local_attr_ancestors(name, context):
                 return class_node[name]
         raise NotFoundError(name)
-        
+    local_attr = remove_nodes(local_attr, DelAttr)
+    
     def instance_attr(self, name, context=None):
         """return the astng nodes associated to name in this class instance
         attributes dictionary or in its parents
@@ -584,7 +596,8 @@ class ClassNG(object):
             for class_node in self.instance_attr_ancestors(name, context):
                 return class_node.instance_attrs[name]
         raise NotFoundError(name)
-
+    instance_attr = remove_nodes(instance_attr, DelAttr)
+    
     def getattr(self, name, context=None):
         """this method doesn't look in the instance_attrs dictionary since it's
         done by an Instance proxy at inference time.
@@ -605,7 +618,8 @@ class ClassNG(object):
             except NotFoundError:
                 continue
         raise NotFoundError(name)
-
+    getattr = remove_nodes(getattr, DelAttr)
+    
     def igetattr(self, name, context=None):
         """infered getattr, need special treatment in class to handle
         descriptors
