@@ -435,19 +435,28 @@ def try_except_block_range(node, lineno):
 
 TryExcept.block_range = try_except_block_range
 
-def elsed_block_range(node, lineno, last=None):
+def _elsed_block_range(node, lineno, orelse, last=None):
     """handle block line numbers range for try/finally, for and while
     statements
     """
     if lineno == node.fromlineno:
         return lineno, lineno
-    if node.orelse:
-        if lineno >= node.orelse[0].fromlineno:
-            return lineno, node.orelse[-1].tolineno
-        return lineno, node.orelse[0].fromlineno - 1
+    if orelse:
+        if lineno >= orelse[0].fromlineno:
+            return lineno, orelse[-1].tolineno
+        return lineno, orelse[0].fromlineno - 1
     return lineno, last or node.tolineno
 
-TryFinally.block_range = elsed_block_range
+
+def elsed_block_range(node, lineno, last=None):
+    """handle block line numbers range for for and while statements"""
+    return _elsed_block_range(node, lineno, node.orelse, last=None)
+
+def try_finalbody_block_range(node, lineno, last=None):
+    """handle block line numbers range for try/finally statements"""
+    return _elsed_block_range(node, lineno, node.finalbody, last=None)
+
+TryFinally.block_range = try_finalbody_block_range
 While.block_range = elsed_block_range
 For.block_range = elsed_block_range
 
@@ -537,7 +546,7 @@ class Instance(Proxy):
             if lookupclass:
                 return self._proxied.getattr(name, context)
         raise NotFoundError(name)
-
+    
     def igetattr(self, name, context=None):
         """infered getattr"""
         try:
@@ -673,7 +682,7 @@ def repr_tree(node, indent='', _done=None):
         print ('loop in tree: %r (%s)' % (node, node.lineno))
         return
     _done.add(node)
-    print indent + repr(node)
-    indent += ' '
+    print indent + str(node)
+    indent += '    '
     for child in node.get_children():
         repr_tree(child, indent, _done)
