@@ -565,19 +565,19 @@ class ClassNG(object):
                 yield astng
 
     def local_attr(self, name, context=None):
-        """return the astng associated to name in this class locals or
-        in its parents
+        """return the list of assign node associated to name in this class
+        locals or in its parents
 
         :raises `NotFoundError`:
           if no attribute with this name has been find in this class or
           its parent classes
         """
         try:
-            return self[name]
+            return self.locals[name]
         except KeyError:
             # get if from the first parent implementing it if any
             for class_node in self.local_attr_ancestors(name, context):
-                return class_node[name]
+                return class_node.locals[name]
         raise NotFoundError(name)
     local_attr = remove_nodes(local_attr, DelAttr)
     

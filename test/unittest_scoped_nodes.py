@@ -201,7 +201,9 @@ class ClassNodeTC(TestCase):
         methods = [m.name for m in klass2.mymethods()]
         methods.sort()
         self.assertEquals(methods, [])
-        self.assertEquals(klass2.local_attr('method').name, 'method')
+        method_locals = klass2.local_attr('method')
+        self.assertEquals(len(method_locals), 1)
+        self.assertEquals(method_locals[0].name, 'method')
         self.assertRaises(NotFoundError, klass2.local_attr, 'nonexistant')
         methods = [m.name for m in klass2.methods()]
         methods.sort()
