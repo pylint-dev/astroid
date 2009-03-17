@@ -24,20 +24,18 @@ from __future__ import generators
 __doctype__ = "restructuredtext en"
 
 from copy import copy
-from types import NoneType
 
 from logilab.common.compat import imap, chain, set
 
-from logilab.astng import nodes, raw_building, MANAGER, \
-     unpack_infer, copy_context, path_wrapper, raise_if_nothing_infered
+from logilab.astng import MANAGER, nodes, raw_building
 from logilab.astng import ASTNGError, InferenceError, UnresolvableName, \
      NoDefault, NotFoundError, ASTNGBuildingException
-from logilab.astng.nodes import _infer_stmts, YES, InferenceContext, Instance, \
-     Generator
+from logilab.astng.infutils import YES, Instance, Generator, InferenceContext, \
+     _infer_stmts, unpack_infer, copy_context, path_wrapper, raise_if_nothing_infered
 from logilab.astng.protocols import _arguments_infer_argname
 
 _CONST_PROXY = {
-    NoneType: raw_building.build_class('NoneType'),
+    type(None): raw_building.build_class('NoneType'),
     bool: MANAGER.astng_from_class(bool),
     int: MANAGER.astng_from_class(int),
     long: MANAGER.astng_from_class(long),
@@ -46,7 +44,7 @@ _CONST_PROXY = {
     str: MANAGER.astng_from_class(str),
     unicode: MANAGER.astng_from_class(unicode),
     }
-_CONST_PROXY[NoneType].parent = _CONST_PROXY[bool].parent
+_CONST_PROXY[type(None)].parent = _CONST_PROXY[bool].parent
 
 def _set_proxied(const):
     if not hasattr(const, '__proxied'):
@@ -239,6 +237,12 @@ def infer_import(self, context=None, asname=True):
         yield _imported_module_astng(self, name)
 nodes.Import.infer = path_wrapper(infer_import)
 
+def infer_name_module(node, name):
+    context = InferenceContext(node)
+    context.lookupname = name
+    return node.infer(context, asname=False)
+nodes.Import.infer_name_module = infer_name_module
+
 
 def infer_from(self, context=None, asname=True):
     """infer a From nodes: return the imported module/object"""
@@ -259,7 +263,6 @@ nodes.From.infer = path_wrapper(infer_from)
 
 def infer_getattr(self, context=None):
     """infer a Getattr node by using getattr on the associated object"""
-    # XXX
     #context = context.clone()
     for owner in self.expr.infer(context):
         if owner is YES:
@@ -271,10 +274,10 @@ def infer_getattr(self, context=None):
                 yield obj
             context.boundnode = None
         except (NotFoundError, InferenceError):
-            continue
+            context.boundnode = None
         except AttributeError:
             # XXX method / function
-            continue
+            context.boundnode = None
 nodes.Getattr.infer = path_wrapper(raise_if_nothing_infered(infer_getattr))
 
 
@@ -289,8 +292,7 @@ nodes.Global.infer = path_wrapper(infer_global)
 
 
 def infer_subscript(self, context=None):
-    """infer simple subscription such as [1,2,3][0] or (1,2,3)[-1]
-    """
+    """infer simple subscription such as [1,2,3][0] or (1,2,3)[-1]"""
     if len(self.subs) == 1:
         index = self.subs[0].infer(context).next()
         if index is YES:
@@ -398,7 +400,7 @@ def infer_ass(self, context=None):
     assign node
     """
     stmts = list(self.assigned_stmts(context=context))
-    return nodes._infer_stmts(stmts, context)
+    return _infer_stmts(stmts, context)
 nodes.AssName.infer = path_wrapper(infer_ass)
 nodes.AssAttr.infer = path_wrapper(infer_ass)
 # no infer method on DelName and DelAttr (expected InferenceError)

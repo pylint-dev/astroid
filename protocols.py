@@ -24,15 +24,17 @@ from __future__ import generators
 
 __doctype__ = "restructuredtext en"
 
-from logilab.astng import nodes, raise_if_nothing_infered, yes_if_nothing_infered
-from logilab.astng import InferenceError, NoDefault, copy_context, unpack_infer
-from logilab.astng.nodes import YES, Instance, Const, Class
+from logilab.astng import InferenceError, NoDefault, nodes
+from logilab.astng.infutils import copy_context, unpack_infer, \
+     raise_if_nothing_infered, yes_if_nothing_infered, Instance, Generator, YES
+from logilab.astng.nodes import Const, Class, Function, Tuple, List, \
+     const_factory
 
 # unary operations ############################################################
 
 def tl_infer_unary_op(self, operator):
     if operator == 'not':
-        return nodes.const_factory(not bool(self.elts))
+        return const_factory(not bool(self.elts))
     raise TypeError() # XXX log unsupported operation
 nodes.Tuple.infer_unary_op = tl_infer_unary_op
 nodes.List.infer_unary_op = tl_infer_unary_op
@@ -40,19 +42,19 @@ nodes.List.infer_unary_op = tl_infer_unary_op
 
 def dict_infer_unary_op(self, operator):
     if operator == 'not':
-        return nodes.const_factory(not bool(self.items))
+        return const_factory(not bool(self.items))
     raise TypeError() # XXX log unsupported operation
 nodes.Dict.infer_unary_op = dict_infer_unary_op
 
 
 def const_infer_unary_op(self, operator):
     if operator == 'not':
-        return nodes.const_factory(not self.value)
+        return const_factory(not self.value)
     # XXX log potentialy raised TypeError
     elif operator == '+':
-        return nodes.const_factory(+self.value)
+        return const_factory(+self.value)
     else: # operator == '-':
-        return nodes.const_factory(-self.value)        
+        return const_factory(-self.value)        
 nodes.Const.infer_unary_op = const_infer_unary_op
 
 
@@ -68,8 +70,8 @@ BIN_OP_IMPL = {'+':  lambda a,b: a+b,
                '&':  lambda a,b: a&b,
                '|':  lambda a,b: a|b,
                '^':  lambda a,b: a^b,
-               '<<':  lambda a,b: a^b,
-               '>>':  lambda a,b: a^b,
+               '<<': lambda a,b: a^b,
+               '>>': lambda a,b: a^b,
                }
 
 def const_infer_binary_op(self, operator, other, context):
@@ -77,7 +79,7 @@ def const_infer_binary_op(self, operator, other, context):
         if isinstance(other, Const):
             try:
                 impl = BIN_OP_IMPL[operator]
-                yield nodes.const_factory(impl(self.value, other.value))
+                yield const_factory(impl(self.value, other.value))
             except TypeError:
                 # XXX log TypeError
                 continue
@@ -172,7 +174,7 @@ def _resolve_looppart(parts, asspath, context):
 def for_assigned_stmts(self, node, context=None, asspath=None):
     if asspath is None:
         for lst in self.iter.infer(context):
-            if isinstance(lst, (nodes.Tuple, nodes.List)):
+            if isinstance(lst, (Tuple, List)):
                 for item in lst.elts:
                     yield item
     else:
@@ -213,10 +215,10 @@ def _arguments_infer_argname(self, name, context):
             yield self.parent.parent.frame()
             return
     if name == self.vararg:
-        yield nodes.const_factory(())
+        yield const_factory(())
         return
     if name == self.kwarg:
-        yield nodes.const_factory({})
+        yield const_factory({})
         return
     # if there is a default value, yield it. And then yield YES to reflect
     # we can't guess given argument value
@@ -285,7 +287,7 @@ def _resolve_asspart(parts, asspath, context):
     
 def excepthandler_assigned_stmts(self, node, context=None, asspath=None):
     for assigned in unpack_infer(self.type):
-        if isinstance(assigned, nodes.Class):
+        if isinstance(assigned, Class):
             assigned = Instance(assigned)
         yield assigned
 nodes.ExceptHandler.assigned_stmts = raise_if_nothing_infered(excepthandler_assigned_stmts)
@@ -294,7 +296,7 @@ nodes.ExceptHandler.assigned_stmts = raise_if_nothing_infered(excepthandler_assi
 def with_assigned_stmts(self, node, context=None, asspath=None):
     if asspath is None:
         for lst in self.vars.infer(context):
-            if isinstance(lst, (nodes.Tuple, nodes.List)):
+            if isinstance(lst, (Tuple, List)):
                 for item in lst.nodes:
                     yield item
 nodes.With.assigned_stmts = raise_if_nothing_infered(with_assigned_stmts)
@@ -348,9 +350,9 @@ nodes.Class.callable = callable_true
 def infer_call_result_function(self, caller, context=None):
     """infer what a function is returning when called"""
     if self.is_generator():
-        yield nodes.Generator(self)
+        yield Generator(self)
         return
-    returns = self.nodes_of_class(nodes.Return, skip_klass=nodes.Function)
+    returns = self.nodes_of_class(nodes.Return, skip_klass=Function)
     for returnnode in returns:
         if returnnode.value is None:
             yield None
@@ -415,7 +417,7 @@ def dict_getitem(self, key):
         for inferedkey in self.items[i].infer():
             if inferedkey is YES:
                 continue
-            if inferedkey.eq(key):
+            if isinstance(inferedkey, Const) and inferekey.value == key:
                 return self.items[i+1]
     raise IndexError(key)
 nodes.Dict.getitem = dict_getitem

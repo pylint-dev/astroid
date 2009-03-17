@@ -17,12 +17,14 @@ import sys
 from os.path import join, abspath, dirname
 
 from logilab.common.testlib import TestCase, unittest_main
-from unittest_inference import get_name_node
 from pprint import pprint
 
-from logilab.astng import builder, nodes, patchcomptransformer, MANAGER
-from logilab.astng import Module, YES, InferenceError
+from logilab.astng import builder, nodes, patchcomptransformer, MANAGER, InferenceError
+from logilab.astng.nodes import Module
+from logilab.astng.infutils import YES
 from logilab.astng.nodes_as_string import as_string
+
+from unittest_inference import get_name_node
 
 import data
 from data import module as test_module

@@ -26,14 +26,13 @@ ilookup returns an iterator on infered values.
 :contact:   mailto:thenault@gmail.com
 """
 
-from __future__ import generators
-
 __docformat__ = "restructuredtext en"
 
 import __builtin__
 
-from logilab.astng import nodes, MANAGER, copy_context
+from logilab.astng import MANAGER, nodes
 from logilab.astng.utils import are_exclusive
+from logilab.astng.infutils import copy_context, _infer_stmts
 
 
 def decorators_scope(self):
@@ -115,7 +114,7 @@ def ilookup(self, name, context=None):
     frame, stmts = self.lookup(name)
     context = copy_context(context)
     context.lookupname = name
-    return nodes._infer_stmts(stmts, context, frame)
+    return _infer_stmts(stmts, context, frame)
 
 
 def _filter_stmts(self, stmts, frame, offset):
@@ -223,17 +222,15 @@ def _filter_stmts(self, stmts, frame, offset):
     return _stmts
 
 
-def _decorate(astmodule):
-    """add this module functionalities to necessary nodes"""
-    for klass in (astmodule.Name, astmodule.AssName, astmodule.DelName,
-                  astmodule.Module, astmodule.Class,
-                  astmodule.Function, astmodule.Lambda):
-        klass.ilookup = ilookup
-        klass.lookup = lookup
-        klass._filter_stmts = _filter_stmts
-    astmodule.Class.scope_lookup = class_scope_lookup
-    astmodule.Function.scope_lookup = function_scope_lookup
-    astmodule.Lambda.scope_lookup = function_scope_lookup
-    astmodule.Module.scope_lookup = scope_lookup
-    astmodule.GenExpr.scope_lookup = scope_lookup
+for klass in (nodes.Name, nodes.AssName, nodes.DelName,
+              nodes.Module, nodes.Class,
+              nodes.Function, nodes.Lambda):
+    klass.ilookup = ilookup
+    klass.lookup = lookup
+    klass._filter_stmts = _filter_stmts
+nodes.Class.scope_lookup = class_scope_lookup
+nodes.Function.scope_lookup = function_scope_lookup
+nodes.Lambda.scope_lookup = function_scope_lookup
+nodes.Module.scope_lookup = scope_lookup
+nodes.GenExpr.scope_lookup = scope_lookup
         

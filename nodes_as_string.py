@@ -185,13 +185,13 @@ class AsStringVisitor(ASTVisitor):
     
     def visit_exec(self, node):
         """return an astng.Exec node as string"""
-        if node.globals:
-            return 'exec %s in %s, %s' % (node.expr.accept(self),
-                                        node.locals.accept(self),
-                                        node.globals.accept(self))
         if node.locals:
+            return 'exec %s in %s, %s' % (node.expr.accept(self),
+                                          node.locals.accept(self),
+                                          node.globals.accept(self))
+        if node.globals:
             return 'exec %s in %s' % (node.expr.accept(self),
-                                    node.locals.accept(self))
+                                      node.globals.accept(self))
         return 'exec %s' % node.expr.accept(self)
 
     def visit_for(self, node):

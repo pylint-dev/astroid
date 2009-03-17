@@ -10,7 +10,8 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-"""this module contains exceptions used in the astng library
+"""this module contains utilities for rebuilding a compiler.ast or _ast tree in
+order to get a single ASTNG representation
 
 :author:    Sylvain Thenault
 :copyright: 2008-2009 LOGILAB S.A. (Paris, FRANCE)
@@ -19,15 +20,16 @@
 :contact:   mailto:thenault@gmail.com
 """
 
-"""this module contains utilities for rebuilding a compiler.ast
-or _ast tree in order to get a single ASTNG representation
-"""
 from logilab.astng import ASTNGBuildingException, InferenceError, NodeRemoved
 from logilab.astng import nodes
 from logilab.astng.utils import ASTVisitor
+from logilab.astng.infutils import YES, Instance
 from logilab.astng.raw_building import *
-from logilab.astng.nodes_as_string import as_string
 
+
+CONST_NAME_TRANSFORMS = {'None':  (nodes.Const, None),
+                         'True':  (nodes.Const, True),
+                         'False': (nodes.Const, False)}
 
 class RebuildVisitor(ASTVisitor):
     """Visitor to transform an AST to an ASTNG
@@ -54,6 +56,7 @@ class RebuildVisitor(ASTVisitor):
 
     def set_context(self, node, childnode):
         """set assignment /delete context needed later on by the childnode"""
+        # XXX refactor
         if isinstance(node, (nodes.Delete, nodes.Assign)):
             if childnode in node.targets:
                 self.asscontext = node
@@ -255,7 +258,7 @@ class RebuildVisitor(ASTVisitor):
     def visit_name(self, node):
         """visit an Name node to become astng"""
         try:
-            cls, value = nodes.CONST_NAME_TRANSFORMS[node.name]
+            cls, value = CONST_NAME_TRANSFORMS[node.name]
             node.__class__ = cls
             node.value = value
         except KeyError:
@@ -273,20 +276,20 @@ class RebuildVisitor(ASTVisitor):
         try:
             frame = node.frame()
             for infered in node.expr.infer():
-                if infered is nodes.YES:
+                if infered is YES:
                     continue
                 try:
-                    if infered.__class__ is nodes.Instance:
+                    if infered.__class__ is Instance:
                         infered = infered._proxied
                         iattrs = infered.instance_attrs
-                    elif isinstance(infered, nodes.Instance):
+                    elif isinstance(infered, Instance):
                         # Const, Tuple, ... we may be wrong, may be not, but
                         # anyway we don't want to pollute builtin's namespace
                         continue
                     else:
                         iattrs = infered.locals
                 except AttributeError:
-                    # XXX
+                    # XXX log error
                     import traceback
                     traceback.print_exc()
                     continue

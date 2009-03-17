@@ -18,8 +18,10 @@ import sys
 
 from logilab.common.testlib import TestCase, unittest_main
 from logilab.common.compat import sorted
+
 from logilab.astng import builder, nodes, scoped_nodes, \
      InferenceError, NotFoundError
+from logilab.astng.infutils import Instance
 
 abuilder = builder.ASTNGBuilder() 
 MODULE = abuilder.file_build('data/module.py', 'data.module')
@@ -325,7 +327,7 @@ class WebAppObject(object):
         astng = abuilder.string_build(data, __name__, __file__)
         cls = astng['WebAppObject']
         # test del statement not returned by getattr
-        self.assertEquals(len(nodes.Instance(cls).getattr('appli')), 2)
+        self.assertEquals(len(Instance(cls).getattr('appli')), 2)
 
 __all__ = ('ModuleNodeTC', 'ImportNodeTC', 'FunctionNodeTC', 'ClassNodeTC')
         

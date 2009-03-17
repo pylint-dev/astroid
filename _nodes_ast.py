@@ -21,8 +21,9 @@
 
 __docformat__ = "restructuredtext en"
 
+#  "as is" nodes
 from _ast import (Assert, Assign, AugAssign,
-                  Break,
+                  BinOp, BoolOp, Break,
                   Compare, Continue,
                   Delete, Dict, 
                   Ellipsis, Exec, 
@@ -36,31 +37,49 @@ from _ast import (Assert, Assign, AugAssign,
                   Raise, Return,
                   Slice, Sub, Subscript, 
                   TryExcept, TryFinally, Tuple,
+                  UnaryOp,
                   While, With,
                   Yield,
-                  )
-                  
+                  )                  
+#  aliased nodes
 from _ast import (AST as Node,
                   Attribute as Getattr,
                   Call as CallFunc,
                   ClassDef as Class,
+                  Expr as Discard, 
                   FunctionDef as Function,
                   GeneratorExp as GenExpr,
-                  Repr as Backquote,
-                  
-                  Expr as Discard, 
                   ImportFrom as From,
-                  excepthandler as ExceptHandler,
+                  Repr as Backquote,
+                  arguments as Arguments,
                   comprehension as Comprehension,
-                  keyword as Keyword
+                  keyword as Keyword,
+                  excepthandler as ExceptHandler,
                   )
+# nodes which are not part of astng
+from _ast import (
+    # binary operators
+    Add as _Add, Div as _Div, FloorDiv as _FloorDiv,
+    Mod as _Mod, Mult as _Mult, Pow as _Pow, Sub as _Sub,
+    BitAnd as _BitAnd, BitOr as _BitOr, BitXor as _BitXor,
+    LShift as _LShift, RShift as _RShift,
+    # logical operators
+    And as _And, Or as _Or,
+    # unary operators
+    UAdd as _UAdd, USub as _USub, Not as _Not, Invert as _Invert,
+    # comparison operators
+    Eq as _Eq, Gt as _Gt, GtE as _GtE, In as _In, Is as _Is,
+    IsNot as _IsNot, Lt as _Lt, LtE as _LtE, NotEq as _NotEq,
+    NotIn as _NotIn    ,
+    # other nodes which are not part of astng
+    Str as _Str, Load as _Load, Store as _Store, Del as _Del,
+    )
 
-from _ast import Num, Str, Eq, alias, arguments as Arguments
+from logilab.astng.utils import ASTVisitor
 
-from _ast import (Add as _Add, Div as _Div, FloorDiv as _FloorDiv,
-                  Mod as _Mod, Mult as _Mult, Pow as _Pow, Sub as _Sub,
-                  BitAnd as _BitAnd, BitOr as _BitOr, BitXor as _BitXor,
-                  LShift as _LShift, RShift as _RShift)
+
+Proxy_ = object
+
 BIN_OP_CLASSES = {_Add: '+',
                   _BitAnd: '&',
                   _BitOr: '|',
@@ -74,22 +93,14 @@ BIN_OP_CLASSES = {_Add: '+',
                   _LShift: '<<',
                   _RShift: '>>'}
 
-
-from _ast import And as _And, Or as _Or
 BOOL_OP_CLASSES = {_And: 'and',
                    _Or: 'or'}
 
-from _ast import UAdd as _UAdd, USub as _USub, Not as _Not, Invert as _Invert
 UNARY_OP_CLASSES = {_UAdd: '+',
                     _USub: '-',
                     _Not: 'not',
                     _Invert: '~'}
 
-from _ast import BinOp, BoolOp, UnaryOp
-
-from _ast import (Eq as _Eq, Gt as _Gt, GtE as _GtE, In as _In, Is as _Is,
-                  IsNot as _IsNot, Lt as _Lt, LtE as _LtE, NotEq as _NotEq,
-                  NotIn as _NotIn)
 CMP_OP_CLASSES = {_Eq: '==',
                   _Gt: '>',
                   _GtE: '>=',
@@ -102,8 +113,57 @@ CMP_OP_CLASSES = {_Eq: '==',
                   _NotIn: 'not in',
                   }
 
-from logilab.astng.utils import ASTVisitor
 
+def _init_set_doc(node):
+    node.doc = None
+    try:
+        if isinstance(node.body[0], Discard) and isinstance(node.body[0].value, _Str):
+            node.tolineno = node.body[0].lineno
+            node.doc = node.body[0].value.s
+            node.body = node.body[1:]
+    except IndexError:
+        pass # ast built from scratch
+
+
+def native_repr_tree(node, indent='', _done=None):
+    if _done is None:
+        _done = set()
+    if node in _done:
+        print ('loop in tree: %r (%s)' % (node, getattr(node, 'lineno', None)))
+        return
+    _done.add(node)
+    print indent + str(node)
+    if type(node) is str: # XXX crash on Globals
+        return
+    indent += '    '
+    d = node.__dict__
+    if hasattr(node, '_attributes'):
+        for a in node._attributes:
+            attr = d[a]
+            if attr is None:
+                continue
+            print indent + a, repr(attr)
+    for f in node._fields or ():
+        attr = d[f]
+        if attr is None:
+            continue
+        if type(attr) is list:
+            if not attr: continue
+            print indent + f + ' ['
+            for elt in attr:
+                native_repr_tree(elt, indent, _done)
+            print indent + ']'
+            continue
+        if isinstance(attr, (_Load, _Store, _Del)):
+            continue
+        if isinstance(attr, Node):
+            print indent + f
+            native_repr_tree(attr, indent, _done)
+        else:
+            print indent + f, repr(attr)
+
+
+# some astng nodes unexistant in _ast #########################################
 
 class AssAttr(Node):
     """represent Attribute Assignment statements"""
@@ -131,35 +191,10 @@ class Decorators(Node):
     def __init__(self, nodes):
         self.nodes = nodes
 
-##  some auxiliary functions ##########################
-
-def _recurse_if(ifnode, tests, orelse):
-    """recurse on nested If nodes"""
-    tests.append( (ifnode.test, ifnode.body) )
-    del ifnode.test, ifnode.body
-    if ifnode.orelse:
-        if isinstance( ifnode.orelse[0], If):
-            tests, orelse =  _recurse_if(ifnode.orelse[0], tests, orelse)
-            del ifnode.orelse[0]
-        else:
-            orelse = ifnode.orelse
-    return tests, orelse
-
-def _init_set_doc(node):
-    node.doc = None
-    try:
-        if isinstance(node.body[0], Discard) and isinstance(node.body[0].value, Str):
-            node.tolineno = node.body[0].lineno
-            node.doc = node.body[0].value.s
-            node.body = node.body[1:]
-    except IndexError:
-        pass # ast built from scratch
-
+# _ast rebuilder ##############################################################
 
 class TreeRebuilder(ASTVisitor):
     """REbuilds the _ast tree to become an ASTNG tree"""
-
-    # #  visit_<node> methods  # # ##########################################
 
     def __init__(self, rebuild_visitor):
         self.visitor = rebuild_visitor
@@ -192,7 +227,6 @@ class TreeRebuilder(ASTVisitor):
 
     def visit_exec(self, node):
         node.expr = node.body
-        node.globals, node.locals = node.locals, node.globals # XXX ?
         del node.body
 
     def visit_function(self, node):
@@ -270,24 +304,15 @@ class TreeRebuilder(ASTVisitor):
             node.parent.parent.replace(parent, node)
             del parent
 
+
 # raw building ################################################################
 
-def _add_docstring(node, doc):
-    node.doc = doc
-#     if doc:
-#         expr = Expr()
-#         node.body.append(expr)
-#         expr.parent = None
-#         docstr = Str()
-#         docstr.s = doc
-#         expr.value = docstr
-#         docstr.parent = expr
-    
 def module_factory(doc):
     node = Module()
     node.body = []
-    _add_docstring(node, doc)
+    node.doc = doc
     return node
+
 
 def import_from_factory(modname, membername):
     node = From()
@@ -296,6 +321,7 @@ def import_from_factory(modname, membername):
     node.names = [(membername, None)]
     return node
 
+
 def _const_factory(value):
     if isinstance(value, (int, long, complex, float, basestring)):
         node = Const()
@@ -303,6 +329,7 @@ def _const_factory(value):
         raise Exception(type(value))
     node.value = value
     return node
+
         
 def function_factory(name, args, defaults, flag=0, doc=None):
     """create and initialize a astng Function node"""
@@ -324,7 +351,7 @@ def function_factory(name, args, defaults, flag=0, doc=None):
     argsnode.kwarg = None
     argsnode.vararg = None
     argsnode.parent = node
-    _add_docstring(node, doc)
+    node.doc = doc
     return node
 
 
@@ -340,46 +367,5 @@ def class_factory(name, basenames=(), doc=None):
         basenode.name = base
         node.bases.append(basenode)
         basenode.parent = node
-    _add_docstring(node, doc)
+    node.doc = doc
     return node
-
-class Proxy_(object): pass
-
-
-from _ast import Load as _Load, Store as _Store, Del as _Del
-def native_repr_tree(node, indent='', _done=None):
-    if _done is None:
-        _done = set()
-    if node in _done:
-        print ('loop in tree: %r (%s)' % (node, getattr(node, 'lineno', None)))
-        return
-    _done.add(node)
-    print indent + str(node)
-    if type(node) is str: # XXX crash on Globals
-        return
-    indent += '    '
-    d = node.__dict__
-    if hasattr(node, '_attributes'):
-        for a in node._attributes:
-            attr = d[a]
-            if attr is None:
-                continue
-            print indent + a, repr(attr)
-    for f in node._fields or ():
-        attr = d[f]
-        if attr is None:
-            continue
-        if type(attr) is list:
-            if not attr: continue
-            print indent + f + ' ['
-            for elt in attr:
-                native_repr_tree(elt, indent, _done)
-            print indent + ']'
-            continue
-        if isinstance(attr, (_Load, _Store, _Del)):
-            continue
-        if isinstance(attr, Node):
-            print indent + f
-            native_repr_tree(attr, indent, _done)
-        else:
-            print indent + f, repr(attr)

@@ -16,8 +16,8 @@
 import sys
 from logilab.common.testlib import TestCase, unittest_main
 
-from logilab.astng import builder, nodes, inference, YES, Instance, \
-     InstanceMethod
+from logilab.astng import InferenceError, builder, nodes, inference
+from logilab.astng.infutils import YES, Instance, InstanceMethod, path_wrapper
 
 def get_name_node(start_from, name, index=0):
     return [n for n in start_from.nodes_of_class(nodes.Name) if n.name == name][index]
@@ -30,9 +30,9 @@ builder = builder.ASTNGBuilder()
 class InferenceUtilsTC(TestCase):
 
     def test_path_wrapper(self):
-        infer_default = inference.path_wrapper(inference.infer_default)
-        infer_end = inference.path_wrapper(inference.infer_end)
-        self.failUnlessRaises(inference.InferenceError,
+        infer_default = path_wrapper(inference.infer_default)
+        infer_end = path_wrapper(inference.infer_end)
+        self.failUnlessRaises(InferenceError,
                               infer_default(1).next)
         self.failUnlessEqual(infer_end(1).next(), 1)
         
@@ -105,7 +105,7 @@ a, b= b, a # Gasp !
     def test_tupleassign_name_inference(self):
         infered = self.astng['a'].infer()
         exc = infered.next()
-        self.assertIsInstance(exc, inference.Instance)
+        self.assertIsInstance(exc, Instance)
         self.failUnlessEqual(exc.name, 'Exception')
         self.failUnlessEqual(exc.root().name, 'exceptions')
         self.failUnlessRaises(StopIteration, infered.next)
@@ -123,7 +123,7 @@ a, b= b, a # Gasp !
     def test_listassign_name_inference(self):
         infered = self.astng['d'].infer()
         exc = infered.next()
-        self.assertIsInstance(exc, inference.Instance)
+        self.assertIsInstance(exc, Instance)
         self.failUnlessEqual(exc.name, 'Exception')
         self.failUnlessEqual(exc.root().name, 'exceptions')
         self.failUnlessRaises(StopIteration, infered.next)
@@ -174,7 +174,7 @@ a, b= b, a # Gasp !
         self.failUnlessRaises(StopIteration, infered.next)
         infered = self.astng.locals['b'][1].infer()
         exc = infered.next()
-        self.assertIsInstance(exc, inference.Instance)
+        self.assertIsInstance(exc, Instance)
         self.failUnlessEqual(exc.name, 'Exception')
         self.failUnlessEqual(exc.root().name, 'exceptions')
         self.failUnlessRaises(StopIteration, infered.next)
@@ -182,7 +182,7 @@ a, b= b, a # Gasp !
     def test_getattr_inference1(self):
         infered = self.astng['ex'].infer()
         exc = infered.next()
-        self.assertIsInstance(exc, inference.Instance)
+        self.assertIsInstance(exc, Instance)
         self.failUnlessEqual(exc.name, 'Exception')
         self.failUnlessEqual(exc.root().name, 'exceptions')
         self.failUnlessRaises(StopIteration, infered.next)
@@ -211,7 +211,7 @@ a, b= b, a # Gasp !
     def test_callfunc_inference(self):
         infered = self.astng['v'].infer()
         meth1 = infered.next()
-        self.assertIsInstance(meth1, inference.Instance)
+        self.assertIsInstance(meth1, Instance)
         self.failUnlessEqual(meth1.name, 'object')
         self.failUnlessEqual(meth1.root().name, '__builtin__')
         self.failUnlessRaises(StopIteration, infered.next)
@@ -333,13 +333,13 @@ except Exception, ex:
         ex1 = astng['ex1']
         ex1_infer = ex1.infer()
         ex1 = ex1_infer.next()
-        self.assertIsInstance(ex1, inference.Instance)
+        self.assertIsInstance(ex1, Instance)
         self.failUnlessEqual(ex1.name, 'NameError')
         self.failUnlessRaises(StopIteration, ex1_infer.next)
         ex2 = astng['ex2']
         ex2_infer = ex2.infer()
         ex2 = ex2_infer.next()
-        self.assertIsInstance(ex2, inference.Instance)
+        self.assertIsInstance(ex2, Instance)
         self.failUnlessEqual(ex2.name, 'Exception')
         self.failUnlessRaises(StopIteration, ex2_infer.next)
 
@@ -348,7 +348,7 @@ except Exception, ex:
 del undefined_attr
         '''
         delete = builder.string_build(code, __name__, __file__).body[0]
-        self.failUnlessRaises(inference.InferenceError, delete.infer)
+        self.failUnlessRaises(InferenceError, delete.infer)
         
     def test_del2(self):
         code = '''
@@ -368,7 +368,7 @@ d = a
         self.failUnlessRaises(StopIteration, n_infer.next)
         n = astng['c']
         n_infer = n.infer()
-        self.failUnlessRaises(inference.InferenceError, n_infer.next)
+        self.failUnlessRaises(InferenceError, n_infer.next)
         n = astng['d']
         n_infer = n.infer()
         infered = n_infer.next()
@@ -388,7 +388,7 @@ u = u''
         n = astng['l']
         infered = n.infer().next()
         self.assertIsInstance(infered, nodes.List)
-        self.assertIsInstance(infered, inference.Instance)
+        self.assertIsInstance(infered, Instance)
         self.failUnlessEqual(infered.getitem(0).value, 1)
         self.assertIsInstance(infered._proxied, nodes.Class)
         self.failUnlessEqual(infered._proxied.name, 'list')
@@ -396,27 +396,27 @@ u = u''
         n = astng['t']
         infered = n.infer().next()
         self.assertIsInstance(infered, nodes.Tuple)
-        self.assertIsInstance(infered, inference.Instance)
+        self.assertIsInstance(infered, Instance)
         self.failUnlessEqual(infered.getitem(0).value, 2)
         self.assertIsInstance(infered._proxied, nodes.Class)
         self.failUnlessEqual(infered._proxied.name, 'tuple')
         n = astng['d']
         infered = n.infer().next()
         self.assertIsInstance(infered, nodes.Dict)
-        self.assertIsInstance(infered, inference.Instance)
+        self.assertIsInstance(infered, Instance)
         self.assertIsInstance(infered._proxied, nodes.Class)
         self.failUnlessEqual(infered._proxied.name, 'dict')
         self.failUnless('get' in infered._proxied.locals)
         n = astng['s']
         infered = n.infer().next()
         self.assertIsInstance(infered, nodes.Const)
-        self.assertIsInstance(infered, inference.Instance)
+        self.assertIsInstance(infered, Instance)
         self.failUnlessEqual(infered.name, 'str')
         self.failUnless('lower' in infered._proxied.locals)
         n = astng['u']
         infered = n.infer().next()
         self.assertIsInstance(infered, nodes.Const)
-        self.assertIsInstance(infered, inference.Instance)
+        self.assertIsInstance(infered, Instance)
         self.failUnlessEqual(infered.name, 'unicode')
         self.failUnless('lower' in infered._proxied.locals)
         

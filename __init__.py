@@ -41,96 +41,21 @@ Main modules are:
 :copyright: 2003-2009 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
-
-from __future__ import generators
-
 __doctype__ = "restructuredtext en"
-
-from logilab.common.compat import chain, imap
 
 # WARNING: internal imports order matters !
 
+# make all exception classes accessible from astng package
 from logilab.astng._exceptions import *
 
-
-
-def unpack_infer(stmt, context=None):
-    """return an iterator on nodes infered by the given statement if the infered
-    value is a list or a tuple, recurse on it to get values infered by its
-    content
-    """
-    if isinstance(stmt, (List, Tuple)):
-        # XXX loosing context
-        return chain(*imap(unpack_infer, stmt.elts))
-    infered = stmt.infer(context).next()
-    if infered is stmt:
-        return iter( (stmt,) )
-    return chain(*imap(unpack_infer, stmt.infer(context)))
-
-def copy_context(context):
-    if context is not None:
-        return context.clone()
-    else:
-        return InferenceContext()
-
-# decorators ##################################################################
-
-def path_wrapper(func):
-    """return the given infer function wrapped to handle the path"""
-    def wrapped(node, context=None, _func=func, **kwargs):
-        """wrapper function handling context"""
-        if context is None:
-            context = InferenceContext(node)
-        context.push(node)
-        yielded = []
-        try:
-            for res in _func(node, context, **kwargs):
-                # unproxy only true instance, not const, tuple, dict...
-                if res.__class__ is Instance:
-                    ares = res._proxied
-                else:
-                    ares = res
-                if not ares in yielded:
-                    yield res
-                    yielded.append(ares)
-            context.pop()
-        except:
-            context.pop()
-            raise
-    return wrapped
-
-def yes_if_nothing_infered(func):
-    def wrapper(*args, **kwargs):
-        infered = False
-        for node in func(*args, **kwargs):
-            infered = True
-            yield node
-        if not infered:
-            yield YES
-    return wrapper
-
-def raise_if_nothing_infered(func):
-    def wrapper(*args, **kwargs):
-        infered = False
-        for node in func(*args, **kwargs):
-            infered = True
-            yield node
-        if not infered:
-            raise InferenceError()
-    return wrapper
-
-
-# imports #####################################################################
-
-from logilab.common.decorators import classproperty
-
+# make a manager singleton as well as Project and Package classes accessible
+# from astng package
 from logilab.astng.manager import ASTNGManager, Project, Package
 MANAGER = ASTNGManager()
+del ASTNGManager
 
+# make all node classes accessible from astng package
 from logilab.astng.nodes import *
-from logilab.astng.scoped_nodes import *
 
-from logilab.astng import lookup
-lookup._decorate(nodes)
-
-from logilab.astng import inference
+# trigger extra monkey-patching
+from logilab.astng import scoped_nodes, lookup, inference

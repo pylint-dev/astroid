@@ -16,16 +16,16 @@
  [1] http://docs.python.org/lib/module-compiler.ast.html
 
 :author:    Sylvain Thenault
-:copyright: 2008-2009 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2008-2009 Sylvain Thenault
+:copyright: 2003-2009 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
-from __future__ import generators
 
 __docformat__ = "restructuredtext en"
 
 import sys
+from compiler import ast
 from compiler.ast import AssAttr, AssList, AssName, \
      AssTuple, Assert, Assign, AugAssign, \
      Backquote, Break, CallFunc, Class, \
@@ -37,34 +37,6 @@ from compiler.ast import AssAttr, AssList, AssName, \
      Pass, Print, Raise, Return, Slice, \
      Sliceobj, Stmt, Subscript, TryExcept, TryFinally, Tuple, \
      While, Yield
-
-# modify __repr__ of all Nodes as they are not compatible with ASTNG
-
-def generic__repr__(self):
-    """simple representation method to override compiler.ast's methods"""
-    return "<%s at 0x%x>" % (self.__class__.__name__, id(self))
-
-from compiler import ast
-for name, value in ast.__dict__.items():
-    try:
-        if issubclass(value, ast.Node):
-            value.__repr__ = generic__repr__
-    except:
-        pass
-del ast
-
-def init_noargs(self, *args, **kwargs):
-    if not (args or kwargs):
-        self._orig_init([])
-    else:
-        self._orig_init(*args, **kwargs)
-# we have to be able to instantiate Tuple, Dict and List without any argument
-Tuple._orig_init = Tuple.__init__
-Tuple.__init__ = init_noargs
-List._orig_init = List.__init__
-List.__init__ = init_noargs
-Dict._orig_init = Dict.__init__
-Dict.__init__ = init_noargs
 
 try:
     # introduced in python 2.4
@@ -90,7 +62,50 @@ class With:
     but we need it for the other astng modules
     """
 
-# additional nodes
+# introduced in python 2.5
+From.level = 0 # will be overiden by instance attribute with py>=2.5
+
+
+from logilab.astng.utils import ASTVisitor
+from logilab.astng._exceptions import NodeRemoved
+
+class Proxy_: pass
+
+
+def native_repr_tree(node, indent='', _done=None):
+    """enhanced compiler.ast tree representation"""
+    if _done is None:
+        _done = set()
+    if node in _done:
+        print ('loop in tree: %r (%s)' % (node, getattr(node, 'lineno', None)))
+        return
+    _done.add(node)
+    print indent + "<%s>" % node.__class__
+    indent += '    '
+    if not hasattr(node, "__dict__"): # XXX
+        return
+    for field, attr in node.__dict__.items():
+        if attr is None or field == "_proxied":
+            continue
+        if type(attr) is list:
+            if not attr: continue
+            print indent + field + ' ['
+            for elt in attr:
+                if type(elt) is tuple:
+                    for val in elt:
+                        native_repr_tree(val, indent, _done)
+                else:
+                    native_repr_tree(elt, indent, _done)
+            print indent + ']'
+            continue
+        if isinstance(attr, Node):
+            print indent + field
+            native_repr_tree(attr, indent, _done)
+        else:
+            print indent + field,  repr(attr)
+
+
+# some astng nodes unexistant in compiler #####################################
 
 class ExceptHandler(Node):
     def __init__(self, exc_type, name, body, parent):
@@ -104,6 +119,7 @@ class ExceptHandler(Node):
             self.lineno = self.body[0].fromlineno - 1
         self.fromlineno =  self.lineno
         self.tolineno = self.body[-1].tolineno
+
 
 class BinOp(Node):
     """replace Add, Div, FloorDiv, Mod, Mul, Power, Sub nodes"""
@@ -123,6 +139,7 @@ class BinOp(Node):
                   RightShift: '>>'}
     BIT_CLASSES = {'&': Bitand, '|': Bitor, '^': Bitxor}
 
+
 class BoolOp(Node):
     """replace And, Or"""
     from compiler.ast import And, Or
@@ -137,8 +154,6 @@ class UnaryOp(Node):
                   Not: 'not',
                   Invert: '~'}
 
-
-from logilab.astng.utils import ASTVisitor
 
 class Delete(Node):
     """represent del statements"""
@@ -156,18 +171,37 @@ class Arguments(Node):
         self.vararg = vararg
         self.kwarg = kwarg
         
-###############################################################################
+# modify __repr__ of all Nodes as they are not compatible with ASTNG ##########
+
+def generic__repr__(self):
+    """simple representation method to override compiler.ast's methods"""
+    return "<%s at 0x%x>" % (self.__class__.__name__, id(self))
+
+for name, value in ast.__dict__.items():
+    try:
+        if issubclass(value, ast.Node):
+            value.__repr__ = generic__repr__
+    except:
+        pass
+del ast
+
+# we have to be able to instantiate Tuple, Dict and List without any argument #
+
+def init_noargs(self, *args, **kwargs):
+    if not (args or kwargs):
+        self._orig_init([])
+    else:
+        self._orig_init(*args, **kwargs)
+
+Tuple._orig_init = Tuple.__init__
+Tuple.__init__ = init_noargs
+List._orig_init = List.__init__
+List.__init__ = init_noargs
+Dict._orig_init = Dict.__init__
+Dict.__init__ = init_noargs
         
 
-
-Const.eq = lambda self, value: self.value == value
-
-# introduced in python 2.5
-From.level = 0 # will be overiden by instance attribute with py>=2.5
-
-
-##  some auxiliary functions ##########################
-
+# compiler rebuilder ##########################################################
 
 def _init_else_node(node):
     """remove Stmt node if exists"""
@@ -210,8 +244,6 @@ def args_compiler_to_ast(node):
     del node.defaults
 
     
-from logilab.astng._exceptions import NodeRemoved
-
 class TreeRebuilder(ASTVisitor):
     """Rebuilds the compiler tree to become an ASTNG tree"""
 
@@ -338,7 +370,10 @@ class TreeRebuilder(ASTVisitor):
             # dummy Const(None) introducted when statement is ended by a semi-colon
             node.parent.child_sequence(node).remove(node)
             raise NodeRemoved
-            
+
+    def visit_exec(self, node):
+        node.locals, node.globals = node.globals, node.locals
+        
     def visit_for(self, node):
         node.target = node.assign
         del node.assign
@@ -467,6 +502,7 @@ class TreeRebuilder(ASTVisitor):
         node.body = node.body.nodes
         _init_else_node(node)
 
+
 # raw building ################################################################
 
 def module_factory(doc):
@@ -475,6 +511,7 @@ def module_factory(doc):
     node.body = []
     return node
 
+
 if sys.version_info < (2, 5):
     def import_from_factory(modname, membername):
         return From(modname, ( (membername, None), ) )
@@ -482,8 +519,10 @@ else:
     def import_from_factory(modname, membername):
         return From(modname, ( (membername, None), ), 0)
 
+
 def _const_factory(value):
     return Const(value)
+
 
 # introduction of decorators has changed the Function initializer arguments
 if sys.version_info >= (2, 4):
@@ -505,6 +544,7 @@ else:
         args_compiler_to_ast(func)
         return func
 
+
 def class_factory(name, basenames=(), doc=None):
     """create and initialize a astng Class node"""
     node = Class(name, [], doc, None)
@@ -515,38 +555,3 @@ def class_factory(name, basenames=(), doc=None):
         base.parent = node
     node.bases = bases
     return node
-
-class Proxy_: pass
-
-
-def native_repr_tree(node, indent='', _done=None):
-    """enhanced compiler.ast tree representation"""
-    if _done is None:
-        _done = set()
-    if node in _done:
-        print ('loop in tree: %r (%s)' % (node, getattr(node, 'lineno', None)))
-        return
-    _done.add(node)
-    print indent + "<%s>" % node.__class__
-    indent += '    '
-    if not hasattr(node, "__dict__"): # XXX
-        return
-    for field, attr in node.__dict__.items():
-        if attr is None or field == "_proxied":
-            continue
-        if type(attr) is list:
-            if not attr: continue
-            print indent + field + ' ['
-            for elt in attr:
-                if type(elt) is tuple:
-                    for val in elt:
-                        native_repr_tree(val, indent, _done)
-                else:
-                    native_repr_tree(elt, indent, _done)
-            print indent + ']'
-            continue
-        if isinstance(attr, Node):
-            print indent + field
-            native_repr_tree(attr, indent, _done)
-        else:
-            print indent + field,  repr(attr)

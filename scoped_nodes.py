@@ -12,7 +12,7 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """This module extends ast "scoped" node, i.e. which are opening a new
 local scope in the language definition : Module, Class, Function (and
-Lambda in some extends).
+Lambda to some extends).
 
 Each new methods and attributes added on each class are documented
 below.
@@ -32,13 +32,13 @@ import sys
 
 from logilab.common.compat import chain, set
 
-from logilab.astng import MANAGER, InferenceContext, copy_context, \
-     unpack_infer, Arguments, Class, Const, Dict, Function, GenExpr, Lambda, \
-     Module, Name, Pass, Raise, Tuple, Yield, DelAttr, DelName
-from logilab.astng import NotFoundError, NoDefault, ASTNGBuildingException, \
+from logilab.astng import MANAGER, NotFoundError, NoDefault, ASTNGBuildingException, \
      InferenceError
+from logilab.astng.nodes import Arguments, Class, Const, Dict, Function, GenExpr, \
+     Lambda, Module, Name, Pass, Raise, Tuple, Yield, DelAttr, DelName
 from logilab.astng.utils import extend_class
-from logilab.astng.nodes import YES, Instance, _infer_stmts
+from logilab.astng.infutils import YES, InferenceContext, Instance, copy_context, \
+     unpack_infer, _infer_stmts
 from logilab.astng.nodes_as_string import as_string
 
 
