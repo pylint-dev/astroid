@@ -60,18 +60,18 @@ nodes.Const.infer_unary_op = const_infer_unary_op
 
 # binary operations ###########################################################
 
-BIN_OP_IMPL = {'+':  lambda a,b: a + b,
-               '-':  lambda a,b: a - b,
-               '/':  lambda a,b: a / b,
-               '//': lambda a,b: a // b,
-               '*':  lambda a,b: a * b,
-               '**': lambda a,b: a ** b,
-               '%':  lambda a,b: a % b,
-               '&':  lambda a,b: a & b,
-               '|':  lambda a,b: a | b,
-               '^':  lambda a,b: a ^ b,
-               '<<': lambda a,b: a ^ b,
-               '>>': lambda a,b: a ^ b,
+BIN_OP_IMPL = {'+':  lambda a, b: a + b,
+               '-':  lambda a, b: a - b,
+               '/':  lambda a, b: a / b,
+               '//': lambda a, b: a // b,
+               '*':  lambda a, b: a * b,
+               '**': lambda a, b: a ** b,
+               '%':  lambda a, b: a % b,
+               '&':  lambda a, b: a & b,
+               '|':  lambda a, b: a | b,
+               '^':  lambda a, b: a ^ b,
+               '<<': lambda a, b: a ^ b,
+               '>>': lambda a, b: a ^ b,
                }
 
 def const_infer_binary_op(self, operator, other, context):
