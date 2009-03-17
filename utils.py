@@ -377,46 +377,24 @@ def are_exclusive(stmt1, stmt2):
             # if the common parent is a If or TryExcept statement, look if
             # nodes are in exclusive branchs
             if isinstance(node, If):
-                if previous != children[node]:
+                if (node.locate_child(previous)[1]
+                    is not node.locate_child(children[node])[1]):
                     return True
             elif isinstance(node, TryExcept):
-                stmt1_previous = children[node]
-                if not previous is stmt1_previous:
-                    values1 = _try_except_from_branch(node, stmt1_previous)
-                    values2 = _try_except_from_branch(node, previous)
-                    if _are_from_exclusive_nodes(values1, values2):
+                c2attr, c2node = node.locate_child(previous)
+                c1attr, c1node = node.locate_child(children[node])
+                if c1node is not c2node:
+                    if ((c2attr == 'body' and c1attr == 'handlers') or
+                        (c2attr == 'handlers' and c1attr == 'body') or
+                        (c2attr == 'handlers' and c1attr == 'orelse') or
+                        (c2attr == 'orelse' and c1attr == 'handlers')):
                         return True
+                elif c2attr == 'handlers' and c1attr == 'handlers':
+                    return previous is not children[node]
             return False
         previous = node
         node = node.parent
     return False
-
-def _try_except_from_branch(node, stmt):
-    """returns values to compare to nodes"""
-    if stmt in node.body:
-        return 'body', 1
-    if stmt in node.orelse:
-        return 'else', 1
-    for i, handler in enumerate(node.handlers):
-        if stmt is handler:
-            return 'except', i 
-        if stmt in handler.body:
-            return 'except', i
-    raise ASTNGError, "comparing try_except nodes '%s' '%s'" % (node, stmt)
-
-
-def _are_from_exclusive_nodes(values1, values2):
-    """return true if values from two nodes are exclusive"""
-    stmt1_branch, stmt1_num = values1
-    stmt2_branch, stmt2_num = values2
-    if stmt1_branch != stmt2_branch:
-        if not ((stmt2_branch == 'body' and stmt1_branch == 'else') or
-                (stmt1_branch == 'body' and stmt2_branch == 'else') or
-                (stmt2_branch == 'body' and stmt1_branch == 'except') or
-                (stmt1_branch == 'body' and stmt2_branch == 'except')):
-            return True
-    else:
-        return stmt1_num != stmt2_num
 
 __all__ = ('REDIRECT', 'LocalsVisitor', 'ASTWalker', 'ASTVisitor', 
         'are_exclusive', 'extend_class')
