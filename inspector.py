@@ -147,7 +147,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
         # resolve implemented interface
         try:
             node.implements = list(node.interfaces(self.inherited_interfaces))
-        except InferenceError, TypeError: # XXX why TypeError ?
+        except InferenceError:
             node.implements = ()
 
     def visit_function(self, node):
