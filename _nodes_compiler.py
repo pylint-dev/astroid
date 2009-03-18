@@ -248,7 +248,14 @@ def args_compiler_to_ast(node):
         node.args.tolineno = node.tolineno
     del node.defaults
 
-    
+
+def _filter_none(node):
+    """transform Const(None) to None"""
+    if isinstance(node, Const) and node.value is None:
+        return None
+    else:
+        return node
+
 class TreeRebuilder(ASTVisitor):
     """Rebuilds the compiler tree to become an ASTNG tree"""
 
@@ -463,9 +470,8 @@ class TreeRebuilder(ASTVisitor):
         del node.expr1, node.expr2, node.expr3
 
     def visit_return(self, node):
-        """visit Return: remove Const node if its value is None"""
-        if isinstance(node.value, Const) and node.value.value is None:
-            node.value = None
+        """visit Return: filter None Const"""
+        node.value = _filter_none( node.value )
 
     def visit_slice(self, node):
         node.__class__ = Subscript
