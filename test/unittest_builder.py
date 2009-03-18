@@ -150,7 +150,6 @@ class BuilderTC(TestCase):
         self.assert_(fclass.newstyle)
         self.assert_(fclass.pytype(), '__builtin__.type')
         self.assert_(isinstance(fclass['read'], nodes.Function))
-        self.assert_(isinstance(fclass['__doc__'], nodes.Const), fclass['__doc__'])
         # check builtin function has args.args == None
         dclass = builtin_astng['dict']
         self.assertEquals(dclass['has_key'].args.args, None)
@@ -350,7 +349,7 @@ class FileBuildTC(TestCase):
         self.assert_(_locals is module.globals)
         keys = _locals.keys()
         keys.sort()
-        should = ['MY_DICT', 'YO', 'YOUPI', '__dict__', '__doc__', '__file__', '__name__',
+        should = ['MY_DICT', 'YO', 'YOUPI',
                 '__revision__',  'global_access','modutils', 'nested_args',
                  'os', 'redirect', 'spawn', 'REDIRECT', 'LocalsVisitor', 
                 'ASTWalker', 'ASTVisitor',  'extend_class']
@@ -392,24 +391,20 @@ class FileBuildTC(TestCase):
         self.assertEquals(klass.root(), module)
         self.assertEquals(klass.basenames, [])
         self.assertEquals(klass.newstyle, False)
-        self.failUnless(isinstance(klass['__doc__'], nodes.Const))
                         
     def test_class_locals(self):
         """test the 'locals' dictionary of a astng class"""
         module = self.module
         klass1 = module['YO']
-        klass2 = module['YOUPI']
         locals1 = klass1.locals
-        locals2 = klass2.locals
         keys = locals1.keys()
         keys.sort()
-        self.assertEquals(keys, ['__dict__', '__doc__', '__init__', '__module__', '__name__',
-                                 'a'])
+        self.assertEquals(keys, ['__init__', 'a'])
+        klass2 = module['YOUPI']
+        locals2 = klass2.locals
         keys = locals2.keys()
         keys.sort()
-        self.assertEquals(keys, ['__dict__', '__doc__', '__init__', '__module__', '__name__',
-                                 'class_attr',
-                                 'class_method', 'method', 'static_method'])
+        self.assertEquals(keys, ['__init__', 'class_attr', 'class_method', 'method', 'static_method'])
 
     def test_class_instance_attrs(self):
         module = self.module

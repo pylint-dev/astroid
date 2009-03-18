@@ -351,8 +351,7 @@ class WebAppObject(object):
         astng = abuilder.string_build(data, __name__, __file__)
         cls = astng['WebAppObject']
         self.assertEquals(sorted(cls.locals.keys()),
-                          ['__dict__', '__doc__', '__module__', '__name__',
-                           'appli', 'config', 'registered', 'schema'])
+                          ['appli', 'config', 'registered', 'schema'])
         
 
     def test_class_getattr(self):
