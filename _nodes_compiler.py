@@ -293,29 +293,31 @@ class TreeRebuilder(ASTVisitor):
 
     def __init__(self, rebuild_visitor):
         self.visitor = rebuild_visitor
-
     
-    def check_delete_node(self, node):
-        """insert a Delete node if necessary -- else return True"""
+    def insert_delstmt_if_necessary(self, node):
+        """insert a Delete statement node if necessary
+
+        return True if we have mutated a AssTuple into a Delete
+        """
         assign_nodes = (Assign, With, For, ExceptHandler, Delete, AugAssign)
-        if isinstance(node.parent, assign_nodes) or not (node.parent.is_statement
-                                            or isinstance(node.parent, Module)):
+        if isinstance(node.parent, assign_nodes) or not (
+            node.parent.is_statement or isinstance(node.parent, Module)):
             return False
         if isinstance(node, AssTuple): # replace node by Delete
             node.__class__ = Delete
             node.targets = node.nodes
             del node.nodes
-            delete = node
-        else: # introduce new Delete node
-            delete = Delete()
-            node.parent.replace(node, delete)
-            delete.fromlineno = node.fromlineno
-            delete.tolineno = node.tolineno
-            node.parent = delete
-            delete.targets = [node]
-        self.visitor.asscontext = delete
-        return True
-        
+            stmt = node
+        else: # introduce new Stmt node
+            stmt = Delete()
+            node.parent.replace(node, stmt)
+            stmt.fromlineno = node.fromlineno
+            stmt.tolineno = node.tolineno
+            node.parent = stmt
+            stmt.targets = [node]
+        self.visitor.asscontext = stmt
+        return stmt is node
+    
     # scoped nodes #######################################################
         
     def visit_function(self, node):
@@ -340,11 +342,11 @@ class TreeRebuilder(ASTVisitor):
         del node.node
         return True
         
-    ##  init_<node> functions #####################################################
+    #  other visit_<node> #####################################################
     
     def visit_assattr(self, node):
-        self.check_delete_node(node)
         if node.flags == 'OP_DELETE':
+            self.insert_delstmt_if_necessary(node)
             node.__class__ = DelAttr
         del node.flags
 
@@ -354,18 +356,18 @@ class TreeRebuilder(ASTVisitor):
         del node.nodes, node.expr
 
     def visit_asslist(self, node):
-        self.check_delete_node(node)
+        self.insert_delstmt_if_necessary(node)
         node.__class__ = List
         self.visit_list(node)
 
     def visit_asstuple(self, node):
-        if not self.check_delete_node(node):
+        if not self.insert_delstmt_if_necessary(node):
             node.__class__ = Tuple
             self.visit_tuple(node)
 
     def visit_assname(self, node):
-        self.check_delete_node(node)
         if node.flags == 'OP_DELETE':
+            self.insert_delstmt_if_necessary(node)
             node.__class__ = DelName
         del node.flags
 
@@ -508,18 +510,19 @@ class TreeRebuilder(ASTVisitor):
     def visit_slice(self, node):
         """visit slice : if it comes from compiler, we call it a Subscript;
         else it's a real astng Slice"""
-        if node.flags is "OP_APPLY": # compiler.ast.Slice
-            node.__class__ = Subscript
-            node.value = node.expr
-            node.slice = Slice(node.lower, node.upper, None,
-                               node.lineno)
-            del node.expr, node.lower, node.upper
-        else: # should be a logilab.astng._nodes_compiler.Slice
-            msg = "Strange Slice Object %s" % node
-            assert node.flags == "astng", msg
+        if node.__class__ is Slice:
+            return # node inserted in visit_subscript
+        if node.flags == 'OP_DELETE':
+            self.insert_delstmt_if_necessary(node.parent)
+        else:
+            assert node.flags in ('OP_APPLY', 'OP_ASSIGN')
+        node.__class__ = Subscript
+        node.value = node.expr
+        node.slice = Slice(node.lower, node.upper, None,
+                           node.lineno)
+        del node.expr, node.lower, node.upper, node.flags
 
     def visit_subscript(self, node):
-        print node, node.expr
         node.value = node.expr
         if [n for n in node.subs if isinstance(n, Sliceobj)]:
             subs = node.subs
@@ -533,8 +536,8 @@ class TreeRebuilder(ASTVisitor):
         del node.expr, node.subs
 
     def visit_tryexcept(self, node):
-        node.body = node.body.nodes
         # remove Stmt node
+        node.body = node.body.nodes
         node.handlers = [ExceptHandler(exctype, excobj, body, node)
                         for exctype, excobj, body in node.handlers]
         _init_else_node(node)
