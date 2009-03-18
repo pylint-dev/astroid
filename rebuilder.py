@@ -41,12 +41,6 @@ class RebuildVisitor(ASTVisitor):
         self.rebuilder = nodes.TreeRebuilder(self)
         self.set_line_info = nodes.AST_MODE == '_ast'
 
-    def _add_local(self, node, name):
-        if self._global_names and name in self._global_names[-1]:
-            node.root().set_local(name, node)
-        else:
-            node.parent.set_local(name, node)
-
     def _push(self, node):
         """update the stack and init some parts of the Function or Class node
         """
@@ -247,7 +241,10 @@ class RebuildVisitor(ASTVisitor):
 
     def visit_assname(self, node):
         if self.asscontext is not None:
-            self._add_local(node, node.name)
+            if self._global_names and node.name in self._global_names[-1]:
+                node.root().set_local(node.name, node)
+            else:
+                node.parent.set_local(node.name, node)
     visit_delname = visit_assname
     
     def delayed_visit_assattr(self, node):
