@@ -216,6 +216,12 @@ class SliceNodeTC(testlib.TestCase):
         for code in ('a[0]', 'a[:-1:step]', 'a[:,newaxis]', 'a[newaxis,:]'):
             ast = abuilder.string_build(code)
             self.assertEquals(ast.as_string(), code)
+
+class EllipsisNodeTC(testlib.TestCase):
+    def test(self):
+        ast = abuilder.string_build('a[...]')
+        nodes.repr_tree(ast)
+        self.assertEquals(ast.as_string(), 'a[...]')
         
 if __name__ == '__main__':
     testlib.unittest_main()
