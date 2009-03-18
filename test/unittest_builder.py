@@ -513,6 +513,18 @@ def func2(a={}):
         nonetype = nodes.const_factory({})
         self.failIf('custom_attr' in nonetype.locals)
         self.failIf('custom_attr' in nonetype.instance_attrs)
+
+
+    def test_asstuple(self):
+        code = 'a, b = range(2)'
+        astng = self.builder.string_build(code)
+        self.failUnless('b' in astng.locals)
+        code = '''
+def visit_if(self, node):
+    node.test, body = node.tests[0]
+'''
+        astng = self.builder.string_build(code)
+        self.failUnless('body' in astng['visit_if'].locals)
         
 if __name__ == '__main__':
     unittest_main()
