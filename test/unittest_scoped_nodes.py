@@ -181,6 +181,11 @@ def f():
         g = list(astng['f'].ilookup('g'))[0]
         self.failUnlessEqual(g.pytype(), '__builtin__.function')
 
+    def test_argnames(self):
+        code = 'def f(a, (b, c), *args, **kwargs): pass'
+        astng = abuilder.string_build(code, __name__, __file__)
+        self.assertEquals(astng['f'].argnames(), ['a', 'b', 'c', 'args', 'kwargs'])
+
         
 class ClassNodeTC(TestCase):
 

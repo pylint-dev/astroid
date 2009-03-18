@@ -351,11 +351,12 @@ class FunctionNG(object):
 
     def argnames(self):
         """return argument names if there are any arguments"""
-        if not self.args.args: # can be None for builtins
-            return []
-        else:
-            #return [arg.name for arg in self.args.args]
-            return _get_names(self.args.args)
+        names = _rec_get_names(self.args.args)
+        if self.args.vararg:
+            names.append(self.args.vararg)
+        if self.args.kwarg:
+            names.append(self.args.kwarg)        
+        return names
 
     def is_bound(self):
         """return true if the function is bound to an Instance or a class"""
@@ -399,13 +400,13 @@ Lambda.argnames = FunctionNG.argnames.im_func
 
 # XXX need to cleanup these args / arguments methods
 
-def _get_names(args, names=None):
+def _rec_get_names(args, names=None):
     """return a list of all argument names"""
     if names is None:
         names = []
     for arg in args:
         if isinstance(arg, Tuple):
-            _get_names(arg.elts, names)
+            _rec_get_names(arg.elts, names)
         else:
             names.append(arg.name)
     return names
