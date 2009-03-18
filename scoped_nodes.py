@@ -168,6 +168,19 @@ def frame(self):
     return self.parent.frame()
 GenExpr.frame = frame
 
+def std_special_attributes(self, name, add_locals=True):
+    if add_locals:
+        locals = self.locals
+    else:
+        locals = {}
+    if name == '__name__':
+        return [cf(self.name)] + locals.get(name, [])
+    if name == '__doc__':
+        return [cf(self.doc)] + locals.get(name, [])
+    if name == '__dict__':
+        return [Dict()] + locals.get(name, [])
+    raise NotFoundError(name)
+
 
 # Module  #####################################################################
 
@@ -195,33 +208,36 @@ class ModuleNG(object):
     # as value
     globals = None
 
-    scope_attrs = ('__name__', '__doc__', '__file__', '__path__')
+    # names of python special attributes (handled by getattr impl.)
+    special_attributes = set(('__name__', '__doc__', '__file__', '__path__',
+                              '__dict__'))
+    # names of module attributes available through the global scope
+    scope_attrs = set(('__name__', '__doc__', '__file__', '__path__'))
     
     def pytype(self):
         return '__builtin__.module'
     
     def getattr(self, name, context=None):
-        try:
-            return self.locals[name]
-        except KeyError:
-            if name == '__name__':
-                return [cf(self.name)]
-            if name == '__doc__':
-                return [cf(self.doc)]
+        if not name in self.special_attributes:
+            try:
+                return self.locals[name]
+            except KeyError:
+                pass
+        else:
             if name == '__file__':
-                return [cf(self.file)]
-            if name == '__dict__':
-                return [Dict()]
-            if name == '__path__' and self.package:
-                return [List()]
-            if self.package:
-                try:
-                    return [self.import_module(name, relative_only=True)]
-                except KeyboardInterrupt:
-                    raise
-                except:
-                    pass
-            raise NotFoundError(name)        
+                return [cf(self.file)] + self.locals.get(name, [])
+            if name == '__path__':
+                if self.package:
+                    return [List()] + self.locals.get(name, [])
+            return std_special_attributes(self, name)
+        if self.package:
+            try:
+                return [self.import_module(name, relative_only=True)]
+            except (KeyboardInterrupt, SystemExit):
+                raise
+            except:
+                pass
+        raise NotFoundError(name)        
     getattr = remove_nodes(getattr, DelName)
     
     def igetattr(self, name, context=None):
@@ -313,6 +329,7 @@ class FunctionNG(object):
     (see below the class definition)
     """
 
+    special_attributes = set(('__name__', '__doc__', '__dict__'))
     # attributes below are set by the builder module or by raw factories
     
     blockstart_tolineno = None
@@ -333,17 +350,10 @@ class FunctionNG(object):
     def getattr(self, name, context=None):
         """this method doesn't look in the instance_attrs dictionary since it's
         done by an Instance proxy at inference time.
-        
-        It may return a YES object if the attribute has not been actually
-        found but a __getattr__ or __getattribute__ method is defined
         """
-        if name == '__name__':
-            return [cf(self.name)]
-        if name == '__doc__':
-            return [cf(self.doc)]
-        if name == '__dict__':
-            return [Dict()]
-        raise NotFoundError(name)
+        if name == '__module__':
+            return [cf(self.root().qname())]
+        return std_special_attributes(self, name, False)
     
     def is_method(self):
         """return true if the function node should be considered as a method"""
@@ -507,6 +517,8 @@ class ClassNG(object):
     original class from the compiler.ast module using its dictionnary
     (see below the class definition)
     """
+    special_attributes = set(('__name__', '__doc__', '__dict__', '__module__',
+                              '__bases__', '__mro__'))
 
     blockstart_tolineno = None
     
@@ -644,21 +656,21 @@ class ClassNG(object):
         It may return a YES object if the attribute has not been actually
         found but a __getattr__ or __getattribute__ method is defined
         """
-        if name in self.locals:
-            return self.locals[name]
-        if name == '__name__':
-            return [cf(self.name)]
-        if name == '__doc__':
-            return [cf(self.doc)]
-        if name == '__dict__':
-            return [Dict()]
-        if name == '__bases__':
-            return [cf(tuple(self.ancestors(recurs=False, context=context)))]
-        if name == '__module__':
-            return [cf(self.root().qname())]
-        # XXX need proper meta class handling + MRO implementation
-        if name == '__mro__' and self.newstyle:
-            return [cf(tuple(self.ancestors(recurs=True, context=context)))]
+        if not name in self.special_attributes:
+            try:
+                return self.locals[name]
+            except KeyError:
+                pass
+        else:
+            if name == '__module__':
+                return [cf(self.root().qname())] + self.locals.get(name, [])
+            if name == '__bases__':
+                return [cf(tuple(self.ancestors(recurs=False, context=context)))] + self.locals.get(name, [])
+            # XXX need proper meta class handling + MRO implementation
+            if name == '__mro__' and self.newstyle:
+                # XXX mro is read-only but that's not our job to detect that
+                return [cf(tuple(self.ancestors(recurs=True, context=context)))] + self.locals.get(name, [])
+            return std_special_attributes(self, name)
         for classnode in self.ancestors(recurs=False, context=context):
             try:
                 return classnode.getattr(name, context)
