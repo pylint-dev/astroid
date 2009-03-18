@@ -413,7 +413,6 @@ Lambda.type = 'function'
 Lambda.pytype = FunctionNG.pytype.im_func
 Lambda.argnames = FunctionNG.argnames.im_func
 
-# XXX need to cleanup these args / arguments methods
 
 def _rec_get_names(args, names=None):
     """return a list of all argument names"""
@@ -441,7 +440,7 @@ def default_value(self, argname):
 
     :raise `NoDefault`: if there is no default value defined
     """
-    i, arg = _find_arg(argname, self.args)
+    i = _find_arg(argname, self.args)[0]
     if i is not None:
         idx = i - (len(self.args) - len(self.defaults))
         if idx >= 0:
@@ -449,9 +448,20 @@ def default_value(self, argname):
     raise NoDefault()
 Arguments.default_value = default_value
 
+def is_argument(self, name):
+    """return True if the name is defined in arguments"""
+    if name == self.vararg:
+        return True
+    if name == self.kwarg:
+        return True
+    return self.find_argname(name, True)[1] is not None
+Arguments.is_argument = is_argument
+
 def find_argname(self, argname, rec=False):
     """return index and Name node with given name"""
-    return _find_arg(argname, self.args, rec)
+    if self.args: # self.args may be None in some cases (builtin function)
+        return _find_arg(argname, self.args, rec)
+    return None, None
 Arguments.find_argname = find_argname
 
 def _find_arg(argname, args, rec=False):
