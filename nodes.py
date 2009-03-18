@@ -380,15 +380,6 @@ def _dict_get_children(node): # XXX : distinguish key and value ?
 Dict.get_children = _dict_get_children
 
 
-def _subscript_get_children(node):
-    """get_children by removing None children"""
-    yield node.expr
-    for sub in node.subs:
-        if sub:
-            yield sub
-Subscript.get_children = _subscript_get_children
-
-
 def _compare_get_children(node):
     """override get_children for tuple fields"""
     yield node.left

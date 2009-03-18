@@ -318,7 +318,7 @@ class AsStringVisitor(ASTVisitor):
         """return a astng.Slice node as string"""
         lower = node.lower and node.lower.accept(self) or ''
         upper = node.upper and node.upper.accept(self) or ''
-        step = node.upper and node.upper.accept(self) or ''
+        step = node.step and node.step.accept(self) or ''
         if step:
             return '%s:%s:%s' % (lower, upper, step)
         return  '%s:%s' % (lower, upper)

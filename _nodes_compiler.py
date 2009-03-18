@@ -34,7 +34,7 @@ from compiler.ast import AssAttr, AssList, AssName, \
      For, From, Function, Getattr, Global, \
      If, Import, Keyword, Lambda, \
      List, ListComp, ListCompFor as Comprehension, ListCompIf, Module, Name, Node, \
-     Pass, Print, Raise, Return, Slice, \
+     Pass, Print, Raise, Return, \
      Sliceobj, Stmt, Subscript, TryExcept, TryFinally, Tuple, \
      While, Yield
 
@@ -67,7 +67,7 @@ From.level = 0 # will be overiden by instance attribute with py>=2.5
 
 
 from logilab.astng.utils import ASTVisitor
-from logilab.astng._exceptions import NodeRemoved
+from logilab.astng._exceptions import NodeRemoved, ASTNGError
 
 class Proxy_: pass
 
@@ -170,7 +170,37 @@ class Arguments(Node):
         self.defaults = defaults
         self.vararg = vararg
         self.kwarg = kwarg
-        
+
+class Index(Node):
+    """represent an Index of a Subscript"""
+    def __init__(self, values):
+        if len(values) == 1:
+            self.value = values[0]
+        else:
+            self.value = Tuple(values)
+
+class Slice(Node):
+    """represent an ExtSlice of a Subscript; these comes from numeric slices"""
+    def __init__(self, lower, upper, step, lineno):
+        self.flags = "astng" # flag for catching namespace conflict
+        self.lower = _filter_none(lower)
+        self.upper = _filter_none(upper)
+        self.step = _filter_none(step)
+        self.lineno = lineno
+
+def _extslice(dim):
+    if dim.__class__ == Sliceobj:
+        if len(dim.nodes) == 2:
+            dim.nodes.append(None)
+        return Slice(dim.nodes[0], dim.nodes[1], dim.nodes[2], dim.lineno)
+    else:
+        return Index([dim])
+
+class ExtSlice(Node):
+    """represent an ExtSlice of a Subscript; these comes from numeric slices"""
+    def __init__(self, dims):
+        self.dims = [_extslice(dim) for dim in dims]
+
 # modify __repr__ of all Nodes as they are not compatible with ASTNG ##########
 
 def generic__repr__(self):
@@ -474,19 +504,34 @@ class TreeRebuilder(ASTVisitor):
         node.value = _filter_none( node.value )
 
     def visit_slice(self, node):
-        node.__class__ = Subscript
-        node.subs = [node.lower, node.upper]
-        node.sliceflag = 'slice'
-        del node.lower, node.upper
-    
-    def visit_subscript(self, node):
-        if hasattr(node.subs[0], "nodes"): # Sliceobj
-            subs = [sub for sub in node.subs[0].nodes
-                    if isinstance(sub, Const) and sub.value is None]
-            node.subs = subs
-            node.sliceflag = 'slice'
+        """visit slice : if it comes from compiler, we call it a Subscript;
+        else it's a real Slice"""
+        if node.flags is "OP_APPLY": # compiler.ast.Slice
+            node.__class__ = Subscript
+            node.value = node.expr
+            node.slice = Slice(node.lower, node.upper, None,
+                               node.lineno)
+            del node.expr, node.lower, node.upper
+        elif node.flags == "astng": # logilab.astng._nodes_compiler.Slice
+            # introduced right before
+            node.flags = "done"
         else:
-            node.sliceflag = 'index'
+            msg = "Strange Slice Object %s" % node
+            raise ASTNGError(msg)
+
+    def visit_subscript(self, node):
+        print node, node.expr
+        node.value = node.expr
+        if [n for n in node.subs if isinstance(n, Sliceobj)]:
+            subs = node.subs
+            if len(node.subs) == 1:# Slice
+                subs = node.subs[0].nodes
+                node.slice = Slice(subs[0], subs[1], subs[2], node.lineno)
+            else: # ExtSlice
+                node.slice = ExtSlice(node.subs)
+        else: # Index
+            node.slice = Index(node.subs)
+        del node.expr, node.subs
 
     def visit_tryexcept(self, node):
         node.body = node.body.nodes

@@ -243,7 +243,6 @@ REDIRECT = {'Attribute': 'Getattr',
             'ImportFrom': 'From',
             'keyword': 'Keyword',
             'Repr': 'Backquote',
-            'Sliceobj': 'Slice',
             
             'Add': 'BinOp',
             'Bitand': 'BinOp',
