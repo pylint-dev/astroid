@@ -133,6 +133,16 @@ if x > 0:
         self.assertEquals(len(xnames[2].lookup('x')[1]), 2)
 
 
+    def test_function_module_special(self):
+        astng = builder.string_build('''
+def initialize(linter):
+    """initialize linter with checkers in this package """
+    package_load(linter, __path__[0])
+        ''', 'data.__init__', 'data/__init__.py')
+        path = [n for n in astng.nodes_of_class(nodes.Name) if n.name == '__path__'][0]
+        self.assertEquals(len(path.lookup('__path__')[1]), 1)
+
+
     def test_builtin_lookup(self):
         self.assertEquals(lookup.builtin_lookup('__dict__')[1], ())
         intstmts = lookup.builtin_lookup('int')[1]
