@@ -156,15 +156,16 @@ class UnaryOp(Node):
 
 
 class Delete(Node):
-    """represent del statements"""
+    """represent a Delete statement"""
 
 class DelAttr(Node):
-    """represent del attribute statements"""
+    """represent a deleted Attribute"""
 
 class DelName(Node):
-    """represent del statements"""
+    """represent a deleted Name"""
 
 class Arguments(Node):
+    """represent the arguments of a function"""
     def __init__(self, args=None, defaults=None, vararg=None, kwarg=None):
         self.args = args
         self.defaults = defaults
@@ -189,6 +190,7 @@ class Slice(Node):
         self.lineno = lineno
 
 def _extslice(dim):
+    """introduce Index or Slice nodes depending on situation"""
     if dim.__class__ == Sliceobj:
         if len(dim.nodes) == 2:
             dim.nodes.append(None)
@@ -207,7 +209,7 @@ def generic__repr__(self):
     """simple representation method to override compiler.ast's methods"""
     return "<%s at 0x%x>" % (self.__class__.__name__, id(self))
 
-for name, value in ast.__dict__.items():
+for value in ast.__dict__.values():
     try:
         if issubclass(value, ast.Node):
             value.__repr__ = generic__repr__
@@ -409,7 +411,8 @@ class TreeRebuilder(ASTVisitor):
         node.value = node.expr
         del node.expr
         if node.lineno is None:
-            # dummy Const(None) introducted when statement is ended by a semi-colon
+            # remove dummy Discard introduced when a statement
+            # is ended by a semi-colon
             node.parent.child_sequence(node).remove(node)
             raise NodeRemoved
 
@@ -505,19 +508,16 @@ class TreeRebuilder(ASTVisitor):
 
     def visit_slice(self, node):
         """visit slice : if it comes from compiler, we call it a Subscript;
-        else it's a real Slice"""
+        else it's a real astng Slice"""
         if node.flags is "OP_APPLY": # compiler.ast.Slice
             node.__class__ = Subscript
             node.value = node.expr
             node.slice = Slice(node.lower, node.upper, None,
                                node.lineno)
             del node.expr, node.lower, node.upper
-        elif node.flags == "astng": # logilab.astng._nodes_compiler.Slice
-            # introduced right before
-            node.flags = "done"
-        else:
+        else: # should be a logilab.astng._nodes_compiler.Slice
             msg = "Strange Slice Object %s" % node
-            raise ASTNGError(msg)
+            assert node.flags == "astng", msg
 
     def visit_subscript(self, node):
         print node, node.expr
