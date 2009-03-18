@@ -311,7 +311,6 @@ class AsStringVisitor(ASTVisitor):
 
     def visit_index(self, node):
         """return a astng.Index node as string"""
-        print "str index", node, node.value
         return node.value.accept(self)
 
     def visit_slice(self, node):
@@ -325,7 +324,6 @@ class AsStringVisitor(ASTVisitor):
 
     def visit_subscript(self, node):
         """return an astng.Subscript node as string"""
-        print 'str subscr', node
         return '%s[%s]' % (node.value.accept(self), node.slice.accept(self))
     
     def visit_tryexcept(self, node):
