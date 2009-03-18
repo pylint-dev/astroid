@@ -255,7 +255,8 @@ def _nodify_args(parent, values):
             n = AssName(None, None)
             n.name = arg
         n.parent = parent
-        n.lineno = parent.lineno
+        n.fromlineno = parent.fromlineno
+        n.tolineno = parent.fromlineno
         res.append(n)
     return res
 
