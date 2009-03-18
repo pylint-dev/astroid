@@ -196,7 +196,7 @@ class ConstNodeTC(testlib.TestCase):
 
 
 class ArgumentsNodeTC(testlib.TestCase):
-    def test_as_string(self):
+    def test_linenumbering(self):
         ast = abuilder.string_build('''
 def func(a,
     b): pass
@@ -209,6 +209,13 @@ x = lambda x: None
         self.assertEquals(xlambda.args.fromlineno, 4)
         self.assertEquals(xlambda.args.tolineno, 4)
         self.failIf(xlambda.args.is_statement)
+
+
+class SliceNodeTC(testlib.TestCase):
+    def test(self):
+        for code in ('a[0]', 'a[:-1,step]', 'a[:,newaxis]'):
+            ast = abuilder.string_build(code)
+            self.assertEquals(ast.as_string(), code)
         
 if __name__ == '__main__':
     testlib.unittest_main()
