@@ -122,7 +122,7 @@ class CallContext:
                             its.append((YES,))
                             continue
                         try:
-                            its.append(infered.getitem(argindex).infer(context))
+                            its.append(infered.getitem(argindex, context).infer(context))
                         except (InferenceError, AttributeError):
                             its.append((YES,))
                         except (IndexError, TypeError):
@@ -137,7 +137,7 @@ class CallContext:
                     its.append((YES,))
                     continue
                 try:
-                    its.append(infered.getitem(name).infer(context))
+                    its.append(infered.getitem(name, context).infer(context))
                 except (InferenceError, AttributeError):
                     its.append((YES,))
                 except (IndexError, TypeError):
@@ -298,7 +298,7 @@ def infer_subscript(self, context=None):
             return
         try:
             # suppose it's a Tuple/List node (attribute error else)
-            assigned = self.expr.getitem(index.value)
+            assigned = self.expr.getitem(index.value, context)
         except AttributeError:
             raise InferenceError()
         except (IndexError, TypeError):

@@ -95,16 +95,16 @@ nodes.Const.infer_binary_op = yes_if_nothing_infered(const_infer_binary_op)
 
     
 def tl_infer_binary_op(self, operator, other, context):
-    for other in other.infer():
+    for other in other.infer(context):
         if isinstance(other, self.__class__) and operator == '+':
             node = self.__class__()
-            elts = [n for elt in self.elts for n in elt.infer()]
-            elts += [n for elt in other.elts for n in elt.infer()]
+            elts = [n for elt in self.elts for n in elt.infer(context)]
+            elts += [n for elt in other.elts for n in elt.infer(context)]
             node.elts = elts
             yield node
         elif isinstance(other, Const) and operator == '*':
             node = self.__class__()
-            elts = [n for elt in self.elts for n in elt.infer()] * other.value
+            elts = [n for elt in self.elts for n in elt.infer(context)] * other.value
             node.elts = elts
             yield node
         elif isinstance(other, Instance) and not isinstance(other, Const):
@@ -151,7 +151,7 @@ def _resolve_looppart(parts, asspath, context):
             continue # XXX log error
         for stmt in part.itered():
             try:
-                assigned = stmt.getitem(index)
+                assigned = stmt.getitem(index, context)
             except (AttributeError, IndexError):
                 continue
             if not asspath:
@@ -262,7 +262,7 @@ def _resolve_asspart(parts, asspath, context):
     for part in parts:
         if hasattr(part, 'getitem'):
             try:
-                assigned = part.getitem(index)
+                assigned = part.getitem(index, context)
             # XXX raise a specific exception to avoid potential hiding of
             # unexpected exception ?
             except (TypeError, IndexError):
@@ -399,22 +399,22 @@ nodes.Dict.itered = dict_itered
 
 # subscription protocol #######################################################
                 
-def const_getitem(self, index):
+def const_getitem(self, index, context=None):
     if isinstance(self.value, basestring):
         return self.value[index]
     raise TypeError()
 nodes.Const.getitem = const_getitem
 
 
-def tl_getitem(self, index):
+def tl_getitem(self, index, context=None):
     return self.elts[index]
 nodes.Tuple.getitem = tl_getitem
 nodes.List.getitem = tl_getitem
 
 
-def dict_getitem(self, key):
+def dict_getitem(self, key, context=None):
     for i in xrange(0, len(self.items), 2):
-        for inferedkey in self.items[i].infer():
+        for inferedkey in self.items[i].infer(context):
             if inferedkey is YES:
                 continue
             if isinstance(inferedkey, Const) and inferedkey.value == key:
