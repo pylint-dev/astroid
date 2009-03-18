@@ -508,18 +508,19 @@ class TreeRebuilder(ASTVisitor):
     def visit_slice(self, node):
         """visit slice : if it comes from compiler, we call it a Subscript;
         else it's a real astng Slice"""
-        if node.flags is "OP_APPLY": # compiler.ast.Slice
+        if node.flags in ('OP_APPLY', 'OP_ASSIGN', 'OP_DELETE'):# compiler.ast.Slice
+            self.check_delete_node(node)
             node.__class__ = Subscript
             node.value = node.expr
             node.slice = Slice(node.lower, node.upper, None,
                                node.lineno)
             del node.expr, node.lower, node.upper
-        else: # should be a logilab.astng._nodes_compiler.Slice
+        elif node.flags is not "astng": # should be a logilab.astng._nodes_compiler.Slice
             msg = "Strange Slice Object %s" % node
-            assert node.flags == "astng", msg
+            raise ASTNGError(msg)
 
     def visit_subscript(self, node):
-        print node, node.expr
+        self.check_delete_node(node)
         node.value = node.expr
         if [n for n in node.subs if isinstance(n, Sliceobj)]:
             subs = node.subs
