@@ -219,8 +219,7 @@ class ASTVisitor(object):
     def visit_bool(self, node):
         """dummy method for visiting an Bool node"""
 
-REDIRECT = {
-            'Attribute': 'Getattr',
+REDIRECT = {'Attribute': 'Getattr',
             'Call': 'CallFunc',
             'ClassDef': 'Class',
             "ListCompFor": 'Comprehension',
@@ -232,7 +231,8 @@ REDIRECT = {
             'ImportFrom': 'From',
             'keyword': 'Keyword',
             'Repr': 'Backquote',
-
+            'Sliceobj': 'Subscript',
+            
             'Add': 'BinOp',
             'Bitand': 'BinOp',
             'Bitor': 'BinOp',
