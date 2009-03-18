@@ -1,6 +1,10 @@
 Change log for the astng package
 ================================
- --
+ -- 
+    * refactoring : cleanups and some refactoring on inference 
+    * builder/rebuilder : move Ast walk to rebuilder
+    * _ast_compat: introduce _nodes_<ast/compiler> TreeRebuilder Visitors 
+    * _ast_compat #904 : big api changes
     * fix bug w/ loop assigment in .lookup
 	
 2008-01-14  --  0.17.2
