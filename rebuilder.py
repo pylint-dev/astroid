@@ -47,9 +47,9 @@ class RebuildVisitor(ASTVisitor):
         node.locals = {}
         node.parent.frame().set_local(node.name, node)
 
-    def set_context(self, node, childnode):
+    def set_asscontext(self, node, childnode):
         """set assignment /delete context needed later on by the childnode"""
-        # XXX refactor
+        # XXX refactor this method at least, but killing .asscontext  would be better
         if isinstance(node, (nodes.Delete, nodes.Assign)):
             if childnode in node.targets:
                 self.asscontext = node
@@ -75,8 +75,15 @@ class RebuildVisitor(ASTVisitor):
                 self.asscontext = node
             else:
                 self.asscontext = None
-        elif isinstance(node, nodes.Subscript):
-            self.asscontext = None # disable asscontext on subscripts to skip d[x] = y (item assigment)
+
+    # take node arguments to be usable as visit/leave methods
+    def push_asscontext(self, node=None):
+        self.__asscontext = self.asscontext
+        self.asscontext = None
+        return True
+    def pop_asscontext(self, node=None):
+        self.asscontext = self.__asscontext
+        self.__asscontext = None
 
     def walk(self, node):
         self._walk(node)
@@ -98,7 +105,7 @@ class RebuildVisitor(ASTVisitor):
         # XXX tuple necessary since node removal may modify children
         #     find a trick to avoid tuple() or make get_children() returning a list)
         for child in tuple(node.get_children()):
-            self.set_context(node, child)
+            self.set_asscontext(node, child)
             self._walk(child, node)
             if self.asscontext is child:
                 self.asscontext = None
@@ -205,7 +212,15 @@ class RebuildVisitor(ASTVisitor):
     def visit_assattr(self, node):
         """visit an Getattr node to become astng"""
         self._delayed.append(node) # FIXME
+        self.push_asscontext()
+        return True        
     visit_delattr = visit_assattr
+    
+    def leave_assattr(self, node):
+        """visit an Getattr node to become astng"""
+        self._delayed.append(node) # FIXME
+        self.pop_asscontext()
+    leave_delattr = leave_assattr
     
     def visit_global(self, node):
         """visit an Global node to become astng"""
@@ -246,6 +261,9 @@ class RebuildVisitor(ASTVisitor):
             else:
                 node.parent.set_local(node.name, node)
     visit_delname = visit_assname
+
+    visit_subscript = push_asscontext
+    leave_subscript = pop_asscontext
     
     def delayed_visit_assattr(self, node):
         """visit a AssAttr node -> add name to locals, handle members
@@ -268,8 +286,8 @@ class RebuildVisitor(ASTVisitor):
                         iattrs = infered.locals
                 except AttributeError:
                     # XXX log error
-                    import traceback
-                    traceback.print_exc()
+                    #import traceback
+                    #traceback.print_exc()
                     continue
                 values = iattrs.setdefault(node.attrname, [])
                 if node in values:

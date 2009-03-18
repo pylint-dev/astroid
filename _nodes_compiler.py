@@ -436,7 +436,6 @@ class TreeRebuilder(ASTVisitor):
     def visit_getattr(self, node):
         if isinstance(self.visitor.asscontext, AugAssign):
             node.__class__ = AssAttr
-            self.visitor.asscontext = None
 
     def visit_if(self, node):
         node.test, body = node.tests[0]

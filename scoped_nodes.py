@@ -353,7 +353,10 @@ class FunctionNG(object):
 
     def argnames(self):
         """return argument names if there are any arguments"""
-        names = _rec_get_names(self.args.args)
+        if self.args.args: # maybe None with builtin functions
+            names = _rec_get_names(self.args.args)
+        else:
+            names = []
         if self.args.vararg:
             names.append(self.args.vararg)
         if self.args.kwarg:
