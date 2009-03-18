@@ -89,6 +89,7 @@ DelName._astng_fields = ()
 Dict._astng_fields = ('items',)
 Discard._astng_fields = ('value',)
 From._astng_fields = ()
+Ellipsis._astng_fields = ()
 EmptyNode._astng_fields = ()
 ExceptHandler._astng_fields = ('type', 'name', 'body',)
 Exec._astng_fields = ('expr', 'globals', 'locals',)
@@ -144,6 +145,7 @@ class NodeNG:
 
     def get_children(self):
         d = self.__dict__
+        assert hasattr(self, '_astng_fields'), (self, self.lineno)
         for f in self._astng_fields:
             attr = d[f]
             if attr is None:
