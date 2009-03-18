@@ -110,6 +110,7 @@ class ASTNGManager(OptionsProviderMixIn):
                     raise
                 except Exception, ex:
                     if __debug__:
+                        print 'error while building astng for', filepath
                         import traceback
                         traceback.print_exc()
                     msg = 'Unable to load module %s (%s)' % (modname, ex)
