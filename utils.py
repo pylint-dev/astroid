@@ -133,6 +133,9 @@ class ASTVisitor(object):
     def visit_exec(self, node):
         """dummy method for visiting an Exec node"""
 
+    def visit_extslice(self, node):
+        """dummy method for visiting an ExtSlice node"""
+
     def visit_for(self, node):
         """dummy method for visiting an For node"""
 
@@ -159,6 +162,9 @@ class ASTVisitor(object):
 
     def visit_import(self, node):
         """dummy method for visiting an Import node"""
+
+    def visit_index(self, node):
+        """dummy method for visiting an Index node"""
 
     def visit_keyword(self, node):
         """dummy method for visiting an Keyword node"""
@@ -189,6 +195,9 @@ class ASTVisitor(object):
 
     def visit_return(self, node):
         """dummy method for visiting an Return node"""
+
+    def visit_slice(self, node):
+        """dummy method for visiting an Slice node"""
 
     def visit_subscript(self, node):
         """dummy method for visiting an Subscript node"""
@@ -234,7 +243,7 @@ REDIRECT = {'Attribute': 'Getattr',
             'ImportFrom': 'From',
             'keyword': 'Keyword',
             'Repr': 'Backquote',
-            'Sliceobj': 'Subscript',
+            'Sliceobj': 'Slice',
             
             'Add': 'BinOp',
             'Bitand': 'BinOp',
