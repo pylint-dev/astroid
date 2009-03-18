@@ -194,6 +194,9 @@ class AsStringVisitor(ASTVisitor):
                                       node.globals.accept(self))
         return 'exec %s' % node.expr.accept(self)
 
+    def visit_extslice(self, node):
+        """return an astng.ExtSlice node as string"""
+        return ','.join( dim.accept(self) for dim in node.dims )
     def visit_for(self, node):
         """return an astng.For node as string"""
         fors = 'for %s in %s:\n%s' % (node.target.accept(self),
@@ -305,15 +308,25 @@ class AsStringVisitor(ASTVisitor):
             return 'return %s' % node.value.accept(self)
         else:
             return 'return'
-    
+
+    def visit_index(self, node):
+        """return a astng.Index node as string"""
+        print "str index", node, node.value
+        return node.value.accept(self)
+
+    def visit_slice(self, node):
+        """return a astng.Slice node as string"""
+        lower = node.lower and node.lower.accept(self) or ''
+        upper = node.upper and node.upper.accept(self) or ''
+        step = node.step and node.step.accept(self) or ''
+        if step:
+            return '%s:%s:%s' % (lower, upper, step)
+        return  '%s:%s' % (lower, upper)
+
     def visit_subscript(self, node):
         """return an astng.Subscript node as string"""
-        if node.sliceflag == 'index':
-            index = ','.join([n.accept(self) for n in node.subs])
-        else: # sliceflag == 'slice':
-            slist = [sub and sub.accept(self) or '' for sub in node.subs]
-            index = ':'.join(slist)
-        return '%s[%s]' % (node.expr.accept(self), index)
+        print 'str subscr', node
+        return '%s[%s]' % (node.value.accept(self), node.slice.accept(self))
     
     def visit_tryexcept(self, node):
         """return an astng.TryExcept node as string"""

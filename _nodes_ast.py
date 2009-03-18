@@ -26,10 +26,10 @@ from _ast import (Assert, Assign, AugAssign,
                   BinOp, BoolOp, Break,
                   Compare, Continue,
                   Delete, Dict, 
-                  Ellipsis, Exec, 
+                  Ellipsis, Exec, ExtSlice,
                   For,
                   Global, 
-                  If, IfExp, Import,
+                  If, IfExp, Import, Index,
                   Lambda, List, ListComp, 
                   Module, 
                   Name,
@@ -269,21 +269,6 @@ class TreeRebuilder(ASTVisitor):
         node.__class__ = Const
         node.value = node.s
         del node.s
-    
-    def visit_subscript(self, node):
-        node.expr = node.value
-        slices = node.slice
-        if hasattr(slices, 'value'): # Index
-            node.subs = [slices.value]
-            node.sliceflag = 'index'
-        elif hasattr(slices, 'lower'): # Slice
-            node.subs = [slices.lower, slices.upper]
-            if slices.step:
-                node.subs.append(slices.step)
-            node.sliceflag = 'slice'
-        else:
-            node.subs = []
-        del node.slice, node.value
 
     def visit_unaryop(self, node):
         node.op = _UNARY_OP_CLASSES[node.op.__class__]

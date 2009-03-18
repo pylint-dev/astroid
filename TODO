@@ -1,13 +1,11 @@
 
-List of things to do for _ast_compability :
+TODO list
 
 ASTNG Motor
 ===========
 
 Representation
 --------------
-* have a common representation for both _ast and compiler
-
 * ensure compatible representation for _nodes_ast function_factory
 
 * step forward to have more _ast like representation
@@ -16,11 +14,4 @@ Refactoring
 ===========
 * InferenceVisitor
 * func / arguments : cleanup methods
-
-Tests:
-======
-
-are_exclusive
--------------
-* more are_exclusive tests ... : we had a big unseen bug !
 

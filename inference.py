@@ -291,14 +291,14 @@ nodes.Global.infer = path_wrapper(infer_global)
 
 def infer_subscript(self, context=None):
     """infer simple subscription such as [1,2,3][0] or (1,2,3)[-1]"""
-    if len(self.subs) == 1:
-        index = self.subs[0].infer(context).next()
+    if isinstance(self.slice, nodes.Index):
+        index = self.slice.value.infer(context).next()
         if index is YES:
             yield YES
             return
         try:
             # suppose it's a Tuple/List node (attribute error else)
-            assigned = self.expr.getitem(index.value, context)
+            assigned = self.value.getitem(index.value, context)
         except AttributeError:
             raise InferenceError()
         except (IndexError, TypeError):
