@@ -314,7 +314,9 @@ class FunctionNG(object):
     """
 
     # attributes below are set by the builder module or by raw factories
-
+    
+    blockstart_tolineno = None
+    
     # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
     type = 'function'
     
@@ -502,6 +504,8 @@ class ClassNG(object):
     original class from the compiler.ast module using its dictionnary
     (see below the class definition)
     """
+
+    blockstart_tolineno = None
     
     _type = None
     type = property(_class_type,

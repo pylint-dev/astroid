@@ -241,6 +241,11 @@ def args_compiler_to_ast(node):
     args = _nodify_args(node, node.argnames)
     del node.argnames
     node.args = Arguments(args, node.defaults, vararg, kwarg)
+    node.args.fromlineno = node.fromlineno
+    try:
+        node.args.tolineno = node.blockstart_tolineno
+    except AttributeError: # lambda
+        node.args.tolineno = node.tolineno
     del node.defaults
 
     

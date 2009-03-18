@@ -193,6 +193,22 @@ class ConstNodeTC(testlib.TestCase):
         
     def test_unicode(self):
         self._test(u'a')
+
+
+class ArgumentsNodeTC(testlib.TestCase):
+    def test_as_string(self):
+        ast = abuilder.string_build('''
+def func(a,
+    b): pass
+x = lambda x: None
+        ''')
+        self.assertEquals(ast['func'].args.fromlineno, 2)
+        self.assertEquals(ast['func'].args.tolineno, 3)
+        self.failIf(ast['func'].args.is_statement)
+        xlambda = ast['x'].infer().next()
+        self.assertEquals(xlambda.args.fromlineno, 4)
+        self.assertEquals(xlambda.args.tolineno, 4)
+        self.failIf(xlambda.args.is_statement)
         
 if __name__ == '__main__':
     testlib.unittest_main()
