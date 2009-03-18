@@ -145,7 +145,6 @@ class NodeNG:
 
     def get_children(self):
         d = self.__dict__
-        assert hasattr(self, '_astng_fields'), (self, self.lineno)
         for f in self._astng_fields:
             attr = d[f]
             if attr is None:
