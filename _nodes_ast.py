@@ -35,7 +35,7 @@ from _ast import (Assert, Assign, AugAssign,
                   Name,
                   Pass, Print,
                   Raise, Return,
-                  Slice, Sub, Subscript, 
+                  Slice, Subscript, 
                   TryExcept, TryFinally, Tuple,
                   UnaryOp,
                   While, With,
@@ -79,38 +79,37 @@ from logilab.astng.utils import ASTVisitor
 
 Proxy_ = object
 
-BIN_OP_CLASSES = {_Add: '+',
-                  _BitAnd: '&',
-                  _BitOr: '|',
-                  _BitXor: '^',
-                  _Div: '/',
-                  _FloorDiv: '//',
-                  _Mod: '%',
-                  _Mult: '*',
-                  _Pow: '**',
-                  _Sub: '-',
-                  _LShift: '<<',
-                  _RShift: '>>'}
+_BIN_OP_CLASSES = {_Add: '+',
+                   _BitAnd: '&',
+                   _BitOr: '|',
+                   _BitXor: '^',
+                   _Div: '/',
+                   _FloorDiv: '//',
+                   _Mod: '%',
+                   _Mult: '*',
+                   _Pow: '**',
+                   _Sub: '-',
+                   _LShift: '<<',
+                   _RShift: '>>'}
 
-BOOL_OP_CLASSES = {_And: 'and',
-                   _Or: 'or'}
+_BOOL_OP_CLASSES = {_And: 'and',
+                    _Or: 'or'}
 
-UNARY_OP_CLASSES = {_UAdd: '+',
-                    _USub: '-',
-                    _Not: 'not',
-                    _Invert: '~'}
+_UNARY_OP_CLASSES = {_UAdd: '+',
+                     _USub: '-',
+                     _Not: 'not',
+                     _Invert: '~'}
 
-CMP_OP_CLASSES = {_Eq: '==',
-                  _Gt: '>',
-                  _GtE: '>=',
-                  _In: 'in',
-                  _Is: 'is',
-                  _IsNot: 'is not',
-                  _Lt: '<',
-                  _LtE: '<=',
-                  _NotEq: '!=',
-                  _NotIn: 'not in',
-                  }
+_CMP_OP_CLASSES = {_Eq: '==',
+                   _Gt: '>',
+                   _GtE: '>=',
+                   _In: 'in',
+                   _Is: 'is',
+                   _IsNot: 'is not',
+                   _Lt: '<',
+                   _LtE: '<=',
+                   _NotEq: '!=',
+                   _NotIn: 'not in'}
 
 
 def _init_set_doc(node):
@@ -203,10 +202,10 @@ class TreeRebuilder(ASTVisitor):
         del node.msg
 
     def visit_binop(self, node):
-        node.op = BIN_OP_CLASSES[node.op.__class__]
+        node.op = _BIN_OP_CLASSES[node.op.__class__]
     
     def visit_boolop(self, node):
-        node.op = BOOL_OP_CLASSES[node.op.__class__]
+        node.op = _BOOL_OP_CLASSES[node.op.__class__]
     
     def visit_callfunc(self, node):
         node.args.extend(node.keywords)
@@ -216,7 +215,7 @@ class TreeRebuilder(ASTVisitor):
         _init_set_doc(node)
 
     def visit_compare(self, node):
-        node.ops = [(CMP_OP_CLASSES[op.__class__], expr)
+        node.ops = [(_CMP_OP_CLASSES[op.__class__], expr)
                     for op, expr in zip(node.ops, node.comparators)]
         del node.comparators
 
@@ -287,7 +286,7 @@ class TreeRebuilder(ASTVisitor):
         del node.slice, node.value
 
     def visit_unaryop(self, node):
-        node.op = UNARY_OP_CLASSES[node.op.__class__]
+        node.op = _UNARY_OP_CLASSES[node.op.__class__]
 
     def visit_with(self, node):
         """build compiler like node """

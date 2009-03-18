@@ -177,7 +177,7 @@ def generic__repr__(self):
     """simple representation method to override compiler.ast's methods"""
     return "<%s at 0x%x>" % (self.__class__.__name__, id(self))
 
-for name, value in ast.__dict__.items():
+for value in ast.__dict__.values():
     try:
         if issubclass(value, ast.Node):
             value.__repr__ = generic__repr__

@@ -149,7 +149,7 @@ def _resolve_looppart(parts, asspath, context):
             itered = part.itered()
         except TypeError:
             continue # XXX log error
-        for stmt in part.itered():
+        for stmt in itered:
             try:
                 assigned = stmt.getitem(index, context)
             except (AttributeError, IndexError):
@@ -157,7 +157,6 @@ def _resolve_looppart(parts, asspath, context):
             if not asspath:
                 # we acheived to resolved the assigment path,
                 # don't infer the last part
-                found = True
                 yield assigned
             elif assigned is YES:
                 break
@@ -270,7 +269,6 @@ def _resolve_asspart(parts, asspath, context):
             if not asspath:
                 # we acheived to resolved the assigment path, don't infer the
                 # last part
-                found = True
                 yield assigned
             elif assigned is YES:
                 return
