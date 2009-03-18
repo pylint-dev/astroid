@@ -56,11 +56,11 @@ except ImportError:
         """dummy Decorators node, shouldn't be used with py < 2.4"""
         def __init__(self, nodes=None):
             self.nodes = nodes
-            
-class With:
-    """dummy With node: if we are using py >= 2.5 we will use _ast;
-    but we need it for the other astng modules
-    """
+
+# dummy python >= 2.5 nodes: if we are using py >= 2.5 we will use _ast;
+# but we need it for the other astng modules            
+class With: pass
+class IfExp: pass
 
 # introduced in python 2.5
 From.level = 0 # will be overiden by instance attribute with py>=2.5

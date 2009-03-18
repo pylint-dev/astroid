@@ -232,8 +232,15 @@ class AsStringVisitor(ASTVisitor):
         """return an astng.If node as string"""
         ifs = ['if %s:\n%s' % (node.test.accept(self), self._stmt_list(node.body))]
         if node.orelse:
-            ifs.append('else:\n%s' % self._stmt_list(node.orelse) )
+            ifs.append('else:\n%s' % self._stmt_list(node.orelse))
         return '\n'.join(ifs)
+    
+    def visit_ifexp(self, node):
+        """return an astng.IfExp node as string"""
+        ifs = ['%s if %s' % (self._stmt_list(node.body), node.test.accept(self))]
+        if node.orelse:
+            ifs.append('else %s' % self._stmt_list(node.orelse))
+        return ' '.join(ifs)
     
     def visit_import(self, node):
         """return an astng.Import node as string"""

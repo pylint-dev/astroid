@@ -154,6 +154,9 @@ class ASTVisitor(object):
     def visit_if(self, node):
         """dummy method for visiting an If node"""
 
+    def visit_ifexp(self, node):
+        """dummy method for visiting an IfExp node"""
+
     def visit_import(self, node):
         """dummy method for visiting an Import node"""
 
