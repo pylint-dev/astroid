@@ -231,6 +231,8 @@ class TreeRebuilder(ASTVisitor):
         _init_set_doc(node)
         if node.decorators:
             node.decorators = Decorators(node.decorators)
+        else:
+            node.decorators = None
 
     def visit_getattr(self, node):
         node.attrname = node.attr
@@ -318,7 +320,7 @@ def function_factory(name, args, defaults, flag=0, doc=None):
     # XXX local import necessary due to cyclic deps
     from logilab.astng.nodes import const_factory
     node = Function()
-    node.decorators = []
+    node.decorators = None
     node.body = []
     node.name = name
     # XXX ensure we get a compatible representation

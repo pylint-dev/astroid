@@ -339,6 +339,9 @@ class FunctionNG(object):
     
     def set_line_info(self, lastchild):
         self.fromlineno = self.lineno
+        # lineno is the line number of the first decorator, we want the def statement lineno
+        if self.decorators is not None:
+            self.fromlineno += len(self.decorators.nodes)
         self.tolineno = lastchild.tolineno
         self.blockstart_tolineno = self.args.tolineno
 

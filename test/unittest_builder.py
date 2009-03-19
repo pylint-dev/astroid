@@ -97,7 +97,24 @@ class FromToLineNoTC(TestCase):
         self.assertIsInstance(return_, nodes.Return)
         self.assertEquals(return_.fromlineno, 18)
         self.assertEquals(return_.tolineno, 18)
-
+        
+    def test_decorated_function_lineno(self):
+        if sys.version_info < (2, 4):
+            self.skip('require python >=2.4')
+        astng = builder.ASTNGBuilder().string_build('''
+@decorator
+def function(
+    arg):
+    print arg
+''', __name__, __file__)
+        function = astng['function']
+        self.assertEquals(function.fromlineno, 3) # XXX discussable, but that's what is expected by pylint right now
+        self.assertEquals(function.tolineno, 5) 
+        self.assertEquals(function.blockstart_tolineno, 4)
+        self.assertEquals(function.decorators.fromlineno, 2)
+        self.assertEquals(function.decorators.tolineno, 2) 
+    
+    
     def test_class_lineno(self):
         stmts = self.astng.body
         # on line 20:
