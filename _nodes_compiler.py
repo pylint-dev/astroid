@@ -183,7 +183,6 @@ class Index(Node):
 class Slice(Node):
     """represent an ExtSlice of a Subscript; these comes from numeric slices"""
     def __init__(self, lower, upper, step, lineno):
-        self.flags = "astng" # flag for catching namespace conflict
         self.lower = _filter_none(lower)
         self.upper = _filter_none(upper)
         self.step = _filter_none(step)
@@ -510,12 +509,20 @@ class TreeRebuilder(ASTVisitor):
         node.value = _filter_none( node.value )
 
     def visit_slice(self, node):
-        """visit slice : if it comes from compiler, we call it a Subscript;
-        else it's a real astng Slice"""
+        """visit slice"""
+        # /!\ Careful :
+        # if the node comes from compiler, it is actually an astng.Subscript
+        # with only 'lower' and 'upper' attributes; no 'step'.
+        # However we want its attribute 'slice' to be a astng.Slice;
+        # hence node.slice will be visited here as a node's child
+        # furthermore, some child nodes of Subscript are also Slice objects
+        #
+        # logilab.astng._nodes_compiler.Slice introduced before :
         if node.__class__ is Slice:
-            return # node inserted in visit_subscript
+            return
+        # compiler.ast.Slice :
         if node.flags == 'OP_DELETE':
-            self.insert_delstmt_if_necessary(node.parent)
+            self.insert_delstmt_if_necessary(node)
         else:
             assert node.flags in ('OP_APPLY', 'OP_ASSIGN')
         node.__class__ = Subscript
@@ -526,7 +533,7 @@ class TreeRebuilder(ASTVisitor):
 
     def visit_subscript(self, node):
         if node.flags == 'OP_DELETE':
-            self.insert_delstmt_if_necessary(node.parent)
+            self.insert_delstmt_if_necessary(node)
         node.value = node.expr
         if [n for n in node.subs if isinstance(n, Sliceobj)]:
             subs = node.subs
