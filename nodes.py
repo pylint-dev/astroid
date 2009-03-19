@@ -357,7 +357,13 @@ def _repr_tree(node, result, indent='', _done=None):
         if isinstance(value, (list, tuple) ):
             result.append(  indent + field + " = [" )
             for child in value:
-                _repr_tree(child, result, indent, _done)
+                if isinstance(child, (list, tuple) ):
+                    # special case for Dict # FIXME
+                     _repr_tree(child[0], result, indent, _done)
+                     _repr_tree(child[1], result, indent, _done)
+                     result.append(indent + ',')
+                else:
+                    _repr_tree(child, result, indent, _done)
             result.append(  indent + "]" )
         else:
             result.append(  indent + field + " = " )
