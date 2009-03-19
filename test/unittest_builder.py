@@ -145,6 +145,62 @@ def function(
         self.assertEquals(if_.blockstart_tolineno, 24)
         self.assertEquals(if_.orelse[0].fromlineno, 26)
         self.assertEquals(if_.orelse[1].tolineno, 27)
+
+    def test_for_while_lineno(self):
+        for code in ('''
+for a in range(4):
+  print a
+  break
+else:
+  print "bouh"
+''', '''
+while a:
+  print a
+  break
+else:
+  print "bouh"
+''',
+                     ):
+            astng = builder.ASTNGBuilder().string_build(code, __name__, __file__)
+            stmt = astng.body[0]
+            self.assertEquals(stmt.fromlineno, 2)
+            self.assertEquals(stmt.tolineno, 6)
+            self.assertEquals(stmt.blockstart_tolineno, 2)        
+            self.assertEquals(stmt.orelse[0].fromlineno, 6) # XXX
+            self.assertEquals(stmt.orelse[0].tolineno, 6)
+
+
+    def test_try_lineno(self):
+        astng = builder.ASTNGBuilder().string_build('''
+try:
+  print a
+except:
+  break
+else:
+  print "bouh"
+''', __name__, __file__)
+        try_ = astng.body[0]
+        self.assertEquals(try_.fromlineno, 2)
+        self.assertEquals(try_.tolineno, 7)
+        self.assertEquals(try_.blockstart_tolineno, 2)        
+        self.assertEquals(try_.orelse[0].fromlineno, 7) # XXX
+        self.assertEquals(try_.orelse[0].tolineno, 7)
+
+
+    def test_with_lineno(self):
+        if sys.version_info < (2, 5):
+            self.skip('require python >=2.5')
+        astng = builder.ASTNGBuilder().string_build('''
+from __future__ import with_statement
+with file("/tmp/pouet") as f:
+  print f
+''', __name__, __file__)
+        with_ = astng.body[1]
+        self.assertEquals(with_.fromlineno, 3)
+        self.assertEquals(with_.tolineno, 4)
+        self.assertEquals(with_.blockstart_tolineno, 3)
+        
+
         
 class BuilderTC(TestCase):
         

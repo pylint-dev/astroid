@@ -393,6 +393,35 @@ Compare.get_children = _compare_get_children
 
 # block range overrides #######################################################
 
+def for_set_line_info(self, lastchild):
+    self.fromlineno = self.lineno
+    self.tolineno = lastchild.tolineno
+    self.blockstart_tolineno = self.iter.tolineno
+For.set_line_info = for_set_line_info
+
+def if_set_line_info(self, lastchild):
+    self.fromlineno = self.lineno
+    self.tolineno = lastchild.tolineno
+    self.blockstart_tolineno = self.test.tolineno
+If.set_line_info = if_set_line_info
+While.set_line_info = if_set_line_info
+
+def try_set_line_info(self, lastchild):
+    self.fromlineno = self.blockstart_tolineno = self.lineno
+    self.tolineno = lastchild.tolineno
+TryExcept.set_line_info = try_set_line_info
+TryFinally.set_line_info = try_set_line_info
+
+def with_set_line_info(self, lastchild):
+    self.fromlineno = self.blockstart_tolineno = self.lineno
+    self.tolineno = lastchild.tolineno
+    if self.vars:
+        self.blockstart_tolineno = self.vars.tolineno
+    else:
+        self.blockstart_tolineno = self.expr.tolineno
+With.set_line_info = with_set_line_info
+
+
 def object_block_range(node, lineno):
     """handle block line numbers range for function/class statements:
 
@@ -425,13 +454,6 @@ def if_block_range(node, lineno):
         return lineno, node.body[-1].tolineno
     return _elsed_block_range(node, lineno, node.orelse, node.body[0].fromlineno - 1)
 If.block_range = if_block_range
-
-
-def if_set_line_info(self, lastchild):
-    self.fromlineno = self.lineno
-    self.tolineno = lastchild.tolineno
-    self.blockstart_tolineno = self.test.tolineno
-If.set_line_info = if_set_line_info
 
 
 def try_except_block_range(node, lineno):
