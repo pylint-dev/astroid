@@ -299,10 +299,6 @@ class TreeRebuilder(ASTVisitor):
     def insert_delstmt_if_necessary(self, node):
         """insert a Delete statement node if necessary
 
-    
-    def insert_delstmt_if_necessary(self, node):
-        """insert a Delete statement node if necessary
-
         return True if we have mutated a AssTuple into a Delete
         """
         assign_nodes = (Assign, With, For, ExceptHandler, Delete, AugAssign)
@@ -351,7 +347,6 @@ class TreeRebuilder(ASTVisitor):
     #  other visit_<node> #####################################################
     
     def visit_assattr(self, node):
-        self.check_delete_node(node)
         if node.flags == 'OP_DELETE':
             self.insert_delstmt_if_necessary(node)
             node.__class__ = DelAttr
@@ -373,7 +368,6 @@ class TreeRebuilder(ASTVisitor):
             self.visit_tuple(node)
 
     def visit_assname(self, node):
-        self.check_delete_node(node)
         if node.flags == 'OP_DELETE':
             self.insert_delstmt_if_necessary(node)
             node.__class__ = DelName
@@ -531,7 +525,8 @@ class TreeRebuilder(ASTVisitor):
         del node.expr, node.lower, node.upper, node.flags
 
     def visit_subscript(self, node):
-        self.check_delete_node(node)
+        if node.flags == 'OP_DELETE':
+            self.insert_delstmt_if_necessary(node.parent)
         node.value = node.expr
         if [n for n in node.subs if isinstance(n, Sliceobj)]:
             subs = node.subs
