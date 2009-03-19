@@ -192,7 +192,7 @@ class ClassNodeTC(TestCase):
     def test_dict_interface(self):
         _test_dict_interface(self, MODULE['YOUPI'], 'method')
 
-    def test_cls_special_attributes(self):
+    def test_cls_special_attributes_1(self):
         cls = MODULE['YO']
         self.assertEquals(len(cls.getattr('__bases__')), 1)
         self.assertEquals(len(cls.getattr('__name__')), 1)
@@ -209,10 +209,22 @@ class ClassNodeTC(TestCase):
         for cls in (nodes.List._proxied, nodes.Const(1)._proxied):
             self.assertEquals(len(cls.getattr('__bases__')), 1)
             self.assertEquals(len(cls.getattr('__name__')), 1)
-            self.assertEquals(len(cls.getattr('__doc__')), 1)
+            self.assertEquals(len(cls.getattr('__doc__')), 1, (cls, cls.getattr('__doc__')))
+            self.assertEquals(cls.getattr('__doc__')[0].value, cls.doc)
             self.assertEquals(len(cls.getattr('__module__')), 1)
             self.assertEquals(len(cls.getattr('__dict__')), 1)
             self.assertEquals(len(cls.getattr('__mro__')), 1)
+            
+    def test_cls_special_attributes_2(self):
+        astng = abuilder.string_build('''
+class A: pass
+class B: pass
+
+A.__bases__ += (B,)
+''', __name__, __file__)
+        self.assertEquals(len(astng['A'].getattr('__bases__')), 2)
+        self.assertIsInstance(astng['A'].getattr('__bases__')[0], nodes.Tuple)
+        self.assertIsInstance(astng['A'].getattr('__bases__')[1], nodes.AssAttr)
 
     def test_instance_special_attributes(self):
         for inst in (Instance(MODULE['YO']), nodes.List(), nodes.Const(1)): 

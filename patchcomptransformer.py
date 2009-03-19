@@ -112,7 +112,8 @@ class ASTNGTransformer(BaseTransformer):
     
     def funcdef(self, nodelist):
         node = BaseTransformer.funcdef(self, nodelist)
-        # XXX decorators
+        if node.decorators is not None:
+            fix_lineno(node.decorators, nodelist[0])
         return fix_lineno(node, nodelist[-5], nodelist[-1], nodelist[-3])
     
     def lambdef(self, nodelist):
