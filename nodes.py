@@ -330,8 +330,38 @@ class NodeNG:
         from logilab.astng.nodes_as_string import as_string
         return as_string(self)
 
+    def repr_tree(self):!
+        """print a nice astng tree representation"""
+        result = []
+        _repr_tree(node, result)
+        print "\n".join(result)
+
 extend_class(Node, NodeNG)
 
+INDENT = "    "
+
+def _repr_tree(node, indent='', _done=None):
+    """built a tree representation of a node as a list of lines"""
+    if _done is None:
+        _done = set()
+    if not hasattr(node, '_astng_fields'): # not a astng node
+        return
+    if node in _done:
+        result.append( indent + 'loop in tree: %s' % node )
+        return
+    _done.add(node)
+    result.append( indent + str(node))
+    indent += INDENT
+    for field in node._astng_fields:
+        value = getattr(node, field)
+        if isinstance(value, (list, tuple) ):
+            result.append(  indent + field + " = [" )
+            for child in value:
+                _repr_tree(child, result, indent, _done)
+            result.append(  indent + "]" )
+        else:
+            result.append(  indent + field + " = " )
+            _repr_tree(value, result, indent, _done)
 
 
 def replace_child(self, child, newchild):
@@ -499,16 +529,4 @@ def real_name(node, asname):
 From.real_name = real_name
 Import.real_name = real_name
 
-
-def repr_tree(node, indent='', _done=None):
-    if _done is None:
-        _done = set()
-    if node in _done:
-        print ('loop in tree: %r (%s)' % (node, node.lineno))
-        return
-    _done.add(node)
-    print indent + str(node)
-    indent += '    '
-    for child in node.get_children():
-        repr_tree(child, indent, _done)
         
