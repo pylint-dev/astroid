@@ -330,7 +330,7 @@ class NodeNG:
         from logilab.astng.nodes_as_string import as_string
         return as_string(self)
 
-    def repr_tree(self):!
+    def repr_tree(self):
         """print a nice astng tree representation"""
         result = []
         _repr_tree(node, result)
