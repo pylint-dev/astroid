@@ -333,14 +333,14 @@ class NodeNG:
     def repr_tree(self):
         """print a nice astng tree representation"""
         result = []
-        _repr_tree(node, result)
+        _repr_tree(self, result)
         print "\n".join(result)
 
 extend_class(Node, NodeNG)
 
 INDENT = "    "
 
-def _repr_tree(node, indent='', _done=None):
+def _repr_tree(node, result, indent='', _done=None):
     """built a tree representation of a node as a list of lines"""
     if _done is None:
         _done = set()
