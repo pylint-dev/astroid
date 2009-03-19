@@ -221,7 +221,6 @@ class SliceNodeTC(testlib.TestCase):
 class EllipsisNodeTC(testlib.TestCase):
     def test(self):
         ast = abuilder.string_build('a[...]')
-        nodes.repr_tree(ast)
         self.assertEquals(ast.as_string(), 'a[...]')
         
 if __name__ == '__main__':
