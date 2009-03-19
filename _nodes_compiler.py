@@ -544,7 +544,7 @@ class TreeRebuilder(ASTVisitor):
                 node.slice = ExtSlice(node.subs)
         else: # Index
             node.slice = Index(node.subs)
-        del node.expr, node.subs
+        del node.expr, node.subs, node.flags
 
     def visit_tryexcept(self, node):
         # remove Stmt node
