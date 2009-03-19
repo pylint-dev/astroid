@@ -1,7 +1,7 @@
 Change log for the astng package
 ================================
 
- -- 
+2009-03-19  -- 0.18.0
     * major api / tree structure changes to make it works with compiler *and* py >= 2.5 _ast module
     * cleanups and refactoring on the way
 
