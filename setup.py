@@ -93,7 +93,8 @@ def get_packages(directory, prefix):
 
 def export(from_dir, to_dir,
            blacklist=STD_BLACKLIST,
-           ignore_ext=IGNORED_EXTENSIONS):
+           ignore_ext=IGNORED_EXTENSIONS,
+           verbose=True):
     """make a mirror of from_dir in to_dir, omitting directories and files
     listed in the black list
     """
@@ -112,7 +113,8 @@ def export(from_dir, to_dir,
                 continue
             src = join(directory, filename)
             dest = to_dir + src[len(from_dir):]
-            print >> sys.stderr, src, '->', dest
+            if verbose:
+                print >> sys.stderr, src, '->', dest
             if os.path.isdir(src):
                 if not exists(dest):
                     os.mkdir(dest)
@@ -160,10 +162,15 @@ class MyInstallLib(install_lib.install_lib):
                 base = modname
             for directory in include_dirs:
                 dest = join(self.install_dir, base, directory)
-                export(directory, dest)
+                export(directory, dest, verbose=False)
         
 def install(**kwargs):
     """setup entry point"""
+    try:
+        if USE_SETUPTOOLS:
+            sys.argv.remove('--force-manifest')
+    except:
+        pass
     if subpackage_of:
         package = subpackage_of + '.' + modname
         kwargs['package_dir'] = {package : '.'}
