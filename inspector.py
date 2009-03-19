@@ -32,6 +32,7 @@ from logilab.common.modutils import get_module_part, is_relative, \
      is_standard_module
 
 from logilab import astng
+from logilab.astng import InferenceError
 from logilab.astng.utils import LocalsVisitor
 
 class IdGeneratorMixIn:
@@ -146,9 +147,9 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
         # resolve implemented interface
         try:
             node.implements = list(node.interfaces(self.inherited_interfaces))
-        except TypeError:
+        except InferenceError:
             node.implements = ()
-            
+
     def visit_function(self, node):
         """visit an astng.Function node
         

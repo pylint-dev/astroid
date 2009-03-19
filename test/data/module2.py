@@ -41,6 +41,9 @@ del YO
 [SYN1, SYN2] = Concrete0, Concrete1
 assert `1`
 b = 1 | 2 & 3 ^ 8
+bb = 1 | two | 6
+ccc = one & two & three
+dddd = x ^ o ^ r
 exec 'c = 3'
 exec 'c = 3' in {}, {}
 

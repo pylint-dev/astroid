@@ -1,6 +1,4 @@
-# pylint: disable-msg=W0622
-#
-# Copyright (c) 2003-2008 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2003-2009 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -23,10 +21,10 @@ modname = 'astng'
 distname = 'logilab-astng'
 numversion = (0, 17, 4)
 version = '.'.join([str(num) for num in numversion])
-pyversions = ["2.3", "2.4", "2.5"]
+pyversions = ["2.3", "2.4", "2.5", '2.6']
 
 license = 'GPL'
-copyright = '''Copyright (c) 2003-2008 LOGILAB S.A. (Paris, FRANCE).
+copyright = '''Copyright (c) 2003-2009 LOGILAB S.A. (Paris, FRANCE).
 http://www.logilab.fr/ -- mailto:contact@logilab.fr'''
 
 author = 'Sylvain Thenault'
@@ -40,14 +38,15 @@ python source code for projects such as pychecker, pyreverse,
 pylint... Well, actually the development of this library is essentialy
 governed by pylint's needs.
 
-It extends class defined in the compiler.ast [1] module with some
-additional methods and attributes. Instance attributes are added by a
-builder object, which can either generate extended ast (let's call
-them astng ;) by visiting an existant ast tree or by inspecting living
-object. Methods are added by monkey patching ast classes."""
+It extends class defined in the compiler.ast [1] module (python <= 2.4) or in
+the builtin _ast module (python >= 2.5) with some additional methods and
+attributes. Instance attributes are added by a builder object, which can either
+generate extended ast (let's call them astng ;) by visiting an existant ast tree
+or by inspecting living object. Methods are added by monkey patching ast
+classes."""
 
 
-web = "http://www.logilab.org/project/name/%s" % distname
+web = "http://www.logilab.org/project/%s" % distname
 ftp = "ftp://ftp.logilab.org/pub/%s" % modname
 mailinglist = "mailto://python-projects@lists.logilab.org"
 

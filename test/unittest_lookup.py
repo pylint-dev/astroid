@@ -16,7 +16,7 @@ import sys
 from os.path import join, abspath
 from logilab.common.testlib import TestCase, unittest_main
 
-from logilab.astng import builder, nodes, scoped_nodes, \
+from logilab.astng import builder, nodes, scoped_nodes, lookup, \
      InferenceError, NotFoundError
 
 from unittest_inference import get_name_node
@@ -98,9 +98,9 @@ class A(A):
         self.assertEquals(base.name, 'YO')
         self.assertEquals(base.root().name, 'data.module')
 
+
     def test_class(self):
         klass = MODULE['YOUPI']
-        #print klass.getattr('MY_DICT')
         my_dict = klass.ilookup('MY_DICT').next()
         self.assertIsInstance(my_dict, nodes.Dict)
         none = klass.ilookup('None').next()
@@ -110,9 +110,11 @@ class A(A):
         self.assertEquals(obj.name, 'object')
         self.assertRaises(InferenceError, klass.ilookup('YOAA').next)
 
+
     def test_inner_classes(self):
         ccc = NONREGR['Ccc']
         self.assertEquals(ccc.ilookup('Ddd').next().name, 'Ddd')
+
 
     def test_loopvar_hiding(self):
         astng = builder.string_build("""
@@ -167,6 +169,26 @@ p3 = NoName()
         self.failUnless(astng['NoName'].getattr('__name__'))
         p3 = astng['p3'].infer().next()
         self.assertRaises(NotFoundError, p3.getattr, '__name__')
+
+
+    def test_function_module_special(self):
+        astng = builder.string_build('''
+def initialize(linter):
+    """initialize linter with checkers in this package """
+    package_load(linter, __path__[0])
+        ''', 'data.__init__', 'data/__init__.py')
+        path = [n for n in astng.nodes_of_class(nodes.Name) if n.name == '__path__'][0]
+        self.assertEquals(len(path.lookup('__path__')[1]), 1)
+
+
+    def test_builtin_lookup(self):
+        self.assertEquals(lookup.builtin_lookup('__dict__')[1], ())
+        intstmts = lookup.builtin_lookup('int')[1]
+        self.assertEquals(len(intstmts), 1)
+        self.assertIsInstance(intstmts[0], nodes.Class)
+        self.assertEquals(intstmts[0].name, 'int')
+        self.assertIs(intstmts[0], nodes.const_factory(1)._proxied)
+
         
     def test_nonregr_method_lookup(self):
         if sys.version_info < (2, 4):
@@ -208,7 +230,6 @@ class foo:
         ''' 
         astng = builder.string_build(data, __name__, __file__)
         member = get_name_node(astng['foo'], 'member')
-        print 'oop', member.lineno
         it = member.infer()
         obj = it.next()
         self.assertIsInstance(obj, nodes.Const)

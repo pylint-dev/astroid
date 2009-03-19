@@ -15,9 +15,9 @@ possible by providing a class responsible to get astng representation
 from various source and using a cache of built modules)
 
 :author:    Sylvain Thenault
-:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2007 Sylvain Thenault
+:copyright: 2003-2009 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 
@@ -27,13 +27,12 @@ import sys
 import os
 from os.path import dirname, basename, abspath, join, isdir, exists
 
-from logilab.common.cache import Cache
 from logilab.common.modutils import NoSourceFile, is_python_source, \
      file_from_modpath, load_module_from_name, \
      get_module_files, get_source_file
 from logilab.common.configuration import OptionsProviderMixIn
 
-from logilab.astng import ASTNGBuildingException, Instance, nodes
+from logilab.astng import ASTNGBuildingException, nodes, infutils
 
 def astng_wrapper(func, modname):
     """wrapper to give to ASTNGManager.project_from_files"""
@@ -108,10 +107,11 @@ class ASTNGManager(OptionsProviderMixIn):
                 try:
                     from logilab.astng.builder import ASTNGBuilder
                     astng = ASTNGBuilder(self).file_build(filepath, modname)
-                except SyntaxError:
+                except (SyntaxError, KeyboardInterrupt, SystemExit):
                     raise
                 except Exception, ex:
                     if __debug__:
+                        print 'error while building astng for', filepath
                         import traceback
                         traceback.print_exc()
                     msg = 'Unable to load module %s (%s)' % (modname, ex)
@@ -221,7 +221,7 @@ class ASTNGManager(OptionsProviderMixIn):
         modastng = self.astng_from_module_name(modname)
         for infered in modastng.igetattr(name, context):
             if klass is not obj and isinstance(infered, nodes.Class):
-                infered = Instance(infered)
+                infered = infutils.Instance(infered)
             yield infered
 
     def project_from_files(self, files, func_wrapper=astng_wrapper,
@@ -376,7 +376,7 @@ class Project:
     def get_module(self, name):
         return self.locals[name]
 
-    def getChildNodes(self):
+    def get_children(self):
         return self.modules
 
     def __repr__(self):

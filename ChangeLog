@@ -1,6 +1,11 @@
 Change log for the astng package
 ================================
 
+ -- 
+    * major api / tree structure changes to make it works with compiler *and* py >= 2.5 _ast module
+    * cleanups and refactoring on the way
+
+	
 2008-11-19  --  0.17.4
     * fix #6015: filter statements bug triggering W0631 false positive in pylint
 

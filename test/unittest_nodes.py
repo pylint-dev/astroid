@@ -13,18 +13,101 @@
 """tests for specific behaviour of astng nodes
 """
 
-import unittest
-
+from logilab.common import testlib
 from logilab.astng import builder, nodes, NotFoundError
+from logilab.astng.nodes_as_string import as_string
 
 from data import module as test_module
 
-abuilder = builder.ASTNGBuilder() 
+abuilder = builder.ASTNGBuilder()
+
+class _NodeTC(testlib.TestCase):
+    """test transformation of If Node"""
+    CODE = None
+    @property
+    def astng(self):
+        try:
+            return self.__class__.__dict__['CODE_ASTNG']
+        except KeyError:
+            astng = abuilder.string_build(self.CODE)
+            self.__class__.CODE_ASTNG = astng
+            return astng
+
+
+class IfNodeTC(_NodeTC):
+    """test transformation of If Node"""
+    CODE = """
+if 0:
+    print
+
+if True:
+    print
+else:
+    pass
+
+if "":
+    print
+elif []:
+    raise
+
+if 1:
+    print
+elif True:
+    print
+elif func():
+    pass
+else:
+    raise
+    """
+        
+    def test_if_elif_else_node(self):
+        """test transformation for If node"""
+        self.assertEquals(len(self.astng.body), 4)
+        for stmt in self.astng.body:
+            self.assertIsInstance( stmt, nodes.If)
+        self.failIf(self.astng.body[0].orelse) # simple If
+        self.assertIsInstance(self.astng.body[1].orelse[0], nodes.Pass) # If / else
+        self.assertIsInstance(self.astng.body[2].orelse[0], nodes.If) # If / elif
+        self.assertIsInstance(self.astng.body[3].orelse[0].orelse[0], nodes.If)
+
+    def test_block_range(self):
+        # XXX ensure expected values
+        self.assertEquals(self.astng.block_range(1), (0, 22))
+        self.assertEquals(self.astng.block_range(10), (0, 22)) # XXX (10, 22) ?
+        self.assertEquals(self.astng.body[1].block_range(5), (5, 6))
+        self.assertEquals(self.astng.body[1].block_range(6), (6, 6))
+        self.assertEquals(self.astng.body[1].orelse[0].block_range(0), (0, 8))
+        self.assertEquals(self.astng.body[1].orelse[0].block_range(7), (7, 8))
+        self.assertEquals(self.astng.body[1].orelse[0].block_range(8), (8, 8))
+
+class TryExceptNodeTC(_NodeTC):
+    CODE = """
+try:
+    print 'pouet'
+except IOError:
+    pass
+except UnicodeError:
+    print
+else:
+    print
+    """
+    def test_block_range(self):
+        # XXX ensure expected values
+        self.assertEquals(self.astng.body[0].block_range(0), (0, 8))
+        self.assertEquals(self.astng.body[0].block_range(1), (1, 8))
+        self.assertEquals(self.astng.body[0].block_range(2), (2, 2))
+        self.assertEquals(self.astng.body[0].block_range(3), (3, 8))
+        self.assertEquals(self.astng.body[0].block_range(4), (4, 4))
+        self.assertEquals(self.astng.body[0].block_range(5), (5, 5))
+        self.assertEquals(self.astng.body[0].block_range(6), (6, 6))
+        self.assertEquals(self.astng.body[0].block_range(7), (7, 7))
+        self.assertEquals(self.astng.body[0].block_range(8), (8, 8))
+        
 MODULE = abuilder.module_build(test_module)
 MODULE2 = abuilder.file_build('data/module2.py', 'data.module2')
 
 
-class ImportNodeTC(unittest.TestCase):
+class ImportNodeTC(testlib.TestCase):
     
     def test_import_self_resolve(self):
         myos = MODULE2.igetattr('myos').next()
@@ -59,19 +142,86 @@ class ImportNodeTC(unittest.TestCase):
         self.assertRaises(NotFoundError, imp_.real_name, 'data')
 
     def test_as_string(self):
+        
         ast = MODULE['modutils']
-        self.assertEquals(ast.as_string(), "from logilab.common import modutils")
+        self.assertEquals(as_string(ast), "from logilab.common import modutils")
         ast = MODULE['spawn']
-        self.assertEquals(ast.as_string(), "from logilab.common.shellutils import Execute as spawn")
+        self.assertEquals(as_string(ast), "from logilab.common.shellutils import Execute as spawn")
         ast = MODULE['os']
-        self.assertEquals(ast.as_string(), "import os.path")
+        self.assertEquals(as_string(ast), "import os.path")
+    
+    def test_module_as_string(self):
+        """just check as_string on a whole module doesn't raise an exception
+        """
+        self.assert_(as_string(MODULE))
+        self.assert_(as_string(MODULE2))
+        
 
-class CmpNodeTC(unittest.TestCase):
+class CmpNodeTC(testlib.TestCase):
     def test_as_string(self):
         ast = abuilder.string_build("a == 2")
-        self.assertEquals(ast.as_string(), "a == 2")
+        self.assertEquals(as_string(ast), "a == 2")
+
+
+class ConstNodeTC(testlib.TestCase):
+    
+    def _test(self, value):
+        node = nodes.const_factory(value)
+        self.assertIsInstance(node._proxied, nodes.Class)
+        self.assertEquals(node._proxied.name, value.__class__.__name__)
+        self.assertIs(node.value, value)
+        self.failUnless(node._proxied.parent)
+        self.assertEquals(node._proxied.root().name, value.__class__.__module__)
         
-__all__ = ('ImportNodeTC',)
+    def test_none(self):
+        self._test(None)
+        
+    def test_bool(self):
+        self._test(True)
+        
+    def test_int(self):
+        self._test(1)
+        
+    def test_float(self):
+        self._test(1.0)
+        
+    def test_complex(self):
+        self._test(1.0j)
+        
+    def test_str(self):
+        self._test('a')
+        
+    def test_unicode(self):
+        self._test(u'a')
+
+
+class ArgumentsNodeTC(testlib.TestCase):
+    def test_linenumbering(self):
+        ast = abuilder.string_build('''
+def func(a,
+    b): pass
+x = lambda x: None
+        ''')
+        self.assertEquals(ast['func'].args.fromlineno, 2)
+        self.assertEquals(ast['func'].args.tolineno, 3)
+        self.failIf(ast['func'].args.is_statement)
+        xlambda = ast['x'].infer().next()
+        self.assertEquals(xlambda.args.fromlineno, 4)
+        self.assertEquals(xlambda.args.tolineno, 4)
+        self.failIf(xlambda.args.is_statement)
+
+
+class SliceNodeTC(testlib.TestCase):
+    def test(self):
+        for code in ('a[0]', 'a[1:3]', 'a[:-1:step]', 'a[:,newaxis]',
+                     'a[newaxis,:]', 'del L[::2]', 'del A[1]', 'del Br[:]'):
+            ast = abuilder.string_build(code)
+            self.assertEquals(ast.as_string(), code)
+
+class EllipsisNodeTC(testlib.TestCase):
+    def test(self):
+        ast = abuilder.string_build('a[...]')
+        self.assertEquals(ast.as_string(), 'a[...]')
         
 if __name__ == '__main__':
-    unittest.main()
+    testlib.unittest_main()

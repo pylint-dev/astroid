@@ -12,16 +12,16 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """This module extends ast "scoped" node, i.e. which are opening a new
 local scope in the language definition : Module, Class, Function (and
-Lambda in some extends).
+Lambda to some extends).
 
 Each new methods and attributes added on each class are documented
 below.
 
 
 :author:    Sylvain Thenault
-:copyright: 2003-2007 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2007 Sylvain Thenault
+:copyright: 2003-2009 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 from __future__ import generators
@@ -32,13 +32,24 @@ import sys
 
 from logilab.common.compat import chain, set
 
-from logilab.astng.utils import extend_class
-from logilab.astng import YES, MANAGER, Instance, InferenceContext, copy_context, \
-     unpack_infer, _infer_stmts, \
-     Class, Const, Dict, Function, GenExpr, Lambda, From, \
-     Module, Name, Pass, Raise, Tuple, Yield
-from logilab.astng import NotFoundError, NoDefault, \
+from logilab.astng import MANAGER, NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
+from logilab.astng.nodes import Arguments, Class, Const, Function, GenExpr, \
+     From, Lambda, Module, Name, Pass, Raise, Tuple, List, Dict, Yield, \
+     DelAttr, DelName, const_factory as cf
+from logilab.astng.utils import extend_class
+from logilab.astng.infutils import YES, InferenceContext, Instance, copy_context, \
+     unpack_infer, _infer_stmts
+from logilab.astng.nodes_as_string import as_string
+
+
+def remove_nodes(func, cls):
+    def wrapper(*args, **kwargs):
+        nodes = [n for n in func(*args, **kwargs) if not isinstance(n, cls)]
+        if not nodes:
+            raise NotFoundError()
+        return nodes
+    return wrapper
 
 # module class dict/iterator interface ########################################
     
@@ -85,9 +96,16 @@ class LocalsDictMixIn(object):
 
         if the name is already defined, ignore it
         """
+        assert self.locals is not None, (self, id(self))
+        #assert not stmt in self.locals.get(name, ()), (self, stmt)
         self.locals.setdefault(name, []).append(stmt)
         
     __setitem__ = set_local
+
+    def _append_node(self, child):
+        """append a child, linking it in the tree"""
+        self.body.append(child)
+        child.parent = self
     
     def add_local_node(self, child_node, name=None):
         """append a child which should alter locals to the given node"""
@@ -96,10 +114,6 @@ class LocalsDictMixIn(object):
             self._append_node(child_node)
         self.set_local(name or child_node.name, child_node)
 
-    def _append_node(self, child_node):
-        """append a child, linking it in the tree"""
-        self.code.nodes.append(child_node)
-        child_node.parent = self
     
     def __getitem__(self, item):
         """method from the `dict` interface returning the first node
@@ -122,19 +136,6 @@ class LocalsDictMixIn(object):
         locally defined names
         """
         return self.locals.keys()
-##         associated to nodes which are instance of `Function` or
-##         `Class`
-##         """
-##         # FIXME: sort keys according to line number ?
-##         try:
-##             return self.__keys
-##         except AttributeError:
-##             keys = [member.name for member in self.locals.values()
-##                     if (isinstance(member, Function)
-##                         or isinstance(member, Class))
-##                         and member.parent.frame() is self]
-##             self.__keys = tuple(keys)
-##             return keys
 
     def values(self):
         """method from the `dict` interface returning a tuple containing
@@ -161,32 +162,25 @@ extend_class(Module, LocalsDictMixIn)
 extend_class(Class, LocalsDictMixIn)
 extend_class(Function, LocalsDictMixIn)
 extend_class(Lambda, LocalsDictMixIn)
-# GenExpr has it's own locals but isn't a frame
+# GenExpr has its own locals but isn't a frame
 extend_class(GenExpr, LocalsDictMixIn)
 def frame(self):
     return self.parent.frame()
 GenExpr.frame = frame
 
+def std_special_attributes(self, name, add_locals=True):
+    if add_locals:
+        locals = self.locals
+    else:
+        locals = {}
+    if name == '__name__':
+        return [cf(self.name)] + locals.get(name, [])
+    if name == '__doc__':
+        return [cf(self.doc)] + locals.get(name, [])
+    if name == '__dict__':
+        return [Dict()] + locals.get(name, [])
+    raise NotFoundError(name)
 
-class GetattrMixIn(object):
-    def getattr(self, name, context=None):
-        try:
-            return self.locals[name]
-        except KeyError:
-            raise NotFoundError(name)
-        
-    def igetattr(self, name, context=None):
-        """infered getattr"""
-        # set lookup name since this is necessary to infer on import nodes for
-        # instance
-        context = copy_context(context)
-        context.lookupname = name
-        try:
-            return _infer_stmts(self.getattr(name, context), context, frame=self)
-        except NotFoundError:
-            raise InferenceError(name)
-extend_class(Module, GetattrMixIn)
-extend_class(Class, GetattrMixIn)
 
 # Module  #####################################################################
 
@@ -196,7 +190,9 @@ class ModuleNG(object):
     original class from the compiler.ast module using its dictionnary
     (see below the class definition)
     """
-        
+    fromlineno = 0
+    lineno = 0
+
     # attributes below are set by the builder module or by raw factories
 
     # the file from which as been extracted the astng representation. It may
@@ -212,30 +208,48 @@ class ModuleNG(object):
     # as value
     globals = None
 
+    # names of python special attributes (handled by getattr impl.)
+    special_attributes = set(('__name__', '__doc__', '__file__', '__path__',
+                              '__dict__'))
+    # names of module attributes available through the global scope
+    scope_attrs = set(('__name__', '__doc__', '__file__', '__path__'))
+    
     def pytype(self):
         return '__builtin__.module'
     
     def getattr(self, name, context=None):
+        if not name in self.special_attributes:
+            try:
+                return self.locals[name]
+            except KeyError:
+                pass
+        else:
+            if name == '__file__':
+                return [cf(self.file)] + self.locals.get(name, [])
+            if name == '__path__':
+                if self.package:
+                    return [List()] + self.locals.get(name, [])
+            return std_special_attributes(self, name)
+        if self.package:
+            try:
+                return [self.import_module(name, relative_only=True)]
+            except (KeyboardInterrupt, SystemExit):
+                raise
+            except:
+                pass
+        raise NotFoundError(name)        
+    getattr = remove_nodes(getattr, DelName)
+    
+    def igetattr(self, name, context=None):
+        """infered getattr"""
+        # set lookup name since this is necessary to infer on import nodes for
+        # instance
+        context = copy_context(context)
+        context.lookupname = name
         try:
-            return self.locals[name]
-        except KeyError:
-            if self.package:
-                try:
-                    return [self.import_module(name, relative_only=True)]
-                except KeyboardInterrupt:
-                    raise
-                except:
-                    pass
-            raise NotFoundError(name)
-        
-    def _append_node(self, child_node):
-        """append a child version specific to Module node"""
-        self.node.nodes.append(child_node)
-        child_node.parent = self
-        
-    def source_line(self):
-        """return the source line number, 0 on a module"""
-        return 0
+            return _infer_stmts(self.getattr(name, context), context, frame=self)
+        except NotFoundError:
+            raise InferenceError(name)
 
     def fully_defined(self):
         """return True if this module has been built from a .py file
@@ -300,16 +314,23 @@ class ModuleNG(object):
                 return [name for name in living.__dict__.keys()
                         if not name.startswith('_')]
         # else lookup the astng
+        #
+        # We separate the different steps of lookup in try/excepts
+        # to avoid catching too many Exceptions
+        # However, we can not analyse dynamically constructed __all__
         try:
-            explicit = self['__all__'].assigned_stmts().next()
-            # should be a tuple of constant string
-            return [const.value for const in explicit.nodes]
-        except (KeyError, AttributeError, InferenceError):
-            # XXX should admit we have lost if there is something like
-            # __all__ that we've not been able to analyse (such as
-            # dynamically constructed __all__)
-            return [name for name in self.keys()
-                    if not name.startswith('_')]
+            all = self['__all__']
+        except KeyError:
+            return [name for name in self.keys() if not name.startswith('_')]
+        try:
+            explicit = all.assigned_stmts().next()
+        except InferenceError:
+            return [name for name in self.keys() if not name.startswith('_')]
+        try:
+            # should be a Tuple/List of constant string / 1 string not allowed
+            return [const.value for const in explicit.elts]
+        except AttributeError:
+            return [name for name in self.keys() if not name.startswith('_')]
 
 extend_class(Module, ModuleNG)
 
@@ -322,25 +343,53 @@ class FunctionNG(object):
     (see below the class definition)
     """
 
+    special_attributes = set(('__name__', '__doc__', '__dict__'))
     # attributes below are set by the builder module or by raw factories
-
+    
+    blockstart_tolineno = None
+    
     # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
     type = 'function'
-    # list of argument names. MAY BE NONE on some builtin functions where
-    # arguments are unknown
-    argnames = None
+    
+    def set_line_info(self, lastchild):
+        self.fromlineno = self.lineno
+        # lineno is the line number of the first decorator, we want the def statement lineno
+        if self.decorators is not None:
+            self.fromlineno += len(self.decorators.nodes)
+        self.tolineno = lastchild.tolineno
+        self.blockstart_tolineno = self.args.tolineno
 
     def pytype(self):
         if 'method' in self.type:
             return '__builtin__.instancemethod'
         return '__builtin__.function'
 
+    def getattr(self, name, context=None):
+        """this method doesn't look in the instance_attrs dictionary since it's
+        done by an Instance proxy at inference time.
+        """
+        if name == '__module__':
+            return [cf(self.root().qname())]
+        return std_special_attributes(self, name, False)
+    
     def is_method(self):
         """return true if the function node should be considered as a method"""
-        # isinstance to avoid returning True on functions decorated by
-        # [static|class]method at the module level
+        # check we are defined in a Class, because this is usually expected
+        # (eg pylint...) when is_method() return True
         return self.type != 'function' and isinstance(self.parent.frame(), Class)
-    
+
+    def argnames(self):
+        """return argument names if there are any arguments"""
+        if self.args.args: # maybe None with builtin functions
+            names = _rec_get_names(self.args.args)
+        else:
+            names = []
+        if self.args.vararg:
+            names.append(self.args.vararg)
+        if self.args.kwarg:
+            names.append(self.args.kwarg)        
+        return names
+
     def is_bound(self):
         """return true if the function is bound to an Instance or a class"""
         return self.type == 'classmethod'
@@ -350,10 +399,10 @@ class FunctionNG(object):
         It's considered as abstract if the only statement is a raise of
         NotImplementError, or, if pass_is_abstract, a pass statement
         """
-        for child_node in self.code.getChildNodes():
-            if isinstance(child_node, Raise) and child_node.expr1:
+        for child_node in self.body:
+            if isinstance(child_node, Raise) and child_node.type:
                 try:
-                    name = child_node.expr1.nodes_of_class(Name).next()
+                    name = child_node.type.nodes_of_class(Name).next()
                     if name.name == 'NotImplementedError':
                         return True
                 except StopIteration:
@@ -367,90 +416,97 @@ class FunctionNG(object):
 
     def is_generator(self):
         """return true if this is a generator function"""
+        # XXX should be flagged, not computed
         try:
             return self.nodes_of_class(Yield, skip_klass=Function).next()
         except StopIteration:
             return False
-        
-    def format_args(self):
-        """return arguments formatted as string"""
-        if self.argnames is None: # information is missing
-            return ''
-        result = []
-        args, kwargs, last, default_idx = self._pos_information()
-        for i in range(len(self.argnames)):
-            name = self.argnames[i]
-            if type(name) is type(()):
-                name = '(%s)' % ','.join(name)
-            if i == last and kwargs:
-                name = '**%s' % name
-            elif args and i == last or (kwargs and i == last - 1):
-                name = '*%s' % name
-            elif i >= default_idx:
-                default_str = self.defaults[i - default_idx].as_string()
-                name = '%s=%s' % (name, default_str)
-            result.append(name)
-        return ', '.join(result)
-
-    def default_value(self, argname):
-        """return the default value for an argument
-
-        :raise `NoDefault`: if there is no default value defined
-        """
-        if self.argnames is None: # information is missing
-            raise NoDefault()
-        args, kwargs, last, defaultidx = self._pos_information()
-        try:
-            i = self.argnames.index(argname)
-        except ValueError:
-            raise NoDefault() # XXX
-        if i >= defaultidx and (i - defaultidx) < len(self.defaults):
-            return self.defaults[i - defaultidx]
-        raise NoDefault()
-
-    def mularg_class(self, argname):
-        """if the given argument is a * or ** argument, return respectivly
-        a Tuple or Dict instance, else return None
-        """
-        args, kwargs, last, defaultidx = self._pos_information()
-        try:
-            i = self.argnames.index(argname)
-        except ValueError:
-            return None # XXX
-        if i == last and kwargs:
-            valnode = Dict([])
-            valnode.parent = self
-            return valnode
-        if args and (i == last or (kwargs and i == last - 1)):
-            valnode = Tuple([])
-            valnode.parent = self
-            return valnode
-        return None
-
-    def _pos_information(self):
-        """return a 4-uple with positional information about arguments:
-        (true if * is used,
-         true if ** is used,
-         index of the last argument,
-         index of the first argument having a default value)
-        """
-        args = self.flags & 4
-        kwargs = self.flags & 8
-        last = len(self.argnames) - 1
-        defaultidx = len(self.argnames) - (len(self.defaults) +
-                                           (args and 1 or 0) +
-                                           (kwargs and 1 or 0))
-        return args, kwargs, last, defaultidx
 
 extend_class(Function, FunctionNG)
 
+
 # lambda nodes may also need some of the function members
-Lambda._pos_information = FunctionNG._pos_information.im_func
-Lambda.format_args = FunctionNG.format_args.im_func
-Lambda.default_value = FunctionNG.default_value.im_func
-Lambda.mularg_class = FunctionNG.mularg_class.im_func
 Lambda.type = 'function'
 Lambda.pytype = FunctionNG.pytype.im_func
+Lambda.argnames = FunctionNG.argnames.im_func
+
+
+def _rec_get_names(args, names=None):
+    """return a list of all argument names"""
+    if names is None:
+        names = []
+    for arg in args:
+        if isinstance(arg, Tuple):
+            _rec_get_names(arg.elts, names)
+        else:
+            names.append(arg.name)
+    return names
+
+def format_args(self):
+    """return arguments formatted as string"""
+    result = [_format_args(self.args, self.defaults)]
+    if self.vararg:
+        result.append('*%s' % self.vararg)
+    if self.kwarg:
+        result.append('**%s' % self.kwarg)
+    return ', '.join(result)
+Arguments.format_args = format_args
+
+def default_value(self, argname):
+    """return the default value for an argument
+
+    :raise `NoDefault`: if there is no default value defined
+    """
+    i = _find_arg(argname, self.args)[0]
+    if i is not None:
+        idx = i - (len(self.args) - len(self.defaults))
+        if idx >= 0:
+            return self.defaults[idx]
+    raise NoDefault()
+Arguments.default_value = default_value
+
+def is_argument(self, name):
+    """return True if the name is defined in arguments"""
+    if name == self.vararg:
+        return True
+    if name == self.kwarg:
+        return True
+    return self.find_argname(name, True)[1] is not None
+Arguments.is_argument = is_argument
+
+def find_argname(self, argname, rec=False):
+    """return index and Name node with given name"""
+    if self.args: # self.args may be None in some cases (builtin function)
+        return _find_arg(argname, self.args, rec)
+    return None, None
+Arguments.find_argname = find_argname
+
+def _find_arg(argname, args, rec=False):
+    for i, arg in enumerate(args):
+        if isinstance(arg, Tuple):
+            if rec:
+                found = _find_arg(argname, arg.elts)
+                if found[0] is not None:
+                    return found
+        elif arg.name == argname:
+            return i, arg
+    return None, None
+
+
+def _format_args(args, defaults=None):
+    values = []
+    if defaults is not None:
+        default_offset = len(args) - len(defaults)
+    if args is None:
+        return ''
+    for i, arg in enumerate(args):
+        if isinstance(arg, Tuple):
+            values.append('(%s)' % _format_args(arg.elts))
+        else:
+            values.append(arg.name)
+            if defaults is not None and i >= default_offset:
+                values[-1] += '=' + defaults[i-default_offset].as_string()
+    return ', '.join(values)
 
 # Class ######################################################################
 
@@ -481,12 +537,17 @@ def _iface_hdlr(iface_node):
     """
     return True
 
+
 class ClassNG(object):
     """/!\ this class should not be used directly /!\ it's
     only used as a methods and attribute container, and update the
     original class from the compiler.ast module using its dictionnary
     (see below the class definition)
     """
+    special_attributes = set(('__name__', '__doc__', '__dict__', '__module__',
+                              '__bases__', '__mro__'))
+
+    blockstart_tolineno = None
     
     _type = None
     type = property(_class_type,
@@ -494,7 +555,8 @@ class ClassNG(object):
                     "'metaclass' | 'interface' | 'exception'")
     
     def _newstyle_impl(self, context=None):
-        context = context or InferenceContext()
+        if context is None:
+            context = InferenceContext()
         if self._newstyle is not None:
             return self._newstyle
         for base in self.ancestors(recurs=False, context=context):
@@ -509,7 +571,14 @@ class ClassNG(object):
     newstyle = property(_newstyle_impl,
                         doc="boolean indicating if it's a new style class"
                         "or not")
-
+    
+    def set_line_info(self, lastchild):
+        self.fromlineno = self.lineno
+        self.blockstart_tolineno = self.bases and self.bases[-1].tolineno or self.fromlineno
+        if lastchild is not None:
+            self.tolineno = lastchild.tolineno
+        # else this is a class with only a docstring, then tolineno is (should be) already ok
+        
     def pytype(self):
         if self.newstyle:
             return '__builtin__.type'
@@ -519,10 +588,13 @@ class ClassNG(object):
     
     # a dictionary of class instances attributes
     instance_attrs = None
+    
     # list of parent class as a list of string (ie names as they appears
-    # in the class definition)
-    basenames = None
-
+    # in the class definition) XXX bw compat
+    def basenames(self):
+        return [as_string(bnode) for bnode in self.bases]
+    basenames = property(basenames)
+    
     def ancestors(self, recurs=True, context=None):
         """return an iterator on the node base classes in a prefixed
         depth first order
@@ -534,7 +606,8 @@ class ClassNG(object):
         # FIXME: should be possible to choose the resolution order
         # XXX inference make infinite loops possible here (see BaseTransformer
         # manipulation in the builder module for instance !)
-        context = context or InferenceContext()
+        if context is None:
+            context = InferenceContext()
         for stmt in self.bases:
             try:
                 for baseobj in stmt.infer(context):
@@ -550,8 +623,6 @@ class ClassNG(object):
                                 continue # cf xxx above
                             yield grandpa
             except InferenceError:
-                #import traceback
-                #traceback.print_exc()
                 # XXX log error ?
                 continue
             
@@ -572,21 +643,22 @@ class ClassNG(object):
                 yield astng
 
     def local_attr(self, name, context=None):
-        """return the astng associated to name in this class locals or
-        in its parents
+        """return the list of assign node associated to name in this class
+        locals or in its parents
 
         :raises `NotFoundError`:
           if no attribute with this name has been find in this class or
           its parent classes
         """
         try:
-            return self[name]
+            return self.locals[name]
         except KeyError:
             # get if from the first parent implementing it if any
             for class_node in self.local_attr_ancestors(name, context):
-                return class_node[name]
+                return class_node.locals[name]
         raise NotFoundError(name)
-        
+    local_attr = remove_nodes(local_attr, DelAttr)
+    
     def instance_attr(self, name, context=None):
         """return the astng nodes associated to name in this class instance
         attributes dictionary or in its parents
@@ -602,7 +674,8 @@ class ClassNG(object):
             for class_node in self.instance_attr_ancestors(name, context):
                 return class_node.instance_attrs[name]
         raise NotFoundError(name)
-
+    instance_attr = remove_nodes(instance_attr, DelAttr)
+    
     def getattr(self, name, context=None):
         """this method doesn't look in the instance_attrs dictionary since it's
         done by an Instance proxy at inference time.
@@ -610,20 +683,29 @@ class ClassNG(object):
         It may return a YES object if the attribute has not been actually
         found but a __getattr__ or __getattribute__ method is defined
         """
-        if name in self.locals:
-            return self.locals[name]
-        if name == '__bases__':
-            return tuple(self.ancestors(recurs=False))
-        # XXX need proper meta class handling + MRO implementation
-        if name == '__mro__':
-            return tuple(self.ancestors(recurs=True))
+        if not name in self.special_attributes:
+            try:
+                return self.locals[name]
+            except KeyError:
+                pass
+        else:
+            if name == '__module__':
+                return [cf(self.root().qname())] + self.locals.get(name, [])
+            if name == '__bases__':
+                return [cf(tuple(self.ancestors(recurs=False, context=context)))] + self.locals.get(name, [])
+            # XXX need proper meta class handling + MRO implementation
+            if name == '__mro__' and self.newstyle:
+                # XXX mro is read-only but that's not our job to detect that
+                return [cf(tuple(self.ancestors(recurs=True, context=context)))] + self.locals.get(name, [])
+            return std_special_attributes(self, name)
         for classnode in self.ancestors(recurs=False, context=context):
             try:
                 return classnode.getattr(name, context)
             except NotFoundError:
                 continue
         raise NotFoundError(name)
-
+    getattr = remove_nodes(getattr, DelAttr)
+    
     def igetattr(self, name, context=None):
         """infered getattr, need special treatment in class to handle
         descriptors
@@ -702,22 +784,14 @@ class ClassNG(object):
             return
         if not herited and not implements.frame() is self:
             return
-        oneinf = False
+        found = set()
         for iface in unpack_infer(implements):
             if iface is YES:
                 continue
-            if handler_func(iface):
-                oneinf = True
+            if not iface in found and handler_func(iface):
+                found.add(iface)
                 yield iface
-        if not oneinf:
+        if not found:
             raise InferenceError()
-##         if hasattr(implements, 'nodes'):
-##             implements = implements.nodes
-##         else:
-##             implements = (implements,)
-##         for iface in implements:
-##             # let the handler function take care of this....
-##             for iface in handler_func(iface):
-##                 yield iface
-
+    
 extend_class(Class, ClassNG)

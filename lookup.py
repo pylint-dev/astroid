@@ -10,36 +10,40 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-"""name lookup methods, available on Name ans scoped (Module, Class,
-Function...) nodes:
+"""name lookup methods, available on Name and scoped nodes (Module, Class,
+Function, Lambda, GenExpr...):
 
 * .lookup(name)
 * .ilookup(name)
 
-Be careful, lookup is kinda internal and return a tuple (scope, [stmts]), while
-ilookup return an iterator on infered values
+Be careful, lookup is nternal and returns a tuple (scope, [stmts]), while
+ilookup returns an iterator on infered values.
 
 :author:    Sylvain Thenault
-:copyright: 2003-2008 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2008 Sylvain Thenault
+:copyright: 2003-2009 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
-
-from __future__ import generators
 
 __docformat__ = "restructuredtext en"
 
 import __builtin__
 
-from logilab.astng.utils import are_exclusive
-from logilab.astng import nodes, MANAGER, _infer_stmts, copy_context
+from logilab.astng import MANAGER, NotFoundError, nodes
+from logilab.astng.infutils import are_exclusive, copy_context, _infer_stmts
+
+
+def decorators_scope(self):
+    # skip the function node to go directly to the upper level scope
+    return self.parent.parent.scope()
+nodes.Decorators.scope = decorators_scope
 
 
 def lookup(self, name):
     """lookup a variable name
 
-    return the scoope node and the list of assignments associated to the given
+    return the scope node and the list of assignments associated to the given
     name according to the scope where it has been found (locals, globals or
     builtin)
 
@@ -47,7 +51,6 @@ def lookup(self, name):
     the name is found in the inner frame locals, statements will be filtered
     to remove ignorable statements according to self's location
     """
-    #assert ID_RGX.match(name), '%r is not a valid identifier' % name
     return self.scope().scope_lookup(self, name)
 
 def scope_lookup(self, node, name, offset=0):
@@ -66,9 +69,17 @@ def scope_lookup(self, node, name, offset=0):
         return pscope.scope_lookup(node, name)
     return builtin_lookup(name)
 
+def module_scope_lookup(self, node, name, offset=0):
+    # module's __dict__ not accessible through name lookup
+    if name in nodes.Module.scope_attrs and not name in self.locals:
+        try:
+            return self, self.getattr(name)
+        except NotFoundError:
+            return self, ()
+    return scope_lookup(self, node, name, offset)
+
 def class_scope_lookup(self, node, name, offset=0):
     if node in self.bases:
-        #print 'frame swaping'
         frame = self.parent.frame()
         # line offset to avoid that class A(A) resolve the ancestor to
         # the defined class
@@ -78,7 +89,7 @@ def class_scope_lookup(self, node, name, offset=0):
     return scope_lookup(frame, node, name, offset)
 
 def function_scope_lookup(self, node, name, offset=0):
-    if node in self.defaults:
+    if node in self.args.defaults:
         frame = self.parent.frame()
         # line offset to avoid that def func(f=func) resolve the default
         # value to the defined function
@@ -94,7 +105,11 @@ def builtin_lookup(name):
     module
     """
     builtinastng = MANAGER.astng_from_module(__builtin__)
-    if name == '__dict__': # XXX __doc__, __name__, etc added by astng
+    if name == '__dict__':
+        return builtinastng, ()
+    try:
+        stmts = builtinastng.locals[name]
+    except KeyError:
         stmts = ()
     else:
         try:
@@ -133,96 +148,107 @@ def _filter_stmts(self, stmts, frame, offset):
         myframe = self.frame()
     if not myframe is frame or self is frame:
         return stmts
-    #print self.name, frame.name
     mystmt = self.statement()
     # line filtering if we are in the same frame
-    if myframe is frame:
-        mylineno = mystmt.source_line() + offset
+    #
+    # take care node may be missing lineno information (this is the case for
+    # nodes inserted for living objects)
+    if myframe is frame and mystmt.fromlineno is not None:
+        assert mystmt.fromlineno is not None, mystmt
+        mylineno = mystmt.fromlineno + offset
     else:
         # disabling lineno filtering
-        #print 'disabling lineno filtering'
         mylineno = 0
     _stmts = []
     _stmt_parents = []
     for node in stmts:
         stmt = node.statement()
         # line filtering is on and we have reached our location, break
-        if mylineno > 0 and stmt.source_line() > mylineno:
+        if mylineno > 0 and stmt.fromlineno > mylineno:
             break
-        if isinstance(node, Class) and self in node.bases:
+        if isinstance(node, nodes.Class) and self in node.bases:
             break
-        try:
-            ass_type = node.ass_type()
-            if ass_type is mystmt:
-                if not isinstance(ass_type, (ListCompFor,  GenExprFor)):
-                    break
-                if isinstance(self, (Const, Name)):
-                    _stmts = [self]
-                    break
-            elif ass_type.statement() is mystmt:
-                # original node's statement is the assignment, only keeps current node
-                _stmts = [node]
+        assert hasattr(node, 'ass_type'), (node, node.scope(), node.scope().locals)
+        ass_type = node.ass_type()
+        if ass_type is mystmt and not isinstance(ass_type, (nodes.Class,
+                 nodes.Function, nodes.Import, nodes.From, nodes.Lambda)):
+            if not isinstance(ass_type, nodes.Comprehension):
                 break
-        except AttributeError:
-            ass_type = None
-        # on loop assignment types, assignment won't necessarily be done
-        # if the loop has no iteration, so we don't want to clear previous
-        # assigments if any
-        optional_assign = isinstance(ass_type, (For, ListCompFor,  GenExprFor))
+            if isinstance(self, (nodes.Const, nodes.Name)):
+                _stmts = [self]
+                break
+        elif ass_type.statement() is mystmt:
+            # original node's statement is the assignment, only keeps current
+            # node (gen exp, list comp)
+            _stmts = [node]
+            break        
+        optional_assign = isinstance(ass_type, nodes.LOOP_SCOPES)
         if optional_assign and ass_type.parent_of(self):
             # we are inside a loop, loop var assigment is hidding previous
             # assigment
             _stmts = [node]
             _stmt_parents = [stmt.parent]
             continue
+        # XXX comment various branches below!!!
         try:
             pindex = _stmt_parents.index(stmt.parent)
         except ValueError:
             pass
         else:
-            try:
-                if ass_type and _stmts[pindex].ass_type().parent_of(ass_type):
-                    #print 'skipping', node, node.source_line()
-                    continue
-            except AttributeError:
-                pass # name from Import, Function, Class...
-            if not (optional_assign or are_exclusive(self, node)):
-                ###print 'PARENT', stmt.parent
-                #print 'removing', _stmts[pindex]
+            # we got a parent index, this means the currently visited node
+            # is at the same block level as a previously visited node
+            if _stmts[pindex].ass_type().parent_of(ass_type):
+                # both statements are not at the same block level
+                continue
+            # if currently visited node is following previously considered 
+            # assignement and both are not exclusive, we can drop the previous
+            # one. For instance in the following code ::
+            # 
+            #   if a:
+            #     x = 1
+            #   else:
+            #     x = 2
+            #   print x
+            #
+            # we can't remove neither x = 1 nor x = 2 when looking for 'x' of 
+            # 'print x'; while in the following ::
+            #
+            #   x = 1
+            #   x = 2
+            #   print x
+            #
+            # we can remove x = 1 when we see x = 2
+            #
+            # moreover, on loop assignment types, assignment won't necessarily
+            # be done if the loop has no iteration, so we don't want to clear
+            # previous assigments if any (hence the test on optional_assign)
+
+            if not (optional_assign or are_exclusive(_stmts[pindex], node)):
                 del _stmt_parents[pindex]
                 del _stmts[pindex]
-        if isinstance(node, AssName):
+        if isinstance(node, nodes.AssName):
             if not optional_assign and stmt.parent is mystmt.parent:
-                #print 'assign clear'
                 _stmts = []
                 _stmt_parents = []
-            if node.flags == 'OP_DELETE':
-                #print 'delete clear'
-                _stmts = []
-                _stmt_parents = []
-                continue
+        elif isinstance(node, nodes.DelName):
+            _stmts = []
+            _stmt_parents = []
+            continue
         if not are_exclusive(self, node):
-            #print 'append', node, node.source_line()
             _stmts.append(node)
             _stmt_parents.append(stmt.parent)
-    #print '->', _stmts
-    stmts = _stmts
-    return stmts
+    return _stmts
 
 
-def _decorate(astmodule):
-    """add this module functionalities to necessary nodes"""
-    for klass in (astmodule.Name, astmodule.Module, astmodule.Class,
-                  astmodule.Function, astmodule.Lambda):
-        klass.ilookup = ilookup
-        klass.lookup = lookup
-        klass._filter_stmts = _filter_stmts
-    astmodule.Class.scope_lookup = class_scope_lookup
-    astmodule.Function.scope_lookup = function_scope_lookup
-    astmodule.Lambda.scope_lookup = function_scope_lookup
-    astmodule.Module.scope_lookup = scope_lookup
-    astmodule.GenExpr.scope_lookup = scope_lookup
-    for name in ('Class', 'Function', 'Lambda',
-                 'For', 'ListCompFor', 'GenExprFor',
-                 'AssName', 'Name', 'Const'):
-        globals()[name] = getattr(astmodule, name)
+for klass in (nodes.Name, nodes.AssName, nodes.DelName,
+              nodes.Module, nodes.Class,
+              nodes.Function, nodes.Lambda):
+    klass.ilookup = ilookup
+    klass.lookup = lookup
+    klass._filter_stmts = _filter_stmts
+nodes.Class.scope_lookup = class_scope_lookup
+nodes.Function.scope_lookup = function_scope_lookup
+nodes.Lambda.scope_lookup = function_scope_lookup
+nodes.Module.scope_lookup = module_scope_lookup
+nodes.GenExpr.scope_lookup = scope_lookup
+        

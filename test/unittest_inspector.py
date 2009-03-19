@@ -20,8 +20,8 @@ unittest for the visitors.diadefs module
 import unittest
 import sys
 
-from logilab import astng
-from logilab.astng import ASTNGManager, nodes, inspector
+from logilab.astng import MANAGER, nodes, inspector
+from logilab.astng.infutils import Instance, YES
 
 def astng_wrapper(func, modname):
     return func(modname)
@@ -30,7 +30,7 @@ def astng_wrapper(func, modname):
 class LinkerTC(unittest.TestCase):
     
     def setUp(self):
-        self.project = ASTNGManager().project_from_files(['data2'], astng_wrapper) 
+        self.project = MANAGER.project_from_files(['data2'], astng_wrapper) 
         self.linker = inspector.Linker(self.project)
         self.linker.visit(self.project)
 
@@ -65,17 +65,17 @@ class LinkerTC(unittest.TestCase):
         keys = type_dict.keys()
         keys.sort()
         self.assertEqual(keys, ['_id', 'relation', 'toto'])
-        self.assert_(isinstance(type_dict['relation'][0], astng.Instance), type_dict['relation'])
+        self.assert_(isinstance(type_dict['relation'][0], Instance), type_dict['relation'])
         self.assertEqual(type_dict['relation'][0].name, 'DoNothing')
-        self.assert_(isinstance(type_dict['toto'][0], astng.Instance), type_dict['toto'])
+        self.assert_(isinstance(type_dict['toto'][0], Instance), type_dict['toto'])
         self.assertEqual(type_dict['toto'][0].name, 'Toto')
-        self.assert_(type_dict['_id'][0] is astng.YES, type_dict['_id'])
+        self.assert_(type_dict['_id'][0] is YES, type_dict['_id'])
 
 
 class LinkerTC2(LinkerTC):
     
     def setUp(self):
-        self.project = ASTNGManager().from_directory('data2') 
+        self.project = MANAGER.from_directory('data2') 
         self.linker = inspector.Linker(self.project)
         self.linker.visit(self.project)
         

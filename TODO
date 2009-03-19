@@ -1,0 +1,17 @@
+
+TODO list
+
+ASTNG Motor
+===========
+
+Representation
+--------------
+* ensure compatible representation for _nodes_ast function_factory
+
+* step forward to have more _ast like representation
+
+Refactoring
+===========
+* InferenceVisitor
+* func / arguments : cleanup methods
+

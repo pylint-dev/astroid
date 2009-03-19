@@ -1,30 +1,22 @@
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the GNU General Public License as published by the Free Software
-# Foundation; either version 2 of the License, or (at your option) any later
-# version.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License along with
-# this program; if not, write to the Free Software Foundation, Inc.,
-# 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """tests for specific behaviour of astng scoped nodes (ie module, class and
 function)
 """
 
 import sys
+from os.path import join, abspath
 
 from logilab.common.testlib import TestCase, unittest_main
 from logilab.common.compat import sorted
+
 from logilab.astng import builder, nodes, scoped_nodes, \
      InferenceError, NotFoundError
+from logilab.astng.infutils import Instance
 
 abuilder = builder.ASTNGBuilder() 
 MODULE = abuilder.file_build('data/module.py', 'data.module')
 MODULE2 = abuilder.file_build('data/module2.py', 'data.module2')
 NONREGR = abuilder.file_build('data/nonregr.py', 'data.nonregr')
+PACK = abuilder.file_build('data/__init__.py', 'data')
 
 def _test_dict_interface(self, node, test_attr):
     self.assert_(node[test_attr] is node[test_attr])
@@ -36,6 +28,22 @@ def _test_dict_interface(self, node, test_attr):
 
 
 class ModuleNodeTC(TestCase):
+    
+    def test_special_attributes(self):
+        self.assertEquals(len(MODULE.getattr('__name__')), 1)
+        self.assertIsInstance(MODULE.getattr('__name__')[0], nodes.Const)
+        self.assertEquals(MODULE.getattr('__name__')[0].value, 'data.module')
+        self.assertEquals(len(MODULE.getattr('__doc__')), 1)
+        self.assertIsInstance(MODULE.getattr('__doc__')[0], nodes.Const)
+        self.assertEquals(MODULE.getattr('__doc__')[0].value, 'test module for astng\n')
+        self.assertEquals(len(MODULE.getattr('__file__')), 1)
+        self.assertIsInstance(MODULE.getattr('__file__')[0], nodes.Const)
+        self.assertEquals(MODULE.getattr('__file__')[0].value, abspath(join('data', 'module.py')))
+        self.assertEquals(len(MODULE.getattr('__dict__')), 1)
+        self.assertIsInstance(MODULE.getattr('__dict__')[0], nodes.Dict)
+        self.assertRaises(NotFoundError, MODULE.getattr, '__path__')
+        self.assertEquals(len(PACK.getattr('__path__')), 1)
+        self.assertIsInstance(PACK.getattr('__path__')[0], nodes.List)
 
     def test_dict_interface(self):
         _test_dict_interface(self, MODULE, 'YO')
@@ -71,39 +79,57 @@ class ModuleNodeTC(TestCase):
         res = m.wildcard_import_names()
         res.sort()
         self.assertEquals(res, ['Aaa', 'func', 'name', 'other'])
-        
-    def test_as_string(self):
-        """just check as_string on a whole module doesn't raise an exception
-        """
-        self.assert_(MODULE.as_string())
-        self.assert_(MODULE2.as_string())
-        
-        
+                
+    def test_module_getattr(self):
+        data = '''
+appli = application
+appli += 2
+del appli
+        '''
+        astng = abuilder.string_build(data, __name__, __file__)
+        # test del statement not returned by getattr
+        self.assertEquals(len(astng.getattr('appli')), 2,
+                          astng.getattr('appli'))
+
+
 class FunctionNodeTC(TestCase):
+    
+    def test_special_attributes(self):
+        func = MODULE2['make_class']
+        self.assertEquals(len(func.getattr('__name__')), 1)
+        self.assertIsInstance(func.getattr('__name__')[0], nodes.Const)
+        self.assertEquals(func.getattr('__name__')[0].value, 'make_class')
+        self.assertEquals(len(func.getattr('__doc__')), 1)
+        self.assertIsInstance(func.getattr('__doc__')[0], nodes.Const)
+        self.assertEquals(func.getattr('__doc__')[0].value, 'check base is correctly resolved to Concrete0')
+        self.assertEquals(len(MODULE.getattr('__dict__')), 1)
+        self.assertIsInstance(MODULE.getattr('__dict__')[0], nodes.Dict)
 
     def test_dict_interface(self):
         _test_dict_interface(self, MODULE['global_access'], 'local')
         
     def test_default_value(self):
         func = MODULE2['make_class']
-        self.assertIsInstance(func.default_value('base'), nodes.Getattr)
-        self.assertRaises(scoped_nodes.NoDefault, func.default_value, 'args')
-        self.assertRaises(scoped_nodes.NoDefault, func.default_value, 'kwargs')
-        self.assertRaises(scoped_nodes.NoDefault, func.default_value, 'any')
-        self.assertIsInstance(func.mularg_class('args'), nodes.Tuple)
-        self.assertIsInstance(func.mularg_class('kwargs'), nodes.Dict)
-        self.assertEquals(func.mularg_class('base'), None)
+        self.assertIsInstance(func.args.default_value('base'), nodes.Getattr)
+        self.assertRaises(scoped_nodes.NoDefault, func.args.default_value, 'args')
+        self.assertRaises(scoped_nodes.NoDefault, func.args.default_value, 'kwargs')
+        self.assertRaises(scoped_nodes.NoDefault, func.args.default_value, 'any')
+        #self.assertIsInstance(func.mularg_class('args'), nodes.Tuple)
+        #self.assertIsInstance(func.mularg_class('kwargs'), nodes.Dict)
+        #self.assertEquals(func.mularg_class('base'), None)
 
     def test_navigation(self):
         function = MODULE['global_access']
         self.assertEquals(function.statement(), function)
         l_sibling = function.previous_sibling()
+        # check taking parent if child is not a stmt
         self.assertIsInstance(l_sibling, nodes.Assign)
-        self.assert_(l_sibling is function.getChildNodes()[0].previous_sibling())
+        child = function.args.args[0]
+        self.assert_(l_sibling is child.previous_sibling())
         r_sibling = function.next_sibling()
         self.assertIsInstance(r_sibling, nodes.Class)
         self.assertEquals(r_sibling.name, 'YO')
-        self.assert_(r_sibling is function.getChildNodes()[0].next_sibling())
+        self.assert_(r_sibling is child.next_sibling())
         last = r_sibling.next_sibling().next_sibling().next_sibling()
         self.assertIsInstance(last, nodes.Assign)
         self.assertEquals(last.next_sibling(), None)
@@ -112,7 +138,7 @@ class FunctionNodeTC(TestCase):
 
     def test_nested_args(self):
         func = MODULE['nested_args']
-        self.assertEquals(func.argnames, ['a', ('b', 'c', 'd')])
+        #self.assertEquals(func.args.args, ['a', ('b', 'c', 'd')])
         local = func.keys()
         local.sort()
         self.assertEquals(local, ['a', 'b', 'c', 'd'])
@@ -120,9 +146,9 @@ class FunctionNodeTC(TestCase):
        
     def test_format_args(self):
         func = MODULE2['make_class']
-        self.assertEquals(func.format_args(), 'any, base=data.module.YO, *args, **kwargs')
+        self.assertEquals(func.args.format_args(), 'any, base=data.module.YO, *args, **kwargs')
         func = MODULE['nested_args']
-        self.assertEquals(func.format_args(), 'a, (b,c,d)')
+        self.assertEquals(func.args.format_args(), 'a, (b, c, d)')
 
     def test_is_abstract(self):
         method = MODULE2['AbstractClass']['to_override']
@@ -182,11 +208,59 @@ def sfunction():
         self.failUnless(astng['A']['meth3'].is_method())
         self.failIf(astng['function'].is_method())
         self.failIf(astng['sfunction'].is_method())
+
+    def test_argnames(self):
+        code = 'def f(a, (b, c), *args, **kwargs): pass'
+        astng = abuilder.string_build(code, __name__, __file__)
+        self.assertEquals(astng['f'].argnames(), ['a', 'b', 'c', 'args', 'kwargs'])
+
         
 class ClassNodeTC(TestCase):
 
     def test_dict_interface(self):
         _test_dict_interface(self, MODULE['YOUPI'], 'method')
+
+    def test_cls_special_attributes_1(self):
+        cls = MODULE['YO']
+        self.assertEquals(len(cls.getattr('__bases__')), 1)
+        self.assertEquals(len(cls.getattr('__name__')), 1)
+        self.assertIsInstance(cls.getattr('__name__')[0], nodes.Const)
+        self.assertEquals(cls.getattr('__name__')[0].value, 'YO')
+        self.assertEquals(len(cls.getattr('__doc__')), 1)
+        self.assertIsInstance(cls.getattr('__doc__')[0], nodes.Const)
+        self.assertEquals(cls.getattr('__doc__')[0].value, 'hehe')
+        self.assertEquals(len(cls.getattr('__module__')), 1)
+        self.assertIsInstance(cls.getattr('__module__')[0], nodes.Const)
+        self.assertEquals(cls.getattr('__module__')[0].value, 'data.module')
+        self.assertEquals(len(cls.getattr('__dict__')), 1)
+        self.assertRaises(NotFoundError, cls.getattr, '__mro__')
+        for cls in (nodes.List._proxied, nodes.Const(1)._proxied):
+            self.assertEquals(len(cls.getattr('__bases__')), 1)
+            self.assertEquals(len(cls.getattr('__name__')), 1)
+            self.assertEquals(len(cls.getattr('__doc__')), 1, (cls, cls.getattr('__doc__')))
+            self.assertEquals(cls.getattr('__doc__')[0].value, cls.doc)
+            self.assertEquals(len(cls.getattr('__module__')), 1)
+            self.assertEquals(len(cls.getattr('__dict__')), 1)
+            self.assertEquals(len(cls.getattr('__mro__')), 1)
+            
+    def test_cls_special_attributes_2(self):
+        astng = abuilder.string_build('''
+class A: pass
+class B: pass
+
+A.__bases__ += (B,)
+''', __name__, __file__)
+        self.assertEquals(len(astng['A'].getattr('__bases__')), 2)
+        self.assertIsInstance(astng['A'].getattr('__bases__')[0], nodes.Tuple)
+        self.assertIsInstance(astng['A'].getattr('__bases__')[1], nodes.AssAttr)
+
+    def test_instance_special_attributes(self):
+        for inst in (Instance(MODULE['YO']), nodes.List(), nodes.Const(1)): 
+            self.assertRaises(NotFoundError, inst.getattr, '__mro__')
+            self.assertRaises(NotFoundError, inst.getattr, '__bases__')
+            self.assertRaises(NotFoundError, inst.getattr, '__name__')
+            self.assertEquals(len(inst.getattr('__dict__')), 1)
+            self.assertEquals(len(inst.getattr('__doc__')), 1)
         
     def test_navigation(self):
         klass = MODULE['YO']
@@ -197,7 +271,7 @@ class ClassNodeTC(TestCase):
         r_sibling = klass.next_sibling()
         self.assertIsInstance(r_sibling, nodes.Class)
         self.assertEquals(r_sibling.name, 'YOUPI')
-        
+
     def test_local_attr_ancestors(self):
         klass2 = MODULE['YOUPI']
         it = klass2.local_attr_ancestors('__init__')
@@ -233,7 +307,9 @@ class ClassNodeTC(TestCase):
         methods = [m.name for m in klass2.mymethods()]
         methods.sort()
         self.assertEquals(methods, [])
-        self.assertEquals(klass2.local_attr('method').name, 'method')
+        method_locals = klass2.local_attr('method')
+        self.assertEquals(len(method_locals), 1)
+        self.assertEquals(method_locals[0].name, 'method')
         self.assertRaises(NotFoundError, klass2.local_attr, 'nonexistant')
         methods = [m.name for m in klass2.methods()]
         methods.sort()
@@ -276,6 +352,26 @@ class ClassNodeTC(TestCase):
             klass = MODULE2[klass]
             self.assertEquals([i.name for i in klass.interfaces()],
                               interfaces)
+            
+    def test_concat_interfaces(self):
+        astng = abuilder.string_build('''
+class IMachin: pass
+
+class Correct2:
+    """docstring"""
+    __implements__ = (IMachin,)
+    
+class BadArgument:
+    """docstring"""
+    __implements__ = (IMachin,)
+
+class InterfaceCanNowBeFound:
+    """docstring"""
+    __implements__ = BadArgument.__implements__ + Correct2.__implements__
+
+        ''')
+        self.assertEquals([i.name for i in astng['InterfaceCanNowBeFound'].interfaces()],
+                          ['IMachin'])
         
     def test_inner_classes(self):
         eee = NONREGR['Ccc']['Eee']
@@ -295,9 +391,35 @@ class WebAppObject(object):
         astng = abuilder.string_build(data, __name__, __file__)
         cls = astng['WebAppObject']
         self.assertEquals(sorted(cls.locals.keys()),
-                          ['__dict__', '__doc__', '__module__', '__name__',
-                           'appli', 'config', 'registered', 'schema'])
+                          ['appli', 'config', 'registered', 'schema'])
         
+
+    def test_class_getattr(self):
+        data =         '''
+class WebAppObject(object):
+    appli = application
+    appli += 2
+    del self.appli
+        '''
+        astng = abuilder.string_build(data, __name__, __file__)
+        cls = astng['WebAppObject']
+        # test del statement not returned by getattr
+        self.assertEquals(len(cls.getattr('appli')), 2)
+        
+
+    def test_instance_getattr(self):
+        data =         '''
+class WebAppObject(object):
+    def __init__(self, application):
+        self.appli = application
+        self.appli += 2
+        del self.appli
+         '''
+        astng = abuilder.string_build(data, __name__, __file__)
+        cls = astng['WebAppObject']
+        # test del statement not returned by getattr
+        self.assertEquals(len(Instance(cls).getattr('appli')), 2)
+
 __all__ = ('ModuleNodeTC', 'ImportNodeTC', 'FunctionNodeTC', 'ClassNodeTC')
         
 if __name__ == '__main__':
