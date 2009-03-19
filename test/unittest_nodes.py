@@ -213,7 +213,8 @@ x = lambda x: None
 
 class SliceNodeTC(testlib.TestCase):
     def test(self):
-        for code in ('a[0]', 'a[:-1:step]', 'a[:,newaxis]', 'a[newaxis,:]'):
+        for code in ('a[0]', 'a[1:3]', 'a[:-1:step]', 'a[:,newaxis]',
+                     'a[newaxis,:]', 'del L[::2]', 'del A[1]', 'del Br[:]'):
             ast = abuilder.string_build(code)
             self.assertEquals(ast.as_string(), code)
 
