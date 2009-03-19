@@ -1,6 +1,8 @@
 include ChangeLog
 include README
-include COPYING 
+include README._ast_compatibility
+include COPYING
+include TODO
 include test/fulltest.sh
 recursive-include test/data *.py
 recursive-include test/data2 *.py

@@ -4,7 +4,7 @@ logilab-astng (0.18.0-1) unstable; urgency=low
 
  -- Emile Anclin <emile.anclin@logilab.fr>  Thu, 19 Mar 2009 15:17:38 +0100
 
-logilab-astng (0.17.4-2) UNRELEASED; urgency=low
+logilab-astng (0.17.4-2) unstable; urgency=low
 
   * debian/control
     - added ${misc:Depends} to Depends

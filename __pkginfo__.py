@@ -41,8 +41,8 @@ governed by pylint's needs.
 It extends class defined in the compiler.ast [1] module (python <= 2.4) or in
 the builtin _ast module (python >= 2.5) with some additional methods and
 attributes. Instance attributes are added by a builder object, which can either
-generate extended ast (let's call them astng ;) by visiting an existant ast tree
-or by inspecting living object. Methods are added by monkey patching ast
+generate extended ast (let's call them astng ;) by visiting an existant ast
+tree or by inspecting living object. Methods are added by monkey patching ast
 classes."""
 
 
