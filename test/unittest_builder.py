@@ -185,6 +185,10 @@ else:
         self.assertEquals(try_.blockstart_tolineno, 2)        
         self.assertEquals(try_.orelse[0].fromlineno, 7) # XXX
         self.assertEquals(try_.orelse[0].tolineno, 7)
+        hdlr = try_.handlers[0]
+        self.assertEquals(hdlr.fromlineno, 4)
+        self.assertEquals(hdlr.tolineno, 5)
+        self.assertEquals(hdlr.blockstart_tolineno, 4)        
 
 
     def test_with_lineno(self):

@@ -447,6 +447,17 @@ def try_set_line_info(self, lastchild):
 TryExcept.set_line_info = try_set_line_info
 TryFinally.set_line_info = try_set_line_info
 
+def excepthandler_set_line_info(self, lastchild):
+    self.fromlineno = self.lineno
+    if self.name:
+        self.blockstart_tolineno= self.name.tolineno
+    elif self.type:
+        self.blockstart_tolineno= self.type.tolineno
+    else:
+        self.blockstart_tolineno= self.lineno
+    self.tolineno = lastchild.tolineno    
+ExceptHandler.set_line_info = excepthandler_set_line_info
+
 def with_set_line_info(self, lastchild):
     self.fromlineno = self.blockstart_tolineno = self.lineno
     self.tolineno = lastchild.tolineno
