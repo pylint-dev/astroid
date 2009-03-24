@@ -162,10 +162,13 @@ class CallContext:
 
 # .infer method ###############################################################
 
+# extend all classes instead of base Node class which is an unextendable type
+# in 2.6
 def infer_default(self, context=None):
     """we don't know how to resolve a statement by default"""
     raise InferenceError(self.__class__.__name__)
-nodes.Node.infer = infer_default
+for cls in nodes.ALL_NODES: 
+    cls.infer = infer_default
 
 
 def infer_end(self, context=None):

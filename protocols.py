@@ -333,10 +333,6 @@ nodes.With.ass_type = end_ass_type
 
 # callable protocol ###########################################################
 
-def callable_default(self):
-    return False
-nodes.Node.callable = callable_default
-
 
 def callable_true(self):
     return True

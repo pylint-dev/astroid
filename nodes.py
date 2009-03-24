@@ -121,6 +121,16 @@ With._astng_fields = ('expr', 'vars', 'body')
 While._astng_fields = ('test', 'body', 'orelse',)
 Yield._astng_fields = ('value',)
 
+STMTS_NODES = (Assign, AugAssign, Assert, Break, Class, Continue, Delete,
+               Discard, ExceptHandler, Exec, For, From, Function, Global, If,
+               Import, Pass, Print, Raise, Return, TryExcept, TryFinally, While,
+               With, Yield)
+
+ALL_NODES = STMTS_NODES + (
+    Arguments, AssAttr, AssName, BinOp, BoolOp, Backquote,  CallFunc, Compare,
+    Comprehension, Const, Decorators, DelAttr, DelName, Dict, Ellipsis,
+    EmptyNode,  ExtSlice, Getattr,  GenExpr, IfExp, Index, Keyword, Lambda,
+    List,  ListComp, Module, Name, Slice, Subscript, UnaryOp, Tuple)
 
 # Node  ######################################################################
 
@@ -323,6 +333,9 @@ class NodeNG:
             return name
         return None
 
+    def callable(self):
+        return False
+
     def eq(self, value):
         return False
     
@@ -336,7 +349,10 @@ class NodeNG:
         _repr_tree(self, result)
         print "\n".join(result)
 
-extend_class(Node, NodeNG)
+# extend all classes instead of base Node class which is an unextendable type
+# in 2.6
+for cls in ALL_NODES: 
+    extend_class(cls, NodeNG)
 
 INDENT = "    "
 
@@ -376,9 +392,7 @@ def replace_child(self, child, newchild):
     child.parent = None
     sequence[sequence.index(child)] = newchild
 
-for klass in (Assign, AugAssign, Assert, Break, Class, Continue, Delete, Discard, 
-              ExceptHandler, Exec, For, From, Function, Global, If, Import, Pass,
-              Print, Raise, Return, TryExcept, TryFinally, While, With, Yield):
+for klass in STMT_NODES:
     klass.is_statement = True
     klass.replace = replace_child
 Module.replace = replace_child
