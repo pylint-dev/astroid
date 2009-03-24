@@ -256,26 +256,28 @@ class Instance(Proxy):
         try:
             # XXX frame should be self._proxied, or not ?
             return _infer_stmts(
-                self._wrap_attr(self.getattr(name, context, lookupclass=False)),
+                self._wrap_attr(self.getattr(name, context, lookupclass=False), context),
                                 context, frame=self)
         except NotFoundError:
             try:
                 # fallback to class'igetattr since it has some logic to handle
                 # descriptors
-                return self._wrap_attr(self._proxied.igetattr(name, context))
+                return self._wrap_attr(self._proxied.igetattr(name, context), context)
             except NotFoundError:
                 raise InferenceError(name)
             
-    def _wrap_attr(self, attrs):
+    def _wrap_attr(self, attrs, context=None):
         """wrap bound methods of attrs in a InstanceMethod proxies"""
-        # Guess which attrs are used in inference.
-        def wrap(attr):
-            if isinstance(attr, Function) and attr.type == 'method':
-                return InstanceMethod(attr)
+        for attr in attrs:
+            if isinstance(attr, Function):
+                if '__builtin__.property' in attr.decoratornames():
+                    for infered in attr.infer_call_result(self, context):
+                        yield infered
+                elif attr.type == 'method':
+                    yield InstanceMethod(attr)
             else:
-                return attr
-        return imap(wrap, attrs)
-        
+                yield attr
+
     def infer_call_result(self, caller, context=None):
         """infer what's a class instance is returning when called"""
         infered = False

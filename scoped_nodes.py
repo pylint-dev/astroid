@@ -31,6 +31,7 @@ __doctype__ = "restructuredtext en"
 import sys
 
 from logilab.common.compat import chain, set
+from logilab.common.decorators import cached
 
 from logilab.astng import MANAGER, NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
@@ -378,8 +379,21 @@ class FunctionNG(object):
         # (eg pylint...) when is_method() return True
         return self.type != 'function' and isinstance(self.parent.frame(), Class)
 
+    @cached
+    def decoratornames(self):
+        """return a list of decorator qualified names"""
+        result = set()
+        decoratornodes = []
+        if self.decorators is not None:
+            decoratornodes += self.decorators.nodes
+        decoratornodes += getattr(self, 'extra_decorators', [])
+        for decnode in decoratornodes:
+            for infnode in decnode.infer():
+                result.add(infnode.qname())
+        return result
+    
     def argnames(self):
-        """return argument names if there are any arguments"""
+        """return a list of argument names"""
         if self.args.args: # maybe None with builtin functions
             names = _rec_get_names(self.args.args)
         else:

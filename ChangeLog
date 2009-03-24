@@ -1,8 +1,12 @@
 Change log for the astng package
 ================================
 
+--
+    * some understanding of the __builtin__.property decorator
+	
 2009-03-19  -- 0.18.0
-    * major api / tree structure changes to make it works with compiler *and* py >= 2.5 _ast module
+    * major api / tree structure changes to make it works with compiler *and*
+      python >= 2.5 _ast module
     * cleanups and refactoring on the way
 
 	

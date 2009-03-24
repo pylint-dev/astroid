@@ -870,20 +870,20 @@ def f(x):
         if sys.version_info < (2, 5):
             self.skip('require py >= 2.5')
         data = "from ...common import date; print date"
-        astng = builder.string_build(data, 'logilab.astng.test.unittest_inference', __file__)
+        astng = builder.string_build(data, __name__, __file__)
         infered = get_name_node(astng, 'date').infer().next()
         self.assertIsInstance(infered, nodes.Module)
         self.assertEquals(infered.name, 'logilab.common.date')
 
     def test_python25_no_relative_import(self):
         data = 'import unittest_lookup; print unittest_lookup'
-        astng = builder.string_build(data, 'logilab.astng.test.unittest_inference', __file__)
+        astng = builder.string_build(data, __name__, __file__)
         self.failIf(astng.absolute_import_activated())
 #         infered = get_name_node(astng, 'unittest_lookup').infer().next()
 #         self.assertIsInstance(infered, nodes.Module)
         # failed to import unittest_lookup since absolute_import is activated
         data = 'from __future__ import absolute_import; import unittest_lookup; print unittest_lookup'
-        astng = builder.string_build(data, 'logilab.astng.test.unittest_inference', __file__)
+        astng = builder.string_build(data, __name__, __file__)
         self.failUnless(astng.absolute_import_activated(), True)
 #         infered = get_name_node(astng, 'unittest_lookup').infer().next()
 #         # failed to import unittest_lookup since absolute_import is activated
@@ -914,6 +914,40 @@ def f(x):
 #         self.assertEquals(len(bopen), 1)
 #         self.assertIsInstance(bopen[0], InstanceMethod)
 #         self.failUnless(bopen[0].callable())
+
+    def test_property(self):
+        code = '''
+from smtplib import SMTP
+class SendMailController(object):
+
+    @property
+    def smtp(self):
+        return SMTP(mailhost, port)
     
+    @property
+    def me(self):
+        return self
+    
+print SendMailController().smtp
+print SendMailController().me
+'''
+        astng = builder.string_build(code, __name__, __file__)
+        self.assertEquals(astng['SendMailController']['smtp'].decoratornames(),
+                          set(('__builtin__.property',)))
+        propinfered = list(astng.body[2].values[0].infer())
+        self.assertEquals(len(propinfered), 1)
+        propinfered = propinfered[0]
+        self.assertIsInstance(propinfered, Instance)
+        self.assertEquals(propinfered.name, 'SMTP')
+        self.assertEquals(propinfered.root().name, 'smtplib')
+        self.assertEquals(astng['SendMailController']['me'].decoratornames(),
+                          set(('__builtin__.property',)))
+        propinfered = list(astng.body[3].values[0].infer())
+        self.assertEquals(len(propinfered), 1)
+        propinfered = propinfered[0]
+        self.assertIsInstance(propinfered, Instance)
+        self.assertEquals(propinfered.name, 'SendMailController')
+        self.assertEquals(propinfered.root().name, __name__)
+        
 if __name__ == '__main__':
     unittest_main()

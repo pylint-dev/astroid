@@ -130,18 +130,22 @@ class RebuildVisitor(ASTVisitor):
     def leave_assign(self, node):
         """leave an Assign node to become astng"""
         klass = node.parent.frame()
-        if isinstance(klass, nodes.Class) and \
-            isinstance(node.value, nodes.CallFunc) and \
-            isinstance(node.value.func, nodes.Name):
+        if (isinstance(klass, nodes.Class)
+            and isinstance(node.value, nodes.CallFunc)
+            and isinstance(node.value.func, nodes.Name)):
             func_name = node.value.func.name
-            if func_name in ('classmethod', 'staticmethod'):
-                for ass_node in node.targets:
-                    try:
-                        meth = klass[ass_node.name]
-                        if isinstance(meth, nodes.Function):
+            for ass_node in node.targets:
+                try:
+                    meth = klass[ass_node.name]
+                    if isinstance(meth, nodes.Function):
+                        if func_name in ('classmethod', 'staticmethod'):
                             meth.type = func_name
-                    except (AttributeError, KeyError):
-                        continue
+                        try:
+                            meth.extra_decorators.append(node.value)
+                        except AttributeError:
+                            meth.extra_decorators = [node.value]
+                except (AttributeError, KeyError):
+                    continue
         elif getattr(node.targets[0], 'name', None) == '__metaclass__': # XXX check more...
             self._metaclass[-1] = 'type' # XXX get the actual metaclass
 
