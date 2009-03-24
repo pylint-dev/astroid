@@ -38,6 +38,30 @@ from compiler.ast import AssAttr, AssList, AssName, \
      Sliceobj, Stmt, Subscript, TryExcept, TryFinally, Tuple, \
      While, Yield
 
+# nodes which are not part of astng
+from compiler.ast import AssList as _AssList, AssTuple as _AssTuple,\
+     Printnl as _Printnl, And as _And, Or as _Or,\
+     UnaryAdd as _UnaryAdd, UnarySub as _UnarySub, Not as _Not,\
+     Invert as _Invert, Add as _Add, Div as _Div, FloorDiv as _FloorDiv,\
+     Mod as _Mod, Mul as _Mul, Power as _Power, Sub as _Sub, Bitand as _Bitand,\
+     Bitor as _Bitor, Bitxor as _Bitxor, LeftShift as _LeftShift,\
+     RightShift as _RightShift, \
+     Slice as _Slice, GenExprFor as _GenExprFor
+
+# set missing accept methods
+_AssList.accept = lambda self, visitor: visitor.visit_asslist(self)
+_AssTuple.accept = lambda self, visitor: visitor.visit_asstuple(self)
+_Printnl.accept = lambda self, visitor: visitor.visit_printnl(self)
+_Slice.accept = lambda self, visitor: visitor.visit_slice(self)
+_GenExprFor.accept = lambda self, visitor: visitor.visit_comprehension(self)
+for boolopcls in (_And, _Or):
+    boolopcls.accept = lambda self, visitor: visitor.visit_boolop(self)
+for unaryopcls in (_UnaryAdd, _UnarySub, _Not,_Invert):
+    unaryopcls.accept = lambda self, visitor: visitor.visit_unaryop(self)
+for binopcls in (_Add, _Div, _FloorDiv, _Mod, _Mul, _Power, _Sub, _Bitand,
+                 _Bitor, _Bitxor, _LeftShift, _RightShift):
+    binopcls.accept = lambda self, visitor: visitor.visit_binop(self)
+
 try:
     # introduced in python 2.4
     from compiler.ast import GenExpr, GenExprIf, GenExprInner
@@ -114,45 +138,52 @@ class ExceptHandler(Node):
         self.body = body.nodes
         # XXX parent.lineno is wrong, cant't catch the right line ...
         if exc_type and exc_type.lineno:
-            self.lineno = exc_type.lineno
+            self.fromlineno =  exc_type.lineno
         else:
-            self.lineno = self.body[0].fromlineno - 1
-        self.fromlineno =  self.lineno
+            self.fromlineno =  self.body[0].fromlineno - 1
         self.tolineno = self.body[-1].tolineno
-
+        if name:
+            self.blockstart_tolineno = name.tolineno
+        elif exc_type:
+            self.blockstart_tolineno = exc_type.tolineno
+        else:
+            self.blockstart_tolineno = self.fromlineno
 
 class BinOp(Node):
     """replace Add, Div, FloorDiv, Mod, Mul, Power, Sub nodes"""
-    from compiler.ast import Add, Div, FloorDiv, Mod, Mul, Power, Sub
-    from compiler.ast import Bitand, Bitor, Bitxor, LeftShift, RightShift
-    OP_CLASSES = {Add: '+',
-                  Div: '/',
-                  FloorDiv: '//',
-                  Mod: '%',
-                  Mul: '*',
-                  Power: '**',
-                  Sub: '-',
-                  Bitand: '&',
-                  Bitor: '|',
-                  Bitxor: '^',
-                  LeftShift: '<<',
-                  RightShift: '>>'}
-    BIT_CLASSES = {'&': Bitand, '|': Bitor, '^': Bitxor}
+    OP_CLASSES = {_Add: '+',
+                  _Div: '/',
+                  _FloorDiv: '//',
+                  _Mod: '%',
+                  _Mul: '*',
+                  _Power: '**',
+                  _Sub: '-',
+                  _Bitand: '&',
+                  _Bitor: '|',
+                  _Bitxor: '^',
+                  _LeftShift: '<<',
+                  _RightShift: '>>'
+                  }
+    BIT_CLASSES = {'&': _Bitand,
+                   '|': _Bitor,
+                   '^': _Bitxor
+                   }
 
 
 class BoolOp(Node):
     """replace And, Or"""
-    from compiler.ast import And, Or
-    OP_CLASSES = {And: 'and',
-                  Or: 'or'}
+    OP_CLASSES = {_And: 'and',
+                  _Or: 'or'
+                  }
+
     
 class UnaryOp(Node):
     """replace UnaryAdd, UnarySub, Not"""
-    from compiler.ast import UnaryAdd, UnarySub, Not, Invert
-    OP_CLASSES = {UnaryAdd: '+',
-                  UnarySub: '-',
-                  Not: 'not',
-                  Invert: '~'}
+    OP_CLASSES = {_UnaryAdd: '+',
+                  _UnarySub: '-',
+                  _Not: 'not',
+                  _Invert: '~'
+                  }
 
 
 class Delete(Node):
