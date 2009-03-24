@@ -39,8 +39,8 @@ from logilab.astng.nodes import Arguments, Class, Const, Function, GenExpr, \
      From, Lambda, Module, Name, Pass, Raise, Tuple, List, Dict, Yield, \
      DelAttr, DelName, const_factory as cf
 from logilab.astng.utils import extend_class
-from logilab.astng.infutils import YES, InferenceContext, Instance, copy_context, \
-     unpack_infer, _infer_stmts
+from logilab.astng.infutils import YES, InferenceContext, Instance, \
+     UnboundMethod, copy_context, unpack_infer, _infer_stmts
 from logilab.astng.nodes_as_string import as_string
 
 
@@ -50,6 +50,12 @@ def remove_nodes(func, cls):
         if not nodes:
             raise NotFoundError()
         return nodes
+    return wrapper
+
+def function_to_unbound_method(func):
+    def wrapper(*args, **kwargs):
+        return [isinstance(n, Function) and UnboundMethod(n) or n
+                for n in func(*args, **kwargs)]
     return wrapper
 
 # module class dict/iterator interface ########################################
@@ -718,7 +724,7 @@ class ClassNG(object):
             except NotFoundError:
                 continue
         raise NotFoundError(name)
-    getattr = remove_nodes(getattr, DelAttr)
+    getattr = function_to_unbound_method(remove_nodes(getattr, DelAttr))
     
     def igetattr(self, name, context=None):
         """infered getattr, need special treatment in class to handle

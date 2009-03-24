@@ -18,7 +18,7 @@ from StringIO import StringIO
 from logilab.common.testlib import TestCase, unittest_main
 
 from logilab.astng import InferenceError, builder, nodes, inference
-from logilab.astng.infutils import YES, Instance, InstanceMethod, path_wrapper
+from logilab.astng.infutils import YES, Instance, BoundMethod, UnboundMethod, path_wrapper
 
 def get_name_node(start_from, name, index=0):
     return [n for n in start_from.nodes_of_class(nodes.Name) if n.name == name][index]
@@ -220,7 +220,7 @@ a, b= b, a # Gasp !
     def test_unbound_method_inference(self):
         infered = self.astng['m_unbound'].infer()
         meth1 = infered.next()
-        self.assertIsInstance(meth1, nodes.Function)
+        self.assertIsInstance(meth1, UnboundMethod)
         self.failUnlessEqual(meth1.name, 'meth1')
         self.failUnlessEqual(meth1.parent.frame().name, 'C')
         self.failUnlessRaises(StopIteration, infered.next)
@@ -228,7 +228,7 @@ a, b= b, a # Gasp !
     def test_bound_method_inference(self):
         infered = self.astng['m_bound'].infer()
         meth1 = infered.next()
-        self.assertIsInstance(meth1, InstanceMethod)
+        self.assertIsInstance(meth1, BoundMethod)
         self.failUnlessEqual(meth1.name, 'meth1')
         self.failUnlessEqual(meth1.parent.frame().name, 'C')
         self.failUnlessRaises(StopIteration, infered.next)
@@ -912,7 +912,7 @@ def f(x):
 #         self.assertIsInstance(b, Instance)
 #         bopen = list(b.igetattr('open'))
 #         self.assertEquals(len(bopen), 1)
-#         self.assertIsInstance(bopen[0], InstanceMethod)
+#         self.assertIsInstance(bopen[0], BoundMethod)
 #         self.failUnless(bopen[0].callable())
 
     def test_property(self):
@@ -948,6 +948,30 @@ print SendMailController().me
         self.assertIsInstance(propinfered, Instance)
         self.assertEquals(propinfered.name, 'SendMailController')
         self.assertEquals(propinfered.root().name, __name__)
-        
+
+
+    def test_im_func_unwrap(self):
+        code = '''
+class EnvBasedTC:
+    def pactions(self):
+        print "hop"
+pactions = EnvBasedTC.pactions.im_func
+print pactions
+
+class EnvBasedTC2:
+    pactions = EnvBasedTC.pactions.im_func
+    print pactions
+
+'''
+        astng = builder.string_build(code, __name__, __file__)
+        pactions = get_name_node(astng, 'pactions')
+        infered = list(pactions.infer())
+        self.assertEquals(len(infered), 1)
+        self.assertIsInstance(infered[0], nodes.Function)
+        pactions = get_name_node(astng['EnvBasedTC2'], 'pactions')
+        infered = list(pactions.infer())
+        self.assertEquals(len(infered), 1)
+        self.assertIsInstance(infered[0], nodes.Function)
+
 if __name__ == '__main__':
     unittest_main()

@@ -62,4 +62,4 @@ from logilab.astng import scoped_nodes, lookup, inference
 
 # more stuff available
 from logilab.astng import raw_building
-from logilab.astng.infutils import YES, Instance, InstanceMethod
+from logilab.astng.infutils import YES, Instance, BoundMethod, UnboundMethod

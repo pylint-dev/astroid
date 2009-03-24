@@ -3,6 +3,7 @@ Change log for the astng package
 
 --
     * some understanding of the __builtin__.property decorator
+    * inference: introduce UnboundMethod / rename InstanceMethod to BoundMethod
 	
 2009-03-19  -- 0.18.0
     * major api / tree structure changes to make it works with compiler *and*

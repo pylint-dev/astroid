@@ -273,12 +273,16 @@ class Instance(Proxy):
     def _wrap_attr(self, attrs, context=None):
         """wrap bound methods of attrs in a InstanceMethod proxies"""
         for attr in attrs:
-            if isinstance(attr, Function):
+            if isinstance(attr, UnboundMethod):
                 if '__builtin__.property' in attr.decoratornames():
                     for infered in attr.infer_call_result(self, context):
                         yield infered
-                elif attr.type == 'method':
-                    yield InstanceMethod(attr)
+                elif attr.type in ('method', 'classmethod'):
+                    # XXX could get some information from the bound node:
+                    #     self (if method) or self._proxied (if class method)
+                    yield BoundMethod(attr)
+                else:
+                    yield attr
             else:
                 yield attr
 
@@ -311,16 +315,25 @@ class Instance(Proxy):
         return self._proxied.qname()
 
 
-class InstanceMethod(Proxy):
-    """a special node representing a function bound to an instance"""
+class UnboundMethod(Proxy):
+    """a special node representing a method not bound to an instance"""
     def __repr__(self):
-        instance = self._proxied.parent.frame()
-        return '<Bound method %s of %s.%s at 0x%s' % (self._proxied.name,
-                                                      instance.root().name,
-                                                      instance.name,
-                                                      id(self))
-    __str__ = __repr__
+        frame = self._proxied.parent.frame()
+        return '<%s %s of %s at 0x%s' % (self.__class__.__name__,
+                                         self._proxied.name,
+                                         frame.qname(), id(self))
 
+    def is_bound(self):
+        return False
+
+    def igetattr(self, name, context=None):
+        if name == 'im_func':
+            return iter((self._proxied,))
+        return super(UnboundMethod, self).igetattr(name, context)
+
+
+class BoundMethod(UnboundMethod):
+    """a special node representing a method bound to an instance"""
     def is_bound(self):
         return True
 
