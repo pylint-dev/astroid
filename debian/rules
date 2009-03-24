@@ -15,7 +15,7 @@ build: build-stamp
 build-stamp: 
 	dh_testdir
 	
-	python setup.py -q build
+	NO_SETUPTOOLS=1 python setup.py -q build
 
 	touch build-stamp
 
@@ -23,7 +23,7 @@ clean:
 	dh_testdir
 	dh_testroot
 
-	python setup.py clean
+	NO_SETUPTOOLS=1 python setup.py clean
 
 	find . -name "*.pyc" -delete 
 	
@@ -35,7 +35,7 @@ install: build
 	dh_clean -k
 	dh_installdirs
 
-	python setup.py -q install --no-compile --prefix=debian/python-logilab-astng/usr/
+	NO_SETUPTOOLS=1 python setup.py -q install --no-compile --prefix=debian/python-logilab-astng/usr/
 
 	# remove sub-package __init__ file (created in postinst)
 	rm debian/python-logilab-astng/usr/lib/python*/site-packages/logilab/__init__.py
