@@ -80,6 +80,10 @@ class InferenceContext(object):
 def are_exclusive(stmt1, stmt2, exceptions=None):
     """return true if the two given statements are mutually exclusive
 
+    `exceptions` may be a list of exception names. If specified, discard If
+    branches and check one of the statement is in an exception handler catching
+    one of the given exceptions.
+
     algorithm :
      1) index stmt1's parents
      2) climb among stmt2's parents until we find a common parent
@@ -103,7 +107,7 @@ def are_exclusive(stmt1, stmt2, exceptions=None):
         if stmt1_parents.has_key(node):
             # if the common parent is a If or TryExcept statement, look if
             # nodes are in exclusive branchs
-            if isinstance(node, If):
+            if isinstance(node, If) and exceptions is None: 
                 if (node.locate_child(previous)[1]
                     is not node.locate_child(children[node])[1]):
                     return True
