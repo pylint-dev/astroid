@@ -233,14 +233,16 @@ class TreeRebuilder(ASTVisitor):
 
     def visit_function(self, node):
         _init_set_doc(node)
-        node.decorators = None
         if 'decorators' in node._fields: # py < 2.6
-            if node.decorators:
-                node.decorators = Decorators(node.decorators)
+            attr = 'decorators'
         else:
-            if node.decorator_list:
-                node.decorators = Decorators(node.decorator_list)
-                del node.decorator_list
+            attr = 'decorators_list'
+        decorators = getattr(node, attr)
+        delattr(node, attr)
+        if decorators:
+            node.decorators = Decorators(decorators)
+        else:
+            node.decorators = None
 
     def visit_getattr(self, node):
         node.attrname = node.attr
