@@ -3,10 +3,10 @@ Section: python
 Priority: optional
 Maintainer: Debian Python Modules Team <python-modules-team@lists.alioth.debian.org>
 Uploaders: Sylvain Thénault <sylvain.thenault@logilab.fr>, Alexandre Fayolle <afayolle@debian.org>, Sandro Tosi <morph@debian.org>
-Build-Depends: debhelper (>= 5.0.37.2), python (>=2.3.5-7)
-Build-Depends-Indep: python-central (>=0.5)
+Build-Depends: debhelper (>= 5.0.37.2), python (>= 2.3.5-7)
+Build-Depends-Indep: python-support
 XS-Python-Version: all
-Standards-Version: 3.8.0
+Standards-Version: 3.8.1
 Homepage: http://www.logilab.org/project/logilab-astng
 Vcs-Svn: svn://svn.debian.org/svn/python-modules/packages/logilab-astng/trunk/
 Vcs-Browser: http://svn.debian.org/viewsvn/python-modules/packages/logilab-astng/trunk/

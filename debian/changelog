@@ -8,9 +8,16 @@ logilab-astng (0.17.4-2) unstable; urgency=low
 
   * debian/control
     - added ${misc:Depends} to Depends
+    - tighten the depends on python-logilab-common to the version using
+      python-support (0.38.1-1)
+    - bump Standards-Version to 3.8.1 (no changes needed)
+  * debian/{control, rules}
+    - switch to python-support, implicitly fixing missing namespace; thanks to
+      Servilio Afre Puentes for the report; Closes: #520584
+  * debian/rules
+    - 'build' is a dir, so we need 'rm' for it
 
- -- Sandro Tosi <morph@debian.org>  Sun, 30 Nov 2008 00:08:46 +0100
-
+ -- Sandro Tosi <morph@debian.org>  Sun, 22 Mar 2009 10:19:45 +0100
 
 logilab-astng (0.17.4-1.1) unstable; urgency=low
 
