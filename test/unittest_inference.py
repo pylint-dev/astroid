@@ -870,14 +870,14 @@ def f(x):
         if sys.version_info < (2, 5):
             self.skip('require py >= 2.5')
         data = "from ...common import date; print date"
-        astng = builder.string_build(data, __name__, __file__)
+        astng = builder.string_build(data, 'logilab.astng.test.unittest_inference', __file__)
         infered = get_name_node(astng, 'date').infer().next()
         self.assertIsInstance(infered, nodes.Module)
         self.assertEquals(infered.name, 'logilab.common.date')
 
     def test_python25_no_relative_import(self):
         data = 'import unittest_lookup; print unittest_lookup'
-        astng = builder.string_build(data, __name__, __file__)
+        astng = builder.string_build(data, 'logilab.astng.test.unittest_inference', __file__)
         self.failIf(astng.absolute_import_activated())
 #         infered = get_name_node(astng, 'unittest_lookup').infer().next()
 #         self.assertIsInstance(infered, nodes.Module)
