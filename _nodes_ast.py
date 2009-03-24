@@ -70,9 +70,9 @@ from _ast import (
     # comparison operators
     Eq as _Eq, Gt as _Gt, GtE as _GtE, In as _In, Is as _Is,
     IsNot as _IsNot, Lt as _Lt, LtE as _LtE, NotEq as _NotEq,
-    NotIn as _NotIn    ,
+    NotIn as _NotIn,
     # other nodes which are not part of astng
-    Str as _Str, Load as _Load, Store as _Store, Del as _Del,
+    Num as _Num, Str as _Str, Load as _Load, Store as _Store, Del as _Del,
     )
 
 from logilab.astng.utils import ASTVisitor
@@ -160,6 +160,10 @@ def native_repr_tree(node, indent='', _done=None):
         else:
             print indent + f, repr(attr)
 
+
+from _ast import Str as _Str, Num as _Num
+_Num.accept = lambda self, visitor: visitor.visit_num(self)
+_Str.accept = lambda self, visitor: visitor.visit_str(self)
 
 # some astng nodes unexistant in _ast #########################################
 
