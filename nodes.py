@@ -155,11 +155,7 @@ class NodeNG:
 
     def accept(self, visitor):
         klass = self.__class__.__name__
-        try:
-            func = getattr(visitor, "visit_" + REDIRECT.get(klass, klass).lower() )
-        except AttributeError:
-            print self, self.lineno, self.fromlineno
-            raise
+        func = getattr(visitor, "visit_" + REDIRECT.get(klass, klass).lower())
         return func(self)
 
     def get_children(self):
