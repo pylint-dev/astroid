@@ -121,16 +121,18 @@ With._astng_fields = ('expr', 'vars', 'body')
 While._astng_fields = ('test', 'body', 'orelse',)
 Yield._astng_fields = ('value',)
 
-STMTS_NODES = (Assign, AugAssign, Assert, Break, Class, Continue, Delete,
-               Discard, ExceptHandler, Exec, For, From, Function, Global, If,
-               Import, Pass, Print, Raise, Return, TryExcept, TryFinally, While,
-               With, Yield)
+STMT_NODES = (
+    Assign, AugAssign, Assert, Break, Class, Continue, Delete, Discard,
+    ExceptHandler, Exec, For, From, Function, Global, If, Import, Pass, Print,
+    Raise, Return, TryExcept, TryFinally, While, With, Yield
+    )
 
-ALL_NODES = STMTS_NODES + (
+ALL_NODES = STMT_NODES + (
     Arguments, AssAttr, AssName, BinOp, BoolOp, Backquote,  CallFunc, Compare,
     Comprehension, Const, Decorators, DelAttr, DelName, Dict, Ellipsis,
     EmptyNode,  ExtSlice, Getattr,  GenExpr, IfExp, Index, Keyword, Lambda,
-    List,  ListComp, Module, Name, Slice, Subscript, UnaryOp, Tuple)
+    List,  ListComp, Module, Name, Slice, Subscript, UnaryOp, Tuple
+    )
 
 # Node  ######################################################################
 
