@@ -1,6 +1,7 @@
 import unittest
 import os
-from os.path import join
+import sys
+from os.path import join, dirname
 from logilab.astng.manager import ASTNGManager
 
 
@@ -25,7 +26,28 @@ class ASTNGManagerTC(unittest.TestCase):
         self.assertEquals(astng.parent.frame().name, '__builtin__')
         self.failUnless('__setattr__' in astng)
 
-        
+    def test_astng_from_module_name_egg(self):
+        origpath = sys.path[:]
+        sys.path.insert(0, join(dirname(__file__), 'data', 'setuptools-0.6c9-py2.5.egg'))
+        try:
+            module = self.manager.astng_from_module_name('setuptools')
+            self.assertEquals(module.name, 'setuptools')
+            self.failUnless(module.file.endswith('setuptools-0.6c9-py2.5.egg/setuptools'),
+                            module.file)
+        finally:
+            sys.path = origpath
+
+    def test_astng_from_module_name_zip(self):
+        origpath = sys.path[:]
+        sys.path.insert(0, join(dirname(__file__), 'data', 'setuptools-0.6c9-py2.5.zip'))
+        try:
+            module = self.manager.astng_from_module_name('setuptools')
+            self.assertEquals(module.name, 'setuptools')
+            self.failUnless(module.file.endswith('setuptools-0.6c9-py2.5.zip/setuptools'),
+                            module.file)
+        finally:
+            sys.path = origpath
+            
         
     def test_from_directory(self):
         obj = self.manager.from_directory('data')

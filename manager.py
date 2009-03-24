@@ -29,7 +29,7 @@ from os.path import dirname, basename, abspath, join, isdir, exists
 
 from logilab.common.modutils import NoSourceFile, is_python_source, \
      file_from_modpath, load_module_from_name, \
-     get_module_files, get_source_file
+     get_module_files, get_source_file, zipimport
 from logilab.common.configuration import OptionsProviderMixIn
 
 from logilab.astng import ASTNGBuildingException, nodes, infutils
@@ -53,6 +53,22 @@ def safe_repr(obj):
     except:
         return '???'
 
+def zip_import_data(filepath):
+    if zipimport is None:
+        return None, None
+    for ext in ('.zip', '.egg'):
+        try:
+            eggpath, resource = filepath.split(ext + '/', 1)
+        except ValueError:
+            continue
+        try:
+            importer = zipimport.zipimporter(eggpath + ext)
+            return importer.get_source(resource), resource.replace('/', '.')
+        except:
+            continue
+    return None, None
+
+        
 class ASTNGManager(OptionsProviderMixIn):
     """the astng manager, responsible to build astng from files
      or modules.
@@ -133,6 +149,19 @@ class ASTNGManager(OptionsProviderMixIn):
             os.chdir(dirname(context_file))
         try:
             filepath = self.file_from_module_name(modname, context_file)
+            if filepath is not None and not is_python_source(filepath):
+                try:
+                    return self._cache[filepath]
+                except KeyError:
+                    data, zmodname = zip_import_data(filepath)
+                    if data is not None:
+                        from logilab.astng.builder import ASTNGBuilder
+                        try:
+                            astng = ASTNGBuilder(self).string_build(data, zmodname, filepath)
+                        except (SyntaxError, KeyboardInterrupt, SystemExit):
+                            raise
+                        self._cache[filepath] = astng
+                        return astng
             if filepath is None or not is_python_source(filepath):
                 try:
                     module = load_module_from_name(modname)
