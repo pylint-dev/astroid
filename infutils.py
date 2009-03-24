@@ -326,6 +326,11 @@ class UnboundMethod(Proxy):
     def is_bound(self):
         return False
 
+    def getattr(self, name, context=None):
+        if name == 'im_func':
+            return [self._proxied]
+        return super(UnboundMethod, self).getattr(name, context)
+    
     def igetattr(self, name, context=None):
         if name == 'im_func':
             return iter((self._proxied,))
