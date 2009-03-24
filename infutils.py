@@ -77,7 +77,7 @@ class InferenceContext(object):
         return clone
 
 
-def are_exclusive(stmt1, stmt2):
+def are_exclusive(stmt1, stmt2, exceptions=None):
     """return true if the two given statements are mutually exclusive
 
     algorithm :
@@ -111,8 +111,8 @@ def are_exclusive(stmt1, stmt2):
                 c2attr, c2node = node.locate_child(previous)
                 c1attr, c1node = node.locate_child(children[node])
                 if c1node is not c2node:
-                    if ((c2attr == 'body' and c1attr == 'handlers') or
-                        (c2attr == 'handlers' and c1attr == 'body') or
+                    if ((c2attr == 'body' and c1attr == 'handlers' and children[node].catch(exceptions)) or
+                        (c2attr == 'handlers' and c1attr == 'body' and previous.catch(exceptions)) or
                         (c2attr == 'handlers' and c1attr == 'orelse') or
                         (c2attr == 'orelse' and c1attr == 'handlers')):
                         return True

@@ -470,6 +470,14 @@ def excepthandler_set_line_info(self, lastchild):
     self.tolineno = lastchild.tolineno    
 ExceptHandler.set_line_info = excepthandler_set_line_info
 
+def excepthandler_catch(self, exceptions):
+    if self.type is None or exceptions is None:
+        return True
+    for node in self.type.nodes_of_class(Name):
+        if node.name in exceptions:
+            return True
+ExceptHandler.catch = excepthandler_catch
+
 def with_set_line_info(self, lastchild):
     self.fromlineno = self.blockstart_tolineno = self.lineno
     self.tolineno = lastchild.tolineno
