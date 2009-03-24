@@ -29,7 +29,7 @@ NONREGR = builder.file_build('data/nonregr.py', 'data.nonregr')
 class LookupTC(TestCase):
 
     def test_limit(self):
-        data = '''
+        code = '''
 l = [a
      for a,b in list]
 
@@ -40,7 +40,7 @@ a = None
 def func():
     c = 1
         '''
-        astng = builder.string_build(data, __name__, __file__)
+        astng = builder.string_build(code, __name__, __file__)
         names = astng.nodes_of_class(nodes.Name)
         a = names.next()
         stmts = a.lookup('a')[1]
@@ -69,14 +69,14 @@ def func():
         self.assertEquals(len(list(NONREGR.ilookup('enumerate'))), 2)
 
     def test_class_ancestor_name(self):
-        data = '''
+        code = '''
 class A:
     pass
 
 class A(A):
     pass
         '''
-        astng = builder.string_build(data, __name__, __file__)
+        astng = builder.string_build(code, __name__, __file__)
         cls1 = astng.locals['A'][0]
         cls2 = astng.locals['A'][1]
         name = cls2.nodes_of_class(nodes.Name).next()
@@ -90,6 +90,7 @@ class A(A):
         none = method.ilookup('None').next()
         self.assertEquals(none.value, None)
         self.assertRaises(InferenceError, method.ilookup('YOAA').next)
+
         
     def test_function_argument_with_default(self):
         make_class = MODULE2['make_class']
@@ -150,7 +151,7 @@ print list( i for i in range(10) )
 
 
     def test_explicit___name__(self):
-        data = '''
+        code = '''
 class Pouet:
     __name__ = "pouet"
 p1 = Pouet()
@@ -161,7 +162,7 @@ p2 = Pouet()
 class NoName: pass
 p3 = NoName()
 '''
-        astng = builder.string_build(data, __name__, __file__)
+        astng = builder.string_build(code, __name__, __file__)
         p1 = astng['p1'].infer().next()
         self.failUnless(p1.getattr('__name__'))
         p2 = astng['p2'].infer().next()
@@ -189,33 +190,11 @@ def initialize(linter):
         self.assertEquals(intstmts[0].name, 'int')
         self.assertIs(intstmts[0], nodes.const_factory(1)._proxied)
 
-        
-    def test_nonregr_method_lookup(self):
-        if sys.version_info < (2, 4):
-            self.skip('this test require python >= 2.4')
-        data = '''
-class FileA:
-    @staticmethod
-    def funcA():
-        return 4
-
-
-class Test:
-    FileA = [1,2,3]
-    
-    def __init__(self):
-        print FileA.funcA()
-        '''
-        astng = builder.string_build(data, __name__, __file__)
-        it = astng['Test']['__init__'].ilookup('FileA')
-        obj = it.next()
-        self.assertIsInstance(obj, nodes.Class)
-        self.assertRaises(StopIteration, it.next)
 
     def test_decorator_arguments_lookup(self):
         if sys.version_info < (2, 4):
             self.skip('this test require python >= 2.4')
-        data = '''
+        code = '''
 def decorator(value):
    def wrapper(function):
         return function
@@ -228,18 +207,19 @@ class foo:
   def test(self):
        pass
         ''' 
-        astng = builder.string_build(data, __name__, __file__)
+        astng = builder.string_build(code, __name__, __file__)
         member = get_name_node(astng['foo'], 'member')
         it = member.infer()
         obj = it.next()
         self.assertIsInstance(obj, nodes.Const)
         self.assertEquals(obj.value, 10)
         self.assertRaises(StopIteration, it.next)
+
        
-    def test_nonregr_decorator_member_lookup(self):
+    def test_inner_decorator_member_lookup(self):
         if sys.version_info < (2, 4):
             self.skip('this test require python >= 2.4')
-        data = '''
+        code = '''
 class FileA:
     def decorator(bla):
         return bla
@@ -248,13 +228,56 @@ class FileA:
     def funcA():
         return 4
         '''
-        astng = builder.string_build(data, __name__, __file__)
+        astng = builder.string_build(code, __name__, __file__)
         decname = get_name_node(astng['FileA'], 'decorator')
         it = decname.infer()
         obj = it.next()
         self.assertIsInstance(obj, nodes.Function)
         self.assertRaises(StopIteration, it.next)
         
+        
+    def test_static_method_lookup(self):
+        if sys.version_info < (2, 4):
+            self.skip('this test require python >= 2.4')
+        code = '''
+class FileA:
+    @staticmethod
+    def funcA():
+        return 4
+
+
+class Test:
+    FileA = [1,2,3]
+    
+    def __init__(self):
+        print FileA.funcA()
+        '''
+        astng = builder.string_build(code, __name__, __file__)
+        it = astng['Test']['__init__'].ilookup('FileA')
+        obj = it.next()
+        self.assertIsInstance(obj, nodes.Class)
+        self.assertRaises(StopIteration, it.next)
+
+
+    def test_global_delete(self):
+        code = '''
+def run2():
+    f = Frobble()
+    
+class Frobble:
+     pass
+Frobble.mumble = True
+
+del Frobble
+
+def run1():
+    f = Frobble()
+'''
+        astng = builder.string_build(code, __name__, __file__)
+        stmts = astng['run2'].lookup('Frobbel')[1]
+        self.failUnlessEqual(len(stmts), 0)
+        stmts = astng['run1'].lookup('Frobbel')[1]
+        self.failUnlessEqual(len(stmts), 0)
         
 if __name__ == '__main__':
     unittest_main()
