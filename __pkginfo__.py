@@ -54,4 +54,6 @@ tree or by inspecting living object. Methods are added by monkey patching ast
 classes."""
 
 
-
+from os.path import join
+include_dirs = [join('test', 'regrtest_data'),
+                join('test', 'data'), join('test', 'data2')]
