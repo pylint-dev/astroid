@@ -8,7 +8,10 @@ from logilab.astng.manager import ASTNGManager
 class ASTNGManagerTC(unittest.TestCase):
     def setUp(self):
         self.manager = ASTNGManager()
-
+        # borg
+        self.manager._cache.clear()
+        self.manager._mod_file_cache.clear()
+        
     def test_astng_from_module(self):
         astng = self.manager.astng_from_module(unittest)
         self.assertEquals(astng.pure_python, True)
@@ -25,29 +28,24 @@ class ASTNGManagerTC(unittest.TestCase):
         self.assertEquals(astng.name, 'object')
         self.assertEquals(astng.parent.frame().name, '__builtin__')
         self.failUnless('__setattr__' in astng)
+        
+    def _test_astng_from_zip(self, archive):
+        origpath = sys.path[:]
+        sys.modules.pop('mypypa', None)
+        sys.path.insert(0, join(dirname(__file__), 'data', archive))
+        try:
+            module = self.manager.astng_from_module_name('mypypa')
+            self.assertEquals(module.name, 'mypypa')
+            self.failUnless(module.file.endswith('%s/mypypa' % archive),
+                            module.file)
+        finally:
+            sys.path = origpath
 
     def test_astng_from_module_name_egg(self):
-        origpath = sys.path[:]
-        sys.path.insert(0, join(dirname(__file__), 'data', 'setuptools-0.6c9-py2.5.egg'))
-        try:
-            module = self.manager.astng_from_module_name('setuptools')
-            self.assertEquals(module.name, 'setuptools')
-            self.failUnless(module.file.endswith('setuptools-0.6c9-py2.5.egg/setuptools'),
-                            module.file)
-        finally:
-            sys.path = origpath
+        self._test_astng_from_zip('MyPyPa-0.1.0-py2.5.egg')
 
     def test_astng_from_module_name_zip(self):
-        origpath = sys.path[:]
-        sys.path.insert(0, join(dirname(__file__), 'data', 'setuptools-0.6c9-py2.5.zip'))
-        try:
-            module = self.manager.astng_from_module_name('setuptools')
-            self.assertEquals(module.name, 'setuptools')
-            self.failUnless(module.file.endswith('setuptools-0.6c9-py2.5.zip/setuptools'),
-                            module.file)
-        finally:
-            sys.path = origpath
-            
+        self._test_astng_from_zip('MyPyPa-0.1.0-py2.5.zip')            
         
     def test_from_directory(self):
         obj = self.manager.from_directory('data')
@@ -74,17 +72,9 @@ class ASTNGManagerTC(unittest.TestCase):
         self.assertEquals(obj.get('module').name, 'data.module')
         self.assertEquals(obj['module'].name, 'data.module')
         self.assertEquals(obj.get('whatever'), None)
-
-        #self.assertEquals(obj.has_key, [])
-        #self.assertEquals(obj.get, [])
-        #for key in obj:
-        #    print key,
-        #    print obj[key]
-        
         self.assertEquals(obj.fullname(), 'data')
         # FIXME: test fullname on a subpackage
 
-__all__ = ('ASTNGManagerTC',)
         
 if __name__ == '__main__':
     unittest.main()
