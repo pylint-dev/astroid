@@ -3,7 +3,7 @@ logilab-astng (0.19.0-1) unstable; urgency=low
   * actually backport Sandro Tosi 0.17.4-2 changes which wasn't in 0.18.0-1
   * debian/rules: set NO_SETUPTOOLS when calling python setup.py
 
- --
+ -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Wed, 25 Mar 2009 09:31:23 +0100
 
 logilab-astng (0.18.0-1) unstable; urgency=low
 
