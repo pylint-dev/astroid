@@ -236,7 +236,7 @@ class TreeRebuilder(ASTVisitor):
         if 'decorators' in node._fields: # py < 2.6
             attr = 'decorators'
         else:
-            attr = 'decorators_list'
+            attr = 'decorator_list'
         decorators = getattr(node, attr)
         delattr(node, attr)
         if decorators:
