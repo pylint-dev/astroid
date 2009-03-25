@@ -2,8 +2,7 @@ include ChangeLog
 include README
 include README._ast_compatibility
 include COPYING
-include TODO
 include test/fulltest.sh
-recursive-include test/data *.py
+recursive-include test/data *.py *.zip *.egg
 recursive-include test/data2 *.py
 recursive-include test/regrtest_data *.py
