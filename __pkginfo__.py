@@ -17,18 +17,26 @@
 logilab.astng packaging information
 """
 
-modname = 'astng'
 distname = 'logilab-astng'
-numversion = (0, 18, 0)
+
+modname = 'astng'
+subpackage_of = 'logilab'
+
+numversion = (0, 19, 0)
 version = '.'.join([str(num) for num in numversion])
-pyversions = ["2.3", "2.4", "2.5", '2.6']
+
+install_requires = ['logilab-common >= 0.38.1']
+
+# though not all submodules have that level of compat...
+pyversions = ["2.2", "2.3", "2.4", "2.5", '2.6']
 
 license = 'GPL'
-copyright = '''Copyright (c) 2003-2009 LOGILAB S.A. (Paris, FRANCE).
-http://www.logilab.fr/ -- mailto:contact@logilab.fr'''
 
-author = 'Sylvain Thenault'
-author_email = 'sylvain.thenault@logilab.fr'
+author = 'Logilab'
+author_email = 'python-projects@lists.logilab.org'
+mailinglist = "mailto://%s" % author_email
+web = "http://www.logilab.org/project/%s" % distname
+ftp = "ftp://ftp.logilab.org/pub/%s" % modname
 
 short_desc = "extend python's abstract syntax tree"
 
@@ -46,16 +54,4 @@ tree or by inspecting living object. Methods are added by monkey patching ast
 classes."""
 
 
-web = "http://www.logilab.org/project/%s" % distname
-ftp = "ftp://ftp.logilab.org/pub/%s" % modname
-mailinglist = "mailto://python-projects@lists.logilab.org"
 
-subpackage_of = 'logilab'
-
-from os.path import join
-include_dirs = [join('test', 'regrtest_data'),
-                join('test', 'data'), join('test', 'data2')]
-
-debian_uploader = 'Alexandre Fayolle <afayolle@debian.org>'
-
-install_requires = ['logilab-common']
