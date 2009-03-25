@@ -7,10 +7,7 @@ from logilab.astng.manager import ASTNGManager
 
 class ASTNGManagerTC(unittest.TestCase):
     def setUp(self):
-        self.manager = ASTNGManager()
-        # borg
-        self.manager._cache.clear()
-        self.manager._mod_file_cache.clear()
+        self.manager = ASTNGManager(borg=False)
         
     def test_astng_from_module(self):
         astng = self.manager.astng_from_module(unittest)

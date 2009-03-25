@@ -89,8 +89,9 @@ class ASTNGManager(OptionsProviderMixIn):
                  'help' : 'set the project name.'}),
                )
     brain = {}
-    def __init__(self):
-        self.__dict__ = ASTNGManager.brain
+    def __init__(self, borg=True):
+        if borg:
+            self.__dict__ = ASTNGManager.brain
         if not self.__dict__:
             OptionsProviderMixIn.__init__(self)
             self._cache = None
