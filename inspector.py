@@ -18,9 +18,9 @@ This module has been imported from pyreverse
 
 :version:   $Revision: 1.6 $  
 :author:    Sylvain Thenault
-:copyright: 2003-2005 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2005 Sylvain Thenault
+:copyright: 2003-2009 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 
@@ -62,11 +62,11 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
     
     * uid,
       a unique identifier for the node (on astng.Project, astng.Module,
-      astng.Class and astng.locals_type). Only if the linker has been instantiad
+      astng.Class and astng.locals_type). Only if the linker has been instantiated
       with tag=True parameter (False by default).
             
     * Function
-      a mapping from locals'names to their bounded value, which may be a
+      a mapping from locals names to their bounded value, which may be a
       constant like a string or an integer, or an astng node (on astng.Module,
       astng.Class and astng.Function).
 
@@ -74,7 +74,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
       as locals_type but for klass member attributes (only on astng.Class)
       
     * implements,
-      list of implemented interfaces _objects_ (only on astng.Class nodes)
+      list of implemented interface _objects_ (only on astng.Class nodes)
     """
     
     def __init__(self, project, inherited_interfaces=0, tag=False):
@@ -186,7 +186,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
             pass
 
     def handle_assattr_type(self, node, parent):
-        """visit an astng.AssAttr node
+        """handle an astng.AssAttr node
 
         handle instance_attrs_type
         """
