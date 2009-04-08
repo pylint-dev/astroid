@@ -270,6 +270,14 @@ class ModuleNG(object):
         """
         return self
 
+    def previous_sibling(self):
+        """module has no sibling"""
+        return
+
+    def next_sibling(self):
+        """module has no sibling"""
+        return
+
     def absolute_import_activated(self):
         for stmt in self.locals.get('absolute_import', ()):
             if isinstance(stmt, From) and stmt.modname == '__future__':

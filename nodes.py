@@ -228,12 +228,9 @@ class NodeNG:
         raise ASTNGError(msg % (repr(child), repr(self)))
 
     def next_sibling(self):
-        """return the previous sibling statement
-        """
-        if isinstance(self, Module):
-            return
-        while not (self.is_statement or isinstance(self, Module)):
-            self = self.parent
+        """return the next sibling statement"""
+        if not self.is_statement:
+            return self.parent.next_sibling()
         stmts = self.parent.child_sequence(self)
         index = stmts.index(self)
         try:
@@ -242,12 +239,9 @@ class NodeNG:
             pass
 
     def previous_sibling(self):
-        """return the next sibling statement 
-        """
-        if isinstance(self, Module):
-            return
-        while not (self.is_statement or isinstance(self, Module)):
-            self = self.parent
+        """return the previous sibling statement"""
+        if not self.is_statement:
+            return self.parent.previous_sibling()
         stmts = self.parent.child_sequence(self)
         index = stmts.index(self)
         if index >= 1:
