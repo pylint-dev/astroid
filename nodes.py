@@ -545,6 +545,11 @@ For.block_range = elsed_block_range
 
 def try_finalbody_block_range(node, lineno):
     """handle block line numbers range for try/finally statements"""
+    child = node.body[0]
+    # py2.5 try: except: finally:
+    if (isinstance(child, TryExcept) and child.fromlineno == node.fromlineno
+        and lineno > node.fromlineno and lineno <= child.tolineno):
+        return child.block_range(lineno)
     return _elsed_block_range(node, lineno, node.finalbody)
 TryFinally.block_range = try_finalbody_block_range
 

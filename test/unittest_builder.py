@@ -170,12 +170,12 @@ else:
             self.assertEquals(stmt.orelse[0].tolineno, 6)
 
 
-    def test_try_lineno(self):
+    def test_try_except_lineno(self):
         astng = builder.ASTNGBuilder().string_build('''
 try:
   print a
 except:
-  break
+  pass
 else:
   print "bouh"
 ''', __name__, __file__)
@@ -189,6 +189,40 @@ else:
         self.assertEquals(hdlr.fromlineno, 4)
         self.assertEquals(hdlr.tolineno, 5)
         self.assertEquals(hdlr.blockstart_tolineno, 4)        
+
+
+    def test_try_finally_lineno(self):
+        astng = builder.ASTNGBuilder().string_build('''
+try:
+  print a
+finally:
+  print "bouh"
+''', __name__, __file__)
+        try_ = astng.body[0]
+        self.assertEquals(try_.fromlineno, 2)
+        self.assertEquals(try_.tolineno, 5)
+        self.assertEquals(try_.blockstart_tolineno, 2)        
+        self.assertEquals(try_.finalbody[0].fromlineno, 5) # XXX
+        self.assertEquals(try_.finalbody[0].tolineno, 5)
+
+
+    def test_try_finally_25_lineno(self):
+        if sys.version_info < (2, 5):
+            self.skip('require python >= 2.5')
+        astng = builder.ASTNGBuilder().string_build('''
+try:
+  print a
+except:
+  pass
+finally:
+  print "bouh"
+''', __name__, __file__)
+        try_ = astng.body[0]
+        self.assertEquals(try_.fromlineno, 2)
+        self.assertEquals(try_.tolineno, 7)
+        self.assertEquals(try_.blockstart_tolineno, 2)        
+        self.assertEquals(try_.finalbody[0].fromlineno, 7) # XXX
+        self.assertEquals(try_.finalbody[0].tolineno, 7)
 
 
     def test_with_lineno(self):

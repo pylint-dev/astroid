@@ -12,6 +12,7 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """tests for specific behaviour of astng nodes
 """
+import sys
 
 from logilab.common import testlib
 from logilab.astng import builder, nodes, NotFoundError
@@ -76,9 +77,9 @@ else:
         self.assertEquals(self.astng.block_range(10), (0, 22)) # XXX (10, 22) ?
         self.assertEquals(self.astng.body[1].block_range(5), (5, 6))
         self.assertEquals(self.astng.body[1].block_range(6), (6, 6))
-        self.assertEquals(self.astng.body[1].orelse[0].block_range(0), (0, 8))
         self.assertEquals(self.astng.body[1].orelse[0].block_range(7), (7, 8))
         self.assertEquals(self.astng.body[1].orelse[0].block_range(8), (8, 8))
+
 
 class TryExceptNodeTC(_NodeTC):
     CODE = """
@@ -93,7 +94,6 @@ else:
     """
     def test_block_range(self):
         # XXX ensure expected values
-        self.assertEquals(self.astng.body[0].block_range(0), (0, 8))
         self.assertEquals(self.astng.body[0].block_range(1), (1, 8))
         self.assertEquals(self.astng.body[0].block_range(2), (2, 2))
         self.assertEquals(self.astng.body[0].block_range(3), (3, 8))
@@ -102,6 +102,43 @@ else:
         self.assertEquals(self.astng.body[0].block_range(6), (6, 6))
         self.assertEquals(self.astng.body[0].block_range(7), (7, 7))
         self.assertEquals(self.astng.body[0].block_range(8), (8, 8))
+
+
+class TryFinallyNodeTC(_NodeTC):
+    CODE = """
+try:
+    print 'pouet'
+finally:
+    print 'pouet'
+    """
+    def test_block_range(self):
+        # XXX ensure expected values
+        self.assertEquals(self.astng.body[0].block_range(1), (1, 4))
+        self.assertEquals(self.astng.body[0].block_range(2), (2, 2))
+        self.assertEquals(self.astng.body[0].block_range(3), (3, 4))
+        self.assertEquals(self.astng.body[0].block_range(4), (4, 4))
+
+
+class TryFinally25NodeTC(_NodeTC):
+    CODE = """
+try:
+    print 'pouet'
+except Exception:
+    print 'oops'
+finally:
+    print 'pouet'
+    """
+    def test_block_range(self):
+        if sys.version_info < (2, 5):
+            self.skip('require python >= 2.5')
+        # XXX ensure expected values
+        self.assertEquals(self.astng.body[0].block_range(1), (1, 6))
+        self.assertEquals(self.astng.body[0].block_range(2), (2, 2))
+        self.assertEquals(self.astng.body[0].block_range(3), (3, 4))
+        self.assertEquals(self.astng.body[0].block_range(4), (4, 4))
+        self.assertEquals(self.astng.body[0].block_range(5), (5, 5))
+        self.assertEquals(self.astng.body[0].block_range(6), (6, 6))
+
         
 MODULE = abuilder.module_build(test_module)
 MODULE2 = abuilder.file_build('data/module2.py', 'data.module2')
