@@ -59,22 +59,22 @@ def function_to_unbound_method(func):
     return wrapper
 
 # module class dict/iterator interface ########################################
-    
+
 class LocalsDictMixIn(object):
     """ this class provides locals handling common to Module, Function
     and Class nodes, including a dict like interface for direct access
     to locals information
-    
+
     /!\ this class should not be used directly /!\ it's
     only used as a methods and attribute container, and update the
     original class from the compiler.ast module using its dictionnary
     (see below the class definition)
     """
-    
+
     # attributes below are set by the builder module or by raw factories
-    
+
     # dictionary of locals with name as key and node defining the local as
-    # value    
+    # value
     locals = None
 
     def qname(self):
@@ -84,18 +84,18 @@ class LocalsDictMixIn(object):
         if self.parent is None:
             return self.name
         return '%s.%s' % (self.parent.frame().qname(), self.name)
-        
+
     def frame(self):
         """return the first parent frame node (i.e. Module, Function or Class)
         """
         return self
-    
+
     def scope(self):
         """return the first node defining a new scope (i.e. Module,
         Function, Class, Lambda but also GenExpr)
         """
         return self
-    
+
     def set_local(self, name, stmt):
         """define <name> in locals (<stmt> is the node defining the name)
         if the node is a Module node (i.e. has globals), add the name to
@@ -106,14 +106,14 @@ class LocalsDictMixIn(object):
         assert self.locals is not None, (self, id(self))
         #assert not stmt in self.locals.get(name, ()), (self, stmt)
         self.locals.setdefault(name, []).append(stmt)
-        
+
     __setitem__ = set_local
 
     def _append_node(self, child):
         """append a child, linking it in the tree"""
         self.body.append(child)
         child.parent = self
-    
+
     def add_local_node(self, child_node, name=None):
         """append a child which should alter locals to the given node"""
         if name != '__class__':
@@ -121,7 +121,7 @@ class LocalsDictMixIn(object):
             self._append_node(child_node)
         self.set_local(name or child_node.name, child_node)
 
-    
+
     def __getitem__(self, item):
         """method from the `dict` interface returning the first node
         associated with the given name in the locals dictionnary
@@ -131,13 +131,13 @@ class LocalsDictMixIn(object):
         :raises KeyError: if the name is not defined
         """
         return self.locals[item][0]
-    
+
     def __iter__(self):
         """method from the `dict` interface returning an iterator on
         `self.keys()`
         """
         return iter(self.keys())
-    
+
     def keys(self):
         """method from the `dict` interface returning a tuple containing
         locally defined names
@@ -149,7 +149,7 @@ class LocalsDictMixIn(object):
         locally defined nodes which are instance of `Function` or `Class`
         """
         return [self[key] for key in self.keys()]
-    
+
     def items(self):
         """method from the `dict` interface returning a list of tuple
         containing each locally defined name with its associated node,
@@ -162,9 +162,9 @@ class LocalsDictMixIn(object):
         name is defined in the locals dictionary
         """
         return self.locals.has_key(name)
-    
+
     __contains__ = has_key
-    
+
 extend_class(Module, LocalsDictMixIn)
 extend_class(Class, LocalsDictMixIn)
 extend_class(Function, LocalsDictMixIn)
@@ -220,10 +220,10 @@ class ModuleNG(object):
                               '__dict__'))
     # names of module attributes available through the global scope
     scope_attrs = set(('__name__', '__doc__', '__file__', '__path__'))
-    
+
     def pytype(self):
         return '__builtin__.module'
-    
+
     def getattr(self, name, context=None):
         if not name in self.special_attributes:
             try:
@@ -244,9 +244,9 @@ class ModuleNG(object):
                 raise
             except:
                 pass
-        raise NotFoundError(name)        
+        raise NotFoundError(name)
     getattr = remove_nodes(getattr, DelName)
-    
+
     def igetattr(self, name, context=None):
         """infered getattr"""
         # set lookup name since this is necessary to infer on import nodes for
@@ -263,7 +263,7 @@ class ModuleNG(object):
         and so contains a complete representation including the code
         """
         return self.file is not None and self.file.endswith('.py')
-    
+
     def statement(self):
         """return the first parent node marked as statement node
         consider a module as a statement...
@@ -283,7 +283,7 @@ class ModuleNG(object):
             if isinstance(stmt, From) and stmt.modname == '__future__':
                 return True
         return False
-    
+
     def import_module(self, modname, relative_only=False, level=None):
         """import the given module considering self as context"""
         try:
@@ -309,7 +309,7 @@ class ModuleNG(object):
         if package_name:
             return '%s.%s' % (package_name, modname)
         return modname
-        
+
     def wildcard_import_names(self):
         """return the list of imported names when this module is 'wildard
         imported'
@@ -360,12 +360,12 @@ class FunctionNG(object):
 
     special_attributes = set(('__name__', '__doc__', '__dict__'))
     # attributes below are set by the builder module or by raw factories
-    
+
     blockstart_tolineno = None
-    
+
     # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
     type = 'function'
-    
+
     def set_line_info(self, lastchild):
         self.fromlineno = self.lineno
         # lineno is the line number of the first decorator, we want the def statement lineno
@@ -386,7 +386,7 @@ class FunctionNG(object):
         if name == '__module__':
             return [cf(self.root().qname())]
         return std_special_attributes(self, name, False)
-    
+
     def is_method(self):
         """return true if the function node should be considered as a method"""
         # check we are defined in a Class, because this is usually expected
@@ -405,7 +405,7 @@ class FunctionNG(object):
             for infnode in decnode.infer():
                 result.add(infnode.qname())
         return result
-    
+
     def argnames(self):
         """return a list of argument names"""
         if self.args.args: # maybe None with builtin functions
@@ -415,7 +415,7 @@ class FunctionNG(object):
         if self.args.vararg:
             names.append(self.args.vararg)
         if self.args.kwarg:
-            names.append(self.args.kwarg)        
+            names.append(self.args.kwarg)
         return names
 
     def is_bound(self):
@@ -576,12 +576,12 @@ class ClassNG(object):
                               '__bases__', '__mro__'))
 
     blockstart_tolineno = None
-    
+
     _type = None
     type = property(_class_type,
                     doc="class'type, possible values are 'class' | "
                     "'metaclass' | 'interface' | 'exception'")
-    
+
     def _newstyle_impl(self, context=None):
         if context is None:
             context = InferenceContext()
@@ -599,34 +599,34 @@ class ClassNG(object):
     newstyle = property(_newstyle_impl,
                         doc="boolean indicating if it's a new style class"
                         "or not")
-    
+
     def set_line_info(self, lastchild):
         self.fromlineno = self.lineno
         self.blockstart_tolineno = self.bases and self.bases[-1].tolineno or self.fromlineno
         if lastchild is not None:
             self.tolineno = lastchild.tolineno
         # else this is a class with only a docstring, then tolineno is (should be) already ok
-        
+
     def pytype(self):
         if self.newstyle:
             return '__builtin__.type'
         return '__builtin__.classobj'
-    
+
     # attributes below are set by the builder module or by raw factories
-    
+
     # a dictionary of class instances attributes
     instance_attrs = None
-    
+
     # list of parent class as a list of string (ie names as they appears
     # in the class definition) XXX bw compat
     def basenames(self):
         return [as_string(bnode) for bnode in self.bases]
     basenames = property(basenames)
-    
+
     def ancestors(self, recurs=True, context=None):
         """return an iterator on the node base classes in a prefixed
         depth first order
-        
+
         :param recurs:
           boolean indicating if it should recurse or return direct
           ancestors only
@@ -653,7 +653,7 @@ class ClassNG(object):
             except InferenceError:
                 # XXX log error ?
                 continue
-            
+
     def local_attr_ancestors(self, name, context=None):
         """return an iterator on astng representation of parent classes
         which have <name> defined in their locals
@@ -686,7 +686,7 @@ class ClassNG(object):
                 return class_node.locals[name]
         raise NotFoundError(name)
     local_attr = remove_nodes(local_attr, DelAttr)
-    
+
     def instance_attr(self, name, context=None):
         """return the astng nodes associated to name in this class instance
         attributes dictionary or in its parents
@@ -703,11 +703,11 @@ class ClassNG(object):
                 return class_node.instance_attrs[name]
         raise NotFoundError(name)
     instance_attr = remove_nodes(instance_attr, DelAttr)
-    
+
     def getattr(self, name, context=None):
         """this method doesn't look in the instance_attrs dictionary since it's
         done by an Instance proxy at inference time.
-        
+
         It may return a YES object if the attribute has not been actually
         found but a __getattr__ or __getattribute__ method is defined
         """
@@ -733,7 +733,7 @@ class ClassNG(object):
                 continue
         raise NotFoundError(name)
     getattr = function_to_unbound_method(remove_nodes(getattr, DelAttr))
-    
+
     def igetattr(self, name, context=None):
         """infered getattr, need special treatment in class to handle
         descriptors
@@ -761,7 +761,7 @@ class ClassNG(object):
                 yield YES
             else:
                 raise InferenceError(name)
-        
+
     def has_dynamic_getattr(self, context=None):
         """return True if the class has a custom __getattr__ or
         __getattribute__ method
@@ -782,7 +782,7 @@ class ClassNG(object):
             except NotFoundError:
                 pass
         return False
-    
+
     def methods(self):
         """return an iterator on all methods defined in the class and
         its ancestors
@@ -794,13 +794,13 @@ class ClassNG(object):
                     continue
                 done[meth.name] = None
                 yield meth
-                
+
     def mymethods(self):
         """return an iterator on all methods defined in the class"""
         for member in self.values():
             if isinstance(member, Function):
                 yield member
-                
+
     def interfaces(self, herited=True, handler_func=_iface_hdlr):
         """return an iterator on interfaces implemented by the given
         class node
@@ -821,5 +821,5 @@ class ClassNG(object):
                 yield iface
         if not found:
             raise InferenceError()
-    
+
 extend_class(Class, ClassNG)
