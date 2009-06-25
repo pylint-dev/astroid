@@ -25,28 +25,28 @@ __docformat__ = "restructuredtext en"
 from _ast import (Assert, Assign, AugAssign,
                   BinOp, BoolOp, Break,
                   Compare, Continue,
-                  Delete, Dict, 
+                  Delete, Dict,
                   Ellipsis, Exec, ExtSlice,
                   For,
-                  Global, 
+                  Global,
                   If, IfExp, Import, Index,
-                  Lambda, List, ListComp, 
-                  Module, 
+                  Lambda, List, ListComp,
+                  Module,
                   Name,
                   Pass, Print,
                   Raise, Return,
-                  Slice, Subscript, 
+                  Slice, Subscript,
                   TryExcept, TryFinally, Tuple,
                   UnaryOp,
                   While, With,
                   Yield,
-                  )                  
+                  )
 #  aliased nodes
 from _ast import (AST as Node,
                   Attribute as Getattr,
                   Call as CallFunc,
                   ClassDef as Class,
-                  Expr as Discard, 
+                  Expr as Discard,
                   FunctionDef as Function,
                   GeneratorExp as GenExpr,
                   ImportFrom as From,
@@ -178,7 +178,7 @@ class Const(Node):
     def __init__(self, value=None):
         super(Const, self).__init__()
         self.value = value
-        
+
 class DelAttr(Node):
     """represent del attribute statements"""
 
@@ -207,10 +207,10 @@ class TreeRebuilder(ASTVisitor):
 
     def visit_binop(self, node):
         node.op = _BIN_OP_CLASSES[node.op.__class__]
-    
+
     def visit_boolop(self, node):
         node.op = _BOOL_OP_CLASSES[node.op.__class__]
-    
+
     def visit_callfunc(self, node):
         node.args.extend(node.keywords)
         del node.keywords
@@ -255,7 +255,7 @@ class TreeRebuilder(ASTVisitor):
 
     def visit_import(self, node):
         node.names = [(alias.name, alias.asname) for alias in node.names]
-    
+
     def visit_from(self, node):
         node.names = [(alias.name, alias.asname) for alias in node.names]
         node.modname = node.module
@@ -271,7 +271,7 @@ class TreeRebuilder(ASTVisitor):
             node.__class__ = DelName
         elif self.visitor.asscontext is not None:
             node.__class__ = AssName
-            
+
     def visit_num(self, node):
         node.__class__ = Const
         node.value = node.n
@@ -324,7 +324,7 @@ def _const_factory(value):
     node.value = value
     return node
 
-        
+
 def function_factory(name, args, defaults, flag=0, doc=None):
     """create and initialize a astng Function node"""
     # XXX local import necessary due to cyclic deps

@@ -47,13 +47,13 @@ try:
 except:
     from compiler import parse
     from logilab.astng import patchcomptransformer
-    
+
 # ast NG builder ##############################################################
 
 class ASTNGBuilder:
     """provide astng building methods
     """
-    
+
     def __init__(self, manager=None):
         if manager is None:
             from logilab.astng import MANAGER as manager
@@ -94,7 +94,7 @@ class ASTNGBuilder:
         self._done = {}
         self.object_build(node, module)
         return node
-    
+
     def file_build(self, path, modname=None):
         """build astng from a source code file (i.e. from an ast)
 
@@ -120,13 +120,13 @@ class ASTNGBuilder:
         finally:
             self._file = None
             sys.path.pop(0)
-        
+
         return node
-    
+
     def string_build(self, data, modname='', path=None):
         """build astng from a source code stream (i.e. from an ast)"""
         return self.ast_build(parse(data + '\n'), modname, path)
-       
+
     def ast_build(self, node, modname='', path=None):
         """recurse on the ast (soon ng) to add some arguments et method"""
         if path is not None:
@@ -138,7 +138,7 @@ class ASTNGBuilder:
             node.package = True
         else:
             node.package = path and path.find('__init__.py') > -1 or False
-        node.name = modname 
+        node.name = modname
         node.pure_python = True
         if self._manager is not None:
             self._manager._cache[node.file] = node
@@ -151,7 +151,7 @@ class ASTNGBuilder:
     #
     # this is actually a really minimal representation, including only Module,
     # Function and Class nodes and some others as guessed
-    
+
     def object_build(self, node, obj):
         """recursive method which create a partial ast from real objects
          (only function, class, and method are handled)
@@ -179,7 +179,7 @@ class ASTNGBuilder:
                 if self._member_module(member) != self._module.__name__:
                     imported_member(node, member, name)
                     continue
-                object_build_methoddescriptor(node, member)                
+                object_build_methoddescriptor(node, member)
             elif isclass(member):
                 # verify this is not an imported class
                 if self._member_module(member) != self._module.__name__:
@@ -215,7 +215,7 @@ def imported_member(node, member, name):
 
     check if it's sound valid and then add an import node, else use a dummy node
     """
-    # /!\ some classes like ExtensionClass doesn't have a 
+    # /!\ some classes like ExtensionClass doesn't have a
     # __module__ attribute !
     member_module = getattr(member, '__module__', '__builtin__')
     try:
@@ -224,4 +224,4 @@ def imported_member(node, member, name):
         attach_dummy_node(node, name, member)
     else:
         attach_import_node(node, member_module, name)
-    
+

@@ -27,7 +27,7 @@ from inspect import getargspec
 
 from logilab.astng import nodes
 
-    
+
 def _attach_local_node(parent, node, name):
     node.name = name # needed by add_local_node
     parent.add_local_node(node)
@@ -43,7 +43,7 @@ def attach_dummy_node(node, name, object=_marker):
     _attach_local_node(node, enode, name)
 
 nodes.EmptyNode.has_underlying_object = lambda self: self.object is not _marker
-    
+
 def attach_const_node(node, name, value):
     """create a Const node and register it in the locals of the given
     node with the specified name
@@ -107,7 +107,7 @@ else:
 
 def register_arguments(func, args=None):
     """add given arguments to local
-    
+
     args is a list that may contains nested lists
     (i.e. def func(a, (b, c, d)): ...)
     """
@@ -181,8 +181,8 @@ def _base_class_object_build(node, member, basenames, name=None):
     return klass
 
 
-__all__ = ('register_arguments',  'build_module', 
-           'object_build_class', 'object_build_function', 
+__all__ = ('register_arguments',  'build_module',
+           'object_build_class', 'object_build_function',
            'object_build_datadescriptor', 'object_build_methoddescriptor',
            'attach_dummy_node',
            'attach_const_node', 'attach_import_node')
