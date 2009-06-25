@@ -274,16 +274,16 @@ class BuilderTC(TestCase):
         # check property has __init__
         pclass = builtin_astng['property']
         self.assert_('__init__' in pclass)
-        self.failUnless(isinstance(builtin_astng['None'], nodes.Const), builtin_astng['None'])
-        self.failUnless(isinstance(builtin_astng['True'], nodes.Const), builtin_astng['True'])
-        self.failUnless(isinstance(builtin_astng['False'], nodes.Const), builtin_astng['False'])
-        self.failUnless(isinstance(builtin_astng['Exception'], nodes.From), builtin_astng['Exception'])
-        self.failUnless(isinstance(builtin_astng['NotImplementedError'], nodes.From))
-       
-        # 
+        self.assertIsInstance(builtin_astng['None'], nodes.Const)
+        self.assertIsInstance(builtin_astng['True'], nodes.Const)
+        self.assertIsInstance(builtin_astng['False'], nodes.Const)
+        self.assertIsInstance(builtin_astng['Exception'], nodes.From)
+        self.assertIsInstance(builtin_astng['NotImplementedError'], nodes.From)
+
+    def test_inspect_build1(self):
         time_astng = MANAGER.astng_from_module_name('time')
         self.assert_(time_astng)
-        unittest_astng = self.builder.inspect_build(unittest)
+        self.assertEquals(time_astng['time'].args.defaults, [])
 
         
     def test_inspect_build2(self):
@@ -297,6 +297,9 @@ class BuilderTC(TestCase):
             dt_astng.getattr('DateTime')
             # this one is failing since DateTimeType.__module__ = 'builtins' !
             #dt_astng.getattr('DateTimeType')
+
+    def test_inspect_build3(self):
+        unittest_astng = self.builder.inspect_build(unittest)
 
     def test_inspect_build_instance(self):
         """test astng tree build from a living object"""
