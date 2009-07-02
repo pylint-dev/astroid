@@ -46,7 +46,9 @@ For installation options, see ::
 	python setup.py install --help
 
 
-If you have any questions, please mail devel@logilab.fr for support. 
+If you have any questions, please mail the python-project@logilab.org mailing
+list  for support (http://lists.logilab.org/mailman/listinfo/python-projects
+for subscription information)
 
 Sylvain Thénault
 Oct 21, 2005
