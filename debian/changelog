@@ -1,3 +1,33 @@
+logilab-astng (0.19.0-2) unstable; urgency=medium
+
+  [ Sandro Tosi ]
+  * debian/python-logilab-astng.preinst
+    - added to remove leftover files after migration to python-support; thanks
+      to Helmut Grohne and Yaroslav Halchenko for the reports; Closes: #533282,
+      #528458
+  * urgency=medium because it fixes RC bugs 
+  * debian/control
+    - bump Standards-Version 3.8.2 (no changes needed)
+  * debian/copyright
+    - bump upstream copyright years
+    - added packaging copyright for the work I do
+  * debian/control
+    - updated long description to match new upstream one
+    - bump python-logilab-common dependency to at least 0.39.0
+  * debian/rules
+    - using --root instead of --prefix
+
+
+  [ Julien Lavergne ]
+  * debian/{control, rules}
+    - prepare for the upcoming Python 2.6 transition; thanks to Alessio Treglia
+      for the report and patch; Closes: #530607
+      + added versioned depend on python and debhelper to have functions we need
+      + used --install-layout=deb to setup.py install
+      + replaced site-packages by *-packages
+
+ -- Sandro Tosi <morph@debian.org>  Thu, 18 Jun 2009 07:14:21 +0200
+
 logilab-astng (0.19.0-1) unstable; urgency=low
 
   * actually backport Sandro Tosi 0.17.4-2 changes which wasn't in 0.18.0-1

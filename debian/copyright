@@ -8,9 +8,9 @@ Upstream Author:
 
 Copyright:
 
-    Copyright (c) 2003-2008 LOGILAB S.A. (Paris, FRANCE).
+    Copyright (c) 2003-2009 LOGILAB S.A. (Paris, FRANCE).
       http://www.logilab.fr/ -- mailto:contact@logilab.fr
-    Copyright (C) 2003-2008 Sylvain Thenault
+    Copyright (C) 2003-2009 Sylvain Thenault
 
 License:
 
@@ -31,3 +31,6 @@ License:
 
 On Debian systems, the complete text of the GNU General Public License
 v2 may be found in '/usr/share/common-licenses/GPL-2'.
+
+The Debian packaging is Copyright (C) 2008-2009, Sandro Tosi <morph@debian.org>
+and is licensed under the same terms as upstream code (see above).

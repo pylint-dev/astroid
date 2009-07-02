@@ -3,10 +3,10 @@ Section: python
 Priority: optional
 Maintainer: Debian Python Modules Team <python-modules-team@lists.alioth.debian.org>
 Uploaders: Sylvain Thénault <sylvain.thenault@logilab.fr>, Alexandre Fayolle <afayolle@debian.org>, Sandro Tosi <morph@debian.org>
-Build-Depends: debhelper (>= 5.0.37.2), python (>= 2.3.5-7)
+Build-Depends: debhelper (>= 5.0.37.2), python (>= 2.4)
 Build-Depends-Indep: python-support
 XS-Python-Version: all
-Standards-Version: 3.8.1
+Standards-Version: 3.8.2
 Homepage: http://www.logilab.org/project/logilab-astng
 Vcs-Svn: svn://svn.debian.org/svn/python-modules/packages/logilab-astng/trunk/
 Vcs-Browser: http://svn.debian.org/viewsvn/python-modules/packages/logilab-astng/trunk/
@@ -19,8 +19,9 @@ Description: extend Python's abstract syntax tree (AST)
  The aim of this module is to provide a common base representation of
  Python source code for projects such as pyreverse or pylint. 
  .
- It extends classes defined in the compiler.ast module with some
- additional methods and attributes. Instance attributes are added by a
- builder object, which can either generate extended ast (let's call
- them astng ;) by visiting an existant ast tree or by inspecting
- living object. Methods are added by monkey patching ast classes.
+ It extends classes defined in the compiler.ast module (Python <= 2.4)
+ or in the builtin _ast module (Python >= 2.5) with some additional
+ methods and attributes. Instance attributes are added by a builder
+ object, which can either generate extended ast (let's call them astng
+ ;) by visiting an existant ast tree or by inspecting living
+ object. Methods are added by monkey patching ast classes.
