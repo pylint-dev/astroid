@@ -9,29 +9,25 @@ python source code for projects such as pychecker, pyreverse,
 pylint... Well, actually the development of this library is essentialy
 governed by pylint's needs.
 
-It extends class defined in the compiler.ast [1] module with some
-additional methods and attributes. Instance attributes are added by a
-builder object, which can either generate extended ast (let's call
-them astng ;) by visiting an existant ast tree or by inspecting living
-object. Methods are added by monkey patching ast classes.
+Since 0.18, it provides a compatible representation which may come
+from the `compiler` module (for python <= 2.4) pr the `_ast` module
+(for python >= 2.5).
+
+It extends bare node classes with some additional methods and
+attributes. Instance attributes are added by a builder object, which
+can generate extended ast (let's call them astng ;) by visiting either
+an existant ast tree or by inspecting living object. Methods are added
+by monkey patching ast classes. Finally some support for static
+inference is provided.
 
 Main modules are:
 
-* nodes and scoped_nodes for more information about methods and
+* `nodes` and `scoped_nodes` for more information about methods and
   attributes added to different node classes
 
-* the manager contains a high level object to get astng trees from
+* the `manager` contains a high level object to get astng trees from
   source files and living objects. It maintains a cache of previously
   constructed tree for quick access
-
-* builder contains the class responsible to build astng trees
-
-
-Notice
-------
-This package has been extracted from the logilab-common package, which
-will be kept for some time for backward compatibility but will no
-longer be maintained. 
 
 
 Installation
@@ -46,9 +42,10 @@ For installation options, see ::
 	python setup.py install --help
 
 
-If you have any questions, please mail the python-project@logilab.org mailing
-list  for support (http://lists.logilab.org/mailman/listinfo/python-projects
-for subscription information)
+If you have any questions, please mail the
+python-project@lists.logilab.org mailing list for support. See
+http://lists.logilab.org/mailman/listinfo/python-projects for
+subscription information and archives.
 
 Sylvain Thénault
-Oct 21, 2005
+Oct 21, 2005, updated on Aug 26 2009.
