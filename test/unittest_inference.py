@@ -12,7 +12,7 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """tests for the astng inference capabilities
 """
-
+from os.path import join
 import sys
 from StringIO import StringIO
 from logilab.common.testlib import TestCase, unittest_main
@@ -876,18 +876,19 @@ def f(x):
         self.assertEquals(infered.name, 'logilab.common.date')
 
     def test_python25_no_relative_import(self):
-        data = 'import unittest_lookup; print unittest_lookup'
-        astng = builder.string_build(data, 'logilab.astng.test.unittest_inference', __file__)
-        self.failIf(astng.absolute_import_activated())
-#         infered = get_name_node(astng, 'unittest_lookup').infer().next()
-#         self.assertIsInstance(infered, nodes.Module)
-        # failed to import unittest_lookup since absolute_import is activated
+        if sys.version_info < (2, 5):
+            self.skip('require py >= 2.5')
+        # data = 'import unittest_lookup; print unittest_lookup'
+        # astng = builder.string_build(data, 'logilab.astng.test.unittest_inference', __file__)
+        # self.failIf(astng.absolute_import_activated())
+        # infered = get_name_node(astng, 'unittest_lookup').infer().next()
+        # self.assertIsInstance(infered, nodes.Module)
         data = 'from __future__ import absolute_import; import unittest_lookup; print unittest_lookup'
-        astng = builder.string_build(data, __name__, __file__)
+        astng = builder.file_build(join('regrtest_data', 'absimport.py'), 'absimport')
         self.failUnless(astng.absolute_import_activated(), True)
-#         infered = get_name_node(astng, 'unittest_lookup').infer().next()
-#         # failed to import unittest_lookup since absolute_import is activated
-#         self.failUnless(infered is YES)
+        infered = get_name_node(astng, 'import_package_subpackage_module').infer().next()
+        # failed to import since absolute_import is activated
+        self.failUnless(infered is YES)
 
 #     def test_mechanize_open(self):
 #         try:
