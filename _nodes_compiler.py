@@ -68,7 +68,7 @@ try:
 except:
     class GenExpr:
         """dummy GenExpr node, shouldn't be used with py < 2.4"""
-    class GenExprIf: 
+    class GenExprIf:
         """dummy GenExprIf node, shouldn't be used with py < 2.4"""
     class GenExprInner:
         """dummy GenExprInner node, shouldn't be used with py < 2.4"""
@@ -82,7 +82,7 @@ except ImportError:
             self.nodes = nodes
 
 # dummy python >= 2.5 nodes: if we are using py >= 2.5 we will use _ast;
-# but we need it for the other astng modules            
+# but we need it for the other astng modules
 class With: pass
 class IfExp: pass
 
@@ -176,7 +176,7 @@ class BoolOp(Node):
                   _Or: 'or'
                   }
 
-    
+
 class UnaryOp(Node):
     """replace UnaryAdd, UnarySub, Not"""
     OP_CLASSES = {_UnaryAdd: '+',
@@ -261,7 +261,7 @@ List._orig_init = List.__init__
 List.__init__ = init_noargs
 Dict._orig_init = Dict.__init__
 Dict.__init__ = init_noargs
-        
+
 
 # compiler rebuilder ##########################################################
 
@@ -325,7 +325,7 @@ class TreeRebuilder(ASTVisitor):
     def __init__(self, rebuild_visitor):
         self.visitor = rebuild_visitor
 
-    
+
     def insert_delstmt_if_necessary(self, node):
         """insert a Delete statement node if necessary
 
@@ -349,33 +349,33 @@ class TreeRebuilder(ASTVisitor):
             stmt.targets = [node]
         self.visitor.asscontext = stmt
         return stmt is node
-    
+
     # scoped nodes #######################################################
-        
+
     def visit_function(self, node):
         # remove Stmt node
         node.body = node.code.nodes
         del node.code
         args_compiler_to_ast(node)
-        
+
     def visit_lambda(self, node):
         node.body = node.code
         del node.code
         args_compiler_to_ast(node)
-    
+
     def visit_class(self, node):
         # remove Stmt node
         node.body = node.code.nodes
         del node.code
-    
+
     def visit_module(self, node):
         # remove Stmt node
         node.body = node.node.nodes
         del node.node
         return True
-        
+
     #  other visit_<node> #####################################################
-    
+
     def visit_assattr(self, node):
         if node.flags == 'OP_DELETE':
             self.insert_delstmt_if_necessary(node)
@@ -408,11 +408,11 @@ class TreeRebuilder(ASTVisitor):
         del node.expr
         node.target = node.node
         del node.node
-    
+
     def visit_backquote(self, node):
         node.value = node.expr
         del node.expr
-    
+
     def visit_binop(self, node):
         node.op = BinOp.OP_CLASSES[node.__class__]
         node.__class__ = BinOp
@@ -424,19 +424,19 @@ class TreeRebuilder(ASTVisitor):
             else:
                 node.left = node.nodes[0]
             del node.nodes
-    
+
     def visit_boolop(self, node):
         node.op = BoolOp.OP_CLASSES[node.__class__]
         node.__class__ = BoolOp
         node.values = node.nodes
         del node.nodes
-    
+
     def visit_callfunc(self, node):
         node.func = node.node
         node.starargs = node.star_args
         node.kwargs = node.dstar_args
         del node.node, node.star_args, node.dstar_args
-    
+
     def visit_compare(self, node):
         node.left = node.expr
         del node.expr
@@ -452,7 +452,7 @@ class TreeRebuilder(ASTVisitor):
 
     def visit_exec(self, node):
         node.locals, node.globals = node.globals, node.locals
-        
+
     def visit_for(self, node):
         node.target = node.assign
         del node.assign
@@ -460,7 +460,7 @@ class TreeRebuilder(ASTVisitor):
         del node.list
         node.body = node.body.nodes
         _init_else_node(node)
-    
+
     def visit_genexpr(self, node):
         # remove GenExprInner node
         node.elt = node.code.expr
@@ -474,7 +474,7 @@ class TreeRebuilder(ASTVisitor):
     def visit_if(self, node):
         node.test, body = node.tests[0]
         node.body = body.nodes
-        if node.tests[1:]: 
+        if node.tests[1:]:
             # create If node and put it in orelse
             # rely on the fact that the new If node will be visited
             # as well until no more tests remains
@@ -491,21 +491,21 @@ class TreeRebuilder(ASTVisitor):
     def visit_list(self, node):
         node.elts = node.nodes
         del node.nodes
-    
+
     def visit_keyword(self, node):
         node.value = node.expr
         node.arg = node.name
         del node.expr, node.name
-    
+
     def visit_listcomp(self, node):
         node.elt = node.expr
         node.generators = node.quals
         del node.expr, node.quals
-    
+
     def visit_name(self, node):
         if isinstance(self.visitor.asscontext, AugAssign):
             node.__class__ = AssName
-            
+
     def visit_comprehension(self, node):
         if hasattr(node, "list"):
             # ListCompFor
@@ -522,7 +522,7 @@ class TreeRebuilder(ASTVisitor):
         node.values = node.nodes
         del node.nodes
         node.nl = False
-    
+
     def visit_printnl(self, node):
         node.__class__ = Print
         node.values = node.nodes
@@ -584,7 +584,7 @@ class TreeRebuilder(ASTVisitor):
         node.handlers = [ExceptHandler(exctype, excobj, body, node)
                         for exctype, excobj, body in node.handlers]
         _init_else_node(node)
-    
+
     def visit_tryfinally(self, node):
         # remove Stmt nodes
         node.body = node.body.nodes
@@ -646,8 +646,8 @@ if sys.version_info >= (2, 4):
         func.body = []
         args_compiler_to_ast(func)
         return func
-    
-else:    
+
+else:
     def function_factory(name, args, defaults, flag=0, doc=None):
         """create and initialize a astng Function node"""
         func = Function(name, args, defaults, flag, doc, None)

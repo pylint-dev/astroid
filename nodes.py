@@ -180,8 +180,7 @@ class NodeNG:
         return False
 
     def statement(self):
-        """return the first parent node marked as statement node
-        """
+        """return the first parent node marked as statement node"""
         if self.is_statement:
             return self
         return self.parent.statement()
@@ -192,14 +191,13 @@ class NodeNG:
         return self.parent.frame()
 
     def scope(self):
-        """return the first node defining a new scope (i.e. Module,
-        Function, Class, Lambda but also GenExpr)
+        """return the first node defining a new scope (i.e. Module, Function,
+        Class, Lambda but also GenExpr)
         """
         return self.parent.scope()
 
     def root(self):
-        """return the root node of the tree, (i.e. a Module)
-        """
+        """return the root node of the tree, (i.e. a Module)"""
         if self.parent:
             return self.parent.root()
         return self
