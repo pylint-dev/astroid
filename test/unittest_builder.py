@@ -340,7 +340,7 @@ class BuilderTC(TestCase):
         self.assertEquals(datap.package, 1)
 
     def test_yield_parent(self):
-        """check if we removed occasional discard nodes as yield parent"""
+        """check if we added discard nodes as yield parent (w/ compiler)"""
         data = """
 def yiell():
     yield 0
@@ -349,9 +349,12 @@ def yiell():
 """
         func = self.builder.string_build(data).body[0]
         self.assertIsInstance(func, nodes.Function)
-        yill = func.body[0]
-        self.assertIsInstance(yill, nodes.Yield)
-        self.assertIsInstance(func.body[1].body[0], nodes.Yield)
+        stmt = func.body[0]
+        self.assertIsInstance(stmt, nodes.Discard)
+        self.assertIsInstance(stmt.value, nodes.Yield)
+        self.assertIsInstance(func.body[1].body[0], nodes.Discard)
+        self.assertIsInstance(func.body[1].body[0].value, nodes.Yield)
+
     def test_object(self):
         obj_astng = self.builder.inspect_build(object)
         self.failUnless('__setattr__' in obj_astng)
