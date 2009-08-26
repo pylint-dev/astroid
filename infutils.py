@@ -239,7 +239,6 @@ def raise_if_nothing_infered(func):
 # special inference objects (e.g. may be returned as nodes by .infer()) #######
 
 YES = _Yes()
-del _Yes
 
 
 class Instance(Proxy):
