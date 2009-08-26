@@ -68,7 +68,7 @@ def zip_import_data(filepath):
             continue
     return None, None
 
-        
+
 class ASTNGManager(OptionsProviderMixIn):
     """the astng manager, responsible to build astng from files
      or modules.
