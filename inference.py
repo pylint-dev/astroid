@@ -29,7 +29,7 @@ try:
     GeneratorExit # introduced in py2.5
 except NameError:
     class GeneratorExit(Exception): pass
-    
+
 from logilab.astng import MANAGER, nodes, raw_building
 from logilab.astng import ASTNGError, InferenceError, UnresolvableName, \
      NoDefault, NotFoundError, ASTNGBuildingException
@@ -63,7 +63,7 @@ nodes.Const.pytype = Const_pytype
 
 nodes.Const.has_dynamic_getattr = lambda x: False
 
-    
+
 nodes.List._proxied = MANAGER.astng_from_class(list)
 nodes.List.__bases__ += (Instance,)
 nodes.List.pytype = lambda x: '__builtin__.list'
@@ -112,7 +112,7 @@ class CallContext:
                             boundnode = Instance(boundnode)
                         return iter((boundnode,))
                     if funcnode.type == 'classmethod':
-                        return iter((boundnode,))                            
+                        return iter((boundnode,))
                 # 2. search arg index
                 try:
                     return self.args[argindex].infer(context)
@@ -158,7 +158,7 @@ class CallContext:
             return funcnode.args.default_value(name).infer(context)
         except NoDefault:
             raise InferenceError(name)
-        
+
 
 # .infer method ###############################################################
 
@@ -167,7 +167,7 @@ class CallContext:
 def infer_default(self, context=None):
     """we don't know how to resolve a statement by default"""
     raise InferenceError(self.__class__.__name__)
-for cls in nodes.ALL_NODES: 
+for cls in nodes.ALL_NODES:
     cls.infer = infer_default
 
 
@@ -176,7 +176,7 @@ def infer_end(self, context=None):
     """
     yield self
 nodes.Module.infer = infer_end
-nodes.Class.infer = infer_end        
+nodes.Class.infer = infer_end
 nodes.Function.infer = infer_end
 nodes.Lambda.infer = infer_end
 nodes.Const.infer = infer_end
@@ -195,7 +195,7 @@ def infer_name(self, context=None):
     return _infer_stmts(stmts, context, frame)
 nodes.Name.infer = path_wrapper(infer_name)
 
-        
+
 def infer_callfunc(self, context=None):
     """infer a CallFunc node by trying to guess what the function returns"""
     context = context.clone()
@@ -214,7 +214,7 @@ def infer_callfunc(self, context=None):
 nodes.CallFunc.infer = path_wrapper(raise_if_nothing_infered(infer_callfunc))
 
 
-def _imported_module_astng(node, modname):
+def do_import_module(node, modname):
     """return the ast for a module whose name is <modname> imported by <node>
     """
     # handle special case where we are on a package node importing a module
@@ -225,22 +225,24 @@ def _imported_module_astng(node, modname):
     level = getattr(node, 'level', None) # Import as no level
     if mymodule.relative_name(modname, level) == mymodule.name:
         # FIXME: I don't know what to do here...
-        raise InferenceError(modname)
+        raise InferenceError('module importing itself: %s' % modname)
     try:
         return mymodule.import_module(modname, level=level)
     except (ASTNGBuildingException, SyntaxError):
         raise InferenceError(modname)
+nodes.Import.do_import_module = do_import_module
+nodes.From.do_import_module = do_import_module
 
-        
+
 def infer_import(self, context=None, asname=True):
     """infer an Import node: return the imported module/object"""
     name = context.lookupname
     if name is None:
         raise InferenceError()
     if asname:
-        yield _imported_module_astng(self, self.real_name(name))
+        yield self.do_import_module(self.real_name(name))
     else:
-        yield _imported_module_astng(self, name)
+        yield self.do_import_module(name)
 nodes.Import.infer = path_wrapper(infer_import)
 
 def infer_name_module(node, name):
@@ -257,7 +259,7 @@ def infer_from(self, context=None, asname=True):
         raise InferenceError()
     if asname:
         name = self.real_name(name)
-    module = _imported_module_astng(self, self.modname)
+    module = self.do_import_module(self.modname)
     try:
         context = copy_context(context)
         context.lookupname = name
@@ -265,7 +267,7 @@ def infer_from(self, context=None, asname=True):
     except NotFoundError:
         raise InferenceError(name)
 nodes.From.infer = path_wrapper(infer_from)
-    
+
 
 def infer_getattr(self, context=None):
     """infer a Getattr node by using getattr on the associated object"""
@@ -379,7 +381,7 @@ def _infer_binop(operator, operand1, operand2, context, failures=None):
                 yield YES
             else:
                 failures.append(operand1)
-    
+
 def infer_binop(self, context=None):
     failures = []
     for lhs in self.left.infer(context):
