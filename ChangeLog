@@ -41,7 +41,7 @@ Change log for the astng package
     * "with" statement support, patch provided by Brian Hawthorne
 
     * fixed recursion arguments in nodes_of_class method as notified by
-      Dave Borowitz 
+      Dave Borowitz
 
     * new InstanceMethod node introduced to wrap bound method (eg Function
       node), patch provided by Dave Borowitz
@@ -151,7 +151,7 @@ Change log for the astng package
     * multiple inference related bug fixes
 
     * associate List, Tuple and Dict and Const nodes to their respective
-      classes 
+      classes
 
     * new .ass_type method on assignment related node, returning the
       assigment type node (Assign, For, ListCompFor, GenExprFor,
@@ -172,13 +172,13 @@ Change log for the astng package
 
 2006-01-10  --  0.14.0
     * some major inference improvments and refactoring ! The drawback is
-      the introduction of some non backward compatible change in the API 
+      the introduction of some non backward compatible change in the API
       but it's imho much cleaner and powerful now :)
 
     * new boolean property .newstyle on Class nodes (implements #10073)
 
     * new .import_module method on Module node to help in .resolve
-      refactoring 
+      refactoring
 
     * .instance_attrs has list of assignments to instance attribute
       dictionary as value instead of one

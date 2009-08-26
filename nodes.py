@@ -277,7 +277,7 @@ class NodeNG:
             self.tolineno = lastchild.tolineno
         assert self.fromlineno is not None, self
         assert self.tolineno is not None, self
-        
+
     def _fixed_source_line(self):
         """return the line number where the given node appears
 
@@ -296,7 +296,7 @@ class NodeNG:
                 line = _node.lineno
                 _node = _node.parent
         return line
-    
+
     def block_range(self, lineno):
         """handle block line numbers range for non block opening statements
         """
@@ -305,7 +305,7 @@ class NodeNG:
     def set_local(self, name, stmt):
         """delegate to a scoped parent handling a locals dictionary"""
         self.parent.set_local(name, stmt)
-        
+
     def nodes_of_class(self, klass, skip_klass=None):
         """return an iterator on nodes which are instance of the given class(es)
 
@@ -330,7 +330,7 @@ class NodeNG:
 
     def eq(self, value):
         return False
-    
+
     def as_string(self):
         from logilab.astng.nodes_as_string import as_string
         return as_string(self)
@@ -343,7 +343,7 @@ class NodeNG:
 
 # extend all classes instead of base Node class which is an unextendable type
 # in 2.6
-for cls in ALL_NODES: 
+for cls in ALL_NODES:
     extend_class(cls, NodeNG)
 
 INDENT = "    "
@@ -461,7 +461,7 @@ def excepthandler_set_line_info(self, lastchild):
         self.blockstart_tolineno= self.type.tolineno
     else:
         self.blockstart_tolineno= self.lineno
-    self.tolineno = lastchild.tolineno    
+    self.tolineno = lastchild.tolineno
 ExceptHandler.set_line_info = excepthandler_set_line_info
 
 def excepthandler_catch(self, exceptions):
@@ -565,4 +565,4 @@ def real_name(node, asname):
 From.real_name = real_name
 Import.real_name = real_name
 
-        
+
