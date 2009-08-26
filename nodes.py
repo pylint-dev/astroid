@@ -207,10 +207,12 @@ class NodeNG:
     def child_sequence(self, child):
         """search for the right sequence where the child lies in"""
         for field in self._astng_fields:
-            sequence = getattr(self, field)
+            node_or_sequence = getattr(self, field)
+            if node_or_sequence is child:
+                return [node_or_sequence]
             # /!\ compiler.ast Nodes have an __iter__ walking over child nodes
-            if isinstance(sequence, (tuple, list)) and child in sequence:
-                return sequence
+            if isinstance(node_or_sequence, (tuple, list)) and child in node_or_sequence:
+                return node_or_sequence
         else:
             msg = 'Could not found %s in %s\'s children'
             raise ASTNGError(msg % (repr(child), repr(self)))
@@ -218,12 +220,12 @@ class NodeNG:
     def locate_child(self, child):
         """return a 2-uple (child attribute name, sequence or node)"""
         for field in self._astng_fields:
-            sequence = getattr(self, field)
+            node_or_sequence = getattr(self, field)
             # /!\ compiler.ast Nodes have an __iter__ walking over child nodes
-            if child is sequence:
+            if child is node_or_sequence:
                 return field, child
-            if isinstance(sequence, (tuple, list)) and child in sequence:
-                return field, sequence
+            if isinstance(node_or_sequence, (tuple, list)) and child in node_or_sequence:
+                return field, node_or_sequence
         msg = 'Could not found %s in %s\'s children'
         raise ASTNGError(msg % (repr(child), repr(self)))
 
