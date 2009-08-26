@@ -692,19 +692,19 @@ class ClassNG(object):
 
     def instance_attr(self, name, context=None):
         """return the astng nodes associated to name in this class instance
-        attributes dictionary or in its parents
+        attributes dictionary and in its parents
 
         :raises `NotFoundError`:
           if no attribute with this name has been find in this class or
           its parent classes
         """
-        try:
-            return self.instance_attrs[name]
-        except KeyError:
-            # get if from the first parent implementing it if any
-            for class_node in self.instance_attr_ancestors(name, context):
-                return class_node.instance_attrs[name]
-        raise NotFoundError(name)
+        values = self.instance_attrs.get(name, [])
+        # get if from the first parent implementing it if any
+        for class_node in self.instance_attr_ancestors(name, context):
+            values += class_node.instance_attrs[name]
+        if not values:
+            raise NotFoundError(name)
+        return values
     instance_attr = remove_nodes(instance_attr, DelAttr)
 
     def getattr(self, name, context=None):
@@ -714,27 +714,25 @@ class ClassNG(object):
         It may return a YES object if the attribute has not been actually
         found but a __getattr__ or __getattribute__ method is defined
         """
-        if not name in self.special_attributes:
-            try:
-                return self.locals[name]
-            except KeyError:
-                pass
-        else:
+        values = self.locals.get(name, [])
+        if name in self.special_attributes:
             if name == '__module__':
-                return [cf(self.root().qname())] + self.locals.get(name, [])
+                return [cf(self.root().qname())] + values
             if name == '__bases__':
-                return [cf(tuple(self.ancestors(recurs=False, context=context)))] + self.locals.get(name, [])
+                return [cf(tuple(self.ancestors(recurs=False, context=context)))] + values
             # XXX need proper meta class handling + MRO implementation
             if name == '__mro__' and self.newstyle:
                 # XXX mro is read-only but that's not our job to detect that
-                return [cf(tuple(self.ancestors(recurs=True, context=context)))] + self.locals.get(name, [])
+                return [cf(tuple(self.ancestors(recurs=True, context=context)))] + values
             return std_special_attributes(self, name)
         for classnode in self.ancestors(recurs=False, context=context):
             try:
-                return classnode.getattr(name, context)
+                values += classnode.getattr(name, context)
             except NotFoundError:
                 continue
-        raise NotFoundError(name)
+        if not values:
+            raise NotFoundError(name)
+        return values
     getattr = function_to_unbound_method(remove_nodes(getattr, DelAttr))
 
     def igetattr(self, name, context=None):
