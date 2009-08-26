@@ -223,7 +223,7 @@ def do_import_module(node, modname):
     # XXX: no more needed ?
     mymodule = node.root()
     level = getattr(node, 'level', None) # Import as no level
-    if mymodule.relative_name(modname, level) == mymodule.name:
+    if mymodule.absolute_modname(modname, level) == mymodule.name:
         # FIXME: I don't know what to do here...
         raise InferenceError('module importing itself: %s' % modname)
     try:

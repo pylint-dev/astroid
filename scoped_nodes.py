@@ -287,14 +287,17 @@ class ModuleNG(object):
     def import_module(self, modname, relative_only=False, level=None):
         """import the given module considering self as context"""
         try:
-            return MANAGER.astng_from_module_name(self.relative_name(modname, level))
+            absmodname = self.absolute_modname(modname, level)
+            return MANAGER.astng_from_module_name(absmodname)
         except ASTNGBuildingException:
+            # we only want to import a sub module or package of this module,
+            # skip here
             if relative_only:
                 raise
         module = MANAGER.astng_from_module_name(modname)
         return module
 
-    def relative_name(self, modname, level):
+    def absolute_modname(self, modname, level):
         if self.absolute_import_activated() and not level:
             return modname
         if level:
