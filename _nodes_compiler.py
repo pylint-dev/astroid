@@ -603,6 +603,17 @@ class TreeRebuilder(ASTVisitor):
         node.body = node.body.nodes
         _init_else_node(node)
 
+    def visit_yield(self, node):
+        """visit yield : add parent Discard node"""
+        if not isinstance(node.parent, Discard):
+            stmt = Discard(None)
+            del stmt.expr
+            stmt.value = node
+            stmt.fromlineno = node.fromlineno
+            stmt.tolineno = node.tolineno
+            node.parent.replace(node, stmt)
+            node.parent = stmt
+
 
 # raw building ################################################################
 
