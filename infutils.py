@@ -31,7 +31,7 @@ from logilab.astng.nodes import Proxy_, List, Tuple, Function, If, TryExcept
 class Proxy(Proxy_):
     """a simple proxy object"""
     _proxied = None
-    
+
     def __init__(self, proxied=None):
         if proxied is not None:
             self._proxied = proxied
@@ -49,7 +49,7 @@ class Proxy(Proxy_):
 
 class InferenceContext(object):
     __slots__ = ('startingfrom', 'path', 'lookupname', 'callcontext', 'boundnode')
-    
+
     def __init__(self, node=None, path=None):
         self.startingfrom = node # XXX useful ?
         if path is None:
@@ -107,7 +107,7 @@ def are_exclusive(stmt1, stmt2, exceptions=None):
         if stmt1_parents.has_key(node):
             # if the common parent is a If or TryExcept statement, look if
             # nodes are in exclusive branchs
-            if isinstance(node, If) and exceptions is None: 
+            if isinstance(node, If) and exceptions is None:
                 if (node.locate_child(previous)[1]
                     is not node.locate_child(children[node])[1]):
                     return True
@@ -181,6 +181,9 @@ class _Yes(object):
     def __repr__(self):
         return 'YES'
     def __getattribute__(self, name):
+        if name.startswith('__') and name.endswith('__'):
+            # to avoid inspection pb
+            return super(_Yes, self).__getattribute__(name)
         return self
     def __call__(self, *args, **kwargs):
         return self
@@ -254,7 +257,7 @@ class Instance(Proxy):
                     return self._proxied.local_attr(name)
                 return self._proxied.getattr(name, context)
         raise NotFoundError(name)
-    
+
     def igetattr(self, name, context=None):
         """infered getattr"""
         try:
@@ -269,7 +272,7 @@ class Instance(Proxy):
                 return self._wrap_attr(self._proxied.igetattr(name, context), context)
             except NotFoundError:
                 raise InferenceError(name)
-            
+
     def _wrap_attr(self, attrs, context=None):
         """wrap bound methods of attrs in a InstanceMethod proxies"""
         for attr in attrs:
@@ -303,7 +306,7 @@ class Instance(Proxy):
     def __str__(self):
         return 'Instance of %s.%s' % (self._proxied.root().name,
                                       self._proxied.name)
-    
+
     def callable(self):
         try:
             self._proxied.getattr('__call__')
@@ -330,7 +333,7 @@ class UnboundMethod(Proxy):
         if name == 'im_func':
             return [self._proxied]
         return super(UnboundMethod, self).getattr(name, context)
-    
+
     def igetattr(self, name, context=None):
         if name == 'im_func':
             return iter((self._proxied,))
@@ -342,12 +345,12 @@ class BoundMethod(UnboundMethod):
     def is_bound(self):
         return True
 
-    
-class Generator(Proxy): 
+
+class Generator(Proxy):
     """a special node representing a generator"""
     def callable(self):
         return True
-    
+
     def pytype(self):
         return '__builtin__.generator'
 
