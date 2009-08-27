@@ -98,7 +98,7 @@ def function_scope_lookup(self, node, name, offset=0):
         # check this is not used in function decorators
         frame = self
     return scope_lookup(frame, node, name, offset)
-    
+
 def builtin_lookup(name):
     """lookup a name into the builtin module
     return the list of matching statements and the astng for the builtin
@@ -120,7 +120,7 @@ def builtin_lookup(name):
 
 def ilookup(self, name, context=None):
     """infered lookup
-    
+
     return an iterator on infered values of the statements returned by
     the lookup method
     """
@@ -181,7 +181,7 @@ def _filter_stmts(self, stmts, frame, offset):
             # original node's statement is the assignment, only keeps current
             # node (gen exp, list comp)
             _stmts = [node]
-            break        
+            break
         optional_assign = isinstance(ass_type, nodes.LOOP_SCOPES)
         if optional_assign and ass_type.parent_of(self):
             # we are inside a loop, loop var assigment is hidding previous
@@ -200,17 +200,17 @@ def _filter_stmts(self, stmts, frame, offset):
             if _stmts[pindex].ass_type().parent_of(ass_type):
                 # both statements are not at the same block level
                 continue
-            # if currently visited node is following previously considered 
+            # if currently visited node is following previously considered
             # assignement and both are not exclusive, we can drop the previous
             # one. For instance in the following code ::
-            # 
+            #
             #   if a:
             #     x = 1
             #   else:
             #     x = 2
             #   print x
             #
-            # we can't remove neither x = 1 nor x = 2 when looking for 'x' of 
+            # we can't remove neither x = 1 nor x = 2 when looking for 'x' of
             # 'print x'; while in the following ::
             #
             #   x = 1
@@ -251,4 +251,4 @@ nodes.Function.scope_lookup = function_scope_lookup
 nodes.Lambda.scope_lookup = function_scope_lookup
 nodes.Module.scope_lookup = module_scope_lookup
 nodes.GenExpr.scope_lookup = scope_lookup
-        
+
