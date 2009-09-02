@@ -11,7 +11,7 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """visitor doing some postprocessing on the astng tree.
-Try to resolve definitions (namespace) dictionnary, relationship...
+Try to resolve definitions (namespace) dictionary, relationship...
 
 This module has been imported from pyreverse
 
@@ -227,7 +227,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
         for name in node.names:
             if name[0] == '*':
                 continue
-            # analyze dependancies
+            # analyze dependencies
             fullname = '%s.%s' % (basename, name[0])
             if fullname.find('.') > -1:
                 try:
@@ -251,7 +251,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
     # protected methods ########################################################
 
     def _imported_module(self, node, mod_path, relative):
-        """notify an imported module, used to analyze dependancies
+        """notify an imported module, used to analyze dependencies
         """
         module = node.root()
         context_name = module.name
@@ -259,7 +259,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
             mod_path = '%s.%s' % ('.'.join(context_name.split('.')[:-1]),
                                   mod_path)
         if self.compute_module(context_name, mod_path):
-            # handle dependancies
+            # handle dependencies
             if not hasattr(module, 'depends'):
                 module.depends = []
             mod_paths = module.depends

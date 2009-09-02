@@ -133,7 +133,7 @@ ALL_NODES = STMT_NODES + (
 class NodeNG:
     """/!\ this class should not be used directly /!\
     It is used as method and attribute container, and updates the
-    original class from the compiler.ast / _ast module using its dictionnary
+    original class from the compiler.ast / _ast module using its dictionary
     (see below the class definition)
     """
     is_statement = False

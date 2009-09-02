@@ -328,7 +328,7 @@ class ASTWalker:
 
 
 class LocalsVisitor(ASTWalker):
-    """visit a project by traversing the locals dictionnary"""
+    """visit a project by traversing the locals dictionary"""
     def __init__(self):
         ASTWalker.__init__(self, self)
         self._visited = {}
