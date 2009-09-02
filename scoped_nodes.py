@@ -35,7 +35,7 @@ from logilab.common.decorators import cached
 
 from logilab.astng import MANAGER, NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
-from logilab.astng.nodes import Arguments, Class, Const, Function, GenExpr, \
+from logilab.astng._nodes import Arguments, Class, Const, Function, GenExpr, \
      From, Lambda, Module, Name, Pass, Raise, Tuple, List, Dict, Yield, \
      DelAttr, DelName, const_factory as cf
 from logilab.astng.utils import extend_class

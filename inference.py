@@ -30,7 +30,7 @@ try:
 except NameError:
     class GeneratorExit(Exception): pass
 
-from logilab.astng import MANAGER, nodes, raw_building
+from logilab.astng import MANAGER, _nodes as nodes, raw_building
 from logilab.astng import ASTNGError, InferenceError, UnresolvableName, \
      NoDefault, NotFoundError, ASTNGBuildingException
 from logilab.astng.infutils import YES, Instance, InferenceContext, \

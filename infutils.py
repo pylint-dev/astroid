@@ -25,7 +25,7 @@ __doctype__ = "restructuredtext en"
 from logilab.common.compat import chain, imap
 
 from logilab.astng._exceptions import InferenceError, NotFoundError, UnresolvableName
-from logilab.astng.nodes import Proxy_, List, Tuple, Function, If, TryExcept
+from logilab.astng._nodes import Proxy_, List, Tuple, Function, If, TryExcept
 
 
 class Proxy(Proxy_):

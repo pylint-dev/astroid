@@ -24,7 +24,7 @@ from __future__ import generators
 
 __doctype__ = "restructuredtext en"
 
-from logilab.astng import InferenceError, NoDefault, nodes
+from logilab.astng import InferenceError, NoDefault, _nodes as nodes
 from logilab.astng.infutils import copy_context, unpack_infer, \
      raise_if_nothing_infered, yes_if_nothing_infered, Instance, Generator, YES
 from logilab.astng.nodes import Const, Class, Function, Tuple, List, \
