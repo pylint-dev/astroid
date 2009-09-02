@@ -67,7 +67,7 @@ class LocalsDictMixIn(object):
 
     /!\ this class should not be used directly /!\ it's
     only used as a methods and attribute container, and update the
-    original class from the compiler.ast module using its dictionnary
+    original class from the compiler.ast module using its dictionary
     (see below the class definition)
     """
 
@@ -124,7 +124,7 @@ class LocalsDictMixIn(object):
 
     def __getitem__(self, item):
         """method from the `dict` interface returning the first node
-        associated with the given name in the locals dictionnary
+        associated with the given name in the locals dictionary
 
         :type item: str
         :param item: the name of the locally defined object
@@ -170,6 +170,8 @@ extend_class(Class, LocalsDictMixIn)
 extend_class(Function, LocalsDictMixIn)
 extend_class(Lambda, LocalsDictMixIn)
 # GenExpr has its own locals but isn't a frame
+
+
 extend_class(GenExpr, LocalsDictMixIn)
 def frame(self):
     return self.parent.frame()
@@ -194,7 +196,7 @@ def std_special_attributes(self, name, add_locals=True):
 class ModuleNG(object):
     """/!\ this class should not be used directly /!\ it's
     only used as a methods and attribute container, and update the
-    original class from the compiler.ast module using its dictionnary
+    original class from the compiler.ast module using its dictionary
     (see below the class definition)
     """
     fromlineno = 0
@@ -354,20 +356,53 @@ extend_class(Module, ModuleNG)
 
 # Function  ###################################################################
 
-class FunctionNG(object):
+class LambdaNG(object):
     """/!\ this class should not be used directly /!\ it's
     only used as a methods and attribute container, and update the
-    original class from the compiler.ast module using its dictionnary
+    original class from the compiler.ast module using its dictionary
     (see below the class definition)
     """
+
+    # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
+    type = 'function'
+
+    def pytype(self):
+        if 'method' in self.type:
+            return '__builtin__.instancemethod'
+        return '__builtin__.function'
+
+
+    def argnames(self):
+        """return a list of argument names"""
+        if self.args.args: # maybe None with builtin functions
+            names = _rec_get_names(self.args.args)
+        else:
+            names = []
+        if self.args.vararg:
+            names.append(self.args.vararg)
+        if self.args.kwarg:
+            names.append(self.args.kwarg)
+        return names
+
+
+extend_class(Lambda, LambdaNG)
+extend_class(Function, LambdaNG)
+
+
+
+class FunctionNG(LambdaNG):
+    """/!\ this class should not be used directly /!\ it's
+    only used as a methods and attribute container, and update the
+    original class from the compiler.ast module using its dictionary
+    (see below the class definition)
+    """
+
 
     special_attributes = set(('__name__', '__doc__', '__dict__'))
     # attributes below are set by the builder module or by raw factories
 
     blockstart_tolineno = None
 
-    # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
-    type = 'function'
 
     def set_line_info(self, lastchild):
         self.fromlineno = self.lineno
@@ -376,11 +411,6 @@ class FunctionNG(object):
             self.fromlineno += len(self.decorators.nodes)
         self.tolineno = lastchild.tolineno
         self.blockstart_tolineno = self.args.tolineno
-
-    def pytype(self):
-        if 'method' in self.type:
-            return '__builtin__.instancemethod'
-        return '__builtin__.function'
 
     def getattr(self, name, context=None):
         """this method doesn't look in the instance_attrs dictionary since it's
@@ -409,17 +439,6 @@ class FunctionNG(object):
                 result.add(infnode.qname())
         return result
 
-    def argnames(self):
-        """return a list of argument names"""
-        if self.args.args: # maybe None with builtin functions
-            names = _rec_get_names(self.args.args)
-        else:
-            names = []
-        if self.args.vararg:
-            names.append(self.args.vararg)
-        if self.args.kwarg:
-            names.append(self.args.kwarg)
-        return names
 
     def is_bound(self):
         """return true if the function is bound to an Instance or a class"""
@@ -454,12 +473,6 @@ class FunctionNG(object):
             return False
 
 extend_class(Function, FunctionNG)
-
-
-# lambda nodes may also need some of the function members
-Lambda.type = 'function'
-Lambda.pytype = FunctionNG.pytype.im_func
-Lambda.argnames = FunctionNG.argnames.im_func
 
 
 def _rec_get_names(args, names=None):
@@ -578,7 +591,7 @@ def _iface_hdlr(iface_node):
 class ClassNG(object):
     """/!\ this class should not be used directly /!\ it's
     only used as a methods and attribute container, and update the
-    original class from the compiler.ast module using its dictionnary
+    original class from the compiler.ast module using its dictionary
     (see below the class definition)
     """
     special_attributes = set(('__name__', '__doc__', '__dict__', '__module__',
