@@ -111,11 +111,6 @@ def builtin_lookup(name):
         stmts = builtinastng.locals[name]
     except KeyError:
         stmts = ()
-    else:
-        try:
-            stmts = builtinastng.locals[name]
-        except KeyError:
-            stmts = ()
     return builtinastng, stmts
 
 def ilookup(self, name, context=None):
