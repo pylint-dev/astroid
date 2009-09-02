@@ -473,44 +473,47 @@ def _rec_get_names(args, names=None):
             names.append(arg.name)
     return names
 
-def format_args(self):
-    """return arguments formatted as string"""
-    result = [_format_args(self.args, self.defaults)]
-    if self.vararg:
-        result.append('*%s' % self.vararg)
-    if self.kwarg:
-        result.append('**%s' % self.kwarg)
-    return ', '.join(result)
-Arguments.format_args = format_args
 
-def default_value(self, argname):
-    """return the default value for an argument
-
-    :raise `NoDefault`: if there is no default value defined
+class ArgumentsNG(object):
+    """/!\ this class should not be used directly /!\ it's
+    only used as a methods and attribute container, and update the
+    original class from the compiler.ast module using its dictionary
+    (see below the class definition)
     """
-    i = _find_arg(argname, self.args)[0]
-    if i is not None:
-        idx = i - (len(self.args) - len(self.defaults))
-        if idx >= 0:
-            return self.defaults[idx]
-    raise NoDefault()
-Arguments.default_value = default_value
+    def format_args(self):
+        """return arguments formatted as string"""
+        result = [_format_args(self.args, self.defaults)]
+        if self.vararg:
+            result.append('*%s' % self.vararg)
+        if self.kwarg:
+            result.append('**%s' % self.kwarg)
+        return ', '.join(result)
 
-def is_argument(self, name):
-    """return True if the name is defined in arguments"""
-    if name == self.vararg:
-        return True
-    if name == self.kwarg:
-        return True
-    return self.find_argname(name, True)[1] is not None
-Arguments.is_argument = is_argument
+    def default_value(self, argname):
+        """return the default value for an argument
 
-def find_argname(self, argname, rec=False):
-    """return index and Name node with given name"""
-    if self.args: # self.args may be None in some cases (builtin function)
-        return _find_arg(argname, self.args, rec)
-    return None, None
-Arguments.find_argname = find_argname
+        :raise `NoDefault`: if there is no default value defined
+        """
+        i = _find_arg(argname, self.args)[0]
+        if i is not None:
+            idx = i - (len(self.args) - len(self.defaults))
+            if idx >= 0:
+                return self.defaults[idx]
+        raise NoDefault()
+
+    def is_argument(self, name):
+        """return True if the name is defined in arguments"""
+        if name == self.vararg:
+            return True
+        if name == self.kwarg:
+            return True
+        return self.find_argname(name, True)[1] is not None
+
+    def find_argname(self, argname, rec=False):
+        """return index and Name node with given name"""
+        if self.args: # self.args may be None in some cases (builtin function)
+            return _find_arg(argname, self.args, rec)
+        return None, None
 
 def _find_arg(argname, args, rec=False):
     for i, arg in enumerate(args):
@@ -538,6 +541,9 @@ def _format_args(args, defaults=None):
             if defaults is not None and i >= default_offset:
                 values[-1] += '=' + defaults[i-default_offset].as_string()
     return ', '.join(values)
+
+extend_class(Arguments, ArgumentsNG)
+
 
 # Class ######################################################################
 
