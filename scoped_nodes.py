@@ -165,14 +165,11 @@ class LocalsDictMixIn(object):
 
     __contains__ = has_key
 
-extend_class(Module, LocalsDictMixIn)
-extend_class(Class, LocalsDictMixIn)
-extend_class(Function, LocalsDictMixIn)
-extend_class(Lambda, LocalsDictMixIn)
+
 # GenExpr has its own locals but isn't a frame
 
+extend_class(GenExpr, [LocalsDictMixIn])
 
-extend_class(GenExpr, LocalsDictMixIn)
 def frame(self):
     return self.parent.frame()
 GenExpr.frame = frame
@@ -352,7 +349,7 @@ class ModuleNG(object):
         except AttributeError:
             return [name for name in self.keys() if not name.startswith('_')]
 
-extend_class(Module, ModuleNG)
+extend_class(Module, [LocalsDictMixIn, ModuleNG])
 
 # Function  ###################################################################
 
@@ -385,12 +382,10 @@ class LambdaNG(object):
         return names
 
 
-extend_class(Lambda, LambdaNG)
-extend_class(Function, LambdaNG)
+extend_class(Lambda, [LocalsDictMixIn, LambdaNG])
 
 
-
-class FunctionNG(LambdaNG):
+class FunctionNG(object):
     """/!\ this class should not be used directly /!\ it's
     only used as a methods and attribute container, and update the
     original class from the compiler.ast module using its dictionary
@@ -472,7 +467,7 @@ class FunctionNG(LambdaNG):
         except StopIteration:
             return False
 
-extend_class(Function, FunctionNG)
+extend_class(Function, [LocalsDictMixIn, LambdaNG, FunctionNG])
 
 
 def _rec_get_names(args, names=None):
@@ -555,7 +550,7 @@ def _format_args(args, defaults=None):
                 values[-1] += '=' + defaults[i-default_offset].as_string()
     return ', '.join(values)
 
-extend_class(Arguments, ArgumentsNG)
+extend_class(Arguments, [ArgumentsNG])
 
 
 # Class ######################################################################
@@ -842,4 +837,4 @@ class ClassNG(object):
         if not found:
             raise InferenceError()
 
-extend_class(Class, ClassNG)
+extend_class(Class, [LocalsDictMixIn, ClassNG])

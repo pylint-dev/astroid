@@ -338,7 +338,7 @@ class NodeNG:
 # extend all classes instead of base Node class which is an unextendable type
 # in 2.6
 for cls in ALL_NODES:
-    extend_class(cls, NodeNG)
+    extend_class(cls, [NodeNG])
 
 INDENT = "    "
 

@@ -24,20 +24,21 @@ __docformat__ = "restructuredtext en"
 
 from logilab.astng._exceptions import IgnoreChild
 
-def extend_class(original, addons):
-    """add methods and attribute defined in the addons class to the original
+def extend_class(original, class_addons):
+    """add methods and attribute defined in the addon classes to the original
     class
     """
-    brain = addons.__dict__.copy()
-    for special_key in ('__doc__', '__module__', '__dict__'):
-        if special_key in addons.__dict__:
-            del brain[special_key]
-    try:
-        original.__dict__.update(brain)
-    except AttributeError:
-        # dictproxy object
-        for k, v in brain.iteritems():
-            setattr(original, k, v)
+    for addons in class_addons:
+        brain = addons.__dict__.copy()
+        for special_key in ('__doc__', '__module__', '__dict__'):
+            if special_key in addons.__dict__:
+                del brain[special_key]
+        try:
+            original.__dict__.update(brain)
+        except AttributeError:
+            # dictproxy object
+            for k, v in brain.iteritems():
+                setattr(original, k, v)
 
 
 class ASTVisitor(object):
