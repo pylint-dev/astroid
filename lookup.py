@@ -189,8 +189,3 @@ def builtin_lookup(name):
     return builtinastng, stmts
 
 
-def decorators_scope(self):
-    # skip the function node to go directly to the upper level scope
-    return self.parent.parent.scope()
-nodes.Decorators.scope = decorators_scope
-

@@ -53,6 +53,11 @@ class ClassNG(object):# (Class, NodeNG)
 class CompareNG(object):# (Compare, StmtMixIn, NodeNG)
     """class representing a Compare node"""
 
+    def get_children(self):
+        """override get_children for tuple fields"""
+        yield self.left
+        for _, comparator in self.ops:
+            yield comparator # we don't want the 'op'
 
 class ComprehensionNG(object):# (Comprehension, StmtMixIn, NodeNG)
     """class representing a Comprehension node"""
@@ -69,6 +74,9 @@ class ContinueNG(object):# (Continue, NodeNG)
 class DecoratorsNG(object):# (Decorators, StmtMixIn, NodeNG)
     """class representing a Decorators node"""
 
+    def scope(self):
+        # skip the function node to go directly to the upper level scope
+        return self.parent.parent.scope()
 
 class DelAttrNG(object):# (DelAttr, StmtMixIn, NodeNG)
     """class representing a DelAttr node"""
@@ -84,6 +92,13 @@ class DeleteNG(object):# (Delete, NodeNG)
 
 class DictNG(object):# (Dict, StmtMixIn, NodeNG)
     """class representing a Dict node"""
+
+    def get_children(self):
+        """get children of a Dict node"""
+        # overrides get_children
+        for key, value in self.items:
+            yield key
+            yield value
 
 
 class DiscardNG(object):# (Discard, NodeNG)
@@ -101,6 +116,14 @@ class EmptyNodeNG(object):# (EmptyNode, StmtMixIn, NodeNG)
 class ExceptHandlerNG(object):# (ExceptHandler, NodeNG)
     """class representing an ExceptHandler node"""
 
+    def _blockstart_toline(self):
+        if self.name:
+            return self.name.tolineno
+        elif self.type:
+            return self.type.tolineno
+        else:
+            return self.lineno
+
 
 class ExecNG(object):# (Exec, NodeNG)
     """class representing an Exec node"""
@@ -112,6 +135,9 @@ class ExtSliceNG(object):# (ExtSlice, StmtMixIn, NodeNG)
 
 class ForNG(object):# (For, NodeNG)
     """class representing a For node"""
+
+    def _blockstart_toline(self):
+        return self.iter.tolineno
 
 
 class FromNG(object):# (From, NodeNG)
@@ -136,6 +162,10 @@ class GlobalNG(object):# (Global, NodeNG)
 
 class IfNG(object):# (If, NodeNG)
     """class representing an If node"""
+
+    def _blockstart_toline(self):
+        return self.test.tolineno
+
 
 
 class IfExpNG(object):# (IfExp, StmtMixIn, NodeNG)
@@ -169,6 +199,8 @@ class ListCompNG(object):# (ListComp, StmtMixIn, NodeNG)
 class ModuleNG(object):# (Module, StmtMixIn, NodeNG)
     """class representing a Module node"""
 
+    is_statement = False # override StatementMixin
+
 
 class NameNG(object):# (Name, StmtMixIn, NodeNG)
     """class representing a Name node"""
@@ -201,9 +233,15 @@ class SubscriptNG(object):# (Subscript, StmtMixIn, NodeNG)
 class TryExceptNG(object):# (TryExcept, NodeNG)
     """class representing a TryExcept node"""
 
+    def _blockstart_toline(self):
+        return self.lineno
+
 
 class TryFinallyNG(object):# (TryFinally, NodeNG)
     """class representing a TryFinally node"""
+
+    def _blockstart_toline(self):
+        return self.lineno
 
 
 class TupleNG(object):# (Tuple, StmtMixIn, NodeNG)
@@ -217,9 +255,18 @@ class UnaryOpNG(object):# (UnaryOp, StmtMixIn, NodeNG)
 class WhileNG(object):# (While, NodeNG)
     """class representing a While node"""
 
+    def _blockstart_toline(self):
+        return self.test.tolineno
+
 
 class WithNG(object):# (With, NodeNG)
     """class representing a With node"""
+
+    def _blockstart_toline(self):
+        if self.vars:
+            return self.vars.tolineno
+        else:
+            return self.expr.tolineno
 
 
 class YieldNG(object):# (Yield, NodeNG)

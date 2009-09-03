@@ -245,10 +245,10 @@ def infer_import(self, context=None, asname=True):
         yield self.do_import_module(name)
 nodes.Import.infer = path_wrapper(infer_import)
 
-def infer_name_module(node, name):
-    context = InferenceContext(node)
+def infer_name_module(self, name):
+    context = InferenceContext(self)
     context.lookupname = name
-    return node.infer(context, asname=False)
+    return self.infer(context, asname=False)
 nodes.Import.infer_name_module = infer_name_module
 
 

@@ -369,17 +369,25 @@ def _repr_tree(node, result, indent='', _done=None):
             result.append(  indent + field + " = " )
             _repr_tree(value, result, indent, _done)
 
+class StmtMixIn(object):
+    """StmtMixIn used only for a adding a few attributes"""
+    is_statement = True
 
-def replace_child(self, child, newchild):
-    sequence = self.child_sequence(child)
-    newchild.parent = self
-    child.parent = None
-    sequence[sequence.index(child)] = newchild
+    def replace(self, child, newchild):
+        sequence = self.child_sequence(child)
+        newchild.parent = self
+        child.parent = None
+        sequence[sequence.index(child)] = newchild
 
-for klass in STMT_NODES:
-    klass.is_statement = True
-    klass.replace = replace_child
-Module.replace = replace_child
+
+for cls in ALL_NODES:
+    cls_name = REDIRECT.get(cls.__name__, cls.__name__) + "NG"
+    if cls in STMT_NODES:
+        addons = (NodeNG, StmtMixIn, getattr(node_classes, cls_name))
+    else:
+        addons = (NodeNG, getattr(node_classes, cls_name))
+    extend_class(cls, addons)
+
 
 CONST_CLS = {
     list: List,
@@ -387,74 +395,19 @@ CONST_CLS = {
     dict: Dict,
     }
 
-def const_factory(value):
-    """return an astng node for a python value"""
-    try:
-        # if value is of class list, tuple, dict use specific class, not Const
-        cls = CONST_CLS[value.__class__]
-        node = cls()
-        if isinstance(node, Dict):
-            node.items = ()
-        else:
-            node.elts = ()
-    except KeyError:
-        try:
-            node = Const(value)
-        except KeyError:
-            node = _const_factory(value)
-    return node
-
-def _get_children_nochildren(self):
-    return ()
-
-#  get_children overrides  ####################################################
-
-def _dict_get_children(node): # XXX : distinguish key and value ?
-    """override get_children for Dict"""
-    for key, value in node.items:
-        yield key
-        yield value
-Dict.get_children = _dict_get_children
-
-
-def _compare_get_children(node):
-    """override get_children for tuple fields"""
-    yield node.left
-    for _, comparator in node.ops:
-        yield comparator # we don't want the 'op'
-Compare.get_children = _compare_get_children
-
 # block range overrides #######################################################
 
-def for_set_line_info(self, lastchild):
-    self.fromlineno = self.lineno
-    self.tolineno = lastchild.tolineno
-    self.blockstart_tolineno = self.iter.tolineno
-For.set_line_info = for_set_line_info
 
-def if_set_line_info(self, lastchild):
-    self.fromlineno = self.lineno
-    self.tolineno = lastchild.tolineno
-    self.blockstart_tolineno = self.test.tolineno
-If.set_line_info = if_set_line_info
-While.set_line_info = if_set_line_info
+class BlockRangeMixIn(object):
+    """override block range """
+    def set_line_info(self, lastchild):
+        self.fromlineno = self.lineno
+        self.tolineno = lastchild.tolineno
+        self.blockstart_tolineno = self._blockstart_toline()
 
-def try_set_line_info(self, lastchild):
-    self.fromlineno = self.blockstart_tolineno = self.lineno
-    self.tolineno = lastchild.tolineno
-TryExcept.set_line_info = try_set_line_info
-TryFinally.set_line_info = try_set_line_info
+for kls in ExceptHandler, For, If, TryExcept, TryFinally, While, With:
+    extend_class(kls, (BlockRangeMixIn,))
 
-def excepthandler_set_line_info(self, lastchild):
-    self.fromlineno = self.lineno
-    if self.name:
-        self.blockstart_tolineno= self.name.tolineno
-    elif self.type:
-        self.blockstart_tolineno= self.type.tolineno
-    else:
-        self.blockstart_tolineno= self.lineno
-    self.tolineno = lastchild.tolineno
-ExceptHandler.set_line_info = excepthandler_set_line_info
 
 def excepthandler_catch(self, exceptions):
     if self.type is None or exceptions is None:
@@ -463,15 +416,6 @@ def excepthandler_catch(self, exceptions):
         if node.name in exceptions:
             return True
 ExceptHandler.catch = excepthandler_catch
-
-def with_set_line_info(self, lastchild):
-    self.fromlineno = self.blockstart_tolineno = self.lineno
-    self.tolineno = lastchild.tolineno
-    if self.vars:
-        self.blockstart_tolineno = self.vars.tolineno
-    else:
-        self.blockstart_tolineno = self.expr.tolineno
-With.set_line_info = with_set_line_info
 
 
 def object_block_range(node, lineno):
@@ -542,10 +486,10 @@ TryFinally.block_range = try_finalbody_block_range
 
 # From and Import #############################################################
 
-def real_name(node, asname):
+def real_name(self, asname):
     """get name from 'as' name"""
-    for index in range(len(node.names)):
-        name, _asname = node.names[index]
+    for index in range(len(self.names)):
+        name, _asname = self.names[index]
         if name == '*':
             return asname
         if not _asname:
@@ -554,6 +498,7 @@ def real_name(node, asname):
         if asname == _asname:
             return name
     raise NotFoundError(asname)
+
 From.real_name = real_name
 Import.real_name = real_name
 
