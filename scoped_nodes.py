@@ -221,6 +221,15 @@ class ModuleNG(object):
     # names of module attributes available through the global scope
     scope_attrs = set(('__name__', '__doc__', '__file__', '__path__'))
 
+    def scope_lookup(self, node, name, offset=0):
+        if name in self.scope_attrs and not name in self.locals:
+            try:
+                return self, self.getattr(name)
+            except NotFoundError:
+                return self, ()
+        return self._scope_lookup(node, name, offset)
+
+
     def pytype(self):
         return '__builtin__.module'
 
