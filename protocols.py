@@ -331,45 +331,6 @@ nodes.Import.ass_type = end_ass_type
 nodes.With.ass_type = end_ass_type
 
 
-# callable protocol ###########################################################
-
-
-def callable_true(self):
-    return True
-nodes.Function.callable = callable_true
-nodes.Lambda.callable = callable_true
-nodes.Class.callable = callable_true
-
-
-def infer_call_result_function(self, caller, context=None):
-    """infer what a function is returning when called"""
-    if self.is_generator():
-        yield Generator(self)
-        return
-    returns = self.nodes_of_class(nodes.Return, skip_klass=Function)
-    for returnnode in returns:
-        if returnnode.value is None:
-            yield None
-        else:
-            try:
-                for infered in returnnode.value.infer(context):
-                    yield infered
-            except InferenceError:
-                yield YES
-nodes.Function.infer_call_result = infer_call_result_function
-
-
-def infer_call_result_lambda(self, caller, context=None):
-    """infer what a function is returning when called"""
-    return self.body.infer(context)
-nodes.Lambda.infer_call_result = infer_call_result_lambda
-
-
-def infer_call_result_class(self, caller, context=None):
-    """infer what a class is returning when called"""
-    yield Instance(self)
-nodes.Class.infer_call_result = infer_call_result_class
-
 
 # iteration protocol ##########################################################
         

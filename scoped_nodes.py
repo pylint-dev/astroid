@@ -35,9 +35,10 @@ from logilab.common.decorators import cached
 
 from logilab.astng import MANAGER, NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
-from logilab.astng._nodes import Arguments, Class, Const, Function, GenExpr, \
-     From, Lambda, Module, Name, Pass, Raise, Tuple, List, Dict, Yield, \
-     DelAttr, DelName, const_factory as cf
+from logilab.astng._nodes import (Arguments, Class, Const, Dict, From, Function,
+     GenExpr, Lambda, List, Module, Name, Pass, Raise, Return, Tuple, Yield,
+     DelAttr, DelName, const_factory as cf)
+
 from logilab.astng.utils import extend_class
 from logilab.astng.infutils import YES, InferenceContext, Instance, \
      UnboundMethod, copy_context, unpack_infer, _infer_stmts
@@ -368,6 +369,8 @@ class LambdaNG(object):
             return '__builtin__.instancemethod'
         return '__builtin__.function'
 
+    def callable(self):
+        return True
 
     def argnames(self):
         """return a list of argument names"""
@@ -380,6 +383,10 @@ class LambdaNG(object):
         if self.args.kwarg:
             names.append(self.args.kwarg)
         return names
+
+    def infer_call_result(self, caller, context=None):
+        """infer what a function is returning when called"""
+        return self.body.infer(context)
 
 
 extend_class(Lambda, [LocalsDictMixIn, LambdaNG])
@@ -467,6 +474,23 @@ class FunctionNG(object):
         except StopIteration:
             return False
 
+    def infer_call_result(self, caller, context=None):
+        """infer what a function is returning when called"""
+        if self.is_generator():
+            yield Generator(self)
+            return
+        returns = self.nodes_of_class(Return, skip_klass=Function)
+        for returnnode in returns:
+            if returnnode.value is None:
+                yield None
+            else:
+                try:
+                    for infered in returnnode.value.infer(context):
+                        yield infered
+                except InferenceError:
+                    yield YES
+
+
 extend_class(Function, [LocalsDictMixIn, LambdaNG, FunctionNG])
 
 
@@ -550,6 +574,7 @@ def _format_args(args, defaults=None):
                 values[-1] += '=' + defaults[i-default_offset].as_string()
     return ', '.join(values)
 
+
 extend_class(Arguments, [ArgumentsNG])
 
 
@@ -628,6 +653,13 @@ class ClassNG(object):
         if self.newstyle:
             return '__builtin__.type'
         return '__builtin__.classobj'
+
+    def callable(self):
+        return True
+
+    def infer_call_result(self, caller, context=None):
+        """infer what a class is returning when called"""
+        yield Instance(self)
 
     # attributes below are set by the builder module or by raw factories
 
