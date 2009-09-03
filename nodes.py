@@ -51,10 +51,6 @@ from logilab.astng.utils import extend_class, REDIRECT
 INFER_NEED_NAME_STMTS = (From, Import, Global, TryExcept)
 LOOP_SCOPES = (Comprehension, For,)
 
-import re
-ID_RGX = re.compile('^[a-zA-Z_][a-zA-Z_0-9]*$')
-del re
-
 # astng fields definition ####################################################
 Arguments._astng_fields = ('args', 'defaults')
 AssAttr._astng_fields = ('expr',)
