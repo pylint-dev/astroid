@@ -361,6 +361,9 @@ def _repr_tree(node, result, indent='', _done=None):
             result.append(  indent + field + " = " )
             _repr_tree(value, result, indent, _done)
 
+
+# some small MixIns XXX move MixIns to somewhere else ? #######################
+
 class StmtMixIn(object):
     """StmtMixIn used only for a adding a few attributes"""
     is_statement = True
@@ -388,24 +391,6 @@ class StmtMixIn(object):
             return stmts[index -1]
 
 
-for cls in ALL_NODES:
-    cls_name = REDIRECT.get(cls.__name__, cls.__name__) + "NG"
-    if cls in STMT_NODES:
-        addons = (NodeNG, StmtMixIn, getattr(node_classes, cls_name))
-    else:
-        addons = (NodeNG, getattr(node_classes, cls_name))
-    extend_class(cls, addons)
-
-
-CONST_CLS = {
-    list: List,
-    tuple: Tuple,
-    dict: Dict,
-    }
-
-# block range overrides #######################################################
-
-
 class BlockRangeMixIn(object):
     """override block range """
     def set_line_info(self, lastchild):
@@ -425,38 +410,32 @@ class BlockRangeMixIn(object):
             return lineno, orelse[0].fromlineno - 1
         return lineno, last or self.tolineno
 
+# extend all classes
+# TODO : use __bases__ instead of extend_class
+
+for cls in ALL_NODES:
+    cls_name = getattr(node_classes,
+                       REDIRECT.get(cls.__name__, cls.__name__) + "NG")
+    if cls in STMT_NODES:
+        if cls in (For, If, TryExcept, TryFinally, While, With):
+            addons = (NodeNG, StmtMixIn, BlockRangeMixIn, cls_name)
+        else:
+            addons = (NodeNG, StmtMixIn, cls_name)
+    else:
+        addons = (NodeNG, cls_name)
+    extend_class(cls, addons)
+
+
+CONST_CLS = {
+    list: List,
+    tuple: Tuple,
+    dict: Dict,
+    }
+
+# block range overrides #######################################################
+
 
 for kls in For, If, TryExcept, TryFinally, While, With:
     extend_class(kls, (BlockRangeMixIn,))
-
-
-def object_block_range(self, lineno):
-    """handle block line numbers range for function/class statements:
-
-    start from the "def" or "class" position whatever the given lineno
-    """
-    return self.fromlineno, self.tolineno
-Function.block_range = object_block_range
-Class.block_range = object_block_range
-Module.block_range = object_block_range
-
-
-# From and Import #############################################################
-
-def real_name(self, asname):
-    """get name from 'as' name"""
-    for index in range(len(self.names)):
-        name, _asname = self.names[index]
-        if name == '*':
-            return asname
-        if not _asname:
-            name = name.split('.', 1)[0]
-            _asname = name
-        if asname == _asname:
-            return name
-    raise NotFoundError(asname)
-
-From.real_name = real_name
-Import.real_name = real_name
 
 

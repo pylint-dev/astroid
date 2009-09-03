@@ -1,6 +1,7 @@
 #
+from logilab.astng import NotFoundError
+from logilab.astng._nodes import Name, TryExcept
 
-from logilab.astng._nodes import TryExcept
 # from lookup import NodeNG, StmtMixIn, LocalsDictMixIn
 
 
@@ -51,6 +52,12 @@ class CallFuncNG(object):# (CallFunc, StmtMixIn, NodeNG)
 class ClassNG(object):# (Class, NodeNG)
     """class representing a Class node"""
 
+    def block_range(self, lineno):
+        """return block line numbers.
+
+        start from the "class" position whatever the given lineno
+        """
+        return self.fromlineno, self.tolineno
 
 class CompareNG(object):# (Compare, StmtMixIn, NodeNG)
     """class representing a Compare node"""
@@ -161,10 +168,28 @@ class ForNG(object):# (For, NodeNG)
 class FromNG(object):# (From, NodeNG)
     """class representing a From node"""
 
+    def real_name(self, asname):
+        """get name from 'as' name"""
+        for index in range(len(self.names)):
+            name, _asname = self.names[index]
+            if name == '*':
+                return asname
+            if not _asname:
+                name = name.split('.', 1)[0]
+                _asname = name
+            if asname == _asname:
+                return name
+        raise NotFoundError(asname)
 
 class FunctionNG(object):# (Function, NodeNG)
     """class representing a Function node"""
 
+    def block_range(self, lineno):
+        """return block line numbers.
+
+        start from the "class" position whatever the given lineno
+        """
+        return self.fromlineno, self.tolineno
 
 class GenExprNG(object):# (GenExpr, LocalsDictMixIn, StmtMixIn, NodeNG)
     """class representing a GenExpr node"""
@@ -202,6 +227,19 @@ class IfExpNG(object):# (IfExp, StmtMixIn, NodeNG)
 class ImportNG(object):# (Import, NodeNG)
     """class representing an Import node"""
 
+    def real_name(self, asname):
+        """get name from 'as' name"""
+        for index in range(len(self.names)):
+            name, _asname = self.names[index]
+            if name == '*':
+                return asname
+            if not _asname:
+                name = name.split('.', 1)[0]
+                _asname = name
+            if asname == _asname:
+                return name
+        raise NotFoundError(asname)
+
 
 class IndexNG(object):# (Index, StmtMixIn, NodeNG)
     """class representing an Index node"""
@@ -228,6 +266,12 @@ class ModuleNG(object):# (Module, StmtMixIn, NodeNG)
 
     is_statement = False # override StatementMixin
 
+    def block_range(self, lineno):
+        """return block line numbers.
+
+        start from the "class" position whatever the given lineno
+        """
+        return self.fromlineno, self.tolineno
 
 class NameNG(object):# (Name, StmtMixIn, NodeNG)
     """class representing a Name node"""
