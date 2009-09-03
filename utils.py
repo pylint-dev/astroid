@@ -225,7 +225,9 @@ class ASTVisitor(object):
         """dummy method for visiting an Yield node"""
 
 
-REDIRECT = {'Attribute': 'Getattr',
+REDIRECT = {'arguments': 'Arguments',
+            'Attribute': 'Getattr',
+            'comprehension': 'Comprehension',
             'Call': 'CallFunc',
             'ClassDef': 'Class',
             "ListCompFor": 'Comprehension',

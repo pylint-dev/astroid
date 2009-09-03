@@ -47,6 +47,7 @@ from logilab.astng._nodes import _const_factory
 from logilab.astng._exceptions import UnresolvableName, NotFoundError, \
                                         InferenceError, ASTNGError
 from logilab.astng.utils import extend_class, REDIRECT
+from logilab.astng import node_classes
 
 INFER_NEED_NAME_STMTS = (From, Import, Global, TryExcept)
 LOOP_SCOPES = (Comprehension, For,)
@@ -331,10 +332,11 @@ class NodeNG:
         _repr_tree(self, result)
         print "\n".join(result)
 
-# extend all classes instead of base Node class which is an unextendable type
-# in 2.6
+
 for cls in ALL_NODES:
-    extend_class(cls, [NodeNG])
+    cls_name = REDIRECT.get(cls.__name__, cls.__name__) + "NG"
+    extend_class(cls, [NodeNG, getattr(node_classes, cls_name) ])
+
 
 INDENT = "    "
 
