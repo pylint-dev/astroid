@@ -32,7 +32,6 @@ import __builtin__
 
 from logilab.astng import MANAGER, NotFoundError, nodes
 from logilab.astng.infutils import are_exclusive, copy_context, _infer_stmts
-from logilab.astng.utils import extend_class
 
 
 class LookupMixin(object):
@@ -194,70 +193,4 @@ def decorators_scope(self):
     # skip the function node to go directly to the upper level scope
     return self.parent.parent.scope()
 nodes.Decorators.scope = decorators_scope
-
-
-# XXX move it to LocalsDictMixIn
-def _scope_lookup(self, node, name, offset=0):
-    try:
-        stmts = node._filter_stmts(self.locals[name], self, offset)
-    except KeyError:
-        stmts = ()
-    if stmts:
-        return self, stmts
-    if self.parent: # i.e. not Module
-        # nested scope: if parent scope is a function, that's fine
-        # else jump to the module
-        pscope = self.parent.scope()
-        if not isinstance(pscope, nodes.Function):
-            pscope = pscope.root()
-        return pscope.scope_lookup(node, name)
-    return builtin_lookup(name) # Module
-
-
-# move all locals_scope to scope_nodes # rename them by 'scope'
-def module_scope_lookup(self, node, name, offset=0):
-    # module's __dict__ not accessible through name lookup
-    if name in self.scope_attrs and not name in self.locals:
-        try:
-            return self, self.getattr(name)
-        except NotFoundError:
-            return self, ()
-    return self._scope_lookup(node, name, offset)
-
-def class_scope_lookup(self, node, name, offset=0):
-    if node in self.bases:
-        frame = self.parent.frame()
-        # line offset to avoid that class A(A) resolve the ancestor to
-        # the defined class
-        offset = -1
-    else:
-        frame = self
-    return frame._scope_lookup(node, name, offset)
-
-def function_scope_lookup(self, node, name, offset=0):
-    if node in self.args.defaults:
-        frame = self.parent.frame()
-        # line offset to avoid that def func(f=func) resolve the default
-        # value to the defined function
-        offset = -1
-    else:
-        # check this is not used in function decorators
-        frame = self
-    return frame._scope_lookup(node, name, offset)
-
-
-for klass in (nodes.Name, nodes.AssName, nodes.DelName,
-              nodes.Module, nodes.Class,
-              nodes.Function, nodes.Lambda):
-    extend_class(klass, [LookupMixin])
-
-for klass in (nodes.Module, nodes.Class,
-              nodes.Function, nodes.Lambda):
-    klass._scope_lookup = _scope_lookup
-
-nodes.Class.scope_lookup = class_scope_lookup
-nodes.Function.scope_lookup = function_scope_lookup
-nodes.Lambda.scope_lookup = function_scope_lookup
-nodes.Module.scope_lookup = module_scope_lookup
-nodes.GenExpr.scope_lookup = _scope_lookup
 

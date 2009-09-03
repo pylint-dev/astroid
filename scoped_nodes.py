@@ -28,6 +28,7 @@ from __future__ import generators
 
 __doctype__ = "restructuredtext en"
 
+import __builtin__
 import sys
 
 from logilab.common.compat import chain, set
@@ -37,13 +38,13 @@ from logilab.astng import MANAGER, NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
 from logilab.astng._nodes import (Arguments, Class, Const, Dict, From, Function,
      GenExpr, Lambda, List, Module, Name, Pass, Raise, Return, Tuple, Yield,
-     DelAttr, DelName, const_factory as cf)
+     AssName, DelAttr, DelName, const_factory as cf)
 
 from logilab.astng.utils import extend_class
 from logilab.astng.infutils import YES, InferenceContext, Instance, \
      UnboundMethod, copy_context, unpack_infer, _infer_stmts
 from logilab.astng.nodes_as_string import as_string
-
+from logilab.astng.lookup import builtin_lookup, LookupMixin
 
 def remove_nodes(func, cls):
     def wrapper(*args, **kwargs):
@@ -58,6 +59,11 @@ def function_to_unbound_method(func):
         return [isinstance(n, Function) and UnboundMethod(n) or n
                 for n in func(*args, **kwargs)]
     return wrapper
+
+
+for klass in (Name, AssName, DelName):
+    extend_class(klass, [LookupMixin])
+
 
 # module class dict/iterator interface ########################################
 
@@ -96,6 +102,26 @@ class LocalsDictMixIn(object):
         Function, Class, Lambda but also GenExpr)
         """
         return self
+
+
+    def _scope_lookup(self, node, name, offset=0):
+        """XXX method for interfacing the scope lookup"""
+        try:
+            stmts = node._filter_stmts(self.locals[name], self, offset)
+        except KeyError:
+            stmts = ()
+        if stmts:
+            return self, stmts
+        if self.parent: # i.e. not Module
+            # nested scope: if parent scope is a function, that's fine
+            # else jump to the module
+            pscope = self.parent.scope()
+            if not isinstance(pscope, Function):
+                pscope = pscope.root()
+            return pscope.scope_lookup(node, name)
+        return builtin_lookup(name) # Module
+
+
 
     def set_local(self, name, stmt):
         """define <name> in locals (<stmt> is the node defining the name)
@@ -174,6 +200,8 @@ extend_class(GenExpr, [LocalsDictMixIn])
 def frame(self):
     return self.parent.frame()
 GenExpr.frame = frame
+GenExpr.scope_lookup = GenExpr._scope_lookup
+
 
 def std_special_attributes(self, name, add_locals=True):
     if add_locals:
@@ -228,7 +256,6 @@ class ModuleNG(object):
             except NotFoundError:
                 return self, ()
         return self._scope_lookup(node, name, offset)
-
 
     def pytype(self):
         return '__builtin__.module'
@@ -359,7 +386,7 @@ class ModuleNG(object):
         except AttributeError:
             return [name for name in self.keys() if not name.startswith('_')]
 
-extend_class(Module, [LocalsDictMixIn, ModuleNG])
+extend_class(Module, [LocalsDictMixIn, LookupMixin, ModuleNG])
 
 # Function  ###################################################################
 
@@ -397,8 +424,19 @@ class LambdaNG(object):
         """infer what a function is returning when called"""
         return self.body.infer(context)
 
+    def scope_lookup(self, node, name, offset=0):
+        if node in self.args.defaults:
+            frame = self.parent.frame()
+            # line offset to avoid that def func(f=func) resolve the default
+            # value to the defined function
+            offset = -1
+        else:
+            # check this is not used in function decorators
+            frame = self
+        return frame._scope_lookup(node, name, offset)
 
-extend_class(Lambda, [LocalsDictMixIn, LambdaNG])
+
+extend_class(Lambda, [LocalsDictMixIn, LookupMixin, LambdaNG])
 
 
 class FunctionNG(object):
@@ -500,7 +538,8 @@ class FunctionNG(object):
                     yield YES
 
 
-extend_class(Function, [LocalsDictMixIn, LambdaNG, FunctionNG])
+
+extend_class(Function, [LocalsDictMixIn, LookupMixin, LambdaNG, FunctionNG])
 
 
 def _rec_get_names(args, names=None):
@@ -669,6 +708,16 @@ class ClassNG(object):
     def infer_call_result(self, caller, context=None):
         """infer what a class is returning when called"""
         yield Instance(self)
+
+    def scope_lookup(self, node, name, offset=0):
+        if node in self.bases:
+            frame = self.parent.frame()
+            # line offset to avoid that class A(A) resolve the ancestor to
+            # the defined class
+            offset = -1
+        else:
+            frame = self
+        return frame._scope_lookup(node, name, offset)
 
     # attributes below are set by the builder module or by raw factories
 
@@ -878,4 +927,7 @@ class ClassNG(object):
         if not found:
             raise InferenceError()
 
-extend_class(Class, [LocalsDictMixIn, ClassNG])
+extend_class(Class, [LocalsDictMixIn, LookupMixin, ClassNG])
+
+
+
