@@ -1,4 +1,6 @@
+#
 
+from logilab.astng._nodes import TryExcept
 # from lookup import NodeNG, StmtMixIn, LocalsDictMixIn
 
 
@@ -124,6 +126,22 @@ class ExceptHandlerNG(object):# (ExceptHandler, NodeNG)
         else:
             return self.lineno
 
+    def set_line_info(self, lastchild):
+        self.fromlineno = self.lineno
+        self.tolineno = lastchild.tolineno
+        self.blockstart_tolineno = self._blockstart_toline()
+
+    def catch(self, exceptions):
+        if self.type is None or exceptions is None:
+            return True
+        for node in self.type.nodes_of_class(Name):
+            if node.name in exceptions:
+                return True
+
+    def block_range(self, lineno):
+        """handle block line numbers range for For statements"""
+        return self. _elsed_block_range(lineno, self.orelse)
+
 
 class ExecNG(object):# (Exec, NodeNG)
     """class representing an Exec node"""
@@ -165,6 +183,15 @@ class IfNG(object):# (If, NodeNG)
 
     def _blockstart_toline(self):
         return self.test.tolineno
+
+    def block_range(self, lineno):
+        """handle block line numbers range for if statements"""
+        if lineno == self.body[0].fromlineno:
+            return lineno, lineno
+        if lineno <= self.body[-1].tolineno:
+            return lineno, self.body[-1].tolineno
+        return self._elsed_block_range(lineno, self.orelse,
+                                       self.body[0].fromlineno - 1)
 
 
 
@@ -236,12 +263,33 @@ class TryExceptNG(object):# (TryExcept, NodeNG)
     def _blockstart_toline(self):
         return self.lineno
 
+    def block_range(self, lineno):
+        """handle block line numbers range for try/except statements"""
+        last = None
+        for exhandler in self.handlers:
+            if exhandler.type and lineno == exhandler.type.fromlineno:
+                return lineno, lineno
+            if exhandler.body[0].fromlineno <= lineno <= exhandler.body[-1].tolineno:
+                return lineno, exhandler.body[-1].tolineno
+            if last is None:
+                last = exhandler.body[0].fromlineno - 1
+        return self._elsed_block_range(lineno, self.orelse, last)
+
 
 class TryFinallyNG(object):# (TryFinally, NodeNG)
     """class representing a TryFinally node"""
 
     def _blockstart_toline(self):
         return self.lineno
+
+    def block_range(self, lineno):
+        """handle block line numbers range for try/finally statements"""
+        child = self.body[0]
+        # py2.5 try: except: finally:
+        if (isinstance(child, TryExcept) and child.fromlineno == self.fromlineno
+            and lineno > self.fromlineno and lineno <= child.tolineno):
+            return child.block_range(lineno)
+        return self._elsed_block_range(lineno, self.finalbody)
 
 
 class TupleNG(object):# (Tuple, StmtMixIn, NodeNG)
@@ -258,6 +306,9 @@ class WhileNG(object):# (While, NodeNG)
     def _blockstart_toline(self):
         return self.test.tolineno
 
+    def block_range(self, lineno):
+        """handle block line numbers range for for and while statements"""
+        return self. _elsed_block_range(lineno, self.orelse)
 
 class WithNG(object):# (With, NodeNG)
     """class representing a With node"""

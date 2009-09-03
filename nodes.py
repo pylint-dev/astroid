@@ -220,19 +220,11 @@ class NodeNG:
 
     def next_sibling(self):
         """return the next sibling statement"""
-        if not self.is_statement:
-            return self.parent.next_sibling()
-        stmts = self.parent.child_sequence(self)
-        index = stmts.index(self)
-        try:
-            return stmts[index +1]
-        except IndexError:
-            pass
+        return self.parent.next_sibling()
 
     def previous_sibling(self):
         """return the previous sibling statement"""
-        if not self.is_statement:
-            return self.parent.previous_sibling()
+        return self.parent.previous_sibling()
         stmts = self.parent.child_sequence(self)
         index = stmts.index(self)
         if index >= 1:
@@ -379,6 +371,22 @@ class StmtMixIn(object):
         child.parent = None
         sequence[sequence.index(child)] = newchild
 
+    def next_sibling(self):
+        """return the next sibling statement"""
+        stmts = self.parent.child_sequence(self)
+        index = stmts.index(self)
+        try:
+            return stmts[index +1]
+        except IndexError:
+            pass
+
+    def previous_sibling(self):
+        """return the previous sibling statement"""
+        stmts = self.parent.child_sequence(self)
+        index = stmts.index(self)
+        if index >= 1:
+            return stmts[index -1]
+
 
 for cls in ALL_NODES:
     cls_name = REDIRECT.get(cls.__name__, cls.__name__) + "NG"
@@ -405,83 +413,32 @@ class BlockRangeMixIn(object):
         self.tolineno = lastchild.tolineno
         self.blockstart_tolineno = self._blockstart_toline()
 
-for kls in ExceptHandler, For, If, TryExcept, TryFinally, While, With:
+    def _elsed_block_range(self, lineno, orelse, last=None):
+        """handle block line numbers range for try/finally, for, if and while
+        statements
+        """
+        if lineno == self.fromlineno:
+            return lineno, lineno
+        if orelse:
+            if lineno >= orelse[0].fromlineno:
+                return lineno, orelse[-1].tolineno
+            return lineno, orelse[0].fromlineno - 1
+        return lineno, last or self.tolineno
+
+
+for kls in For, If, TryExcept, TryFinally, While, With:
     extend_class(kls, (BlockRangeMixIn,))
 
 
-def excepthandler_catch(self, exceptions):
-    if self.type is None or exceptions is None:
-        return True
-    for node in self.type.nodes_of_class(Name):
-        if node.name in exceptions:
-            return True
-ExceptHandler.catch = excepthandler_catch
-
-
-def object_block_range(node, lineno):
+def object_block_range(self, lineno):
     """handle block line numbers range for function/class statements:
 
     start from the "def" or "class" position whatever the given lineno
     """
-    return node.fromlineno, node.tolineno
+    return self.fromlineno, self.tolineno
 Function.block_range = object_block_range
 Class.block_range = object_block_range
 Module.block_range = object_block_range
-
-
-def _elsed_block_range(node, lineno, orelse, last=None):
-    """handle block line numbers range for try/finally, for and while
-    statements
-    """
-    if lineno == node.fromlineno:
-        return lineno, lineno
-    if orelse:
-        if lineno >= orelse[0].fromlineno:
-            return lineno, orelse[-1].tolineno
-        return lineno, orelse[0].fromlineno - 1
-    return lineno, last or node.tolineno
-
-
-def if_block_range(node, lineno):
-    """handle block line numbers range for if/elif statements"""
-    if lineno == node.body[0].fromlineno:
-        return lineno, lineno
-    if lineno <= node.body[-1].tolineno:
-        return lineno, node.body[-1].tolineno
-    return _elsed_block_range(node, lineno, node.orelse, node.body[0].fromlineno - 1)
-If.block_range = if_block_range
-
-
-def try_except_block_range(node, lineno):
-    """handle block line numbers range for try/except statements"""
-    last = None
-    for exhandler in node.handlers:
-        if exhandler.type and lineno == exhandler.type.fromlineno:
-            return lineno, lineno
-        if exhandler.body[0].fromlineno <= lineno <= exhandler.body[-1].tolineno:
-            return lineno, exhandler.body[-1].tolineno
-        if last is None:
-            last = exhandler.body[0].fromlineno - 1
-    return _elsed_block_range(node, lineno, node.orelse, last)
-TryExcept.block_range = try_except_block_range
-
-
-def elsed_block_range(node, lineno):
-    """handle block line numbers range for for and while statements"""
-    return _elsed_block_range(node, lineno, node.orelse)
-While.block_range = elsed_block_range
-For.block_range = elsed_block_range
-
-
-def try_finalbody_block_range(node, lineno):
-    """handle block line numbers range for try/finally statements"""
-    child = node.body[0]
-    # py2.5 try: except: finally:
-    if (isinstance(child, TryExcept) and child.fromlineno == node.fromlineno
-        and lineno > node.fromlineno and lineno <= child.tolineno):
-        return child.block_range(lineno)
-    return _elsed_block_range(node, lineno, node.finalbody)
-TryFinally.block_range = try_finalbody_block_range
 
 
 # From and Import #############################################################
