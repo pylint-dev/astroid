@@ -38,14 +38,14 @@ LOOP_SCOPES = (Comprehension, For,)
 STMT_NODES = (
     Assert, Assign, AugAssign, Break, Class, Continue, Delete, Discard,
     ExceptHandler, Exec, For, From, Function, Global, If, Import, Pass, Print,
-    Raise, Return, TryExcept, TryFinally, While, With, Yield
+    Raise, Return, TryExcept, TryFinally, While, With
     )
 
 ALL_NODES = STMT_NODES + (
     Arguments, AssAttr, AssName, BinOp, BoolOp, Backquote,  CallFunc, Compare,
     Comprehension, Const, Decorators, DelAttr, DelName, Dict, Ellipsis,
     EmptyNode,  ExtSlice, Getattr,  GenExpr, IfExp, Index, Keyword, Lambda,
-    List,  ListComp, Module, Name, Slice, Subscript, UnaryOp, Tuple
+    List,  ListComp, Module, Name, Slice, Subscript, UnaryOp, Tuple, Yield
     )
 
 
