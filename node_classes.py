@@ -385,6 +385,6 @@ class WithNG(With, BlockRangeMixIn, StmtMixIn, NodeNG):
             return self.expr.tolineno
 
 
-class YieldNG(Yield, StmtMixIn, NodeNG):
+class YieldNG(Yield, NodeNG):
     """class representing a Yield node"""
 
