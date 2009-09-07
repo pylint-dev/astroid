@@ -48,7 +48,7 @@ from logilab.astng._exceptions import UnresolvableName, NotFoundError, \
                                         InferenceError, ASTNGError
 from logilab.astng.utils import extend_class, REDIRECT
 from logilab.astng import node_classes
-from logilab.astng.lookup import LookupMixin
+from logilab.astng.lookup import LookupMixIn
 from logilab.astng import scoped_nodes
 from logilab.astng.scoped_nodes import LocalsDictMixIn
 
@@ -135,17 +135,17 @@ for cls in ALL_NODES:
             scoped_cls = getattr(scoped_nodes,
                        REDIRECT.get(cls.__name__, cls.__name__) + "NG")
             if cls is Function:
-                addons.extend([LookupMixin, LocalsDictMixIn,
+                addons.extend([LookupMixIn, LocalsDictMixIn,
                                scoped_nodes.LambdaNG, scoped_cls])
             else:
-                addons.extend([LookupMixin, LocalsDictMixIn, scoped_cls])
+                addons.extend([LookupMixIn, LocalsDictMixIn, scoped_cls])
         else:
-            addons.append(LookupMixin)
+            addons.append(LookupMixIn)
     if cls not in LOCALS_NODES:
         addons.append(getattr(node_classes,
                        REDIRECT.get(cls.__name__, cls.__name__) + "NG") )
     extend_class(cls,  addons)
 
-# _scope_lookup only available with LookupMixin extention
+# _scope_lookup only available with LookupMixIn extention
 GenExpr.scope_lookup = GenExpr._scope_lookup
 
