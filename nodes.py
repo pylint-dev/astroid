@@ -121,30 +121,17 @@ Yield._astng_fields = ('value',)
 # TODO : use __bases__ instead of extend_class
 
 LOCALS_NODES = (Class, Function, GenExpr, Lambda, Module)
-LOOKUP_NODES = LOCALS_NODES + (Name, AssName, DelName)
-
 
 for cls in ALL_NODES:
-    addons = [NodeNG]
-    if cls in STMT_NODES:
-        addons.append(StmtMixIn)
-        if cls in (For, If, TryExcept, TryFinally, While, With):
-            addons.append(BlockRangeMixIn)
-    if cls in LOOKUP_NODES:
-        if cls in LOCALS_NODES:
-            scoped_cls = getattr(scoped_nodes,
-                       REDIRECT.get(cls.__name__, cls.__name__) + "NG")
-            if cls is Function:
-                addons.extend([LookupMixIn, LocalsDictMixIn,
-                               scoped_nodes.LambdaNG, scoped_cls])
-            else:
-                addons.extend([LookupMixIn, LocalsDictMixIn, scoped_cls])
-        else:
-            addons.append(LookupMixIn)
-    if cls not in LOCALS_NODES:
-        addons.append(getattr(node_classes,
-                       REDIRECT.get(cls.__name__, cls.__name__) + "NG") )
+    if cls in LOCALS_NODES:
+        cls_module = scoped_nodes
+    else:
+        cls_module = node_classes
+    ng_class = getattr(cls_module, REDIRECT.get(cls.__name__, cls.__name__) + "NG")
+    addons = list((ng_class,) + ng_class.__bases__)
+    addons.reverse()
     extend_class(cls,  addons)
+    # cls.__bases__ += (ng_class,) + ng_class.__bases__
 
 # _scope_lookup only available with LookupMixIn extention
 GenExpr.scope_lookup = GenExpr._scope_lookup
