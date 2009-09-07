@@ -27,7 +27,7 @@ __doctype__ = "restructuredtext en"
 from logilab.astng import InferenceError, NoDefault, _nodes as nodes
 from logilab.astng.infutils import copy_context, unpack_infer, \
      raise_if_nothing_infered, yes_if_nothing_infered, Instance, Generator, YES
-from logilab.astng.nodes import Const, Class, Function, Tuple, List, \
+from logilab.astng._nodes import Const, Class, Function, Tuple, List, \
      const_factory
 
 # unary operations ############################################################
@@ -314,7 +314,7 @@ def end_ass_type(self):
     return self
 
 # XXX if you add ass_type to a class, you should probably modify
-#     lookup.filter_stmts around line ::
+#     lookup.LookupMixin.filter_stmts around line ::
 #
 #       if ass_type is mystmt and not isinstance(ass_type, (nodes.Class, ...)):
 nodes.Arguments.ass_type = end_ass_type

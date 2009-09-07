@@ -14,7 +14,7 @@
 local scope in the language definition : Module, Class, Function (and
 Lambda to some extends).
 
-Each new methods and attributes added on each class are documented
+All new methods and attributes added on each class are documented
 below.
 
 
@@ -40,7 +40,6 @@ from logilab.astng._nodes import (Arguments, Class, Const, Dict, From, Function,
      GenExpr, Lambda, List, Module, Name, Pass, Raise, Return, Tuple, Yield,
      AssName, DelAttr, DelName, const_factory as cf)
 
-from logilab.astng.utils import extend_class
 from logilab.astng.infutils import YES, InferenceContext, Instance, \
      UnboundMethod, copy_context, unpack_infer, _infer_stmts
 from logilab.astng.nodes_as_string import as_string
@@ -59,10 +58,6 @@ def function_to_unbound_method(func):
         return [isinstance(n, Function) and UnboundMethod(n) or n
                 for n in func(*args, **kwargs)]
     return wrapper
-
-
-for klass in (Name, AssName, DelName):
-    extend_class(klass, [LookupMixin])
 
 
 # module class dict/iterator interface ########################################
@@ -193,16 +188,6 @@ class LocalsDictMixIn(object):
     __contains__ = has_key
 
 
-# GenExpr has its own locals but isn't a frame
-
-extend_class(GenExpr, [LocalsDictMixIn])
-
-def frame(self):
-    return self.parent.frame()
-GenExpr.frame = frame
-GenExpr.scope_lookup = GenExpr._scope_lookup
-
-
 def std_special_attributes(self, name, add_locals=True):
     if add_locals:
         locals = self.locals
@@ -248,6 +233,15 @@ class ModuleNG(object):
                               '__dict__'))
     # names of module attributes available through the global scope
     scope_attrs = set(('__name__', '__doc__', '__file__', '__path__'))
+
+    is_statement = False # override StatementMixin
+
+    def block_range(self, lineno):
+        """return block line numbers.
+
+        start from the "class" position whatever the given lineno
+        """
+        return self.fromlineno, self.tolineno
 
     def scope_lookup(self, node, name, offset=0):
         if name in self.scope_attrs and not name in self.locals:
@@ -386,7 +380,13 @@ class ModuleNG(object):
         except AttributeError:
             return [name for name in self.keys() if not name.startswith('_')]
 
-extend_class(Module, [LocalsDictMixIn, LookupMixin, ModuleNG])
+
+class GenExprNG(LocalsDictMixIn): #(NodeNG, LocalsDictMixIn):
+    """class representing a GenExpr node"""
+
+    def frame(self):
+        return self.parent.frame()
+
 
 # Function  ###################################################################
 
@@ -436,9 +436,6 @@ class LambdaNG(object):
         return frame._scope_lookup(node, name, offset)
 
 
-extend_class(Lambda, [LocalsDictMixIn, LookupMixin, LambdaNG])
-
-
 class FunctionNG(object):
     """/!\ this class should not be used directly /!\ it's
     only used as a methods and attribute container, and update the
@@ -460,6 +457,13 @@ class FunctionNG(object):
             self.fromlineno += len(self.decorators.nodes)
         self.tolineno = lastchild.tolineno
         self.blockstart_tolineno = self.args.tolineno
+
+    def block_range(self, lineno):
+        """return block line numbers.
+
+        start from the "class" position whatever the given lineno
+        """
+        return self.fromlineno, self.tolineno
 
     def getattr(self, name, context=None):
         """this method doesn't look in the instance_attrs dictionary since it's
@@ -539,9 +543,6 @@ class FunctionNG(object):
 
 
 
-extend_class(Function, [LocalsDictMixIn, LookupMixin, LambdaNG, FunctionNG])
-
-
 def _rec_get_names(args, names=None):
     """return a list of all argument names"""
     if names is None:
@@ -552,59 +553,6 @@ def _rec_get_names(args, names=None):
         else:
             names.append(arg.name)
     return names
-
-
-class ArgumentsNG(object):
-    """/!\ this class should not be used directly /!\ it's
-    only used as a methods and attribute container, and update the
-    original class from the compiler.ast module using its dictionary
-    (see below the class definition)
-    """
-    def format_args(self):
-        """return arguments formatted as string"""
-        result = [_format_args(self.args, self.defaults)]
-        if self.vararg:
-            result.append('*%s' % self.vararg)
-        if self.kwarg:
-            result.append('**%s' % self.kwarg)
-        return ', '.join(result)
-
-    def default_value(self, argname):
-        """return the default value for an argument
-
-        :raise `NoDefault`: if there is no default value defined
-        """
-        i = _find_arg(argname, self.args)[0]
-        if i is not None:
-            idx = i - (len(self.args) - len(self.defaults))
-            if idx >= 0:
-                return self.defaults[idx]
-        raise NoDefault()
-
-    def is_argument(self, name):
-        """return True if the name is defined in arguments"""
-        if name == self.vararg:
-            return True
-        if name == self.kwarg:
-            return True
-        return self.find_argname(name, True)[1] is not None
-
-    def find_argname(self, argname, rec=False):
-        """return index and Name node with given name"""
-        if self.args: # self.args may be None in some cases (builtin function)
-            return _find_arg(argname, self.args, rec)
-        return None, None
-
-def _find_arg(argname, args, rec=False):
-    for i, arg in enumerate(args):
-        if isinstance(arg, Tuple):
-            if rec:
-                found = _find_arg(argname, arg.elts)
-                if found[0] is not None:
-                    return found
-        elif arg.name == argname:
-            return i, arg
-    return None, None
 
 
 def _format_args(args, defaults=None):
@@ -621,9 +569,6 @@ def _format_args(args, defaults=None):
             if defaults is not None and i >= default_offset:
                 values[-1] += '=' + defaults[i-default_offset].as_string()
     return ', '.join(values)
-
-
-extend_class(Arguments, [ArgumentsNG])
 
 
 # Class ######################################################################
@@ -696,6 +641,13 @@ class ClassNG(object):
         if lastchild is not None:
             self.tolineno = lastchild.tolineno
         # else this is a class with only a docstring, then tolineno is (should be) already ok
+
+    def block_range(self, lineno):
+        """return block line numbers.
+
+        start from the "class" position whatever the given lineno
+        """
+        return self.fromlineno, self.tolineno
 
     def pytype(self):
         if self.newstyle:
@@ -926,8 +878,5 @@ class ClassNG(object):
                 yield iface
         if not found:
             raise InferenceError()
-
-extend_class(Class, [LocalsDictMixIn, LookupMixin, ClassNG])
-
 
 

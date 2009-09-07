@@ -58,7 +58,7 @@ del ASTNGManager
 from logilab.astng.nodes import *
 
 # trigger extra monkey-patching
-from logilab.astng import scoped_nodes, inference
+from logilab.astng import inference
 
 # more stuff available
 from logilab.astng import raw_building

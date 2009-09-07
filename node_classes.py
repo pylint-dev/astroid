@@ -1,12 +1,75 @@
 #
-from logilab.astng import NotFoundError
-from logilab.astng._nodes import Name, TryExcept
+from logilab.astng import NotFoundError, NoDefault
+from logilab.astng._nodes import Name, TryExcept, Tuple
+
 
 # from lookup import NodeNG, StmtMixIn, LocalsDictMixIn
 
 
 class ArgumentsNG(object):# (Arguments, StmtMixIn, NodeNG)
     """class representing an Arguments node"""
+
+    def format_args(self):
+        """return arguments formatted as string"""
+        result = [_format_args(self.args, self.defaults)]
+        if self.vararg:
+            result.append('*%s' % self.vararg)
+        if self.kwarg:
+            result.append('**%s' % self.kwarg)
+        return ', '.join(result)
+
+    def default_value(self, argname):
+        """return the default value for an argument
+
+        :raise `NoDefault`: if there is no default value defined
+        """
+        i = _find_arg(argname, self.args)[0]
+        if i is not None:
+            idx = i - (len(self.args) - len(self.defaults))
+            if idx >= 0:
+                return self.defaults[idx]
+        raise NoDefault()
+
+    def is_argument(self, name):
+        """return True if the name is defined in arguments"""
+        if name == self.vararg:
+            return True
+        if name == self.kwarg:
+            return True
+        return self.find_argname(name, True)[1] is not None
+
+    def find_argname(self, argname, rec=False):
+        """return index and Name node with given name"""
+        if self.args: # self.args may be None in some cases (builtin function)
+            return _find_arg(argname, self.args, rec)
+        return None, None
+
+def _find_arg(argname, args, rec=False):
+    for i, arg in enumerate(args):
+        if isinstance(arg, Tuple):
+            if rec:
+                found = _find_arg(argname, arg.elts)
+                if found[0] is not None:
+                    return found
+        elif arg.name == argname:
+            return i, arg
+    return None, None
+
+
+def _format_args(args, defaults=None):
+    values = []
+    if args is None:
+        return ''
+    if defaults is not None:
+        default_offset = len(args) - len(defaults)
+    for i, arg in enumerate(args):
+        if isinstance(arg, Tuple):
+            values.append('(%s)' % _format_args(arg.elts))
+        else:
+            values.append(arg.name)
+            if defaults is not None and i >= default_offset:
+                values[-1] += '=' + defaults[i-default_offset].as_string()
+    return ', '.join(values)
 
 
 class AssAttrNG(object):# (AssAttr, StmtMixIn, NodeNG)
@@ -48,16 +111,6 @@ class BreakNG(object):# (Break, NodeNG)
 class CallFuncNG(object):# (CallFunc, StmtMixIn, NodeNG)
     """class representing a CallFunc node"""
 
-
-class ClassNG(object):# (Class, NodeNG)
-    """class representing a Class node"""
-
-    def block_range(self, lineno):
-        """return block line numbers.
-
-        start from the "class" position whatever the given lineno
-        """
-        return self.fromlineno, self.tolineno
 
 class CompareNG(object):# (Compare, StmtMixIn, NodeNG)
     """class representing a Compare node"""
@@ -181,15 +234,6 @@ class FromNG(object):# (From, NodeNG)
                 return name
         raise NotFoundError(asname)
 
-class FunctionNG(object):# (Function, NodeNG)
-    """class representing a Function node"""
-
-    def block_range(self, lineno):
-        """return block line numbers.
-
-        start from the "class" position whatever the given lineno
-        """
-        return self.fromlineno, self.tolineno
 
 class GenExprNG(object):# (GenExpr, LocalsDictMixIn, StmtMixIn, NodeNG)
     """class representing a GenExpr node"""
@@ -217,7 +261,6 @@ class IfNG(object):# (If, NodeNG)
             return lineno, self.body[-1].tolineno
         return self._elsed_block_range(lineno, self.orelse,
                                        self.body[0].fromlineno - 1)
-
 
 
 class IfExpNG(object):# (IfExp, StmtMixIn, NodeNG)
@@ -249,10 +292,6 @@ class KeywordNG(object):# (Keyword, StmtMixIn, NodeNG)
     """class representing a Keyword node"""
 
 
-class LambdaNG(object):# (Lambda, LocalsDictMixIn, StmtMixIn, NodeNG)
-    """class representing a Lambda node"""
-
-
 class ListNG(object):# (List, StmtMixIn, NodeNG)
     """class representing a List node"""
 
@@ -260,18 +299,6 @@ class ListNG(object):# (List, StmtMixIn, NodeNG)
 class ListCompNG(object):# (ListComp, StmtMixIn, NodeNG)
     """class representing a ListComp node"""
 
-
-class ModuleNG(object):# (Module, StmtMixIn, NodeNG)
-    """class representing a Module node"""
-
-    is_statement = False # override StatementMixin
-
-    def block_range(self, lineno):
-        """return block line numbers.
-
-        start from the "class" position whatever the given lineno
-        """
-        return self.fromlineno, self.tolineno
 
 class NameNG(object):# (Name, StmtMixIn, NodeNG)
     """class representing a Name node"""

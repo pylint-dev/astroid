@@ -16,7 +16,7 @@ Function, Lambda, GenExpr...):
 * .lookup(name)
 * .ilookup(name)
 
-Be careful, lookup is nternal and returns a tuple (scope, [stmts]), while
+Be careful, lookup is internal and returns a tuple (scope, [stmts]), while
 ilookup returns an iterator on infered values.
 
 :author:    Sylvain Thenault
@@ -30,7 +30,8 @@ __docformat__ = "restructuredtext en"
 
 import __builtin__
 
-from logilab.astng import MANAGER, NotFoundError, nodes
+from logilab.astng import MANAGER, NotFoundError
+from logilab.astng import _nodes as nodes
 from logilab.astng.infutils import are_exclusive, copy_context, _infer_stmts
 
 
