@@ -234,7 +234,12 @@ class ModuleNG(object):
     # names of module attributes available through the global scope
     scope_attrs = set(('__name__', '__doc__', '__file__', '__path__'))
 
-    is_statement = False # override StatementMixin
+    # Module is not a Statement node but needs the replace method (see StmtMixIn)
+    def replace(self, child, newchild):
+        sequence = self.child_sequence(child)
+        newchild.parent = self
+        child.parent = None
+        sequence[sequence.index(child)] = newchild
 
     def block_range(self, lineno):
         """return block line numbers.
