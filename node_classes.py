@@ -198,10 +198,6 @@ class ExceptHandlerNG(object):# (ExceptHandler, NodeNG)
             if node.name in exceptions:
                 return True
 
-    def block_range(self, lineno):
-        """handle block line numbers range for For statements"""
-        return self. _elsed_block_range(lineno, self.orelse)
-
 
 class ExecNG(object):# (Exec, NodeNG)
     """class representing an Exec node"""
