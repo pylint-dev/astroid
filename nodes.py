@@ -115,18 +115,6 @@ With._astng_fields = ('expr', 'vars', 'body')
 While._astng_fields = ('test', 'body', 'orelse',)
 Yield._astng_fields = ('value',)
 
-STMT_NODES = (
-    Assign, AugAssign, Assert, Break, Class, Continue, Delete, Discard,
-    ExceptHandler, Exec, For, From, Function, Global, If, Import, Pass, Print,
-    Raise, Return, TryExcept, TryFinally, While, With
-    )
-
-ALL_NODES = STMT_NODES + (
-    Arguments, AssAttr, AssName, BinOp, BoolOp, Backquote,  CallFunc, Compare,
-    Comprehension, Const, Decorators, DelAttr, DelName, Dict, Ellipsis,
-    EmptyNode,  ExtSlice, Getattr,  GenExpr, IfExp, Index, Keyword, Lambda,
-    List,  ListComp, Module, Name, Slice, Subscript, UnaryOp, Tuple, Yield
-    )
 
 # Node  ######################################################################
 
@@ -228,11 +216,6 @@ class NodeNG:
     def previous_sibling(self):
         """return the previous sibling statement"""
         return self.parent.previous_sibling()
-        stmts = self.parent.child_sequence(self)
-        index = stmts.index(self)
-        if index >= 1:
-            return stmts[index -1]
-        return
 
     def nearest(self, nodes):
         """return the node which is the nearest before this one in the
@@ -439,19 +422,4 @@ for cls in ALL_NODES:
 
 # _scope_lookup only available with LookupMixin extention
 GenExpr.scope_lookup = GenExpr._scope_lookup
-
-#ExceptHandler._elsed_block_range = 
-
-CONST_CLS = {
-    list: List,
-    tuple: Tuple,
-    dict: Dict,
-    }
-
-# block range overrides #######################################################
-
-
-for kls in For, If, TryExcept, TryFinally, While, With:
-    extend_class(kls, (BlockRangeMixIn,))
-
 
