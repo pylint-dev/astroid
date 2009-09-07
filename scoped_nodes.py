@@ -43,7 +43,7 @@ from logilab.astng._nodes import (Arguments, Class, Const, Dict, From, Function,
 from logilab.astng.infutils import YES, InferenceContext, Instance, \
      UnboundMethod, copy_context, unpack_infer, _infer_stmts
 from logilab.astng.nodes_as_string import as_string
-from logilab.astng.lookup import builtin_lookup, LookupMixin
+from logilab.astng.lookup import LookupMixIn, LocalsDictMixIn
 
 def remove_nodes(func, cls):
     def wrapper(*args, **kwargs):
@@ -58,134 +58,6 @@ def function_to_unbound_method(func):
         return [isinstance(n, Function) and UnboundMethod(n) or n
                 for n in func(*args, **kwargs)]
     return wrapper
-
-
-# module class dict/iterator interface ########################################
-
-class LocalsDictMixIn(object):
-    """ this class provides locals handling common to Module, Function
-    and Class nodes, including a dict like interface for direct access
-    to locals information
-
-    /!\ this class should not be used directly /!\ it's
-    only used as a methods and attribute container, and update the
-    original class from the compiler.ast module using its dictionary
-    (see below the class definition)
-    """
-
-    # attributes below are set by the builder module or by raw factories
-
-    # dictionary of locals with name as key and node defining the local as
-    # value
-    locals = None
-
-    def qname(self):
-        """return the 'qualified' name of the node, eg module.name,
-        module.class.name ...
-        """
-        if self.parent is None:
-            return self.name
-        return '%s.%s' % (self.parent.frame().qname(), self.name)
-
-    def frame(self):
-        """return the first parent frame node (i.e. Module, Function or Class)
-        """
-        return self
-
-    def scope(self):
-        """return the first node defining a new scope (i.e. Module,
-        Function, Class, Lambda but also GenExpr)
-        """
-        return self
-
-
-    def _scope_lookup(self, node, name, offset=0):
-        """XXX method for interfacing the scope lookup"""
-        try:
-            stmts = node._filter_stmts(self.locals[name], self, offset)
-        except KeyError:
-            stmts = ()
-        if stmts:
-            return self, stmts
-        if self.parent: # i.e. not Module
-            # nested scope: if parent scope is a function, that's fine
-            # else jump to the module
-            pscope = self.parent.scope()
-            if not isinstance(pscope, Function):
-                pscope = pscope.root()
-            return pscope.scope_lookup(node, name)
-        return builtin_lookup(name) # Module
-
-
-
-    def set_local(self, name, stmt):
-        """define <name> in locals (<stmt> is the node defining the name)
-        if the node is a Module node (i.e. has globals), add the name to
-        globals
-
-        if the name is already defined, ignore it
-        """
-        assert self.locals is not None, (self, id(self))
-        #assert not stmt in self.locals.get(name, ()), (self, stmt)
-        self.locals.setdefault(name, []).append(stmt)
-
-    __setitem__ = set_local
-
-    def _append_node(self, child):
-        """append a child, linking it in the tree"""
-        self.body.append(child)
-        child.parent = self
-
-    def add_local_node(self, child_node, name=None):
-        """append a child which should alter locals to the given node"""
-        if name != '__class__':
-            # add __class__ node as a child will cause infinite recursion later!
-            self._append_node(child_node)
-        self.set_local(name or child_node.name, child_node)
-
-
-    def __getitem__(self, item):
-        """method from the `dict` interface returning the first node
-        associated with the given name in the locals dictionary
-
-        :type item: str
-        :param item: the name of the locally defined object
-        :raises KeyError: if the name is not defined
-        """
-        return self.locals[item][0]
-
-    def __iter__(self):
-        """method from the `dict` interface returning an iterator on
-        `self.keys()`
-        """
-        return iter(self.keys())
-
-    def keys(self):
-        """method from the `dict` interface returning a tuple containing
-        locally defined names
-        """
-        return self.locals.keys()
-
-    def values(self):
-        """method from the `dict` interface returning a tuple containing
-        locally defined nodes which are instance of `Function` or `Class`
-        """
-        return [self[key] for key in self.keys()]
-
-    def items(self):
-        """method from the `dict` interface returning a list of tuple
-        containing each locally defined name with its associated node,
-        which is an instance of `Function` or `Class`
-        """
-        return zip(self.keys(), self.values())
-
-    def has_key(self, name):
-        """method from the `dict` interface returning True if the given
-        name is defined in the locals dictionary
-        """
-        return self.locals.has_key(name)
-
-    __contains__ = has_key
 
 
 def std_special_attributes(self, name, add_locals=True):

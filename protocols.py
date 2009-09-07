@@ -314,7 +314,7 @@ def end_ass_type(self):
     return self
 
 # XXX if you add ass_type to a class, you should probably modify
-#     lookup.LookupMixin.filter_stmts around line ::
+#     lookup.LookupMixIn.filter_stmts around line ::
 #
 #       if ass_type is mystmt and not isinstance(ass_type, (nodes.Class, ...)):
 nodes.Arguments.ass_type = end_ass_type
