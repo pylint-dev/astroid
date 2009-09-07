@@ -38,7 +38,7 @@ from logilab.astng import MANAGER, NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
 from logilab.astng._nodes import (Arguments, Class, Const, Dict, From, Function,
      GenExpr, Lambda, List, Module, Name, Pass, Raise, Return, Tuple, Yield,
-     AssName, DelAttr, DelName, const_factory as cf)
+     AssName, DelAttr, DelName, const_factory as cf, NodeNG, StmtMixIn)
 
 from logilab.astng.infutils import YES, InferenceContext, Instance, \
      UnboundMethod, copy_context, unpack_infer, _infer_stmts
@@ -76,7 +76,7 @@ def std_special_attributes(self, name, add_locals=True):
 
 # Module  #####################################################################
 
-class ModuleNG(object):
+class ModuleNG(Module, LookupMixIn, LocalsDictMixIn, NodeNG):
     """/!\ this class should not be used directly /!\ it's
     only used as a methods and attribute container, and update the
     original class from the compiler.ast module using its dictionary
@@ -258,7 +258,7 @@ class ModuleNG(object):
             return [name for name in self.keys() if not name.startswith('_')]
 
 
-class GenExprNG(LocalsDictMixIn): #(NodeNG, LocalsDictMixIn):
+class GenExprNG(GenExpr, LookupMixIn, LocalsDictMixIn, NodeNG):
     """class representing a GenExpr node"""
 
     def frame(self):
@@ -267,7 +267,7 @@ class GenExprNG(LocalsDictMixIn): #(NodeNG, LocalsDictMixIn):
 
 # Function  ###################################################################
 
-class LambdaNG(object):
+class LambdaNG(Lambda, LookupMixIn, LocalsDictMixIn, NodeNG):
     """/!\ this class should not be used directly /!\ it's
     only used as a methods and attribute container, and update the
     original class from the compiler.ast module using its dictionary
@@ -313,7 +313,7 @@ class LambdaNG(object):
         return frame._scope_lookup(node, name, offset)
 
 
-class FunctionNG(object):
+class FunctionNG(Function, LambdaNG, LookupMixIn, LocalsDictMixIn, StmtMixIn, NodeNG):
     """/!\ this class should not be used directly /!\ it's
     only used as a methods and attribute container, and update the
     original class from the compiler.ast module using its dictionary
@@ -478,7 +478,7 @@ def _iface_hdlr(iface_node):
     return True
 
 
-class ClassNG(object):
+class ClassNG(Class, LookupMixIn, LocalsDictMixIn,  StmtMixIn, NodeNG):
     """/!\ this class should not be used directly /!\ it's
     only used as a methods and attribute container, and update the
     original class from the compiler.ast module using its dictionary
