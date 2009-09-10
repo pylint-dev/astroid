@@ -61,18 +61,13 @@ def Const_pytype(self):
     return self._proxied.qname()
 nodes.Const.pytype = Const_pytype
 
-nodes.Const.has_dynamic_getattr = lambda x: False
-
 
 nodes.List._proxied = MANAGER.astng_from_class(list)
 nodes.List.__bases__ += (Instance,)
-nodes.List.pytype = lambda x: '__builtin__.list'
 nodes.Tuple._proxied = MANAGER.astng_from_class(tuple)
 nodes.Tuple.__bases__ += (Instance,)
-nodes.Tuple.pytype = lambda x: '__builtin__.tuple'
 nodes.Dict.__bases__ += (Instance,)
 nodes.Dict._proxied = MANAGER.astng_from_class(dict)
-nodes.Dict.pytype = lambda x: '__builtin__.dict'
 
 
 class CallContext:

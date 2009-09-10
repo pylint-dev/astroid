@@ -126,6 +126,18 @@ class ComprehensionNG(Comprehension, NodeNG):
 class ConstNG(Const, NodeNG):
     """class representing a Const node"""
 
+    def getitem(self, index, context=None):
+        if isinstance(self.value, basestring):
+            return self.value[index]
+        raise TypeError()
+
+    def has_dynamic_getattr(self):
+        return False
+
+    def itered(self):
+        if isinstance(self.value, basestring):
+            return self.value
+        raise TypeError()
 
 class ContinueNG(Continue, StmtMixIn, NodeNG):
     """class representing a Continue node"""
@@ -153,12 +165,27 @@ class DeleteNG(Delete, StmtMixIn, NodeNG):
 class DictNG(Dict, NodeNG):
     """class representing a Dict node"""
 
+    def pytype(self):
+        return '__builtin__.dict'
+
     def get_children(self):
         """get children of a Dict node"""
         # overrides get_children
         for key, value in self.items:
             yield key
             yield value
+
+    def itered(self):
+        return self.items[::2]
+
+    def getitem(self, key, context=None):
+        for i in xrange(0, len(self.items), 2):
+            for inferedkey in self.items[i].infer(context):
+                if inferedkey is YES:
+                    continue
+                if isinstance(inferedkey, Const) and inferedkey.value == key:
+                    return self.items[i+1]
+        raise IndexError(key)
 
 
 class DiscardNG(Discard, StmtMixIn, NodeNG):
@@ -210,7 +237,6 @@ class ForNG(For, BlockRangeMixIn, StmtMixIn, NodeNG):
 
     def _blockstart_toline(self):
         return self.iter.tolineno
-
 
 class FromNG(From, StmtMixIn, NodeNG):
     """class representing a From node"""
@@ -289,6 +315,15 @@ class KeywordNG(Keyword, NodeNG):
 class ListNG(List, NodeNG):
     """class representing a List node"""
 
+    def pytype(self):
+        return '__builtin__.list'
+
+    def getitem(self, index, context=None):
+        return self.elts[index]
+
+    def itered(self):
+        return self.elts
+
 
 class ListCompNG(ListComp, NodeNG):
     """class representing a ListComp node"""
@@ -359,6 +394,15 @@ class TryFinallyNG(TryFinally, BlockRangeMixIn, StmtMixIn, NodeNG):
 
 class TupleNG(Tuple, NodeNG):
     """class representing a Tuple node"""
+
+    def pytype(self):
+        return '__builtin__.tuple'
+
+    def getitem(self, index, context=None):
+        return self.elts[index]
+
+    def itered(self):
+        return self.elts
 
 
 class UnaryOpNG(UnaryOp, NodeNG):
