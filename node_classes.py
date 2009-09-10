@@ -1,5 +1,6 @@
 #
-from logilab.astng import NotFoundError, NoDefault
+from logilab.astng import (ASTNGBuildingException, InferenceError,
+                           NotFoundError, NoDefault)
 from logilab.astng._nodes import *
 from logilab.astng.lookup import LookupMixIn, LocalsDictMixIn
 
@@ -238,8 +239,26 @@ class ForNG(For, BlockRangeMixIn, StmtMixIn, NodeNG):
     def _blockstart_toline(self):
         return self.iter.tolineno
 
-class FromNG(From, StmtMixIn, NodeNG):
-    """class representing a From node"""
+
+class FromImportMixIn(object):
+    """MixIn for From and Import Nodes"""
+
+    def do_import_module(node, modname):
+        """return the ast for a module whose name is <modname> imported by <node>
+        """
+        # handle special case where we are on a package node importing a module
+        # using the same name as the package, which may end in an infinite loop
+        # on relative imports
+        # XXX: no more needed ?
+        mymodule = node.root()
+        level = getattr(node, 'level', None) # Import as no level
+        if mymodule.absolute_modname(modname, level) == mymodule.name:
+            # FIXME: I don't know what to do here...
+            raise InferenceError('module importing itself: %s' % modname)
+        try:
+            return mymodule.import_module(modname, level=level)
+        except (ASTNGBuildingException, SyntaxError):
+            raise InferenceError(modname)
 
     def real_name(self, asname):
         """get name from 'as' name"""
@@ -253,6 +272,10 @@ class FromNG(From, StmtMixIn, NodeNG):
             if asname == _asname:
                 return name
         raise NotFoundError(asname)
+
+
+class FromNG(From, FromImportMixIn, StmtMixIn, NodeNG):
+    """class representing a From node"""
 
 
 class GenExprNG(GenExpr, LocalsDictMixIn, NodeNG):
@@ -287,21 +310,8 @@ class IfExpNG(IfExp, NodeNG):
     """class representing an IfExp node"""
 
 
-class ImportNG(Import, StmtMixIn, NodeNG):
+class ImportNG(Import, FromImportMixIn, StmtMixIn, NodeNG):
     """class representing an Import node"""
-
-    def real_name(self, asname):
-        """get name from 'as' name"""
-        for index in range(len(self.names)):
-            name, _asname = self.names[index]
-            if name == '*':
-                return asname
-            if not _asname:
-                name = name.split('.', 1)[0]
-                _asname = name
-            if asname == _asname:
-                return name
-        raise NotFoundError(asname)
 
 
 class IndexNG(Index, NodeNG):
