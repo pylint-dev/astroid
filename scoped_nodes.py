@@ -76,7 +76,7 @@ def std_special_attributes(self, name, add_locals=True):
 
 # Module  #####################################################################
 
-class ModuleNG(Module, LookupMixIn, LocalsDictMixIn, NodeNG):
+class ModuleNG(LookupMixIn, LocalsDictMixIn, NodeNG):
     """/!\ this class should not be used directly /!\ it's
     only used as a methods and attribute container, and update the
     original class from the compiler.ast module using its dictionary
@@ -258,7 +258,7 @@ class ModuleNG(Module, LookupMixIn, LocalsDictMixIn, NodeNG):
             return [name for name in self.keys() if not name.startswith('_')]
 
 
-class GenExprNG(GenExpr, LookupMixIn, LocalsDictMixIn, NodeNG):
+class GenExprNG(LookupMixIn, LocalsDictMixIn, NodeNG):
     """class representing a GenExpr node"""
 
     def frame(self):
@@ -267,7 +267,7 @@ class GenExprNG(GenExpr, LookupMixIn, LocalsDictMixIn, NodeNG):
 
 # Function  ###################################################################
 
-class LambdaNG(Lambda, LookupMixIn, LocalsDictMixIn, NodeNG):
+class LambdaNG(LookupMixIn, LocalsDictMixIn, NodeNG):
     """/!\ this class should not be used directly /!\ it's
     only used as a methods and attribute container, and update the
     original class from the compiler.ast module using its dictionary
@@ -313,7 +313,7 @@ class LambdaNG(Lambda, LookupMixIn, LocalsDictMixIn, NodeNG):
         return frame._scope_lookup(node, name, offset)
 
 
-class FunctionNG(Function, LambdaNG, LookupMixIn, LocalsDictMixIn, StmtMixIn, NodeNG):
+class FunctionNG(LambdaNG, LookupMixIn, LocalsDictMixIn, StmtMixIn, NodeNG):
     """/!\ this class should not be used directly /!\ it's
     only used as a methods and attribute container, and update the
     original class from the compiler.ast module using its dictionary
@@ -478,7 +478,7 @@ def _iface_hdlr(iface_node):
     return True
 
 
-class ClassNG(Class, LookupMixIn, LocalsDictMixIn,  StmtMixIn, NodeNG):
+class ClassNG(LookupMixIn, LocalsDictMixIn,  StmtMixIn, NodeNG):
     """/!\ this class should not be used directly /!\ it's
     only used as a methods and attribute container, and update the
     original class from the compiler.ast module using its dictionary
