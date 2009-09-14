@@ -3,7 +3,7 @@ from logilab.astng import (ASTNGBuildingException, InferenceError,
                            NotFoundError, NoDefault)
 from logilab.astng._nodes import *
 from logilab.astng.lookup import LookupMixIn, LocalsDictMixIn
-
+from logilab.astng.infutils import Instance
 
 class ArgumentsNG(NodeNG):
     """class representing an Arguments node"""
@@ -124,7 +124,7 @@ class ComprehensionNG(NodeNG):
     """class representing a Comprehension node"""
 
 
-class ConstNG(NodeNG):
+class ConstNG(NodeNG, Instance):
     """class representing a Const node"""
 
     def getitem(self, index, context=None):
@@ -163,7 +163,7 @@ class DeleteNG(StmtMixIn, NodeNG):
     """class representing a Delete node"""
 
 
-class DictNG(NodeNG):
+class DictNG(NodeNG, Instance):
     """class representing a Dict node"""
 
     def pytype(self):
@@ -240,7 +240,7 @@ class ForNG(BlockRangeMixIn, StmtMixIn, NodeNG):
         return self.iter.tolineno
 
 
-class FromImportMixIn(object):
+class FromImportMixIn(Proxy_):
     """MixIn for From and Import Nodes"""
 
     def do_import_module(node, modname):
@@ -322,7 +322,7 @@ class KeywordNG(NodeNG):
     """class representing a Keyword node"""
 
 
-class ListNG(NodeNG):
+class ListNG(NodeNG, Instance):
     """class representing a List node"""
 
     def pytype(self):
@@ -402,7 +402,7 @@ class TryFinallyNG(BlockRangeMixIn, StmtMixIn, NodeNG):
         return self._elsed_block_range(lineno, self.finalbody)
 
 
-class TupleNG(NodeNG):
+class TupleNG(NodeNG, Instance):
     """class representing a Tuple node"""
 
     def pytype(self):

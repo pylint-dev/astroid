@@ -55,18 +55,13 @@ def _set_proxied(const):
     return const.__proxied
 nodes.Const._proxied = property(_set_proxied)
 
-nodes.Const.__bases__ += (Instance,)
-
 def Const_pytype(self):
     return self._proxied.qname()
 nodes.Const.pytype = Const_pytype
 
 
 nodes.List._proxied = MANAGER.astng_from_class(list)
-nodes.List.__bases__ += (Instance,)
 nodes.Tuple._proxied = MANAGER.astng_from_class(tuple)
-nodes.Tuple.__bases__ += (Instance,)
-nodes.Dict.__bases__ += (Instance,)
 nodes.Dict._proxied = MANAGER.astng_from_class(dict)
 
 

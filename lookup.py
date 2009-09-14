@@ -32,10 +32,11 @@ import __builtin__
 
 from logilab.astng import MANAGER, NotFoundError
 from logilab.astng import _nodes as nodes
+from logilab.astng._nodes import Proxy_
 from logilab.astng.infutils import are_exclusive, copy_context, _infer_stmts
 
 
-class LookupMixIn(object):
+class LookupMixIn(Proxy_):
     """Mixin looking up a name in the right scope
     """
 
@@ -190,7 +191,7 @@ def builtin_lookup(name):
     return builtinastng, stmts
 
 
-class LocalsDictMixIn(object):
+class LocalsDictMixIn(Proxy_):
     """ this class provides locals handling common to Module, Function
     and Class nodes, including a dict like interface for direct access
     to locals information

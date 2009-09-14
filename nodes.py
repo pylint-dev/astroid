@@ -46,7 +46,7 @@ from logilab.astng._nodes import _const_factory
 
 from logilab.astng._exceptions import UnresolvableName, NotFoundError, \
                                         InferenceError, ASTNGError
-from logilab.astng.utils import extend_class, REDIRECT
+from logilab.astng.utils import REDIRECT
 from logilab.astng import node_classes
 from logilab.astng.lookup import LookupMixIn
 from logilab.astng import scoped_nodes
@@ -118,7 +118,6 @@ Yield._astng_fields = ('value',)
 
 
 # extend all classes
-# TODO : use __bases__ instead of extend_class
 
 LOCALS_NODES = (Class, Function, GenExpr, Lambda, Module)
 
@@ -128,10 +127,7 @@ for cls in ALL_NODES:
     else:
         cls_module = node_classes
     ng_class = getattr(cls_module, REDIRECT.get(cls.__name__, cls.__name__) + "NG")
-    addons = list((ng_class,) + ng_class.__bases__)
-    addons.reverse()
-    extend_class(cls,  addons)
-    # cls.__bases__ += (ng_class,) + ng_class.__bases__
+    cls.__bases__ = (ng_class,) + ng_class.__bases__ + cls.__bases__
 
 # _scope_lookup only available with LookupMixIn extention
 GenExpr.scope_lookup = GenExpr._scope_lookup

@@ -313,19 +313,17 @@ class LambdaNG(LookupMixIn, LocalsDictMixIn, NodeNG):
         return frame._scope_lookup(node, name, offset)
 
 
-class FunctionNG(LambdaNG, LookupMixIn, LocalsDictMixIn, StmtMixIn, NodeNG):
+class FunctionNG(StmtMixIn, LambdaNG):
     """/!\ this class should not be used directly /!\ it's
     only used as a methods and attribute container, and update the
     original class from the compiler.ast module using its dictionary
     (see below the class definition)
     """
 
-
     special_attributes = set(('__name__', '__doc__', '__dict__'))
     # attributes below are set by the builder module or by raw factories
 
     blockstart_tolineno = None
-
 
     def set_line_info(self, lastchild):
         self.fromlineno = self.lineno
