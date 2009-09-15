@@ -49,6 +49,7 @@ from logilab.astng._exceptions import UnresolvableName, NotFoundError, \
 from logilab.astng.utils import REDIRECT
 from logilab.astng import node_classes
 from logilab.astng import scoped_nodes
+from logilab.astng.lookup import LookupMixIn
 
 INFER_NEED_NAME_STMTS = (From, Import, Global, TryExcept)
 LOOP_SCOPES = (Comprehension, For,)
@@ -125,6 +126,15 @@ for cls in ALL_NODES:
     if cls in LOCALS_NODES:
         cls_module = scoped_nodes
     else:
+        if cls in node_classes.SIMPLE_NODES:
+            cls.__bases__ = (NodeNG,) + cls.__bases__
+            continue
+        elif cls in node_classes.SIMPLE_STMTS:
+            cls.__bases__ = (StmtMixIn, NodeNG) + cls.__bases__
+            continue
+        elif cls in node_classes.SIMPLE_LOOKUPS:
+            cls.__bases__ = (LookupMixIn, NodeNG) + cls.__bases__
+            continue
         cls_module = node_classes
     ng_class = getattr(cls_module, REDIRECT.get(cls.__name__, cls.__name__) + "NG")
     cls.__bases__ = (ng_class,) + ng_class.__bases__ + cls.__bases__
