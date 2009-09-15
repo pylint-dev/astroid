@@ -193,7 +193,7 @@ class ForNG(BlockRangeMixIn, StmtMixIn, NodeNG):
         return self.iter.tolineno
 
 
-class FromImportMixIn(Proxy_):
+class FromImportMixIn(BaseClass):
     """MixIn for From and Import Nodes"""
 
     def do_import_module(node, modname):

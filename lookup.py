@@ -32,11 +32,11 @@ import __builtin__
 
 from logilab.astng import MANAGER, NotFoundError
 from logilab.astng import _nodes as nodes
-from logilab.astng._nodes import Proxy_, NodeNG
+from logilab.astng._nodes import BaseClass, NodeNG
 from logilab.astng.infutils import are_exclusive, copy_context, _infer_stmts
 
 
-class LookupMixIn(Proxy_):
+class LookupMixIn(BaseClass):
     """Mixin looking up a name in the right scope
     """
 

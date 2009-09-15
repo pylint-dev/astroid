@@ -51,7 +51,7 @@ ALL_NODES = STMT_NODES + (
 
 # Node  ######################################################################
 
-class NodeNG(Proxy_):
+class NodeNG(BaseClass):
     """/!\ this class should not be used directly /!\
     It is used as method and attribute container, and updates the
     original class from the compiler.ast / _ast module using its dictionary
@@ -284,7 +284,7 @@ def _repr_tree(node, result, indent='', _done=None):
 # in "nodes.py" has to work *both* for old-style and new-style classes,
 # but we need the StmtMixIn for scoped nodes
 
-class StmtMixIn(Proxy_):
+class StmtMixIn(BaseClass):
     """StmtMixIn used only for a adding a few attributes"""
     is_statement = True
 
@@ -311,7 +311,7 @@ class StmtMixIn(Proxy_):
             return stmts[index -1]
 
 
-class BlockRangeMixIn(Proxy_):
+class BlockRangeMixIn(BaseClass):
     """override block range """
     def set_line_info(self, lastchild):
         self.fromlineno = self.lineno

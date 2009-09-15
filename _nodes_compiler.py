@@ -93,7 +93,7 @@ From.level = 0 # will be overiden by instance attribute with py>=2.5
 from logilab.astng.utils import ASTVisitor
 from logilab.astng._exceptions import NodeRemoved, ASTNGError
 
-class Proxy_: pass
+class BaseClass: pass
 
 
 def native_repr_tree(node, indent='', _done=None):
