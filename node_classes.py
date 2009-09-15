@@ -2,7 +2,7 @@
 from logilab.astng import (ASTNGBuildingException, InferenceError,
                            NotFoundError, NoDefault)
 from logilab.astng._nodes import *
-from logilab.astng.lookup import LookupMixIn, LocalsDictMixIn
+from logilab.astng.lookup import LookupMixIn
 from logilab.astng.infutils import Instance
 
 class ArgumentsNG(NodeNG):
@@ -276,10 +276,6 @@ class FromImportMixIn(Proxy_):
 
 class FromNG(FromImportMixIn, StmtMixIn, NodeNG):
     """class representing a From node"""
-
-
-class GenExprNG(LocalsDictMixIn, NodeNG):
-    """class representing a GenExpr node"""
 
 
 class GetattrNG(NodeNG):

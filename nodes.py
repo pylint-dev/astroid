@@ -48,9 +48,7 @@ from logilab.astng._exceptions import UnresolvableName, NotFoundError, \
                                         InferenceError, ASTNGError
 from logilab.astng.utils import REDIRECT
 from logilab.astng import node_classes
-from logilab.astng.lookup import LookupMixIn
 from logilab.astng import scoped_nodes
-from logilab.astng.scoped_nodes import LocalsDictMixIn
 
 INFER_NEED_NAME_STMTS = (From, Import, Global, TryExcept)
 LOOP_SCOPES = (Comprehension, For,)
