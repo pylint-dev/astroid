@@ -280,6 +280,10 @@ def _repr_tree(node, result, indent='', _done=None):
 
 # some small MixIns for extending the node classes #######################
 
+# /!\ We cannot build a StmtNode(NodeNG) class since modifying "__bases__"
+# in "nodes.py" has to work *both* for old-style and new-style classes,
+# but we need the StmtMixIn for scoped nodes
+
 class StmtMixIn(Proxy_):
     """StmtMixIn used only for a adding a few attributes"""
     is_statement = True

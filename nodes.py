@@ -116,6 +116,8 @@ Yield._astng_fields = ('value',)
 
 
 # extend all classes
+# be careful : the inheritance / modification of "__bases__" is quite difficult
+# since it has to work *both* for old-style and new-style classes
 
 LOCALS_NODES = (Class, Function, GenExpr, Lambda, Module)
 

@@ -14,6 +14,11 @@
 local scope in the language definition : Module, Class, Function (and
 Lambda to some extends).
 
+/!\ All [node-name]NG classes should not be used directly /!\
+They are only used as additionnal base classes for the original class
+from the compiler.ast or _ast module (depending on _nodes.AST_MODE). This is
+done by modifying directly the __bases__ attribute in logilab.astng.nodes
+
 All new methods and attributes added on each class are documented
 below.
 
@@ -43,7 +48,7 @@ from logilab.astng._nodes import (Arguments, Class, Const, Dict, From, Function,
 from logilab.astng.infutils import YES, InferenceContext, Instance, Generator, \
      UnboundMethod, copy_context, unpack_infer, _infer_stmts
 from logilab.astng.nodes_as_string import as_string
-from logilab.astng.lookup import LookupMixIn, LocalsDictMixIn
+from logilab.astng.lookup import LocalsDictNodeNG
 
 def remove_nodes(func, cls):
     def wrapper(*args, **kwargs):
@@ -76,11 +81,9 @@ def std_special_attributes(self, name, add_locals=True):
 
 # Module  #####################################################################
 
-class ModuleNG(LookupMixIn, LocalsDictMixIn, NodeNG):
-    """/!\ this class should not be used directly /!\ it's
-    only used as a methods and attribute container, and update the
-    original class from the compiler.ast module using its dictionary
-    (see below the class definition)
+class ModuleNG(LocalsDictNodeNG):
+    """/!\ this class should not be used directly /!\
+    It is only used as an additionnal base class for the original class.
     """
     fromlineno = 0
     lineno = 0
@@ -258,8 +261,10 @@ class ModuleNG(LookupMixIn, LocalsDictMixIn, NodeNG):
             return [name for name in self.keys() if not name.startswith('_')]
 
 
-class GenExprNG(LookupMixIn, LocalsDictMixIn, NodeNG):
-    """class representing a GenExpr node"""
+class GenExprNG(LocalsDictNodeNG):
+    """/!\ this class should not be used directly /!\
+    It is only used as an additionnal base class for the original class.
+    """
 
     def frame(self):
         return self.parent.frame()
@@ -267,11 +272,9 @@ class GenExprNG(LookupMixIn, LocalsDictMixIn, NodeNG):
 
 # Function  ###################################################################
 
-class LambdaNG(LookupMixIn, LocalsDictMixIn, NodeNG):
-    """/!\ this class should not be used directly /!\ it's
-    only used as a methods and attribute container, and update the
-    original class from the compiler.ast module using its dictionary
-    (see below the class definition)
+class LambdaNG(LocalsDictNodeNG):
+    """/!\ this class should not be used directly /!\
+    It is only used as an additionnal base class for the original class.
     """
 
     # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
@@ -314,10 +317,8 @@ class LambdaNG(LookupMixIn, LocalsDictMixIn, NodeNG):
 
 
 class FunctionNG(StmtMixIn, LambdaNG):
-    """/!\ this class should not be used directly /!\ it's
-    only used as a methods and attribute container, and update the
-    original class from the compiler.ast module using its dictionary
-    (see below the class definition)
+    """/!\ this class should not be used directly /!\
+    It is only used as an additionnal base class for the original class.
     """
 
     special_attributes = set(('__name__', '__doc__', '__dict__'))
@@ -476,12 +477,11 @@ def _iface_hdlr(iface_node):
     return True
 
 
-class ClassNG(LookupMixIn, LocalsDictMixIn,  StmtMixIn, NodeNG):
-    """/!\ this class should not be used directly /!\ it's
-    only used as a methods and attribute container, and update the
-    original class from the compiler.ast module using its dictionary
-    (see below the class definition)
+class ClassNG(StmtMixIn, LocalsDictNodeNG):
+    """/!\ this class should not be used directly /!\
+    It is only used as an additionnal base class for the original class.
     """
+
     special_attributes = set(('__name__', '__doc__', '__dict__', '__module__',
                               '__bases__', '__mro__'))
 

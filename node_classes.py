@@ -5,6 +5,17 @@ from logilab.astng._nodes import *
 from logilab.astng.lookup import LookupMixIn
 from logilab.astng.infutils import Instance
 
+"""
+Module for extensions of all nodes (except scoped nodes).
+
+
+/!\ All [node-name]NG classes should not be used directly /!\
+They are only used as additionnal base classes for the original class
+from the compiler.ast or _ast module (depending on _nodes.AST_MODE). This is
+done by modifying directly the __bases__ attribute in logilab.astng.nodes
+"""
+
+
 class ArgumentsNG(NodeNG):
     """class representing an Arguments node"""
 
