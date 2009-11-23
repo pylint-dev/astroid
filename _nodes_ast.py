@@ -165,7 +165,7 @@ from _ast import Str as _Str, Num as _Num
 _Num.accept = lambda self, visitor: visitor.visit_num(self)
 _Str.accept = lambda self, visitor: visitor.visit_str(self)
 
-# some astng nodes unexistant in _ast #########################################
+# some astng nodes unexistent in _ast #########################################
 
 class AssAttr(Node):
     """represent Attribute Assignment statements"""
@@ -196,7 +196,7 @@ class Decorators(Node):
 # _ast rebuilder ##############################################################
 
 class TreeRebuilder(ASTVisitor):
-    """REbuilds the _ast tree to become an ASTNG tree"""
+    """Rebuilds the _ast tree to become an ASTNG tree"""
 
     def __init__(self, rebuild_visitor):
         self.visitor = rebuild_visitor

@@ -43,7 +43,7 @@ def extend_class(original, addons):
 class ASTVisitor(object):
     """Abstract Base Class for Python AST Visitors.
     
-    Visitors inheritating from ASTVisitors could visit
+    Visitors inheriting from ASTVisitors could visit
     compiler.ast, _ast or astng trees.
     
     Not all methods will have to be implemented;
@@ -327,7 +327,7 @@ class ASTWalker:
 
 
 class LocalsVisitor(ASTWalker):
-    """visit a project by traversing the locals dictionnary"""
+    """visit a project by traversing the locals dictionary"""
     def __init__(self):
         ASTWalker.__init__(self, self)
         self._visited = {}

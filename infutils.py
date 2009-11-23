@@ -88,7 +88,7 @@ def are_exclusive(stmt1, stmt2, exceptions=None):
      1) index stmt1's parents
      2) climb among stmt2's parents until we find a common parent
      3) if the common parent is a If or TryExcept statement, look if nodes are
-        in exclusive branchs
+        in exclusive branches
     """
     # index stmt1's parents
     stmt1_parents = {}
@@ -106,7 +106,7 @@ def are_exclusive(stmt1, stmt2, exceptions=None):
     while node:
         if stmt1_parents.has_key(node):
             # if the common parent is a If or TryExcept statement, look if
-            # nodes are in exclusive branchs
+            # nodes are in exclusive branches
             if isinstance(node, If) and exceptions is None:
                 if (node.locate_child(previous)[1]
                     is not node.locate_child(children[node])[1]):
@@ -129,8 +129,8 @@ def are_exclusive(stmt1, stmt2, exceptions=None):
 
 
 def unpack_infer(stmt, context=None):
-    """return an iterator on nodes infered by the given statement if the infered
-    value is a list or a tuple, recurse on it to get values infered by its
+    """return an iterator on nodes inferred by the given statement if the inferred
+    value is a list or a tuple, recurse on it to get values inferred by its
     content
     """
     if isinstance(stmt, (List, Tuple)):
@@ -148,7 +148,7 @@ def copy_context(context):
         return InferenceContext()
 
 def _infer_stmts(stmts, context, frame=None):
-    """return an iterator on statements infered by each statement in <stmts>
+    """return an iterator on statements inferred by each statement in <stmts>
     """
     stmt = None
     infered = False
@@ -258,7 +258,7 @@ class Instance(Proxy):
         raise NotFoundError(name)
 
     def igetattr(self, name, context=None):
-        """infered getattr"""
+        """inferred getattr"""
         try:
             # XXX frame should be self._proxied, or not ?
             return _infer_stmts(

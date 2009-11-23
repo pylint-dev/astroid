@@ -45,7 +45,7 @@ Change log for the astng package
 2008-09-10  --  0.17.3
     * fix #5889: astng crash on certain pyreverse projects
 
-    * fix bug w/ loop assigment in .lookup
+    * fix bug w/ loop assignment in .lookup
 
     * apply Maarten patch fixing a crash on TryFinalaly.block_range and fixing
       'else'/'final' block line detection
@@ -58,13 +58,13 @@ Change log for the astng package
     * fixed recursion arguments in nodes_of_class method as notified by
       Dave Borowitz
 
-    * new InstanceMethod node introduced to wrap bound method (eg Function
+    * new InstanceMethod node introduced to wrap bound method (e.g. Function
       node), patch provided by Dave Borowitz
 
 
 
 2007-06-07  --  0.17.1
-    * fix #3651: crash when callable as defaut arg
+    * fix #3651: crash when callable as default arg
 
     * fix #3670: subscription inference crash in some cases
 
@@ -94,7 +94,7 @@ Change log for the astng package
 
     * basic math operation inference
 
-    * new pytype method on possibly infered node (eg module, classes, const...)
+    * new pytype method on possibly inferred node (e.g. module, classes, const...)
 
     * fix a living object astng building bug, which was making "open" uninferable
 
@@ -169,7 +169,7 @@ Change log for the astng package
       classes
 
     * new .ass_type method on assignment related node, returning the
-      assigment type node (Assign, For, ListCompFor, GenExprFor,
+      assignment type node (Assign, For, ListCompFor, GenExprFor,
       TryExcept)
 
     * more API refactoring... .resolve method has disappeared, now you
@@ -186,7 +186,7 @@ Change log for the astng package
 
 
 2006-01-10  --  0.14.0
-    * some major inference improvments and refactoring ! The drawback is
+    * some major inference improvements and refactoring ! The drawback is
       the introduction of some non backward compatible change in the API
       but it's imho much cleaner and powerful now :)
 
@@ -209,11 +209,11 @@ Change log for the astng package
       __init__ file
 
     * fix a bug regarding construction of Function node from living object
-      with realier version of python 2.4
+      with earlier version of python 2.4
 
     * fix a NameError on Import and From self_resolve method
 
-    * fix a bug occuring when building an astng from a living object with
+    * fix a bug occurring when building an astng from a living object with
       a property
 
     * lint fixes
@@ -222,7 +222,7 @@ Change log for the astng package
 
 2005-11-07  --  0.13.1
     * fix bug on building from living module the same object in
-      encountered more than once time (eg builtins.object) (close #10069)
+      encountered more than once time (e.g. builtins.object) (close #10069)
 
     * fix bug in Class.ancestors() regarding inner classes (close #10072)
 
@@ -247,8 +247,8 @@ Change log for the astng package
 
 2005-10-21  --  0.13.0
     * .locals  and .globals on scoped node handle now a list of references
-       to each assigment statements instead of a single reference to the
-       first assigment statement.
+       to each assignment statements instead of a single reference to the
+       first assignment statement.
 
     * fix bug with manager.astng_from_module_name when a context file is
       given (notably fix ZODB 3.4 crash with pylint/pyreverse)

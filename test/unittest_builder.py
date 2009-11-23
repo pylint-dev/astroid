@@ -414,7 +414,7 @@ def global_no_effect():
     def test_socket_build(self):
         import socket
         astng = self.builder.module_build(socket)
-        # XXX just check the first one. Actually 3 objects are infered (look at
+        # XXX just check the first one. Actually 3 objects are inferred (look at
         # the socket module) but the last one as those attributes dynamically
         # set and astng is missing this.
         for fclass in astng.igetattr('socket'):
@@ -428,7 +428,7 @@ def global_no_effect():
         def test_gen_expr_var_scope(self):
             data = 'l = list(n for n in range(10))\n'
             astng = self.builder.string_build(data, __name__, __file__)
-            # n unvailable touside gen expr scope
+            # n unavailable outside gen expr scope
             self.failIf('n' in astng)
             # test n is inferable anyway
             n = get_name_node(astng, 'n')
@@ -598,7 +598,7 @@ A.ass_type = A_ass_type
 #         import compiler
 #         sn = astng.MANAGER.astng_from_file(join(astng.__path__[0], 'inference.py'))
 #         astastng = astng.MANAGER.astng_from_file(join(compiler.__path__[0], 'ast.py'))
-#         # check monkey patching of the compiler module has been infered
+#         # check monkey patching of the compiler module has been inferred
 #         lclass = list(astastng.igetattr('Function'))
 #         self.assertEquals(len(lclass), 1)
 #         lclass = lclass[0]

@@ -20,7 +20,7 @@
 """
 
 """This module renders ASTNG nodes to string representation.
-It will problably not work on compiler.ast or _ast trees.
+It will probably not work on compiler.ast or _ast trees.
 """
 
 

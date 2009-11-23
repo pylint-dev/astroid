@@ -656,7 +656,7 @@ print ((d,e) for e,d in ([1,2], [3,4]))
         code = '''
 help()
         '''
-        # XXX failing with python > 2.3 since __builtin__.help assigment has
+        # XXX failing with python > 2.3 since __builtin__.help assignment has
         #     been moved into a function...
         astng = builder.string_build(code, __name__, __file__)
         node = get_name_node(astng, 'help', -1)

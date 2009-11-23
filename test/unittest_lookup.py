@@ -127,9 +127,9 @@ if x > 0:
     print '#' * x        
         """, __name__, __file__)
         xnames = [n for n in astng.nodes_of_class(nodes.Name) if n.name == 'x']
-        # inside the loop, only one possible assigment
+        # inside the loop, only one possible assignment
         self.assertEquals(len(xnames[0].lookup('x')[1]), 1)
-        # outside the loop, two possible assigments
+        # outside the loop, two possible assignments
         self.assertEquals(len(xnames[1].lookup('x')[1]), 2)
         self.assertEquals(len(xnames[2].lookup('x')[1]), 2)
 

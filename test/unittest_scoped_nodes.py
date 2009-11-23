@@ -1,4 +1,4 @@
-"""tests for specific behaviour of astng scoped nodes (ie module, class and
+"""tests for specific behaviour of astng scoped nodes (i.e. module, class and
 function)
 """
 

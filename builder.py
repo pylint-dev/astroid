@@ -128,7 +128,7 @@ class ASTNGBuilder:
         return self.ast_build(parse(data + '\n'), modname, path)
 
     def ast_build(self, node, modname='', path=None):
-        """recurse on the ast (soon ng) to add some arguments et method"""
+        """recurse on the ast (soon ng) to add some arguments at method"""
         if path is not None:
             node.file = node.path = abspath(path)
         else:

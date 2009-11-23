@@ -76,7 +76,7 @@ nodes.Dict.pytype = lambda x: '__builtin__.dict'
 
 
 class CallContext:
-    """when infering a function call, this class is used to remember values
+    """when inferring a function call, this class is used to remember values
     given as argument
     """
     def __init__(self, args, starargs, dstarargs):
@@ -91,7 +91,7 @@ class CallContext:
         self.dstarargs = dstarargs
 
     def infer_argument(self, funcnode, name, context):
-        """infer a function argument value according the the call context"""
+        """infer a function argument value according to the call context"""
         # 1. search in named keywords
         try:
             return self.nargs[name].infer(context)

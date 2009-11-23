@@ -98,11 +98,11 @@ def build_function(name, args=None, defaults=None, flag=0, doc=None):
 
 if sys.version_info < (2, 5):
     def build_from_import(fromname, names):
-        """create and intialize an astng From import statement"""
+        """create and initialize an astng From import statement"""
         return nodes.From(fromname, [(name, None) for name in names])
 else:
     def build_from_import(fromname, names):
-        """create and intialize an astng From import statement"""
+        """create and initialize an astng From import statement"""
         return nodes.From(fromname, [(name, None) for name in names], 0)
 
 def register_arguments(func, args=None):

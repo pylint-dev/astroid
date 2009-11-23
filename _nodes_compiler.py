@@ -87,7 +87,7 @@ class With: pass
 class IfExp: pass
 
 # introduced in python 2.5
-From.level = 0 # will be overiden by instance attribute with py>=2.5
+From.level = 0 # will be overridden by instance attribute with py>=2.5
 
 
 from logilab.astng.utils import ASTVisitor
@@ -129,14 +129,14 @@ def native_repr_tree(node, indent='', _done=None):
             print indent + field,  repr(attr)
 
 
-# some astng nodes unexistant in compiler #####################################
+# some astng nodes unexistent in compiler #####################################
 
 class ExceptHandler(Node):
     def __init__(self, exc_type, name, body, parent):
         self.type = exc_type
         self.name = name
         self.body = body.nodes
-        # XXX parent.lineno is wrong, cant't catch the right line ...
+        # XXX parent.lineno is wrong, can't catch the right line ...
         if exc_type and exc_type.lineno:
             self.fromlineno =  exc_type.lineno
         else:

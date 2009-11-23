@@ -16,8 +16,8 @@ Function, Lambda, GenExpr...):
 * .lookup(name)
 * .ilookup(name)
 
-Be careful, lookup is nternal and returns a tuple (scope, [stmts]), while
-ilookup returns an iterator on infered values.
+Be careful, lookup is internal and returns a tuple (scope, [stmts]), while
+ilookup returns an iterator on inferred values.
 
 :author:    Sylvain Thenault
 :copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE)
@@ -119,9 +119,9 @@ def builtin_lookup(name):
     return builtinastng, stmts
 
 def ilookup(self, name, context=None):
-    """infered lookup
+    """inferred lookup
 
-    return an iterator on infered values of the statements returned by
+    return an iterator on inferred values of the statements returned by
     the lookup method
     """
     frame, stmts = self.lookup(name)
@@ -184,8 +184,8 @@ def _filter_stmts(self, stmts, frame, offset):
             break
         optional_assign = isinstance(ass_type, nodes.LOOP_SCOPES)
         if optional_assign and ass_type.parent_of(self):
-            # we are inside a loop, loop var assigment is hidding previous
-            # assigment
+            # we are inside a loop, loop var assignment is hiding previous
+            # assignment
             _stmts = [node]
             _stmt_parents = [stmt.parent]
             continue
@@ -201,7 +201,7 @@ def _filter_stmts(self, stmts, frame, offset):
                 # both statements are not at the same block level
                 continue
             # if currently visited node is following previously considered
-            # assignement and both are not exclusive, we can drop the previous
+            # assignment and both are not exclusive, we can drop the previous
             # one. For instance in the following code ::
             #
             #   if a:
@@ -221,7 +221,7 @@ def _filter_stmts(self, stmts, frame, offset):
             #
             # moreover, on loop assignment types, assignment won't necessarily
             # be done if the loop has no iteration, so we don't want to clear
-            # previous assigments if any (hence the test on optional_assign)
+            # previous assignments if any (hence the test on optional_assign)
 
             if not (optional_assign or are_exclusive(_stmts[pindex], node)):
                 del _stmt_parents[pindex]

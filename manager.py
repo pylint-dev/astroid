@@ -10,7 +10,7 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-"""astng manager: avoid multible astng build of a same module when
+"""astng manager: avoid multiple astng build of a same module when
 possible by providing a class responsible to get astng representation
 from various source and using a cache of built modules)
 
@@ -236,7 +236,7 @@ class ASTNGManager(OptionsProviderMixIn):
                     'Unable to get module for %s' % safe_repr(klass))
             except Exception, ex:
                 raise ASTNGBuildingException(
-                    'Unexpected error while retreiving module for %s: %s'
+                    'Unexpected error while retrieving module for %s: %s'
                     % (safe_repr(klass), ex))
         try:
             name = klass.__name__
@@ -245,7 +245,7 @@ class ASTNGManager(OptionsProviderMixIn):
                 'Unable to get name for %s' % safe_repr(klass))
         except Exception, ex:
             raise ASTNGBuildingException(
-                'Unexpected error while retreiving name for %s: %s'
+                'Unexpected error while retrieving name for %s: %s'
                 % (safe_repr(klass), ex))
         # take care, on living object __module__ is regularly wrong :(
         modastng = self.astng_from_module_name(modname)

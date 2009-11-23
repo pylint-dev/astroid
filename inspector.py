@@ -11,7 +11,7 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """visitor doing some postprocessing on the astng tree.
-Try to resolve definitions (namespace) dictionnary, relationship...
+Try to resolve definitions (namespace) dictionary, relationship...
 
 This module has been imported from pyreverse
 
@@ -48,7 +48,7 @@ class IdGeneratorMixIn:
         self.id_count = start_value
         
     def generate_id(self):
-        """generate a new identifer
+        """generate a new identifier
         """
         self.id_count += 1
         return self.id_count
@@ -91,7 +91,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
     def visit_project(self, node):
         """visit an astng.Project node
         
-         * optionaly tag the node wth a unique id
+         * optionally tag the node with a unique id
         """
         if self.tag:
             node.uid = self.generate_id()
@@ -101,7 +101,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
     def visit_package(self, node):
         """visit an astng.Package node
         
-         * optionaly tag the node wth a unique id
+         * optionally tag the node with a unique id
         """
         if self.tag:
             node.uid = self.generate_id()
@@ -113,7 +113,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
         
          * set the locals_type mapping
          * set the depends mapping
-         * optionaly tag the node wth a unique id
+         * optionally tag the node with a unique id
         """
         if hasattr(node, 'locals_type'):
             return
@@ -127,7 +127,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
         
          * set the locals_type and instance_attrs_type mappings
          * set the implements list and build it
-         * optionaly tag the node wth a unique id
+         * optionally tag the node with a unique id
         """
         if hasattr(node, 'locals_type'):
             return
@@ -154,7 +154,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
         """visit an astng.Function node
         
          * set the locals_type mapping
-         * optionaly tag the node wth a unique id
+         * optionally tag the node with a unique id
         """
         if hasattr(node, 'locals_type'):
             return
@@ -227,7 +227,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
         for name in node.names:
             if name[0] == '*':
                 continue
-            # analyze dependancies
+            # analyze dependencies
             fullname = '%s.%s' % (basename, name[0])
             if fullname.find('.') > -1:
                 try:
@@ -251,7 +251,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
     # protected methods ########################################################
 
     def _imported_module(self, node, mod_path, relative):
-        """notify an imported module, used to analyze dependancies
+        """notify an imported module, used to analyze dependencies
         """
         module = node.root()
         context_name = module.name
@@ -259,7 +259,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
             mod_path = '%s.%s' % ('.'.join(context_name.split('.')[:-1]),
                                   mod_path)
         if self.compute_module(context_name, mod_path):
-            # handle dependancies
+            # handle dependencies
             if not hasattr(module, 'depends'):
                 module.depends = []
             mod_paths = module.depends

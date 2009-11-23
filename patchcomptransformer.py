@@ -86,7 +86,7 @@ def fixlineno_wrap(function, stype):
     return fixlineno_wrapper
 
 class ASTNGTransformer(BaseTransformer):
-    """ovverides transformer for a better source line number handling"""
+    """overrides transformer for a better source line number handling"""
     def com_NEWLINE(self, *args):
         # A ';' at the end of a line can make a NEWLINE token appear
         # here, Render it harmless. (genc discards ('discard',

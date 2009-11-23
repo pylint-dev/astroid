@@ -67,7 +67,7 @@ class LocalsDictMixIn(object):
 
     /!\ this class should not be used directly /!\ it's
     only used as a methods and attribute container, and update the
-    original class from the compiler.ast module using its dictionnary
+    original class from the compiler.ast module using its dictionary
     (see below the class definition)
     """
 
@@ -78,7 +78,7 @@ class LocalsDictMixIn(object):
     locals = None
 
     def qname(self):
-        """return the 'qualified' name of the node, eg module.name,
+        """return the 'qualified' name of the node, e.g. module.name,
         module.class.name ...
         """
         if self.parent is None:
@@ -124,7 +124,7 @@ class LocalsDictMixIn(object):
 
     def __getitem__(self, item):
         """method from the `dict` interface returning the first node
-        associated with the given name in the locals dictionnary
+        associated with the given name in the locals dictionary
 
         :type item: str
         :param item: the name of the locally defined object
@@ -194,7 +194,7 @@ def std_special_attributes(self, name, add_locals=True):
 class ModuleNG(object):
     """/!\ this class should not be used directly /!\ it's
     only used as a methods and attribute container, and update the
-    original class from the compiler.ast module using its dictionnary
+    original class from the compiler.ast module using its dictionary
     (see below the class definition)
     """
     fromlineno = 0
@@ -248,7 +248,7 @@ class ModuleNG(object):
     getattr = remove_nodes(getattr, DelName)
 
     def igetattr(self, name, context=None):
-        """infered getattr"""
+        """inferred getattr"""
         # set lookup name since this is necessary to infer on import nodes for
         # instance
         context = copy_context(context)
@@ -314,7 +314,7 @@ class ModuleNG(object):
         return modname
 
     def wildcard_import_names(self):
-        """return the list of imported names when this module is 'wildard
+        """return the list of imported names when this module is 'wildcard
         imported'
 
         It doesn't include the '__builtins__' name which is added by the
@@ -357,7 +357,7 @@ extend_class(Module, ModuleNG)
 class FunctionNG(object):
     """/!\ this class should not be used directly /!\ it's
     only used as a methods and attribute container, and update the
-    original class from the compiler.ast module using its dictionnary
+    original class from the compiler.ast module using its dictionary
     (see below the class definition)
     """
 
@@ -393,7 +393,7 @@ class FunctionNG(object):
     def is_method(self):
         """return true if the function node should be considered as a method"""
         # check we are defined in a Class, because this is usually expected
-        # (eg pylint...) when is_method() return True
+        # (e.g. pylint...) when is_method() return True
         return self.type != 'function' and isinstance(self.parent.frame(), Class)
 
     @cached
@@ -572,7 +572,7 @@ def _iface_hdlr(iface_node):
 class ClassNG(object):
     """/!\ this class should not be used directly /!\ it's
     only used as a methods and attribute container, and update the
-    original class from the compiler.ast module using its dictionnary
+    original class from the compiler.ast module using its dictionary
     (see below the class definition)
     """
     special_attributes = set(('__name__', '__doc__', '__dict__', '__module__',
@@ -620,7 +620,7 @@ class ClassNG(object):
     # a dictionary of class instances attributes
     instance_attrs = None
 
-    # list of parent class as a list of string (ie names as they appears
+    # list of parent class as a list of string (i.e. names as they appears
     # in the class definition) XXX bw compat
     def basenames(self):
         return [as_string(bnode) for bnode in self.bases]
@@ -736,10 +736,10 @@ class ClassNG(object):
     getattr = function_to_unbound_method(remove_nodes(getattr, DelAttr))
 
     def igetattr(self, name, context=None):
-        """infered getattr, need special treatment in class to handle
+        """inferred getattr, need special treatment in class to handle
         descriptors
         """
-        # set lookoup name since this is necessary to infer on import nodes for
+        # set lookup name since this is necessary to infer on import nodes for
         # instance
         context = copy_context(context)
         context.lookupname = name

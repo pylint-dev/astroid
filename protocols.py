@@ -50,7 +50,7 @@ nodes.Dict.infer_unary_op = dict_infer_unary_op
 def const_infer_unary_op(self, operator):
     if operator == 'not':
         return const_factory(not self.value)
-    # XXX log potentialy raised TypeError
+    # XXX log potentially raised TypeError
     elif operator == '+':
         return const_factory(+self.value)
     else: # operator == '-':
@@ -125,7 +125,7 @@ nodes.Dict.infer_binary_op = yes_if_nothing_infered(dict_infer_binary_op)
 # assignment ##################################################################
 
 """the assigned_stmts method is responsible to return the assigned statement
-(eg not infered) according to the assignment type.
+(e.g. not inferred) according to the assignment type.
 
 The `asspath` argument is used to record the lhs path of the original node.
 For instance if we want assigned statements for 'c' in 'a, (b,c)', asspath
@@ -155,14 +155,14 @@ def _resolve_looppart(parts, asspath, context):
             except (AttributeError, IndexError):
                 continue
             if not asspath:
-                # we acheived to resolved the assigment path,
+                # we achieved to resolved the assignment path,
                 # don't infer the last part
                 yield assigned
             elif assigned is YES:
                 break
             else:
                 # we are not yet on the last part of the path
-                # search on each possibly infered value
+                # search on each possibly inferred value
                 try:
                     for infered in _resolve_looppart(assigned.infer(context), asspath, context):
                         yield infered
@@ -199,7 +199,7 @@ nodes.AssAttr.assigned_stmts = assend_assigned_stmts
 
 
 def _arguments_infer_argname(self, name, context):
-    # arguments informmtion may be missing, in which case we can't do anything
+    # arguments information may be missing, in which case we can't do anything
     # more
     if not (self.args or self.vararg or self.kwarg):
         yield YES
@@ -267,14 +267,14 @@ def _resolve_asspart(parts, asspath, context):
             except (TypeError, IndexError):
                 return
             if not asspath:
-                # we acheived to resolved the assigment path, don't infer the
+                # we achieved to resolved the assignment path, don't infer the
                 # last part
                 yield assigned
             elif assigned is YES:
                 return
             else:
                 # we are not yet on the last part of the path search on each
-                # possibly infered value
+                # possibly inferred value
                 try:
                     for infered in _resolve_asspart(assigned.infer(context), 
                                                     asspath, context):
