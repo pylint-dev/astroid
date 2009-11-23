@@ -30,7 +30,7 @@ try:
 except NameError:
     class GeneratorExit(Exception): pass
 
-from logilab.astng import MANAGER, nodes, raw_building
+from logilab.astng import MANAGER, _nodes as nodes, raw_building
 from logilab.astng import ASTNGError, InferenceError, UnresolvableName, \
      NoDefault, NotFoundError, ASTNGBuildingException
 from logilab.astng.infutils import YES, Instance, InferenceContext, \
@@ -55,24 +55,14 @@ def _set_proxied(const):
     return const.__proxied
 nodes.Const._proxied = property(_set_proxied)
 
-nodes.Const.__bases__ += (Instance,)
-
 def Const_pytype(self):
     return self._proxied.qname()
 nodes.Const.pytype = Const_pytype
 
-nodes.Const.has_dynamic_getattr = lambda x: False
-
 
 nodes.List._proxied = MANAGER.astng_from_class(list)
-nodes.List.__bases__ += (Instance,)
-nodes.List.pytype = lambda x: '__builtin__.list'
 nodes.Tuple._proxied = MANAGER.astng_from_class(tuple)
-nodes.Tuple.__bases__ += (Instance,)
-nodes.Tuple.pytype = lambda x: '__builtin__.tuple'
-nodes.Dict.__bases__ += (Instance,)
 nodes.Dict._proxied = MANAGER.astng_from_class(dict)
-nodes.Dict.pytype = lambda x: '__builtin__.dict'
 
 
 class CallContext:
@@ -214,26 +204,6 @@ def infer_callfunc(self, context=None):
 nodes.CallFunc.infer = path_wrapper(raise_if_nothing_infered(infer_callfunc))
 
 
-def do_import_module(node, modname):
-    """return the ast for a module whose name is <modname> imported by <node>
-    """
-    # handle special case where we are on a package node importing a module
-    # using the same name as the package, which may end in an infinite loop
-    # on relative imports
-    # XXX: no more needed ?
-    mymodule = node.root()
-    level = getattr(node, 'level', None) # Import as no level
-    if mymodule.absolute_modname(modname, level) == mymodule.name:
-        # FIXME: I don't know what to do here...
-        raise InferenceError('module importing itself: %s' % modname)
-    try:
-        return mymodule.import_module(modname, level=level)
-    except (ASTNGBuildingException, SyntaxError):
-        raise InferenceError(modname)
-nodes.Import.do_import_module = do_import_module
-nodes.From.do_import_module = do_import_module
-
-
 def infer_import(self, context=None, asname=True):
     """infer an Import node: return the imported module/object"""
     name = context.lookupname
@@ -245,10 +215,10 @@ def infer_import(self, context=None, asname=True):
         yield self.do_import_module(name)
 nodes.Import.infer = path_wrapper(infer_import)
 
-def infer_name_module(node, name):
-    context = InferenceContext(node)
+def infer_name_module(self, name):
+    context = InferenceContext(self)
     context.lookupname = name
-    return node.infer(context, asname=False)
+    return self.infer(context, asname=False)
 nodes.Import.infer_name_module = infer_name_module
 
 

@@ -787,6 +787,27 @@ print make_code
         astng = builder.string_build('a = "*" * 40', __name__, __file__)
         self._test_const_infered(astng['a'], "*" * 40)
 
+    def test_binary_op_bitand(self):
+        astng = builder.string_build('a = 23&20', __name__, __file__)
+        self._test_const_infered(astng['a'], 23&20)
+
+    def test_binary_op_bitor(self):
+        astng = builder.string_build('a = 23|8', __name__, __file__)
+        self._test_const_infered(astng['a'], 23|8)
+
+    def test_binary_op_bitxor(self):
+        astng = builder.string_build('a = 23^9', __name__, __file__)
+        self._test_const_infered(astng['a'], 23^9)
+
+    def test_binary_op_shiftright(self):
+        astng = builder.string_build('a = 23 >>1', __name__, __file__)
+        self._test_const_infered(astng['a'], 23>>1)
+
+    def test_binary_op_shiftleft(self):
+        astng = builder.string_build('a = 23 <<1', __name__, __file__)
+        self._test_const_infered(astng['a'], 23<<1)
+
+
     def test_binary_op_list_mul(self):
         for code in ('a = [[]] * 2', 'a = 2 * [[]]'):
             astng = builder.string_build(code, __name__, __file__)

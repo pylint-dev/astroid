@@ -24,10 +24,10 @@ from __future__ import generators
 
 __doctype__ = "restructuredtext en"
 
-from logilab.astng import InferenceError, NoDefault, nodes
+from logilab.astng import InferenceError, NoDefault, _nodes as nodes
 from logilab.astng.infutils import copy_context, unpack_infer, \
      raise_if_nothing_infered, yes_if_nothing_infered, Instance, Generator, YES
-from logilab.astng.nodes import Const, Class, Function, Tuple, List, \
+from logilab.astng._nodes import Const, Class, Function, Tuple, List, \
      const_factory
 
 # unary operations ############################################################
@@ -70,8 +70,8 @@ BIN_OP_IMPL = {'+':  lambda a, b: a + b,
                '&':  lambda a, b: a & b,
                '|':  lambda a, b: a | b,
                '^':  lambda a, b: a ^ b,
-               '<<': lambda a, b: a ^ b,
-               '>>': lambda a, b: a ^ b,
+               '<<': lambda a, b: a << b,
+               '>>': lambda a, b: a >> b,
                }
 
 def const_infer_binary_op(self, operator, other, context):
@@ -314,7 +314,7 @@ def end_ass_type(self):
     return self
 
 # XXX if you add ass_type to a class, you should probably modify
-#     lookup.filter_stmts around line ::
+#     lookup.LookupMixIn.filter_stmts around line ::
 #
 #       if ass_type is mystmt and not isinstance(ass_type, (nodes.Class, ...)):
 nodes.Arguments.ass_type = end_ass_type
@@ -331,88 +331,4 @@ nodes.Import.ass_type = end_ass_type
 nodes.With.ass_type = end_ass_type
 
 
-# callable protocol ###########################################################
-
-
-def callable_true(self):
-    return True
-nodes.Function.callable = callable_true
-nodes.Lambda.callable = callable_true
-nodes.Class.callable = callable_true
-
-
-def infer_call_result_function(self, caller, context=None):
-    """infer what a function is returning when called"""
-    if self.is_generator():
-        yield Generator(self)
-        return
-    returns = self.nodes_of_class(nodes.Return, skip_klass=Function)
-    for returnnode in returns:
-        if returnnode.value is None:
-            yield None
-        else:
-            try:
-                for infered in returnnode.value.infer(context):
-                    yield infered
-            except InferenceError:
-                yield YES
-nodes.Function.infer_call_result = infer_call_result_function
-
-
-def infer_call_result_lambda(self, caller, context=None):
-    """infer what a function is returning when called"""
-    return self.body.infer(context)
-nodes.Lambda.infer_call_result = infer_call_result_lambda
-
-
-def infer_call_result_class(self, caller, context=None):
-    """infer what a class is returning when called"""
-    yield Instance(self)
-nodes.Class.infer_call_result = infer_call_result_class
-
-
-# iteration protocol ##########################################################
-        
-def const_itered(self):
-    if isinstance(self.value, basestring):
-        return self.value
-    raise TypeError()
-nodes.Const.itered = const_itered
-
-        
-def tl_itered(self):
-    return self.elts
-nodes.Tuple.itered = tl_itered
-nodes.List.itered = tl_itered
-
-        
-def dict_itered(self):
-    return self.items[::2]
-nodes.Dict.itered = dict_itered
-
-
-# subscription protocol #######################################################
-                
-def const_getitem(self, index, context=None):
-    if isinstance(self.value, basestring):
-        return self.value[index]
-    raise TypeError()
-nodes.Const.getitem = const_getitem
-
-
-def tl_getitem(self, index, context=None):
-    return self.elts[index]
-nodes.Tuple.getitem = tl_getitem
-nodes.List.getitem = tl_getitem
-
-
-def dict_getitem(self, key, context=None):
-    for i in xrange(0, len(self.items), 2):
-        for inferedkey in self.items[i].infer(context):
-            if inferedkey is YES:
-                continue
-            if isinstance(inferedkey, Const) and inferedkey.value == key:
-                return self.items[i+1]
-    raise IndexError(key)
-nodes.Dict.getitem = dict_getitem
 

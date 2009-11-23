@@ -468,7 +468,7 @@ class FileBuildTC(TestCase):
         should = ['MY_DICT', 'YO', 'YOUPI',
                 '__revision__',  'global_access','modutils', 'nested_args',
                  'os', 'redirect', 'spawn', 'REDIRECT', 'LocalsVisitor',
-                'ASTWalker', 'ASTVisitor',  'extend_class']
+                'ASTWalker', 'ASTVisitor']
         should.sort()
         self.assertEquals(keys, should)
 
@@ -520,7 +520,8 @@ class FileBuildTC(TestCase):
         locals2 = klass2.locals
         keys = locals2.keys()
         keys.sort()
-        self.assertEquals(keys, ['__init__', 'class_attr', 'class_method', 'method', 'static_method'])
+        self.assertEquals(keys, ['__init__', 'class_attr', 'class_method',
+                                 'method', 'static_method'])
 
     def test_class_instance_attrs(self):
         module = self.module

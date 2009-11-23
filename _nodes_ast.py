@@ -77,7 +77,7 @@ from _ast import (
 
 from logilab.astng.utils import ASTVisitor
 
-Proxy_ = object
+BaseClass = object
 
 _BIN_OP_CLASSES = {_Add: '+',
                    _BitAnd: '&',
