@@ -44,7 +44,6 @@ from itertools import imap
 from logilab.astng._exceptions import UnresolvableName, NotFoundError, \
                                         InferenceError, ASTNGError
 from logilab.astng.utils import REDIRECT
-from logilab.astng._nodes import class_factory, module_factory
 
 from logilab.astng.node_classes import (Arguments, AssAttr, Assert,
     Assign, AugAssign, Backquote, BinOp, BoolOp, Break, CallFunc, Compare,

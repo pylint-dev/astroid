@@ -55,13 +55,17 @@ def attach_import_node(node, modname, membername):
     """create a From node and register it in the locals of the given
     node with the specified name
     """
-    _attach_local_node(node, nodes.import_from_factory(modname, membername),
-                       membername)
+    from_node = nodes.From()
+    from_node.level = 0
+    from_node.modname = modname
+    from_node.names = [(membername, None)]
+    _attach_local_node(node, from_node, membername)
 
 
 def build_module(name, doc=None):
     """create and initialize a astng Module node"""
-    node = nodes.module_factory(doc)
+    node = nodes.Module()
+    node.doc = doc
     node.name = name
     node.pure_python = False
     node.package = False
@@ -71,7 +75,16 @@ def build_module(name, doc=None):
 
 def build_class(name, basenames=(), doc=None):
     """create and initialize a astng Class node"""
-    node = nodes.class_factory(name, basenames, doc)
+    node = nodes.Class()
+    node.body = []
+    node.name = name
+    node.bases = []
+    for base in basenames:
+        basenode = nodes.Name()
+        basenode.name = base
+        node.bases.append(basenode)
+        basenode.parent = node
+    node.doc = doc
     node.locals = {}
     node.instance_attrs = {}
     return node
@@ -80,7 +93,24 @@ def build_function(name, args=None, defaults=None, flag=0, doc=None):
     """create and initialize a astng Function node"""
     args, defaults = args or [], defaults or []
     # first argument is now a list of decorators
-    func = nodes.function_factory(name, args, defaults, flag, doc)
+    func = nodes.Function()
+    node.decorators = None
+    func.body = []
+    func.name = name
+    func.args = argsnode = nodes.Arguments()
+    argsnode.args = []
+    for arg in args:
+        argsnode.args.append(Name())
+        argsnode.args[-1].name = arg
+        argsnode.args[-1].parent = argsnode
+    argsnode.defaults = []
+    for default in defaults:
+        argsnode.defaults.append(nodes.const_factory(default))
+        argsnode.defaults[-1].parent = argsnode
+    argsnode.kwarg = None
+    argsnode.vararg = None
+    argsnode.parent = node
+    func.doc = doc
     func.locals = {}
     if args:
         register_arguments(func)

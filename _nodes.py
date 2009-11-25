@@ -23,11 +23,9 @@ from itertools import imap
 
 try:
     from logilab.astng._nodes_ast import *
-    from logilab.astng._nodes_ast import _const_factory
     AST_MODE = '_ast'
 except ImportError:
     from logilab.astng._nodes_compiler import *
-    from logilab.astng._nodes_compiler import _const_factory
     AST_MODE = 'compiler'
 from logilab.astng.utils import REDIRECT
 

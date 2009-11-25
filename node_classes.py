@@ -1,7 +1,7 @@
 #
 from logilab.astng import (ASTNGBuildingException, InferenceError,
                            NotFoundError, NoDefault)
-from logilab.astng._nodes import NodeNG, StmtMixIn, BlockRangeMixIn, BaseClass, _const_factory
+from logilab.astng._nodes import NodeNG, StmtMixIn, BlockRangeMixIn, BaseClass
 from logilab.astng.infutils import Instance
 
 """
@@ -528,10 +528,9 @@ def const_factory(value):
         else:
             node.elts = ()
     except KeyError:
-        try:
-            node = Const(value)
-        except KeyError:
-            node = _const_factory(value)
+        assert isinstance(value, (int, long, complex, float, basestring))
+        node = Const()
+        node.value = value
     return node
 
 
