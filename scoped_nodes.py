@@ -656,6 +656,8 @@ class ClassNG(StmtMixIn, LocalsDictNodeNG):
                 # XXX mro is read-only but that's not our job to detect that
                 return [cf(tuple(self.ancestors(recurs=True, context=context)))] + values
             return std_special_attributes(self, name)
+        # don't modify the list in self.locals!
+        values = list(values)
         for classnode in self.ancestors(recurs=False, context=context):
             try:
                 values += classnode.getattr(name, context)
