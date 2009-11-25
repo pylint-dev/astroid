@@ -54,7 +54,7 @@ def const_infer_unary_op(self, operator):
     elif operator == '+':
         return const_factory(+self.value)
     else: # operator == '-':
-        return const_factory(-self.value)        
+        return const_factory(-self.value)
 nodes.Const.infer_unary_op = const_infer_unary_op
 
 
@@ -93,7 +93,7 @@ def const_infer_binary_op(self, operator, other, context):
                 yield YES
 nodes.Const.infer_binary_op = yes_if_nothing_infered(const_infer_binary_op)
 
-    
+
 def tl_infer_binary_op(self, operator, other, context):
     for other in other.infer(context):
         if isinstance(other, self.__class__) and operator == '+':
@@ -193,7 +193,7 @@ nodes.List.assigned_stmts = mulass_assigned_stmts
 
 
 def assend_assigned_stmts(self, context=None):
-    return self.parent.assigned_stmts(self, context=context)    
+    return self.parent.assigned_stmts(self, context=context)
 nodes.AssName.assigned_stmts = assend_assigned_stmts
 nodes.AssAttr.assigned_stmts = assend_assigned_stmts
 
@@ -242,7 +242,7 @@ def arguments_assigned_stmts(self, node, context, asspath=None):
     for infered in _arguments_infer_argname(self, node.name, context):
         yield infered
 nodes.Arguments.assigned_stmts = arguments_assigned_stmts
-        
+
 
 def assign_assigned_stmts(self, node, context=None, asspath=None):
     if not asspath:
@@ -276,13 +276,13 @@ def _resolve_asspart(parts, asspath, context):
                 # we are not yet on the last part of the path search on each
                 # possibly inferred value
                 try:
-                    for infered in _resolve_asspart(assigned.infer(context), 
+                    for infered in _resolve_asspart(assigned.infer(context),
                                                     asspath, context):
                         yield infered
                 except InferenceError:
                     return
 
-    
+
 def excepthandler_assigned_stmts(self, node, context=None, asspath=None):
     for assigned in unpack_infer(self.type):
         if isinstance(assigned, Class):
@@ -302,7 +302,7 @@ nodes.With.assigned_stmts = raise_if_nothing_infered(with_assigned_stmts)
 
 def parent_ass_type(self, context=None):
     return self.parent.ass_type()
-    
+
 nodes.Tuple.ass_type = parent_ass_type
 nodes.List.ass_type = parent_ass_type
 nodes.AssName.ass_type = parent_ass_type
