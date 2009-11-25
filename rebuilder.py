@@ -21,7 +21,12 @@ order to get a single ASTNG representation
 """
 
 from logilab.astng import ASTNGBuildingException, InferenceError, NodeRemoved
-from logilab.astng import _nodes
+try:
+    from logilab.astng._nodes_ast import TreeRebuilder
+    AST_MODE = '_ast'
+except ImportError:
+    from logilab.astng._nodes_compiler import TreeRebuilder
+    AST_MODE = '_compiler'
 from logilab.astng import nodes
 from logilab.astng.utils import ASTVisitor, REDIRECT
 from logilab.astng.infutils import YES, Instance
@@ -39,8 +44,8 @@ class RebuildVisitor(ASTVisitor):
         self._metaclass = None
         self._global_names = None
         self._delayed = []
-        self.rebuilder = _nodes.TreeRebuilder(self)
-        self.set_line_info = _nodes.AST_MODE == '_ast'
+        self.rebuilder = TreeRebuilder(self)
+        self.set_line_info = AST_MODE == '_ast'
 
     def _push(self, node):
         """update the stack and init some parts of the Function or Class node

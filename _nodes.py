@@ -22,11 +22,13 @@ __docformat__ = "restructuredtext en"
 from itertools import imap
 
 try:
-    from logilab.astng._nodes_ast import *
-    AST_MODE = '_ast'
+    from _ast import AST
+    del AST
+    class BaseClass(object):
+        pass
 except ImportError:
-    from logilab.astng._nodes_compiler import *
-    AST_MODE = 'compiler'
+    class BaseClass:
+        pass
 from logilab.astng.utils import REDIRECT
 
 
@@ -46,6 +48,7 @@ class NodeNG(BaseClass):
     tolineno = None
     # parent node in the tree
     parent = None
+    is_class_node = False # only True for Class nodes
 
     def __str__(self):
         return '%s(%s)' % (self.__class__.__name__, getattr(self, 'name', ''))

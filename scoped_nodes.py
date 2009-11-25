@@ -770,7 +770,7 @@ class Class(StmtMixIn, LocalsDictNodeNG):
     """/!\ this class should not be used directly /!\
     It is only used as an additionnal base class for the original class.
     """
-
+    is_class_node = True # only True for Class nodes
     special_attributes = set(('__name__', '__doc__', '__dict__', '__module__',
                               '__bases__', '__mro__'))
 

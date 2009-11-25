@@ -24,12 +24,12 @@ from __future__ import generators
 
 __doctype__ = "restructuredtext en"
 
-from logilab.astng import InferenceError, NoDefault, _nodes as nodes
+from logilab.astng import InferenceError, NoDefault
 from logilab.astng.node_classes import unpack_infer
 from logilab.astng.infutils import copy_context, \
      raise_if_nothing_infered, yes_if_nothing_infered, Instance, Generator, YES
-from logilab.astng.nodes import Const, Class, Function, Tuple, List, \
-     const_factory
+from logilab.astng.nodes import const_factory
+from logilab.astng import nodes
 
 # unary operations ############################################################
 
@@ -77,7 +77,7 @@ BIN_OP_IMPL = {'+':  lambda a, b: a + b,
 
 def const_infer_binary_op(self, operator, other, context):
     for other in other.infer(context):
-        if isinstance(other, Const):
+        if isinstance(other, nodes.Const):
             try:
                 impl = BIN_OP_IMPL[operator]
                 yield const_factory(impl(self.value, other.value))
@@ -103,12 +103,12 @@ def tl_infer_binary_op(self, operator, other, context):
             elts += [n for elt in other.elts for n in elt.infer(context)]
             node.elts = elts
             yield node
-        elif isinstance(other, Const) and operator == '*':
+        elif isinstance(other, nodes.Const) and operator == '*':
             node = self.__class__()
             elts = [n for elt in self.elts for n in elt.infer(context)] * other.value
             node.elts = elts
             yield node
-        elif isinstance(other, Instance) and not isinstance(other, Const):
+        elif isinstance(other, Instance) and not isinstance(other, nodes.Const):
             yield YES
     # XXX else log TypeError
 nodes.Tuple.infer_binary_op = yes_if_nothing_infered(tl_infer_binary_op)
@@ -117,7 +117,7 @@ nodes.List.infer_binary_op = yes_if_nothing_infered(tl_infer_binary_op)
 
 def dict_infer_binary_op(self, operator, other, context):
     for other in other.infer(context):
-        if isinstance(other, Instance) and isinstance(other._proxied, Class):
+        if isinstance(other, Instance) and isinstance(other._proxied, nodes.Class):
             yield YES
         # XXX else log TypeError
 nodes.Dict.infer_binary_op = yes_if_nothing_infered(dict_infer_binary_op)
@@ -174,7 +174,7 @@ def _resolve_looppart(parts, asspath, context):
 def for_assigned_stmts(self, node, context=None, asspath=None):
     if asspath is None:
         for lst in self.iter.infer(context):
-            if isinstance(lst, (Tuple, List)):
+            if isinstance(lst, (nodes.Tuple, nodes.List)):
                 for item in lst.elts:
                     yield item
     else:
@@ -286,7 +286,7 @@ def _resolve_asspart(parts, asspath, context):
 
 def excepthandler_assigned_stmts(self, node, context=None, asspath=None):
     for assigned in unpack_infer(self.type):
-        if isinstance(assigned, Class):
+        if isinstance(assigned, nodes.Class):
             assigned = Instance(assigned)
         yield assigned
 nodes.ExceptHandler.assigned_stmts = raise_if_nothing_infered(excepthandler_assigned_stmts)
@@ -295,7 +295,7 @@ nodes.ExceptHandler.assigned_stmts = raise_if_nothing_infered(excepthandler_assi
 def with_assigned_stmts(self, node, context=None, asspath=None):
     if asspath is None:
         for lst in self.vars.infer(context):
-            if isinstance(lst, (Tuple, List)):
+            if isinstance(lst, (nodes.Tuple, nodes.List)):
                 for item in lst.nodes:
                     yield item
 nodes.With.assigned_stmts = raise_if_nothing_infered(with_assigned_stmts)
