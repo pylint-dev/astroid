@@ -184,6 +184,7 @@ def infer_name(self, context=None):
     context.lookupname = self.name
     return _infer_stmts(stmts, context, frame)
 nodes.Name.infer = path_wrapper(infer_name)
+nodes.AssName.infer_lhs = infer_name # won't work with a path wrapper
 
 
 def infer_callfunc(self, context=None):
@@ -257,6 +258,7 @@ def infer_getattr(self, context=None):
             # XXX method / function
             context.boundnode = None
 nodes.Getattr.infer = path_wrapper(raise_if_nothing_infered(infer_getattr))
+nodes.AssAttr.infer_lhs = raise_if_nothing_infered(infer_getattr) # # won't work with a path wrapper
 
 
 def infer_global(self, context=None):
@@ -376,10 +378,26 @@ def infer_ass(self, context=None):
     """infer a AssName/AssAttr: need to inspect the RHS part of the
     assign node
     """
+    stmt = self.statement()
+    if isinstance(stmt, nodes.AugAssign):
+        return stmt.infer(context)
     stmts = list(self.assigned_stmts(context=context))
     return _infer_stmts(stmts, context)
 nodes.AssName.infer = path_wrapper(infer_ass)
 nodes.AssAttr.infer = path_wrapper(infer_ass)
+
+def infer_augassign(self, context=None):
+    failures = []
+    for lhs in self.target.infer_lhs(context):
+        for val in _infer_binop(self.op, lhs, self.value, context, failures):
+            yield val
+    for lhs in failures:
+        for rhs in self.value.infer(context):
+            for val in _infer_binop(self.op, rhs, lhs, context):
+                yield val
+nodes.AugAssign.infer = path_wrapper(infer_augassign)
+
+
 # no infer method on DelName and DelAttr (expected InferenceError)
 
 

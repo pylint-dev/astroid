@@ -995,5 +995,17 @@ class EnvBasedTC2:
         self.assertEquals(len(infered), 1)
         self.assertIsInstance(infered[0], nodes.Function)
 
+    def test_augassign(self):
+        code = '''
+a = 1
+a += 2
+print a
+'''
+        astng = builder.string_build(code, __name__, __file__)
+        infered = list(get_name_node(astng, 'a').infer())
+        self.assertEquals(len(infered), 1)
+        self.assertIsInstance(infered[0], nodes.Const)
+        self.assertEquals(infered[0].value, 3)
+
 if __name__ == '__main__':
     unittest_main()

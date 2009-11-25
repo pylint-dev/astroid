@@ -2,6 +2,8 @@ Change log for the astng package
 ================================
 
  --
+    * fix #18953: inference fails with augmented assignment (special case for augmented
+      assignement in infer_ass method)
     * fix #13944: false positive for class/instance attributes (Instance.getattr
       should return assign nodes on instance classes as well as instance.
     * include spelling fixes provided by Dotan Barak
