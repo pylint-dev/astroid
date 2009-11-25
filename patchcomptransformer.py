@@ -18,12 +18,13 @@
 :copyright: 2003-2009 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
+# TODO : move this module to _nodes_compiler
 
 from types import TupleType
 from token import DEDENT
 from compiler import transformer
 
-from logilab.astng import nodes
+import compiler.ast as nodes
 
 def fromto_lineno(asttuple):
     """return the minimum and maximum line number of the given ast tuple"""

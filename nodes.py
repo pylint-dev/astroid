@@ -44,16 +44,16 @@ from itertools import imap
 from logilab.astng._exceptions import UnresolvableName, NotFoundError, \
                                         InferenceError, ASTNGError
 from logilab.astng.utils import REDIRECT
-from logilab.astng._nodes import _const_factory
+from logilab.astng._nodes import class_factory, module_factory
 
-from logilab.astng.node_classes import (Arguments, AssAttr, AssName, Assert,
+from logilab.astng.node_classes import (Arguments, AssAttr, Assert,
     Assign, AugAssign, Backquote, BinOp, BoolOp, Break, CallFunc, Compare,
-    Comprehension, Const, Continue, Decorators, DelAttr, DelName, Delete,
+    Comprehension, Const, Continue, Decorators, DelAttr, Delete,
     Dict, Discard, Ellipsis, EmptyNode, ExceptHandler, Exec, ExtSlice, For,
     From, Getattr, Global, If, IfExp, Import, Index, Keyword,
-    List, ListComp, Name, Pass, Print, Raise, Return, Slice, Subscript,
-    TryExcept, TryFinally, Tuple, UnaryOp, While, With, Yield)
-from logilab.astng.scoped_nodes import Module, GenExpr, Lambda, Function, Class
+    List, ListComp, Pass, Print, Raise, Return, Slice, Subscript,
+    TryExcept, TryFinally, Tuple, UnaryOp, While, With, Yield, const_factory )
+from logilab.astng.scoped_nodes import AssName, DelName, Name, Module, GenExpr, Lambda, Function, Class
 
 
 # astng fields definition ####################################################
@@ -115,33 +115,6 @@ Tuple._astng_fields = ('elts',)  # ctx
 With._astng_fields = ('expr', 'vars', 'body')
 While._astng_fields = ('test', 'body', 'orelse',)
 Yield._astng_fields = ('value',)
-
-# constants ... ##############################################################
-
-CONST_CLS = {
-    list: List,
-    tuple: Tuple,
-    dict: Dict,
-    }
-
-def const_factory(value):
-    """return an astng node for a python value"""
-    try:
-        # if value is of class list, tuple, dict use specific class, not Const
-        cls = CONST_CLS[value.__class__]
-        node = cls()
-        if isinstance(node, Dict):
-            node.items = ()
-        else:
-            node.elts = ()
-    except KeyError:
-        try:
-            node = Const(value)
-        except KeyError:
-            node = _const_factory(value)
-    return node
-
-LOCALS_NODES = (Class, Function, GenExpr, Lambda, Module)
 
 
 

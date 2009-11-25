@@ -21,8 +21,9 @@ order to get a single ASTNG representation
 """
 
 from logilab.astng import ASTNGBuildingException, InferenceError, NodeRemoved
+from logilab.astng import _nodes
 from logilab.astng import nodes
-from logilab.astng.utils import ASTVisitor
+from logilab.astng.utils import ASTVisitor, REDIRECT
 from logilab.astng.infutils import YES, Instance
 
 
@@ -38,8 +39,8 @@ class RebuildVisitor(ASTVisitor):
         self._metaclass = None
         self._global_names = None
         self._delayed = []
-        self.rebuilder = nodes.TreeRebuilder(self)
-        self.set_line_info = nodes.AST_MODE == '_ast'
+        self.rebuilder = _nodes.TreeRebuilder(self)
+        self.set_line_info = _nodes.AST_MODE == '_ast'
 
     def _push(self, node):
         """update the stack and init some parts of the Function or Class node
@@ -86,15 +87,19 @@ class RebuildVisitor(ASTVisitor):
         self.__asscontext = None
 
     def walk(self, node):
-        self._walk(node)
+        node = self._walk(node)
         delayed = self._delayed
         while delayed:
             dnode = delayed.pop(0)
             node_name = dnode.__class__.__name__.lower()
             self.delayed_visit_assattr(dnode)
+        return node
 
     def _walk(self, node, parent=None):
         """default visit method, handle the parent attribute"""
+        cls_name = node.__class__.__name__
+        NGNode = getattr(nodes, REDIRECT.get(cls_name, cls_name))
+        node = NGNode()
         node.parent = parent
         try:
             node.accept(self.rebuilder)
@@ -114,7 +119,7 @@ class RebuildVisitor(ASTVisitor):
         if handle_leave:
             leave = getattr(self, "leave_" + node.__class__.__name__.lower())
             leave(node)
-        
+        return node
 
     # general visit_<node> methods ############################################
 

@@ -26,7 +26,6 @@ from logilab.common.compat import chain, imap
 
 from logilab.astng._exceptions import InferenceError, NotFoundError, UnresolvableName
 from logilab.astng._nodes import BaseClass
-from logilab.astng.node_classes import List, Tuple, If, TryExcept
 
 
 class Proxy(BaseClass):
@@ -76,71 +75,6 @@ class InferenceContext(object):
         clone.callcontext = self.callcontext
         clone.boundnode = self.boundnode
         return clone
-
-
-def are_exclusive(stmt1, stmt2, exceptions=None):
-    """return true if the two given statements are mutually exclusive
-
-    `exceptions` may be a list of exception names. If specified, discard If
-    branches and check one of the statement is in an exception handler catching
-    one of the given exceptions.
-
-    algorithm :
-     1) index stmt1's parents
-     2) climb among stmt2's parents until we find a common parent
-     3) if the common parent is a If or TryExcept statement, look if nodes are
-        in exclusive branches
-    """
-    # index stmt1's parents
-    stmt1_parents = {}
-    children = {}
-    node = stmt1.parent
-    previous = stmt1
-    while node:
-        stmt1_parents[node] = 1
-        children[node] = previous
-        previous = node
-        node = node.parent
-    # climb among stmt2's parents until we find a common parent
-    node = stmt2.parent
-    previous = stmt2
-    while node:
-        if stmt1_parents.has_key(node):
-            # if the common parent is a If or TryExcept statement, look if
-            # nodes are in exclusive branches
-            if isinstance(node, If) and exceptions is None:
-                if (node.locate_child(previous)[1]
-                    is not node.locate_child(children[node])[1]):
-                    return True
-            elif isinstance(node, TryExcept):
-                c2attr, c2node = node.locate_child(previous)
-                c1attr, c1node = node.locate_child(children[node])
-                if c1node is not c2node:
-                    if ((c2attr == 'body' and c1attr == 'handlers' and children[node].catch(exceptions)) or
-                        (c2attr == 'handlers' and c1attr == 'body' and previous.catch(exceptions)) or
-                        (c2attr == 'handlers' and c1attr == 'orelse') or
-                        (c2attr == 'orelse' and c1attr == 'handlers')):
-                        return True
-                elif c2attr == 'handlers' and c1attr == 'handlers':
-                    return previous is not children[node]
-            return False
-        previous = node
-        node = node.parent
-    return False
-
-
-def unpack_infer(stmt, context=None):
-    """return an iterator on nodes inferred by the given statement if the inferred
-    value is a list or a tuple, recurse on it to get values inferred by its
-    content
-    """
-    if isinstance(stmt, (List, Tuple)):
-        # XXX loosing context
-        return chain(*imap(unpack_infer, stmt.elts))
-    infered = stmt.infer(context).next()
-    if infered is stmt:
-        return iter( (stmt,) )
-    return chain(*imap(unpack_infer, stmt.infer(context)))
 
 def copy_context(context):
     if context is not None:

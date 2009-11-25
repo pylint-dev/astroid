@@ -404,3 +404,4 @@ def infer_empty_node(self, context=None):
         except ASTNGError:
             yield YES
 nodes.EmptyNode.infer = path_wrapper(infer_empty_node)
+
