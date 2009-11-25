@@ -117,7 +117,7 @@ class LookupMixIn(BaseClass):
                 # original node's statement is the assignment, only keeps
                 # current node (gen exp, list comp)
                 _stmts = [node]
-                break        
+                break
             optional_assign = isinstance(ass_type, nodes.LOOP_SCOPES)
             if optional_assign and ass_type.parent_of(self):
                 # we are inside a loop, loop var assigment is hidding previous
