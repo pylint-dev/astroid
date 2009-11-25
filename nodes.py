@@ -41,18 +41,21 @@ __docformat__ = "restructuredtext en"
 
 from itertools import imap
 
-from logilab.astng._nodes import *
-from logilab.astng._nodes import _const_factory
-
 from logilab.astng._exceptions import UnresolvableName, NotFoundError, \
                                         InferenceError, ASTNGError
 from logilab.astng.utils import REDIRECT
-from logilab.astng import node_classes
-from logilab.astng import scoped_nodes
+from logilab.astng._nodes import _const_factory
+
+from logilab.astng.node_classes import (Arguments, AssAttr, AssName, Assert,
+    Assign, AugAssign, Backquote, BinOp, BoolOp, Break, CallFunc, Compare,
+    Comprehension, Const, Continue, Decorators, DelAttr, DelName, Delete,
+    Dict, Discard, Ellipsis, EmptyNode, ExceptHandler, Exec, ExtSlice, For,
+    From, Getattr, Global, If, IfExp, Import, Index, Keyword,
+    List, ListComp, Name, Pass, Print, Raise, Return, Slice, Subscript,
+    TryExcept, TryFinally, Tuple, UnaryOp, While, With, Yield)
+from logilab.astng.scoped_nodes import Module, GenExpr, Lambda, Function, Class
 from logilab.astng.lookup import LookupMixIn
 
-INFER_NEED_NAME_STMTS = (From, Import, Global, TryExcept)
-LOOP_SCOPES = (Comprehension, For,)
 
 # astng fields definition ####################################################
 Arguments._astng_fields = ('args', 'defaults')
@@ -114,30 +117,32 @@ With._astng_fields = ('expr', 'vars', 'body')
 While._astng_fields = ('test', 'body', 'orelse',)
 Yield._astng_fields = ('value',)
 
+# constants ... ##############################################################
 
-# extend all classes
-# be careful : the inheritance / modification of "__bases__" is quite difficult
-# since it has to work *both* for old-style and new-style classes
+CONST_CLS = {
+    list: List,
+    tuple: Tuple,
+    dict: Dict,
+    }
+
+def const_factory(value):
+    """return an astng node for a python value"""
+    try:
+        # if value is of class list, tuple, dict use specific class, not Const
+        cls = CONST_CLS[value.__class__]
+        node = cls()
+        if isinstance(node, Dict):
+            node.items = ()
+        else:
+            node.elts = ()
+    except KeyError:
+        try:
+            node = Const(value)
+        except KeyError:
+            node = _const_factory(value)
+    return node
 
 LOCALS_NODES = (Class, Function, GenExpr, Lambda, Module)
 
-for cls in ALL_NODES:
-    if cls in LOCALS_NODES:
-        cls_module = scoped_nodes
-    else:
-        if cls in node_classes.SIMPLE_NODES:
-            cls.__bases__ = (NodeNG,) + cls.__bases__
-            continue
-        elif cls in node_classes.SIMPLE_STMTS:
-            cls.__bases__ = (StmtMixIn, NodeNG) + cls.__bases__
-            continue
-        elif cls in node_classes.SIMPLE_LOOKUPS:
-            cls.__bases__ = (LookupMixIn, NodeNG) + cls.__bases__
-            continue
-        cls_module = node_classes
-    ng_class = getattr(cls_module, REDIRECT.get(cls.__name__, cls.__name__) + "NG")
-    cls.__bases__ = (ng_class,) + ng_class.__bases__ + cls.__bases__
 
-# _scope_lookup only available with LookupMixIn extention
-GenExpr.scope_lookup = GenExpr._scope_lookup
 
