@@ -77,7 +77,8 @@ from _ast import (
 
 from logilab.astng.utils import ASTVisitor
 
-BaseClass = object
+class BaseClass(object):
+    """base class for ASTNG node classes"""
 
 _BIN_OP_CLASSES = {_Add: '+',
                    _BitAnd: '&',

@@ -31,7 +31,7 @@ __docformat__ = "restructuredtext en"
 import __builtin__
 
 from logilab.astng import MANAGER, NotFoundError
-from logilab.astng import _nodes as nodes
+from logilab.astng import nodes # XXX this will not work ?? circular import
 from logilab.astng._nodes import BaseClass, NodeNG
 from logilab.astng.infutils import are_exclusive, copy_context, _infer_stmts
 
@@ -118,7 +118,7 @@ class LookupMixIn(BaseClass):
                 # current node (gen exp, list comp)
                 _stmts = [node]
                 break        
-            optional_assign = isinstance(ass_type, nodes.LOOP_SCOPES)
+            optional_assign = isinstance(ass_type, (nodes.For, nodes.Comprehension))
             if optional_assign and ass_type.parent_of(self):
                 # we are inside a loop, loop var assigment is hidding previous
                 # assigment
@@ -194,11 +194,6 @@ class LocalsDictNodeNG(LookupMixIn, NodeNG):
     """ this class provides locals handling common to Module, Function
     and Class nodes, including a dict like interface for direct access
     to locals information
-
-    /!\ this class should not be used directly /!\ it's
-    only used as a methods and attribute container, and update the
-    original class from the compiler.ast module using its dictionary
-    (see below the class definition)
     """
 
     # attributes below are set by the builder module or by raw factories
@@ -315,4 +310,6 @@ class LocalsDictNodeNG(LookupMixIn, NodeNG):
 
     __contains__ = has_key
 
+# maybe import at the end ?
+from logilab.astng import nodes
 

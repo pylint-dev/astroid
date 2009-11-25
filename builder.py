@@ -140,11 +140,11 @@ class ASTNGBuilder:
             node.package = path and path.find('__init__.py') > -1 or False
         node.name = modname
         node.pure_python = True
+        node = self.rebuilder.walk(node) # XXX get the added attributes
         if self._manager is not None:
             self._manager._cache[node.file] = node
             if self._file:
                 self._manager._cache[abspath(self._file)] = node
-        self.rebuilder.walk(node)
         return node
 
     # astng from living objects ###############################################

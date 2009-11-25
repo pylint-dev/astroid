@@ -54,7 +54,6 @@ from logilab.astng.node_classes import (Arguments, AssAttr, AssName, Assert,
     List, ListComp, Name, Pass, Print, Raise, Return, Slice, Subscript,
     TryExcept, TryFinally, Tuple, UnaryOp, While, With, Yield)
 from logilab.astng.scoped_nodes import Module, GenExpr, Lambda, Function, Class
-from logilab.astng.lookup import LookupMixIn
 
 
 # astng fields definition ####################################################
