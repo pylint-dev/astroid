@@ -1,6 +1,11 @@
 Change log for the astng package
 ================================
 
+ --
+    * fix #13944: false positive for class/instance attributes (Instance.getattr
+      should return assign nodes on instance classes as well as instance.
+    * include spelling fixes provided by Dotan Barak
+
 2009-08-27  --  0.19.1
     * fix #8771: crash on yield expression
 
