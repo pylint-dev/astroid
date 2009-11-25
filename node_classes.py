@@ -38,6 +38,11 @@ SIMPLE_LOOKUPS = (AssName, DelName, Name)
 class ArgumentsNG(NodeNG):
     """class representing an Arguments node"""
 
+    def _infer_name(self, frame, name):
+        if self.parent is frame:
+            return name
+        return None
+
     def format_args(self):
         """return arguments formatted as string"""
         result = [_format_args(self.args, self.defaults)]
@@ -72,6 +77,7 @@ class ArgumentsNG(NodeNG):
         if self.args: # self.args may be None in some cases (builtin function)
             return _find_arg(argname, self.args, rec)
         return None, None
+
 
 def _find_arg(argname, args, rec=False):
     for i, arg in enumerate(args):
@@ -273,6 +279,9 @@ class ForNG(BlockRangeMixIn, StmtMixIn, NodeNG):
 class FromImportMixIn(BaseClass):
     """MixIn for From and Import Nodes"""
 
+    def _infer_name(self, frame, name):
+        return name
+
     def do_import_module(node, modname):
         """return the ast for a module whose name is <modname> imported by <node>
         """
@@ -314,6 +323,8 @@ class GetattrNG(NodeNG):
 
 class GlobalNG(StmtMixIn, NodeNG):
     """class representing a Global node"""
+    def _infer_name(self, frame, name):
+        return name
 
 
 class IfNG(BlockRangeMixIn, StmtMixIn, NodeNG):
@@ -395,6 +406,8 @@ class SubscriptNG(NodeNG):
 
 class TryExceptNG(BlockRangeMixIn, StmtMixIn, NodeNG):
     """class representing a TryExcept node"""
+    def _infer_name(self, frame, name):
+        return name
 
     def _blockstart_toline(self):
         return self.lineno

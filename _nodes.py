@@ -31,7 +31,6 @@ except ImportError:
     AST_MODE = 'compiler'
 from logilab.astng.utils import REDIRECT
 
-INFER_NEED_NAME_STMTS = (From, Import, Global, TryExcept)
 LOOP_SCOPES = (Comprehension, For,)
 
 
@@ -222,9 +221,7 @@ class NodeNG(BaseClass):
                 yield matching
 
     def _infer_name(self, frame, name):
-        if isinstance(self, INFER_NEED_NAME_STMTS) or (
-                 isinstance(self, Arguments) and self.parent is frame):
-            return name
+        # overriden for From, Import, Global, TryExcept and Arguments
         return None
 
     def callable(self):
