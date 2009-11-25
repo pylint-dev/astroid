@@ -324,6 +324,9 @@ class Instance(Proxy):
     def pytype(self):
         return self._proxied.qname()
 
+    def display_type(self):
+        return 'Instance of'
+
 
 class UnboundMethod(Proxy):
     """a special node representing a method not bound to an instance"""
@@ -360,5 +363,8 @@ class Generator(Proxy):
 
     def pytype(self):
         return '__builtin__.generator'
+
+    def display_type(self):
+        return 'Generator'
 
 

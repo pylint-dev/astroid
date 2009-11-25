@@ -134,6 +134,9 @@ class ModuleNG(LocalsDictNodeNG):
     def pytype(self):
         return '__builtin__.module'
 
+    def display_type(self):
+        return 'Module'
+
     def getattr(self, name, context=None):
         if not name in self.special_attributes:
             try:
@@ -284,6 +287,11 @@ class LambdaNG(LocalsDictNodeNG):
         if 'method' in self.type:
             return '__builtin__.instancemethod'
         return '__builtin__.function'
+
+    def display_type(self):
+        if 'method' in self.type:
+            return 'Method'
+        return 'Function'
 
     def callable(self):
         return True
@@ -528,6 +536,9 @@ class ClassNG(StmtMixIn, LocalsDictNodeNG):
         if self.newstyle:
             return '__builtin__.type'
         return '__builtin__.classobj'
+
+    def display_type(self):
+        return 'Class'
 
     def callable(self):
         return True
