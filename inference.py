@@ -182,6 +182,7 @@ def infer_name(self, context=None):
         raise UnresolvableName(self.name)
     context = context.clone()
     context.lookupname = self.name
+    #context.boundnode = None
     return _infer_stmts(stmts, context, frame)
 nodes.Name.infer = path_wrapper(infer_name)
 nodes.AssName.infer_lhs = infer_name # won't work with a path wrapper
@@ -191,6 +192,7 @@ def infer_callfunc(self, context=None):
     """infer a CallFunc node by trying to guess what the function returns"""
     callcontext = context.clone()
     callcontext.callcontext = CallContext(self.args, self.starargs, self.kwargs)
+    callcontext.boundnode = None
     for callee in self.func.infer(context):
         if callee is YES:
             yield callee

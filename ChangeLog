@@ -2,6 +2,9 @@ Change log for the astng package
 ================================
 
  --
+
+    * fix #18773: inference bug on class member (due to bad handling of instance
+      / class nodes "bounded" to method calls)
     * fix #9515: strange message for non-class "Class baz has no egg member" (due to
       bad inference of function call)
     * fix #18953: inference fails with augmented assignment (special case for augmented

@@ -1023,5 +1023,35 @@ def foo(self, bar):
         self.assertEquals(len(infered), 1)
         self.assertIs(infered[0], YES)
 
+    def test_nonregr_func_global(self):
+        code = '''
+active_application = None
+
+def get_active_application():
+  global active_application
+  return active_application
+
+class Application(object):
+  def __init__(self):
+     global active_application
+     active_application = self
+
+class DataManager(object):
+  def __init__(self, app=None):
+     self.app = get_active_application()
+  def test(self):
+     p = self.app
+     print p
+        '''
+        astng = builder.string_build(code, __name__, __file__)
+        infered = list(Instance(astng['DataManager']).igetattr('app'))
+        self.assertEquals(len(infered), 2, infered) # None / Instance(Application)
+        infered = list(get_name_node(astng['DataManager']['test'], 'p').infer())
+        self.assertEquals(len(infered), 2, infered)
+        for node in infered:
+            if isinstance(node, Instance) and node.name == 'Application':
+                break
+        else:
+            self.fail('expected to find an instance of Application in %s' % infered)
 if __name__ == '__main__':
     unittest_main()
