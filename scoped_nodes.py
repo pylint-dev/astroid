@@ -12,12 +12,7 @@
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """This module extends ast "scoped" node, i.e. which are opening a new
 local scope in the language definition : Module, Class, Function (and
-Lambda to some extends).
-
-/!\ All [node-name]NG classes should not be used directly /!\
-They are only used as additionnal base classes for the original class
-from the compiler.ast or _ast module (depending on _nodes.AST_MODE). This is
-done by modifying directly the __bases__ attribute in logilab.astng.nodes
+Lambda and GenExpr to some extends).
 
 All new methods and attributes added on each class are documented
 below.
@@ -41,10 +36,9 @@ from logilab.common.decorators import cached
 
 from logilab.astng import MANAGER, NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
-from logilab.astng._nodes import (Arguments, Class, Const, Dict, From, Function,
-     GenExpr, Lambda, List, Module, Name, Pass, Raise, Return, Tuple, Yield,
-     AssName, DelAttr, DelName, const_factory as cf, NodeNG, StmtMixIn)
-
+from logilab.astng.node_clases import (Const, Dict, From, List,  Name, Pass,
+     Raise, Return, Tuple, Yield, AssName, DelAttr, DelName,) 
+from logilab.astng._nodes import const_factory as cf, NodeNG, StmtMixIn
 from logilab.astng.infutils import YES, InferenceContext, Instance, Generator, \
      UnboundMethod, copy_context, unpack_infer, _infer_stmts
 from logilab.astng.nodes_as_string import as_string
@@ -81,7 +75,7 @@ def std_special_attributes(self, name, add_locals=True):
 
 # Module  #####################################################################
 
-class ModuleNG(LocalsDictNodeNG):
+class Module(LocalsDictNodeNG):
     """/!\ this class should not be used directly /!\
     It is only used as an additionnal base class for the original class.
     """
@@ -261,19 +255,19 @@ class ModuleNG(LocalsDictNodeNG):
             return [name for name in self.keys() if not name.startswith('_')]
 
 
-class GenExprNG(LocalsDictNodeNG):
+class GenExpr(LocalsDictNodeNG):
     """/!\ this class should not be used directly /!\
     It is only used as an additionnal base class for the original class.
     """
 
     def frame(self):
         return self.parent.frame()
-GenExprNG.scope_lookup = LocalsDictNodeNG._scope_lookup
+GenExpr.scope_lookup = LocalsDictNodeNG._scope_lookup
 
 
 # Function  ###################################################################
 
-class LambdaNG(LocalsDictNodeNG):
+class Lambda(LocalsDictNodeNG):
     """/!\ this class should not be used directly /!\
     It is only used as an additionnal base class for the original class.
     """
@@ -317,7 +311,7 @@ class LambdaNG(LocalsDictNodeNG):
         return frame._scope_lookup(node, name, offset)
 
 
-class FunctionNG(StmtMixIn, LambdaNG):
+class Function(StmtMixIn, Lambda):
     """/!\ this class should not be used directly /!\
     It is only used as an additionnal base class for the original class.
     """
@@ -478,7 +472,7 @@ def _iface_hdlr(iface_node):
     return True
 
 
-class ClassNG(StmtMixIn, LocalsDictNodeNG):
+class Class(StmtMixIn, LocalsDictNodeNG):
     """/!\ this class should not be used directly /!\
     It is only used as an additionnal base class for the original class.
     """
