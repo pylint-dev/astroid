@@ -863,7 +863,8 @@ def f(g = lambda: None):
         astng = builder.string_build(code, __name__, __file__)
         callfuncnode = astng['f'].body[0].value.expr
         infered = list(callfuncnode.infer())
-        self.failUnlessEqual(len(infered), 1)
+        self.failUnlessEqual(len(infered), 2, infered)
+        infered.remove(YES)
         self.assertIsInstance(infered[0], nodes.Const)
         self.failUnlessEqual(infered[0].value, None)
 
@@ -1006,6 +1007,21 @@ print a
         self.assertEquals(len(infered), 1)
         self.assertIsInstance(infered[0], nodes.Const)
         self.assertEquals(infered[0].value, 3)
+
+    def test_nonregr_func_arg(self):
+        code = '''
+def foo(self, bar):
+    def baz():
+        pass
+    def qux():
+        return baz
+    spam = bar(None, qux)
+    print spam
+'''
+        astng = builder.string_build(code, __name__, __file__)
+        infered = list(get_name_node(astng['foo'], 'spam').infer())
+        self.assertEquals(len(infered), 1)
+        self.assertIs(infered[0], YES)
 
 if __name__ == '__main__':
     unittest_main()

@@ -189,15 +189,15 @@ nodes.AssName.infer_lhs = infer_name # won't work with a path wrapper
 
 def infer_callfunc(self, context=None):
     """infer a CallFunc node by trying to guess what the function returns"""
-    context = context.clone()
-    context.callcontext = CallContext(self.args, self.starargs, self.kwargs)
+    callcontext = context.clone()
+    callcontext.callcontext = CallContext(self.args, self.starargs, self.kwargs)
     for callee in self.func.infer(context):
         if callee is YES:
             yield callee
             continue
         try:
             if hasattr(callee, 'infer_call_result'):
-                for infered in callee.infer_call_result(self, context):
+                for infered in callee.infer_call_result(self, callcontext):
                     yield infered
         except InferenceError:
             ## XXX log error ?

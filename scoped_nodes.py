@@ -46,7 +46,7 @@ from logilab.astng._nodes import (Arguments, Class, Const, Dict, From, Function,
      AssName, DelAttr, DelName, const_factory as cf, NodeNG, StmtMixIn)
 
 from logilab.astng.infutils import YES, InferenceContext, Instance, Generator, \
-     UnboundMethod, copy_context, unpack_infer, _infer_stmts
+     UnboundMethod, BoundMethod, copy_context, unpack_infer, _infer_stmts
 from logilab.astng.nodes_as_string import as_string
 from logilab.astng.lookup import LocalsDictNodeNG
 
@@ -58,11 +58,19 @@ def remove_nodes(func, cls):
         return nodes
     return wrapper
 
-def function_to_unbound_method(func):
-    def wrapper(*args, **kwargs):
-        return [isinstance(n, Function) and UnboundMethod(n) or n
-                for n in func(*args, **kwargs)]
-    return wrapper
+
+def function_to_method(values, klass):
+    res = []
+    for n in values:
+        if isinstance(n, Function):
+            if n.type == 'method':
+                res.append(UnboundMethod(n))
+                continue
+            if n.type == 'classmethod':
+                res.append(BoundMethod(n, klass))
+                continue
+        res.append(n)
+    return res
 
 
 def std_special_attributes(self, name, add_locals=True):
@@ -649,7 +657,7 @@ class ClassNG(StmtMixIn, LocalsDictNodeNG):
         return values
     instance_attr = remove_nodes(instance_attr, DelAttr)
 
-    def getattr(self, name, context=None):
+    def getattr(self, name, context=None, recursing=False):
         """this method doesn't look in the instance_attrs dictionary since it's
         done by an Instance proxy at inference time.
 
@@ -671,13 +679,14 @@ class ClassNG(StmtMixIn, LocalsDictNodeNG):
         values = list(values)
         for classnode in self.ancestors(recurs=False, context=context):
             try:
-                values += classnode.getattr(name, context)
+                values += classnode.getattr(name, context, True)
             except NotFoundError:
                 continue
         if not values:
             raise NotFoundError(name)
+        if not recursing:
+            return function_to_method(values, self)
         return values
-    getattr = function_to_unbound_method(remove_nodes(getattr, DelAttr))
 
     def igetattr(self, name, context=None):
         """inferred getattr, need special treatment in class to handle

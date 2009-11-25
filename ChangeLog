@@ -2,6 +2,8 @@ Change log for the astng package
 ================================
 
  --
+    * fix #9515: strange message for non-class "Class baz has no egg member" (due to
+      bad inference of function call)
     * fix #18953: inference fails with augmented assignment (special case for augmented
       assignement in infer_ass method)
     * fix #13944: false positive for class/instance attributes (Instance.getattr
