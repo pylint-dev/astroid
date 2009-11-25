@@ -10,7 +10,7 @@ from logilab.common.compat import sorted
 
 from logilab.astng import builder, nodes, scoped_nodes, \
      InferenceError, NotFoundError
-from logilab.astng.infutils import Instance
+from logilab.astng.infutils import Instance, BoundMethod, UnboundMethod
 
 abuilder = builder.ASTNGBuilder()
 MODULE = abuilder.file_build('data/module.py', 'data.module')
@@ -444,6 +444,37 @@ class Klass(Parent):
         self.assertEquals(len(inst.getattr('aa')), 3, inst.getattr('aa'))
         self.assertEquals(len(inst.getattr('bb')), 1, inst.getattr('bb'))
         self.assertEquals(len(inst.getattr('cc')), 2, inst.getattr('cc'))
+
+
+    def test_getattr_method_transform(self):
+        data = '''
+class Clazz(object):
+
+    def m1(self, value):
+        self.value = value
+    m2 = m1
+
+def func(arg1, arg2):
+    "function that will be used as a method"
+    return arg1.value + arg2
+
+Clazz.m3 = func
+inst = Clazz()
+inst.m4 = func
+        '''
+        astng = abuilder.string_build(data, __name__, __file__)
+        cls = astng['Clazz']
+        # test del statement not returned by getattr
+        for method in ('m1', 'm2', 'm3'):
+            inferred = list(cls.igetattr(method))
+            self.assertEquals(len(inferred), 1)
+            self.assertIsInstance(inferred[0], UnboundMethod)
+            inferred = list(Instance(cls).igetattr(method))
+            self.assertEquals(len(inferred), 1)
+            self.assertIsInstance(inferred[0], BoundMethod)
+        inferred = list(Instance(cls).igetattr('m4'))
+        self.assertEquals(len(inferred), 1)
+        self.assertIsInstance(inferred[0], nodes.Function)
 
 __all__ = ('ModuleNodeTC', 'ImportNodeTC', 'FunctionNodeTC', 'ClassNodeTC')
 

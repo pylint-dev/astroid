@@ -59,18 +59,13 @@ def remove_nodes(func, cls):
     return wrapper
 
 
-def function_to_method(values, klass):
-    res = []
-    for n in values:
-        if isinstance(n, Function):
-            if n.type == 'method':
-                res.append(UnboundMethod(n))
-                continue
-            if n.type == 'classmethod':
-                res.append(BoundMethod(n, klass))
-                continue
-        res.append(n)
-    return res
+def function_to_method(n, klass):
+    if isinstance(n, Function):
+        if n.type == 'classmethod':
+            return BoundMethod(n, klass)
+        if n.type != 'staticmethod':
+            return UnboundMethod(n)
+    return n
 
 
 def std_special_attributes(self, name, add_locals=True):
@@ -657,7 +652,7 @@ class ClassNG(StmtMixIn, LocalsDictNodeNG):
         return values
     instance_attr = remove_nodes(instance_attr, DelAttr)
 
-    def getattr(self, name, context=None, recursing=False):
+    def getattr(self, name, context=None):
         """this method doesn't look in the instance_attrs dictionary since it's
         done by an Instance proxy at inference time.
 
@@ -679,13 +674,11 @@ class ClassNG(StmtMixIn, LocalsDictNodeNG):
         values = list(values)
         for classnode in self.ancestors(recurs=False, context=context):
             try:
-                values += classnode.getattr(name, context, True)
+                values += classnode.getattr(name, context)
             except NotFoundError:
                 continue
         if not values:
             raise NotFoundError(name)
-        if not recursing:
-            return function_to_method(values, self)
         return values
 
     def igetattr(self, name, context=None):
@@ -708,7 +701,7 @@ class ClassNG(StmtMixIn, LocalsDictNodeNG):
                     else:
                         yield YES
                 else:
-                    yield infered
+                    yield function_to_method(infered, self)
         except NotFoundError:
             if not name.startswith('__') and self.has_dynamic_getattr(context):
                 # class handle some dynamic attributes, return a YES object

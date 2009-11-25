@@ -241,21 +241,6 @@ def raise_if_nothing_infered(func):
 YES = _Yes()
 
 
-def function_to_method(func):
-    def wrapper(self, *args, **kwargs):
-        res = []
-        for n in func(self, *args, **kwargs):
-            if isinstance(n, Function):
-                if n.type == 'method':
-                    res.append(BoundMethod(n, self))
-                    continue
-                if n.type == 'classmethod':
-                    res.append(BoundMethod(n, self._proxied))
-                    continue
-            res.append(n)
-        return res
-    return wrapper
-
 class Instance(Proxy):
     """a special node representing a class instance"""
     def getattr(self, name, context=None, lookupclass=True):
@@ -269,17 +254,16 @@ class Instance(Proxy):
                 # unless they are explicitly defined
                 if name in ('__name__', '__bases__', '__mro__'):
                     return self._proxied.local_attr(name)
-                return self._proxied.getattr(name, context, True)
+                return self._proxied.getattr(name, context)
             raise NotFoundError(name)
         # since we've no context information, return matching class members as
         # well
         if lookupclass:
             try:
-                return values + self._proxied.getattr(name, context, True)
+                return values + self._proxied.getattr(name, context)
             except NotFoundError:
                 pass
         return values
-    getattr = function_to_method(getattr)
 
     def igetattr(self, name, context=None):
         """inferred getattr"""
@@ -303,12 +287,8 @@ class Instance(Proxy):
                 if '__builtin__.property' in attr.decoratornames():
                     for infered in attr.infer_call_result(self, context):
                         yield infered
-                elif attr.type in ('method', 'classmethod'):
-                    # XXX could get some information from the bound node:
-                    #     self (if method) or self._proxied (if class method)
-                    yield BoundMethod(attr, self)
                 else:
-                    yield attr
+                    yield BoundMethod(attr, self)
             else:
                 yield attr
 
@@ -379,6 +359,7 @@ class BoundMethod(UnboundMethod):
         context = context.clone()
         context.boundnode = self.bound
         return self._proxied.infer_call_result(caller, context)
+
 
 class Generator(Proxy):
     """a special node representing a generator"""
