@@ -1,41 +1,16 @@
 #
 from logilab.astng import (ASTNGBuildingException, InferenceError,
                            NotFoundError, NoDefault)
-from logilab.astng._nodes import *
+from logilab.astng._nodes import NodeNG, StmtMixIn, BlockRangeMixIn
 from logilab.astng.lookup import LookupMixIn
 from logilab.astng.infutils import Instance
 
 """
-Module for extensions of all nodes (except scoped nodes).
-
-
-/!\ All [node-name]NG classes should not be used directly /!\
-They are only used as additionnal base classes for the original class
-from the compiler.ast or _ast module (depending on _nodes.AST_MODE). This is
-done by modifying directly the __bases__ attribute in logilab.astng.nodes
+Module for all nodes (except scoped nodes).
 """
 
-# The following *simple* nodes have no particular methods so far, but they have
-# different additional bases (these bases are added to __bases__ in nodes.py);
-# if you need an extra class for one of them, remove it from the corresponding
-# tuple and add an `[node-name]NG` class
 
-# bases : NodeNG
-SIMPLE_NODES = (
-    AssAttr, Backquote, BinOp, BoolOp, CallFunc,
-    Comprehension, DelAttr, Ellipsis, EmptyNode, ExtSlice, Getattr, IfExp,
-    Index, Keyword, ListComp, Slice, Subscript, UnaryOp, Yield)
-
-# bases : StmtMixin, NodeNG
-SIMPLE_STMTS = (
-    Assert, Assign, AugAssign, Break, Continue, Delete, Discard,
-    Exec, Global, Pass, Print, Raise, Return)
-
-# bases : LookupMixIn, NodeNG
-SIMPLE_LOOKUPS = (AssName, DelName, Name)
-
-
-class ArgumentsNG(NodeNG):
+class Arguments(NodeNG):
     """class representing an Arguments node"""
 
     def _infer_name(self, frame, name):
@@ -107,47 +82,47 @@ def _format_args(args, defaults=None):
     return ', '.join(values)
 
 
-class AssAttrNG(NodeNG):
+class AssAttr(NodeNG):
     """class representing an AssAttr node"""
 
 
-class AssNameNG(LookupMixIn, NodeNG):
+class AssName(LookupMixIn, NodeNG):
     """class representing an AssName node"""
 
 
-class AssertNG(StmtMixIn, NodeNG):
+class Assert(StmtMixIn, NodeNG):
     """class representing an Assert node"""
 
 
-class AssignNG(StmtMixIn, NodeNG):
+class Assign(StmtMixIn, NodeNG):
     """class representing an Assign node"""
 
 
-class AugAssignNG(StmtMixIn, NodeNG):
+class AugAssign(StmtMixIn, NodeNG):
     """class representing an AugAssign node"""
 
 
-class BackquoteNG(NodeNG):
+class Backquote(NodeNG):
     """class representing a Backquote node"""
 
 
-class BinOpNG(NodeNG):
+class BinOp(NodeNG):
     """class representing a BinOp node"""
 
 
-class BoolOpNG(NodeNG):
+class BoolOp(NodeNG):
     """class representing a BoolOp node"""
 
 
-class BreakNG(StmtMixIn, NodeNG):
+class Break(StmtMixIn, NodeNG):
     """class representing a Break node"""
 
 
-class CallFuncNG(NodeNG):
+class CallFunc(NodeNG):
     """class representing a CallFunc node"""
 
 
-class CompareNG(NodeNG):
+class Compare(NodeNG):
     """class representing a Compare node"""
 
     def get_children(self):
@@ -156,11 +131,11 @@ class CompareNG(NodeNG):
         for _, comparator in self.ops:
             yield comparator # we don't want the 'op'
 
-class ComprehensionNG(NodeNG):
+class Comprehension(NodeNG):
     """class representing a Comprehension node"""
 
 
-class ConstNG(NodeNG, Instance):
+class Const(NodeNG, Instance):
     """class representing a Const node"""
 
     def getitem(self, index, context=None):
@@ -176,30 +151,30 @@ class ConstNG(NodeNG, Instance):
             return self.value
         raise TypeError()
 
-class ContinueNG(StmtMixIn, NodeNG):
+class Continue(StmtMixIn, NodeNG):
     """class representing a Continue node"""
 
 
-class DecoratorsNG(NodeNG):
+class Decorators(NodeNG):
     """class representing a Decorators node"""
 
     def scope(self):
         # skip the function node to go directly to the upper level scope
         return self.parent.parent.scope()
 
-class DelAttrNG(NodeNG):
+class DelAttr(NodeNG):
     """class representing a DelAttr node"""
 
 
-class DelNameNG(LookupMixIn, NodeNG):
+class DelName(LookupMixIn, NodeNG):
     """class representing a DelName node"""
 
 
-class DeleteNG(StmtMixIn, NodeNG):
+class Delete(StmtMixIn, NodeNG):
     """class representing a Delete node"""
 
 
-class DictNG(NodeNG, Instance):
+class Dict(NodeNG, Instance):
     """class representing a Dict node"""
 
     def pytype(self):
@@ -225,19 +200,19 @@ class DictNG(NodeNG, Instance):
         raise IndexError(key)
 
 
-class DiscardNG(StmtMixIn, NodeNG):
+class Discard(StmtMixIn, NodeNG):
     """class representing a Discard node"""
 
 
-class EllipsisNG(NodeNG):
+class Ellipsis(NodeNG):
     """class representing an Ellipsis node"""
 
 
-class EmptyNodeNG(NodeNG):
+class EmptyNode(NodeNG):
     """class representing an EmptyNode node"""
 
 
-class ExceptHandlerNG(StmtMixIn, NodeNG):
+class ExceptHandler(StmtMixIn, NodeNG):
     """class representing an ExceptHandler node"""
 
     def _blockstart_toline(self):
@@ -261,15 +236,15 @@ class ExceptHandlerNG(StmtMixIn, NodeNG):
                 return True
 
 
-class ExecNG(StmtMixIn, NodeNG):
+class Exec(StmtMixIn, NodeNG):
     """class representing an Exec node"""
 
 
-class ExtSliceNG(NodeNG):
+class ExtSlice(NodeNG):
     """class representing an ExtSlice node"""
 
 
-class ForNG(BlockRangeMixIn, StmtMixIn, NodeNG):
+class For(BlockRangeMixIn, StmtMixIn, NodeNG):
     """class representing a For node"""
 
     def _blockstart_toline(self):
@@ -313,21 +288,21 @@ class FromImportMixIn(BaseClass):
         raise NotFoundError(asname)
 
 
-class FromNG(FromImportMixIn, StmtMixIn, NodeNG):
+class From(FromImportMixIn, StmtMixIn, NodeNG):
     """class representing a From node"""
 
 
-class GetattrNG(NodeNG):
+class Getattr(NodeNG):
     """class representing a Getattr node"""
 
 
-class GlobalNG(StmtMixIn, NodeNG):
+class Global(StmtMixIn, NodeNG):
     """class representing a Global node"""
     def _infer_name(self, frame, name):
         return name
 
 
-class IfNG(BlockRangeMixIn, StmtMixIn, NodeNG):
+class If(BlockRangeMixIn, StmtMixIn, NodeNG):
     """class representing an If node"""
 
     def _blockstart_toline(self):
@@ -343,23 +318,23 @@ class IfNG(BlockRangeMixIn, StmtMixIn, NodeNG):
                                        self.body[0].fromlineno - 1)
 
 
-class IfExpNG(NodeNG):
+class IfExp(NodeNG):
     """class representing an IfExp node"""
 
 
-class ImportNG(FromImportMixIn, StmtMixIn, NodeNG):
+class Import(FromImportMixIn, StmtMixIn, NodeNG):
     """class representing an Import node"""
 
 
-class IndexNG(NodeNG):
+class Index(NodeNG):
     """class representing an Index node"""
 
 
-class KeywordNG(NodeNG):
+class Keyword(NodeNG):
     """class representing a Keyword node"""
 
 
-class ListNG(NodeNG, Instance):
+class List(NodeNG, Instance):
     """class representing a List node"""
 
     def pytype(self):
@@ -372,39 +347,39 @@ class ListNG(NodeNG, Instance):
         return self.elts
 
 
-class ListCompNG(NodeNG):
+class ListComp(NodeNG):
     """class representing a ListComp node"""
 
 
-class NameNG(LookupMixIn, NodeNG):
+class Name(LookupMixIn, NodeNG):
     """class representing a Name node"""
 
 
-class PassNG(StmtMixIn, NodeNG):
+class Pass(StmtMixIn, NodeNG):
     """class representing a Pass node"""
 
 
-class PrintNG(StmtMixIn, NodeNG):
+class Print(StmtMixIn, NodeNG):
     """class representing a Print node"""
 
 
-class RaiseNG(StmtMixIn, NodeNG):
+class Raise(StmtMixIn, NodeNG):
     """class representing a Raise node"""
 
 
-class ReturnNG(StmtMixIn, NodeNG):
+class Return(StmtMixIn, NodeNG):
     """class representing a Return node"""
 
 
-class SliceNG(NodeNG):
+class Slice(NodeNG):
     """class representing a Slice node"""
 
 
-class SubscriptNG(NodeNG):
+class Subscript(NodeNG):
     """class representing a Subscript node"""
 
 
-class TryExceptNG(BlockRangeMixIn, StmtMixIn, NodeNG):
+class TryExcept(BlockRangeMixIn, StmtMixIn, NodeNG):
     """class representing a TryExcept node"""
     def _infer_name(self, frame, name):
         return name
@@ -425,7 +400,7 @@ class TryExceptNG(BlockRangeMixIn, StmtMixIn, NodeNG):
         return self._elsed_block_range(lineno, self.orelse, last)
 
 
-class TryFinallyNG(BlockRangeMixIn, StmtMixIn, NodeNG):
+class TryFinally(BlockRangeMixIn, StmtMixIn, NodeNG):
     """class representing a TryFinally node"""
 
     def _blockstart_toline(self):
@@ -441,7 +416,7 @@ class TryFinallyNG(BlockRangeMixIn, StmtMixIn, NodeNG):
         return self._elsed_block_range(lineno, self.finalbody)
 
 
-class TupleNG(NodeNG, Instance):
+class Tuple(NodeNG, Instance):
     """class representing a Tuple node"""
 
     def pytype(self):
@@ -454,11 +429,11 @@ class TupleNG(NodeNG, Instance):
         return self.elts
 
 
-class UnaryOpNG(NodeNG):
+class UnaryOp(NodeNG):
     """class representing an UnaryOp node"""
 
 
-class WhileNG(BlockRangeMixIn, StmtMixIn, NodeNG):
+class While(BlockRangeMixIn, StmtMixIn, NodeNG):
     """class representing a While node"""
 
     def _blockstart_toline(self):
@@ -468,7 +443,7 @@ class WhileNG(BlockRangeMixIn, StmtMixIn, NodeNG):
         """handle block line numbers range for for and while statements"""
         return self. _elsed_block_range(lineno, self.orelse)
 
-class WithNG(BlockRangeMixIn, StmtMixIn, NodeNG):
+class With(BlockRangeMixIn, StmtMixIn, NodeNG):
     """class representing a With node"""
 
     def _blockstart_toline(self):
@@ -478,6 +453,6 @@ class WithNG(BlockRangeMixIn, StmtMixIn, NodeNG):
             return self.expr.tolineno
 
 
-class YieldNG(NodeNG):
+class Yield(NodeNG):
     """class representing a Yield node"""
 
