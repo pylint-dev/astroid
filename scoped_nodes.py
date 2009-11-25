@@ -268,6 +268,7 @@ class GenExprNG(LocalsDictNodeNG):
 
     def frame(self):
         return self.parent.frame()
+GenExprNG.scope_lookup = LocalsDictNodeNG._scope_lookup
 
 
 # Function  ###################################################################
