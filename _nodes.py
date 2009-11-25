@@ -31,21 +31,6 @@ except ImportError:
     AST_MODE = 'compiler'
 from logilab.astng.utils import REDIRECT
 
-LOOP_SCOPES = (Comprehension, For,)
-
-
-STMT_NODES = (
-    Assert, Assign, AugAssign, Break, Class, Continue, Delete, Discard,
-    ExceptHandler, Exec, For, From, Function, Global, If, Import, Pass, Print,
-    Raise, Return, TryExcept, TryFinally, While, With
-    )
-
-ALL_NODES = STMT_NODES + (
-    Arguments, AssAttr, AssName, BinOp, BoolOp, Backquote,  CallFunc, Compare,
-    Comprehension, Const, Decorators, DelAttr, DelName, Dict, Ellipsis,
-    EmptyNode,  ExtSlice, Getattr,  GenExpr, IfExp, Index, Keyword, Lambda,
-    List,  ListComp, Module, Name, Slice, Subscript, UnaryOp, Tuple, Yield
-    )
 
 
 # Node  ######################################################################
@@ -221,8 +206,13 @@ class NodeNG(BaseClass):
                 yield matching
 
     def _infer_name(self, frame, name):
-        # overriden for From, Import, Global, TryExcept and Arguments
+        # overridden for From, Import, Global, TryExcept and Arguments
         return None
+
+    def infer(self, context=None):
+        """we don't know how to resolve a statement by default"""
+        # this method is overridden by most concrete classes
+        raise InferenceError(self.__class__.__name__)
 
     def callable(self):
         return False
@@ -328,28 +318,4 @@ class BlockRangeMixIn(BaseClass):
         return lineno, last or self.tolineno
 
 
-# constants ... ##############################################################
-
-CONST_CLS = {
-    list: List,
-    tuple: Tuple,
-    dict: Dict,
-    }
-
-def const_factory(value):
-    """return an astng node for a python value"""
-    try:
-        # if value is of class list, tuple, dict use specific class, not Const
-        cls = CONST_CLS[value.__class__]
-        node = cls()
-        if isinstance(node, Dict):
-            node.items = ()
-        else:
-            node.elts = ()
-    except KeyError:
-        try:
-            node = Const(value)
-        except KeyError:
-            node = _const_factory(value)
-    return node
 
