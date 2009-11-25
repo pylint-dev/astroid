@@ -101,6 +101,46 @@ def _format_args(args, defaults=None):
     return ', '.join(values)
 
 
+class AssAttrNG(NodeNG):
+    """class representing an AssAttr node"""
+
+
+class AssNameNG(LookupMixIn, NodeNG):
+    """class representing an AssName node"""
+
+
+class AssertNG(StmtMixIn, NodeNG):
+    """class representing an Assert node"""
+
+
+class AssignNG(StmtMixIn, NodeNG):
+    """class representing an Assign node"""
+
+
+class AugAssignNG(StmtMixIn, NodeNG):
+    """class representing an AugAssign node"""
+
+
+class BackquoteNG(NodeNG):
+    """class representing a Backquote node"""
+
+
+class BinOpNG(NodeNG):
+    """class representing a BinOp node"""
+
+
+class BoolOpNG(NodeNG):
+    """class representing a BoolOp node"""
+
+
+class BreakNG(StmtMixIn, NodeNG):
+    """class representing a Break node"""
+
+
+class CallFuncNG(NodeNG):
+    """class representing a CallFunc node"""
+
+
 class CompareNG(NodeNG):
     """class representing a Compare node"""
 
@@ -109,6 +149,9 @@ class CompareNG(NodeNG):
         yield self.left
         for _, comparator in self.ops:
             yield comparator # we don't want the 'op'
+
+class ComprehensionNG(NodeNG):
+    """class representing a Comprehension node"""
 
 
 class ConstNG(NodeNG, Instance):
@@ -127,6 +170,9 @@ class ConstNG(NodeNG, Instance):
             return self.value
         raise TypeError()
 
+class ContinueNG(StmtMixIn, NodeNG):
+    """class representing a Continue node"""
+
 
 class DecoratorsNG(NodeNG):
     """class representing a Decorators node"""
@@ -134,6 +180,17 @@ class DecoratorsNG(NodeNG):
     def scope(self):
         # skip the function node to go directly to the upper level scope
         return self.parent.parent.scope()
+
+class DelAttrNG(NodeNG):
+    """class representing a DelAttr node"""
+
+
+class DelNameNG(LookupMixIn, NodeNG):
+    """class representing a DelName node"""
+
+
+class DeleteNG(StmtMixIn, NodeNG):
+    """class representing a Delete node"""
 
 
 class DictNG(NodeNG, Instance):
@@ -162,6 +219,18 @@ class DictNG(NodeNG, Instance):
         raise IndexError(key)
 
 
+class DiscardNG(StmtMixIn, NodeNG):
+    """class representing a Discard node"""
+
+
+class EllipsisNG(NodeNG):
+    """class representing an Ellipsis node"""
+
+
+class EmptyNodeNG(NodeNG):
+    """class representing an EmptyNode node"""
+
+
 class ExceptHandlerNG(StmtMixIn, NodeNG):
     """class representing an ExceptHandler node"""
 
@@ -184,6 +253,14 @@ class ExceptHandlerNG(StmtMixIn, NodeNG):
         for node in self.type.nodes_of_class(Name):
             if node.name in exceptions:
                 return True
+
+
+class ExecNG(StmtMixIn, NodeNG):
+    """class representing an Exec node"""
+
+
+class ExtSliceNG(NodeNG):
+    """class representing an ExtSlice node"""
 
 
 class ForNG(BlockRangeMixIn, StmtMixIn, NodeNG):
@@ -231,6 +308,14 @@ class FromNG(FromImportMixIn, StmtMixIn, NodeNG):
     """class representing a From node"""
 
 
+class GetattrNG(NodeNG):
+    """class representing a Getattr node"""
+
+
+class GlobalNG(StmtMixIn, NodeNG):
+    """class representing a Global node"""
+
+
 class IfNG(BlockRangeMixIn, StmtMixIn, NodeNG):
     """class representing an If node"""
 
@@ -247,8 +332,20 @@ class IfNG(BlockRangeMixIn, StmtMixIn, NodeNG):
                                        self.body[0].fromlineno - 1)
 
 
+class IfExpNG(NodeNG):
+    """class representing an IfExp node"""
+
+
 class ImportNG(FromImportMixIn, StmtMixIn, NodeNG):
     """class representing an Import node"""
+
+
+class IndexNG(NodeNG):
+    """class representing an Index node"""
+
+
+class KeywordNG(NodeNG):
+    """class representing a Keyword node"""
 
 
 class ListNG(NodeNG, Instance):
@@ -262,6 +359,38 @@ class ListNG(NodeNG, Instance):
 
     def itered(self):
         return self.elts
+
+
+class ListCompNG(NodeNG):
+    """class representing a ListComp node"""
+
+
+class NameNG(LookupMixIn, NodeNG):
+    """class representing a Name node"""
+
+
+class PassNG(StmtMixIn, NodeNG):
+    """class representing a Pass node"""
+
+
+class PrintNG(StmtMixIn, NodeNG):
+    """class representing a Print node"""
+
+
+class RaiseNG(StmtMixIn, NodeNG):
+    """class representing a Raise node"""
+
+
+class ReturnNG(StmtMixIn, NodeNG):
+    """class representing a Return node"""
+
+
+class SliceNG(NodeNG):
+    """class representing a Slice node"""
+
+
+class SubscriptNG(NodeNG):
+    """class representing a Subscript node"""
 
 
 class TryExceptNG(BlockRangeMixIn, StmtMixIn, NodeNG):
@@ -312,6 +441,10 @@ class TupleNG(NodeNG, Instance):
         return self.elts
 
 
+class UnaryOpNG(NodeNG):
+    """class representing an UnaryOp node"""
+
+
 class WhileNG(BlockRangeMixIn, StmtMixIn, NodeNG):
     """class representing a While node"""
 
@@ -322,7 +455,6 @@ class WhileNG(BlockRangeMixIn, StmtMixIn, NodeNG):
         """handle block line numbers range for for and while statements"""
         return self. _elsed_block_range(lineno, self.orelse)
 
-
 class WithNG(BlockRangeMixIn, StmtMixIn, NodeNG):
     """class representing a With node"""
 
@@ -331,4 +463,8 @@ class WithNG(BlockRangeMixIn, StmtMixIn, NodeNG):
             return self.vars.tolineno
         else:
             return self.expr.tolineno
+
+
+class YieldNG(NodeNG):
+    """class representing a Yield node"""
 
