@@ -416,9 +416,34 @@ class WebAppObject(object):
         del self.appli
          '''
         astng = abuilder.string_build(data, __name__, __file__)
-        cls = astng['WebAppObject']
+        inst = Instance(astng['WebAppObject'])
         # test del statement not returned by getattr
-        self.assertEquals(len(Instance(cls).getattr('appli')), 2)
+        self.assertEquals(len(inst.getattr('appli')), 2)
+
+
+    def test_instance_getattr_with_class_attr(self):
+        data = '''
+class Parent:
+    aa = 1
+    cc = 1
+
+class Klass(Parent):
+    aa = 0
+    bb = 0
+
+    def incr(self, val):
+        self.cc = self.aa
+        if val > self.aa:
+            val = self.aa
+        if val < self.bb:
+            val = self.bb
+        self.aa += val
+        '''
+        astng = abuilder.string_build(data, __name__, __file__)
+        inst = Instance(astng['Klass'])
+        self.assertEquals(len(inst.getattr('aa')), 3, inst.getattr('aa'))
+        self.assertEquals(len(inst.getattr('bb')), 1, inst.getattr('bb'))
+        self.assertEquals(len(inst.getattr('cc')), 2, inst.getattr('cc'))
 
 __all__ = ('ModuleNodeTC', 'ImportNodeTC', 'FunctionNodeTC', 'ClassNodeTC')
         

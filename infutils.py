@@ -245,7 +245,7 @@ class Instance(Proxy):
     """a special node representing a class instance"""
     def getattr(self, name, context=None, lookupclass=True):
         try:
-            return self._proxied.instance_attr(name, context)
+            values = self._proxied.instance_attr(name, context)
         except NotFoundError:
             if name == '__class__':
                 return [self._proxied]
@@ -255,7 +255,15 @@ class Instance(Proxy):
                 if name in ('__name__', '__bases__', '__mro__'):
                     return self._proxied.local_attr(name)
                 return self._proxied.getattr(name, context)
-        raise NotFoundError(name)
+            raise NotFoundError(name)
+        # since we've no context information, return matching class members as
+        # well
+        if lookupclass:
+            try:
+                return values + self._proxied.getattr(name, context)
+            except NotFoundError:
+                pass
+        return values
 
     def igetattr(self, name, context=None):
         """inferred getattr"""
