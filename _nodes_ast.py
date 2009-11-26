@@ -76,9 +76,7 @@ from _ast import (
     )
 
 from logilab.astng.utils import ASTVisitor
-
-class BaseClass(object):
-    """base class for ASTNG node classes"""
+import logilab.astng.nodes as new
 
 _BIN_OP_CLASSES = {_Add: '+',
                    _BitAnd: '&',
@@ -162,37 +160,9 @@ def native_repr_tree(node, indent='', _done=None):
             print indent + f, repr(attr)
 
 
-from _ast import Str as _Str, Num as _Num
 _Num.accept = lambda self, visitor: visitor.visit_num(self)
 _Str.accept = lambda self, visitor: visitor.visit_str(self)
 
-# some astng nodes unexistent in _ast #########################################
-
-class AssAttr(Node):
-    """represent Attribute Assignment statements"""
-
-class AssName(Node):
-    """represent AssName statements"""
-
-class Const(Node):
-    """represent a Str or Num node"""
-    def __init__(self, value=None):
-        super(Const, self).__init__()
-        self.value = value
-
-class DelAttr(Node):
-    """represent del attribute statements"""
-
-class DelName(Node):
-    """represent del statements"""
-
-class EmptyNode(Node):
-    """represent a Empty node for compatibility"""
-
-class Decorators(Node):
-    """represent a Decorator node"""
-    def __init__(self, nodes):
-        self.nodes = nodes
 
 # _ast rebuilder ##############################################################
 
@@ -218,6 +188,7 @@ class TreeRebuilder(ASTVisitor):
     def visit_callfunc(self, node):
         node.args.extend(node.keywords)
         del node.keywords
+        return newnode
 
     def visit_class(self, node):
         _init_set_doc(node)
@@ -244,7 +215,7 @@ class TreeRebuilder(ASTVisitor):
         decorators = getattr(node, attr)
         delattr(node, attr)
         if decorators:
-            node.decorators = Decorators(decorators)
+            node.decorators = new.Decorators(decorators)
         else:
             node.decorators = None
 
@@ -253,9 +224,9 @@ class TreeRebuilder(ASTVisitor):
         node.expr = node.value
         del node.attr, node.value
         if isinstance(self.visitor.asscontext, Delete):
-            node.__class__ = DelAttr
+            node.__class__ = new.DelAttr
         elif self.visitor.asscontext is not None:
-            node.__class__ = AssAttr
+            node.__class__ = new.AssAttr
 
     def visit_import(self, node):
         node.names = [(alias.name, alias.asname) for alias in node.names]
@@ -272,17 +243,17 @@ class TreeRebuilder(ASTVisitor):
         node.name = node.id
         del node.id
         if isinstance(self.visitor.asscontext, Delete):
-            node.__class__ = DelName
+            node.__class__ = new.DelName
         elif self.visitor.asscontext is not None:
-            node.__class__ = AssName
+            node.__class__ = new.AssName
 
     def visit_num(self, node):
-        node.__class__ = Const
+        node.__class__ = new.Const
         node.value = node.n
         del node.n
 
     def visit_str(self, node):
-        node.__class__ = Const
+        node.__class__ = new.Const
         node.value = node.s
         del node.s
 
