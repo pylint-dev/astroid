@@ -457,10 +457,20 @@ class Raise(StmtMixIn, NodeNG):
 class Return(StmtMixIn, NodeNG):
     """class representing a Return node"""
 
+def _filter_none(node):
+    """transform Const(None) to None"""
+    if isinstance(node, Const) and node.value is None:
+        return None
+    else:
+        return node
 
 class Slice(NodeNG):
     """class representing a Slice node"""
-
+    def __init__(self, lower, upper, step, lineno):
+        self.lower = _filter_none(lower)
+        self.upper = _filter_none(upper)
+        self.step = _filter_none(step)
+        self.lineno = lineno
 
 class Subscript(NodeNG):
     """class representing a Subscript node"""
