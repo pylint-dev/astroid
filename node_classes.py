@@ -77,6 +77,11 @@ def are_exclusive(stmt1, stmt2, exceptions=None):
 
 class Arguments(NodeNG):
     """class representing an Arguments node"""
+    def __init__(self, args=None, defaults=None, vararg=None, kwarg=None):
+        self.args = args
+        self.defaults = defaults
+        self.vararg = vararg
+        self.kwarg = kwarg
 
     def _infer_name(self, frame, name):
         if self.parent is frame:
@@ -199,6 +204,11 @@ class Comprehension(NodeNG):
 class Const(NodeNG, Instance):
     """class representing a Const node"""
 
+class Const(Node):
+    """represent a Str or Num node"""
+    def __init__(self, value=None):
+        self.value = value
+
     def getitem(self, index, context=None):
         if isinstance(self.value, basestring):
             return self.value[index]
@@ -218,6 +228,8 @@ class Continue(StmtMixIn, NodeNG):
 
 class Decorators(NodeNG):
     """class representing a Decorators node"""
+    def __init__(self, nodes=None):
+        self.nodes = nodes
 
     def scope(self):
         # skip the function node to go directly to the upper level scope
@@ -271,6 +283,23 @@ class EmptyNode(NodeNG):
 
 class ExceptHandler(StmtMixIn, NodeNG):
     """class representing an ExceptHandler node"""
+
+    def __init__(self, exc_type, name, body):
+        self.type = exc_type
+        self.name = name
+        self.body = body
+        # XXX parent.lineno is wrong, can't catch the right line ...
+        if exc_type and exc_type.lineno:
+            self.fromlineno =  exc_type.lineno
+        else:
+            self.fromlineno =  self.body[0].fromlineno - 1
+        self.tolineno = self.body[-1].tolineno
+        if name:
+            self.blockstart_tolineno = name.tolineno
+        elif exc_type:
+            self.blockstart_tolineno = exc_type.tolineno
+        else:
+            self.blockstart_tolineno = self.fromlineno
 
     def _blockstart_toline(self):
         if self.name:
@@ -385,6 +414,11 @@ class Import(FromImportMixIn, StmtMixIn, NodeNG):
 
 class Index(NodeNG):
     """class representing an Index node"""
+    def __init__(self, values):
+        if len(values) == 1:
+            self.value = values[0]
+        else:
+            self.value = Tuple(values)
 
 
 class Keyword(NodeNG):
