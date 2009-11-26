@@ -48,6 +48,10 @@ from compiler.ast import AssList as _AssList, AssTuple as _AssTuple,\
      RightShift as _RightShift, \
      Slice as _Slice, GenExprFor as _GenExprFor
 
+from logilab.astng.utils import ASTVisitor
+from logilab.astng._exceptions import NodeRemoved, ASTNGError
+
+
 # set missing accept methods
 _AssList.accept = lambda self, visitor: visitor.visit_asslist(self)
 _AssTuple.accept = lambda self, visitor: visitor.visit_asstuple(self)
@@ -62,39 +66,13 @@ for binopcls in (_Add, _Div, _FloorDiv, _Mod, _Mul, _Power, _Sub, _Bitand,
                  _Bitor, _Bitxor, _LeftShift, _RightShift):
     binopcls.accept = lambda self, visitor: visitor.visit_binop(self)
 
-try:
-    # introduced in python 2.4
-    from compiler.ast import GenExpr, GenExprIf, GenExprInner
-except:
-    class GenExpr:
-        """dummy GenExpr node, shouldn't be used with py < 2.4"""
-    class GenExprIf:
-        """dummy GenExprIf node, shouldn't be used with py < 2.4"""
-    class GenExprInner:
-        """dummy GenExprInner node, shouldn't be used with py < 2.4"""
-try:
-    # introduced in python 2.4
-    from compiler.ast import Decorators
-except ImportError:
-    class Decorators:
-        """dummy Decorators node, shouldn't be used with py < 2.4"""
-        def __init__(self, nodes=None):
-            self.nodes = nodes
+class BaseClass: pass
 
-# dummy python >= 2.5 nodes: if we are using py >= 2.5 we will use _ast;
-# but we need it for the other astng modules
-class With: pass
-class IfExp: pass
+import logilab.astng.nodes as new
+
 
 # introduced in python 2.5
 From.level = 0 # will be overridden by instance attribute with py>=2.5
-
-
-from logilab.astng.utils import ASTVisitor
-from logilab.astng._exceptions import NodeRemoved, ASTNGError
-
-class BaseClass: pass
-
 
 def native_repr_tree(node, indent='', _done=None):
     """enhanced compiler.ast tree representation"""
@@ -131,107 +109,45 @@ def native_repr_tree(node, indent='', _done=None):
 
 # some astng nodes unexistent in compiler #####################################
 
-class ExceptHandler(Node):
-    def __init__(self, exc_type, name, body, parent):
-        self.type = exc_type
-        self.name = name
-        self.body = body.nodes
-        # XXX parent.lineno is wrong, can't catch the right line ...
-        if exc_type and exc_type.lineno:
-            self.fromlineno =  exc_type.lineno
-        else:
-            self.fromlineno =  self.body[0].fromlineno - 1
-        self.tolineno = self.body[-1].tolineno
-        if name:
-            self.blockstart_tolineno = name.tolineno
-        elif exc_type:
-            self.blockstart_tolineno = exc_type.tolineno
-        else:
-            self.blockstart_tolineno = self.fromlineno
-
-class BinOp(Node):
-    """replace Add, Div, FloorDiv, Mod, Mul, Power, Sub nodes"""
-    OP_CLASSES = {_Add: '+',
-                  _Div: '/',
-                  _FloorDiv: '//',
-                  _Mod: '%',
-                  _Mul: '*',
-                  _Power: '**',
-                  _Sub: '-',
-                  _Bitand: '&',
-                  _Bitor: '|',
-                  _Bitxor: '^',
-                  _LeftShift: '<<',
-                  _RightShift: '>>'
-                  }
-    BIT_CLASSES = {'&': _Bitand,
-                   '|': _Bitor,
-                   '^': _Bitxor
-                   }
+BinOp_OP_CLASSES = {_Add: '+',
+              _Div: '/',
+              _FloorDiv: '//',
+              _Mod: '%',
+              _Mul: '*',
+              _Power: '**',
+              _Sub: '-',
+              _Bitand: '&',
+              _Bitor: '|',
+              _Bitxor: '^',
+              _LeftShift: '<<',
+              _RightShift: '>>'
+              }
+BinOp_BIT_CLASSES = {'&': _Bitand,
+               '|': _Bitor,
+               '^': _Bitxor
+               }
 
 
-class BoolOp(Node):
-    """replace And, Or"""
-    OP_CLASSES = {_And: 'and',
-                  _Or: 'or'
-                  }
+BoolOp_OP_CLASSES = {_And: 'and',
+              _Or: 'or'
+              }
 
 
-class UnaryOp(Node):
-    """replace UnaryAdd, UnarySub, Not"""
-    OP_CLASSES = {_UnaryAdd: '+',
-                  _UnarySub: '-',
-                  _Not: 'not',
-                  _Invert: '~'
-                  }
-
-
-class Delete(Node):
-    """represent a Delete statement"""
-
-class DelAttr(Node):
-    """represent a deleted Attribute"""
-
-class DelName(Node):
-    """represent a deleted Name"""
-
-class Arguments(Node):
-    """represent the arguments of a function"""
-    def __init__(self, args=None, defaults=None, vararg=None, kwarg=None):
-        self.args = args
-        self.defaults = defaults
-        self.vararg = vararg
-        self.kwarg = kwarg
-
-class Index(Node):
-    """represent an Index of a Subscript"""
-    def __init__(self, values):
-        if len(values) == 1:
-            self.value = values[0]
-        else:
-            self.value = Tuple(values)
-
-class Slice(Node):
-    """represent an ExtSlice of a Subscript; these comes from numeric slices"""
-    def __init__(self, lower, upper, step, lineno):
-        self.lower = _filter_none(lower)
-        self.upper = _filter_none(upper)
-        self.step = _filter_none(step)
-        self.lineno = lineno
+UnaryOp_OP_CLASSES = {_UnaryAdd: '+',
+              _UnarySub: '-',
+              _Not: 'not',
+              _Invert: '~'
+              }
 
 def _extslice(dim):
     """introduce Index or Slice nodes depending on situation"""
     if dim.__class__ == Sliceobj:
         if len(dim.nodes) == 2:
             dim.nodes.append(None)
-        return Slice(dim.nodes[0], dim.nodes[1], dim.nodes[2], dim.lineno)
+        return new.Slice(dim.nodes[0], dim.nodes[1], dim.nodes[2], dim.lineno)
     else:
-        return Index([dim])
+        return new.Index([dim])
 
-class ExtSlice(Node):
-    """represent an ExtSlice of a Subscript; these comes from numeric slices"""
-    def __init__(self, dims):
-        self.dims = [_extslice(dim) for dim in dims]
 
 # modify __repr__ of all Nodes as they are not compatible with ASTNG ##########
 
@@ -277,12 +193,12 @@ def _nodify_args(parent, values):
     res = []
     for arg in values:
         if isinstance(arg, (tuple, list)):
-            n = Tuple()
+            n = new.Tuple()
             # set .nodes, not .elts since this will be visited as a node coming
             # from compiler tree
             n.nodes = _nodify_args(n, arg)
         else:
-            n = AssName(None, None)
+            n = new.AssName(None, None)
             n.name = arg
         n.parent = parent
         n.fromlineno = parent.fromlineno
@@ -303,7 +219,7 @@ def args_compiler_to_ast(node):
     del node.flags
     args = _nodify_args(node, node.argnames)
     del node.argnames
-    node.args = Arguments(args, node.defaults, vararg, kwarg)
+    node.args = new.Arguments(args, node.defaults, vararg, kwarg)
     node.args.fromlineno = node.fromlineno
     try:
         node.args.tolineno = node.blockstart_tolineno
@@ -331,17 +247,17 @@ class TreeRebuilder(ASTVisitor):
 
         return True if we have mutated a AssTuple into a Delete
         """
-        assign_nodes = (Assign, With, For, ExceptHandler, Delete, AugAssign)
+        assign_nodes = (new.Assign, new.With, new.For, new.ExceptHandler, new.Delete, new.AugAssign)
         if isinstance(node.parent, assign_nodes) or not (
-            node.parent.is_statement or isinstance(node.parent, Module)):
+            node.parent.is_statement or isinstance(node.parent, new.Module)):
             return False
         if isinstance(node, AssTuple): # replace node by Delete
-            node.__class__ = Delete
+            node.__class__ = new.Delete
             node.targets = node.nodes
             del node.nodes
             stmt = node
         else: # introduce new Stmt node
-            stmt = Delete()
+            stmt = new.Delete()
             node.parent.replace(node, stmt)
             stmt.fromlineno = node.fromlineno
             stmt.tolineno = node.tolineno
@@ -379,7 +295,7 @@ class TreeRebuilder(ASTVisitor):
     def visit_assattr(self, node):
         if node.flags == 'OP_DELETE':
             self.insert_delstmt_if_necessary(node)
-            node.__class__ = DelAttr
+            node.__class__ = new.DelAttr
         del node.flags
 
     def visit_assign(self, node):
@@ -389,18 +305,18 @@ class TreeRebuilder(ASTVisitor):
 
     def visit_asslist(self, node):
         self.insert_delstmt_if_necessary(node)
-        node.__class__ = List
+        node.__class__ = new.List
         self.visit_list(node)
 
     def visit_asstuple(self, node):
         if not self.insert_delstmt_if_necessary(node):
-            node.__class__ = Tuple
+            node.__class__ = new.Tuple
             self.visit_tuple(node)
 
     def visit_assname(self, node):
         if node.flags == 'OP_DELETE':
             self.insert_delstmt_if_necessary(node)
-            node.__class__ = DelName
+            node.__class__ = new.DelName
         del node.flags
 
     def visit_augassign(self, node):
@@ -414,11 +330,11 @@ class TreeRebuilder(ASTVisitor):
         del node.expr
 
     def visit_binop(self, node):
-        node.op = BinOp.OP_CLASSES[node.__class__]
-        node.__class__ = BinOp
+        node.op = BinOp_OP_CLASSES[node.__class__]
+        node.__class__ = new.BinOp # XXX just instanciate the node
         if node.op in ('&', '|', '^'):
             node.right = node.nodes[-1]
-            bitop = BinOp.BIT_CLASSES[node.op]
+            bitop = BinOp_BIT_CLASSES[node.op]
             if len(node.nodes) > 2:
                 node.left = bitop(node.nodes[:-1])
             else:
@@ -426,8 +342,8 @@ class TreeRebuilder(ASTVisitor):
             del node.nodes
 
     def visit_boolop(self, node):
-        node.op = BoolOp.OP_CLASSES[node.__class__]
-        node.__class__ = BoolOp
+        node.op = BoolOp_OP_CLASSES[node.__class__]
+        node.__class__ = new.BoolOp # XXX just instanciate the node
         node.values = node.nodes
         del node.nodes
 
@@ -468,8 +384,8 @@ class TreeRebuilder(ASTVisitor):
         del node.code
 
     def visit_getattr(self, node):
-        if isinstance(self.visitor.asscontext, AugAssign):
-            node.__class__ = AssAttr
+        if isinstance(self.visitor.asscontext, new.AugAssign):
+            node.__class__ = new.AssAttr
 
     def visit_if(self, node):
         node.test, body = node.tests[0]
@@ -503,8 +419,8 @@ class TreeRebuilder(ASTVisitor):
         del node.expr, node.quals
 
     def visit_name(self, node):
-        if isinstance(self.visitor.asscontext, AugAssign):
-            node.__class__ = AssName
+        if isinstance(self.visitor.asscontext, new.AugAssign):
+            node.__class__ = new.AssName
 
     def visit_comprehension(self, node):
         if hasattr(node, "list"):
@@ -512,7 +428,7 @@ class TreeRebuilder(ASTVisitor):
             node.iter = node.list
             del node.list
         else: # GenExprFor
-            node.__class__ = Comprehension
+            node.__class__ = new.Comprehension
         node.target = node.assign
         if node.ifs:
             node.ifs = [iff.test for iff in node.ifs ]
@@ -556,9 +472,9 @@ class TreeRebuilder(ASTVisitor):
             self.insert_delstmt_if_necessary(node)
         else:
             assert node.flags in ('OP_APPLY', 'OP_ASSIGN')
-        node.__class__ = Subscript
+        node.__class__ = Subscript # XXX what should we do here ?
         node.value = node.expr
-        node.slice = Slice(node.lower, node.upper, None,
+        node.slice = ew.Slice(node.lower, node.upper, None,
                            node.lineno)
         del node.expr, node.lower, node.upper, node.flags
 
@@ -570,18 +486,19 @@ class TreeRebuilder(ASTVisitor):
             subs = node.subs
             if len(node.subs) == 1:# Slice
                 subs = node.subs[0].nodes
-                node.slice = Slice(subs[0], subs[1], subs[2], node.lineno)
+                node.slice = new.Slice(subs[0], subs[1], subs[2], node.lineno)
             else: # ExtSlice
-                node.slice = ExtSlice(node.subs)
+                node.slice = new.ExtSlice()
+                node.dims = [_extslice(n) for n in node.subs]
         else: # Index
-            node.slice = Index(node.subs)
+            node.slice = new.Index(node.subs)
         del node.expr, node.subs, node.flags
 
     def visit_tryexcept(self, node):
         # remove Stmt node
         node.body = node.body.nodes
         # remove Stmt node
-        node.handlers = [ExceptHandler(exctype, excobj, body, node)
+        node.handlers = [new.ExceptHandler(exctype, excobj, body.nodes)
                         for exctype, excobj, body in node.handlers]
         _init_else_node(node)
 
@@ -594,8 +511,8 @@ class TreeRebuilder(ASTVisitor):
     visit_tuple = visit_list
 
     def visit_unaryop(self, node):
-        node.op = UnaryOp.OP_CLASSES[node.__class__]
-        node.__class__ = UnaryOp
+        node.op = UnaryOp_OP_CLASSES[node.__class__]
+        node.__class__ = new.UnaryOp # XXX just instanciate the node
         node.operand = node.expr
         del node.expr
 
@@ -605,8 +522,8 @@ class TreeRebuilder(ASTVisitor):
 
     def visit_yield(self, node):
         """visit yield : add parent Discard node"""
-        if not isinstance(node.parent, Discard):
-            stmt = Discard(None)
+        if not isinstance(node.parent, new.Discard):
+            stmt = new.Discard(None)
             del stmt.expr
             stmt.value = node
             stmt.fromlineno = node.fromlineno
