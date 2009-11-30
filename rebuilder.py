@@ -314,3 +314,4 @@ class RebuildVisitor(ASTVisitor):
                     values.append(node)
         except InferenceError:
             pass
+

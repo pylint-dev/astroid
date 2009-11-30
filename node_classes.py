@@ -377,6 +377,9 @@ class FromImportMixIn(BaseClass):
 class From(FromImportMixIn, StmtMixIn, NodeNG):
     """class representing a From node"""
 
+    def __init__(self,  fromname, names):
+        self.fromname = fromname
+        self.names = names
 
 class Getattr(NodeNG):
     """class representing a Getattr node"""

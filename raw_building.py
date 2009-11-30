@@ -55,10 +55,8 @@ def attach_import_node(node, modname, membername):
     """create a From node and register it in the locals of the given
     node with the specified name
     """
-    from_node = nodes.From()
+    from_node = nodes.From(modname, [(membername, None)])
     from_node.level = 0
-    from_node.modname = modname
-    from_node.names = [(membername, None)]
     _attach_local_node(node, from_node, membername)
 
 
@@ -126,14 +124,10 @@ def build_function(name, args=None, defaults=None, flag=0, doc=None):
 #     return nodes.Assign([nodes.AssAttr(nodes.Name(attr), name, 'OP_ASSIGN')],
 #                         nodes.Const(value))
 
-if sys.version_info < (2, 5):
-    def build_from_import(fromname, names):
-        """create and initialize an astng From import statement"""
-        return nodes.From(fromname, [(name, None) for name in names])
-else:
-    def build_from_import(fromname, names):
-        """create and initialize an astng From import statement"""
-        return nodes.From(fromname, [(name, None) for name in names], 0)
+
+def build_from_import(fromname, names):
+    """create and initialize an astng From import statement"""
+    return nodes.From(fromname, [(name, None) for name in names])
 
 def register_arguments(func, args=None):
     """add given arguments to local
