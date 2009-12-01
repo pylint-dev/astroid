@@ -46,7 +46,12 @@ class RebuildVisitor(ASTVisitor):
         node.parent = parent
         kls_name = node.__class__.__name__
         method = getattr(self, "visit_%s" % REDIRECT.get(kls_name, kls_name).lower() )
+        if self.set_line_info:
+            last_child = tuple(node.get_children())[-1]
+            node.set_line_info(last_child)
         return method(node)
+        
+
 
     def _push(self, node):
         """update the stack and init some parts of the Function or Class node

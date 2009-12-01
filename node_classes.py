@@ -202,9 +202,6 @@ class Comprehension(NodeNG):
 
 
 class Const(NodeNG, Instance):
-    """class representing a Const node"""
-
-class Const(NodeNG):
     """represent a Str or Num node"""
     def __init__(self, value=None):
         self.value = value
@@ -289,6 +286,7 @@ class ExceptHandler(StmtMixIn, NodeNG):
         self.name = name
         self.body = body
         # XXX parent.lineno is wrong, can't catch the right line ...
+        return # XXX it doesn't work yet
         if exc_type and exc_type.lineno:
             self.fromlineno =  exc_type.lineno
         else:

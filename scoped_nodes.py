@@ -615,6 +615,10 @@ class Function(StmtMixIn, Lambda):
     It is only used as an additionnal base class for the original class.
     """
 
+    def __init__(self):
+        self.starargs = None
+        self.kwargs = None
+
     special_attributes = set(('__name__', '__doc__', '__dict__'))
     # attributes below are set by the builder module or by raw factories
 

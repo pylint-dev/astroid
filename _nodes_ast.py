@@ -236,8 +236,11 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.CallFunc()
         newnode.func = self.visit(node.func, node)
         newnode.args = [self.visit(child, node) for child in node.args]
-        newnode.starargs = [self.visit(child, node) for child in node.starargs]
-        newnode.kwargs = [self.visit(child, node) for child in node.kwargs]
+        print "kwargs=", node.kwargs, node.starargs
+        if node.starargs:
+            newnode.starargs = self.visit(node.starargs, node)
+        if node.kwargs:
+            newnode.kwargs = self.visit(node.kwargs, node)
         # XXX old code
         node.args.extend(node.keywords)
         del node.keywords
@@ -256,11 +259,10 @@ class TreeRebuilder(RebuildVisitor):
         """visit a Compare node by returning a fresh instance of it"""
         newnode = new.Compare()
         newnode.left = self.visit(node.left, node)
-        newnode.ops = [self.visit(child, node) for child in node.ops]
+        #newnode.ops = [self.visit(child, node) for child in node.ops]
         # XXX old code
-        node.ops = [(_CMP_OP_CLASSES[op.__class__], expr) 
+        newnode.ops = [(_CMP_OP_CLASSES[op.__class__], self.visit(expr, node))
                     for (op, expr) in zip(node.ops, node.comparators)]
-        del node.comparators
         # end old
         return newnode
 
@@ -341,8 +343,8 @@ class TreeRebuilder(RebuildVisitor):
         """visit an Exec node by returning a fresh instance of it"""
         newnode = new.Exec()
         newnode.expr = self.visit(node.body, node)
-        newnode.globals = [self.visit(child, node) for child in node.globals]
-        newnode.locals = [self.visit(child, node) for child in node.locals]
+        newnode.globals = self.visit(node.globals, node)
+        newnode.locals = self.visit(node.locals, node)
         return newnode
 
     def visit_extslice(self, node):
@@ -448,8 +450,8 @@ class TreeRebuilder(RebuildVisitor):
     def visit_lambda(self, node):
         """visit a Lambda node by returning a fresh instance of it"""
         newnode = new.Lambda()
-        newnode.args = [self.visit(child, node) for child in node.args]
-        newnode.body = [self.visit(child, node) for child in node.body]
+        newnode.args =  self.visit(node.args, node)
+        newnode.body = self.visit(node.body, node)
         return newnode
 
     def visit_list(self, node):
@@ -552,7 +554,7 @@ class TreeRebuilder(RebuildVisitor):
         """visit a TryFinally node by returning a fresh instance of it"""
         newnode = new.TryFinally()
         newnode.body = [self.visit(child, node) for child in node.body]
-        newnode.finalbody = self.visit(node.finalbody, node)
+        newnode.finalbody = [self.visit(n, node) for n in node.finalbody]
         return newnode
 
     def visit_tuple(self, node):
