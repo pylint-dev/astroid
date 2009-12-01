@@ -76,7 +76,7 @@ from _ast import (
     )
 
 from logilab.astng.utils import ASTVisitor
-import logilab.astng.nodes as new
+from logilab.astng import nodes as new
 
 _BIN_OP_CLASSES = {_Add: '+',
                    _BitAnd: '&',
@@ -160,110 +160,436 @@ def native_repr_tree(node, indent='', _done=None):
             print indent + f, repr(attr)
 
 
-_Num.accept = lambda self, visitor: visitor.visit_num(self)
-_Str.accept = lambda self, visitor: visitor.visit_str(self)
-
-
+from logilab.astng.rebuilder import RebuildVisitor
 # _ast rebuilder ##############################################################
 
-class TreeRebuilder(ASTVisitor):
+class TreeRebuilder(RebuildVisitor):
     """Rebuilds the _ast tree to become an ASTNG tree"""
 
-    def __init__(self, rebuild_visitor):
-        self.visitor = rebuild_visitor
+    def visit_arguments(self, node):
+        """visit a Arguments node by returning a fresh instance of it"""
+        newnode = new.Arguments()
+        newnode.args = [self.visit(child, node) for child in node.args]
+        newnode.defaults = [self.visit(child, node) for child in node.defaults]
+        return newnode
+
+    def visit_assattr(self, node):
+        """visit a AssAttr node by returning a fresh instance of it"""
+        newnode = new.AssAttr()
+        newnode.expr = self.visit(node.expr, node)
+        return newnode
+
+    def visit_assname(self, node):
+        """visit a AssName node by returning a fresh instance of it"""
+        newnode = new.AssName()
+        return newnode
 
     def visit_assert(self, node):
-        node.fail = node.msg
-        del node.msg
+        """visit a Assert node by returning a fresh instance of it"""
+        newnode = new.Assert()
+        newnode.test = self.visit(node.test, node)
+        newnode.fail = self.visit(node.msg, node)
+        return newnode
+
+    def visit_assign(self, node):
+        """visit a Assign node by returning a fresh instance of it"""
+        newnode = new.Assign()
+        newnode.targets = [self.visit(child, node) for child in node.targets]
+        newnode.value = self.visit(node.value, node)
+        return newnode
 
     def visit_augassign(self, node):
-        node.op = _BIN_OP_CLASSES[node.op.__class__]
+        """visit a AugAssign node by returning a fresh instance of it"""
+        newnode = new.AugAssign()
+        newnode.target = self.visit(node.target, node)
+        newnode.value = self.visit(node.value, node)
+        return newnode
+
+    def visit_backquote(self, node):
+        """visit a Backquote node by returning a fresh instance of it"""
+        newnode = new.Backquote()
+        newnode.value = self.visit(node.value, node)
+        return newnode
 
     def visit_binop(self, node):
-        node.op = _BIN_OP_CLASSES[node.op.__class__]
+        """visit a BinOp node by returning a fresh instance of it"""
+        newnode = new.BinOp()
+        newnode.left = self.visit(node.left, node)
+        newnode.right = self.visit(node.right, node)
+        newnode.op = _BIN_OP_CLASSES[node.op.__class__]
+        return newnode
 
     def visit_boolop(self, node):
-        node.op = _BOOL_OP_CLASSES[node.op.__class__]
+        """visit a BoolOp node by returning a fresh instance of it"""
+        newnode = new.BoolOp()
+        newnode.values = [self.visit(child, node) for child in node.values]
+        newnode.op = _BOOL_OP_CLASSES[node.op.__class__]
+        return newnode
+
+    def visit_break(self, node):
+        """visit a Break node by returning a fresh instance of it"""
+        newnode = new.Break()
+        return newnode
 
     def visit_callfunc(self, node):
+        """visit a CallFunc node by returning a fresh instance of it"""
+        newnode = new.CallFunc()
+        newnode.func = self.visit(node.func, node)
+        newnode.args = [self.visit(child, node) for child in node.args]
+        newnode.starargs = [self.visit(child, node) for child in node.starargs]
+        newnode.kwargs = [self.visit(child, node) for child in node.kwargs]
+        # XXX old code
         node.args.extend(node.keywords)
         del node.keywords
+        # end old
         return newnode
 
     def visit_class(self, node):
-        _init_set_doc(node)
+        """visit a Class node by returning a fresh instance of it"""
+        newnode = new.Class()
+        _init_set_doc(node, newnode)
+        newnode.bases = [self.visit(child, node) for child in node.bases]
+        newnode.body = [self.visit(child, node) for child in node.body]
+        return newnode
 
     def visit_compare(self, node):
-        node.ops = [(_CMP_OP_CLASSES[op.__class__], expr)
-                    for op, expr in zip(node.ops, node.comparators)]
+        """visit a Compare node by returning a fresh instance of it"""
+        newnode = new.Compare()
+        newnode.left = self.visit(node.left, node)
+        newnode.ops = [self.visit(child, node) for child in node.ops]
+        # XXX old code
+        node.ops = [(_CMP_OP_CLASSES[op.__class__], expr) 
+                    for (op, expr) in zip(node.ops, node.comparators)]
         del node.comparators
+        # end old
+        return newnode
+
+    def visit_comprehension(self, node):
+        """visit a Comprehension node by returning a fresh instance of it"""
+        newnode = new.Comprehension()
+        newnode.target = self.visit(node.target, node)
+        newnode.iter = self.visit(node.iter, node)
+        newnode.ifs = [self.visit(child, node) for child in node.ifs]
+        return newnode
+
+    def visit_const(self, node):
+        """visit a Const node by returning a fresh instance of it"""
+        newnode = new.Const()
+        return newnode
+
+    def visit_continue(self, node):
+        """visit a Continue node by returning a fresh instance of it"""
+        newnode = new.Continue()
+        return newnode
+
+    def visit_decorators(self, node):
+        """visit a Decorators node by returning a fresh instance of it"""
+        newnode = new.Decorators()
+        newnode.nodes = [self.visit(child, node) for child in node.nodes]
+        return newnode
+
+    def visit_delattr(self, node):
+        """visit a DelAttr node by returning a fresh instance of it"""
+        newnode = new.DelAttr()
+        newnode.expr = self.visit(node.expr, node)
+        return newnode
+
+    def visit_delname(self, node):
+        """visit a DelName node by returning a fresh instance of it"""
+        newnode = new.DelName()
+        return newnode
+
+    def visit_delete(self, node):
+        """visit a Delete node by returning a fresh instance of it"""
+        newnode = new.Delete()
+        newnode.targets = [self.visit(child, node) for child in node.targets]
+        return newnode
 
     def visit_dict(self, node):
-        node.items = zip(node.keys, node.values)
-        del node.keys, node.values
+        """visit a Dict node by returning a fresh instance of it"""
+        newnode = new.Dict()
+        newnode.items = [(self.visit(key, node),self.visit(value, node)) 
+                          for key, value in zip(node.keys, node.values)]
+        return newnode
+
+    def visit_discard(self, node):
+        """visit a Discard node by returning a fresh instance of it"""
+        if isinstance(node.value, _ast.Yield):
+            return self.visit(node.value, node)
+        newnode = new.Discard()
+        newnode.value = self.visit(node.value, node)
+        return newnode
+
+    def visit_ellipsis(self, node):
+        """visit an Ellipsis node by returning a fresh instance of it"""
+        newnode = new.Ellipsis()
+        return newnode
+
+    def visit_emptynode(self, node):
+        """visit an EmptyNode node by returning a fresh instance of it"""
+        newnode = new.EmptyNode()
+        return newnode
+
+    def visit_excepthandler(self, node):
+        """visit an ExceptHandler node by returning a fresh instance of it"""
+        newnode = new.ExceptHandler()
+        newnode.type = self.visit(node.type, node)
+        newnode.name = self.visit(node.name, node)
+        newnode.body = [self.visit(child, node) for child in node.body]
+        return newnode
 
     def visit_exec(self, node):
-        node.expr = node.body
-        del node.body
+        """visit an Exec node by returning a fresh instance of it"""
+        newnode = new.Exec()
+        newnode.expr = self.visit(node.body, node)
+        newnode.globals = [self.visit(child, node) for child in node.globals]
+        newnode.locals = [self.visit(child, node) for child in node.locals]
+        return newnode
+
+    def visit_extslice(self, node):
+        """visit an ExtSlice node by returning a fresh instance of it"""
+        newnode = new.ExtSlice()
+        newnode.dims = self.visit(node.dims, node)
+        return newnode
+
+    def visit_for(self, node):
+        """visit a For node by returning a fresh instance of it"""
+        newnode = new.For()
+        newnode.target = self.visit(node.target, node)
+        newnode.iter = self.visit(node.iter, node)
+        newnode.body = [self.visit(child, node) for child in node.body]
+        newnode.orelse = self.visit(node.orelse, node)
+        return newnode
+
+    def visit_from(self, node):
+        """visit a From node by returning a fresh instance of it"""
+        names = [(alias.name, alias.asname) for alias in node.names]
+        newnode = new.From(node.module, names)
+        return newnode
 
     def visit_function(self, node):
-        _init_set_doc(node)
+        """visit a Function node by returning a fresh instance of it"""
+        newnode = new.Function()
+        _init_set_doc(node, newnode)
+        newnode.args = [self.visit(child, node) for child in node.args]
+        newnode.body = [self.visit(child, node) for child in node.body]
         if 'decorators' in node._fields: # py < 2.6
             attr = 'decorators'
         else:
             attr = 'decorator_list'
         decorators = getattr(node, attr)
-        delattr(node, attr)
         if decorators:
-            node.decorators = new.Decorators(decorators)
+            newnode.decorators = Decorators(decorators)
         else:
-            node.decorators = None
+            newnode.decorators = None
+        return newnode
+
+    def visit_genexpr(self, node):
+        """visit a GenExpr node by returning a fresh instance of it"""
+        newnode = new.GenExpr()
+        newnode.elt = self.visit(node.elt, node)
+        newnode.generators = [self.visit(child, node) for child in node.generators]
+        return newnode
 
     def visit_getattr(self, node):
+        """visit a Getattr node by returning a fresh instance of it"""
+        newnode = new.Getattr()
+        newnode.expr = self.visit(node.expr, node)
+        # XXX old code
         node.attrname = node.attr
         node.expr = node.value
         del node.attr, node.value
-        if isinstance(self.visitor.asscontext, Delete):
-            node.__class__ = new.DelAttr
-        elif self.visitor.asscontext is not None:
-            node.__class__ = new.AssAttr
+        if isinstance(self.asscontext, Delete):
+            node.__class__ = DelAttr
+        else:
+            if self.asscontext is not None:
+                node.__class__ = AssAttr
+        # end old
+        return newnode
+
+    def visit_global(self, node):
+        """visit a Global node by returning a fresh instance of it"""
+        newnode = new.Global()
+        # XXX newnode.globals/targets = ...
+        return newnode
+
+    def visit_if(self, node):
+        """visit a If node by returning a fresh instance of it"""
+        newnode = new.If()
+        newnode.test = self.visit(node.test, node)
+        newnode.body = [self.visit(child, node) for child in node.body]
+        newnode.orelse = self.visit(node.orelse, node)
+        return newnode
+
+    def visit_ifexp(self, node):
+        """visit a IfExp node by returning a fresh instance of it"""
+        newnode = new.IfExp()
+        newnode.test = self.visit(node.test, node)
+        newnode.body = [self.visit(child, node) for child in node.body]
+        newnode.orelse = self.visit(node.orelse, node)
+        return newnode
 
     def visit_import(self, node):
-        node.names = [(alias.name, alias.asname) for alias in node.names]
+        """visit a Import node by returning a fresh instance of it"""
+        newnode = new.Import()
+        newnode.names = [(alias.name, alias.asname) for alias in node.names]
+        return newnode
 
-    def visit_from(self, node):
-        node.names = [(alias.name, alias.asname) for alias in node.names]
-        node.modname = node.module
-        del node.module
+    def visit_index(self, node):
+        """visit a Index node by returning a fresh instance of it"""
+        newnode = new.Index()
+        newnode.value = self.visit(node.value, node)
+        return newnode
+
+    def visit_keyword(self, node):
+        """visit a Keyword node by returning a fresh instance of it"""
+        newnode = new.Keyword()
+        newnode.value = self.visit(node.value, node)
+        return newnode
+
+    def visit_lambda(self, node):
+        """visit a Lambda node by returning a fresh instance of it"""
+        newnode = new.Lambda()
+        newnode.args = [self.visit(child, node) for child in node.args]
+        newnode.body = [self.visit(child, node) for child in node.body]
+        return newnode
+
+    def visit_list(self, node):
+        """visit a List node by returning a fresh instance of it"""
+        newnode = new.List()
+        newnode.elts = [self.visit(child, node) for child in node.elts]
+        return newnode
+
+    def visit_listcomp(self, node):
+        """visit a ListComp node by returning a fresh instance of it"""
+        newnode = new.ListComp()
+        newnode.elt = self.visit(node.elt, node)
+        newnode.generators = [self.visit(child, node)
+                              for child in node.generators]
+        return newnode
 
     def visit_module(self, node):
-        _init_set_doc(node)
+        """visit a Module node by returning a fresh instance of it"""
+        print "build new Module"
+        newnode = new.Module()
+        _init_set_doc(node, newnode)
+        newnode.body = [self.visit(child, node) for child in node.body]
+        return newnode
 
     def visit_name(self, node):
-        node.name = node.id
-        del node.id
-        if isinstance(self.visitor.asscontext, Delete):
-            node.__class__ = new.DelName
-        elif self.visitor.asscontext is not None:
-            node.__class__ = new.AssName
+        """visit a Name node by returning a fresh instance of it"""
+        newnode = new.Name()
+        newnode.name = node.id
+        # XXX old code
+        if isinstance(self.asscontext, Delete):
+            node.__class__ = DelName
+        else:
+            if self.asscontext is not None:
+                node.__class__ = AssName
+        # end old
+        return newnode
 
     def visit_num(self, node):
-        node.__class__ = new.Const
-        node.value = node.n
-        del node.n
+        """visit a a Num node by returning a fresh instance of Const"""
+        newnode = new.Const()
+        newnode.value = node.n
+        return newnode
 
     def visit_str(self, node):
-        node.__class__ = new.Const
-        node.value = node.s
-        del node.s
+        """visit a a Str node by returning a fresh instance of Const"""
+        newnode = new.Const()
+        newnode.value = node.s
+        return newnode
+
+    def visit_pass(self, node):
+        """visit a Pass node by returning a fresh instance of it"""
+        newnode = new.Pass()
+        return newnode
+
+    def visit_print(self, node):
+        """visit a Print node by returning a fresh instance of it"""
+        newnode = new.Print()
+        newnode.dest = self.visit(node.dest, node)
+        newnode.values = [self.visit(child, node) for child in node.values]
+        return newnode
+
+    def visit_raise(self, node):
+        """visit a Raise node by returning a fresh instance of it"""
+        newnode = new.Raise()
+        newnode.type = self.visit(node.type, node)
+        newnode.inst = self.visit(node.inst, node)
+        newnode.tback = self.visit(node.tback, node)
+        return newnode
+
+    def visit_return(self, node):
+        """visit a Return node by returning a fresh instance of it"""
+        newnode = new.Return()
+        newnode.value = self.visit(node.value, node)
+        return newnode
+
+    def visit_slice(self, node):
+        """visit a Slice node by returning a fresh instance of it"""
+        newnode = new.Slice()
+        newnode.lower = self.visit(node.lower, node)
+        newnode.upper = self.visit(node.upper, node)
+        newnode.step = self.visit(node.step, node)
+        return newnode
+
+    def visit_subscript(self, node):
+        """visit a Subscript node by returning a fresh instance of it"""
+        newnode = new.Subscript()
+        newnode.value = self.visit(node.value, node)
+        newnode.slice = self.visit(node.slice, node)
+        return newnode
+
+    def visit_tryexcept(self, node):
+        """visit a TryExcept node by returning a fresh instance of it"""
+        newnode = new.TryExcept()
+        newnode.body = [self.visit(child, node) for child in node.body]
+        newnode.handlers = [self.visit(child, node) for child in node.handlers]
+        newnode.orelse = self.visit(node.orelse, node)
+        return newnode
+
+    def visit_tryfinally(self, node):
+        """visit a TryFinally node by returning a fresh instance of it"""
+        newnode = new.TryFinally()
+        newnode.body = [self.visit(child, node) for child in node.body]
+        newnode.finalbody = self.visit(node.finalbody, node)
+        return newnode
+
+    def visit_tuple(self, node):
+        """visit a Tuple node by returning a fresh instance of it"""
+        newnode = new.Tuple()
+        newnode.elts = [self.visit(child, node) for child in node.elts]
+        return newnode
 
     def visit_unaryop(self, node):
-        node.op = _UNARY_OP_CLASSES[node.op.__class__]
+        """visit a UnaryOp node by returning a fresh instance of it"""
+        newnode = new.UnaryOp()
+        newnode.operand = self.visit(node.operand, node)
+        newnode.op = _UNARY_OP_CLASSES[node.op.__class__]
+        return newnode
+
+    def visit_while(self, node):
+        """visit a While node by returning a fresh instance of it"""
+        newnode = new.While()
+        newnode.test = self.visit(node.test, node)
+        newnode.body = [self.visit(child, node) for child in node.body]
+        newnode.orelse = self.visit(node.orelse, node)
+        return newnode
 
     def visit_with(self, node):
-        """build compiler like node """
-        node.vars = node.optional_vars
-        node.expr = node.context_expr
-        del node.optional_vars, node.context_expr
+        """visit a With node by returning a fresh instance of it"""
+        newnode = new.With()
+        newnode.expr = self.visit(node.context_expr, node)
+        newnode.vars = self.visit(node.optional_vars, node)
+        newnode.body = [self.visit(child, node) for child in node.body]
+        return newnode
 
+    def visit_yield(self, node):
+        """visit a Yield node by returning a fresh instance of it"""
+        newnode = new.Yield()
+        newnode.value = self.visit(node.value, node)
+        # removing discard parent handled in visit_discard
+        return newnode
 
