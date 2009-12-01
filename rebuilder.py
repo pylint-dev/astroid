@@ -21,12 +21,6 @@ order to get a single ASTNG representation
 """
 
 from logilab.astng import ASTNGBuildingException, InferenceError, NodeRemoved
-try:
-    from logilab.astng._nodes_ast import TreeRebuilder
-    AST_MODE = '_ast'
-except ImportError:
-    from logilab.astng._nodes_compiler import TreeRebuilder
-    AST_MODE = '_compiler'
 from logilab.astng import nodes
 from logilab.astng.utils import ASTVisitor, REDIRECT
 from logilab.astng.infutils import YES, Instance
@@ -39,13 +33,20 @@ CONST_NAME_TRANSFORMS = {'None':  (nodes.Const, None),
 class RebuildVisitor(ASTVisitor):
     """Visitor to transform an AST to an ASTNG
     """
-    def __init__(self):
+    def __init__(self, set_line_info = True):
         self.asscontext = None
         self._metaclass = None
         self._global_names = None
         self._delayed = []
-        self.rebuilder = TreeRebuilder(self)
-        self.set_line_info = AST_MODE == '_ast'
+        self.set_line_info = set_line_info
+
+    def visit(self, node, parent):
+        if node is None: # XXX something wrong here ?
+            return None
+        node.parent = parent
+        kls_name = node.__class__.lower()
+        method = getattr(self, REDIRECT.get(kls_name, kls_name))
+        return method(node)
 
     def _push(self, node):
         """update the stack and init some parts of the Function or Class node
@@ -102,29 +103,28 @@ class RebuildVisitor(ASTVisitor):
 
     def _walk(self, node, parent=None):
         """default visit method, handle the parent attribute"""
-        cls_name = node.__class__.__name__
-        NGNode = getattr(nodes, REDIRECT.get(cls_name, cls_name))
-        node = NGNode()
-        node.parent = parent
         try:
-            node.accept(self.rebuilder)
+            newnode = self.visit(node)
         except NodeRemoved:
             return
-        handle_leave = node.accept(self)
+        handle_leave = self.visit(newnode) # XXX of course this is wrong
         child = None
+        # TODO : the walk over the children is done by the TreeRebuilder classes
+        # so where should we set self.asscontext and what is the last child ?
+        #
         # XXX tuple necessary since node removal may modify children
         #     find a trick to avoid tuple() or make get_children() returning a list)
-        for child in tuple(node.get_children()):
-            self.set_asscontext(node, child)
-            self._walk(child, node)
-            if self.asscontext is child:
-                self.asscontext = None
+        # for child in tuple(newnode.get_children()):
+        #    self.set_asscontext(node, child)
+        #    self._walk(child, node)
+        #    if self.asscontext is child:
+        #        self.asscontext = None
         if self.set_line_info:
-            node.set_line_info(child)
+            newnode.set_line_info(child) # XXX get the last child
         if handle_leave:
             leave = getattr(self, "leave_" + node.__class__.__name__.lower())
             leave(node)
-        return node
+        return newnode
 
     # general visit_<node> methods ############################################
 

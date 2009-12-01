@@ -37,16 +37,19 @@ from logilab.common.fileutils import norm_read
 from logilab.common.modutils import modpath_from_file
 
 from logilab.astng._exceptions import ASTNGBuildingException
-from logilab.astng.rebuilder import RebuildVisitor
 from logilab.astng.raw_building import *
 
 try:
     from _ast import PyCF_ONLY_AST
     def parse(string):
         return compile(string, "<string>", 'exec', PyCF_ONLY_AST)
+    from logilab.astng._nodes_ast import TreeRebuilder
+    AST_MODE = '_ast'
 except:
     from compiler import parse
     from logilab.astng import patchcomptransformer
+    from logilab.astng._nodes_compiler import TreeRebuilder
+    AST_MODE = '_compiler'
 
 # ast NG builder ##############################################################
 
@@ -61,7 +64,7 @@ class ASTNGBuilder:
         self._module = None
         self._file = None
         self._done = None
-        self.rebuilder = RebuildVisitor()
+        self.rebuilder = TreeRebuilder(set_line_info=(AST_MODE=='_AST'))
         self._dyn_modname_map = {'gtk': 'gtk._gtk'}
 
     def module_build(self, module, modname=None):
@@ -139,13 +142,15 @@ class ASTNGBuilder:
         else:
             node.package = path and path.find('__init__.py') > -1 or False
         node.name = modname
-        node.pure_python = True
-        node = self.rebuilder.walk(node) # XXX get the added attributes
+        newnode = self.rebuilder.walk(node)
+        newnode.pure_python = True
+        newnode.package = node.package
+        newnode.file = node.file
         if self._manager is not None:
-            self._manager._cache[node.file] = node
+            self._manager._cache[newnode.file] = newnode
             if self._file:
-                self._manager._cache[abspath(self._file)] = node
-        return node
+                self._manager._cache[abspath(self._file)] = newnode
+        return newnode
 
     # astng from living objects ###############################################
     #
