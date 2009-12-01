@@ -168,14 +168,6 @@ Dict.__init__ = init_noargs
 
 # compiler rebuilder ##########################################################
 
-def _init_else_node(node):
-    """remove Stmt node if exists"""
-    if node.else_:
-        node.orelse = node.else_.nodes
-    else:
-        node.orelse = []
-    del node.else_
-
 def _nodify_args(parent, values):
     res = []
     for arg in values:
@@ -225,6 +217,11 @@ def _filter_none(node):
 
 class TreeRebuilder(RebuildVisitor):
     """Rebuilds the compiler tree to become an ASTNG tree"""
+
+    def _init_else_node(self, node, parent):
+        if not node.else_:
+            return []
+        return [self.visit(child, node) for child in node.else_.nodes]
 
     def insert_delstmt_if_necessary(self, node):
         """insert a Delete statement node if necessary
@@ -290,68 +287,44 @@ class TreeRebuilder(RebuildVisitor):
     def visit_assign(self, node):
         """visit an Assign node by returning a fresh instance of it"""
         newnode = new.Assign()
-        newnode.targets = [self.visit(child, node) for child in node.targets]
-        newnode.value = self.visit(node.value, node)
-        # XXX old code
-        node.value = node.expr
-        node.targets = node.nodes
-        del node.nodes, node.expr
-        # end old
+        newnode.targets = [self.visit(child, node) for child in node.nodes]
+        newnode.value = self.visit(node.expr, node)
         return newnode
 
     def visit_augassign(self, node):
         """visit an AugAssign node by returning a fresh instance of it"""
         newnode = new.AugAssign()
-        newnode.target = self.visit(node.target, node)
-        newnode.value = self.visit(node.value, node)
-        # XXX old code
-        node.value = node.expr
-        del node.expr
-        node.target = node.node
-        del node.node
-        # end old
+        newnode.target = self.visit(node.node, node)
+        newnode.value = self.visit(node.expr, node)
         return newnode
-
 
    def visit_backquote(self, node):
         """visit a Backquote node by returning a fresh instance of it"""
         newnode = new.Backquote()
-        newnode.value = self.visit(node.value, node)
-        # XXX old code
-        node.value = node.expr
-        del node.expr
-        # end old
+        newnode.value = self.visit(node.expr, node)
         return newnode
 
     def visit_binop(self, node):
         """visit a BinOp node by returning a fresh instance of it"""
         newnode = new.BinOp()
-        newnode.left = self.visit(node.left, node)
-        newnode.right = self.visit(node.right, node)
-        # XXX old code
-        node.op = BinOp.OP_CLASSES[node.__class__]
-        node.__class__ = BinOp
         if node.op in ('&', '|', '^'):
-            node.right = node.nodes[-1]
-            bitop = BinOp.BIT_CLASSES[node.op]
+            newnode.right = self.visit(node.nodes[-1], node)
+            bitop = BinOp_BIT_CLASSES[node.op]
             if len(node.nodes) > 2:
-                node.left = bitop(node.nodes[:-1])
+                # create a bitop node on the fly and visit it:
+                newnode.left = self.visit(bitop(node.nodes[:-1]), node)
             else:
-                node.left = node.nodes[0]
-            del node.nodes
-        # end old
+                newnode.left = self.visit(node.nodes[0], node)
+        else:
+            newnode.left = self.visit(node.left, node)
+            newnode.right = self.visit(node.right, node)
         return newnode
 
     def visit_boolop(self, node):
         """visit a BoolOp node by returning a fresh instance of it"""
         newnode = new.BoolOp()
-        newnode.values = [self.visit(child, node) for child in node.values]
-        # XXX old code
-        node.op = BoolOp.OP_CLASSES[node.__class__]
-        node.__class__ = BoolOp
-        node.values = node.nodes
-        del node.nodes
-        # end old
+        newnode.values = [self.visit(child, node) for child in node.nodes]
+        node.op = BoolOp_OP_CLASSES[node.__class__]
         return newnode
 
     def visit_break(self, node):
@@ -362,63 +335,45 @@ class TreeRebuilder(RebuildVisitor):
     def visit_callfunc(self, node):
         """visit a CallFunc node by returning a fresh instance of it"""
         newnode = new.CallFunc()
-        newnode.func = self.visit(node.func, node)
+        newnode.func = self.visit(node.node, node)
         newnode.args = [self.visit(child, node) for child in node.args]
-        newnode.starargs = [self.visit(child, node) for child in node.starargs]
-        newnode.kwargs = [self.visit(child, node) for child in node.kwargs]
-        # XXX old code
-        node.func = node.node
-        node.starargs = node.star_args
-        node.kwargs = node.dstar_args
-        del node.node, node.star_args, node.dstar_args
-        # end old
+        if node.starargs:
+            newnode.starargs = self.visit(node.star_args, node)
+        if node.kwargs:
+            newnode.kwargs = self.visit(node.dstar_args, node)
         return newnode
 
     def visit_class(self, node):
         """visit a Class node by returning a fresh instance of it"""
         newnode = new.Class()
         newnode.bases = [self.visit(child, node) for child in node.bases]
-        newnode.body = [self.visit(child, node) for child in node.body]
-        # XXX old code
-        node.body = node.code.nodes
-        del node.code
-        # end old
+        newnode.body = [self.visit(child, node) for child in node.code.nodes]
+        newnode.doc = node.doc
         return newnode
 
     def visit_compare(self, node):
         """visit a Compare node by returning a fresh instance of it"""
         newnode = new.Compare()
-        newnode.left = self.visit(node.left, node)
+        newnode.left = self.visit(node.expr, node)
         newnode.ops = [self.visit(child, node) for child in node.ops]
-        # XXX old code
-        node.left = node.expr
-        del node.expr
-        # end old
         return newnode
 
     def visit_comprehension(self, node):
         """visit a Comprehension node by returning a fresh instance of it"""
         newnode = new.Comprehension()
-        newnode.target = self.visit(node.target, node)
-        newnode.iter = self.visit(node.iter, node)
-        newnode.ifs = [self.visit(child, node) for child in node.ifs]
-        # XXX old code
-        if hasattr(node, 'list'):
-            # ListCompFor
-            node.iter = node.list
-            del node.list
-        else: # GenExprFor
-            node.__class__ = Comprehension
-        node.target = node.assign
+        newnode.target = self.visit(node.assign, node)
+        if hasattr(node, 'list'):# ListCompFor
+            iters = node.list
+        else:# GenExprFor
+            iters = node.iter
+        newnode.iter = self.visit(iters, node)
         if node.ifs:
-            node.ifs = [iff.test for iff in node.ifs]
-        del node.assign
-        # end old
+            newnode.ifs = [self.visit(iff.test) for iff in node.ifs]
         return newnode
 
     def visit_const(self, node):
         """visit a Const node by returning a fresh instance of it"""
-        newnode = new.Const()
+        newnode = new.Const(node.value)
         return newnode
 
     def visit_continue(self, node):
@@ -458,14 +413,12 @@ class TreeRebuilder(RebuildVisitor):
     def visit_discard(self, node):
         """visit a Discard node by returning a fresh instance of it"""
         newnode = new.Discard()
-        newnode.value = self.visit(node.value, node)
+        newnode.value = self.visit(node.expr, node)
         # XXX old code
-        node.value = node.expr
-        del node.expr
         if node.lineno is None:
             # remove dummy Discard introduced when a statement
             # is ended by a semi-colon
-            node.parent.child_sequence(node).remove(node)
+            newnode.parent.child_sequence(newnode).remove(newnode)
             raise NodeRemoved
         # end old
         return newnode
@@ -492,11 +445,8 @@ class TreeRebuilder(RebuildVisitor):
         """visit an Exec node by returning a fresh instance of it"""
         newnode = new.Exec()
         newnode.expr = self.visit(node.expr, node)
-        newnode.globals = [self.visit(child, node) for child in node.globals]
-        newnode.locals = [self.visit(child, node) for child in node.locals]
-        # XXX old code
-        (node.locals, node.globals) = (node.globals, node.locals)
-        # end old
+        newnode.globals = self.visit(node.locals, node)
+        newnode.locals = self.visit(node.globals, node)
         return newnode
 
     def visit_extslice(self, node):
@@ -508,18 +458,11 @@ class TreeRebuilder(RebuildVisitor):
     def visit_for(self, node):
         """visit a For node by returning a fresh instance of it"""
         newnode = new.For()
-        newnode.target = self.visit(node.target, node)
-        newnode.iter = self.visit(node.iter, node)
-        newnode.body = [self.visit(child, node) for child in node.body]
-        newnode.orelse = self.visit(node.orelse, node)
-        # XXX old code
-        node.target = node.assign
-        del node.assign
-        node.iter = node.list
-        del node.list
-        node.body = node.body.nodes
-        _init_else_node(node)
-        # end old
+        newnode.target = self.visit(node.assign, node)
+        newnode.iter = self.visit(node.list, node)
+        newnode.body = [self.visit(child, node) for child in node.body.nodes]
+        newnode.orelse = _self.visit(node.orelse, node)
+        newnode.orelse = self._init_else_node(node)
         return newnode
 
     def visit_from(self, node):
@@ -531,12 +474,10 @@ class TreeRebuilder(RebuildVisitor):
     def visit_function(self, node):
         """visit a Function node by returning a fresh instance of it"""
         newnode = new.Function()
-        newnode.decorators = [self.visit(child, node) for child in node.decorators]
+        newnode.decorators = [self.visit(n, node) for n in node.decorators]
         newnode.args = [self.visit(child, node) for child in node.args]
-        newnode.body = [self.visit(child, node) for child in node.body]
+        newnode.body = [self.visit(child, node) for child in node.body.nodes]
         # XXX old code
-        node.body = node.code.nodes
-        del node.code
         args_compiler_to_ast(node)
         # end old
         return newnode
@@ -544,31 +485,24 @@ class TreeRebuilder(RebuildVisitor):
     def visit_genexpr(self, node):
         """visit a GenExpr node by returning a fresh instance of it"""
         newnode = new.GenExpr()
-        newnode.elt = self.visit(node.elt, node)
-        newnode.generators = [self.visit(child, node) for child in node.generators]
-        # XXX old code
         # remove GenExprInner node
-        node.elt = node.code.expr
-        node.generators = node.code.quals
-        del node.code
-        # end old
+        newnode.elt = self.visit(node.code.expr, node)
+        newnode.generators = [self.visit(n, node) for n in node.code.quals]
         return newnode
 
     def visit_getattr(self, node):
         """visit a Getattr node by returning a fresh instance of it"""
         newnode = new.Getattr()
-        newnode.expr = self.visit(node.expr, node)
-        # XXX old code
         if isinstance(self.visitor.asscontext, AugAssign):
-            node.__class__ = AssAttr
-        # end old
+            newnode = new.AssAttr()
+        newnode.expr = self.visit(node.expr, node)
         return newnode
 
     def visit_global(self, node):
         """visit a Global node by returning a fresh instance of it"""
         newnode = new.Global()
+        # XXX missing child nodes
         return newnode
-
 
     def visit_if(self, node):
         """visit an If node by returning a fresh instance of it"""
@@ -788,13 +722,8 @@ class TreeRebuilder(RebuildVisitor):
     def visit_tryfinally(self, node):
         """visit a TryFinally node by returning a fresh instance of it"""
         newnode = new.TryFinally()
-        newnode.body = [self.visit(child, node) for child in node.body]
-        newnode.finalbody = self.visit(node.finalbody, node)
-        # XXX old code
-        node.body = node.body.nodes
-        node.finalbody = node.final.nodes
-        del node.final
-        # end old
+        newnode.body = [self.visit(child, node) for child in node.body.nodes]
+        newnode.finalbody = [self.visit(n, node) for n in node.final.nodes]
         return newnode
 
     def visit_tuple(self, node):
