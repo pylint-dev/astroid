@@ -68,7 +68,6 @@ def build_module(name, doc=None):
     node.pure_python = False
     node.package = False
     node.parent = None
-    node.globals = node.locals = {}
     return node
 
 def build_class(name, basenames=(), doc=None):
@@ -92,13 +91,13 @@ def build_function(name, args=None, defaults=None, flag=0, doc=None):
     args, defaults = args or [], defaults or []
     # first argument is now a list of decorators
     func = nodes.Function()
-    node.decorators = None
+    func.decorators = None
     func.body = []
     func.name = name
     func.args = argsnode = nodes.Arguments()
     argsnode.args = []
     for arg in args:
-        argsnode.args.append(Name())
+        argsnode.args.append(nodes.Name())
         argsnode.args[-1].name = arg
         argsnode.args[-1].parent = argsnode
     argsnode.defaults = []
@@ -107,7 +106,7 @@ def build_function(name, args=None, defaults=None, flag=0, doc=None):
         argsnode.defaults[-1].parent = argsnode
     argsnode.kwarg = None
     argsnode.vararg = None
-    argsnode.parent = node
+    argsnode.parent = func
     func.doc = doc
     func.locals = {}
     if args:

@@ -204,7 +204,7 @@ class Comprehension(NodeNG):
 class Const(NodeNG, Instance):
     """class representing a Const node"""
 
-class Const(Node):
+class Const(NodeNG):
     """represent a Str or Num node"""
     def __init__(self, value=None):
         self.value = value
@@ -417,7 +417,9 @@ class Import(FromImportMixIn, StmtMixIn, NodeNG):
 
 class Index(NodeNG):
     """class representing an Index node"""
-    def __init__(self, values):
+    def __init__(self, values=None): # XXX compiler
+        if values == None:
+            return
         if len(values) == 1:
             self.value = values[0]
         else:
@@ -575,7 +577,8 @@ def const_factory(value):
         else:
             node.elts = ()
     except KeyError:
-        assert isinstance(value, (int, long, complex, float, basestring))
+        # why was value in (None, False, True) not OK?
+        assert isinstance(value, (int, long, complex, float, basestring)) or value in (None, False, True)
         node = Const()
         node.value = value
     return node

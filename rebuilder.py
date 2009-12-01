@@ -44,8 +44,8 @@ class RebuildVisitor(ASTVisitor):
         if node is None: # XXX something wrong here ?
             return None
         node.parent = parent
-        kls_name = node.__class__.lower()
-        method = getattr(self, REDIRECT.get(kls_name, kls_name))
+        kls_name = node.__class__.__name__
+        method = getattr(self, "visit_%s" % REDIRECT.get(kls_name, kls_name).lower() )
         return method(node)
 
     def _push(self, node):
@@ -104,10 +104,10 @@ class RebuildVisitor(ASTVisitor):
     def _walk(self, node, parent=None):
         """default visit method, handle the parent attribute"""
         try:
-            newnode = self.visit(node)
+            newnode = self.visit(node, parent)
         except NodeRemoved:
             return
-        handle_leave = self.visit(newnode) # XXX of course this is wrong
+        # handle_leave = self.visit(newnode) # XXX of course this is wrong
         child = None
         # TODO : the walk over the children is done by the TreeRebuilder classes
         # so where should we set self.asscontext and what is the last child ?
