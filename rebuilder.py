@@ -30,6 +30,7 @@ CONST_NAME_TRANSFORMS = {'None':  (nodes.Const, None),
                          'True':  (nodes.Const, True),
                          'False': (nodes.Const, False)}
 
+
 class RebuildVisitor(ASTVisitor):
     """Visitor to transform an AST to an ASTNG
     """
@@ -41,16 +42,21 @@ class RebuildVisitor(ASTVisitor):
         self.set_line_info = set_line_info
 
     def visit(self, node, parent):
-        if node is None: # XXX something wrong here ?
+        # XXX do we need parent ?
+        if node is None: # some attributes of some nodes are just None
+            print "node with parent %s is None" % parent
             return None
-        node.parent = parent
-        kls_name = node.__class__.__name__
-        method = getattr(self, "visit_%s" % REDIRECT.get(kls_name, kls_name).lower() )
+        _method = REDIRECT.get(node.__class__.__name__, node.__class__.__name__).lower()
+        _visit = getattr(self, "visit_%s" % _method )
         if self.set_line_info:
             last_child = tuple(node.get_children())[-1]
             node.set_line_info(last_child)
-        return method(node)
-        
+        newnode = _visit(node)
+        for child in newnode.get_children():
+            child.parent = newnode
+        _leave = getattr(self, "leave_%s" % _method, None )
+        # _leave(newnode)
+        return newnode
 
 
     def _push(self, node):
