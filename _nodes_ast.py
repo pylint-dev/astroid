@@ -325,10 +325,7 @@ class TreeRebuilder(RebuildVisitor):
 
     def visit_excepthandler(self, node):
         """visit an ExceptHandler node by returning a fresh instance of it"""
-        newnode = new.ExceptHandler(self.visit(node.type, node),
-                                    self.visit(node.name, node),
-                                    [self.visit(n, node) for n in node.body])
-        return newnode
+        return self._build_excepthandler(node, node.type, node.name, node.body)
 
     def visit_exec(self, node):
         """visit an Exec node by returning a fresh instance of it"""
@@ -371,7 +368,7 @@ class TreeRebuilder(RebuildVisitor):
             attr = 'decorator_list'
         decorators = getattr(node, attr)
         if decorators:
-            newnode.decorators = new.Decorators(decorators)
+            newnode.decorators = self.visit(decorators, node)
         else:
             newnode.decorators = None
         return newnode

@@ -281,10 +281,7 @@ class EmptyNode(NodeNG):
 class ExceptHandler(StmtMixIn, NodeNG):
     """class representing an ExceptHandler node"""
 
-    def __init__(self, exc_type, name, body):
-        self.type = exc_type
-        self.name = name
-        self.body = body
+    def __init__(self):
         # XXX parent.lineno is wrong, can't catch the right line ...
         return # XXX it doesn't work yet
         if exc_type and exc_type.lineno:

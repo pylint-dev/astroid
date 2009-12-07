@@ -42,10 +42,10 @@ class RebuildVisitor(ASTVisitor):
         self.set_line_info = set_line_info
 
     def visit(self, node, parent):
-        # XXX do we need parent ?
         if node is None: # some attributes of some nodes are just None
             print "node with parent %s is None" % parent
             return None
+        node.parent = parent # XXX it seems that we need it sometimes
         _method = REDIRECT.get(node.__class__.__name__, node.__class__.__name__).lower()
         _visit = getattr(self, "visit_%s" % _method )
         if self.set_line_info:
@@ -325,4 +325,11 @@ class RebuildVisitor(ASTVisitor):
                     values.append(node)
         except InferenceError:
             pass
+
+    def _build_excepthandler(self, node, exctype, excobj, body):
+        newnode = nodes.ExceptHandler()
+        newnode.type = self.visit(exctype, node)
+        newnode.name = self.visit(excobj, node)
+        newnode.body = [self.visit(child, node) for child in body]
+        return newnode
 
