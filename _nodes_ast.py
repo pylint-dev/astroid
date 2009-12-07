@@ -236,15 +236,9 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.CallFunc()
         newnode.func = self.visit(node.func, node)
         newnode.args = [self.visit(child, node) for child in node.args]
-        print "kwargs=", node.kwargs, node.starargs
-        if node.starargs:
-            newnode.starargs = self.visit(node.starargs, node)
-        if node.kwargs:
-            newnode.kwargs = self.visit(node.kwargs, node)
-        # XXX old code
-        node.args.extend(node.keywords)
-        del node.keywords
-        # end old
+        newnode.starargs = self.visit(node.starargs, node)
+        newnode.kwargs = self.visit(node.kwargs, node)
+        newnode.args.extend(node.keywords)
         return newnode
 
     def visit_class(self, node):
@@ -259,11 +253,8 @@ class TreeRebuilder(RebuildVisitor):
         """visit a Compare node by returning a fresh instance of it"""
         newnode = new.Compare()
         newnode.left = self.visit(node.left, node)
-        #newnode.ops = [self.visit(child, node) for child in node.ops]
-        # XXX old code
         newnode.ops = [(_CMP_OP_CLASSES[op.__class__], self.visit(expr, node))
                     for (op, expr) in zip(node.ops, node.comparators)]
-        # end old
         return newnode
 
     def visit_comprehension(self, node):
@@ -276,7 +267,7 @@ class TreeRebuilder(RebuildVisitor):
 
     def visit_const(self, node):
         """visit a Const node by returning a fresh instance of it"""
-        newnode = new.Const()
+        newnode = new.Const(node.value)
         return newnode
 
     def visit_continue(self, node):
@@ -310,7 +301,7 @@ class TreeRebuilder(RebuildVisitor):
     def visit_dict(self, node):
         """visit a Dict node by returning a fresh instance of it"""
         newnode = new.Dict()
-        newnode.items = [(self.visit(key, node),self.visit(value, node)) 
+        newnode.items = [(self.visit(key, node), self.visit(value, node))
                           for key, value in zip(node.keys, node.values)]
         return newnode
 
@@ -394,17 +385,14 @@ class TreeRebuilder(RebuildVisitor):
 
     def visit_getattr(self, node):
         """visit a Getattr node by returning a fresh instance of it"""
-        newnode = new.Getattr()
+        if isinstance(self.asscontext, Delete):
+            newnode = new.DelAttr()
+        elif self.asscontext is not None:
+            newnode = new.AssAttr()
+        else:
+            newnode = new.Getattr()
         newnode.expr = self.visit(node.value, node)
         newnode.attrname = node.attr
-        # XXX old code
-        del node.attr, node.value
-        if isinstance(self.asscontext, Delete):
-            node.__class__ = DelAttr
-        else:
-            if self.asscontext is not None:
-                node.__class__ = AssAttr
-        # end old
         return newnode
 
     def visit_global(self, node):
@@ -470,7 +458,6 @@ class TreeRebuilder(RebuildVisitor):
 
     def visit_module(self, node):
         """visit a Module node by returning a fresh instance of it"""
-        print "build new Module"
         newnode = new.Module()
         _init_set_doc(node, newnode)
         newnode.body = [self.visit(child, node) for child in node.body]
@@ -478,27 +465,23 @@ class TreeRebuilder(RebuildVisitor):
 
     def visit_name(self, node):
         """visit a Name node by returning a fresh instance of it"""
-        newnode = new.Name()
-        newnode.name = node.id
-        # XXX old code
         if isinstance(self.asscontext, Delete):
-            node.__class__ = DelName
+            newnode = DelName()
+        elif self.asscontext is not None:
+                newnode = AssName()
         else:
-            if self.asscontext is not None:
-                node.__class__ = AssName
-        # end old
+            newnode = new.Name()
+        newnode.name = node.id
         return newnode
 
     def visit_num(self, node):
         """visit a a Num node by returning a fresh instance of Const"""
-        newnode = new.Const()
-        newnode.value = node.n
+        newnode = new.Const(node.n)
         return newnode
 
     def visit_str(self, node):
         """visit a a Str node by returning a fresh instance of Const"""
-        newnode = new.Const()
-        newnode.value = node.s
+        newnode = new.Const(node.s)
         return newnode
 
     def visit_pass(self, node):
