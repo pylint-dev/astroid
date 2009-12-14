@@ -370,9 +370,7 @@ class Name(LookupMixIn, NodeNG):
 # Module  #####################################################################
 
 class Module(LocalsDictNodeNG):
-    """/!\ this class should not be used directly /!\
-    It is only used as an additionnal base class for the original class.
-    """
+
     fromlineno = 0
     lineno = 0
 
@@ -555,9 +553,9 @@ class Module(LocalsDictNodeNG):
 
 
 class GenExpr(LocalsDictNodeNG):
-    """/!\ this class should not be used directly /!\
-    It is only used as an additionnal base class for the original class.
-    """
+
+    def __init__(self):
+        self.locals = {}
 
     def frame(self):
         return self.parent.frame()
@@ -567,12 +565,12 @@ GenExpr.scope_lookup = LocalsDictNodeNG._scope_lookup
 # Function  ###################################################################
 
 class Lambda(LocalsDictNodeNG):
-    """/!\ this class should not be used directly /!\
-    It is only used as an additionnal base class for the original class.
-    """
 
     # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
     type = 'function'
+
+    def __init__(self):
+        self.locals = {}
 
     def pytype(self):
         if 'method' in self.type:
@@ -611,9 +609,6 @@ class Lambda(LocalsDictNodeNG):
 
 
 class Function(StmtMixIn, Lambda):
-    """/!\ this class should not be used directly /!\
-    It is only used as an additionnal base class for the original class.
-    """
 
     def __init__(self):
         self.starargs = None
@@ -776,9 +771,7 @@ def _iface_hdlr(iface_node):
 
 
 class Class(StmtMixIn, LocalsDictNodeNG):
-    """/!\ this class should not be used directly /!\
-    It is only used as an additionnal base class for the original class.
-    """
+
     is_class_node = True # only True for Class nodes
     special_attributes = set(('__name__', '__doc__', '__dict__', '__module__',
                               '__bases__', '__mro__'))
@@ -789,6 +782,9 @@ class Class(StmtMixIn, LocalsDictNodeNG):
     type = property(_class_type,
                     doc="class'type, possible values are 'class' | "
                     "'metaclass' | 'interface' | 'exception'")
+
+    def __init__(self):
+        self.instance_attrs = {}
 
     def _newstyle_impl(self, context=None):
         if context is None:

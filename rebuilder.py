@@ -26,9 +26,9 @@ from logilab.astng.utils import ASTVisitor, REDIRECT
 from logilab.astng.infutils import YES, Instance
 
 
-CONST_NAME_TRANSFORMS = {'None':  (nodes.Const, None),
-                         'True':  (nodes.Const, True),
-                         'False': (nodes.Const, False)}
+CONST_NAME_TRANSFORMS = {'None':  None,
+                         'True':  True,
+                         'False': False}
 
 
 class RebuildVisitor(ASTVisitor):
@@ -46,16 +46,23 @@ class RebuildVisitor(ASTVisitor):
             print "node with parent %s is None" % parent
             return None
         node.parent = parent # XXX it seems that we need it sometimes
-        _method = REDIRECT.get(node.__class__.__name__, node.__class__.__name__).lower()
-        _visit = getattr(self, "visit_%s" % _method )
-        if self.set_line_info:
-            last_child = tuple(node.get_children())[-1]
-            node.set_line_info(last_child)
-        newnode = _visit(node)
+        self.set_asscontext(node, parent) # XXX
+        cls_name = node.__class__.__name__
+        _method_suffix = REDIRECT.get(cls_name, cls_name).lower()
+        _visit = getattr(self, "visit_%s" % _method_suffix )
+        try:
+            newnode = _visit(node)
+        except NodeRemoved:
+            return
+        child = None
+        if newnode is None:
+            return
         for child in newnode.get_children():
             child.parent = newnode
-        _leave = getattr(self, "leave_%s" % _method, None )
-        # _leave(newnode)
+        newnode.set_line_info(child)
+        _leave = getattr(self, "leave_%s" % _method_suffix, None )
+        if _leave:
+            _leave(newnode)
         return newnode
 
 
@@ -104,94 +111,64 @@ class RebuildVisitor(ASTVisitor):
         self.__asscontext = None
 
     def walk(self, node):
-        node = self._walk(node)
+        node = self.visit(node, None)
         delayed = self._delayed
         while delayed:
             dnode = delayed.pop(0)
-            node_name = dnode.__class__.__name__.lower()
             self.delayed_visit_assattr(dnode)
         return node
 
-    def _walk(self, node, parent=None):
-        """default visit method, handle the parent attribute"""
-        try:
-            newnode = self.visit(node, parent)
-        except NodeRemoved:
-            return
-        # handle_leave = self.visit(newnode) # XXX of course this is wrong
-        child = None
-        # TODO : the walk over the children is done by the TreeRebuilder classes
-        # so where should we set self.asscontext and what is the last child ?
-        #
-        # XXX tuple necessary since node removal may modify children
-        #     find a trick to avoid tuple() or make get_children() returning a list)
-        # for child in tuple(newnode.get_children()):
-        #    self.set_asscontext(node, child)
-        #    self._walk(child, node)
-        #    if self.asscontext is child:
-        #        self.asscontext = None
-        if self.set_line_info:
-            newnode.set_line_info(child) # XXX get the last child
-        if handle_leave:
-            leave = getattr(self, "leave_" + node.__class__.__name__.lower())
-            leave(node)
-        return newnode
-
     # general visit_<node> methods ############################################
 
-    def visit_arguments(self, node):
+    def visit_arguments(self, node): # XXX  parent...
         if node.vararg:
             node.parent.set_local(node.vararg, node)
         if node.kwarg:
             node.parent.set_local(node.kwarg, node)
 
     def visit_assign(self, node):
-        return True
+        newnode = self._visit_assign(node)
 
-    def leave_assign(self, node):
-        """leave an Assign node to become astng"""
-        klass = node.parent.frame()
+    def xxx_leave_assign(self, newnode): #XXX  parent...
+        klass = newnode.parent.frame()
         if (isinstance(klass, nodes.Class)
-            and isinstance(node.value, nodes.CallFunc)
-            and isinstance(node.value.func, nodes.Name)):
-            func_name = node.value.func.name
-            for ass_node in node.targets:
+            and isinstance(newnode.value, nodes.CallFunc)
+            and isinstance(newnode.value.func, nodes.Name)):
+            func_name = newnode.value.func.name
+            for ass_node in newnode.targets:
                 try:
                     meth = klass[ass_node.name]
                     if isinstance(meth, nodes.Function):
                         if func_name in ('classmethod', 'staticmethod'):
                             meth.type = func_name
                         try:
-                            meth.extra_decorators.append(node.value)
+                            meth.extra_decorators.append(newnode.value)
                         except AttributeError:
-                            meth.extra_decorators = [node.value]
+                            meth.extra_decorators = [newnode.value]
                 except (AttributeError, KeyError):
                     continue
-        elif getattr(node.targets[0], 'name', None) == '__metaclass__': # XXX check more...
+        elif getattr(newnode.targets[0], 'name', None) == '__metaclass__':
+            # XXX check more...
             self._metaclass[-1] = 'type' # XXX get the actual metaclass
+        return newnode
 
-    def visit_class(self, node):
+    def visit_class(self, node): # TODO
         """visit an Class node to become astng"""
-        node.instance_attrs = {}
-        self._push(node)
+        newnode = self._visit_class(node)
+        self._push(newnode)
         self._metaclass.append(self._metaclass[-1])
-        return True
-
-    def leave_class(self, node):
-        """leave a Class node -> pop the last item on the stack"""
         metaclass = self._metaclass.pop()
-        if not node.bases:
+        if not newnode.bases:
             # no base classes, detect new / style old style according to
             # current scope
             node._newstyle = metaclass == 'type'
-    
-    leave_classdef = leave_class
+        return newnode
 
-    def visit_decorators(self, node):
-        """visiting an Decorators node: return True for leaving"""
-        return True
+    def visit_decorators(self, node): # TODO
+        """visiting an Decorators node"""
+        return self._visit_decorators(node)
 
-    def leave_decorators(self, node):
+    def leave_decorators(self, node): # XXX parent
         """python >= 2.4
         visit a Decorator node -> check for classmethod and staticmethod
         """
@@ -199,8 +176,9 @@ class RebuildVisitor(ASTVisitor):
             if isinstance(decorator_expr, nodes.Name) and \
                    decorator_expr.name in ('classmethod', 'staticmethod'):
                 node.parent.type = decorator_expr.name
+        return newnode
 
-    def visit_from(self, node):
+    def visit_from(self, node): # TODO XXX root !
         """visit an From node to become astng"""
         # add names imported by the import to locals
         for (name, asname) in node.names:
@@ -214,7 +192,7 @@ class RebuildVisitor(ASTVisitor):
             else:
                 node.parent.set_local(asname or name, node)
 
-    def visit_function(self, node):
+    def visit_function(self, node): # XXX parent
         """visit an Function node to become astng"""
         self._global_names.append({})
         if isinstance(node.parent.frame(), nodes.Class):
@@ -225,23 +203,18 @@ class RebuildVisitor(ASTVisitor):
         self._push(node)
         return True
 
-    def leave_function(self, node):
+    def leave_function(self, node): # TODO
         """leave a Function node -> pop the last item on the stack"""
         self._global_names.pop()
-    leave_functiondef = leave_function
 
-    def visit_genexpr(self, node):
-        """visit an ListComp node to become astng"""
-        node.locals = {}
-
-    def visit_assattr(self, node):
+    def visit_assattr(self, node): # TODO
         """visit an Getattr node to become astng"""
         self._delayed.append(node) # FIXME
         self.push_asscontext()
         return True        
     visit_delattr = visit_assattr
     
-    def leave_assattr(self, node):
+    def leave_assattr(self, node): # TODO
         """visit an Getattr node to become astng"""
         self._delayed.append(node) # FIXME
         self.pop_asscontext()
@@ -249,37 +222,33 @@ class RebuildVisitor(ASTVisitor):
     
     def visit_global(self, node):
         """visit an Global node to become astng"""
-        if not self._global_names: # global at the module level, no effect
-            return
-        for name in node.names:
-            self._global_names[-1].setdefault(name, []).append(node)
+        newnode = nodes.Global(node.names)
+        if self._global_names: # global at the module level, no effect
+            return nodes.Global(node.names)
+            for name in node.names:
+                self._global_names[-1].setdefault(name, []).append(newnode)
+        return newnode
 
-    def visit_import(self, node):
+    def visit_import(self, node): # XXX parent !
         """visit an Import node to become astng"""
         for (name, asname) in node.names:
             name = asname or name
             node.parent.set_local(name.split('.')[0], node)
 
-    def visit_lambda(self, node):
-        """visit an Keyword node to become astng"""
-        node.locals = {}
-
     def visit_module(self, node):
         """visit an Module node to become astng"""
         self._metaclass = ['']
         self._global_names = []
-        node.globals = node.locals = {}
-        
+        return self._visit_module(node)
+
     def visit_name(self, node):
         """visit an Name node to become astng"""
-        try:
-            cls, value = CONST_NAME_TRANSFORMS[node.name]
-            node.__class__ = cls
-            node.value = value
-        except KeyError:
-            pass
+        newnode = self._visit_name(node)
+        if newnode.name in CONST_NAME_TRANSFORMS:
+            return nodes.Const(CONST_NAME_TRANSFORMS[newnode.name])
+        return newnode
 
-    def visit_assname(self, node):
+    def visit_assname(self, node): # XXX parent
         if self.asscontext is not None:
             if self._global_names and node.name in self._global_names[-1]:
                 node.root().set_local(node.name, node)
@@ -325,6 +294,8 @@ class RebuildVisitor(ASTVisitor):
                     values.append(node)
         except InferenceError:
             pass
+
+    # --- additional methods ----
 
     def _build_excepthandler(self, node, exctype, excobj, body):
         newnode = nodes.ExceptHandler()

@@ -162,6 +162,8 @@ class NodeNG(BaseClass):
             self.tolineno = self.fromlineno
         else:
             self.tolineno = lastchild.tolineno
+        return
+        # TODO / FIXME:
         assert self.fromlineno is not None, self
         assert self.tolineno is not None, self
 

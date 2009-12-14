@@ -284,7 +284,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.fail = self.visit(node.fail, node)
         return newnode
 
-    def visit_assign(self, node):
+    def _visit_assign(self, node):
         """visit an Assign node by returning a fresh instance of it"""
         newnode = new.Assign()
         newnode.targets = [self.visit(child, node) for child in node.nodes]
@@ -343,7 +343,7 @@ class TreeRebuilder(RebuildVisitor):
             newnode.kwargs = self.visit(node.dstar_args, node)
         return newnode
 
-    def visit_class(self, node):
+    def _visit_class(self, node):
         """visit a Class node by returning a fresh instance of it"""
         newnode = new.Class()
         newnode.bases = [self.visit(child, node) for child in node.bases]
@@ -498,12 +498,6 @@ class TreeRebuilder(RebuildVisitor):
         newnode.expr = self.visit(node.expr, node)
         return newnode
 
-    def visit_global(self, node):
-        """visit a Global node by returning a fresh instance of it"""
-        newnode = new.Global()
-        # XXX missing child nodes ???
-        return newnode
-
     def visit_if(self, node):
         """visit an If node by returning a fresh instance of it"""
         newnode = new.If()
@@ -574,13 +568,13 @@ class TreeRebuilder(RebuildVisitor):
         newnode.generators = [self.visit(child, node) for child in node.quals]
         return newnode
 
-    def visit_module(self, node):
+    def _visit_module(self, node):
         """visit a Module node by returning a fresh instance of it"""
         newnode = new.Module()
         newnode.body = [self.visit(child, node) for child in node.node.nodes]
         return newnode
 
-    def visit_name(self, node):
+    def _visit_name(self, node):
         """visit a Name node by returning a fresh instance of it"""
         if isinstance(self.visitor.asscontext, AugAssign):
             newnode = AssName()

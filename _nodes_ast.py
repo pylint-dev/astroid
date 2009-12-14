@@ -191,7 +191,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.fail = self.visit(node.msg, node)
         return newnode
 
-    def visit_assign(self, node):
+    def _visit_assign(self, node):
         """visit a Assign node by returning a fresh instance of it"""
         newnode = new.Assign()
         newnode.targets = [self.visit(child, node) for child in node.targets]
@@ -241,7 +241,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.args.extend(node.keywords)
         return newnode
 
-    def visit_class(self, node):
+    def _visit_class(self, node):
         """visit a Class node by returning a fresh instance of it"""
         newnode = new.Class()
         _init_set_doc(node, newnode)
@@ -392,12 +392,6 @@ class TreeRebuilder(RebuildVisitor):
         newnode.attrname = node.attr
         return newnode
 
-    def visit_global(self, node):
-        """visit a Global node by returning a fresh instance of it"""
-        newnode = new.Global()
-        # XXX newnode.globals/targets = ...
-        return newnode
-
     def visit_if(self, node):
         """visit a If node by returning a fresh instance of it"""
         newnode = new.If()
@@ -453,19 +447,19 @@ class TreeRebuilder(RebuildVisitor):
                               for child in node.generators]
         return newnode
 
-    def visit_module(self, node):
+    def _visit_module(self, node):
         """visit a Module node by returning a fresh instance of it"""
         newnode = new.Module()
         _init_set_doc(node, newnode)
         newnode.body = [self.visit(child, node) for child in node.body]
         return newnode
 
-    def visit_name(self, node):
+    def _visit_name(self, node):
         """visit a Name node by returning a fresh instance of it"""
         if isinstance(self.asscontext, Delete):
             newnode = DelName()
         elif self.asscontext is not None:
-                newnode = AssName()
+            newnode = AssName()
         else:
             newnode = new.Name()
         newnode.name = node.id
