@@ -613,6 +613,7 @@ class Function(StmtMixIn, Lambda):
     def __init__(self):
         self.starargs = None
         self.kwargs = None
+        self.locals = {}
 
     special_attributes = set(('__name__', '__doc__', '__dict__'))
     # attributes below are set by the builder module or by raw factories
@@ -785,6 +786,7 @@ class Class(StmtMixIn, LocalsDictNodeNG):
 
     def __init__(self):
         self.instance_attrs = {}
+        self.locals = {}
 
     def _newstyle_impl(self, context=None):
         if context is None:

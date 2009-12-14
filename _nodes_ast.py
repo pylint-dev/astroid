@@ -112,7 +112,7 @@ _CMP_OP_CLASSES = {_Eq: '==',
 
 
 def _init_set_doc(node, newnode):
-    node.doc = None
+    newnode.doc = None
     try:
         if isinstance(node.body[0], Discard) and isinstance(node.body[0].value, _Str):
             newnode.tolineno = node.body[0].lineno
@@ -120,7 +120,6 @@ def _init_set_doc(node, newnode):
             node.body = node.body[1:]
     except IndexError:
         pass # ast built from scratch
-
 
 def native_repr_tree(node, indent='', _done=None):
     if _done is None:
@@ -356,7 +355,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.From(node.module, names)
         return newnode
 
-    def visit_function(self, node):
+    def _visit_function(self, node):
         """visit a Function node by returning a fresh instance of it"""
         newnode = new.Function()
         _init_set_doc(node, newnode)
@@ -483,6 +482,7 @@ class TreeRebuilder(RebuildVisitor):
     def visit_print(self, node):
         """visit a Print node by returning a fresh instance of it"""
         newnode = new.Print()
+        newnode.nl = node.nl
         newnode.dest = self.visit(node.dest, node)
         newnode.values = [self.visit(child, node) for child in node.values]
         return newnode

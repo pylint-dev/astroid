@@ -471,7 +471,7 @@ class TreeRebuilder(RebuildVisitor):
         return newnode
 
 
-    def visit_function(self, node):
+    def _visit_function(self, node):
         """visit a Function node by returning a fresh instance of it"""
         newnode = new.Function()
         newnode.decorators = self.visit(node.decorators, node)

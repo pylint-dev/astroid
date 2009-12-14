@@ -38,12 +38,13 @@ class RebuildVisitor(ASTVisitor):
         self.asscontext = None
         self._metaclass = None
         self._global_names = None
-        self._delayed = []
+        self._delayed = dict((name, []) for name in ('class', 'function', 'assattr'))
         self.set_line_info = set_line_info
+        self._asscontext = None
 
     def visit(self, node, parent):
         if node is None: # some attributes of some nodes are just None
-            print "node with parent %s is None" % parent
+            print  "node with parent %s is None" % parent
             return None
         node.parent = parent # XXX it seems that we need it sometimes
         self.set_asscontext(node, parent) # XXX
@@ -58,19 +59,16 @@ class RebuildVisitor(ASTVisitor):
         if newnode is None:
             return
         for child in newnode.get_children():
-            child.parent = newnode
+            if child is not None:
+                child.parent = newnode
+            else:
+                print indent +  "newnode %s has None as child" % newnode
         newnode.set_line_info(child)
         _leave = getattr(self, "leave_%s" % _method_suffix, None )
         if _leave:
             _leave(newnode)
         return newnode
 
-
-    def _push(self, node):
-        """update the stack and init some parts of the Function or Class node
-        """
-        node.locals = {}
-        node.parent.frame().set_local(node.name, node)
 
     def set_asscontext(self, node, childnode):
         """set assignment /delete context needed later on by the childnode"""
@@ -103,20 +101,21 @@ class RebuildVisitor(ASTVisitor):
 
     # take node arguments to be usable as visit/leave methods
     def push_asscontext(self, node=None):
-        self.__asscontext = self.asscontext
+        self._asscontext = self.asscontext
         self.asscontext = None
         return True
     def pop_asscontext(self, node=None):
-        self.asscontext = self.__asscontext
-        self.__asscontext = None
+        self.asscontext = self._asscontext
+        self._asscontext = None
 
     def walk(self, node):
-        node = self.visit(node, None)
+        newnode = self.visit(node, None)
         delayed = self._delayed
-        while delayed:
-            dnode = delayed.pop(0)
-            self.delayed_visit_assattr(dnode)
-        return node
+        for name, nodes in self._delayed.items():
+            delay_method = getattr(self, 'delayed_' + name)
+            for node in nodes:
+                delay_method(node)
+        return newnode
 
     # general visit_<node> methods ############################################
 
@@ -127,7 +126,8 @@ class RebuildVisitor(ASTVisitor):
             node.parent.set_local(node.kwarg, node)
 
     def visit_assign(self, node):
-        newnode = self._visit_assign(node)
+        return self._visit_assign(node)
+        # XXX call leave_assign  here ?
 
     def xxx_leave_assign(self, newnode): #XXX  parent...
         klass = newnode.parent.frame()
@@ -155,7 +155,7 @@ class RebuildVisitor(ASTVisitor):
     def visit_class(self, node): # TODO
         """visit an Class node to become astng"""
         newnode = self._visit_class(node)
-        self._push(newnode)
+        newnode.name = node.name
         self._metaclass.append(self._metaclass[-1])
         metaclass = self._metaclass.pop()
         if not newnode.bases:
@@ -163,6 +163,9 @@ class RebuildVisitor(ASTVisitor):
             # current scope
             node._newstyle = metaclass == 'type'
         return newnode
+
+    def delayed_class(self, node):
+        node.parent.frame().set_local(node.name, node)
 
     def visit_decorators(self, node): # TODO
         """visiting an Decorators node"""
@@ -195,24 +198,30 @@ class RebuildVisitor(ASTVisitor):
     def visit_function(self, node): # XXX parent
         """visit an Function node to become astng"""
         self._global_names.append({})
-        if isinstance(node.parent.frame(), nodes.Class):
-            if node.name == '__new__':
-                node.type = 'classmethod'
-            else:
-                node.type = 'method'
-        self._push(node)
-        return True
+        newnode = self._visit_function(node)
+        self._delayed['function'].append(newnode)
+        newnode.name = node.name
+        return newnode
 
     def leave_function(self, node): # TODO
         """leave a Function node -> pop the last item on the stack"""
         self._global_names.pop()
 
+    def delayed_function(self, newnode):
+        frame = newnode.parent.frame()
+        if isinstance(frame, nodes.Class):
+            if newnode.name == '__new__':
+                newnode.type = 'classmethod'
+            else:
+                newnode.type = 'method'
+        frame.set_local(newnode.name, newnode)
+
     def visit_assattr(self, node): # TODO
         """visit an Getattr node to become astng"""
-        self._delayed.append(node) # FIXME
+        self._delayed['assattr'].append(node) # FIXME
         self.push_asscontext()
         return True        
-    visit_delattr = visit_assattr
+    # XXX visit_delattr = visit_assattr
     
     def leave_assattr(self, node): # TODO
         """visit an Getattr node to become astng"""
@@ -224,7 +233,6 @@ class RebuildVisitor(ASTVisitor):
         """visit an Global node to become astng"""
         newnode = nodes.Global(node.names)
         if self._global_names: # global at the module level, no effect
-            return nodes.Global(node.names)
             for name in node.names:
                 self._global_names[-1].setdefault(name, []).append(newnode)
         return newnode
@@ -259,7 +267,7 @@ class RebuildVisitor(ASTVisitor):
     visit_subscript = push_asscontext
     leave_subscript = pop_asscontext
     
-    def delayed_visit_assattr(self, node):
+    def delayed_assattr(self, node):
         """visit a AssAttr node -> add name to locals, handle members
         definition
         """
