@@ -81,7 +81,7 @@ class AsStringVisitor(ASTVisitor):
     
     def visit_augassign(self, node):
         """return an astng.AugAssign node as string"""
-        return '%s %s %s' % (node.target.accept(self), node.op, node.value.accept(self))
+        return '%s %s= %s' % (node.target.accept(self), node.op, node.value.accept(self))
     
     def visit_backquote(self, node):
         """return an astng.Backquote node as string"""

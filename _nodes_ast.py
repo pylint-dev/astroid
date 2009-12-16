@@ -200,6 +200,7 @@ class TreeRebuilder(RebuildVisitor):
     def visit_augassign(self, node):
         """visit a AugAssign node by returning a fresh instance of it"""
         newnode = new.AugAssign()
+        newnode.op = _BIN_OP_CLASSES[node.op.__class__]
         newnode.target = self.visit(node.target, node)
         newnode.value = self.visit(node.value, node)
         return newnode
@@ -237,7 +238,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.args = [self.visit(child, node) for child in node.args]
         newnode.starargs = self.visit(node.starargs, node)
         newnode.kwargs = self.visit(node.kwargs, node)
-        newnode.args.extend(node.keywords)
+        newnode.args.extend(self.visit(child, node) for child in node.keywords)
         return newnode
 
     def _visit_class(self, node):
@@ -422,6 +423,7 @@ class TreeRebuilder(RebuildVisitor):
     def visit_keyword(self, node):
         """visit a Keyword node by returning a fresh instance of it"""
         newnode = new.Keyword()
+        newnode.arg = node.arg
         newnode.value = self.visit(node.value, node)
         return newnode
 
