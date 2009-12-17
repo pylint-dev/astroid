@@ -863,7 +863,8 @@ def f(g = lambda: None):
         astng = builder.string_build(code, __name__, __file__)
         callfuncnode = astng['f'].body[0].value.expr
         infered = list(callfuncnode.infer())
-        self.failUnlessEqual(len(infered), 1)
+        self.failUnlessEqual(len(infered), 2, infered)
+        infered.remove(YES)
         self.assertIsInstance(infered[0], nodes.Const)
         self.failUnlessEqual(infered[0].value, None)
 
@@ -995,5 +996,62 @@ class EnvBasedTC2:
         self.assertEquals(len(infered), 1)
         self.assertIsInstance(infered[0], nodes.Function)
 
+    def test_augassign(self):
+        code = '''
+a = 1
+a += 2
+print a
+'''
+        astng = builder.string_build(code, __name__, __file__)
+        infered = list(get_name_node(astng, 'a').infer())
+        self.assertEquals(len(infered), 1)
+        self.assertIsInstance(infered[0], nodes.Const)
+        self.assertEquals(infered[0].value, 3)
+
+    def test_nonregr_func_arg(self):
+        code = '''
+def foo(self, bar):
+    def baz():
+        pass
+    def qux():
+        return baz
+    spam = bar(None, qux)
+    print spam
+'''
+        astng = builder.string_build(code, __name__, __file__)
+        infered = list(get_name_node(astng['foo'], 'spam').infer())
+        self.assertEquals(len(infered), 1)
+        self.assertIs(infered[0], YES)
+
+    def test_nonregr_func_global(self):
+        code = '''
+active_application = None
+
+def get_active_application():
+  global active_application
+  return active_application
+
+class Application(object):
+  def __init__(self):
+     global active_application
+     active_application = self
+
+class DataManager(object):
+  def __init__(self, app=None):
+     self.app = get_active_application()
+  def test(self):
+     p = self.app
+     print p
+        '''
+        astng = builder.string_build(code, __name__, __file__)
+        infered = list(Instance(astng['DataManager']).igetattr('app'))
+        self.assertEquals(len(infered), 2, infered) # None / Instance(Application)
+        infered = list(get_name_node(astng['DataManager']['test'], 'p').infer())
+        self.assertEquals(len(infered), 2, infered)
+        for node in infered:
+            if isinstance(node, Instance) and node.name == 'Application':
+                break
+        else:
+            self.fail('expected to find an instance of Application in %s' % infered)
 if __name__ == '__main__':
     unittest_main()
