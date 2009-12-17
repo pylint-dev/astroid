@@ -41,7 +41,7 @@ from logilab.astng._nodes import (Arguments, Class, Const, Dict, From, Function,
      AssName, DelAttr, DelName, const_factory as cf, NodeNG, StmtMixIn)
 
 from logilab.astng.infutils import YES, InferenceContext, Instance, \
-     UnboundMethod, copy_context, unpack_infer, _infer_stmts
+     UnboundMethod, BoundMethod, copy_context, unpack_infer, _infer_stmts
 from logilab.astng.nodes_as_string import as_string
 from logilab.astng.lookup import LookupMixIn, LocalsDictMixIn
 
@@ -53,12 +53,14 @@ def remove_nodes(func, cls):
         return nodes
     return wrapper
 
-def function_to_unbound_method(func):
-    def wrapper(*args, **kwargs):
-        return [isinstance(n, Function) and UnboundMethod(n) or n
-                for n in func(*args, **kwargs)]
-    return wrapper
 
+def function_to_method(n, klass):
+    if isinstance(n, Function):
+        if n.type == 'classmethod':
+            return BoundMethod(n, klass)
+        if n.type != 'staticmethod':
+            return UnboundMethod(n)
+    return n
 
 def std_special_attributes(self, name, add_locals=True):
     if add_locals:
@@ -679,7 +681,6 @@ class ClassNG(LookupMixIn, LocalsDictMixIn,  StmtMixIn, NodeNG):
         if not values:
             raise NotFoundError(name)
         return values
-    getattr = function_to_unbound_method(remove_nodes(getattr, DelAttr))
 
     def igetattr(self, name, context=None):
         """infered getattr, need special treatment in class to handle
@@ -701,7 +702,7 @@ class ClassNG(LookupMixIn, LocalsDictMixIn,  StmtMixIn, NodeNG):
                     else:
                         yield YES
                 else:
-                    yield infered
+                    yield function_to_method(infered, self)
         except NotFoundError:
             if not name.startswith('__') and self.has_dynamic_getattr(context):
                 # class handle some dynamic attributes, return a YES object
