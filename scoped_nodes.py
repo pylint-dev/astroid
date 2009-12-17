@@ -131,6 +131,9 @@ class ModuleNG(LookupMixIn, LocalsDictMixIn, NodeNG):
     def pytype(self):
         return '__builtin__.module'
 
+    def display_type(self):
+        return 'Module'
+
     def getattr(self, name, context=None):
         if not name in self.special_attributes:
             try:
@@ -281,6 +284,11 @@ class LambdaNG(LookupMixIn, LocalsDictMixIn, NodeNG):
         if 'method' in self.type:
             return '__builtin__.instancemethod'
         return '__builtin__.function'
+
+    def display_type(self):
+        if 'method' in self.type:
+            return 'Method'
+        return 'Function'
 
     def callable(self):
         return True
@@ -531,6 +539,9 @@ class ClassNG(LookupMixIn, LocalsDictMixIn,  StmtMixIn, NodeNG):
             return '__builtin__.type'
         return '__builtin__.classobj'
 
+    def display_type(self):
+        return 'Class'
+
     def callable(self):
         return True
 
@@ -658,6 +669,8 @@ class ClassNG(LookupMixIn, LocalsDictMixIn,  StmtMixIn, NodeNG):
                 # XXX mro is read-only but that's not our job to detect that
                 return [cf(tuple(self.ancestors(recurs=True, context=context)))] + values
             return std_special_attributes(self, name)
+        # don't modify the list in self.locals!
+        values = list(values)
         for classnode in self.ancestors(recurs=False, context=context):
             try:
                 values += classnode.getattr(name, context)
