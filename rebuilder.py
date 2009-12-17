@@ -34,12 +34,13 @@ CONST_NAME_TRANSFORMS = {'None':  None,
 class RebuildVisitor(ASTVisitor):
     """Visitor to transform an AST to an ASTNG
     """
-    def __init__(self, set_line_info = True):
+    def __init__(self, ast_mode):
         self.asscontext = None
         self._metaclass = None
         self._global_names = None
         self._delayed = dict((name, []) for name in ('class', 'function', 'assattr'))
-        self.set_line_info = set_line_info
+        self.set_line_info = (ast_mode == '_ast')
+        self._ast_mode = (ast_mode == '_ast')
         self._asscontext = None
 
     def visit(self, node, parent):
@@ -47,8 +48,8 @@ class RebuildVisitor(ASTVisitor):
             print  "node with parent %s is None" % parent
             return None
         node.parent = parent # XXX it seems that we need it sometimes
-        self.set_asscontext(node, parent) # XXX
         cls_name = node.__class__.__name__
+        self.set_asscontext(node, parent, cls_name) # XXX
         _method_suffix = REDIRECT.get(cls_name, cls_name).lower()
         _visit = getattr(self, "visit_%s" % _method_suffix )
         try:
@@ -63,16 +64,19 @@ class RebuildVisitor(ASTVisitor):
                 child.parent = newnode
             else:
                 print indent +  "newnode %s has None as child" % newnode
-        newnode.set_line_info(child)
+        # newnode.set_line_info(child)
         _leave = getattr(self, "leave_%s" % _method_suffix, None )
         if _leave:
             _leave(newnode)
         return newnode
 
 
-    def set_asscontext(self, node, childnode):
+    def set_asscontext(self, node, childnode), cls_name:
         """set assignment /delete context needed later on by the childnode"""
         # XXX refactor this method at least, but killing .asscontext  would be better
+        if not self._ast_mode: # compiler
+            if cls_name in ('AssAttr', 'AssName', 'Slice', 'Subscript'):
+                self.check_missing_delstmt(node, childnode, cls_name)
         if isinstance(node, (nodes.Delete, nodes.Assign)):
             if childnode in node.targets:
                 self.asscontext = node

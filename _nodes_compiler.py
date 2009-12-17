@@ -39,8 +39,7 @@ from compiler.ast import AssAttr, AssList, AssName, \
      While, Yield
 
 # nodes which are not part of astng
-from compiler.ast import AssList as _AssList, AssTuple as _AssTuple,\
-     Printnl as _Printnl, And as _And, Or as _Or,\
+from compiler.ast import And as _And, Or as _Or,\
      UnaryAdd as _UnaryAdd, UnarySub as _UnarySub, Not as _Not,\
      Invert as _Invert, Add as _Add, Div as _Div, FloorDiv as _FloorDiv,\
      Mod as _Mod, Mul as _Mul, Power as _Power, Sub as _Sub, Bitand as _Bitand,\
@@ -247,6 +246,17 @@ class TreeRebuilder(RebuildVisitor):
         self.asscontext = stmt
         return stmt is node
 
+    def check_missing_delstmt(node, parent, cls_name):
+        possible_delstmt = (Assert, Break, Class, Continue, Discard, Exec, From,
+                      Function, Global, If, Import, Module, Pass, Print,
+                      Raise, Return, TryExcept, TryFinally, While)
+        if not isinstance(parent, possible_delstmt):
+            self._insert_delete = False
+        elif isinstance(node, AssTuple):
+            pass #XXX
+        else:
+            self._insert_delete = True
+
     def visit_arguments(self, node):
         """visit an Arguments node by returning a fresh instance of it"""
         newnode = new.Arguments()
@@ -268,13 +278,11 @@ class TreeRebuilder(RebuildVisitor):
 
     def visit_assname(self, node):
         """visit an AssName node by returning a fresh instance of it"""
-        newnode = new.AssName()
-        # XXX old code
         if node.flags == 'OP_DELETE':
             self.insert_delstmt_if_necessary(node)
-            node.__class__ = DelName
-        del node.flags
-        # end old
+            newnode = new.DelName()
+        else:
+            newnode = new.AssName()
         return newnode
 
     def visit_assert(self, node):
@@ -290,6 +298,18 @@ class TreeRebuilder(RebuildVisitor):
         newnode.targets = [self.visit(child, node) for child in node.nodes]
         newnode.value = self.visit(node.expr, node)
         return newnode
+        
+    #XXX TODO
+    """
+    def visit_asslist(self, node):
+        self.insert_delstmt_if_necessary(node)
+        node.__class__ = List
+        self.visit_list(node)
+
+    def visit_asstuple(self, node):
+        if not self.insert_delstmt_if_necessary(node):
+            node.__class__ = Tuple
+            self.visit_tuple(node)"""
 
     def visit_augassign(self, node):
         """visit an AugAssign node by returning a fresh instance of it"""
@@ -493,7 +513,7 @@ class TreeRebuilder(RebuildVisitor):
     def visit_getattr(self, node):
         """visit a Getattr node by returning a fresh instance of it"""
         newnode = new.Getattr()
-        if isinstance(self.visitor.asscontext, AugAssign):
+        if isinstance(self.asscontext, AugAssign):
             newnode = new.AssAttr()
         newnode.expr = self.visit(node.expr, node)
         return newnode
@@ -571,12 +591,14 @@ class TreeRebuilder(RebuildVisitor):
     def _visit_module(self, node):
         """visit a Module node by returning a fresh instance of it"""
         newnode = new.Module()
+        newnode.doc = node.doc
         newnode.body = [self.visit(child, node) for child in node.node.nodes]
         return newnode
 
     def _visit_name(self, node):
         """visit a Name node by returning a fresh instance of it"""
-        if isinstance(self.visitor.asscontext, AugAssign):
+        print node, self.asscontext
+        if isinstance(self.asscontext, AugAssign):
             newnode = AssName()
         else:
            newnode = new.Name()
@@ -596,9 +618,9 @@ class TreeRebuilder(RebuildVisitor):
         newnode.nl = False
         return newnode
 
-    def visit_println(self, node):
+    def visit_printnl(self, node):
         newnode = self.visit_print(node)
-        newnde.nl = True
+        newnode.nl = True
         return newnode
 
     def visit_raise(self, node):
