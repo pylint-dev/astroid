@@ -1,17 +1,21 @@
 Change log for the astng package
 ================================
 
- --
-
+2009-12-18  --  0.19.2
     * fix #18773: inference bug on class member (due to bad handling of instance
       / class nodes "bounded" to method calls)
+
     * fix #9515: strange message for non-class "Class baz has no egg member" (due to
       bad inference of function call)
+
     * fix #18953: inference fails with augmented assignment (special case for augmented
       assignement in infer_ass method)
+
     * fix #13944: false positive for class/instance attributes (Instance.getattr
       should return assign nodes on instance classes as well as instance.
+
     * include spelling fixes provided by Dotan Barak
+
 
 
 2009-08-27  --  0.19.1
