@@ -40,7 +40,7 @@ from logilab.astng._nodes import (Arguments, Class, Const, Dict, From, Function,
      GenExpr, Lambda, List, Module, Name, Pass, Raise, Return, Tuple, Yield,
      AssName, DelAttr, DelName, const_factory as cf, NodeNG, StmtMixIn)
 
-from logilab.astng.infutils import YES, InferenceContext, Instance, \
+from logilab.astng.infutils import YES, InferenceContext, Instance, Generator, \
      UnboundMethod, BoundMethod, copy_context, unpack_infer, _infer_stmts
 from logilab.astng.nodes_as_string import as_string
 from logilab.astng.lookup import LookupMixIn, LocalsDictMixIn
