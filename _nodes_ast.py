@@ -170,6 +170,8 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.Arguments()
         newnode.args = [self.visit(child, node) for child in node.args]
         newnode.defaults = [self.visit(child, node) for child in node.defaults]
+        newnode.vararg = node.vararg
+        newnode.kwarg = node.kwarg
         return newnode
 
     def visit_assattr(self, node):
