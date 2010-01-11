@@ -71,7 +71,7 @@ class RebuildVisitor(ASTVisitor):
         return newnode
 
 
-    def set_asscontext(self, node, childnode), cls_name:
+    def set_asscontext(self, node, childnode, cls_name):
         """set assignment /delete context needed later on by the childnode"""
         # XXX refactor this method at least, but killing .asscontext  would be better
         if not self._ast_mode: # compiler

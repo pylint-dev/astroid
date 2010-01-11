@@ -64,7 +64,7 @@ class ASTNGBuilder:
         self._module = None
         self._file = None
         self._done = None
-        self.rebuilder = TreeRebuilder(mode=AST_MODE)
+        self.rebuilder = TreeRebuilder(ast_mode=AST_MODE)
         self._dyn_modname_map = {'gtk': 'gtk._gtk'}
 
     def module_build(self, module, modname=None):
