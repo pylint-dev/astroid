@@ -81,7 +81,7 @@ class AsStringVisitor(ASTVisitor):
     
     def visit_augassign(self, node):
         """return an astng.AugAssign node as string"""
-        return '%s %s= %s' % (node.target.accept(self), node.op, node.value.accept(self))
+        return '%s %s %s' % (node.target.accept(self), node.op, node.value.accept(self))
     
     def visit_backquote(self, node):
         """return an astng.Backquote node as string"""
@@ -346,7 +346,8 @@ class AsStringVisitor(ASTVisitor):
     
     def visit_unaryop(self, node):
         """return an astng.UnaryOp node as string"""
-        return '%s%s' % (node.op, node.operand.accept(self))
+        # parenthesis: at least to protect 'not' to avoid 'notX' for 'not X'
+        return '%s(%s)' % (node.op, node.operand.accept(self))
     
     def visit_while(self, node):
         """return an astng.While node as string"""

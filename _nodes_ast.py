@@ -200,7 +200,7 @@ class TreeRebuilder(RebuildVisitor):
     def visit_augassign(self, node):
         """visit a AugAssign node by returning a fresh instance of it"""
         newnode = new.AugAssign()
-        newnode.op = _BIN_OP_CLASSES[node.op.__class__]
+        newnode.op = _BIN_OP_CLASSES[node.op.__class__] + "="
         newnode.target = self.visit(node.target, node)
         newnode.value = self.visit(node.value, node)
         return newnode
