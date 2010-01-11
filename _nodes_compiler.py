@@ -124,15 +124,31 @@ UnaryOp_OP_CLASSES = {_UnaryAdd: '+',
               _Not: 'not',
               _Invert: '~'
               }
+def _filter_none(node):
+    """transform Const(None) to None"""
+    if isinstance(node, Const) and node.value is None:
+        return None
+    else:
+        return node
 
 def _extslice(dim):
     """introduce Index or Slice nodes depending on situation"""
     if dim.__class__ == Sliceobj:
         if len(dim.nodes) == 2:
             dim.nodes.append(None)
-        return new.Slice(dim.nodes[0], dim.nodes[1], dim.nodes[2], dim.lineno)
+        slice_n = new.Slice()
+        slice_n.lower = _filter_none(dim.nodes[0])
+        slice_n.upper = _filter_none(dim.nodes[1])
+        slice_n.step = dim.nodes[2]
+        slice_n.lineno = dim.lineno
+        return slice_n
     else:
-        return new.Index([dim])
+        newnode = new.Index()
+        if len(dim) == 1:
+            newnode.value = dim[0]
+        else:
+            newnode.value = Tuple(dim)
+        return newnode
 
 
 # modify __repr__ of all Nodes as they are not compatible with ASTNG ##########
@@ -639,10 +655,11 @@ class TreeRebuilder(RebuildVisitor):
 
     def visit_slice(self, node):
         """visit a Slice node by returning a fresh instance of it"""
-        newnode = new.Slice( XXX )
+        newnode = new.Slice()
         newnode.lower = self.visit(node.lower, node)
         newnode.upper = self.visit(node.upper, node)
         newnode.step = self.visit(node.step, node)
+        XXX
         # XXX old code
         # /!\ Careful :
         # if the node comes from compiler, it is actually an astng.Subscript

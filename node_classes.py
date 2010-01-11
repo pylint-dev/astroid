@@ -416,13 +416,6 @@ class Import(FromImportMixIn, StmtMixIn, NodeNG):
 
 class Index(NodeNG):
     """class representing an Index node"""
-    def __init__(self, values=None): # XXX compiler
-        if values == None:
-            return
-        if len(values) == 1:
-            self.value = values[0]
-        else:
-            self.value = Tuple(values)
 
 
 class Keyword(NodeNG):
@@ -461,20 +454,10 @@ class Raise(StmtMixIn, NodeNG):
 class Return(StmtMixIn, NodeNG):
     """class representing a Return node"""
 
-def _filter_none(node):
-    """transform Const(None) to None"""
-    if isinstance(node, Const) and node.value is None:
-        return None
-    else:
-        return node
 
 class Slice(NodeNG):
     """class representing a Slice node"""
-    def __init__(self, lower, upper, step, lineno):
-        self.lower = _filter_none(lower)
-        self.upper = _filter_none(upper)
-        self.step = _filter_none(step)
-        self.lineno = lineno
+
 
 class Subscript(NodeNG):
     """class representing a Subscript node"""
