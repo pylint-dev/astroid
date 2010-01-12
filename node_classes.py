@@ -77,9 +77,8 @@ def are_exclusive(stmt1, stmt2, exceptions=None):
 
 class Arguments(NodeNG):
     """class representing an Arguments node"""
-    def __init__(self, args=None, defaults=None, vararg=None, kwarg=None):
+    def __init__(self, args=None, vararg=None, kwarg=None):
         self.args = args
-        self.defaults = defaults
         self.vararg = vararg
         self.kwarg = kwarg
 
@@ -187,6 +186,9 @@ class Break(StmtMixIn, NodeNG):
 class CallFunc(NodeNG):
     """class representing a CallFunc node"""
 
+    def __init__(self):
+        self.starargs = None
+        self.kwargs = None
 
 class Compare(NodeNG):
     """class representing a Compare node"""

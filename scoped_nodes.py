@@ -611,8 +611,6 @@ class Lambda(LocalsDictNodeNG):
 class Function(StmtMixIn, Lambda):
 
     def __init__(self):
-        self.starargs = None
-        self.kwargs = None
         self.locals = {}
 
     special_attributes = set(('__name__', '__doc__', '__dict__'))

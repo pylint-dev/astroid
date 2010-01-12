@@ -118,12 +118,12 @@ BoolOp_OP_CLASSES = {_And: 'and',
               _Or: 'or'
               }
 
-
 UnaryOp_OP_CLASSES = {_UnaryAdd: '+',
               _UnarySub: '-',
               _Not: 'not',
               _Invert: '~'
               }
+
 def _filter_none(node):
     """transform Const(None) to None"""
     if isinstance(node, Const) and node.value is None:
@@ -165,21 +165,6 @@ for value in ast.__dict__.values():
         pass
 del ast
 
-# we have to be able to instantiate Tuple, Dict and List without any argument #
-
-def init_noargs(self, *args, **kwargs):
-    if not (args or kwargs):
-        self._orig_init([])
-    else:
-        self._orig_init(*args, **kwargs)
-
-Tuple._orig_init = Tuple.__init__
-Tuple.__init__ = init_noargs
-List._orig_init = List.__init__
-List.__init__ = init_noargs
-Dict._orig_init = Dict.__init__
-Dict.__init__ = init_noargs
-
 
 # compiler rebuilder ##########################################################
 
@@ -188,19 +173,21 @@ def _nodify_args(parent, values):
     for arg in values:
         if isinstance(arg, (tuple, list)):
             n = new.Tuple()
-            # set .nodes, not .elts since this will be visited as a node coming
-            # from compiler tree
-            n.nodes = _nodify_args(n, arg)
+            n.elts = _nodify_args(n, arg)
         else:
-            n = new.AssName(None, None)
+            n = new.AssName()
+            assert isinstance(arg, basestring)
             n.name = arg
         n.parent = parent
-        n.fromlineno = parent.fromlineno
-        n.tolineno = parent.fromlineno
+        try: # TODO
+            n.fromlineno = parent.fromlineno
+            n.tolineno = parent.fromlineno
+        except AttributeError:
+            pass
         res.append(n)
     return res
 
-def args_compiler_to_ast(node):
+def args_compiler_to_ast(newnode, node):
     # insert Arguments node
     if node.flags & 8:
         kwarg = node.argnames.pop()
@@ -210,16 +197,13 @@ def args_compiler_to_ast(node):
         vararg = node.argnames.pop()
     else:
         vararg = None
-    del node.flags
     args = _nodify_args(node, node.argnames)
-    del node.argnames
-    node.args = new.Arguments(args, node.defaults, vararg, kwarg)
-    node.args.fromlineno = node.fromlineno
+    newnode.args = new.Arguments(args, vararg, kwarg)
+    newnode.args.fromlineno = node.fromlineno
     try:
-        node.args.tolineno = node.blockstart_tolineno
+        newnode.args.tolineno = newnode.blockstart_tolineno
     except AttributeError: # lambda
-        node.args.tolineno = node.tolineno
-    del node.defaults
+        newnode.args.tolineno = node.tolineno
 
 
 def _filter_none(node):
@@ -262,7 +246,7 @@ class TreeRebuilder(RebuildVisitor):
         self.asscontext = stmt
         return stmt is node
 
-    def check_missing_delstmt(node, parent, cls_name):
+    def check_missing_delstmt(self, node, parent, cls_name):
         possible_delstmt = (Assert, Break, Class, Continue, Discard, Exec, From,
                       Function, Global, If, Import, Module, Pass, Print,
                       Raise, Return, TryExcept, TryFinally, While)
@@ -343,7 +327,8 @@ class TreeRebuilder(RebuildVisitor):
     def visit_binop(self, node):
         """visit a BinOp node by returning a fresh instance of it"""
         newnode = new.BinOp()
-        if node.op in ('&', '|', '^'):
+        newnode.op = BinOp_OP_CLASSES[node.__class__]
+        if newnode.op in ('&', '|', '^'):
             newnode.right = self.visit(node.nodes[-1], node)
             bitop = BinOp_BIT_CLASSES[node.op]
             if len(node.nodes) > 2:
@@ -373,9 +358,9 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.CallFunc()
         newnode.func = self.visit(node.node, node)
         newnode.args = [self.visit(child, node) for child in node.args]
-        if node.starargs:
+        if node.star_args:
             newnode.starargs = self.visit(node.star_args, node)
-        if node.kwargs:
+        if node.dstar_args:
             newnode.kwargs = self.visit(node.dstar_args, node)
         return newnode
 
@@ -511,11 +496,10 @@ class TreeRebuilder(RebuildVisitor):
         """visit a Function node by returning a fresh instance of it"""
         newnode = new.Function()
         newnode.decorators = self.visit(node.decorators, node)
-        newnode.args = [self.visit(child, node) for child in node.args]
-        newnode.body = [self.visit(child, node) for child in node.body.nodes]
-        # XXX old code
-        args_compiler_to_ast(node)
-        # end old
+        newnode.body = [self.visit(child, node) for child in node.code.nodes]
+        newnode.doc = node.doc
+        args_compiler_to_ast(newnode, node)
+        newnode.args.defaults = [self.visit(n, newnode.args) for n in node.defaults]
         return newnode
 
     def visit_genexpr(self, node):
@@ -584,11 +568,9 @@ class TreeRebuilder(RebuildVisitor):
     def visit_lambda(self, node):
         """visit a Lambda node by returning a fresh instance of it"""
         newnode = new.Lambda()
-        newnode.args = [self.visit(child, node) for child in node.args]
         newnode.body = self.visit(node.code, node)
-        # XXX old code
-        args_compiler_to_ast(newnode, node)# TODO
-        # end old
+        args_compiler_to_ast(newnode, node)
+        newnode.args.defaults = [self.visit(n, newnode.args) for n in node.defaults]
         return newnode
 
     def visit_list(self, node):
@@ -754,7 +736,11 @@ class TreeRebuilder(RebuildVisitor):
     def visit_yield(self, node):
         """visit a Yield node by returning a fresh instance of it"""
         newnode = new.Yield()
-        newnode.value = self.visit(node.expr, node)
+        try:
+            newnode.value = self.visit(node.value, node)
+        except AttributeError:
+            print "AttributeError Yield node.expr:", node.__dict__
+            newnode.value = None
         if not isinstance(node.parent, Discard): # XXX waiting for better solution
             newnode, yield_node = new.Discard(), newnode
             newnode.value = yield_node
