@@ -406,8 +406,8 @@ class TreeRebuilder(RebuildVisitor):
         """visit a IfExp node by returning a fresh instance of it"""
         newnode = new.IfExp()
         newnode.test = self.visit(node.test, node)
-        newnode.body = [self.visit(child, node) for child in node.body]
-        newnode.orelse = [self.visit(child, node) for child in node.orelse]
+        newnode.body = self.visit(node.body, node)
+        newnode.orelse = self.visit(node.orelse, node)
         return newnode
 
     def visit_import(self, node):

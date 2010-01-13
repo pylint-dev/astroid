@@ -237,14 +237,12 @@ class AsStringVisitor(ASTVisitor):
         if node.orelse:# XXX use elif ???
             ifs.append('else:\n%s' % self._stmt_list(node.orelse))
         return '\n'.join(ifs)
-    
+  
     def visit_ifexp(self, node):
         """return an astng.IfExp node as string"""
-        ifs = ['%s if %s' % (self._stmt_list(node.body), node.test.accept(self))]
-        if node.orelse:
-            ifs.append('else %s' % self._stmt_list(node.orelse))
-        return ' '.join(ifs)
-    
+        return '%s if %s else %s' % (node.body.accept(self),
+                node.test.accept(self), node.orelse.accept(self))
+
     def visit_import(self, node):
         """return an astng.Import node as string"""
         return 'import %s' % _import_string(node.names)
