@@ -283,6 +283,7 @@ class TreeRebuilder(RebuildVisitor):
             newnode = new.DelName()
         else:
             newnode = new.AssName()
+        newnode.name = node.name
         return newnode
 
     def visit_assert(self, node):
@@ -300,7 +301,7 @@ class TreeRebuilder(RebuildVisitor):
         return newnode
         
     #XXX TODO
-    """
+    "" ""
     def visit_asslist(self, node):
         self.insert_delstmt_if_necessary(node)
         node.__class__ = List
@@ -309,7 +310,8 @@ class TreeRebuilder(RebuildVisitor):
     def visit_asstuple(self, node):
         if not self.insert_delstmt_if_necessary(node):
             node.__class__ = Tuple
-            self.visit_tuple(node)"""
+            self.visit_tuple(node)
+            
 
     def visit_augassign(self, node):
         """visit an AugAssign node by returning a fresh instance of it"""
