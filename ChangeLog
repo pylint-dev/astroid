@@ -1,6 +1,11 @@
 Change log for the astng package
 ================================
 
+--
+	* Ned Batchelder to properly import eggs with Windows line
+	endings.  This fixes a problem with pylint not being able to
+	import setuptools.
+
 2009-12-18  --  0.19.3
     * fix name error making 0.19.2 almost useless
 
