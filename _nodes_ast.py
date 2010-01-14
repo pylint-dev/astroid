@@ -206,7 +206,7 @@ class TreeRebuilder(ASTVisitor):
         del node.msg
 
     def visit_augassign(self, node):
-        node.op = _BIN_OP_CLASSES[node.op.__class__]
+        node.op = _BIN_OP_CLASSES[node.op.__class__] + '='
 
     def visit_binop(self, node):
         node.op = _BIN_OP_CLASSES[node.op.__class__]

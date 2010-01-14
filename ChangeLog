@@ -5,7 +5,8 @@ Change log for the astng package
 	* Ned Batchelder patch to properly import eggs with Windows line
 	endings.  This fixes a problem with pylint not being able to
 	import setuptools.
-        * Winfried Plapper patch fixing visit_ifexp in nodes_as_string
+        * Winfried Plapper patches fixing .op attribute value for AugAssign nodes,
+	  visit_ifexp in nodes_as_string
 
 2009-12-18  --  0.19.3
     * fix name error making 0.19.2 almost useless
