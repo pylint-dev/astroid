@@ -344,8 +344,11 @@ class AsStringVisitor(ASTVisitor):
     
     def visit_unaryop(self, node):
         """return an astng.UnaryOp node as string"""
-        # parenthesis: at least to protect 'not' to avoid 'notX' for 'not X'
-        return '%s(%s)' % (node.op, node.operand.accept(self))
+        if node.op == 'not':
+            operator = 'not '
+        else:
+            operator = node.op
+        return '%s%s' % (operator, node.operand.accept(self))
     
     def visit_while(self, node):
         """return an astng.While node as string"""
