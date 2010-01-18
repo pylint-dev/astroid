@@ -99,12 +99,11 @@ class RebuildVisitor(ASTVisitor):
             node.parent.set_local(node.kwarg, node)
 
     def visit_assign(self, node):
-        self.asscontext = "Ass"
-        return self._visit_assign(node)
-        self.asscontext = None
+        newnode = self._visit_assign(node)
         # XXX call leave_assign  here ?
+        return newnode
 
-    def xxx_leave_assign(self, newnode): #XXX  parent...
+        #def xxx_leave_assign(self, newnode): #XXX  parent...
         klass = newnode.parent.frame()
         if (isinstance(klass, nodes.Class)
             and isinstance(newnode.value, nodes.CallFunc)

@@ -197,7 +197,9 @@ class TreeRebuilder(RebuildVisitor):
     def _visit_assign(self, node):
         """visit a Assign node by returning a fresh instance of it"""
         newnode = new.Assign()
+        self.asscontext = "Ass"
         newnode.targets = [self.visit(child, node) for child in node.targets]
+        self.asscontext = None
         newnode.value = self.visit(node.value, node)
         return newnode
 
@@ -471,7 +473,6 @@ class TreeRebuilder(RebuildVisitor):
 
     def _visit_name(self, node):
         """visit a Name node by returning a fresh instance of it"""
-        print self.indent  + "visit name %s " % node.id, self.asscontext
         if self.asscontext == "Del":
             newnode = new.DelName()
         elif self.asscontext is not None: # Ass
