@@ -49,7 +49,9 @@ class RebuildVisitor(ASTVisitor):
             return None
         node.parent = parent # XXX it seems that we need it sometimes
         cls_name = node.__class__.__name__
-        self.set_asscontext(node, parent, cls_name) # XXX
+        if not self._ast_mode: # compiler
+            # TODO if cls_name in ('AssAttr', 'AssName', 'Slice', 'Subscript')
+            self.check_missing_delstmt(node, childnode, cls_name)
         _method_suffix = REDIRECT.get(cls_name, cls_name).lower()
         _visit = getattr(self, "visit_%s" % _method_suffix )
         try:
@@ -63,45 +65,13 @@ class RebuildVisitor(ASTVisitor):
             if child is not None:
                 child.parent = newnode
             else:
-                print indent +  "newnode %s has None as child" % newnode
+                print "newnode %s has None as child" % newnode
         # newnode.set_line_info(child)
         _leave = getattr(self, "leave_%s" % _method_suffix, None )
         if _leave:
             _leave(newnode)
         return newnode
 
-
-    def set_asscontext(self, node, childnode, cls_name):
-        """set assignment /delete context needed later on by the childnode"""
-        # XXX refactor this method at least, but killing .asscontext  would be better
-        if not self._ast_mode: # compiler
-            if cls_name in ('AssAttr', 'AssName', 'Slice', 'Subscript'):
-                self.check_missing_delstmt(node, childnode, cls_name)
-        if isinstance(node, (nodes.Delete, nodes.Assign)):
-            if childnode in node.targets:
-                self.asscontext = node
-            else:
-                self.asscontext = None
-        elif isinstance(node, (nodes.AugAssign, nodes.Comprehension, nodes.For)):
-            if childnode is node.target:
-                self.asscontext = node
-            else:
-                self.asscontext = None
-        elif isinstance(node, nodes.Arguments):
-            if childnode in node.args:
-                self.asscontext = node
-            else:
-                self.asscontext = None
-        elif isinstance(node, nodes.With):
-            if childnode is node.vars:
-                self.asscontext = node
-            else:
-                self.asscontext = None
-        elif isinstance(node, nodes.ExceptHandler):
-            if childnode is node.name:
-                self.asscontext = node
-            else:
-                self.asscontext = None
 
     # take node arguments to be usable as visit/leave methods
     def push_asscontext(self, node=None):
@@ -114,7 +84,6 @@ class RebuildVisitor(ASTVisitor):
 
     def walk(self, node):
         newnode = self.visit(node, None)
-        delayed = self._delayed
         for name, nodes in self._delayed.items():
             delay_method = getattr(self, 'delayed_' + name)
             for node in nodes:
@@ -130,7 +99,9 @@ class RebuildVisitor(ASTVisitor):
             node.parent.set_local(node.kwarg, node)
 
     def visit_assign(self, node):
+        self.asscontext = "Ass"
         return self._visit_assign(node)
+        self.asscontext = None
         # XXX call leave_assign  here ?
 
     def xxx_leave_assign(self, newnode): #XXX  parent...
@@ -222,17 +193,20 @@ class RebuildVisitor(ASTVisitor):
 
     def visit_assattr(self, node): # TODO
         """visit an Getattr node to become astng"""
-        self._delayed['assattr'].append(node) # FIXME
-        self.push_asscontext()
-        return True        
-    # XXX visit_delattr = visit_assattr
-    
-    def leave_assattr(self, node): # TODO
+        print self.indent + "visit_assattr" + "XXX"
+        assc, self.asscontext = self.asscontext, None
+        newnode = self._visit_assattr(node)
+        self.asscontext = assc
+        self._delayed['assattr'].append(newnode)
+        return newnode
+
+    def visit_delattr(self, node): # TODO
         """visit an Getattr node to become astng"""
-        self._delayed.append(node) # FIXME
-        self.pop_asscontext()
-    leave_delattr = leave_assattr
-    
+        assc, self.asscontext = self.asscontext, None
+        newnode = self._visit_delattr(node)
+        self.asscontext = assc
+        return newnode
+
     def visit_global(self, node):
         """visit an Global node to become astng"""
         newnode = nodes.Global(node.names)
@@ -312,7 +286,9 @@ class RebuildVisitor(ASTVisitor):
     def _build_excepthandler(self, node, exctype, excobj, body):
         newnode = nodes.ExceptHandler()
         newnode.type = self.visit(exctype, node)
+        self.asscontext = "Ass"
         newnode.name = self.visit(excobj, node)
+        self.asscontext = None
         newnode.body = [self.visit(child, node) for child in body]
         return newnode
 

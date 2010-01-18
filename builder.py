@@ -45,7 +45,7 @@ try:
         return compile(string, "<string>", 'exec', PyCF_ONLY_AST)
     from logilab.astng._nodes_ast import TreeRebuilder
     AST_MODE = '_ast'
-except:
+except ImportError, exc:
     from compiler import parse
     from logilab.astng import patchcomptransformer
     from logilab.astng._nodes_compiler import TreeRebuilder
