@@ -246,16 +246,19 @@ class TreeRebuilder(RebuildVisitor):
         self.asscontext = stmt
         return stmt is node
 
-    def check_missing_delstmt(self, node, parent, cls_name):
-        possible_delstmt = (Assert, Break, Class, Continue, Discard, Exec, From,
-                      Function, Global, If, Import, Module, Pass, Print,
-                      Raise, Return, TryExcept, TryFinally, While)
-        if not isinstance(parent, possible_delstmt):
-            self._insert_delete = False
-        elif isinstance(node, AssTuple):
-            pass #XXX
+    def _check_del_node(self, node, targets):
+        """insert a Delete node if necessary.
+
+        As for assignments we have a Assign node, this method is only called in
+        delete contexts. Hence we return a Delete node"""
+        if self.asscontext is None:
+            self.asscontext = "Del"
+            newnode = new.Delete()
+            newnode.targets = [self.visit(target, newnode) for target in targets]
+            self.asscontext = None
+            return newnode
         else:
-            self._insert_delete = True
+            return False
 
     def visit_arguments(self, node):
         """visit an Arguments node by returning a fresh instance of it"""
@@ -266,24 +269,28 @@ class TreeRebuilder(RebuildVisitor):
 
     def visit_assattr(self, node):
         """visit an AssAttr node by returning a fresh instance of it"""
-        newnode = new.AssAttr()
-        newnode.expr = self.visit(node.expr, node)
-        # XXX old code
-        if node.flags == 'OP_DELETE':
-            self.insert_delstmt_if_necessary(node)
-            node.__class__ = DelAttr
-        del node.flags
-        # end old
+        delnode = self._check_del_node(node, [node])
+        if delnode:
+            return delnode
+        elif self.asscontext == "Del":
+            newnode = self.visit_delattr(node)
+        elif self.asscontext == "Ass":
+            newnode = new.AssAttr()
+            newnode.expr = self.visit(node.expr, node)
+            newnode.attrname = node.attrname
         return newnode
 
     def visit_assname(self, node):
         """visit an AssName node by returning a fresh instance of it"""
-        if node.flags == 'OP_DELETE':
-            self.insert_delstmt_if_necessary(node)
-            newnode = new.DelName()
-        else:
+        delnode = self._check_del_node(node, [node])
+        if delnode:
+            return delnode
+        elif self.asscontext == "Del":
+            newnode = self.visit_delname(node)
+        elif self.asscontext == "Ass":
+            assert node.flags == 'OP_ASSIGN'
             newnode = new.AssName()
-        newnode.name = node.name
+            newnode.name = node.name
         return newnode
 
     def visit_assert(self, node):
@@ -296,21 +303,24 @@ class TreeRebuilder(RebuildVisitor):
     def _visit_assign(self, node):
         """visit an Assign node by returning a fresh instance of it"""
         newnode = new.Assign()
+        self.asscontext = 'Ass'
         newnode.targets = [self.visit(child, node) for child in node.nodes]
         newnode.value = self.visit(node.expr, node)
+        self.asscontext = None
         return newnode
-        
-    #XXX TODO
-    "" ""
+
     def visit_asslist(self, node):
-        self.insert_delstmt_if_necessary(node)
-        node.__class__ = List
-        self.visit_list(node)
+        # FIXME : use self._check_del_node(node, [node]) more precise ?
+        delnode = self._check_del_node(node, node.nodes)
+        if delnode:
+            return delnode
+        return self.visit_list(node)
 
     def visit_asstuple(self, node):
-        if not self.insert_delstmt_if_necessary(node):
-            node.__class__ = Tuple
-            self.visit_tuple(node)
+        delnode = self._check_del_node(node, node.nodes)
+        if delnode:
+            return delnode
+        return self.visit_tuple(node)
             
 
     def visit_augassign(self, node):
@@ -414,17 +424,13 @@ class TreeRebuilder(RebuildVisitor):
         """visit a DelAttr node by returning a fresh instance of it"""
         newnode = new.DelAttr()
         newnode.expr = self.visit(node.expr, node)
+        newnode.attrname = node.attrname
         return newnode
 
     def visit_delname(self, node):
         """visit a DelName node by returning a fresh instance of it"""
         newnode = new.DelName()
-        return newnode
-
-    def visit_delete(self, node):
-        """visit a Delete node by returning a fresh instance of it"""
-        newnode = new.Delete()
-        newnode.targets = [self.visit(child, node) for child in node.targets]
+        newnode.name = node.name
         return newnode
 
     def visit_dict(self, node):
@@ -518,6 +524,7 @@ class TreeRebuilder(RebuildVisitor):
         if isinstance(self.asscontext, AugAssign):
             newnode = new.AssAttr()
         newnode.expr = self.visit(node.expr, node)
+        newnode.attrname = node.attrname
         return newnode
 
     def visit_if(self, node):
