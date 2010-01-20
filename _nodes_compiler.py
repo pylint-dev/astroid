@@ -254,10 +254,11 @@ class TreeRebuilder(RebuildVisitor):
         if self.asscontext is None:
             self.asscontext = "Del"
             newnode = new.Delete()
-            newnode.targets = [self.visit(target, newnode) for target in targets]
+            newnode.targets = [self.visit(elt, newnode) for elt in targets]
             self.asscontext = None
             return newnode
         else:
+            # this will trigger the visit_ass* methods to create the right nodes
             return False
 
     def visit_arguments(self, node):
@@ -401,7 +402,9 @@ class TreeRebuilder(RebuildVisitor):
             iters = node.iter
         newnode.iter = self.visit(iters, node)
         if node.ifs:
-            newnode.ifs = [self.visit(iff.test) for iff in node.ifs]
+            newnode.ifs = [self.visit(iff.test, node) for iff in node.ifs]
+        else:
+            newnode.ifs = []
         return newnode
 
     def visit_const(self, node):
