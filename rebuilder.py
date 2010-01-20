@@ -73,15 +73,6 @@ class RebuildVisitor(ASTVisitor):
         return newnode
 
 
-    # take node arguments to be usable as visit/leave methods
-    def push_asscontext(self, node=None):
-        self._asscontext = self.asscontext
-        self.asscontext = None
-        return True
-    def pop_asscontext(self, node=None):
-        self.asscontext = self._asscontext
-        self._asscontext = None
-
     def walk(self, node):
         newnode = self.visit(node, None)
         for name, nodes in self._delayed.items():
@@ -192,7 +183,6 @@ class RebuildVisitor(ASTVisitor):
 
     def visit_assattr(self, node): # TODO
         """visit an Getattr node to become astng"""
-        print self.indent + "visit_assattr" + "XXX"
         assc, self.asscontext = self.asscontext, None
         newnode = self._visit_assattr(node)
         self.asscontext = assc
@@ -241,9 +231,6 @@ class RebuildVisitor(ASTVisitor):
                 node.parent.set_local(node.name, node)
     visit_delname = visit_assname
 
-    visit_subscript = push_asscontext
-    leave_subscript = pop_asscontext
-    
     def delayed_assattr(self, node):
         """visit a AssAttr node -> add name to locals, handle members
         definition

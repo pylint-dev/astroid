@@ -1,7 +1,7 @@
 from logilab.common.testlib import TestCase, unittest_main
 
 from logilab.astng import builder, nodes
-from logilab.astng.infutils import are_exclusive
+from logilab.astng.node_classes import are_exclusive
 
 builder = builder.ASTNGBuilder()
 

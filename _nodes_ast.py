@@ -531,8 +531,10 @@ class TreeRebuilder(RebuildVisitor):
     def visit_subscript(self, node):
         """visit a Subscript node by returning a fresh instance of it"""
         newnode = new.Subscript()
+        subcontext, self.asscontext = self.asscontext, None
         newnode.value = self.visit(node.value, node)
         newnode.slice = self.visit(node.slice, node)
+        self.asscontext = subcontext
         return newnode
 
     def visit_tryexcept(self, node):
