@@ -345,6 +345,8 @@ class AsStringVisitor(ASTVisitor):
 
     def visit_unaryop(self, node):
         """return an astng.UnaryOp node as string"""
+        if node.op == 'not':
+            return '%s %s' % (node.op, node.operand.accept(self))
         return '%s%s' % (node.op, node.operand.accept(self))
 
     def visit_while(self, node):
