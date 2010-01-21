@@ -230,6 +230,7 @@ class TreeRebuilder(RebuildVisitor):
             newnode = new.AssAttr()
             newnode.expr = self.visit(node.expr, node)
             newnode.attrname = node.attrname
+        self._delayed['assattr'].append(newnode)
         return newnode
 
     def visit_assname(self, node):
@@ -389,25 +390,15 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.Discard()
         self.asscontext = "Dis"
         newnode.value = self.visit(node.expr, node)
-        '''# XXX old code
+        # TODO : remove dummy Discard
+        '''
         if node.lineno is None:
             # remove dummy Discard introduced when a statement
             # is ended by a semi-colon
             newnode.parent.child_sequence(newnode).remove(newnode)
             raise NodeRemoved
-        # end old
         '''
         self.asscontext = None
-        return newnode
-
-    def visit_ellipsis(self, node):
-        """visit an Ellipsis node by returning a fresh instance of it"""
-        newnode = new.Ellipsis()
-        return newnode
-
-    def visit_emptynode(self, node):
-        """visit an EmptyNode node by returning a fresh instance of it"""
-        newnode = new.EmptyNode()
         return newnode
 
     def visit_excepthandler(self, node):
@@ -558,11 +549,6 @@ class TreeRebuilder(RebuildVisitor):
         else:
            newnode = new.Name()
         newnode.name = node.name
-        return newnode
-
-    def visit_pass(self, node):
-        """visit a Pass node by returning a fresh instance of it"""
-        newnode = new.Pass()
         return newnode
 
     def visit_print(self, node):

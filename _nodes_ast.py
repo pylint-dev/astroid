@@ -176,10 +176,13 @@ class TreeRebuilder(RebuildVisitor):
         newnode.kwarg = node.kwarg
         return newnode
 
-    def _visit_assattr(self, node):
+    def visit_assattr(self, node):
         """visit a AssAttr node by returning a fresh instance of it"""
+        assc, self.asscontext = self.asscontext, None
         newnode = new.AssAttr()
         newnode.expr = self.visit(node.expr, node)
+        self.asscontext = assc
+        self._delayed['assattr'].append(newnode)
         return newnode
 
     def visit_assname(self, node):
@@ -278,7 +281,7 @@ class TreeRebuilder(RebuildVisitor):
     def visit_decorators(self, node):
         """visit a Decorators node by returning a fresh instance of it"""
         newnode = new.Decorators()
-        newnode.nodes = [self.visit(child, node) for child in node.nodes]
+        newnode.nodes = [self.visit(child, node) for child in node.decorators]
         return newnode
 
     def visit_delete(self, node):
@@ -302,16 +305,6 @@ class TreeRebuilder(RebuildVisitor):
             return self.visit(node.value, node)
         newnode = new.Discard()
         newnode.value = self.visit(node.value, node)
-        return newnode
-
-    def visit_ellipsis(self, node):
-        """visit an Ellipsis node by returning a fresh instance of it"""
-        newnode = new.Ellipsis()
-        return newnode
-
-    def visit_emptynode(self, node):
-        """visit an EmptyNode node by returning a fresh instance of it"""
-        newnode = new.EmptyNode()
         return newnode
 
     def visit_excepthandler(self, node):
@@ -361,7 +354,7 @@ class TreeRebuilder(RebuildVisitor):
             attr = 'decorator_list'
         decorators = getattr(node, attr)
         if decorators:
-            newnode.decorators = self.visit(decorators, node)
+            newnode.decorators = self.visit_decorators(node)
         else:
             newnode.decorators = None
         return newnode
@@ -381,6 +374,7 @@ class TreeRebuilder(RebuildVisitor):
             newnode = new.AssAttr()
         else:
             newnode = new.Getattr()
+        self._delayed['assattr'].append(newnode)
         asscontext, self.asscontext = self.asscontext, None
         newnode.expr = self.visit(node.value, node)
         self.asscontext = asscontext
@@ -470,11 +464,6 @@ class TreeRebuilder(RebuildVisitor):
     def visit_str(self, node):
         """visit a a Str node by returning a fresh instance of Const"""
         newnode = new.Const(node.s)
-        return newnode
-
-    def visit_pass(self, node):
-        """visit a Pass node by returning a fresh instance of it"""
-        newnode = new.Pass()
         return newnode
 
     def visit_print(self, node):

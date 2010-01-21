@@ -147,10 +147,21 @@ class RebuildVisitor(ASTVisitor):
         """python >= 2.4
         visit a Decorator node -> check for classmethod and staticmethod
         """
+        return # TODO
         for decorator_expr in node.nodes:
             if isinstance(decorator_expr, nodes.Name) and \
                    decorator_expr.name in ('classmethod', 'staticmethod'):
                 node.parent.type = decorator_expr.name
+        return newnode
+
+    def visit_ellipsis(self, node):
+        """visit an Ellipsis node by returning a fresh instance of it"""
+        newnode = nodes.Ellipsis()
+        return newnode
+
+    def visit_emptynode(self, node):
+        """visit an EmptyNode node by returning a fresh instance of it"""
+        newnode = nodes.EmptyNode()
         return newnode
 
     def visit_from(self, node): # TODO XXX root !
@@ -188,21 +199,6 @@ class RebuildVisitor(ASTVisitor):
                 newnode.type = 'method'
         frame.set_local(newnode.name, newnode)
 
-    def visit_assattr(self, node): # TODO
-        """visit an Getattr node to become astng"""
-        assc, self.asscontext = self.asscontext, None
-        newnode = self._visit_assattr(node)
-        self.asscontext = assc
-        self._delayed['assattr'].append(newnode)
-        return newnode
-
-    def visit_delattr(self, node): # TODO
-        """visit an Getattr node to become astng"""
-        assc, self.asscontext = self.asscontext, None
-        newnode = self._visit_delattr(node)
-        self.asscontext = assc
-        return newnode
-
     def visit_global(self, node):
         """visit an Global node to become astng"""
         newnode = nodes.Global(node.names)
@@ -228,6 +224,11 @@ class RebuildVisitor(ASTVisitor):
         newnode = self._visit_name(node)
         if newnode.name in CONST_NAME_TRANSFORMS:
             return nodes.Const(CONST_NAME_TRANSFORMS[newnode.name])
+        return newnode
+
+    def visit_pass(self, node):
+        """visit a Pass node by returning a fresh instance of it"""
+        newnode = nodes.Pass()
         return newnode
 
     def visit_assname(self, node): # XXX parent
