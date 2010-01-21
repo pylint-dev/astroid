@@ -36,9 +36,9 @@ from logilab.common.decorators import cached
 
 from logilab.astng import MANAGER, NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
-from logilab.astng.node_classes import (Const, Dict, From, List, Pass,
-     Raise, Return, Tuple, Yield, DelAttr, are_exclusive, const_factory as cf,
-     unpack_infer) 
+from logilab.astng.node_classes import (Const, Comprehension, Dict,
+     From, For, Import, List, Pass, Raise, Return, Tuple, Yield, DelAttr,
+     are_exclusive, const_factory as cf, unpack_infer)
 from logilab.astng._nodes import NodeNG, StmtMixIn, BaseClass
 from logilab.astng.infutils import YES, InferenceContext, Instance, Generator, \
      UnboundMethod, _infer_stmts, copy_context
@@ -143,16 +143,16 @@ class LookupMixIn(BaseClass):
             # line filtering is on and we have reached our location, break
             if mylineno > 0 and stmt.fromlineno > mylineno:
                 break
-            if isinstance(node, nodes.Class) and self in node.bases:
+            if isinstance(node, Class) and self in node.bases:
                 break
             assert hasattr(node, 'ass_type'), (node, node.scope(),
                                                node.scope().locals)
             ass_type = node.ass_type()
-            if ass_type is mystmt and not isinstance(ass_type, (nodes.Class,
-                    nodes.Function, nodes.Import, nodes.From, nodes.Lambda)):
-                if not isinstance(ass_type, nodes.Comprehension):
+            if ass_type is mystmt and not isinstance(ass_type, (Class,
+                                        Function, Import, From, Lambda)):
+                if not isinstance(ass_type, Comprehension):
                     break
-                if isinstance(self, (nodes.Const, nodes.Name)):
+                if isinstance(self, (Const, Name)):
                     _stmts = [self]
                     break
             elif ass_type.statement() is mystmt:
@@ -160,7 +160,7 @@ class LookupMixIn(BaseClass):
                 # current node (gen exp, list comp)
                 _stmts = [node]
                 break        
-            optional_assign = isinstance(ass_type, (nodes.For, nodes.Comprehension))
+            optional_assign = isinstance(ass_type, (For, Comprehension))
             if optional_assign and ass_type.parent_of(self):
                 # we are inside a loop, loop var assigment is hidding previous
                 # assigment
@@ -204,11 +204,11 @@ class LookupMixIn(BaseClass):
                 if not (optional_assign or are_exclusive(_stmts[pindex], node)):
                     del _stmt_parents[pindex]
                     del _stmts[pindex]
-            if isinstance(node, nodes.AssName):
+            if isinstance(node, AssName):
                 if not optional_assign and stmt.parent is mystmt.parent:
                     _stmts = []
                     _stmt_parents = []
-            elif isinstance(node, nodes.DelName):
+            elif isinstance(node, DelName):
                 _stmts = []
                 _stmt_parents = []
                 continue
@@ -277,7 +277,7 @@ class LocalsDictNodeNG(LookupMixIn, NodeNG):
             # nested scope: if parent scope is a function, that's fine
             # else jump to the module
             pscope = self.parent.scope()
-            if not isinstance(pscope, nodes.Function):
+            if not isinstance(pscope, Function):
                 pscope = pscope.root()
             return pscope.scope_lookup(node, name)
         return builtin_lookup(name) # Module
