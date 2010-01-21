@@ -57,7 +57,6 @@ class RebuildVisitor(ASTVisitor):
 
     def visit(self, node, parent):
         if node is None: # some attributes of some nodes are just None
-            print  "node with parent %s is None" % parent
             return None
         # TODO : remove parent: it is never used
         cls_name = node.__class__.__name__

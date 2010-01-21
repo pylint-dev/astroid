@@ -443,10 +443,12 @@ class TreeRebuilder(RebuildVisitor):
         """visit a Name node by returning a fresh instance of it"""
         if self.asscontext == "Del":
             newnode = new.DelName()
+            newnode.name = node.id
             self._save_assigment(newnode)
         elif self.asscontext is not None: # Ass
             assert self.asscontext == "Ass"
             newnode = new.AssName()
+            newnode.name = node.id
             self._save_assigment(newnode)
         else:
             newnode = new.Name()

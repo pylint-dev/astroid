@@ -298,9 +298,10 @@ class TreeRebuilder(RebuildVisitor):
         newnode.op = BinOp_OP_CLASSES[node.__class__]
         if newnode.op in ('&', '|', '^'):
             newnode.right = self.visit(node.nodes[-1], node)
-            bitop = BinOp_BIT_CLASSES[node.op]
+            bitop = BinOp_BIT_CLASSES[newnode.op]
             if len(node.nodes) > 2:
                 # create a bitop node on the fly and visit it:
+                # XXX can't we create directly the right node ?
                 newnode.left = self.visit(bitop(node.nodes[:-1]), node)
             else:
                 newnode.left = self.visit(node.nodes[0], node)
@@ -451,6 +452,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.doc = node.doc
         args_compiler_to_ast(newnode, node)
         newnode.args.defaults = [self.visit(n, newnode.args) for n in node.defaults]
+        self.set_infos(newnode.args, node)
         return newnode
 
     def visit_genexpr(self, node):
@@ -526,6 +528,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.body = self.visit(node.code, node)
         args_compiler_to_ast(newnode, node)
         newnode.args.defaults = [self.visit(n, newnode.args) for n in node.defaults]
+        self.set_infos(newnode.args, node)
         return newnode
 
     def visit_list(self, node):
@@ -682,7 +685,7 @@ class TreeRebuilder(RebuildVisitor):
         except AttributeError:
             print "AttributeError Yield node.expr:", node.__dict__
             newnode.value = None
-        if not isinstance(node.parent, Discard): # XXX waiting for better solution
+        if self.asscontext != 'Dis':
             newnode, yield_node = new.Discard(), newnode
             newnode.value = yield_node
         newnode.fromlineno = node.fromlineno
