@@ -423,6 +423,7 @@ class TreeRebuilder(RebuildVisitor):
         """visit an ExtSlice node by returning a fresh instance of it"""
         newnode = new.ExtSlice()
         newnode.dims = [self.visit(dim, node) for dim in node.subs]
+        self.set_infos(newnode, node)
         return newnode
 
     def visit_for(self, node):
@@ -468,7 +469,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.expr = self.visit(node.expr, node)
         newnode.attrname = node.attrname
         return newnode
-
+        
     def visit_if(self, node):
         """visit an If node by returning a fresh instance of it"""
         newnode = subnode = new.If()
@@ -479,18 +480,16 @@ class TreeRebuilder(RebuildVisitor):
             # create successively If nodes and put it in orelse of the previous
             parent, subnode = subnode, new.If()
             subnode.parent = parent
-            print "subnode %x, parent %x", id(subnode), id(parent)
             subnode.fromlineno = node.tests[1][0].fromlineno
             subnode.tolineno = node.tests[1][1].nodes[-1].tolineno
             subnode.blockstart_tolineno = node.tests[1][0].tolineno
             subnode.test = self.visit(test, 0)
             subnode.body = [self.visit(child, 0) for child in body.nodes]
             parent.orelse = [subnode]
-            # FIXME we don't walk through visit, so we have to set parent here
-            for child in [subnode.test] + subnode.body:
-                child.parent = subnode
+            self.set_infos(parent, node)
         # the last subnode gets the else block:
         subnode.orelse = self._init_else_node(node)
+        self.set_infos(subnode, node)
         return newnode
 
     def visit_ifexp(self, node):
@@ -511,6 +510,7 @@ class TreeRebuilder(RebuildVisitor):
         """visit an Index node by returning a fresh instance of it"""
         newnode = new.Index()
         newnode.value = self.visit(node.subs[0], node)
+        self.set_infos(newnode, node)
         return newnode
 
     def visit_keyword(self, node):
@@ -594,6 +594,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.Subscript()
         newnode.value = self.visit(node.expr, node)
         newnode.slice = self.visit_sliceobj(node, slice=True)
+        self.set_infos(newnode, node)
         return newnode
 
     def visit_sliceobj(self, node, slice=False):
@@ -608,6 +609,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.lower = self.visit(_filter_none(subs[0]), node)
         newnode.upper = self.visit(_filter_none(subs[1]), node)
         newnode.step = self.visit(_filter_none(subs[2]), node)
+        self.set_infos(newnode, node)
         return newnode
 
     def visit_subscript(self, node):

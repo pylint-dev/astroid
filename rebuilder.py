@@ -30,6 +30,17 @@ CONST_NAME_TRANSFORMS = {'None':  None,
                          'True':  True,
                          'False': False}
 
+def _check_children(node):
+    """a helper function to check children - parent relations"""
+    for child in node.get_children():
+        if not hasattr(child, 'parent'):
+            print "  %s has child %s %x with no parent" % (node, child, id(child))
+        elif not child.parent:
+            print "  %s has child %s %x with parent %r" % (node, child, id(child), child.parent)
+        elif child.parent is not node:
+            print "  child %s %x has not parent %s %x" % (child, id(child), node, id(node))
+        _check_children(child)
+
 
 class RebuildVisitor(ASTVisitor):
     """Visitor to transform an AST to an ASTNG
@@ -47,7 +58,7 @@ class RebuildVisitor(ASTVisitor):
         if node is None: # some attributes of some nodes are just None
             print  "node with parent %s is None" % parent
             return None
-        node.parent = parent # XXX it seems that we need it sometimes
+        # TODO : remove parent: it is never used
         cls_name = node.__class__.__name__
         _method_suffix = REDIRECT.get(cls_name, cls_name).lower()
         _visit = getattr(self, "visit_%s" % _method_suffix )
@@ -55,29 +66,33 @@ class RebuildVisitor(ASTVisitor):
             newnode = _visit(node)
         except NodeRemoved:
             return
-        child = None
         if newnode is None:
             return
+        self.set_infos(newnode, node)
+        _leave = getattr(self, "leave_%s" % _method_suffix, None )
+        if _leave:
+            _leave(newnode)
+        return newnode
+
+    def set_infos(self, newnode, oldnode):
+        """set parent and line number infos"""
+        child = None
         for child in newnode.get_children():
             if child is not None:
                 child.parent = newnode
             else:
                 print "newnode %s has None as child" % newnode
         # newnode.set_line_info(child)
-        _leave = getattr(self, "leave_%s" % _method_suffix, None )
-        if _leave:
-            _leave(newnode)
-        return newnode
-
 
     def walk(self, node):
         newnode = self.visit(node, None)
+        _check_children(newnode)
         for name, nodes in self._delayed.items():
             delay_method = getattr(self, 'delayed_' + name)
             for node in nodes:
                 delay_method(node)
-        for node, root in self._assignments:
-            self.set_local_name(node, root)
+        for assnode, root in self._assignments:
+            self.set_local_name(assnode, root)
         return newnode
 
     # general visit_<node> methods ############################################
