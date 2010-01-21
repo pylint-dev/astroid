@@ -227,16 +227,16 @@ class NodeNG(BaseClass):
         from logilab.astng.nodes_as_string import as_string
         return as_string(self)
 
-    def repr_tree(self):
+    def repr_tree(self, ids=False):
         """print a nice astng tree representation"""
         result = []
-        _repr_tree(self, result)
+        _repr_tree(self, result, ids=ids)
         print "\n".join(result)
 
 
 INDENT = "    "
 
-def _repr_tree(node, result, indent='', _done=None):
+def _repr_tree(node, result, indent='', _done=None, ids=False):
     """built a tree representation of a node as a list of lines"""
     if _done is None:
         _done = set()
@@ -246,7 +246,10 @@ def _repr_tree(node, result, indent='', _done=None):
         result.append( indent + 'loop in tree: %s' % node )
         return
     _done.add(node)
-    result.append( indent + str(node))
+    node_str = str(node)
+    if ids:
+        node_str += '  . \t%x' % id(node)
+    result.append( indent + node_str )
     indent += INDENT
     for field in node._astng_fields:
         value = getattr(node, field)
@@ -255,15 +258,15 @@ def _repr_tree(node, result, indent='', _done=None):
             for child in value:
                 if isinstance(child, (list, tuple) ):
                     # special case for Dict # FIXME
-                     _repr_tree(child[0], result, indent, _done)
-                     _repr_tree(child[1], result, indent, _done)
+                     _repr_tree(child[0], result, indent, _done, ids)
+                     _repr_tree(child[1], result, indent, _done, ids)
                      result.append(indent + ',')
                 else:
-                    _repr_tree(child, result, indent, _done)
+                    _repr_tree(child, result, indent, _done, ids)
             result.append(  indent + "]" )
         else:
             result.append(  indent + field + " = " )
-            _repr_tree(value, result, indent, _done)
+            _repr_tree(value, result, indent, _done, ids)
 
 
 
