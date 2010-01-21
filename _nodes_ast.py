@@ -350,7 +350,7 @@ class TreeRebuilder(RebuildVisitor):
     def visit_extslice(self, node):
         """visit an ExtSlice node by returning a fresh instance of it"""
         newnode = new.ExtSlice()
-        newnode.dims = self.visit(node.dims, node)
+        newnode.dims = [self.visit(dim, node) for dim in node.dims]
         return newnode
 
     def visit_for(self, node):
