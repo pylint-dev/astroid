@@ -16,9 +16,9 @@ import sys
 from os.path import join, abspath
 from logilab.common.testlib import TestCase, unittest_main
 
-from logilab.astng import builder, nodes, scoped_nodes, lookup, \
+from logilab.astng import builder, nodes, scoped_nodes, \
      InferenceError, NotFoundError
-
+from logilab.astng.scoped_nodes import builtin_lookup
 from unittest_inference import get_name_node
 
 builder = builder.ASTNGBuilder()
@@ -183,8 +183,8 @@ def initialize(linter):
 
 
     def test_builtin_lookup(self):
-        self.assertEquals(lookup.builtin_lookup('__dict__')[1], ())
-        intstmts = lookup.builtin_lookup('int')[1]
+        self.assertEquals(builtin_lookup('__dict__')[1], ())
+        intstmts = builtin_lookup('int')[1]
         self.assertEquals(len(intstmts), 1)
         self.assertIsInstance(intstmts[0], nodes.Class)
         self.assertEquals(intstmts[0].name, 'int')
