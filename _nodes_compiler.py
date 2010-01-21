@@ -471,22 +471,26 @@ class TreeRebuilder(RebuildVisitor):
 
     def visit_if(self, node):
         """visit an If node by returning a fresh instance of it"""
-        newnode = new.If()
+        newnode = subnode = new.If()
         test, body = node.tests[0]
         newnode.test = self.visit(test, node)
         newnode.body = [self.visit(child, node) for child in body.nodes]
-        newnode.orelse = self.visit(node.orelse, node)
-        if node.tests[1:]: # this represents 'elif'
-            # create If node and put it in orelse
-            # rely on the fact that the new If node will be visited
-            # as well until no more tests remain
-            subnode = If(node.tests[1:], node.else_)
+        for test, body in node.tests[1:]:# this represents 'elif'
+            # create successively If nodes and put it in orelse of the previous
+            parent, subnode = subnode, new.If()
+            subnode.parent = parent
+            print "subnode %x, parent %x", id(subnode), id(parent)
             subnode.fromlineno = node.tests[1][0].fromlineno
             subnode.tolineno = node.tests[1][1].nodes[-1].tolineno
             subnode.blockstart_tolineno = node.tests[1][0].tolineno
-            newnode.orelse = [self.visit(subnode, node)]
-        else: # handle orelse
-            newnode.orelse = self._init_else_node(node)
+            subnode.test = self.visit(test, 0)
+            subnode.body = [self.visit(child, 0) for child in body.nodes]
+            parent.orelse = [subnode]
+            # FIXME we don't walk through visit, so we have to set parent here
+            for child in [subnode.test] + subnode.body:
+                child.parent = subnode
+        # the last subnode gets the else block:
+        subnode.orelse = self._init_else_node(node)
         return newnode
 
     def visit_ifexp(self, node):
