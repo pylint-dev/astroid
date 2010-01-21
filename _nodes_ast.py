@@ -275,31 +275,10 @@ class TreeRebuilder(RebuildVisitor):
         newnode.ifs = [self.visit(child, node) for child in node.ifs]
         return newnode
 
-    def visit_const(self, node):
-        """visit a Const node by returning a fresh instance of it"""
-        newnode = new.Const(node.value)
-        return newnode
-
-    def visit_continue(self, node):
-        """visit a Continue node by returning a fresh instance of it"""
-        newnode = new.Continue()
-        return newnode
-
     def visit_decorators(self, node):
         """visit a Decorators node by returning a fresh instance of it"""
         newnode = new.Decorators()
         newnode.nodes = [self.visit(child, node) for child in node.nodes]
-        return newnode
-
-    def _visit_delattr(self, node):
-        """visit a DelAttr node by returning a fresh instance of it"""
-        newnode = new.DelAttr()
-        newnode.expr = self.visit(node.expr, node)
-        return newnode
-
-    def visit_delname(self, node):
-        """visit a DelName node by returning a fresh instance of it"""
-        newnode = new.DelName()
         return newnode
 
     def visit_delete(self, node):

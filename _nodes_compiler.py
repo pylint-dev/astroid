@@ -124,32 +124,6 @@ UnaryOp_OP_CLASSES = {_UnaryAdd: '+',
               _Invert: '~'
               }
 
-def _filter_none(node):
-    """transform Const(None) to None"""
-    if isinstance(node, Const) and node.value is None:
-        return None
-    else:
-        return node
-
-def _extslice(dim):
-    """introduce Index or Slice nodes depending on situation"""
-    if dim.__class__ == Sliceobj:
-        if len(dim.nodes) == 2:
-            dim.nodes.append(None)
-        slice_n = new.Slice()
-        slice_n.lower = _filter_none(dim.nodes[0])
-        slice_n.upper = _filter_none(dim.nodes[1])
-        slice_n.step = dim.nodes[2]
-        slice_n.lineno = dim.lineno
-        return slice_n
-    else:
-        newnode = new.Index()
-        if len(dim) == 1:
-            newnode.value = dim[0]
-        else:
-            newnode.value = Tuple(dim)
-        return newnode
-
 
 # modify __repr__ of all Nodes as they are not compatible with ASTNG ##########
 
@@ -383,16 +357,6 @@ class TreeRebuilder(RebuildVisitor):
             newnode.ifs = [self.visit(iff.test, node) for iff in node.ifs]
         else:
             newnode.ifs = []
-        return newnode
-
-    def visit_const(self, node):
-        """visit a Const node by returning a fresh instance of it"""
-        newnode = new.Const(node.value)
-        return newnode
-
-    def visit_continue(self, node):
-        """visit a Continue node by returning a fresh instance of it"""
-        newnode = new.Continue()
         return newnode
 
     def visit_decorators(self, node):

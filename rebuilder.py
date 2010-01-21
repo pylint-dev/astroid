@@ -129,6 +129,16 @@ class RebuildVisitor(ASTVisitor):
     def delayed_class(self, node):
         node.parent.frame().set_local(node.name, node)
 
+    def visit_const(self, node):
+        """visit a Const node by returning a fresh instance of it"""
+        newnode = nodes.Const(node.value)
+        return newnode
+
+    def visit_continue(self, node):
+        """visit a Continue node by returning a fresh instance of it"""
+        newnode = nodes.Continue()
+        return newnode
+
     def visit_decorators(self, node): # TODO
         """visiting an Decorators node"""
         return self._visit_decorators(node)
