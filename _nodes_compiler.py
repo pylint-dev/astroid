@@ -222,30 +222,6 @@ class TreeRebuilder(RebuildVisitor):
             return []
         return [self.visit(child, node) for child in node.else_.nodes]
 
-    def insert_delstmt_if_necessary(self, node):
-        """insert a Delete statement node if necessary
-
-        return True if we have mutated a AssTuple into a Delete
-        """
-        assign_nodes = (new.Assign, new.With, new.For, new.ExceptHandler, new.Delete, new.AugAssign)
-        if isinstance(node.parent, assign_nodes) or not (
-            node.parent.is_statement or isinstance(node.parent, new.Module)):
-            return False
-        if isinstance(node, AssTuple): # replace node by Delete
-            node.__class__ = new.Delete
-            node.targets = node.nodes
-            del node.nodes
-            stmt = node
-        else: # introduce new Stmt node
-            stmt = new.Delete()
-            node.parent.replace(node, stmt)
-            stmt.fromlineno = node.fromlineno
-            stmt.tolineno = node.tolineno
-            node.parent = stmt
-            stmt.targets = [node]
-        self.asscontext = stmt
-        return stmt is node
-
     def _check_del_node(self, node, targets):
         """insert a Delete node if necessary.
 
@@ -445,14 +421,17 @@ class TreeRebuilder(RebuildVisitor):
     def visit_discard(self, node):
         """visit a Discard node by returning a fresh instance of it"""
         newnode = new.Discard()
+        self.asscontext = "Dis"
         newnode.value = self.visit(node.expr, node)
-        # XXX old code
+        '''# XXX old code
         if node.lineno is None:
             # remove dummy Discard introduced when a statement
             # is ended by a semi-colon
             newnode.parent.child_sequence(newnode).remove(newnode)
             raise NodeRemoved
         # end old
+        '''
+        self.asscontext = None
         return newnode
 
     def visit_ellipsis(self, node):
@@ -484,7 +463,7 @@ class TreeRebuilder(RebuildVisitor):
     def visit_extslice(self, node):
         """visit an ExtSlice node by returning a fresh instance of it"""
         newnode = new.ExtSlice()
-        newnode.dims = self.visit(node.dims, node)
+        newnode.dims = [self.visit(dim, node) for dim in node.subs]
         return newnode
 
     def visit_for(self, node):
@@ -567,7 +546,7 @@ class TreeRebuilder(RebuildVisitor):
     def visit_index(self, node):
         """visit an Index node by returning a fresh instance of it"""
         newnode = new.Index()
-        newnode.value = self.visit(node.value, node)
+        newnode.value = self.visit(node.subs[0], node)
         return newnode
 
     def visit_keyword(self, node):
@@ -648,55 +627,43 @@ class TreeRebuilder(RebuildVisitor):
         return newnode
 
     def visit_slice(self, node):
-        """visit a Slice node by returning a fresh instance of it"""
+        """visit a compiler.Slice by returning a astng.Subscript"""
+        delnode = self._check_del_node(node, [node])
+        if delnode:
+            return delnode
+        newnode = new.Subscript()
+        newnode.value = self.visit(node.expr, node)
+        newnode.slice = self.visit_sliceobj(node, slice=True)
+        return newnode
+
+    def visit_sliceobj(self, node, slice=False):
+        """visit a Slice; transform Sliceobj into a astng.Slice"""
         newnode = new.Slice()
-        newnode.lower = self.visit(node.lower, node)
-        newnode.upper = self.visit(node.upper, node)
-        newnode.step = self.visit(node.step, node)
-        XXX
-        # XXX old code
-        # /!\ Careful :
-        # if the node comes from compiler, it is actually an astng.Subscript
-        # with only 'lower' and 'upper' attributes; no 'step'.
-        # However we want its attribute 'slice' to be a astng.Slice;
-        # hence node.slice will be visited here as a node's child
-        # furthermore, some child nodes of Subscript are also Slice objects
-        #
-        # logilab.astng._nodes_compiler.Slice introduced before :
-        if node.__class__ is Slice:
-            return
-        # compiler.ast.Slice :
-        if node.flags == 'OP_DELETE':
-            self.insert_delstmt_if_necessary(node)
+        if slice:
+            subs = [node.lower, node.upper, None]
         else:
-            assert node.flags in ('OP_APPLY', 'OP_ASSIGN')
-        node.__class__ = Subscript
-        node.value = node.expr
-        node.slice = Slice(node.lower, node.upper, None, node.lineno)
-        del node.expr, node.lower, node.upper, node.flags
-        # end old
+            subs = node.nodes
+            if len(subs) == 2:
+                subs.append(None)
+        newnode.lower = self.visit(_filter_none(subs[0]), node)
+        newnode.upper = self.visit(_filter_none(subs[1]), node)
+        newnode.step = self.visit(_filter_none(subs[2]), node)
         return newnode
 
     def visit_subscript(self, node):
         """visit a Subscript node by returning a fresh instance of it"""
+        delnode = self._check_del_node(node, [node])
+        if delnode:
+            return delnode
         newnode = new.Subscript()
-        newnode.value = self.visit(node.value, node)
-        newnode.slice = self.visit(node.slice, node)
-        # XXX old code
-        if node.flags == 'OP_DELETE':
-            self.insert_delstmt_if_necessary(node)
-        node.value = node.expr
+        newnode.value = self.visit(node.expr, node)
         if [n for n in node.subs if isinstance(n, Sliceobj)]:
-            subs = node.subs
-            if len(node.subs) == 1:
-                subs = node.subs[0].nodes
-                node.slice = Slice(subs[0], subs[1], subs[2], node.lineno)
+            if len(node.subs) == 1: # Sliceobj -> new.Slice
+                newnode.slice = self.visit_sliceobj(node.subs[0])
             else: # ExtSlice
-                node.slice = ExtSlice(node.subs)
+                newnode.slice = self.visit_extslice(node)
         else: # Index
-            node.slice = Index(node.subs)
-        del node.expr, node.subs, node.flags
-        # end old
+            newnode.slice = self.visit_index(node)
         return newnode
 
     def visit_tryexcept(self, node):

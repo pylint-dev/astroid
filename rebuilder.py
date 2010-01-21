@@ -49,9 +49,6 @@ class RebuildVisitor(ASTVisitor):
             return None
         node.parent = parent # XXX it seems that we need it sometimes
         cls_name = node.__class__.__name__
-        if not self._ast_mode: # compiler
-            # TODO if cls_name in ('AssAttr', 'AssName', 'Slice', 'Subscript')
-            self.check_missing_delstmt(node, childnode, cls_name)
         _method_suffix = REDIRECT.get(cls_name, cls_name).lower()
         _visit = getattr(self, "visit_%s" % _method_suffix )
         try:
