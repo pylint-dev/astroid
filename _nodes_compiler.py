@@ -240,10 +240,12 @@ class TreeRebuilder(RebuildVisitor):
             return delnode
         elif self.asscontext == "Del":
             newnode = self.visit_delname(node)
+            self._save_assigment(newnode)
         elif self.asscontext == "Ass":
             assert node.flags == 'OP_ASSIGN'
             newnode = new.AssName()
             newnode.name = node.name
+            self._save_assigment(newnode)
         return newnode
 
     def visit_assert(self, node):

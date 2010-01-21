@@ -185,11 +185,6 @@ class TreeRebuilder(RebuildVisitor):
         self._delayed['assattr'].append(newnode)
         return newnode
 
-    def visit_assname(self, node):
-        """visit a AssName node by returning a fresh instance of it"""
-        newnode = new.AssName()
-        return newnode
-
     def visit_assert(self, node):
         """visit a Assert node by returning a fresh instance of it"""
         newnode = new.Assert()
@@ -448,9 +443,11 @@ class TreeRebuilder(RebuildVisitor):
         """visit a Name node by returning a fresh instance of it"""
         if self.asscontext == "Del":
             newnode = new.DelName()
+            self._save_assigment(newnode)
         elif self.asscontext is not None: # Ass
             assert self.asscontext == "Ass"
             newnode = new.AssName()
+            self._save_assigment(newnode)
         else:
             newnode = new.Name()
         newnode.name = node.id

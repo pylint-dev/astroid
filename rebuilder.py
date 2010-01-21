@@ -41,7 +41,7 @@ class RebuildVisitor(ASTVisitor):
         self._delayed = dict((name, []) for name in ('class', 'function', 'assattr'))
         self.set_line_info = (ast_mode == '_ast')
         self._ast_mode = (ast_mode == '_ast')
-        self._asscontext = None
+        self._assignments = []
 
     def visit(self, node, parent):
         if node is None: # some attributes of some nodes are just None
@@ -76,6 +76,8 @@ class RebuildVisitor(ASTVisitor):
             delay_method = getattr(self, 'delayed_' + name)
             for node in nodes:
                 delay_method(node)
+        for node, root in self._assignments:
+            self.set_local_name(node, root)
         return newnode
 
     # general visit_<node> methods ############################################
@@ -231,13 +233,19 @@ class RebuildVisitor(ASTVisitor):
         newnode = nodes.Pass()
         return newnode
 
-    def visit_assname(self, node): # XXX parent
-        if self.asscontext is not None:
-            if self._global_names and node.name in self._global_names[-1]:
-                node.root().set_local(node.name, node)
-            else:
-                node.parent.set_local(node.name, node)
-    visit_delname = visit_assname
+    def _save_assigment(self, node):
+        """save assignement situation since node.parent is not available yet"""
+        if self._global_names and node.name in self._global_names[-1]:
+            self._assignments.append((node, True))
+        else:
+            self._assignments.append((node, False))
+
+    def set_local_name(self, node, root):
+        """set local name into the right place"""
+        if root:
+            node.root().set_local(node.name, node)
+        else:
+            node.parent.set_local(node.name, node)
 
     def delayed_assattr(self, node):
         """visit a AssAttr node -> add name to locals, handle members
