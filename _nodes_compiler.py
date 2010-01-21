@@ -344,7 +344,7 @@ class TreeRebuilder(RebuildVisitor):
         """visit a Compare node by returning a fresh instance of it"""
         newnode = new.Compare()
         newnode.left = self.visit(node.expr, node)
-        newnode.ops = [self.visit(child, node) for child in node.ops]
+        newnode.ops = [(op, self.visit(child, node)) for op, child in node.ops]
         return newnode
 
     def visit_comprehension(self, node):

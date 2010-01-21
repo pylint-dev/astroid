@@ -34,11 +34,12 @@ def _check_children(node):
     """a helper function to check children - parent relations"""
     for child in node.get_children():
         if not hasattr(child, 'parent'):
-            print "  %s has child %s %x with no parent" % (node, child, id(child))
+            print " ERROR: %s has child %s %x with no parent" % (node, child, id(child))
         elif not child.parent:
-            print "  %s has child %s %x with parent %r" % (node, child, id(child), child.parent)
+            print " ERROR: %s has child %s %x with parent %r" % (node, child, id(child), child.parent)
         elif child.parent is not node:
-            print "  child %s %x has not parent %s %x" % (child, id(child), node, id(node))
+            print " ERROR: %s %x has child %s %x with wrong parent %s" % (node,
+                                      id(node), child, id(child), child.parent)
         _check_children(child)
 
 
@@ -76,15 +77,20 @@ class RebuildVisitor(ASTVisitor):
 
     def set_infos(self, newnode, oldnode):
         """set parent and line number infos"""
+        # some nodes are created by the TreeRebuilder without going through
+        # the visit method; hence we have to set infos explicitly
         child = None
         for child in newnode.get_children():
             if child is not None:
                 child.parent = newnode
             else:
                 print "newnode %s has None as child" % newnode
+        if hasattr(oldnode, 'lineno'):
+            newnode.lineno = oldnode.lineno
         # newnode.set_line_info(child)
 
     def walk(self, node):
+        """start the walk down the tree and do some work after it"""
         newnode = self.visit(node, None)
         _check_children(newnode)
         for name, nodes in self._delayed.items():
@@ -307,5 +313,6 @@ class RebuildVisitor(ASTVisitor):
         newnode.name = self.visit(excobj, node)
         self.asscontext = None
         newnode.body = [self.visit(child, node) for child in body]
+        self.set_infos(newnode, node)
         return newnode
 
