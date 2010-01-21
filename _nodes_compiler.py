@@ -218,6 +218,7 @@ class TreeRebuilder(RebuildVisitor):
     """Rebuilds the compiler tree to become an ASTNG tree"""
 
     def _init_else_node(self, node):
+        """visit else block; replace None by empty list"""
         if not node.else_:
             return []
         return [self.visit(child, node) for child in node.else_.nodes]
@@ -225,8 +226,8 @@ class TreeRebuilder(RebuildVisitor):
     def _check_del_node(self, node, targets):
         """insert a Delete node if necessary.
 
-        As for assignments we have a Assign node, this method is only called in
-        delete contexts. Hence we return a Delete node"""
+        As for assignments we have a Assign (or For or ...) node, this method
+        is only called in delete contexts. Hence we return a Delete node"""
         if self.asscontext is None:
             self.asscontext = "Del"
             newnode = new.Delete()
@@ -304,6 +305,7 @@ class TreeRebuilder(RebuildVisitor):
         """visit an AugAssign node by returning a fresh instance of it"""
         newnode = new.AugAssign()
         newnode.target = self.visit(node.node, node)
+        newnode.op = node.op
         newnode.value = self.visit(node.expr, node)
         return newnode
 
@@ -469,10 +471,11 @@ class TreeRebuilder(RebuildVisitor):
     def visit_for(self, node):
         """visit a For node by returning a fresh instance of it"""
         newnode = new.For()
+        self.asscontext = "Ass"
         newnode.target = self.visit(node.assign, node)
+        self.asscontext = None
         newnode.iter = self.visit(node.list, node)
         newnode.body = [self.visit(child, node) for child in node.body.nodes]
-        newnode.orelse = _self.visit(node.orelse, node)
         newnode.orelse = self._init_else_node(node)
         return newnode
 
@@ -586,7 +589,6 @@ class TreeRebuilder(RebuildVisitor):
 
     def _visit_name(self, node):
         """visit a Name node by returning a fresh instance of it"""
-        print node, self.asscontext
         if isinstance(self.asscontext, AugAssign):
             newnode = AssName()
         else:
@@ -628,6 +630,8 @@ class TreeRebuilder(RebuildVisitor):
 
     def visit_slice(self, node):
         """visit a compiler.Slice by returning a astng.Subscript"""
+        # compiler.Slice nodes represent astng.Subscript nodes
+        # the astng.Subscript node has a astng.Slice node as child
         delnode = self._check_del_node(node, [node])
         if delnode:
             return delnode
@@ -637,7 +641,7 @@ class TreeRebuilder(RebuildVisitor):
         return newnode
 
     def visit_sliceobj(self, node, slice=False):
-        """visit a Slice; transform Sliceobj into a astng.Slice"""
+        """visit a Slice or Sliceobj; transform Sliceobj into a astng.Slice"""
         newnode = new.Slice()
         if slice:
             subs = [node.lower, node.upper, None]
