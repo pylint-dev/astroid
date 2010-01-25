@@ -50,7 +50,8 @@ class RebuildVisitor(ASTVisitor):
         self.asscontext = None
         self._metaclass = None
         self._global_names = None
-        self._delayed = dict((name, []) for name in ('class', 'function', 'assattr'))
+        self._delayed = dict((name, []) for name in ('class', 'function',
+                              'assattr', 'assign', 'decorators', 'from'))
         self.set_line_info = (ast_mode == '_ast')
         self._ast_mode = (ast_mode == '_ast')
         self._assignments = []
@@ -58,7 +59,8 @@ class RebuildVisitor(ASTVisitor):
     def visit(self, node, parent):
         if node is None: # some attributes of some nodes are just None
             return None
-        # TODO : remove parent: it is never used
+        # TODO : parent is never used; replace by newparent ? Could
+        #        replace set_infos or simplify some other cases ?
         cls_name = node.__class__.__name__
         _method_suffix = REDIRECT.get(cls_name, cls_name).lower()
         _visit = getattr(self, "visit_%s" % _method_suffix )
@@ -96,24 +98,29 @@ class RebuildVisitor(ASTVisitor):
             delay_method = getattr(self, 'delayed_' + name)
             for node in nodes:
                 delay_method(node)
-        for assnode, root in self._assignments:
-            self.set_local_name(assnode, root)
+        for assnode, name, root_local in self._assignments:
+            if root_local:
+                assnode.root().set_local(name, assnode)
+            else:
+                assnode.parent.set_local(name, assnode)
         return newnode
+
 
     # general visit_<node> methods ############################################
 
-    def visit_arguments(self, node): # XXX  parent...
+    def _save_argument_name(self, node):
+        """save argument names for setting locals"""
         if node.vararg:
-            node.parent.set_local(node.vararg, node)
+            self._assignments.append((node, node.vararg, False))
         if node.kwarg:
-            node.parent.set_local(node.kwarg, node)
+            self._assignments.append((node, node.kwarg, False))
 
     def visit_assign(self, node):
         newnode = self._visit_assign(node)
-        # XXX call leave_assign  here ?
+        self._delayed['assign'].append(newnode)
         return newnode
 
-        #def xxx_leave_assign(self, newnode): #XXX  parent...
+    def delayed_assign(self, newnode):
         klass = newnode.parent.frame()
         if (isinstance(klass, nodes.Class)
             and isinstance(newnode.value, nodes.CallFunc)
@@ -125,7 +132,7 @@ class RebuildVisitor(ASTVisitor):
                     if isinstance(meth, nodes.Function):
                         if func_name in ('classmethod', 'staticmethod'):
                             meth.type = func_name
-                        try:
+                        try: # XXX use setdefault ?
                             meth.extra_decorators.append(newnode.value)
                         except AttributeError:
                             meth.extra_decorators = [newnode.value]
@@ -136,8 +143,8 @@ class RebuildVisitor(ASTVisitor):
             self._metaclass[-1] = 'type' # XXX get the actual metaclass
         return newnode
 
-    def visit_class(self, node): # TODO
-        """visit an Class node to become astng"""
+    def visit_class(self, node):
+        """visit a Class node to become astng"""
         newnode = self._visit_class(node)
         newnode.name = node.name
         self._metaclass.append(self._metaclass[-1])
@@ -161,15 +168,16 @@ class RebuildVisitor(ASTVisitor):
         newnode = nodes.Continue()
         return newnode
 
-    def visit_decorators(self, node): # TODO
+    def visit_decorators(self, node):
         """visiting an Decorators node"""
-        return self._visit_decorators(node)
+        newnode = self._visit_decorators(node)
+        self._delayed['decorators'].append(newnode)
+        return newnode
 
-    def leave_decorators(self, node): # XXX parent
+    def delayed_decorators(self, node):
         """python >= 2.4
         visit a Decorator node -> check for classmethod and staticmethod
         """
-        return # TODO
         for decorator_expr in node.nodes:
             if isinstance(decorator_expr, nodes.Name) and \
                    decorator_expr.name in ('classmethod', 'staticmethod'):
@@ -186,7 +194,7 @@ class RebuildVisitor(ASTVisitor):
         newnode = nodes.EmptyNode()
         return newnode
 
-    def visit_from(self, node): # TODO XXX root !
+    def delayed_from(self, node):
         """visit an From node to become astng"""
         # add names imported by the import to locals
         for (name, asname) in node.names:
@@ -206,11 +214,8 @@ class RebuildVisitor(ASTVisitor):
         newnode = self._visit_function(node)
         self._delayed['function'].append(newnode)
         newnode.name = node.name
-        return newnode
-
-    def leave_function(self, node): # TODO
-        """leave a Function node -> pop the last item on the stack"""
         self._global_names.pop()
+        return newnode
 
     def delayed_function(self, newnode):
         frame = newnode.parent.frame()
@@ -229,11 +234,11 @@ class RebuildVisitor(ASTVisitor):
                 self._global_names[-1].setdefault(name, []).append(newnode)
         return newnode
 
-    def visit_import(self, node): # XXX parent !
-        """visit an Import node to become astng"""
-        for (name, asname) in node.names:
+    def _save_import_locals(self, newnode):
+        """save import names to set them in locals later on"""
+        for (name, asname) in newnode.names:
             name = asname or name
-            node.parent.set_local(name.split('.')[0], node)
+            self._assignments.append( (newnode, name.split('.')[0], False) )
 
     def visit_module(self, node):
         """visit an Module node to become astng"""
@@ -253,24 +258,19 @@ class RebuildVisitor(ASTVisitor):
         newnode = nodes.Pass()
         return newnode
 
-    def _save_assigment(self, node):
+    def _save_assigment(self, node, name=None):
         """save assignement situation since node.parent is not available yet"""
         if self._global_names and node.name in self._global_names[-1]:
-            self._assignments.append((node, True))
+            self._assignments.append((node, node.name, True))
         else:
-            self._assignments.append((node, False))
-
-    def set_local_name(self, node, root):
-        """set local name into the right place"""
-        if root:
-            node.root().set_local(node.name, node)
-        else:
-            node.parent.set_local(node.name, node)
+            self._assignments.append((node, node.name, False))
 
     def delayed_assattr(self, node):
         """visit a AssAttr node -> add name to locals, handle members
         definition
         """
+        # XXX this probably doesn't work as expected : 
+        # while running delayed nodes, not all locals are set, hence bad Inference ?
         try:
             frame = node.frame()
             for infered in node.expr.infer():

@@ -174,6 +174,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.defaults = [self.visit(child, node) for child in node.defaults]
         newnode.vararg = node.vararg
         newnode.kwarg = node.kwarg
+        self._save_argument_name(newnode)
         return newnode
 
     def visit_assattr(self, node):
@@ -277,7 +278,9 @@ class TreeRebuilder(RebuildVisitor):
         """visit a Decorators node by returning a fresh instance of it"""
         newnode = new.Decorators()
         newnode.nodes = [self.visit(child, node) for child in node.decorators]
+        self._delayed['decorators'].append(newnode)
         return newnode
+
 
     def visit_delete(self, node):
         """visit a Delete node by returning a fresh instance of it"""
@@ -335,6 +338,7 @@ class TreeRebuilder(RebuildVisitor):
         """visit a From node by returning a fresh instance of it"""
         names = [(alias.name, alias.asname) for alias in node.names]
         newnode = new.From(node.module, names)
+        self._delayed['from'].append(newnode)
         return newnode
 
     def _visit_function(self, node):
@@ -396,6 +400,7 @@ class TreeRebuilder(RebuildVisitor):
         """visit a Import node by returning a fresh instance of it"""
         newnode = new.Import()
         newnode.names = [(alias.name, alias.asname) for alias in node.names]
+        self._save_import_locals(newnode)
         return newnode
 
     def visit_index(self, node):
@@ -437,6 +442,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.Module()
         _init_set_doc(node, newnode)
         newnode.body = [self.visit(child, node) for child in node.body]
+        newnode.name = node.name
         return newnode
 
     def _visit_name(self, node):

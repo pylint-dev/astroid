@@ -163,6 +163,7 @@ def _nodify_args(parent, values):
 
 def args_compiler_to_ast(newnode, node):
     # insert Arguments node
+    # XXX move this to TreeRebuilder.visit_arguments
     if node.flags & 8:
         kwarg = node.argnames.pop()
     else:
@@ -214,8 +215,11 @@ class TreeRebuilder(RebuildVisitor):
 
     def visit_arguments(self, node):
         """visit an Arguments node by returning a fresh instance of it"""
+        XXX
+        # XXX never called ? move args_compiler_to_ast
         newnode = new.Arguments()
         newnode.args = [self.visit(child, node) for child in node.args]
+        self._save_argument_name(newnode)
         newnode.defaults = [self.visit(child, node) for child in node.defaults]
         return newnode
 
@@ -441,6 +445,7 @@ class TreeRebuilder(RebuildVisitor):
     def visit_from(self, node):
         """visit a From node by returning a fresh instance of it"""
         newnode = new.From(node.modname, node.names)
+        self._delayed['from'].append(newnode)
         return newnode
 
 
@@ -506,6 +511,7 @@ class TreeRebuilder(RebuildVisitor):
         """visit an Import node by returning a fresh instance of it"""
         newnode = new.Import()
         newnode.names = node.names
+        self._save_import_locals(newnode)
         return newnode
 
     def visit_index(self, node):
@@ -549,6 +555,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.Module()
         newnode.doc = node.doc
         newnode.body = [self.visit(child, node) for child in node.node.nodes]
+        newnode.name = node.name
         return newnode
 
     def _visit_name(self, node):
