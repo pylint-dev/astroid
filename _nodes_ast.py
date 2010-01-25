@@ -278,6 +278,7 @@ class TreeRebuilder(RebuildVisitor):
         """visit a Decorators node by returning a fresh instance of it"""
         newnode = new.Decorators()
         newnode.nodes = [self.visit(child, node) for child in node.decorators]
+        self.set_infos(newnode, node)
         self._delayed['decorators'].append(newnode)
         return newnode
 
@@ -299,8 +300,6 @@ class TreeRebuilder(RebuildVisitor):
 
     def visit_discard(self, node):
         """visit a Discard node by returning a fresh instance of it"""
-        if isinstance(node.value, Yield):
-            return self.visit(node.value, node)
         newnode = new.Discard()
         newnode.value = self.visit(node.value, node)
         return newnode
@@ -560,6 +559,5 @@ class TreeRebuilder(RebuildVisitor):
         """visit a Yield node by returning a fresh instance of it"""
         newnode = new.Yield()
         newnode.value = self.visit(node.value, node)
-        # removing discard parent handled in visit_discard
         return newnode
 

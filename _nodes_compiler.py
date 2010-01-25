@@ -389,7 +389,8 @@ class TreeRebuilder(RebuildVisitor):
     def visit_dict(self, node):
         """visit a Dict node by returning a fresh instance of it"""
         newnode = new.Dict()
-        newnode.items = [self.visit(child, node) for child in node.items]
+        newnode.items = [(self.visit(key, node), self.visit(value, node))
+                         for (key, value) in node.items]
         return newnode
 
     def visit_discard(self, node):
@@ -686,17 +687,21 @@ class TreeRebuilder(RebuildVisitor):
 
     def visit_yield(self, node):
         """visit a Yield node by returning a fresh instance of it"""
+        discard = self._check_discard(node)
+        if discard:
+            return discard
         newnode = new.Yield()
-        try:
-            newnode.value = self.visit(node.value, node)
-        except AttributeError:
-            print "AttributeError Yield node.expr:", node.__dict__
-            newnode.value = None
-        if self.asscontext != 'Dis':
-            newnode, yield_node = new.Discard(), newnode
-            newnode.value = yield_node
-        newnode.fromlineno = node.fromlineno
-        newnode.tolineno = node.tolineno
+        newnode.value = self.visit(node.value, node)
         return newnode
 
-    
+    def _check_discard(self, node):
+        """check if we introduced already a discard node."""
+        if self.asscontext is None:
+            self.asscontext = 'Dis'
+            newnode = new.Discard()
+            newnode.value = self.visit(node, newnode)
+            self.set_infos(newnode, node)
+            self.context = None
+            return newnode
+        return False
+

@@ -63,6 +63,7 @@ class RebuildVisitor(ASTVisitor):
         #        replace set_infos or simplify some other cases ?
         cls_name = node.__class__.__name__
         _method_suffix = REDIRECT.get(cls_name, cls_name).lower()
+
         _visit = getattr(self, "visit_%s" % _method_suffix )
         try:
             newnode = _visit(node)
@@ -86,14 +87,23 @@ class RebuildVisitor(ASTVisitor):
                 child.parent = newnode
             else:
                 print "newnode %s has None as child" % newnode
+        # line info setting
+        # XXX We don't get the same type of node back. Rebuilding inserts nodes
+        #     of different type and returns them... Is this a problem ?
         if hasattr(oldnode, 'lineno'):
             newnode.lineno = oldnode.lineno
-        # newnode.set_line_info(child)
+        if self.set_line_info: # _ast
+            newnode.set_line_info(child)
+        else: # compiler
+            if hasattr(oldnode, 'fromlineno'):
+                newnode.fromlineno = oldnode.fromlineno
+            if hasattr(oldnode, 'tolineno'):
+                newnode.tolineno = oldnode.tolineno
 
     def walk(self, node):
         """start the walk down the tree and do some work after it"""
         newnode = self.visit(node, None)
-        _check_children(newnode)
+        _check_children(newnode) # FIXME : remove this asap
         for name, nodes in self._delayed.items():
             delay_method = getattr(self, 'delayed_' + name)
             for node in nodes:
@@ -182,7 +192,6 @@ class RebuildVisitor(ASTVisitor):
             if isinstance(decorator_expr, nodes.Name) and \
                    decorator_expr.name in ('classmethod', 'staticmethod'):
                 node.parent.type = decorator_expr.name
-        return newnode
 
     def visit_ellipsis(self, node):
         """visit an Ellipsis node by returning a fresh instance of it"""
