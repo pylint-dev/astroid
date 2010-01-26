@@ -318,7 +318,7 @@ class TreeRebuilder(RebuildVisitor):
         """visit a BoolOp node by returning a fresh instance of it"""
         newnode = new.BoolOp()
         newnode.values = [self.visit(child, node) for child in node.nodes]
-        node.op = BoolOp_OP_CLASSES[node.__class__]
+        newnode.op = BoolOp_OP_CLASSES[node.__class__]
         return newnode
 
     def visit_break(self, node):

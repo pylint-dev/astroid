@@ -80,7 +80,8 @@ class RebuildVisitor(ASTVisitor):
     def set_infos(self, newnode, oldnode):
         """set parent and line number infos"""
         # some nodes are created by the TreeRebuilder without going through
-        # the visit method; hence we have to set infos explicitly
+        # the visit method; hence we have to set infos explicitly at different
+        # places
         child = None
         for child in newnode.get_children():
             if child is not None:
@@ -88,8 +89,8 @@ class RebuildVisitor(ASTVisitor):
             else:
                 print "newnode %s has None as child" % newnode
         # line info setting
-        # XXX We don't get the same type of node back. Rebuilding inserts nodes
-        #     of different type and returns them... Is this a problem ?
+        # XXX We don't necessarily get the same type of node back as Rebuilding
+        # inserts nodes of different type and returns them... Is it a problem ?
         if hasattr(oldnode, 'lineno'):
             newnode.lineno = oldnode.lineno
         if self.set_line_info: # _ast
@@ -112,7 +113,10 @@ class RebuildVisitor(ASTVisitor):
             if root_local:
                 assnode.root().set_local(name, assnode)
             else:
-                assnode.parent.set_local(name, assnode)
+                # _check_children(assnode)
+                # print assnode, id(assnode)
+                if assnode.parent is not None:
+                    assnode.parent.set_local(name, assnode)
         return newnode
 
 
@@ -155,14 +159,15 @@ class RebuildVisitor(ASTVisitor):
 
     def visit_class(self, node):
         """visit a Class node to become astng"""
+        self._metaclass.append(self._metaclass[-1])
         newnode = self._visit_class(node)
         newnode.name = node.name
-        self._metaclass.append(self._metaclass[-1])
         metaclass = self._metaclass.pop()
         if not newnode.bases:
             # no base classes, detect new / style old style according to
             # current scope
-            node._newstyle = metaclass == 'type'
+            newnode._newstyle = metaclass == 'type'
+        self._delayed['class'].append(newnode)
         return newnode
 
     def delayed_class(self, node):
@@ -217,7 +222,7 @@ class RebuildVisitor(ASTVisitor):
             else:
                 node.parent.set_local(asname or name, node)
 
-    def visit_function(self, node): # XXX parent
+    def visit_function(self, node):
         """visit an Function node to become astng"""
         self._global_names.append({})
         newnode = self._visit_function(node)
