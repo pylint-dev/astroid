@@ -30,7 +30,7 @@ except ImportError:
     class BaseClass:
         pass
 from logilab.astng.utils import REDIRECT
-
+from logilab.astng._exceptions import InferenceError, ASTNGError
 
 
 # Node  ######################################################################

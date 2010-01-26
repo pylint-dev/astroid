@@ -1,4 +1,6 @@
 #
+from logilab.common.compat import chain, imap
+
 from logilab.astng import (ASTNGBuildingException, InferenceError,
                            NotFoundError, NoDefault)
 from logilab.astng._nodes import NodeNG, StmtMixIn, BlockRangeMixIn, BaseClass
