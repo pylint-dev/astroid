@@ -72,9 +72,6 @@ class RebuildVisitor(ASTVisitor):
         if newnode is None:
             return
         self.set_infos(newnode, node)
-        _leave = getattr(self, "leave_%s" % _method_suffix, None )
-        if _leave:
-            _leave(newnode)
         return newnode
 
     def set_infos(self, newnode, oldnode):
@@ -105,10 +102,17 @@ class RebuildVisitor(ASTVisitor):
         """start the walk down the tree and do some work after it"""
         newnode = self.visit(node, None)
         _check_children(newnode) # FIXME : remove this asap
+        # handle delayed nodes; assattr has to be done at last since it needs
+        # some inference which is only possible once the node.locals set
         for name, nodes in self._delayed.items():
+            if name == 'assattr':
+                continue
             delay_method = getattr(self, 'delayed_' + name)
             for node in nodes:
                 delay_method(node)
+        delay_assattr = self.delayed_assattr
+        for node in self._delayed['assattr']:
+            delay_assattr(node)
         for assnode, name, root_local in self._assignments:
             if root_local:
                 assnode.root().set_local(name, assnode)
@@ -119,15 +123,15 @@ class RebuildVisitor(ASTVisitor):
                     assnode.parent.set_local(name, assnode)
         return newnode
 
-
-    # general visit_<node> methods ############################################
-
     def _save_argument_name(self, node):
         """save argument names for setting locals"""
         if node.vararg:
             self._assignments.append((node, node.vararg, False))
         if node.kwarg:
             self._assignments.append((node, node.kwarg, False))
+
+
+    # visit_<node> and delayed_<node> methods #################################
 
     def visit_assign(self, node):
         newnode = self._visit_assign(node)
@@ -283,8 +287,6 @@ class RebuildVisitor(ASTVisitor):
         """visit a AssAttr node -> add name to locals, handle members
         definition
         """
-        # XXX this probably doesn't work as expected : 
-        # while running delayed nodes, not all locals are set, hence bad Inference ?
         try:
             frame = node.frame()
             for infered in node.expr.infer():
