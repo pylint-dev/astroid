@@ -217,6 +217,10 @@ class NodeNG(BaseClass):
         # this method is overridden by most concrete classes
         raise InferenceError(self.__class__.__name__)
 
+    def infered(self):
+        '''return list of infered values for a more simple inference usage'''
+        return list(self.infer())
+
     def callable(self):
         return False
 

@@ -142,44 +142,27 @@ del ast
 
 # compiler rebuilder ##########################################################
 
-def _nodify_args(parent, values):
+def _nodify_args(parent, values, visitor):
+    """transform arguments and tuples or lists of arguments into astng nodes"""
+    # TODO : let _nodify_args be a TreeRebuilder method
     res = []
     for arg in values:
         if isinstance(arg, (tuple, list)):
             n = new.Tuple()
-            n.elts = _nodify_args(n, arg)
+            n.elts = _nodify_args(n, arg, visitor)
         else:
             n = new.AssName()
             assert isinstance(arg, basestring)
             n.name = arg
+            visitor._save_assignment(n, n.name)
         n.parent = parent
-        try: # TODO
+        try:
             n.fromlineno = parent.fromlineno
             n.tolineno = parent.fromlineno
         except AttributeError:
             pass
         res.append(n)
     return res
-
-def args_compiler_to_ast(newnode, node):
-    # insert Arguments node
-    # XXX move this to TreeRebuilder.visit_arguments
-    if node.flags & 8:
-        kwarg = node.argnames.pop()
-    else:
-        kwarg = None
-    if node.flags & 4:
-        vararg = node.argnames.pop()
-    else:
-        vararg = None
-    args = _nodify_args(node, node.argnames)
-    newnode.args = new.Arguments(args, vararg, kwarg)
-    newnode.args.fromlineno = node.fromlineno
-    try:
-        newnode.args.tolineno = newnode.blockstart_tolineno
-    except AttributeError: # lambda
-        newnode.args.tolineno = node.tolineno
-
 
 def _filter_none(node):
     """transform Const(None) to None"""
@@ -215,12 +198,21 @@ class TreeRebuilder(RebuildVisitor):
 
     def visit_arguments(self, node):
         """visit an Arguments node by returning a fresh instance of it"""
-        XXX
-        # XXX never called ? move args_compiler_to_ast
-        newnode = new.Arguments()
-        newnode.args = [self.visit(child, node) for child in node.args]
+        # /!\ incoming node is Function or Lambda, coming directly from visit_*
+        if node.flags & 8:
+            kwarg = node.argnames.pop()
+        else:
+            kwarg = None
+        if node.flags & 4:
+            vararg = node.argnames.pop()
+        else:
+            vararg = None
+        args = _nodify_args(node, node.argnames, self)
+        newnode = new.Arguments(args, vararg, kwarg)
         self._save_argument_name(newnode)
         newnode.defaults = [self.visit(child, node) for child in node.defaults]
+        self.set_infos(newnode, node)
+        self._save_argument_name(newnode)
         return newnode
 
     def visit_assattr(self, node):
@@ -244,12 +236,12 @@ class TreeRebuilder(RebuildVisitor):
             return delnode
         elif self.asscontext == "Del":
             newnode = self.visit_delname(node)
-            self._save_assigment(newnode)
+            self._save_assignment(newnode)
         elif self.asscontext == "Ass":
             assert node.flags == 'OP_ASSIGN'
             newnode = new.AssName()
             newnode.name = node.name
-            self._save_assigment(newnode)
+            self._save_assignment(newnode)
         return newnode
 
     def visit_assert(self, node):
@@ -456,9 +448,8 @@ class TreeRebuilder(RebuildVisitor):
         newnode.decorators = self.visit(node.decorators, node)
         newnode.body = [self.visit(child, node) for child in node.code.nodes]
         newnode.doc = node.doc
-        args_compiler_to_ast(newnode, node)
-        newnode.args.defaults = [self.visit(n, newnode.args) for n in node.defaults]
-        self.set_infos(newnode.args, node)
+        newnode.args = self.visit_arguments(node)
+        newnode.fromlineno =  node.blockstart_tolineno # node.fromlineno =
         return newnode
 
     def visit_genexpr(self, node):
@@ -533,9 +524,7 @@ class TreeRebuilder(RebuildVisitor):
         """visit a Lambda node by returning a fresh instance of it"""
         newnode = new.Lambda()
         newnode.body = self.visit(node.code, node)
-        args_compiler_to_ast(newnode, node)
-        newnode.args.defaults = [self.visit(n, newnode.args) for n in node.defaults]
-        self.set_infos(newnode.args, node)
+        newnode.args = self.visit_arguments(node)
         return newnode
 
     def visit_list(self, node):

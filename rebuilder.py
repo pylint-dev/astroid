@@ -276,7 +276,7 @@ class RebuildVisitor(ASTVisitor):
         newnode = nodes.Pass()
         return newnode
 
-    def _save_assigment(self, node, name=None):
+    def _save_assignment(self, node, name=None):
         """save assignement situation since node.parent is not available yet"""
         if self._global_names and node.name in self._global_names[-1]:
             self._assignments.append((node, node.name, True))

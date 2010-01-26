@@ -449,12 +449,12 @@ class TreeRebuilder(RebuildVisitor):
         if self.asscontext == "Del":
             newnode = new.DelName()
             newnode.name = node.id
-            self._save_assigment(newnode)
+            self._save_assignment(newnode)
         elif self.asscontext is not None: # Ass
             assert self.asscontext == "Ass"
             newnode = new.AssName()
             newnode.name = node.id
-            self._save_assigment(newnode)
+            self._save_assignment(newnode)
         else:
             newnode = new.Name()
         newnode.name = node.id
