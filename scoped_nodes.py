@@ -410,7 +410,7 @@ class Module(LocalsDictNodeNG):
     def block_range(self, lineno):
         """return block line numbers.
 
-        start from the "class" position whatever the given lineno
+        start from the beginning whatever the given lineno
         """
         return self.fromlineno, self.tolineno
 
@@ -629,7 +629,7 @@ class Function(StmtMixIn, Lambda):
     def block_range(self, lineno):
         """return block line numbers.
 
-        start from the "class" position whatever the given lineno
+        start from the "def" position whatever the given lineno
         """
         return self.fromlineno, self.tolineno
 

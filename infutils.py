@@ -232,7 +232,7 @@ class Instance(Proxy):
                 yield attr
 
     def infer_call_result(self, caller, context=None):
-        """infer what's a class instance is returning when called"""
+        """infer what a class instance is returning when called"""
         infered = False
         for node in self._proxied.igetattr('__call__', context):
             for res in node.infer_call_result(caller, context):
