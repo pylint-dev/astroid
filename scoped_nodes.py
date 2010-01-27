@@ -243,7 +243,6 @@ class LocalsDictNodeNG(LookupMixIn, NodeNG):
 
     # dictionary of locals with name as key and node defining the local as
     # value
-    locals = None
 
     def qname(self):
         """return the 'qualified' name of the node, eg module.name,
@@ -291,7 +290,6 @@ class LocalsDictNodeNG(LookupMixIn, NodeNG):
 
         if the name is already defined, ignore it
         """
-        assert self.locals is not None, (self, id(self))
         #assert not stmt in self.locals.get(name, ()), (self, stmt)
         self.locals.setdefault(name, []).append(stmt)
 
