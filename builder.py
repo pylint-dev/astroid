@@ -133,19 +133,20 @@ class ASTNGBuilder:
     def ast_build(self, node, modname='', path=None):
         """recurse on the ast (soon ng) to add some arguments at method"""
         if path is not None:
-            node.file = node.path = abspath(path)
+            node_file = abspath(path)
         else:
-            node.file = node.path = '<?>'
+            node_file = '<?>'
         if modname.endswith('.__init__'):
             modname = modname[:-9]
-            node.package = True
+            package = True
         else:
-            node.package = path and path.find('__init__.py') > -1 or False
-        node.name = modname
+            package = path and path.find('__init__.py') > -1 or False
+        node.name = modname # we need the name during the rebuilding prcess
         newnode = self.rebuilder.walk(node)
         newnode.pure_python = True
-        newnode.package = node.package
-        newnode.file = node.file
+        newnode.package = package
+        newnode.file = newnode.path = node_file
+        newnode.name = modname
         if self._manager is not None:
             self._manager._cache[newnode.file] = newnode
             if self._file:
