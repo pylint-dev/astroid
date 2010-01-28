@@ -370,9 +370,9 @@ class TreeRebuilder(RebuildVisitor):
             newnode = new.DelAttr()
         elif self.asscontext == "Ass":
             newnode = new.AssAttr()
+            self._delayed['assattr'].append(newnode)
         else:
             newnode = new.Getattr()
-        self._delayed['assattr'].append(newnode)
         asscontext, self.asscontext = self.asscontext, None
         newnode.expr = self.visit(node.value, node)
         self.asscontext = asscontext
