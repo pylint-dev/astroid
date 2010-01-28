@@ -277,7 +277,9 @@ class TreeRebuilder(RebuildVisitor):
     def visit_augassign(self, node):
         """visit an AugAssign node by returning a fresh instance of it"""
         newnode = new.AugAssign()
+        self.asscontext = "Ass"
         newnode.target = self.visit(node.node, node)
+        self.asscontext = None
         newnode.op = node.op
         newnode.value = self.visit(node.expr, node)
         return newnode
@@ -463,8 +465,8 @@ class TreeRebuilder(RebuildVisitor):
     def visit_getattr(self, node):
         """visit a Getattr node by returning a fresh instance of it"""
         newnode = new.Getattr()
-        if isinstance(self.asscontext, AugAssign):
-            newnode = new.AssAttr()
+        if self.asscontext == "Ass":# this is coming from AugAssign
+            return self.visit_assattr(node)
         newnode.expr = self.visit(node.expr, node)
         newnode.attrname = node.attrname
         return newnode
