@@ -48,7 +48,7 @@ from compiler.ast import And as _And, Or as _Or,\
      Slice as _Slice, GenExprFor as _GenExprFor
 
 from logilab.astng.utils import ASTVisitor
-from logilab.astng._exceptions import NodeRemoved, ASTNGError
+from logilab.astng._exceptions import ASTNGError
 
 from logilab.astng import nodes as new
 from logilab.astng.rebuilder import RebuildVisitor
@@ -389,17 +389,13 @@ class TreeRebuilder(RebuildVisitor):
 
     def visit_discard(self, node):
         """visit a Discard node by returning a fresh instance of it"""
+        if node.lineno is None:
+            # ignore dummy Discard introduced when a statement
+            # is ended by a semi-colon
+            return
         newnode = new.Discard()
         self.asscontext = "Dis"
         newnode.value = self.visit(node.expr, node)
-        # TODO : remove dummy Discard
-        '''
-        if node.lineno is None:
-            # remove dummy Discard introduced when a statement
-            # is ended by a semi-colon
-            newnode.parent.child_sequence(newnode).remove(newnode)
-            raise NodeRemoved
-        '''
         self.asscontext = None
         return newnode
 

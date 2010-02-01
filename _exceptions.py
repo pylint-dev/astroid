@@ -47,6 +47,4 @@ class NoDefault(ASTNGError):
 class IgnoreChild(Exception):
     """exception that maybe raised by visit methods to avoid children traversal
     """
-    
-class NodeRemoved(Exception):
-    """exception raised to interrupt the walk when a node is removed"""
+

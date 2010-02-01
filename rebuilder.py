@@ -20,7 +20,7 @@ order to get a single ASTNG representation
 :contact:   mailto:thenault@gmail.com
 """
 
-from logilab.astng import ASTNGBuildingException, InferenceError, NodeRemoved
+from logilab.astng import ASTNGBuildingException, InferenceError
 from logilab.astng import nodes
 from logilab.astng.utils import ASTVisitor, REDIRECT
 from logilab.astng.infutils import YES, Instance
@@ -65,10 +65,7 @@ class RebuildVisitor(ASTVisitor):
         _method_suffix = REDIRECT.get(cls_name, cls_name).lower()
 
         _visit = getattr(self, "visit_%s" % _method_suffix )
-        try:
-            newnode = _visit(node)
-        except NodeRemoved:
-            return
+        newnode = _visit(node)
         if newnode is None:
             return
         self.set_infos(newnode, node)
