@@ -110,9 +110,6 @@ class RebuildVisitor(ASTVisitor):
             delay_method = getattr(self, 'delayed_' + name)
             for node in nodes:
                 delay_method(node)
-        delay_assattr = self.delayed_assattr
-        for node in self._delayed['assattr']:
-            delay_assattr(node)
         for assnode, name, root_local in self._assignments:
             if root_local:
                 assnode.root().set_local(name, assnode)
@@ -121,6 +118,10 @@ class RebuildVisitor(ASTVisitor):
                 # print assnode, id(assnode)
                 if assnode.parent is not None:
                     assnode.parent.set_local(name, assnode)
+
+        delay_assattr = self.delayed_assattr
+        for node in self._delayed['assattr']:
+            delay_assattr(node)
         return newnode
 
     def _save_argument_name(self, node):
