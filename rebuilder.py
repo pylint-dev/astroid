@@ -60,7 +60,6 @@ class RebuildVisitor(ASTVisitor):
         self._delayed_assattr = []
         self.set_line_info = (ast_mode == '_ast')
         self._ast_mode = (ast_mode == '_ast')
-        self._assignments = []
 
     def visit(self, node, parent):
         if node is None: # some attributes of some nodes are just None
@@ -104,13 +103,6 @@ class RebuildVisitor(ASTVisitor):
         """start the walk down the tree and do some work after it"""
         newnode = self.visit(node, None)
         _check_children(newnode) # FIXME : remove this asap
-        for assnode, name, root_local in self._assignments:
-            if root_local:
-                assnode.root().set_local(name, assnode)
-            else:
-                # _check_children(assnode)
-                if assnode.parent is not None:
-                    assnode.parent.set_local(name, assnode)
 
         # handle delayed assattr nodes
         delay_assattr = self.delayed_assattr
@@ -119,11 +111,11 @@ class RebuildVisitor(ASTVisitor):
         return newnode
 
     def _save_argument_name(self, node):
-        """save argument names for setting locals"""
+        """save argument names in locals"""
         if node.vararg:
-            self._assignments.append((node, node.vararg, False))
+            node.parent.set_local(node.vararg, node)
         if node.kwarg:
-            self._assignments.append((node, node.kwarg, False))
+            node.parent.set_local(node.kwarg, node)
 
 
     # visit_<node> and delayed_<node> methods #################################
@@ -243,10 +235,10 @@ class RebuildVisitor(ASTVisitor):
         return newnode
 
     def _save_import_locals(self, newnode):
-        """save import names to set them in locals later on"""
+        """save import names in parent's locals"""
         for (name, asname) in newnode.names:
             name = asname or name
-            self._assignments.append( (newnode, name.split('.')[0], False) )
+            newnode.parent.set_local(name.split('.')[0], newnode)
 
     def visit_module(self, node, parent):
         """visit an Module node to become astng"""
@@ -264,9 +256,9 @@ class RebuildVisitor(ASTVisitor):
     def _save_assignment(self, node, name=None):
         """save assignement situation since node.parent is not available yet"""
         if self._global_names and node.name in self._global_names[-1]:
-            self._assignments.append((node, node.name, True))
+            node.root().set_local(node.name, node)
         else:
-            self._assignments.append((node, node.name, False))
+            node.parent.set_local(node.name, node)
 
     def delayed_assattr(self, node):
         """visit a AssAttr node -> add name to locals, handle members
