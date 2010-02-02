@@ -54,8 +54,9 @@ from logilab.astng import nodes as new
 from logilab.astng.rebuilder import RebuildVisitor
 
 
-class BaseClass: pass
-
+CONST_NAME_TRANSFORMS = {'None':  None,
+                         'True':  True,
+                         'False': False}
 
 # introduced in python 2.5
 From.level = 0 # will be overridden by instance attribute with py>=2.5
@@ -548,8 +549,10 @@ class TreeRebuilder(RebuildVisitor):
         newnode.name = node.name
         return newnode
 
-    def _visit_name(self, node, parent):
+    def visit_name(self, node, parent):
         """visit a Name node by returning a fresh instance of it"""
+        if node.name in CONST_NAME_TRANSFORMS:
+            return new.Const(CONST_NAME_TRANSFORMS[node.name])
         if self.asscontext == "Aug":
             newnode = new.AssName()
         else:

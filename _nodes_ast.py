@@ -448,20 +448,19 @@ class TreeRebuilder(RebuildVisitor):
         newnode.name = node.name
         return newnode
 
-    def _visit_name(self, node, parent):
+    def visit_name(self, node, parent):
         """visit a Name node by returning a fresh instance of it"""
         if self.asscontext == "Del":
             newnode = new.DelName()
-            newnode.name = node.id
-            self._save_assignment(newnode)
         elif self.asscontext is not None: # Ass
             assert self.asscontext == "Ass"
             newnode = new.AssName()
-            newnode.name = node.id
-            self._save_assignment(newnode)
         else:
             newnode = new.Name()
         newnode.name = node.id
+        # XXX REMOVE me :
+        if self.asscontext in ('Del', 'Ass'): # 'Aug' ??
+            self._save_assignment(newnode)
         return newnode
 
     def visit_num(self, node, parent):

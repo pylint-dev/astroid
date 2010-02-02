@@ -26,9 +26,6 @@ from logilab.astng.utils import ASTVisitor, REDIRECT
 from logilab.astng.infutils import YES, Instance
 
 
-CONST_NAME_TRANSFORMS = {'None':  None,
-                         'True':  True,
-                         'False': False}
 
 def _check_children(node):
     """a helper function to check children - parent relations"""
@@ -59,8 +56,6 @@ class RebuildVisitor(ASTVisitor):
     def visit(self, node, parent):
         if node is None: # some attributes of some nodes are just None
             return None
-        # TODO : parent is never used; replace by newparent ? Could
-        #        replace set_infos or simplify some other cases ?
         cls_name = node.__class__.__name__
         _method_suffix = REDIRECT.get(cls_name, cls_name).lower()
 
@@ -256,13 +251,6 @@ class RebuildVisitor(ASTVisitor):
         self._metaclass = ['']
         self._global_names = []
         return self._visit_module(node, parent)
-
-    def visit_name(self, node, parent):
-        """visit an Name node to become astng"""
-        newnode = self._visit_name(node, parent)
-        if newnode.name in CONST_NAME_TRANSFORMS:
-            return nodes.Const(CONST_NAME_TRANSFORMS[newnode.name])
-        return newnode
 
     def visit_pass(self, node, parent):
         """visit a Pass node by returning a fresh instance of it"""
