@@ -769,6 +769,12 @@ def _iface_hdlr(iface_node):
 
 class Class(StmtMixIn, LocalsDictNodeNG):
 
+    # some of the attributes below are set by the builder module or
+    # by a raw factories
+
+    # a dictionary of class instances attributes
+    instance_attrs = None
+
     is_class_node = True # only True for Class nodes
     special_attributes = set(('__name__', '__doc__', '__dict__', '__module__',
                               '__bases__', '__mro__'))
@@ -838,12 +844,7 @@ class Class(StmtMixIn, LocalsDictNodeNG):
             frame = self
         return frame._scope_lookup(node, name, offset)
 
-    # attributes below are set by the builder module or by raw factories
-
-    # a dictionary of class instances attributes
-    instance_attrs = None
-
-    # list of parent class as a list of string (i.e. names as they appears
+    # list of parent class as a list of string (i.e. names as they appear
     # in the class definition) XXX bw compat
     def basenames(self):
         return [as_string(bnode) for bnode in self.bases]
