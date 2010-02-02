@@ -71,18 +71,19 @@ class RebuildVisitor(ASTVisitor):
         # some nodes are created by the TreeRebuilder without going through
         # the visit method; hence we have to set infos explicitly at different
         # places
-        child = None
-        for child in newnode.get_children():
-            if child is not None:
-                child.parent = newnode
-            else:
-                print "newnode %s has None as child" % newnode
         # line info setting
         # XXX We don't necessarily get the same type of node back as Rebuilding
         # inserts nodes of different type and returns them... Is it a problem ?
         if hasattr(oldnode, 'lineno'):
             newnode.lineno = oldnode.lineno
         if self.set_line_info: # _ast
+            # TODO (): set line_info after visiting last child of each
+            # concrete class
+            children = list(newnode.get_children())
+            if children:
+                child = children[-1]
+            else:
+                child = None
             newnode.set_line_info(child)
         else: # compiler
             if hasattr(oldnode, 'fromlineno'):
@@ -168,16 +169,22 @@ class RebuildVisitor(ASTVisitor):
     def visit_const(self, node, parent):
         """visit a Const node by returning a fresh instance of it"""
         newnode = nodes.Const(node.value)
+        newnode.parent = parent
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_continue(self, node, parent):
         """visit a Continue node by returning a fresh instance of it"""
         newnode = nodes.Continue()
+        newnode.parent = parent
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_decorators(self, node, parent):
         """visiting an Decorators node"""
         newnode = self._visit_decorators(node, parent)
+        newnode.parent = parent
+        self._set_infos(node, newnode, parent)
         self._delayed['decorators'].append(newnode)
         return newnode
 
@@ -193,11 +200,15 @@ class RebuildVisitor(ASTVisitor):
     def visit_ellipsis(self, node, parent):
         """visit an Ellipsis node by returning a fresh instance of it"""
         newnode = nodes.Ellipsis()
+        newnode.parent = parent
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_emptynode(self, node, parent):
         """visit an EmptyNode node by returning a fresh instance of it"""
         newnode = nodes.EmptyNode()
+        newnode.parent = parent
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def delayed_from(self, node):
@@ -235,6 +246,8 @@ class RebuildVisitor(ASTVisitor):
     def visit_global(self, node, parent):
         """visit an Global node to become astng"""
         newnode = nodes.Global(node.names)
+        newnode.parent = parent
+        self._set_infos(node, newnode, parent)
         if self._global_names: # global at the module level, no effect
             for name in node.names:
                 self._global_names[-1].setdefault(name, []).append(newnode)
@@ -255,6 +268,8 @@ class RebuildVisitor(ASTVisitor):
     def visit_pass(self, node, parent):
         """visit a Pass node by returning a fresh instance of it"""
         newnode = nodes.Pass()
+        newnode.parent = parent
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def _save_assignment(self, node, name=None):
@@ -300,15 +315,4 @@ class RebuildVisitor(ASTVisitor):
         except InferenceError:
             pass
 
-    # --- additional methods ----
-
-    def _build_excepthandler(self, node, exctype, excobj, body):
-        newnode = nodes.ExceptHandler()
-        newnode.type = self.visit(exctype, node)
-        self.asscontext = "Ass"
-        newnode.name = self.visit(excobj, node)
-        self.asscontext = None
-        newnode.body = [self.visit(child, node) for child in body]
-        self.set_infos(newnode, node)
-        return newnode
 
