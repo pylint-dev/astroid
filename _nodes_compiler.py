@@ -191,13 +191,14 @@ class TreeRebuilder(RebuildVisitor):
         for arg in values:
             if isinstance(arg, (tuple, list)):
                 n = new.Tuple()
+                self._set_infos(parent, n, parent)
                 n.elts = self._nodify_args(n, arg)
             else:
-                n = new.AssName()
                 assert isinstance(arg, basestring)
+                n = new.AssName()
+                self._set_infos(parent, n, parent)
                 n.name = arg
                 self._save_assignment(n, n.name)
-            self._set_infos(parent, n, parent)
             res.append(n)
         return res
 
@@ -213,8 +214,8 @@ class TreeRebuilder(RebuildVisitor):
         else:
             vararg = None
         newnode = new.Arguments(vararg, kwarg)
-        newnode.args = self._nodify_args(newnode, node.argnames)
         self._set_infos(node, newnode, parent)
+        newnode.args = self._nodify_args(newnode, node.argnames)
         self._save_argument_name(newnode)
         newnode.defaults = [self.visit(child, newnode) for child in node.defaults]
         self.set_infos(newnode,node)
