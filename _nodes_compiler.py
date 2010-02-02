@@ -221,13 +221,13 @@ class TreeRebuilder(RebuildVisitor):
         if delnode:
             return delnode
         elif self.asscontext == "Del":
-            newnode = self.visit_delattr(node, parent)
-        elif self.asscontext == "Ass":
+            return self.visit_delattr(node, parent)
+        elif self.asscontext in ("Ass", "Aug"):
             newnode = new.AssAttr()
             newnode.expr = self.visit(node.expr, node)
             newnode.attrname = node.attrname
             self._delayed['assattr'].append(newnode)
-        return newnode
+            return newnode
 
     def visit_assname(self, node, parent):
         """visit an AssName node by returning a fresh instance of it"""
@@ -235,14 +235,13 @@ class TreeRebuilder(RebuildVisitor):
         if delnode:
             return delnode
         elif self.asscontext == "Del":
-            newnode = self.visit_delname(node, parent)
-            self._save_assignment(newnode)
-        elif self.asscontext == "Ass":
+            return self.visit_delname(node, parent)
+        elif self.asscontext in ("Ass", "Aug"):
             assert node.flags == 'OP_ASSIGN'
             newnode = new.AssName()
             newnode.name = node.name
             self._save_assignment(newnode)
-        return newnode
+            return newnode
 
     def visit_assert(self, node, parent):
         """visit an Assert node by returning a fresh instance of it"""
@@ -256,8 +255,8 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.Assign()
         self.asscontext = 'Ass'
         newnode.targets = [self.visit(child, node) for child in node.nodes]
-        newnode.value = self.visit(node.expr, node)
         self.asscontext = None
+        newnode.value = self.visit(node.expr, node)
         self._delayed['assign'].append(newnode)
         return newnode
 
@@ -278,7 +277,7 @@ class TreeRebuilder(RebuildVisitor):
     def visit_augassign(self, node, parent):
         """visit an AugAssign node by returning a fresh instance of it"""
         newnode = new.AugAssign()
-        self.asscontext = "Ass"
+        self.asscontext = "Aug"
         newnode.target = self.visit(node.node, node)
         self.asscontext = None
         newnode.op = node.op
@@ -379,6 +378,8 @@ class TreeRebuilder(RebuildVisitor):
         """visit a DelName node by returning a fresh instance of it"""
         newnode = new.DelName()
         newnode.name = node.name
+        # XXX _save_assignment
+        self._save_assignment(newnode)
         return newnode
 
     def visit_dict(self, node, parent):
@@ -462,7 +463,7 @@ class TreeRebuilder(RebuildVisitor):
     def visit_getattr(self, node, parent):
         """visit a Getattr node by returning a fresh instance of it"""
         newnode = new.Getattr()
-        if self.asscontext == "Ass":# this is coming from AugAssign
+        if self.asscontext == "Aug":
             return self.visit_assattr(node, parent)
         newnode.expr = self.visit(node.expr, node)
         newnode.attrname = node.attrname
@@ -549,8 +550,8 @@ class TreeRebuilder(RebuildVisitor):
 
     def _visit_name(self, node, parent):
         """visit a Name node by returning a fresh instance of it"""
-        if isinstance(self.asscontext, AugAssign):
-            newnode = AssName()
+        if self.asscontext == "Aug":
+            newnode = new.AssName()
         else:
            newnode = new.Name()
         newnode.name = node.name
@@ -622,7 +623,7 @@ class TreeRebuilder(RebuildVisitor):
             if len(node.subs) == 1: # Sliceobj -> new.Slice
                 newnode.slice = self.visit_sliceobj(node.subs[0], parent)
             else: # ExtSlice
-                newnode.slice = self.visit_extslice(node), parent
+                newnode.slice = self.visit_extslice(node, parent)
         else: # Index
             newnode.slice = self.visit_index(node, parent)
         return newnode

@@ -118,7 +118,6 @@ class RebuildVisitor(ASTVisitor):
 
         delay_assattr = self.delayed_assattr
         for node in self._delayed['assattr']:
-            print "delayed", node
             delay_assattr(node)
         return newnode
 
