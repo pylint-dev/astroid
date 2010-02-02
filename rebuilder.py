@@ -65,7 +65,7 @@ class RebuildVisitor(ASTVisitor):
         _method_suffix = REDIRECT.get(cls_name, cls_name).lower()
 
         _visit = getattr(self, "visit_%s" % _method_suffix )
-        newnode = _visit(node)
+        newnode = _visit(node, parent)
         if newnode is None:
             return
         self.set_infos(newnode, node)
@@ -118,6 +118,7 @@ class RebuildVisitor(ASTVisitor):
 
         delay_assattr = self.delayed_assattr
         for node in self._delayed['assattr']:
+            print "delayed", node
             delay_assattr(node)
         return newnode
 
@@ -130,11 +131,6 @@ class RebuildVisitor(ASTVisitor):
 
 
     # visit_<node> and delayed_<node> methods #################################
-
-    def visit_assign(self, node):
-        newnode = self._visit_assign(node)
-        self._delayed['assign'].append(newnode)
-        return newnode
 
     def delayed_assign(self, newnode):
         klass = newnode.parent.frame()
@@ -159,10 +155,10 @@ class RebuildVisitor(ASTVisitor):
             self._metaclass[-1] = 'type' # XXX get the actual metaclass
         return newnode
 
-    def visit_class(self, node):
+    def visit_class(self, node, parent):
         """visit a Class node to become astng"""
         self._metaclass.append(self._metaclass[-1])
-        newnode = self._visit_class(node)
+        newnode = self._visit_class(node, parent)
         newnode.name = node.name
         metaclass = self._metaclass.pop()
         if not newnode.bases:
@@ -175,19 +171,19 @@ class RebuildVisitor(ASTVisitor):
     def delayed_class(self, node):
         node.parent.frame().set_local(node.name, node)
 
-    def visit_const(self, node):
+    def visit_const(self, node, parent):
         """visit a Const node by returning a fresh instance of it"""
         newnode = nodes.Const(node.value)
         return newnode
 
-    def visit_continue(self, node):
+    def visit_continue(self, node, parent):
         """visit a Continue node by returning a fresh instance of it"""
         newnode = nodes.Continue()
         return newnode
 
-    def visit_decorators(self, node):
+    def visit_decorators(self, node, parent):
         """visiting an Decorators node"""
-        newnode = self._visit_decorators(node)
+        newnode = self._visit_decorators(node, parent)
         self._delayed['decorators'].append(newnode)
         return newnode
 
@@ -200,12 +196,12 @@ class RebuildVisitor(ASTVisitor):
                    decorator_expr.name in ('classmethod', 'staticmethod'):
                 node.parent.type = decorator_expr.name
 
-    def visit_ellipsis(self, node):
+    def visit_ellipsis(self, node, parent):
         """visit an Ellipsis node by returning a fresh instance of it"""
         newnode = nodes.Ellipsis()
         return newnode
 
-    def visit_emptynode(self, node):
+    def visit_emptynode(self, node, parent):
         """visit an EmptyNode node by returning a fresh instance of it"""
         newnode = nodes.EmptyNode()
         return newnode
@@ -224,10 +220,10 @@ class RebuildVisitor(ASTVisitor):
             else:
                 node.parent.set_local(asname or name, node)
 
-    def visit_function(self, node):
+    def visit_function(self, node, parent):
         """visit an Function node to become astng"""
         self._global_names.append({})
-        newnode = self._visit_function(node)
+        newnode = self._visit_function(node, parent)
         self._delayed['function'].append(newnode)
         newnode.name = node.name
         self._global_names.pop()
@@ -242,7 +238,7 @@ class RebuildVisitor(ASTVisitor):
                 newnode.type = 'method'
         frame.set_local(newnode.name, newnode)
 
-    def visit_global(self, node):
+    def visit_global(self, node, parent):
         """visit an Global node to become astng"""
         newnode = nodes.Global(node.names)
         if self._global_names: # global at the module level, no effect
@@ -256,20 +252,20 @@ class RebuildVisitor(ASTVisitor):
             name = asname or name
             self._assignments.append( (newnode, name.split('.')[0], False) )
 
-    def visit_module(self, node):
+    def visit_module(self, node, parent):
         """visit an Module node to become astng"""
         self._metaclass = ['']
         self._global_names = []
-        return self._visit_module(node)
+        return self._visit_module(node, parent)
 
-    def visit_name(self, node):
+    def visit_name(self, node, parent):
         """visit an Name node to become astng"""
-        newnode = self._visit_name(node)
+        newnode = self._visit_name(node, parent)
         if newnode.name in CONST_NAME_TRANSFORMS:
             return nodes.Const(CONST_NAME_TRANSFORMS[newnode.name])
         return newnode
 
-    def visit_pass(self, node):
+    def visit_pass(self, node, parent):
         """visit a Pass node by returning a fresh instance of it"""
         newnode = nodes.Pass()
         return newnode
