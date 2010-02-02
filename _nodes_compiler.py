@@ -510,18 +510,16 @@ class TreeRebuilder(RebuildVisitor):
         newnode.body = [self.visit(child, newnode) for child in body.nodes]
         for test, body in node.tests[1:]:# this represents 'elif'
             # create successively If nodes and put it in orelse of the previous
-            parent, subnode = subnode, new.If()
-            subnode.parent = parent
+            subparent, subnode = subnode, new.If()
+            self._set_infos(node, subnode, subparent)
             subnode.fromlineno = node.tests[1][0].fromlineno
             subnode.tolineno = node.tests[1][1].nodes[-1].tolineno
             subnode.blockstart_tolineno = node.tests[1][0].tolineno
-            subnode.test = self.visit(test, 0)
-            subnode.body = [self.visit(child, 0) for child in body.nodes]
-            parent.orelse = [subnode]
-            self.set_infos(parent,node)
+            subnode.test = self.visit(test, subnode)
+            subnode.body = [self.visit(child, subnode) for child in body.nodes]
+            subparent.orelse = [subnode]
         # the last subnode gets the else block:
-        subnode.orelse = self._init_else_node(node, newnode)
-        self.set_infos(subnode,node)
+        subnode.orelse = self._init_else_node(node, subnode)
         return newnode
 
     def visit_ifexp(self, node, parent):
@@ -592,7 +590,9 @@ class TreeRebuilder(RebuildVisitor):
     def visit_name(self, node, parent):
         """visit a Name node by returning a fresh instance of it"""
         if node.name in CONST_NAME_TRANSFORMS:
-            return new.Const(CONST_NAME_TRANSFORMS[node.name])
+            newnode = new.Const(CONST_NAME_TRANSFORMS[node.name])
+            self._set_infos(node, newnode, parent)
+            return newnode
         if self.asscontext == "Aug":
             newnode = new.AssName()
         else:
@@ -642,8 +642,8 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.Subscript()
         self._set_infos(node, newnode, parent)
         newnode.value = self.visit(node.expr, newnode)
-        newnode.slice = self.visit_sliceobj(node, parent, slice=True)
-        self.set_infos(newnode,node)
+        newnode.slice = self.visit_sliceobj(node, newnode, slice=True)
+        #{ self.set_infos(newnode,node)
         return newnode
 
     def visit_sliceobj(self, node, parent, slice=False):
@@ -659,7 +659,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.lower = self.visit(_filter_none(subs[0]), newnode)
         newnode.upper = self.visit(_filter_none(subs[1]), newnode)
         newnode.step = self.visit(_filter_none(subs[2]), newnode)
-        self.set_infos(newnode,node)
+        # self.set_infos(newnode,node)
         return newnode
 
     def visit_subscript(self, node, parent):
@@ -672,11 +672,11 @@ class TreeRebuilder(RebuildVisitor):
         newnode.value = self.visit(node.expr, newnode)
         if [n for n in node.subs if isinstance(n, Sliceobj)]:
             if len(node.subs) == 1: # Sliceobj -> new.Slice
-                newnode.slice = self.visit_sliceobj(node.subs[0], parent)
+                newnode.slice = self.visit_sliceobj(node.subs[0], newnode)
             else: # ExtSlice
-                newnode.slice = self.visit_extslice(node, parent)
+                newnode.slice = self.visit_extslice(node, newnode)
         else: # Index
-            newnode.slice = self.visit_index(node, parent)
+            newnode.slice = self.visit_index(node, newnode)
         return newnode
 
     def visit_tryexcept(self, node, parent):
@@ -745,7 +745,7 @@ class TreeRebuilder(RebuildVisitor):
 
     def visit_yield(self, node, parent):
         """visit a Yield node by returning a fresh instance of it"""
-        discard = self._check_discard(node)
+        discard = self._check_discard(node, parent)
         if discard:
             return discard
         newnode = new.Yield()
@@ -753,7 +753,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.value = self.visit(node.value, newnode)
         return newnode
 
-    def _check_discard(self,node):
+    def _check_discard(self, node, parent):
         """check if we introduced already a discard node."""
         if self.asscontext is None:
             self.asscontext = 'Dis'
