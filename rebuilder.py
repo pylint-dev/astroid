@@ -30,6 +30,10 @@ from logilab.astng.infutils import YES, Instance
 def _check_children(node):
     """a helper function to check children - parent relations"""
     for child in node.get_children():
+        ok = False
+        if child is None:
+            print "Hm, child of %s is None" % node 
+            continue
         if not hasattr(child, 'parent'):
             print " ERROR: %s has child %s %x with no parent" % (node, child, id(child))
         elif not child.parent:
@@ -37,6 +41,12 @@ def _check_children(node):
         elif child.parent is not node:
             print " ERROR: %s %x has child %s %x with wrong parent %s" % (node,
                                       id(node), child, id(child), child.parent)
+        else:
+            ok = True
+        if not ok:
+            print "lines;", node.lineno, child.lineno
+            print "of module", node.root(), node.root().name
+            raise ASTNGBuildingException
         _check_children(child)
 
 
@@ -47,8 +57,7 @@ class RebuildVisitor(ASTVisitor):
         self.asscontext = None
         self._metaclass = None
         self._global_names = None
-        self._delayed = dict((name, []) for name in ('class', 'function',
-                              'assattr', 'assign', 'decorators', 'from'))
+        self._delayed_assattr = []
         self.set_line_info = (ast_mode == '_ast')
         self._ast_mode = (ast_mode == '_ast')
         self._assignments = []
@@ -95,25 +104,17 @@ class RebuildVisitor(ASTVisitor):
         """start the walk down the tree and do some work after it"""
         newnode = self.visit(node, None)
         _check_children(newnode) # FIXME : remove this asap
-        # handle delayed nodes; assattr has to be done at last since it needs
-        # some inference which is only possible once the node.locals set
-        for name, nodes in self._delayed.items():
-            if name == 'assattr':
-                continue
-            delay_method = getattr(self, 'delayed_' + name)
-            for node in nodes:
-                delay_method(node)
         for assnode, name, root_local in self._assignments:
             if root_local:
                 assnode.root().set_local(name, assnode)
             else:
                 # _check_children(assnode)
-                # print assnode, id(assnode)
                 if assnode.parent is not None:
                     assnode.parent.set_local(name, assnode)
 
+        # handle delayed assattr nodes
         delay_assattr = self.delayed_assattr
-        for node in self._delayed['assattr']:
+        for node in self._delayed_assattr:
             delay_assattr(node)
         return newnode
 
@@ -127,7 +128,8 @@ class RebuildVisitor(ASTVisitor):
 
     # visit_<node> and delayed_<node> methods #################################
 
-    def delayed_assign(self, newnode):
+    def _set_assign_infos(self, newnode):
+        """set some function or metaclass infos""" # XXX right ?
         klass = newnode.parent.frame()
         if (isinstance(klass, nodes.Class)
             and isinstance(newnode.value, nodes.CallFunc)
@@ -148,7 +150,6 @@ class RebuildVisitor(ASTVisitor):
         elif getattr(newnode.targets[0], 'name', None) == '__metaclass__':
             # XXX check more...
             self._metaclass[-1] = 'type' # XXX get the actual metaclass
-        return newnode
 
     def visit_class(self, node, parent):
         """visit a Class node to become astng"""
@@ -160,11 +161,8 @@ class RebuildVisitor(ASTVisitor):
             # no base classes, detect new / style old style according to
             # current scope
             newnode._newstyle = metaclass == 'type'
-        self._delayed['class'].append(newnode)
+        newnode.parent.frame().set_local(newnode.name, newnode)
         return newnode
-
-    def delayed_class(self, node):
-        node.parent.frame().set_local(node.name, node)
 
     def visit_const(self, node, parent):
         """visit a Const node by returning a fresh instance of it"""
@@ -185,17 +183,11 @@ class RebuildVisitor(ASTVisitor):
         newnode = self._visit_decorators(node, parent)
         newnode.parent = parent
         self._set_infos(node, newnode, parent)
-        self._delayed['decorators'].append(newnode)
-        return newnode
-
-    def delayed_decorators(self, node):
-        """python >= 2.4
-        visit a Decorator node -> check for classmethod and staticmethod
-        """
-        for decorator_expr in node.nodes:
+        for decorator_expr in newnode.nodes:
             if isinstance(decorator_expr, nodes.Name) and \
                    decorator_expr.name in ('classmethod', 'staticmethod'):
-                node.parent.type = decorator_expr.name
+                newnode.parent.type = decorator_expr.name
+        return newnode
 
     def visit_ellipsis(self, node, parent):
         """visit an Ellipsis node by returning a fresh instance of it"""
@@ -211,7 +203,7 @@ class RebuildVisitor(ASTVisitor):
         self._set_infos(node, newnode, parent)
         return newnode
 
-    def delayed_from(self, node):
+    def _add_from_names_to_locals(self, node):
         """visit an From node to become astng"""
         # add names imported by the import to locals
         for (name, asname) in node.names:
@@ -229,12 +221,8 @@ class RebuildVisitor(ASTVisitor):
         """visit an Function node to become astng"""
         self._global_names.append({})
         newnode = self._visit_function(node, parent)
-        self._delayed['function'].append(newnode)
         newnode.name = node.name
         self._global_names.pop()
-        return newnode
-
-    def delayed_function(self, newnode):
         frame = newnode.parent.frame()
         if isinstance(frame, nodes.Class):
             if newnode.name == '__new__':
@@ -242,6 +230,7 @@ class RebuildVisitor(ASTVisitor):
             else:
                 newnode.type = 'method'
         frame.set_local(newnode.name, newnode)
+        return newnode
 
     def visit_global(self, node, parent):
         """visit an Global node to become astng"""

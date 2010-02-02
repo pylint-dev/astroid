@@ -233,7 +233,7 @@ class TreeRebuilder(RebuildVisitor):
             self._set_infos(node, newnode, parent)
             newnode.expr = self.visit(node.expr, newnode)
             newnode.attrname = node.attrname
-            self._delayed['assattr'].append(newnode)
+            self._delayed_assattr.append(newnode)
             return newnode
 
     def visit_assname(self, node, parent):
@@ -267,7 +267,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.targets = [self.visit(child, newnode) for child in node.nodes]
         self.asscontext = None
         newnode.value = self.visit(node.expr, newnode)
-        self._delayed['assign'].append(newnode)
+        self._set_assign_infos(newnode)
         return newnode
 
     def visit_asslist(self, node, parent):
@@ -467,9 +467,8 @@ class TreeRebuilder(RebuildVisitor):
         """visit a From node by returning a fresh instance of it"""
         newnode = new.From(node.modname, node.names)
         self._set_infos(node, newnode, parent)
-        self._delayed['from'].append(newnode)
+        self._add_from_names_to_locals(newnode)
         return newnode
-
 
     def _visit_function(self, node, parent):
         """visit a Function node by returning a fresh instance of it"""
@@ -583,8 +582,8 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.Module()
         self._set_infos(node, newnode, parent)
         newnode.doc = node.doc
-        newnode.body = [self.visit(child, newnode) for child in node.node.nodes]
         newnode.name = node.name
+        newnode.body = [self.visit(child, newnode) for child in node.node.nodes]
         return newnode
 
     def visit_name(self, node, parent):

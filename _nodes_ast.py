@@ -191,7 +191,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.parent = parent
         newnode.expr = self.visit(node.expr, newnode)
         self.asscontext = assc
-        self._delayed['assattr'].append(newnode)
+        self._delayed_assattr.append(newnode)
         return newnode
 
     def visit_assert(self, node, parent):
@@ -210,7 +210,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.targets = [self.visit(child, newnode) for child in node.targets]
         self.asscontext = None
         newnode.value = self.visit(node.value, newnode)
-        self._delayed['assign'].append(newnode)
+        self._set_assign_infos(newnode)
         return newnode
 
     def visit_augassign(self, node, parent):
@@ -302,7 +302,6 @@ class TreeRebuilder(RebuildVisitor):
         newnode.parent = parent
         newnode.nodes = [self.visit(child, newnode) for child in node.decorators]
         self.set_infos(newnode, node)
-        self._delayed['decorators'].append(newnode)
         return newnode
 
     def visit_delete(self, node, parent):
@@ -374,7 +373,7 @@ class TreeRebuilder(RebuildVisitor):
         names = [(alias.name, alias.asname) for alias in node.names]
         newnode = new.From(node.module, names)
         newnode.parent = parent
-        self._delayed['from'].append(newnode)
+        self._add_from_names_to_locals(newnode)
         return newnode
 
     def _visit_function(self, node, parent):
@@ -412,7 +411,7 @@ class TreeRebuilder(RebuildVisitor):
         elif self.asscontext == "Ass":
             # FIXME : maybe we should call visit_assattr ?
             newnode = new.AssAttr()
-            self._delayed['assattr'].append(newnode)
+            self._delayed_assattr.append(newnode)
         else:
             newnode = new.Getattr()
         newnode.parent = parent
@@ -492,8 +491,8 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.Module()
         newnode.parent = parent
         _init_set_doc(node, newnode)
-        newnode.body = [self.visit(child, newnode) for child in node.body]
         newnode.name = node.name
+        newnode.body = [self.visit(child, newnode) for child in node.body]
         return newnode
 
     def visit_name(self, node, parent):
