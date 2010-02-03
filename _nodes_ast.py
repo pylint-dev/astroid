@@ -165,11 +165,11 @@ from logilab.astng.rebuilder import RebuildVisitor
 class TreeRebuilder(RebuildVisitor):
     """Rebuilds the _ast tree to become an ASTNG tree"""
 
-    def _set_infos(self, oldnode, newnode, parent, lastchild=None):
+    def _set_infos(self, oldnode, newnode, parent):
         if hasattr(oldnode, 'lineno'):
             newnode.lineno = oldnode.lineno
-        if lastchild:
-            newnode.set_line_info(lastchild)
+        last = newnode.last_child()
+        newnode.set_line_info(last) # set_line_info accepts None
 
     def visit_arguments(self, node, parent):
         """visit a Arguments node by returning a fresh instance of it"""
@@ -182,6 +182,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.vararg = node.vararg
         newnode.kwarg = node.kwarg
         self._save_argument_name(newnode)
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_assattr(self, node, parent):
@@ -192,6 +193,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.expr = self.visit(node.expr, newnode)
         self.asscontext = assc
         self._delayed_assattr.append(newnode)
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_assert(self, node, parent):
@@ -200,6 +202,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.parent = parent
         newnode.test = self.visit(node.test, newnode)
         newnode.fail = self.visit(node.msg, newnode)
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_assign(self, node, parent):
@@ -211,6 +214,7 @@ class TreeRebuilder(RebuildVisitor):
         self.asscontext = None
         newnode.value = self.visit(node.value, newnode)
         self._set_assign_infos(newnode)
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_augassign(self, node, parent):
@@ -222,6 +226,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.target = self.visit(node.target, newnode)
         self.asscontext = None
         newnode.value = self.visit(node.value, newnode)
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_backquote(self, node, parent):
@@ -229,6 +234,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.Backquote()
         newnode.parent = parent
         newnode.value = self.visit(node.value, newnode)
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_binop(self, node, parent):
@@ -238,6 +244,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.left = self.visit(node.left, newnode)
         newnode.right = self.visit(node.right, newnode)
         newnode.op = _BIN_OP_CLASSES[node.op.__class__]
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_boolop(self, node, parent):
@@ -246,12 +253,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.parent = parent
         newnode.values = [self.visit(child, newnode) for child in node.values]
         newnode.op = _BOOL_OP_CLASSES[node.op.__class__]
-        return newnode
-
-    def visit_break(self, node, parent):
-        """visit a Break node by returning a fresh instance of it"""
-        newnode = new.Break()
-        newnode.parent = parent
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_callfunc(self, node, parent):
@@ -263,6 +265,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.starargs = self.visit(node.starargs, newnode)
         newnode.kwargs = self.visit(node.kwargs, newnode)
         newnode.args.extend(self.visit(child, newnode) for child in node.keywords)
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def _visit_class(self, node, parent):
@@ -272,6 +275,7 @@ class TreeRebuilder(RebuildVisitor):
         _init_set_doc(node, newnode)
         newnode.bases = [self.visit(child, newnode) for child in node.bases]
         newnode.body = [self.visit(child, newnode) for child in node.body]
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_compare(self, node, parent):
@@ -281,6 +285,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.left = self.visit(node.left, newnode)
         newnode.ops = [(_CMP_OP_CLASSES[op.__class__], self.visit(expr, newnode))
                     for (op, expr) in zip(node.ops, node.comparators)]
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_comprehension(self, node, parent):
@@ -292,6 +297,7 @@ class TreeRebuilder(RebuildVisitor):
         self.asscontext = None
         newnode.iter = self.visit(node.iter, newnode)
         newnode.ifs = [self.visit(child, newnode) for child in node.ifs]
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_decorators(self, node, parent):
@@ -301,7 +307,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.Decorators()
         newnode.parent = parent
         newnode.nodes = [self.visit(child, newnode) for child in node.decorators]
-        self.set_infos(newnode, node)
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_delete(self, node, parent):
@@ -311,6 +317,7 @@ class TreeRebuilder(RebuildVisitor):
         self.asscontext = "Del"
         newnode.targets = [self.visit(child, newnode) for child in node.targets]
         self.asscontext = None
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_dict(self, node, parent):
@@ -319,6 +326,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.parent = parent
         newnode.items = [(self.visit(key, newnode), self.visit(value, newnode))
                           for key, value in zip(node.keys, node.values)]
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_discard(self, node, parent):
@@ -326,6 +334,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.Discard()
         newnode.parent = parent
         newnode.value = self.visit(node.value, newnode)
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_excepthandler(self, node, parent):
@@ -337,7 +346,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.name = self.visit(node.name, newnode)
         self.asscontext = None
         newnode.body = [self.visit(child, newnode) for child in node.body]
-        self.set_infos(newnode, node)
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_exec(self, node, parent):
@@ -347,6 +356,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.expr = self.visit(node.body, newnode)
         newnode.globals = self.visit(node.globals, newnode)
         newnode.locals = self.visit(node.locals, newnode)
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_extslice(self, node, parent):
@@ -354,6 +364,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.ExtSlice()
         newnode.parent = parent
         newnode.dims = [self.visit(dim, newnode) for dim in node.dims]
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_for(self, node, parent):
@@ -366,6 +377,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.iter = self.visit(node.iter, newnode)
         newnode.body = [self.visit(child, newnode) for child in node.body]
         newnode.orelse = [self.visit(child, newnode) for child in node.orelse]
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_from(self, node, parent):
@@ -374,6 +386,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.From(node.module, names)
         newnode.parent = parent
         self._add_from_names_to_locals(newnode)
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def _visit_function(self, node, parent):
@@ -383,6 +396,7 @@ class TreeRebuilder(RebuildVisitor):
         _init_set_doc(node, newnode)
         newnode.args = self.visit(node.args, newnode)
         newnode.body = [self.visit(child, newnode) for child in node.body]
+        self._set_infos(node, newnode.args, parent)
         if 'decorators' in node._fields: # py < 2.6
             attr = 'decorators'
         else:
@@ -392,6 +406,7 @@ class TreeRebuilder(RebuildVisitor):
             newnode.decorators = self.visit_decorators(node, newnode)
         else:
             newnode.decorators = None
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_genexpr(self, node, parent):
@@ -400,6 +415,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.parent = parent
         newnode.elt = self.visit(node.elt, newnode)
         newnode.generators = [self.visit(child, newnode) for child in node.generators]
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_getattr(self, node, parent):
@@ -419,6 +435,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.expr = self.visit(node.value, newnode)
         self.asscontext = asscontext
         newnode.attrname = node.attr
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_if(self, node, parent):
@@ -428,6 +445,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.test = self.visit(node.test, newnode)
         newnode.body = [self.visit(child, newnode) for child in node.body]
         newnode.orelse = [self.visit(child, newnode) for child in node.orelse]
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_ifexp(self, node, parent):
@@ -437,6 +455,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.test = self.visit(node.test, newnode)
         newnode.body = self.visit(node.body, newnode)
         newnode.orelse = self.visit(node.orelse, newnode)
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_import(self, node, parent):
@@ -445,6 +464,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.parent = parent
         newnode.names = [(alias.name, alias.asname) for alias in node.names]
         self._save_import_locals(newnode)
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_index(self, node, parent):
@@ -452,6 +472,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.Index()
         newnode.parent = parent
         newnode.value = self.visit(node.value, newnode)
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_keyword(self, node, parent):
@@ -460,6 +481,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.parent = parent
         newnode.arg = node.arg
         newnode.value = self.visit(node.value, newnode)
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_lambda(self, node, parent):
@@ -468,6 +490,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.parent = parent
         newnode.args = self.visit(node.args, newnode)
         newnode.body = self.visit(node.body, newnode)
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_list(self, node, parent):
@@ -475,6 +498,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.List()
         newnode.parent = parent
         newnode.elts = [self.visit(child, newnode) for child in node.elts]
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_listcomp(self, node, parent):
@@ -484,6 +508,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.elt = self.visit(node.elt, newnode)
         newnode.generators = [self.visit(child, newnode)
                               for child in node.generators]
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def _visit_module(self, node, parent):
@@ -493,6 +518,7 @@ class TreeRebuilder(RebuildVisitor):
         _init_set_doc(node, newnode)
         newnode.name = node.name
         newnode.body = [self.visit(child, newnode) for child in node.body]
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_name(self, node, parent):
@@ -509,18 +535,21 @@ class TreeRebuilder(RebuildVisitor):
         # XXX REMOVE me :
         if self.asscontext in ('Del', 'Ass'): # 'Aug' ??
             self._save_assignment(newnode)
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_num(self, node, parent):
         """visit a a Num node by returning a fresh instance of Const"""
         newnode = new.Const(node.n)
         newnode.parent = parent
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_str(self, node, parent):
         """visit a a Str node by returning a fresh instance of Const"""
         newnode = new.Const(node.s)
         newnode.parent = parent
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_print(self, node, parent):
@@ -530,6 +559,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.nl = node.nl
         newnode.dest = self.visit(node.dest, newnode)
         newnode.values = [self.visit(child, newnode) for child in node.values]
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_raise(self, node, parent):
@@ -539,6 +569,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.type = self.visit(node.type, newnode)
         newnode.inst = self.visit(node.inst, newnode)
         newnode.tback = self.visit(node.tback, newnode)
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_return(self, node, parent):
@@ -546,6 +577,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.Return()
         newnode.parent = parent
         newnode.value = self.visit(node.value, newnode)
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_slice(self, node, parent):
@@ -555,6 +587,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.lower = self.visit(node.lower, newnode)
         newnode.upper = self.visit(node.upper, newnode)
         newnode.step = self.visit(node.step, newnode)
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_subscript(self, node, parent):
@@ -565,6 +598,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.value = self.visit(node.value, newnode)
         newnode.slice = self.visit(node.slice, newnode)
         self.asscontext = subcontext
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_tryexcept(self, node, parent):
@@ -574,6 +608,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.body = [self.visit(child, newnode) for child in node.body]
         newnode.handlers = [self.visit(child, newnode) for child in node.handlers]
         newnode.orelse = [self.visit(child, newnode) for child in node.orelse]
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_tryfinally(self, node, parent):
@@ -582,6 +617,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.parent = parent
         newnode.body = [self.visit(child, newnode) for child in node.body]
         newnode.finalbody = [self.visit(n, newnode) for n in node.finalbody]
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_tuple(self, node, parent):
@@ -589,6 +625,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.Tuple()
         newnode.parent = parent
         newnode.elts = [self.visit(child, newnode) for child in node.elts]
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_unaryop(self, node, parent):
@@ -597,6 +634,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.parent = parent
         newnode.operand = self.visit(node.operand, newnode)
         newnode.op = _UNARY_OP_CLASSES[node.op.__class__]
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_while(self, node, parent):
@@ -606,6 +644,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.test = self.visit(node.test, newnode)
         newnode.body = [self.visit(child, newnode) for child in node.body]
         newnode.orelse = [self.visit(child, newnode) for child in node.orelse]
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_with(self, node, parent):
@@ -617,6 +656,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.vars = self.visit(node.optional_vars, newnode)
         self.asscontext = None
         newnode.body = [self.visit(child, newnode) for child in node.body]
+        self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_yield(self, node, parent):
@@ -624,5 +664,6 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.Yield()
         newnode.parent = parent
         newnode.value = self.visit(node.value, newnode)
+        self._set_infos(node, newnode, parent)
         return newnode
 

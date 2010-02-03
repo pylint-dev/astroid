@@ -58,46 +58,14 @@ class RebuildVisitor(ASTVisitor):
         self._metaclass = None
         self._global_names = None
         self._delayed_assattr = []
-        self.set_line_info = (ast_mode == '_ast')
-        self._ast_mode = (ast_mode == '_ast')
 
     def visit(self, node, parent):
         if node is None: # some attributes of some nodes are just None
             return None
         cls_name = node.__class__.__name__
-        _method_suffix = REDIRECT.get(cls_name, cls_name).lower()
-
-        _visit = getattr(self, "visit_%s" % _method_suffix )
-        newnode = _visit(node, parent)
-        if newnode is None:
-            return
-        self.set_infos(newnode, node)
-        return newnode
-
-    def set_infos(self, newnode, oldnode):
-        """set parent and line number infos"""
-        # some nodes are created by the TreeRebuilder without going through
-        # the visit method; hence we have to set infos explicitly at different
-        # places
-        # line info setting
-        # XXX We don't necessarily get the same type of node back as Rebuilding
-        # inserts nodes of different type and returns them... Is it a problem ?
-        if hasattr(oldnode, 'lineno'):
-            newnode.lineno = oldnode.lineno
-        if self.set_line_info: # _ast
-            # TODO (): set line_info after visiting last child of each
-            # concrete class
-            children = list(newnode.get_children())
-            if children:
-                child = children[-1]
-            else:
-                child = None
-            newnode.set_line_info(child)
-        else: # compiler
-            if hasattr(oldnode, 'fromlineno'):
-                newnode.fromlineno = oldnode.fromlineno
-            if hasattr(oldnode, 'tolineno'):
-                newnode.tolineno = oldnode.tolineno
+        visit_name = 'visit_' + REDIRECT.get(cls_name, cls_name).lower()
+        visit_method = getattr(self, visit_name)
+        return visit_method(node, parent)
 
     def walk(self, node):
         """start the walk down the tree and do some work after it"""

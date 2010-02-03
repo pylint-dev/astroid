@@ -218,7 +218,6 @@ class TreeRebuilder(RebuildVisitor):
         newnode.args = self._nodify_args(newnode, node.argnames)
         self._save_argument_name(newnode)
         newnode.defaults = [self.visit(child, newnode) for child in node.defaults]
-        self.set_infos(newnode,node)
         self._save_argument_name(newnode)
         return newnode
 
@@ -443,7 +442,6 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.ExtSlice()
         self._set_infos(node, newnode, parent)
         newnode.dims = [self.visit(dim, newnode) for dim in node.subs]
-        self.set_infos(newnode,node)
         return newnode
 
     def visit_for(self, node, parent):
@@ -538,7 +536,6 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.Index()
         self._set_infos(node, newnode, parent)
         newnode.value = self.visit(node.subs[0], newnode)
-        self.set_infos(newnode,node)
         return newnode
 
     def visit_keyword(self, node, parent):
@@ -637,7 +634,6 @@ class TreeRebuilder(RebuildVisitor):
         self._set_infos(node, newnode, parent)
         newnode.value = self.visit(node.expr, newnode)
         newnode.slice = self.visit_sliceobj(node, newnode, slice=True)
-        #{ self.set_infos(newnode,node)
         return newnode
 
     def visit_sliceobj(self, node, parent, slice=False):
@@ -653,7 +649,6 @@ class TreeRebuilder(RebuildVisitor):
         newnode.lower = self.visit(_filter_none(subs[0]), newnode)
         newnode.upper = self.visit(_filter_none(subs[1]), newnode)
         newnode.step = self.visit(_filter_none(subs[2]), newnode)
-        # self.set_infos(newnode,node)
         return newnode
 
     def visit_subscript(self, node, parent):
@@ -693,7 +688,6 @@ class TreeRebuilder(RebuildVisitor):
         newnode.name = self.visit(excobj, newnode)
         self.asscontext = None
         newnode.body = [self.visit(child, newnode) for child in body]
-        self.set_infos(newnode,node)
         return newnode
 
     def visit_tryfinally(self, node, parent):
@@ -754,7 +748,6 @@ class TreeRebuilder(RebuildVisitor):
             newnode = new.Discard()
             self._set_infos(node, newnode, parent)
             newnode.value = self.visit(node, newnode)
-            self.set_infos(newnode,node)
             self.context = None
             return newnode
         return False
