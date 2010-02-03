@@ -156,6 +156,13 @@ class RebuildVisitor(ASTVisitor):
         newnode.parent.frame().set_local(newnode.name, newnode)
         return newnode
 
+    def visit_break(self, node, parent):
+        """visit a Break node by returning a fresh instance of it"""
+        newnode = nodes.Break()
+        newnode.parent = parent
+        self._set_infos(node, newnode, parent)
+        return newnode
+
     def visit_const(self, node, parent):
         """visit a Const node by returning a fresh instance of it"""
         newnode = nodes.Const(node.value)

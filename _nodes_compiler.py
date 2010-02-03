@@ -330,12 +330,6 @@ class TreeRebuilder(RebuildVisitor):
         newnode.op = BoolOp_OP_CLASSES[node.__class__]
         return newnode
 
-    def visit_break(self, node, parent):
-        """visit a Break node by returning a fresh instance of it"""
-        newnode = new.Break()
-        self._set_infos(node, newnode, parent)
-        return newnode
-
     def visit_callfunc(self, node, parent):
         """visit a CallFunc node by returning a fresh instance of it"""
         newnode = new.CallFunc()
