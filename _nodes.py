@@ -19,7 +19,6 @@ from __future__ import generators
 
 __docformat__ = "restructuredtext en"
 
-from itertools import imap
 
 try:
     from _ast import AST
@@ -69,6 +68,19 @@ class NodeNG(BaseClass):
                     yield elt
             else:
                 yield attr
+
+    def last_child(self):
+        """an optimized version of list(get_children())[-1]"""
+        n_dict = self.__dict__
+        for field in self._astng_fields[::-1]:
+            attr = n_dict[field]
+            if not attr: # None or empty listy / tuple
+                continue
+            if isinstance(attr, (list, tuple)):
+                return attr[-1]
+            else:
+                return attr
+        return None
 
     def parent_of(self, node):
         """return true if i'm a parent of the given node"""

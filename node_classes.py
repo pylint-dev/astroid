@@ -200,6 +200,12 @@ class Compare(NodeNG):
         for _, comparator in self.ops:
             yield comparator # we don't want the 'op'
 
+    def last_child(self):
+        """override last_child"""
+        # XXX maybe if self.ops:
+        return self.ops[-1][1]
+        #return self.left
+
 class Comprehension(NodeNG):
     """class representing a Comprehension node"""
 
@@ -255,6 +261,12 @@ class Dict(NodeNG, Instance):
         for key, value in self.items:
             yield key
             yield value
+
+    def last_child(self):
+        """override last_child"""
+        if self.items:
+            return self.items[-1][1]
+        return None
 
     def itered(self):
         return self.items[::2]
