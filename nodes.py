@@ -35,15 +35,7 @@ on From and Import :
 
 """
 
-from __future__ import generators
-
 __docformat__ = "restructuredtext en"
-
-from itertools import imap
-
-from logilab.astng._exceptions import UnresolvableName, NotFoundError, \
-                                        InferenceError, ASTNGError
-from logilab.astng.utils import REDIRECT
 
 from logilab.astng.node_classes import (Arguments, AssAttr, Assert,
     Assign, AugAssign, Backquote, BinOp, BoolOp, Break, CallFunc, Compare,
@@ -61,13 +53,10 @@ AssAttr._astng_fields = ('expr',)
 Assert._astng_fields = ('test', 'fail',)
 Assign._astng_fields = ('targets', 'value',)
 AssName._astng_fields = ()
-
 AugAssign._astng_fields = ('target', 'value',)
+Backquote._astng_fields = ('value',)
 BinOp._astng_fields = ('left', 'right',)
 BoolOp._astng_fields = ('values',)
-UnaryOp._astng_fields = ('operand',)
-
-Backquote._astng_fields = ('value',)
 Break._astng_fields = ()
 CallFunc._astng_fields = ('func', 'args', 'starargs', 'kwargs')
 Class._astng_fields = ('bases', 'body',) # name
@@ -76,21 +65,21 @@ Comprehension._astng_fields = ('target', 'iter' ,'ifs')
 Const._astng_fields = ()
 Continue._astng_fields = ()
 Decorators._astng_fields = ('nodes',)
-Delete._astng_fields = ('targets', )
 DelAttr._astng_fields = ('expr',)
+Delete._astng_fields = ('targets', )
 DelName._astng_fields = ()
 Dict._astng_fields = ('items',)
 Discard._astng_fields = ('value',)
-From._astng_fields = ()
 Ellipsis._astng_fields = ()
 EmptyNode._astng_fields = ()
 ExceptHandler._astng_fields = ('type', 'name', 'body',)
 Exec._astng_fields = ('expr', 'globals', 'locals',)
 ExtSlice._astng_fields =('dims',)
-Function._astng_fields = ('decorators', 'args', 'body')
 For._astng_fields = ('target', 'iter', 'body', 'orelse',)
-Getattr._astng_fields = ('expr',) # (former value), attr (now attrname), ctx
+From._astng_fields = ()
+Function._astng_fields = ('decorators', 'args', 'body')
 GenExpr._astng_fields = ('elt', 'generators')
+Getattr._astng_fields = ('expr',) # (former value), attr (now attrname), ctx
 Global._astng_fields = ()
 If._astng_fields = ('test', 'body', 'orelse')
 IfExp._astng_fields = ('test', 'body', 'orelse')
@@ -111,6 +100,7 @@ Subscript._astng_fields = ('value', 'slice')
 TryExcept._astng_fields = ('body', 'handlers', 'orelse',)
 TryFinally._astng_fields = ('body', 'finalbody',)
 Tuple._astng_fields = ('elts',)  # ctx
+UnaryOp._astng_fields = ('operand',)
 With._astng_fields = ('expr', 'vars', 'body')
 While._astng_fields = ('test', 'body', 'orelse',)
 Yield._astng_fields = ('value',)
