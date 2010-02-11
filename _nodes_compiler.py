@@ -243,13 +243,12 @@ class TreeRebuilder(RebuildVisitor):
             return delnode
         elif self.asscontext == "Del":
             return self.visit_delname(node, parent)
-        elif self.asscontext in ("Ass", "Aug"):
-            assert node.flags == 'OP_ASSIGN'
-            newnode = new.AssName()
-            self._set_infos(node, newnode, parent)
-            newnode.name = node.name
-            self._save_assignment(newnode)
-            return newnode
+        assert self.asscontext in ("Ass", "Aug")
+        newnode = new.AssName()
+        self._set_infos(node, newnode, parent)
+        newnode.name = node.name
+        self._save_assignment(newnode)
+        return newnode
 
     def visit_assert(self, node, parent):
         """visit an Assert node by returning a fresh instance of it"""
@@ -282,7 +281,6 @@ class TreeRebuilder(RebuildVisitor):
         if delnode:
             return delnode
         return self.visit_tuple(node, parent)
-            
 
     def visit_augassign(self, node, parent):
         """visit an AugAssign node by returning a fresh instance of it"""
@@ -394,8 +392,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.DelName()
         self._set_infos(node, newnode, parent)
         newnode.name = node.name
-        # XXX _save_assignment
-        self._save_assignment(newnode)
+        self._save_assignment(newnode) # ???
         return newnode
 
     def visit_dict(self, node, parent):
@@ -585,9 +582,8 @@ class TreeRebuilder(RebuildVisitor):
             self._set_infos(node, newnode, parent)
             return newnode
         if self.asscontext == "Aug":
-            newnode = new.AssName()
-        else:
-           newnode = new.Name()
+            return self.visit_assname(node, parent)
+        newnode = new.Name()
         self._set_infos(node, newnode, parent)
         newnode.name = node.name
         return newnode
