@@ -395,8 +395,7 @@ class Module(LocalsDictNodeNG):
 
     def __init__(self, body=None):
         self.body = body or []
-        self.globals = {}
-        self.locals = {}
+        self.locals = self.globals = {}
 
     # Module is not a Statement node but needs the replace method (see StmtMixIn)
     def replace(self, child, newchild):
