@@ -19,7 +19,8 @@ from os.path import join, abspath, dirname
 from logilab.common.testlib import TestCase, unittest_main
 from pprint import pprint
 
-from logilab.astng import builder, nodes, patchcomptransformer, MANAGER, InferenceError
+from logilab.astng import builder, nodes, patchcomptransformer, MANAGER, \
+                          InferenceError, NotFoundError
 from logilab.astng.nodes import Module
 from logilab.astng.infutils import YES
 from logilab.astng.nodes_as_string import as_string
@@ -406,7 +407,7 @@ def global_no_effect():
         self.assertIsInstance(astng.getattr('CSTE')[0], nodes.AssName)
         self.failUnlessEqual(astng.getattr('CSTE')[0].fromlineno, 2)
         self.failUnlessEqual(astng.getattr('CSTE')[1].fromlineno, 6)
-        self.assertRaises(nodes.NotFoundError,
+        self.assertRaises(NotFoundError,
                           astng.getattr, 'CSTE2')
         self.assertRaises(InferenceError,
                           astng['global_no_effect'].ilookup('CSTE2').next)
