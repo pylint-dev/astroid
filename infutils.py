@@ -222,12 +222,8 @@ class Instance(Proxy):
                 if '__builtin__.property' in attr.decoratornames():
                     for infered in attr.infer_call_result(self, context):
                         yield infered
-                elif attr.type in ('method', 'classmethod'):
-                    # XXX could get some information from the bound node:
-                    #     self (if method) or self._proxied (if class method)
-                    yield BoundMethod(attr)
                 else:
-                    yield attr
+                    yield BoundMethod(attr, self)
             else:
                 yield attr
 
@@ -259,6 +255,9 @@ class Instance(Proxy):
     def pytype(self):
         return self._proxied.qname()
 
+    def display_type(self):
+        return 'Instance of'
+
 
 class UnboundMethod(Proxy):
     """a special node representing a method not bound to an instance"""
@@ -284,8 +283,17 @@ class UnboundMethod(Proxy):
 
 class BoundMethod(UnboundMethod):
     """a special node representing a method bound to an instance"""
+    def __init__(self,  proxy, bound):
+        UnboundMethod.__init__(self, proxy)
+        self.bound = bound
+
     def is_bound(self):
         return True
+
+    def infer_call_result(self, caller, context):
+        context = context.clone()
+        context.boundnode = self.bound
+        return self._proxied.infer_call_result(caller, context)
 
 
 class Generator(Proxy):
@@ -296,4 +304,6 @@ class Generator(Proxy):
     def pytype(self):
         return '__builtin__.generator'
 
+    def display_type(self):
+        return 'Generator'
 
