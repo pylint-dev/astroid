@@ -22,7 +22,7 @@ extract information from it
 
 __docformat__ = "restructuredtext en"
 
-from logilab.astng._exceptions import IgnoreChild
+from logilab.astng._exceptions import IgnoreChild, ASTNGBuildingException
 
 
 class ASTVisitor(object):
@@ -337,6 +337,30 @@ class LocalsVisitor(ASTWalker):
                     self.visit(local_node)
         if methods[1] is not None:
             return methods[1](node)
+
+
+def _check_children(node):
+    """a helper function to check children - parent relations"""
+    for child in node.get_children():
+        ok = False
+        if child is None:
+            print "Hm, child of %s is None" % node
+            continue
+        if not hasattr(child, 'parent'):
+            print " ERROR: %s has child %s %x with no parent" % (node, child, id(child))
+        elif not child.parent:
+            print " ERROR: %s has child %s %x with parent %r" % (node, child, id(child), child.parent)
+        elif child.parent is not node:
+            print " ERROR: %s %x has child %s %x with wrong parent %s" % (node,
+                                      id(node), child, id(child), child.parent)
+        else:
+            ok = True
+        if not ok:
+            print "lines;", node.lineno, child.lineno
+            print "of module", node.root(), node.root().name
+            raise ASTNGBuildingException
+        _check_children(child)
+
 
 __all__ = ('REDIRECT', 'LocalsVisitor', 'ASTWalker', 'ASTVisitor',)
 

@@ -27,29 +27,6 @@ from logilab.astng.infutils import YES, Instance
 
 
 
-def _check_children(node):
-    """a helper function to check children - parent relations"""
-    for child in node.get_children():
-        ok = False
-        if child is None:
-            print "Hm, child of %s is None" % node 
-            continue
-        if not hasattr(child, 'parent'):
-            print " ERROR: %s has child %s %x with no parent" % (node, child, id(child))
-        elif not child.parent:
-            print " ERROR: %s has child %s %x with parent %r" % (node, child, id(child), child.parent)
-        elif child.parent is not node:
-            print " ERROR: %s %x has child %s %x with wrong parent %s" % (node,
-                                      id(node), child, id(child), child.parent)
-        else:
-            ok = True
-        if not ok:
-            print "lines;", node.lineno, child.lineno
-            print "of module", node.root(), node.root().name
-            raise ASTNGBuildingException
-        _check_children(child)
-
-
 class RebuildVisitor(ASTVisitor):
     """Visitor to transform an AST to an ASTNG
     """
@@ -70,8 +47,6 @@ class RebuildVisitor(ASTVisitor):
     def walk(self, node):
         """start the walk down the tree and do some work after it"""
         newnode = self.visit(node, None)
-        _check_children(newnode) # FIXME : remove this asap
-
         # handle delayed assattr nodes
         delay_assattr = self.delayed_assattr
         for node in self._delayed_assattr:
