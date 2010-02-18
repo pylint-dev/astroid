@@ -50,9 +50,7 @@ _CONST_PROXY = {
 _CONST_PROXY[type(None)].parent = _CONST_PROXY[bool].parent
 
 def _set_proxied(const):
-    if not hasattr(const, '__proxied'):
-        const.__proxied = _CONST_PROXY[const.value.__class__]
-    return const.__proxied
+    return _CONST_PROXY[const.value.__class__]
 nodes.Const._proxied = property(_set_proxied)
 
 nodes.Const.__bases__ += (Instance,)
