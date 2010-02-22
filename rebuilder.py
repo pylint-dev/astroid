@@ -120,17 +120,6 @@ class RebuildVisitor(ASTVisitor):
         self._set_infos(node, newnode, parent)
         return newnode
 
-    def visit_decorators(self, node, parent):
-        """visiting an Decorators node"""
-        newnode = self._visit_decorators(node, parent)
-        newnode.parent = parent
-        self._set_infos(node, newnode, parent)
-        for decorator_expr in newnode.nodes:
-            if isinstance(decorator_expr, nodes.Name) and \
-                   decorator_expr.name in ('classmethod', 'staticmethod'):
-                newnode.parent.type = decorator_expr.name
-        return newnode
-
     def visit_ellipsis(self, node, parent):
         """visit an Ellipsis node by returning a fresh instance of it"""
         newnode = nodes.Ellipsis()
@@ -171,6 +160,11 @@ class RebuildVisitor(ASTVisitor):
                 newnode.type = 'classmethod'
             else:
                 newnode.type = 'method'
+        if newnode.decorators is not None:
+            for decorator_expr in newnode.decorators.nodes:
+                if isinstance(decorator_expr, nodes.Name) and \
+                       decorator_expr.name in ('classmethod', 'staticmethod'):
+                    newnode.type = decorator_expr.name
         frame.set_local(newnode.name, newnode)
         return newnode
 
