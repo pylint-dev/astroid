@@ -387,6 +387,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.parent = parent
         self._add_from_names_to_locals(newnode)
         self._set_infos(node, newnode, parent)
+        newnode.level = node.level
         return newnode
 
     def _visit_function(self, node, parent):
