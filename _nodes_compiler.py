@@ -360,7 +360,9 @@ class TreeRebuilder(RebuildVisitor):
         """visit a Comprehension node by returning a fresh instance of it"""
         newnode = new.Comprehension()
         self._set_infos(node, newnode, parent)
+        self.asscontext = "Ass"
         newnode.target = self.visit(node.assign, newnode)
+        self.asscontext = None
         if hasattr(node, 'list'):# ListCompFor
             iters = node.list
         else:# GenExprFor
