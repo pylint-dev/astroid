@@ -231,7 +231,9 @@ class TreeRebuilder(RebuildVisitor):
         elif self.asscontext in ("Ass", "Aug"):
             newnode = new.AssAttr()
             self._set_infos(node, newnode, parent)
+            asscontext, self.asscontext = self.asscontext, None
             newnode.expr = self.visit(node.expr, newnode)
+            self.asscontext = asscontext
             newnode.attrname = node.attrname
             self._delayed_assattr.append(newnode)
             return newnode
