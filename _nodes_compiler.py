@@ -268,8 +268,10 @@ class TreeRebuilder(RebuildVisitor):
         self._set_infos(node, newnode, parent)
         self.asscontext = 'Ass'
         newnode.targets = [self.visit(child, newnode) for child in node.nodes]
-        self.asscontext = None
+        # /!\ Subscript can appear on both sides,
+        # so we need 'Ass' in rhs to avoid inserting a Delete node
         newnode.value = self.visit(node.expr, newnode)
+        self.asscontext = None
         self._set_assign_infos(newnode)
         return newnode
 
