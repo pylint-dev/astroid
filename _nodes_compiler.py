@@ -474,7 +474,6 @@ class TreeRebuilder(RebuildVisitor):
         newnode.body = [self.visit(child, newnode) for child in node.code.nodes]
         newnode.doc = node.doc
         newnode.args = self.visit_arguments(node, newnode)
-        newnode.fromlineno =  node.blockstart_tolineno # node.fromlineno =
         return newnode
 
     def visit_genexpr(self, node, parent):
@@ -675,21 +674,32 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.TryExcept()
         self._set_infos(node, newnode, parent)
         newnode.body = [self.visit(child, newnode) for child in node.body.nodes]
-        newnode.handlers = [self.visit_excepthandler(node, newnode, values)
+        newnode.handlers = [self._visit_excepthandler(newnode, values)
                             for values in node.handlers]
         newnode.orelse = self._init_else_node(node, newnode)
         return newnode
 
-    def visit_excepthandler(self, node, parent, values):
+    def _visit_excepthandler(self, parent, values):
+        """build an ExceptHandler node from given values and visit children"""
         newnode = new.ExceptHandler()
-        self._set_infos(node, newnode, parent)
         newnode.parent = parent
         exctype, excobj, body = values
+        if exctype and exctype.lineno:
+            newnode.fromlineno =  exctype.lineno
+        else:
+            newnode.fromlineno =  body.nodes[0].fromlineno - 1
+        newnode.tolineno = body.nodes[-1].tolineno
+        if excobj:
+            newnode.blockstart_tolineno = excobj.tolineno
+        elif exctype:
+            newnode.blockstart_tolineno = exctype.tolineno
+        else:
+            newnode.blockstart_tolineno = newnode.fromlineno
         newnode.type = self.visit(exctype, newnode)
         self.asscontext = "Ass"
         newnode.name = self.visit(excobj, newnode)
         self.asscontext = None
-        newnode.body = [self.visit(child, newnode) for child in body]
+        newnode.body = [self.visit(child, newnode) for child in body.nodes]
         return newnode
 
     def visit_tryfinally(self, node, parent):
