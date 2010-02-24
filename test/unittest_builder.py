@@ -644,5 +644,22 @@ def visit_if(self, node):
         astng = self.builder.string_build(code)
         self.failUnless('body' in astng['visit_if'].locals)
 
+    def test_build_constants(self):
+        '''test expected values of constants after rebuilding'''
+        code = '''
+def func():
+    return None
+    return
+    return 'None'
+'''
+        astng = self.builder.string_build(code)
+        none, nothing, chain = [ret.value for ret in astng.body[0].body]
+        self.assertIsInstance(none, nodes.Const)
+        self.assertEquals(none.value, None)
+        self.assertEquals(nothing, None)
+        self.assertIsInstance(chain, nodes.Const)
+        self.assertEquals(chain.value, 'None')
+
+
 if __name__ == '__main__':
     unittest_main()
