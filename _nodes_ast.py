@@ -311,7 +311,11 @@ class TreeRebuilder(RebuildVisitor):
         # parent is a astng.nodes.Function node
         newnode = new.Decorators()
         newnode.parent = parent
-        newnode.nodes = [self.visit(child, newnode) for child in node.decorators]
+        if 'decorators' in node._fields: # py < 2.6, i.e. 2.5
+            decorators = node.decorators
+        else:
+            decorators= node.decorator_list
+        newnode.nodes = [self.visit(child, newnode) for child in decorators]
         self._set_infos(node, newnode, parent)
         return newnode
 
