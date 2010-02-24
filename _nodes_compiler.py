@@ -168,6 +168,8 @@ class TreeRebuilder(RebuildVisitor):
             newnode.fromlineno = oldnode.fromlineno
         if hasattr(oldnode, 'tolineno'):
             newnode.tolineno = oldnode.tolineno
+        if hasattr(oldnode, 'blockstart_tolineno'):
+            newnode.blockstart_tolineno = oldnode.blockstart_tolineno
 
     def _check_del_node(self, node, parent, targets):
         """insert a Delete node if necessary.
