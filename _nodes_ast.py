@@ -111,6 +111,11 @@ _CMP_OP_CLASSES = {_Eq: '==',
                    _NotIn: 'not in'}
 
 
+CONST_NAME_TRANSFORMS = {'None':  None,
+                         'True':  True,
+                         'False': False}
+
+
 def _init_set_doc(node, newnode):
     newnode.doc = None
     try:
@@ -524,6 +529,10 @@ class TreeRebuilder(RebuildVisitor):
 
     def visit_name(self, node, parent):
         """visit a Name node by returning a fresh instance of it"""
+        if node.id in CONST_NAME_TRANSFORMS:
+            newnode = new.Const(CONST_NAME_TRANSFORMS[node.id])
+            self._set_infos(node, newnode, parent)
+            return newnode
         if self.asscontext == "Del":
             newnode = new.DelName()
         elif self.asscontext is not None: # Ass
