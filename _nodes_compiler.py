@@ -743,12 +743,13 @@ class TreeRebuilder(RebuildVisitor):
 
     def _check_discard(self, node, parent):
         """check if we introduced already a discard node."""
+        # XXX we should maybe use something else then 'asscontext' here
         if self.asscontext is None:
             self.asscontext = 'Dis'
             newnode = new.Discard()
             self._set_infos(node, newnode, parent)
             newnode.value = self.visit(node, newnode)
-            self.context = None
+            self.asscontext = None
             return newnode
         return False
 
