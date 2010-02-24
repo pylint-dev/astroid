@@ -7,6 +7,8 @@ Change log for the astng package
 	import setuptools.
         * Winfried Plapper patches fixing .op attribute value for AugAssign nodes,
 	  visit_ifexp in nodes_as_string
+        * Edward K. Ream / Tom Fleck patch closes #19641 (maximum recursion depth
+	  exceeded" messages w/ python 2.6), see https://bugs.launchpad.net/pylint/+bug/456870
 
 2009-12-18  --  0.19.3
     * fix name error making 0.19.2 almost useless
