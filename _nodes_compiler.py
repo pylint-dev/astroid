@@ -473,9 +473,9 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.Function()
         self._set_infos(node, newnode, parent)
         newnode.decorators = self.visit(node.decorators, newnode)
-        newnode.body = [self.visit(child, newnode) for child in node.code.nodes]
         newnode.doc = node.doc
         newnode.args = self.visit_arguments(node, newnode)
+        newnode.body = [self.visit(child, newnode) for child in node.code.nodes]
         return newnode
 
     def visit_genexpr(self, node, parent):
