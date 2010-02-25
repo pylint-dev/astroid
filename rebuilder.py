@@ -102,35 +102,30 @@ class RebuildVisitor(ASTVisitor):
     def visit_break(self, node, parent):
         """visit a Break node by returning a fresh instance of it"""
         newnode = nodes.Break()
-        newnode.parent = parent
         self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_const(self, node, parent):
         """visit a Const node by returning a fresh instance of it"""
         newnode = nodes.Const(node.value)
-        newnode.parent = parent
         self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_continue(self, node, parent):
         """visit a Continue node by returning a fresh instance of it"""
         newnode = nodes.Continue()
-        newnode.parent = parent
         self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_ellipsis(self, node, parent):
         """visit an Ellipsis node by returning a fresh instance of it"""
         newnode = nodes.Ellipsis()
-        newnode.parent = parent
         self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_emptynode(self, node, parent):
         """visit an EmptyNode node by returning a fresh instance of it"""
         newnode = nodes.EmptyNode()
-        newnode.parent = parent
         self._set_infos(node, newnode, parent)
         return newnode
 
@@ -171,7 +166,6 @@ class RebuildVisitor(ASTVisitor):
     def visit_global(self, node, parent):
         """visit an Global node to become astng"""
         newnode = nodes.Global(node.names)
-        newnode.parent = parent
         self._set_infos(node, newnode, parent)
         if self._global_names: # global at the module level, no effect
             for name in node.names:
@@ -193,7 +187,6 @@ class RebuildVisitor(ASTVisitor):
     def visit_pass(self, node, parent):
         """visit a Pass node by returning a fresh instance of it"""
         newnode = nodes.Pass()
-        newnode.parent = parent
         self._set_infos(node, newnode, parent)
         return newnode
 
