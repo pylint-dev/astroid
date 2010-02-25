@@ -44,12 +44,10 @@ try:
     def parse(string):
         return compile(string, "<string>", 'exec', PyCF_ONLY_AST)
     from logilab.astng._nodes_ast import TreeRebuilder
-    AST_MODE = '_ast'
 except ImportError, exc:
     from compiler import parse
     from logilab.astng import patchcomptransformer
     from logilab.astng._nodes_compiler import TreeRebuilder
-    AST_MODE = '_compiler'
 
 # ast NG builder ##############################################################
 
@@ -64,7 +62,7 @@ class ASTNGBuilder:
         self._module = None
         self._file = None
         self._done = None
-        self.rebuilder = TreeRebuilder(ast_mode=AST_MODE)
+        self.rebuilder = TreeRebuilder()
         self._dyn_modname_map = {'gtk': 'gtk._gtk'}
 
     def module_build(self, module, modname=None):

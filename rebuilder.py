@@ -30,7 +30,7 @@ from logilab.astng.infutils import YES, Instance
 class RebuildVisitor(ASTVisitor):
     """Visitor to transform an AST to an ASTNG
     """
-    def __init__(self, ast_mode):
+    def __init__(self):
         self.asscontext = None
         self._metaclass = None
         self._global_names = None
