@@ -784,7 +784,6 @@ class Class(StmtMixIn, LocalsDictNodeNG):
     # a dictionary of class instances attributes
     instance_attrs = None
 
-    is_class_node = True # only True for Class nodes
     special_attributes = set(('__name__', '__doc__', '__dict__', '__module__',
                               '__bases__', '__mro__'))
 
@@ -942,6 +941,10 @@ class Class(StmtMixIn, LocalsDictNodeNG):
             raise NotFoundError(name)
         return values
     instance_attr = remove_nodes(instance_attr, DelAttr)
+
+    def instanciate_class(self):
+        """return Instance of Class node, else return self"""
+        return Instance(self)
 
     def getattr(self, name, context=None):
         """this method doesn't look in the instance_attrs dictionary since it's

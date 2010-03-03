@@ -47,7 +47,6 @@ class NodeNG(BaseClass):
     tolineno = None
     # parent node in the tree
     parent = None
-    is_class_node = False # only True for Class nodes
 
     def __str__(self):
         return '%s(%s)' % (self.__class__.__name__, getattr(self, 'name', ''))
@@ -232,6 +231,10 @@ class NodeNG(BaseClass):
     def infered(self):
         '''return list of infered values for a more simple inference usage'''
         return list(self.infer())
+
+    def instanciate_class(self):
+        """instanciate a node if it is a Class node, else return self"""
+        return self
 
     def callable(self):
         return False
