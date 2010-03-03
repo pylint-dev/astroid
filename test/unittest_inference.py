@@ -31,7 +31,9 @@ builder = builder.ASTNGBuilder()
 class InferenceUtilsTC(TestCase):
 
     def test_path_wrapper(self):
-        infer_default = path_wrapper(inference.infer_default)
+        def infer_default(self, *args):
+            raise InferenceError
+        infer_default = path_wrapper(infer_default)
         infer_end = path_wrapper(inference.infer_end)
         self.failUnlessRaises(InferenceError,
                               infer_default(1).next)
@@ -551,8 +553,8 @@ if __name__ == '__main__':
         self.failUnlessEqual(len(list(astng['process_line'].infer_call_result(
                                                                 None))), 3)
         self.failUnlessEqual(len(list(astng['tupletest'].infer())), 3)
-        values = ['Function(first_word)', 'Function(last_word)', 'Const(None)']
-        self.failUnlessEqual([str(infered).replace('FunctionDef', 'Function')
+        values = ['Function(first_word)', 'Function(last_word)', 'Const(NoneType)']
+        self.failUnlessEqual([str(infered)
                               for infered in astng['fct'].infer()], values)
 
     def test_float_complex_ambiguity(self):
