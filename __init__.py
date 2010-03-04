@@ -63,4 +63,6 @@ from logilab.astng import inference
 # more stuff available
 from logilab.astng import raw_building
 from logilab.astng.bases import YES, Instance, BoundMethod, UnboundMethod
+from logilab.astng.node_classes import are_exclusive, unpack_infer
+from logilab.astng.scoped_nodes import builtin_lookup
 
