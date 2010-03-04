@@ -525,6 +525,9 @@ class NodeNG(BaseClass):
         """instanciate a node if it is a Class node, else return self"""
         return self
 
+    def has_base(self, node):
+        return False
+
     def callable(self):
         return False
 

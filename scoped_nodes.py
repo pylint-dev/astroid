@@ -145,11 +145,13 @@ class LookupMixIn(BaseClass):
             # line filtering is on and we have reached our location, break
             if mylineno > 0 and stmt.fromlineno > mylineno:
                 break
-            if isinstance(node, Class) and self in node.bases:
-                break
             assert hasattr(node, 'ass_type'), (node, node.scope(),
                                                node.scope().locals)
             ass_type = node.ass_type()
+
+            if node.has_base(self):
+                break
+
             if ass_type is mystmt and not isinstance(ass_type, (Class,
                                         Function, Import, From, Lambda)):
                 if not isinstance(ass_type, Comprehension):
@@ -161,7 +163,9 @@ class LookupMixIn(BaseClass):
                 # original node's statement is the assignment, only keeps
                 # current node (gen exp, list comp)
                 _stmts = [node]
-                break        
+                break
+
+
             optional_assign = isinstance(ass_type, (For, Comprehension))
             if optional_assign and ass_type.parent_of(self):
                 # we are inside a loop, loop var assigment is hidding previous
@@ -169,6 +173,7 @@ class LookupMixIn(BaseClass):
                 _stmts = [node]
                 _stmt_parents = [stmt.parent]
                 continue
+
             # XXX comment various branches below!!!
             try:
                 pindex = _stmt_parents.index(stmt.parent)
@@ -225,6 +230,7 @@ def builtin_lookup(name):
     return the list of matching statements and the astng for the builtin
     module
     """
+    # TODO : once there is no more monkey patching, make a BUILTINASTNG const
     builtinastng = MANAGER.astng_from_module(__builtin__)
     if name == '__dict__':
         return builtinastng, ()
@@ -907,6 +913,9 @@ class Class(StmtMixIn, LocalsDictNodeNG):
         for astng in self.ancestors(context=context):
             if astng.instance_attrs.has_key(name):
                 yield astng
+
+    def has_base(self, node):
+        return node in self.bases
 
     def local_attr(self, name, context=None):
         """return the list of assign node associated to name in this class
