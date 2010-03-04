@@ -21,7 +21,7 @@ import unittest
 import sys
 
 from logilab.astng import MANAGER, nodes, inspector
-from logilab.astng.infutils import Instance, YES
+from logilab.astng.bases import Instance, YES
 
 def astng_wrapper(func, modname):
     return func(modname)

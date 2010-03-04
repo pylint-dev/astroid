@@ -33,7 +33,7 @@ except NameError:
 from logilab.astng import MANAGER, nodes, raw_building
 from logilab.astng import ASTNGError, InferenceError, UnresolvableName, \
      NoDefault, NotFoundError, ASTNGBuildingException
-from logilab.astng.infutils import YES, Instance, InferenceContext, \
+from logilab.astng.bases import YES, Instance, InferenceContext, \
      _infer_stmts, copy_context, path_wrapper, raise_if_nothing_infered
 from logilab.astng.protocols import _arguments_infer_argname
 

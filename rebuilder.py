@@ -23,7 +23,7 @@ order to get a single ASTNG representation
 from logilab.astng import ASTNGBuildingException, InferenceError
 from logilab.astng import nodes
 from logilab.astng.utils import ASTVisitor, REDIRECT
-from logilab.astng.infutils import YES, Instance
+from logilab.astng.bases import YES, Instance
 
 
 

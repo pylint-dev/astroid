@@ -22,7 +22,7 @@ from pprint import pprint
 from logilab.astng import builder, nodes, patchcomptransformer, MANAGER, \
                           InferenceError, NotFoundError
 from logilab.astng.nodes import Module
-from logilab.astng.infutils import YES
+from logilab.astng.bases import YES
 from logilab.astng.nodes_as_string import as_string
 
 from unittest_inference import get_name_node

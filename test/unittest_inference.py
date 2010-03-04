@@ -18,7 +18,7 @@ from StringIO import StringIO
 from logilab.common.testlib import TestCase, unittest_main
 
 from logilab.astng import InferenceError, builder, nodes, inference
-from logilab.astng.infutils import YES, Instance, BoundMethod, UnboundMethod, path_wrapper
+from logilab.astng.bases import YES, Instance, BoundMethod, UnboundMethod, path_wrapper
 
 def get_name_node(start_from, name, index=0):
     return [n for n in start_from.nodes_of_class(nodes.Name) if n.name == name][index]

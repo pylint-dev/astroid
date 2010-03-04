@@ -3,8 +3,8 @@ from logilab.common.compat import chain, imap
 
 from logilab.astng import (ASTNGBuildingException, InferenceError,
                            NotFoundError, NoDefault)
-from logilab.astng.bases import NodeNG, StmtMixIn, BlockRangeMixIn, BaseClass
-from logilab.astng.infutils import Instance
+from logilab.astng.bases import (NodeNG, StmtMixIn, BlockRangeMixIn,
+                                 BaseClass, Instance)
 
 """
 Module for all nodes (except scoped nodes).

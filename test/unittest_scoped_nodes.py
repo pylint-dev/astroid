@@ -10,7 +10,7 @@ from logilab.common.compat import sorted
 
 from logilab.astng import builder, nodes, scoped_nodes, \
      InferenceError, NotFoundError
-from logilab.astng.infutils import Instance, BoundMethod, UnboundMethod
+from logilab.astng.bases import Instance, BoundMethod, UnboundMethod
 
 abuilder = builder.ASTNGBuilder()
 MODULE = abuilder.file_build('data/module.py', 'data.module')

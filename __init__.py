@@ -62,4 +62,5 @@ from logilab.astng import inference
 
 # more stuff available
 from logilab.astng import raw_building
-from logilab.astng.infutils import YES, Instance, BoundMethod, UnboundMethod
+from logilab.astng.bases import YES, Instance, BoundMethod, UnboundMethod
+
