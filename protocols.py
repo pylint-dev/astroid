@@ -303,35 +303,3 @@ def with_assigned_stmts(self, node, context=None, asspath=None):
 nodes.With.assigned_stmts = raise_if_nothing_infered(with_assigned_stmts)
 
 
-def parent_ass_type(self, context=None):
-    return self.parent.ass_type()
-
-nodes.Tuple.ass_type = parent_ass_type
-nodes.List.ass_type = parent_ass_type
-nodes.AssName.ass_type = parent_ass_type
-nodes.AssAttr.ass_type = parent_ass_type
-nodes.DelName.ass_type = parent_ass_type
-nodes.DelAttr.ass_type = parent_ass_type
-
-def end_ass_type(self):
-    return self
-
-# XXX if you add ass_type to a class, you should probably modify
-#     lookup.LookupMixIn.filter_stmts around line ::
-#
-#       if ass_type is mystmt and not isinstance(ass_type, (nodes.Class, ...)):
-nodes.Arguments.ass_type = end_ass_type
-nodes.Assign.ass_type = end_ass_type
-nodes.AugAssign.ass_type = end_ass_type
-nodes.Class.ass_type = end_ass_type
-nodes.Comprehension.ass_type = end_ass_type
-nodes.Delete.ass_type = end_ass_type
-nodes.ExceptHandler.ass_type = end_ass_type
-nodes.For.ass_type = end_ass_type
-nodes.From.ass_type = end_ass_type
-nodes.Function.ass_type = end_ass_type
-nodes.Import.ass_type = end_ass_type
-nodes.With.ass_type = end_ass_type
-
-
-

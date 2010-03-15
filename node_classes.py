@@ -75,9 +75,45 @@ def are_exclusive(stmt1, stmt2, exceptions=None):
         node = node.parent
     return False
 
+class FilterStmtsMixin(object):
+    """Mixin for statement filtering and assignment type"""
+
+    def _get_filtered_stmts(self, _, node, _stmts, mystmt):
+        """method used in _filter_stmts to get statemtents and trigger break"""
+        if self.statement() is mystmt:
+            # original node's statement is the assignment, only keep
+            # current node (gen exp, list comp)
+            return [node], True
+        return _stmts, False
+
+    def ass_type(self):
+        return self
 
 
-class Arguments(NodeNG):
+class AssignTypeMixin(object):
+
+    def ass_type(self):
+        return self
+
+    def _get_filtered_stmts(self, lookup_node, node, _stmts, mystmt):
+        """method used in filter_stmts"""
+        if self is mystmt:
+            return _stmts, True
+        if self.statement() is mystmt:
+            # original node's statement is the assignment, only keep
+            # current node (gen exp, list comp)
+            return [node], True
+        return _stmts, False
+
+
+class ParentAssignTypeMixin(AssignTypeMixin):
+
+    def ass_type(self):
+        return self.parent.ass_type()
+
+
+
+class Arguments(NodeNG, AssignTypeMixin):
     """class representing an Arguments node"""
     def __init__(self, vararg=None, kwarg=None):
         self.vararg = vararg
@@ -152,7 +188,7 @@ def _format_args(args, defaults=None):
     return ', '.join(values)
 
 
-class AssAttr(NodeNG):
+class AssAttr(NodeNG, ParentAssignTypeMixin):
     """class representing an AssAttr node"""
 
 
@@ -160,11 +196,11 @@ class Assert(StmtMixIn, NodeNG):
     """class representing an Assert node"""
 
 
-class Assign(StmtMixIn, NodeNG):
+class Assign(StmtMixIn, NodeNG, AssignTypeMixin):
     """class representing an Assign node"""
 
 
-class AugAssign(StmtMixIn, NodeNG):
+class AugAssign(StmtMixIn, NodeNG, AssignTypeMixin):
     """class representing an AugAssign node"""
 
 
@@ -209,6 +245,24 @@ class Compare(NodeNG):
 class Comprehension(NodeNG):
     """class representing a Comprehension node"""
 
+    def ass_type(self):
+        return self
+
+    def _get_filtered_stmts(self, lookup_node, node, stmts, mystmt):
+        """method used in filter_stmts"""
+        if self is mystmt:
+            from logilab.astng.nodes import Name # XXX remove me
+            if isinstance(lookup_node, (Const, Name)):
+                return [lookup_node], True
+
+        elif self.statement() is mystmt:
+            # original node's statement is the assignment, only keeps
+            # current node (gen exp, list comp)
+
+            return [node], True
+
+        return stmts, False
+
 
 class Const(NodeNG, Instance):
     """represent a Str or Num node"""
@@ -241,11 +295,11 @@ class Decorators(NodeNG):
         # skip the function node to go directly to the upper level scope
         return self.parent.parent.scope()
 
-class DelAttr(NodeNG):
+class DelAttr(NodeNG, ParentAssignTypeMixin):
     """class representing a DelAttr node"""
 
 
-class Delete(StmtMixIn, NodeNG):
+class Delete(StmtMixIn, NodeNG, AssignTypeMixin):
     """class representing a Delete node"""
 
 
@@ -293,7 +347,7 @@ class EmptyNode(NodeNG):
     """class representing an EmptyNode node"""
 
 
-class ExceptHandler(StmtMixIn, NodeNG):
+class ExceptHandler(StmtMixIn, NodeNG, AssignTypeMixin):
     """class representing an ExceptHandler node"""
 
     def __init__(self):
@@ -340,14 +394,14 @@ class ExtSlice(NodeNG):
     """class representing an ExtSlice node"""
 
 
-class For(BlockRangeMixIn, StmtMixIn, NodeNG):
+class For(BlockRangeMixIn, StmtMixIn, AssignTypeMixin, NodeNG):
     """class representing a For node"""
 
     def _blockstart_toline(self):
         return self.iter.tolineno
 
 
-class FromImportMixIn(BaseClass):
+class FromImportMixIn(BaseClass, FilterStmtsMixin):
     """MixIn for From and Import Nodes"""
 
     def _infer_name(self, frame, name):
@@ -437,7 +491,7 @@ class Keyword(NodeNG):
     """class representing a Keyword node"""
 
 
-class List(NodeNG, Instance):
+class List(NodeNG, Instance, ParentAssignTypeMixin):
     """class representing a List node"""
 
     def pytype(self):
@@ -448,6 +502,7 @@ class List(NodeNG, Instance):
 
     def itered(self):
         return self.elts
+
 
 
 class ListComp(NodeNG):
@@ -515,7 +570,7 @@ class TryFinally(BlockRangeMixIn, StmtMixIn, NodeNG):
         return self._elsed_block_range(lineno, self.finalbody)
 
 
-class Tuple(NodeNG, Instance):
+class Tuple(NodeNG, Instance, ParentAssignTypeMixin):
     """class representing a Tuple node"""
 
     def pytype(self):
@@ -542,7 +597,7 @@ class While(BlockRangeMixIn, StmtMixIn, NodeNG):
         """handle block line numbers range for for and while statements"""
         return self. _elsed_block_range(lineno, self.orelse)
 
-class With(BlockRangeMixIn, StmtMixIn, NodeNG):
+class With(BlockRangeMixIn, StmtMixIn, AssignTypeMixin, NodeNG):
     """class representing a With node"""
 
     def _blockstart_toline(self):

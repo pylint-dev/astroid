@@ -38,7 +38,8 @@ from logilab.astng import MANAGER, NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
 from logilab.astng.node_classes import (Const, Comprehension, Dict,
      From, For, Import, List, Pass, Raise, Return, Tuple, Yield, DelAttr,
-     are_exclusive, const_factory as cf, unpack_infer)
+     are_exclusive, const_factory as cf, unpack_infer, FilterStmtsMixin,
+     ParentAssignTypeMixin)
 from logilab.astng.bases import (NodeNG, StmtMixIn, BaseClass, YES,
     InferenceContext, Instance, Generator,
     UnboundMethod, BoundMethod, _infer_stmts, copy_context)
@@ -152,19 +153,9 @@ class LookupMixIn(BaseClass):
             if node.has_base(self):
                 break
 
-            if ass_type is mystmt and not isinstance(ass_type, (Class,
-                                        Function, Import, From, Lambda)):
-                if not isinstance(ass_type, Comprehension):
-                    break
-                if isinstance(self, (Const, Name)):
-                    _stmts = [self]
-                    break
-            elif ass_type.statement() is mystmt:
-                # original node's statement is the assignment, only keeps
-                # current node (gen exp, list comp)
-                _stmts = [node]
+            _stmts, done = ass_type._get_filtered_stmts(self, node, _stmts, mystmt)
+            if done:
                 break
-
 
             optional_assign = isinstance(ass_type, (For, Comprehension))
             if optional_assign and ass_type.parent_of(self):
@@ -361,11 +352,11 @@ class LocalsDictNodeNG(LookupMixIn, NodeNG):
 
 # Name classses
 
-class AssName(LookupMixIn, NodeNG):
+class AssName(LookupMixIn, ParentAssignTypeMixin, NodeNG):
     """class representing an AssName node"""
 
 
-class DelName(LookupMixIn, NodeNG):
+class DelName(LookupMixIn, ParentAssignTypeMixin, NodeNG):
     """class representing a DelName node"""
 
 
@@ -572,7 +563,8 @@ GenExpr.scope_lookup = LocalsDictNodeNG._scope_lookup
 
 # Function  ###################################################################
 
-class Lambda(LocalsDictNodeNG):
+
+class Lambda(LocalsDictNodeNG, FilterStmtsMixin):
 
     # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
     type = 'function'
@@ -619,7 +611,6 @@ class Lambda(LocalsDictNodeNG):
             # check this is not used in function decorators
             frame = self
         return frame._scope_lookup(node, name, offset)
-
 
 class Function(StmtMixIn, Lambda):
 
@@ -782,7 +773,7 @@ def _iface_hdlr(iface_node):
     return True
 
 
-class Class(StmtMixIn, LocalsDictNodeNG):
+class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
 
     # some of the attributes below are set by the builder module or
     # by a raw factories
