@@ -24,19 +24,7 @@
 
 __docformat__ = "restructuredtext en"
 
-import sys
-from compiler import ast
-from compiler.ast import AssAttr, AssList, AssName, \
-     AssTuple, Assert, Assign, AugAssign, \
-     Backquote, Break, CallFunc, Class, \
-     Compare, Const, Continue, Dict, Discard, \
-     Ellipsis, EmptyNode, Exec, \
-     For, From, Function, Getattr, Global, \
-     If, Import, Keyword, Lambda, \
-     List, ListComp, ListCompFor as Comprehension, ListCompIf, Module, Name, Node, \
-     Pass, Print, Raise, Return, \
-     Sliceobj, Stmt, Subscript, TryExcept, TryFinally, Tuple, \
-     While, Yield
+from compiler.ast import Const, Node, Sliceobj
 
 # nodes which are not part of astng
 from compiler.ast import And as _And, Or as _Or,\
@@ -44,11 +32,8 @@ from compiler.ast import And as _And, Or as _Or,\
      Invert as _Invert, Add as _Add, Div as _Div, FloorDiv as _FloorDiv,\
      Mod as _Mod, Mul as _Mul, Power as _Power, Sub as _Sub, Bitand as _Bitand,\
      Bitor as _Bitor, Bitxor as _Bitxor, LeftShift as _LeftShift,\
-     RightShift as _RightShift, \
-     Slice as _Slice, GenExprFor as _GenExprFor
+     RightShift as _RightShift
 
-from logilab.astng.utils import ASTVisitor
-from logilab.astng._exceptions import ASTNGError
 
 from logilab.astng import nodes as new
 from logilab.astng.rebuilder import RebuildVisitor
@@ -58,8 +43,6 @@ CONST_NAME_TRANSFORMS = {'None':  None,
                          'True':  True,
                          'False': False}
 
-# introduced in python 2.5
-From.level = 0 # will be overridden by instance attribute with py>=2.5
 
 def native_repr_tree(node, indent='', _done=None):
     """enhanced compiler.ast tree representation"""
@@ -124,21 +107,6 @@ UnaryOp_OP_CLASSES = {_UnaryAdd: '+',
               _Not: 'not',
               _Invert: '~'
               }
-
-
-# modify __repr__ of all Nodes as they are not compatible with ASTNG ##########
-
-def generic__repr__(self):
-    """simple representation method to override compiler.ast's methods"""
-    return "<%s at 0x%x>" % (self.__class__.__name__, id(self))
-
-for value in ast.__dict__.values():
-    try:
-        if issubclass(value, ast.Node):
-            value.__repr__ = generic__repr__
-    except:
-        pass
-del ast
 
 
 # compiler rebuilder ##########################################################

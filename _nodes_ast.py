@@ -21,41 +21,9 @@
 
 __docformat__ = "restructuredtext en"
 
-#  "as is" nodes
-from _ast import (Assert, Assign, AugAssign,
-                  BinOp, BoolOp, Break,
-                  Compare, Continue,
-                  Delete, Dict,
-                  Ellipsis, Exec, ExtSlice,
-                  For,
-                  Global,
-                  If, IfExp, Import, Index,
-                  Lambda, List, ListComp,
-                  Module,
-                  Name,
-                  Pass, Print,
-                  Raise, Return,
-                  Slice, Subscript,
-                  TryExcept, TryFinally, Tuple,
-                  UnaryOp,
-                  While, With,
-                  Yield,
-                  )
+
 #  aliased nodes
-from _ast import (AST as Node,
-                  Attribute as Getattr,
-                  Call as CallFunc,
-                  ClassDef as Class,
-                  Expr as Discard,
-                  FunctionDef as Function,
-                  GeneratorExp as GenExpr,
-                  ImportFrom as From,
-                  Repr as Backquote,
-                  arguments as Arguments,
-                  comprehension as Comprehension,
-                  keyword as Keyword,
-                  excepthandler as ExceptHandler,
-                  )
+from _ast import AST as Node, Expr as Discard
 # nodes which are not part of astng
 from _ast import (
     # binary operators
@@ -75,7 +43,6 @@ from _ast import (
     Num as _Num, Str as _Str, Load as _Load, Store as _Store, Del as _Del,
     )
 
-from logilab.astng.utils import ASTVisitor
 from logilab.astng import nodes as new
 
 _BIN_OP_CLASSES = {_Add: '+',
