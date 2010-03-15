@@ -38,13 +38,13 @@ on From and Import :
 __docformat__ = "restructuredtext en"
 
 from logilab.astng.node_classes import (Arguments, AssAttr, Assert,
-    Assign, AugAssign, Backquote, BinOp, BoolOp, Break, CallFunc, Compare,
-    Comprehension, Const, Continue, Decorators, DelAttr, Delete,
+    Assign, AssName, AugAssign, Backquote, BinOp, BoolOp, Break, CallFunc, Compare,
+    Comprehension, Const, Continue, Decorators, DelAttr, DelName, Delete,
     Dict, Discard, Ellipsis, EmptyNode, ExceptHandler, Exec, ExtSlice, For,
     From, Getattr, Global, If, IfExp, Import, Index, Keyword,
-    List, ListComp, Pass, Print, Raise, Return, Slice, Subscript,
+    List, ListComp, Name, Pass, Print, Raise, Return, Slice, Subscript,
     TryExcept, TryFinally, Tuple, UnaryOp, While, With, Yield, const_factory )
-from logilab.astng.scoped_nodes import AssName, DelName, Name, Module, GenExpr, Lambda, Function, Class
+from logilab.astng.scoped_nodes import Module, GenExpr, Lambda, Function, Class
 
 
 # astng fields definition ####################################################

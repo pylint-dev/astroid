@@ -11,8 +11,15 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-"""
-Module containing the node classes; it is only used for avoiding circular imports
+
+"""This module contains base classes and functions for the nodes and some inference
+utils.
+
+:author:    Sylvain Thenault
+:copyright: 2003-2010 LOGILAB S.A. (Paris, FRANCE)
+:contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
+:copyright: 2003-2010 Sylvain Thenault
+:contact:   mailto:thenault@gmail.com
 """
 
 from __future__ import generators
@@ -578,61 +585,5 @@ def _repr_tree(node, result, indent='', _done=None, ids=False):
         else:
             result.append(  indent + field + " = " )
             _repr_tree(value, result, indent, _done, ids)
-
-
-
-
-# some small MixIns for extending the node classes #######################
-
-# /!\ We cannot build a StmtNode(NodeNG) class since modifying "__bases__"
-# in "nodes.py" has to work *both* for old-style and new-style classes,
-# but we need the StmtMixIn for scoped nodes
-
-class StmtMixIn(BaseClass):
-    """StmtMixIn used only for a adding a few attributes"""
-    is_statement = True
-
-    def replace(self, child, newchild):
-        sequence = self.child_sequence(child)
-        newchild.parent = self
-        child.parent = None
-        sequence[sequence.index(child)] = newchild
-
-    def next_sibling(self):
-        """return the next sibling statement"""
-        stmts = self.parent.child_sequence(self)
-        index = stmts.index(self)
-        try:
-            return stmts[index +1]
-        except IndexError:
-            pass
-
-    def previous_sibling(self):
-        """return the previous sibling statement"""
-        stmts = self.parent.child_sequence(self)
-        index = stmts.index(self)
-        if index >= 1:
-            return stmts[index -1]
-
-
-class BlockRangeMixIn(BaseClass):
-    """override block range """
-    def set_line_info(self, lastchild):
-        self.fromlineno = self.lineno
-        self.tolineno = lastchild.tolineno
-        self.blockstart_tolineno = self._blockstart_toline()
-
-    def _elsed_block_range(self, lineno, orelse, last=None):
-        """handle block line numbers range for try/finally, for, if and while
-        statements
-        """
-        if lineno == self.fromlineno:
-            return lineno, lineno
-        if orelse:
-            if lineno >= orelse[0].fromlineno:
-                return lineno, orelse[-1].tolineno
-            return lineno, orelse[0].fromlineno - 1
-        return lineno, last or self.tolineno
-
 
 

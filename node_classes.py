@@ -1,14 +1,34 @@
+# -*- coding: utf-8 -*-
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 2 of the License, or (at your option) any later
+# version.
 #
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc.,
+# 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+"""
+Module for some node classes. More nodes in scoped_nodes.py
+
+:author:    Sylvain Thenault
+:copyright: 2003-2010 LOGILAB S.A. (Paris, FRANCE)
+:contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
+:copyright: 2003-2010 Sylvain Thenault
+:contact:   mailto:thenault@gmail.com
+
+"""
 from logilab.common.compat import chain, imap
 
 from logilab.astng import (ASTNGBuildingException, InferenceError,
                            NotFoundError, NoDefault)
-from logilab.astng.bases import (NodeNG, StmtMixIn, BlockRangeMixIn,
-                                 BaseClass, Instance)
-
-"""
-Module for all nodes (except scoped nodes).
-"""
+from logilab.astng.bases import (NodeNG, BaseClass, Instance, copy_context,
+                                _infer_stmts)
+from logilab.astng.mixins import (StmtMixIn, BlockRangeMixIn, FilterStmtsMixin,
+    AssignTypeMixin, ParentAssignTypeMixin, FromImportMixIn)
 
 def unpack_infer(stmt, context=None):
     """return an iterator on nodes inferred by the given statement if the inferred
@@ -75,43 +95,160 @@ def are_exclusive(stmt1, stmt2, exceptions=None):
         node = node.parent
     return False
 
-class FilterStmtsMixin(object):
-    """Mixin for statement filtering and assignment type"""
-
-    def _get_filtered_stmts(self, _, node, _stmts, mystmt):
-        """method used in _filter_stmts to get statemtents and trigger break"""
-        if self.statement() is mystmt:
-            # original node's statement is the assignment, only keep
-            # current node (gen exp, list comp)
-            return [node], True
-        return _stmts, False
-
-    def ass_type(self):
-        return self
 
 
-class AssignTypeMixin(object):
-
-    def ass_type(self):
-        return self
-
-    def _get_filtered_stmts(self, lookup_node, node, _stmts, mystmt):
-        """method used in filter_stmts"""
-        if self is mystmt:
-            return _stmts, True
-        if self.statement() is mystmt:
-            # original node's statement is the assignment, only keep
-            # current node (gen exp, list comp)
-            return [node], True
-        return _stmts, False
 
 
-class ParentAssignTypeMixin(AssignTypeMixin):
+class LookupMixIn(BaseClass):
+    """Mixin looking up a name in the right scope
+    """
 
-    def ass_type(self):
-        return self.parent.ass_type()
+    def lookup(self, name):
+        """lookup a variable name
+
+        return the scope node and the list of assignments associated to the given
+        name according to the scope where it has been found (locals, globals or
+        builtin)
+
+        The lookup is starting from self's scope. If self is not a frame itself and
+        the name is found in the inner frame locals, statements will be filtered
+        to remove ignorable statements according to self's location
+        """
+        return self.scope().scope_lookup(self, name)
+
+    def ilookup(self, name, context=None):
+        """infered lookup
+
+        return an iterator on infered values of the statements returned by
+        the lookup method
+        """
+        frame, stmts = self.lookup(name)
+        context = copy_context(context)
+        context.lookupname = name
+        return _infer_stmts(stmts, context, frame)
+
+    def _filter_stmts(self, stmts, frame, offset):
+        """filter statements to remove ignorable statements.
+
+        If self is not a frame itself and the name is found in the inner
+        frame locals, statements will be filtered to remove ignorable
+        statements according to self's location
+        """
+        # if offset == -1, my actual frame is not the inner frame but its parent
+        #
+        # class A(B): pass
+        #
+        # we need this to resolve B correctly
+        if offset == -1:
+            myframe = self.frame().parent.frame()
+        else:
+            myframe = self.frame()
+        if not myframe is frame or self is frame:
+            return stmts
+        mystmt = self.statement()
+        # line filtering if we are in the same frame
+        #
+        # take care node may be missing lineno information (this is the case for
+        # nodes inserted for living objects)
+        if myframe is frame and mystmt.fromlineno is not None:
+            assert mystmt.fromlineno is not None, mystmt
+            mylineno = mystmt.fromlineno + offset
+        else:
+            # disabling lineno filtering
+            mylineno = 0
+        _stmts = []
+        _stmt_parents = []
+        for node in stmts:
+            stmt = node.statement()
+            # line filtering is on and we have reached our location, break
+            if mylineno > 0 and stmt.fromlineno > mylineno:
+                break
+            assert hasattr(node, 'ass_type'), (node, node.scope(),
+                                               node.scope().locals)
+            ass_type = node.ass_type()
+
+            if node.has_base(self):
+                break
+
+            _stmts, done = ass_type._get_filtered_stmts(self, node, _stmts, mystmt)
+            if done:
+                break
+
+            optional_assign = isinstance(ass_type, (For, Comprehension))
+            if optional_assign and ass_type.parent_of(self):
+                # we are inside a loop, loop var assigment is hidding previous
+                # assigment
+                _stmts = [node]
+                _stmt_parents = [stmt.parent]
+                continue
+
+            # XXX comment various branches below!!!
+            try:
+                pindex = _stmt_parents.index(stmt.parent)
+            except ValueError:
+                pass
+            else:
+                # we got a parent index, this means the currently visited node
+                # is at the same block level as a previously visited node
+                if _stmts[pindex].ass_type().parent_of(ass_type):
+                    # both statements are not at the same block level
+                    continue
+                # if currently visited node is following previously considered
+                # assignement and both are not exclusive, we can drop the
+                # previous one. For instance in the following code ::
+                #
+                #   if a:
+                #     x = 1
+                #   else:
+                #     x = 2
+                #   print x
+                #
+                # we can't remove neither x = 1 nor x = 2 when looking for 'x'
+                # of 'print x'; while in the following ::
+                #
+                #   x = 1
+                #   x = 2
+                #   print x
+                #
+                # we can remove x = 1 when we see x = 2
+                #
+                # moreover, on loop assignment types, assignment won't
+                # necessarily be done if the loop has no iteration, so we don't
+                # want to clear previous assigments if any (hence the test on
+                # optional_assign)
+                if not (optional_assign or are_exclusive(_stmts[pindex], node)):
+                    del _stmt_parents[pindex]
+                    del _stmts[pindex]
+            if isinstance(node, AssName):
+                if not optional_assign and stmt.parent is mystmt.parent:
+                    _stmts = []
+                    _stmt_parents = []
+            elif isinstance(node, DelName):
+                _stmts = []
+                _stmt_parents = []
+                continue
+            if not are_exclusive(self, node):
+                _stmts.append(node)
+                _stmt_parents.append(stmt.parent)
+        return _stmts
+
+# Name classes
+
+class AssName(LookupMixIn, ParentAssignTypeMixin, NodeNG):
+    """class representing an AssName node"""
 
 
+class DelName(LookupMixIn, ParentAssignTypeMixin, NodeNG):
+    """class representing a DelName node"""
+
+
+class Name(LookupMixIn, NodeNG):
+    """class representing a Name node"""
+
+
+
+
+#####################   node classes   ########################################
 
 class Arguments(NodeNG, AssignTypeMixin):
     """class representing an Arguments node"""
@@ -251,7 +388,6 @@ class Comprehension(NodeNG):
     def _get_filtered_stmts(self, lookup_node, node, stmts, mystmt):
         """method used in filter_stmts"""
         if self is mystmt:
-            from logilab.astng.nodes import Name # XXX remove me
             if isinstance(lookup_node, (Const, Name)):
                 return [lookup_node], True
 
@@ -400,42 +536,6 @@ class For(BlockRangeMixIn, StmtMixIn, AssignTypeMixin, NodeNG):
     def _blockstart_toline(self):
         return self.iter.tolineno
 
-
-class FromImportMixIn(BaseClass, FilterStmtsMixin):
-    """MixIn for From and Import Nodes"""
-
-    def _infer_name(self, frame, name):
-        return name
-
-    def do_import_module(node, modname):
-        """return the ast for a module whose name is <modname> imported by <node>
-        """
-        # handle special case where we are on a package node importing a module
-        # using the same name as the package, which may end in an infinite loop
-        # on relative imports
-        # XXX: no more needed ?
-        mymodule = node.root()
-        level = getattr(node, 'level', None) # Import as no level
-        if mymodule.absolute_modname(modname, level) == mymodule.name:
-            # FIXME: I don't know what to do here...
-            raise InferenceError('module importing itself: %s' % modname)
-        try:
-            return mymodule.import_module(modname, level=level)
-        except (ASTNGBuildingException, SyntaxError):
-            raise InferenceError(modname)
-
-    def real_name(self, asname):
-        """get name from 'as' name"""
-        for index in range(len(self.names)):
-            name, _asname = self.names[index]
-            if name == '*':
-                return asname
-            if not _asname:
-                name = name.split('.', 1)[0]
-                _asname = name
-            if asname == _asname:
-                return name
-        raise NotFoundError(asname)
 
 
 class From(FromImportMixIn, StmtMixIn, NodeNG):

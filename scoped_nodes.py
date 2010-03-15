@@ -10,18 +10,14 @@
 # You should have received a copy of the GNU General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-"""This module extends ast "scoped" node, i.e. which are opening a new
-local scope in the language definition : Module, Class, Function (and
+"""This module contains the classes for "scoped" node, i.e. which are opening a
+new local scope in the language definition : Module, Class, Function (and
 Lambda and GenExpr to some extends).
 
-All new methods and attributes added on each class are documented
-below.
-
-
 :author:    Sylvain Thenault
-:copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2010 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2009 Sylvain Thenault
+:copyright: 2003-2010 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 from __future__ import generators
@@ -36,13 +32,12 @@ from logilab.common.decorators import cached
 
 from logilab.astng import MANAGER, NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
-from logilab.astng.node_classes import (Const, Comprehension, Dict,
-     From, For, Import, List, Pass, Raise, Return, Tuple, Yield, DelAttr,
-     are_exclusive, const_factory as cf, unpack_infer, FilterStmtsMixin,
-     ParentAssignTypeMixin)
-from logilab.astng.bases import (NodeNG, StmtMixIn, BaseClass, YES,
-    InferenceContext, Instance, Generator,
-    UnboundMethod, BoundMethod, _infer_stmts, copy_context)
+from logilab.astng.node_classes import (Const, DelName, DelAttr,
+     Dict, From, List, Name, Pass, Raise, Return, Tuple, Yield,
+     are_exclusive, LookupMixIn, const_factory as cf, unpack_infer)
+from logilab.astng.bases import (NodeNG, BaseClass, YES, InferenceContext, Instance,
+    Generator, UnboundMethod, BoundMethod, _infer_stmts, copy_context)
+from logilab.astng.mixins import (StmtMixIn, FilterStmtsMixin)
 
 from logilab.astng.nodes_as_string import as_string
 
@@ -78,143 +73,6 @@ def std_special_attributes(self, name, add_locals=True):
     raise NotFoundError(name)
 
 
-# MixIns -----------------------------------------------------
-
-
-
-class LookupMixIn(BaseClass):
-    """Mixin looking up a name in the right scope
-    """
-
-    def lookup(self, name):
-        """lookup a variable name
-
-        return the scope node and the list of assignments associated to the given
-        name according to the scope where it has been found (locals, globals or
-        builtin)
-
-        The lookup is starting from self's scope. If self is not a frame itself and
-        the name is found in the inner frame locals, statements will be filtered
-        to remove ignorable statements according to self's location
-        """
-        return self.scope().scope_lookup(self, name)
-
-    def ilookup(self, name, context=None):
-        """infered lookup
-
-        return an iterator on infered values of the statements returned by
-        the lookup method
-        """
-        frame, stmts = self.lookup(name)
-        context = copy_context(context)
-        context.lookupname = name
-        return _infer_stmts(stmts, context, frame)
-
-    def _filter_stmts(self, stmts, frame, offset):
-        """filter statements to remove ignorable statements.
-
-        If self is not a frame itself and the name is found in the inner
-        frame locals, statements will be filtered to remove ignorable
-        statements according to self's location
-        """
-        # if offset == -1, my actual frame is not the inner frame but its parent
-        #
-        # class A(B): pass
-        #
-        # we need this to resolve B correctly
-        if offset == -1:
-            myframe = self.frame().parent.frame()
-        else:
-            myframe = self.frame()
-        if not myframe is frame or self is frame:
-            return stmts
-        mystmt = self.statement()
-        # line filtering if we are in the same frame
-        #
-        # take care node may be missing lineno information (this is the case for
-        # nodes inserted for living objects)
-        if myframe is frame and mystmt.fromlineno is not None:
-            assert mystmt.fromlineno is not None, mystmt
-            mylineno = mystmt.fromlineno + offset
-        else:
-            # disabling lineno filtering
-            mylineno = 0
-        _stmts = []
-        _stmt_parents = []
-        for node in stmts:
-            stmt = node.statement()
-            # line filtering is on and we have reached our location, break
-            if mylineno > 0 and stmt.fromlineno > mylineno:
-                break
-            assert hasattr(node, 'ass_type'), (node, node.scope(),
-                                               node.scope().locals)
-            ass_type = node.ass_type()
-
-            if node.has_base(self):
-                break
-
-            _stmts, done = ass_type._get_filtered_stmts(self, node, _stmts, mystmt)
-            if done:
-                break
-
-            optional_assign = isinstance(ass_type, (For, Comprehension))
-            if optional_assign and ass_type.parent_of(self):
-                # we are inside a loop, loop var assigment is hidding previous
-                # assigment
-                _stmts = [node]
-                _stmt_parents = [stmt.parent]
-                continue
-
-            # XXX comment various branches below!!!
-            try:
-                pindex = _stmt_parents.index(stmt.parent)
-            except ValueError:
-                pass
-            else:
-                # we got a parent index, this means the currently visited node
-                # is at the same block level as a previously visited node
-                if _stmts[pindex].ass_type().parent_of(ass_type):
-                    # both statements are not at the same block level
-                    continue
-                # if currently visited node is following previously considered
-                # assignement and both are not exclusive, we can drop the
-                # previous one. For instance in the following code ::
-                #
-                #   if a:
-                #     x = 1
-                #   else:
-                #     x = 2
-                #   print x
-                #
-                # we can't remove neither x = 1 nor x = 2 when looking for 'x'
-                # of 'print x'; while in the following ::
-                #
-                #   x = 1
-                #   x = 2
-                #   print x
-                #
-                # we can remove x = 1 when we see x = 2
-                #
-                # moreover, on loop assignment types, assignment won't
-                # necessarily be done if the loop has no iteration, so we don't
-                # want to clear previous assigments if any (hence the test on
-                # optional_assign)
-                if not (optional_assign or are_exclusive(_stmts[pindex], node)):
-                    del _stmt_parents[pindex]
-                    del _stmts[pindex]
-            if isinstance(node, AssName):
-                if not optional_assign and stmt.parent is mystmt.parent:
-                    _stmts = []
-                    _stmt_parents = []
-            elif isinstance(node, DelName):
-                _stmts = []
-                _stmt_parents = []
-                continue
-            if not are_exclusive(self, node):
-                _stmts.append(node)
-                _stmt_parents.append(stmt.parent)
-        return _stmts
-
 
 def builtin_lookup(name):
     """lookup a name into the builtin module
@@ -232,6 +90,7 @@ def builtin_lookup(name):
     return builtinastng, stmts
 
 
+# TODO move this Mixin to mixins.py; problem: 'Function' in _scope_lookup
 class LocalsDictNodeNG(LookupMixIn, NodeNG):
     """ this class provides locals handling common to Module, Function
     and Class nodes, including a dict like interface for direct access
@@ -349,19 +208,6 @@ class LocalsDictNodeNG(LookupMixIn, NodeNG):
         return self.locals.has_key(name)
 
     __contains__ = has_key
-
-# Name classses
-
-class AssName(LookupMixIn, ParentAssignTypeMixin, NodeNG):
-    """class representing an AssName node"""
-
-
-class DelName(LookupMixIn, ParentAssignTypeMixin, NodeNG):
-    """class representing a DelName node"""
-
-
-class Name(LookupMixIn, NodeNG):
-    """class representing a Name node"""
 
 
 # Module  #####################################################################
