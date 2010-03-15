@@ -378,7 +378,6 @@ class TreeRebuilder(RebuildVisitor):
         _init_set_doc(node, newnode)
         newnode.args = self.visit(node.args, newnode)
         newnode.body = [self.visit(child, newnode) for child in node.body]
-        self._set_infos(node, newnode.args, newnode)
         if 'decorators' in node._fields: # py < 2.6
             attr = 'decorators'
         else:
