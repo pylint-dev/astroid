@@ -381,11 +381,11 @@ class TreeRebuilder(RebuildVisitor):
 
     def visit_discard(self, node, parent):
         """visit a Discard node by returning a fresh instance of it"""
+        newnode = new.Discard()
         if node.lineno is None:
             # ignore dummy Discard introduced when a statement
-            # is ended by a semi-colon
-            return
-        newnode = new.Discard()
+            # is ended by a semi-colon: remove it at the end of rebuilding
+            self._remove_nodes.append((newnode, parent))
         self._set_infos(node, newnode, parent)
         self.asscontext = "Dis"
         newnode.value = self.visit(node.expr, newnode)
@@ -545,9 +545,12 @@ class TreeRebuilder(RebuildVisitor):
         """visit a Module node by returning a fresh instance of it"""
         newnode = new.Module()
         self._set_infos(node, newnode, parent)
+        self._remove_nodes = [] # list of ';' Discard nodes to be removed
         newnode.doc = node.doc
         newnode.name = node.name
         newnode.body = [self.visit(child, newnode) for child in node.node.nodes]
+        for discard, d_parent in self._remove_nodes:
+            d_parent.child_sequence(discard).remove(discard)
         return newnode
 
     def visit_name(self, node, parent):
