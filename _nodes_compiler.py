@@ -475,10 +475,10 @@ class TreeRebuilder(RebuildVisitor):
         for test, body in node.tests[1:]:# this represents 'elif'
             # create successively If nodes and put it in orelse of the previous
             subparent, subnode = subnode, new.If()
-            self._set_infos(node, subnode, subparent)
-            subnode.fromlineno = node.tests[1][0].fromlineno
-            subnode.tolineno = node.tests[1][1].nodes[-1].tolineno
-            subnode.blockstart_tolineno = node.tests[1][0].tolineno
+            subnode.parent = subparent
+            subnode.fromlineno = test.fromlineno
+            subnode.tolineno = body.nodes[-1].tolineno
+            subnode.blockstart_tolineno = test.tolineno
             subnode.test = self.visit(test, subnode)
             subnode.body = [self.visit(child, subnode) for child in body.nodes]
             subparent.orelse = [subnode]
