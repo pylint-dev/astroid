@@ -632,6 +632,7 @@ class TreeRebuilder(RebuildVisitor):
             return delnode
         newnode = new.Subscript()
         self._set_infos(node, newnode, parent)
+        self.asscontext, asscontext = None, self.asscontext
         newnode.value = self.visit(node.expr, newnode)
         if [n for n in node.subs if isinstance(n, Sliceobj)]:
             if len(node.subs) == 1: # Sliceobj -> new.Slice
@@ -640,6 +641,7 @@ class TreeRebuilder(RebuildVisitor):
                 newnode.slice = self.visit_extslice(node, newnode)
         else: # Index
             newnode.slice = self.visit_index(node, newnode)
+        self.asscontext = asscontext
         return newnode
 
     def visit_tryexcept(self, node, parent):
