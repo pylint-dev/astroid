@@ -365,10 +365,9 @@ class TreeRebuilder(RebuildVisitor):
     def visit_from(self, node, parent):
         """visit a From node by returning a fresh instance of it"""
         names = [(alias.name, alias.asname) for alias in node.names]
-        newnode = new.From(node.module, names)
+        newnode = new.From(node.module, names, node.level)
         self._set_infos(node, newnode, parent)
         self._add_from_names_to_locals(newnode)
-        newnode.level = node.level
         return newnode
 
     def _visit_function(self, node, parent):

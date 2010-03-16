@@ -541,9 +541,10 @@ class For(BlockRangeMixIn, StmtMixIn, AssignTypeMixin, NodeNG):
 class From(FromImportMixIn, StmtMixIn, NodeNG):
     """class representing a From node"""
 
-    def __init__(self,  fromname, names):
+    def __init__(self,  fromname, names, level=0):
         self.modname = fromname
         self.names = names
+        self.level = level
 
 class Getattr(NodeNG):
     """class representing a Getattr node"""
