@@ -663,7 +663,7 @@ help()
         astng = builder.string_build(code, __name__, __file__)
         node = get_name_node(astng, 'help', -1)
         infered = list(node.infer())
-        self.failUnlessEqual(len(infered), 1)
+        self.failUnlessEqual(len(infered), 1, infered)
         self.assertIsInstance(infered[0], Instance)
         self.failUnlessEqual(str(infered[0]),
                              'Instance of site._Helper')

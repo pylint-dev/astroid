@@ -69,7 +69,7 @@ class InferenceContext(object):
 
     def __init__(self, path=None):
         if path is None:
-            self.path = []
+            self.path = set()
         else:
             self.path = path
         self.lookupname = None
@@ -80,10 +80,7 @@ class InferenceContext(object):
         name = self.lookupname
         if (node, name) in self.path:
             raise StopIteration()
-        self.path.append( (node, name) )
-
-    def pop(self):
-        return self.path.pop()
+        self.path.add( (node, name) )
 
     def clone(self):
         # XXX copy lookupname/callcontext ?
@@ -290,18 +287,15 @@ def path_wrapper(func):
             context = InferenceContext()
         context.push(node)
         yielded = set()
-        try:
-            for res in _func(node, context, **kwargs):
-                # unproxy only true instance, not const, tuple, dict...
-                if res.__class__ is Instance:
-                    ares = res._proxied
-                else:
-                    ares = res
-                if not ares in yielded:
-                    yield res
-                    yielded.add(ares)
-        finally:
-            context.pop()
+        for res in _func(node, context, **kwargs):
+            # unproxy only true instance, not const, tuple, dict...
+            if res.__class__ is Instance:
+                ares = res._proxied
+            else:
+                ares = res
+            if not ares in yielded:
+                yield res
+                yielded.add(ares)
     return wrapped
 
 def yes_if_nothing_infered(func):

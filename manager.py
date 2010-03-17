@@ -120,7 +120,6 @@ class ASTNGManager(OptionsProviderMixIn):
             source = False
         if modname is None:
             modname = '.'.join(modpath_from_file(filepath))
-        print >>sys.stderr, 'astng from file', filepath, modname
         try:
             return self._cache[modname]
         except KeyError:
