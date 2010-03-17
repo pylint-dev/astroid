@@ -13,9 +13,9 @@
 """this module contains a set of functions to handle inference on astng trees
 
 :author:    Sylvain Thenault
-:copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2010 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2009 Sylvain Thenault
+:copyright: 2003-2010 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 
@@ -212,7 +212,7 @@ def infer_import(self, context=None, asname=True):
 nodes.Import.infer = path_wrapper(infer_import)
 
 def infer_name_module(self, name):
-    context = InferenceContext(self)
+    context = InferenceContext()
     context.lookupname = name
     return self.infer(context, asname=False)
 nodes.Import.infer_name_module = infer_name_module

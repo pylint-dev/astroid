@@ -36,7 +36,7 @@ except ImportError:
     class BaseClass:
         pass
 
-
+from logilab.common.compat import set
 from logilab.astng.utils import REDIRECT
 from logilab.astng._exceptions import (InferenceError, ASTNGError,
                                        NotFoundError, UnresolvableName)
@@ -65,10 +65,9 @@ class Proxy(BaseClass):
 
 
 class InferenceContext(object):
-    __slots__ = ('startingfrom', 'path', 'lookupname', 'callcontext', 'boundnode')
+    __slots__ = ('path', 'lookupname', 'callcontext', 'boundnode')
 
-    def __init__(self, node=None, path=None):
-        self.startingfrom = node # XXX useful ?
+    def __init__(self, path=None):
         if path is None:
             self.path = []
         else:
@@ -88,7 +87,7 @@ class InferenceContext(object):
 
     def clone(self):
         # XXX copy lookupname/callcontext ?
-        clone = InferenceContext(self.startingfrom, self.path)
+        clone = InferenceContext(self.path)
         clone.callcontext = self.callcontext
         clone.boundnode = self.boundnode
         return clone
@@ -288,9 +287,9 @@ def path_wrapper(func):
     def wrapped(node, context=None, _func=func, **kwargs):
         """wrapper function handling context"""
         if context is None:
-            context = InferenceContext(node)
+            context = InferenceContext()
         context.push(node)
-        yielded = []
+        yielded = set()
         try:
             for res in _func(node, context, **kwargs):
                 # unproxy only true instance, not const, tuple, dict...
@@ -300,11 +299,9 @@ def path_wrapper(func):
                     ares = res
                 if not ares in yielded:
                     yield res
-                    yielded.append(ares)
+                    yielded.add(ares)
+        finally:
             context.pop()
-        except:
-            context.pop()
-            raise
     return wrapped
 
 def yes_if_nothing_infered(func):
