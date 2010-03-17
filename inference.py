@@ -286,12 +286,14 @@ def infer_subscript(self, context=None):
     else:
         raise InferenceError()
 nodes.Subscript.infer = path_wrapper(infer_subscript)
+nodes.Subscript.infer_lhs = raise_if_nothing_infered(infer_subscript)
 
 
-UNARY_OP_METHOD = {'+':  '__pos__',
-                 '-':  '__neg__',
-                 'not': None, # XXX not '__nonzero__'
-                 }
+UNARY_OP_METHOD = {'+': '__pos__',
+                   '-': '__neg__',
+                   '~': '__invert__',
+                   'not': None, # XXX not '__nonzero__'
+                  }
 
 def infer_unaryop(self, context=None):
     for operand in self.operand.infer(context):
