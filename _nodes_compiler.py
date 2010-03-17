@@ -184,11 +184,15 @@ class TreeRebuilder(RebuildVisitor):
         else:
             vararg = None
         newnode = new.Arguments(vararg, kwarg)
-        self._set_infos(node, newnode, parent)
+        newnode.parent = parent
+        newnode.fromlineno = parent.fromlineno
+        try:
+            newnode.tolineno = parent.blockstart_tolineno
+        except AttributeError: # lambda
+            newnode.tolineno = parent.tolineno
         newnode.args = self._nodify_args(newnode, node.argnames)
         self._save_argument_name(newnode)
-        newnode.defaults = [self.visit(child, newnode) for child in node.defaults]
-        self._save_argument_name(newnode)
+        newnode.defaults = [self.visit(n, newnode) for n in node.defaults]
         return newnode
 
     def visit_assattr(self, node, parent):
