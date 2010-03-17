@@ -39,11 +39,11 @@ def astng_wrapper(func, modname):
     print 'parsing %s...' % modname
     try:
         return func(modname)
-    except ASTNGBuildingException, ex:
-        print ex
+    except ASTNGBuildingException, exc:
+        print exc
     except KeyboardInterrupt:
         raise
-    except Exception, ex:
+    except Exception, exc:
         import traceback
         traceback.print_exc()
 
@@ -94,14 +94,12 @@ class ASTNGManager(OptionsProviderMixIn):
             self.__dict__ = ASTNGManager.brain
         if not self.__dict__:
             OptionsProviderMixIn.__init__(self)
-            self._cache = None
-            self._mod_file_cache = None
-            self.set_cache_size(200)
             self.load_defaults()
+            # NOTE: cache entries are added by the [re]builder
+            self._cache = {} #Cache(cache_size)
+            self._mod_file_cache = {}
 
-    def set_cache_size(self, cache_size):
-        """set the cache size (flush it as a side effect!)"""
-        # NOTE: cache entries are added by the [re]builder
+    def reset_cache(self):
         self._cache = {} #Cache(cache_size)
         self._mod_file_cache = {}
 
@@ -120,10 +118,8 @@ class ASTNGManager(OptionsProviderMixIn):
             source = False
         if modname is None:
             modname = '.'.join(modpath_from_file(filepath))
-        try:
+        if modname in self._cache:
             return self._cache[modname]
-        except KeyError:
-            pass
         if source:
             try:
                 from logilab.astng.builder import ASTNGBuilder
@@ -145,10 +141,8 @@ class ASTNGManager(OptionsProviderMixIn):
 
     def astng_from_module_name(self, modname, context_file=None):
         """given a module name, return the astng object"""
-        try:
+        if modname in self._cache:
             return self._cache[modname]
-        except KeyError:
-            pass
         old_cwd = os.getcwd()
         if context_file:
             os.chdir(dirname(context_file))
@@ -159,7 +153,8 @@ class ASTNGManager(OptionsProviderMixIn):
                 if data is not None:
                     from logilab.astng.builder import ASTNGBuilder
                     try:
-                        return ASTNGBuilder(self).string_build(data, zmodname, filepath)
+                        return ASTNGBuilder(self).string_build(data, zmodname,
+                                                               filepath)
                     except (SyntaxError, KeyboardInterrupt, SystemExit):
                         raise
             if filepath is None or not is_python_source(filepath):
@@ -191,11 +186,8 @@ class ASTNGManager(OptionsProviderMixIn):
     def astng_from_module(self, module, modname=None):
         """given an imported module, return the astng object"""
         modname = modname or module.__name__
-        try:
+        if modname in self._cache:
             return self._cache[modname]
-        except KeyError:
-            pass
-        filepath = modname
         try:
             # some builtin modules don't have __file__ attribute
             filepath = module.__file__
@@ -410,3 +402,4 @@ class Project:
     def __repr__(self):
         return '<Project %r at %s (%s modules)>' % (self.name, id(self),
                                                     len(self.modules))
+
