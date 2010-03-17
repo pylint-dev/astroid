@@ -213,6 +213,7 @@ class LocalsDictNodeNG(LookupMixIn, NodeNG):
 # Module  #####################################################################
 
 class Module(LocalsDictNodeNG):
+    _astng_fields = ('body',)
 
     fromlineno = 0
     lineno = 0
@@ -398,6 +399,7 @@ class Module(LocalsDictNodeNG):
 
 
 class GenExpr(LocalsDictNodeNG):
+    _astng_fields = ('elt', 'generators')
 
     def __init__(self):
         self.locals = {}
@@ -411,6 +413,7 @@ GenExpr.scope_lookup = LocalsDictNodeNG._scope_lookup
 
 
 class Lambda(LocalsDictNodeNG, FilterStmtsMixin):
+    _astng_fields = ('args', 'body',)
 
     # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
     type = 'function'
@@ -459,14 +462,15 @@ class Lambda(LocalsDictNodeNG, FilterStmtsMixin):
         return frame._scope_lookup(node, name, offset)
 
 class Function(StmtMixIn, Lambda):
-
-    def __init__(self):
-        self.locals = {}
+    _astng_fields = ('decorators', 'args', 'body')
 
     special_attributes = set(('__name__', '__doc__', '__dict__'))
     # attributes below are set by the builder module or by raw factories
 
     blockstart_tolineno = None
+
+    def __init__(self):
+        self.locals = {}
 
     def set_line_info(self, lastchild):
         self.fromlineno = self.lineno
@@ -625,8 +629,9 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
     # by a raw factories
 
     # a dictionary of class instances attributes
-    instance_attrs = None
+    _astng_fields = ('bases', 'body',) # name
 
+    instance_attrs = None
     special_attributes = set(('__name__', '__doc__', '__dict__', '__module__',
                               '__bases__', '__mro__'))
 

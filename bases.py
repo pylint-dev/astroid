@@ -334,6 +334,8 @@ class NodeNG(BaseClass):
     tolineno = None
     # parent node in the tree
     parent = None
+    # attributes containing child node(s) redefined in most concrete classes:
+    _astng_fields = ()
 
     def __str__(self):
         return '%s(%s)' % (self.__class__.__name__, getattr(self, 'name', ''))
