@@ -62,7 +62,7 @@ class ASTNGBuilder:
         self._module = None
         self._file = None
         self._done = None
-        self.rebuilder = TreeRebuilder()
+        self.rebuilder = TreeRebuilder(manager)
         self._dyn_modname_map = {'gtk': 'gtk._gtk'}
 
     def module_build(self, module, modname=None):
@@ -87,10 +87,12 @@ class ASTNGBuilder:
         because it's a built-in module or because the .py is not available)
         """
         self._module = module
-        node = build_module(modname or module.__name__, module.__doc__)
+        if modname is None:
+            modname = module.__name__
+        node = build_module(modname, module.__doc__)
         node.file = node.path = path and abspath(path) or path
         if self._manager is not None:
-            self._manager._cache[node.file] = self._manager._cache[node.name] = node
+            self._manager._cache[modname] = node
         node.package = hasattr(module, '__path__')
         self._done = {}
         self.object_build(node, module)
@@ -144,11 +146,6 @@ class ASTNGBuilder:
         newnode.pure_python = True
         newnode.package = package
         newnode.file = newnode.path = node_file
-        newnode.name = modname
-        if self._manager is not None:
-            self._manager._cache[newnode.file] = newnode
-            if self._file:
-                self._manager._cache[abspath(self._file)] = newnode
         return newnode
 
     # astng from living objects ###############################################

@@ -28,7 +28,7 @@ import os
 from os.path import dirname, basename, abspath, join, isdir, exists
 
 from logilab.common.modutils import NoSourceFile, is_python_source, \
-     file_from_modpath, load_module_from_name, \
+     file_from_modpath, load_module_from_name, modpath_from_file, \
      get_module_files, get_source_file, zipimport
 from logilab.common.configuration import OptionsProviderMixIn
 
@@ -101,6 +101,7 @@ class ASTNGManager(OptionsProviderMixIn):
 
     def set_cache_size(self, cache_size):
         """set the cache size (flush it as a side effect!)"""
+        # NOTE: cache entries are added by the [re]builder
         self._cache = {} #Cache(cache_size)
         self._mod_file_cache = {}
 
@@ -117,52 +118,51 @@ class ASTNGManager(OptionsProviderMixIn):
             source = True
         except NoSourceFile:
             source = False
+        if modname is None:
+            modname = '.'.join(modpath_from_file(filepath))
+        print >>sys.stderr, 'astng from file', filepath, modname
         try:
-            return self._cache[filepath]
+            return self._cache[modname]
         except KeyError:
-            if source:
-                try:
-                    from logilab.astng.builder import ASTNGBuilder
-                    astng = ASTNGBuilder(self).file_build(filepath, modname)
-                except (SyntaxError, KeyboardInterrupt, SystemExit):
-                    raise
-                except Exception, ex:
-                    if __debug__:
-                        print 'error while building astng for', filepath
-                        import traceback
-                        traceback.print_exc()
-                    msg = 'Unable to load module %s (%s)' % (modname, ex)
-                    raise ASTNGBuildingException(msg), None, sys.exc_info()[-1]
-            elif fallback and modname:
-                return self.astng_from_module_name(modname)
-            else:
-                raise ASTNGBuildingException('unable to get astng for file %s' %
-                                             filepath)
-        self._cache[filepath] = astng
-        return astng
-
-    from_file = astng_from_file # backward compat
+            pass
+        if source:
+            try:
+                from logilab.astng.builder import ASTNGBuilder
+                return ASTNGBuilder(self).file_build(filepath, modname)
+            except (SyntaxError, KeyboardInterrupt, SystemExit):
+                raise
+            except Exception, ex:
+                raise
+                if __debug__:
+                    print 'error while building astng for', filepath
+                    import traceback
+                    traceback.print_exc()
+                msg = 'Unable to load module %s (%s)' % (modname, ex)
+                raise ASTNGBuildingException(msg), None, sys.exc_info()[-1]
+        elif fallback and modname:
+            return self.astng_from_module_name(modname)
+        raise ASTNGBuildingException('unable to get astng for file %s' %
+                                     filepath)
 
     def astng_from_module_name(self, modname, context_file=None):
         """given a module name, return the astng object"""
+        try:
+            return self._cache[modname]
+        except KeyError:
+            pass
         old_cwd = os.getcwd()
         if context_file:
             os.chdir(dirname(context_file))
         try:
             filepath = self.file_from_module_name(modname, context_file)
             if filepath is not None and not is_python_source(filepath):
-                try:
-                    return self._cache[filepath]
-                except KeyError:
-                    data, zmodname = zip_import_data(filepath)
-                    if data is not None:
-                        from logilab.astng.builder import ASTNGBuilder
-                        try:
-                            astng = ASTNGBuilder(self).string_build(data, zmodname, filepath)
-                        except (SyntaxError, KeyboardInterrupt, SystemExit):
-                            raise
-                        self._cache[filepath] = astng
-                        return astng
+                data, zmodname = zip_import_data(filepath)
+                if data is not None:
+                    from logilab.astng.builder import ASTNGBuilder
+                    try:
+                        return ASTNGBuilder(self).string_build(data, zmodname, filepath)
+                    except (SyntaxError, KeyboardInterrupt, SystemExit):
+                        raise
             if filepath is None or not is_python_source(filepath):
                 try:
                     module = load_module_from_name(modname)
@@ -192,6 +192,10 @@ class ASTNGManager(OptionsProviderMixIn):
     def astng_from_module(self, module, modname=None):
         """given an imported module, return the astng object"""
         modname = modname or module.__name__
+        try:
+            return self._cache[modname]
+        except KeyError:
+            pass
         filepath = modname
         try:
             # some builtin modules don't have __file__ attribute
@@ -200,15 +204,8 @@ class ASTNGManager(OptionsProviderMixIn):
                 return self.astng_from_file(filepath, modname)
         except AttributeError:
             pass
-        try:
-            return self._cache[filepath]
-        except KeyError:
-            from logilab.astng.builder import ASTNGBuilder
-            astng = ASTNGBuilder(self).module_build(module, modname)
-            # update caches (filepath and astng.file are not necessarily  the
-            # same (.pyc pb))
-            self._cache[filepath] = self._cache[astng.file] = astng
-            return astng
+        from logilab.astng.builder import ASTNGBuilder
+        return ASTNGBuilder(self).module_build(module, modname)
 
     def astng_from_class(self, klass, modname=None):
         """get astng for the given class"""

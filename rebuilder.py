@@ -30,7 +30,8 @@ from logilab.astng.bases import YES, Instance
 class RebuildVisitor(ASTVisitor):
     """Visitor to transform an AST to an ASTNG
     """
-    def __init__(self):
+    def __init__(self, manager):
+        self._manager = manager
         self.asscontext = None
         self._metaclass = None
         self._global_names = None
@@ -183,7 +184,12 @@ class RebuildVisitor(ASTVisitor):
         """visit an Module node to become astng"""
         self._metaclass = ['']
         self._global_names = []
-        return self._visit_module(node, parent)
+        module = self._visit_module(node, parent)
+        # init module cache here else we may get some infinite recursion
+        # errors while infering delayed assignments
+        if self._manager is not None:
+            self._manager._cache[module.name] = module
+        return module
 
     def visit_pass(self, node, parent):
         """visit a Pass node by returning a fresh instance of it"""
