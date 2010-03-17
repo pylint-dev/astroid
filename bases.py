@@ -12,8 +12,8 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-"""This module contains base classes and functions for the nodes and some inference
-utils.
+"""This module contains base classes and functions for the nodes and some
+inference utils.
 
 :author:    Sylvain Thenault
 :copyright: 2003-2010 LOGILAB S.A. (Paris, FRANCE)
@@ -37,10 +37,9 @@ except ImportError:
         pass
 
 
-from logilab.common.compat import chain, imap
-
 from logilab.astng.utils import REDIRECT
-from logilab.astng._exceptions import InferenceError, ASTNGError, NotFoundError, UnresolvableName
+from logilab.astng._exceptions import (InferenceError, ASTNGError,
+                                       NotFoundError, UnresolvableName)
 
 
 class Proxy(BaseClass):
@@ -177,14 +176,15 @@ class Instance(Proxy):
         """inferred getattr"""
         try:
             # XXX frame should be self._proxied, or not ?
-            return _infer_stmts(
-                self._wrap_attr(self.getattr(name, context, lookupclass=False), context),
-                                context, frame=self)
+            get_attr = self.getattr(name, context, lookupclass=False)
+            return _infer_stmts(self._wrap_attr(get_attr, context), context,
+                                frame=self)
         except NotFoundError:
             try:
                 # fallback to class'igetattr since it has some logic to handle
                 # descriptors
-                return self._wrap_attr(self._proxied.igetattr(name, context), context)
+                return self._wrap_attr(self._proxied.igetattr(name, context),
+                                       context)
             except NotFoundError:
                 raise InferenceError(name)
 
@@ -353,9 +353,9 @@ class NodeNG(BaseClass):
         return func(self)
 
     def get_children(self):
-        d = self.__dict__
-        for f in self._astng_fields:
-            attr = d[f]
+        node_dict = self.__dict__
+        for field in self._astng_fields:
+            attr = node_dict[field]
             if attr is None:
                 continue
             if isinstance(attr, (list, tuple)):
@@ -433,6 +433,8 @@ class NodeNG(BaseClass):
                 return field, node_or_sequence
         msg = 'Could not found %s in %s\'s children'
         raise ASTNGError(msg % (repr(child), repr(self)))
+    # FIXME : should we merge child_sequence and locate_child ? locate_child
+    # is only used in are_exclusive, child_sequence one time in pylint.
 
     def next_sibling(self):
         """return the next sibling statement"""
@@ -451,7 +453,7 @@ class NodeNG(BaseClass):
         nearest = None, 0
         for node in nodes:
             assert node.root() is myroot, \
-                   'not from the same module %s' % (self, node)
+                   'nodes %s and %s are not from the same module' % (self, node)
             lineno = node.fromlineno
             if node.fromlineno > mylineno:
                 break
@@ -576,9 +578,9 @@ def _repr_tree(node, result, indent='', _done=None, ids=False):
             for child in value:
                 if isinstance(child, (list, tuple) ):
                     # special case for Dict # FIXME
-                     _repr_tree(child[0], result, indent, _done, ids)
-                     _repr_tree(child[1], result, indent, _done, ids)
-                     result.append(indent + ',')
+                    _repr_tree(child[0], result, indent, _done, ids)
+                    _repr_tree(child[1], result, indent, _done, ids)
+                    result.append(indent + ',')
                 else:
                     _repr_tree(child, result, indent, _done, ids)
             result.append(  indent + "]" )

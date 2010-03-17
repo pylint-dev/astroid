@@ -117,15 +117,15 @@ class FromImportMixIn(BaseClass, FilterStmtsMixin):
     def _infer_name(self, frame, name):
         return name
 
-    def do_import_module(node, modname):
-        """return the ast for a module whose name is <modname> imported by <node>
+    def do_import_module(self, modname):
+        """return the ast for a module whose name is <modname> imported by <self>
         """
         # handle special case where we are on a package node importing a module
         # using the same name as the package, which may end in an infinite loop
         # on relative imports
         # XXX: no more needed ?
-        mymodule = node.root()
-        level = getattr(node, 'level', None) # Import as no level
+        mymodule = self.root()
+        level = getattr(self, 'level', None) # Import as no level
         if mymodule.absolute_modname(modname, level) == mymodule.name:
             # FIXME: I don't know what to do here...
             raise InferenceError('module importing itself: %s' % modname)

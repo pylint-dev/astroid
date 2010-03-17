@@ -22,7 +22,7 @@ order to get a single ASTNG representation
 
 from logilab.astng import ASTNGBuildingException, InferenceError
 from logilab.astng import nodes
-from logilab.astng.utils import ASTVisitor, REDIRECT
+from logilab.astng.utils import ASTVisitor, REDIRECT, _check_children
 from logilab.astng.bases import YES, Instance
 
 
@@ -51,6 +51,7 @@ class RebuildVisitor(ASTVisitor):
         delay_assattr = self.delayed_assattr
         for node in self._delayed_assattr:
             delay_assattr(node)
+        _check_children(newnode)
         return newnode
 
     def _save_argument_name(self, node):

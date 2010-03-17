@@ -23,17 +23,16 @@ Module for some node classes. More nodes in scoped_nodes.py
 """
 from logilab.common.compat import chain, imap
 
-from logilab.astng import (ASTNGBuildingException, InferenceError,
-                           NotFoundError, NoDefault)
+from logilab.astng import NoDefault
 from logilab.astng.bases import (NodeNG, BaseClass, Instance, copy_context,
-                                _infer_stmts)
-from logilab.astng.mixins import (StmtMixIn, BlockRangeMixIn, FilterStmtsMixin,
-    AssignTypeMixin, ParentAssignTypeMixin, FromImportMixIn)
+                                _infer_stmts, YES)
+from logilab.astng.mixins import (StmtMixIn, BlockRangeMixIn, AssignTypeMixin,
+    ParentAssignTypeMixin, FromImportMixIn)
 
 def unpack_infer(stmt, context=None):
-    """return an iterator on nodes inferred by the given statement if the inferred
-    value is a list or a tuple, recurse on it to get values inferred by its
-    content
+    """return an iterator on nodes inferred by the given statement if the
+    inferred value is a list or a tuple, recurse on it to get values inferred
+    by its content
     """
     if isinstance(stmt, (List, Tuple)):
         # XXX loosing context
@@ -485,21 +484,6 @@ class EmptyNode(NodeNG):
 
 class ExceptHandler(StmtMixIn, NodeNG, AssignTypeMixin):
     """class representing an ExceptHandler node"""
-
-    def __init__(self):
-        # XXX parent.lineno is wrong, can't catch the right line ...
-        return # XXX it doesn't work yet
-        if exc_type and exc_type.lineno:
-            self.fromlineno =  exc_type.lineno
-        else:
-            self.fromlineno =  self.body[0].fromlineno - 1
-        self.tolineno = self.body[-1].tolineno
-        if name:
-            self.blockstart_tolineno = name.tolineno
-        elif exc_type:
-            self.blockstart_tolineno = exc_type.tolineno
-        else:
-            self.blockstart_tolineno = self.fromlineno
 
     def _blockstart_toline(self):
         if self.name:

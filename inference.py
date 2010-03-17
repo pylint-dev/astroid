@@ -49,6 +49,10 @@ _CONST_PROXY = {
     }
 _CONST_PROXY[type(None)].parent = _CONST_PROXY[bool].parent
 
+# TODO : find a nicer way to handle this situation; we should at least
+# be able to avoid calling MANAGER.astng_from_class(const.value.__class__)
+# each time (if we can not avoid the property). However __proxied introduced an
+# infinite recursion (see https://bugs.launchpad.net/pylint/+bug/456870)
 def _set_proxied(const):
     return _CONST_PROXY[const.value.__class__]
 nodes.Const._proxied = property(_set_proxied)
