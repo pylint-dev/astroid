@@ -58,7 +58,7 @@ class RebuildVisitor(object):
             self._manager._cache[module.name] = module
         # handle delayed assattr nodes
         for from_node in self._from_nodes:
-            self._add_from_names_to_locals(from_node)
+            self._add_from_names_to_locals(from_node, delayed=True)
         delay_assattr = self.delayed_assattr
         for delayed in self._delayed_assattr:
             delay_assattr(delayed)
@@ -145,14 +145,16 @@ class RebuildVisitor(object):
         # we can not call handle wildcard imports if the source module is not
         # in the cache since 'import_module' calls the MANAGER and we will
         # end up with infinite recursions working with unfinished trees
-        # XXX but the values in locals are no more in the right order
         if node.modname in self._manager._cache:
              self._add_from_names_to_locals(node)
         else:
              self._from_nodes.append(node)
 
-    def _add_from_names_to_locals(self, node):
-        """store wildcard imported names to the current scope's locals"""
+    def _add_from_names_to_locals(self, node, delayed=False):
+        """store imported names to the locals;
+        resort the locals if coming from a delayed node
+        """
+        cmp_nodes = lambda x, y: cmp(x.fromlineno, y.fromlineno)
         for (name, asname) in node.names:
             if name == '*':
                 try:
@@ -161,8 +163,13 @@ class RebuildVisitor(object):
                     continue
                 for name in imported.wildcard_import_names():
                     node.parent.set_local(name, node)
+                    if delayed:
+                        node.parent.scope().locals[name].sort(cmp=cmp_nodes)
             else:
                 node.parent.set_local(asname or name, node)
+                if delayed:
+                    node.parent.scope().locals[asname or name].sort(cmp=cmp_nodes)
+
 
     def visit_function(self, node, parent):
         """visit an Function node to become astng"""
