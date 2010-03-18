@@ -367,7 +367,8 @@ class TreeRebuilder(RebuildVisitor):
         names = [(alias.name, alias.asname) for alias in node.names]
         newnode = new.From(node.module, names, node.level)
         self._set_infos(node, newnode, parent)
-        self._add_from_names_to_locals(newnode)
+        self._store_from_node(newnode)
+
         return newnode
 
     def _visit_function(self, node, parent):

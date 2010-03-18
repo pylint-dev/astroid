@@ -26,7 +26,6 @@ from logilab.astng.utils import REDIRECT
 from logilab.astng.bases import YES, Instance
 
 
-
 class RebuildVisitor(object):
     """Visitor to transform an AST to an ASTNG
     """
@@ -51,12 +50,15 @@ class RebuildVisitor(object):
         """
         self._metaclass = ['']
         self._global_names = []
+        self._from_nodes = []
         module = self.visit_module(node, None)
         # init module cache here else we may get some infinite recursion
         # errors while infering delayed assignments
         if self._manager is not None:
             self._manager._cache[module.name] = module
         # handle delayed assattr nodes
+        for from_node in self._from_nodes:
+            self._add_from_names_to_locals(from_node)
         delay_assattr = self.delayed_assattr
         for delayed in self._delayed_assattr:
             delay_assattr(delayed)
@@ -138,9 +140,19 @@ class RebuildVisitor(object):
         self._set_infos(node, newnode, parent)
         return newnode
 
+    def _store_from_node(self, node):
+        """handle From names by adding them to locals now or after"""
+        # we can not call handle wildcard imports if the source module is not
+        # in the cache since 'import_module' calls the MANAGER and we will
+        # end up with infinite recursions working with unfinished trees
+        # XXX but the values in locals are no more in the right order
+        if node.modname in self._manager._cache:
+             self._add_from_names_to_locals(node)
+        else:
+             self._from_nodes.append(node)
+
     def _add_from_names_to_locals(self, node):
-        """visit an From node to become astng"""
-        # add names imported by the import to locals
+        """store wildcard imported names to the current scope's locals"""
         for (name, asname) in node.names:
             if name == '*':
                 try:

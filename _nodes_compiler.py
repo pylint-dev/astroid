@@ -437,7 +437,7 @@ class TreeRebuilder(RebuildVisitor):
         """visit a From node by returning a fresh instance of it"""
         newnode = new.From(node.modname, node.names)
         self._set_infos(node, newnode, parent)
-        self._add_from_names_to_locals(newnode)
+        self._store_frome_node(newnode)
         return newnode
 
     def _visit_function(self, node, parent):
