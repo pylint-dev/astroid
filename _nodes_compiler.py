@@ -545,7 +545,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.generators = [self.visit(child, newnode) for child in node.quals]
         return newnode
 
-    def _visit_module(self, node, parent):
+    def visit_module(self, node, parent):
         """visit a Module node by returning a fresh instance of it"""
         newnode = new.Module()
         self._set_infos(node, newnode, parent)

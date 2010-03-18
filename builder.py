@@ -142,7 +142,7 @@ class ASTNGBuilder:
         else:
             package = path and path.find('__init__.py') > -1 or False
         node.name = modname # we need the name during the rebuilding prcess
-        newnode = self.rebuilder.walk(node)
+        newnode = self.rebuilder.build(node)
         newnode.pure_python = True
         newnode.package = package
         newnode.file = newnode.path = node_file

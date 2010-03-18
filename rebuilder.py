@@ -22,12 +22,12 @@ order to get a single ASTNG representation
 
 from logilab.astng import ASTNGBuildingException, InferenceError
 from logilab.astng import nodes
-from logilab.astng.utils import ASTVisitor, REDIRECT, _check_children
+from logilab.astng.utils import REDIRECT
 from logilab.astng.bases import YES, Instance
 
 
 
-class RebuildVisitor(ASTVisitor):
+class RebuildVisitor(object):
     """Visitor to transform an AST to an ASTNG
     """
     def __init__(self, manager):
@@ -45,15 +45,22 @@ class RebuildVisitor(ASTVisitor):
         visit_method = getattr(self, visit_name)
         return visit_method(node, parent)
 
-    def walk(self, node):
-        """start the walk down the tree and do some work after it"""
-        newnode = self.visit(node, None)
+    def build(self, node):
+        """rebuild the tree starting with an Module node;
+        return an astng.Module node
+        """
+        self._metaclass = ['']
+        self._global_names = []
+        module = self.visit_module(node, None)
+        # init module cache here else we may get some infinite recursion
+        # errors while infering delayed assignments
+        if self._manager is not None:
+            self._manager._cache[module.name] = module
         # handle delayed assattr nodes
         delay_assattr = self.delayed_assattr
-        for node in self._delayed_assattr:
-            delay_assattr(node)
-        _check_children(newnode)
-        return newnode
+        for delayed in self._delayed_assattr:
+            delay_assattr(delayed)
+        return module
 
     def _save_argument_name(self, node):
         """save argument names in locals"""
@@ -179,17 +186,6 @@ class RebuildVisitor(ASTVisitor):
         for (name, asname) in newnode.names:
             name = asname or name
             newnode.parent.set_local(name.split('.')[0], newnode)
-
-    def visit_module(self, node, parent):
-        """visit an Module node to become astng"""
-        self._metaclass = ['']
-        self._global_names = []
-        module = self._visit_module(node, parent)
-        # init module cache here else we may get some infinite recursion
-        # errors while infering delayed assignments
-        if self._manager is not None:
-            self._manager._cache[module.name] = module
-        return module
 
     def visit_pass(self, node, parent):
         """visit a Pass node by returning a fresh instance of it"""

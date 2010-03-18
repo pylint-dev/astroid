@@ -35,8 +35,8 @@ from logilab.astng import MANAGER, NotFoundError, NoDefault, \
 from logilab.astng.node_classes import (Const, DelName, DelAttr,
      Dict, From, List, Name, Pass, Raise, Return, Tuple, Yield,
      are_exclusive, LookupMixIn, const_factory as cf, unpack_infer)
-from logilab.astng.bases import (NodeNG, BaseClass, YES, InferenceContext, Instance,
-    Generator, UnboundMethod, BoundMethod, _infer_stmts, copy_context)
+from logilab.astng.bases import (NodeNG, BaseClass, InferenceContext, Instance,
+     YES, Generator, UnboundMethod, BoundMethod, _infer_stmts, copy_context)
 from logilab.astng.mixins import (StmtMixIn, FilterStmtsMixin)
 
 from logilab.astng.nodes_as_string import as_string
