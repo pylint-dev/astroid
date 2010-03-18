@@ -2,13 +2,27 @@ Change log for the astng package
 ================================
 
 --
-	* Ned Batchelder patch to properly import eggs with Windows line
-	endings.  This fixes a problem with pylint not being able to
-	import setuptools.
-        * Winfried Plapper patches fixing .op attribute value for AugAssign nodes,
-	  visit_ifexp in nodes_as_string
-        * Edward K. Ream / Tom Fleck patch closes #19641 (maximum recursion depth
-	  exceeded" messages w/ python 2.6), see https://bugs.launchpad.net/pylint/+bug/456870
+
+    * fix #20759: crash on pyreverse UNARY_OP_METHOD KeyError '~'
+
+    * fix #20760: crash on pyreverse : AttributeError: 'Subscript' 
+      object has no attribute 'infer_lhs'
+
+    * fix #21980: [Python-modules-team] Bug#573229 : Pylint hangs;
+      improving the cache yields a speed improvement on big projects
+
+    * major refactoring: rebuild the tree instead of modify / monkey patching
+
+    * fix #19641: "maximum recursion depth exceeded" messages w/ python 2.6
+      this was introduced by a refactoring
+
+    * Ned Batchelder patch to properly import eggs with Windows line
+      endings.  This fixes a problem with pylint not being able to
+      import setuptools.
+    * Winfried Plapper patches fixing .op attribute value for AugAssign nodes,
+      visit_ifexp in nodes_as_string
+    * Edward K. Ream / Tom Fleck patch closes #19641 (maximum recursion depth
+      exceeded" messages w/ python 2.6), see https://bugs.launchpad.net/pylint/+bug/456870
 
 2009-12-18  --  0.19.3
     * fix name error making 0.19.2 almost useless
@@ -59,7 +73,7 @@ Change log for the astng package
     * major api / tree structure changes to make it works with compiler *and*
       python >= 2.5 _ast module
 
-    * cleanups and refactoring on the way
+    * cleanup and refactoring on the way
 
 
 
