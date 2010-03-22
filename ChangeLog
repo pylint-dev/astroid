@@ -3,7 +3,7 @@ Change log for the astng package
 
 --  
 
-2010-03-18 -- 0.20.0
+2010-03-22 -- 0.20.0
     * fix #19882: pylint hangs
 
     * fix #20759: crash on pyreverse UNARY_OP_METHOD KeyError '~'

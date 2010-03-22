@@ -18,9 +18,9 @@ This module has been imported from pyreverse
 
 :version:   $Revision: 1.6 $  
 :author:    Sylvain Thenault
-:copyright: 2003-2009 LOGILAB S.A. (Paris, FRANCE)
+:copyright: 2003-2010 LOGILAB S.A. (Paris, FRANCE)
 :contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2009 Sylvain Thenault
+:copyright: 2003-2010 Sylvain Thenault
 :contact:   mailto:thenault@gmail.com
 """
 
