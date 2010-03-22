@@ -82,7 +82,13 @@ def const_infer_binary_op(self, operator, other, context):
         if isinstance(other, nodes.Const):
             try:
                 impl = BIN_OP_IMPL[operator]
-                yield const_factory(impl(self.value, other.value))
+
+                try:
+                    yield const_factory(impl(self.value, other.value))
+                except StandardError:
+                    # ArithmeticError is not enough: float >> float is a TypeError
+                    # TODO : let pylint know about the problem
+                    pass
             except TypeError:
                 # XXX log TypeError
                 continue
