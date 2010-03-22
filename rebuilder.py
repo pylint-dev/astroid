@@ -101,7 +101,6 @@ class RebuildVisitor(object):
         """visit a Class node to become astng"""
         self._metaclass.append(self._metaclass[-1])
         newnode = self._visit_class(node, parent)
-        newnode.name = node.name
         metaclass = self._metaclass.pop()
         if not newnode.bases:
             # no base classes, detect new / style old style according to
@@ -142,7 +141,7 @@ class RebuildVisitor(object):
 
     def _store_from_node(self, node):
         """handle From names by adding them to locals now or after"""
-        # we can not call handle wildcard imports if the source module is not
+        # we can not handle wildcard imports if the source module is not
         # in the cache since 'import_module' calls the MANAGER and we will
         # end up with infinite recursions working with unfinished trees
         if node.modname in self._manager._cache:
@@ -175,7 +174,6 @@ class RebuildVisitor(object):
         """visit an Function node to become astng"""
         self._global_names.append({})
         newnode = self._visit_function(node, parent)
-        newnode.name = node.name
         self._global_names.pop()
         frame = newnode.parent.frame()
         if isinstance(frame, nodes.Class):

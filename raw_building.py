@@ -61,9 +61,7 @@ def attach_import_node(node, modname, membername):
 
 def build_module(name, doc=None):
     """create and initialize a astng Module node"""
-    node = nodes.Module()
-    node.doc = doc
-    node.name = name
+    node = nodes.Module(name, doc)
     node.pure_python = False
     node.package = False
     node.parent = None
@@ -71,28 +69,19 @@ def build_module(name, doc=None):
 
 def build_class(name, basenames=(), doc=None):
     """create and initialize a astng Class node"""
-    node = nodes.Class()
-    node.body = []
-    node.name = name
-    node.bases = []
+    node = nodes.Class(name, doc)
     for base in basenames:
         basenode = nodes.Name()
         basenode.name = base
         node.bases.append(basenode)
         basenode.parent = node
-    node.doc = doc
-    node.locals = {}
-    node.instance_attrs = {}
     return node
 
 def build_function(name, args=None, defaults=None, flag=0, doc=None):
     """create and initialize a astng Function node"""
     args, defaults = args or [], defaults or []
     # first argument is now a list of decorators
-    func = nodes.Function()
-    func.decorators = None
-    func.body = []
-    func.name = name
+    func = nodes.Function(name, doc)
     func.args = argsnode = nodes.Arguments()
     argsnode.args = []
     for arg in args:
@@ -106,8 +95,6 @@ def build_function(name, args=None, defaults=None, flag=0, doc=None):
     argsnode.kwarg = None
     argsnode.vararg = None
     argsnode.parent = func
-    func.doc = doc
-    func.locals = {}
     if args:
         register_arguments(func)
     return func

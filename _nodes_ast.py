@@ -90,8 +90,11 @@ def _init_set_doc(node, newnode):
             newnode.tolineno = node.body[0].lineno
             newnode.doc = node.body[0].value.s
             node.body = node.body[1:]
+
     except IndexError:
         pass # ast built from scratch
+    
+
 
 def native_repr_tree(node, indent='', _done=None):
     if _done is None:
@@ -248,7 +251,7 @@ class TreeRebuilder(RebuildVisitor):
 
     def _visit_class(self, node, parent):
         """visit a Class node by returning a fresh instance of it"""
-        newnode = new.Class()
+        newnode = new.Class(node.name, None)
         _lineno_parent(node, newnode, parent)
         _init_set_doc(node, newnode)
         newnode.bases = [self.visit(child, newnode) for child in node.bases]
@@ -373,7 +376,7 @@ class TreeRebuilder(RebuildVisitor):
 
     def _visit_function(self, node, parent):
         """visit a Function node by returning a fresh instance of it"""
-        newnode = new.Function()
+        newnode = new.Function(node.name, None)
         _lineno_parent(node, newnode, parent)
         _init_set_doc(node, newnode)
         newnode.args = self.visit(node.args, newnode)
@@ -493,10 +496,9 @@ class TreeRebuilder(RebuildVisitor):
 
     def visit_module(self, node, parent):
         """visit a Module node by returning a fresh instance of it"""
-        newnode = new.Module()
+        newnode = new.Module(node.name, None)
         _lineno_parent(node, newnode, parent)
         _init_set_doc(node, newnode)
-        newnode.name = node.name
         newnode.body = [self.visit(child, newnode) for child in node.body]
         newnode.set_line_info(newnode.last_child())
         return newnode

@@ -239,8 +239,10 @@ class Module(LocalsDictNodeNG):
     # names of module attributes available through the global scope
     scope_attrs = set(('__name__', '__doc__', '__file__', '__path__'))
 
-    def __init__(self, body=None):
-        self.body = body or []
+    def __init__(self, name, doc):
+        self.body = []
+        self.name = name
+        self.doc = doc
         self.locals = self.globals = {}
 
     # Module is not a Statement node but needs the replace method (see StmtMixIn)
@@ -403,6 +405,8 @@ class GenExpr(LocalsDictNodeNG):
 
     def __init__(self):
         self.locals = {}
+        self.elt = None
+        self.generators = []
 
     def frame(self):
         return self.parent.frame()
@@ -420,6 +424,8 @@ class Lambda(LocalsDictNodeNG, FilterStmtsMixin):
 
     def __init__(self):
         self.locals = {}
+        self.args = []
+        self.body = []
 
     def pytype(self):
         if 'method' in self.type:
@@ -469,8 +475,13 @@ class Function(StmtMixIn, Lambda):
 
     blockstart_tolineno = None
 
-    def __init__(self):
+    def __init__(self, name, doc):
         self.locals = {}
+        self.args = []
+        self.body = []
+        self.decorators = None
+        self.name = name
+        self.doc = doc
 
     def set_line_info(self, lastchild):
         self.fromlineno = self.lineno
@@ -642,9 +653,13 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
                     doc="class'type, possible values are 'class' | "
                     "'metaclass' | 'interface' | 'exception'")
 
-    def __init__(self):
+    def __init__(self, name, doc):
         self.instance_attrs = {}
         self.locals = {}
+        self.bases = []
+        self.body = []
+        self.name = name
+        self.doc = doc
 
     def _newstyle_impl(self, context=None):
         if context is None:

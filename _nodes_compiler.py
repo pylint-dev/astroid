@@ -319,11 +319,10 @@ class TreeRebuilder(RebuildVisitor):
 
     def _visit_class(self, node, parent):
         """visit a Class node by returning a fresh instance of it"""
-        newnode = new.Class()
+        newnode = new.Class(node.name, node.doc)
         self._set_infos(node, newnode, parent)
         newnode.bases = [self.visit(child, newnode) for child in node.bases]
         newnode.body = [self.visit(child, newnode) for child in node.code.nodes]
-        newnode.doc = node.doc
         return newnode
 
     def visit_compare(self, node, parent):
@@ -442,10 +441,9 @@ class TreeRebuilder(RebuildVisitor):
 
     def _visit_function(self, node, parent):
         """visit a Function node by returning a fresh instance of it"""
-        newnode = new.Function()
+        newnode = new.Function(node.name, node.doc)
         self._set_infos(node, newnode, parent)
         newnode.decorators = self.visit(node.decorators, newnode)
-        newnode.doc = node.doc
         newnode.args = self.visit_arguments(node, newnode)
         newnode.body = [self.visit(child, newnode) for child in node.code.nodes]
         return newnode
@@ -547,11 +545,9 @@ class TreeRebuilder(RebuildVisitor):
 
     def visit_module(self, node, parent):
         """visit a Module node by returning a fresh instance of it"""
-        newnode = new.Module()
+        newnode = new.Module(node.name, node.doc)
         self._set_infos(node, newnode, parent)
         self._remove_nodes = [] # list of ';' Discard nodes to be removed
-        newnode.doc = node.doc
-        newnode.name = node.name
         newnode.body = [self.visit(child, newnode) for child in node.node.nodes]
         for discard, d_parent in self._remove_nodes:
             d_parent.child_sequence(discard).remove(discard)

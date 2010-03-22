@@ -252,6 +252,8 @@ class Name(LookupMixIn, NodeNG):
 class Arguments(NodeNG, AssignTypeMixin):
     """class representing an Arguments node"""
     _astng_fields = ('args', 'defaults')
+    args = None
+    defaults = None
 
     def __init__(self, vararg=None, kwarg=None):
         self.vararg = vararg
@@ -329,37 +331,41 @@ def _format_args(args, defaults=None):
 class AssAttr(NodeNG, ParentAssignTypeMixin):
     """class representing an AssAttr node"""
     _astng_fields = ('expr',)
-
+    expr = None
 
 class Assert(StmtMixIn, NodeNG):
     """class representing an Assert node"""
     _astng_fields = ('test', 'fail',)
-
+    test = None
+    fail = None
 
 class Assign(StmtMixIn, NodeNG, AssignTypeMixin):
     """class representing an Assign node"""
     _astng_fields = ('targets', 'value',)
-
+    targets = None
+    value = None
 
 class AugAssign(StmtMixIn, NodeNG, AssignTypeMixin):
     """class representing an AugAssign node"""
     _astng_fields = ('target', 'value',)
-
+    target = None
+    value = None
 
 class Backquote(NodeNG):
     """class representing a Backquote node"""
     _astng_fields = ('value',)
-
+    value = None
 
 class BinOp(NodeNG):
     """class representing a BinOp node"""
     _astng_fields = ('left', 'right',)
-
+    left = None
+    right = None
 
 class BoolOp(NodeNG):
     """class representing a BoolOp node"""
     _astng_fields = ('values',)
-
+    values = None
 
 class Break(StmtMixIn, NodeNG):
     """class representing a Break node"""
@@ -368,6 +374,10 @@ class Break(StmtMixIn, NodeNG):
 class CallFunc(NodeNG):
     """class representing a CallFunc node"""
     _astng_fields = ('func', 'args', 'starargs', 'kwargs')
+    func = None
+    args = None
+    starargs = None
+    kwargs = None
 
     def __init__(self):
         self.starargs = None
@@ -376,6 +386,8 @@ class CallFunc(NodeNG):
 class Compare(NodeNG):
     """class representing a Compare node"""
     _astng_fields = ('left', 'ops',)
+    left = None
+    ops = None
 
     def get_children(self):
         """override get_children for tuple fields"""
@@ -392,6 +404,9 @@ class Compare(NodeNG):
 class Comprehension(NodeNG):
     """class representing a Comprehension node"""
     _astng_fields = ('target', 'iter' ,'ifs')
+    target = None
+    iter = None
+    ifs = None
 
     def ass_type(self):
         return self
@@ -437,6 +452,7 @@ class Continue(StmtMixIn, NodeNG):
 class Decorators(NodeNG):
     """class representing a Decorators node"""
     _astng_fields = ('nodes',)
+    nodes = None
 
     def __init__(self, nodes=None):
         self.nodes = nodes
@@ -448,16 +464,19 @@ class Decorators(NodeNG):
 class DelAttr(NodeNG, ParentAssignTypeMixin):
     """class representing a DelAttr node"""
     _astng_fields = ('expr',)
+    expr = None
 
 
 class Delete(StmtMixIn, NodeNG, AssignTypeMixin):
     """class representing a Delete node"""
     _astng_fields = ('targets',)
+    targets = None
 
 
 class Dict(NodeNG, Instance):
     """class representing a Dict node"""
     _astng_fields = ('items',)
+    items = None
 
     def pytype(self):
         return '__builtin__.dict'
@@ -491,6 +510,7 @@ class Dict(NodeNG, Instance):
 class Discard(StmtMixIn, NodeNG):
     """class representing a Discard node"""
     _astng_fields = ('value',)
+    value = None
 
 
 class Ellipsis(NodeNG):
@@ -504,6 +524,9 @@ class EmptyNode(NodeNG):
 class ExceptHandler(StmtMixIn, NodeNG, AssignTypeMixin):
     """class representing an ExceptHandler node"""
     _astng_fields = ('type', 'name', 'body',)
+    type = None
+    name = None
+    body = None
 
     def _blockstart_toline(self):
         if self.name:
@@ -529,16 +552,24 @@ class ExceptHandler(StmtMixIn, NodeNG, AssignTypeMixin):
 class Exec(StmtMixIn, NodeNG):
     """class representing an Exec node"""
     _astng_fields = ('expr', 'globals', 'locals',)
+    expr = None
+    globals = None
+    locals = None
 
 
 class ExtSlice(NodeNG):
     """class representing an ExtSlice node"""
     _astng_fields = ('dims',)
+    dims = None
 
 
 class For(BlockRangeMixIn, StmtMixIn, AssignTypeMixin, NodeNG):
     """class representing a For node"""
     _astng_fields = ('target', 'iter', 'body', 'orelse',)
+    target = None
+    iter = None
+    body = None
+    orelse = None
 
     def _blockstart_toline(self):
         return self.iter.tolineno
@@ -555,6 +586,7 @@ class From(FromImportMixIn, StmtMixIn, NodeNG):
 class Getattr(NodeNG):
     """class representing a Getattr node"""
     _astng_fields = ('expr',)
+    expr = None
 
 
 class Global(StmtMixIn, NodeNG):
@@ -570,6 +602,9 @@ class Global(StmtMixIn, NodeNG):
 class If(BlockRangeMixIn, StmtMixIn, NodeNG):
     """class representing an If node"""
     _astng_fields = ('test', 'body', 'orelse')
+    test = None
+    body = None
+    orelse = None
 
     def _blockstart_toline(self):
         return self.test.tolineno
@@ -587,6 +622,9 @@ class If(BlockRangeMixIn, StmtMixIn, NodeNG):
 class IfExp(NodeNG):
     """class representing an IfExp node"""
     _astng_fields = ('test', 'body', 'orelse')
+    test = None
+    body = None
+    orelse = None
 
 
 class Import(FromImportMixIn, StmtMixIn, NodeNG):
@@ -596,16 +634,19 @@ class Import(FromImportMixIn, StmtMixIn, NodeNG):
 class Index(NodeNG):
     """class representing an Index node"""
     _astng_fields = ('value',)
+    value = None
 
 
 class Keyword(NodeNG):
     """class representing a Keyword node"""
     _astng_fields = ('value',)
+    value = None
 
 
 class List(NodeNG, Instance, ParentAssignTypeMixin):
     """class representing a List node"""
     _astng_fields = ('elts',) 
+    elts = None
 
     def pytype(self):
         return '__builtin__.list'
@@ -621,6 +662,8 @@ class List(NodeNG, Instance, ParentAssignTypeMixin):
 class ListComp(NodeNG):
     """class representing a ListComp node"""
     _astng_fields = ('elt', 'generators')
+    elt = None
+    generators = None
 
 
 class Pass(StmtMixIn, NodeNG):
@@ -630,31 +673,45 @@ class Pass(StmtMixIn, NodeNG):
 class Print(StmtMixIn, NodeNG):
     """class representing a Print node"""
     _astng_fields = ('dest', 'values',)
+    dest = None
+    values = None
 
 
 class Raise(StmtMixIn, NodeNG):
     """class representing a Raise node"""
     _astng_fields = ('type', 'inst', 'tback')
+    type = None
+    inst = None
+    tback = None
 
 
 class Return(StmtMixIn, NodeNG):
     """class representing a Return node"""
     _astng_fields = ('value',)
+    value = None
 
 
 class Slice(NodeNG):
     """class representing a Slice node"""
     _astng_fields = ('lower', 'upper', 'step')
+    lower = None
+    upper = None
+    step = None
 
 
 class Subscript(NodeNG):
     """class representing a Subscript node"""
     _astng_fields = ('value', 'slice')
+    value = None
+    slice = None
 
 
 class TryExcept(BlockRangeMixIn, StmtMixIn, NodeNG):
     """class representing a TryExcept node"""
     _astng_fields = ('body', 'handlers', 'orelse',)
+    body = None
+    handlers = None
+    orelse = None
 
     def _infer_name(self, frame, name):
         return name
@@ -678,6 +735,8 @@ class TryExcept(BlockRangeMixIn, StmtMixIn, NodeNG):
 class TryFinally(BlockRangeMixIn, StmtMixIn, NodeNG):
     """class representing a TryFinally node"""
     _astng_fields = ('body', 'finalbody',)
+    body = None
+    finalbody = None
 
     def _blockstart_toline(self):
         return self.lineno
@@ -695,6 +754,7 @@ class TryFinally(BlockRangeMixIn, StmtMixIn, NodeNG):
 class Tuple(NodeNG, Instance, ParentAssignTypeMixin):
     """class representing a Tuple node"""
     _astng_fields = ('elts',)
+    elts = None
 
     def pytype(self):
         return '__builtin__.tuple'
@@ -709,11 +769,15 @@ class Tuple(NodeNG, Instance, ParentAssignTypeMixin):
 class UnaryOp(NodeNG):
     """class representing an UnaryOp node"""
     _astng_fields = ('operand',)
+    operand = None
 
 
 class While(BlockRangeMixIn, StmtMixIn, NodeNG):
     """class representing a While node"""
     _astng_fields = ('test', 'body', 'orelse',)
+    test = None
+    body = None
+    orelse = None
 
     def _blockstart_toline(self):
         return self.test.tolineno
@@ -725,6 +789,9 @@ class While(BlockRangeMixIn, StmtMixIn, NodeNG):
 class With(BlockRangeMixIn, StmtMixIn, AssignTypeMixin, NodeNG):
     """class representing a With node"""
     _astng_fields = ('expr', 'vars', 'body')
+    expr = None
+    vars = None
+    body = None
 
     def _blockstart_toline(self):
         if self.vars:
@@ -736,6 +803,7 @@ class With(BlockRangeMixIn, StmtMixIn, AssignTypeMixin, NodeNG):
 class Yield(NodeNG):
     """class representing a Yield node"""
     _astng_fields = ('value',)
+    value = None
 
 # constants ##############################################################
 
