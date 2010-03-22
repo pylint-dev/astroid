@@ -44,14 +44,15 @@ class RebuildVisitor(object):
         visit_method = getattr(self, visit_name)
         return visit_method(node, parent)
 
-    def build(self, node):
+    def build(self, node, modname, module_file):
         """rebuild the tree starting with an Module node;
         return an astng.Module node
         """
         self._metaclass = ['']
         self._global_names = []
         self._from_nodes = []
-        module = self.visit_module(node, None)
+        module = self.visit_module(node, modname)
+        module.file = module.path = module_file
         # init module cache here else we may get some infinite recursion
         # errors while infering delayed assignments
         if self._manager is not None:

@@ -543,10 +543,10 @@ class TreeRebuilder(RebuildVisitor):
         newnode.generators = [self.visit(child, newnode) for child in node.quals]
         return newnode
 
-    def visit_module(self, node, parent):
+    def visit_module(self, node, modname):
         """visit a Module node by returning a fresh instance of it"""
-        newnode = new.Module(node.name, node.doc)
-        self._set_infos(node, newnode, parent)
+        newnode = new.Module(modname, node.doc)
+        self._set_infos(node, newnode, None)
         self._remove_nodes = [] # list of ';' Discard nodes to be removed
         newnode.body = [self.visit(child, newnode) for child in node.node.nodes]
         for discard, d_parent in self._remove_nodes:

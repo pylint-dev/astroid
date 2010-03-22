@@ -131,7 +131,7 @@ class ASTNGBuilder:
         return self.ast_build(parse(data + '\n'), modname, path)
 
     def ast_build(self, node, modname='', path=None):
-        """recurse on the ast (soon ng) to add some arguments at method"""
+        """build the astng from AST, return the new tree"""
         if path is not None:
             node_file = abspath(path)
         else:
@@ -141,11 +141,8 @@ class ASTNGBuilder:
             package = True
         else:
             package = path and path.find('__init__.py') > -1 or False
-        node.name = modname # we need the name during the rebuilding prcess
-        newnode = self.rebuilder.build(node)
-        newnode.pure_python = True
+        newnode = self.rebuilder.build(node, modname, node_file)
         newnode.package = package
-        newnode.file = newnode.path = node_file
         return newnode
 
     # astng from living objects ###############################################

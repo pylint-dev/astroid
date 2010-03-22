@@ -61,8 +61,7 @@ def attach_import_node(node, modname, membername):
 
 def build_module(name, doc=None):
     """create and initialize a astng Module node"""
-    node = nodes.Module(name, doc)
-    node.pure_python = False
+    node = nodes.Module(name, doc, pure_python=False)
     node.package = False
     node.parent = None
     return node

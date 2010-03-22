@@ -239,11 +239,12 @@ class Module(LocalsDictNodeNG):
     # names of module attributes available through the global scope
     scope_attrs = set(('__name__', '__doc__', '__file__', '__path__'))
 
-    def __init__(self, name, doc):
-        self.body = []
+    def __init__(self, name, doc, pure_python=True):
         self.name = name
         self.doc = doc
+        self.pure_python = pure_python
         self.locals = self.globals = {}
+        self.body = []
 
     # Module is not a Statement node but needs the replace method (see StmtMixIn)
     def replace(self, child, newchild):
