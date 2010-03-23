@@ -394,6 +394,10 @@ class Module(LocalsDictNodeNG):
             explicit = all.assigned_stmts().next()
         except InferenceError:
             return [name for name in self.keys() if not name.startswith('_')]
+        except AttributeError:
+            # not an assignment node
+            # XXX infer?
+            return [name for name in self.keys() if not name.startswith('_')]
         try:
             # should be a Tuple/List of constant string / 1 string not allowed
             return [const.value for const in explicit.elts]
