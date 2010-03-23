@@ -160,7 +160,9 @@ class ASTNGManager(OptionsProviderMixIn):
             if filepath is None or not is_python_source(filepath):
                 try:
                     module = load_module_from_name(modname)
-                except ImportError, ex:
+                # catch SystemError as well, we may get that on badly
+                # initialized C-module
+                except (SystemError, ImportError), ex:
                     msg = 'Unable to load module %s (%s)' % (modname, ex)
                     raise ASTNGBuildingException(msg)
                 return self.astng_from_module(module, modname)
