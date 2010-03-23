@@ -107,13 +107,16 @@ def tl_infer_binary_op(self, operator, other, context):
     for other in other.infer(context):
         if isinstance(other, self.__class__) and operator == '+':
             node = self.__class__()
-            elts = [n for elt in self.elts for n in elt.infer(context)]
-            elts += [n for elt in other.elts for n in elt.infer(context)]
+            elts = [n for elt in self.elts for n in elt.infer(context)
+                    if not n is YES]
+            elts += [n for elt in other.elts for n in elt.infer(context)
+                     if not n is YES]
             node.elts = elts
             yield node
         elif isinstance(other, nodes.Const) and operator == '*':
             node = self.__class__()
-            elts = [n for elt in self.elts for n in elt.infer(context)] * other.value
+            elts = [n for elt in self.elts for n in elt.infer(context)
+                    if not n is YES] * other.value
             node.elts = elts
             yield node
         elif isinstance(other, Instance) and not isinstance(other, nodes.Const):

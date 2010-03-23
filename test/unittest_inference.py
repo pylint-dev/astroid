@@ -1056,5 +1056,38 @@ class DataManager(object):
                 break
         else:
             self.fail('expected to find an instance of Application in %s' % infered)
+
+    def test_list_inference(self):
+        """#20464"""
+        code = '''
+import optparse
+
+A = []
+B = []
+
+def test():
+  xyz = [
+    "foobar=%s" % options.ca,
+  ] + A + B
+
+  if options.bind is not None:
+    xyz.append("bind=%s" % options.bind)
+  return xyz
+
+def main():
+  global options
+
+  parser = optparse.OptionParser()
+  (options, args) = parser.parse_args()
+
+Z = test()
+        '''
+        astng = builder.string_build(code, __name__, __file__)
+        infered = list(astng['Z'].infer())
+        self.assertEquals(len(infered), 1, infered)
+        self.assertIsInstance(infered[0], Instance)
+        self.assertIsInstance(infered[0]._proxied, nodes.Class)
+        self.assertEquals(infered[0]._proxied.name, 'list')
+
 if __name__ == '__main__':
     unittest_main()
