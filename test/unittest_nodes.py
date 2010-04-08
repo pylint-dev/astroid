@@ -255,6 +255,25 @@ class SliceNodeTC(testlib.TestCase):
             ast = abuilder.string_build(code)
             self.assertEquals(ast.as_string(), code)
 
+    def test_slice_and_subscripts(self):
+        code = """a[:1] = bord[2:]
+a[:1] = bord[2:]
+del bree[3:d]
+bord[2:]
+del av[d::f], a[df:]
+a[:1] = bord[2:]
+del SRC[::1,newaxis,1:]
+tous[vals] = 1010
+del thousand[key]
+del a[::2], a[:-1:step]
+del Fee.form[left:]
+aout.vals = miles.of_stuff
+del (ccok, (name.thing, foo.attrib.value)), Fee.form[left:]
+if all[1] == bord[0:]:
+    pass"""
+        ast = abuilder.string_build(code)
+        self.assertEquals(ast.as_string(), code)
+
 class EllipsisNodeTC(testlib.TestCase):
     def test(self):
         ast = abuilder.string_build('a[...]')

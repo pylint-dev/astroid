@@ -601,9 +601,10 @@ class TreeRebuilder(RebuildVisitor):
         """visit a compiler.Slice by returning a astng.Subscript"""
         # compiler.Slice nodes represent astng.Subscript nodes
         # the astng.Subscript node has a astng.Slice node as child
-        delnode = self._check_del_node(node, parent, [node])
-        if delnode:
-            return delnode
+        if node.flags == 'OP_DELETE':
+            delnode = self._check_del_node(node, parent, [node])
+            if delnode:
+                return delnode
         newnode = new.Subscript()
         self._set_infos(node, newnode, parent)
         newnode.value = self.visit(node.expr, newnode)
@@ -627,9 +628,10 @@ class TreeRebuilder(RebuildVisitor):
 
     def visit_subscript(self, node, parent):
         """visit a Subscript node by returning a fresh instance of it"""
-        delnode = self._check_del_node(node, parent, [node])
-        if delnode:
-            return delnode
+        if node.flags == 'OP_DELETE':
+            delnode = self._check_del_node(node, parent, [node])
+            if delnode:
+                return delnode
         newnode = new.Subscript()
         self._set_infos(node, newnode, parent)
         self.asscontext, asscontext = None, self.asscontext
