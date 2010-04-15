@@ -435,7 +435,7 @@ class Const(NodeNG, Instance):
     def getitem(self, index, context=None):
         if isinstance(self.value, basestring):
             return self.value[index]
-        raise TypeError()
+        raise TypeError('%r (value=%s)' % (self, self.value))
 
     def has_dynamic_getattr(self):
         return False

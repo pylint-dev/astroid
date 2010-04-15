@@ -322,10 +322,9 @@ def raise_if_nothing_infered(func):
 # Node  ######################################################################
 
 class NodeNG(BaseClass):
-    """/!\ this class should not be used directly /!\
-    It is used as method and attribute container, and updates the
-    original class from the compiler.ast / _ast module using its dictionary
-    (see below the class definition)
+    """Base Class for all ASTNG node classes.
+
+    It represents a node of the new abstract syntax tree.
     """
     is_statement = False
     # attributes below are set by the builder module or by raw factories
@@ -337,8 +336,20 @@ class NodeNG(BaseClass):
     # attributes containing child node(s) redefined in most concrete classes:
     _astng_fields = ()
 
+    def _repr_name(self):
+        """return self.name or self.attrname or '' for nice representation"""
+        return getattr(self, 'name', getattr(self, 'attrname', ''))
+
     def __str__(self):
-        return '%s(%s)' % (self.__class__.__name__, getattr(self, 'name', ''))
+        return '%s(%s)' % (self.__class__.__name__, self._repr_name())
+
+    def __repr__(self):
+        return '<%s(%s) l.%s [%s] at Ox%x>' % (self.__class__.__name__,
+                                           self._repr_name(),
+                                           self.fromlineno,
+                                           self.root().name,
+                                           id(self))
+
 
     def accept(self, visitor):
         klass = self.__class__.__name__
