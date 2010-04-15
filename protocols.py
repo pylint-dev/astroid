@@ -166,6 +166,8 @@ def _resolve_looppart(parts, asspath, context):
                 assigned = stmt.getitem(index, context)
             except (AttributeError, IndexError):
                 continue
+            except TypeError, exc: # stmt is unsubscriptable Const
+                continue
             if not asspath:
                 # we achieved to resolved the assignment path,
                 # don't infer the last part
@@ -176,7 +178,8 @@ def _resolve_looppart(parts, asspath, context):
                 # we are not yet on the last part of the path
                 # search on each possibly inferred value
                 try:
-                    for infered in _resolve_looppart(assigned.infer(context), asspath, context):
+                    for infered in _resolve_looppart(assigned.infer(context),
+                                                     asspath, context):
                         yield infered
                 except InferenceError:
                     break
@@ -189,8 +192,10 @@ def for_assigned_stmts(self, node, context=None, asspath=None):
                 for item in lst.elts:
                     yield item
     else:
-        for infered in _resolve_looppart(self.iter.infer(context), asspath, context):
+        for infered in _resolve_looppart(self.iter.infer(context),
+                                             asspath, context):
             yield infered
+
 nodes.For.assigned_stmts = raise_if_nothing_infered(for_assigned_stmts)
 nodes.Comprehension.assigned_stmts = raise_if_nothing_infered(for_assigned_stmts)
 
