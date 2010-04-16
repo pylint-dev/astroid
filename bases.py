@@ -37,7 +37,6 @@ except ImportError:
         pass
 
 from logilab.common.compat import set
-from logilab.astng.utils import REDIRECT
 from logilab.astng._exceptions import (InferenceError, ASTNGError,
                                        NotFoundError, UnresolvableName)
 
@@ -353,7 +352,7 @@ class NodeNG(BaseClass):
 
     def accept(self, visitor):
         klass = self.__class__.__name__
-        func = getattr(visitor, "visit_" + REDIRECT.get(klass, klass).lower())
+        func = getattr(visitor, "visit_" + self.__class__.__name__.lower())
         return func(self)
 
     def get_children(self):

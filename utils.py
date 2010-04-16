@@ -27,10 +27,10 @@ from logilab.astng._exceptions import IgnoreChild, ASTNGBuildingException
 
 class ASTVisitor(object):
     """Abstract Base Class for Python AST Visitors.
-    
+
     Visitors inheriting from ASTVisitors could visit
     compiler.ast, _ast or astng trees.
-    
+
     Not all methods will have to be implemented;
     so some methods are just empty interfaces for catching
     cases where we don't want to do anything on the
@@ -39,7 +39,7 @@ class ASTVisitor(object):
 
     def visit_arguments(self, node):
         """dummy method for visiting an Arguments node"""
-        
+
     def visit_assattr(self, node):
         """dummy method for visiting an AssAttr node"""
 
@@ -105,7 +105,7 @@ class ASTVisitor(object):
 
     def visit_emptynode(self, node):
         """dummy method for visiting an EmptyNode node"""
-        
+
     def visit_excepthandler(self, node):
         """dummy method for visiting an ExceptHandler node"""
 
@@ -209,43 +209,6 @@ class ASTVisitor(object):
         """dummy method for visiting an Yield node"""
 
 
-REDIRECT = {'arguments': 'Arguments',
-            'Attribute': 'Getattr',
-            'comprehension': 'Comprehension',
-            'Call': 'CallFunc',
-            'ClassDef': 'Class',
-            "ListCompFor": 'Comprehension',
-            "GenExprFor": 'Comprehension',
-            'excepthandler': 'ExceptHandler',
-            'Expr': 'Discard',
-            'FunctionDef': 'Function',
-            'GeneratorExp': 'GenExpr',
-            'ImportFrom': 'From',
-            'keyword': 'Keyword',
-            'Repr': 'Backquote',
-            
-            'Add': 'BinOp',
-            'Bitand': 'BinOp',
-            'Bitor': 'BinOp',
-            'Bitxor': 'BinOp',
-            'Div': 'BinOp',
-            'FloorDiv': 'BinOp',
-            'LeftShift': 'BinOp',
-            'Mod': 'BinOp',
-            'Mul': 'BinOp',
-            'Power': 'BinOp',
-            'RightShift': 'BinOp',
-            'Sub': 'BinOp',
-
-            'And': 'BoolOp',
-            'Or': 'BoolOp',
-
-            'UnaryAdd': 'UnaryOp',
-            'UnarySub': 'UnaryOp',
-            'Not': 'UnaryOp',
-            'Invert': 'UnaryOp'
-            }
-
 class ASTWalker:
     """a walker visiting a tree in preorder, calling on the handler:
 
@@ -255,12 +218,11 @@ class ASTWalker:
     * leave_<class name> on leaving a node, where class name is the class of
     the node in lower case
     """
-    REDIRECTION = REDIRECT
-    
+
     def __init__(self, handler):
         self.handler = handler
         self._cache = {}
-        
+
     def walk(self, node, _done=None):
         """walk on the tree from <node>, getting callbacks from handler"""
         if _done is None:
@@ -290,7 +252,7 @@ class ASTWalker:
         methods = self._cache.get(klass)
         if methods is None:
             handler = self.handler
-            kid = self.REDIRECTION.get(klass.__name__, klass.__name__).lower()
+            kid = klass.__name__.lower()
             e_method = getattr(handler, 'visit_%s' % kid,
                                getattr(handler, 'visit_default', None))
             l_method = getattr(handler, 'leave_%s' % kid,
@@ -362,5 +324,5 @@ def _check_children(node):
         _check_children(child)
 
 
-__all__ = ('REDIRECT', 'LocalsVisitor', 'ASTWalker', 'ASTVisitor',)
+__all__ = ('LocalsVisitor', 'ASTWalker', 'ASTVisitor',)
 

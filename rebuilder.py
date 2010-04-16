@@ -22,8 +22,44 @@ order to get a single ASTNG representation
 
 from logilab.astng import ASTNGBuildingException, InferenceError
 from logilab.astng import nodes
-from logilab.astng.utils import REDIRECT
 from logilab.astng.bases import YES, Instance
+
+REDIRECT = {'arguments': 'Arguments',
+            'Attribute': 'Getattr',
+            'comprehension': 'Comprehension',
+            'Call': 'CallFunc',
+            'ClassDef': 'Class',
+            "ListCompFor": 'Comprehension',
+            "GenExprFor": 'Comprehension',
+            'excepthandler': 'ExceptHandler',
+            'Expr': 'Discard',
+            'FunctionDef': 'Function',
+            'GeneratorExp': 'GenExpr',
+            'ImportFrom': 'From',
+            'keyword': 'Keyword',
+            'Repr': 'Backquote',
+            
+            'Add': 'BinOp',
+            'Bitand': 'BinOp',
+            'Bitor': 'BinOp',
+            'Bitxor': 'BinOp',
+            'Div': 'BinOp',
+            'FloorDiv': 'BinOp',
+            'LeftShift': 'BinOp',
+            'Mod': 'BinOp',
+            'Mul': 'BinOp',
+            'Power': 'BinOp',
+            'RightShift': 'BinOp',
+            'Sub': 'BinOp',
+
+            'And': 'BoolOp',
+            'Or': 'BoolOp',
+
+            'UnaryAdd': 'UnaryOp',
+            'UnarySub': 'UnaryOp',
+            'Not': 'UnaryOp',
+            'Invert': 'UnaryOp'
+            }
 
 
 class RebuildVisitor(object):
