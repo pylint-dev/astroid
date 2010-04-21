@@ -172,6 +172,11 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
 
         handle locals_type
         """
+        # avoid double parsing done by different Linkers.visit
+        # running over the same project:
+        if hasattr(node, '_handled'):
+            return
+        node._handled = True
         if node.name in node.frame().keys():
             frame = node.frame()
         else:
