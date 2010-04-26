@@ -35,8 +35,7 @@ install_requires = ['logilab-common >= 0.49.0']
 
 pyversions = ["2.3", "2.4", "2.5", '2.6']
 
-license = 'GPL'
-copyright = 'LOGILAB S.A.'
+license = 'LGPL'
 
 author = 'Logilab'
 author_email = 'python-projects@lists.logilab.org'
