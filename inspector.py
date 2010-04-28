@@ -172,7 +172,13 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
 
         handle locals_type
         """
-        frame = node.frame()
+        if node.name in node.frame().keys():
+            frame = node.frame()
+        else:
+            # the name has been defined as 'global' in the frame and belongs
+            # there. Btw the frame is not yet visited as the name is in the 
+            # root locals; the frame hence has no locals_type attribute
+            frame = node.root()
         try:
             values = list(node.infer())
             try:
