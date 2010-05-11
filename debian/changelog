@@ -1,3 +1,9 @@
+logilab-astng (0.20.1-1) unstable; urgency=low
+
+  * new upstream release
+
+ -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Tue, 11 May 2010 10:38:59 +0200
+
 logilab-astng (0.20.0-1) unstable; urgency=low
 
   * new upstream release
