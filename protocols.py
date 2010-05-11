@@ -1,23 +1,37 @@
 # This program is free software; you can redistribute it and/or modify it under
-# the terms of the GNU General Public License as published by the Free Software
+# the terms of the GNU Lesser General Public License as published by the Free Software
 # Foundation; either version 2 of the License, or (at your option) any later
 # version.
 #
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License along with
+# You should have received a copy of the GNU Lesser General Public License along with
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+# copyright 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
+# copyright 2003-2010 Sylvain Thenault, all rights reserved.
+# contact mailto:thenault@gmail.com
+#
+# This file is part of logilab-astng.
+#
+# logilab-astng is free software: you can redistribute it and/or modify it
+# under the terms of the GNU Lesser General Public License as published by the
+# Free Software Foundation, either version 2.1 of the License, or (at your
+# option) any later version.
+#
+# logilab-astng is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
+# for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
 """this module contains a set of functions to handle python protocols for nodes
 where it makes sense.
 
-:author:    Sylvain Thenault
-:copyright: 2003-2010 LOGILAB S.A. (Paris, FRANCE)
-:contact:   http://www.logilab.fr/ -- mailto:python-projects@logilab.org
-:copyright: 2003-2010 Sylvain Thenault
-:contact:   mailto:thenault@gmail.com
 """
 
 from __future__ import generators
@@ -166,6 +180,8 @@ def _resolve_looppart(parts, asspath, context):
                 assigned = stmt.getitem(index, context)
             except (AttributeError, IndexError):
                 continue
+            except TypeError, exc: # stmt is unsubscriptable Const
+                continue
             if not asspath:
                 # we achieved to resolved the assignment path,
                 # don't infer the last part
@@ -176,7 +192,8 @@ def _resolve_looppart(parts, asspath, context):
                 # we are not yet on the last part of the path
                 # search on each possibly inferred value
                 try:
-                    for infered in _resolve_looppart(assigned.infer(context), asspath, context):
+                    for infered in _resolve_looppart(assigned.infer(context),
+                                                     asspath, context):
                         yield infered
                 except InferenceError:
                     break
@@ -189,8 +206,10 @@ def for_assigned_stmts(self, node, context=None, asspath=None):
                 for item in lst.elts:
                     yield item
     else:
-        for infered in _resolve_looppart(self.iter.infer(context), asspath, context):
+        for infered in _resolve_looppart(self.iter.infer(context),
+                                             asspath, context):
             yield infered
+
 nodes.For.assigned_stmts = raise_if_nothing_infered(for_assigned_stmts)
 nodes.Comprehension.assigned_stmts = raise_if_nothing_infered(for_assigned_stmts)
 

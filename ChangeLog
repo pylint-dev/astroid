@@ -2,6 +2,11 @@ Change log for the astng package
 ================================
 
 --  
+ * fix licensing to LGPL
+ * add ALL_NODES_CLASSES constant to nodes module
+ * nodes redirection cleanup (possible since refactoring)
+ * bug fix for python < 2.5: add Delete node on Subscript nodes if we are in a
+   del context
 
 2010-03-22 -- 0.20.0
     * fix #20464: raises “TypeError: '_Yes' object is not iterable” on list inference
