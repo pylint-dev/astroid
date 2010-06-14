@@ -128,6 +128,9 @@ def tl_infer_binary_op(self, operator, other, context):
             node.elts = elts
             yield node
         elif isinstance(other, nodes.Const) and operator == '*':
+            if not isinstance(other.value, int):
+                yield YES
+                continue
             node = self.__class__()
             elts = [n for elt in self.elts for n in elt.infer(context)
                     if not n is YES] * other.value

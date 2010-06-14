@@ -839,6 +839,17 @@ print make_code
             self.assertIsInstance(infered[0].elts[0], nodes.List)
             self.assertIsInstance(infered[0].elts[1], nodes.List)
 
+    def test_binary_op_list_mul_none(self):
+        'test correct handling on list multiplied by None'
+        astng = builder.string_build( 'a = [1] * None\nb = [1] * "r"')
+        infered = astng['a'].infered()
+        self.assertEqual(len(infered), 1)
+        self.assertEqual(infered[0], YES)
+        infered = astng['b'].infered()
+        self.assertEqual(len(infered), 1)
+        self.assertEqual(infered[0], YES)
+
+
     def test_binary_op_tuple_add(self):
         astng = builder.string_build('a = (1,) + (2,)', __name__, __file__)
         infered = list(astng['a'].infer())
