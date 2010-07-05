@@ -927,13 +927,15 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
         if not herited and not implements.frame() is self:
             return
         found = set()
+        missing = False
         for iface in unpack_infer(implements):
             if iface is YES:
+                missing = True
                 continue
             if not iface in found and handler_func(iface):
                 found.add(iface)
                 yield iface
-        if not found:
+        if missing:
             raise InferenceError()
 
 
