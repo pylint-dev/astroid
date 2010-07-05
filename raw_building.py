@@ -141,7 +141,7 @@ def register_arguments(func, args=None):
             func.set_local(func.args.kwarg, func.args)
     for arg in args:
         if isinstance(arg, nodes.Name):
-            func.set_local(arg.id, arg)
+            func.set_local(arg.name, arg)
         else:
             register_arguments(func, arg.elts)
 

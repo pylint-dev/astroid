@@ -1,21 +1,26 @@
 Change log for the astng package
 ================================
 
---  
- * fix licensing to LGPL
- * add ALL_NODES_CLASSES constant to nodes module
- * nodes redirection cleanup (possible since refactoring)
- * bug fix for python < 2.5: add Delete node on Subscript nodes if we are in a
+2010-05-11  --  0.20.1
+    * fix licensing to LGPL
+
+    * add ALL_NODES_CLASSES constant to nodes module
+
+    * nodes redirection cleanup (possible since refactoring)
+
+    * bug fix for python < 2.5: add Delete node on Subscript nodes if we are in a
    del context
 
-2010-03-22 -- 0.20.0
+
+
+2010-03-22  --  0.20.0
     * fix #20464: raises “TypeError: '_Yes' object is not iterable” on list inference
 
     * fix #19882: pylint hangs
 
     * fix #20759: crash on pyreverse UNARY_OP_METHOD KeyError '~'
 
-    * fix #20760: crash on pyreverse : AttributeError: 'Subscript' 
+    * fix #20760: crash on pyreverse : AttributeError: 'Subscript'
       object has no attribute 'infer_lhs'
 
     * fix #21980: [Python-modules-team] Bug#573229 : Pylint hangs;
@@ -35,6 +40,8 @@ Change log for the astng package
 
     * Edward K. Ream / Tom Fleck patch closes #19641 (maximum recursion depth
       exceeded" messages w/ python 2.6), see https://bugs.launchpad.net/pylint/+bug/456870
+
+
 
 2009-12-18  --  0.19.3
     * fix name error making 0.19.2 almost useless

@@ -33,9 +33,6 @@
 Try to resolve definitions (namespace) dictionary, relationship...
 
 This module has been imported from pyreverse
-
-
-:version:   $Revision: 1.6 $  
 """
 
 __docformat__ = "restructuredtext en"
