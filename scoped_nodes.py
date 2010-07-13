@@ -651,7 +651,7 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
 
     instance_attrs = None
     special_attributes = set(('__name__', '__doc__', '__dict__', '__module__',
-                              '__bases__', '__mro__'))
+                              '__bases__', '__mro__', '__subclasses__'))
 
     blockstart_tolineno = None
 

@@ -168,7 +168,7 @@ class Instance(Proxy):
             if lookupclass:
                 # class attributes not available through the instance
                 # unless they are explicitly defined
-                if name in ('__name__', '__bases__', '__mro__'):
+                if name in ('__name__', '__bases__', '__mro__', '__subclasses__'):
                     return self._proxied.local_attr(name)
                 return self._proxied.getattr(name, context)
             raise NotFoundError(name)
