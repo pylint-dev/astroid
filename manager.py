@@ -263,39 +263,33 @@ class ASTNGManager(OptionsProviderMixIn):
     def project_from_files(self, files, func_wrapper=astng_wrapper,
                            project_name=None, black_list=None):
         """return a Project from a list of files or modules"""
-        # insert current working directory to the python path to have a correct
-        # behaviour
-        sys.path.insert(0, os.getcwd())
-        try:
-            # build the project representation
-            project_name = project_name or self.config.project
-            black_list = black_list or self.config.black_list
-            project = Project(project_name)
-            for something in files:
-                if not exists(something):
-                    fpath = file_from_modpath(something.split('.'))
-                elif isdir(something):
-                    fpath = join(something, '__init__.py')
-                else:
-                    fpath = something
-                astng = func_wrapper(self.astng_from_file, fpath)
-                if astng is None:
-                    continue
-                project.path = project.path or astng.file
-                project.add_module(astng)
-                base_name = astng.name
-                # recurse in package except if __init__ was explicitly given
-                if astng.package and something.find('__init__') == -1:
-                    # recurse on others packages / modules if this is a package
-                    for fpath in get_module_files(dirname(astng.file),
-                                                  black_list):
-                        astng = func_wrapper(self.astng_from_file, fpath)
-                        if astng is None or astng.name == base_name:
-                            continue
-                        project.add_module(astng)
-            return project
-        finally:
-            sys.path.pop(0)
+        # build the project representation
+        project_name = project_name or self.config.project
+        black_list = black_list or self.config.black_list
+        project = Project(project_name)
+        for something in files:
+            if not exists(something):
+                fpath = file_from_modpath(something.split('.'))
+            elif isdir(something):
+                fpath = join(something, '__init__.py')
+            else:
+                fpath = something
+            astng = func_wrapper(self.astng_from_file, fpath)
+            if astng is None:
+                continue
+            project.path = project.path or astng.file
+            project.add_module(astng)
+            base_name = astng.name
+            # recurse in package except if __init__ was explicitly given
+            if astng.package and something.find('__init__') == -1:
+                # recurse on others packages / modules if this is a package
+                for fpath in get_module_files(dirname(astng.file),
+                                              black_list):
+                    astng = func_wrapper(self.astng_from_file, fpath)
+                    if astng is None or astng.name == base_name:
+                        continue
+                    project.add_module(astng)
+        return project
 
 
 
