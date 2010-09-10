@@ -155,8 +155,7 @@ class ASTNGBuilder:
             package = True
         else:
             package = path and path.find('__init__.py') > -1 or False
-        newnode = self.rebuilder.build(node, modname, node_file)
-        newnode.package = package
+        newnode = self.rebuilder.build(node, modname, node_file, package)
         return newnode
 
     # astng from living objects ###############################################
