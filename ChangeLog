@@ -1,6 +1,20 @@
 Change log for the astng package
 ================================
 
+2010-09-10  --  0.20.2
+    * fix astng building bug: we've to set module.package flag at the node
+      creation time otherwise we'll miss this information when infering relative
+      import during the build process (this should fix for instance some problems
+      with numpy)
+
+    * added __subclasses__ to special class attribute
+
+    * fix Class.interfaces so that no InferenceError raised on empty __implements__
+
+    * yield YES on multiplication of tuple/list with non valid operand
+
+
+
 2010-05-11  --  0.20.1
     * fix licensing to LGPL
 
