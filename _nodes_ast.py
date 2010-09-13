@@ -508,9 +508,10 @@ class TreeRebuilder(RebuildVisitor):
         newnode.set_line_info(newnode.last_child())
         return newnode
 
-    def visit_module(self, node, modname):
+    def visit_module(self, node, modname, package):
         """visit a Module node by returning a fresh instance of it"""
         newnode = new.Module(modname, None)
+        newnode.package = package
         _lineno_parent(node, newnode, parent=None)
         _init_set_doc(node, newnode)
         newnode.body = [self.visit(child, newnode) for child in node.body]

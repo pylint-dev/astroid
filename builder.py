@@ -1,15 +1,3 @@
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the GNU Lesser General Public License as published by the Free Software
-# Foundation; either version 2 of the License, or (at your option) any later
-# version.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public License along with
-# this program; if not, write to the Free Software Foundation, Inc.,
-# 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 # copyright 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 # copyright 2003-2010 Sylvain Thenault, all rights reserved.
@@ -35,8 +23,6 @@ With python >= 2.5, the internal _ast module is used instead
 
 The builder is not thread safe and can't be used to parse different sources
 at the same time.
-
-
 """
 
 __docformat__ = "restructuredtext en"
@@ -155,8 +141,7 @@ class ASTNGBuilder:
             package = True
         else:
             package = path and path.find('__init__.py') > -1 or False
-        newnode = self.rebuilder.build(node, modname, node_file)
-        newnode.package = package
+        newnode = self.rebuilder.build(node, modname, node_file, package)
         return newnode
 
     # astng from living objects ###############################################
