@@ -190,6 +190,8 @@ class ASTNGBuilder:
                     class_node = object_build_class(node, member, name)
                     # recursion
                     self.object_build(class_node, member)
+                if name == '__class__' and class_node.parent is None:
+                    class_node.parent = self._done[self._module]
             elif ismethoddescriptor(member):
                 assert isinstance(member, object)
                 object_build_methoddescriptor(node, member, name)

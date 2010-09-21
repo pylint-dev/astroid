@@ -1,6 +1,11 @@
 Change log for the astng package
 ================================
 
+	--
+     * fix #45959: AttributeError: 'NoneType' object has no attribute 'frame', due
+       to handling of __class__ when importing from living object (because of missing
+       source code or C-compiled object)
+
 2010-09-10  --  0.20.2
     * fix astng building bug: we've to set module.package flag at the node
       creation time otherwise we'll miss this information when infering relative
