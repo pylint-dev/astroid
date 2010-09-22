@@ -214,11 +214,11 @@ class RebuildVisitor(object):
                 for name in imported.wildcard_import_names():
                     node.parent.set_local(name, node)
                     if delayed:
-                        node.parent.scope().locals[name].sort(cmp=cmp_nodes)
+                        node.parent.scope().locals[name].sort(cmp_nodes)
             else:
                 node.parent.set_local(asname or name, node)
                 if delayed:
-                    node.parent.scope().locals[asname or name].sort(cmp=cmp_nodes)
+                    node.parent.scope().locals[asname or name].sort(cmp_nodes)
 
 
     def visit_function(self, node, parent):

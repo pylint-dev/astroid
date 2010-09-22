@@ -37,7 +37,7 @@ extract information from it
 __docformat__ = "restructuredtext en"
 
 from logilab.astng._exceptions import IgnoreChild, ASTNGBuildingException
-
+from logilab.common.compat import set
 
 class ASTVisitor(object):
     """Abstract Base Class for Python AST Visitors.

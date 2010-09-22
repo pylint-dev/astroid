@@ -23,10 +23,10 @@
 from logilab.common.compat import chain, imap
 
 from logilab.astng import NoDefault
-from logilab.astng.bases import (NodeNG, BaseClass, Instance, copy_context,
-                                _infer_stmts, YES)
-from logilab.astng.mixins import (StmtMixIn, BlockRangeMixIn, AssignTypeMixin,
-    ParentAssignTypeMixin, FromImportMixIn)
+from logilab.astng.bases import NodeNG, BaseClass, Instance, copy_context, \
+                                _infer_stmts, YES
+from logilab.astng.mixins import StmtMixIn, BlockRangeMixIn, AssignTypeMixin, \
+                                 ParentAssignTypeMixin, FromImportMixIn
 
 def unpack_infer(stmt, context=None):
     """return an iterator on nodes inferred by the given statement if the
