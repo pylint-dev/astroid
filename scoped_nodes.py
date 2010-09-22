@@ -519,7 +519,6 @@ class Function(StmtMixIn, Lambda):
         # (e.g. pylint...) when is_method() return True
         return self.type != 'function' and isinstance(self.parent.frame(), Class)
 
-    @cached
     def decoratornames(self):
         """return a list of decorator qualified names"""
         result = set()
@@ -531,7 +530,7 @@ class Function(StmtMixIn, Lambda):
             for infnode in decnode.infer():
                 result.add(infnode.qname())
         return result
-
+    decoratornames = cached(decoratornames)
 
     def is_bound(self):
         """return true if the function is bound to an Instance or a class"""
