@@ -122,8 +122,6 @@ UnaryOp_OP_CLASSES = {_UnaryAdd: '+',
               _Invert: '~'
               }
 
-if sys.version_info < (2, 4):
-    Function.decorators = None
 
 # compiler rebuilder ##########################################################
 
@@ -402,10 +400,10 @@ class TreeRebuilder(RebuildVisitor):
         """visit a Discard node by returning a fresh instance of it"""
         newnode = new.Discard()
         if sys.version_info >= (2, 4) and  node.lineno is None:
-                # ignore dummy Discard introduced when a statement
-                # is ended by a semi-colon: remove it at the end of rebuilding
-                # however, it does also happen in regular Discard nodes on 2.3
-                self._remove_nodes.append((newnode, parent))
+            # ignore dummy Discard introduced when a statement
+            # is ended by a semi-colon: remove it at the end of rebuilding
+            # however, it does also happen in regular Discard nodes on 2.3
+            self._remove_nodes.append((newnode, parent))
         self._set_infos(node, newnode, parent)
         self.asscontext = "Dis"
         newnode.value = self.visit(node.expr, newnode)
@@ -460,7 +458,8 @@ class TreeRebuilder(RebuildVisitor):
         """visit a Function node by returning a fresh instance of it"""
         newnode = new.Function(node.name, node.doc)
         self._set_infos(node, newnode, parent)
-        newnode.decorators = self.visit(node.decorators, newnode)
+        if hasattr(node, 'decorators'):
+            newnode.decorators = self.visit(node.decorators, newnode)
         newnode.args = self.visit_arguments(node, newnode)
         newnode.body = [self.visit(child, newnode) for child in node.code.nodes]
         return newnode
