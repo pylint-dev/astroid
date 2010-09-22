@@ -33,7 +33,6 @@
 
 
  [1] http://docs.python.org/lib/module-compiler.ast.html
-
 """
 
 __docformat__ = "restructuredtext en"
@@ -457,7 +456,8 @@ class TreeRebuilder(RebuildVisitor):
         """visit a Function node by returning a fresh instance of it"""
         newnode = new.Function(node.name, node.doc)
         self._set_infos(node, newnode, parent)
-        newnode.decorators = self.visit(node.decorators, newnode)
+        if hasattr(node, 'decorators'):
+            newnode.decorators = self.visit(node.decorators, newnode)
         newnode.args = self.visit_arguments(node, newnode)
         newnode.body = [self.visit(child, newnode) for child in node.code.nodes]
         return newnode
@@ -480,7 +480,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.expr = self.visit(node.expr, newnode)
         newnode.attrname = node.attrname
         return newnode
-        
+
     def visit_if(self, node, parent):
         """visit an If node by returning a fresh instance of it"""
         newnode = subnode = new.If()
