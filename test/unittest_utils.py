@@ -39,8 +39,8 @@ if x > 0:
         xnames = [n for n in astng.nodes_of_class(nodes.Name) if n.name == 'x']
         assert len(xnames) == 3
         assert xnames[1].lineno == 6
-        self.assertEquals(are_exclusive(xass1, xnames[1]), False)
-        self.assertEquals(are_exclusive(xass1, xnames[2]), False)
+        self.assertEqual(are_exclusive(xass1, xnames[1]), False)
+        self.assertEqual(are_exclusive(xass1, xnames[2]), False)
         
     def test_if(self):
         astng = builder.string_build('''
@@ -61,12 +61,12 @@ else:
         a4 = astng.locals['a'][3]
         a5 = astng.locals['a'][4]
         a6 = astng.locals['a'][5]
-        self.assertEquals(are_exclusive(a1, a2), False)
-        self.assertEquals(are_exclusive(a1, a3), True)
-        self.assertEquals(are_exclusive(a1, a5), True)
-        self.assertEquals(are_exclusive(a3, a5), True)
-        self.assertEquals(are_exclusive(a3, a4), False)
-        self.assertEquals(are_exclusive(a5, a6), False)
+        self.assertEqual(are_exclusive(a1, a2), False)
+        self.assertEqual(are_exclusive(a1, a3), True)
+        self.assertEqual(are_exclusive(a1, a5), True)
+        self.assertEqual(are_exclusive(a3, a5), True)
+        self.assertEqual(are_exclusive(a3, a4), False)
+        self.assertEqual(are_exclusive(a5, a6), False)
         
     def test_try_except(self):
         astng = builder.string_build('''
@@ -88,16 +88,16 @@ else:
         f2 = astng.locals['exclusive_func2'][1]
         f3 = astng.locals['exclusive_func2'][2]
         f4 = astng.locals['exclusive_func2'][3]
-        self.assertEquals(are_exclusive(f1, f2), True)
-        self.assertEquals(are_exclusive(f1, f3), True)
-        self.assertEquals(are_exclusive(f1, f4), False)
-        self.assertEquals(are_exclusive(f2, f4), True)
-        self.assertEquals(are_exclusive(f3, f4), True)
-        self.assertEquals(are_exclusive(f3, f2), True)
+        self.assertEqual(are_exclusive(f1, f2), True)
+        self.assertEqual(are_exclusive(f1, f3), True)
+        self.assertEqual(are_exclusive(f1, f4), False)
+        self.assertEqual(are_exclusive(f2, f4), True)
+        self.assertEqual(are_exclusive(f3, f4), True)
+        self.assertEqual(are_exclusive(f3, f2), True)
         
-        self.assertEquals(are_exclusive(f2, f1), True)
-        self.assertEquals(are_exclusive(f4, f1), False)
-        self.assertEquals(are_exclusive(f4, f2), True)
+        self.assertEqual(are_exclusive(f2, f1), True)
+        self.assertEqual(are_exclusive(f4, f1), False)
+        self.assertEqual(are_exclusive(f4, f2), True)
 
 if __name__ == '__main__':
     unittest_main()

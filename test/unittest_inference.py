@@ -720,7 +720,7 @@ un = mirror(1)
 
     def test_factory_method(self):
         if sys.version_info < (2, 4):
-            self.skip('this test require python >= 2.4')
+            self.skipTest('this test require python >= 2.4')
         code = '''
 class Super(object):
       @classmethod
@@ -870,7 +870,7 @@ x = randint(1)
         # The __name__ trick here makes it work when invoked directly
         # (__name__ == '__main__') and through pytest (__name__ ==
         # 'unittest_inference')
-        self.assertEquals(value, ['Instance of %s.myarray' % (__name__,),
+        self.assertEqual(value, ['Instance of %s.myarray' % (__name__,),
                                   'Instance of __builtin__.int'])
 
     def test_nonregr_lambda_arg(self):
@@ -908,16 +908,16 @@ def f(x):
 
     def test_python25_relative_import(self):
         if sys.version_info < (2, 5):
-            self.skip('require py >= 2.5')
+            self.skipTest('require py >= 2.5')
         data = "from ...common import date; print date"
         astng = builder.string_build(data, 'logilab.astng.test.unittest_inference', __file__)
         infered = get_name_node(astng, 'date').infer().next()
         self.assertIsInstance(infered, nodes.Module)
-        self.assertEquals(infered.name, 'logilab.common.date')
+        self.assertEqual(infered.name, 'logilab.common.date')
 
     def test_python25_no_relative_import(self):
         if sys.version_info < (2, 5):
-            self.skip('require py >= 2.5')
+            self.skipTest('require py >= 2.5')
         # data = 'import unittest_lookup; print unittest_lookup'
         # astng = builder.string_build(data, 'logilab.astng.test.unittest_inference', __file__)
         # self.failIf(astng.absolute_import_activated())
@@ -934,7 +934,7 @@ def f(x):
 #         try:
 #             import mechanize
 #         except ImportError:
-#             self.skip('require mechanize installed')
+#             self.skipTest('require mechanize installed')
 #         data = '''from mechanize import Browser
 # print Browser
 # b = Browser()
@@ -945,14 +945,14 @@ def f(x):
 #         self.assertIsInstance(browser, nodes.Class)
 #         print '*'*80
 #         bopen = list(browser.igetattr('open'))
-#         self.assertEquals(len(bopen), 1)
+#         self.assertEqual(len(bopen), 1)
 #         self.assertIsInstance(bopen[0], nodes.Function)
 #         self.failUnless(bopen[0].callable())
 #         print '*'*80
 #         b = get_name_node(astng, 'b').infer().next()
 #         self.assertIsInstance(b, Instance)
 #         bopen = list(b.igetattr('open'))
-#         self.assertEquals(len(bopen), 1)
+#         self.assertEqual(len(bopen), 1)
 #         self.assertIsInstance(bopen[0], BoundMethod)
 #         self.failUnless(bopen[0].callable())
 
@@ -973,22 +973,22 @@ print SendMailController().smtp
 print SendMailController().me
 '''
         astng = builder.string_build(code, __name__, __file__)
-        self.assertEquals(astng['SendMailController']['smtp'].decoratornames(),
+        self.assertEqual(astng['SendMailController']['smtp'].decoratornames(),
                           set(('__builtin__.property',)))
         propinfered = list(astng.body[2].values[0].infer())
-        self.assertEquals(len(propinfered), 1)
+        self.assertEqual(len(propinfered), 1)
         propinfered = propinfered[0]
         self.assertIsInstance(propinfered, Instance)
-        self.assertEquals(propinfered.name, 'SMTP')
-        self.assertEquals(propinfered.root().name, 'smtplib')
-        self.assertEquals(astng['SendMailController']['me'].decoratornames(),
+        self.assertEqual(propinfered.name, 'SMTP')
+        self.assertEqual(propinfered.root().name, 'smtplib')
+        self.assertEqual(astng['SendMailController']['me'].decoratornames(),
                           set(('__builtin__.property',)))
         propinfered = list(astng.body[3].values[0].infer())
-        self.assertEquals(len(propinfered), 1)
+        self.assertEqual(len(propinfered), 1)
         propinfered = propinfered[0]
         self.assertIsInstance(propinfered, Instance)
-        self.assertEquals(propinfered.name, 'SendMailController')
-        self.assertEquals(propinfered.root().name, __name__)
+        self.assertEqual(propinfered.name, 'SendMailController')
+        self.assertEqual(propinfered.root().name, __name__)
 
 
     def test_im_func_unwrap(self):
@@ -1007,11 +1007,11 @@ class EnvBasedTC2:
         astng = builder.string_build(code, __name__, __file__)
         pactions = get_name_node(astng, 'pactions')
         infered = list(pactions.infer())
-        self.assertEquals(len(infered), 1)
+        self.assertEqual(len(infered), 1)
         self.assertIsInstance(infered[0], nodes.Function)
         pactions = get_name_node(astng['EnvBasedTC2'], 'pactions')
         infered = list(pactions.infer())
-        self.assertEquals(len(infered), 1)
+        self.assertEqual(len(infered), 1)
         self.assertIsInstance(infered[0], nodes.Function)
 
     def test_augassign(self):
@@ -1023,9 +1023,9 @@ print a
         astng = builder.string_build(code, __name__, __file__)
         infered = list(get_name_node(astng, 'a').infer())
 
-        self.assertEquals(len(infered), 1)
+        self.assertEqual(len(infered), 1)
         self.assertIsInstance(infered[0], nodes.Const)
-        self.assertEquals(infered[0].value, 3)
+        self.assertEqual(infered[0].value, 3)
 
     def test_nonregr_func_arg(self):
         code = '''
@@ -1039,7 +1039,7 @@ def foo(self, bar):
 '''
         astng = builder.string_build(code, __name__, __file__)
         infered = list(get_name_node(astng['foo'], 'spam').infer())
-        self.assertEquals(len(infered), 1)
+        self.assertEqual(len(infered), 1)
         self.assertIs(infered[0], YES)
 
     def test_nonregr_func_global(self):
@@ -1064,9 +1064,9 @@ class DataManager(object):
         '''
         astng = builder.string_build(code, __name__, __file__)
         infered = list(Instance(astng['DataManager']).igetattr('app'))
-        self.assertEquals(len(infered), 2, infered) # None / Instance(Application)
+        self.assertEqual(len(infered), 2, infered) # None / Instance(Application)
         infered = list(get_name_node(astng['DataManager']['test'], 'p').infer())
-        self.assertEquals(len(infered), 2, infered)
+        self.assertEqual(len(infered), 2, infered)
         for node in infered:
             if isinstance(node, Instance) and node.name == 'Application':
                 break
@@ -1100,10 +1100,10 @@ Z = test()
         '''
         astng = builder.string_build(code, __name__, __file__)
         infered = list(astng['Z'].infer())
-        self.assertEquals(len(infered), 1, infered)
+        self.assertEqual(len(infered), 1, infered)
         self.assertIsInstance(infered[0], Instance)
         self.assertIsInstance(infered[0]._proxied, nodes.Class)
-        self.assertEquals(infered[0]._proxied.name, 'list')
+        self.assertEqual(infered[0]._proxied.name, 'list')
 
 if __name__ == '__main__':
     unittest_main()

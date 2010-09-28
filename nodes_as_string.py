@@ -63,7 +63,7 @@ class AsStringVisitor(ASTVisitor):
     
     def _stmt_list(self, stmts):
         """return a list of nodes to string"""
-        stmts = '\n'.join([nstr for nstr in (n.accept(self) for n in stmts) if nstr])
+        stmts = '\n'.join([nstr for nstr in [n.accept(self) for n in stmts] if nstr])
         return INDENT + stmts.replace('\n', '\n'+INDENT)
 
     
@@ -167,7 +167,7 @@ class AsStringVisitor(ASTVisitor):
 
     def visit_decorators(self, node):
         """return an astng.Decorators node as string"""
-        return '@%s\n' % '\n@'.join(item.accept(self) for item in node.nodes)
+        return '@%s\n' % '\n@'.join([item.accept(self) for item in node.nodes])
 
     def visit_dict(self, node):
         """return an astng.Dict node as string"""
@@ -210,7 +210,7 @@ class AsStringVisitor(ASTVisitor):
 
     def visit_extslice(self, node):
         """return an astng.ExtSlice node as string"""
-        return ','.join( dim.accept(self) for dim in node.dims )
+        return ','.join( [dim.accept(self) for dim in node.dims] )
     def visit_for(self, node):
         """return an astng.For node as string"""
         fors = 'for %s in %s:\n%s' % (node.target.accept(self),

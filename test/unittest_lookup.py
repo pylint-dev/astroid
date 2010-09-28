@@ -78,14 +78,14 @@ def func():
         astng = builder.string_build('pass', __name__, __file__)
         # built-in objects
         none = astng.ilookup('None').next()
-        self.assertEquals(none.value, None)
+        self.assertEqual(none.value, None)
         obj = astng.ilookup('object').next()
         self.assertIsInstance(obj, nodes.Class)
-        self.assertEquals(obj.name, 'object')
+        self.assertEqual(obj.name, 'object')
         self.assertRaises(InferenceError, astng.ilookup('YOAA').next)
 
         # XXX
-        self.assertEquals(len(list(NONREGR.ilookup('enumerate'))), 2)
+        self.assertEqual(len(list(NONREGR.ilookup('enumerate'))), 2)
 
     def test_class_ancestor_name(self):
         code = '''
@@ -99,7 +99,7 @@ class A(A):
         cls1 = astng.locals['A'][0]
         cls2 = astng.locals['A'][1]
         name = cls2.nodes_of_class(nodes.Name).next()
-        self.assertEquals(name.infer().next(), cls1)
+        self.assertEqual(name.infer().next(), cls1)
         
     ### backport those test to inline code
     def test_method(self):
@@ -107,7 +107,7 @@ class A(A):
         my_dict = method.ilookup('MY_DICT').next()
         self.assert_(isinstance(my_dict, nodes.Dict), my_dict)
         none = method.ilookup('None').next()
-        self.assertEquals(none.value, None)
+        self.assertEqual(none.value, None)
         self.assertRaises(InferenceError, method.ilookup('YOAA').next)
 
         
@@ -115,8 +115,8 @@ class A(A):
         make_class = MODULE2['make_class']
         base = make_class.ilookup('base').next()
         self.assert_(isinstance(base, nodes.Class), base.__class__)
-        self.assertEquals(base.name, 'YO')
-        self.assertEquals(base.root().name, 'data.module')
+        self.assertEqual(base.name, 'YO')
+        self.assertEqual(base.root().name, 'data.module')
 
 
     def test_class(self):
@@ -124,16 +124,16 @@ class A(A):
         my_dict = klass.ilookup('MY_DICT').next()
         self.assertIsInstance(my_dict, nodes.Dict)
         none = klass.ilookup('None').next()
-        self.assertEquals(none.value, None)
+        self.assertEqual(none.value, None)
         obj = klass.ilookup('object').next()
         self.assertIsInstance(obj, nodes.Class)
-        self.assertEquals(obj.name, 'object')
+        self.assertEqual(obj.name, 'object')
         self.assertRaises(InferenceError, klass.ilookup('YOAA').next)
 
 
     def test_inner_classes(self):
         ccc = NONREGR['Ccc']
-        self.assertEquals(ccc.ilookup('Ddd').next().name, 'Ddd')
+        self.assertEqual(ccc.ilookup('Ddd').next().name, 'Ddd')
 
 
     def test_loopvar_hiding(self):
@@ -147,26 +147,26 @@ if x > 0:
         """, __name__, __file__)
         xnames = [n for n in astng.nodes_of_class(nodes.Name) if n.name == 'x']
         # inside the loop, only one possible assignment
-        self.assertEquals(len(xnames[0].lookup('x')[1]), 1)
+        self.assertEqual(len(xnames[0].lookup('x')[1]), 1)
         # outside the loop, two possible assignments
-        self.assertEquals(len(xnames[1].lookup('x')[1]), 2)
-        self.assertEquals(len(xnames[2].lookup('x')[1]), 2)
+        self.assertEqual(len(xnames[1].lookup('x')[1]), 2)
+        self.assertEqual(len(xnames[2].lookup('x')[1]), 2)
 
     def test_list_comps(self):
         if sys.version_info < (2, 4):
-            self.skip('this test require python >= 2.4')
+            self.skipTest('this test require python >= 2.4')
         astng = builder.string_build("""
 print [ i for i in range(10) ]
 print [ i for i in range(10) ]
 print list( i for i in range(10) )
         """, __name__, __file__)
         xnames = [n for n in astng.nodes_of_class(nodes.Name) if n.name == 'i']
-        self.assertEquals(len(xnames[0].lookup('i')[1]), 1)
-        self.assertEquals(xnames[0].lookup('i')[1][0].lineno, 2)
-        self.assertEquals(len(xnames[1].lookup('i')[1]), 1)
-        self.assertEquals(xnames[1].lookup('i')[1][0].lineno, 3)
-        self.assertEquals(len(xnames[2].lookup('i')[1]), 1)
-        self.assertEquals(xnames[2].lookup('i')[1][0].lineno, 4)
+        self.assertEqual(len(xnames[0].lookup('i')[1]), 1)
+        self.assertEqual(xnames[0].lookup('i')[1][0].lineno, 2)
+        self.assertEqual(len(xnames[1].lookup('i')[1]), 1)
+        self.assertEqual(xnames[1].lookup('i')[1][0].lineno, 3)
+        self.assertEqual(len(xnames[2].lookup('i')[1]), 1)
+        self.assertEqual(xnames[2].lookup('i')[1][0].lineno, 4)
 
 
     def test_explicit___name__(self):
@@ -198,21 +198,21 @@ def initialize(linter):
     package_load(linter, __path__[0])
         ''', 'data.__init__', 'data/__init__.py')
         path = [n for n in astng.nodes_of_class(nodes.Name) if n.name == '__path__'][0]
-        self.assertEquals(len(path.lookup('__path__')[1]), 1)
+        self.assertEqual(len(path.lookup('__path__')[1]), 1)
 
 
     def test_builtin_lookup(self):
-        self.assertEquals(builtin_lookup('__dict__')[1], ())
+        self.assertEqual(builtin_lookup('__dict__')[1], ())
         intstmts = builtin_lookup('int')[1]
-        self.assertEquals(len(intstmts), 1)
+        self.assertEqual(len(intstmts), 1)
         self.assertIsInstance(intstmts[0], nodes.Class)
-        self.assertEquals(intstmts[0].name, 'int')
+        self.assertEqual(intstmts[0].name, 'int')
         self.assertIs(intstmts[0], nodes.const_factory(1)._proxied)
 
 
     def test_decorator_arguments_lookup(self):
         if sys.version_info < (2, 4):
-            self.skip('this test require python >= 2.4')
+            self.skipTest('this test require python >= 2.4')
         code = '''
 def decorator(value):
    def wrapper(function):
@@ -231,13 +231,13 @@ class foo:
         it = member.infer()
         obj = it.next()
         self.assertIsInstance(obj, nodes.Const)
-        self.assertEquals(obj.value, 10)
+        self.assertEqual(obj.value, 10)
         self.assertRaises(StopIteration, it.next)
 
        
     def test_inner_decorator_member_lookup(self):
         if sys.version_info < (2, 4):
-            self.skip('this test require python >= 2.4')
+            self.skipTest('this test require python >= 2.4')
         code = '''
 class FileA:
     def decorator(bla):
@@ -257,7 +257,7 @@ class FileA:
         
     def test_static_method_lookup(self):
         if sys.version_info < (2, 4):
-            self.skip('this test require python >= 2.4')
+            self.skipTest('this test require python >= 2.4')
         code = '''
 class FileA:
     @staticmethod

@@ -31,7 +31,6 @@
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
 """this module contains a set of functions to create astng trees from scratch
 (build_* functions) or from living object (object_build_* functions)
-
 """
 
 __docformat__ = "restructuredtext en"

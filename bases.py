@@ -51,8 +51,8 @@ except ImportError:
         pass
 
 from logilab.common.compat import set
-from logilab.astng._exceptions import (InferenceError, ASTNGError,
-                                       NotFoundError, UnresolvableName)
+from logilab.astng._exceptions import InferenceError, ASTNGError, \
+                                       NotFoundError, UnresolvableName
 
 
 class Proxy(BaseClass):

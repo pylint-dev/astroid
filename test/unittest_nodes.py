@@ -82,7 +82,7 @@ else:
         
     def test_if_elif_else_node(self):
         """test transformation for If node"""
-        self.assertEquals(len(self.astng.body), 4)
+        self.assertEqual(len(self.astng.body), 4)
         for stmt in self.astng.body:
             self.assertIsInstance( stmt, nodes.If)
         self.failIf(self.astng.body[0].orelse) # simple If
@@ -92,12 +92,12 @@ else:
 
     def test_block_range(self):
         # XXX ensure expected values
-        self.assertEquals(self.astng.block_range(1), (0, 22))
-        self.assertEquals(self.astng.block_range(10), (0, 22)) # XXX (10, 22) ?
-        self.assertEquals(self.astng.body[1].block_range(5), (5, 6))
-        self.assertEquals(self.astng.body[1].block_range(6), (6, 6))
-        self.assertEquals(self.astng.body[1].orelse[0].block_range(7), (7, 8))
-        self.assertEquals(self.astng.body[1].orelse[0].block_range(8), (8, 8))
+        self.assertEqual(self.astng.block_range(1), (0, 22))
+        self.assertEqual(self.astng.block_range(10), (0, 22)) # XXX (10, 22) ?
+        self.assertEqual(self.astng.body[1].block_range(5), (5, 6))
+        self.assertEqual(self.astng.body[1].block_range(6), (6, 6))
+        self.assertEqual(self.astng.body[1].orelse[0].block_range(7), (7, 8))
+        self.assertEqual(self.astng.body[1].orelse[0].block_range(8), (8, 8))
 
 
 class TryExceptNodeTC(_NodeTC):
@@ -113,14 +113,14 @@ else:
     """
     def test_block_range(self):
         # XXX ensure expected values
-        self.assertEquals(self.astng.body[0].block_range(1), (1, 8))
-        self.assertEquals(self.astng.body[0].block_range(2), (2, 2))
-        self.assertEquals(self.astng.body[0].block_range(3), (3, 8))
-        self.assertEquals(self.astng.body[0].block_range(4), (4, 4))
-        self.assertEquals(self.astng.body[0].block_range(5), (5, 5))
-        self.assertEquals(self.astng.body[0].block_range(6), (6, 6))
-        self.assertEquals(self.astng.body[0].block_range(7), (7, 7))
-        self.assertEquals(self.astng.body[0].block_range(8), (8, 8))
+        self.assertEqual(self.astng.body[0].block_range(1), (1, 8))
+        self.assertEqual(self.astng.body[0].block_range(2), (2, 2))
+        self.assertEqual(self.astng.body[0].block_range(3), (3, 8))
+        self.assertEqual(self.astng.body[0].block_range(4), (4, 4))
+        self.assertEqual(self.astng.body[0].block_range(5), (5, 5))
+        self.assertEqual(self.astng.body[0].block_range(6), (6, 6))
+        self.assertEqual(self.astng.body[0].block_range(7), (7, 7))
+        self.assertEqual(self.astng.body[0].block_range(8), (8, 8))
 
 
 class TryFinallyNodeTC(_NodeTC):
@@ -132,10 +132,10 @@ finally:
     """
     def test_block_range(self):
         # XXX ensure expected values
-        self.assertEquals(self.astng.body[0].block_range(1), (1, 4))
-        self.assertEquals(self.astng.body[0].block_range(2), (2, 2))
-        self.assertEquals(self.astng.body[0].block_range(3), (3, 4))
-        self.assertEquals(self.astng.body[0].block_range(4), (4, 4))
+        self.assertEqual(self.astng.body[0].block_range(1), (1, 4))
+        self.assertEqual(self.astng.body[0].block_range(2), (2, 2))
+        self.assertEqual(self.astng.body[0].block_range(3), (3, 4))
+        self.assertEqual(self.astng.body[0].block_range(4), (4, 4))
 
 
 class TryFinally25NodeTC(_NodeTC):
@@ -149,14 +149,14 @@ finally:
     """
     def test_block_range(self):
         if sys.version_info < (2, 5):
-            self.skip('require python >= 2.5')
+            self.skipTest('require python >= 2.5')
         # XXX ensure expected values
-        self.assertEquals(self.astng.body[0].block_range(1), (1, 6))
-        self.assertEquals(self.astng.body[0].block_range(2), (2, 2))
-        self.assertEquals(self.astng.body[0].block_range(3), (3, 4))
-        self.assertEquals(self.astng.body[0].block_range(4), (4, 4))
-        self.assertEquals(self.astng.body[0].block_range(5), (5, 5))
-        self.assertEquals(self.astng.body[0].block_range(6), (6, 6))
+        self.assertEqual(self.astng.body[0].block_range(1), (1, 6))
+        self.assertEqual(self.astng.body[0].block_range(2), (2, 2))
+        self.assertEqual(self.astng.body[0].block_range(3), (3, 4))
+        self.assertEqual(self.astng.body[0].block_range(4), (4, 4))
+        self.assertEqual(self.astng.body[0].block_range(5), (5, 5))
+        self.assertEqual(self.astng.body[0].block_range(6), (6, 6))
 
         
 MODULE = abuilder.module_build(test_module)
@@ -186,25 +186,25 @@ class ImportNodeTC(testlib.TestCase):
 
     def test_real_name(self):
         from_ = MODULE['spawn']
-        self.assertEquals(from_.real_name('spawn'), 'Execute')
+        self.assertEqual(from_.real_name('spawn'), 'Execute')
         imp_ = MODULE['os']
-        self.assertEquals(imp_.real_name('os'), 'os')
+        self.assertEqual(imp_.real_name('os'), 'os')
         self.assertRaises(NotFoundError, imp_.real_name, 'os.path')
         imp_ = MODULE['spawn']
-        self.assertEquals(imp_.real_name('spawn'), 'Execute')
+        self.assertEqual(imp_.real_name('spawn'), 'Execute')
         self.assertRaises(NotFoundError, imp_.real_name, 'Execute')
         imp_ = MODULE2['YO']
-        self.assertEquals(imp_.real_name('YO'), 'YO')
+        self.assertEqual(imp_.real_name('YO'), 'YO')
         self.assertRaises(NotFoundError, imp_.real_name, 'data')
 
     def test_as_string(self):
         
         ast = MODULE['modutils']
-        self.assertEquals(as_string(ast), "from logilab.common import modutils")
+        self.assertEqual(as_string(ast), "from logilab.common import modutils")
         ast = MODULE['spawn']
-        self.assertEquals(as_string(ast), "from logilab.common.shellutils import Execute as spawn")
+        self.assertEqual(as_string(ast), "from logilab.common.shellutils import Execute as spawn")
         ast = MODULE['os']
-        self.assertEquals(as_string(ast), "import os.path")
+        self.assertEqual(as_string(ast), "import os.path")
     
     def test_module_as_string(self):
         """just check as_string on a whole module doesn't raise an exception
@@ -216,7 +216,7 @@ class ImportNodeTC(testlib.TestCase):
 class CmpNodeTC(testlib.TestCase):
     def test_as_string(self):
         ast = abuilder.string_build("a == 2")
-        self.assertEquals(as_string(ast), "a == 2")
+        self.assertEqual(as_string(ast), "a == 2")
 
 
 class ConstNodeTC(testlib.TestCase):
@@ -224,10 +224,10 @@ class ConstNodeTC(testlib.TestCase):
     def _test(self, value):
         node = nodes.const_factory(value)
         self.assertIsInstance(node._proxied, nodes.Class)
-        self.assertEquals(node._proxied.name, value.__class__.__name__)
+        self.assertEqual(node._proxied.name, value.__class__.__name__)
         self.assertIs(node.value, value)
         self.failUnless(node._proxied.parent)
-        self.assertEquals(node._proxied.root().name, value.__class__.__module__)
+        self.assertEqual(node._proxied.root().name, value.__class__.__module__)
         
     def test_none(self):
         self._test(None)
@@ -258,12 +258,12 @@ def func(a,
     b): pass
 x = lambda x: None
         ''')
-        self.assertEquals(ast['func'].args.fromlineno, 2)
-        self.assertEquals(ast['func'].args.tolineno, 3)
+        self.assertEqual(ast['func'].args.fromlineno, 2)
+        self.assertEqual(ast['func'].args.tolineno, 3)
         self.failIf(ast['func'].args.is_statement)
         xlambda = ast['x'].infer().next()
-        self.assertEquals(xlambda.args.fromlineno, 4)
-        self.assertEquals(xlambda.args.tolineno, 4)
+        self.assertEqual(xlambda.args.fromlineno, 4)
+        self.assertEqual(xlambda.args.tolineno, 4)
         self.failIf(xlambda.args.is_statement)
 
 
@@ -272,7 +272,7 @@ class SliceNodeTC(testlib.TestCase):
         for code in ('a[0]', 'a[1:3]', 'a[:-1:step]', 'a[:,newaxis]',
                      'a[newaxis,:]', 'del L[::2]', 'del A[1]', 'del Br[:]'):
             ast = abuilder.string_build(code)
-            self.assertEquals(ast.as_string(), code)
+            self.assertEqual(ast.as_string(), code)
 
     def test_slice_and_subscripts(self):
         code = """a[:1] = bord[2:]
@@ -291,12 +291,12 @@ del (ccok, (name.thing, foo.attrib.value)), Fee.form[left:]
 if all[1] == bord[0:]:
     pass"""
         ast = abuilder.string_build(code)
-        self.assertEquals(ast.as_string(), code)
+        self.assertEqual(ast.as_string(), code)
 
 class EllipsisNodeTC(testlib.TestCase):
     def test(self):
         ast = abuilder.string_build('a[...]')
-        self.assertEquals(ast.as_string(), 'a[...]')
+        self.assertEqual(ast.as_string(), 'a[...]')
         
 if __name__ == '__main__':
     testlib.unittest_main()

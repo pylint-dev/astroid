@@ -34,12 +34,12 @@ from logilab.common.decorators import cached
 
 from logilab.astng import MANAGER, NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
-from logilab.astng.node_classes import (Const, DelName, DelAttr,
-     Dict, From, List, Name, Pass, Raise, Return, Tuple, Yield,
-     are_exclusive, LookupMixIn, const_factory as cf, unpack_infer)
-from logilab.astng.bases import (NodeNG, BaseClass, InferenceContext, Instance,
-     YES, Generator, UnboundMethod, BoundMethod, _infer_stmts, copy_context)
-from logilab.astng.mixins import (StmtMixIn, FilterStmtsMixin)
+from logilab.astng.node_classes import Const, DelName, DelAttr, \
+     Dict, From, List, Name, Pass, Raise, Return, Tuple, Yield, \
+     are_exclusive, LookupMixIn, const_factory as cf, unpack_infer
+from logilab.astng.bases import NodeNG, BaseClass, InferenceContext, Instance,\
+     YES, Generator, UnboundMethod, BoundMethod, _infer_stmts, copy_context
+from logilab.astng.mixins import StmtMixIn, FilterStmtsMixin
 
 from logilab.astng.nodes_as_string import as_string
 
@@ -519,7 +519,6 @@ class Function(StmtMixIn, Lambda):
         # (e.g. pylint...) when is_method() return True
         return self.type != 'function' and isinstance(self.parent.frame(), Class)
 
-    @cached
     def decoratornames(self):
         """return a list of decorator qualified names"""
         result = set()
@@ -531,7 +530,7 @@ class Function(StmtMixIn, Lambda):
             for infnode in decnode.infer():
                 result.add(infnode.qname())
         return result
-
+    decoratornames = cached(decoratornames)
 
     def is_bound(self):
         """return true if the function is bound to an Instance or a class"""

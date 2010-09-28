@@ -33,12 +33,12 @@
 
 
  [1] http://docs.python.org/lib/module-compiler.ast.html
-
 """
 
 __docformat__ = "restructuredtext en"
 
-from compiler.ast import Const, Node, Sliceobj
+from compiler.ast import Const, Node, Sliceobj, Function
+import sys
 
 # nodes which are not part of astng
 from compiler.ast import And as _And, Or as _Or,\
@@ -51,7 +51,7 @@ from compiler.ast import And as _And, Or as _Or,\
 
 from logilab.astng import nodes as new
 from logilab.astng.rebuilder import RebuildVisitor
-
+from logilab.common.compat import set
 
 CONST_NAME_TRANSFORMS = {'None':  None,
                          'True':  True,
@@ -399,9 +399,10 @@ class TreeRebuilder(RebuildVisitor):
     def visit_discard(self, node, parent):
         """visit a Discard node by returning a fresh instance of it"""
         newnode = new.Discard()
-        if node.lineno is None:
+        if sys.version_info >= (2, 4) and  node.lineno is None:
             # ignore dummy Discard introduced when a statement
             # is ended by a semi-colon: remove it at the end of rebuilding
+            # however, it does also happen in regular Discard nodes on 2.3
             self._remove_nodes.append((newnode, parent))
         self._set_infos(node, newnode, parent)
         self.asscontext = "Dis"
@@ -457,7 +458,8 @@ class TreeRebuilder(RebuildVisitor):
         """visit a Function node by returning a fresh instance of it"""
         newnode = new.Function(node.name, node.doc)
         self._set_infos(node, newnode, parent)
-        newnode.decorators = self.visit(node.decorators, newnode)
+        if hasattr(node, 'decorators'):
+            newnode.decorators = self.visit(node.decorators, newnode)
         newnode.args = self.visit_arguments(node, newnode)
         newnode.body = [self.visit(child, newnode) for child in node.code.nodes]
         return newnode
@@ -480,7 +482,7 @@ class TreeRebuilder(RebuildVisitor):
         newnode.expr = self.visit(node.expr, newnode)
         newnode.attrname = node.attrname
         return newnode
-        
+
     def visit_if(self, node, parent):
         """visit an If node by returning a fresh instance of it"""
         newnode = subnode = new.If()
