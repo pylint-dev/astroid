@@ -2,6 +2,8 @@ Change log for the astng package
 ================================
 
 	--
+     * restored python 2.3 compatibility
+
      * fix #45959: AttributeError: 'NoneType' object has no attribute 'frame', due
        to handling of __class__ when importing from living object (because of missing
        source code or C-compiled object)
