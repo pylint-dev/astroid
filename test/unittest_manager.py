@@ -30,19 +30,19 @@ class ASTNGManagerTC(unittest.TestCase):
         
     def test_astng_from_module(self):
         astng = self.manager.astng_from_module(unittest)
-        self.assertEquals(astng.pure_python, True)
+        self.assertEqual(astng.pure_python, True)
         import time
         astng = self.manager.astng_from_module(time)
-        self.assertEquals(astng.pure_python, False)
+        self.assertEqual(astng.pure_python, False)
         
     def test_astng_from_class(self):
         astng = self.manager.astng_from_class(file)
-        self.assertEquals(astng.name, 'file')
-        self.assertEquals(astng.parent.frame().name, '__builtin__')
+        self.assertEqual(astng.name, 'file')
+        self.assertEqual(astng.parent.frame().name, '__builtin__')
 
         astng = self.manager.astng_from_class(object)
-        self.assertEquals(astng.name, 'object')
-        self.assertEquals(astng.parent.frame().name, '__builtin__')
+        self.assertEqual(astng.name, 'object')
+        self.assertEqual(astng.parent.frame().name, '__builtin__')
         self.failUnless('__setattr__' in astng)
         
     def _test_astng_from_zip(self, archive):
@@ -51,7 +51,7 @@ class ASTNGManagerTC(unittest.TestCase):
         sys.path.insert(0, join(dirname(__file__), 'data', archive))
         try:
             module = self.manager.astng_from_module_name('mypypa')
-            self.assertEquals(module.name, 'mypypa')
+            self.assertEqual(module.name, 'mypypa')
             self.failUnless(module.file.endswith('%s/mypypa' % archive),
                             module.file)
         finally:
@@ -65,8 +65,8 @@ class ASTNGManagerTC(unittest.TestCase):
         
     def test_from_directory(self):
         obj = self.manager.from_directory('data')
-        self.assertEquals(obj.name, 'data')
-        self.assertEquals(obj.path, join(os.getcwd(), 'data'))
+        self.assertEqual(obj.name, 'data')
+        self.assertEqual(obj.path, join(os.getcwd(), 'data'))
         
     def test_package_node(self):
         obj = self.manager.from_directory('data')
@@ -75,20 +75,20 @@ class ASTNGManagerTC(unittest.TestCase):
         expected_long = ['SSL1', 'data', 'data.all', 'appl', 'data.format', 'data.module',
                          'data.module2', 'data.noendingnewline', 'data.nonregr',
                          'data.notall']
-        self.assertEquals(obj.keys(), expected_short)
-        self.assertEquals([m.name for m in obj.values()], expected_long)
-        self.assertEquals([m for m in list(obj)], expected_short)
-        self.assertEquals([(name, m.name) for name, m in obj.items()],
+        self.assertEqual(obj.keys(), expected_short)
+        self.assertEqual([m.name for m in obj.values()], expected_long)
+        self.assertEqual([m for m in list(obj)], expected_short)
+        self.assertEqual([(name, m.name) for name, m in obj.items()],
                           zip(expected_short, expected_long))
-        self.assertEquals([(name, m.name) for name, m in obj.items()],
+        self.assertEqual([(name, m.name) for name, m in obj.items()],
                           zip(expected_short, expected_long))
         
-        self.assertEquals('module' in obj, True)
-        self.assertEquals(obj.has_key('module'), True)
-        self.assertEquals(obj.get('module').name, 'data.module')
-        self.assertEquals(obj['module'].name, 'data.module')
-        self.assertEquals(obj.get('whatever'), None)
-        self.assertEquals(obj.fullname(), 'data')
+        self.assertEqual('module' in obj, True)
+        self.assertEqual(obj.has_key('module'), True)
+        self.assertEqual(obj.get('module').name, 'data.module')
+        self.assertEqual(obj['module'].name, 'data.module')
+        self.assertEqual(obj.get('whatever'), None)
+        self.assertEqual(obj.fullname(), 'data')
         # FIXME: test fullname on a subpackage
 
         

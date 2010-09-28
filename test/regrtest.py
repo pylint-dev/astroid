@@ -55,7 +55,7 @@ class NonRegressionTC(TestCase):
         try:
             import pygtk
         except ImportError:
-            self.skip('test skipped: pygtk is not available')
+            self.skipTest('test skipped: pygtk is not available')
         else:
             # XXX may fail on some pygtk version, because objects in
             # gobject._gobject have __module__ set to gobject :(
@@ -94,27 +94,27 @@ if __name__ == "__main__":
         try:
             from pylint import lint
         except ImportError:
-            self.skip('pylint not available')
+            self.skipTest('pylint not available')
         mod = m.astng_from_module_name('pylint.lint')
         pylinter = mod['PyLinter']
-        self.assertEquals([c.name for c in pylinter.ancestors()],
+        self.assertEqual([c.name for c in pylinter.ancestors()],
                           ['OptionsManagerMixIn', 'object', 'MessagesHandlerMixIn',
                            'ReportsHandlerMixIn', 'BaseRawChecker', 'BaseChecker',
                            'OptionsProviderMixIn', 'ASTWalker'])
         
         self.assert_(list(Instance(pylinter).getattr('config')))
         infered = list(Instance(pylinter).igetattr('config'))
-        self.assertEquals(len(infered), 2)
+        self.assertEqual(len(infered), 2)
         infered = [c for c in infered if not c is YES]
-        self.assertEquals(len(infered), 1)
-        self.assertEquals(infered[0].root().name, 'optparse')
-        self.assertEquals(infered[0].name, 'Values')
+        self.assertEqual(len(infered), 1)
+        self.assertEqual(infered[0].root().name, 'optparse')
+        self.assertEqual(infered[0].name, 'Values')
         
     def test_numpy_crash(self):
         try:
             import numpy
         except ImportError:
-            self.skip('test skipped: numpy is not available')
+            self.skipTest('test skipped: numpy is not available')
         else:
             builder = ASTNGBuilder()
             data = """

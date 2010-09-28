@@ -61,24 +61,24 @@ class FromToLineNoTC(TestCase):
         #    earzer', hop)
         discard = stmts[0]
         self.assertIsInstance(discard, nodes.Discard)
-        self.assertEquals(discard.fromlineno, 4)
-        self.assertEquals(discard.tolineno, 5)
+        self.assertEqual(discard.fromlineno, 4)
+        self.assertEqual(discard.tolineno, 5)
         callfunc = discard.value
         self.assertIsInstance(callfunc, nodes.CallFunc)
-        self.assertEquals(callfunc.fromlineno, 4)
-        self.assertEquals(callfunc.tolineno, 5)
+        self.assertEqual(callfunc.fromlineno, 4)
+        self.assertEqual(callfunc.tolineno, 5)
         name = callfunc.func
         self.assertIsInstance(name, nodes.Name)
-        self.assertEquals(name.fromlineno, 4)
-        self.assertEquals(name.tolineno, 4)
+        self.assertEqual(name.fromlineno, 4)
+        self.assertEqual(name.tolineno, 4)
         strarg = callfunc.args[0]
         self.assertIsInstance(strarg, nodes.Const)
-        self.assertEquals(strarg.fromlineno, 5) # no way for this one (is 4 actually)
-        self.assertEquals(strarg.tolineno, 5)
+        self.assertEqual(strarg.fromlineno, 5) # no way for this one (is 4 actually)
+        self.assertEqual(strarg.tolineno, 5)
         namearg = callfunc.args[1]
         self.assertIsInstance(namearg, nodes.Name)
-        self.assertEquals(namearg.fromlineno, 5)
-        self.assertEquals(namearg.tolineno, 5)
+        self.assertEqual(namearg.fromlineno, 5)
+        self.assertEqual(namearg.tolineno, 5)
         # on line 10:
         #    fonction(1,
         #             2,
@@ -86,20 +86,20 @@ class FromToLineNoTC(TestCase):
         #             4)
         discard = stmts[2]
         self.assertIsInstance(discard, nodes.Discard)
-        self.assertEquals(discard.fromlineno, 10)
-        self.assertEquals(discard.tolineno, 13)
+        self.assertEqual(discard.fromlineno, 10)
+        self.assertEqual(discard.tolineno, 13)
         callfunc = discard.value
         self.assertIsInstance(callfunc, nodes.CallFunc)
-        self.assertEquals(callfunc.fromlineno, 10)
-        self.assertEquals(callfunc.tolineno, 13)
+        self.assertEqual(callfunc.fromlineno, 10)
+        self.assertEqual(callfunc.tolineno, 13)
         name = callfunc.func
         self.assertIsInstance(name, nodes.Name)
-        self.assertEquals(name.fromlineno, 10)
-        self.assertEquals(name.tolineno, 10)
+        self.assertEqual(name.fromlineno, 10)
+        self.assertEqual(name.tolineno, 10)
         for i, arg in enumerate(callfunc.args):
             self.assertIsInstance(arg, nodes.Const)
-            self.assertEquals(arg.fromlineno, 10+i)
-            self.assertEquals(arg.tolineno, 10+i)
+            self.assertEqual(arg.fromlineno, 10+i)
+            self.assertEqual(arg.tolineno, 10+i)
 
     def test_function_lineno(self):
         stmts = self.astng.body
@@ -110,17 +110,17 @@ class FromToLineNoTC(TestCase):
         #        return a + b + c
         function = stmts[3]
         self.assertIsInstance(function, nodes.Function)
-        self.assertEquals(function.fromlineno, 15)
-        self.assertEquals(function.tolineno, 18)
-        self.assertEquals(function.blockstart_tolineno, 17)
+        self.assertEqual(function.fromlineno, 15)
+        self.assertEqual(function.tolineno, 18)
+        self.assertEqual(function.blockstart_tolineno, 17)
         return_ = function.body[0]
         self.assertIsInstance(return_, nodes.Return)
-        self.assertEquals(return_.fromlineno, 18)
-        self.assertEquals(return_.tolineno, 18)
+        self.assertEqual(return_.fromlineno, 18)
+        self.assertEqual(return_.tolineno, 18)
 
     def test_decorated_function_lineno(self):
         if sys.version_info < (2, 4):
-            self.skip('require python >=2.4')
+            self.skipTest('require python >=2.4')
         astng = builder.ASTNGBuilder().string_build('''
 @decorator
 def function(
@@ -128,11 +128,11 @@ def function(
     print arg
 ''', __name__, __file__)
         function = astng['function']
-        self.assertEquals(function.fromlineno, 3) # XXX discussable, but that's what is expected by pylint right now
-        self.assertEquals(function.tolineno, 5)
-        self.assertEquals(function.blockstart_tolineno, 4)
-        self.assertEquals(function.decorators.fromlineno, 2)
-        self.assertEquals(function.decorators.tolineno, 2)
+        self.assertEqual(function.fromlineno, 3) # XXX discussable, but that's what is expected by pylint right now
+        self.assertEqual(function.tolineno, 5)
+        self.assertEqual(function.blockstart_tolineno, 4)
+        self.assertEqual(function.decorators.fromlineno, 2)
+        self.assertEqual(function.decorators.tolineno, 2)
 
 
     def test_class_lineno(self):
@@ -143,13 +143,13 @@ def function(
         #       pass
         class_ = stmts[4]
         self.assertIsInstance(class_, nodes.Class)
-        self.assertEquals(class_.fromlineno, 20)
-        self.assertEquals(class_.tolineno, 22)
-        self.assertEquals(class_.blockstart_tolineno, 21)
+        self.assertEqual(class_.fromlineno, 20)
+        self.assertEqual(class_.tolineno, 22)
+        self.assertEqual(class_.blockstart_tolineno, 21)
         pass_ = class_.body[0]
         self.assertIsInstance(pass_, nodes.Pass)
-        self.assertEquals(pass_.fromlineno, 22)
-        self.assertEquals(pass_.tolineno, 22)
+        self.assertEqual(pass_.fromlineno, 22)
+        self.assertEqual(pass_.tolineno, 22)
 
     def test_if_lineno(self):
         stmts = self.astng.body
@@ -160,11 +160,11 @@ def function(
         #        aaaa,bbbb = bbbb,aaaa
         if_ = stmts[5]
         self.assertIsInstance(if_, nodes.If)
-        self.assertEquals(if_.fromlineno, 24)
-        self.assertEquals(if_.tolineno, 27)
-        self.assertEquals(if_.blockstart_tolineno, 24)
-        self.assertEquals(if_.orelse[0].fromlineno, 26)
-        self.assertEquals(if_.orelse[1].tolineno, 27)
+        self.assertEqual(if_.fromlineno, 24)
+        self.assertEqual(if_.tolineno, 27)
+        self.assertEqual(if_.blockstart_tolineno, 24)
+        self.assertEqual(if_.orelse[0].fromlineno, 26)
+        self.assertEqual(if_.orelse[1].tolineno, 27)
 
     def test_for_while_lineno(self):
         for code in ('''
@@ -183,11 +183,11 @@ else:
                      ):
             astng = builder.ASTNGBuilder().string_build(code, __name__, __file__)
             stmt = astng.body[0]
-            self.assertEquals(stmt.fromlineno, 2)
-            self.assertEquals(stmt.tolineno, 6)
-            self.assertEquals(stmt.blockstart_tolineno, 2)
-            self.assertEquals(stmt.orelse[0].fromlineno, 6) # XXX
-            self.assertEquals(stmt.orelse[0].tolineno, 6)
+            self.assertEqual(stmt.fromlineno, 2)
+            self.assertEqual(stmt.tolineno, 6)
+            self.assertEqual(stmt.blockstart_tolineno, 2)
+            self.assertEqual(stmt.orelse[0].fromlineno, 6) # XXX
+            self.assertEqual(stmt.orelse[0].tolineno, 6)
 
 
     def test_try_except_lineno(self):
@@ -200,15 +200,15 @@ else:
   print "bouh"
 ''', __name__, __file__)
         try_ = astng.body[0]
-        self.assertEquals(try_.fromlineno, 2)
-        self.assertEquals(try_.tolineno, 7)
-        self.assertEquals(try_.blockstart_tolineno, 2)
-        self.assertEquals(try_.orelse[0].fromlineno, 7) # XXX
-        self.assertEquals(try_.orelse[0].tolineno, 7)
+        self.assertEqual(try_.fromlineno, 2)
+        self.assertEqual(try_.tolineno, 7)
+        self.assertEqual(try_.blockstart_tolineno, 2)
+        self.assertEqual(try_.orelse[0].fromlineno, 7) # XXX
+        self.assertEqual(try_.orelse[0].tolineno, 7)
         hdlr = try_.handlers[0]
-        self.assertEquals(hdlr.fromlineno, 4)
-        self.assertEquals(hdlr.tolineno, 5)
-        self.assertEquals(hdlr.blockstart_tolineno, 4)
+        self.assertEqual(hdlr.fromlineno, 4)
+        self.assertEqual(hdlr.tolineno, 5)
+        self.assertEqual(hdlr.blockstart_tolineno, 4)
 
 
     def test_try_finally_lineno(self):
@@ -219,16 +219,16 @@ finally:
   print "bouh"
 ''', __name__, __file__)
         try_ = astng.body[0]
-        self.assertEquals(try_.fromlineno, 2)
-        self.assertEquals(try_.tolineno, 5)
-        self.assertEquals(try_.blockstart_tolineno, 2)
-        self.assertEquals(try_.finalbody[0].fromlineno, 5) # XXX
-        self.assertEquals(try_.finalbody[0].tolineno, 5)
+        self.assertEqual(try_.fromlineno, 2)
+        self.assertEqual(try_.tolineno, 5)
+        self.assertEqual(try_.blockstart_tolineno, 2)
+        self.assertEqual(try_.finalbody[0].fromlineno, 5) # XXX
+        self.assertEqual(try_.finalbody[0].tolineno, 5)
 
 
     def test_try_finally_25_lineno(self):
         if sys.version_info < (2, 5):
-            self.skip('require python >= 2.5')
+            self.skipTest('require python >= 2.5')
         astng = builder.ASTNGBuilder().string_build('''
 try:
   print a
@@ -238,25 +238,25 @@ finally:
   print "bouh"
 ''', __name__, __file__)
         try_ = astng.body[0]
-        self.assertEquals(try_.fromlineno, 2)
-        self.assertEquals(try_.tolineno, 7)
-        self.assertEquals(try_.blockstart_tolineno, 2)
-        self.assertEquals(try_.finalbody[0].fromlineno, 7) # XXX
-        self.assertEquals(try_.finalbody[0].tolineno, 7)
+        self.assertEqual(try_.fromlineno, 2)
+        self.assertEqual(try_.tolineno, 7)
+        self.assertEqual(try_.blockstart_tolineno, 2)
+        self.assertEqual(try_.finalbody[0].fromlineno, 7) # XXX
+        self.assertEqual(try_.finalbody[0].tolineno, 7)
 
 
     def test_with_lineno(self):
         if sys.version_info < (2, 5):
-            self.skip('require python >=2.5')
+            self.skipTest('require python >=2.5')
         astng = builder.ASTNGBuilder().string_build('''
 from __future__ import with_statement
 with file("/tmp/pouet") as f:
   print f
 ''', __name__, __file__)
         with_ = astng.body[1]
-        self.assertEquals(with_.fromlineno, 3)
-        self.assertEquals(with_.tolineno, 4)
-        self.assertEquals(with_.blockstart_tolineno, 3)
+        self.assertEqual(with_.fromlineno, 3)
+        self.assertEqual(with_.tolineno, 4)
+        self.assertEqual(with_.blockstart_tolineno, 3)
 
 
 
@@ -283,7 +283,7 @@ class BuilderTC(TestCase):
         self.assertIsInstance(fclass['read'], nodes.Function)
         # check builtin function has args.args == None
         dclass = builtin_astng['dict']
-        self.assertEquals(dclass['has_key'].args.args, None)
+        self.assertEqual(dclass['has_key'].args.args, None)
         # just check type and object are there
         builtin_astng.getattr('type')
         builtin_astng.getattr('object')
@@ -303,14 +303,14 @@ class BuilderTC(TestCase):
     def test_inspect_build1(self):
         time_astng = MANAGER.astng_from_module_name('time')
         self.assert_(time_astng)
-        self.assertEquals(time_astng['time'].args.defaults, [])
+        self.assertEqual(time_astng['time'].args.defaults, [])
 
     def test_inspect_build2(self):
         """test astng tree build from a living object"""
         try:
             from mx import DateTime
         except ImportError:
-            self.skip('test skipped: mxDateTime is not available')
+            self.skipTest('test skipped: mxDateTime is not available')
         else:
             dt_astng = self.builder.inspect_build(DateTime)
             dt_astng.getattr('DateTime')
@@ -339,25 +339,25 @@ class BuilderTC(TestCase):
         builtin_astng = MANAGER.astng_from_module_name('__builtin__')
 
         infered = list(builtin_astng.igetattr('object'))
-        self.assertEquals(len(infered), 1)
+        self.assertEqual(len(infered), 1)
         infered = infered[0]
-        self.assertEquals(infered.name, 'object')
+        self.assertEqual(infered.name, 'object')
         as_string(infered)
 
         infered = list(builtin_astng.igetattr('type'))
-        self.assertEquals(len(infered), 1)
+        self.assertEqual(len(infered), 1)
         infered = infered[0]
-        self.assertEquals(infered.name, 'type')
+        self.assertEqual(infered.name, 'type')
         as_string(infered)
 
     def test_package_name(self):
         """test base properties and method of a astng module"""
         datap = self.builder.file_build('data/__init__.py', 'data')
-        self.assertEquals(datap.name, 'data')
-        self.assertEquals(datap.package, 1)
+        self.assertEqual(datap.name, 'data')
+        self.assertEqual(datap.package, 1)
         datap = self.builder.file_build('data/__init__.py', 'data.__init__')
-        self.assertEquals(datap.name, 'data')
-        self.assertEquals(datap.package, 1)
+        self.assertEqual(datap.name, 'data')
+        self.assertEqual(datap.package, 1)
 
     def test_yield_parent(self):
         """check if we added discard nodes as yield parent (w/ compiler)"""
@@ -465,18 +465,18 @@ class FileBuildTC(TestCase):
     def test_module_base_props(self):
         """test base properties and method of a astng module"""
         module = self.module
-        self.assertEquals(module.name, 'data.module')
-        self.assertEquals(module.doc, "test module for astng\n")
-        self.assertEquals(module.fromlineno, 0)
-        self.assertEquals(module.parent, None)
-        self.assertEquals(module.frame(), module)
-        self.assertEquals(module.root(), module)
-        self.assertEquals(module.file, join(abspath(data.__path__[0]), 'module.py'))
-        self.assertEquals(module.pure_python, 1)
-        self.assertEquals(module.package, 0)
+        self.assertEqual(module.name, 'data.module')
+        self.assertEqual(module.doc, "test module for astng\n")
+        self.assertEqual(module.fromlineno, 0)
+        self.assertEqual(module.parent, None)
+        self.assertEqual(module.frame(), module)
+        self.assertEqual(module.root(), module)
+        self.assertEqual(module.file, join(abspath(data.__path__[0]), 'module.py'))
+        self.assertEqual(module.pure_python, 1)
+        self.assertEqual(module.package, 0)
         self.assert_(not module.is_statement)
-        self.assertEquals(module.statement(), module)
-        self.assertEquals(module.statement(), module)
+        self.assertEqual(module.statement(), module)
+        self.assertEqual(module.statement(), module)
 
     def test_module_locals(self):
         """test the 'locals' dictionary of a astng module"""
@@ -490,43 +490,43 @@ class FileBuildTC(TestCase):
                  'os', 'redirect', 'spawn', 'LocalsVisitor',
                 'ASTWalker', 'ASTVisitor']
         should.sort()
-        self.assertEquals(keys, should)
+        self.assertEqual(keys, should)
 
     def test_function_base_props(self):
         """test base properties and method of a astng function"""
         module = self.module
         function = module['global_access']
-        self.assertEquals(function.name, 'global_access')
-        self.assertEquals(function.doc, 'function test')
-        self.assertEquals(function.fromlineno, 15)
+        self.assertEqual(function.name, 'global_access')
+        self.assertEqual(function.doc, 'function test')
+        self.assertEqual(function.fromlineno, 15)
         self.assert_(function.parent)
-        self.assertEquals(function.frame(), function)
-        self.assertEquals(function.parent.frame(), module)
-        self.assertEquals(function.root(), module)
-        self.assertEquals([n.name for n in function.args.args], ['key', 'val'])
-        self.assertEquals(function.type, 'function')
+        self.assertEqual(function.frame(), function)
+        self.assertEqual(function.parent.frame(), module)
+        self.assertEqual(function.root(), module)
+        self.assertEqual([n.name for n in function.args.args], ['key', 'val'])
+        self.assertEqual(function.type, 'function')
 
     def test_function_locals(self):
         """test the 'locals' dictionary of a astng function"""
         _locals = self.module['global_access'].locals
-        self.assertEquals(len(_locals), 4)
+        self.assertEqual(len(_locals), 4)
         keys = _locals.keys()
         keys.sort()
-        self.assertEquals(keys, ['i', 'key', 'local', 'val'])
+        self.assertEqual(keys, ['i', 'key', 'local', 'val'])
 
     def test_class_base_props(self):
         """test base properties and method of a astng class"""
         module = self.module
         klass = module['YO']
-        self.assertEquals(klass.name, 'YO')
-        self.assertEquals(klass.doc, 'hehe')
-        self.assertEquals(klass.fromlineno, 28)
+        self.assertEqual(klass.name, 'YO')
+        self.assertEqual(klass.doc, 'hehe')
+        self.assertEqual(klass.fromlineno, 28)
         self.assert_(klass.parent)
-        self.assertEquals(klass.frame(), klass)
-        self.assertEquals(klass.parent.frame(), module)
-        self.assertEquals(klass.root(), module)
-        self.assertEquals(klass.basenames, [])
-        self.assertEquals(klass.newstyle, False)
+        self.assertEqual(klass.frame(), klass)
+        self.assertEqual(klass.parent.frame(), module)
+        self.assertEqual(klass.root(), module)
+        self.assertEqual(klass.basenames, [])
+        self.assertEqual(klass.newstyle, False)
 
     def test_class_locals(self):
         """test the 'locals' dictionary of a astng class"""
@@ -535,56 +535,56 @@ class FileBuildTC(TestCase):
         locals1 = klass1.locals
         keys = locals1.keys()
         keys.sort()
-        self.assertEquals(keys, ['__init__', 'a'])
+        self.assertEqual(keys, ['__init__', 'a'])
         klass2 = module['YOUPI']
         locals2 = klass2.locals
         keys = locals2.keys()
         keys.sort()
-        self.assertEquals(keys, ['__init__', 'class_attr', 'class_method',
+        self.assertEqual(keys, ['__init__', 'class_attr', 'class_method',
                                  'method', 'static_method'])
 
     def test_class_instance_attrs(self):
         module = self.module
         klass1 = module['YO']
         klass2 = module['YOUPI']
-        self.assertEquals(klass1.instance_attrs.keys(), ['yo'])
-        self.assertEquals(klass2.instance_attrs.keys(), ['member'])
+        self.assertEqual(klass1.instance_attrs.keys(), ['yo'])
+        self.assertEqual(klass2.instance_attrs.keys(), ['member'])
 
     def test_class_basenames(self):
         module = self.module
         klass1 = module['YO']
         klass2 = module['YOUPI']
-        self.assertEquals(klass1.basenames, [])
-        self.assertEquals(klass2.basenames, ['YO'])
+        self.assertEqual(klass1.basenames, [])
+        self.assertEqual(klass2.basenames, ['YO'])
 
     def test_method_base_props(self):
         """test base properties and method of a astng method"""
         klass2 = self.module['YOUPI']
         # "normal" method
         method = klass2['method']
-        self.assertEquals(method.name, 'method')
-        self.assertEquals([n.name for n in method.args.args], ['self'])
-        self.assertEquals(method.doc, 'method test')
-        self.assertEquals(method.fromlineno, 48)
-        self.assertEquals(method.type, 'method')
+        self.assertEqual(method.name, 'method')
+        self.assertEqual([n.name for n in method.args.args], ['self'])
+        self.assertEqual(method.doc, 'method test')
+        self.assertEqual(method.fromlineno, 48)
+        self.assertEqual(method.type, 'method')
         # class method
         method = klass2['class_method']
-        self.assertEquals([n.name for n in method.args.args], ['cls'])
-        self.assertEquals(method.type, 'classmethod')
+        self.assertEqual([n.name for n in method.args.args], ['cls'])
+        self.assertEqual(method.type, 'classmethod')
         # static method
         method = klass2['static_method']
-        self.assertEquals(method.args.args, [])
-        self.assertEquals(method.type, 'staticmethod')
+        self.assertEqual(method.args.args, [])
+        self.assertEqual(method.type, 'staticmethod')
 
     def test_method_locals(self):
         """test the 'locals' dictionary of a astng method"""
         klass2 = self.module['YOUPI']
         method = klass2['method']
         _locals = method.locals
-        self.assertEquals(len(_locals), 5)
+        self.assertEqual(len(_locals), 5)
         keys = _locals.keys()
         keys.sort()
-        self.assertEquals(keys, ['a', 'autre', 'b', 'local', 'self'])
+        self.assertEqual(keys, ['a', 'autre', 'b', 'local', 'self'])
 
 
 class ModuleBuildTC(FileBuildTC):
@@ -609,7 +609,7 @@ A.ass_type = A_ass_type
     '''
         astng = self.builder.string_build(code)
         lclass = list(astng.igetattr('A'))
-        self.assertEquals(len(lclass), 1)
+        self.assertEqual(len(lclass), 1)
         lclass = lclass[0]
         self.assert_('ass_type' in lclass.locals, lclass.locals.keys())
         self.assert_('type' in lclass.locals.keys())
@@ -621,7 +621,7 @@ A.ass_type = A_ass_type
 #         astastng = astng.MANAGER.astng_from_file(join(compiler.__path__[0], 'ast.py'))
 #         # check monkey patching of the compiler module has been inferred
 #         lclass = list(astastng.igetattr('Function'))
-#         self.assertEquals(len(lclass), 1)
+#         self.assertEqual(len(lclass), 1)
 #         lclass = lclass[0]
 #         self.assert_('ass_type' in lclass.locals, lclass.locals.keys())
 
@@ -674,10 +674,10 @@ def func():
         astng = self.builder.string_build(code)
         none, nothing, chain = [ret.value for ret in astng.body[0].body]
         self.assertIsInstance(none, nodes.Const)
-        self.assertEquals(none.value, None)
-        self.assertEquals(nothing, None)
+        self.assertEqual(none.value, None)
+        self.assertEqual(nothing, None)
         self.assertIsInstance(chain, nodes.Const)
-        self.assertEquals(chain.value, 'None')
+        self.assertEqual(chain.value, 'None')
 
 
 if __name__ == '__main__':
