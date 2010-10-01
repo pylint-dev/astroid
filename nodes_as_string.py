@@ -330,6 +330,11 @@ class AsStringVisitor(ASTVisitor):
         """return a astng.Index node as string"""
         return node.value.accept(self)
 
+    def visit_setcomp(self, node):
+        """return an astng.SetComp node as string"""
+        return '[%s %s]' % (node.elt.accept(self), ' '.join([n.accept(self)
+                                                for n in node.generators]))
+
     def visit_slice(self, node):
         """return a astng.Slice node as string"""
         lower = node.lower and node.lower.accept(self) or ''

@@ -198,6 +198,9 @@ class ASTVisitor(object):
     def visit_return(self, node):
         """dummy method for visiting an Return node"""
 
+    def visit_setcomp(self, node):
+        """dummy method for visiting an SetComp node"""
+
     def visit_slice(self, node):
         """dummy method for visiting an Slice node"""
 

@@ -590,6 +590,16 @@ class TreeRebuilder(RebuildVisitor):
         newnode.set_line_info(newnode.last_child())
         return newnode
 
+    def visit_setcomp(self, node, parent):
+        """visit a SetComp node by returning a fresh instance of it"""
+        newnode = new.SetComp()
+        _lineno_parent(node, newnode, parent)
+        newnode.elt = self.visit(node.elt, newnode)
+        newnode.generators = [self.visit(child, newnode)
+                              for child in node.generators]
+        newnode.set_line_info(newnode.last_child())
+        return newnode
+
     def visit_slice(self, node, parent):
         """visit a Slice node by returning a fresh instance of it"""
         newnode = new.Slice()

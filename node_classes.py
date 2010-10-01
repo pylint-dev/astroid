@@ -697,6 +697,13 @@ class Return(StmtMixIn, NodeNG):
     value = None
 
 
+class SetComp(NodeNG):
+    """class representing a SetComp node"""
+    _astng_fields = ('elt', 'generators')
+    elt = None
+    generators = None
+
+
 class Slice(NodeNG):
     """class representing a Slice node"""
     _astng_fields = ('lower', 'upper', 'step')
