@@ -328,6 +328,17 @@ class TreeRebuilder(RebuildVisitor):
         newnode.set_line_info(newnode.last_child())
         return newnode
 
+    def visit_dictcomp(self, node, parent):
+        """visit a DictComp node by returning a fresh instance of it"""
+        newnode = new.DictComp()
+        _lineno_parent(node, newnode, parent)
+        newnode.key = self.visit(node.key, newnode)
+        newnode.value = self.visit(node.value, newnode)
+        newnode.generators = [self.visit(child, newnode)
+                              for child in node.generators]
+        newnode.set_line_info(newnode.last_child())
+        return newnode
+
     def visit_discard(self, node, parent):
         """visit a Discard node by returning a fresh instance of it"""
         newnode = new.Discard()

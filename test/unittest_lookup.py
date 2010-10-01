@@ -169,6 +169,26 @@ print list( i for i in range(10) )
         self.assertEqual(xnames[2].lookup('i')[1][0].lineno, 4)
 
 
+    def test_dict_comps(self):
+        if sys.version_info < (2, 7):
+            self.skipTest('this test require python >= 2.7')
+        astng = builder.string_build("""
+print { i: j for i in range(10) for j in range(10) }
+print { i: j for i in range(10) for j in range(10) }
+        """, __name__, __file__)
+        xnames = [n for n in astng.nodes_of_class(nodes.Name) if n.name == 'i']
+        self.assertEqual(len(xnames[0].lookup('i')[1]), 1)
+        self.assertEqual(xnames[0].lookup('i')[1][0].lineno, 2)
+        self.assertEqual(len(xnames[1].lookup('i')[1]), 1)
+        self.assertEqual(xnames[1].lookup('i')[1][0].lineno, 3)
+
+        xnames = [n for n in astng.nodes_of_class(nodes.Name) if n.name == 'j']
+        self.assertEqual(len(xnames[0].lookup('i')[1]), 1)
+        self.assertEqual(xnames[0].lookup('i')[1][0].lineno, 2)
+        self.assertEqual(len(xnames[1].lookup('i')[1]), 1)
+        self.assertEqual(xnames[1].lookup('i')[1][0].lineno, 3)
+
+
     def test_explicit___name__(self):
         code = '''
 class Pouet:

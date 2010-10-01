@@ -173,7 +173,12 @@ class AsStringVisitor(ASTVisitor):
         """return an astng.Dict node as string"""
         return '{%s}' % ', '.join(['%s: %s' % (key.accept(self), 
                             value.accept(self)) for key, value in node.items])
-    
+
+    def visit_dictcomp(self, node):
+        """return an astng.DictComp node as string"""
+        return '[%s: %s %s]' % (node.key.accept(self), node.value.accept(self),
+                ' '.join([n.accept(self) for n in node.generators]))
+
     def visit_discard(self, node):
         """return an astng.Discard node as string"""
         return node.value.accept(self)
@@ -233,7 +238,7 @@ class AsStringVisitor(ASTVisitor):
                                         docs, self._stmt_list(node.body))
     
     def visit_genexpr(self, node):
-        """return an astng.ListComp node as string"""
+        """return an astng.GenExpr node as string"""
         return '(%s %s)' % (node.elt.accept(self), ' '.join([n.accept(self)
                                                     for n in node.generators]))
     

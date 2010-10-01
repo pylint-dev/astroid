@@ -505,6 +505,14 @@ class Dict(NodeNG, Instance):
         raise IndexError(key)
 
 
+class DictComp(NodeNG):
+    """class representing a DictComp node"""
+    _astng_fields = ('key', 'value', 'generators')
+    key = None
+    value = None
+    generators = None
+
+
 class Discard(StmtMixIn, NodeNG):
     """class representing a Discard node"""
     _astng_fields = ('value',)

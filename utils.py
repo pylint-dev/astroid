@@ -114,6 +114,9 @@ class ASTVisitor(object):
     def visit_dict(self, node):
         """dummy method for visiting an Dict node"""
 
+    def visit_dictcomp(self, node):
+        """dummy method for visiting an DictComp node"""
+
     def visit_discard(self, node):
         """dummy method for visiting an Discard node"""
 
