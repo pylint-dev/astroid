@@ -84,7 +84,7 @@ class ASTNGManagerTC(unittest.TestCase):
                           zip(expected_short, expected_long))
         
         self.assertEqual('module' in obj, True)
-        self.assertEqual(obj.has_key('module'), True)
+        self.assertTrue(obj.get('module'))
         self.assertEqual(obj.get('module').name, 'data.module')
         self.assertEqual(obj['module'].name, 'data.module')
         self.assertEqual(obj.get('whatever'), None)

@@ -119,6 +119,7 @@ class ASTNGManager(OptionsProviderMixIn):
 
     def from_directory(self, directory, modname=None):
         """given a module name, return the astng object"""
+        # FIXME : seems to be dead or unused code
         modname = modname or basename(directory)
         directory = abspath(directory)
         return Package(directory, modname, self)
@@ -293,6 +294,7 @@ class ASTNGManager(OptionsProviderMixIn):
 
 
 
+# FIXME : seems to be dead or unused code
 class Package:
     """a package using a dictionary like interface
 
@@ -368,9 +370,6 @@ class Package:
     def items(self):
         return zip(self.keys(), self.values())
 
-    def has_key(self, name):
-        return bool(self.get(name))
-
     def get(self, name, default=None):
         try:
             return self.get_subobject(name)
@@ -379,8 +378,10 @@ class Package:
 
     def __getitem__(self, name):
         return self.get_subobject(name)
+
     def __contains__(self, name):
-        return self.has_key(name)
+        return bool(self.get(name))
+
     def __iter__(self):
         return iter(self.keys())
 
@@ -397,7 +398,6 @@ class Project:
         self.values = self.locals.values
         self.keys = self.locals.keys
         self.items = self.locals.items
-        self.has_key = self.locals.has_key
 
     def add_module(self, node):
         self.locals[node.name] = node
