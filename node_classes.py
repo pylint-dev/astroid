@@ -69,7 +69,7 @@ def are_exclusive(stmt1, stmt2, exceptions=None):
     node = stmt2.parent
     previous = stmt2
     while node:
-        if stmt1_parents.has_key(node):
+        if node in stmt1_parents:
             # if the common parent is a If or TryExcept statement, look if
             # nodes are in exclusive branches
             if isinstance(node, If) and exceptions is None:

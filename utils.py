@@ -303,7 +303,7 @@ class LocalsVisitor(ASTWalker):
 
     def visit(self, node):
         """launch the visit starting from the given node"""
-        if self._visited.has_key(node):
+        if node in self._visited:
             return
         self._visited[node] = 1 # FIXME: use set ?
         methods = self.get_callbacks(node)

@@ -203,14 +203,10 @@ class LocalsDictNodeNG(LookupMixIn, NodeNG):
         """
         return zip(self.keys(), self.values())
 
-    def has_key(self, name):
-        """method from the `dict` interface returning True if the given
-        name is defined in the locals dictionary
-        """
-        return self.locals.has_key(name)
 
-    __contains__ = has_key
-
+    def __contains__(self, name):
+        return name in self.locals
+    has_key = __contains__
 
 # Module  #####################################################################
 
@@ -766,7 +762,7 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
         which have <name> defined in their locals
         """
         for astng in self.ancestors(context=context):
-            if astng.locals.has_key(name):
+            if name in astng:
                 yield astng
 
     def instance_attr_ancestors(self, name, context=None):
@@ -774,7 +770,7 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
         which have <name> defined in their instance attribute dictionary
         """
         for astng in self.ancestors(context=context):
-            if astng.instance_attrs.has_key(name):
+            if name in astng.instance_attrs:
                 yield astng
 
     def has_base(self, node):
@@ -903,7 +899,7 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
         done = {}
         for astng in chain(iter((self,)), self.ancestors()):
             for meth in astng.mymethods():
-                if done.has_key(meth.name):
+                if meth.name in done:
                     continue
                 done[meth.name] = None
                 yield meth

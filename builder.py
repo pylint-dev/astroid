@@ -153,7 +153,7 @@ class ASTNGBuilder:
         """recursive method which create a partial ast from real objects
          (only function, class, and method are handled)
         """
-        if self._done.has_key(obj):
+        if obj in self._done:
             return self._done[obj]
         self._done[obj] = node
         for name in dir(obj):
