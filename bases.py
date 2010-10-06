@@ -565,10 +565,12 @@ class NodeNG(BaseClass):
         return as_string(self)
 
     def repr_tree(self, ids=False):
-        """print a nice astng tree representation"""
+        """print a nice astng tree representation.
+
+        :param ids: if true, we also print the ids (usefull for debugging)"""
         result = []
         _repr_tree(self, result, ids=ids)
-        print "\n".join(result)
+        return "\n".join(result)
 
 
 INDENT = "    "

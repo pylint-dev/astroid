@@ -107,45 +107,6 @@ def _init_set_doc(node, newnode):
 
     except IndexError:
         pass # ast built from scratch
-    
-
-
-def native_repr_tree(node, indent='', _done=None):
-    if _done is None:
-        _done = set()
-    if node in _done:
-        print ('loop in tree: %r (%s)' % (node, getattr(node, 'lineno', None)))
-        return
-    _done.add(node)
-    print indent + str(node)
-    if type(node) is str: # XXX crash on Globals
-        return
-    indent += '    '
-    d = node.__dict__
-    if hasattr(node, '_attributes'):
-        for a in node._attributes:
-            attr = d[a]
-            if attr is None:
-                continue
-            print indent + a, repr(attr)
-    for f in node._fields or ():
-        attr = d[f]
-        if attr is None:
-            continue
-        if type(attr) is list:
-            if not attr: continue
-            print indent + f + ' ['
-            for elt in attr:
-                native_repr_tree(elt, indent, _done)
-            print indent + ']'
-            continue
-        if isinstance(attr, (_Load, _Store, _Del)):
-            continue
-        if isinstance(attr, Node):
-            print indent + f
-            native_repr_tree(attr, indent, _done)
-        else:
-            print indent + f, repr(attr)
 
 
 from logilab.astng.rebuilder import RebuildVisitor

@@ -344,5 +344,115 @@ def _check_children(node):
         _check_children(child)
 
 
+# XXX This class don't support 'compiler' for now.
+# If we want it, there is a "_native_repr_tree" method in _nodes_compiler.py
+class TreeTester(object):
+    '''A helper class to see _ast tree and compare with astng tree
+
+    indent: string for tree indent representation
+    lineno: bool to tell if we should print the line numbers
+
+    >>> tester = TreeTester('print')
+    >>> print tester.native_tree_repr()
+
+    <Module>
+    .   body = [
+    .   <Print>
+    .   .   nl = True
+    .   ]
+    >>> print tester.astng_tree_repr()
+    Module()
+        body = [
+        Print()
+            dest = 
+            values = [
+            ]
+        ]
+    '''
+
+    indent = '.   '
+    lineno = False
+
+    def __init__(self, sourcecode):
+        self._string = ''
+        self.sourcecode = sourcecode
+        self._ast_node = None
+        self.build_ast()
+
+    def build_ast(self):
+        """build the _ast tree from the source code"""
+        from _ast import PyCF_ONLY_AST
+        def parse(string):
+            return compile(string, "<string>", 'exec', PyCF_ONLY_AST)
+        self._ast_node = parse(self.sourcecode)
+
+    def native_tree_repr(self, node=None, indent=''):
+        """get a nice representation of the _ast tree"""
+        self._string = ''
+        if node is None:
+            node = self._ast_node
+        self._native_repr_tree(node, indent)
+        return self._string
+
+
+    def _native_repr_tree(self, node, indent, _done=None):
+        """recursive method for the native tree representation"""
+        from _ast import Load as _Load, Store as _Store, Del as _Del
+        from _ast import AST as Node
+        if _done is None:
+            _done = set()
+        if node in _done:
+            self._string += '\nloop in tree: %r (%s)' % (node,
+                                            getattr(node, 'lineno', None))
+            return
+        _done.add(node)
+        self._string += '\n' + indent +  '<%s>' % node.__class__.__name__
+        indent += self.indent
+        if not hasattr(node, '__dict__'):
+            self._string += '\n' + self.indent + " ** node has no __dict__ " + str(node)
+            return
+        node_dict = node.__dict__
+        if hasattr(node, '_attributes'):
+            for a in node._attributes:
+                attr = node_dict[a]
+                if attr is None:
+                    continue
+                if a in ("lineno", "col_offset") and not self.lineno:
+                    continue
+                self._string +='\n' +  indent + a + " = " + repr(attr)
+        for field in node._fields or ():
+            attr = node_dict[field]
+            if attr is None:
+                continue
+            if type(attr) is list:
+                if not attr:
+                    continue
+                self._string += '\n' + indent + field + ' = ['
+                for elt in attr:
+                    self._native_repr_tree(elt, indent, _done)
+                self._string += '\n' + indent + ']'
+                continue
+            if isinstance(attr, (_Load, _Store, _Del)):
+                continue
+            if isinstance(attr, Node):
+                self._string += '\n' + indent + field + " = "
+                self._native_repr_tree(attr, indent, _done)
+            else:
+                self._string += '\n' + indent + field + " = " + repr(attr)
+
+
+    def build_astng_tree(self):
+        """build astng tree from the _ast tree
+        """
+        from logilab.astng.builder import ASTNGBuilder
+        tree = ASTNGBuilder().ast_build(self._ast_node)
+        return tree
+
+    def astng_tree_repr(self, ids=False):
+        """build the astng tree and return a nice tree representation"""
+        mod = self.build_astng_tree()
+        return mod.repr_tree(ids)
+
+
 __all__ = ('LocalsVisitor', 'ASTWalker', 'ASTVisitor',)
 
