@@ -38,7 +38,7 @@ from os.path import join, abspath, dirname
 from logilab.common.testlib import TestCase, unittest_main
 from pprint import pprint
 
-from logilab.astng import builder, nodes, patchcomptransformer, MANAGER, \
+from logilab.astng import builder, nodes, MANAGER, \
                           InferenceError, NotFoundError
 from logilab.astng.nodes import Module
 from logilab.astng.bases import YES
