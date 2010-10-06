@@ -20,7 +20,7 @@
 """Module for some node classes. More nodes in scoped_nodes.py
 """
 
-from logilab.common.compat import chain, imap
+from itertools import chain, imap
 
 from logilab.astng import NoDefault
 from logilab.astng.bases import NodeNG, BaseClass, Instance, copy_context, \

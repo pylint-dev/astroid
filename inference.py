@@ -24,7 +24,7 @@ from __future__ import generators
 
 __doctype__ = "restructuredtext en"
 
-from logilab.common.compat import chain
+from itertools import chain
 
 try:
     GeneratorExit # introduced in py2.5
