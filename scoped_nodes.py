@@ -26,11 +26,10 @@ from __future__ import generators
 
 __doctype__ = "restructuredtext en"
 
-import __builtin__
 import sys
 from itertools import chain
 
-from logilab.common.compat import set
+from logilab.common.compat import set, builtins
 from logilab.common.decorators import cached
 
 from logilab.astng import MANAGER, NotFoundError, NoDefault, \
@@ -43,7 +42,6 @@ from logilab.astng.bases import NodeNG, BaseClass, InferenceContext, Instance,\
 from logilab.astng.mixins import StmtMixIn, FilterStmtsMixin
 
 from logilab.astng.nodes_as_string import as_string
-
 
 def remove_nodes(func, cls):
     def wrapper(*args, **kwargs):
@@ -83,7 +81,7 @@ def builtin_lookup(name):
     module
     """
     # TODO : once there is no more monkey patching, make a BUILTINASTNG const
-    builtinastng = MANAGER.astng_from_module(__builtin__)
+    builtinastng = MANAGER.astng_from_module(builtins)
     if name == '__dict__':
         return builtinastng, ()
     try:
