@@ -697,6 +697,18 @@ class Return(StmtMixIn, NodeNG):
     value = None
 
 
+class Set(NodeNG, Instance, ParentAssignTypeMixin):
+    """class representing a Set node"""
+    _astng_fields = ('elts',)
+    elts = None
+
+    def pytype(self):
+        return '__builtin__.set' # XXX __builtin__ vs builtins
+
+    def itered(self):
+        return self.elts
+
+
 class SetComp(NodeNG):
     """class representing a SetComp node"""
     _astng_fields = ('elt', 'generators')

@@ -330,6 +330,10 @@ class AsStringVisitor(ASTVisitor):
         """return a astng.Index node as string"""
         return node.value.accept(self)
 
+    def visit_set(self, node):
+        """return an astng.Set node as string"""
+        return '{%s}' % ', '.join([child.accept(self) for child in node.elts])
+
     def visit_setcomp(self, node):
         """return an astng.SetComp node as string"""
         return '[%s %s]' % (node.elt.accept(self), ' '.join([n.accept(self)

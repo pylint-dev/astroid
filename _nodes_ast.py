@@ -570,6 +570,14 @@ class TreeRebuilder(RebuildVisitor):
         newnode.set_line_info(newnode.last_child())
         return newnode
 
+    def visit_set(self, node, parent):
+        """visit a Tuple node by returning a fresh instance of it"""
+        newnode = new.Set()
+        _lineno_parent(node, newnode, parent)
+        newnode.elts = [self.visit(child, newnode) for child in node.elts]
+        newnode.set_line_info(newnode.last_child())
+        return newnode
+
     def visit_setcomp(self, node, parent):
         """visit a SetComp node by returning a fresh instance of it"""
         newnode = new.SetComp()
