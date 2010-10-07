@@ -370,9 +370,8 @@ class NodeNG(BaseClass):
         return func(self)
 
     def get_children(self):
-        node_dict = self.__dict__
         for field in self._astng_fields:
-            attr = node_dict[field]
+            attr = getattr(self, field)
             if attr is None:
                 continue
             if isinstance(attr, (list, tuple)):
@@ -383,9 +382,8 @@ class NodeNG(BaseClass):
 
     def last_child(self):
         """an optimized version of list(get_children())[-1]"""
-        n_dict = self.__dict__
         for field in self._astng_fields[::-1]:
-            attr = n_dict[field]
+            attr = getattr(self, field)
             if not attr: # None or empty listy / tuple
                 continue
             if isinstance(attr, (list, tuple)):
