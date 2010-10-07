@@ -58,6 +58,7 @@ from _ast import (
     )
 
 from logilab.astng import nodes as new
+import sys
 
 _BIN_OP_CLASSES = {_Add: '+',
                    _BitAnd: '&',
@@ -171,6 +172,14 @@ class TreeRebuilder(RebuildVisitor):
         newnode.value = self.visit(node.value, newnode)
         self._set_assign_infos(newnode)
         newnode.set_line_info(newnode.last_child())
+        return newnode
+
+    def visit_assname(self, node, parent, node_name=None):
+        '''visit a node and return a AssName node'''
+        newnode = new.AssName()
+        self._set_infos(node, newnode, parent)
+        newnode.name = node_name
+        self._save_assignment(newnode)
         return newnode
 
     def visit_augassign(self, node, parent):
@@ -313,9 +322,12 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.ExceptHandler()
         _lineno_parent(node, newnode, parent)
         newnode.type = self.visit(node.type, newnode)
-        self.asscontext = "Ass"
-        newnode.name = self.visit(node.name, newnode)
-        self.asscontext = None
+        if node.name is not None:
+            if sys.version_info < (3, 0):
+                newnode.name = self.visit_assname(node.name, newnode,
+                                                  node.name.id)
+            else:
+                newnode.name = self.visit_assname(node, newnode, node.name)
         newnode.body = [self.visit(child, newnode) for child in node.body]
         newnode.set_line_info(newnode.last_child())
         return newnode
