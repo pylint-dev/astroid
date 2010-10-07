@@ -55,7 +55,7 @@ class C(object):
 
     def meth1(self, arg1, optarg=0):
         var = object()
-        print "yo", arg1, optarg
+        print ("yo", arg1, optarg)
         self.iattr = "hop"
         return var
 
@@ -74,7 +74,7 @@ m_bound = C().meth1
 a, b, c = ex, 1, "bonjour"
 [d, e, f] = [ex, 1.0, ("bonjour", v)]
 g, h = f
-i, (j, k) = u"glup", f
+i, (j, k) = "glup", f
 
 a, b= b, a # Gasp !
 '''
@@ -330,13 +330,15 @@ def f():
     def test_except_inference(self):
         code = '''
 try:
-    print hop
+    print (hop)
 except NameError, ex:
     ex1 = ex
 except Exception, ex:
     ex2 = ex
     raise
         '''
+        if sys.version_info >= (3, 0):
+            code = code.replace(', ex:', ' as ex:')
         astng = builder.string_build(code, __name__, __file__)
         ex1 = astng['ex1']
         ex1_infer = ex1.infer()
@@ -483,7 +485,7 @@ class ErudiEntitySchema:
 
     def meth(self, e_type, *args, **kwargs):
         kwargs['e_type'] = e_type.capitalize().encode()
-        print args
+        print(args)
         '''
         astng = builder.string_build(code, __name__, __file__)
         arg = get_name_node(astng['ErudiEntitySchema']['__init__'], 'e_type')
@@ -600,7 +602,7 @@ a = [1, 2, 3][0]
 b = (1, 2, 3)[1]
 c = (1, 2, 3)[-1]
 d = a + b + c
-print d
+print (d)
         '''
         astng = builder.string_build(code, __name__, __file__)
         self.failUnlessEqual([i.value for i in
@@ -626,12 +628,12 @@ print d
     def test_simple_for(self):
         code = '''
 for a in [1, 2, 3]:
-    print a
+    print (a)
 for b,c in [(1,2), (3,4)]:
-    print b
-    print c
+    print (b)
+    print (c)
 
-print [(d,e) for e,d in ([1,2], [3,4])]
+print ([(d,e) for e,d in ([1,2], [3,4])])
         '''
         astng = builder.string_build(code, __name__, __file__)
         self.failUnlessEqual([i.value for i in
@@ -743,13 +745,13 @@ sub = Sub.instance()
     def test_import_as(self):
         code = '''
 import os.path as osp
-print osp.dirname(__file__)
+print (osp.dirname(__file__))
 
 from os.path import exists as e
 assert e(__file__)
 
 from new import code as make_code
-print make_code
+print (make_code)
         '''
         astng = builder.string_build(code, __name__, __file__)
         infered = list(astng.igetattr('osp'))
@@ -969,8 +971,8 @@ class SendMailController(object):
     def me(self):
         return self
 
-print SendMailController().smtp
-print SendMailController().me
+print (SendMailController().smtp)
+print (SendMailController().me)
 '''
         astng = builder.string_build(code, __name__, __file__)
         self.assertEqual(astng['SendMailController']['smtp'].decoratornames(),
@@ -995,13 +997,13 @@ print SendMailController().me
         code = '''
 class EnvBasedTC:
     def pactions(self):
-        print "hop"
+        pass
 pactions = EnvBasedTC.pactions.im_func
-print pactions
+print (pactions)
 
 class EnvBasedTC2:
     pactions = EnvBasedTC.pactions.im_func
-    print pactions
+    print (pactions)
 
 '''
         astng = builder.string_build(code, __name__, __file__)
@@ -1018,7 +1020,7 @@ class EnvBasedTC2:
         code = '''
 a = 1
 a += 2
-print a
+print (a)
 '''
         astng = builder.string_build(code, __name__, __file__)
         infered = list(get_name_node(astng, 'a').infer())
@@ -1035,7 +1037,7 @@ def foo(self, bar):
     def qux():
         return baz
     spam = bar(None, qux)
-    print spam
+    print (spam)
 '''
         astng = builder.string_build(code, __name__, __file__)
         infered = list(get_name_node(astng['foo'], 'spam').infer())
@@ -1060,7 +1062,7 @@ class DataManager(object):
      self.app = get_active_application()
   def test(self):
      p = self.app
-     print p
+     print (p)
         '''
         astng = builder.string_build(code, __name__, __file__)
         infered = list(Instance(astng['DataManager']).igetattr('app'))

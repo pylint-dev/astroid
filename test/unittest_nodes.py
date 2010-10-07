@@ -58,22 +58,22 @@ class IfNodeTC(_NodeTC):
     """test transformation of If Node"""
     CODE = """
 if 0:
-    print
+    print()
 
 if True:
-    print
+    print()
 else:
     pass
 
 if "":
-    print
+    print()
 elif []:
     raise
 
 if 1:
-    print
+    print()
 elif True:
-    print
+    print()
 elif func():
     pass
 else:
@@ -103,13 +103,13 @@ else:
 class TryExceptNodeTC(_NodeTC):
     CODE = """
 try:
-    print 'pouet'
+    print ('pouet')
 except IOError:
     pass
 except UnicodeError:
-    print
+    print()
 else:
-    print
+    print()
     """
     def test_block_range(self):
         # XXX ensure expected values
@@ -126,9 +126,9 @@ else:
 class TryFinallyNodeTC(_NodeTC):
     CODE = """
 try:
-    print 'pouet'
+    print ('pouet')
 finally:
-    print 'pouet'
+    print ('pouet')
     """
     def test_block_range(self):
         # XXX ensure expected values
@@ -141,11 +141,11 @@ finally:
 class TryFinally25NodeTC(_NodeTC):
     CODE = """
 try:
-    print 'pouet'
+    print('pouet')
 except Exception:
     print 'oops'
 finally:
-    print 'pouet'
+    print ('pouet')
     """
     def test_block_range(self):
         if sys.version_info < (2, 5):

@@ -125,7 +125,7 @@ class FromToLineNoTC(TestCase):
 @decorator
 def function(
     arg):
-    print arg
+    print (arg)
 ''', __name__, __file__)
         function = astng['function']
         self.assertEqual(function.fromlineno, 3) # XXX discussable, but that's what is expected by pylint right now
@@ -169,16 +169,16 @@ def function(
     def test_for_while_lineno(self):
         for code in ('''
 for a in range(4):
-  print a
+  print (a)
   break
 else:
-  print "bouh"
+  print ("bouh")
 ''', '''
 while a:
-  print a
+  print (a)
   break
 else:
-  print "bouh"
+  print ("bouh")
 ''',
                      ):
             astng = builder.ASTNGBuilder().string_build(code, __name__, __file__)
@@ -193,11 +193,11 @@ else:
     def test_try_except_lineno(self):
         astng = builder.ASTNGBuilder().string_build('''
 try:
-  print a
+  print (a)
 except:
   pass
 else:
-  print "bouh"
+  print ("bouh")
 ''', __name__, __file__)
         try_ = astng.body[0]
         self.assertEqual(try_.fromlineno, 2)
@@ -214,9 +214,9 @@ else:
     def test_try_finally_lineno(self):
         astng = builder.ASTNGBuilder().string_build('''
 try:
-  print a
+  print (a)
 finally:
-  print "bouh"
+  print ("bouh")
 ''', __name__, __file__)
         try_ = astng.body[0]
         self.assertEqual(try_.fromlineno, 2)
@@ -231,11 +231,11 @@ finally:
             self.skipTest('require python >= 2.5')
         astng = builder.ASTNGBuilder().string_build('''
 try:
-  print a
+  print (a)
 except:
   pass
 finally:
-  print "bouh"
+  print ("bouh")
 ''', __name__, __file__)
         try_ = astng.body[0]
         self.assertEqual(try_.fromlineno, 2)
@@ -251,7 +251,7 @@ finally:
         astng = builder.ASTNGBuilder().string_build('''
 from __future__ import with_statement
 with file("/tmp/pouet") as f:
-  print f
+  print (f)
 ''', __name__, __file__)
         with_ = astng.body[1]
         self.assertEqual(with_.fromlineno, 3)
@@ -419,7 +419,7 @@ def update_global():
 
 def global_no_effect():
     global CSTE2
-    print CSTE
+    print (CSTE)
 '''
         astng = self.builder.string_build(data, __name__, __file__)
         self.failUnlessEqual(len(astng.getattr('CSTE')), 2)
@@ -604,7 +604,7 @@ class MoreTC(TestCase):
 A.type = "class"
 
 def A_ass_type(self):
-    print self
+    print (self)
 A.ass_type = A_ass_type
     '''
         astng = self.builder.string_build(code)

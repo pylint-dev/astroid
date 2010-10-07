@@ -140,10 +140,10 @@ class A(A):
         astng = builder.string_build("""
 x = 10
 for x in range(5):
-    print x
+    print (x)
    
 if x > 0:
-    print '#' * x        
+    print ('#' * x)
         """, __name__, __file__)
         xnames = [n for n in astng.nodes_of_class(nodes.Name) if n.name == 'x']
         # inside the loop, only one possible assignment
@@ -156,9 +156,9 @@ if x > 0:
         if sys.version_info < (2, 4):
             self.skipTest('this test require python >= 2.4')
         astng = builder.string_build("""
-print [ i for i in range(10) ]
-print [ i for i in range(10) ]
-print list( i for i in range(10) )
+print ([ i for i in range(10) ])
+print ([ i for i in range(10) ])
+print ( list( i for i in range(10) ) )
         """, __name__, __file__)
         xnames = [n for n in astng.nodes_of_class(nodes.Name) if n.name == 'i']
         self.assertEqual(len(xnames[0].lookup('i')[1]), 1)
@@ -173,8 +173,8 @@ print list( i for i in range(10) )
         if sys.version_info < (2, 7):
             self.skipTest('this test require python >= 2.7')
         astng = builder.string_build("""
-print { i: j for i in range(10) for j in range(10) }
-print { i: j for i in range(10) for j in range(10) }
+print ({ i: j for i in range(10) for j in range(10) })
+print ({ i: j for i in range(10) for j in range(10) })
         """, __name__, __file__)
         xnames = [n for n in astng.nodes_of_class(nodes.Name) if n.name == 'i']
         self.assertEqual(len(xnames[0].lookup('i')[1]), 1)
@@ -193,8 +193,8 @@ print { i: j for i in range(10) for j in range(10) }
         if sys.version_info < (2, 7):
             self.skipTest('this test require python >= 2.7')
         astng = builder.string_build("""
-print { i for i in range(10) }
-print { i for i in range(10) }
+print ({ i for i in range(10) })
+print ({ i for i in range(10) })
         """, __name__, __file__)
         xnames = [n for n in astng.nodes_of_class(nodes.Name) if n.name == 'i']
         self.assertEqual(len(xnames[0].lookup('i')[1]), 1)
@@ -303,7 +303,7 @@ class Test:
     FileA = [1,2,3]
     
     def __init__(self):
-        print FileA.funcA()
+        print (FileA.funcA())
         '''
         astng = builder.string_build(code, __name__, __file__)
         it = astng['Test']['__init__'].ilookup('FileA')
