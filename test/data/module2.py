@@ -67,7 +67,6 @@ exec 'c = 3'
 exec 'c = 3' in {}, {}
 
 def raise_string(a=2, *args, **kwargs):
-    raise 'pas glop'
     raise Exception, 'yo'
     yield 'coucou'
     
