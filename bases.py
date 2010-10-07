@@ -50,10 +50,11 @@ except ImportError:
     class BaseClass:
         pass
 
-from logilab.common.compat import set
+from logilab.common.compat import set, builtins
 from logilab.astng._exceptions import InferenceError, ASTNGError, \
                                        NotFoundError, UnresolvableName
 
+BUILTINS_NAME = builtins.__name__
 
 class Proxy(BaseClass):
     """a simple proxy object"""

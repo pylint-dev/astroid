@@ -41,7 +41,7 @@ from pprint import pprint
 from logilab.astng import builder, nodes, MANAGER, \
                           InferenceError, NotFoundError
 from logilab.astng.nodes import Module
-from logilab.astng.bases import YES
+from logilab.astng.bases import YES, BUILTINS_NAME
 from logilab.astng.nodes_as_string import as_string
 
 from unittest_inference import get_name_node
@@ -273,14 +273,15 @@ class BuilderTC(TestCase):
 
     def test_inspect_build0(self):
         """test astng tree build from a living object"""
-        builtin_astng = MANAGER.astng_from_module_name('__builtin__')
-        fclass = builtin_astng['file']
-        self.assert_('name' in fclass)
-        self.assert_('mode' in fclass)
-        self.assert_('read' in fclass)
-        self.assert_(fclass.newstyle)
-        self.assert_(fclass.pytype(), '__builtin__.type')
-        self.assertIsInstance(fclass['read'], nodes.Function)
+        builtin_astng = MANAGER.astng_from_module_name(BUILTINS_NAME)
+        if sys.version_info < (3, 0):
+            fclass = builtin_astng['file']
+            self.assert_('name' in fclass)
+            self.assert_('mode' in fclass)
+            self.assert_('read' in fclass)
+            self.assert_(fclass.newstyle)
+            self.assert_(fclass.pytype(), '__builtin__.type')
+            self.assertIsInstance(fclass['read'], nodes.Function)
         # check builtin function has args.args == None
         dclass = builtin_astng['dict']
         self.assertEqual(dclass['has_key'].args.args, None)
@@ -336,7 +337,7 @@ class BuilderTC(TestCase):
         self.assert_('filename' in container)
 
     def test_inspect_build_type_object(self):
-        builtin_astng = MANAGER.astng_from_module_name('__builtin__')
+        builtin_astng = MANAGER.astng_from_module_name(BUILTINS_NAME)
 
         infered = list(builtin_astng.igetattr('object'))
         self.assertEqual(len(infered), 1)

@@ -21,10 +21,10 @@ from os.path import join, dirname, abspath
 import sys
 from StringIO import StringIO
 from logilab.common.testlib import TestCase, unittest_main
-from logilab.common.compat import builtins
 
 from logilab.astng import InferenceError, builder, nodes, inference
-from logilab.astng.bases import YES, Instance, BoundMethod, UnboundMethod, path_wrapper
+from logilab.astng.bases import YES, Instance, BoundMethod, UnboundMethod,\
+                                path_wrapper, BUILTINS_NAME
 
 def get_name_node(start_from, name, index=0):
     return [n for n in start_from.nodes_of_class(nodes.Name) if n.name == name][index]
@@ -45,7 +45,6 @@ class InferenceUtilsTC(TestCase):
                               infer_default(1).next)
         self.failUnlessEqual(infer_end(1).next(), 1)
 
-BUILTINS_NAME = builtins.__name__
 
 class InferenceTC(TestCase):
 
@@ -395,7 +394,6 @@ l = [1]
 t = (2,)
 d = {}
 s = ''
-u = u''
         '''
         astng = builder.string_build(code, __name__, __file__)
         n = astng['l']
@@ -426,6 +424,12 @@ u = u''
         self.assertIsInstance(infered, Instance)
         self.failUnlessEqual(infered.name, 'str')
         self.failUnless('lower' in infered._proxied.locals)
+
+    def test_unicode_type(self):
+        if sys.version_info >= (3, 0):
+            self.skipTest('unicode removed on py >= 3.0')
+        code = '''u = u""'''
+        astng = builder.string_build(code, __name__, __file__)
         n = astng['u']
         infered = n.infer().next()
         self.assertIsInstance(infered, nodes.Const)
@@ -690,7 +694,7 @@ open("toto.txt")
         node = get_name_node(astng, 'open', -1)
         infered = list(node.infer())
         self.failUnlessEqual(len(infered), 1)
-        if open is file:
+        if sys.version_info < (2, 5):
             # On python < 2.5 open and file are the same thing.
             self.assertIsInstance(infered[0], nodes.Class)
             self.failUnlessEqual(infered[0].name, 'file')
@@ -919,7 +923,7 @@ def f(x):
     def test_python25_relative_import(self):
         if sys.version_info < (2, 5):
             self.skipTest('require py >= 2.5')
-        data = "from ...common import date; print date"
+        data = "from ...common import date; print (date)"
         astng = builder.string_build(data, 'logilab.astng.test.unittest_inference', __file__)
         infered = get_name_node(astng, 'date').infer().next()
         self.assertIsInstance(infered, nodes.Module)

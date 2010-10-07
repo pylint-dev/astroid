@@ -143,7 +143,7 @@ class TryFinally25NodeTC(_NodeTC):
 try:
     print('pouet')
 except Exception:
-    print 'oops'
+    print ('oops')
 finally:
     print ('pouet')
     """

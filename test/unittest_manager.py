@@ -22,6 +22,7 @@ import os
 import sys
 from os.path import join, dirname
 from logilab.astng.manager import ASTNGManager
+from logilab.astng.bases import  BUILTINS_NAME
 
 
 class ASTNGManagerTC(unittest.TestCase):
@@ -36,13 +37,13 @@ class ASTNGManagerTC(unittest.TestCase):
         self.assertEqual(astng.pure_python, False)
         
     def test_astng_from_class(self):
-        astng = self.manager.astng_from_class(file)
-        self.assertEqual(astng.name, 'file')
-        self.assertEqual(astng.parent.frame().name, '__builtin__')
+        astng = self.manager.astng_from_class(int)
+        self.assertEqual(astng.name, 'int')
+        self.assertEqual(astng.parent.frame().name, BUILTINS_NAME)
 
         astng = self.manager.astng_from_class(object)
         self.assertEqual(astng.name, 'object')
-        self.assertEqual(astng.parent.frame().name, '__builtin__')
+        self.assertEqual(astng.parent.frame().name, BUILTINS_NAME)
         self.failUnless('__setattr__' in astng)
         
     def _test_astng_from_zip(self, archive):

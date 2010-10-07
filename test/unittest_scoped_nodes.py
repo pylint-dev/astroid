@@ -229,7 +229,10 @@ def sfunction():
         self.failIf(astng['sfunction'].is_method())
 
     def test_argnames(self):
-        code = 'def f(a, (b, c), *args, **kwargs): pass'
+        if sys.version_info < (3, 0):
+            code = 'def f(a, (b, c), *args, **kwargs): pass'
+        else:
+            code = 'def f(a, b, c, *args, **kwargs): pass'
         astng = abuilder.string_build(code, __name__, __file__)
         self.assertEqual(astng['f'].argnames(), ['a', 'b', 'c', 'args', 'kwargs'])
 
