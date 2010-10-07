@@ -142,6 +142,12 @@ class TreeRebuilder(RebuildVisitor):
         newnode.set_line_info(newnode.last_child())
         return newnode
 
+    def visit_arg(self, node, parent):
+        """visit a arg node by returning a fresh AssName instance"""
+        # the <arg> node is coming from py>=3.0, but we use AssName in py2.x
+        # XXX or we should instead introduce a Arg node in astng ?
+        return self.visit_assname(node, parent, node.arg)
+
     def visit_assattr(self, node, parent):
         """visit a AssAttr node by returning a fresh instance of it"""
         assc, self.asscontext = self.asscontext, None
@@ -549,6 +555,7 @@ class TreeRebuilder(RebuildVisitor):
         """visit a Raise node by returning a fresh instance of it"""
         newnode = new.Raise()
         _lineno_parent(node, newnode, parent)
+
         newnode.type = self.visit(node.type, newnode)
         newnode.inst = self.visit(node.inst, newnode)
         newnode.tback = self.visit(node.tback, newnode)
