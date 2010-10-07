@@ -17,7 +17,7 @@
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
 """tests for the astng inference capabilities
 """
-from os.path import join
+from os.path import join, dirname, abspath
 import sys
 from StringIO import StringIO
 from logilab.common.testlib import TestCase, unittest_main
@@ -923,8 +923,8 @@ def f(x):
         # self.failIf(astng.absolute_import_activated())
         # infered = get_name_node(astng, 'unittest_lookup').infer().next()
         # self.assertIsInstance(infered, nodes.Module)
-        data = 'from __future__ import absolute_import; import unittest_lookup; print unittest_lookup'
-        astng = builder.file_build(join('regrtest_data', 'absimport.py'), 'absimport')
+        fname = join(abspath(dirname(__file__)), 'regrtest_data', 'absimport.py')
+        astng = builder.file_build(fname, 'absimport')
         self.failUnless(astng.absolute_import_activated(), True)
         infered = get_name_node(astng, 'import_package_subpackage_module').infer().next()
         # failed to import since absolute_import is activated
