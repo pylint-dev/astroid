@@ -21,6 +21,7 @@ from os.path import join, dirname, abspath
 import sys
 from StringIO import StringIO
 from logilab.common.testlib import TestCase, unittest_main
+from logilab.common.compat import builtins
 
 from logilab.astng import InferenceError, builder, nodes, inference
 from logilab.astng.bases import YES, Instance, BoundMethod, UnboundMethod, path_wrapper
@@ -43,6 +44,8 @@ class InferenceUtilsTC(TestCase):
         self.failUnlessRaises(InferenceError,
                               infer_default(1).next)
         self.failUnlessEqual(infer_end(1).next(), 1)
+
+BUILTINS_NAME = builtins.__name__
 
 class InferenceTC(TestCase):
 
@@ -107,7 +110,7 @@ a, b= b, a # Gasp !
         infered = self.astng['C']['meth1']['var'].infer()
         var = infered.next()
         self.failUnlessEqual(var.name, 'object')
-        self.failUnlessEqual(var.root().name, '__builtin__')
+        self.failUnlessEqual(var.root().name, BUILTINS_NAME)
         self.failUnlessRaises(StopIteration, infered.next)
 
     def test_tupleassign_name_inference(self):
@@ -154,7 +157,7 @@ a, b= b, a # Gasp !
         infered = self.astng['h'].infer()
         var = infered.next()
         self.failUnlessEqual(var.name, 'object')
-        self.failUnlessEqual(var.root().name, '__builtin__')
+        self.failUnlessEqual(var.root().name, BUILTINS_NAME)
         self.failUnlessRaises(StopIteration, infered.next)
 
     def test_advanced_tupleassign_name_inference2(self):
@@ -171,7 +174,7 @@ a, b= b, a # Gasp !
         infered = self.astng['k'].infer()
         var = infered.next()
         self.failUnlessEqual(var.name, 'object')
-        self.failUnlessEqual(var.root().name, '__builtin__')
+        self.failUnlessEqual(var.root().name, BUILTINS_NAME)
         self.failUnlessRaises(StopIteration, infered.next)
 
     def test_swap_assign_inference(self):
@@ -221,7 +224,7 @@ a, b= b, a # Gasp !
         meth1 = infered.next()
         self.assertIsInstance(meth1, Instance)
         self.failUnlessEqual(meth1.name, 'object')
-        self.failUnlessEqual(meth1.root().name, '__builtin__')
+        self.failUnlessEqual(meth1.root().name, BUILTINS_NAME)
         self.failUnlessRaises(StopIteration, infered.next)
 
     def test_unbound_method_inference(self):
@@ -450,19 +453,23 @@ class Warning(Warning):
         astng = builder.string_build(code, __name__, __file__)
         w = astng['Warning']
         ancestors = w.ancestors()
+        if sys.version_info < (3, 0):
+            exception_module = 'exceptions'
+        else:
+            exception_module = BUILTINS_NAME
         ancestor = ancestors.next()
         self.failUnlessEqual(ancestor.name, 'Warning')
-        self.failUnlessEqual(ancestor.root().name, 'exceptions')
+        self.failUnlessEqual(ancestor.root().name, exception_module)
         ancestor = ancestors.next()
         self.failUnlessEqual(ancestor.name, 'Exception')
-        self.failUnlessEqual(ancestor.root().name, 'exceptions')
+        self.failUnlessEqual(ancestor.root().name, exception_module)
         if sys.version_info >= (2, 5):
             ancestor = ancestors.next()
             self.failUnlessEqual(ancestor.name, 'BaseException')
-            self.failUnlessEqual(ancestor.root().name, 'exceptions')
+            self.failUnlessEqual(ancestor.root().name, exception_module)
             ancestor = ancestors.next()
             self.failUnlessEqual(ancestor.name, 'object')
-            self.failUnlessEqual(ancestor.root().name, '__builtin__')
+            self.failUnlessEqual(ancestor.root().name, BUILTINS_NAME)
         self.failUnlessRaises(StopIteration, ancestors.next)
 
     def test_qqch(self):
@@ -765,7 +772,8 @@ print (make_code)
         infered = list(astng.igetattr('make_code'))
         self.failUnlessEqual(len(infered), 1)
         self.assertIsInstance(infered[0], Instance)
-        self.failUnlessEqual(str(infered[0]), 'Instance of __builtin__.type')
+        self.failUnlessEqual(str(infered[0]),
+                             'Instance of %s.type' % BUILTINS_NAME)
 
     def _test_const_infered(self, node, value):
         infered = list(node.infer())
@@ -872,8 +880,8 @@ x = randint(1)
         # The __name__ trick here makes it work when invoked directly
         # (__name__ == '__main__') and through pytest (__name__ ==
         # 'unittest_inference')
-        self.assertEqual(value, ['Instance of %s.myarray' % (__name__,),
-                                  'Instance of __builtin__.int'])
+        self.assertEqual(value, ['Instance of %s.myarray' % __name__,
+                                 'Instance of %s.int' % BUILTINS_NAME])
 
     def test_nonregr_lambda_arg(self):
         code = '''
@@ -974,9 +982,10 @@ class SendMailController(object):
 print (SendMailController().smtp)
 print (SendMailController().me)
 '''
+        decorators = set(['%s.property' % BUILTINS_NAME])
         astng = builder.string_build(code, __name__, __file__)
         self.assertEqual(astng['SendMailController']['smtp'].decoratornames(),
-                          set(('__builtin__.property',)))
+                          decorators)
         propinfered = list(astng.body[2].values[0].infer())
         self.assertEqual(len(propinfered), 1)
         propinfered = propinfered[0]
@@ -984,7 +993,7 @@ print (SendMailController().me)
         self.assertEqual(propinfered.name, 'SMTP')
         self.assertEqual(propinfered.root().name, 'smtplib')
         self.assertEqual(astng['SendMailController']['me'].decoratornames(),
-                          set(('__builtin__.property',)))
+                          decorators)
         propinfered = list(astng.body[3].values[0].infer())
         self.assertEqual(len(propinfered), 1)
         propinfered = propinfered[0]
