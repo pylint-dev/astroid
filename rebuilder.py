@@ -75,6 +75,15 @@ REDIRECT = {'arguments': 'Arguments',
             'Invert': 'UnaryOp'
             }
 
+import sys
+if sys.version_info >= (2, 4):
+    _key_func = lambda node: node.fromlineno
+    def sort_locals(my_list):
+        my_list.sort(key=_key_func)
+else:
+    _cmp_nodes = lambda x, y: cmp(x.fromlineno, y.fromlineno)
+    def sort_locals(my_list):
+        my_list.sort(_cmp_nodes)
 
 class RebuildVisitor(object):
     """Visitor to transform an AST to an ASTNG
@@ -204,7 +213,6 @@ class RebuildVisitor(object):
         """store imported names to the locals;
         resort the locals if coming from a delayed node
         """
-        cmp_nodes = lambda x, y: cmp(x.fromlineno, y.fromlineno)
         for (name, asname) in node.names:
             if name == '*':
                 try:
@@ -214,11 +222,12 @@ class RebuildVisitor(object):
                 for name in imported.wildcard_import_names():
                     node.parent.set_local(name, node)
                     if delayed:
-                        node.parent.scope().locals[name].sort(cmp_nodes)
+                        sort_locals(node.parent.scope().locals[name])
+
             else:
                 node.parent.set_local(asname or name, node)
                 if delayed:
-                    node.parent.scope().locals[asname or name].sort(cmp_nodes)
+                    sort_locals(node.parent.scope().locals[asname or name])
 
 
     def visit_function(self, node, parent):
