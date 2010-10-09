@@ -505,14 +505,6 @@ class Dict(NodeNG, Instance):
         raise IndexError(key)
 
 
-class DictComp(NodeNG):
-    """class representing a DictComp node"""
-    _astng_fields = ('key', 'value', 'generators')
-    key = None
-    value = None
-    generators = None
-
-
 class Discard(StmtMixIn, NodeNG):
     """class representing a Discard node"""
     _astng_fields = ('value',)
@@ -707,13 +699,6 @@ class Set(NodeNG, Instance, ParentAssignTypeMixin):
 
     def itered(self):
         return self.elts
-
-
-class SetComp(NodeNG):
-    """class representing a SetComp node"""
-    _astng_fields = ('elt', 'generators')
-    elt = None
-    generators = None
 
 
 class Slice(NodeNG):

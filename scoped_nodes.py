@@ -19,7 +19,7 @@
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
 """This module contains the classes for "scoped" node, i.e. which are opening a
 new local scope in the language definition : Module, Class, Function (and
-Lambda and GenExpr to some extends).
+Lambda, GenExpr, DictComp and SetComp to some extent).
 
 """
 from __future__ import generators
@@ -116,7 +116,7 @@ class LocalsDictNodeNG(LookupMixIn, NodeNG):
 
     def scope(self):
         """return the first node defining a new scope (i.e. Module,
-        Function, Class, Lambda but also GenExpr)
+        Function, Class, Lambda but also GenExpr, DictComp and SetComp)
         """
         return self
 
@@ -411,6 +411,33 @@ class GenExpr(LocalsDictNodeNG):
     def frame(self):
         return self.parent.frame()
 GenExpr.scope_lookup = LocalsDictNodeNG._scope_lookup
+
+
+class DictComp(LocalsDictNodeNG):
+    _astng_fields = ('key', 'value', 'generators')
+
+    def __init__(self):
+        self.locals = {}
+        self.key = None
+        self.value = None
+        self.generators = []
+
+    def frame(self):
+        return self.parent.frame()
+DictComp.scope_lookup = LocalsDictNodeNG._scope_lookup
+
+
+class SetComp(LocalsDictNodeNG):
+    _astng_fields = ('elt', 'generators')
+
+    def __init__(self):
+        self.locals = {}
+        self.elt = None
+        self.generators = []
+
+    def frame(self):
+        return self.parent.frame()
+SetComp.scope_lookup = LocalsDictNodeNG._scope_lookup
 
 
 # Function  ###################################################################

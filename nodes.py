@@ -54,12 +54,13 @@ __docformat__ = "restructuredtext en"
 from logilab.astng.node_classes import Arguments, AssAttr, Assert, Assign, \
     AssName, AugAssign, Backquote, BinOp, BoolOp, Break, CallFunc, Compare, \
     Comprehension, Const, Continue, Decorators, DelAttr, DelName, Delete, \
-    Dict, DictComp, Discard, Ellipsis, EmptyNode, ExceptHandler, Exec, \
-    ExtSlice, For, From, Getattr, Global, If, IfExp, Import, Index, Keyword, \
-    List, ListComp, Name, Pass, Print, Raise, Return, Set, SetComp, Slice, \
-    Subscript, TryExcept, TryFinally, Tuple, UnaryOp, While, With, Yield, \
+    Dict, Discard, Ellipsis, EmptyNode, ExceptHandler, Exec, ExtSlice, For, \
+    From, Getattr, Global, If, IfExp, Import, Index, Keyword, \
+    List, ListComp, Name, Pass, Print, Raise, Return, Set, Slice, Subscript, \
+    TryExcept, TryFinally, Tuple, UnaryOp, While, With, Yield, \
     const_factory
-from logilab.astng.scoped_nodes import Module, GenExpr, Lambda, Function, Class
+from logilab.astng.scoped_nodes import Module, GenExpr, Lambda, DictComp, \
+    SetComp, Function, Class
 
 ALL_NODE_CLASSES = (
     Arguments, AssAttr, Assert, Assign, AssName, AugAssign,
