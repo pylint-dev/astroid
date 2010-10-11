@@ -171,7 +171,7 @@ class LookupMixIn(BaseClass):
             if done:
                 break
 
-            optional_assign = isinstance(ass_type, (For, Comprehension))
+            optional_assign = ass_type.optional_assign
             if optional_assign and ass_type.parent_of(self):
                 # we are inside a loop, loop var assigment is hidding previous
                 # assigment
@@ -406,6 +406,7 @@ class Comprehension(NodeNG):
     iter = None
     ifs = None
 
+    optional_assign = True
     def ass_type(self):
         return self
 
@@ -569,6 +570,7 @@ class For(BlockRangeMixIn, StmtMixIn, AssignTypeMixin, NodeNG):
     body = None
     orelse = None
 
+    optional_assign = True
     def _blockstart_toline(self):
         return self.iter.tolineno
 
