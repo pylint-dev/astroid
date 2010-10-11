@@ -400,14 +400,14 @@ class Module(LocalsDictNodeNG):
             return [name for name in self.keys() if not name.startswith('_')]
 
 
-class ScopedComprehensionNodeNG(LocalsDictNodeNG):
+class ComprehensionScope(LocalsDictNodeNG):
     def frame(self):
         return self.parent.frame()
 
     scope_lookup = LocalsDictNodeNG._scope_lookup
 
 
-class GenExpr(ScopedComprehensionNodeNG):
+class GenExpr(ComprehensionScope):
     _astng_fields = ('elt', 'generators')
 
     def __init__(self):
@@ -416,7 +416,7 @@ class GenExpr(ScopedComprehensionNodeNG):
         self.generators = []
 
 
-class DictComp(ScopedComprehensionNodeNG):
+class DictComp(ComprehensionScope):
     _astng_fields = ('key', 'value', 'generators')
 
     def __init__(self):
@@ -426,7 +426,7 @@ class DictComp(ScopedComprehensionNodeNG):
         self.generators = []
 
 
-class SetComp(ScopedComprehensionNodeNG):
+class SetComp(ComprehensionScope):
     _astng_fields = ('elt', 'generators')
 
     def __init__(self):
@@ -435,6 +435,20 @@ class SetComp(ScopedComprehensionNodeNG):
         self.generators = []
 
 
+class _ListComp(NodeNG):
+    """class representing a ListComp node"""
+    _astng_fields = ('elt', 'generators')
+    elt = None
+    generators = None
+
+if sys.version_info >= (3, 0):
+    class ListComp(_ListComp, ComprehensionScope):
+        """class representing a ListComp node"""
+        def __init__(self):
+            self.locals = {}
+else:
+    class ListComp(_ListComp):
+        """class representing a ListComp node"""
 
 # Function  ###################################################################
 

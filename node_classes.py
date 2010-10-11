@@ -93,9 +93,6 @@ def are_exclusive(stmt1, stmt2, exceptions=None):
     return False
 
 
-
-
-
 class LookupMixIn(BaseClass):
     """Mixin looking up a name in the right scope
     """
@@ -657,13 +654,6 @@ class List(NodeNG, Instance, ParentAssignTypeMixin):
     def itered(self):
         return self.elts
 
-
-
-class ListComp(NodeNG):
-    """class representing a ListComp node"""
-    _astng_fields = ('elt', 'generators')
-    elt = None
-    generators = None
 
 
 class Pass(StmtMixIn, NodeNG):
