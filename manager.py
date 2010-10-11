@@ -124,15 +124,18 @@ class ASTNGManager(OptionsProviderMixIn):
         directory = abspath(directory)
         return Package(directory, modname, self)
 
-    def astng_from_file(self, filepath, modname=None, fallback=True):
+    def astng_from_file(self, filepath, modname=None, fallback=True, source=False):
         """given a module name, return the astng object"""
         try:
             filepath = get_source_file(filepath, include_no_ext=True)
             source = True
         except NoSourceFile:
-            source = False
+            pass
         if modname is None:
-            modname = '.'.join(modpath_from_file(filepath))
+            try:
+                modname = '.'.join(modpath_from_file(filepath))
+            except ImportError:
+                modname = filepath
         if modname in self._cache:
             return self._cache[modname]
         if source:
@@ -142,7 +145,6 @@ class ASTNGManager(OptionsProviderMixIn):
             except (SyntaxError, KeyboardInterrupt, SystemExit):
                 raise
             except Exception, ex:
-                raise
                 if __debug__:
                     print 'error while building astng for', filepath
                     import traceback
