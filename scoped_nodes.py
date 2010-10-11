@@ -400,7 +400,14 @@ class Module(LocalsDictNodeNG):
             return [name for name in self.keys() if not name.startswith('_')]
 
 
-class GenExpr(LocalsDictNodeNG):
+class ScopedComprehensionNodeNG(LocalsDictNodeNG):
+    def frame(self):
+        return self.parent.frame()
+
+    scope_lookup = LocalsDictNodeNG._scope_lookup
+
+
+class GenExpr(ScopedComprehensionNodeNG):
     _astng_fields = ('elt', 'generators')
 
     def __init__(self):
@@ -408,12 +415,8 @@ class GenExpr(LocalsDictNodeNG):
         self.elt = None
         self.generators = []
 
-    def frame(self):
-        return self.parent.frame()
-GenExpr.scope_lookup = LocalsDictNodeNG._scope_lookup
 
-
-class DictComp(LocalsDictNodeNG):
+class DictComp(ScopedComprehensionNodeNG):
     _astng_fields = ('key', 'value', 'generators')
 
     def __init__(self):
@@ -422,12 +425,8 @@ class DictComp(LocalsDictNodeNG):
         self.value = None
         self.generators = []
 
-    def frame(self):
-        return self.parent.frame()
-DictComp.scope_lookup = LocalsDictNodeNG._scope_lookup
 
-
-class SetComp(LocalsDictNodeNG):
+class SetComp(ScopedComprehensionNodeNG):
     _astng_fields = ('elt', 'generators')
 
     def __init__(self):
@@ -435,9 +434,6 @@ class SetComp(LocalsDictNodeNG):
         self.elt = None
         self.generators = []
 
-    def frame(self):
-        return self.parent.frame()
-SetComp.scope_lookup = LocalsDictNodeNG._scope_lookup
 
 
 # Function  ###################################################################
