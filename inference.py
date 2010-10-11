@@ -25,6 +25,7 @@ from __future__ import generators
 __doctype__ = "restructuredtext en"
 
 from itertools import chain
+import sys
 
 try:
     GeneratorExit # introduced in py2.5
@@ -52,6 +53,8 @@ _CONST_PROXY = {
     unicode: MANAGER.astng_from_class(unicode),
     }
 _CONST_PROXY[type(None)].parent = _CONST_PROXY[bool].parent
+if sys.version_info >= (2, 6):
+    _CONST_PROXY[bytes] = MANAGER.astng_from_class(bytes)
 
 # TODO : find a nicer way to handle this situation; we should at least
 # be able to avoid calling MANAGER.astng_from_class(const.value.__class__)

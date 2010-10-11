@@ -529,14 +529,20 @@ class TreeRebuilder(RebuildVisitor):
         newnode.set_line_info(newnode.last_child())
         return newnode
 
+    def visit_bytes(self, node, parent):
+        """visit a Bytes node by returning a fresh instance of Const"""
+        newnode = new.Const(node.s)
+        self._set_infos(node, newnode, parent)
+        return newnode
+
     def visit_num(self, node, parent):
-        """visit a a Num node by returning a fresh instance of Const"""
+        """visit a Num node by returning a fresh instance of Const"""
         newnode = new.Const(node.n)
         self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_str(self, node, parent):
-        """visit a a Str node by returning a fresh instance of Const"""
+        """visit a Str node by returning a fresh instance of Const"""
         newnode = new.Const(node.s)
         self._set_infos(node, newnode, parent)
         return newnode
