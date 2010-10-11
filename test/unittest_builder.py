@@ -41,7 +41,7 @@ from pprint import pprint
 from logilab.astng import builder, nodes, InferenceError, NotFoundError
 from logilab.astng.nodes import Module
 from logilab.astng.bases import YES, BUILTINS_NAME
-from logilab.astng.nodes_as_string import as_string
+from logilab.astng.as_string import as_string
 from logilab.astng.manager import ASTNGManager
 MANAGER = ASTNGManager()
 

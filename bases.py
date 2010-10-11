@@ -53,6 +53,7 @@ except ImportError:
 from logilab.common.compat import set, builtins
 from logilab.astng._exceptions import InferenceError, ASTNGError, \
                                        NotFoundError, UnresolvableName
+from logilab.astng.as_string import as_string
 
 BUILTINS_NAME = builtins.__name__
 
@@ -560,7 +561,6 @@ class NodeNG(BaseClass):
         return False
 
     def as_string(self):
-        from logilab.astng.nodes_as_string import as_string
         return as_string(self)
 
     def repr_tree(self, ids=False):

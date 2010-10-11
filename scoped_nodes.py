@@ -41,7 +41,6 @@ from logilab.astng.bases import NodeNG, BaseClass, InferenceContext, Instance,\
      YES, Generator, UnboundMethod, BoundMethod, _infer_stmts, copy_context
 from logilab.astng.mixins import StmtMixIn, FilterStmtsMixin
 from logilab.astng.manager import ASTNGManager
-from logilab.astng.nodes_as_string import as_string
 
 
 def remove_nodes(func, cls):
@@ -721,7 +720,7 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
     # list of parent class as a list of string (i.e. names as they appear
     # in the class definition) XXX bw compat
     def basenames(self):
-        return [as_string(bnode) for bnode in self.bases]
+        return [bnode.as_string() for bnode in self.bases]
     basenames = property(basenames)
 
     def ancestors(self, recurs=True, context=None):

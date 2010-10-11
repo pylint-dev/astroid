@@ -35,7 +35,7 @@ import sys
 
 from logilab.common import testlib
 from logilab.astng import builder, nodes, NotFoundError
-from logilab.astng.nodes_as_string import as_string
+from logilab.astng.as_string import as_string
 
 from data import module as test_module
 
