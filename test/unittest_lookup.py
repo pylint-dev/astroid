@@ -36,8 +36,9 @@ from os.path import join, abspath
 from logilab.common.testlib import TestCase, unittest_main
 
 from logilab.astng import builder, nodes, scoped_nodes, \
-     InferenceError, NotFoundError
+     InferenceError, NotFoundError, UnresolvableName
 from logilab.astng.scoped_nodes import builtin_lookup
+from logilab.astng.bases import YES
 from unittest_inference import get_name_node
 
 builder = builder.ASTNGBuilder()
@@ -168,6 +169,18 @@ print ( list( i for i in range(10) ) )
         self.assertEqual(len(xnames[2].lookup('i')[1]), 1)
         self.assertEqual(xnames[2].lookup('i')[1][0].lineno, 4)
 
+    def test_list_comp_target(self):
+        """test the list comprehension target"""
+        astng = builder.string_build("""
+ten = [ var for var in range(10) ]
+var
+        """)
+        var = astng.body[1].value
+        if sys.version_info < (3, 0):
+            self.assertEqual(var.infered(), [YES])
+        else:
+            self.assertRaises(UnresolvableName, var.infered)
+
 
     def test_dict_comps(self):
         if sys.version_info < (2, 7):
@@ -201,6 +214,17 @@ print ({ i for i in range(10) })
         self.assertEqual(xnames[0].lookup('i')[1][0].lineno, 2)
         self.assertEqual(len(xnames[1].lookup('i')[1]), 1)
         self.assertEqual(xnames[1].lookup('i')[1][0].lineno, 3)
+
+    def test_set_comp_closure(self):
+        if sys.version_info < (2, 7):
+            self.skipTest('this test require python >= 2.7')
+        astng = builder.string_build("""
+ten = { var for var in range(10) }
+var
+        """)
+        var = astng.body[1].value
+        self.assertRaises(UnresolvableName, var.infered)
+
 
 
     def test_explicit___name__(self):
