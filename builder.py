@@ -38,6 +38,7 @@ from logilab.common.modutils import modpath_from_file
 
 from logilab.astng._exceptions import ASTNGBuildingException
 from logilab.astng.raw_building import *
+from logilab.astng.manager import ASTNGManager
 
 try:
     from _ast import PyCF_ONLY_AST
@@ -57,7 +58,7 @@ class ASTNGBuilder:
 
     def __init__(self, manager=None):
         if manager is None:
-            from logilab.astng import MANAGER as manager
+            manager = ASTNGManager()
         self._manager = manager
         self._module = None
         self._file = None

@@ -92,7 +92,31 @@ class ASTNGManagerTC(unittest.TestCase):
         self.assertEqual(obj.fullname(), 'data')
         # FIXME: test fullname on a subpackage
 
-        
+
+
+class BorgASTNGManagerTC(unittest.TestCase):
+
+    def test_borg(self):
+        """test that the ASTNGManager is really a borg, i.e. that two different
+        instances has same cache"""
+        first_manager = ASTNGManager(borg=True)
+        built = first_manager.astng_from_module_name('__builtin__')
+
+        second_manager = ASTNGManager(borg=True)
+        second_built = first_manager.astng_from_module_name('__builtin__')
+        self.assertTrue(built is second_built)
+
+    def test_not_borg(self):
+        """test that the ASTNGManager is not a borg when we ask him not to be"""
+        self.skipTest('FIXME: unusable borg=False option')
+        first_manager = ASTNGManager(borg=False)
+        built = first_manager.astng_from_module_name('__builtin__')
+
+        second_manager = ASTNGManager(borg=False)
+        second_built = first_manager.astng_from_module_name('__builtin__')
+        self.assertFalse(built is second_built)
+
+
 if __name__ == '__main__':
     unittest.main()
 

@@ -62,12 +62,6 @@ __doctype__ = "restructuredtext en"
 # make all exception classes accessible from astng package
 from logilab.astng._exceptions import *
 
-# make a manager singleton as well as Project and Package classes accessible
-# from astng package
-from logilab.astng.manager import ASTNGManager, Project, Package
-MANAGER = ASTNGManager()
-del ASTNGManager
-
 # make all node classes accessible from astng package
 from logilab.astng.nodes import *
 
@@ -79,4 +73,10 @@ from logilab.astng import raw_building
 from logilab.astng.bases import YES, Instance, BoundMethod, UnboundMethod
 from logilab.astng.node_classes import are_exclusive, unpack_infer
 from logilab.astng.scoped_nodes import builtin_lookup
+
+# make a manager instance (borg) as well as Project and Package classes
+# accessible from astng package
+from logilab.astng.manager import ASTNGManager, Project, Package
+MANAGER = ASTNGManager()
+del ASTNGManager
 

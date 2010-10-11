@@ -32,7 +32,7 @@ from itertools import chain
 from logilab.common.compat import set, builtins
 from logilab.common.decorators import cached
 
-from logilab.astng import MANAGER, NotFoundError, NoDefault, \
+from logilab.astng import NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
 from logilab.astng.node_classes import Const, DelName, DelAttr, \
      Dict, From, List, Name, Pass, Raise, Return, Tuple, Yield, \
@@ -40,8 +40,9 @@ from logilab.astng.node_classes import Const, DelName, DelAttr, \
 from logilab.astng.bases import NodeNG, BaseClass, InferenceContext, Instance,\
      YES, Generator, UnboundMethod, BoundMethod, _infer_stmts, copy_context
 from logilab.astng.mixins import StmtMixIn, FilterStmtsMixin
-
+from logilab.astng.manager import ASTNGManager
 from logilab.astng.nodes_as_string import as_string
+
 
 def remove_nodes(func, cls):
     def wrapper(*args, **kwargs):
@@ -73,22 +74,20 @@ def std_special_attributes(self, name, add_locals=True):
         return [Dict()] + locals.get(name, [])
     raise NotFoundError(name)
 
-
-
+MANAGER = ASTNGManager()
 def builtin_lookup(name):
     """lookup a name into the builtin module
     return the list of matching statements and the astng for the builtin
     module
     """
-    # TODO : once there is no more monkey patching, make a BUILTINASTNG const
-    builtinastng = MANAGER.astng_from_module(builtins)
+    builtin_astng = MANAGER.astng_from_module(builtins)
     if name == '__dict__':
-        return builtinastng, ()
+        return builtin_astng, ()
     try:
-        stmts = builtinastng.locals[name]
+        stmts = builtin_astng.locals[name]
     except KeyError:
         stmts = ()
-    return builtinastng, stmts
+    return builtin_astng, stmts
 
 
 # TODO move this Mixin to mixins.py; problem: 'Function' in _scope_lookup

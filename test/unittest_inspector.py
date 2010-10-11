@@ -39,8 +39,11 @@ unittest for the visitors.diadefs module
 import unittest
 import sys
 
-from logilab.astng import MANAGER, nodes, inspector
+from logilab.astng import nodes, inspector
 from logilab.astng.bases import Instance, YES
+
+from logilab.astng.manager import ASTNGManager
+MANAGER = ASTNGManager()
 
 def astng_wrapper(func, modname):
     return func(modname)
