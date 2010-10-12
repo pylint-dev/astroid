@@ -27,7 +27,7 @@ from logilab.astng.bases import  BUILTINS_NAME
 
 class ASTNGManagerTC(unittest.TestCase):
     def setUp(self):
-        self.manager = ASTNGManager(borg=False)
+        self.manager = ASTNGManager()
         
     def test_astng_from_module(self):
         astng = self.manager.astng_from_module(unittest)
@@ -57,6 +57,9 @@ class ASTNGManagerTC(unittest.TestCase):
                             module.file)
         finally:
             sys.path = origpath
+            # remove the module, else after importing egg, we don't get the zip
+            del self.manager._cache['mypypa']
+            del self.manager._mod_file_cache[('mypypa', None)]
 
     def test_astng_from_module_name_egg(self):
         self._test_astng_from_zip('MyPyPa-0.1.0-py2.5.egg')
@@ -99,22 +102,12 @@ class BorgASTNGManagerTC(unittest.TestCase):
     def test_borg(self):
         """test that the ASTNGManager is really a borg, i.e. that two different
         instances has same cache"""
-        first_manager = ASTNGManager(borg=True)
+        first_manager = ASTNGManager()
         built = first_manager.astng_from_module_name('__builtin__')
 
-        second_manager = ASTNGManager(borg=True)
+        second_manager = ASTNGManager()
         second_built = first_manager.astng_from_module_name('__builtin__')
         self.assertTrue(built is second_built)
-
-    def test_not_borg(self):
-        """test that the ASTNGManager is not a borg when we ask him not to be"""
-        self.skipTest('FIXME: unusable borg=False option')
-        first_manager = ASTNGManager(borg=False)
-        built = first_manager.astng_from_module_name('__builtin__')
-
-        second_manager = ASTNGManager(borg=False)
-        second_built = first_manager.astng_from_module_name('__builtin__')
-        self.assertFalse(built is second_built)
 
 
 if __name__ == '__main__':

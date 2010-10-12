@@ -103,19 +103,14 @@ class ASTNGManager(OptionsProviderMixIn):
                  'help' : 'set the project name.'}),
                )
     brain = {}
-    def __init__(self, borg=True):
-        if borg:
-            self.__dict__ = ASTNGManager.brain
+    def __init__(self):
+        self.__dict__ = ASTNGManager.brain
         if not self.__dict__:
             OptionsProviderMixIn.__init__(self)
             self.load_defaults()
             # NOTE: cache entries are added by the [re]builder
-            self._cache = {} #Cache(cache_size)
+            self._cache = {}
             self._mod_file_cache = {}
-
-    def reset_cache(self):
-        self._cache = {} #Cache(cache_size)
-        self._mod_file_cache = {}
 
     def from_directory(self, directory, modname=None):
         """given a module name, return the astng object"""
