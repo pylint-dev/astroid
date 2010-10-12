@@ -308,15 +308,15 @@ class AsStringVisitor(ASTVisitor):
     
     def visit_raise(self, node):
         """return an astng.Raise node as string"""
-        if node.type:
+        if node.exc:
             if node.inst:
                 if node.tback:
-                    return 'raise %s, %s, %s' % (node.type.accept(self),
+                    return 'raise %s, %s, %s' % (node.exc.accept(self),
                                                 node.inst.accept(self),
                                                 node.tback.accept(self))
-                return 'raise %s, %s' % (node.type.accept(self),
+                return 'raise %s, %s' % (node.exc.accept(self),
                                         node.inst.accept(self))
-            return 'raise %s' % node.type.accept(self)
+            return 'raise %s' % node.exc.accept(self)
         return 'raise'
 
     def visit_return(self, node):

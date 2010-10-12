@@ -20,6 +20,7 @@
 """Module for some node classes. More nodes in scoped_nodes.py
 """
 
+import sys
 from itertools import chain, imap
 
 from logilab.astng import NoDefault
@@ -667,12 +668,25 @@ class Print(StmtMixIn, NodeNG):
     values = None
 
 
+
 class Raise(StmtMixIn, NodeNG):
     """class representing a Raise node"""
-    _astng_fields = ('type', 'inst', 'tback')
-    type = None
-    inst = None
-    tback = None
+    exc = None
+    if sys.version_info < (3, 0):
+        _astng_fields = ('exc', 'inst', 'tback')
+        inst = None
+        tback = None
+    else:
+        _astng_fields = ('exc', 'cause')
+        inst = None
+        tback = None
+
+    def raises_not_implemented(self):
+        if not self.exc:
+            return
+        for name in self.exc.nodes_of_class(Name):
+            if name.name == 'NotImplementedError':
+                return True
 
 
 class Return(StmtMixIn, NodeNG):

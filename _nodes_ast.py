@@ -557,16 +557,26 @@ class TreeRebuilder(RebuildVisitor):
         newnode.set_line_info(newnode.last_child())
         return newnode
 
-    def visit_raise(self, node, parent):
-        """visit a Raise node by returning a fresh instance of it"""
-        newnode = new.Raise()
-        _lineno_parent(node, newnode, parent)
-
-        newnode.type = self.visit(node.type, newnode)
-        newnode.inst = self.visit(node.inst, newnode)
-        newnode.tback = self.visit(node.tback, newnode)
-        newnode.set_line_info(newnode.last_child())
-        return newnode
+    if sys.version_info < (3, 0):
+        def visit_raise(self, node, parent):
+            """visit a Raise node by returning a fresh instance of it"""
+            newnode = new.Raise()
+            _lineno_parent(node, newnode, parent)
+            newnode.exc = self.visit(node.type, newnode)
+            newnode.inst = self.visit(node.inst, newnode)
+            newnode.tback = self.visit(node.tback, newnode)
+            newnode.set_line_info(newnode.last_child())
+            return newnode
+    else:
+        def visit_raise(self, node, parent):
+            """visit a Raise node by returning a fresh instance of it"""
+            newnode = new.Raise()
+            _lineno_parent(node, newnode, parent)
+            # no traceback; anyway it is not used in Pylint
+            newnode.exc = self.visit(node.exc, newnode)
+            newnode.cause = self.visit(node.cause, newnode)
+            newnode.set_line_info(newnode.last_child())
+            return newnode
 
     def visit_return(self, node, parent):
         """visit a Return node by returning a fresh instance of it"""

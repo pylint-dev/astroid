@@ -602,7 +602,7 @@ class TreeRebuilder(RebuildVisitor):
         """visit a Raise node by returning a fresh instance of it"""
         newnode = new.Raise()
         self._set_infos(node, newnode, parent)
-        newnode.type = self.visit(node.expr1, newnode)
+        newnode.exc = self.visit(node.expr1, newnode)
         newnode.inst = self.visit(node.expr2, newnode)
         newnode.tback = self.visit(node.expr3, newnode)
         return newnode
