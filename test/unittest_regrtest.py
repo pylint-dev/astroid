@@ -20,7 +20,7 @@
 
 from logilab.common.testlib import unittest_main, TestCase
 
-from logilab.astng import ResolveError, MANAGER as m, Instance, YES, InferenceError
+from logilab.astng import ResolveError, MANAGER, Instance, YES, InferenceError
 from logilab.astng.builder import ASTNGBuilder, build_module
 
 import sys
@@ -29,14 +29,9 @@ sys.path.insert(1, abspath('regrtest_data'))
 
 class NonRegressionTC(TestCase):
 
-##     def test_resolve1(self):
-##         mod = m.astng_from_module_name('data.nonregr')
-##         cls = mod['OptionParser']
-##         self.assertRaises(ResolveError, cls.resolve_dotted, cls.basenames[0])
-##         #self.assert_(cls is not cls.resolve_dotted(cls.basenames[0]))
 
     def test_module_path(self):
-        mod = m.astng_from_module_name('import_package_subpackage_module')
+        mod = MANAGER.astng_from_module_name('import_package_subpackage_module')
         package = mod.igetattr('package').next()
         self.failUnlessEqual(package.name, 'package')
         subpackage = package.igetattr('subpackage').next()
@@ -51,43 +46,26 @@ class NonRegressionTC(TestCase):
         builder._module = sys.modules[__name__]
         builder.object_build(build_module('module_name', ''), Whatever)
 
+
     def test_new_style_class_detection(self):
         try:
             import pygtk
         except ImportError:
             self.skipTest('test skipped: pygtk is not available')
-        else:
-            # XXX may fail on some pygtk version, because objects in
-            # gobject._gobject have __module__ set to gobject :(
-            builder = ASTNGBuilder()
-            data = """
+        # XXX may fail on some pygtk version, because objects in
+        # gobject._gobject have __module__ set to gobject :(
+        builder = ASTNGBuilder()
+        data = """
 import pygtk
 pygtk.require("2.6")
 import gobject
 
 class A(gobject.GObject):
-    def __init__(self, val):
-        gobject.GObject.__init__(self)
-        self._val = val
-    def _get_val(self):
-        print "get"
-        return self._val
-    def _set_val(self, val):
-        print "set"
-        self._val = val
-    val = property(_get_val, _set_val)
-
-
-if __name__ == "__main__":
-    print gobject.GObject.__bases__
-    a = A(7)
-    print a.val
-    a.val = 6
-    print a.val
+    pass
 """
-            astng = builder.string_build(data, __name__, __file__)
-            a = astng['A']
-            self.failUnless(a.newstyle)
+        astng = builder.string_build(data, __name__, __file__)
+        a = astng['A']
+        self.failUnless(a.newstyle)
 
 
     def test_pylint_config_attr(self):
@@ -95,13 +73,13 @@ if __name__ == "__main__":
             from pylint import lint
         except ImportError:
             self.skipTest('pylint not available')
-        mod = m.astng_from_module_name('pylint.lint')
+        mod = MANAGER.astng_from_module_name('pylint.lint')
         pylinter = mod['PyLinter']
-        self.assertEqual([c.name for c in pylinter.ancestors()],
-                          ['OptionsManagerMixIn', 'object', 'MessagesHandlerMixIn',
-                           'ReportsHandlerMixIn', 'BaseRawChecker', 'BaseChecker',
-                           'OptionsProviderMixIn', 'ASTWalker'])
-        
+        expect = ['OptionsManagerMixIn', 'object', 'MessagesHandlerMixIn',
+                  'ReportsHandlerMixIn', 'BaseRawChecker', 'BaseChecker',
+                  'OptionsProviderMixIn', 'ASTWalker']
+        self.assertListEqual([c.name for c in pylinter.ancestors()],
+                             expect)
         self.assert_(list(Instance(pylinter).getattr('config')))
         infered = list(Instance(pylinter).igetattr('config'))
         self.assertEqual(len(infered), 2)
@@ -109,27 +87,30 @@ if __name__ == "__main__":
         self.assertEqual(len(infered), 1)
         self.assertEqual(infered[0].root().name, 'optparse')
         self.assertEqual(infered[0].name, 'Values')
-        
+
     def test_numpy_crash(self):
+        """test don't crash on numpy"""
+        #a crash occured somewhere in the past, and an
+        # InferenceError instead of a crash was better, but now we even infer!
         try:
             import numpy
         except ImportError:
             self.skipTest('test skipped: numpy is not available')
-        else:
-            builder = ASTNGBuilder()
-            data = """
+        builder = ASTNGBuilder()
+        data = """
 from numpy import multiply
 
 multiply(1, 2, 3)
 """
-            astng = builder.string_build(data, __name__, __file__)
-            callfunc = astng.node.nodes[1].expr
-            # well, InferenceError instead of a crash is better
-            self.assertRaises(InferenceError, list, callfunc.infer())
+        astng = builder.string_build(data, __name__, __file__)
+        callfunc = astng.body[1].value.func
+        infered = callfunc.infered()
+        self.assertEqual(len(infered), 1)
+        self.assertIsInstance(infered[0], Instance)
 
-        
+
 class Whatever(object):
     a = property(lambda x: x, lambda x: x)
-    
+
 if __name__ == '__main__':
     unittest_main()
