@@ -252,7 +252,7 @@ finally:
         astng = builder.ASTNGBuilder().string_build('''
 from __future__ import with_statement
 with file("/tmp/pouet") as f:
-  print (f)
+    print (f)
 ''', __name__, __file__)
         with_ = astng.body[1]
         self.assertEqual(with_.fromlineno, 3)
@@ -283,9 +283,9 @@ class BuilderTC(TestCase):
             self.assert_(fclass.newstyle)
             self.assert_(fclass.pytype(), '__builtin__.type')
             self.assertIsInstance(fclass['read'], nodes.Function)
-        # check builtin function has args.args == None
-        dclass = builtin_astng['dict']
-        self.assertEqual(dclass['has_key'].args.args, None)
+            # check builtin function has args.args == None
+            dclass = builtin_astng['dict']
+            self.assertEqual(dclass['has_key'].args.args, None)
         # just check type and object are there
         builtin_astng.getattr('type')
         builtin_astng.getattr('object')

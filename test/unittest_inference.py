@@ -483,9 +483,8 @@ xxx = load_module_from_name('__pkginfo__')
         '''
         astng = builder.string_build(code, __name__, __file__)
         xxx = astng['xxx']
-        infered = list(xxx.infer())
-        self.failUnlessEqual(sorted([n.__class__ for n in infered]),
-                             sorted([nodes.Const, YES.__class__]))
+        self.assertSetEqual(set(n.__class__ for n in xxx.infered()),
+                            set([nodes.Const, YES.__class__]))
 
     def test_method_argument(self):
         code = '''
@@ -742,7 +741,7 @@ class Super(object):
 
 class Sub(Super):
       def method(self):
-              print 'method called'
+              print ('method called')
 
 sub = Sub.instance()
         '''
