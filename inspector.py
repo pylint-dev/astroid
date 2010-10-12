@@ -188,7 +188,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
         if hasattr(node, '_handled'):
             return
         node._handled = True
-        if node.name in node.frame().keys():
+        if node.name in node.frame():
             frame = node.frame()
         else:
             # the name has been defined as 'global' in the frame and belongs
@@ -196,7 +196,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
             # root locals; the frame hence has no locals_type attribute
             frame = node.root()
         try:
-            values = list(node.infer())
+            values = node.infered()
             try:
                 already_infered = frame.locals_type[node.name]
                 for valnode in values:

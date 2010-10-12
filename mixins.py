@@ -149,8 +149,7 @@ class FromImportMixIn(BaseClass, FilterStmtsMixin):
 
     def real_name(self, asname):
         """get name from 'as' name"""
-        for index in range(len(self.names)):
-            name, _asname = self.names[index]
+        for name, _asname in self.names:
             if name == '*':
                 return asname
             if not _asname:
