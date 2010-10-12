@@ -982,14 +982,14 @@ class SendMailController(object):
     def me(self):
         return self
 
-print (SendMailController().smtp)
-print (SendMailController().me)
+my_smtp = SendMailController().smtp
+my_me = SendMailController().me
 '''
         decorators = set(['%s.property' % BUILTINS_NAME])
         astng = builder.string_build(code, __name__, __file__)
         self.assertEqual(astng['SendMailController']['smtp'].decoratornames(),
                           decorators)
-        propinfered = list(astng.body[2].values[0].infer())
+        propinfered = list(astng.body[2].value.infer())
         self.assertEqual(len(propinfered), 1)
         propinfered = propinfered[0]
         self.assertIsInstance(propinfered, Instance)
@@ -997,7 +997,7 @@ print (SendMailController().me)
         self.assertEqual(propinfered.root().name, 'smtplib')
         self.assertEqual(astng['SendMailController']['me'].decoratornames(),
                           decorators)
-        propinfered = list(astng.body[3].values[0].infer())
+        propinfered = list(astng.body[3].value.infer())
         self.assertEqual(len(propinfered), 1)
         propinfered = propinfered[0]
         self.assertIsInstance(propinfered, Instance)
