@@ -273,16 +273,16 @@ def initialize(linter):
             self.skipTest('this test require python >= 2.4')
         code = '''
 def decorator(value):
-   def wrapper(function):
+    def wrapper(function):
         return function
-   return wrapper
+    return wrapper
 
 class foo:
-  member = 10
+    member = 10
 
-  @decorator(member) #This will cause pylint to complain
-  def test(self):
-       pass
+    @decorator(member) #This will cause pylint to complain
+    def test(self):
+        pass
         ''' 
         astng = builder.string_build(code, __name__, __file__)
         member = get_name_node(astng['foo'], 'member')
@@ -342,7 +342,7 @@ def run2():
     f = Frobble()
     
 class Frobble:
-     pass
+    pass
 Frobble.mumble = True
 
 del Frobble
