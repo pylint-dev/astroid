@@ -327,8 +327,11 @@ def f():
         nie_ancestors = [c.name for c in nie.ancestors()]
         if sys.version_info < (2, 5):
             self.failUnlessEqual(nie_ancestors, ['RuntimeError', 'StandardError', 'Exception'])
-        else:
+        elif sys.version_info < (3, 0):
             self.failUnlessEqual(nie_ancestors, ['RuntimeError', 'StandardError', 'Exception', 'BaseException', 'object'])
+        else:
+            
+            self.failUnlessEqual(nie_ancestors, ['RuntimeError', 'Exception', 'BaseException', 'object'])
 
     def test_except_inference(self):
         code = '''
