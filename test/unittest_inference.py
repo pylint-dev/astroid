@@ -941,31 +941,29 @@ def f(x):
         # failed to import since absolute_import is activated
         self.failUnless(infered is YES)
 
-#     def test_mechanize_open(self):
-#         try:
-#             import mechanize
-#         except ImportError:
-#             self.skipTest('require mechanize installed')
-#         data = '''from mechanize import Browser
-# print Browser
-# b = Browser()
-# print b
-# '''
-#         astng = builder.string_build(data, __name__, __file__)
-#         browser = get_name_node(astng, 'Browser').infer().next()
-#         self.assertIsInstance(browser, nodes.Class)
-#         print '*'*80
-#         bopen = list(browser.igetattr('open'))
-#         self.assertEqual(len(bopen), 1)
-#         self.assertIsInstance(bopen[0], nodes.Function)
-#         self.failUnless(bopen[0].callable())
-#         print '*'*80
-#         b = get_name_node(astng, 'b').infer().next()
-#         self.assertIsInstance(b, Instance)
-#         bopen = list(b.igetattr('open'))
-#         self.assertEqual(len(bopen), 1)
-#         self.assertIsInstance(bopen[0], BoundMethod)
-#         self.failUnless(bopen[0].callable())
+    def test_mechanize_open(self):
+        try:
+            import mechanize
+        except ImportError:
+            self.skipTest('require mechanize installed')
+        data = '''from mechanize import Browser
+print (Browser)
+b = Browser()
+'''
+        astng = builder.string_build(data, __name__, __file__)
+        browser = get_name_node(astng, 'Browser').infer().next()
+        self.assertIsInstance(browser, nodes.Class)
+        bopen = list(browser.igetattr('open'))
+        self.skipTest('the commit said: "huum, see that later"')
+        self.assertEqual(len(bopen), 1)
+        self.assertIsInstance(bopen[0], nodes.Function)
+        self.failUnless(bopen[0].callable())
+        b = get_name_node(astng, 'b').infer().next()
+        self.assertIsInstance(b, Instance)
+        bopen = list(b.igetattr('open'))
+        self.assertEqual(len(bopen), 1)
+        self.assertIsInstance(bopen[0], BoundMethod)
+        self.failUnless(bopen[0].callable())
 
     def test_property(self):
         code = '''
