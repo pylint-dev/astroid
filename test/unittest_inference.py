@@ -81,9 +81,7 @@ i, (j, k) = "glup", f
 a, b= b, a # Gasp !
 '''
 
-
-    def setUp(self):
-        self.astng = builder.string_build(self.CODE, __name__, __file__)
+    astng = builder.string_build(CODE, __name__, __file__)
 
     def test_module_inference(self):
         infered = self.astng.infer()
