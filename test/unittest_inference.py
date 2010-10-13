@@ -81,6 +81,7 @@ i, (j, k) = "glup", f
 a, b= b, a # Gasp !
 '''
 
+
     def setUp(self):
         self.astng = builder.string_build(self.CODE, __name__, __file__)
 
@@ -923,6 +924,8 @@ def f(x):
         if sys.version_info < (2, 5):
             self.skipTest('require py >= 2.5')
         data = "from ...common import date; print (date)"
+        # !! FIXME also this relative import would not work 'in real' (no __init__.py in test/)
+        # the test works since we pretend we have a package by passing the full modname
         astng = builder.string_build(data, 'logilab.astng.test.unittest_inference', __file__)
         infered = get_name_node(astng, 'date').infer().next()
         self.assertIsInstance(infered, nodes.Module)
@@ -931,12 +934,7 @@ def f(x):
     def test_python25_no_relative_import(self):
         if sys.version_info < (2, 5):
             self.skipTest('require py >= 2.5')
-        # data = 'import unittest_lookup; print unittest_lookup'
-        # astng = builder.string_build(data, 'logilab.astng.test.unittest_inference', __file__)
-        # self.failIf(astng.absolute_import_activated())
-        # infered = get_name_node(astng, 'unittest_lookup').infer().next()
-        # self.assertIsInstance(infered, nodes.Module)
-        fname = join(abspath(dirname(__file__)), 'regrtest_data', 'absimport.py')
+        fname = join(abspath(dirname(__file__)), 'regrtest_data', 'package', 'absimport.py')
         astng = builder.file_build(fname, 'absimport')
         self.failUnless(astng.absolute_import_activated(), True)
         infered = get_name_node(astng, 'import_package_subpackage_module').infer().next()
