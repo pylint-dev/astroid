@@ -103,10 +103,10 @@ class BorgASTNGManagerTC(unittest.TestCase):
         """test that the ASTNGManager is really a borg, i.e. that two different
         instances has same cache"""
         first_manager = ASTNGManager()
-        built = first_manager.astng_from_module_name('__builtin__')
+        built = first_manager.astng_from_module_name(BUILTINS_NAME)
 
         second_manager = ASTNGManager()
-        second_built = first_manager.astng_from_module_name('__builtin__')
+        second_built = first_manager.astng_from_module_name(BUILTINS_NAME)
         self.assertTrue(built is second_built)
 
 
