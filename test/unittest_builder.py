@@ -324,6 +324,8 @@ class BuilderTC(TestCase):
 
     def test_inspect_build_instance(self):
         """test astng tree build from a living object"""
+        if sys.version_info >= (3, 0):
+            self.skipTest('The module "exceptions" is gone in py3.x')
         import exceptions
         builtin_astng = self.builder.inspect_build(exceptions)
         fclass = builtin_astng['OSError']

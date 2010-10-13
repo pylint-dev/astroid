@@ -45,11 +45,14 @@ class InferenceUtilsTC(TestCase):
                               infer_default(1).next)
         self.failUnlessEqual(infer_end(1).next(), 1)
 
+if sys.version_info < (3, 0):
+    EXC_MODULE = 'exceptions'
+else:
+    EXC_MODULE = BUILTINS_NAME
 
 class InferenceTC(TestCase):
 
     CODE = '''
-import exceptions
 
 class C(object):
     "new style"
@@ -69,7 +72,7 @@ class C(object):
         c = self.iattr
         return b, c
 
-ex = exceptions.Exception("msg")
+ex = Exception("msg")
 v = C().meth1(1)
 m_unbound = C.meth1
 m_bound = C().meth1
@@ -116,7 +119,7 @@ a, b= b, a # Gasp !
         exc = infered.next()
         self.assertIsInstance(exc, Instance)
         self.failUnlessEqual(exc.name, 'Exception')
-        self.failUnlessEqual(exc.root().name, 'exceptions')
+        self.failUnlessEqual(exc.root().name, EXC_MODULE)
         self.failUnlessRaises(StopIteration, infered.next)
         infered = self.astng['b'].infer()
         const = infered.next()
@@ -134,7 +137,7 @@ a, b= b, a # Gasp !
         exc = infered.next()
         self.assertIsInstance(exc, Instance)
         self.failUnlessEqual(exc.name, 'Exception')
-        self.failUnlessEqual(exc.root().name, 'exceptions')
+        self.failUnlessEqual(exc.root().name, EXC_MODULE)
         self.failUnlessRaises(StopIteration, infered.next)
         infered = self.astng['e'].infer()
         const = infered.next()
@@ -185,7 +188,7 @@ a, b= b, a # Gasp !
         exc = infered.next()
         self.assertIsInstance(exc, Instance)
         self.failUnlessEqual(exc.name, 'Exception')
-        self.failUnlessEqual(exc.root().name, 'exceptions')
+        self.failUnlessEqual(exc.root().name, EXC_MODULE)
         self.failUnlessRaises(StopIteration, infered.next)
 
     def test_getattr_inference1(self):
@@ -193,7 +196,7 @@ a, b= b, a # Gasp !
         exc = infered.next()
         self.assertIsInstance(exc, Instance)
         self.failUnlessEqual(exc.name, 'Exception')
-        self.failUnlessEqual(exc.root().name, 'exceptions')
+        self.failUnlessEqual(exc.root().name, EXC_MODULE)
         self.failUnlessRaises(StopIteration, infered.next)
 
     def test_getattr_inference2(self):
@@ -459,20 +462,16 @@ class Warning(Warning):
         astng = builder.string_build(code, __name__, __file__)
         w = astng['Warning']
         ancestors = w.ancestors()
-        if sys.version_info < (3, 0):
-            exception_module = 'exceptions'
-        else:
-            exception_module = BUILTINS_NAME
         ancestor = ancestors.next()
         self.failUnlessEqual(ancestor.name, 'Warning')
-        self.failUnlessEqual(ancestor.root().name, exception_module)
+        self.failUnlessEqual(ancestor.root().name, EXC_MODULE)
         ancestor = ancestors.next()
         self.failUnlessEqual(ancestor.name, 'Exception')
-        self.failUnlessEqual(ancestor.root().name, exception_module)
+        self.failUnlessEqual(ancestor.root().name, EXC_MODULE)
         if sys.version_info >= (2, 5):
             ancestor = ancestors.next()
             self.failUnlessEqual(ancestor.name, 'BaseException')
-            self.failUnlessEqual(ancestor.root().name, exception_module)
+            self.failUnlessEqual(ancestor.root().name, EXC_MODULE)
             ancestor = ancestors.next()
             self.failUnlessEqual(ancestor.name, 'object')
             self.failUnlessEqual(ancestor.root().name, BUILTINS_NAME)
