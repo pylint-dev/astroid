@@ -71,8 +71,8 @@ class YOUPI(YO):
     class_method = classmethod(class_method)
         
 
-def nested_args(a, (b, c, d)):
-    """nested arguments test"""
+def four_args(a, b, c, d):
+    """four arguments (was nested_args)"""
     print a, b, c, d
     while 1:
         if a:
@@ -86,5 +86,5 @@ def nested_args(a, (b, c, d)):
         c = a and b or d
     map(lambda x, y: (y, x), a)
     
-redirect = nested_args
+redirect = four_args
 

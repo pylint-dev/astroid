@@ -490,7 +490,7 @@ class FileBuildTC(TestCase):
         keys = _locals.keys()
         keys.sort()
         should = ['MY_DICT', 'YO', 'YOUPI',
-                '__revision__',  'global_access','modutils', 'nested_args',
+                '__revision__',  'global_access','modutils', 'four_args',
                  'os', 'redirect', 'spawn', 'LocalsVisitor',
                 'ASTWalker', 'ASTVisitor']
         should.sort()

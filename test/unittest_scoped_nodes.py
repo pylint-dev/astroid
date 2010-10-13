@@ -73,15 +73,17 @@ class ModuleNodeTC(TestCase):
         self.assertEqual(yo.name, 'YO')
         red = MODULE.igetattr('redirect').next()
         self.assertIsInstance(red, nodes.Function)
-        self.assertEqual(red.name, 'nested_args')
+        self.assertEqual(red.name, 'four_args')
         spawn = MODULE.igetattr('spawn').next()
         self.assertIsInstance(spawn, nodes.Class)
         self.assertEqual(spawn.name, 'Execute')
         # resolve packageredirection
         sys.path.insert(1, 'data')
+        mod = abuilder.file_build('data/appl/myConnection.py',
+                                  'appl.myConnection')
         try:
-            m = abuilder.file_build('data/appl/myConnection.py', 'appl.myConnection')
-            cnx = m.igetattr('SSL1').next().igetattr('Connection').next()
+            ssl = mod.igetattr('SSL1').next()
+            cnx = ssl.igetattr('Connection').next()
             self.assertEqual(cnx.__class__, nodes.Class)
             self.assertEqual(cnx.name, 'Connection')
             self.assertEqual(cnx.root().name, 'SSL1.Connection1')
@@ -156,7 +158,19 @@ class FunctionNodeTC(TestCase):
         self.assertEqual(first.previous_sibling(), None)
 
     def test_nested_args(self):
-        func = MODULE['nested_args']
+        if sys.version_info >= (3, 0):
+            self.skipTest("nested args has been removed in py3.x")
+        code = '''
+def nested_args(a, (b, c, d)):
+    "nested arguments test"
+        '''
+        tree = abuilder.string_build(code)
+        func = tree['nested_args']
+        self.assertEqual(sorted(func.locals), ['a', 'b', 'c', 'd'])
+        self.assertEqual(func.args.format_args(), 'a, (b, c, d)')
+
+    def test_four_args(self):
+        func = MODULE['four_args']
         #self.assertEqual(func.args.args, ['a', ('b', 'c', 'd')])
         local = func.keys()
         local.sort()
@@ -166,8 +180,8 @@ class FunctionNodeTC(TestCase):
     def test_format_args(self):
         func = MODULE2['make_class']
         self.assertEqual(func.args.format_args(), 'any, base=data.module.YO, *args, **kwargs')
-        func = MODULE['nested_args']
-        self.assertEqual(func.args.format_args(), 'a, (b, c, d)')
+        func = MODULE['four_args']
+        self.assertEqual(func.args.format_args(), 'a, b, c, d')
 
     def test_is_abstract(self):
         method = MODULE2['AbstractClass']['to_override']
