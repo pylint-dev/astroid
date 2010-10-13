@@ -39,14 +39,12 @@ class NonRegressionTC(TestCase):
 
     def test_module_path(self):
         manager = ASTNGManager()
-        print 'manager cache',  id(manager._cache)
         # avoid caching into the ASTNGManager borg since we get problems
         # with other tests :
         manager.__dict__ = {}
         manager._cache = {}
-        print 'manager cache',  id(manager._cache)
         manager._mod_file_cache = {}
-        mod = manager.astng_from_module_name('import_package_subpackage_module')
+        mod = manager.astng_from_module_name('package.import_package_subpackage_module')
         package = mod.igetattr('package').next()
         self.failUnlessEqual(package.name, 'package')
         subpackage = package.igetattr('subpackage').next()
