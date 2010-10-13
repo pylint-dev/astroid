@@ -582,14 +582,15 @@ class FileBuildTC(TestCase):
 
     def test_method_locals(self):
         """test the 'locals' dictionary of a astng method"""
-        klass2 = self.module['YOUPI']
-        method = klass2['method']
+        method = self.module['YOUPI']['method']
         _locals = method.locals
-        self.assertEqual(len(_locals), 5)
-        keys = _locals.keys()
-        keys.sort()
-        self.assertEqual(keys, ['a', 'autre', 'b', 'local', 'self'])
-
+        keys = sorted(_locals)
+        if sys.version_info < (3, 0):
+            self.assertEqual(len(_locals), 5)
+            self.assertEqual(keys, ['a', 'autre', 'b', 'local', 'self'])
+        else:# ListComp variables are no more accessible outside
+            self.assertEqual(len(_locals), 3)
+            self.assertEqual(keys, ['autre', 'local', 'self'])
 
 class ModuleBuildTC(FileBuildTC):
 
