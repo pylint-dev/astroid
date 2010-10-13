@@ -773,6 +773,8 @@ print (make_code)
         self.failUnlessEqual(len(infered), 1)
         self.assertIsInstance(infered[0], nodes.Function)
         self.failUnlessEqual(infered[0].name, 'exists')
+        if sys.version_info >= (3, 0):
+            self.skipTest('<new> module has been removed')
         infered = list(astng.igetattr('make_code'))
         self.failUnlessEqual(len(infered), 1)
         self.assertIsInstance(infered[0], Instance)
