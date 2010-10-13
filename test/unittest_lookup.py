@@ -61,16 +61,24 @@ def func():
     c = 1
         '''
         astng = builder.string_build(code, __name__, __file__)
-        names = astng.nodes_of_class(nodes.Name)
-        a = names.next()
+        # a & b
+        a = astng.nodes_of_class(nodes.Name).next()
+        self.assertEqual(a.lineno, 2)
+        if sys.version_info < (3, 0):
+            self.failUnlessEqual(len(astng.lookup('b')[1]), 2)
+            self.failUnlessEqual(len(astng.lookup('a')[1]), 3)
+            b = astng.locals['b'][1]
+        else:
+            self.failUnlessEqual(len(astng.lookup('b')[1]), 1)
+            self.failUnlessEqual(len(astng.lookup('a')[1]), 2)
+            b = astng.locals['b'][0]
         stmts = a.lookup('a')[1]
         self.failUnlessEqual(len(stmts), 1)
-        b = astng.locals['b'][1]
-        #self.failUnlessEqual(len(b.lookup('b')[1]), 1)
-        self.failUnlessEqual(len(astng.lookup('b')[1]), 2)
+        self.assertEqual(b.lineno, 6)
         b_infer = b.infer()
         b_value = b_infer.next()
         self.failUnlessEqual(b_value.value, 1)
+        # c
         self.failUnlessRaises(StopIteration, b_infer.next)
         func = astng.locals['func'][0]
         self.failUnlessEqual(len(func.lookup('c')[1]), 1)
@@ -133,8 +141,8 @@ class A(A):
 
 
     def test_inner_classes(self):
-        ccc = NONREGR['Ccc']
-        self.assertEqual(ccc.ilookup('Ddd').next().name, 'Ddd')
+        ddd = list(NONREGR['Ccc'].ilookup('Ddd'))
+        self.assertEqual(ddd[0].name, 'Ddd')
 
 
     def test_loopvar_hiding(self):
