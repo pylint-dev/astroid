@@ -311,9 +311,9 @@ a = f()
         '''
         astng = builder.string_build(code, __name__, __file__)
         a = astng['a']
-        a_infer = a.infer()
-        self.failUnlessEqual(a_infer.next().value, 1)
-        self.failUnlessRaises(StopIteration, a_infer.next)
+        a_infered = a.infered()
+        self.failUnlessEqual(a_infered[0].value, 1)
+        self.assertEqual(len(a_infered), 1)
 
     def test_exc_ancestors(self):
         code = '''
@@ -321,8 +321,8 @@ def f():
     raise NotImplementedError
         '''
         astng = builder.string_build(code, __name__, __file__)
-        names = astng.nodes_of_class(nodes.Name)
-        nie = names.next().infer().next()
+        error = astng.nodes_of_class(nodes.Name).next()
+        nie = error.infered()[0]
         self.assertIsInstance(nie, nodes.Class)
         nie_ancestors = [c.name for c in nie.ancestors()]
         if sys.version_info < (2, 5):
