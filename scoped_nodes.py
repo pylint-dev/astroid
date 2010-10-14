@@ -864,11 +864,8 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
             return std_special_attributes(self, name)
         # don't modify the list in self.locals!
         values = list(values)
-        for classnode in self.ancestors(recurs=False, context=context):
-            try:
-                values += classnode.getattr(name, context)
-            except NotFoundError:
-                continue
+        for classnode in self.ancestors(recurs=True, context=context):
+            values += classnode.locals.get(name, [])
         if not values:
             raise NotFoundError(name)
         return values
