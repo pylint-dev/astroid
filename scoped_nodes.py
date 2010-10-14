@@ -776,6 +776,7 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
         # FIXME: should be possible to choose the resolution order
         # XXX inference make infinite loops possible here (see BaseTransformer
         # manipulation in the builder module for instance !)
+        yielded = set([self])
         if context is None:
             context = InferenceContext()
         for stmt in self.bases:
@@ -784,13 +785,15 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
                     if not isinstance(baseobj, Class):
                         # duh ?
                         continue
-                    if baseobj is self:
+                    if baseobj in yielded:
                         continue # cf xxx above
+                    yielded.add(baseobj)
                     yield baseobj
                     if recurs:
                         for grandpa in baseobj.ancestors(True, context):
-                            if grandpa is self:
+                            if grandpa in yielded:
                                 continue # cf xxx above
+                            yielded.add(grandpa)
                             yield grandpa
             except InferenceError:
                 # XXX log error ?

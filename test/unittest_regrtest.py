@@ -95,8 +95,6 @@ class A(gobject.GObject):
                              expect)
         self.assert_(list(Instance(pylinter).getattr('config')))
         infered = list(Instance(pylinter).igetattr('config'))
-        self.assertEqual(len(infered), 2)
-        infered = [c for c in infered if not c is YES]
         self.assertEqual(len(infered), 1)
         self.assertEqual(infered[0].root().name, 'optparse')
         self.assertEqual(infered[0].name, 'Values')

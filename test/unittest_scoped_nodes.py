@@ -366,7 +366,7 @@ A.__bases__ += (B,)
         self.assertEqual(ancs, ['YO'])
         klass = MODULE2['Specialization']
         ancs = [a.name for a in klass.ancestors()]
-        self.assertEqual(ancs, ['YOUPI', 'YO', 'YO'])
+        self.assertEqual(ancs, ['YOUPI', 'YO'])
 
     def test_type(self):
         klass = MODULE['YOUPI']
