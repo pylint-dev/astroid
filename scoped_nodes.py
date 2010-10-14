@@ -638,10 +638,11 @@ def _format_args(args, defaults=None):
 
 # Class ######################################################################
 
-def _class_type(klass):
+def _class_type(klass, ancestors=None):
     """return a Class node type to differ metaclass, interface and exception
     from 'regular' classes
     """
+    # XXX we have to store ancestors in case we have a ancestor loop
     if klass._type is not None:
         return klass._type
     if klass.name == 'type':
@@ -651,8 +652,16 @@ def _class_type(klass):
     elif klass.name.endswith('Exception'):
         klass._type = 'exception'
     else:
+        if ancestors is None:
+            ancestors = set()
+        if klass in ancestors:
+            # XXX we are in loop ancestors, and have found no type
+            klass._type = 'class'
+            return 'class'
+        ancestors.add(klass)
+        # print >> sys.stderr, '_class_type', repr(klass)
         for base in klass.ancestors(recurs=False):
-            if base.type != 'class':
+            if _class_type(base, ancestors) != 'class':
                 klass._type = base.type
                 break
     if klass._type is None:
