@@ -512,6 +512,26 @@ inst.m4 = func
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], nodes.Function)
 
+    def test_getattr_from_grandpa(self):
+        data = '''
+class Future:
+    attr = 1
+
+class Present(Future):
+    pass
+
+class Past(Present):
+    pass
+'''
+        astng = abuilder.string_build(data)
+        past = astng['Past']
+        attr = past.getattr('attr')
+        self.assertEqual(len(attr), 1)
+        attr1 = attr[0]
+        self.assertIsInstance(attr1, nodes.AssName)
+        self.assertEqual(attr1.name, 'attr')
+
+
 __all__ = ('ModuleNodeTC', 'ImportNodeTC', 'FunctionNodeTC', 'ClassNodeTC')
 
 if __name__ == '__main__':
