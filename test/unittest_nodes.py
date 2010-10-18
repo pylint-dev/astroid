@@ -158,7 +158,21 @@ finally:
         self.assertEqual(self.astng.body[0].block_range(5), (5, 5))
         self.assertEqual(self.astng.body[0].block_range(6), (6, 6))
 
-        
+
+class TryExcept2xNodeTC(_NodeTC):
+    CODE = """
+try:
+    hello
+except AttributeError, (retval, desc):
+    pass
+    """
+    def test_tuple_attribute(self):
+        if sys.version_info >= (3, 0):
+            self.skipTest('syntax removed from py3.x')
+        handler = self.astng.body[0].handlers[0]
+        self.assertIsInstance(handler.name, nodes.Tuple)
+
+
 MODULE = abuilder.module_build(test_module)
 MODULE2 = abuilder.file_build('data/module2.py', 'data.module2')
 

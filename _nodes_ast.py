@@ -323,20 +323,32 @@ class TreeRebuilder(RebuildVisitor):
         newnode.set_line_info(newnode.last_child())
         return newnode
 
-    def visit_excepthandler(self, node, parent):
-        """visit an ExceptHandler node by returning a fresh instance of it"""
-        newnode = new.ExceptHandler()
-        _lineno_parent(node, newnode, parent)
-        newnode.type = self.visit(node.type, newnode)
-        if node.name is not None:
-            if sys.version_info < (3, 0):
-                newnode.name = self.visit_assname(node.name, newnode,
-                                                  node.name.id)
-            else:
+    if sys.version_info < (3, 0):
+        def visit_excepthandler(self, node, parent):
+            """visit an ExceptHandler node by returning a fresh instance of it"""
+            newnode = new.ExceptHandler()
+            _lineno_parent(node, newnode, parent)
+            newnode.type = self.visit(node.type, newnode)
+            if node.name is not None:
+                # /!\ node.name can be a tuple
+                self.asscontext = "Ass"
+                newnode.name = self.visit(node.name, newnode)
+                self.asscontext = None
+            newnode.body = [self.visit(child, newnode) for child in node.body]
+            newnode.set_line_info(newnode.last_child())
+            return newnode
+
+    else:
+        def visit_excepthandler(self, node, parent):
+            """visit an ExceptHandler node by returning a fresh instance of it"""
+            newnode = new.ExceptHandler()
+            _lineno_parent(node, newnode, parent)
+            newnode.type = self.visit(node.type, newnode)
+            if node.name is not None:
                 newnode.name = self.visit_assname(node, newnode, node.name)
-        newnode.body = [self.visit(child, newnode) for child in node.body]
-        newnode.set_line_info(newnode.last_child())
-        return newnode
+            newnode.body = [self.visit(child, newnode) for child in node.body]
+            newnode.set_line_info(newnode.last_child())
+            return newnode
 
     def visit_exec(self, node, parent):
         """visit an Exec node by returning a fresh instance of it"""
