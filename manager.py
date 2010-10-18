@@ -145,7 +145,7 @@ class ASTNGManager(OptionsProviderMixIn):
                     import traceback
                     traceback.print_exc()
                 msg = 'Unable to load module %s (%s)' % (modname, ex)
-                raise ASTNGBuildingException(msg), None, sys.exc_info()[-1]
+                raise ASTNGBuildingException, msg, sys.exc_info()[-1]
         elif fallback and modname:
             return self.astng_from_module_name(modname)
         raise ASTNGBuildingException('unable to get astng for file %s' %
