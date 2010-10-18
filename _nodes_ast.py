@@ -384,7 +384,7 @@ class TreeRebuilder(RebuildVisitor):
     def visit_from(self, node, parent):
         """visit a From node by returning a fresh instance of it"""
         names = [(alias.name, alias.asname) for alias in node.names]
-        newnode = new.From(node.module, names, node.level)
+        newnode = new.From(node.module or '', names, node.level)
         self._set_infos(node, newnode, parent)
         self._store_from_node(newnode)
 
