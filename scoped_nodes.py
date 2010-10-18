@@ -133,7 +133,7 @@ class LocalsDictNodeNG(LookupMixIn, NodeNG):
             # nested scope: if parent scope is a function, that's fine
             # else jump to the module
             pscope = self.parent.scope()
-            if not isinstance(pscope, Function):
+            if not pscope.is_function:
                 pscope = pscope.root()
             return pscope.scope_lookup(node, name)
         return builtin_lookup(name) # Module
@@ -508,8 +508,8 @@ class Function(StmtMixIn, Lambda):
     _astng_fields = ('decorators', 'args', 'body')
 
     special_attributes = set(('__name__', '__doc__', '__dict__'))
+    is_function = True
     # attributes below are set by the builder module or by raw factories
-
     blockstart_tolineno = None
 
     def __init__(self, name, doc):

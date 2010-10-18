@@ -343,6 +343,7 @@ class NodeNG(BaseClass):
     """
     is_statement = False
     optional_assign = False # True  for For (and for Comprehension if py <3.0)
+    is_function = False # True for Function nodes
     # attributes below are set by the builder module or by raw factories
     lineno = None
     fromlineno = None
