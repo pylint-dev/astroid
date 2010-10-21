@@ -20,7 +20,7 @@
 
 from logilab.common.testlib import unittest_main, TestCase
 
-from logilab.astng import ResolveError, MANAGER, Instance, YES, InferenceError
+from logilab.astng import ResolveError, MANAGER, Instance, nodes, YES, InferenceError
 from logilab.astng.builder import ASTNGBuilder, build_module
 from logilab.astng.manager import ASTNGManager
 
@@ -37,20 +37,38 @@ class NonRegressionTC(TestCase):
     def tearDown(self):
         sys.path.pop(0)
 
-    def test_module_path(self):
+    def brainless_manager(self):
         manager = ASTNGManager()
         # avoid caching into the ASTNGManager borg since we get problems
         # with other tests :
         manager.__dict__ = {}
         manager._cache = {}
         manager._mod_file_cache = {}
-        mod = manager.astng_from_module_name('package.import_package_subpackage_module')
+        return manager
+
+    def test_module_path(self):
+        man = self.brainless_manager()
+        mod = man.astng_from_module_name('package.import_package_subpackage_module')
         package = mod.igetattr('package').next()
         self.failUnlessEqual(package.name, 'package')
         subpackage = package.igetattr('subpackage').next()
+        self.assertIsInstance(subpackage, nodes.Module)
+        self.assertTrue(subpackage.package)
         self.failUnlessEqual(subpackage.name, 'package.subpackage')
         module = subpackage.igetattr('module').next()
         self.failUnlessEqual(module.name, 'package.subpackage.module')
+
+
+    def test_package_sidepackage(self):
+        manager = self.brainless_manager()
+        assert 'package.sidepackage' not in MANAGER._cache
+        package = manager.astng_from_module_name('absimp')
+        self.assertIsInstance(package, nodes.Module)
+        self.assertTrue(package.package)
+        subpackage = package.getattr('sidepackage')[0].infer().next()
+        self.assertIsInstance(subpackage, nodes.Module)
+        self.assertTrue(subpackage.package)
+        self.failUnlessEqual(subpackage.name, 'absimp.sidepackage')
 
 
     def test_living_property(self):
