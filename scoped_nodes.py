@@ -517,6 +517,7 @@ class Function(StmtMixIn, Lambda):
     is_function = True
     # attributes below are set by the builder module or by raw factories
     blockstart_tolineno = None
+    decorators = None
 
     def __init__(self, name, doc):
         self.locals = {}
@@ -687,8 +688,9 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
     # by a raw factories
 
     # a dictionary of class instances attributes
-    _astng_fields = ('bases', 'body',) # name
+    _astng_fields = ('decorators', 'bases', 'body') # name
 
+    decorators = None
     instance_attrs = None
     special_attributes = set(('__name__', '__doc__', '__dict__', '__module__',
                               '__bases__', '__mro__', '__subclasses__'))
