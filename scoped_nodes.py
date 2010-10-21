@@ -331,20 +331,23 @@ class Module(LocalsDictNodeNG):
 
     def import_module(self, modname, relative_only=False, level=None):
         """import the given module considering self as context"""
+        absmodname = self.relative_to_absolute_name(modname, level)
         try:
-            absmodname = self.absolute_modname(modname, level)
             return MANAGER.astng_from_module_name(absmodname)
         except ASTNGBuildingException:
             # we only want to import a sub module or package of this module,
             # skip here
             if relative_only:
                 raise
-        module = MANAGER.astng_from_module_name(modname)
-        return module
+        return MANAGER.astng_from_module_name(modname)
 
-    def absolute_modname(self, modname, level):
-        if self.absolute_import_activated() and not level:
-            return modname
+    def relative_to_absolute_name(self, modname, level):
+        """return the absolute module name for a relative import.
+
+        The relative import can be implicit or explicit.
+        """
+        # XXX this returns non sens when called on an absolute import
+        # like 'pylint.checkers.logilab.astng.utils'
         if level:
             parts = self.name.split('.')
             if self.package:
@@ -355,8 +358,11 @@ class Module(LocalsDictNodeNG):
         else:
             package_name = '.'.join(self.name.split('.')[:-1])
         if package_name:
+            if not modname:
+                return package_name
             return '%s.%s' % (package_name, modname)
         return modname
+
 
     def wildcard_import_names(self):
         """return the list of imported names when this module is 'wildcard

@@ -139,7 +139,9 @@ class FromImportMixIn(BaseClass, FilterStmtsMixin):
         # XXX: no more needed ?
         mymodule = self.root()
         level = getattr(self, 'level', None) # Import as no level
-        if mymodule.absolute_modname(modname, level) == mymodule.name:
+        # XXX we should investigate deeper if we really want to check 
+        # importing itself: modname and mymodule.name be relative or absolute
+        if mymodule.relative_to_absolute_name(modname, level) == mymodule.name:
             # FIXME: I don't know what to do here...
             raise InferenceError('module importing itself: %s' % modname)
         try:
