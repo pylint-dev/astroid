@@ -50,10 +50,11 @@ from unittest_inference import get_name_node
 import data
 from data import module as test_module
 
+DATA = join(dirname(abspath(__file__)), 'data')
+
 class FromToLineNoTC(TestCase):
 
-    def setUp(self):
-        self.astng = builder.ASTNGBuilder().file_build('data/format.py')
+    astng = builder.ASTNGBuilder().file_build(join(DATA, 'format.py'))
 
     def test_callfunc_lineno(self):
         stmts = self.astng.body
@@ -268,9 +269,9 @@ class BuilderTC(TestCase):
 
     def test_border_cases(self):
         """check that a file with no trailing new line is parseable"""
-        self.builder.file_build('data/noendingnewline.py', 'data.noendingnewline')
+        self.builder.file_build(join(DATA, 'noendingnewline.py'), 'data.noendingnewline')
         self.assertRaises(builder.ASTNGBuildingException,
-                          self.builder.file_build, 'data/inexistant.py', 'whatever')
+                          self.builder.file_build, join(DATA, 'inexistant.py'), 'whatever')
 
     def test_inspect_build0(self):
         """test astng tree build from a living object"""
@@ -356,10 +357,10 @@ class BuilderTC(TestCase):
 
     def test_package_name(self):
         """test base properties and method of a astng module"""
-        datap = self.builder.file_build('data/__init__.py', 'data')
+        datap = self.builder.file_build(join(DATA, '__init__.py'), 'data')
         self.assertEqual(datap.name, 'data')
         self.assertEqual(datap.package, 1)
-        datap = self.builder.file_build('data/__init__.py', 'data.__init__')
+        datap = self.builder.file_build(join(DATA, '__init__.py'), 'data.__init__')
         self.assertEqual(datap.name, 'data')
         self.assertEqual(datap.package, 1)
 
@@ -462,9 +463,7 @@ def global_no_effect():
 
 class FileBuildTC(TestCase):
 
-    def setUp(self):
-        abuilder = builder.ASTNGBuilder()
-        self.module = abuilder.file_build('data/module.py', 'data.module')
+    module = builder.ASTNGBuilder().file_build(join(DATA, 'module.py'), 'data.module')
 
     def test_module_base_props(self):
         """test base properties and method of a astng module"""

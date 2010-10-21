@@ -18,12 +18,12 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
 import unittest
-import os
 import sys
-from os.path import join, dirname
+from os.path import join, abspath, dirname
 from logilab.astng.manager import ASTNGManager
 from logilab.astng.bases import  BUILTINS_NAME
 
+DATA = join(dirname(abspath(__file__)), 'data')
 
 class ASTNGManagerTC(unittest.TestCase):
     def setUp(self):
@@ -49,7 +49,7 @@ class ASTNGManagerTC(unittest.TestCase):
     def _test_astng_from_zip(self, archive):
         origpath = sys.path[:]
         sys.modules.pop('mypypa', None)
-        sys.path.insert(0, join(dirname(__file__), 'data', archive))
+        sys.path.insert(0, join(DATA, archive))
         try:
             module = self.manager.astng_from_module_name('mypypa')
             self.assertEqual(module.name, 'mypypa')
@@ -70,10 +70,10 @@ class ASTNGManagerTC(unittest.TestCase):
     def test_from_directory(self):
         obj = self.manager.from_directory('data')
         self.assertEqual(obj.name, 'data')
-        self.assertEqual(obj.path, join(os.getcwd(), 'data'))
+        self.assertEqual(obj.path, DATA)
         
     def test_package_node(self):
-        obj = self.manager.from_directory('data')
+        obj = self.manager.from_directory(DATA)
         expected_short = ['SSL1', '__init__', 'all', 'appl', 'format', 'module', 'module2',
                           'noendingnewline', 'nonregr', 'notall']
         expected_long = ['SSL1', 'data', 'data.all', 'appl', 'data.format', 'data.module',

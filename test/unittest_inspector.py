@@ -38,6 +38,7 @@ unittest for the visitors.diadefs module
 
 import unittest
 import sys
+from os.path import join, abspath, dirname
 
 from logilab.astng import nodes, inspector
 from logilab.astng.bases import Instance, YES
@@ -48,11 +49,15 @@ MANAGER = ASTNGManager()
 def astng_wrapper(func, modname):
     return func(modname)
 
-        
+
+DATA2 = join(dirname(abspath(__file__)), 'data2')
+
+from os.path import join, abspath, dirname
+
 class LinkerTC(unittest.TestCase):
     
     def setUp(self):
-        self.project = MANAGER.project_from_files(['data2'], astng_wrapper) 
+        self.project = MANAGER.project_from_files([DATA2], astng_wrapper)
         self.linker = inspector.Linker(self.project)
         self.linker.visit(self.project)
 
@@ -97,7 +102,7 @@ class LinkerTC(unittest.TestCase):
 class LinkerTC2(LinkerTC):
     
     def setUp(self):
-        self.project = MANAGER.from_directory('data2') 
+        self.project = MANAGER.from_directory(DATA2)
         self.linker = inspector.Linker(self.project)
         self.linker.visit(self.project)
         

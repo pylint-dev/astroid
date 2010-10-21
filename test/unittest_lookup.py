@@ -32,7 +32,7 @@
 """tests for the astng variable lookup capabilities
 """
 import sys
-from os.path import join, abspath
+from os.path import join, abspath, dirname
 from logilab.common.testlib import TestCase, unittest_main
 
 from logilab.astng import builder, nodes, scoped_nodes, \
@@ -42,9 +42,10 @@ from logilab.astng.bases import YES
 from unittest_inference import get_name_node
 
 builder = builder.ASTNGBuilder()
-MODULE = builder.file_build('data/module.py', 'data.module')
-MODULE2 = builder.file_build('data/module2.py', 'data.module2')
-NONREGR = builder.file_build('data/nonregr.py', 'data.nonregr')
+DATA = join(dirname(abspath(__file__)), 'data')
+MODULE = builder.file_build(join(DATA, 'module.py'), 'data.module')
+MODULE2 = builder.file_build(join(DATA, 'module2.py'), 'data.module2')
+NONREGR = builder.file_build(join(DATA, 'nonregr.py'), 'data.nonregr')
 
 class LookupTC(TestCase):
 

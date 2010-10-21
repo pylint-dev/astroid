@@ -39,6 +39,10 @@ from logilab.astng.as_string import as_string
 
 from data import module as test_module
 
+from os.path import join, abspath, dirname
+
+DATA = join(dirname(abspath(__file__)), 'data')
+
 abuilder = builder.ASTNGBuilder()
 
 class _NodeTC(testlib.TestCase):
@@ -174,7 +178,7 @@ except AttributeError, (retval, desc):
 
 
 MODULE = abuilder.module_build(test_module)
-MODULE2 = abuilder.file_build('data/module2.py', 'data.module2')
+MODULE2 = abuilder.file_build(join(DATA, 'module2.py'), 'data.module2')
 
 
 class ImportNodeTC(testlib.TestCase):

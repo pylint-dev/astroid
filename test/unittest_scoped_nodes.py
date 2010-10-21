@@ -22,7 +22,7 @@ function)
 """
 
 import sys
-from os.path import join, abspath
+from os.path import join, abspath, dirname
 
 from logilab.common.testlib import TestCase, unittest_main
 from logilab.common.compat import sorted
@@ -32,10 +32,12 @@ from logilab.astng import builder, nodes, scoped_nodes, \
 from logilab.astng.bases import Instance, BoundMethod, UnboundMethod
 
 abuilder = builder.ASTNGBuilder()
-MODULE = abuilder.file_build('data/module.py', 'data.module')
-MODULE2 = abuilder.file_build('data/module2.py', 'data.module2')
-NONREGR = abuilder.file_build('data/nonregr.py', 'data.nonregr')
-PACK = abuilder.file_build('data/__init__.py', 'data')
+DATA = join(dirname(abspath(__file__)), 'data')
+MODULE = abuilder.file_build(join(DATA, 'module.py'), 'data.module')
+MODULE2 = abuilder.file_build(join(DATA, 'module2.py'), 'data.module2')
+NONREGR = abuilder.file_build(join(DATA, 'nonregr.py'), 'data.nonregr')
+
+PACK = abuilder.file_build(join(DATA, '__init__.py'), 'data')
 
 def _test_dict_interface(self, node, test_attr):
     self.assert_(node[test_attr] is node[test_attr])
@@ -57,7 +59,7 @@ class ModuleNodeTC(TestCase):
         self.assertEqual(MODULE.getattr('__doc__')[0].value, 'test module for astng\n')
         self.assertEqual(len(MODULE.getattr('__file__')), 1)
         self.assertIsInstance(MODULE.getattr('__file__')[0], nodes.Const)
-        self.assertEqual(MODULE.getattr('__file__')[0].value, abspath(join('data', 'module.py')))
+        self.assertEqual(MODULE.getattr('__file__')[0].value, join(DATA, 'module.py'))
         self.assertEqual(len(MODULE.getattr('__dict__')), 1)
         self.assertIsInstance(MODULE.getattr('__dict__')[0], nodes.Dict)
         self.assertRaises(NotFoundError, MODULE.getattr, '__path__')
@@ -78,8 +80,8 @@ class ModuleNodeTC(TestCase):
         self.assertIsInstance(spawn, nodes.Class)
         self.assertEqual(spawn.name, 'Execute')
         # resolve packageredirection
-        sys.path.insert(1, 'data')
-        mod = abuilder.file_build('data/appl/myConnection.py',
+        sys.path.insert(1, DATA)
+        mod = abuilder.file_build(join(DATA, 'appl/myConnection.py'),
                                   'appl.myConnection')
         try:
             ssl = mod.igetattr('SSL1').next()
@@ -94,9 +96,9 @@ class ModuleNodeTC(TestCase):
         self.assertRaises(InferenceError, MODULE.igetattr, 'YOAA')
 
     def test_wildard_import_names(self):
-        m = abuilder.file_build('data/all.py', 'all')
+        m = abuilder.file_build(join(DATA, 'all.py'), 'all')
         self.assertEqual(m.wildcard_import_names(), ['Aaa', '_bla', 'name'])
-        m = abuilder.file_build('data/notall.py', 'notall')
+        m = abuilder.file_build(join(DATA, 'notall.py'), 'notall')
         res = m.wildcard_import_names()
         res.sort()
         self.assertEqual(res, ['Aaa', 'func', 'name', 'other'])
@@ -431,7 +433,7 @@ class WebAppObject(object):
 
 
     def test_class_getattr(self):
-        data =         '''
+        data = '''
 class WebAppObject(object):
     appli = application
     appli += 2

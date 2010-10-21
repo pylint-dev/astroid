@@ -25,15 +25,15 @@ from logilab.astng.builder import ASTNGBuilder, build_module
 from logilab.astng.manager import ASTNGManager
 
 import sys
-from os.path import abspath
-
+from os.path import join, abspath, dirname
 
 class NonRegressionTC(TestCase):
     
 
     def setUp(self):
         
-        sys.path.insert(0, abspath('regrtest_data'))
+        sys.path.insert(0, join(dirname(abspath(__file__)), 'regrtest_data'))
+
     def tearDown(self):
         sys.path.pop(0)
 
