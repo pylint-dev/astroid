@@ -68,7 +68,7 @@ class ASTNGManagerTC(unittest.TestCase):
         self._test_astng_from_zip('MyPyPa-0.1.0-py2.5.zip')            
         
     def test_from_directory(self):
-        obj = self.manager.from_directory('data')
+        obj = self.manager.from_directory(DATA)
         self.assertEqual(obj.name, 'data')
         self.assertEqual(obj.path, DATA)
         
