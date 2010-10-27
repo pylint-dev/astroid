@@ -1,7 +1,21 @@
 Change log for the astng package
 ================================
 
-	--
+
+2010-10-27  --  0.20.4
+
+    * fix #37868 #37665 #33638 #37909: import problems with absolute_import_activated
+
+    * fix #8969: false positive when importing from zip-safe eggs
+
+    * fix #46131: minimal class decorator support
+
+    * minimal python2.7 support (dict and set comprehension)
+
+    * important progress on Py3k compatibility
+
+2010-09-28  --  0.20.3
+
      * restored python 2.3 compatibility
 
      * fix #45959: AttributeError: 'NoneType' object has no attribute 'frame', due

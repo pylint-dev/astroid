@@ -24,12 +24,12 @@ distname = 'logilab-astng'
 modname = 'astng'
 subpackage_of = 'logilab'
 
-numversion = (0, 20, 3)
+numversion = (0, 20, 4)
 version = '.'.join([str(num) for num in numversion])
 
-install_requires = ['logilab-common >= 0.49.0']
+install_requires = ['logilab-common >= 0.52.1']
 
-pyversions = ["2.3", "2.4", "2.5", '2.6']
+pyversions = ["2.3", "2.4", "2.5", '2.6', '2.7']
 
 license = 'LGPL'
 

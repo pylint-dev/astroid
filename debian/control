@@ -13,7 +13,7 @@ Vcs-Browser: http://svn.debian.org/viewsvn/python-modules/packages/logilab-astng
 
 Package: python-logilab-astng
 Architecture: all
-Depends: ${python:Depends}, ${misc:Depends}, python-logilab-common (>= 0.49.0-1)
+Depends: ${python:Depends}, ${misc:Depends}, python-logilab-common (>= 0.52.1-1)
 XB-Python-Version: ${python:Versions}
 Description: rebuild a new abstract syntax tree from Python's ast
  The aim of this module is to provide a common base representation of
