@@ -605,7 +605,7 @@ class Function(StmtMixIn, Lambda):
         returns = self.nodes_of_class(Return, skip_klass=Function)
         for returnnode in returns:
             if returnnode.value is None:
-                yield None
+                yield Const(None)
             else:
                 try:
                     for infered in returnnode.value.infer(context):

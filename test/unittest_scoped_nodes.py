@@ -252,6 +252,20 @@ def sfunction():
         astng = abuilder.string_build(code, __name__, __file__)
         self.assertEqual(astng['f'].argnames(), ['a', 'b', 'c', 'args', 'kwargs'])
 
+    def test_return_nothing(self):
+        """test infered value on a function with empty return"""
+        data = '''
+def func():
+    return
+
+a = func()
+'''
+        astng = abuilder.string_build(data, __name__, __file__)
+        call = astng.body[1].value
+        func_vals = call.infered()
+        self.assertEqual(len(func_vals), 1)
+        self.assertIsInstance(func_vals[0], nodes.Const)
+        self.assertEqual(func_vals[0].value, None)
 
 class ClassNodeTC(TestCase):
 
