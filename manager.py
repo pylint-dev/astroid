@@ -67,20 +67,6 @@ def safe_repr(obj):
     except:
         return '???'
 
-def zip_import_data(filepath):
-    if zipimport is None:
-        return None, None
-    for ext in ('.zip', '.egg'):
-        try:
-            eggpath, resource = filepath.split(ext + '/', 1)
-        except ValueError:
-            continue
-        try:
-            importer = zipimport.zipimporter(eggpath + ext)
-            return importer.get_source(resource), resource.replace('/', '.')
-        except:
-            continue
-    return None, None
 
 
 class ASTNGManager(OptionsProviderMixIn):
@@ -161,14 +147,9 @@ class ASTNGManager(OptionsProviderMixIn):
         try:
             filepath = self.file_from_module_name(modname, context_file)
             if filepath is not None and not is_python_source(filepath):
-                data, zmodname = zip_import_data(filepath)
-                if data is not None:
-                    from logilab.astng.builder import ASTNGBuilder
-                    try:
-                        return ASTNGBuilder(self).string_build(data, zmodname,
-                                                               filepath)
-                    except (SyntaxError, KeyboardInterrupt, SystemExit):
-                        raise
+                module = self.zip_import_data(filepath)
+                if module is not None:
+                    return module
             if filepath is None or not is_python_source(filepath):
                 try:
                     module = load_module_from_name(modname)
@@ -181,6 +162,28 @@ class ASTNGManager(OptionsProviderMixIn):
             return self.astng_from_file(filepath, modname, fallback=False)
         finally:
             os.chdir(old_cwd)
+
+    def zip_import_data(self, filepath):
+        if zipimport is None:
+            return None
+        from logilab.astng.builder import ASTNGBuilder
+        builder = ASTNGBuilder(self)
+        for ext in ('.zip', '.egg'):
+            try:
+                eggpath, resource = filepath.rsplit(ext + '/', 1)
+            except ValueError:
+                continue
+            try:
+                importer = zipimport.zipimporter(eggpath + ext)
+                zmodname = resource.replace('/', '.')
+                if importer.is_package(resource):
+                    zmodname =  zmodname + '.__init__'
+                module = builder.string_build(importer.get_source(resource),
+                                              zmodname, filepath)
+                return module
+            except:
+                continue
+        return None
 
     def file_from_module_name(self, modname, contextfile):
         try:
