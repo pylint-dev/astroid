@@ -637,6 +637,15 @@ class TreeRebuilder(RebuildVisitor):
         newnode.set_line_info(newnode.last_child())
         return newnode
 
+    def visit_starred(self, node, parent):
+        """visit a Starred node and return a new instance of it"""
+        newnode = new.Starred()
+        _lineno_parent(node, newnode, parent)
+        newnode.value = self.visit(node.value, newnode)
+        newnode.set_line_info(newnode.last_child())
+        return newnode
+
+
     def visit_tryexcept(self, node, parent):
         """visit a TryExcept node by returning a fresh instance of it"""
         newnode = new.TryExcept()

@@ -407,7 +407,7 @@ class AsStringVisitor3k(AsStringVisitor):
                 excs = 'except %s' % node.type.accept(self)
         else:
             excs = 'except'
-       return '%s:\n%s' % (excs, self._stmt_list(node.body))
+        return '%s:\n%s' % (excs, self._stmt_list(node.body))
 
     def visit_raise(self, node):
         """return an astng.Raise node as string"""
@@ -418,6 +418,9 @@ class AsStringVisitor3k(AsStringVisitor):
             return 'raise %s' % node.exc.accept(self)
         return 'raise'
 
+    def visit_starred(self, node):
+        """return Starred node as string"""
+        return "*" + node.value.accept(self)
 
 if sys.version_info >= (3, 0):
     AsStringVisitor = AsStringVisitor3k

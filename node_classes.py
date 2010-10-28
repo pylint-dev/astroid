@@ -714,6 +714,11 @@ class Slice(NodeNG):
     upper = None
     step = None
 
+class Starred(NodeNG):
+    """class representing a Starred node"""
+    _astng_fields = ('value',)
+    value = None
+
 
 class Subscript(NodeNG):
     """class representing a Subscript node"""

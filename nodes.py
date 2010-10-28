@@ -56,7 +56,7 @@ from logilab.astng.node_classes import Arguments, AssAttr, Assert, Assign, \
     Comprehension, Const, Continue, Decorators, DelAttr, DelName, Delete, \
     Dict, Discard, Ellipsis, EmptyNode, ExceptHandler, Exec, ExtSlice, For, \
     From, Getattr, Global, If, IfExp, Import, Index, Keyword, \
-    List, Name, Pass, Print, Raise, Return, Set, Slice, Subscript, \
+    List, Name, Pass, Print, Raise, Return, Set, Slice, Starred, Subscript, \
     TryExcept, TryFinally, Tuple, UnaryOp, While, With, Yield, \
     const_factory
 from logilab.astng.scoped_nodes import Module, GenExpr, Lambda, DictComp, \
@@ -78,7 +78,7 @@ ALL_NODE_CLASSES = (
     Module,
     Pass, Print,
     Raise, Return,
-    Set, SetComp, Slice, Subscript,
+    Set, SetComp, Slice, Starred, Subscript,
     TryExcept, TryFinally, Tuple,
     UnaryOp,
     While, With,
