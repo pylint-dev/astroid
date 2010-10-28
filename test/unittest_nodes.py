@@ -223,14 +223,17 @@ class ImportNodeTC(testlib.TestCase):
         self.assertEqual(as_string(ast), "from logilab.common.shellutils import Execute as spawn")
         ast = MODULE['os']
         self.assertEqual(as_string(ast), "import os.path")
+        ast = abuilder.string_build( 'raise_string(*args, **kwargs)').body[0]
+        self.assertEqual(as_string(ast), 'raise_string(*args, **kwargs)')
 
     def test_module_as_string(self):
         """check as_string on a whole module prepared to be returned identically
         """
         data = open(join(DATA, 'module.py')).read()
         self.assertMultiLineEqual(as_string(MODULE), data)
-        self.assert_(as_string(MODULE2))
-        
+        data = open(join(DATA, 'module2.py')).read()
+        self.assertMultiLineEqual(as_string(MODULE2), data)
+
 
 class CmpNodeTC(testlib.TestCase):
     def test_as_string(self):

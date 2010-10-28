@@ -113,12 +113,12 @@ class AsStringVisitor(ASTVisitor):
     def visit_callfunc(self, node):
         """return an astng.CallFunc node as string"""
         expr_str = node.func.accept(self)
-        args = ', '.join([arg.accept(self) for arg in node.args])
+        args = [arg.accept(self) for arg in node.args]
         if node.starargs:
-            args += ', *%s' % node.starargs.accept(self)
+            args.append( '*' + node.starargs.accept(self))
         if node.kwargs:
-            args += ', **%s' % node.kwargs.accept(self)
-        return '%s(%s)' % (expr_str, args)
+            args.append( '**' + node.kwargs.accept(self))
+        return '%s(%s)' % (expr_str, ', '.join(args))
     
     def visit_class(self, node):
         """return an astng.Class node as string"""
