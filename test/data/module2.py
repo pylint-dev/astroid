@@ -1,4 +1,3 @@
-from __future__ import generators
 from data.module import YO, YOUPI
 import data
 
