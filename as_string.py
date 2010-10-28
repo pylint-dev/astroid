@@ -409,6 +409,10 @@ class AsStringVisitor3k(AsStringVisitor):
             excs = 'except'
         return '%s:\n%s' % (excs, self._stmt_list(node.body))
 
+    def visit_nonlocal(self, node):
+        """return an astng.Nonlocal node as string"""
+        return 'nonlocal %s' % ', '.join(node.names)
+
     def visit_raise(self, node):
         """return an astng.Raise node as string"""
         if node.exc:

@@ -656,6 +656,15 @@ class List(NodeNG, Instance, ParentAssignTypeMixin):
         return self.elts
 
 
+class Nonlocal(StmtMixIn, NodeNG):
+    """class representing a Nonlocal node"""
+
+    def __init__(self, names):
+        self.names = names
+
+    def _infer_name(self, frame, name):
+        return name
+
 
 class Pass(StmtMixIn, NodeNG):
     """class representing a Pass node"""
