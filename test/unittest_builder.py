@@ -501,7 +501,7 @@ class FileBuildTC(TestCase):
         function = module['global_access']
         self.assertEqual(function.name, 'global_access')
         self.assertEqual(function.doc, 'function test')
-        self.assertEqual(function.fromlineno, 15)
+        self.assertEqual(function.fromlineno, 11)
         self.assert_(function.parent)
         self.assertEqual(function.frame(), function)
         self.assertEqual(function.parent.frame(), module)
@@ -523,7 +523,7 @@ class FileBuildTC(TestCase):
         klass = module['YO']
         self.assertEqual(klass.name, 'YO')
         self.assertEqual(klass.doc, 'hehe')
-        self.assertEqual(klass.fromlineno, 28)
+        self.assertEqual(klass.fromlineno, 25)
         self.assert_(klass.parent)
         self.assertEqual(klass.frame(), klass)
         self.assertEqual(klass.parent.frame(), module)
@@ -568,7 +568,7 @@ class FileBuildTC(TestCase):
         self.assertEqual(method.name, 'method')
         self.assertEqual([n.name for n in method.args.args], ['self'])
         self.assertEqual(method.doc, 'method test')
-        self.assertEqual(method.fromlineno, 48)
+        self.assertEqual(method.fromlineno, 47)
         self.assertEqual(method.type, 'method')
         # class method
         method = klass2['class_method']

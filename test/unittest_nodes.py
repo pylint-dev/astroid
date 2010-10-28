@@ -223,17 +223,18 @@ class ImportNodeTC(testlib.TestCase):
         self.assertEqual(as_string(ast), "from logilab.common.shellutils import Execute as spawn")
         ast = MODULE['os']
         self.assertEqual(as_string(ast), "import os.path")
-    
+
     def test_module_as_string(self):
-        """just check as_string on a whole module doesn't raise an exception
+        """check as_string on a whole module prepared to be returned identically
         """
-        self.assert_(as_string(MODULE))
+        data = open(join(DATA, 'module.py')).read()
+        self.assertMultiLineEqual(as_string(MODULE), data)
         self.assert_(as_string(MODULE2))
         
 
 class CmpNodeTC(testlib.TestCase):
     def test_as_string(self):
-        ast = abuilder.string_build("a == 2")
+        ast = abuilder.string_build("a == 2").body[0]
         self.assertEqual(as_string(ast), "a == 2")
 
 
@@ -289,7 +290,7 @@ class SliceNodeTC(testlib.TestCase):
     def test(self):
         for code in ('a[0]', 'a[1:3]', 'a[:-1:step]', 'a[:,newaxis]',
                      'a[newaxis,:]', 'del L[::2]', 'del A[1]', 'del Br[:]'):
-            ast = abuilder.string_build(code)
+            ast = abuilder.string_build(code).body[0]
             self.assertEqual(ast.as_string(), code)
 
     def test_slice_and_subscripts(self):
@@ -307,13 +308,13 @@ del Fee.form[left:]
 aout.vals = miles.of_stuff
 del (ccok, (name.thing, foo.attrib.value)), Fee.form[left:]
 if all[1] == bord[0:]:
-    pass"""
+    pass\n\n"""
         ast = abuilder.string_build(code)
         self.assertEqual(ast.as_string(), code)
 
 class EllipsisNodeTC(testlib.TestCase):
     def test(self):
-        ast = abuilder.string_build('a[...]')
+        ast = abuilder.string_build('a[...]').body[0]
         self.assertEqual(ast.as_string(), 'a[...]')
         
 if __name__ == '__main__':
