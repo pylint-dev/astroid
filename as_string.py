@@ -303,29 +303,18 @@ class AsStringVisitor(ASTVisitor):
             return 'print >> %s, %s' % (node.dest.accept(self), nodes)
         return 'print %s' % nodes
 
-    if sys.version_info < (3, 0):
-        def visit_raise(self, node):
-            """return an astng.Raise node as string"""
-            if node.exc:
-                if node.inst:
-                    if node.tback:
-                        return 'raise %s, %s, %s' % (node.exc.accept(self),
-                                                    node.inst.accept(self),
-                                                    node.tback.accept(self))
-                    return 'raise %s, %s' % (node.exc.accept(self),
-                                            node.inst.accept(self))
-                return 'raise %s' % node.exc.accept(self)
-            return 'raise'
-    else:
-        def visit_raise(self, node):
-            """return an astng.Raise node as string"""
-            if node.exc:
-                if node.cause:
-                    return 'raise %s, %s' % (node.exc.accept(self),
-                                            node.inst.accept(self))
-                return 'raise %s' % node.exc.accept(self)
-            return 'raise'
-
+    def visit_raise(self, node):
+        """return an astng.Raise node as string"""
+        if node.exc:
+            if node.inst:
+                if node.tback:
+                    return 'raise %s, %s, %s' % (node.exc.accept(self),
+                                                node.inst.accept(self),
+                                                node.tback.accept(self))
+                return 'raise %s, %s' % (node.exc.accept(self),
+                                        node.inst.accept(self))
+            return 'raise %s' % node.exc.accept(self)
+        return 'raise'
 
     def visit_return(self, node):
         """return an astng.Return node as string"""
@@ -405,6 +394,33 @@ class AsStringVisitor(ASTVisitor):
         """yield an ast.Yield node as string"""
         return 'yield %s' % node.value.accept(self)
 
+
+class AsStringVisitor3k(AsStringVisitor):
+    """AsStringVisitor3k overwrites some AsStringVisitor methods"""
+
+    def visit_excepthandler(self, node):
+        if node.type:
+            if node.name:
+                excs = 'except %s as %s' % (node.type.accept(self),
+                                        node.name.accept(self))
+            else:
+                excs = 'except %s' % node.type.accept(self)
+        else:
+            excs = 'except'
+       return '%s:\n%s' % (excs, self._stmt_list(node.body))
+
+    def visit_raise(self, node):
+        """return an astng.Raise node as string"""
+        if node.exc:
+            if node.cause:
+                return 'raise %s from %s' % (node.exc.accept(self),
+                                             node.cause.accept(self))
+            return 'raise %s' % node.exc.accept(self)
+        return 'raise'
+
+
+if sys.version_info >= (3, 0):
+    AsStringVisitor = AsStringVisitor3k
 
 # this visitor is stateless, thus it can be reused
 as_string = AsStringVisitor()
