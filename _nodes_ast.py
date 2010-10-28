@@ -142,12 +142,6 @@ class TreeRebuilder(RebuildVisitor):
         newnode.set_line_info(newnode.last_child())
         return newnode
 
-    def visit_arg(self, node, parent):
-        """visit a arg node by returning a fresh AssName instance"""
-        # the <arg> node is coming from py>=3.0, but we use AssName in py2.x
-        # XXX or we should instead introduce a Arg node in astng ?
-        return self.visit_assname(node, parent, node.arg)
-
     def visit_assattr(self, node, parent):
         """visit a AssAttr node by returning a fresh instance of it"""
         assc, self.asscontext = self.asscontext, None
@@ -325,32 +319,19 @@ class TreeRebuilder(RebuildVisitor):
         newnode.set_line_info(newnode.last_child())
         return newnode
 
-    if sys.version_info < (3, 0):
-        def visit_excepthandler(self, node, parent):
-            """visit an ExceptHandler node by returning a fresh instance of it"""
-            newnode = new.ExceptHandler()
-            _lineno_parent(node, newnode, parent)
-            newnode.type = self.visit(node.type, newnode)
-            if node.name is not None:
-                # /!\ node.name can be a tuple
-                self.asscontext = "Ass"
-                newnode.name = self.visit(node.name, newnode)
-                self.asscontext = None
-            newnode.body = [self.visit(child, newnode) for child in node.body]
-            newnode.set_line_info(newnode.last_child())
-            return newnode
-
-    else:
-        def visit_excepthandler(self, node, parent):
-            """visit an ExceptHandler node by returning a fresh instance of it"""
-            newnode = new.ExceptHandler()
-            _lineno_parent(node, newnode, parent)
-            newnode.type = self.visit(node.type, newnode)
-            if node.name is not None:
-                newnode.name = self.visit_assname(node, newnode, node.name)
-            newnode.body = [self.visit(child, newnode) for child in node.body]
-            newnode.set_line_info(newnode.last_child())
-            return newnode
+    def visit_excepthandler(self, node, parent):
+        """visit an ExceptHandler node by returning a fresh instance of it"""
+        newnode = new.ExceptHandler()
+        _lineno_parent(node, newnode, parent)
+        newnode.type = self.visit(node.type, newnode)
+        if node.name is not None:
+            # /!\ node.name can be a tuple
+            self.asscontext = "Ass"
+            newnode.name = self.visit(node.name, newnode)
+            self.asscontext = None
+        newnode.body = [self.visit(child, newnode) for child in node.body]
+        newnode.set_line_info(newnode.last_child())
+        return newnode
 
     def visit_exec(self, node, parent):
         """visit an Exec node by returning a fresh instance of it"""
@@ -569,26 +550,15 @@ class TreeRebuilder(RebuildVisitor):
         newnode.set_line_info(newnode.last_child())
         return newnode
 
-    if sys.version_info < (3, 0):
-        def visit_raise(self, node, parent):
-            """visit a Raise node by returning a fresh instance of it"""
-            newnode = new.Raise()
-            _lineno_parent(node, newnode, parent)
-            newnode.exc = self.visit(node.type, newnode)
-            newnode.inst = self.visit(node.inst, newnode)
-            newnode.tback = self.visit(node.tback, newnode)
-            newnode.set_line_info(newnode.last_child())
-            return newnode
-    else:
-        def visit_raise(self, node, parent):
-            """visit a Raise node by returning a fresh instance of it"""
-            newnode = new.Raise()
-            _lineno_parent(node, newnode, parent)
-            # no traceback; anyway it is not used in Pylint
-            newnode.exc = self.visit(node.exc, newnode)
-            newnode.cause = self.visit(node.cause, newnode)
-            newnode.set_line_info(newnode.last_child())
-            return newnode
+    def visit_raise(self, node, parent):
+        """visit a Raise node by returning a fresh instance of it"""
+        newnode = new.Raise()
+        _lineno_parent(node, newnode, parent)
+        newnode.exc = self.visit(node.type, newnode)
+        newnode.inst = self.visit(node.inst, newnode)
+        newnode.tback = self.visit(node.tback, newnode)
+        newnode.set_line_info(newnode.last_child())
+        return newnode
 
     def visit_return(self, node, parent):
         """visit a Return node by returning a fresh instance of it"""
@@ -636,15 +606,6 @@ class TreeRebuilder(RebuildVisitor):
         self.asscontext = subcontext
         newnode.set_line_info(newnode.last_child())
         return newnode
-
-    def visit_starred(self, node, parent):
-        """visit a Starred node and return a new instance of it"""
-        newnode = new.Starred()
-        _lineno_parent(node, newnode, parent)
-        newnode.value = self.visit(node.value, newnode)
-        newnode.set_line_info(newnode.last_child())
-        return newnode
-
 
     def visit_tryexcept(self, node, parent):
         """visit a TryExcept node by returning a fresh instance of it"""
@@ -711,4 +672,54 @@ class TreeRebuilder(RebuildVisitor):
         newnode.value = self.visit(node.value, newnode)
         newnode.set_line_info(newnode.last_child())
         return newnode
+
+
+class TreeRebuilder3k(TreeRebuilder):
+    """extend and overwrite TreeRebuilder for python3k"""
+
+    def visit_arg(self, node, parent):
+        """visit a arg node by returning a fresh AssName instance"""
+        # the <arg> node is coming from py>=3.0, but we use AssName in py2.x
+        # XXX or we should instead introduce a Arg node in astng ?
+        return self.visit_assname(node, parent, node.arg)
+
+    def visit_excepthandler(self, node, parent):
+        """visit an ExceptHandler node by returning a fresh instance of it"""
+        newnode = new.ExceptHandler()
+        _lineno_parent(node, newnode, parent)
+        newnode.type = self.visit(node.type, newnode)
+        if node.name is not None:
+            newnode.name = self.visit_assname(node, newnode, node.name)
+        newnode.body = [self.visit(child, newnode) for child in node.body]
+        newnode.set_line_info(newnode.last_child())
+        return newnode
+
+    def visit_nonlocal(self, node, parent):
+        """visit a Nonlocal node and return a new instance of it"""
+        newnode = new.Nonlocal(node.names)
+        self._set_infos(node, newnode, parent)
+        return newnode
+
+    def visit_raise(self, node, parent):
+        """visit a Raise node by returning a fresh instance of it"""
+        newnode = new.Raise()
+        _lineno_parent(node, newnode, parent)
+        # no traceback; anyway it is not used in Pylint
+        newnode.exc = self.visit(node.exc, newnode)
+        newnode.cause = self.visit(node.cause, newnode)
+        newnode.set_line_info(newnode.last_child())
+        return newnode
+
+    def visit_starred(self, node, parent):
+        """visit a Starred node and return a new instance of it"""
+        newnode = new.Starred()
+        _lineno_parent(node, newnode, parent)
+        newnode.value = self.visit(node.value, newnode)
+        newnode.set_line_info(newnode.last_child())
+        return newnode
+
+
+if sys.version_info >= (3, 0):
+    TreeRebuilder = TreeRebuilder3k
+
 
