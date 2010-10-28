@@ -29,14 +29,10 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
-"""this module contains exceptions used in the astng library
-
-"""
-
 """This module renders ASTNG nodes to string representation.
 It will probably not work on compiler.ast or _ast trees.
 """
-
+import sys
 
 from logilab.astng.utils import ASTVisitor
 
@@ -126,10 +122,11 @@ class AsStringVisitor(ASTVisitor):
     
     def visit_class(self, node):
         """return an astng.Class node as string"""
+        decorate = node.decorators and node.decorators.accept(self)  or ''
         bases =  ', '.join([n.accept(self) for n in node.bases])
         bases = bases and '(%s)' % bases or ''
         docs = node.doc and '\n%s"""%s"""' % (INDENT, node.doc) or ''
-        return 'class %s%s:%s\n%s\n' % (node.name, bases, docs,
+        return '\n\n%sclass %s%s:%s\n%s\n' % (decorate, node.name, bases, docs,
                                             self._stmt_list( node.body))
     
     def visit_compare(self, node):
@@ -216,6 +213,7 @@ class AsStringVisitor(ASTVisitor):
     def visit_extslice(self, node):
         """return an astng.ExtSlice node as string"""
         return ','.join( [dim.accept(self) for dim in node.dims] )
+
     def visit_for(self, node):
         """return an astng.For node as string"""
         fors = 'for %s in %s:\n%s' % (node.target.accept(self),
@@ -234,7 +232,7 @@ class AsStringVisitor(ASTVisitor):
         """return an astng.Function node as string"""
         decorate = node.decorators and node.decorators.accept(self)  or ''
         docs = node.doc and '\n%s"""%s"""' % (INDENT, node.doc) or ''
-        return '%sdef %s(%s):%s\n%s' % (decorate, node.name, node.args.accept(self),
+        return '\n%sdef %s(%s):%s\n%s' % (decorate, node.name, node.args.accept(self),
                                         docs, self._stmt_list(node.body))
     
     def visit_genexpr(self, node):
@@ -285,9 +283,8 @@ class AsStringVisitor(ASTVisitor):
 
     def visit_module(self, node):
         """return an astng.Module node as string"""
-        docs = node.doc and '"""%s"""\n' % node.doc or ''
-        stmts = '\n'.join([n.accept(self) for n in node.body])
-        return docs + '\n'.join([n.accept(self) for n in node.body])
+        docs = node.doc and '"""%s"""\n\n' % node.doc or ''
+        return docs + '\n'.join([n.accept(self) for n in node.body]) + '\n\n'
     
     def visit_name(self, node):
         """return an astng.Name node as string"""
@@ -305,19 +302,30 @@ class AsStringVisitor(ASTVisitor):
         if node.dest:
             return 'print >> %s, %s' % (node.dest.accept(self), nodes)
         return 'print %s' % nodes
-    
-    def visit_raise(self, node):
-        """return an astng.Raise node as string"""
-        if node.exc:
-            if node.inst:
-                if node.tback:
-                    return 'raise %s, %s, %s' % (node.exc.accept(self),
-                                                node.inst.accept(self),
-                                                node.tback.accept(self))
-                return 'raise %s, %s' % (node.exc.accept(self),
-                                        node.inst.accept(self))
-            return 'raise %s' % node.exc.accept(self)
-        return 'raise'
+
+    if sys.version_info < (3, 0):
+        def visit_raise(self, node):
+            """return an astng.Raise node as string"""
+            if node.exc:
+                if node.inst:
+                    if node.tback:
+                        return 'raise %s, %s, %s' % (node.exc.accept(self),
+                                                    node.inst.accept(self),
+                                                    node.tback.accept(self))
+                    return 'raise %s, %s' % (node.exc.accept(self),
+                                            node.inst.accept(self))
+                return 'raise %s' % node.exc.accept(self)
+            return 'raise'
+    else:
+        def visit_raise(self, node):
+            """return an astng.Raise node as string"""
+            if node.exc:
+                if node.cause:
+                    return 'raise %s, %s' % (node.exc.accept(self),
+                                            node.inst.accept(self))
+                return 'raise %s' % node.exc.accept(self)
+            return 'raise'
+
 
     def visit_return(self, node):
         """return an astng.Return node as string"""
