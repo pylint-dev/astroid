@@ -614,7 +614,6 @@ class Function(StmtMixIn, Lambda):
                     yield YES
 
 
-
 def _rec_get_names(args, names=None):
     """return a list of all argument names"""
     if names is None:
@@ -625,22 +624,6 @@ def _rec_get_names(args, names=None):
         else:
             names.append(arg.name)
     return names
-
-
-def _format_args(args, defaults=None):
-    values = []
-    if args is None:
-        return ''
-    if defaults is not None:
-        default_offset = len(args) - len(defaults)
-    for i, arg in enumerate(args):
-        if isinstance(arg, Tuple):
-            values.append('(%s)' % _format_args(arg.elts))
-        else:
-            values.append(arg.name)
-            if defaults is not None and i >= default_offset:
-                values[-1] += '=' + defaults[i-default_offset].as_string()
-    return ', '.join(values)
 
 
 # Class ######################################################################
