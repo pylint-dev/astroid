@@ -173,7 +173,7 @@ class AsStringVisitor(ASTVisitor):
 
     def visit_dictcomp(self, node):
         """return an astng.DictComp node as string"""
-        return '[%s: %s %s]' % (node.key.accept(self), node.value.accept(self),
+        return '{%s: %s %s}' % (node.key.accept(self), node.value.accept(self),
                 ' '.join([n.accept(self) for n in node.generators]))
 
     def visit_discard(self, node):
@@ -333,7 +333,7 @@ class AsStringVisitor(ASTVisitor):
 
     def visit_setcomp(self, node):
         """return an astng.SetComp node as string"""
-        return '[%s %s]' % (node.elt.accept(self), ' '.join([n.accept(self)
+        return '{%s %s}' % (node.elt.accept(self), ' '.join([n.accept(self)
                                                 for n in node.generators]))
 
     def visit_slice(self, node):

@@ -234,6 +234,16 @@ class ImportNodeTC(testlib.TestCase):
         data = open(join(DATA, 'module2.py')).read()
         self.assertMultiLineEqual(as_string(MODULE2), data)
 
+    def test_2_7_as_string(self):
+        """check as_string for python syntax >= 2.7"""
+        if sys.version_info < (2, 7):
+            self.skipTest("test python >= 2.7 specific")
+        code = '''one_two = {1, 2}
+b = {v: k for (k, v) in enumerate('string')}
+cdd = {k for k in b}\n\n'''
+        ast = abuilder.string_build(code)
+        self.assertMultiLineEqual(as_string(ast), code)
+
 
 class CmpNodeTC(testlib.TestCase):
     def test_as_string(self):
