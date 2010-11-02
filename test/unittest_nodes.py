@@ -244,6 +244,31 @@ cdd = {k for k in b}\n\n'''
         ast = abuilder.string_build(code)
         self.assertMultiLineEqual(as_string(ast), code)
 
+    def test_3k_as_string(self):
+        """check as_string for python 3k syntax"""
+        if sys.version_info < (3, 0):
+            self.skipTest("test python 3k specific")
+        code = '''print()
+
+def function(var):
+    nonlocal counter
+    try:
+        hello
+    except NameError as nexc:
+        (*hell, o) = b'hello'
+        raise AttributeError from nexc
+\n'''
+        # TODO : annotations and keywords for class definition are not yet implemented
+        _todo = '''
+def function(var:int):
+    nonlocal counter
+
+class Language(metaclass=Natural):
+    """natural language"""
+        '''
+        ast = abuilder.string_build(code)
+        self.assertEqual(as_string(ast), code)
+
 
 class CmpNodeTC(testlib.TestCase):
     def test_as_string(self):
