@@ -142,8 +142,8 @@ class FromImportMixIn(BaseClass, FilterStmtsMixin):
         # XXX we should investigate deeper if we really want to check 
         # importing itself: modname and mymodule.name be relative or absolute
         if mymodule.relative_to_absolute_name(modname, level) == mymodule.name:
-            # FIXME: I don't know what to do here...
-            raise InferenceError('module importing itself: %s' % modname)
+            # FIXME: we used to raise InferenceError here, but why ?
+            return mymodule
         try:
             return mymodule.import_module(modname, level=level)
         except (ASTNGBuildingException, SyntaxError):
