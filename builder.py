@@ -33,7 +33,6 @@ from inspect import isfunction, ismethod, ismethoddescriptor, isclass, \
      isbuiltin
 from inspect import isdatadescriptor
 
-from logilab.common.fileutils import norm_read
 from logilab.common.modutils import modpath_from_file
 
 from logilab.astng._exceptions import ASTNGBuildingException
@@ -106,7 +105,7 @@ class ASTNGBuilder:
         path is expected to be a python source file
         """
         try:
-            data = norm_read(path)
+            data = open(path, 'U').read()
         except IOError, ex:
             msg = 'Unable to load file %r (%s)' % (path, ex)
             raise ASTNGBuildingException(msg)
