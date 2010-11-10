@@ -75,15 +75,9 @@ REDIRECT = {'arguments': 'Arguments',
             'Invert': 'UnaryOp'
             }
 
-import sys
-if sys.version_info >= (2, 4):
-    _key_func = lambda node: node.fromlineno
-    def sort_locals(my_list):
-        my_list.sort(key=_key_func)
-else:
-    _cmp_nodes = lambda x, y: cmp(x.fromlineno, y.fromlineno)
-    def sort_locals(my_list):
-        my_list.sort(_cmp_nodes)
+_key_func = lambda node: node.fromlineno
+def sort_locals(my_list):
+    my_list.sort(key=_key_func)
 
 class RebuildVisitor(object):
     """Visitor to transform an AST to an ASTNG

@@ -152,8 +152,6 @@ finally:
     print ('pouet')
     """
     def test_block_range(self):
-        if sys.version_info < (2, 5):
-            self.skipTest('require python >= 2.5')
         # XXX ensure expected values
         self.assertEqual(self.astng.body[0].block_range(1), (1, 6))
         self.assertEqual(self.astng.body[0].block_range(2), (2, 2))

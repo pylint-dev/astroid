@@ -217,8 +217,6 @@ def f():
         self.failUnlessEqual(g.pytype(), '__builtin__.function')
 
     def test_is_method(self):
-        if sys.version_info < (2, 4):
-            self.skipTest('this test require python >= 2.4')
         data = '''
 class A:
     def meth1(self):

@@ -121,8 +121,6 @@ class FromToLineNoTC(TestCase):
         self.assertEqual(return_.tolineno, 18)
 
     def test_decorated_function_lineno(self):
-        if sys.version_info < (2, 4):
-            self.skipTest('require python >=2.4')
         astng = builder.ASTNGBuilder().string_build('''
 @decorator
 def function(
@@ -229,8 +227,6 @@ finally:
 
 
     def test_try_finally_25_lineno(self):
-        if sys.version_info < (2, 5):
-            self.skipTest('require python >= 2.5')
         astng = builder.ASTNGBuilder().string_build('''
 try:
   print (a)
@@ -248,8 +244,6 @@ finally:
 
 
     def test_with_lineno(self):
-        if sys.version_info < (2, 5):
-            self.skipTest('require python >=2.5')
         astng = builder.ASTNGBuilder().string_build('''
 from __future__ import with_statement
 with file("/tmp/pouet") as f:
@@ -332,10 +326,7 @@ class BuilderTC(TestCase):
         fclass = builtin_astng['OSError']
         # things like OSError.strerror are now (2.5) data descriptors on the
         # class instead of entries in the __dict__ of an instance
-        if sys.version_info < (2, 5):
-            container = fclass.instance_attrs
-        else:
-            container = fclass
+        container = fclass
         self.assert_('errno' in container)
         self.assert_('strerror' in container)
         self.assert_('filename' in container)
@@ -449,17 +440,16 @@ def global_no_effect():
             self.assert_('close' in fclass)
             break
 
-    if sys.version_info >= (2, 4):
-        def test_gen_expr_var_scope(self):
-            data = 'l = list(n for n in range(10))\n'
-            astng = self.builder.string_build(data, __name__, __file__)
-            # n unavailable outside gen expr scope
-            self.failIf('n' in astng)
-            # test n is inferable anyway
-            n = get_name_node(astng, 'n')
-            self.failIf(n.scope() is astng)
-            self.failUnlessEqual([i.__class__ for i in n.infer()],
-                                 [YES.__class__])
+    def test_gen_expr_var_scope(self):
+        data = 'l = list(n for n in range(10))\n'
+        astng = self.builder.string_build(data, __name__, __file__)
+        # n unavailable outside gen expr scope
+        self.failIf('n' in astng)
+        # test n is inferable anyway
+        n = get_name_node(astng, 'n')
+        self.failIf(n.scope() is astng)
+        self.failUnlessEqual([i.__class__ for i in n.infer()],
+                             [YES.__class__])
 
 class FileBuildTC(TestCase):
 

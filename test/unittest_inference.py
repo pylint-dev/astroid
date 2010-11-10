@@ -326,12 +326,9 @@ def f():
         nie = error.infered()[0]
         self.assertIsInstance(nie, nodes.Class)
         nie_ancestors = [c.name for c in nie.ancestors()]
-        if sys.version_info < (2, 5):
-            self.failUnlessEqual(nie_ancestors, ['RuntimeError', 'StandardError', 'Exception'])
-        elif sys.version_info < (3, 0):
+        if sys.version_info < (3, 0):
             self.failUnlessEqual(nie_ancestors, ['RuntimeError', 'StandardError', 'Exception', 'BaseException', 'object'])
         else:
-            
             self.failUnlessEqual(nie_ancestors, ['RuntimeError', 'Exception', 'BaseException', 'object'])
 
     def test_except_inference(self):
@@ -468,13 +465,12 @@ class Warning(Warning):
         ancestor = ancestors.next()
         self.failUnlessEqual(ancestor.name, 'Exception')
         self.failUnlessEqual(ancestor.root().name, EXC_MODULE)
-        if sys.version_info >= (2, 5):
-            ancestor = ancestors.next()
-            self.failUnlessEqual(ancestor.name, 'BaseException')
-            self.failUnlessEqual(ancestor.root().name, EXC_MODULE)
-            ancestor = ancestors.next()
-            self.failUnlessEqual(ancestor.name, 'object')
-            self.failUnlessEqual(ancestor.root().name, BUILTINS_NAME)
+        ancestor = ancestors.next()
+        self.failUnlessEqual(ancestor.name, 'BaseException')
+        self.failUnlessEqual(ancestor.root().name, EXC_MODULE)
+        ancestor = ancestors.next()
+        self.failUnlessEqual(ancestor.name, 'object')
+        self.failUnlessEqual(ancestor.root().name, BUILTINS_NAME)
         self.failUnlessRaises(StopIteration, ancestors.next)
 
     def test_qqch(self):
@@ -660,8 +656,6 @@ print ([(d,e) for e,d in ([1,2], [3,4])])
 
 
     def test_simple_for_genexpr(self):
-        if sys.version_info < (2, 4):
-            return
         code = '''
 print ((d,e) for e,d in ([1,2], [3,4]))
         '''
@@ -676,7 +670,7 @@ print ((d,e) for e,d in ([1,2], [3,4]))
         code = '''
 help()
         '''
-        # XXX failing with python > 2.3 since __builtin__.help assignment has
+        # XXX failing since __builtin__.help assignment has
         #     been moved into a function...
         astng = builder.string_build(code, __name__, __file__)
         node = get_name_node(astng, 'help', -1)
@@ -694,14 +688,8 @@ open("toto.txt")
         node = get_name_node(astng, 'open', -1)
         infered = list(node.infer())
         self.failUnlessEqual(len(infered), 1)
-        if sys.version_info < (2, 5):
-            # On python < 2.5 open and file are the same thing.
-            self.assertIsInstance(infered[0], nodes.Class)
-            self.failUnlessEqual(infered[0].name, 'file')
-        else:
-            # On python >= 2.5 open is a builtin function.
-            self.assertIsInstance(infered[0], nodes.Function)
-            self.failUnlessEqual(infered[0].name, 'open')
+        self.assertIsInstance(infered[0], nodes.Function)
+        self.failUnlessEqual(infered[0].name, 'open')
 
     def test_callfunc_context_func(self):
         code = '''
@@ -732,8 +720,6 @@ un = mirror(1)
         self.failUnlessEqual(infered[0].value, 1)
 
     def test_factory_method(self):
-        if sys.version_info < (2, 4):
-            self.skipTest('this test require python >= 2.4')
         code = '''
 class Super(object):
       @classmethod
@@ -923,8 +909,6 @@ def f(x):
         sys.stderr = sys.__stderr__
 
     def test_python25_relative_import(self):
-        if sys.version_info < (2, 5):
-            self.skipTest('require py >= 2.5')
         data = "from ...common import date; print (date)"
         # !! FIXME also this relative import would not work 'in real' (no __init__.py in test/)
         # the test works since we pretend we have a package by passing the full modname
@@ -934,8 +918,6 @@ def f(x):
         self.assertEqual(infered.name, 'logilab.common.date')
 
     def test_python25_no_relative_import(self):
-        if sys.version_info < (2, 5):
-            self.skipTest('require py >= 2.5')
         fname = join(abspath(dirname(__file__)), 'regrtest_data', 'package', 'absimport.py')
         astng = builder.file_build(fname, 'absimport')
         self.failUnless(astng.absolute_import_activated(), True)

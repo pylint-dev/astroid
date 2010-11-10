@@ -41,15 +41,10 @@ from logilab.astng.raw_building import build_module, object_build_class, \
      object_build_methoddescriptor, attach_const_node, attach_import_node
 from logilab.astng.manager import ASTNGManager
 
-try:
-    from _ast import PyCF_ONLY_AST
-    def parse(string):
-        return compile(string, "<string>", 'exec', PyCF_ONLY_AST)
-    from logilab.astng._nodes_ast import TreeRebuilder
-except ImportError, exc:
-    from compiler import parse
-    from logilab.astng import patchcomptransformer
-    from logilab.astng._nodes_compiler import TreeRebuilder
+from _ast import PyCF_ONLY_AST
+def parse(string):
+    return compile(string, "<string>", 'exec', PyCF_ONLY_AST)
+from logilab.astng._nodes_ast import TreeRebuilder
 
 # ast NG builder ##############################################################
 

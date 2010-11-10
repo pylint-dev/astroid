@@ -163,8 +163,6 @@ if x > 0:
         self.assertEqual(len(xnames[2].lookup('x')[1]), 2)
 
     def test_list_comps(self):
-        if sys.version_info < (2, 4):
-            self.skipTest('this test require python >= 2.4')
         astng = builder.string_build("""
 print ([ i for i in range(10) ])
 print ([ i for i in range(10) ])
@@ -278,8 +276,6 @@ def initialize(linter):
 
 
     def test_decorator_arguments_lookup(self):
-        if sys.version_info < (2, 4):
-            self.skipTest('this test require python >= 2.4')
         code = '''
 def decorator(value):
     def wrapper(function):
@@ -303,8 +299,6 @@ class foo:
 
        
     def test_inner_decorator_member_lookup(self):
-        if sys.version_info < (2, 4):
-            self.skipTest('this test require python >= 2.4')
         code = '''
 class FileA:
     def decorator(bla):
@@ -323,8 +317,6 @@ class FileA:
         
         
     def test_static_method_lookup(self):
-        if sys.version_info < (2, 4):
-            self.skipTest('this test require python >= 2.4')
         code = '''
 class FileA:
     @staticmethod
