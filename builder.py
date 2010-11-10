@@ -63,7 +63,6 @@ class ASTNGBuilder:
             manager = ASTNGManager()
         self._manager = manager
         self._module = None
-        self._file = None
         self._done = None
         self.rebuilder = TreeRebuilder(manager)
         self._dyn_modname_map = {'gtk': 'gtk._gtk'}
@@ -111,7 +110,6 @@ class ASTNGBuilder:
         except IOError, ex:
             msg = 'Unable to load file %r (%s)' % (path, ex)
             raise ASTNGBuildingException(msg)
-        self._file = path
         # get module name if necessary, *before modifying sys.path*
         if modname is None:
             try:
@@ -122,9 +120,7 @@ class ASTNGBuilder:
         try:
             sys.path.insert(0, dirname(path))
             node = self.string_build(data, modname, path)
-            node.file = abspath(path)
         finally:
-            self._file = None
             sys.path.pop(0)
 
         return node
