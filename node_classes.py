@@ -21,7 +21,6 @@
 """
 
 import sys
-from itertools import chain, imap
 
 from logilab.astng import NoDefault
 from logilab.astng.bases import NodeNG, BaseClass, Instance, copy_context, \
@@ -29,18 +28,23 @@ from logilab.astng.bases import NodeNG, BaseClass, Instance, copy_context, \
 from logilab.astng.mixins import StmtMixIn, BlockRangeMixIn, AssignTypeMixin, \
                                  ParentAssignTypeMixin, FromImportMixIn
 
+
 def unpack_infer(stmt, context=None):
-    """return an iterator on nodes inferred by the given statement if the
-    inferred value is a list or a tuple, recurse on it to get values inferred
-    by its content
+    """recursively generate nodes inferred by the given statement.
+    If the inferred value is a list or a tuple, recurse on the elements
     """
     if isinstance(stmt, (List, Tuple)):
-        # XXX loosing context
-        return chain(*imap(unpack_infer, stmt.elts))
+        for elt in stmt.elts:
+            for infered_elt in unpack_infer(elt, context):
+                yield infered_elt
+        return
     infered = stmt.infer(context).next()
-    if infered is stmt:
-        return iter( (stmt,) )
-    return chain(*imap(unpack_infer, stmt.infer(context)))
+    if infered is stmt or infered is YES:
+        yield infered
+        return
+    for infered in stmt.infer(context):
+        for inf_inf in unpack_infer(infered, context):
+            yield inf_inf
 
 
 def are_exclusive(stmt1, stmt2, exceptions=None):
