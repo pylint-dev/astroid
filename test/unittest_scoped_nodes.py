@@ -25,7 +25,6 @@ import sys
 from os.path import join, abspath, dirname
 
 from logilab.common.testlib import TestCase, unittest_main
-from logilab.common.compat import sorted
 
 from logilab.astng import builder, nodes, scoped_nodes, \
      InferenceError, NotFoundError

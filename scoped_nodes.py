@@ -29,7 +29,7 @@ __doctype__ = "restructuredtext en"
 import sys
 from itertools import chain
 
-from logilab.common.compat import set, builtins
+from logilab.common.compat import builtins
 from logilab.common.decorators import cached
 
 from logilab.astng import NotFoundError, NoDefault, \

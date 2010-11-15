@@ -1,6 +1,5 @@
 include ChangeLog
 include README
-include README._ast_compatibility
 include COPYING
 include COPYING.LESSER
 include test/fulltest.sh

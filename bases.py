@@ -50,7 +50,7 @@ except ImportError:
     class BaseClass:
         pass
 
-from logilab.common.compat import set, builtins
+from logilab.common.compat import builtins
 from logilab.astng._exceptions import InferenceError, ASTNGError, \
                                        NotFoundError, UnresolvableName
 from logilab.astng.as_string import as_string
