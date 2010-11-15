@@ -1,6 +1,12 @@
 Change log for the astng package
 ================================
 
+2010-11-15  --  0.21.0
+    * python3.x: first python3.x release
+
+    * fix #37105: Crash on AttributeError: 'NoneType' object has no attribute '_infer_name'
+
+    * python2.4: drop python < 2.4 support
 
 2010-10-27  --  0.20.4
 
