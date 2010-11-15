@@ -98,8 +98,7 @@ class ModuleNodeTC(TestCase):
         m = abuilder.file_build(join(DATA, 'all.py'), 'all')
         self.assertEqual(m.wildcard_import_names(), ['Aaa', '_bla', 'name'])
         m = abuilder.file_build(join(DATA, 'notall.py'), 'notall')
-        res = m.wildcard_import_names()
-        res.sort()
+        res = sorted(m.wildcard_import_names())
         self.assertEqual(res, ['Aaa', 'func', 'name', 'other'])
 
     def test_module_getattr(self):
@@ -173,8 +172,7 @@ def nested_args(a, (b, c, d)):
     def test_four_args(self):
         func = MODULE['four_args']
         #self.assertEqual(func.args.args, ['a', ('b', 'c', 'd')])
-        local = func.keys()
-        local.sort()
+        local = sorted(func.keys())
         self.assertEqual(local, ['a', 'b', 'c', 'd'])
         self.assertEqual(func.type, 'function')
 
@@ -344,8 +342,7 @@ A.__bases__ += (B,)
 
     def test_methods(self):
         klass2 = MODULE['YOUPI']
-        methods = [m.name for m in klass2.methods()]
-        methods.sort()
+        methods = sorted([m.name for m in klass2.methods()])
         self.assertEqual(methods, ['__init__', 'class_method',
                                    'method', 'static_method'])
         methods = [m.name for m in klass2.mymethods()]

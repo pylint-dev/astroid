@@ -423,7 +423,7 @@ class TreeTester(object):
             attr = node_dict[field]
             if attr is None:
                 continue
-            if type(attr) is list:
+            if isinstance(attr, list):
                 if not attr:
                     continue
                 self._string += '\n' + indent + field + ' = ['

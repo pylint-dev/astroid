@@ -476,8 +476,7 @@ class FileBuildTC(TestCase):
         module = self.module
         _locals = module.locals
         self.assert_(_locals is module.globals)
-        keys = _locals.keys()
-        keys.sort()
+        keys = sorted(_locals.keys())
         should = ['MY_DICT', 'YO', 'YOUPI',
                 '__revision__',  'global_access','modutils', 'four_args',
                  'os', 'redirect', 'spawn', 'LocalsVisitor',
@@ -503,8 +502,7 @@ class FileBuildTC(TestCase):
         """test the 'locals' dictionary of a astng function"""
         _locals = self.module['global_access'].locals
         self.assertEqual(len(_locals), 4)
-        keys = _locals.keys()
-        keys.sort()
+        keys = sorted(_locals.keys())
         self.assertEqual(keys, ['i', 'key', 'local', 'val'])
 
     def test_class_base_props(self):
@@ -526,8 +524,7 @@ class FileBuildTC(TestCase):
         module = self.module
         klass1 = module['YO']
         locals1 = klass1.locals
-        keys = locals1.keys()
-        keys.sort()
+        keys = sorted(locals1.keys())
         self.assertEqual(keys, ['__init__', 'a'])
         klass2 = module['YOUPI']
         locals2 = klass2.locals

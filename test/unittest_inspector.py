@@ -76,8 +76,7 @@ class LinkerTC(unittest.TestCase):
         self.assert_(hasattr(klass, 'locals_type'))
         type_dict = klass.locals_type
         self.assertEqual(len(type_dict), 2)
-        keys = type_dict.keys()
-        keys.sort()
+        keys = sorted(type_dict.keys())
         self.assertEqual(keys, ['TYPE', 'top'])
         self.assertEqual(len(type_dict['TYPE']), 1)
         self.assertEqual(type_dict['TYPE'][0].value, 'final class')
@@ -89,8 +88,7 @@ class LinkerTC(unittest.TestCase):
         self.assert_(hasattr(klass, 'instance_attrs_type'))
         type_dict = klass.instance_attrs_type
         self.assertEqual(len(type_dict), 3)
-        keys = type_dict.keys()
-        keys.sort()
+        keys = sorted(type_dict.keys())
         self.assertEqual(keys, ['_id', 'relation', 'toto'])
         self.assert_(isinstance(type_dict['relation'][0], Instance), type_dict['relation'])
         self.assertEqual(type_dict['relation'][0].name, 'DoNothing')
