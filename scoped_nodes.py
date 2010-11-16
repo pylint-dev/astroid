@@ -38,7 +38,8 @@ from logilab.astng.node_classes import Const, DelName, DelAttr, \
      Dict, From, List, Name, Pass, Raise, Return, Tuple, Yield, \
      are_exclusive, LookupMixIn, const_factory as cf, unpack_infer
 from logilab.astng.bases import NodeNG, BaseClass, InferenceContext, Instance,\
-     YES, Generator, UnboundMethod, BoundMethod, _infer_stmts, copy_context
+     YES, Generator, UnboundMethod, BoundMethod, _infer_stmts, copy_context, \
+     BUILTINS_NAME
 from logilab.astng.mixins import StmtMixIn, FilterStmtsMixin
 from logilab.astng.manager import ASTNGManager
 
@@ -915,7 +916,7 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
             #if self.newstyle: XXX cause an infinite recursion error
             try:
                 getattribute = self.getattr('__getattribute__', context)[0]
-                if getattribute.root().name != '__builtin__':
+                if getattribute.root().name != BUILTINS_NAME:
                     # class has a custom __getattribute__ defined
                     return True
             except NotFoundError:
