@@ -1,5 +1,5 @@
 include ChangeLog
-include README
+include README*
 include COPYING
 include COPYING.LESSER
 include test/fulltest.sh
