@@ -40,11 +40,13 @@ except ImportError:
 
 
 sys.modules.pop('__pkginfo__', None)
+# import optional features
+__pkginfo__ = __import__("__pkginfo__")
 # import required features
 from __pkginfo__ import modname, version, license, description, \
      web, author, author_email
 # import optional features
-import __pkginfo__
+
 distname = getattr(__pkginfo__, 'distname', modname)
 scripts = getattr(__pkginfo__, 'scripts', [])
 data_files = getattr(__pkginfo__, 'data_files', None)
