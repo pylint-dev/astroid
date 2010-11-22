@@ -36,7 +36,7 @@ extract information from it
 
 __docformat__ = "restructuredtext en"
 
-from logilab.astng._exceptions import IgnoreChild, ASTNGBuildingException
+from logilab.astng._exceptions import ASTNGBuildingException
 
 class ASTVisitor(object):
     """Abstract Base Class for Python AST Visitors.
@@ -249,19 +249,11 @@ class ASTWalker:
         if node in _done:
             raise AssertionError((id(node), node, node.parent))
         _done.add(node)
-        try:
-            self.visit(node)
-        except IgnoreChild:
-            pass
-        else:
-            try:
-                for child_node in node.get_children():
-                    self.handler.set_context(node, child_node)
-                    assert child_node is not node
-                    self.walk(child_node, _done)
-            except AttributeError:
-                print node.__class__, id(node.__class__)
-                raise
+        self.visit(node)
+        for child_node in node.get_children():
+            self.handler.set_context(node, child_node)
+            assert child_node is not node
+            self.walk(child_node, _done)
         self.leave(node)
         assert node.parent is not node
 
@@ -343,8 +335,6 @@ def _check_children(node):
         _check_children(child)
 
 
-# XXX This class don't support 'compiler' for now.
-# If we want it, there is a "_native_repr_tree" method in _nodes_compiler.py
 class TreeTester(object):
     '''A helper class to see _ast tree and compare with astng tree
 
