@@ -27,7 +27,7 @@ at the same time.
 
 __docformat__ = "restructuredtext en"
 
-import sys
+import sys, re
 from os.path import splitext, basename, dirname, exists, abspath
 
 from logilab.common.modutils import modpath_from_file
@@ -41,6 +41,42 @@ from logilab.astng.bases import YES, Instance
 from _ast import PyCF_ONLY_AST
 def parse(string):
     return compile(string, "<string>", 'exec', PyCF_ONLY_AST)
+
+_ENCODING_RGX = re.compile("[^#]*#*.*coding[:=]\s*([^\s]+)")
+
+def _guess_encoding(string):
+    """get encoding from a python file as string or return None if not found
+    """
+    # check for UTF-8 byte-order mark
+    if string.startswith('\xef\xbb\xbf'):
+        return 'UTF-8'
+    for line in string.split('\n', 2)[:2]:
+        # check for encoding declaration
+        match = _ENCODING_RGX.match(line)
+        if match is not None:
+            return match.group(1)
+
+def get_data(filename):
+    """get data for parsing a file"""
+    stream = open(filename, 'U')
+    data = stream.read()
+    encoding = _guess_encoding(data)
+    return stream, encoding, data
+
+if sys.version_info >= (3, 0):
+    from tokenize import detect_encoding
+
+    def get_data(filename):
+        byte_stream = open(filename, 'bU')
+        encoding = detect_encoding(byte_stream.readline)[0]
+        stream = open(filename, 'U', encoding=encoding)
+        try:
+            data = stream.read()
+        except UnicodeError: # wrong encoding
+            # detect_encoding returns utf-8 if no encoding specified
+            msg = 'Wrong (%s) or no encoding specified' % encoding
+            raise ASTNGBuildingException(msg)
+        return stream, encoding, data
 
 # ast NG builder ##############################################################
 
@@ -75,10 +111,14 @@ class ASTNGBuilder(InspectBuilder):
         path is expected to be a python source file
         """
         try:
-            data = open(path, 'U').read()
-        except IOError, ex:
-            msg = 'Unable to load file %r (%s)' % (path, ex)
+            file_stream, encoding, data = get_data(path)
+        except IOError, exc:
+            msg = 'Unable to load file %r (%s)' % (path, exc)
             raise ASTNGBuildingException(msg)
+        except SyntaxError, exc: # py3k encoding specification error
+            raise ASTNGBuildingException(exc)
+        except LookupError, l_ex: # unknown encoding
+            raise ASTNGBuildingException(l_ex)
         # get module name if necessary, *before modifying sys.path*
         if modname is None:
             try:
@@ -91,6 +131,8 @@ class ASTNGBuilder(InspectBuilder):
             node = self.string_build(data, modname, path)
         finally:
             sys.path.pop(0)
+        node.file_encoding = encoding
+        node.file_stream = file_stream
         return node
 
     def string_build(self, data, modname='', path=None):
