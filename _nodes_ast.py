@@ -36,61 +36,52 @@
 __docformat__ = "restructuredtext en"
 
 
-#  aliased nodes
-from _ast import AST as Node, Expr as Discard
-# nodes which are not part of astng
-from _ast import (
+from _ast import (Expr as Discard, Str,
     # binary operators
-    Add as _Add, Div as _Div, FloorDiv as _FloorDiv,
-    Mod as _Mod, Mult as _Mult, Pow as _Pow, Sub as _Sub,
-    BitAnd as _BitAnd, BitOr as _BitOr, BitXor as _BitXor,
-    LShift as _LShift, RShift as _RShift,
+    Add, Div, FloorDiv,  Mod, Mult, Pow, Sub, BitAnd, BitOr, BitXor,
+    LShift, RShift,
     # logical operators
-    And as _And, Or as _Or,
+    And, Or,
     # unary operators
-    UAdd as _UAdd, USub as _USub, Not as _Not, Invert as _Invert,
+    UAdd, USub, Not, Invert,
     # comparison operators
-    Eq as _Eq, Gt as _Gt, GtE as _GtE, In as _In, Is as _Is,
-    IsNot as _IsNot, Lt as _Lt, LtE as _LtE, NotEq as _NotEq,
-    NotIn as _NotIn,
-    # other nodes which are not part of astng
-    Num as _Num, Str as _Str, Load as _Load, Store as _Store, Del as _Del,
+    Eq, Gt, GtE, In, Is, IsNot, Lt, LtE, NotEq, NotIn,
     )
 
 from logilab.astng import nodes as new
 import sys
 
-_BIN_OP_CLASSES = {_Add: '+',
-                   _BitAnd: '&',
-                   _BitOr: '|',
-                   _BitXor: '^',
-                   _Div: '/',
-                   _FloorDiv: '//',
-                   _Mod: '%',
-                   _Mult: '*',
-                   _Pow: '**',
-                   _Sub: '-',
-                   _LShift: '<<',
-                   _RShift: '>>'}
+_BIN_OP_CLASSES = {Add: '+',
+                   BitAnd: '&',
+                   BitOr: '|',
+                   BitXor: '^',
+                   Div: '/',
+                   FloorDiv: '//',
+                   Mod: '%',
+                   Mult: '*',
+                   Pow: '**',
+                   Sub: '-',
+                   LShift: '<<',
+                   RShift: '>>'}
 
-_BOOL_OP_CLASSES = {_And: 'and',
-                    _Or: 'or'}
+_BOOL_OP_CLASSES = {And: 'and',
+                    Or: 'or'}
 
-_UNARY_OP_CLASSES = {_UAdd: '+',
-                     _USub: '-',
-                     _Not: 'not',
-                     _Invert: '~'}
+_UNARY_OP_CLASSES = {UAdd: '+',
+                     USub: '-',
+                     Not: 'not',
+                     Invert: '~'}
 
-_CMP_OP_CLASSES = {_Eq: '==',
-                   _Gt: '>',
-                   _GtE: '>=',
-                   _In: 'in',
-                   _Is: 'is',
-                   _IsNot: 'is not',
-                   _Lt: '<',
-                   _LtE: '<=',
-                   _NotEq: '!=',
-                   _NotIn: 'not in'}
+_CMP_OP_CLASSES = {Eq: '==',
+                   Gt: '>',
+                   GtE: '>=',
+                   In: 'in',
+                   Is: 'is',
+                   IsNot: 'is not',
+                   Lt: '<',
+                   LtE: '<=',
+                   NotEq: '!=',
+                   NotIn: 'not in'}
 
 
 CONST_NAME_TRANSFORMS = {'None':  None,
@@ -101,7 +92,7 @@ CONST_NAME_TRANSFORMS = {'None':  None,
 def _init_set_doc(node, newnode):
     newnode.doc = None
     try:
-        if isinstance(node.body[0], Discard) and isinstance(node.body[0].value, _Str):
+        if isinstance(node.body[0], Discard) and isinstance(node.body[0].value, Str):
             newnode.tolineno = node.body[0].lineno
             newnode.doc = node.body[0].value.s
             node.body = node.body[1:]

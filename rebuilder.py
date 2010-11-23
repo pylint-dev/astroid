@@ -52,27 +52,6 @@ REDIRECT = {'arguments': 'Arguments',
             'ImportFrom': 'From',
             'keyword': 'Keyword',
             'Repr': 'Backquote',
-            
-            'Add': 'BinOp',
-            'Bitand': 'BinOp',
-            'Bitor': 'BinOp',
-            'Bitxor': 'BinOp',
-            'Div': 'BinOp',
-            'FloorDiv': 'BinOp',
-            'LeftShift': 'BinOp',
-            'Mod': 'BinOp',
-            'Mul': 'BinOp',
-            'Power': 'BinOp',
-            'RightShift': 'BinOp',
-            'Sub': 'BinOp',
-
-            'And': 'BoolOp',
-            'Or': 'BoolOp',
-
-            'UnaryAdd': 'UnaryOp',
-            'UnarySub': 'UnaryOp',
-            'Not': 'UnaryOp',
-            'Invert': 'UnaryOp'
             }
 
 _key_func = lambda node: node.fromlineno
