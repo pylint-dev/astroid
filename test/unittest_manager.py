@@ -49,17 +49,21 @@ class ASTNGManagerTC(unittest.TestCase):
     def _test_astng_from_zip(self, archive):
         origpath = sys.path[:]
         sys.modules.pop('mypypa', None)
-        sys.path.insert(0, join(DATA, archive))
+        archive_path = join(DATA, archive)
+        sys.path.insert(0, archive_path)
         try:
             module = self.manager.astng_from_module_name('mypypa')
             self.assertEqual(module.name, 'mypypa')
             self.failUnless(module.file.endswith('%s/mypypa' % archive),
                             module.file)
         finally:
-            sys.path = origpath
             # remove the module, else after importing egg, we don't get the zip
-            del self.manager._cache['mypypa']
-            del self.manager._mod_file_cache[('mypypa', None)]
+            if 'mypypa' in self.manager._cache:
+                del self.manager._cache['mypypa']
+                del self.manager._mod_file_cache[('mypypa', None)]
+            if archive_path in sys.path_importer_cache:
+                del sys.path_importer_cache[archive_path]
+            sys.path = origpath
 
     def test_astng_from_module_name_egg(self):
         self._test_astng_from_zip('MyPyPa-0.1.0-py2.5.egg')
