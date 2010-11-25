@@ -294,8 +294,12 @@ class BuilderTC(TestCase):
         self.assertIsInstance(builtin_astng['None'], nodes.Const)
         self.assertIsInstance(builtin_astng['True'], nodes.Const)
         self.assertIsInstance(builtin_astng['False'], nodes.Const)
-        self.assertIsInstance(builtin_astng['Exception'], nodes.From)
-        self.assertIsInstance(builtin_astng['NotImplementedError'], nodes.From)
+        if sys.version_info < (3, 0):
+            self.assertIsInstance(builtin_astng['Exception'], nodes.From)
+            self.assertIsInstance(builtin_astng['NotImplementedError'], nodes.From)
+        else:
+            self.assertIsInstance(builtin_astng['Exception'], nodes.Class)
+            self.assertIsInstance(builtin_astng['NotImplementedError'], nodes.Class)
 
     def test_inspect_build1(self):
         time_astng = MANAGER.astng_from_module_name('time')
