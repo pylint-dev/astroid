@@ -271,25 +271,22 @@ class Module(LocalsDictNodeNG):
         return 'Module'
 
     def getattr(self, name, context=None):
-        if not name in self.special_attributes:
-            try:
-                return self.locals[name]
-            except KeyError:
-                pass
-        else:
+        if name in self.special_attributes:
             if name == '__file__':
                 return [cf(self.file)] + self.locals.get(name, [])
-            if name == '__path__':
-                if self.package:
-                    return [List()] + self.locals.get(name, [])
+            if name == '__path__' and self.package:
+                return [List()] + self.locals.get(name, [])
             return std_special_attributes(self, name)
+        if name in self.locals:
+            return self.locals[name]
         if self.package:
             try:
                 return [self.import_module(name, relative_only=True)]
-            except (KeyboardInterrupt, SystemExit):
-                raise
-            except:
-                pass
+            except ASTNGBuildingException:
+                raise NotFoundError(name)
+            except Exception:# XXX pylint tests never pass here; do we need it?
+                import traceback
+                traceback.print_exc()
         raise NotFoundError(name)
     getattr = remove_nodes(getattr, DelName)
 
