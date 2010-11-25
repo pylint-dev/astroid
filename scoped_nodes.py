@@ -324,11 +324,14 @@ class Module(LocalsDictNodeNG):
         """module has no sibling"""
         return
 
-    def absolute_import_activated(self):
-        for stmt in self.locals.get('absolute_import', ()):
-            if isinstance(stmt, From) and stmt.modname == '__future__':
-                return True
-        return False
+    if sys.version_info < (2, 7):
+        def absolute_import_activated(self):
+            for stmt in self.locals.get('absolute_import', ()):
+                if isinstance(stmt, From) and stmt.modname == '__future__':
+                    return True
+            return False
+    else:
+        absolute_import_activated = lambda self: True
 
     def import_module(self, modname, relative_only=False, level=None):
         """import the given module considering self as context"""
