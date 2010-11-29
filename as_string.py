@@ -225,8 +225,8 @@ class AsStringVisitor(ASTVisitor):
     
     def visit_from(self, node):
         """return an astng.From node as string"""
-        # XXX level
-        return 'from %s import %s' % (node.modname, _import_string(node.names))
+        modname = node.modname or '.' * node.level
+        return 'from %s import %s' % (modname, _import_string(node.names))
     
     def visit_function(self, node):
         """return an astng.Function node as string"""
