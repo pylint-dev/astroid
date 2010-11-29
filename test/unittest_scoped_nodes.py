@@ -112,6 +112,30 @@ del appli
         self.assertEqual(len(astng.getattr('appli')), 2,
                           astng.getattr('appli'))
 
+    def test_relative_to_absolute_name(self):
+        mod = nodes.Module('very.multi.module', 'doc')
+        # package
+        mod.package = True
+        modname = mod.relative_to_absolute_name('utils', 1)
+        self.assertEqual(modname, 'very.multi.module.utils')
+        modname = mod.relative_to_absolute_name('utils', 2)
+        self.assertEqual(modname, 'very.multi.utils')
+        modname = mod.relative_to_absolute_name('utils', 0)
+        self.assertEqual(modname, 'very.multi.module.utils')
+        """
+        """
+        # non package
+        mod.package = False
+        modname = mod.relative_to_absolute_name('utils', 0)
+        self.assertEqual(modname, 'very.multi.utils')
+        """
+        """
+        modname = mod.relative_to_absolute_name('utils', 1)
+        self.assertEqual(modname, 'very.multi.utils')
+        modname = mod.relative_to_absolute_name('utils', 2)
+        self.assertEqual(modname, 'very.utils')
+
+
 
 class FunctionNodeTC(TestCase):
 

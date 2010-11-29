@@ -349,15 +349,15 @@ class Module(LocalsDictNodeNG):
         """
         # XXX this returns non sens when called on an absolute import
         # like 'pylint.checkers.logilab.astng.utils'
+        # XXX doesn't return absolute name if self.name isn't absolute name
         if level:
-            parts = self.name.split('.')
             if self.package:
-                parts.append('__init__')
-            package_name = '.'.join(parts[:-level])
+                level = level - 1
+            package_name = self.name.rsplit('.', level)[0]
         elif self.package:
             package_name = self.name
         else:
-            package_name = '.'.join(self.name.split('.')[:-1])
+            package_name = self.name.rsplit('.', 1)[0]
         if package_name:
             if not modname:
                 return package_name
