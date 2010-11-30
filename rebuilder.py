@@ -83,24 +83,9 @@ _CMP_OP_CLASSES = {Eq: '==',
                    NotEq: '!=',
                    NotIn: 'not in'}
 
-
 CONST_NAME_TRANSFORMS = {'None':  None,
                          'True':  True,
                          'False': False}
-
-
-def _init_set_doc(node, newnode):
-    newnode.doc = None
-    try:
-        if isinstance(node.body[0], Discard) and isinstance(node.body[0].value, Str):
-            newnode.tolineno = node.body[0].lineno
-            newnode.doc = node.body[0].value.s
-            node.body = node.body[1:]
-
-    except IndexError:
-        pass # ast built from scratch
-
-
 
 REDIRECT = {'arguments': 'Arguments',
             'Attribute': 'Getattr',
@@ -118,10 +103,31 @@ REDIRECT = {'arguments': 'Arguments',
             'Repr': 'Backquote',
             }
 
+def _init_set_doc(node, newnode):
+    newnode.doc = None
+    try:
+        if isinstance(node.body[0], Discard) and isinstance(node.body[0].value, Str):
+            newnode.tolineno = node.body[0].lineno
+            newnode.doc = node.body[0].value.s
+            node.body = node.body[1:]
+
+    except IndexError:
+        pass # ast built from scratch
+
 _key_func = lambda node: node.fromlineno
 def sort_locals(my_list):
     my_list.sort(key=_key_func)
 
+def _lineno_parent(oldnode, newnode, parent):
+    newnode.parent = parent
+    if hasattr(oldnode, 'lineno'):
+        newnode.lineno = oldnode.lineno
+
+def _set_infos(oldnode, newnode, parent):
+    newnode.parent = parent
+    if hasattr(oldnode, 'lineno'):
+        newnode.lineno = oldnode.lineno
+    newnode.set_line_info(newnode.last_child()) # set_line_info accepts None
 
 class RebuildVisitor(object):
     """Visitor to transform an AST to an ASTNG
@@ -161,39 +167,6 @@ class RebuildVisitor(object):
         for delayed in self._delayed_assattr:
             delay_assattr(delayed)
         return module
-
-    # visit_<node> and delayed_<node> methods #################################
-
-    def _set_infos(self, oldnode, newnode, parent):
-        newnode.parent = parent
-        if hasattr(oldnode, 'lineno'):
-            newnode.lineno = oldnode.lineno
-        last = newnode.last_child()
-        newnode.set_line_info(last) # set_line_info accepts None
-
-    def _set_assign_infos(self, newnode):
-        """set some function or metaclass infos""" # XXX right ?
-        klass = newnode.parent.frame()
-        if (isinstance(klass, new.Class)
-            and isinstance(newnode.value, new.CallFunc)
-            and isinstance(newnode.value.func, new.Name)):
-            func_name = newnode.value.func.name
-            for ass_node in newnode.targets:
-                try:
-                    meth = klass[ass_node.name]
-                    if isinstance(meth, new.Function):
-                        if func_name in ('classmethod', 'staticmethod'):
-                            meth.type = func_name
-                        try: # XXX use setdefault ?
-                            meth.extra_decorators.append(newnode.value)
-                        except AttributeError:
-                            meth.extra_decorators = [newnode.value]
-                except (AttributeError, KeyError):
-                    continue
-        elif getattr(newnode.targets[0], 'name', None) == '__metaclass__':
-            # XXX check more...
-            self._metaclass[-1] = 'type' # XXX get the actual metaclass
-
 
     def _add_from_names_to_locals(self, node, delayed=False):
         """store imported names to the locals;
@@ -259,13 +232,6 @@ class RebuildVisitor(object):
             pass
 
 
-# _ast rebuilder ##############################################################
-
-def _lineno_parent(oldnode, newnode, parent):
-    newnode.parent = parent
-    if hasattr(oldnode, 'lineno'):
-        newnode.lineno = oldnode.lineno
-
 class TreeRebuilder(RebuildVisitor):
     """Rebuilds the _ast tree to become an ASTNG tree"""
 
@@ -315,14 +281,34 @@ class TreeRebuilder(RebuildVisitor):
         newnode.targets = [self.visit(child, newnode) for child in node.targets]
         self.asscontext = None
         newnode.value = self.visit(node.value, newnode)
-        self._set_assign_infos(newnode)
+        # set some function or metaclass infos  XXX explain ?
+        klass = newnode.parent.frame()
+        if (isinstance(klass, new.Class)
+            and isinstance(newnode.value, new.CallFunc)
+            and isinstance(newnode.value.func, new.Name)):
+            func_name = newnode.value.func.name
+            for ass_node in newnode.targets:
+                try:
+                    meth = klass[ass_node.name]
+                    if isinstance(meth, new.Function):
+                        if func_name in ('classmethod', 'staticmethod'):
+                            meth.type = func_name
+                        try: # XXX use setdefault ?
+                            meth.extra_decorators.append(newnode.value)
+                        except AttributeError:
+                            meth.extra_decorators = [newnode.value]
+                except (AttributeError, KeyError):
+                    continue
+        elif getattr(newnode.targets[0], 'name', None) == '__metaclass__':
+            # XXX check more...
+            self._metaclass[-1] = 'type' # XXX get the actual metaclass
         newnode.set_line_info(newnode.last_child())
         return newnode
 
     def visit_assname(self, node, parent, node_name=None):
         '''visit a node and return a AssName node'''
         newnode = new.AssName()
-        self._set_infos(node, newnode, parent)
+        _set_infos(node, newnode, parent)
         newnode.name = node_name
         self._save_assignment(newnode)
         return newnode
@@ -400,19 +386,19 @@ class TreeRebuilder(RebuildVisitor):
     def visit_break(self, node, parent):
         """visit a Break node by returning a fresh instance of it"""
         newnode = new.Break()
-        self._set_infos(node, newnode, parent)
+        _set_infos(node, newnode, parent)
         return newnode
 
     def visit_const(self, node, parent):
         """visit a Const node by returning a fresh instance of it"""
         newnode = new.Const(node.value)
-        self._set_infos(node, newnode, parent)
+        _set_infos(node, newnode, parent)
         return newnode
 
     def visit_continue(self, node, parent):
         """visit a Continue node by returning a fresh instance of it"""
         newnode = new.Continue()
-        self._set_infos(node, newnode, parent)
+        _set_infos(node, newnode, parent)
         return newnode
 
     def visit_compare(self, node, parent):
@@ -492,13 +478,13 @@ class TreeRebuilder(RebuildVisitor):
     def visit_ellipsis(self, node, parent):
         """visit an Ellipsis node by returning a fresh instance of it"""
         newnode = new.Ellipsis()
-        self._set_infos(node, newnode, parent)
+        _set_infos(node, newnode, parent)
         return newnode
 
     def visit_emptynode(self, node, parent):
         """visit an EmptyNode node by returning a fresh instance of it"""
         newnode = new.EmptyNode()
-        self._set_infos(node, newnode, parent)
+        _set_infos(node, newnode, parent)
         return newnode
 
     def visit_excepthandler(self, node, parent):
@@ -550,7 +536,7 @@ class TreeRebuilder(RebuildVisitor):
         """visit a From node by returning a fresh instance of it"""
         names = [(alias.name, alias.asname) for alias in node.names]
         newnode = new.From(node.module or '', names, node.level)
-        self._set_infos(node, newnode, parent)
+        _set_infos(node, newnode, parent)
         # handle From names by adding them to locals now or after
         # we can not handle wildcard imports if the source module is not
         # in the cache since 'import_module' calls the MANAGER and we will
@@ -624,7 +610,7 @@ class TreeRebuilder(RebuildVisitor):
     def visit_global(self, node, parent):
         """visit an Global node to become astng"""
         newnode = new.Global(node.names)
-        self._set_infos(node, newnode, parent)
+        _set_infos(node, newnode, parent)
         if self._global_names: # global at the module level, no effect
             for name in node.names:
                 self._global_names[-1].setdefault(name, []).append(newnode)
@@ -653,7 +639,7 @@ class TreeRebuilder(RebuildVisitor):
     def visit_import(self, node, parent):
         """visit a Import node by returning a fresh instance of it"""
         newnode = new.Import()
-        self._set_infos(node, newnode, parent)
+        _set_infos(node, newnode, parent)
         newnode.names = [(alias.name, alias.asname) for alias in node.names]
         # save import names in parent's locals:
         for (name, asname) in newnode.names:
@@ -719,7 +705,7 @@ class TreeRebuilder(RebuildVisitor):
         """visit a Name node by returning a fresh instance of it"""
         if node.id in CONST_NAME_TRANSFORMS:
             newnode = new.Const(CONST_NAME_TRANSFORMS[node.id])
-            self._set_infos(node, newnode, parent)
+            _set_infos(node, newnode, parent)
             return newnode
         if self.asscontext == "Del":
             newnode = new.DelName()
@@ -739,25 +725,25 @@ class TreeRebuilder(RebuildVisitor):
     def visit_bytes(self, node, parent):
         """visit a Bytes node by returning a fresh instance of Const"""
         newnode = new.Const(node.s)
-        self._set_infos(node, newnode, parent)
+        _set_infos(node, newnode, parent)
         return newnode
 
     def visit_num(self, node, parent):
         """visit a Num node by returning a fresh instance of Const"""
         newnode = new.Const(node.n)
-        self._set_infos(node, newnode, parent)
+        _set_infos(node, newnode, parent)
         return newnode
 
     def visit_pass(self, node, parent):
         """visit a Pass node by returning a fresh instance of it"""
         newnode = new.Pass()
-        self._set_infos(node, newnode, parent)
+        _set_infos(node, newnode, parent)
         return newnode
 
     def visit_str(self, node, parent):
         """visit a Str node by returning a fresh instance of Const"""
         newnode = new.Const(node.s)
-        self._set_infos(node, newnode, parent)
+        _set_infos(node, newnode, parent)
         return newnode
 
     def visit_print(self, node, parent):
@@ -917,7 +903,7 @@ class TreeRebuilder3k(TreeRebuilder):
     def visit_nonlocal(self, node, parent):
         """visit a Nonlocal node and return a new instance of it"""
         newnode = new.Nonlocal(node.names)
-        self._set_infos(node, newnode, parent)
+        _set_infos(node, newnode, parent)
         return newnode
 
     def visit_raise(self, node, parent):
