@@ -129,7 +129,11 @@ class TreeRebuilder(RebuildVisitor):
         newnode.defaults = [self.visit(child, newnode) for child in node.defaults]
         newnode.vararg = node.vararg
         newnode.kwarg = node.kwarg
-        self._save_argument_name(newnode)
+        # save argument names in locals:
+        if node.vararg:
+            newnode.parent.set_local(newnode.vararg, newnode)
+        if node.kwarg:
+            newnode.parent.set_local(newnode.kwarg, newnode)
         newnode.set_line_info(newnode.last_child())
         return newnode
 
@@ -435,7 +439,10 @@ class TreeRebuilder(RebuildVisitor):
         newnode = new.Import()
         self._set_infos(node, newnode, parent)
         newnode.names = [(alias.name, alias.asname) for alias in node.names]
-        self._save_import_locals(newnode)
+        # save import names in parent's locals:
+        for (name, asname) in newnode.names:
+            name = asname or name
+            newnode.parent.set_local(name.split('.')[0], newnode)
         return newnode
 
     def visit_index(self, node, parent):

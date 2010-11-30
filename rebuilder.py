@@ -29,13 +29,12 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
-"""this module contains utilities for rebuilding a compiler.ast or _ast tree in
+"""this module contains utilities for rebuilding a _ast tree in
 order to get a single ASTNG representation
-
 """
 
 from logilab.astng import ASTNGBuildingException, InferenceError
-from logilab.astng import nodes
+from logilab.astng import nodes as new
 from logilab.astng.bases import YES, Instance
 
 REDIRECT = {'arguments': 'Arguments',
@@ -97,27 +96,19 @@ class RebuildVisitor(object):
             delay_assattr(delayed)
         return module
 
-    def _save_argument_name(self, node):
-        """save argument names in locals"""
-        if node.vararg:
-            node.parent.set_local(node.vararg, node)
-        if node.kwarg:
-            node.parent.set_local(node.kwarg, node)
-
-
     # visit_<node> and delayed_<node> methods #################################
 
     def _set_assign_infos(self, newnode):
         """set some function or metaclass infos""" # XXX right ?
         klass = newnode.parent.frame()
-        if (isinstance(klass, nodes.Class)
-            and isinstance(newnode.value, nodes.CallFunc)
-            and isinstance(newnode.value.func, nodes.Name)):
+        if (isinstance(klass, new.Class)
+            and isinstance(newnode.value, new.CallFunc)
+            and isinstance(newnode.value.func, new.Name)):
             func_name = newnode.value.func.name
             for ass_node in newnode.targets:
                 try:
                     meth = klass[ass_node.name]
-                    if isinstance(meth, nodes.Function):
+                    if isinstance(meth, new.Function):
                         if func_name in ('classmethod', 'staticmethod'):
                             meth.type = func_name
                         try: # XXX use setdefault ?
@@ -133,6 +124,7 @@ class RebuildVisitor(object):
     def visit_class(self, node, parent):
         """visit a Class node to become astng"""
         self._metaclass.append(self._metaclass[-1])
+
         newnode = self._visit_class(node, parent)
         metaclass = self._metaclass.pop()
         if not newnode.bases:
@@ -144,31 +136,31 @@ class RebuildVisitor(object):
 
     def visit_break(self, node, parent):
         """visit a Break node by returning a fresh instance of it"""
-        newnode = nodes.Break()
+        newnode = new.Break()
         self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_const(self, node, parent):
         """visit a Const node by returning a fresh instance of it"""
-        newnode = nodes.Const(node.value)
+        newnode = new.Const(node.value)
         self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_continue(self, node, parent):
         """visit a Continue node by returning a fresh instance of it"""
-        newnode = nodes.Continue()
+        newnode = new.Continue()
         self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_ellipsis(self, node, parent):
         """visit an Ellipsis node by returning a fresh instance of it"""
-        newnode = nodes.Ellipsis()
+        newnode = new.Ellipsis()
         self._set_infos(node, newnode, parent)
         return newnode
 
     def visit_emptynode(self, node, parent):
         """visit an EmptyNode node by returning a fresh instance of it"""
-        newnode = nodes.EmptyNode()
+        newnode = new.EmptyNode()
         self._set_infos(node, newnode, parent)
         return newnode
 
@@ -209,14 +201,14 @@ class RebuildVisitor(object):
         newnode = self._visit_function(node, parent)
         self._global_names.pop()
         frame = newnode.parent.frame()
-        if isinstance(frame, nodes.Class):
+        if isinstance(frame, new.Class):
             if newnode.name == '__new__':
                 newnode.type = 'classmethod'
             else:
                 newnode.type = 'method'
         if newnode.decorators is not None:
             for decorator_expr in newnode.decorators.nodes:
-                if isinstance(decorator_expr, nodes.Name) and \
+                if isinstance(decorator_expr, new.Name) and \
                        decorator_expr.name in ('classmethod', 'staticmethod'):
                     newnode.type = decorator_expr.name
         frame.set_local(newnode.name, newnode)
@@ -224,22 +216,16 @@ class RebuildVisitor(object):
 
     def visit_global(self, node, parent):
         """visit an Global node to become astng"""
-        newnode = nodes.Global(node.names)
+        newnode = new.Global(node.names)
         self._set_infos(node, newnode, parent)
         if self._global_names: # global at the module level, no effect
             for name in node.names:
                 self._global_names[-1].setdefault(name, []).append(newnode)
         return newnode
 
-    def _save_import_locals(self, newnode):
-        """save import names in parent's locals"""
-        for (name, asname) in newnode.names:
-            name = asname or name
-            newnode.parent.set_local(name.split('.')[0], newnode)
-
     def visit_pass(self, node, parent):
         """visit a Pass node by returning a fresh instance of it"""
-        newnode = nodes.Pass()
+        newnode = new.Pass()
         self._set_infos(node, newnode, parent)
         return newnode
 
