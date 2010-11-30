@@ -44,7 +44,7 @@ from logilab.astng.manager import ASTNGManager
 from _ast import PyCF_ONLY_AST
 def parse(string):
     return compile(string, "<string>", 'exec', PyCF_ONLY_AST)
-from logilab.astng._nodes_ast import TreeRebuilder
+from logilab.astng.rebuilder import TreeRebuilder
 
 # ast NG builder ##############################################################
 
