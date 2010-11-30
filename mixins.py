@@ -44,12 +44,6 @@ class StmtMixIn(BaseClass):
     """StmtMixIn used only for a adding a few attributes"""
     is_statement = True
 
-    def replace(self, child, newchild):
-        sequence = self.child_sequence(child)
-        newchild.parent = self
-        child.parent = None
-        sequence[sequence.index(child)] = newchild
-
     def next_sibling(self):
         """return the next sibling statement"""
         stmts = self.parent.child_sequence(self)

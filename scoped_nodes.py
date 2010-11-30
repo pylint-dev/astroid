@@ -242,13 +242,6 @@ class Module(LocalsDictNodeNG):
         self.locals = self.globals = {}
         self.body = []
 
-    # Module is not a Statement node but needs the replace method (see StmtMixIn)
-    def replace(self, child, newchild):
-        sequence = self.child_sequence(child)
-        newchild.parent = self
-        child.parent = None
-        sequence[sequence.index(child)] = newchild
-
     def block_range(self, lineno):
         """return block line numbers.
 
