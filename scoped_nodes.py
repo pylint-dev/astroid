@@ -521,6 +521,7 @@ class Function(StmtMixIn, Lambda):
         self.name = name
         self.doc = doc
         self.extra_decorators = []
+        self.instance_attrs = {}
 
     def set_line_info(self, lastchild):
         self.fromlineno = self.lineno
@@ -543,6 +544,8 @@ class Function(StmtMixIn, Lambda):
         """
         if name == '__module__':
             return [cf(self.root().qname())]
+        if name in self.instance_attrs:
+            return self.instance_attrs[name]
         return std_special_attributes(self, name, False)
 
     def is_method(self):
@@ -669,10 +672,8 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
     _astng_fields = ('decorators', 'bases', 'body') # name
 
     decorators = None
-    instance_attrs = None
     special_attributes = set(('__name__', '__doc__', '__dict__', '__module__',
                               '__bases__', '__mro__', '__subclasses__'))
-
     blockstart_tolineno = None
 
     _type = None

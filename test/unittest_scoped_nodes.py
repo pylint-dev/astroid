@@ -286,6 +286,24 @@ a = func()
         self.assertIsInstance(func_vals[0], nodes.Const)
         self.assertEqual(func_vals[0].value, None)
 
+    def test_func_instance_attr(self):
+        """test instance attributes for functions"""
+        data= """
+def test():
+    print test.bar
+
+test.bar = 1
+test()
+        """
+        astng = abuilder.string_build(data, 'mod', __file__)
+        func = astng.body[2].value.func.infered()[0]
+        self.assertIsInstance(func, nodes.Function)
+        self.assertEqual(func.name, 'test')
+        one = func.getattr('bar')[0].infered()[0]
+        self.assertIsInstance(one, nodes.Const)
+        self.assertEqual(one.value, 1)
+
+
 class ClassNodeTC(TestCase):
 
     def test_dict_interface(self):

@@ -175,6 +175,8 @@ class ASTNGBuilder:
                         # Const, Tuple, ... we may be wrong, may be not, but
                         # anyway we don't want to pollute builtin's namespace
                         continue
+                    elif infered.is_function:
+                        iattrs = infered.instance_attrs
                     else:
                         iattrs = infered.locals
                 except AttributeError:
