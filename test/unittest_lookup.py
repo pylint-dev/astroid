@@ -232,7 +232,19 @@ var
         var = astng.body[1].value
         self.assertRaises(UnresolvableName, var.infered)
 
+    def test_generator_attributes(self):
+        tree = builder.string_build("""
+def count():
+    "ntesxt"
+    yield 0
 
+iterer = count()
+num = iterer.next()
+        """)
+        next = tree.body[2].value.func # Getattr
+        gener = next.expr.infered()[0] # Genrator
+        # TODO : this is because we dont support function attributes:
+        self.assertRaises(AttributeError, gener.getattr, 'next')
 
     def test_explicit___name__(self):
         code = '''

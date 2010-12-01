@@ -36,7 +36,7 @@ from logilab.astng import nodes, raw_building
 from logilab.astng.manager import ASTNGManager
 from logilab.astng import ASTNGError, InferenceError, UnresolvableName, \
      NoDefault, NotFoundError, ASTNGBuildingException
-from logilab.astng.bases import YES, Instance, InferenceContext, \
+from logilab.astng.bases import YES, Instance, InferenceContext, Generator, \
      _infer_stmts, copy_context, path_wrapper, raise_if_nothing_infered
 from logilab.astng.protocols import _arguments_infer_argname
 
@@ -72,6 +72,7 @@ nodes.Const.pytype = Const_pytype
 nodes.List._proxied = MANAGER.astng_from_class(list)
 nodes.Tuple._proxied = MANAGER.astng_from_class(tuple)
 nodes.Dict._proxied = MANAGER.astng_from_class(dict)
+Generator._proxied = MANAGER.infer_astng_from_something(type(a for a in ()))
 
 
 class CallContext:

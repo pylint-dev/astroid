@@ -280,7 +280,7 @@ class BoundMethod(UnboundMethod):
         return self._proxied.infer_call_result(caller, context)
 
 
-class Generator(Proxy):
+class Generator(Instance):
     """a special node representing a generator"""
     def callable(self):
         return True
@@ -291,6 +291,11 @@ class Generator(Proxy):
     def display_type(self):
         return 'Generator'
 
+    def __repr__(self):
+        return '<Generator(%s) l.%s at 0x%s>' % (self._proxied.name, self.lineno, id(self))
+
+    def __str__(self):
+        return 'Generator(%s)' % (self._proxied.name)
 
 # decorators ##################################################################
 
