@@ -520,6 +520,7 @@ class Function(StmtMixIn, Lambda):
         self.decorators = None
         self.name = name
         self.doc = doc
+        self.extra_decorators = []
 
     def set_line_info(self, lastchild):
         self.fromlineno = self.lineno
@@ -556,7 +557,7 @@ class Function(StmtMixIn, Lambda):
         decoratornodes = []
         if self.decorators is not None:
             decoratornodes += self.decorators.nodes
-        decoratornodes += getattr(self, 'extra_decorators', [])
+        decoratornodes += self.extra_decorators
         for decnode in decoratornodes:
             for infnode in decnode.infer():
                 result.add(infnode.qname())

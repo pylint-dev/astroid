@@ -293,10 +293,7 @@ class TreeRebuilder(RebuildVisitor):
                     if isinstance(meth, new.Function):
                         if func_name in ('classmethod', 'staticmethod'):
                             meth.type = func_name
-                        try: # XXX use setdefault ?
-                            meth.extra_decorators.append(newnode.value)
-                        except AttributeError:
-                            meth.extra_decorators = [newnode.value]
+                        meth.extra_decorators.append(newnode.value)
                 except (AttributeError, KeyError):
                     continue
         elif getattr(newnode.targets[0], 'name', None) == '__metaclass__':
