@@ -140,7 +140,7 @@ class FromImportMixIn(BaseClass, FilterStmtsMixin):
             return mymodule
         try:
             return mymodule.import_module(modname, level=level)
-        except (ASTNGBuildingException, SyntaxError):
+        except ASTNGBuildingException:
             raise InferenceError(modname)
 
     def real_name(self, asname):
