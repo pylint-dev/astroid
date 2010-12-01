@@ -203,7 +203,7 @@ class Instance(Proxy):
         """wrap bound methods of attrs in a InstanceMethod proxies"""
         for attr in attrs:
             if isinstance(attr, UnboundMethod):
-                if '__builtin__.property' in attr.decoratornames():
+                if BUILTINS_NAME + '.property' in attr.decoratornames():
                     for infered in attr.infer_call_result(self, context):
                         yield infered
                 else:
