@@ -35,16 +35,17 @@ from inspect import isdatadescriptor
 
 from logilab.common.modutils import modpath_from_file
 
-from logilab.astng._exceptions import ASTNGBuildingException
+from logilab.astng._exceptions import ASTNGBuildingException, InferenceError
 from logilab.astng.raw_building import build_module, object_build_class, \
      object_build_function, object_build_datadescriptor, attach_dummy_node, \
      object_build_methoddescriptor, attach_const_node, attach_import_node
+from logilab.astng.rebuilder import TreeRebuilder
 from logilab.astng.manager import ASTNGManager
+from logilab.astng.bases import YES, Instance
 
 from _ast import PyCF_ONLY_AST
 def parse(string):
     return compile(string, "<string>", 'exec', PyCF_ONLY_AST)
-from logilab.astng.rebuilder import TreeRebuilder
 
 # ast NG builder ##############################################################
 
@@ -134,8 +135,65 @@ class ASTNGBuilder:
             package = True
         else:
             package = path and path.find('__init__.py') > -1 or False
-        newnode = self.rebuilder.build(node, modname, node_file, package)
+        newnode = self.build(node, modname, node_file, package)
         return newnode
+
+    def build(self, node, modname, module_file, package):
+        """rebuild the tree starting with an Module node;
+        return an astng.Module node
+        """
+        rebuilder = self.rebuilder
+        rebuilder.init()
+        module = rebuilder.visit_module(node, modname, package)
+        module.file = module.path = module_file
+        # init module cache here else we may get some infinite recursion
+        # errors while infering delayed assignments
+        if self._manager is not None:
+            self._manager._cache[module.name] = module
+        # handle delayed assattr nodes
+        for from_node in rebuilder._from_nodes:
+            rebuilder.add_from_names_to_locals(from_node, delayed=True)
+        delay_assattr = self.delayed_assattr
+        for delayed in rebuilder._delayed_assattr:
+            delay_assattr(delayed)
+        return module
+
+    def delayed_assattr(self, node):
+        """visit a AssAttr node -> add name to locals, handle members
+        definition
+        """
+        try:
+            frame = node.frame()
+            for infered in node.expr.infer():
+                if infered is YES:
+                    continue
+                try:
+                    if infered.__class__ is Instance:
+                        infered = infered._proxied
+                        iattrs = infered.instance_attrs
+                    elif isinstance(infered, Instance):
+                        # Const, Tuple, ... we may be wrong, may be not, but
+                        # anyway we don't want to pollute builtin's namespace
+                        continue
+                    else:
+                        iattrs = infered.locals
+                except AttributeError:
+                    # XXX log error
+                    #import traceback
+                    #traceback.print_exc()
+                    continue
+                values = iattrs.setdefault(node.attrname, [])
+                if node in values:
+                    continue
+                # get assign in __init__ first XXX useful ?
+                if frame.name == '__init__' and values and not \
+                       values[0].frame().name == '__init__':
+                    values.insert(0, node)
+                else:
+                    values.append(node)
+        except InferenceError:
+            pass
+
 
     # astng from living objects ###############################################
     #

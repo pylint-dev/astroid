@@ -46,9 +46,8 @@ from _ast import (Expr as Discard, Str,
     Eq, Gt, GtE, In, Is, IsNot, Lt, LtE, NotEq, NotIn,
     )
 
-from logilab.astng import ASTNGBuildingException, InferenceError
+from logilab.astng import ASTNGBuildingException
 from logilab.astng import nodes as new
-from logilab.astng.bases import YES, Instance
 
 
 _BIN_OP_CLASSES = {Add: '+',
@@ -129,14 +128,19 @@ def _set_infos(oldnode, newnode, parent):
         newnode.lineno = oldnode.lineno
     newnode.set_line_info(newnode.last_child()) # set_line_info accepts None
 
-class RebuildVisitor(object):
-    """Visitor to transform an AST to an ASTNG
-    """
+
+class TreeRebuilder(object):
+    """Rebuilds the _ast tree to become an ASTNG tree"""
+
     def __init__(self, manager):
         self._manager = manager
+        self.init()
+
+    def init(self):
         self.asscontext = None
-        self._metaclass = None
-        self._global_names = None
+        self._metaclass = ['']
+        self._global_names = []
+        self._from_nodes = []
         self._delayed_assattr = []
 
     def visit(self, node, parent):
@@ -147,28 +151,7 @@ class RebuildVisitor(object):
         visit_method = getattr(self, visit_name)
         return visit_method(node, parent)
 
-    def build(self, node, modname, module_file, package):
-        """rebuild the tree starting with an Module node;
-        return an astng.Module node
-        """
-        self._metaclass = ['']
-        self._global_names = []
-        self._from_nodes = []
-        module = self.visit_module(node, modname, package)
-        module.file = module.path = module_file
-        # init module cache here else we may get some infinite recursion
-        # errors while infering delayed assignments
-        if self._manager is not None:
-            self._manager._cache[module.name] = module
-        # handle delayed assattr nodes
-        for from_node in self._from_nodes:
-            self._add_from_names_to_locals(from_node, delayed=True)
-        delay_assattr = self.delayed_assattr
-        for delayed in self._delayed_assattr:
-            delay_assattr(delayed)
-        return module
-
-    def _add_from_names_to_locals(self, node, delayed=False):
+    def add_from_names_to_locals(self, node, delayed=False):
         """store imported names to the locals;
         resort the locals if coming from a delayed node
         """
@@ -182,7 +165,6 @@ class RebuildVisitor(object):
                     node.parent.set_local(name, node)
                     if delayed:
                         sort_locals(node.parent.scope().locals[name])
-
             else:
                 node.parent.set_local(asname or name, node)
                 if delayed:
@@ -195,45 +177,6 @@ class RebuildVisitor(object):
         else:
             node.parent.set_local(node.name, node)
 
-    def delayed_assattr(self, node):
-        """visit a AssAttr node -> add name to locals, handle members
-        definition
-        """
-        try:
-            frame = node.frame()
-            for infered in node.expr.infer():
-                if infered is YES:
-                    continue
-                try:
-                    if infered.__class__ is Instance:
-                        infered = infered._proxied
-                        iattrs = infered.instance_attrs
-                    elif isinstance(infered, Instance):
-                        # Const, Tuple, ... we may be wrong, may be not, but
-                        # anyway we don't want to pollute builtin's namespace
-                        continue
-                    else:
-                        iattrs = infered.locals
-                except AttributeError:
-                    # XXX log error
-                    #import traceback
-                    #traceback.print_exc()
-                    continue
-                values = iattrs.setdefault(node.attrname, [])
-                if node in values:
-                    continue
-                # get assign in __init__ first XXX useful ?
-                if frame.name == '__init__' and values and not \
-                       values[0].frame().name == '__init__':
-                    values.insert(0, node)
-                else:
-                    values.append(node)
-        except InferenceError:
-            pass
-
-
-class TreeRebuilder(RebuildVisitor):
-    """Rebuilds the _ast tree to become an ASTNG tree"""
 
     def visit_arguments(self, node, parent):
         """visit a Arguments node by returning a fresh instance of it"""
@@ -539,7 +482,7 @@ class TreeRebuilder(RebuildVisitor):
         # in the cache since 'import_module' calls the MANAGER and we will
         # end up with infinite recursions working with unfinished trees
         if newnode.modname in self._manager._cache:
-             self._add_from_names_to_locals(newnode)
+             self.add_from_names_to_locals(newnode)
         else:
              self._from_nodes.append(newnode)
         return newnode
