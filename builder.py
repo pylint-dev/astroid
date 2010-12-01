@@ -135,10 +135,10 @@ class ASTNGBuilder:
             package = True
         else:
             package = path and path.find('__init__.py') > -1 or False
-        newnode = self.build(node, modname, node_file, package)
+        newnode = self.tree_build(node, modname, node_file, package)
         return newnode
 
-    def build(self, node, modname, module_file, package):
+    def tree_build(self, node, modname, module_file, package):
         """rebuild the tree starting with an Module node;
         return an astng.Module node
         """
