@@ -243,7 +243,7 @@ num = iterer.next()
         """)
         next = tree.body[2].value.func # Getattr
         gener = next.expr.infered()[0] # Genrator
-        # TODO : this is because we dont support function attributes:
+        # XXX gener._proxied is a Function which has no instance_attr
         self.assertRaises(AttributeError, gener.getattr, 'next')
 
     def test_explicit___name__(self):
