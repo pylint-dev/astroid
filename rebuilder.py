@@ -144,8 +144,6 @@ class TreeRebuilder(object):
         self._delayed_assattr = []
 
     def visit(self, node, parent):
-        if node is None: # some attributes of some nodes are just None
-            return None
         cls_name = node.__class__.__name__
         visit_name = 'visit_' + REDIRECT.get(cls_name, cls_name).lower()
         visit_method = getattr(self, visit_name)
@@ -212,7 +210,8 @@ class TreeRebuilder(object):
         newnode = new.Assert()
         _lineno_parent(node, newnode, parent)
         newnode.test = self.visit(node.test, newnode)
-        newnode.fail = self.visit(node.msg, newnode)
+        if node.msg is not None:
+            newnode.fail = self.visit(node.msg, newnode)
         newnode.set_line_info(newnode.last_child())
         return newnode
 
@@ -292,14 +291,22 @@ class TreeRebuilder(object):
         newnode.set_line_info(newnode.last_child())
         return newnode
 
+    def visit_break(self, node, parent):
+        """visit a Break node by returning a fresh instance of it"""
+        newnode = new.Break()
+        _set_infos(node, newnode, parent)
+        return newnode
+
     def visit_callfunc(self, node, parent):
         """visit a CallFunc node by returning a fresh instance of it"""
         newnode = new.CallFunc()
         _lineno_parent(node, newnode, parent)
         newnode.func = self.visit(node.func, newnode)
         newnode.args = [self.visit(child, newnode) for child in node.args]
-        newnode.starargs = self.visit(node.starargs, newnode)
-        newnode.kwargs = self.visit(node.kwargs, newnode)
+        if node.starargs is not None:
+            newnode.starargs = self.visit(node.starargs, newnode)
+        if node.kwargs is not None:
+            newnode.kwargs = self.visit(node.kwargs, newnode)
         newnode.args.extend(self.visit(child, newnode) for child in node.keywords)
         newnode.set_line_info(newnode.last_child())
         return newnode
@@ -321,12 +328,6 @@ class TreeRebuilder(object):
             # current scope
             newnode._newstyle = metaclass == 'type'
         newnode.parent.frame().set_local(newnode.name, newnode)
-        return newnode
-
-    def visit_break(self, node, parent):
-        """visit a Break node by returning a fresh instance of it"""
-        newnode = new.Break()
-        _set_infos(node, newnode, parent)
         return newnode
 
     def visit_const(self, node, parent):
@@ -431,7 +432,8 @@ class TreeRebuilder(object):
         """visit an ExceptHandler node by returning a fresh instance of it"""
         newnode = new.ExceptHandler()
         _lineno_parent(node, newnode, parent)
-        newnode.type = self.visit(node.type, newnode)
+        if node.type is not None:
+            newnode.type = self.visit(node.type, newnode)
         if node.name is not None:
             # /!\ node.name can be a tuple
             self.asscontext = "Ass"
@@ -446,8 +448,10 @@ class TreeRebuilder(object):
         newnode = new.Exec()
         _lineno_parent(node, newnode, parent)
         newnode.expr = self.visit(node.body, newnode)
-        newnode.globals = self.visit(node.globals, newnode)
-        newnode.locals = self.visit(node.locals, newnode)
+        if node.globals is not None:
+            newnode.globals = self.visit(node.globals, newnode)
+        if node.locals is not None:
+            newnode.locals = self.visit(node.locals, newnode)
         newnode.set_line_info(newnode.last_child())
         return newnode
 
@@ -691,7 +695,8 @@ class TreeRebuilder(object):
         newnode = new.Print()
         _lineno_parent(node, newnode, parent)
         newnode.nl = node.nl
-        newnode.dest = self.visit(node.dest, newnode)
+        if node.dest is not None:
+            newnode.dest = self.visit(node.dest, newnode)
         newnode.values = [self.visit(child, newnode) for child in node.values]
         newnode.set_line_info(newnode.last_child())
         return newnode
@@ -700,9 +705,12 @@ class TreeRebuilder(object):
         """visit a Raise node by returning a fresh instance of it"""
         newnode = new.Raise()
         _lineno_parent(node, newnode, parent)
-        newnode.exc = self.visit(node.type, newnode)
-        newnode.inst = self.visit(node.inst, newnode)
-        newnode.tback = self.visit(node.tback, newnode)
+        if node.type is not None:
+            newnode.exc = self.visit(node.type, newnode)
+        if node.inst is not None:
+            newnode.inst = self.visit(node.inst, newnode)
+        if node.tback is not None:
+            newnode.tback = self.visit(node.tback, newnode)
         newnode.set_line_info(newnode.last_child())
         return newnode
 
@@ -710,7 +718,8 @@ class TreeRebuilder(object):
         """visit a Return node by returning a fresh instance of it"""
         newnode = new.Return()
         _lineno_parent(node, newnode, parent)
-        newnode.value = self.visit(node.value, newnode)
+        if node.value is not None:
+            newnode.value = self.visit(node.value, newnode)
         newnode.set_line_info(newnode.last_child())
         return newnode
 
@@ -736,9 +745,12 @@ class TreeRebuilder(object):
         """visit a Slice node by returning a fresh instance of it"""
         newnode = new.Slice()
         _lineno_parent(node, newnode, parent)
-        newnode.lower = self.visit(node.lower, newnode)
-        newnode.upper = self.visit(node.upper, newnode)
-        newnode.step = self.visit(node.step, newnode)
+        if node.lower is not None:
+            newnode.lower = self.visit(node.lower, newnode)
+        if node.upper is not None:
+            newnode.upper = self.visit(node.upper, newnode)
+        if node.step is not None:
+            newnode.step = self.visit(node.step, newnode)
         newnode.set_line_info(newnode.last_child())
         return newnode
 
@@ -805,7 +817,8 @@ class TreeRebuilder(object):
         _lineno_parent(node, newnode, parent)
         newnode.expr = self.visit(node.context_expr, newnode)
         self.asscontext = "Ass"
-        newnode.vars = self.visit(node.optional_vars, newnode)
+        if node.optional_vars is not None:
+            newnode.vars = self.visit(node.optional_vars, newnode)
         self.asscontext = None
         newnode.body = [self.visit(child, newnode) for child in node.body]
         newnode.set_line_info(newnode.last_child())
@@ -851,8 +864,10 @@ class TreeRebuilder3k(TreeRebuilder):
         newnode = new.Raise()
         _lineno_parent(node, newnode, parent)
         # no traceback; anyway it is not used in Pylint
-        newnode.exc = self.visit(node.exc, newnode)
-        newnode.cause = self.visit(node.cause, newnode)
+        if node.exc is not None:
+            newnode.exc = self.visit(node.exc, newnode)
+        if node.cause is not None:
+            newnode.cause = self.visit(node.cause, newnode)
         newnode.set_line_info(newnode.last_child())
         return newnode
 
