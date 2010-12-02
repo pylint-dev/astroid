@@ -690,8 +690,8 @@ class Raise(Statement):
         tback = None
     else:
         _astng_fields = ('exc', 'cause')
-        inst = None
-        tback = None
+        exc = None
+        cause = None
 
     def raises_not_implemented(self):
         if not self.exc:

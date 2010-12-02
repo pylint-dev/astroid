@@ -122,14 +122,10 @@ del appli
         self.assertEqual(modname, 'very.multi.utils')
         modname = mod.relative_to_absolute_name('utils', 0)
         self.assertEqual(modname, 'very.multi.module.utils')
-        """
-        """
         # non package
         mod.package = False
         modname = mod.relative_to_absolute_name('utils', 0)
         self.assertEqual(modname, 'very.multi.utils')
-        """
-        """
         modname = mod.relative_to_absolute_name('utils', 1)
         self.assertEqual(modname, 'very.multi.utils')
         modname = mod.relative_to_absolute_name('utils', 2)
@@ -290,7 +286,7 @@ a = func()
         """test instance attributes for functions"""
         data= """
 def test():
-    print test.bar
+    print(test.bar)
 
 test.bar = 1
 test()

@@ -846,7 +846,8 @@ class TreeRebuilder3k(TreeRebuilder):
         """visit an ExceptHandler node by returning a fresh instance of it"""
         newnode = new.ExceptHandler()
         _lineno_parent(node, newnode, parent)
-        newnode.type = self.visit(node.type, newnode)
+        if node.type is not None:
+            newnode.type = self.visit(node.type, newnode)
         if node.name is not None:
             newnode.name = self.visit_assname(node, newnode, node.name)
         newnode.body = [self.visit(child, newnode) for child in node.body]
