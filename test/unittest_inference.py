@@ -22,7 +22,8 @@ import sys
 from StringIO import StringIO
 from logilab.common.testlib import TestCase, unittest_main
 
-from logilab.astng import InferenceError, builder, nodes, inference
+from logilab.astng import InferenceError, builder, nodes
+from logilab.astng.inference import infer_end as inference_infer_end
 from logilab.astng.bases import YES, Instance, BoundMethod, UnboundMethod,\
                                 path_wrapper, BUILTINS_NAME
 
@@ -40,7 +41,7 @@ class InferenceUtilsTC(TestCase):
         def infer_default(self, *args):
             raise InferenceError
         infer_default = path_wrapper(infer_default)
-        infer_end = path_wrapper(inference.infer_end)
+        infer_end = path_wrapper(inference_infer_end)
         self.failUnlessRaises(InferenceError,
                               infer_default(1).next)
         self.failUnlessEqual(infer_end(1).next(), 1)

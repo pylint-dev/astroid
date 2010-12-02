@@ -32,7 +32,8 @@ try:
 except NameError:
     class GeneratorExit(Exception): pass
 
-from logilab.astng import nodes, raw_building
+from logilab.astng import nodes
+
 from logilab.astng.manager import ASTNGManager
 from logilab.astng.exceptions import (ASTNGBuildingException, ASTNGError,
     InferenceError, NoDefault, NotFoundError, UnresolvableName)
@@ -41,38 +42,6 @@ from logilab.astng.bases import YES, Instance, InferenceContext, Generator, \
 from logilab.astng.protocols import _arguments_infer_argname
 
 MANAGER = ASTNGManager()
-
-_CONST_PROXY = {
-    type(None): raw_building.build_class('NoneType'),
-    bool: MANAGER.astng_from_class(bool),
-    int: MANAGER.astng_from_class(int),
-    long: MANAGER.astng_from_class(long),
-    float: MANAGER.astng_from_class(float),
-    complex: MANAGER.astng_from_class(complex),
-    str: MANAGER.astng_from_class(str),
-    unicode: MANAGER.astng_from_class(unicode),
-    }
-_CONST_PROXY[type(None)].parent = _CONST_PROXY[bool].parent
-if sys.version_info >= (2, 6):
-    _CONST_PROXY[bytes] = MANAGER.astng_from_class(bytes)
-
-# TODO : find a nicer way to handle this situation; we should at least
-# be able to avoid calling MANAGER.astng_from_class(const.value.__class__)
-# each time (if we can not avoid the property). However __proxied introduced an
-# infinite recursion (see https://bugs.launchpad.net/pylint/+bug/456870)
-def _set_proxied(const):
-    return _CONST_PROXY[const.value.__class__]
-nodes.Const._proxied = property(_set_proxied)
-
-def Const_pytype(self):
-    return self._proxied.qname()
-nodes.Const.pytype = Const_pytype
-
-
-nodes.List._proxied = MANAGER.astng_from_class(list)
-nodes.Tuple._proxied = MANAGER.astng_from_class(tuple)
-nodes.Dict._proxied = MANAGER.astng_from_class(dict)
-Generator._proxied = MANAGER.infer_astng_from_something(type(a for a in ()))
 
 
 class CallContext:
