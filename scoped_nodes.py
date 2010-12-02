@@ -32,7 +32,7 @@ from itertools import chain
 from logilab.common.compat import builtins
 from logilab.common.decorators import cached
 
-from logilab.astng import NotFoundError, NoDefault, \
+from logilab.astng.exceptions import NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
 from logilab.astng.node_classes import Const, DelName, DelAttr, \
      Dict, From, List, Name, Pass, Raise, Return, Tuple, Yield, \

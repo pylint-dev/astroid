@@ -36,7 +36,7 @@ extract information from it
 
 __docformat__ = "restructuredtext en"
 
-from logilab.astng._exceptions import ASTNGBuildingException
+from logilab.astng.exceptions import ASTNGBuildingException
 
 class ASTVisitor(object):
     """Abstract Base Class for Python AST Visitors.

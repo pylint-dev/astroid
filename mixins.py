@@ -33,7 +33,8 @@
 
 """
 
-from logilab.astng import ASTNGBuildingException, InferenceError, NotFoundError
+from logilab.astng.exceptions import (ASTNGBuildingException, InferenceError,
+                                      NotFoundError)
 from logilab.astng.bases import BaseClass
 
 # /!\ We cannot build a StmtNode(NodeNG) class since modifying "__bases__"

@@ -60,7 +60,7 @@ __doctype__ = "restructuredtext en"
 # WARNING: internal imports order matters !
 
 # make all exception classes accessible from astng package
-from logilab.astng._exceptions import *
+from logilab.astng.exceptions import *
 
 # make all node classes accessible from astng package
 from logilab.astng.nodes import *

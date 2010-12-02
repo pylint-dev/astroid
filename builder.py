@@ -35,7 +35,7 @@ from inspect import isdatadescriptor
 
 from logilab.common.modutils import modpath_from_file
 
-from logilab.astng._exceptions import ASTNGBuildingException, InferenceError
+from logilab.astng.exceptions import ASTNGBuildingException, InferenceError
 from logilab.astng.raw_building import build_module, object_build_class, \
      object_build_function, object_build_datadescriptor, attach_dummy_node, \
      object_build_methoddescriptor, attach_const_node, attach_import_node

@@ -22,7 +22,7 @@
 
 import sys
 
-from logilab.astng import NoDefault
+from logilab.astng.exceptions import NoDefault
 from logilab.astng.bases import NodeNG, BaseClass, Instance, copy_context, \
                                 _infer_stmts, YES
 from logilab.astng.mixins import StmtMixIn, BlockRangeMixIn, AssignTypeMixin, \

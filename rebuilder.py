@@ -46,7 +46,7 @@ from _ast import (Expr as Discard, Str,
     Eq, Gt, GtE, In, Is, IsNot, Lt, LtE, NotEq, NotIn,
     )
 
-from logilab.astng import ASTNGBuildingException
+from logilab.astng.exceptions import ASTNGBuildingException
 from logilab.astng import nodes as new
 
 
