@@ -35,13 +35,12 @@
 
 from logilab.astng.exceptions import (ASTNGBuildingException, InferenceError,
                                       NotFoundError)
-from logilab.astng.bases import BaseClass
 
 # /!\ We cannot build a StmtNode(NodeNG) class since modifying "__bases__"
 # in "nodes.py" has to work *both* for old-style and new-style classes,
 # but we need the StmtMixIn for scoped nodes
 
-class StmtMixIn(BaseClass):
+class StmtMixIn(object):
     """StmtMixIn used only for a adding a few attributes"""
     is_statement = True
 
@@ -62,7 +61,7 @@ class StmtMixIn(BaseClass):
             return stmts[index -1]
 
 
-class BlockRangeMixIn(BaseClass):
+class BlockRangeMixIn(object):
     """override block range """
     def set_line_info(self, lastchild):
         self.fromlineno = self.lineno
@@ -119,7 +118,7 @@ class ParentAssignTypeMixin(AssignTypeMixin):
 
 
 
-class FromImportMixIn(BaseClass, FilterStmtsMixin):
+class FromImportMixIn(FilterStmtsMixin):
     """MixIn for From and Import Nodes"""
 
     def _infer_name(self, frame, name):

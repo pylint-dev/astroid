@@ -37,7 +37,7 @@ from logilab.astng.exceptions import NotFoundError, NoDefault, \
 from logilab.astng.node_classes import Const, DelName, DelAttr, \
      Dict, From, List, Name, Pass, Raise, Return, Tuple, Yield, \
      are_exclusive, LookupMixIn, const_factory as cf, unpack_infer
-from logilab.astng.bases import NodeNG, BaseClass, InferenceContext, Instance,\
+from logilab.astng.bases import NodeNG, InferenceContext, Instance,\
      YES, Generator, UnboundMethod, BoundMethod, _infer_stmts, copy_context, \
      BUILTINS_NAME
 from logilab.astng.mixins import StmtMixIn, FilterStmtsMixin

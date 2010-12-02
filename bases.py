@@ -41,15 +41,6 @@ from __future__ import generators
 __docformat__ = "restructuredtext en"
 
 
-try:
-    from _ast import AST
-    del AST
-    class BaseClass(object):
-        pass
-except ImportError:
-    class BaseClass:
-        pass
-
 from logilab.common.compat import builtins
 from logilab.astng.exceptions import InferenceError, ASTNGError, \
                                        NotFoundError, UnresolvableName
@@ -57,7 +48,7 @@ from logilab.astng.as_string import as_string
 
 BUILTINS_NAME = builtins.__name__
 
-class Proxy(BaseClass):
+class Proxy(object):
     """a simple proxy object"""
     _proxied = None
 
@@ -341,7 +332,7 @@ def raise_if_nothing_infered(func):
 
 # Node  ######################################################################
 
-class NodeNG(BaseClass):
+class NodeNG(object):
     """Base Class for all ASTNG node classes.
 
     It represents a node of the new abstract syntax tree.

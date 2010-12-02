@@ -23,7 +23,7 @@
 import sys
 
 from logilab.astng.exceptions import NoDefault
-from logilab.astng.bases import NodeNG, BaseClass, Instance, copy_context, \
+from logilab.astng.bases import NodeNG, Instance, copy_context, \
                                 _infer_stmts, YES
 from logilab.astng.mixins import StmtMixIn, BlockRangeMixIn, AssignTypeMixin, \
                                  ParentAssignTypeMixin, FromImportMixIn
@@ -98,7 +98,7 @@ def are_exclusive(stmt1, stmt2, exceptions=None):
     return False
 
 
-class LookupMixIn(BaseClass):
+class LookupMixIn(object):
     """Mixin looking up a name in the right scope
     """
 
