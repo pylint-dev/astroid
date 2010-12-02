@@ -30,35 +30,10 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
 """This module contains some mixins for the different nodes.
-
 """
 
 from logilab.astng.exceptions import (ASTNGBuildingException, InferenceError,
                                       NotFoundError)
-
-# /!\ We cannot build a StmtNode(NodeNG) class since modifying "__bases__"
-# in "nodes.py" has to work *both* for old-style and new-style classes,
-# but we need the StmtMixIn for scoped nodes
-
-class StmtMixIn(object):
-    """StmtMixIn used only for a adding a few attributes"""
-    is_statement = True
-
-    def next_sibling(self):
-        """return the next sibling statement"""
-        stmts = self.parent.child_sequence(self)
-        index = stmts.index(self)
-        try:
-            return stmts[index +1]
-        except IndexError:
-            pass
-
-    def previous_sibling(self):
-        """return the previous sibling statement"""
-        stmts = self.parent.child_sequence(self)
-        index = stmts.index(self)
-        if index >= 1:
-            return stmts[index -1]
 
 
 class BlockRangeMixIn(object):

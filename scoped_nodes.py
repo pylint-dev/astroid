@@ -40,7 +40,8 @@ from logilab.astng.node_classes import Const, DelName, DelAttr, \
 from logilab.astng.bases import NodeNG, InferenceContext, Instance,\
      YES, Generator, UnboundMethod, BoundMethod, _infer_stmts, copy_context, \
      BUILTINS_NAME
-from logilab.astng.mixins import StmtMixIn, FilterStmtsMixin
+from logilab.astng.mixins import FilterStmtsMixin
+from logilab.astng.bases import Statement
 from logilab.astng.manager import ASTNGManager
 
 
@@ -504,7 +505,7 @@ class Lambda(LocalsDictNodeNG, FilterStmtsMixin):
             frame = self
         return frame._scope_lookup(node, name, offset)
 
-class Function(StmtMixIn, Lambda):
+class Function(Statement, Lambda):
     _astng_fields = ('decorators', 'args', 'body')
 
     special_attributes = set(('__name__', '__doc__', '__dict__'))
@@ -663,7 +664,7 @@ def _iface_hdlr(iface_node):
     return True
 
 
-class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
+class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
 
     # some of the attributes below are set by the builder module or
     # by a raw factories

@@ -570,6 +570,26 @@ class NodeNG(object):
         return "\n".join(result)
 
 
+class Statement(NodeNG):
+    """Statement node adding a few attributes"""
+    is_statement = True
+
+    def next_sibling(self):
+        """return the next sibling statement"""
+        stmts = self.parent.child_sequence(self)
+        index = stmts.index(self)
+        try:
+            return stmts[index +1]
+        except IndexError:
+            pass
+
+    def previous_sibling(self):
+        """return the previous sibling statement"""
+        stmts = self.parent.child_sequence(self)
+        index = stmts.index(self)
+        if index >= 1:
+            return stmts[index -1]
+
 INDENT = "    "
 
 def _repr_tree(node, result, indent='', _done=None, ids=False):

@@ -23,9 +23,9 @@
 import sys
 
 from logilab.astng.exceptions import NoDefault
-from logilab.astng.bases import NodeNG, Instance, copy_context, \
-                                _infer_stmts, YES
-from logilab.astng.mixins import StmtMixIn, BlockRangeMixIn, AssignTypeMixin, \
+from logilab.astng.bases import (NodeNG, Statement, Instance, copy_context,
+                                 _infer_stmts, YES)
+from logilab.astng.mixins import BlockRangeMixIn, AssignTypeMixin, \
                                  ParentAssignTypeMixin, FromImportMixIn
 
 
@@ -333,19 +333,19 @@ class AssAttr(NodeNG, ParentAssignTypeMixin):
     _astng_fields = ('expr',)
     expr = None
 
-class Assert(StmtMixIn, NodeNG):
+class Assert(Statement):
     """class representing an Assert node"""
     _astng_fields = ('test', 'fail',)
     test = None
     fail = None
 
-class Assign(StmtMixIn, NodeNG, AssignTypeMixin):
+class Assign(Statement, AssignTypeMixin):
     """class representing an Assign node"""
     _astng_fields = ('targets', 'value',)
     targets = None
     value = None
 
-class AugAssign(StmtMixIn, NodeNG, AssignTypeMixin):
+class AugAssign(Statement, AssignTypeMixin):
     """class representing an AugAssign node"""
     _astng_fields = ('target', 'value',)
     target = None
@@ -367,7 +367,7 @@ class BoolOp(NodeNG):
     _astng_fields = ('values',)
     values = None
 
-class Break(StmtMixIn, NodeNG):
+class Break(Statement):
     """class representing a Break node"""
 
 
@@ -446,7 +446,7 @@ class Const(NodeNG, Instance):
             return self.value
         raise TypeError()
 
-class Continue(StmtMixIn, NodeNG):
+class Continue(Statement):
     """class representing a Continue node"""
 
 
@@ -468,7 +468,7 @@ class DelAttr(NodeNG, ParentAssignTypeMixin):
     expr = None
 
 
-class Delete(StmtMixIn, NodeNG, AssignTypeMixin):
+class Delete(Statement, AssignTypeMixin):
     """class representing a Delete node"""
     _astng_fields = ('targets',)
     targets = None
@@ -508,7 +508,7 @@ class Dict(NodeNG, Instance):
         raise IndexError(key)
 
 
-class Discard(StmtMixIn, NodeNG):
+class Discard(Statement):
     """class representing a Discard node"""
     _astng_fields = ('value',)
     value = None
@@ -522,7 +522,7 @@ class EmptyNode(NodeNG):
     """class representing an EmptyNode node"""
 
 
-class ExceptHandler(StmtMixIn, NodeNG, AssignTypeMixin):
+class ExceptHandler(Statement, AssignTypeMixin):
     """class representing an ExceptHandler node"""
     _astng_fields = ('type', 'name', 'body',)
     type = None
@@ -550,7 +550,7 @@ class ExceptHandler(StmtMixIn, NodeNG, AssignTypeMixin):
                 return True
 
 
-class Exec(StmtMixIn, NodeNG):
+class Exec(Statement):
     """class representing an Exec node"""
     _astng_fields = ('expr', 'globals', 'locals',)
     expr = None
@@ -563,8 +563,7 @@ class ExtSlice(NodeNG):
     _astng_fields = ('dims',)
     dims = None
 
-
-class For(BlockRangeMixIn, StmtMixIn, AssignTypeMixin, NodeNG):
+class For(BlockRangeMixIn, AssignTypeMixin, Statement):
     """class representing a For node"""
     _astng_fields = ('target', 'iter', 'body', 'orelse',)
     target = None
@@ -577,7 +576,7 @@ class For(BlockRangeMixIn, StmtMixIn, AssignTypeMixin, NodeNG):
         return self.iter.tolineno
 
 
-class From(FromImportMixIn, StmtMixIn, NodeNG):
+class From(FromImportMixIn, Statement):
     """class representing a From node"""
 
     def __init__(self,  fromname, names, level=0):
@@ -591,7 +590,7 @@ class Getattr(NodeNG):
     expr = None
 
 
-class Global(StmtMixIn, NodeNG):
+class Global(Statement):
     """class representing a Global node"""
 
     def __init__(self, names):
@@ -601,7 +600,7 @@ class Global(StmtMixIn, NodeNG):
         return name
 
 
-class If(BlockRangeMixIn, StmtMixIn, NodeNG):
+class If(BlockRangeMixIn, Statement):
     """class representing an If node"""
     _astng_fields = ('test', 'body', 'orelse')
     test = None
@@ -629,7 +628,7 @@ class IfExp(NodeNG):
     orelse = None
 
 
-class Import(FromImportMixIn, StmtMixIn, NodeNG):
+class Import(FromImportMixIn, Statement):
     """class representing an Import node"""
 
 
@@ -660,7 +659,7 @@ class List(NodeNG, Instance, ParentAssignTypeMixin):
         return self.elts
 
 
-class Nonlocal(StmtMixIn, NodeNG):
+class Nonlocal(Statement):
     """class representing a Nonlocal node"""
 
     def __init__(self, names):
@@ -670,11 +669,11 @@ class Nonlocal(StmtMixIn, NodeNG):
         return name
 
 
-class Pass(StmtMixIn, NodeNG):
+class Pass(Statement):
     """class representing a Pass node"""
 
 
-class Print(StmtMixIn, NodeNG):
+class Print(Statement):
     """class representing a Print node"""
     _astng_fields = ('dest', 'values',)
     dest = None
@@ -682,7 +681,7 @@ class Print(StmtMixIn, NodeNG):
 
 
 
-class Raise(StmtMixIn, NodeNG):
+class Raise(Statement):
     """class representing a Raise node"""
     exc = None
     if sys.version_info < (3, 0):
@@ -702,7 +701,7 @@ class Raise(StmtMixIn, NodeNG):
                 return True
 
 
-class Return(StmtMixIn, NodeNG):
+class Return(Statement):
     """class representing a Return node"""
     _astng_fields = ('value',)
     value = None
@@ -740,7 +739,7 @@ class Subscript(NodeNG):
     slice = None
 
 
-class TryExcept(BlockRangeMixIn, StmtMixIn, NodeNG):
+class TryExcept(BlockRangeMixIn, Statement):
     """class representing a TryExcept node"""
     _astng_fields = ('body', 'handlers', 'orelse',)
     body = None
@@ -766,7 +765,7 @@ class TryExcept(BlockRangeMixIn, StmtMixIn, NodeNG):
         return self._elsed_block_range(lineno, self.orelse, last)
 
 
-class TryFinally(BlockRangeMixIn, StmtMixIn, NodeNG):
+class TryFinally(BlockRangeMixIn, Statement):
     """class representing a TryFinally node"""
     _astng_fields = ('body', 'finalbody',)
     body = None
@@ -806,7 +805,7 @@ class UnaryOp(NodeNG):
     operand = None
 
 
-class While(BlockRangeMixIn, StmtMixIn, NodeNG):
+class While(BlockRangeMixIn, Statement):
     """class representing a While node"""
     _astng_fields = ('test', 'body', 'orelse',)
     test = None
@@ -820,7 +819,8 @@ class While(BlockRangeMixIn, StmtMixIn, NodeNG):
         """handle block line numbers range for for and while statements"""
         return self. _elsed_block_range(lineno, self.orelse)
 
-class With(BlockRangeMixIn, StmtMixIn, AssignTypeMixin, NodeNG):
+
+class With(BlockRangeMixIn, AssignTypeMixin, Statement):
     """class representing a With node"""
     _astng_fields = ('expr', 'vars', 'body')
     expr = None
