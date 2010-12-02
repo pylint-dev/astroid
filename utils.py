@@ -298,16 +298,11 @@ class LocalsVisitor(ASTWalker):
             return
         self._visited[node] = 1 # FIXME: use set ?
         methods = self.get_callbacks(node)
-        recurse = 1
         if methods[0] is not None:
-            try:
-                methods[0](node)
-            except IgnoreChild:
-                recurse = 0
-        if recurse:
-            if 'locals' in node.__dict__: # skip Instance and other proxy
-                for name, local_node in node.items():
-                    self.visit(local_node)
+            methods[0](node)
+        if 'locals' in node.__dict__: # skip Instance and other proxy
+            for name, local_node in node.items():
+                self.visit(local_node)
         if methods[1] is not None:
             return methods[1](node)
 
