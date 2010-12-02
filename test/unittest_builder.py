@@ -483,8 +483,7 @@ class FileBuildTC(TestCase):
         keys = sorted(_locals.keys())
         should = ['MY_DICT', 'YO', 'YOUPI',
                 '__revision__',  'global_access','modutils', 'four_args',
-                 'os', 'redirect', 'spawn', 'LocalsVisitor',
-                'ASTWalker', 'ASTVisitor']
+                 'os', 'redirect', 'spawn', 'LocalsVisitor', 'ASTWalker']
         should.sort()
         self.assertEqual(keys, should)
 

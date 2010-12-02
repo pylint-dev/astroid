@@ -34,7 +34,6 @@ It will probably not work on compiler.ast or _ast trees.
 """
 import sys
 
-from logilab.astng.utils import ASTVisitor
 
 INDENT = '    ' # 4 spaces ; keep indentation variable
 
@@ -50,7 +49,7 @@ def _import_string(names):
     return  ', '.join(_names)
 
 
-class AsStringVisitor(ASTVisitor):
+class AsStringVisitor(object):
     """Visitor to render an ASTNG node as string """
 
     def __call__(self, node):
@@ -179,7 +178,11 @@ class AsStringVisitor(ASTVisitor):
     def visit_discard(self, node):
         """return an astng.Discard node as string"""
         return node.value.accept(self)
-    
+
+    def visit_emptynode(self, node):
+        """dummy method for visiting an Empty node"""
+        return ''
+
     def visit_excepthandler(self, node):
         if node.type:
             if node.name:
