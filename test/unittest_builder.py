@@ -114,11 +114,15 @@ class FromToLineNoTC(TestCase):
         self.assertIsInstance(function, nodes.Function)
         self.assertEqual(function.fromlineno, 15)
         self.assertEqual(function.tolineno, 18)
-        self.assertEqual(function.blockstart_tolineno, 17)
         return_ = function.body[0]
         self.assertIsInstance(return_, nodes.Return)
         self.assertEqual(return_.fromlineno, 18)
         self.assertEqual(return_.tolineno, 18)
+        if sys.version_info < (3, 0):
+            self.assertEqual(function.blockstart_tolineno, 17)
+        else:
+            self.skipTest('FIXME  http://bugs.python.org/issue10445 '
+                          '(no line number on function args)')
 
     def test_decorated_function_lineno(self):
         astng = builder.ASTNGBuilder().string_build('''
@@ -130,9 +134,13 @@ def function(
         function = astng['function']
         self.assertEqual(function.fromlineno, 3) # XXX discussable, but that's what is expected by pylint right now
         self.assertEqual(function.tolineno, 5)
-        self.assertEqual(function.blockstart_tolineno, 4)
         self.assertEqual(function.decorators.fromlineno, 2)
         self.assertEqual(function.decorators.tolineno, 2)
+        if sys.version_info < (3, 0):
+            self.assertEqual(function.blockstart_tolineno, 4)
+        else:
+            self.skipTest('FIXME  http://bugs.python.org/issue10445 '
+                          '(no line number on function args)')
 
 
     def test_class_lineno(self):

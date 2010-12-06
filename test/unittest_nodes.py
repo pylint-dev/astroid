@@ -314,12 +314,16 @@ def func(a,
 x = lambda x: None
         ''')
         self.assertEqual(ast['func'].args.fromlineno, 2)
-        self.assertEqual(ast['func'].args.tolineno, 3)
         self.failIf(ast['func'].args.is_statement)
         xlambda = ast['x'].infer().next()
         self.assertEqual(xlambda.args.fromlineno, 4)
         self.assertEqual(xlambda.args.tolineno, 4)
         self.failIf(xlambda.args.is_statement)
+        if sys.version_info < (3, 0):
+            self.assertEqual(ast['func'].args.tolineno, 3)
+        else:
+            self.skipTest('FIXME  http://bugs.python.org/issue10445 '
+                          '(no line number on function args)')
 
 
 class SliceNodeTC(testlib.TestCase):
