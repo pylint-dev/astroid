@@ -270,6 +270,12 @@ class ImportNodeTC(testlib.TestCase):
         self.assertEqual(as_string(ast), "from logilab.common.shellutils import Execute as spawn")
         ast = MODULE['os']
         self.assertEqual(as_string(ast), "import os.path")
+        code = """from . import here
+from .. import door
+from .store import bread
+from ..cave import wine\n\n"""
+        ast = abuilder.string_build(code)
+        self.assertMultiLineEqual(ast.as_string(), code)
 
 class CmpNodeTC(testlib.TestCase):
     def test_as_string(self):
