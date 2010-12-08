@@ -45,6 +45,56 @@ DATA = join(dirname(abspath(__file__)), 'data')
 
 abuilder = builder.ASTNGBuilder()
 
+class AsString(testlib.TestCase):
+
+    def test_varargs_kwargs_as_string(self):
+        ast = abuilder.string_build( 'raise_string(*args, **kwargs)').body[0]
+        self.assertEqual(as_string(ast), 'raise_string(*args, **kwargs)')
+
+    def test_module_as_string(self):
+        """check as_string on a whole module prepared to be returned identically
+        """
+        data = open(join(DATA, 'module.py')).read()
+        self.assertMultiLineEqual(as_string(MODULE), data)
+        data = open(join(DATA, 'module2.py')).read()
+        self.assertMultiLineEqual(as_string(MODULE2), data)
+
+    def test_2_7_as_string(self):
+        """check as_string for python syntax >= 2.7"""
+        if sys.version_info < (2, 7):
+            self.skipTest("test python >= 2.7 specific")
+        code = '''one_two = {1, 2}
+b = {v: k for (k, v) in enumerate('string')}
+cdd = {k for k in b}\n\n'''
+        ast = abuilder.string_build(code)
+        self.assertMultiLineEqual(as_string(ast), code)
+
+    def test_3k_as_string(self):
+        """check as_string for python 3k syntax"""
+        if sys.version_info < (3, 0):
+            self.skipTest("test python 3k specific")
+        code = '''print()
+
+def function(var):
+    nonlocal counter
+    try:
+        hello
+    except NameError as nexc:
+        (*hell, o) = b'hello'
+        raise AttributeError from nexc
+\n'''
+        # TODO : annotations and keywords for class definition are not yet implemented
+        _todo = '''
+def function(var:int):
+    nonlocal counter
+
+class Language(metaclass=Natural):
+    """natural language"""
+        '''
+        ast = abuilder.string_build(code)
+        self.assertEqual(as_string(ast), code)
+
+
 class _NodeTC(testlib.TestCase):
     """test transformation of If Node"""
     CODE = None
@@ -214,59 +264,12 @@ class ImportNodeTC(testlib.TestCase):
         self.assertRaises(NotFoundError, imp_.real_name, 'data')
 
     def test_as_string(self):
-        
         ast = MODULE['modutils']
         self.assertEqual(as_string(ast), "from logilab.common import modutils")
         ast = MODULE['spawn']
         self.assertEqual(as_string(ast), "from logilab.common.shellutils import Execute as spawn")
         ast = MODULE['os']
         self.assertEqual(as_string(ast), "import os.path")
-        ast = abuilder.string_build( 'raise_string(*args, **kwargs)').body[0]
-        self.assertEqual(as_string(ast), 'raise_string(*args, **kwargs)')
-
-    def test_module_as_string(self):
-        """check as_string on a whole module prepared to be returned identically
-        """
-        data = open(join(DATA, 'module.py')).read()
-        self.assertMultiLineEqual(as_string(MODULE), data)
-        data = open(join(DATA, 'module2.py')).read()
-        self.assertMultiLineEqual(as_string(MODULE2), data)
-
-    def test_2_7_as_string(self):
-        """check as_string for python syntax >= 2.7"""
-        if sys.version_info < (2, 7):
-            self.skipTest("test python >= 2.7 specific")
-        code = '''one_two = {1, 2}
-b = {v: k for (k, v) in enumerate('string')}
-cdd = {k for k in b}\n\n'''
-        ast = abuilder.string_build(code)
-        self.assertMultiLineEqual(as_string(ast), code)
-
-    def test_3k_as_string(self):
-        """check as_string for python 3k syntax"""
-        if sys.version_info < (3, 0):
-            self.skipTest("test python 3k specific")
-        code = '''print()
-
-def function(var):
-    nonlocal counter
-    try:
-        hello
-    except NameError as nexc:
-        (*hell, o) = b'hello'
-        raise AttributeError from nexc
-\n'''
-        # TODO : annotations and keywords for class definition are not yet implemented
-        _todo = '''
-def function(var:int):
-    nonlocal counter
-
-class Language(metaclass=Natural):
-    """natural language"""
-        '''
-        ast = abuilder.string_build(code)
-        self.assertEqual(as_string(ast), code)
-
 
 class CmpNodeTC(testlib.TestCase):
     def test_as_string(self):
