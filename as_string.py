@@ -395,7 +395,8 @@ class AsStringVisitor(object):
     
     def visit_yield(self, node):
         """yield an ast.Yield node as string"""
-        return 'yield %s' % node.value.accept(self)
+        yi_val = node.value and (" " + node.value.accept(self)) or ""
+        return 'yield' + yi_val
 
 
 class AsStringVisitor3k(AsStringVisitor):

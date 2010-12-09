@@ -34,7 +34,8 @@
 import sys
 
 from logilab.common import testlib
-from logilab.astng import builder, nodes, NotFoundError
+from logilab.astng.exceptions import ASTNGBuildingException, NotFoundError
+from logilab.astng import builder, nodes
 from logilab.astng.as_string import as_string
 
 from data import module as test_module
@@ -314,6 +315,28 @@ class ConstNodeTC(testlib.TestCase):
     def test_unicode(self):
         self._test(u'a')
 
+
+class NameNodeTC(testlib.TestCase):
+    def test_assign_to_True(self):
+        """test that True and False assignements don't crash"""
+        code = """True = False
+def hello(False):
+    pass
+del True
+    """
+        if sys.version_info >= (3, 0):
+            self.assertRaises(SyntaxError,#might become ASTNGBuildingException
+                              abuilder.string_build, code)
+        else:
+            ast = abuilder.string_build(code)
+            ass_true = ast['True']
+            self.assertIsInstance(ass_true, nodes.AssName)
+            self.assertEqual(ass_true.name, "True")
+            del_true = ast.body[2].targets[0]
+            print ast.body[2], ast.body[2].targets
+            self.assertIsInstance(del_true, nodes.DelName)
+            self.assertEqual(del_true.name, "True")
+            
 
 class ArgumentsNodeTC(testlib.TestCase):
     def test_linenumbering(self):
