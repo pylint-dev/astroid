@@ -141,6 +141,10 @@ def _check_children(node):
         _check_children(child)
 
 
+from _ast import PyCF_ONLY_AST
+def parse(string):
+    return compile(string, "<string>", 'exec', PyCF_ONLY_AST)
+
 class TreeTester(object):
     '''A helper class to see _ast tree and compare with astng tree
 
@@ -176,9 +180,6 @@ class TreeTester(object):
 
     def build_ast(self):
         """build the _ast tree from the source code"""
-        from _ast import PyCF_ONLY_AST
-        def parse(string):
-            return compile(string, "<string>", 'exec', PyCF_ONLY_AST)
         self._ast_node = parse(self.sourcecode)
 
     def native_tree_repr(self, node=None, indent=''):
@@ -240,7 +241,7 @@ class TreeTester(object):
         """build astng tree from the _ast tree
         """
         from logilab.astng.builder import ASTNGBuilder
-        tree = ASTNGBuilder().ast_build(self._ast_node)
+        tree = ASTNGBuilder().string_build(self.sourcecode)
         return tree
 
     def astng_tree_repr(self, ids=False):

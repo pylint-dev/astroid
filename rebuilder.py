@@ -113,10 +113,6 @@ def _init_set_doc(node, newnode):
     except IndexError:
         pass # ast built from scratch
 
-_key_func = lambda node: node.fromlineno
-def sort_locals(my_list):
-    my_list.sort(key=_key_func)
-
 def _lineno_parent(oldnode, newnode, parent):
     newnode.parent = parent
     if hasattr(oldnode, 'lineno'):
@@ -132,8 +128,7 @@ def _set_infos(oldnode, newnode, parent):
 class TreeRebuilder(object):
     """Rebuilds the _ast tree to become an ASTNG tree"""
 
-    def __init__(self, manager):
-        self._manager = manager
+    def __init__(self):
         self.init()
 
     def init(self):
@@ -148,25 +143,6 @@ class TreeRebuilder(object):
         visit_name = 'visit_' + REDIRECT.get(cls_name, cls_name).lower()
         visit_method = getattr(self, visit_name)
         return visit_method(node, parent)
-
-    def add_from_names_to_locals(self, node, delayed=False):
-        """store imported names to the locals;
-        resort the locals if coming from a delayed node
-        """
-        for (name, asname) in node.names:
-            if name == '*':
-                try:
-                    imported = node.root().import_module(node.modname)
-                except ASTNGBuildingException:
-                    continue
-                for name in imported.wildcard_import_names():
-                    node.parent.set_local(name, node)
-                    if delayed:
-                        sort_locals(node.parent.scope().locals[name])
-            else:
-                node.parent.set_local(asname or name, node)
-                if delayed:
-                    sort_locals(node.parent.scope().locals[asname or name])
 
     def _save_assignment(self, node, name=None):
         """save assignement situation since node.parent is not available yet"""
@@ -481,14 +457,8 @@ class TreeRebuilder(object):
         names = [(alias.name, alias.asname) for alias in node.names]
         newnode = new.From(node.module or '', names, node.level)
         _set_infos(node, newnode, parent)
-        # handle From names by adding them to locals now or after
-        # we can not handle wildcard imports if the source module is not
-        # in the cache since 'import_module' calls the MANAGER and we will
-        # end up with infinite recursions working with unfinished trees
-        if newnode.modname in self._manager._cache:
-             self.add_from_names_to_locals(newnode)
-        else:
-             self._from_nodes.append(newnode)
+        # store From names to add them to locals after building
+        self._from_nodes.append(newnode)
         return newnode
 
     def visit_function(self, node, parent):

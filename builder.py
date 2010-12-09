@@ -49,17 +49,17 @@ def parse(string):
 
 # ast NG builder ##############################################################
 
+MANAGER = ASTNGManager()
+
 class ASTNGBuilder:
     """provide astng building methods
     """
+    rebuilder = TreeRebuilder()
 
     def __init__(self, manager=None):
-        if manager is None:
-            manager = ASTNGManager()
-        self._manager = manager
+        self._manager = manager or MANAGER
         self._module = None
         self._done = None
-        self.rebuilder = TreeRebuilder(manager)
         self._dyn_modname_map = {'gtk': 'gtk._gtk'}
 
     def module_build(self, module, modname=None):
@@ -117,15 +117,25 @@ class ASTNGBuilder:
             node = self.string_build(data, modname, path)
         finally:
             sys.path.pop(0)
-
         return node
 
     def string_build(self, data, modname='', path=None):
-        """build astng from a source code stream (i.e. from an ast)"""
-        return self.ast_build(parse(data + '\n'), modname, path)
+        """build astng from source code string and return rebuilded astng"""
+        module = self._data_build(data, modname, path)
+        if self._manager is not None:
+            self._manager._cache[module.name] = module
+        # post tree building steps after we stored the module in the cache:
+        for from_node in module._from_nodes:
+            self.add_from_names_to_locals(from_node)
+        # handle delayed assattr nodes
+        for delayed in module._delayed_assattr:
+            self.delayed_assattr(delayed)
+        return module
 
-    def ast_build(self, node, modname='', path=None):
-        """build the astng from AST, return the new tree"""
+    def _data_build(self, data, modname, path):
+        """build tree node from data and add some informations"""
+        # this method could be wrapped with a pickle/cache function
+        node = parse(data + '\n')
         if path is not None:
             node_file = abspath(path)
         else:
@@ -135,28 +145,33 @@ class ASTNGBuilder:
             package = True
         else:
             package = path and path.find('__init__.py') > -1 or False
-        newnode = self.tree_build(node, modname, node_file, package)
-        return newnode
-
-    def tree_build(self, node, modname, module_file, package):
-        """rebuild the tree starting with an Module node;
-        return an astng.Module node
-        """
-        rebuilder = self.rebuilder
-        rebuilder.init()
-        module = rebuilder.visit_module(node, modname, package)
-        module.file = module.path = module_file
-        # init module cache here else we may get some infinite recursion
-        # errors while infering delayed assignments
-        if self._manager is not None:
-            self._manager._cache[module.name] = module
-        # handle delayed assattr nodes
-        for from_node in rebuilder._from_nodes:
-            rebuilder.add_from_names_to_locals(from_node, delayed=True)
-        delay_assattr = self.delayed_assattr
-        for delayed in rebuilder._delayed_assattr:
-            delay_assattr(delayed)
+        self.rebuilder.init()
+        module = self.rebuilder.visit_module(node, modname, package)
+        module.file = module.path = node_file
+        module._from_nodes = self.rebuilder._from_nodes
+        module._delayed_assattr = self.rebuilder._delayed_assattr
         return module
+
+    def add_from_names_to_locals(self, node):
+        """store imported names to the locals;
+        resort the locals if coming from a delayed node
+        """
+
+        _key_func = lambda node: node.fromlineno
+        def sort_locals(my_list):
+            my_list.sort(key=_key_func)
+        for (name, asname) in node.names:
+            if name == '*':
+                try:
+                    imported = node.root().import_module(node.modname)
+                except ASTNGBuildingException:
+                    continue
+                for name in imported.wildcard_import_names():
+                    node.parent.set_local(name, node)
+                    sort_locals(node.parent.scope().locals[name])
+            else:
+                node.parent.set_local(asname or name, node)
+                sort_locals(node.parent.scope().locals[asname or name])
 
     def delayed_assattr(self, node):
         """visit a AssAttr node -> add name to locals, handle members
