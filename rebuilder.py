@@ -617,15 +617,17 @@ class TreeRebuilder(object):
 
     def visit_name(self, node, parent):
         """visit a Name node by returning a fresh instance of it"""
-        if node.id in CONST_NAME_TRANSFORMS:
-            newnode = new.Const(CONST_NAME_TRANSFORMS[node.id])
-            _set_infos(node, newnode, parent)
-            return newnode
+        # True and False can be assigned to something in py2x, so we have to
+        # check first the asscontext
         if self.asscontext == "Del":
             newnode = new.DelName()
         elif self.asscontext is not None: # Ass
             assert self.asscontext == "Ass"
             newnode = new.AssName()
+        elif node.id in CONST_NAME_TRANSFORMS:
+            newnode = new.Const(CONST_NAME_TRANSFORMS[node.id])
+            _set_infos(node, newnode, parent)
+            return newnode
         else:
             newnode = new.Name()
         _lineno_parent(node, newnode, parent)
@@ -798,7 +800,8 @@ class TreeRebuilder(object):
         """visit a Yield node by returning a fresh instance of it"""
         newnode = new.Yield()
         _lineno_parent(node, newnode, parent)
-        newnode.value = self.visit(node.value, newnode)
+        if node.value is not None:
+            newnode.value = self.visit(node.value, newnode)
         newnode.set_line_info(newnode.last_child())
         return newnode
 
