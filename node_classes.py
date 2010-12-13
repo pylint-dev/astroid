@@ -23,7 +23,7 @@
 import sys
 
 from logilab.astng.exceptions import NoDefault
-from logilab.astng.bases import (NodeNG, Statement, Instance, copy_context,
+from logilab.astng.bases import (NodeNG, Statement, Instance, InferenceContext,
                                  _infer_stmts, YES)
 from logilab.astng.mixins import BlockRangeMixIn, AssignTypeMixin, \
                                  ParentAssignTypeMixin, FromImportMixIn
@@ -115,15 +115,14 @@ class LookupMixIn(object):
         """
         return self.scope().scope_lookup(self, name)
 
-    def ilookup(self, name, context=None):
+    def ilookup(self, name):
         """infered lookup
 
         return an iterator on infered values of the statements returned by
         the lookup method
         """
         frame, stmts = self.lookup(name)
-        context = copy_context(context)
-        context.lookupname = name
+        context = InferenceContext()
         return _infer_stmts(stmts, context, frame)
 
     def _filter_stmts(self, stmts, frame, offset):

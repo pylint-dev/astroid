@@ -227,22 +227,21 @@ class ASTNGManager(OptionsProviderMixIn):
         return modastng.getattr(klass.__name__)[0] # XXX
 
 
-    def infer_astng_from_something(self, obj, modname=None, context=None):
+    def infer_astng_from_something(self, obj, context=None):
         """infer astng for the given class"""
         if hasattr(obj, '__class__') and not isinstance(obj, type):
             klass = obj.__class__
         else:
             klass = obj
-        if modname is None:
-            try:
-                modname = klass.__module__
-            except AttributeError:
-                raise ASTNGBuildingException(
-                    'Unable to get module for %s' % safe_repr(klass))
-            except Exception, ex:
-                raise ASTNGBuildingException(
-                    'Unexpected error while retrieving module for %s: %s'
-                    % (safe_repr(klass), ex))
+        try:
+            modname = klass.__module__
+        except AttributeError:
+            raise ASTNGBuildingException(
+                'Unable to get module for %s' % safe_repr(klass))
+        except Exception, ex:
+            raise ASTNGBuildingException(
+                'Unexpected error while retrieving module for %s: %s'
+                % (safe_repr(klass), ex))
         try:
             name = klass.__name__
         except AttributeError:
