@@ -855,6 +855,9 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         if name in self.special_attributes:
             if name == '__module__':
                 return [cf(self.root().qname())] + values
+            # FIXME : what is expected by passing the list of ancestors to cf:
+            # you can just do [cf(tuple())] + values without breaking any test
+            # this is ticket http://www.logilab.org/ticket/52785
             if name == '__bases__':
                 return [cf(tuple(self.ancestors(recurs=False, context=context)))] + values
             # XXX need proper meta class handling + MRO implementation

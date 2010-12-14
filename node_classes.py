@@ -427,7 +427,7 @@ class Comprehension(NodeNG):
 
 
 class Const(NodeNG, Instance):
-    """represent a Str or Num node"""
+    """represent a constant node like num, str, bool, None, bytes"""
 
     def __init__(self, value=None):
         self.value = value
@@ -480,7 +480,12 @@ class Delete(Statement, AssignTypeMixin):
 class Dict(NodeNG, Instance):
     """class representing a Dict node"""
     _astng_fields = ('items',)
-    items = None
+
+    def __init__(self, items=None):
+        if items == None:
+            self.items = []
+        else:
+            self.items = items
 
     def pytype(self):
         return '__builtin__.dict'
@@ -650,7 +655,12 @@ class Keyword(NodeNG):
 class List(NodeNG, Instance, ParentAssignTypeMixin):
     """class representing a List node"""
     _astng_fields = ('elts',) 
-    elts = None
+
+    def __init__(self, elts=None):
+        if elts == None:
+            self.elts = []
+        else:
+            self.elts = elts
 
     def pytype(self):
         return '__builtin__.list'
@@ -790,7 +800,12 @@ class TryFinally(BlockRangeMixIn, Statement):
 class Tuple(NodeNG, Instance, ParentAssignTypeMixin):
     """class representing a Tuple node"""
     _astng_fields = ('elts',)
-    elts = None
+
+    def __init__(self, elts=None):
+        if elts == None:
+            self.elts = []
+        else:
+            self.elts = elts
 
     def pytype(self):
         return '__builtin__.tuple'
@@ -848,24 +863,27 @@ CONST_CLS = {
     list: List,
     tuple: Tuple,
     dict: Dict,
+    set: Set,
+    type(None): Const,
     }
+
+def _update_const_classes():
+    """update constant classes, so the keys of CONST_CLS can be reused"""
+    klasses = (bool, int, float, complex, str)
+    if sys.version < (3, 0):
+        klasses += (unicode, long)
+    if sys.version >= (2, 6):
+        klassses += (bytes,)
+    for kls in klasses:
+        CONST_CLS[kls] = Const
+_update_const_classes()
 
 def const_factory(value):
     """return an astng node for a python value"""
-    try:
-        # if value is of class list, tuple, dict use specific class, not Const
-        cls = CONST_CLS[value.__class__]
-        node = cls()
-        if isinstance(node, Dict):
-            node.items = ()
-        else:
-            node.elts = ()
-    except KeyError:
-        # why was value in (None, False, True) not OK?
-        assert isinstance(value, (int, long, complex, float, basestring)) or value in (None, False, True)
-        node = Const()
-        node.value = value
-    return node
-
-
+    # /!\ current implementation expects the item / elts nodes for
+    # dict, list, tuples and the constant value for the others.
+    #
+    # some constants (like from gtk._gtk) don't have their class in CONST_CLS,
+    # even though we can "assert isinstance(value, tuple(CONST_CLS))"
+    return CONST_CLS.get(value.__class__, Const)(value)
 

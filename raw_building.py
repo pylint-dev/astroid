@@ -40,11 +40,14 @@ from os.path import abspath
 from inspect import (getargspec, isdatadescriptor, isfunction, ismethod,
                      ismethoddescriptor, isclass, isbuiltin)
 
+from logilab.astng.node_classes import CONST_CLS
 from logilab.astng.nodes import (Module, Class, Const, const_factory, From,
     Function, EmptyNode, Name, Arguments, Dict, List, Set, Tuple)
 from logilab.astng.bases import Generator
 from logilab.astng.manager import ASTNGManager
 MANAGER = ASTNGManager()
+
+_CONSTANTS = tuple(CONST_CLS) # the keys of CONST_CLS eg python builtin types
 
 def _attach_local_node(parent, node, name):
     node.name = name # needed by add_local_node
@@ -288,7 +291,7 @@ class InspectBuilder(object):
             elif isdatadescriptor(member):
                 assert isinstance(member, object)
                 object_build_datadescriptor(node, member, name)
-            elif isinstance(member, (int, long, float, str, unicode)) or member is None:
+            elif isinstance(member, _CONSTANTS):
                 attach_const_node(node, name, member)
             else:
                 # create an empty node so that the name is actually defined
@@ -313,13 +316,16 @@ def astng_boot_strapping():
     builder = InspectBuilder()
     from logilab.common.compat import builtins
     astng_builtin = builder.inspect_build(builtins)
-    for cls in (bool, int, long, float, complex, str, unicode):
-        _CONST_PROXY[cls] = astng_builtin.getattr(cls.__name__)[0] # XXX
-    nonetype = build_class('NoneType')
-    nonetype.parent = astng_builtin
-    _CONST_PROXY[type(None)] = nonetype
-    if sys.version_info >= (2, 6):
-        _CONST_PROXY[bytes] = MANAGER.astng_from_class(bytes)
+    for cls, node_cls in CONST_CLS.items():
+        if cls is type(None):
+            proxy = build_class('NoneType')
+            proxy.parent = astng_builtin
+        else:
+            proxy = astng_builtin.getattr(cls.__name__)[0] # XXX
+        if cls in (dict, list, set, tuple):
+            node_cls._proxied = proxy
+        else:
+            _CONST_PROXY[cls] = proxy
 
 astng_boot_strapping()
 
@@ -330,10 +336,6 @@ def _set_proxied(const):
     return _CONST_PROXY[const.value.__class__]
 Const._proxied = property(_set_proxied)
 
-Dict._proxied = MANAGER.astng_from_class(dict)
-List._proxied = MANAGER.astng_from_class(list)
-Set._proxied =  MANAGER.astng_from_class(set) # will be needed for py3k
-Tuple._proxied = MANAGER.astng_from_class(tuple)
 # FIXME : is it alright that Generator._proxied is not a astng node?
 Generator._proxied = MANAGER.infer_astng_from_something(type(a for a in ()))
 
