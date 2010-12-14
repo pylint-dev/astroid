@@ -76,7 +76,7 @@ from logilab.astng.scoped_nodes import builtin_lookup
 
 # make a manager instance (borg) as well as Project and Package classes
 # accessible from astng package
-from logilab.astng.manager import ASTNGManager, Project, Package
+from logilab.astng.manager import ASTNGManager, Project
 MANAGER = ASTNGManager()
 del ASTNGManager
 

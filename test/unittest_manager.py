@@ -17,19 +17,21 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
-import unittest
+from logilab.common.testlib import TestCase, unittest_main
+
 import sys
 from os.path import join, abspath, dirname
-from logilab.astng.manager import ASTNGManager
+from logilab.astng.manager import ASTNGManager, _silent_no_wrap
 from logilab.astng.bases import  BUILTINS_NAME
 
 DATA = join(dirname(abspath(__file__)), 'data')
 
-class ASTNGManagerTC(unittest.TestCase):
+class ASTNGManagerTC(TestCase):
     def setUp(self):
         self.manager = ASTNGManager()
         
     def test_astng_from_module(self):
+        import unittest
         astng = self.manager.astng_from_module(unittest)
         self.assertEqual(astng.pure_python, True)
         import time
@@ -69,39 +71,26 @@ class ASTNGManagerTC(unittest.TestCase):
         self._test_astng_from_zip('MyPyPa-0.1.0-py2.5.egg')
 
     def test_astng_from_module_name_zip(self):
-        self._test_astng_from_zip('MyPyPa-0.1.0-py2.5.zip')            
-        
+        self._test_astng_from_zip('MyPyPa-0.1.0-py2.5.zip')
+
     def test_from_directory(self):
-        obj = self.manager.from_directory(DATA)
+        obj = self.manager.project_from_files([DATA], _silent_no_wrap, 'data')
         self.assertEqual(obj.name, 'data')
-        self.assertEqual(obj.path, DATA)
-        
+        self.assertEqual(obj.path, join(DATA, '__init__.py'))
+
     def test_package_node(self):
-        obj = self.manager.from_directory(DATA)
-        expected_short = ['SSL1', '__init__', 'all', 'appl', 'format', 'module', 'module2',
-                          'noendingnewline', 'nonregr', 'notall']
-        expected_long = ['SSL1', 'data', 'data.all', 'appl', 'data.format', 'data.module',
-                         'data.module2', 'data.noendingnewline', 'data.nonregr',
-                         'data.notall']
-        self.assertEqual(obj.keys(), expected_short)
-        self.assertEqual([m.name for m in obj.values()], expected_long)
-        self.assertEqual([m for m in list(obj)], expected_short)
-        self.assertEqual([(name, m.name) for name, m in obj.items()],
-                          zip(expected_short, expected_long))
-        self.assertEqual([(name, m.name) for name, m in obj.items()],
-                          zip(expected_short, expected_long))
-        
-        self.assertEqual('module' in obj, True)
-        self.assertTrue(obj.get('module'))
-        self.assertEqual(obj.get('module').name, 'data.module')
-        self.assertEqual(obj['module'].name, 'data.module')
-        self.assertEqual(obj.get('whatever'), None)
-        self.assertEqual(obj.fullname(), 'data')
-        # FIXME: test fullname on a subpackage
+        obj = self.manager.project_from_files([DATA], _silent_no_wrap, 'data')
+        expected = set(['SSL1', '__init__', 'all', 'appl', 'format', 'module',
+                        'module2', 'noendingnewline', 'nonregr', 'notall'])
+        expected = ['data', 'data.SSL1', 'data.SSL1.Connection1', 'data.all',
+                    'data.appl', 'data.appl.myConnection', 'data.format',
+                    'data.module', 'data.module2', 'data.noendingnewline',
+                    'data.nonregr', 'data.notall']
+        self.assertListEqual(sorted(k for k in obj.keys()), expected)
+        self.assertEqual('data.module' in obj, True) # testing __getitem__ ?
 
 
-
-class BorgASTNGManagerTC(unittest.TestCase):
+class BorgASTNGManagerTC(TestCase):
 
     def test_borg(self):
         """test that the ASTNGManager is really a borg, i.e. that two different
@@ -115,6 +104,6 @@ class BorgASTNGManagerTC(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest_main()
 
     

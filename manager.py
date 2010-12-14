@@ -55,11 +55,13 @@ def astng_wrapper(func, modname):
         return func(modname)
     except ASTNGBuildingException, exc:
         print exc
-    except KeyboardInterrupt:
-        raise
     except Exception, exc:
         import traceback
         traceback.print_exc()
+
+def _silent_no_wrap(func, modname):
+    """silent wrapper that doesn't do anything; can be used for tests"""
+    return func(modname)
 
 def safe_repr(obj):
     try:
@@ -98,12 +100,6 @@ class ASTNGManager(OptionsProviderMixIn):
             self._cache = {}
             self._mod_file_cache = {}
 
-    def from_directory(self, directory, modname=None):
-        """given a module name, return the astng object"""
-        # FIXME : seems to be dead or unused code
-        modname = modname or basename(directory)
-        directory = abspath(directory)
-        return Package(directory, modname, self)
 
     def astng_from_file(self, filepath, modname=None, fallback=True, source=False):
         """given a module name, return the astng object"""
@@ -277,6 +273,7 @@ class ASTNGManager(OptionsProviderMixIn):
             astng = func_wrapper(self.astng_from_file, fpath)
             if astng is None:
                 continue
+            # XXX why is first file defining the project.path ?
             project.path = project.path or astng.file
             project.add_module(astng)
             base_name = astng.name
@@ -290,99 +287,6 @@ class ASTNGManager(OptionsProviderMixIn):
                         continue
                     project.add_module(astng)
         return project
-
-
-
-# FIXME : seems to be dead or unused code
-class Package:
-    """a package using a dictionary like interface
-
-    load submodules lazily, as they are needed
-    """
-
-    def __init__(self, path, name, manager):
-        self.name = name
-        self.path = abspath(path)
-        self.manager = manager
-        self.parent = None
-        self.lineno = 0
-        self.__keys = None
-        self.__subobjects = None
-
-    def fullname(self):
-        """return the full name of the package (i.e. prefix by the full name
-        of the parent package if any
-        """
-        if self.parent is None:
-            return self.name
-        return '%s.%s' % (self.parent.fullname(), self.name)
-
-    def get_subobject(self, name):
-        """method used to get sub-objects lazily : sub package or module are
-        only build once they are requested
-        """
-        if self.__subobjects is None:
-            try:
-                self.__subobjects = dict.fromkeys(self.keys())
-            except AttributeError:
-                # python <= 2.3
-                self.__subobjects = dict([(k, None) for k in self.keys()])
-        obj = self.__subobjects[name]
-        if obj is None:
-            objpath = join(self.path, name)
-            if isdir(objpath):
-                obj = Package(objpath, name, self.manager)
-                obj.parent = self
-            else:
-                modname = '%s.%s' % (self.fullname(), name)
-                obj = self.manager.astng_from_file(objpath + '.py', modname)
-            self.__subobjects[name] = obj
-        return obj
-
-    def get_module(self, modname):
-        """return the Module or Package object with the given name if any
-        """
-        path = modname.split('.')
-        if path[0] != self.name:
-            raise KeyError(modname)
-        obj = self
-        for part in path[1:]:
-            obj = obj.get_subobject(part)
-        return obj
-
-    def keys(self):
-        if self.__keys is None:
-            self.__keys = []
-            for fname in os.listdir(self.path):
-                if fname.endswith('.py'):
-                    self.__keys.append(fname[:-3])
-                    continue
-                fpath = join(self.path, fname)
-                if isdir(fpath) and exists(join(fpath, '__init__.py')):
-                    self.__keys.append(fname)
-            self.__keys.sort()
-        return self.__keys[:]
-
-    def values(self):
-        return [self.get_subobject(name) for name in self.keys()]
-
-    def items(self):
-        return zip(self.keys(), self.values())
-
-    def get(self, name, default=None):
-        try:
-            return self.get_subobject(name)
-        except KeyError:
-            return default
-
-    def __getitem__(self, name):
-        return self.get_subobject(name)
-
-    def __contains__(self, name):
-        return bool(self.get(name))
-
-    def __iter__(self):
-        return iter(self.keys())
 
 
 class Project:
@@ -411,4 +315,5 @@ class Project:
     def __repr__(self):
         return '<Project %r at %s (%s modules)>' % (self.name, id(self),
                                                     len(self.modules))
+
 

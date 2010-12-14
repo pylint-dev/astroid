@@ -43,7 +43,7 @@ from os.path import join, abspath, dirname
 from logilab.astng import nodes, inspector
 from logilab.astng.bases import Instance, YES
 
-from logilab.astng.manager import ASTNGManager
+from logilab.astng.manager import ASTNGManager, _silent_no_wrap
 MANAGER = ASTNGManager()
 
 def astng_wrapper(func, modname):
@@ -100,7 +100,7 @@ class LinkerTC(unittest.TestCase):
 class LinkerTC2(LinkerTC):
     
     def setUp(self):
-        self.project = MANAGER.from_directory(DATA2)
+        self.project = MANAGER.project_from_files([DATA2], func_wrapper=_silent_no_wrap)
         self.linker = inspector.Linker(self.project)
         self.linker.visit(self.project)
         
