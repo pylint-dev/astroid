@@ -36,7 +36,9 @@
 __docformat__ = "restructuredtext en"
 
 import sys
-from inspect import getargspec
+from os.path import abspath
+from inspect import (getargspec, isdatadescriptor, isfunction, ismethod,
+                     ismethoddescriptor, isclass, isbuiltin)
 
 from logilab.astng import nodes
 from logilab.astng.bases import Generator
@@ -206,6 +208,110 @@ def _base_class_object_build(node, member, basenames, name=None, localname=None)
     return klass
 
 
+
+def imported_member(node, member, name):
+    """consider a class/builtin member where __module__ != current module name
+
+    check if it's sound valid and then add an import node, else use a dummy node
+    """
+    # /!\ some classes like ExtensionClass doesn't have a
+    # __module__ attribute !
+    member_module = getattr(member, '__module__', '__builtin__')
+    try:
+        getattr(sys.modules[member_module], name)
+    except (KeyError, AttributeError):
+        attach_dummy_node(node, name, member)
+    else:
+        attach_import_node(node, member_module, name)
+
+class InspectBuilder(object):
+    """class for building nodes from living object"""
+
+    # astng from living objects ###############################################
+    #
+    # this is actually a really minimal representation, including only Module,
+    # Function and Class nodes and some others as guessed
+
+    def __init__(self):
+        self._done = {}
+        self._module = None
+
+    def inspect_build(self, module, modname=None, path=None):
+        """build astng from a living module (i.e. using inspect)
+        this is used when there is no python source code available (either
+        because it's a built-in module or because the .py is not available)
+        """
+        self._module = module
+        if modname is None:
+            modname = module.__name__
+        node = build_module(modname, module.__doc__)
+        node.file = node.path = path and abspath(path) or path
+        MANAGER._cache[modname] = node
+        node.package = hasattr(module, '__path__')
+        self._done = {}
+        self.object_build(node, module)
+        return node
+
+    def object_build(self, node, obj):
+        """recursive method which create a partial ast from real objects
+         (only function, class, and method are handled)
+        """
+        if obj in self._done:
+            return self._done[obj]
+        self._done[obj] = node
+        for name in dir(obj):
+            try:
+                member = getattr(obj, name)
+            except AttributeError:
+                # damned ExtensionClass.Base, I know you're there !
+                attach_dummy_node(node, name)
+                continue
+            if ismethod(member):
+                member = member.im_func
+            if isfunction(member):
+                # verify this is not an imported function
+                if member.func_code.co_filename != getattr(self._module, '__file__', None):
+                    attach_dummy_node(node, name, member)
+                    continue
+                object_build_function(node, member, name)
+            elif isbuiltin(member):
+                if self.imported_member(node, member, name):
+                    continue
+                object_build_methoddescriptor(node, member, name)
+            elif isclass(member):
+                if self.imported_member(node, member, name):
+                    continue
+                if member in self._done:
+                    class_node = self._done[member]
+                    if not class_node in node.locals.get(name, ()):
+                        node.add_local_node(class_node, name)
+                else:
+                    class_node = object_build_class(node, member, name)
+                    # recursion
+                    self.object_build(class_node, member)
+                if name == '__class__' and class_node.parent is None:
+                    class_node.parent = self._done[self._module]
+            elif ismethoddescriptor(member):
+                assert isinstance(member, object)
+                object_build_methoddescriptor(node, member, name)
+            elif isdatadescriptor(member):
+                assert isinstance(member, object)
+                object_build_datadescriptor(node, member, name)
+            elif isinstance(member, (int, long, float, str, unicode)) or member is None:
+                attach_const_node(node, name, member)
+            else:
+                # create an empty node so that the name is actually defined
+                attach_dummy_node(node, name, member)
+
+    def imported_member(self, node, member, name):
+        """verify this is not an imported class or handle it"""
+        modname = getattr(member, '__module__', None)
+        if {'gtk': 'gtk._gtk'}.get(modname, modname) != self._module.__name__:
+            imported_member(node, member, name)
+            return True
+        return False
+
+
 _CONST_PROXY = {
     type(None): build_class('NoneType'),
     bool: MANAGER.astng_from_class(bool),
@@ -238,9 +344,3 @@ nodes.Tuple._proxied = MANAGER.astng_from_class(tuple)
 nodes.Dict._proxied = MANAGER.astng_from_class(dict)
 Generator._proxied = MANAGER.infer_astng_from_something(type(a for a in ()))
 
-
-__all__ = ('register_arguments',  'build_module',
-           'object_build_class', 'object_build_function',
-           'object_build_datadescriptor', 'object_build_methoddescriptor',
-           'attach_dummy_node',
-           'attach_const_node', 'attach_import_node')

@@ -21,7 +21,8 @@
 from logilab.common.testlib import unittest_main, TestCase
 
 from logilab.astng import ResolveError, MANAGER, Instance, nodes, YES, InferenceError
-from logilab.astng.builder import ASTNGBuilder, build_module
+from logilab.astng.builder import ASTNGBuilder
+from logilab.astng.raw_building import build_module
 from logilab.astng.manager import ASTNGManager
 
 import sys
