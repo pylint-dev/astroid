@@ -312,35 +312,37 @@ class InspectBuilder(object):
         return False
 
 
-_CONST_PROXY = {
-    type(None): build_class('NoneType'),
-    bool: MANAGER.astng_from_class(bool),
-    int: MANAGER.astng_from_class(int),
-    long: MANAGER.astng_from_class(long),
-    float: MANAGER.astng_from_class(float),
-    complex: MANAGER.astng_from_class(complex),
-    str: MANAGER.astng_from_class(str),
-    unicode: MANAGER.astng_from_class(unicode),
-    }
-_CONST_PROXY[type(None)].parent = _CONST_PROXY[bool].parent
-if sys.version_info >= (2, 6):
-    _CONST_PROXY[bytes] = MANAGER.astng_from_class(bytes)
+### astng boot strapping ################################################### ###
 
-# TODO : find a nicer way to handle this situation; we should at least
-# be able to avoid calling MANAGER.astng_from_class(const.value.__class__)
-# each time (if we can not avoid the property). However __proxied introduced an
+_CONST_PROXY = {}
+def astng_boot_strapping():
+    """astng boot strapping the builtins module"""
+    # this boot strapping is necessary since we need the Const nodes to
+    # inspect_build builtins, and then we can proxy Const
+    builder = InspectBuilder()
+    from logilab.common.compat import builtins
+    astng_builtin = builder.inspect_build(builtins)
+    for cls in (bool, int, long, float, complex, str, unicode):
+        _CONST_PROXY[cls] = astng_builtin.getattr(cls.__name__)[0] # XXX
+    nonetype = build_class('NoneType')
+    nonetype.parent = astng_builtin
+    _CONST_PROXY[type(None)] = nonetype
+    if sys.version_info >= (2, 6):
+        _CONST_PROXY[bytes] = MANAGER.astng_from_class(bytes)
+
+astng_boot_strapping()
+
+
+# TODO : find a nicer way to handle this situation;
+# However __proxied introduced an
 # infinite recursion (see https://bugs.launchpad.net/pylint/+bug/456870)
 def _set_proxied(const):
     return _CONST_PROXY[const.value.__class__]
 nodes.Const._proxied = property(_set_proxied)
 
-def Const_pytype(self):
-    return self._proxied.qname()
-nodes.Const.pytype = Const_pytype
-
-
 nodes.List._proxied = MANAGER.astng_from_class(list)
 nodes.Tuple._proxied = MANAGER.astng_from_class(tuple)
 nodes.Dict._proxied = MANAGER.astng_from_class(dict)
+# FIXME : is it alright that Generator._proxied is not a astng node?
 Generator._proxied = MANAGER.infer_astng_from_something(type(a for a in ()))
 

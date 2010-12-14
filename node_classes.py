@@ -445,6 +445,10 @@ class Const(NodeNG, Instance):
             return self.value
         raise TypeError()
 
+    def pytype(self):
+        return self._proxied.qname()
+
+
 class Continue(Statement):
     """class representing a Continue node"""
 
