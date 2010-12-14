@@ -40,7 +40,8 @@ from os.path import abspath
 from inspect import (getargspec, isdatadescriptor, isfunction, ismethod,
                      ismethoddescriptor, isclass, isbuiltin)
 
-from logilab.astng import nodes
+from logilab.astng.nodes import (Module, Class, Const, const_factory, From,
+    Function, EmptyNode, Name, Arguments, Dict, List, Set, Tuple)
 from logilab.astng.bases import Generator
 from logilab.astng.manager import ASTNGManager
 MANAGER = ASTNGManager()
@@ -55,39 +56,39 @@ def attach_dummy_node(node, name, object=_marker):
     """create a dummy node and register it in the locals of the given
     node with the specified name
     """
-    enode = nodes.EmptyNode()
+    enode = EmptyNode()
     enode.object = object
     _attach_local_node(node, enode, name)
 
-nodes.EmptyNode.has_underlying_object = lambda self: self.object is not _marker
+EmptyNode.has_underlying_object = lambda self: self.object is not _marker
 
 def attach_const_node(node, name, value):
     """create a Const node and register it in the locals of the given
     node with the specified name
     """
     if not name in node.special_attributes:
-        _attach_local_node(node, nodes.const_factory(value), name)
+        _attach_local_node(node, const_factory(value), name)
 
 def attach_import_node(node, modname, membername):
     """create a From node and register it in the locals of the given
     node with the specified name
     """
-    from_node = nodes.From(modname, [(membername, None)])
+    from_node = From(modname, [(membername, None)])
     _attach_local_node(node, from_node, membername)
 
 
 def build_module(name, doc=None):
     """create and initialize a astng Module node"""
-    node = nodes.Module(name, doc, pure_python=False)
+    node = Module(name, doc, pure_python=False)
     node.package = False
     node.parent = None
     return node
 
 def build_class(name, basenames=(), doc=None):
     """create and initialize a astng Class node"""
-    node = nodes.Class(name, doc)
+    node = Class(name, doc)
     for base in basenames:
-        basenode = nodes.Name()
+        basenode = Name()
         basenode.name = base
         node.bases.append(basenode)
         basenode.parent = node
@@ -97,16 +98,16 @@ def build_function(name, args=None, defaults=None, flag=0, doc=None):
     """create and initialize a astng Function node"""
     args, defaults = args or [], defaults or []
     # first argument is now a list of decorators
-    func = nodes.Function(name, doc)
-    func.args = argsnode = nodes.Arguments()
+    func = Function(name, doc)
+    func.args = argsnode = Arguments()
     argsnode.args = []
     for arg in args:
-        argsnode.args.append(nodes.Name())
+        argsnode.args.append(Name())
         argsnode.args[-1].name = arg
         argsnode.args[-1].parent = argsnode
     argsnode.defaults = []
     for default in defaults:
-        argsnode.defaults.append(nodes.const_factory(default))
+        argsnode.defaults.append(const_factory(default))
         argsnode.defaults[-1].parent = argsnode
     argsnode.kwarg = None
     argsnode.vararg = None
@@ -116,19 +117,9 @@ def build_function(name, args=None, defaults=None, flag=0, doc=None):
     return func
 
 
-# def build_name_assign(name, value):
-#     """create and initialize an astng Assign for a name assignment"""
-#     return nodes.Assign([nodes.AssName(name, 'OP_ASSIGN')], nodes.Const(value))
-
-# def build_attr_assign(name, value, attr='self'):
-#     """create and initialize an astng Assign for an attribute assignment"""
-#     return nodes.Assign([nodes.AssAttr(nodes.Name(attr), name, 'OP_ASSIGN')],
-#                         nodes.Const(value))
-
-
 def build_from_import(fromname, names):
     """create and initialize an astng From import statement"""
-    return nodes.From(fromname, [(name, None) for name in names])
+    return From(fromname, [(name, None) for name in names])
 
 def register_arguments(func, args=None):
     """add given arguments to local
@@ -143,7 +134,7 @@ def register_arguments(func, args=None):
         if func.args.kwarg:
             func.set_local(func.args.kwarg, func.args)
     for arg in args:
-        if isinstance(arg, nodes.Name):
+        if isinstance(arg, Name):
             func.set_local(arg.name, arg)
         else:
             register_arguments(func, arg.elts)
@@ -200,7 +191,7 @@ def _base_class_object_build(node, member, basenames, name=None, localname=None)
         pass
     else:
         for name, obj in instdict.items():
-            valnode = nodes.EmptyNode()
+            valnode = EmptyNode()
             valnode.object = obj
             valnode.parent = klass
             valnode.lineno = 1
@@ -332,17 +323,17 @@ def astng_boot_strapping():
 
 astng_boot_strapping()
 
-
 # TODO : find a nicer way to handle this situation;
 # However __proxied introduced an
 # infinite recursion (see https://bugs.launchpad.net/pylint/+bug/456870)
 def _set_proxied(const):
     return _CONST_PROXY[const.value.__class__]
-nodes.Const._proxied = property(_set_proxied)
+Const._proxied = property(_set_proxied)
 
-nodes.List._proxied = MANAGER.astng_from_class(list)
-nodes.Tuple._proxied = MANAGER.astng_from_class(tuple)
-nodes.Dict._proxied = MANAGER.astng_from_class(dict)
+Dict._proxied = MANAGER.astng_from_class(dict)
+List._proxied = MANAGER.astng_from_class(list)
+Set._proxied =  MANAGER.astng_from_class(set) # will be needed for py3k
+Tuple._proxied = MANAGER.astng_from_class(tuple)
 # FIXME : is it alright that Generator._proxied is not a astng node?
 Generator._proxied = MANAGER.infer_astng_from_something(type(a for a in ()))
 
