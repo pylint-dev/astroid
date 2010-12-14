@@ -333,7 +333,6 @@ del True
             self.assertIsInstance(ass_true, nodes.AssName)
             self.assertEqual(ass_true.name, "True")
             del_true = ast.body[2].targets[0]
-            print ast.body[2], ast.body[2].targets
             self.assertIsInstance(del_true, nodes.DelName)
             self.assertEqual(del_true.name, "True")
             

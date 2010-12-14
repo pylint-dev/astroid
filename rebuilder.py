@@ -125,9 +125,12 @@ def _set_infos(oldnode, newnode, parent):
     newnode.set_line_info(newnode.last_child()) # set_line_info accepts None
 
 
+
+
 class TreeRebuilder(object):
     """Rebuilds the _ast tree to become an ASTNG tree"""
 
+    _visit_meths = {}
     def __init__(self):
         self.init()
 
@@ -139,10 +142,15 @@ class TreeRebuilder(object):
         self._delayed_assattr = []
 
     def visit(self, node, parent):
-        cls_name = node.__class__.__name__
-        visit_name = 'visit_' + REDIRECT.get(cls_name, cls_name).lower()
-        visit_method = getattr(self, visit_name)
-        return visit_method(node, parent)
+        cls = node.__class__
+        if cls in self._visit_meths:
+            return self._visit_meths[cls](node, parent)
+        else:
+            cls_name = cls.__name__
+            visit_name = 'visit_' + REDIRECT.get(cls_name, cls_name).lower()
+            visit_method = getattr(self, visit_name)
+            self._visit_meths[cls] = visit_method
+            return visit_method(node, parent)
 
     def _save_assignment(self, node, name=None):
         """save assignement situation since node.parent is not available yet"""
