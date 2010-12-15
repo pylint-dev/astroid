@@ -870,10 +870,10 @@ CONST_CLS = {
 def _update_const_classes():
     """update constant classes, so the keys of CONST_CLS can be reused"""
     klasses = (bool, int, float, complex, str)
-    if sys.version < (3, 0):
+    if sys.version_info < (3, 0):
         klasses += (unicode, long)
-    if sys.version >= (2, 6):
-        klassses += (bytes,)
+    if sys.version_info >= (2, 6):
+        klasses += (bytes,)
     for kls in klasses:
         CONST_CLS[kls] = Const
 _update_const_classes()

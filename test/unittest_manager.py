@@ -78,7 +78,7 @@ class ASTNGManagerTC(TestCase):
         self.assertEqual(obj.name, 'data')
         self.assertEqual(obj.path, join(DATA, '__init__.py'))
 
-    def test_package_node(self):
+    def test_project_node(self):
         obj = self.manager.project_from_files([DATA], _silent_no_wrap, 'data')
         expected = set(['SSL1', '__init__', 'all', 'appl', 'format', 'module',
                         'module2', 'noendingnewline', 'nonregr', 'notall'])
@@ -87,7 +87,6 @@ class ASTNGManagerTC(TestCase):
                     'data.module', 'data.module2', 'data.noendingnewline',
                     'data.nonregr', 'data.notall']
         self.assertListEqual(sorted(k for k in obj.keys()), expected)
-        self.assertEqual('data.module' in obj, True) # testing __getitem__ ?
 
 
 class BorgASTNGManagerTC(TestCase):
