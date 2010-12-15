@@ -116,18 +116,8 @@ class ASTNGManager(OptionsProviderMixIn):
         if modname in self._cache:
             return self._cache[modname]
         if source:
-            try:
-                from logilab.astng.builder import ASTNGBuilder
-                return ASTNGBuilder(self).file_build(filepath, modname)
-            except (SyntaxError, KeyboardInterrupt, SystemExit):
-                raise
-            except Exception, ex:
-                if __debug__:
-                    print 'error while building astng for', filepath
-                    import traceback
-                    traceback.print_exc()
-                msg = 'Unable to load module %s (%s)' % (modname, ex)
-                raise ASTNGBuildingException, msg, sys.exc_info()[-1]
+            from logilab.astng.builder import ASTNGBuilder
+            return ASTNGBuilder(self).file_build(filepath, modname)
         elif fallback and modname:
             return self.astng_from_module_name(modname)
         raise ASTNGBuildingException('unable to get astng for file %s' %

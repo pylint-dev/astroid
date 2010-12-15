@@ -42,40 +42,43 @@ from _ast import PyCF_ONLY_AST
 def parse(string):
     return compile(string, "<string>", 'exec', PyCF_ONLY_AST)
 
-_ENCODING_RGX = re.compile("[^#]*#*.*coding[:=]\s*([^\s]+)")
-
-def _guess_encoding(string):
-    """get encoding from a python file as string or return None if not found
-    """
-    # check for UTF-8 byte-order mark
-    if string.startswith('\xef\xbb\xbf'):
-        return 'UTF-8'
-    for line in string.split('\n', 2)[:2]:
-        # check for encoding declaration
-        match = _ENCODING_RGX.match(line)
-        if match is not None:
-            return match.group(1)
-
-def get_data(filename):
-    """get data for parsing a file"""
-    stream = open(filename, 'U')
-    data = stream.read()
-    encoding = _guess_encoding(data)
-    return stream, encoding, data
-
 if sys.version_info >= (3, 0):
     from tokenize import detect_encoding
 
-    def get_data(filename):
+    def open_source_file(filename):
         byte_stream = open(filename, 'bU')
         encoding = detect_encoding(byte_stream.readline)[0]
         stream = open(filename, 'U', encoding=encoding)
         try:
             data = stream.read()
-        except UnicodeError: # wrong encoding
+        except UnicodeError, uex: # wrong encodingg
             # detect_encoding returns utf-8 if no encoding specified
             msg = 'Wrong (%s) or no encoding specified' % encoding
             raise ASTNGBuildingException(msg)
+        return stream, encoding, data
+
+else:
+    import re
+
+    _ENCODING_RGX = re.compile("[^#]*#*.*coding[:=]\s*([^\s]+)")
+
+    def _guess_encoding(string):
+        """get encoding from a python file as string or return None if not found
+        """
+        # check for UTF-8 byte-order mark
+        if string.startswith('\xef\xbb\xbf'):
+            return 'UTF-8'
+        for line in string.split('\n', 2)[:2]:
+            # check for encoding declaration
+            match = _ENCODING_RGX.match(line)
+            if match is not None:
+                return match.group(1)
+
+    def open_source_file(filename):
+        """get data for parsing a file"""
+        stream = open(filename, 'U')
+        data = stream.read()
+        encoding = _guess_encoding(data)
         return stream, encoding, data
 
 # ast NG builder ##############################################################
@@ -111,14 +114,14 @@ class ASTNGBuilder(InspectBuilder):
         path is expected to be a python source file
         """
         try:
-            file_stream, encoding, data = get_data(path)
+            stream, encoding, data = open_source_file(path)
         except IOError, exc:
             msg = 'Unable to load file %r (%s)' % (path, exc)
             raise ASTNGBuildingException(msg)
         except SyntaxError, exc: # py3k encoding specification error
             raise ASTNGBuildingException(exc)
-        except LookupError, l_ex: # unknown encoding
-            raise ASTNGBuildingException(l_ex)
+        except LookupError, exc: # unknown encoding
+            raise ASTNGBuildingException(exc)
         # get module name if necessary, *before modifying sys.path*
         if modname is None:
             try:
@@ -127,12 +130,12 @@ class ASTNGBuilder(InspectBuilder):
                 modname = splitext(basename(path))[0]
         # build astng representation
         try:
-            sys.path.insert(0, dirname(path))
+            sys.path.insert(0, dirname(path)) # XXX (syt) iirk
             node = self.string_build(data, modname, path)
         finally:
             sys.path.pop(0)
         node.file_encoding = encoding
-        node.file_stream = file_stream
+        node.file_stream = stream
         return node
 
     def string_build(self, data, modname='', path=None):

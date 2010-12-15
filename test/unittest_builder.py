@@ -43,7 +43,9 @@ from logilab.astng.nodes import Module
 from logilab.astng.bases import YES, BUILTINS_NAME
 from logilab.astng.as_string import as_string
 from logilab.astng.manager import ASTNGManager
+
 MANAGER = ASTNGManager()
+
 
 from unittest_inference import get_name_node
 
@@ -681,6 +683,44 @@ def func():
         self.assertIsInstance(chain, nodes.Const)
         self.assertEqual(chain.value, 'None')
 
+
+guess_encoding = builder._guess_encoding
+
+class TestGuessEncoding(TestCase):
+
+    def testEmacs(self):
+        e = guess_encoding('# -*- coding: UTF-8  -*-')
+        self.failUnlessEqual(e, 'UTF-8')
+        e = guess_encoding('# -*- coding:UTF-8 -*-')
+        self.failUnlessEqual(e, 'UTF-8')
+        e = guess_encoding('''
+        ### -*- coding: ISO-8859-1  -*-
+        ''')
+        self.failUnlessEqual(e, 'ISO-8859-1')
+        e = guess_encoding('''
+
+        ### -*- coding: ISO-8859-1  -*-
+        ''')
+        self.failUnlessEqual(e, None)
+
+    def testVim(self):
+        e = guess_encoding('# vim:fileencoding=UTF-8')
+        self.failUnlessEqual(e, 'UTF-8')
+        e = guess_encoding('''
+        ### vim:fileencoding=ISO-8859-1
+        ''')
+        self.failUnlessEqual(e, 'ISO-8859-1')
+        e = guess_encoding('''
+
+        ### vim:fileencoding= ISO-8859-1
+        ''')
+        self.failUnlessEqual(e, None)
+
+    def testUTF8(self):
+        e = guess_encoding('\xef\xbb\xbf any UTF-8 data')
+        self.failUnlessEqual(e, 'UTF-8')
+        e = guess_encoding(' any UTF-8 data \xef\xbb\xbf')
+        self.failUnlessEqual(e, None)
 
 if __name__ == '__main__':
     unittest_main()
