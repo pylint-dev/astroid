@@ -684,43 +684,44 @@ def func():
         self.assertEqual(chain.value, 'None')
 
 
-guess_encoding = builder._guess_encoding
+if sys.version_info < (3, 0):
+    guess_encoding = builder._guess_encoding
 
-class TestGuessEncoding(TestCase):
+    class TestGuessEncoding(TestCase):
 
-    def testEmacs(self):
-        e = guess_encoding('# -*- coding: UTF-8  -*-')
-        self.failUnlessEqual(e, 'UTF-8')
-        e = guess_encoding('# -*- coding:UTF-8 -*-')
-        self.failUnlessEqual(e, 'UTF-8')
-        e = guess_encoding('''
-        ### -*- coding: ISO-8859-1  -*-
-        ''')
-        self.failUnlessEqual(e, 'ISO-8859-1')
-        e = guess_encoding('''
+        def testEmacs(self):
+            e = guess_encoding('# -*- coding: UTF-8  -*-')
+            self.failUnlessEqual(e, 'UTF-8')
+            e = guess_encoding('# -*- coding:UTF-8 -*-')
+            self.failUnlessEqual(e, 'UTF-8')
+            e = guess_encoding('''
+            ### -*- coding: ISO-8859-1  -*-
+            ''')
+            self.failUnlessEqual(e, 'ISO-8859-1')
+            e = guess_encoding('''
 
-        ### -*- coding: ISO-8859-1  -*-
-        ''')
-        self.failUnlessEqual(e, None)
+            ### -*- coding: ISO-8859-1  -*-
+            ''')
+            self.failUnlessEqual(e, None)
 
-    def testVim(self):
-        e = guess_encoding('# vim:fileencoding=UTF-8')
-        self.failUnlessEqual(e, 'UTF-8')
-        e = guess_encoding('''
-        ### vim:fileencoding=ISO-8859-1
-        ''')
-        self.failUnlessEqual(e, 'ISO-8859-1')
-        e = guess_encoding('''
+        def testVim(self):
+            e = guess_encoding('# vim:fileencoding=UTF-8')
+            self.failUnlessEqual(e, 'UTF-8')
+            e = guess_encoding('''
+            ### vim:fileencoding=ISO-8859-1
+            ''')
+            self.failUnlessEqual(e, 'ISO-8859-1')
+            e = guess_encoding('''
 
-        ### vim:fileencoding= ISO-8859-1
-        ''')
-        self.failUnlessEqual(e, None)
+            ### vim:fileencoding= ISO-8859-1
+            ''')
+            self.failUnlessEqual(e, None)
 
-    def testUTF8(self):
-        e = guess_encoding('\xef\xbb\xbf any UTF-8 data')
-        self.failUnlessEqual(e, 'UTF-8')
-        e = guess_encoding(' any UTF-8 data \xef\xbb\xbf')
-        self.failUnlessEqual(e, None)
+        def testUTF8(self):
+            e = guess_encoding('\xef\xbb\xbf any UTF-8 data')
+            self.failUnlessEqual(e, 'UTF-8')
+            e = guess_encoding(' any UTF-8 data \xef\xbb\xbf')
+            self.failUnlessEqual(e, None)
 
 if __name__ == '__main__':
     unittest_main()
