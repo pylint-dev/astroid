@@ -20,17 +20,10 @@
 """this module contains a set of functions to handle inference on astng trees
 """
 
-from __future__ import generators
-
 __doctype__ = "restructuredtext en"
 
 from itertools import chain
 import sys
-
-try:
-    GeneratorExit # introduced in py2.5
-except NameError:
-    class GeneratorExit(Exception): pass
 
 from logilab.astng import nodes
 

@@ -19,10 +19,7 @@
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
 """this module contains a set of functions to handle python protocols for nodes
 where it makes sense.
-
 """
-
-from __future__ import generators
 
 __doctype__ = "restructuredtext en"
 
