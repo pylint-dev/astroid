@@ -1100,5 +1100,22 @@ Z = test()
         self.assertIsInstance(infered[0]._proxied, nodes.Class)
         self.assertEqual(infered[0]._proxied.name, 'list')
 
+    def test__new__(self):
+        code = '''
+class NewTest(object):
+    "doc"
+    def __new__(cls, arg):
+        self = object.__new__(cls)
+        self.arg = arg
+        return self
+
+n = NewTest()
+        '''
+        astng = builder.string_build(code, __name__, __file__)
+        self.assertRaises(InferenceError, list, astng['NewTest'].igetattr('arg'))
+        n = astng['n'].infer().next()
+        infered = list(n.igetattr('arg'))
+        self.assertEqual(len(infered), 1, infered)
+
 if __name__ == '__main__':
     unittest_main()

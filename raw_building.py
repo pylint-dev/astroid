@@ -206,7 +206,7 @@ def _base_class_object_build(node, member, basenames, name=None, localname=None)
 def imported_member(node, member, name):
     """consider a class/builtin member where __module__ != current module name
 
-    check if it's sound valid and then add an import node, else use a dummy node
+    check if it sounds valid and then add an import node, else use a dummy node
     """
     # /!\ some classes like ExtensionClass doesn't have a
     # __module__ attribute !
@@ -300,6 +300,11 @@ class InspectBuilder(object):
     def imported_member(self, node, member, name):
         """verify this is not an imported class or handle it"""
         modname = getattr(member, '__module__', None)
+        if modname is None and name in ('__new__', '__subclasshook__'):
+            # Python 2.5.1 (r251:54863, Sep  1 2010, 22:03:14)
+            # >>> print object.__new__.__module__
+            # None
+            modname = '__builtin__'
         if {'gtk': 'gtk._gtk'}.get(modname, modname) != self._module.__name__:
             imported_member(node, member, name)
             return True

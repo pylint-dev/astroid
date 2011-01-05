@@ -238,6 +238,14 @@ class UnboundMethod(Proxy):
             return iter((self._proxied,))
         return super(UnboundMethod, self).igetattr(name, context)
 
+    def infer_call_result(self, caller, context):
+        # If we're unbound method __new__ of builtin object, the result is an
+        # instance of the class given as first argument.
+        if (self._proxied.name == '__new__' and
+                self._proxied.parent.frame().qname() == '__builtin__.object'):
+            return (x is YES and x or Instance(x) for x in caller.args[0].infer())
+        return self._proxied.infer_call_result(caller, context)
+
 
 class BoundMethod(UnboundMethod):
     """a special node representing a method bound to an instance"""
@@ -270,6 +278,7 @@ class Generator(Instance):
 
     def __str__(self):
         return 'Generator(%s)' % (self._proxied.name)
+
 
 # decorators ##################################################################
 
