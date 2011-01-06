@@ -203,20 +203,6 @@ def _base_class_object_build(node, member, basenames, name=None, localname=None)
 
 
 
-def imported_member(node, member, name):
-    """consider a class/builtin member where __module__ != current module name
-
-    check if it sounds valid and then add an import node, else use a dummy node
-    """
-    # /!\ some classes like ExtensionClass doesn't have a
-    # __module__ attribute !
-    member_module = getattr(member, '__module__', '__builtin__')
-    try:
-        getattr(sys.modules[member_module], name)
-    except (KeyError, AttributeError):
-        attach_dummy_node(node, name, member)
-    else:
-        attach_import_node(node, member_module, name)
 
 class InspectBuilder(object):
     """class for building nodes from living object"""
@@ -299,14 +285,35 @@ class InspectBuilder(object):
 
     def imported_member(self, node, member, name):
         """verify this is not an imported class or handle it"""
-        modname = getattr(member, '__module__', None)
-        if modname is None and name in ('__new__', '__subclasshook__'):
-            # Python 2.5.1 (r251:54863, Sep  1 2010, 22:03:14)
-            # >>> print object.__new__.__module__
-            # None
-            modname = '__builtin__'
+        # /!\ some classes like ExtensionClass doesn't have a __module__
+        # attribute ! Also, this may trigger an exception on badly built module
+        # (see http://www.logilab.org/ticket/57299 for instance)
+        try:
+            modname = getattr(member, '__module__', None)
+        except:
+            # XXX use logging
+            print 'unexpected error while building astng from living object'
+            import traceback
+            traceback.print_exc()
+            modname = None
+        if modname is None:
+            if name in ('__new__', '__subclasshook__'):
+                # Python 2.5.1 (r251:54863, Sep  1 2010, 22:03:14)
+                # >>> print object.__new__.__module__
+                # None
+                modname = '__builtin__'
+            else:
+                attach_dummy_node(node, name, member)
+                return True
         if {'gtk': 'gtk._gtk'}.get(modname, modname) != self._module.__name__:
-            imported_member(node, member, name)
+            # check if it sounds valid and then add an import node, else use a
+            # dummy node
+            try:
+                getattr(sys.modules[modname], name)
+            except (KeyError, AttributeError):
+                attach_dummy_node(node, name, member)
+            else:
+                attach_import_node(node, modname, name)
             return True
         return False
 

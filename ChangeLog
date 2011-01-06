@@ -6,8 +6,14 @@ Change log for the astng package
     * python3: handle file encoding; fix a lot of tests
 
     * fix #52006: "True" and "False" can be assigned as variable in Python2x
+
     * fix #8847: pylint doesn't understand function attributes at all
+
     * fix #8774: iterator / generator / next method
+
+    * somewhat fix #57299: Exception when trying to validate file using PyQt's
+      PyQt4.QtCore module: we can't do much about it but at least catch such
+      exception to avoid crash
 
 2010-11-15  --  0.21.0
     * python3.x: first python3.x release
