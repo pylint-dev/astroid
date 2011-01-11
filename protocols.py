@@ -195,7 +195,7 @@ def for_assigned_stmts(self, node, context=None, asspath=None):
                     yield item
     else:
         for infered in _resolve_looppart(self.iter.infer(context),
-                                             asspath, context):
+                                         asspath, context):
             yield infered
 
 nodes.For.assigned_stmts = raise_if_nothing_infered(for_assigned_stmts)

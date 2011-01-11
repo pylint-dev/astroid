@@ -482,7 +482,7 @@ class Dict(NodeNG, Instance):
     _astng_fields = ('items',)
 
     def __init__(self, items=None):
-        if items == None:
+        if items is None:
             self.items = []
         else:
             self.items = [(const_factory(k), const_factory(v))
@@ -655,10 +655,10 @@ class Keyword(NodeNG):
 
 class List(NodeNG, Instance, ParentAssignTypeMixin):
     """class representing a List node"""
-    _astng_fields = ('elts',) 
+    _astng_fields = ('elts',)
 
     def __init__(self, elts=None):
-        if elts == None:
+        if elts is None:
             self.elts = []
         else:
             self.elts = [const_factory(e) for e in elts]
@@ -808,7 +808,7 @@ class Tuple(NodeNG, Instance, ParentAssignTypeMixin):
     _astng_fields = ('elts',)
 
     def __init__(self, elts=None):
-        if elts == None:
+        if elts is None:
             self.elts = []
         else:
             self.elts = [const_factory(e) for e in elts]
