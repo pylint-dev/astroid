@@ -60,8 +60,8 @@ class ASTNGManagerTC(TestCase):
                             module.file)
         finally:
             # remove the module, else after importing egg, we don't get the zip
-            if 'mypypa' in self.manager._cache:
-                del self.manager._cache['mypypa']
+            if 'mypypa' in self.manager.astng_cache:
+                del self.manager.astng_cache['mypypa']
                 del self.manager._mod_file_cache[('mypypa', None)]
             if archive_path in sys.path_importer_cache:
                 del sys.path_importer_cache[archive_path]

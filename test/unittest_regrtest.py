@@ -43,7 +43,7 @@ class NonRegressionTC(TestCase):
         # avoid caching into the ASTNGManager borg since we get problems
         # with other tests :
         manager.__dict__ = {}
-        manager._cache = {}
+        manager.astng_cache = {}
         manager._mod_file_cache = {}
         return manager
 
@@ -62,7 +62,7 @@ class NonRegressionTC(TestCase):
 
     def test_package_sidepackage(self):
         manager = self.brainless_manager()
-        assert 'package.sidepackage' not in MANAGER._cache
+        assert 'package.sidepackage' not in MANAGER.astng_cache
         package = manager.astng_from_module_name('absimp')
         self.assertIsInstance(package, nodes.Module)
         self.assertTrue(package.package)

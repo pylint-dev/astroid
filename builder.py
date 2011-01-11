@@ -142,7 +142,7 @@ class ASTNGBuilder(InspectBuilder):
         """build astng from source code string and return rebuilded astng"""
         module = self._data_build(data, modname, path)
         if self._manager is not None:
-            self._manager._cache[module.name] = module
+            self._manager.astng_cache[module.name] = module
         # post tree building steps after we stored the module in the cache:
         for from_node in module._from_nodes:
             self.add_from_names_to_locals(from_node)

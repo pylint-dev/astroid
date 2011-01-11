@@ -97,7 +97,7 @@ class ASTNGManager(OptionsProviderMixIn):
             OptionsProviderMixIn.__init__(self)
             self.load_defaults()
             # NOTE: cache entries are added by the [re]builder
-            self._cache = {}
+            self.astng_cache = {}
             self._mod_file_cache = {}
 
 
@@ -113,8 +113,8 @@ class ASTNGManager(OptionsProviderMixIn):
                 modname = '.'.join(modpath_from_file(filepath))
             except ImportError:
                 modname = filepath
-        if modname in self._cache:
-            return self._cache[modname]
+        if modname in self.astng_cache:
+            return self.astng_cache[modname]
         if source:
             from logilab.astng.builder import ASTNGBuilder
             return ASTNGBuilder(self).file_build(filepath, modname)
@@ -125,8 +125,8 @@ class ASTNGManager(OptionsProviderMixIn):
 
     def astng_from_module_name(self, modname, context_file=None):
         """given a module name, return the astng object"""
-        if modname in self._cache:
-            return self._cache[modname]
+        if modname in self.astng_cache:
+            return self.astng_cache[modname]
         old_cwd = os.getcwd()
         if context_file:
             os.chdir(dirname(context_file))
@@ -189,8 +189,8 @@ class ASTNGManager(OptionsProviderMixIn):
     def astng_from_module(self, module, modname=None):
         """given an imported module, return the astng object"""
         modname = modname or module.__name__
-        if modname in self._cache:
-            return self._cache[modname]
+        if modname in self.astng_cache:
+            return self.astng_cache[modname]
         try:
             # some builtin modules don't have __file__ attribute
             filepath = module.__file__
