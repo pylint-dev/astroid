@@ -29,7 +29,8 @@ DATA = join(dirname(abspath(__file__)), 'data')
 class ASTNGManagerTC(TestCase):
     def setUp(self):
         self.manager = ASTNGManager()
-        
+        self.manager.astng_cache.clear()
+
     def test_astng_from_module(self):
         import unittest
         astng = self.manager.astng_from_module(unittest)
