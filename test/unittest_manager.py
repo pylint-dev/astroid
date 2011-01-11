@@ -37,7 +37,7 @@ class ASTNGManagerTC(TestCase):
         import time
         astng = self.manager.astng_from_module(time)
         self.assertEqual(astng.pure_python, False)
-        
+
     def test_astng_from_class(self):
         astng = self.manager.astng_from_class(int)
         self.assertEqual(astng.name, 'int')
@@ -47,7 +47,7 @@ class ASTNGManagerTC(TestCase):
         self.assertEqual(astng.name, 'object')
         self.assertEqual(astng.parent.frame().name, BUILTINS_NAME)
         self.failUnless('__setattr__' in astng)
-        
+
     def _test_astng_from_zip(self, archive):
         origpath = sys.path[:]
         sys.modules.pop('mypypa', None)
@@ -105,4 +105,4 @@ class BorgASTNGManagerTC(TestCase):
 if __name__ == '__main__':
     unittest_main()
 
-    
+

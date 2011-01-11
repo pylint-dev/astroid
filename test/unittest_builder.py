@@ -329,7 +329,7 @@ class BuilderTC(TestCase):
             #dt_astng.getattr('DateTimeType')
 
     def test_inspect_build3(self):
-        unittest_astng = self.builder.inspect_build(unittest)
+        self.builder.inspect_build(unittest)
 
     def test_inspect_build_instance(self):
         """test astng tree build from a living object"""

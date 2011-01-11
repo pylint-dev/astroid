@@ -29,10 +29,8 @@ import sys
 from os.path import join, abspath, dirname
 
 class NonRegressionTC(TestCase):
-    
 
     def setUp(self):
-        
         sys.path.insert(0, join(dirname(abspath(__file__)), 'regrtest_data'))
 
     def tearDown(self):
