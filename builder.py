@@ -86,8 +86,7 @@ else:
 MANAGER = ASTNGManager()
 
 class ASTNGBuilder(InspectBuilder):
-    """provide astng building methods
-    """
+    """provide astng building methods"""
     rebuilder = TreeRebuilder()
 
     def __init__(self, manager=None):

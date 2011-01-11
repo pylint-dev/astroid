@@ -1,15 +1,3 @@
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the GNU Lesser General Public License as published by the Free Software
-# Foundation; either version 2 of the License, or (at your option) any later
-# version.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public License along with
-# this program; if not, write to the Free Software Foundation, Inc.,
-# 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 # copyright 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 # copyright 2003-2010 Sylvain Thenault, all rights reserved.
@@ -205,12 +193,13 @@ def _base_class_object_build(node, member, basenames, name=None, localname=None)
 
 
 class InspectBuilder(object):
-    """class for building nodes from living object"""
+    """class for building nodes from living object
+
+    this is actually a really minimal representation, including only Module,
+    Function and Class nodes and some others as guessed.
+    """
 
     # astng from living objects ###############################################
-    #
-    # this is actually a really minimal representation, including only Module,
-    # Function and Class nodes and some others as guessed
 
     def __init__(self):
         self._done = {}
