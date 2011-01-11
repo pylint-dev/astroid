@@ -694,7 +694,6 @@ class Print(Statement):
     values = None
 
 
-
 class Raise(Statement):
     """class representing a Raise node"""
     exc = None
@@ -886,10 +885,13 @@ _update_const_classes()
 
 def const_factory(value):
     """return an astng node for a python value"""
-    # /!\ current implementation expects the item / elts nodes for
-    # dict, list, tuples and the constant value for the others.
-    #
-    # some constants (like from gtk._gtk) don't have their class in CONST_CLS,
-    # even though we can "assert isinstance(value, tuple(CONST_CLS))"
-    return CONST_CLS.get(value.__class__, Const)(value)
-
+    try:
+        return CONST_CLS[value.__class__](value)
+    except (KeyError, AttributeError):
+        # some constants (like from gtk._gtk) don't have their class in
+        # CONST_CLS, though we can "assert isinstance(value, tuple(CONST_CLS))"
+        if isinstance(value, tuple(CONST_CLS)):
+            return Const(value)
+        node = EmptyNode()
+        node.object = value
+        return None
