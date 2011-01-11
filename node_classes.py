@@ -485,7 +485,8 @@ class Dict(NodeNG, Instance):
         if items == None:
             self.items = []
         else:
-            self.items = items
+            self.items = [(const_factory(k), const_factory(v))
+                          for k,v in items.iteritems()]
 
     def pytype(self):
         return '__builtin__.dict'
@@ -660,7 +661,7 @@ class List(NodeNG, Instance, ParentAssignTypeMixin):
         if elts == None:
             self.elts = []
         else:
-            self.elts = elts
+            self.elts = [const_factory(e) for e in elts]
 
     def pytype(self):
         return '__builtin__.list'
@@ -723,7 +724,12 @@ class Return(Statement):
 class Set(NodeNG, Instance, ParentAssignTypeMixin):
     """class representing a Set node"""
     _astng_fields = ('elts',)
-    elts = None
+
+    def __init__(self, elts=None):
+        if elts is None:
+            self.elts = []
+        else:
+            self.elts = [const_factory(e) for e in elts]
 
     def pytype(self):
         return '__builtin__.set' # XXX __builtin__ vs builtins
@@ -805,7 +811,7 @@ class Tuple(NodeNG, Instance, ParentAssignTypeMixin):
         if elts == None:
             self.elts = []
         else:
-            self.elts = elts
+            self.elts = [const_factory(e) for e in elts]
 
     def pytype(self):
         return '__builtin__.tuple'
