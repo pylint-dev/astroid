@@ -43,7 +43,7 @@ from logilab.common.modutils import get_module_part, is_relative, \
      is_standard_module
 
 from logilab import astng
-from logilab.astng import InferenceError
+from logilab.astng.exceptions import InferenceError
 from logilab.astng.utils import LocalsVisitor
 
 class IdGeneratorMixIn:
@@ -188,7 +188,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
         if hasattr(node, '_handled'):
             return
         node._handled = True
-        if node.name in node.frame().keys():
+        if node.name in node.frame():
             frame = node.frame()
         else:
             # the name has been defined as 'global' in the frame and belongs
@@ -196,7 +196,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
             # root locals; the frame hence has no locals_type attribute
             frame = node.root()
         try:
-            values = list(node.infer())
+            values = node.infered()
             try:
                 already_infered = frame.locals_type[node.name]
                 for valnode in values:

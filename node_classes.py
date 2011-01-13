@@ -20,26 +20,31 @@
 """Module for some node classes. More nodes in scoped_nodes.py
 """
 
-from logilab.common.compat import chain, imap
+import sys
 
-from logilab.astng import NoDefault
-from logilab.astng.bases import NodeNG, BaseClass, Instance, copy_context, \
-                                _infer_stmts, YES
-from logilab.astng.mixins import StmtMixIn, BlockRangeMixIn, AssignTypeMixin, \
+from logilab.astng.exceptions import NoDefault
+from logilab.astng.bases import (NodeNG, Statement, Instance, InferenceContext,
+                                 _infer_stmts, YES)
+from logilab.astng.mixins import BlockRangeMixIn, AssignTypeMixin, \
                                  ParentAssignTypeMixin, FromImportMixIn
 
+
 def unpack_infer(stmt, context=None):
-    """return an iterator on nodes inferred by the given statement if the
-    inferred value is a list or a tuple, recurse on it to get values inferred
-    by its content
+    """recursively generate nodes inferred by the given statement.
+    If the inferred value is a list or a tuple, recurse on the elements
     """
     if isinstance(stmt, (List, Tuple)):
-        # XXX loosing context
-        return chain(*imap(unpack_infer, stmt.elts))
+        for elt in stmt.elts:
+            for infered_elt in unpack_infer(elt, context):
+                yield infered_elt
+        return
     infered = stmt.infer(context).next()
-    if infered is stmt:
-        return iter( (stmt,) )
-    return chain(*imap(unpack_infer, stmt.infer(context)))
+    if infered is stmt or infered is YES:
+        yield infered
+        return
+    for infered in stmt.infer(context):
+        for inf_inf in unpack_infer(infered, context):
+            yield inf_inf
 
 
 def are_exclusive(stmt1, stmt2, exceptions=None):
@@ -69,7 +74,7 @@ def are_exclusive(stmt1, stmt2, exceptions=None):
     node = stmt2.parent
     previous = stmt2
     while node:
-        if stmt1_parents.has_key(node):
+        if node in stmt1_parents:
             # if the common parent is a If or TryExcept statement, look if
             # nodes are in exclusive branches
             if isinstance(node, If) and exceptions is None:
@@ -93,10 +98,7 @@ def are_exclusive(stmt1, stmt2, exceptions=None):
     return False
 
 
-
-
-
-class LookupMixIn(BaseClass):
+class LookupMixIn(object):
     """Mixin looking up a name in the right scope
     """
 
@@ -113,15 +115,14 @@ class LookupMixIn(BaseClass):
         """
         return self.scope().scope_lookup(self, name)
 
-    def ilookup(self, name, context=None):
+    def ilookup(self, name):
         """infered lookup
 
         return an iterator on infered values of the statements returned by
         the lookup method
         """
         frame, stmts = self.lookup(name)
-        context = copy_context(context)
-        context.lookupname = name
+        context = InferenceContext()
         return _infer_stmts(stmts, context, frame)
 
     def _filter_stmts(self, stmts, frame, offset):
@@ -171,7 +172,7 @@ class LookupMixIn(BaseClass):
             if done:
                 break
 
-            optional_assign = isinstance(ass_type, (For, Comprehension))
+            optional_assign = ass_type.optional_assign
             if optional_assign and ass_type.parent_of(self):
                 # we are inside a loop, loop var assigment is hidding previous
                 # assigment
@@ -331,19 +332,19 @@ class AssAttr(NodeNG, ParentAssignTypeMixin):
     _astng_fields = ('expr',)
     expr = None
 
-class Assert(StmtMixIn, NodeNG):
+class Assert(Statement):
     """class representing an Assert node"""
     _astng_fields = ('test', 'fail',)
     test = None
     fail = None
 
-class Assign(StmtMixIn, NodeNG, AssignTypeMixin):
+class Assign(Statement, AssignTypeMixin):
     """class representing an Assign node"""
     _astng_fields = ('targets', 'value',)
     targets = None
     value = None
 
-class AugAssign(StmtMixIn, NodeNG, AssignTypeMixin):
+class AugAssign(Statement, AssignTypeMixin):
     """class representing an AugAssign node"""
     _astng_fields = ('target', 'value',)
     target = None
@@ -365,7 +366,7 @@ class BoolOp(NodeNG):
     _astng_fields = ('values',)
     values = None
 
-class Break(StmtMixIn, NodeNG):
+class Break(Statement):
     """class representing a Break node"""
 
 
@@ -406,6 +407,7 @@ class Comprehension(NodeNG):
     iter = None
     ifs = None
 
+    optional_assign = True
     def ass_type(self):
         return self
 
@@ -425,7 +427,7 @@ class Comprehension(NodeNG):
 
 
 class Const(NodeNG, Instance):
-    """represent a Str or Num node"""
+    """represent a constant node like num, str, bool, None, bytes"""
 
     def __init__(self, value=None):
         self.value = value
@@ -443,7 +445,11 @@ class Const(NodeNG, Instance):
             return self.value
         raise TypeError()
 
-class Continue(StmtMixIn, NodeNG):
+    def pytype(self):
+        return self._proxied.qname()
+
+
+class Continue(Statement):
     """class representing a Continue node"""
 
 
@@ -465,7 +471,7 @@ class DelAttr(NodeNG, ParentAssignTypeMixin):
     expr = None
 
 
-class Delete(StmtMixIn, NodeNG, AssignTypeMixin):
+class Delete(Statement, AssignTypeMixin):
     """class representing a Delete node"""
     _astng_fields = ('targets',)
     targets = None
@@ -474,7 +480,13 @@ class Delete(StmtMixIn, NodeNG, AssignTypeMixin):
 class Dict(NodeNG, Instance):
     """class representing a Dict node"""
     _astng_fields = ('items',)
-    items = None
+
+    def __init__(self, items=None):
+        if items is None:
+            self.items = []
+        else:
+            self.items = [(const_factory(k), const_factory(v))
+                          for k,v in items.iteritems()]
 
     def pytype(self):
         return '__builtin__.dict'
@@ -505,7 +517,7 @@ class Dict(NodeNG, Instance):
         raise IndexError(key)
 
 
-class Discard(StmtMixIn, NodeNG):
+class Discard(Statement):
     """class representing a Discard node"""
     _astng_fields = ('value',)
     value = None
@@ -519,7 +531,7 @@ class EmptyNode(NodeNG):
     """class representing an EmptyNode node"""
 
 
-class ExceptHandler(StmtMixIn, NodeNG, AssignTypeMixin):
+class ExceptHandler(Statement, AssignTypeMixin):
     """class representing an ExceptHandler node"""
     _astng_fields = ('type', 'name', 'body',)
     type = None
@@ -547,7 +559,7 @@ class ExceptHandler(StmtMixIn, NodeNG, AssignTypeMixin):
                 return True
 
 
-class Exec(StmtMixIn, NodeNG):
+class Exec(Statement):
     """class representing an Exec node"""
     _astng_fields = ('expr', 'globals', 'locals',)
     expr = None
@@ -560,8 +572,7 @@ class ExtSlice(NodeNG):
     _astng_fields = ('dims',)
     dims = None
 
-
-class For(BlockRangeMixIn, StmtMixIn, AssignTypeMixin, NodeNG):
+class For(BlockRangeMixIn, AssignTypeMixin, Statement):
     """class representing a For node"""
     _astng_fields = ('target', 'iter', 'body', 'orelse',)
     target = None
@@ -569,11 +580,12 @@ class For(BlockRangeMixIn, StmtMixIn, AssignTypeMixin, NodeNG):
     body = None
     orelse = None
 
+    optional_assign = True
     def _blockstart_toline(self):
         return self.iter.tolineno
 
 
-class From(FromImportMixIn, StmtMixIn, NodeNG):
+class From(FromImportMixIn, Statement):
     """class representing a From node"""
 
     def __init__(self,  fromname, names, level=0):
@@ -587,7 +599,7 @@ class Getattr(NodeNG):
     expr = None
 
 
-class Global(StmtMixIn, NodeNG):
+class Global(Statement):
     """class representing a Global node"""
 
     def __init__(self, names):
@@ -597,7 +609,7 @@ class Global(StmtMixIn, NodeNG):
         return name
 
 
-class If(BlockRangeMixIn, StmtMixIn, NodeNG):
+class If(BlockRangeMixIn, Statement):
     """class representing an If node"""
     _astng_fields = ('test', 'body', 'orelse')
     test = None
@@ -625,7 +637,7 @@ class IfExp(NodeNG):
     orelse = None
 
 
-class Import(FromImportMixIn, StmtMixIn, NodeNG):
+class Import(FromImportMixIn, Statement):
     """class representing an Import node"""
 
 
@@ -643,8 +655,13 @@ class Keyword(NodeNG):
 
 class List(NodeNG, Instance, ParentAssignTypeMixin):
     """class representing a List node"""
-    _astng_fields = ('elts',) 
-    elts = None
+    _astng_fields = ('elts',)
+
+    def __init__(self, elts=None):
+        if elts is None:
+            self.elts = []
+        else:
+            self.elts = [const_factory(e) for e in elts]
 
     def pytype(self):
         return '__builtin__.list'
@@ -656,37 +673,68 @@ class List(NodeNG, Instance, ParentAssignTypeMixin):
         return self.elts
 
 
+class Nonlocal(Statement):
+    """class representing a Nonlocal node"""
 
-class ListComp(NodeNG):
-    """class representing a ListComp node"""
-    _astng_fields = ('elt', 'generators')
-    elt = None
-    generators = None
+    def __init__(self, names):
+        self.names = names
+
+    def _infer_name(self, frame, name):
+        return name
 
 
-class Pass(StmtMixIn, NodeNG):
+class Pass(Statement):
     """class representing a Pass node"""
 
 
-class Print(StmtMixIn, NodeNG):
+class Print(Statement):
     """class representing a Print node"""
     _astng_fields = ('dest', 'values',)
     dest = None
     values = None
 
 
-class Raise(StmtMixIn, NodeNG):
+class Raise(Statement):
     """class representing a Raise node"""
-    _astng_fields = ('type', 'inst', 'tback')
-    type = None
-    inst = None
-    tback = None
+    exc = None
+    if sys.version_info < (3, 0):
+        _astng_fields = ('exc', 'inst', 'tback')
+        inst = None
+        tback = None
+    else:
+        _astng_fields = ('exc', 'cause')
+        exc = None
+        cause = None
+
+    def raises_not_implemented(self):
+        if not self.exc:
+            return
+        for name in self.exc.nodes_of_class(Name):
+            if name.name == 'NotImplementedError':
+                return True
 
 
-class Return(StmtMixIn, NodeNG):
+class Return(Statement):
     """class representing a Return node"""
     _astng_fields = ('value',)
     value = None
+
+
+class Set(NodeNG, Instance, ParentAssignTypeMixin):
+    """class representing a Set node"""
+    _astng_fields = ('elts',)
+
+    def __init__(self, elts=None):
+        if elts is None:
+            self.elts = []
+        else:
+            self.elts = [const_factory(e) for e in elts]
+
+    def pytype(self):
+        return '__builtin__.set' # XXX __builtin__ vs builtins
+
+    def itered(self):
+        return self.elts
 
 
 class Slice(NodeNG):
@@ -696,6 +744,11 @@ class Slice(NodeNG):
     upper = None
     step = None
 
+class Starred(NodeNG):
+    """class representing a Starred node"""
+    _astng_fields = ('value',)
+    value = None
+
 
 class Subscript(NodeNG):
     """class representing a Subscript node"""
@@ -704,7 +757,7 @@ class Subscript(NodeNG):
     slice = None
 
 
-class TryExcept(BlockRangeMixIn, StmtMixIn, NodeNG):
+class TryExcept(BlockRangeMixIn, Statement):
     """class representing a TryExcept node"""
     _astng_fields = ('body', 'handlers', 'orelse',)
     body = None
@@ -730,7 +783,7 @@ class TryExcept(BlockRangeMixIn, StmtMixIn, NodeNG):
         return self._elsed_block_range(lineno, self.orelse, last)
 
 
-class TryFinally(BlockRangeMixIn, StmtMixIn, NodeNG):
+class TryFinally(BlockRangeMixIn, Statement):
     """class representing a TryFinally node"""
     _astng_fields = ('body', 'finalbody',)
     body = None
@@ -752,7 +805,12 @@ class TryFinally(BlockRangeMixIn, StmtMixIn, NodeNG):
 class Tuple(NodeNG, Instance, ParentAssignTypeMixin):
     """class representing a Tuple node"""
     _astng_fields = ('elts',)
-    elts = None
+
+    def __init__(self, elts=None):
+        if elts is None:
+            self.elts = []
+        else:
+            self.elts = [const_factory(e) for e in elts]
 
     def pytype(self):
         return '__builtin__.tuple'
@@ -770,7 +828,7 @@ class UnaryOp(NodeNG):
     operand = None
 
 
-class While(BlockRangeMixIn, StmtMixIn, NodeNG):
+class While(BlockRangeMixIn, Statement):
     """class representing a While node"""
     _astng_fields = ('test', 'body', 'orelse',)
     test = None
@@ -784,7 +842,8 @@ class While(BlockRangeMixIn, StmtMixIn, NodeNG):
         """handle block line numbers range for for and while statements"""
         return self. _elsed_block_range(lineno, self.orelse)
 
-class With(BlockRangeMixIn, StmtMixIn, AssignTypeMixin, NodeNG):
+
+class With(BlockRangeMixIn, AssignTypeMixin, Statement):
     """class representing a With node"""
     _astng_fields = ('expr', 'vars', 'body')
     expr = None
@@ -809,24 +868,30 @@ CONST_CLS = {
     list: List,
     tuple: Tuple,
     dict: Dict,
+    set: Set,
+    type(None): Const,
     }
+
+def _update_const_classes():
+    """update constant classes, so the keys of CONST_CLS can be reused"""
+    klasses = (bool, int, float, complex, str)
+    if sys.version_info < (3, 0):
+        klasses += (unicode, long)
+    if sys.version_info >= (2, 6):
+        klasses += (bytes,)
+    for kls in klasses:
+        CONST_CLS[kls] = Const
+_update_const_classes()
 
 def const_factory(value):
     """return an astng node for a python value"""
     try:
-        # if value is of class list, tuple, dict use specific class, not Const
-        cls = CONST_CLS[value.__class__]
-        node = cls()
-        if isinstance(node, Dict):
-            node.items = ()
-        else:
-            node.elts = ()
-    except KeyError:
-        # why was value in (None, False, True) not OK?
-        assert isinstance(value, (int, long, complex, float, basestring)) or value in (None, False, True)
-        node = Const()
-        node.value = value
-    return node
-
-
-
+        return CONST_CLS[value.__class__](value)
+    except (KeyError, AttributeError):
+        # some constants (like from gtk._gtk) don't have their class in
+        # CONST_CLS, though we can "assert isinstance(value, tuple(CONST_CLS))"
+        if isinstance(value, tuple(CONST_CLS)):
+            return Const(value)
+        node = EmptyNode()
+        node.object = value
+        return None

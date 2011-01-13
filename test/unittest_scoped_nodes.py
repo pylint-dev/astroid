@@ -22,20 +22,21 @@ function)
 """
 
 import sys
-from os.path import join, abspath
+from os.path import join, abspath, dirname
 
 from logilab.common.testlib import TestCase, unittest_main
-from logilab.common.compat import sorted
 
 from logilab.astng import builder, nodes, scoped_nodes, \
      InferenceError, NotFoundError
 from logilab.astng.bases import Instance, BoundMethod, UnboundMethod
 
 abuilder = builder.ASTNGBuilder()
-MODULE = abuilder.file_build('data/module.py', 'data.module')
-MODULE2 = abuilder.file_build('data/module2.py', 'data.module2')
-NONREGR = abuilder.file_build('data/nonregr.py', 'data.nonregr')
-PACK = abuilder.file_build('data/__init__.py', 'data')
+DATA = join(dirname(abspath(__file__)), 'data')
+MODULE = abuilder.file_build(join(DATA, 'module.py'), 'data.module')
+MODULE2 = abuilder.file_build(join(DATA, 'module2.py'), 'data.module2')
+NONREGR = abuilder.file_build(join(DATA, 'nonregr.py'), 'data.nonregr')
+
+PACK = abuilder.file_build(join(DATA, '__init__.py'), 'data')
 
 def _test_dict_interface(self, node, test_attr):
     self.assert_(node[test_attr] is node[test_attr])
@@ -57,7 +58,7 @@ class ModuleNodeTC(TestCase):
         self.assertEqual(MODULE.getattr('__doc__')[0].value, 'test module for astng\n')
         self.assertEqual(len(MODULE.getattr('__file__')), 1)
         self.assertIsInstance(MODULE.getattr('__file__')[0], nodes.Const)
-        self.assertEqual(MODULE.getattr('__file__')[0].value, abspath(join('data', 'module.py')))
+        self.assertEqual(MODULE.getattr('__file__')[0].value, join(DATA, 'module.py'))
         self.assertEqual(len(MODULE.getattr('__dict__')), 1)
         self.assertIsInstance(MODULE.getattr('__dict__')[0], nodes.Dict)
         self.assertRaises(NotFoundError, MODULE.getattr, '__path__')
@@ -73,15 +74,17 @@ class ModuleNodeTC(TestCase):
         self.assertEqual(yo.name, 'YO')
         red = MODULE.igetattr('redirect').next()
         self.assertIsInstance(red, nodes.Function)
-        self.assertEqual(red.name, 'nested_args')
+        self.assertEqual(red.name, 'four_args')
         spawn = MODULE.igetattr('spawn').next()
         self.assertIsInstance(spawn, nodes.Class)
         self.assertEqual(spawn.name, 'Execute')
         # resolve packageredirection
-        sys.path.insert(1, 'data')
+        sys.path.insert(1, DATA)
+        mod = abuilder.file_build(join(DATA, 'appl/myConnection.py'),
+                                  'appl.myConnection')
         try:
-            m = abuilder.file_build('data/appl/myConnection.py', 'appl.myConnection')
-            cnx = m.igetattr('SSL1').next().igetattr('Connection').next()
+            ssl = mod.igetattr('SSL1').next()
+            cnx = ssl.igetattr('Connection').next()
             self.assertEqual(cnx.__class__, nodes.Class)
             self.assertEqual(cnx.name, 'Connection')
             self.assertEqual(cnx.root().name, 'SSL1.Connection1')
@@ -92,11 +95,10 @@ class ModuleNodeTC(TestCase):
         self.assertRaises(InferenceError, MODULE.igetattr, 'YOAA')
 
     def test_wildard_import_names(self):
-        m = abuilder.file_build('data/all.py', 'all')
+        m = abuilder.file_build(join(DATA, 'all.py'), 'all')
         self.assertEqual(m.wildcard_import_names(), ['Aaa', '_bla', 'name'])
-        m = abuilder.file_build('data/notall.py', 'notall')
-        res = m.wildcard_import_names()
-        res.sort()
+        m = abuilder.file_build(join(DATA, 'notall.py'), 'notall')
+        res = sorted(m.wildcard_import_names())
         self.assertEqual(res, ['Aaa', 'func', 'name', 'other'])
 
     def test_module_getattr(self):
@@ -109,6 +111,26 @@ del appli
         # test del statement not returned by getattr
         self.assertEqual(len(astng.getattr('appli')), 2,
                           astng.getattr('appli'))
+
+    def test_relative_to_absolute_name(self):
+        mod = nodes.Module('very.multi.module', 'doc')
+        # package
+        mod.package = True
+        modname = mod.relative_to_absolute_name('utils', 1)
+        self.assertEqual(modname, 'very.multi.module.utils')
+        modname = mod.relative_to_absolute_name('utils', 2)
+        self.assertEqual(modname, 'very.multi.utils')
+        modname = mod.relative_to_absolute_name('utils', 0)
+        self.assertEqual(modname, 'very.multi.module.utils')
+        # non package
+        mod.package = False
+        modname = mod.relative_to_absolute_name('utils', 0)
+        self.assertEqual(modname, 'very.multi.utils')
+        modname = mod.relative_to_absolute_name('utils', 1)
+        self.assertEqual(modname, 'very.multi.utils')
+        modname = mod.relative_to_absolute_name('utils', 2)
+        self.assertEqual(modname, 'very.utils')
+
 
 
 class FunctionNodeTC(TestCase):
@@ -156,18 +178,29 @@ class FunctionNodeTC(TestCase):
         self.assertEqual(first.previous_sibling(), None)
 
     def test_nested_args(self):
-        func = MODULE['nested_args']
+        if sys.version_info >= (3, 0):
+            self.skipTest("nested args has been removed in py3.x")
+        code = '''
+def nested_args(a, (b, c, d)):
+    "nested arguments test"
+        '''
+        tree = abuilder.string_build(code)
+        func = tree['nested_args']
+        self.assertEqual(sorted(func.locals), ['a', 'b', 'c', 'd'])
+        self.assertEqual(func.args.format_args(), 'a, (b, c, d)')
+
+    def test_four_args(self):
+        func = MODULE['four_args']
         #self.assertEqual(func.args.args, ['a', ('b', 'c', 'd')])
-        local = func.keys()
-        local.sort()
+        local = sorted(func.keys())
         self.assertEqual(local, ['a', 'b', 'c', 'd'])
         self.assertEqual(func.type, 'function')
 
     def test_format_args(self):
         func = MODULE2['make_class']
         self.assertEqual(func.args.format_args(), 'any, base=data.module.YO, *args, **kwargs')
-        func = MODULE['nested_args']
-        self.assertEqual(func.args.format_args(), 'a, (b, c, d)')
+        func = MODULE['four_args']
+        self.assertEqual(func.args.format_args(), 'a, b, c, d')
 
     def test_is_abstract(self):
         method = MODULE2['AbstractClass']['to_override']
@@ -201,8 +234,6 @@ def f():
         self.failUnlessEqual(g.pytype(), '__builtin__.function')
 
     def test_is_method(self):
-        if sys.version_info < (2, 4):
-            self.skipTest('this test require python >= 2.4')
         data = '''
 class A:
     def meth1(self):
@@ -229,9 +260,44 @@ def sfunction():
         self.failIf(astng['sfunction'].is_method())
 
     def test_argnames(self):
-        code = 'def f(a, (b, c), *args, **kwargs): pass'
+        if sys.version_info < (3, 0):
+            code = 'def f(a, (b, c), *args, **kwargs): pass'
+        else:
+            code = 'def f(a, b, c, *args, **kwargs): pass'
         astng = abuilder.string_build(code, __name__, __file__)
         self.assertEqual(astng['f'].argnames(), ['a', 'b', 'c', 'args', 'kwargs'])
+
+    def test_return_nothing(self):
+        """test infered value on a function with empty return"""
+        data = '''
+def func():
+    return
+
+a = func()
+'''
+        astng = abuilder.string_build(data, __name__, __file__)
+        call = astng.body[1].value
+        func_vals = call.infered()
+        self.assertEqual(len(func_vals), 1)
+        self.assertIsInstance(func_vals[0], nodes.Const)
+        self.assertEqual(func_vals[0].value, None)
+
+    def test_func_instance_attr(self):
+        """test instance attributes for functions"""
+        data= """
+def test():
+    print(test.bar)
+
+test.bar = 1
+test()
+        """
+        astng = abuilder.string_build(data, 'mod', __file__)
+        func = astng.body[2].value.func.infered()[0]
+        self.assertIsInstance(func, nodes.Function)
+        self.assertEqual(func.name, 'test')
+        one = func.getattr('bar')[0].infered()[0]
+        self.assertIsInstance(one, nodes.Const)
+        self.assertEqual(one.value, 1)
 
 
 class ClassNodeTC(TestCase):
@@ -314,8 +380,7 @@ A.__bases__ += (B,)
 
     def test_methods(self):
         klass2 = MODULE['YOUPI']
-        methods = [m.name for m in klass2.methods()]
-        methods.sort()
+        methods = sorted([m.name for m in klass2.methods()])
         self.assertEqual(methods, ['__init__', 'class_method',
                                    'method', 'static_method'])
         methods = [m.name for m in klass2.mymethods()]
@@ -349,7 +414,7 @@ A.__bases__ += (B,)
         self.assertEqual(ancs, ['YO'])
         klass = MODULE2['Specialization']
         ancs = [a.name for a in klass.ancestors()]
-        self.assertEqual(ancs, ['YOUPI', 'YO', 'YO'])
+        self.assertEqual(ancs, ['YOUPI', 'YO'])
 
     def test_type(self):
         klass = MODULE['YOUPI']
@@ -414,7 +479,7 @@ class WebAppObject(object):
 
 
     def test_class_getattr(self):
-        data =         '''
+        data = '''
 class WebAppObject(object):
     appli = application
     appli += 2
@@ -494,6 +559,26 @@ inst.m4 = func
         inferred = list(Instance(cls).igetattr('m4'))
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], nodes.Function)
+
+    def test_getattr_from_grandpa(self):
+        data = '''
+class Future:
+    attr = 1
+
+class Present(Future):
+    pass
+
+class Past(Present):
+    pass
+'''
+        astng = abuilder.string_build(data)
+        past = astng['Past']
+        attr = past.getattr('attr')
+        self.assertEqual(len(attr), 1)
+        attr1 = attr[0]
+        self.assertIsInstance(attr1, nodes.AssName)
+        self.assertEqual(attr1.name, 'attr')
+
 
 __all__ = ('ModuleNodeTC', 'ImportNodeTC', 'FunctionNodeTC', 'ClassNodeTC')
 

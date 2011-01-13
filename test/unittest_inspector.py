@@ -1,4 +1,4 @@
-# Copyright (c) 2003-2006 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2003-2010 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This program is free software; you can redistribute it and/or modify it under
@@ -38,18 +38,26 @@ unittest for the visitors.diadefs module
 
 import unittest
 import sys
+from os.path import join, abspath, dirname
 
-from logilab.astng import MANAGER, nodes, inspector
+from logilab.astng import nodes, inspector
 from logilab.astng.bases import Instance, YES
+
+from logilab.astng.manager import ASTNGManager, _silent_no_wrap
+MANAGER = ASTNGManager()
 
 def astng_wrapper(func, modname):
     return func(modname)
 
-        
+
+DATA2 = join(dirname(abspath(__file__)), 'data2')
+
+from os.path import join, abspath, dirname
+
 class LinkerTC(unittest.TestCase):
     
     def setUp(self):
-        self.project = MANAGER.project_from_files(['data2'], astng_wrapper) 
+        self.project = MANAGER.project_from_files([DATA2], astng_wrapper)
         self.linker = inspector.Linker(self.project)
         self.linker.visit(self.project)
 
@@ -68,8 +76,7 @@ class LinkerTC(unittest.TestCase):
         self.assert_(hasattr(klass, 'locals_type'))
         type_dict = klass.locals_type
         self.assertEqual(len(type_dict), 2)
-        keys = type_dict.keys()
-        keys.sort()
+        keys = sorted(type_dict.keys())
         self.assertEqual(keys, ['TYPE', 'top'])
         self.assertEqual(len(type_dict['TYPE']), 1)
         self.assertEqual(type_dict['TYPE'][0].value, 'final class')
@@ -81,8 +88,7 @@ class LinkerTC(unittest.TestCase):
         self.assert_(hasattr(klass, 'instance_attrs_type'))
         type_dict = klass.instance_attrs_type
         self.assertEqual(len(type_dict), 3)
-        keys = type_dict.keys()
-        keys.sort()
+        keys = sorted(type_dict.keys())
         self.assertEqual(keys, ['_id', 'relation', 'toto'])
         self.assert_(isinstance(type_dict['relation'][0], Instance), type_dict['relation'])
         self.assertEqual(type_dict['relation'][0].name, 'DoNothing')
@@ -94,7 +100,7 @@ class LinkerTC(unittest.TestCase):
 class LinkerTC2(LinkerTC):
     
     def setUp(self):
-        self.project = MANAGER.from_directory('data2') 
+        self.project = MANAGER.project_from_files([DATA2], func_wrapper=_silent_no_wrap)
         self.linker = inspector.Linker(self.project)
         self.linker.visit(self.project)
         

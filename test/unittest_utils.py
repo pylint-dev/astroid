@@ -29,10 +29,10 @@ class AreExclusiveTC(TestCase):
         astng = builder.string_build("""
 x = 10
 for x in range(5):
-    print x
+    print (x)
    
 if x > 0:
-    print '#' * x        
+    print ('#' * x)
         """, __name__, __file__)
         xass1 = astng.locals['x'][0]
         assert xass1.lineno == 2

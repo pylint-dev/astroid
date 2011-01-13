@@ -58,7 +58,3 @@ class NoDefault(ASTNGError):
     no default value
     """
 
-class IgnoreChild(Exception):
-    """exception that maybe raised by visit methods to avoid children traversal
-    """
-

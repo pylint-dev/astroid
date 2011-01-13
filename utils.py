@@ -36,191 +36,7 @@ extract information from it
 
 __docformat__ = "restructuredtext en"
 
-from logilab.astng._exceptions import IgnoreChild, ASTNGBuildingException
-from logilab.common.compat import set
-
-class ASTVisitor(object):
-    """Abstract Base Class for Python AST Visitors.
-
-    Visitors inheriting from ASTVisitors could visit
-    compiler.ast, _ast or astng trees.
-
-    Not all methods will have to be implemented;
-    so some methods are just empty interfaces for catching
-    cases where we don't want to do anything on the
-    concerned node.
-    """
-
-    def visit_arguments(self, node):
-        """dummy method for visiting an Arguments node"""
-
-    def visit_assattr(self, node):
-        """dummy method for visiting an AssAttr node"""
-
-    def visit_assert(self, node):
-        """dummy method for visiting an Assert node"""
-
-    def visit_assign(self, node):
-        """dummy method for visiting an Assign node"""
-
-    def visit_assname(self, node):
-        """dummy method for visiting an AssName node"""
-
-    def visit_augassign(self, node):
-        """dummy method for visiting an AugAssign node"""
-
-    def visit_backquote(self, node):
-        """dummy method for visiting an Backquote node"""
-
-    def visit_binop(self, node):
-        """dummy method for visiting an BinOp node"""
-
-    def visit_boolop(self, node):
-        """dummy method for visiting an BoolOp node"""
-
-    def visit_break(self, node):
-        """dummy method for visiting an Break node"""
-
-    def visit_callfunc(self, node):
-        """dummy method for visiting an CallFunc node"""
-
-    def visit_class(self, node):
-        """dummy method for visiting an Class node"""
-
-    def visit_compare(self, node):
-        """dummy method for visiting an Compare node"""
-
-    def visit_comprehension(self, node):
-        """dummy method for visiting an Comprehension node"""
-
-    def visit_const(self, node):
-        """dummy method for visiting an Const node"""
-
-    def visit_continue(self, node):
-        """dummy method for visiting an Continue node"""
-
-    def visit_decorators(self, node):
-        """dummy method for visiting an Decorators node"""
-
-    def visit_delattr(self, node):
-        """dummy method for visiting an DelAttr node"""
-
-    def visit_delete(self, node):
-        """dummy method for visiting an Delete node"""
-
-    def visit_delname(self, node):
-        """dummy method for visiting an DelName node"""
-
-    def visit_dict(self, node):
-        """dummy method for visiting an Dict node"""
-
-    def visit_discard(self, node):
-        """dummy method for visiting an Discard node"""
-
-    def visit_emptynode(self, node):
-        """dummy method for visiting an EmptyNode node"""
-
-    def visit_excepthandler(self, node):
-        """dummy method for visiting an ExceptHandler node"""
-
-    def visit_ellipsis(self, node):
-        """dummy method for visiting an Ellipsis node"""
-
-    def visit_empty(self, node):
-        """dummy method for visiting an Empty node"""
-
-    def visit_exec(self, node):
-        """dummy method for visiting an Exec node"""
-
-    def visit_extslice(self, node):
-        """dummy method for visiting an ExtSlice node"""
-
-    def visit_for(self, node):
-        """dummy method for visiting an For node"""
-
-    def visit_from(self, node):
-        """dummy method for visiting an From node"""
-
-    def visit_function(self, node):
-        """dummy method for visiting an Function node"""
-
-    def visit_genexpr(self, node):
-        """dummy method for visiting an ListComp node"""
-
-    def visit_getattr(self, node):
-        """dummy method for visiting an Getattr node"""
-
-    def visit_global(self, node):
-        """dummy method for visiting an Global node"""
-
-    def visit_if(self, node):
-        """dummy method for visiting an If node"""
-
-    def visit_ifexp(self, node):
-        """dummy method for visiting an IfExp node"""
-
-    def visit_import(self, node):
-        """dummy method for visiting an Import node"""
-
-    def visit_index(self, node):
-        """dummy method for visiting an Index node"""
-
-    def visit_keyword(self, node):
-        """dummy method for visiting an Keyword node"""
-
-    def visit_lambda(self, node):
-        """dummy method for visiting an Lambda node"""
-
-    def visit_list(self, node):
-        """dummy method for visiting an List node"""
-
-    def visit_listcomp(self, node):
-        """dummy method for visiting an ListComp node"""
-
-    def visit_module(self, node):
-        """dummy method for visiting an Module node"""
-
-    def visit_name(self, node):
-        """dummy method for visiting an Name node"""
-
-    def visit_pass(self, node):
-        """dummy method for visiting an Pass node"""
-
-    def visit_print(self, node):
-        """dummy method for visiting an Print node"""
-
-    def visit_raise(self, node):
-        """dummy method for visiting an Raise node"""
-
-    def visit_return(self, node):
-        """dummy method for visiting an Return node"""
-
-    def visit_slice(self, node):
-        """dummy method for visiting an Slice node"""
-
-    def visit_subscript(self, node):
-        """dummy method for visiting an Subscript node"""
-
-    def visit_tryexcept(self, node):
-        """dummy method for visiting an TryExcept node"""
-
-    def visit_tryfinally(self, node):
-        """dummy method for visiting an TryFinally node"""
-
-    def visit_tuple(self, node):
-        """dummy method for visiting an Tuple node"""
-
-    def visit_unaryop(self, node):
-        """dummy method for visiting an UnaryOp node"""
-
-    def visit_while(self, node):
-        """dummy method for visiting an While node"""
-
-    def visit_with(self, node):
-        """dummy method for visiting an With node"""
-
-    def visit_yield(self, node):
-        """dummy method for visiting an Yield node"""
+from logilab.astng.exceptions import ASTNGBuildingException
 
 
 class ASTWalker:
@@ -244,19 +60,11 @@ class ASTWalker:
         if node in _done:
             raise AssertionError((id(node), node, node.parent))
         _done.add(node)
-        try:
-            self.visit(node)
-        except IgnoreChild:
-            pass
-        else:
-            try:
-                for child_node in node.get_children():
-                    self.handler.set_context(node, child_node)
-                    assert child_node is not node
-                    self.walk(child_node, _done)
-            except AttributeError:
-                print node.__class__, id(node.__class__)
-                raise
+        self.visit(node)
+        for child_node in node.get_children():
+            self.handler.set_context(node, child_node)
+            assert child_node is not node
+            self.walk(child_node, _done)
         self.leave(node)
         assert node.parent is not node
 
@@ -297,20 +105,15 @@ class LocalsVisitor(ASTWalker):
 
     def visit(self, node):
         """launch the visit starting from the given node"""
-        if self._visited.has_key(node):
+        if node in self._visited:
             return
         self._visited[node] = 1 # FIXME: use set ?
         methods = self.get_callbacks(node)
-        recurse = 1
         if methods[0] is not None:
-            try:
-                methods[0](node)
-            except IgnoreChild:
-                recurse = 0
-        if recurse:
-            if 'locals' in node.__dict__: # skip Instance and other proxy
-                for name, local_node in node.items():
-                    self.visit(local_node)
+            methods[0](node)
+        if 'locals' in node.__dict__: # skip Instance and other proxy
+            for name, local_node in node.items():
+                self.visit(local_node)
         if methods[1] is not None:
             return methods[1](node)
 
@@ -338,5 +141,114 @@ def _check_children(node):
         _check_children(child)
 
 
-__all__ = ('LocalsVisitor', 'ASTWalker', 'ASTVisitor',)
+from _ast import PyCF_ONLY_AST
+def parse(string):
+    return compile(string, "<string>", 'exec', PyCF_ONLY_AST)
+
+class TreeTester(object):
+    '''A helper class to see _ast tree and compare with astng tree
+
+    indent: string for tree indent representation
+    lineno: bool to tell if we should print the line numbers
+
+    >>> tester = TreeTester('print')
+    >>> print tester.native_tree_repr()
+
+    <Module>
+    .   body = [
+    .   <Print>
+    .   .   nl = True
+    .   ]
+    >>> print tester.astng_tree_repr()
+    Module()
+        body = [
+        Print()
+            dest = 
+            values = [
+            ]
+        ]
+    '''
+
+    indent = '.   '
+    lineno = False
+
+    def __init__(self, sourcecode):
+        self._string = ''
+        self.sourcecode = sourcecode
+        self._ast_node = None
+        self.build_ast()
+
+    def build_ast(self):
+        """build the _ast tree from the source code"""
+        self._ast_node = parse(self.sourcecode)
+
+    def native_tree_repr(self, node=None, indent=''):
+        """get a nice representation of the _ast tree"""
+        self._string = ''
+        if node is None:
+            node = self._ast_node
+        self._native_repr_tree(node, indent)
+        return self._string
+
+
+    def _native_repr_tree(self, node, indent, _done=None):
+        """recursive method for the native tree representation"""
+        from _ast import Load as _Load, Store as _Store, Del as _Del
+        from _ast import AST as Node
+        if _done is None:
+            _done = set()
+        if node in _done:
+            self._string += '\nloop in tree: %r (%s)' % (node,
+                                            getattr(node, 'lineno', None))
+            return
+        _done.add(node)
+        self._string += '\n' + indent +  '<%s>' % node.__class__.__name__
+        indent += self.indent
+        if not hasattr(node, '__dict__'):
+            self._string += '\n' + self.indent + " ** node has no __dict__ " + str(node)
+            return
+        node_dict = node.__dict__
+        if hasattr(node, '_attributes'):
+            for a in node._attributes:
+                attr = node_dict[a]
+                if attr is None:
+                    continue
+                if a in ("lineno", "col_offset") and not self.lineno:
+                    continue
+                self._string +='\n' +  indent + a + " = " + repr(attr)
+        for field in node._fields or ():
+            attr = node_dict[field]
+            if attr is None:
+                continue
+            if isinstance(attr, list):
+                if not attr:
+                    continue
+                self._string += '\n' + indent + field + ' = ['
+                for elt in attr:
+                    self._native_repr_tree(elt, indent, _done)
+                self._string += '\n' + indent + ']'
+                continue
+            if isinstance(attr, (_Load, _Store, _Del)):
+                continue
+            if isinstance(attr, Node):
+                self._string += '\n' + indent + field + " = "
+                self._native_repr_tree(attr, indent, _done)
+            else:
+                self._string += '\n' + indent + field + " = " + repr(attr)
+
+
+    def build_astng_tree(self):
+        """build astng tree from the _ast tree
+        """
+        from logilab.astng.builder import ASTNGBuilder
+        tree = ASTNGBuilder().string_build(self.sourcecode)
+        return tree
+
+    def astng_tree_repr(self, ids=False):
+        """build the astng tree and return a nice tree representation"""
+        mod = self.build_astng_tree()
+        return mod.repr_tree(ids)
+
+
+__all__ = ('LocalsVisitor', 'ASTWalker',)
 

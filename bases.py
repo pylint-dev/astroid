@@ -1,16 +1,4 @@
 # -*- coding: utf-8 -*-
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the GNU Lesser General Public License as published by the Free Software
-# Foundation; either version 2 of the License, or (at your option) any later
-# version.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public License along with
-# this program; if not, write to the Free Software Foundation, Inc.,
-# 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 # copyright 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 # copyright 2003-2010 Sylvain Thenault, all rights reserved.
@@ -30,32 +18,21 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
-
 """This module contains base classes and functions for the nodes and some
 inference utils.
-
 """
-
-from __future__ import generators
 
 __docformat__ = "restructuredtext en"
 
 
-try:
-    from _ast import AST
-    del AST
-    class BaseClass(object):
-        pass
-except ImportError:
-    class BaseClass:
-        pass
-
-from logilab.common.compat import set
-from logilab.astng._exceptions import InferenceError, ASTNGError, \
+from logilab.common.compat import builtins
+from logilab.astng.exceptions import InferenceError, ASTNGError, \
                                        NotFoundError, UnresolvableName
+from logilab.astng.as_string import as_string
 
+BUILTINS_NAME = builtins.__name__
 
-class Proxy(BaseClass):
+class Proxy(object):
     """a simple proxy object"""
     _proxied = None
 
@@ -73,9 +50,8 @@ class Proxy(BaseClass):
     def infer(self, context=None):
         yield self
 
+
 # Inference ##################################################################
-
-
 
 class InferenceContext(object):
     __slots__ = ('path', 'lookupname', 'callcontext', 'boundnode')
@@ -201,7 +177,7 @@ class Instance(Proxy):
         """wrap bound methods of attrs in a InstanceMethod proxies"""
         for attr in attrs:
             if isinstance(attr, UnboundMethod):
-                if '__builtin__.property' in attr.decoratornames():
+                if BUILTINS_NAME + '.property' in attr.decoratornames():
                     for infered in attr.infer_call_result(self, context):
                         yield infered
                 else:
@@ -262,6 +238,14 @@ class UnboundMethod(Proxy):
             return iter((self._proxied,))
         return super(UnboundMethod, self).igetattr(name, context)
 
+    def infer_call_result(self, caller, context):
+        # If we're unbound method __new__ of builtin object, the result is an
+        # instance of the class given as first argument.
+        if (self._proxied.name == '__new__' and
+                self._proxied.parent.frame().qname() == '__builtin__.object'):
+            return (x is YES and x or Instance(x) for x in caller.args[0].infer())
+        return self._proxied.infer_call_result(caller, context)
+
 
 class BoundMethod(UnboundMethod):
     """a special node representing a method bound to an instance"""
@@ -278,7 +262,7 @@ class BoundMethod(UnboundMethod):
         return self._proxied.infer_call_result(caller, context)
 
 
-class Generator(Proxy):
+class Generator(Instance):
     """a special node representing a generator"""
     def callable(self):
         return True
@@ -288,6 +272,12 @@ class Generator(Proxy):
 
     def display_type(self):
         return 'Generator'
+
+    def __repr__(self):
+        return '<Generator(%s) l.%s at 0x%s>' % (self._proxied.name, self.lineno, id(self))
+
+    def __str__(self):
+        return 'Generator(%s)' % (self._proxied.name)
 
 
 # decorators ##################################################################
@@ -334,12 +324,14 @@ def raise_if_nothing_infered(func):
 
 # Node  ######################################################################
 
-class NodeNG(BaseClass):
+class NodeNG(object):
     """Base Class for all ASTNG node classes.
 
     It represents a node of the new abstract syntax tree.
     """
     is_statement = False
+    optional_assign = False # True  for For (and for Comprehension if py <3.0)
+    is_function = False # True for Function nodes
     # attributes below are set by the builder module or by raw factories
     lineno = None
     fromlineno = None
@@ -370,9 +362,8 @@ class NodeNG(BaseClass):
         return func(self)
 
     def get_children(self):
-        node_dict = self.__dict__
         for field in self._astng_fields:
-            attr = node_dict[field]
+            attr = getattr(self, field)
             if attr is None:
                 continue
             if isinstance(attr, (list, tuple)):
@@ -383,9 +374,8 @@ class NodeNG(BaseClass):
 
     def last_child(self):
         """an optimized version of list(get_children())[-1]"""
-        n_dict = self.__dict__
         for field in self._astng_fields[::-1]:
-            attr = n_dict[field]
+            attr = getattr(self, field)
             if not attr: # None or empty listy / tuple
                 continue
             if isinstance(attr, (list, tuple)):
@@ -561,15 +551,36 @@ class NodeNG(BaseClass):
         return False
 
     def as_string(self):
-        from logilab.astng.nodes_as_string import as_string
         return as_string(self)
 
     def repr_tree(self, ids=False):
-        """print a nice astng tree representation"""
+        """print a nice astng tree representation.
+
+        :param ids: if true, we also print the ids (usefull for debugging)"""
         result = []
         _repr_tree(self, result, ids=ids)
-        print "\n".join(result)
+        return "\n".join(result)
 
+
+class Statement(NodeNG):
+    """Statement node adding a few attributes"""
+    is_statement = True
+
+    def next_sibling(self):
+        """return the next sibling statement"""
+        stmts = self.parent.child_sequence(self)
+        index = stmts.index(self)
+        try:
+            return stmts[index +1]
+        except IndexError:
+            pass
+
+    def previous_sibling(self):
+        """return the previous sibling statement"""
+        stmts = self.parent.child_sequence(self)
+        index = stmts.index(self)
+        if index >= 1:
+            return stmts[index -1]
 
 INDENT = "    "
 

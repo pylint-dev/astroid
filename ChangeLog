@@ -1,12 +1,55 @@
 Change log for the astng package
 ================================
 
-	--
-     * restored python 2.3 compatibility
+2011-01-11  --  0.21.1
+    * python3: handle file encoding; fix a lot of tests
 
-     * fix #45959: AttributeError: 'NoneType' object has no attribute 'frame', due
+    * fix #52006: "True" and "False" can be assigned as variable in Python2x
+
+    * fix #8847: pylint doesn't understand function attributes at all
+
+    * fix #8774: iterator / generator / next method
+
+    * fix bad building of ast from living object w/ container classes
+      (eg dict, set, list, tuple): contained elements should be turned to
+      ast as well (not doing it will much probably cause crash later)
+
+    * somewhat fix #57299 and other similar issue: Exception when
+      trying to validate file using PyQt's PyQt4.QtCore module: we can't
+      do much about it but at least catch such exception to avoid crash
+
+
+
+2010-11-15  --  0.21.0
+    * python3.x: first python3.x release
+
+    * fix #37105: Crash on AttributeError: 'NoneType' object has no attribute '_infer_name'
+
+    * python2.4: drop python < 2.4 support
+
+
+
+2010-10-27  --  0.20.4
+    * fix #37868 #37665 #33638 #37909: import problems with absolute_import_activated
+
+    * fix #8969: false positive when importing from zip-safe eggs
+
+    * fix #46131: minimal class decorator support
+
+    * minimal python2.7 support (dict and set comprehension)
+
+    * important progress on Py3k compatibility
+
+
+
+2010-09-28  --  0.20.3
+    * restored python 2.3 compatibility
+
+    * fix #45959: AttributeError: 'NoneType' object has no attribute 'frame', due
        to handling of __class__ when importing from living object (because of missing
        source code or C-compiled object)
+
+
 
 2010-09-10  --  0.20.2
     * fix astng building bug: we've to set module.package flag at the node

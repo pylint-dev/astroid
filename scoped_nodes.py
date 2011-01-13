@@ -19,29 +19,28 @@
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
 """This module contains the classes for "scoped" node, i.e. which are opening a
 new local scope in the language definition : Module, Class, Function (and
-Lambda and GenExpr to some extends).
-
+Lambda, GenExpr, DictComp and SetComp to some extent).
 """
-from __future__ import generators
 
 __doctype__ = "restructuredtext en"
 
-import __builtin__
 import sys
+from itertools import chain
 
-from logilab.common.compat import chain, set
+from logilab.common.compat import builtins
 from logilab.common.decorators import cached
 
-from logilab.astng import MANAGER, NotFoundError, NoDefault, \
+from logilab.astng.exceptions import NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
 from logilab.astng.node_classes import Const, DelName, DelAttr, \
      Dict, From, List, Name, Pass, Raise, Return, Tuple, Yield, \
      are_exclusive, LookupMixIn, const_factory as cf, unpack_infer
-from logilab.astng.bases import NodeNG, BaseClass, InferenceContext, Instance,\
-     YES, Generator, UnboundMethod, BoundMethod, _infer_stmts, copy_context
-from logilab.astng.mixins import StmtMixIn, FilterStmtsMixin
-
-from logilab.astng.nodes_as_string import as_string
+from logilab.astng.bases import NodeNG, InferenceContext, Instance,\
+     YES, Generator, UnboundMethod, BoundMethod, _infer_stmts, copy_context, \
+     BUILTINS_NAME
+from logilab.astng.mixins import FilterStmtsMixin
+from logilab.astng.bases import Statement
+from logilab.astng.manager import ASTNGManager
 
 
 def remove_nodes(func, cls):
@@ -74,22 +73,20 @@ def std_special_attributes(self, name, add_locals=True):
         return [Dict()] + locals.get(name, [])
     raise NotFoundError(name)
 
-
-
+MANAGER = ASTNGManager()
 def builtin_lookup(name):
     """lookup a name into the builtin module
     return the list of matching statements and the astng for the builtin
     module
     """
-    # TODO : once there is no more monkey patching, make a BUILTINASTNG const
-    builtinastng = MANAGER.astng_from_module(__builtin__)
+    builtin_astng = MANAGER.astng_from_module(builtins)
     if name == '__dict__':
-        return builtinastng, ()
+        return builtin_astng, ()
     try:
-        stmts = builtinastng.locals[name]
+        stmts = builtin_astng.locals[name]
     except KeyError:
         stmts = ()
-    return builtinastng, stmts
+    return builtin_astng, stmts
 
 
 # TODO move this Mixin to mixins.py; problem: 'Function' in _scope_lookup
@@ -119,7 +116,7 @@ class LocalsDictNodeNG(LookupMixIn, NodeNG):
 
     def scope(self):
         """return the first node defining a new scope (i.e. Module,
-        Function, Class, Lambda but also GenExpr)
+        Function, Class, Lambda but also GenExpr, DictComp and SetComp)
         """
         return self
 
@@ -136,7 +133,7 @@ class LocalsDictNodeNG(LookupMixIn, NodeNG):
             # nested scope: if parent scope is a function, that's fine
             # else jump to the module
             pscope = self.parent.scope()
-            if not isinstance(pscope, Function):
+            if not pscope.is_function:
                 pscope = pscope.root()
             return pscope.scope_lookup(node, name)
         return builtin_lookup(name) # Module
@@ -203,14 +200,10 @@ class LocalsDictNodeNG(LookupMixIn, NodeNG):
         """
         return zip(self.keys(), self.values())
 
-    def has_key(self, name):
-        """method from the `dict` interface returning True if the given
-        name is defined in the locals dictionary
-        """
-        return self.locals.has_key(name)
 
-    __contains__ = has_key
-
+    def __contains__(self, name):
+        return name in self.locals
+    has_key = __contains__
 
 # Module  #####################################################################
 
@@ -248,13 +241,6 @@ class Module(LocalsDictNodeNG):
         self.locals = self.globals = {}
         self.body = []
 
-    # Module is not a Statement node but needs the replace method (see StmtMixIn)
-    def replace(self, child, newchild):
-        sequence = self.child_sequence(child)
-        newchild.parent = self
-        child.parent = None
-        sequence[sequence.index(child)] = newchild
-
     def block_range(self, lineno):
         """return block line numbers.
 
@@ -277,25 +263,22 @@ class Module(LocalsDictNodeNG):
         return 'Module'
 
     def getattr(self, name, context=None):
-        if not name in self.special_attributes:
-            try:
-                return self.locals[name]
-            except KeyError:
-                pass
-        else:
+        if name in self.special_attributes:
             if name == '__file__':
                 return [cf(self.file)] + self.locals.get(name, [])
-            if name == '__path__':
-                if self.package:
-                    return [List()] + self.locals.get(name, [])
+            if name == '__path__' and self.package:
+                return [List()] + self.locals.get(name, [])
             return std_special_attributes(self, name)
+        if name in self.locals:
+            return self.locals[name]
         if self.package:
             try:
                 return [self.import_module(name, relative_only=True)]
-            except (KeyboardInterrupt, SystemExit):
-                raise
-            except:
-                pass
+            except ASTNGBuildingException:
+                raise NotFoundError(name)
+            except Exception:# XXX pylint tests never pass here; do we need it?
+                import traceback
+                traceback.print_exc()
         raise NotFoundError(name)
     getattr = remove_nodes(getattr, DelName)
 
@@ -330,40 +313,49 @@ class Module(LocalsDictNodeNG):
         """module has no sibling"""
         return
 
-    def absolute_import_activated(self):
-        for stmt in self.locals.get('absolute_import', ()):
-            if isinstance(stmt, From) and stmt.modname == '__future__':
-                return True
-        return False
+    if sys.version_info < (2, 7):
+        def absolute_import_activated(self):
+            for stmt in self.locals.get('absolute_import', ()):
+                if isinstance(stmt, From) and stmt.modname == '__future__':
+                    return True
+            return False
+    else:
+        absolute_import_activated = lambda self: True
 
     def import_module(self, modname, relative_only=False, level=None):
         """import the given module considering self as context"""
+        absmodname = self.relative_to_absolute_name(modname, level)
         try:
-            absmodname = self.absolute_modname(modname, level)
             return MANAGER.astng_from_module_name(absmodname)
         except ASTNGBuildingException:
             # we only want to import a sub module or package of this module,
             # skip here
             if relative_only:
                 raise
-        module = MANAGER.astng_from_module_name(modname)
-        return module
+        return MANAGER.astng_from_module_name(modname)
 
-    def absolute_modname(self, modname, level):
-        if self.absolute_import_activated() and not level:
-            return modname
+    def relative_to_absolute_name(self, modname, level):
+        """return the absolute module name for a relative import.
+
+        The relative import can be implicit or explicit.
+        """
+        # XXX this returns non sens when called on an absolute import
+        # like 'pylint.checkers.logilab.astng.utils'
+        # XXX doesn't return absolute name if self.name isn't absolute name
         if level:
-            parts = self.name.split('.')
             if self.package:
-                parts.append('__init__')
-            package_name = '.'.join(parts[:-level])
+                level = level - 1
+            package_name = self.name.rsplit('.', level)[0]
         elif self.package:
             package_name = self.name
         else:
-            package_name = '.'.join(self.name.split('.')[:-1])
+            package_name = self.name.rsplit('.', 1)[0]
         if package_name:
+            if not modname:
+                return package_name
             return '%s.%s' % (package_name, modname)
         return modname
+
 
     def wildcard_import_names(self):
         """return the list of imported names when this module is 'wildcard
@@ -407,7 +399,14 @@ class Module(LocalsDictNodeNG):
             return [name for name in self.keys() if not name.startswith('_')]
 
 
-class GenExpr(LocalsDictNodeNG):
+class ComprehensionScope(LocalsDictNodeNG):
+    def frame(self):
+        return self.parent.frame()
+
+    scope_lookup = LocalsDictNodeNG._scope_lookup
+
+
+class GenExpr(ComprehensionScope):
     _astng_fields = ('elt', 'generators')
 
     def __init__(self):
@@ -415,10 +414,40 @@ class GenExpr(LocalsDictNodeNG):
         self.elt = None
         self.generators = []
 
-    def frame(self):
-        return self.parent.frame()
-GenExpr.scope_lookup = LocalsDictNodeNG._scope_lookup
 
+class DictComp(ComprehensionScope):
+    _astng_fields = ('key', 'value', 'generators')
+
+    def __init__(self):
+        self.locals = {}
+        self.key = None
+        self.value = None
+        self.generators = []
+
+
+class SetComp(ComprehensionScope):
+    _astng_fields = ('elt', 'generators')
+
+    def __init__(self):
+        self.locals = {}
+        self.elt = None
+        self.generators = []
+
+
+class _ListComp(NodeNG):
+    """class representing a ListComp node"""
+    _astng_fields = ('elt', 'generators')
+    elt = None
+    generators = None
+
+if sys.version_info >= (3, 0):
+    class ListComp(_ListComp, ComprehensionScope):
+        """class representing a ListComp node"""
+        def __init__(self):
+            self.locals = {}
+else:
+    class ListComp(_ListComp):
+        """class representing a ListComp node"""
 
 # Function  ###################################################################
 
@@ -474,13 +503,14 @@ class Lambda(LocalsDictNodeNG, FilterStmtsMixin):
             frame = self
         return frame._scope_lookup(node, name, offset)
 
-class Function(StmtMixIn, Lambda):
+class Function(Statement, Lambda):
     _astng_fields = ('decorators', 'args', 'body')
 
     special_attributes = set(('__name__', '__doc__', '__dict__'))
+    is_function = True
     # attributes below are set by the builder module or by raw factories
-
     blockstart_tolineno = None
+    decorators = None
 
     def __init__(self, name, doc):
         self.locals = {}
@@ -489,6 +519,8 @@ class Function(StmtMixIn, Lambda):
         self.decorators = None
         self.name = name
         self.doc = doc
+        self.extra_decorators = []
+        self.instance_attrs = {}
 
     def set_line_info(self, lastchild):
         self.fromlineno = self.lineno
@@ -511,6 +543,8 @@ class Function(StmtMixIn, Lambda):
         """
         if name == '__module__':
             return [cf(self.root().qname())]
+        if name in self.instance_attrs:
+            return self.instance_attrs[name]
         return std_special_attributes(self, name, False)
 
     def is_method(self):
@@ -525,7 +559,7 @@ class Function(StmtMixIn, Lambda):
         decoratornodes = []
         if self.decorators is not None:
             decoratornodes += self.decorators.nodes
-        decoratornodes += getattr(self, 'extra_decorators', [])
+        decoratornodes += self.extra_decorators
         for decnode in decoratornodes:
             for infnode in decnode.infer():
                 result.add(infnode.qname())
@@ -542,13 +576,9 @@ class Function(StmtMixIn, Lambda):
         NotImplementError, or, if pass_is_abstract, a pass statement
         """
         for child_node in self.body:
-            if isinstance(child_node, Raise) and child_node.type:
-                try:
-                    name = child_node.type.nodes_of_class(Name).next()
-                    if name.name == 'NotImplementedError':
-                        return True
-                except StopIteration:
-                    pass
+            if isinstance(child_node, Raise):
+                if child_node.raises_not_implemented():
+                    return True
             if pass_is_abstract and isinstance(child_node, Pass):
                 return True
             return False
@@ -572,14 +602,13 @@ class Function(StmtMixIn, Lambda):
         returns = self.nodes_of_class(Return, skip_klass=Function)
         for returnnode in returns:
             if returnnode.value is None:
-                yield None
+                yield Const(None)
             else:
                 try:
                     for infered in returnnode.value.infer(context):
                         yield infered
                 except InferenceError:
                     yield YES
-
 
 
 def _rec_get_names(args, names=None):
@@ -594,28 +623,13 @@ def _rec_get_names(args, names=None):
     return names
 
 
-def _format_args(args, defaults=None):
-    values = []
-    if args is None:
-        return ''
-    if defaults is not None:
-        default_offset = len(args) - len(defaults)
-    for i, arg in enumerate(args):
-        if isinstance(arg, Tuple):
-            values.append('(%s)' % _format_args(arg.elts))
-        else:
-            values.append(arg.name)
-            if defaults is not None and i >= default_offset:
-                values[-1] += '=' + defaults[i-default_offset].as_string()
-    return ', '.join(values)
-
-
 # Class ######################################################################
 
-def _class_type(klass):
+def _class_type(klass, ancestors=None):
     """return a Class node type to differ metaclass, interface and exception
     from 'regular' classes
     """
+    # XXX we have to store ancestors in case we have a ancestor loop
     if klass._type is not None:
         return klass._type
     if klass.name == 'type':
@@ -625,8 +639,16 @@ def _class_type(klass):
     elif klass.name.endswith('Exception'):
         klass._type = 'exception'
     else:
+        if ancestors is None:
+            ancestors = set()
+        if klass in ancestors:
+            # XXX we are in loop ancestors, and have found no type
+            klass._type = 'class'
+            return 'class'
+        ancestors.add(klass)
+        # print >> sys.stderr, '_class_type', repr(klass)
         for base in klass.ancestors(recurs=False):
-            if base.type != 'class':
+            if _class_type(base, ancestors) != 'class':
                 klass._type = base.type
                 break
     if klass._type is None:
@@ -640,18 +662,17 @@ def _iface_hdlr(iface_node):
     return True
 
 
-class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
+class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
 
     # some of the attributes below are set by the builder module or
     # by a raw factories
 
     # a dictionary of class instances attributes
-    _astng_fields = ('bases', 'body',) # name
+    _astng_fields = ('decorators', 'bases', 'body') # name
 
-    instance_attrs = None
+    decorators = None
     special_attributes = set(('__name__', '__doc__', '__dict__', '__module__',
                               '__bases__', '__mro__', '__subclasses__'))
-
     blockstart_tolineno = None
 
     _type = None
@@ -727,7 +748,7 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
     # list of parent class as a list of string (i.e. names as they appear
     # in the class definition) XXX bw compat
     def basenames(self):
-        return [as_string(bnode) for bnode in self.bases]
+        return [bnode.as_string() for bnode in self.bases]
     basenames = property(basenames)
 
     def ancestors(self, recurs=True, context=None):
@@ -741,6 +762,7 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
         # FIXME: should be possible to choose the resolution order
         # XXX inference make infinite loops possible here (see BaseTransformer
         # manipulation in the builder module for instance !)
+        yielded = set([self])
         if context is None:
             context = InferenceContext()
         for stmt in self.bases:
@@ -749,13 +771,15 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
                     if not isinstance(baseobj, Class):
                         # duh ?
                         continue
-                    if baseobj is self:
+                    if baseobj in yielded:
                         continue # cf xxx above
+                    yielded.add(baseobj)
                     yield baseobj
                     if recurs:
                         for grandpa in baseobj.ancestors(True, context):
-                            if grandpa is self:
+                            if grandpa in yielded:
                                 continue # cf xxx above
+                            yielded.add(grandpa)
                             yield grandpa
             except InferenceError:
                 # XXX log error ?
@@ -766,7 +790,7 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
         which have <name> defined in their locals
         """
         for astng in self.ancestors(context=context):
-            if astng.locals.has_key(name):
+            if name in astng:
                 yield astng
 
     def instance_attr_ancestors(self, name, context=None):
@@ -774,7 +798,7 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
         which have <name> defined in their instance attribute dictionary
         """
         for astng in self.ancestors(context=context):
-            if astng.instance_attrs.has_key(name):
+            if name in astng.instance_attrs:
                 yield astng
 
     def has_base(self, node):
@@ -829,6 +853,9 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
         if name in self.special_attributes:
             if name == '__module__':
                 return [cf(self.root().qname())] + values
+            # FIXME : what is expected by passing the list of ancestors to cf:
+            # you can just do [cf(tuple())] + values without breaking any test
+            # this is ticket http://www.logilab.org/ticket/52785
             if name == '__bases__':
                 return [cf(tuple(self.ancestors(recurs=False, context=context)))] + values
             # XXX need proper meta class handling + MRO implementation
@@ -838,11 +865,8 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
             return std_special_attributes(self, name)
         # don't modify the list in self.locals!
         values = list(values)
-        for classnode in self.ancestors(recurs=False, context=context):
-            try:
-                values += classnode.getattr(name, context)
-            except NotFoundError:
-                continue
+        for classnode in self.ancestors(recurs=True, context=context):
+            values += classnode.locals.get(name, [])
         if not values:
             raise NotFoundError(name)
         return values
@@ -889,7 +913,7 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
             #if self.newstyle: XXX cause an infinite recursion error
             try:
                 getattribute = self.getattr('__getattribute__', context)[0]
-                if getattribute.root().name != '__builtin__':
+                if getattribute.root().name != BUILTINS_NAME:
                     # class has a custom __getattribute__ defined
                     return True
             except NotFoundError:
@@ -903,7 +927,7 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
         done = {}
         for astng in chain(iter((self,)), self.ancestors()):
             for meth in astng.mymethods():
-                if done.has_key(meth.name):
+                if meth.name in done:
                     continue
                 done[meth.name] = None
                 yield meth

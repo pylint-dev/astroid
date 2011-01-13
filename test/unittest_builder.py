@@ -38,21 +38,25 @@ from os.path import join, abspath, dirname
 from logilab.common.testlib import TestCase, unittest_main
 from pprint import pprint
 
-from logilab.astng import builder, nodes, patchcomptransformer, MANAGER, \
-                          InferenceError, NotFoundError
+from logilab.astng import builder, nodes, InferenceError, NotFoundError
 from logilab.astng.nodes import Module
-from logilab.astng.bases import YES
-from logilab.astng.nodes_as_string import as_string
+from logilab.astng.bases import YES, BUILTINS_NAME
+from logilab.astng.as_string import as_string
+from logilab.astng.manager import ASTNGManager
+
+MANAGER = ASTNGManager()
+
 
 from unittest_inference import get_name_node
 
 import data
 from data import module as test_module
 
+DATA = join(dirname(abspath(__file__)), 'data')
+
 class FromToLineNoTC(TestCase):
 
-    def setUp(self):
-        self.astng = builder.ASTNGBuilder().file_build('data/format.py')
+    astng = builder.ASTNGBuilder().file_build(join(DATA, 'format.py'))
 
     def test_callfunc_lineno(self):
         stmts = self.astng.body
@@ -112,27 +116,33 @@ class FromToLineNoTC(TestCase):
         self.assertIsInstance(function, nodes.Function)
         self.assertEqual(function.fromlineno, 15)
         self.assertEqual(function.tolineno, 18)
-        self.assertEqual(function.blockstart_tolineno, 17)
         return_ = function.body[0]
         self.assertIsInstance(return_, nodes.Return)
         self.assertEqual(return_.fromlineno, 18)
         self.assertEqual(return_.tolineno, 18)
+        if sys.version_info < (3, 0):
+            self.assertEqual(function.blockstart_tolineno, 17)
+        else:
+            self.skipTest('FIXME  http://bugs.python.org/issue10445 '
+                          '(no line number on function args)')
 
     def test_decorated_function_lineno(self):
-        if sys.version_info < (2, 4):
-            self.skipTest('require python >=2.4')
         astng = builder.ASTNGBuilder().string_build('''
 @decorator
 def function(
     arg):
-    print arg
+    print (arg)
 ''', __name__, __file__)
         function = astng['function']
         self.assertEqual(function.fromlineno, 3) # XXX discussable, but that's what is expected by pylint right now
         self.assertEqual(function.tolineno, 5)
-        self.assertEqual(function.blockstart_tolineno, 4)
         self.assertEqual(function.decorators.fromlineno, 2)
         self.assertEqual(function.decorators.tolineno, 2)
+        if sys.version_info < (3, 0):
+            self.assertEqual(function.blockstart_tolineno, 4)
+        else:
+            self.skipTest('FIXME  http://bugs.python.org/issue10445 '
+                          '(no line number on function args)')
 
 
     def test_class_lineno(self):
@@ -169,16 +179,16 @@ def function(
     def test_for_while_lineno(self):
         for code in ('''
 for a in range(4):
-  print a
+  print (a)
   break
 else:
-  print "bouh"
+  print ("bouh")
 ''', '''
 while a:
-  print a
+  print (a)
   break
 else:
-  print "bouh"
+  print ("bouh")
 ''',
                      ):
             astng = builder.ASTNGBuilder().string_build(code, __name__, __file__)
@@ -193,11 +203,11 @@ else:
     def test_try_except_lineno(self):
         astng = builder.ASTNGBuilder().string_build('''
 try:
-  print a
+  print (a)
 except:
   pass
 else:
-  print "bouh"
+  print ("bouh")
 ''', __name__, __file__)
         try_ = astng.body[0]
         self.assertEqual(try_.fromlineno, 2)
@@ -214,9 +224,9 @@ else:
     def test_try_finally_lineno(self):
         astng = builder.ASTNGBuilder().string_build('''
 try:
-  print a
+  print (a)
 finally:
-  print "bouh"
+  print ("bouh")
 ''', __name__, __file__)
         try_ = astng.body[0]
         self.assertEqual(try_.fromlineno, 2)
@@ -227,15 +237,13 @@ finally:
 
 
     def test_try_finally_25_lineno(self):
-        if sys.version_info < (2, 5):
-            self.skipTest('require python >= 2.5')
         astng = builder.ASTNGBuilder().string_build('''
 try:
-  print a
+  print (a)
 except:
   pass
 finally:
-  print "bouh"
+  print ("bouh")
 ''', __name__, __file__)
         try_ = astng.body[0]
         self.assertEqual(try_.fromlineno, 2)
@@ -246,12 +254,10 @@ finally:
 
 
     def test_with_lineno(self):
-        if sys.version_info < (2, 5):
-            self.skipTest('require python >=2.5')
         astng = builder.ASTNGBuilder().string_build('''
 from __future__ import with_statement
 with file("/tmp/pouet") as f:
-  print f
+    print (f)
 ''', __name__, __file__)
         with_ = astng.body[1]
         self.assertEqual(with_.fromlineno, 3)
@@ -267,23 +273,24 @@ class BuilderTC(TestCase):
 
     def test_border_cases(self):
         """check that a file with no trailing new line is parseable"""
-        self.builder.file_build('data/noendingnewline.py', 'data.noendingnewline')
+        self.builder.file_build(join(DATA, 'noendingnewline.py'), 'data.noendingnewline')
         self.assertRaises(builder.ASTNGBuildingException,
-                          self.builder.file_build, 'data/inexistant.py', 'whatever')
+                          self.builder.file_build, join(DATA, 'inexistant.py'), 'whatever')
 
     def test_inspect_build0(self):
         """test astng tree build from a living object"""
-        builtin_astng = MANAGER.astng_from_module_name('__builtin__')
-        fclass = builtin_astng['file']
-        self.assert_('name' in fclass)
-        self.assert_('mode' in fclass)
-        self.assert_('read' in fclass)
-        self.assert_(fclass.newstyle)
-        self.assert_(fclass.pytype(), '__builtin__.type')
-        self.assertIsInstance(fclass['read'], nodes.Function)
-        # check builtin function has args.args == None
-        dclass = builtin_astng['dict']
-        self.assertEqual(dclass['has_key'].args.args, None)
+        builtin_astng = MANAGER.astng_from_module_name(BUILTINS_NAME)
+        if sys.version_info < (3, 0):
+            fclass = builtin_astng['file']
+            self.assert_('name' in fclass)
+            self.assert_('mode' in fclass)
+            self.assert_('read' in fclass)
+            self.assert_(fclass.newstyle)
+            self.assert_(fclass.pytype(), '__builtin__.type')
+            self.assertIsInstance(fclass['read'], nodes.Function)
+            # check builtin function has args.args == None
+            dclass = builtin_astng['dict']
+            self.assertEqual(dclass['has_key'].args.args, None)
         # just check type and object are there
         builtin_astng.getattr('type')
         builtin_astng.getattr('object')
@@ -297,8 +304,12 @@ class BuilderTC(TestCase):
         self.assertIsInstance(builtin_astng['None'], nodes.Const)
         self.assertIsInstance(builtin_astng['True'], nodes.Const)
         self.assertIsInstance(builtin_astng['False'], nodes.Const)
-        self.assertIsInstance(builtin_astng['Exception'], nodes.From)
-        self.assertIsInstance(builtin_astng['NotImplementedError'], nodes.From)
+        if sys.version_info < (3, 0):
+            self.assertIsInstance(builtin_astng['Exception'], nodes.From)
+            self.assertIsInstance(builtin_astng['NotImplementedError'], nodes.From)
+        else:
+            self.assertIsInstance(builtin_astng['Exception'], nodes.Class)
+            self.assertIsInstance(builtin_astng['NotImplementedError'], nodes.Class)
 
     def test_inspect_build1(self):
         time_astng = MANAGER.astng_from_module_name('time')
@@ -318,25 +329,24 @@ class BuilderTC(TestCase):
             #dt_astng.getattr('DateTimeType')
 
     def test_inspect_build3(self):
-        unittest_astng = self.builder.inspect_build(unittest)
+        self.builder.inspect_build(unittest)
 
     def test_inspect_build_instance(self):
         """test astng tree build from a living object"""
+        if sys.version_info >= (3, 0):
+            self.skipTest('The module "exceptions" is gone in py3.x')
         import exceptions
         builtin_astng = self.builder.inspect_build(exceptions)
         fclass = builtin_astng['OSError']
         # things like OSError.strerror are now (2.5) data descriptors on the
         # class instead of entries in the __dict__ of an instance
-        if sys.version_info < (2, 5):
-            container = fclass.instance_attrs
-        else:
-            container = fclass
+        container = fclass
         self.assert_('errno' in container)
         self.assert_('strerror' in container)
         self.assert_('filename' in container)
 
     def test_inspect_build_type_object(self):
-        builtin_astng = MANAGER.astng_from_module_name('__builtin__')
+        builtin_astng = MANAGER.astng_from_module_name(BUILTINS_NAME)
 
         infered = list(builtin_astng.igetattr('object'))
         self.assertEqual(len(infered), 1)
@@ -352,10 +362,10 @@ class BuilderTC(TestCase):
 
     def test_package_name(self):
         """test base properties and method of a astng module"""
-        datap = self.builder.file_build('data/__init__.py', 'data')
+        datap = self.builder.file_build(join(DATA, '__init__.py'), 'data')
         self.assertEqual(datap.name, 'data')
         self.assertEqual(datap.package, 1)
-        datap = self.builder.file_build('data/__init__.py', 'data.__init__')
+        datap = self.builder.file_build(join(DATA, '__init__.py'), 'data.__init__')
         self.assertEqual(datap.name, 'data')
         self.assertEqual(datap.package, 1)
 
@@ -419,7 +429,7 @@ def update_global():
 
 def global_no_effect():
     global CSTE2
-    print CSTE
+    print (CSTE)
 '''
         astng = self.builder.string_build(data, __name__, __file__)
         self.failUnlessEqual(len(astng.getattr('CSTE')), 2)
@@ -444,23 +454,20 @@ def global_no_effect():
             self.assert_('close' in fclass)
             break
 
-    if sys.version_info >= (2, 4):
-        def test_gen_expr_var_scope(self):
-            data = 'l = list(n for n in range(10))\n'
-            astng = self.builder.string_build(data, __name__, __file__)
-            # n unavailable outside gen expr scope
-            self.failIf('n' in astng)
-            # test n is inferable anyway
-            n = get_name_node(astng, 'n')
-            self.failIf(n.scope() is astng)
-            self.failUnlessEqual([i.__class__ for i in n.infer()],
-                                 [YES.__class__])
+    def test_gen_expr_var_scope(self):
+        data = 'l = list(n for n in range(10))\n'
+        astng = self.builder.string_build(data, __name__, __file__)
+        # n unavailable outside gen expr scope
+        self.failIf('n' in astng)
+        # test n is inferable anyway
+        n = get_name_node(astng, 'n')
+        self.failIf(n.scope() is astng)
+        self.failUnlessEqual([i.__class__ for i in n.infer()],
+                             [YES.__class__])
 
 class FileBuildTC(TestCase):
 
-    def setUp(self):
-        abuilder = builder.ASTNGBuilder()
-        self.module = abuilder.file_build('data/module.py', 'data.module')
+    module = builder.ASTNGBuilder().file_build(join(DATA, 'module.py'), 'data.module')
 
     def test_module_base_props(self):
         """test base properties and method of a astng module"""
@@ -483,12 +490,10 @@ class FileBuildTC(TestCase):
         module = self.module
         _locals = module.locals
         self.assert_(_locals is module.globals)
-        keys = _locals.keys()
-        keys.sort()
+        keys = sorted(_locals.keys())
         should = ['MY_DICT', 'YO', 'YOUPI',
-                '__revision__',  'global_access','modutils', 'nested_args',
-                 'os', 'redirect', 'spawn', 'LocalsVisitor',
-                'ASTWalker', 'ASTVisitor']
+                '__revision__',  'global_access','modutils', 'four_args',
+                 'os', 'redirect', 'spawn', 'LocalsVisitor', 'ASTWalker']
         should.sort()
         self.assertEqual(keys, should)
 
@@ -498,7 +503,7 @@ class FileBuildTC(TestCase):
         function = module['global_access']
         self.assertEqual(function.name, 'global_access')
         self.assertEqual(function.doc, 'function test')
-        self.assertEqual(function.fromlineno, 15)
+        self.assertEqual(function.fromlineno, 11)
         self.assert_(function.parent)
         self.assertEqual(function.frame(), function)
         self.assertEqual(function.parent.frame(), module)
@@ -510,8 +515,7 @@ class FileBuildTC(TestCase):
         """test the 'locals' dictionary of a astng function"""
         _locals = self.module['global_access'].locals
         self.assertEqual(len(_locals), 4)
-        keys = _locals.keys()
-        keys.sort()
+        keys = sorted(_locals.keys())
         self.assertEqual(keys, ['i', 'key', 'local', 'val'])
 
     def test_class_base_props(self):
@@ -520,7 +524,7 @@ class FileBuildTC(TestCase):
         klass = module['YO']
         self.assertEqual(klass.name, 'YO')
         self.assertEqual(klass.doc, 'hehe')
-        self.assertEqual(klass.fromlineno, 28)
+        self.assertEqual(klass.fromlineno, 25)
         self.assert_(klass.parent)
         self.assertEqual(klass.frame(), klass)
         self.assertEqual(klass.parent.frame(), module)
@@ -533,8 +537,7 @@ class FileBuildTC(TestCase):
         module = self.module
         klass1 = module['YO']
         locals1 = klass1.locals
-        keys = locals1.keys()
-        keys.sort()
+        keys = sorted(locals1.keys())
         self.assertEqual(keys, ['__init__', 'a'])
         klass2 = module['YOUPI']
         locals2 = klass2.locals
@@ -565,7 +568,7 @@ class FileBuildTC(TestCase):
         self.assertEqual(method.name, 'method')
         self.assertEqual([n.name for n in method.args.args], ['self'])
         self.assertEqual(method.doc, 'method test')
-        self.assertEqual(method.fromlineno, 48)
+        self.assertEqual(method.fromlineno, 47)
         self.assertEqual(method.type, 'method')
         # class method
         method = klass2['class_method']
@@ -578,14 +581,15 @@ class FileBuildTC(TestCase):
 
     def test_method_locals(self):
         """test the 'locals' dictionary of a astng method"""
-        klass2 = self.module['YOUPI']
-        method = klass2['method']
+        method = self.module['YOUPI']['method']
         _locals = method.locals
-        self.assertEqual(len(_locals), 5)
-        keys = _locals.keys()
-        keys.sort()
-        self.assertEqual(keys, ['a', 'autre', 'b', 'local', 'self'])
-
+        keys = sorted(_locals)
+        if sys.version_info < (3, 0):
+            self.assertEqual(len(_locals), 5)
+            self.assertEqual(keys, ['a', 'autre', 'b', 'local', 'self'])
+        else:# ListComp variables are no more accessible outside
+            self.assertEqual(len(_locals), 3)
+            self.assertEqual(keys, ['autre', 'local', 'self'])
 
 class ModuleBuildTC(FileBuildTC):
 
@@ -604,7 +608,7 @@ class MoreTC(TestCase):
 A.type = "class"
 
 def A_ass_type(self):
-    print self
+    print (self)
 A.ass_type = A_ass_type
     '''
         astng = self.builder.string_build(code)
@@ -679,6 +683,45 @@ def func():
         self.assertIsInstance(chain, nodes.Const)
         self.assertEqual(chain.value, 'None')
 
+
+if sys.version_info < (3, 0):
+    guess_encoding = builder._guess_encoding
+
+    class TestGuessEncoding(TestCase):
+
+        def testEmacs(self):
+            e = guess_encoding('# -*- coding: UTF-8  -*-')
+            self.failUnlessEqual(e, 'UTF-8')
+            e = guess_encoding('# -*- coding:UTF-8 -*-')
+            self.failUnlessEqual(e, 'UTF-8')
+            e = guess_encoding('''
+            ### -*- coding: ISO-8859-1  -*-
+            ''')
+            self.failUnlessEqual(e, 'ISO-8859-1')
+            e = guess_encoding('''
+
+            ### -*- coding: ISO-8859-1  -*-
+            ''')
+            self.failUnlessEqual(e, None)
+
+        def testVim(self):
+            e = guess_encoding('# vim:fileencoding=UTF-8')
+            self.failUnlessEqual(e, 'UTF-8')
+            e = guess_encoding('''
+            ### vim:fileencoding=ISO-8859-1
+            ''')
+            self.failUnlessEqual(e, 'ISO-8859-1')
+            e = guess_encoding('''
+
+            ### vim:fileencoding= ISO-8859-1
+            ''')
+            self.failUnlessEqual(e, None)
+
+        def testUTF8(self):
+            e = guess_encoding('\xef\xbb\xbf any UTF-8 data')
+            self.failUnlessEqual(e, 'UTF-8')
+            e = guess_encoding(' any UTF-8 data \xef\xbb\xbf')
+            self.failUnlessEqual(e, None)
 
 if __name__ == '__main__':
     unittest_main()

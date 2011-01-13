@@ -17,13 +17,15 @@
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
 """tests for the astng inference capabilities
 """
-from os.path import join
+from os.path import join, dirname, abspath
 import sys
 from StringIO import StringIO
 from logilab.common.testlib import TestCase, unittest_main
 
-from logilab.astng import InferenceError, builder, nodes, inference
-from logilab.astng.bases import YES, Instance, BoundMethod, UnboundMethod, path_wrapper
+from logilab.astng import InferenceError, builder, nodes
+from logilab.astng.inference import infer_end as inference_infer_end
+from logilab.astng.bases import YES, Instance, BoundMethod, UnboundMethod,\
+                                path_wrapper, BUILTINS_NAME
 
 def get_name_node(start_from, name, index=0):
     return [n for n in start_from.nodes_of_class(nodes.Name) if n.name == name][index]
@@ -39,15 +41,19 @@ class InferenceUtilsTC(TestCase):
         def infer_default(self, *args):
             raise InferenceError
         infer_default = path_wrapper(infer_default)
-        infer_end = path_wrapper(inference.infer_end)
+        infer_end = path_wrapper(inference_infer_end)
         self.failUnlessRaises(InferenceError,
                               infer_default(1).next)
         self.failUnlessEqual(infer_end(1).next(), 1)
 
+if sys.version_info < (3, 0):
+    EXC_MODULE = 'exceptions'
+else:
+    EXC_MODULE = BUILTINS_NAME
+
 class InferenceTC(TestCase):
 
     CODE = '''
-import exceptions
 
 class C(object):
     "new style"
@@ -55,7 +61,7 @@ class C(object):
 
     def meth1(self, arg1, optarg=0):
         var = object()
-        print "yo", arg1, optarg
+        print ("yo", arg1, optarg)
         self.iattr = "hop"
         return var
 
@@ -67,20 +73,19 @@ class C(object):
         c = self.iattr
         return b, c
 
-ex = exceptions.Exception("msg")
+ex = Exception("msg")
 v = C().meth1(1)
 m_unbound = C.meth1
 m_bound = C().meth1
 a, b, c = ex, 1, "bonjour"
 [d, e, f] = [ex, 1.0, ("bonjour", v)]
 g, h = f
-i, (j, k) = u"glup", f
+i, (j, k) = "glup", f
 
 a, b= b, a # Gasp !
 '''
 
-    def setUp(self):
-        self.astng = builder.string_build(self.CODE, __name__, __file__)
+    astng = builder.string_build(CODE, __name__, __file__)
 
     def test_module_inference(self):
         infered = self.astng.infer()
@@ -107,7 +112,7 @@ a, b= b, a # Gasp !
         infered = self.astng['C']['meth1']['var'].infer()
         var = infered.next()
         self.failUnlessEqual(var.name, 'object')
-        self.failUnlessEqual(var.root().name, '__builtin__')
+        self.failUnlessEqual(var.root().name, BUILTINS_NAME)
         self.failUnlessRaises(StopIteration, infered.next)
 
     def test_tupleassign_name_inference(self):
@@ -115,7 +120,7 @@ a, b= b, a # Gasp !
         exc = infered.next()
         self.assertIsInstance(exc, Instance)
         self.failUnlessEqual(exc.name, 'Exception')
-        self.failUnlessEqual(exc.root().name, 'exceptions')
+        self.failUnlessEqual(exc.root().name, EXC_MODULE)
         self.failUnlessRaises(StopIteration, infered.next)
         infered = self.astng['b'].infer()
         const = infered.next()
@@ -133,7 +138,7 @@ a, b= b, a # Gasp !
         exc = infered.next()
         self.assertIsInstance(exc, Instance)
         self.failUnlessEqual(exc.name, 'Exception')
-        self.failUnlessEqual(exc.root().name, 'exceptions')
+        self.failUnlessEqual(exc.root().name, EXC_MODULE)
         self.failUnlessRaises(StopIteration, infered.next)
         infered = self.astng['e'].infer()
         const = infered.next()
@@ -154,7 +159,7 @@ a, b= b, a # Gasp !
         infered = self.astng['h'].infer()
         var = infered.next()
         self.failUnlessEqual(var.name, 'object')
-        self.failUnlessEqual(var.root().name, '__builtin__')
+        self.failUnlessEqual(var.root().name, BUILTINS_NAME)
         self.failUnlessRaises(StopIteration, infered.next)
 
     def test_advanced_tupleassign_name_inference2(self):
@@ -171,7 +176,7 @@ a, b= b, a # Gasp !
         infered = self.astng['k'].infer()
         var = infered.next()
         self.failUnlessEqual(var.name, 'object')
-        self.failUnlessEqual(var.root().name, '__builtin__')
+        self.failUnlessEqual(var.root().name, BUILTINS_NAME)
         self.failUnlessRaises(StopIteration, infered.next)
 
     def test_swap_assign_inference(self):
@@ -184,7 +189,7 @@ a, b= b, a # Gasp !
         exc = infered.next()
         self.assertIsInstance(exc, Instance)
         self.failUnlessEqual(exc.name, 'Exception')
-        self.failUnlessEqual(exc.root().name, 'exceptions')
+        self.failUnlessEqual(exc.root().name, EXC_MODULE)
         self.failUnlessRaises(StopIteration, infered.next)
 
     def test_getattr_inference1(self):
@@ -192,7 +197,7 @@ a, b= b, a # Gasp !
         exc = infered.next()
         self.assertIsInstance(exc, Instance)
         self.failUnlessEqual(exc.name, 'Exception')
-        self.failUnlessEqual(exc.root().name, 'exceptions')
+        self.failUnlessEqual(exc.root().name, EXC_MODULE)
         self.failUnlessRaises(StopIteration, infered.next)
 
     def test_getattr_inference2(self):
@@ -221,7 +226,7 @@ a, b= b, a # Gasp !
         meth1 = infered.next()
         self.assertIsInstance(meth1, Instance)
         self.failUnlessEqual(meth1.name, 'object')
-        self.failUnlessEqual(meth1.root().name, '__builtin__')
+        self.failUnlessEqual(meth1.root().name, BUILTINS_NAME)
         self.failUnlessRaises(StopIteration, infered.next)
 
     def test_unbound_method_inference(self):
@@ -308,9 +313,9 @@ a = f()
         '''
         astng = builder.string_build(code, __name__, __file__)
         a = astng['a']
-        a_infer = a.infer()
-        self.failUnlessEqual(a_infer.next().value, 1)
-        self.failUnlessRaises(StopIteration, a_infer.next)
+        a_infered = a.infered()
+        self.failUnlessEqual(a_infered[0].value, 1)
+        self.assertEqual(len(a_infered), 1)
 
     def test_exc_ancestors(self):
         code = '''
@@ -318,25 +323,27 @@ def f():
     raise NotImplementedError
         '''
         astng = builder.string_build(code, __name__, __file__)
-        names = astng.nodes_of_class(nodes.Name)
-        nie = names.next().infer().next()
+        error = astng.nodes_of_class(nodes.Name).next()
+        nie = error.infered()[0]
         self.assertIsInstance(nie, nodes.Class)
         nie_ancestors = [c.name for c in nie.ancestors()]
-        if sys.version_info < (2, 5):
-            self.failUnlessEqual(nie_ancestors, ['RuntimeError', 'StandardError', 'Exception'])
-        else:
+        if sys.version_info < (3, 0):
             self.failUnlessEqual(nie_ancestors, ['RuntimeError', 'StandardError', 'Exception', 'BaseException', 'object'])
+        else:
+            self.failUnlessEqual(nie_ancestors, ['RuntimeError', 'Exception', 'BaseException', 'object'])
 
     def test_except_inference(self):
         code = '''
 try:
-    print hop
+    print (hop)
 except NameError, ex:
     ex1 = ex
 except Exception, ex:
     ex2 = ex
     raise
         '''
+        if sys.version_info >= (3, 0):
+            code = code.replace(', ex:', ' as ex:')
         astng = builder.string_build(code, __name__, __file__)
         ex1 = astng['ex1']
         ex1_infer = ex1.infer()
@@ -390,7 +397,6 @@ l = [1]
 t = (2,)
 d = {}
 s = ''
-u = u''
         '''
         astng = builder.string_build(code, __name__, __file__)
         n = astng['l']
@@ -421,6 +427,12 @@ u = u''
         self.assertIsInstance(infered, Instance)
         self.failUnlessEqual(infered.name, 'str')
         self.failUnless('lower' in infered._proxied.locals)
+
+    def test_unicode_type(self):
+        if sys.version_info >= (3, 0):
+            self.skipTest('unicode removed on py >= 3.0')
+        code = '''u = u""'''
+        astng = builder.string_build(code, __name__, __file__)
         n = astng['u']
         infered = n.infer().next()
         self.assertIsInstance(infered, nodes.Const)
@@ -450,17 +462,16 @@ class Warning(Warning):
         ancestors = w.ancestors()
         ancestor = ancestors.next()
         self.failUnlessEqual(ancestor.name, 'Warning')
-        self.failUnlessEqual(ancestor.root().name, 'exceptions')
+        self.failUnlessEqual(ancestor.root().name, EXC_MODULE)
         ancestor = ancestors.next()
         self.failUnlessEqual(ancestor.name, 'Exception')
-        self.failUnlessEqual(ancestor.root().name, 'exceptions')
-        if sys.version_info >= (2, 5):
-            ancestor = ancestors.next()
-            self.failUnlessEqual(ancestor.name, 'BaseException')
-            self.failUnlessEqual(ancestor.root().name, 'exceptions')
-            ancestor = ancestors.next()
-            self.failUnlessEqual(ancestor.name, 'object')
-            self.failUnlessEqual(ancestor.root().name, '__builtin__')
+        self.failUnlessEqual(ancestor.root().name, EXC_MODULE)
+        ancestor = ancestors.next()
+        self.failUnlessEqual(ancestor.name, 'BaseException')
+        self.failUnlessEqual(ancestor.root().name, EXC_MODULE)
+        ancestor = ancestors.next()
+        self.failUnlessEqual(ancestor.name, 'object')
+        self.failUnlessEqual(ancestor.root().name, BUILTINS_NAME)
         self.failUnlessRaises(StopIteration, ancestors.next)
 
     def test_qqch(self):
@@ -470,9 +481,8 @@ xxx = load_module_from_name('__pkginfo__')
         '''
         astng = builder.string_build(code, __name__, __file__)
         xxx = astng['xxx']
-        infered = list(xxx.infer())
-        self.failUnlessEqual(sorted([n.__class__ for n in infered]),
-                             sorted([nodes.Const, YES.__class__]))
+        self.assertSetEqual(set(n.__class__ for n in xxx.infered()),
+                            set([nodes.Const, YES.__class__]))
 
     def test_method_argument(self):
         code = '''
@@ -483,7 +493,7 @@ class ErudiEntitySchema:
 
     def meth(self, e_type, *args, **kwargs):
         kwargs['e_type'] = e_type.capitalize().encode()
-        print args
+        print(args)
         '''
         astng = builder.string_build(code, __name__, __file__)
         arg = get_name_node(astng['ErudiEntitySchema']['__init__'], 'e_type')
@@ -600,7 +610,7 @@ a = [1, 2, 3][0]
 b = (1, 2, 3)[1]
 c = (1, 2, 3)[-1]
 d = a + b + c
-print d
+print (d)
         '''
         astng = builder.string_build(code, __name__, __file__)
         self.failUnlessEqual([i.value for i in
@@ -626,12 +636,12 @@ print d
     def test_simple_for(self):
         code = '''
 for a in [1, 2, 3]:
-    print a
+    print (a)
 for b,c in [(1,2), (3,4)]:
-    print b
-    print c
+    print (b)
+    print (c)
 
-print [(d,e) for e,d in ([1,2], [3,4])]
+print ([(d,e) for e,d in ([1,2], [3,4])])
         '''
         astng = builder.string_build(code, __name__, __file__)
         self.failUnlessEqual([i.value for i in
@@ -647,8 +657,6 @@ print [(d,e) for e,d in ([1,2], [3,4])]
 
 
     def test_simple_for_genexpr(self):
-        if sys.version_info < (2, 4):
-            return
         code = '''
 print ((d,e) for e,d in ([1,2], [3,4]))
         '''
@@ -663,7 +671,7 @@ print ((d,e) for e,d in ([1,2], [3,4]))
         code = '''
 help()
         '''
-        # XXX failing with python > 2.3 since __builtin__.help assignment has
+        # XXX failing since __builtin__.help assignment has
         #     been moved into a function...
         astng = builder.string_build(code, __name__, __file__)
         node = get_name_node(astng, 'help', -1)
@@ -681,14 +689,8 @@ open("toto.txt")
         node = get_name_node(astng, 'open', -1)
         infered = list(node.infer())
         self.failUnlessEqual(len(infered), 1)
-        if open is file:
-            # On python < 2.5 open and file are the same thing.
-            self.assertIsInstance(infered[0], nodes.Class)
-            self.failUnlessEqual(infered[0].name, 'file')
-        else:
-            # On python >= 2.5 open is a builtin function.
-            self.assertIsInstance(infered[0], nodes.Function)
-            self.failUnlessEqual(infered[0].name, 'open')
+        self.assertIsInstance(infered[0], nodes.Function)
+        self.failUnlessEqual(infered[0].name, 'open')
 
     def test_callfunc_context_func(self):
         code = '''
@@ -719,8 +721,6 @@ un = mirror(1)
         self.failUnlessEqual(infered[0].value, 1)
 
     def test_factory_method(self):
-        if sys.version_info < (2, 4):
-            self.skipTest('this test require python >= 2.4')
         code = '''
 class Super(object):
       @classmethod
@@ -729,7 +729,7 @@ class Super(object):
 
 class Sub(Super):
       def method(self):
-              print 'method called'
+              print ('method called')
 
 sub = Sub.instance()
         '''
@@ -743,13 +743,13 @@ sub = Sub.instance()
     def test_import_as(self):
         code = '''
 import os.path as osp
-print osp.dirname(__file__)
+print (osp.dirname(__file__))
 
 from os.path import exists as e
 assert e(__file__)
 
 from new import code as make_code
-print make_code
+print (make_code)
         '''
         astng = builder.string_build(code, __name__, __file__)
         infered = list(astng.igetattr('osp'))
@@ -760,10 +760,13 @@ print make_code
         self.failUnlessEqual(len(infered), 1)
         self.assertIsInstance(infered[0], nodes.Function)
         self.failUnlessEqual(infered[0].name, 'exists')
+        if sys.version_info >= (3, 0):
+            self.skipTest('<new> module has been removed')
         infered = list(astng.igetattr('make_code'))
         self.failUnlessEqual(len(infered), 1)
         self.assertIsInstance(infered[0], Instance)
-        self.failUnlessEqual(str(infered[0]), 'Instance of __builtin__.type')
+        self.failUnlessEqual(str(infered[0]),
+                             'Instance of %s.type' % BUILTINS_NAME)
 
     def _test_const_infered(self, node, value):
         infered = list(node.infer())
@@ -870,8 +873,8 @@ x = randint(1)
         # The __name__ trick here makes it work when invoked directly
         # (__name__ == '__main__') and through pytest (__name__ ==
         # 'unittest_inference')
-        self.assertEqual(value, ['Instance of %s.myarray' % (__name__,),
-                                  'Instance of __builtin__.int'])
+        self.assertEqual(value, ['Instance of %s.myarray' % __name__,
+                                 'Instance of %s.int' % BUILTINS_NAME])
 
     def test_nonregr_lambda_arg(self):
         code = '''
@@ -907,54 +910,45 @@ def f(x):
         sys.stderr = sys.__stderr__
 
     def test_python25_relative_import(self):
-        if sys.version_info < (2, 5):
-            self.skipTest('require py >= 2.5')
-        data = "from ...common import date; print date"
+        data = "from ...common import date; print (date)"
+        # !! FIXME also this relative import would not work 'in real' (no __init__.py in test/)
+        # the test works since we pretend we have a package by passing the full modname
         astng = builder.string_build(data, 'logilab.astng.test.unittest_inference', __file__)
         infered = get_name_node(astng, 'date').infer().next()
         self.assertIsInstance(infered, nodes.Module)
         self.assertEqual(infered.name, 'logilab.common.date')
 
     def test_python25_no_relative_import(self):
-        if sys.version_info < (2, 5):
-            self.skipTest('require py >= 2.5')
-        # data = 'import unittest_lookup; print unittest_lookup'
-        # astng = builder.string_build(data, 'logilab.astng.test.unittest_inference', __file__)
-        # self.failIf(astng.absolute_import_activated())
-        # infered = get_name_node(astng, 'unittest_lookup').infer().next()
-        # self.assertIsInstance(infered, nodes.Module)
-        data = 'from __future__ import absolute_import; import unittest_lookup; print unittest_lookup'
-        astng = builder.file_build(join('regrtest_data', 'absimport.py'), 'absimport')
+        fname = join(abspath(dirname(__file__)), 'regrtest_data', 'package', 'absimport.py')
+        astng = builder.file_build(fname, 'absimport')
         self.failUnless(astng.absolute_import_activated(), True)
         infered = get_name_node(astng, 'import_package_subpackage_module').infer().next()
         # failed to import since absolute_import is activated
         self.failUnless(infered is YES)
 
-#     def test_mechanize_open(self):
-#         try:
-#             import mechanize
-#         except ImportError:
-#             self.skipTest('require mechanize installed')
-#         data = '''from mechanize import Browser
-# print Browser
-# b = Browser()
-# print b
-# '''
-#         astng = builder.string_build(data, __name__, __file__)
-#         browser = get_name_node(astng, 'Browser').infer().next()
-#         self.assertIsInstance(browser, nodes.Class)
-#         print '*'*80
-#         bopen = list(browser.igetattr('open'))
-#         self.assertEqual(len(bopen), 1)
-#         self.assertIsInstance(bopen[0], nodes.Function)
-#         self.failUnless(bopen[0].callable())
-#         print '*'*80
-#         b = get_name_node(astng, 'b').infer().next()
-#         self.assertIsInstance(b, Instance)
-#         bopen = list(b.igetattr('open'))
-#         self.assertEqual(len(bopen), 1)
-#         self.assertIsInstance(bopen[0], BoundMethod)
-#         self.failUnless(bopen[0].callable())
+    def test_mechanize_open(self):
+        try:
+            import mechanize
+        except ImportError:
+            self.skipTest('require mechanize installed')
+        data = '''from mechanize import Browser
+print (Browser)
+b = Browser()
+'''
+        astng = builder.string_build(data, __name__, __file__)
+        browser = get_name_node(astng, 'Browser').infer().next()
+        self.assertIsInstance(browser, nodes.Class)
+        bopen = list(browser.igetattr('open'))
+        self.skipTest('the commit said: "huum, see that later"')
+        self.assertEqual(len(bopen), 1)
+        self.assertIsInstance(bopen[0], nodes.Function)
+        self.failUnless(bopen[0].callable())
+        b = get_name_node(astng, 'b').infer().next()
+        self.assertIsInstance(b, Instance)
+        bopen = list(b.igetattr('open'))
+        self.assertEqual(len(bopen), 1)
+        self.assertIsInstance(bopen[0], BoundMethod)
+        self.failUnless(bopen[0].callable())
 
     def test_property(self):
         code = '''
@@ -969,21 +963,22 @@ class SendMailController(object):
     def me(self):
         return self
 
-print SendMailController().smtp
-print SendMailController().me
+my_smtp = SendMailController().smtp
+my_me = SendMailController().me
 '''
+        decorators = set(['%s.property' % BUILTINS_NAME])
         astng = builder.string_build(code, __name__, __file__)
         self.assertEqual(astng['SendMailController']['smtp'].decoratornames(),
-                          set(('__builtin__.property',)))
-        propinfered = list(astng.body[2].values[0].infer())
+                          decorators)
+        propinfered = list(astng.body[2].value.infer())
         self.assertEqual(len(propinfered), 1)
         propinfered = propinfered[0]
         self.assertIsInstance(propinfered, Instance)
         self.assertEqual(propinfered.name, 'SMTP')
         self.assertEqual(propinfered.root().name, 'smtplib')
         self.assertEqual(astng['SendMailController']['me'].decoratornames(),
-                          set(('__builtin__.property',)))
-        propinfered = list(astng.body[3].values[0].infer())
+                          decorators)
+        propinfered = list(astng.body[3].value.infer())
         self.assertEqual(len(propinfered), 1)
         propinfered = propinfered[0]
         self.assertIsInstance(propinfered, Instance)
@@ -995,13 +990,13 @@ print SendMailController().me
         code = '''
 class EnvBasedTC:
     def pactions(self):
-        print "hop"
+        pass
 pactions = EnvBasedTC.pactions.im_func
-print pactions
+print (pactions)
 
 class EnvBasedTC2:
     pactions = EnvBasedTC.pactions.im_func
-    print pactions
+    print (pactions)
 
 '''
         astng = builder.string_build(code, __name__, __file__)
@@ -1018,7 +1013,7 @@ class EnvBasedTC2:
         code = '''
 a = 1
 a += 2
-print a
+print (a)
 '''
         astng = builder.string_build(code, __name__, __file__)
         infered = list(get_name_node(astng, 'a').infer())
@@ -1035,7 +1030,7 @@ def foo(self, bar):
     def qux():
         return baz
     spam = bar(None, qux)
-    print spam
+    print (spam)
 '''
         astng = builder.string_build(code, __name__, __file__)
         infered = list(get_name_node(astng['foo'], 'spam').infer())
@@ -1060,7 +1055,7 @@ class DataManager(object):
      self.app = get_active_application()
   def test(self):
      p = self.app
-     print p
+     print (p)
         '''
         astng = builder.string_build(code, __name__, __file__)
         infered = list(Instance(astng['DataManager']).igetattr('app'))
@@ -1104,6 +1099,23 @@ Z = test()
         self.assertIsInstance(infered[0], Instance)
         self.assertIsInstance(infered[0]._proxied, nodes.Class)
         self.assertEqual(infered[0]._proxied.name, 'list')
+
+    def test__new__(self):
+        code = '''
+class NewTest(object):
+    "doc"
+    def __new__(cls, arg):
+        self = object.__new__(cls)
+        self.arg = arg
+        return self
+
+n = NewTest()
+        '''
+        astng = builder.string_build(code, __name__, __file__)
+        self.assertRaises(InferenceError, list, astng['NewTest'].igetattr('arg'))
+        n = astng['n'].infer().next()
+        infered = list(n.igetattr('arg'))
+        self.assertEqual(len(infered), 1, infered)
 
 if __name__ == '__main__':
     unittest_main()

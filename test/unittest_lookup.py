@@ -32,18 +32,20 @@
 """tests for the astng variable lookup capabilities
 """
 import sys
-from os.path import join, abspath
+from os.path import join, abspath, dirname
 from logilab.common.testlib import TestCase, unittest_main
 
 from logilab.astng import builder, nodes, scoped_nodes, \
-     InferenceError, NotFoundError
+     InferenceError, NotFoundError, UnresolvableName
 from logilab.astng.scoped_nodes import builtin_lookup
+from logilab.astng.bases import YES
 from unittest_inference import get_name_node
 
 builder = builder.ASTNGBuilder()
-MODULE = builder.file_build('data/module.py', 'data.module')
-MODULE2 = builder.file_build('data/module2.py', 'data.module2')
-NONREGR = builder.file_build('data/nonregr.py', 'data.nonregr')
+DATA = join(dirname(abspath(__file__)), 'data')
+MODULE = builder.file_build(join(DATA, 'module.py'), 'data.module')
+MODULE2 = builder.file_build(join(DATA, 'module2.py'), 'data.module2')
+NONREGR = builder.file_build(join(DATA, 'nonregr.py'), 'data.nonregr')
 
 class LookupTC(TestCase):
 
@@ -60,16 +62,24 @@ def func():
     c = 1
         '''
         astng = builder.string_build(code, __name__, __file__)
-        names = astng.nodes_of_class(nodes.Name)
-        a = names.next()
+        # a & b
+        a = astng.nodes_of_class(nodes.Name).next()
+        self.assertEqual(a.lineno, 2)
+        if sys.version_info < (3, 0):
+            self.failUnlessEqual(len(astng.lookup('b')[1]), 2)
+            self.failUnlessEqual(len(astng.lookup('a')[1]), 3)
+            b = astng.locals['b'][1]
+        else:
+            self.failUnlessEqual(len(astng.lookup('b')[1]), 1)
+            self.failUnlessEqual(len(astng.lookup('a')[1]), 2)
+            b = astng.locals['b'][0]
         stmts = a.lookup('a')[1]
         self.failUnlessEqual(len(stmts), 1)
-        b = astng.locals['b'][1]
-        #self.failUnlessEqual(len(b.lookup('b')[1]), 1)
-        self.failUnlessEqual(len(astng.lookup('b')[1]), 2)
+        self.assertEqual(b.lineno, 6)
         b_infer = b.infer()
         b_value = b_infer.next()
         self.failUnlessEqual(b_value.value, 1)
+        # c
         self.failUnlessRaises(StopIteration, b_infer.next)
         func = astng.locals['func'][0]
         self.failUnlessEqual(len(func.lookup('c')[1]), 1)
@@ -132,18 +142,18 @@ class A(A):
 
 
     def test_inner_classes(self):
-        ccc = NONREGR['Ccc']
-        self.assertEqual(ccc.ilookup('Ddd').next().name, 'Ddd')
+        ddd = list(NONREGR['Ccc'].ilookup('Ddd'))
+        self.assertEqual(ddd[0].name, 'Ddd')
 
 
     def test_loopvar_hiding(self):
         astng = builder.string_build("""
 x = 10
 for x in range(5):
-    print x
+    print (x)
    
 if x > 0:
-    print '#' * x        
+    print ('#' * x)
         """, __name__, __file__)
         xnames = [n for n in astng.nodes_of_class(nodes.Name) if n.name == 'x']
         # inside the loop, only one possible assignment
@@ -153,12 +163,10 @@ if x > 0:
         self.assertEqual(len(xnames[2].lookup('x')[1]), 2)
 
     def test_list_comps(self):
-        if sys.version_info < (2, 4):
-            self.skipTest('this test require python >= 2.4')
         astng = builder.string_build("""
-print [ i for i in range(10) ]
-print [ i for i in range(10) ]
-print list( i for i in range(10) )
+print ([ i for i in range(10) ])
+print ([ i for i in range(10) ])
+print ( list( i for i in range(10) ) )
         """, __name__, __file__)
         xnames = [n for n in astng.nodes_of_class(nodes.Name) if n.name == 'i']
         self.assertEqual(len(xnames[0].lookup('i')[1]), 1)
@@ -168,6 +176,75 @@ print list( i for i in range(10) )
         self.assertEqual(len(xnames[2].lookup('i')[1]), 1)
         self.assertEqual(xnames[2].lookup('i')[1][0].lineno, 4)
 
+    def test_list_comp_target(self):
+        """test the list comprehension target"""
+        astng = builder.string_build("""
+ten = [ var for var in range(10) ]
+var
+        """)
+        var = astng.body[1].value
+        if sys.version_info < (3, 0):
+            self.assertEqual(var.infered(), [YES])
+        else:
+            self.assertRaises(UnresolvableName, var.infered)
+
+
+    def test_dict_comps(self):
+        if sys.version_info < (2, 7):
+            self.skipTest('this test require python >= 2.7')
+        astng = builder.string_build("""
+print ({ i: j for i in range(10) for j in range(10) })
+print ({ i: j for i in range(10) for j in range(10) })
+        """, __name__, __file__)
+        xnames = [n for n in astng.nodes_of_class(nodes.Name) if n.name == 'i']
+        self.assertEqual(len(xnames[0].lookup('i')[1]), 1)
+        self.assertEqual(xnames[0].lookup('i')[1][0].lineno, 2)
+        self.assertEqual(len(xnames[1].lookup('i')[1]), 1)
+        self.assertEqual(xnames[1].lookup('i')[1][0].lineno, 3)
+
+        xnames = [n for n in astng.nodes_of_class(nodes.Name) if n.name == 'j']
+        self.assertEqual(len(xnames[0].lookup('i')[1]), 1)
+        self.assertEqual(xnames[0].lookup('i')[1][0].lineno, 2)
+        self.assertEqual(len(xnames[1].lookup('i')[1]), 1)
+        self.assertEqual(xnames[1].lookup('i')[1][0].lineno, 3)
+
+
+    def test_set_comps(self):
+        if sys.version_info < (2, 7):
+            self.skipTest('this test require python >= 2.7')
+        astng = builder.string_build("""
+print ({ i for i in range(10) })
+print ({ i for i in range(10) })
+        """, __name__, __file__)
+        xnames = [n for n in astng.nodes_of_class(nodes.Name) if n.name == 'i']
+        self.assertEqual(len(xnames[0].lookup('i')[1]), 1)
+        self.assertEqual(xnames[0].lookup('i')[1][0].lineno, 2)
+        self.assertEqual(len(xnames[1].lookup('i')[1]), 1)
+        self.assertEqual(xnames[1].lookup('i')[1][0].lineno, 3)
+
+    def test_set_comp_closure(self):
+        if sys.version_info < (2, 7):
+            self.skipTest('this test require python >= 2.7')
+        astng = builder.string_build("""
+ten = { var for var in range(10) }
+var
+        """)
+        var = astng.body[1].value
+        self.assertRaises(UnresolvableName, var.infered)
+
+    def test_generator_attributes(self):
+        tree = builder.string_build("""
+def count():
+    "ntesxt"
+    yield 0
+
+iterer = count()
+num = iterer.next()
+        """)
+        next = tree.body[2].value.func # Getattr
+        gener = next.expr.infered()[0] # Genrator
+        # XXX gener._proxied is a Function which has no instance_attr
+        self.assertRaises(AttributeError, gener.getattr, 'next')
 
     def test_explicit___name__(self):
         code = '''
@@ -211,20 +288,18 @@ def initialize(linter):
 
 
     def test_decorator_arguments_lookup(self):
-        if sys.version_info < (2, 4):
-            self.skipTest('this test require python >= 2.4')
         code = '''
 def decorator(value):
-   def wrapper(function):
+    def wrapper(function):
         return function
-   return wrapper
+    return wrapper
 
 class foo:
-  member = 10
+    member = 10
 
-  @decorator(member) #This will cause pylint to complain
-  def test(self):
-       pass
+    @decorator(member) #This will cause pylint to complain
+    def test(self):
+        pass
         ''' 
         astng = builder.string_build(code, __name__, __file__)
         member = get_name_node(astng['foo'], 'member')
@@ -236,8 +311,6 @@ class foo:
 
        
     def test_inner_decorator_member_lookup(self):
-        if sys.version_info < (2, 4):
-            self.skipTest('this test require python >= 2.4')
         code = '''
 class FileA:
     def decorator(bla):
@@ -256,8 +329,6 @@ class FileA:
         
         
     def test_static_method_lookup(self):
-        if sys.version_info < (2, 4):
-            self.skipTest('this test require python >= 2.4')
         code = '''
 class FileA:
     @staticmethod
@@ -269,7 +340,7 @@ class Test:
     FileA = [1,2,3]
     
     def __init__(self):
-        print FileA.funcA()
+        print (FileA.funcA())
         '''
         astng = builder.string_build(code, __name__, __file__)
         it = astng['Test']['__init__'].ilookup('FileA')
@@ -284,7 +355,7 @@ def run2():
     f = Frobble()
     
 class Frobble:
-     pass
+    pass
 Frobble.mumble = True
 
 del Frobble

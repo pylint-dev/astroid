@@ -30,44 +30,13 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
 """This module contains some mixins for the different nodes.
-
 """
 
-from logilab.astng import ASTNGBuildingException, InferenceError, NotFoundError
-from logilab.astng.bases import BaseClass
-
-# /!\ We cannot build a StmtNode(NodeNG) class since modifying "__bases__"
-# in "nodes.py" has to work *both* for old-style and new-style classes,
-# but we need the StmtMixIn for scoped nodes
-
-class StmtMixIn(BaseClass):
-    """StmtMixIn used only for a adding a few attributes"""
-    is_statement = True
-
-    def replace(self, child, newchild):
-        sequence = self.child_sequence(child)
-        newchild.parent = self
-        child.parent = None
-        sequence[sequence.index(child)] = newchild
-
-    def next_sibling(self):
-        """return the next sibling statement"""
-        stmts = self.parent.child_sequence(self)
-        index = stmts.index(self)
-        try:
-            return stmts[index +1]
-        except IndexError:
-            pass
-
-    def previous_sibling(self):
-        """return the previous sibling statement"""
-        stmts = self.parent.child_sequence(self)
-        index = stmts.index(self)
-        if index >= 1:
-            return stmts[index -1]
+from logilab.astng.exceptions import (ASTNGBuildingException, InferenceError,
+                                      NotFoundError)
 
 
-class BlockRangeMixIn(BaseClass):
+class BlockRangeMixIn(object):
     """override block range """
     def set_line_info(self, lastchild):
         self.fromlineno = self.lineno
@@ -124,7 +93,7 @@ class ParentAssignTypeMixin(AssignTypeMixin):
 
 
 
-class FromImportMixIn(BaseClass, FilterStmtsMixin):
+class FromImportMixIn(FilterStmtsMixin):
     """MixIn for From and Import Nodes"""
 
     def _infer_name(self, frame, name):
@@ -139,18 +108,19 @@ class FromImportMixIn(BaseClass, FilterStmtsMixin):
         # XXX: no more needed ?
         mymodule = self.root()
         level = getattr(self, 'level', None) # Import as no level
-        if mymodule.absolute_modname(modname, level) == mymodule.name:
-            # FIXME: I don't know what to do here...
-            raise InferenceError('module importing itself: %s' % modname)
+        # XXX we should investigate deeper if we really want to check 
+        # importing itself: modname and mymodule.name be relative or absolute
+        if mymodule.relative_to_absolute_name(modname, level) == mymodule.name:
+            # FIXME: we used to raise InferenceError here, but why ?
+            return mymodule
         try:
             return mymodule.import_module(modname, level=level)
-        except (ASTNGBuildingException, SyntaxError):
+        except ASTNGBuildingException:
             raise InferenceError(modname)
 
     def real_name(self, asname):
         """get name from 'as' name"""
-        for index in range(len(self.names)):
-            name, _asname = self.names[index]
+        for name, _asname in self.names:
             if name == '*':
                 return asname
             if not _asname:
