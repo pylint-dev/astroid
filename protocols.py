@@ -19,14 +19,11 @@
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
 """this module contains a set of functions to handle python protocols for nodes
 where it makes sense.
-
 """
-
-from __future__ import generators
 
 __doctype__ = "restructuredtext en"
 
-from logilab.astng import InferenceError, NoDefault
+from logilab.astng.exceptions import InferenceError, NoDefault
 from logilab.astng.node_classes import unpack_infer
 from logilab.astng.bases import copy_context, \
      raise_if_nothing_infered, yes_if_nothing_infered, Instance, Generator, YES
@@ -198,7 +195,7 @@ def for_assigned_stmts(self, node, context=None, asspath=None):
                     yield item
     else:
         for infered in _resolve_looppart(self.iter.infer(context),
-                                             asspath, context):
+                                         asspath, context):
             yield infered
 
 nodes.For.assigned_stmts = raise_if_nothing_infered(for_assigned_stmts)

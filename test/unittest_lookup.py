@@ -232,7 +232,19 @@ var
         var = astng.body[1].value
         self.assertRaises(UnresolvableName, var.infered)
 
+    def test_generator_attributes(self):
+        tree = builder.string_build("""
+def count():
+    "ntesxt"
+    yield 0
 
+iterer = count()
+num = iterer.next()
+        """)
+        next = tree.body[2].value.func # Getattr
+        gener = next.expr.infered()[0] # Genrator
+        # XXX gener._proxied is a Function which has no instance_attr
+        self.assertRaises(AttributeError, gener.getattr, 'next')
 
     def test_explicit___name__(self):
         code = '''

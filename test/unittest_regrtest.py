@@ -21,17 +21,16 @@
 from logilab.common.testlib import unittest_main, TestCase
 
 from logilab.astng import ResolveError, MANAGER, Instance, nodes, YES, InferenceError
-from logilab.astng.builder import ASTNGBuilder, build_module
+from logilab.astng.builder import ASTNGBuilder
+from logilab.astng.raw_building import build_module
 from logilab.astng.manager import ASTNGManager
 
 import sys
 from os.path import join, abspath, dirname
 
 class NonRegressionTC(TestCase):
-    
 
     def setUp(self):
-        
         sys.path.insert(0, join(dirname(abspath(__file__)), 'regrtest_data'))
 
     def tearDown(self):
@@ -42,7 +41,7 @@ class NonRegressionTC(TestCase):
         # avoid caching into the ASTNGManager borg since we get problems
         # with other tests :
         manager.__dict__ = {}
-        manager._cache = {}
+        manager.astng_cache = {}
         manager._mod_file_cache = {}
         return manager
 
@@ -61,7 +60,7 @@ class NonRegressionTC(TestCase):
 
     def test_package_sidepackage(self):
         manager = self.brainless_manager()
-        assert 'package.sidepackage' not in MANAGER._cache
+        assert 'package.sidepackage' not in MANAGER.astng_cache
         package = manager.astng_from_module_name('absimp')
         self.assertIsInstance(package, nodes.Module)
         self.assertTrue(package.package)

@@ -81,6 +81,7 @@ exec 'c = 3' in {}, {}
 def raise_string(a=2, *args, **kwargs):
     raise Exception, 'yo'
     yield 'coucou'
+    yield
 a = (b) + (2)
 c = (b) * (2)
 c = (b) / (2)

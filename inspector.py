@@ -43,7 +43,7 @@ from logilab.common.modutils import get_module_part, is_relative, \
      is_standard_module
 
 from logilab import astng
-from logilab.astng import InferenceError
+from logilab.astng.exceptions import InferenceError
 from logilab.astng.utils import LocalsVisitor
 
 class IdGeneratorMixIn:

@@ -112,6 +112,26 @@ del appli
         self.assertEqual(len(astng.getattr('appli')), 2,
                           astng.getattr('appli'))
 
+    def test_relative_to_absolute_name(self):
+        mod = nodes.Module('very.multi.module', 'doc')
+        # package
+        mod.package = True
+        modname = mod.relative_to_absolute_name('utils', 1)
+        self.assertEqual(modname, 'very.multi.module.utils')
+        modname = mod.relative_to_absolute_name('utils', 2)
+        self.assertEqual(modname, 'very.multi.utils')
+        modname = mod.relative_to_absolute_name('utils', 0)
+        self.assertEqual(modname, 'very.multi.module.utils')
+        # non package
+        mod.package = False
+        modname = mod.relative_to_absolute_name('utils', 0)
+        self.assertEqual(modname, 'very.multi.utils')
+        modname = mod.relative_to_absolute_name('utils', 1)
+        self.assertEqual(modname, 'very.multi.utils')
+        modname = mod.relative_to_absolute_name('utils', 2)
+        self.assertEqual(modname, 'very.utils')
+
+
 
 class FunctionNodeTC(TestCase):
 
@@ -261,6 +281,24 @@ a = func()
         self.assertEqual(len(func_vals), 1)
         self.assertIsInstance(func_vals[0], nodes.Const)
         self.assertEqual(func_vals[0].value, None)
+
+    def test_func_instance_attr(self):
+        """test instance attributes for functions"""
+        data= """
+def test():
+    print(test.bar)
+
+test.bar = 1
+test()
+        """
+        astng = abuilder.string_build(data, 'mod', __file__)
+        func = astng.body[2].value.func.infered()[0]
+        self.assertIsInstance(func, nodes.Function)
+        self.assertEqual(func.name, 'test')
+        one = func.getattr('bar')[0].infered()[0]
+        self.assertIsInstance(one, nodes.Const)
+        self.assertEqual(one.value, 1)
+
 
 class ClassNodeTC(TestCase):
 

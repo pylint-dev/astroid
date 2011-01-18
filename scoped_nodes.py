@@ -20,9 +20,7 @@
 """This module contains the classes for "scoped" node, i.e. which are opening a
 new local scope in the language definition : Module, Class, Function (and
 Lambda, GenExpr, DictComp and SetComp to some extent).
-
 """
-from __future__ import generators
 
 __doctype__ = "restructuredtext en"
 
@@ -32,15 +30,16 @@ from itertools import chain
 from logilab.common.compat import builtins
 from logilab.common.decorators import cached
 
-from logilab.astng import NotFoundError, NoDefault, \
+from logilab.astng.exceptions import NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
 from logilab.astng.node_classes import Const, DelName, DelAttr, \
      Dict, From, List, Name, Pass, Raise, Return, Tuple, Yield, \
      are_exclusive, LookupMixIn, const_factory as cf, unpack_infer
-from logilab.astng.bases import NodeNG, BaseClass, InferenceContext, Instance,\
+from logilab.astng.bases import NodeNG, InferenceContext, Instance,\
      YES, Generator, UnboundMethod, BoundMethod, _infer_stmts, copy_context, \
      BUILTINS_NAME
-from logilab.astng.mixins import StmtMixIn, FilterStmtsMixin
+from logilab.astng.mixins import FilterStmtsMixin
+from logilab.astng.bases import Statement
 from logilab.astng.manager import ASTNGManager
 
 
@@ -242,13 +241,6 @@ class Module(LocalsDictNodeNG):
         self.locals = self.globals = {}
         self.body = []
 
-    # Module is not a Statement node but needs the replace method (see StmtMixIn)
-    def replace(self, child, newchild):
-        sequence = self.child_sequence(child)
-        newchild.parent = self
-        child.parent = None
-        sequence[sequence.index(child)] = newchild
-
     def block_range(self, lineno):
         """return block line numbers.
 
@@ -271,25 +263,22 @@ class Module(LocalsDictNodeNG):
         return 'Module'
 
     def getattr(self, name, context=None):
-        if not name in self.special_attributes:
-            try:
-                return self.locals[name]
-            except KeyError:
-                pass
-        else:
+        if name in self.special_attributes:
             if name == '__file__':
                 return [cf(self.file)] + self.locals.get(name, [])
-            if name == '__path__':
-                if self.package:
-                    return [List()] + self.locals.get(name, [])
+            if name == '__path__' and self.package:
+                return [List()] + self.locals.get(name, [])
             return std_special_attributes(self, name)
+        if name in self.locals:
+            return self.locals[name]
         if self.package:
             try:
                 return [self.import_module(name, relative_only=True)]
-            except (KeyboardInterrupt, SystemExit):
-                raise
-            except:
-                pass
+            except ASTNGBuildingException:
+                raise NotFoundError(name)
+            except Exception:# XXX pylint tests never pass here; do we need it?
+                import traceback
+                traceback.print_exc()
         raise NotFoundError(name)
     getattr = remove_nodes(getattr, DelName)
 
@@ -324,11 +313,14 @@ class Module(LocalsDictNodeNG):
         """module has no sibling"""
         return
 
-    def absolute_import_activated(self):
-        for stmt in self.locals.get('absolute_import', ()):
-            if isinstance(stmt, From) and stmt.modname == '__future__':
-                return True
-        return False
+    if sys.version_info < (2, 7):
+        def absolute_import_activated(self):
+            for stmt in self.locals.get('absolute_import', ()):
+                if isinstance(stmt, From) and stmt.modname == '__future__':
+                    return True
+            return False
+    else:
+        absolute_import_activated = lambda self: True
 
     def import_module(self, modname, relative_only=False, level=None):
         """import the given module considering self as context"""
@@ -349,15 +341,15 @@ class Module(LocalsDictNodeNG):
         """
         # XXX this returns non sens when called on an absolute import
         # like 'pylint.checkers.logilab.astng.utils'
+        # XXX doesn't return absolute name if self.name isn't absolute name
         if level:
-            parts = self.name.split('.')
             if self.package:
-                parts.append('__init__')
-            package_name = '.'.join(parts[:-level])
+                level = level - 1
+            package_name = self.name.rsplit('.', level)[0]
         elif self.package:
             package_name = self.name
         else:
-            package_name = '.'.join(self.name.split('.')[:-1])
+            package_name = self.name.rsplit('.', 1)[0]
         if package_name:
             if not modname:
                 return package_name
@@ -511,7 +503,7 @@ class Lambda(LocalsDictNodeNG, FilterStmtsMixin):
             frame = self
         return frame._scope_lookup(node, name, offset)
 
-class Function(StmtMixIn, Lambda):
+class Function(Statement, Lambda):
     _astng_fields = ('decorators', 'args', 'body')
 
     special_attributes = set(('__name__', '__doc__', '__dict__'))
@@ -527,6 +519,8 @@ class Function(StmtMixIn, Lambda):
         self.decorators = None
         self.name = name
         self.doc = doc
+        self.extra_decorators = []
+        self.instance_attrs = {}
 
     def set_line_info(self, lastchild):
         self.fromlineno = self.lineno
@@ -549,6 +543,8 @@ class Function(StmtMixIn, Lambda):
         """
         if name == '__module__':
             return [cf(self.root().qname())]
+        if name in self.instance_attrs:
+            return self.instance_attrs[name]
         return std_special_attributes(self, name, False)
 
     def is_method(self):
@@ -563,7 +559,7 @@ class Function(StmtMixIn, Lambda):
         decoratornodes = []
         if self.decorators is not None:
             decoratornodes += self.decorators.nodes
-        decoratornodes += getattr(self, 'extra_decorators', [])
+        decoratornodes += self.extra_decorators
         for decnode in decoratornodes:
             for infnode in decnode.infer():
                 result.add(infnode.qname())
@@ -666,7 +662,7 @@ def _iface_hdlr(iface_node):
     return True
 
 
-class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
+class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
 
     # some of the attributes below are set by the builder module or
     # by a raw factories
@@ -675,10 +671,8 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
     _astng_fields = ('decorators', 'bases', 'body') # name
 
     decorators = None
-    instance_attrs = None
     special_attributes = set(('__name__', '__doc__', '__dict__', '__module__',
                               '__bases__', '__mro__', '__subclasses__'))
-
     blockstart_tolineno = None
 
     _type = None
@@ -859,6 +853,9 @@ class Class(StmtMixIn, LocalsDictNodeNG, FilterStmtsMixin):
         if name in self.special_attributes:
             if name == '__module__':
                 return [cf(self.root().qname())] + values
+            # FIXME : what is expected by passing the list of ancestors to cf:
+            # you can just do [cf(tuple())] + values without breaking any test
+            # this is ticket http://www.logilab.org/ticket/52785
             if name == '__bases__':
                 return [cf(tuple(self.ancestors(recurs=False, context=context)))] + values
             # XXX need proper meta class handling + MRO implementation

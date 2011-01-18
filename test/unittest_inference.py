@@ -22,7 +22,8 @@ import sys
 from StringIO import StringIO
 from logilab.common.testlib import TestCase, unittest_main
 
-from logilab.astng import InferenceError, builder, nodes, inference
+from logilab.astng import InferenceError, builder, nodes
+from logilab.astng.inference import infer_end as inference_infer_end
 from logilab.astng.bases import YES, Instance, BoundMethod, UnboundMethod,\
                                 path_wrapper, BUILTINS_NAME
 
@@ -40,7 +41,7 @@ class InferenceUtilsTC(TestCase):
         def infer_default(self, *args):
             raise InferenceError
         infer_default = path_wrapper(infer_default)
-        infer_end = path_wrapper(inference.infer_end)
+        infer_end = path_wrapper(inference_infer_end)
         self.failUnlessRaises(InferenceError,
                               infer_default(1).next)
         self.failUnlessEqual(infer_end(1).next(), 1)
@@ -1098,6 +1099,23 @@ Z = test()
         self.assertIsInstance(infered[0], Instance)
         self.assertIsInstance(infered[0]._proxied, nodes.Class)
         self.assertEqual(infered[0]._proxied.name, 'list')
+
+    def test__new__(self):
+        code = '''
+class NewTest(object):
+    "doc"
+    def __new__(cls, arg):
+        self = object.__new__(cls)
+        self.arg = arg
+        return self
+
+n = NewTest()
+        '''
+        astng = builder.string_build(code, __name__, __file__)
+        self.assertRaises(InferenceError, list, astng['NewTest'].igetattr('arg'))
+        n = astng['n'].infer().next()
+        infered = list(n.igetattr('arg'))
+        self.assertEqual(len(infered), 1, infered)
 
 if __name__ == '__main__':
     unittest_main()

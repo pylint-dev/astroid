@@ -43,7 +43,9 @@ from logilab.astng.nodes import Module
 from logilab.astng.bases import YES, BUILTINS_NAME
 from logilab.astng.as_string import as_string
 from logilab.astng.manager import ASTNGManager
+
 MANAGER = ASTNGManager()
+
 
 from unittest_inference import get_name_node
 
@@ -114,11 +116,15 @@ class FromToLineNoTC(TestCase):
         self.assertIsInstance(function, nodes.Function)
         self.assertEqual(function.fromlineno, 15)
         self.assertEqual(function.tolineno, 18)
-        self.assertEqual(function.blockstart_tolineno, 17)
         return_ = function.body[0]
         self.assertIsInstance(return_, nodes.Return)
         self.assertEqual(return_.fromlineno, 18)
         self.assertEqual(return_.tolineno, 18)
+        if sys.version_info < (3, 0):
+            self.assertEqual(function.blockstart_tolineno, 17)
+        else:
+            self.skipTest('FIXME  http://bugs.python.org/issue10445 '
+                          '(no line number on function args)')
 
     def test_decorated_function_lineno(self):
         astng = builder.ASTNGBuilder().string_build('''
@@ -130,9 +136,13 @@ def function(
         function = astng['function']
         self.assertEqual(function.fromlineno, 3) # XXX discussable, but that's what is expected by pylint right now
         self.assertEqual(function.tolineno, 5)
-        self.assertEqual(function.blockstart_tolineno, 4)
         self.assertEqual(function.decorators.fromlineno, 2)
         self.assertEqual(function.decorators.tolineno, 2)
+        if sys.version_info < (3, 0):
+            self.assertEqual(function.blockstart_tolineno, 4)
+        else:
+            self.skipTest('FIXME  http://bugs.python.org/issue10445 '
+                          '(no line number on function args)')
 
 
     def test_class_lineno(self):
@@ -294,8 +304,12 @@ class BuilderTC(TestCase):
         self.assertIsInstance(builtin_astng['None'], nodes.Const)
         self.assertIsInstance(builtin_astng['True'], nodes.Const)
         self.assertIsInstance(builtin_astng['False'], nodes.Const)
-        self.assertIsInstance(builtin_astng['Exception'], nodes.From)
-        self.assertIsInstance(builtin_astng['NotImplementedError'], nodes.From)
+        if sys.version_info < (3, 0):
+            self.assertIsInstance(builtin_astng['Exception'], nodes.From)
+            self.assertIsInstance(builtin_astng['NotImplementedError'], nodes.From)
+        else:
+            self.assertIsInstance(builtin_astng['Exception'], nodes.Class)
+            self.assertIsInstance(builtin_astng['NotImplementedError'], nodes.Class)
 
     def test_inspect_build1(self):
         time_astng = MANAGER.astng_from_module_name('time')
@@ -315,7 +329,7 @@ class BuilderTC(TestCase):
             #dt_astng.getattr('DateTimeType')
 
     def test_inspect_build3(self):
-        unittest_astng = self.builder.inspect_build(unittest)
+        self.builder.inspect_build(unittest)
 
     def test_inspect_build_instance(self):
         """test astng tree build from a living object"""
@@ -479,8 +493,7 @@ class FileBuildTC(TestCase):
         keys = sorted(_locals.keys())
         should = ['MY_DICT', 'YO', 'YOUPI',
                 '__revision__',  'global_access','modutils', 'four_args',
-                 'os', 'redirect', 'spawn', 'LocalsVisitor',
-                'ASTWalker', 'ASTVisitor']
+                 'os', 'redirect', 'spawn', 'LocalsVisitor', 'ASTWalker']
         should.sort()
         self.assertEqual(keys, should)
 
@@ -670,6 +683,45 @@ def func():
         self.assertIsInstance(chain, nodes.Const)
         self.assertEqual(chain.value, 'None')
 
+
+if sys.version_info < (3, 0):
+    guess_encoding = builder._guess_encoding
+
+    class TestGuessEncoding(TestCase):
+
+        def testEmacs(self):
+            e = guess_encoding('# -*- coding: UTF-8  -*-')
+            self.failUnlessEqual(e, 'UTF-8')
+            e = guess_encoding('# -*- coding:UTF-8 -*-')
+            self.failUnlessEqual(e, 'UTF-8')
+            e = guess_encoding('''
+            ### -*- coding: ISO-8859-1  -*-
+            ''')
+            self.failUnlessEqual(e, 'ISO-8859-1')
+            e = guess_encoding('''
+
+            ### -*- coding: ISO-8859-1  -*-
+            ''')
+            self.failUnlessEqual(e, None)
+
+        def testVim(self):
+            e = guess_encoding('# vim:fileencoding=UTF-8')
+            self.failUnlessEqual(e, 'UTF-8')
+            e = guess_encoding('''
+            ### vim:fileencoding=ISO-8859-1
+            ''')
+            self.failUnlessEqual(e, 'ISO-8859-1')
+            e = guess_encoding('''
+
+            ### vim:fileencoding= ISO-8859-1
+            ''')
+            self.failUnlessEqual(e, None)
+
+        def testUTF8(self):
+            e = guess_encoding('\xef\xbb\xbf any UTF-8 data')
+            self.failUnlessEqual(e, 'UTF-8')
+            e = guess_encoding(' any UTF-8 data \xef\xbb\xbf')
+            self.failUnlessEqual(e, None)
 
 if __name__ == '__main__':
     unittest_main()
