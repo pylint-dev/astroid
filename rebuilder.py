@@ -117,11 +117,15 @@ def _lineno_parent(oldnode, newnode, parent):
     newnode.parent = parent
     if hasattr(oldnode, 'lineno'):
         newnode.lineno = oldnode.lineno
+    if hasattr(oldnode, 'col_offset'):
+        newnode.col_offset = oldnode.col_offset
 
 def _set_infos(oldnode, newnode, parent):
     newnode.parent = parent
     if hasattr(oldnode, 'lineno'):
         newnode.lineno = oldnode.lineno
+    if hasattr(oldnode, 'col_offset'):
+        newnode.col_offset = oldnode.col_offset
     newnode.set_line_info(newnode.last_child()) # set_line_info accepts None
 
 

@@ -336,6 +336,7 @@ class NodeNG(object):
     lineno = None
     fromlineno = None
     tolineno = None
+    col_offset = None
     # parent node in the tree
     parent = None
     # attributes containing child node(s) redefined in most concrete classes:
