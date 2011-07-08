@@ -324,6 +324,8 @@ class Module(LocalsDictNodeNG):
 
     def import_module(self, modname, relative_only=False, level=None):
         """import the given module considering self as context"""
+        if relative_only and level is None:
+            level = 0
         absmodname = self.relative_to_absolute_name(modname, level)
         try:
             return MANAGER.astng_from_module_name(absmodname)
@@ -342,6 +344,8 @@ class Module(LocalsDictNodeNG):
         # XXX this returns non sens when called on an absolute import
         # like 'pylint.checkers.logilab.astng.utils'
         # XXX doesn't return absolute name if self.name isn't absolute name
+        if self.absolute_import_activated() and level is None:
+            return modname
         if level:
             if self.package:
                 level = level - 1

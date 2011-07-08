@@ -926,6 +926,15 @@ def f(x):
         # failed to import since absolute_import is activated
         self.failUnless(infered is YES)
 
+    def test_nonregr_absolute_import(self):
+        fname = join(abspath(dirname(__file__)), 'regrtest_data', 'absimp', 'string.py')
+        astng = builder.file_build(fname, 'absimp.string')
+        self.failUnless(astng.absolute_import_activated(), True)
+        infered = get_name_node(astng, 'string').infer().next()
+        self.assertIsInstance(infered, nodes.Module)
+        self.assertEqual(infered.name, 'string')
+        self.failUnless('lower' in infered.locals)
+
     def test_mechanize_open(self):
         try:
             import mechanize
