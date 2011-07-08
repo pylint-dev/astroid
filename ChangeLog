@@ -3,7 +3,8 @@ Change log for the astng package
 
 --
     * added column offset information on nodes (patch by fawce)
-
+    * #70497: Crash on AttributeError: 'NoneType' object has no attribute '_infer_name'
+	
 2011-01-11  --  0.21.1
     * python3: handle file encoding; fix a lot of tests
 

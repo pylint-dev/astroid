@@ -885,6 +885,11 @@ _update_const_classes()
 
 def const_factory(value):
     """return an astng node for a python value"""
+    # since const_factory is called to evaluate content of container (eg list,
+    # tuple), it may be called with some node as argument that should be left
+    # untouched
+    if isinstance(value, NodeNG):
+        return value
     try:
         return CONST_CLS[value.__class__](value)
     except (KeyError, AttributeError):
@@ -894,4 +899,4 @@ def const_factory(value):
             return Const(value)
         node = EmptyNode()
         node.object = value
-        return None
+        return node
