@@ -717,6 +717,18 @@ if sys.version_info < (3, 0):
             ''')
             self.failUnlessEqual(e, None)
 
+        def test_wrong_coding(self):
+            # setting "coding" varaible
+            e = guess_encoding("coding = UTF-8")
+            self.failUnlessEqual(e, None)
+            # setting a dictionnary entry
+            e = guess_encoding("coding:UTF-8")
+            self.failUnlessEqual(e, None)
+            # setting an arguement
+            e = guess_encoding("def do_something(a_word_with_coding=None):")
+            self.failUnlessEqual(e, None)
+
+
         def testUTF8(self):
             e = guess_encoding('\xef\xbb\xbf any UTF-8 data')
             self.failUnlessEqual(e, 'UTF-8')

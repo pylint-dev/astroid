@@ -6,6 +6,7 @@ Change log for the astng package
     * #70497: Crash on AttributeError: 'NoneType' object has no attribute '_infer_name'
     * #70381: IndendationError in import causes crash
     * #70565: absolute imports treated as relative (patch by Jacek Konieczny)
+    * #70494: fix file encoding detection with python2.x
 
 2011-01-11  --  0.21.1
     * python3: handle file encoding; fix a lot of tests
