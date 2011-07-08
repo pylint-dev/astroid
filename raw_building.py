@@ -1,4 +1,4 @@
-# copyright 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 # copyright 2003-2010 Sylvain Thenault, all rights reserved.
 # contact mailto:thenault@gmail.com
@@ -28,6 +28,7 @@ from os.path import abspath
 from inspect import (getargspec, isdatadescriptor, isfunction, ismethod,
                      ismethoddescriptor, isclass, isbuiltin)
 
+from logilab.astng import BUILTINS_MODULE
 from logilab.astng.node_classes import CONST_CLS
 from logilab.astng.nodes import (Module, Class, Const, const_factory, From,
     Function, EmptyNode, Name, Arguments, Dict, List, Set, Tuple)
@@ -245,6 +246,8 @@ class InspectBuilder(object):
                 object_build_function(node, member, name)
             elif isbuiltin(member):
                 if self.imported_member(node, member, name):
+                    if obj is object:
+                        print 'skippp', obj, name, member
                     continue
                 object_build_methoddescriptor(node, member, name)
             elif isclass(member):
@@ -290,7 +293,7 @@ class InspectBuilder(object):
                 # Python 2.5.1 (r251:54863, Sep  1 2010, 22:03:14)
                 # >>> print object.__new__.__module__
                 # None
-                modname = '__builtin__'
+                modname = BUILTINS_MODULE
             else:
                 attach_dummy_node(node, name, member)
                 return True

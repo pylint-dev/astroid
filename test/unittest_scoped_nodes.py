@@ -27,7 +27,7 @@ from os.path import join, abspath, dirname
 from logilab.common.testlib import TestCase, unittest_main
 
 from logilab.astng import builder, nodes, scoped_nodes, \
-     InferenceError, NotFoundError
+     BUILTINS_MODULE, InferenceError, NotFoundError
 from logilab.astng.bases import Instance, BoundMethod, UnboundMethod
 
 abuilder = builder.ASTNGBuilder()
@@ -238,7 +238,7 @@ def nested_args(a, (b, c, d)):
         method = MODULE2['AbstractClass']['to_override']
         self.assert_(method.is_abstract(pass_is_abstract=False))
         self.failUnlessEqual(method.qname(), 'data.module2.AbstractClass.to_override')
-        self.failUnlessEqual(method.pytype(), '__builtin__.instancemethod')
+        self.failUnlessEqual(method.pytype(), '%s.instancemethod' % BUILTINS_MODULE)
         method = MODULE2['AbstractClass']['return_something']
         self.assert_(not method.is_abstract(pass_is_abstract=False))
         # non regression : test raise "string" doesn't cause an exception in is_abstract
@@ -263,7 +263,7 @@ def f():
         '''
         astng = abuilder.string_build(data, __name__, __file__)
         g = list(astng['f'].ilookup('g'))[0]
-        self.failUnlessEqual(g.pytype(), '__builtin__.function')
+        self.failUnlessEqual(g.pytype(), '%s.function' % BUILTINS_MODULE)
 
     def test_is_method(self):
         data = '''

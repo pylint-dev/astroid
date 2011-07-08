@@ -38,7 +38,7 @@ from os.path import join, abspath, dirname
 from logilab.common.testlib import TestCase, unittest_main
 from pprint import pprint
 
-from logilab.astng import builder, nodes, InferenceError, NotFoundError
+from logilab.astng import BUILTINS_MODULE, builder, nodes, InferenceError, NotFoundError
 from logilab.astng.nodes import Module
 from logilab.astng.bases import YES, BUILTINS_NAME
 from logilab.astng.as_string import as_string
@@ -286,14 +286,15 @@ class BuilderTC(TestCase):
             self.assert_('mode' in fclass)
             self.assert_('read' in fclass)
             self.assert_(fclass.newstyle)
-            self.assert_(fclass.pytype(), '__builtin__.type')
+            self.assert_(fclass.pytype(), '%s.type' % BUILTINS_MODULE)
             self.assertIsInstance(fclass['read'], nodes.Function)
             # check builtin function has args.args == None
             dclass = builtin_astng['dict']
             self.assertEqual(dclass['has_key'].args.args, None)
         # just check type and object are there
         builtin_astng.getattr('type')
-        builtin_astng.getattr('object')
+        objectastng = builtin_astng.getattr('object')[0]
+        self.assertIsInstance(objectastng.getattr('__new__')[0], nodes.Function)
         # check open file alias
         builtin_astng.getattr('open')
         # check 'help' is there (defined dynamically by site.py)

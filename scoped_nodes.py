@@ -30,6 +30,7 @@ from itertools import chain
 from logilab.common.compat import builtins
 from logilab.common.decorators import cached
 
+from logilab.astng import BUILTINS_MODULE
 from logilab.astng.exceptions import NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
 from logilab.astng.node_classes import Const, DelName, DelAttr, \
@@ -257,7 +258,7 @@ class Module(LocalsDictNodeNG):
         return self._scope_lookup(node, name, offset)
 
     def pytype(self):
-        return '__builtin__.module'
+        return '%s.module' % BUILTINS_MODULE
 
     def display_type(self):
         return 'Module'
@@ -469,8 +470,8 @@ class Lambda(LocalsDictNodeNG, FilterStmtsMixin):
 
     def pytype(self):
         if 'method' in self.type:
-            return '__builtin__.instancemethod'
-        return '__builtin__.function'
+            return '%s.instancemethod' % BUILTINS_MODULE
+        return '%s.function' % BUILTINS_MODULE
 
     def display_type(self):
         if 'method' in self.type:
@@ -726,8 +727,8 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
 
     def pytype(self):
         if self.newstyle:
-            return '__builtin__.type'
-        return '__builtin__.classobj'
+            return '%s.type' % BUILTINS_MODULE
+        return '%s.classobj' % BUILTINS_MODULE
 
     def display_type(self):
         return 'Class'

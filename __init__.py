@@ -1,16 +1,4 @@
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the GNU Lesser General Public License as published by the Free Software
-# Foundation; either version 2 of the License, or (at your option) any later
-# version.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public License along with
-# this program; if not, write to the Free Software Foundation, Inc.,
-# 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-# copyright 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 # copyright 2003-2010 Sylvain Thenault, all rights reserved.
 # contact mailto:thenault@gmail.com
@@ -52,10 +40,14 @@ Main modules are:
   constructed tree for quick access
 
 * builder contains the class responsible to build astng trees
-
-
 """
 __doctype__ = "restructuredtext en"
+
+import sys
+if sys.version_info >= (3, 0):
+    BUILTINS_MODULE = 'builtins'
+else:
+    BUILTINS_MODULE = '__builtin__'
 
 # WARNING: internal imports order matters !
 
@@ -79,4 +71,3 @@ from logilab.astng.scoped_nodes import builtin_lookup
 from logilab.astng.manager import ASTNGManager, Project
 MANAGER = ASTNGManager()
 del ASTNGManager
-
