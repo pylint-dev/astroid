@@ -262,14 +262,14 @@ class Module(LocalsDictNodeNG):
     def display_type(self):
         return 'Module'
 
-    def getattr(self, name, context=None):
+    def getattr(self, name, context=None, ignore_locals=False):
         if name in self.special_attributes:
             if name == '__file__':
                 return [cf(self.file)] + self.locals.get(name, [])
             if name == '__path__' and self.package:
                 return [List()] + self.locals.get(name, [])
             return std_special_attributes(self, name)
-        if name in self.locals:
+        if not ignore_locals and name in self.locals:
             return self.locals[name]
         if self.package:
             try:

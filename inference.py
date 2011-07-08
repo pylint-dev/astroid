@@ -199,7 +199,7 @@ def infer_from(self, context=None, asname=True):
     try:
         context = copy_context(context)
         context.lookupname = name
-        return _infer_stmts(module.getattr(name), context)
+        return _infer_stmts(module.getattr(name, ignore_locals=module is self.root()), context)
     except NotFoundError:
         raise InferenceError(name)
 nodes.From.infer = path_wrapper(infer_from)
