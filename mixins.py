@@ -117,6 +117,8 @@ class FromImportMixIn(FilterStmtsMixin):
             return mymodule.import_module(modname, level=level)
         except ASTNGBuildingException:
             raise InferenceError(modname)
+        except SyntaxError, ex:
+            raise InferenceError(str(ex))
 
     def real_name(self, asname):
         """get name from 'as' name"""
