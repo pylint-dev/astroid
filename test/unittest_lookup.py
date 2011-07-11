@@ -110,7 +110,7 @@ class A(A):
         cls2 = astng.locals['A'][1]
         name = cls2.nodes_of_class(nodes.Name).next()
         self.assertEqual(name.infer().next(), cls1)
-        
+
     ### backport those test to inline code
     def test_method(self):
         method = MODULE['YOUPI']['method']
@@ -120,7 +120,7 @@ class A(A):
         self.assertEqual(none.value, None)
         self.assertRaises(InferenceError, method.ilookup('YOAA').next)
 
-        
+
     def test_function_argument_with_default(self):
         make_class = MODULE2['make_class']
         base = make_class.ilookup('base').next()
@@ -151,7 +151,7 @@ class A(A):
 x = 10
 for x in range(5):
     print (x)
-   
+
 if x > 0:
     print ('#' * x)
         """, __name__, __file__)
@@ -300,7 +300,7 @@ class foo:
     @decorator(member) #This will cause pylint to complain
     def test(self):
         pass
-        ''' 
+        '''
         astng = builder.string_build(code, __name__, __file__)
         member = get_name_node(astng['foo'], 'member')
         it = member.infer()
@@ -309,13 +309,13 @@ class foo:
         self.assertEqual(obj.value, 10)
         self.assertRaises(StopIteration, it.next)
 
-       
+
     def test_inner_decorator_member_lookup(self):
         code = '''
 class FileA:
     def decorator(bla):
         return bla
-    
+
     @decorator
     def funcA():
         return 4
@@ -326,8 +326,8 @@ class FileA:
         obj = it.next()
         self.assertIsInstance(obj, nodes.Function)
         self.assertRaises(StopIteration, it.next)
-        
-        
+
+
     def test_static_method_lookup(self):
         code = '''
 class FileA:
@@ -338,7 +338,7 @@ class FileA:
 
 class Test:
     FileA = [1,2,3]
-    
+
     def __init__(self):
         print (FileA.funcA())
         '''
@@ -353,7 +353,7 @@ class Test:
         code = '''
 def run2():
     f = Frobble()
-    
+
 class Frobble:
     pass
 Frobble.mumble = True
@@ -368,6 +368,6 @@ def run1():
         self.failUnlessEqual(len(stmts), 0)
         stmts = astng['run1'].lookup('Frobbel')[1]
         self.failUnlessEqual(len(stmts), 0)
-        
+
 if __name__ == '__main__':
     unittest_main()
