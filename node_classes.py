@@ -1,4 +1,4 @@
-# copyright 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 # copyright 2003-2010 Sylvain Thenault, all rights reserved.
 # contact mailto:thenault@gmail.com
@@ -22,6 +22,7 @@
 
 import sys
 
+from logilab.astng import BUILTINS_MODULE
 from logilab.astng.exceptions import NoDefault
 from logilab.astng.bases import (NodeNG, Statement, Instance, InferenceContext,
                                  _infer_stmts, YES)
@@ -489,7 +490,7 @@ class Dict(NodeNG, Instance):
                           for k,v in items.iteritems()]
 
     def pytype(self):
-        return '__builtin__.dict'
+        return '%s.dict' % BUILTINS_MODULE
 
     def get_children(self):
         """get children of a Dict node"""
@@ -664,7 +665,7 @@ class List(NodeNG, Instance, ParentAssignTypeMixin):
             self.elts = [const_factory(e) for e in elts]
 
     def pytype(self):
-        return '__builtin__.list'
+        return '%s.list' % BUILTINS_MODULE
 
     def getitem(self, index, context=None):
         return self.elts[index]
@@ -731,7 +732,7 @@ class Set(NodeNG, Instance, ParentAssignTypeMixin):
             self.elts = [const_factory(e) for e in elts]
 
     def pytype(self):
-        return '__builtin__.set' # XXX __builtin__ vs builtins
+        return '%s.set' % BUILTINS_MODULE
 
     def itered(self):
         return self.elts
@@ -813,7 +814,7 @@ class Tuple(NodeNG, Instance, ParentAssignTypeMixin):
             self.elts = [const_factory(e) for e in elts]
 
     def pytype(self):
-        return '__builtin__.tuple'
+        return '%s.tuple' % BUILTINS_MODULE
 
     def getitem(self, index, context=None):
         return self.elts[index]
@@ -885,6 +886,11 @@ _update_const_classes()
 
 def const_factory(value):
     """return an astng node for a python value"""
+    # since const_factory is called to evaluate content of container (eg list,
+    # tuple), it may be called with some node as argument that should be left
+    # untouched
+    if isinstance(value, NodeNG):
+        return value
     try:
         return CONST_CLS[value.__class__](value)
     except (KeyError, AttributeError):
@@ -894,4 +900,4 @@ def const_factory(value):
             return Const(value)
         node = EmptyNode()
         node.object = value
-        return None
+        return node

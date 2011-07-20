@@ -27,11 +27,12 @@ from os.path import join, abspath, dirname
 from logilab.common.testlib import TestCase, unittest_main
 
 from logilab.astng import builder, nodes, scoped_nodes, \
-     InferenceError, NotFoundError
+     BUILTINS_MODULE, InferenceError, NotFoundError
 from logilab.astng.bases import Instance, BoundMethod, UnboundMethod
 
 abuilder = builder.ASTNGBuilder()
 DATA = join(dirname(abspath(__file__)), 'data')
+REGRTEST_DATA = join(dirname(abspath(__file__)), 'regrtest_data')
 MODULE = abuilder.file_build(join(DATA, 'module.py'), 'data.module')
 MODULE2 = abuilder.file_build(join(DATA, 'module2.py'), 'data.module2')
 NONREGR = abuilder.file_build(join(DATA, 'nonregr.py'), 'data.nonregr')
@@ -113,16 +114,19 @@ del appli
                           astng.getattr('appli'))
 
     def test_relative_to_absolute_name(self):
-        mod = nodes.Module('very.multi.module', 'doc')
         # package
+        mod = nodes.Module('very.multi.package', 'doc')
         mod.package = True
         modname = mod.relative_to_absolute_name('utils', 1)
-        self.assertEqual(modname, 'very.multi.module.utils')
+        self.assertEqual(modname, 'very.multi.package.utils')
         modname = mod.relative_to_absolute_name('utils', 2)
         self.assertEqual(modname, 'very.multi.utils')
         modname = mod.relative_to_absolute_name('utils', 0)
-        self.assertEqual(modname, 'very.multi.module.utils')
+        self.assertEqual(modname, 'very.multi.package.utils')
+        modname = mod.relative_to_absolute_name('', 1)
+        self.assertEqual(modname, 'very.multi.package')
         # non package
+        mod = nodes.Module('very.multi.module', 'doc')
         mod.package = False
         modname = mod.relative_to_absolute_name('utils', 0)
         self.assertEqual(modname, 'very.multi.utils')
@@ -130,7 +134,35 @@ del appli
         self.assertEqual(modname, 'very.multi.utils')
         modname = mod.relative_to_absolute_name('utils', 2)
         self.assertEqual(modname, 'very.utils')
+        modname = mod.relative_to_absolute_name('', 1)
+        self.assertEqual(modname, 'very.multi')
 
+    def test_import_1(self):
+        data = '''from . import subpackage'''
+        astng = abuilder.string_build(data, 'package', join(REGRTEST_DATA, 'package', '__init__.py'))
+        sys.path.insert(1, REGRTEST_DATA)
+        try:
+            m = astng.import_module('', level=1)
+            self.assertEqual(m.name, 'package')
+            infered = list(astng.igetattr('subpackage'))
+            self.assertEqual(len(infered), 1)
+            self.assertEqual(infered[0].name, 'package.subpackage')
+        finally:
+            del sys.path[1]
+
+
+    def test_import_2(self):
+        data = '''from . import subpackage as pouet'''
+        astng = abuilder.string_build(data, 'package', join(dirname(abspath(__file__)), 'regrtest_data', 'package', '__init__.py'))
+        sys.path.insert(1, REGRTEST_DATA)
+        try:
+            m = astng.import_module('', level=1)
+            self.assertEqual(m.name, 'package')
+            infered = list(astng.igetattr('pouet'))
+            self.assertEqual(len(infered), 1)
+            self.assertEqual(infered[0].name, 'package.subpackage')
+        finally:
+            del sys.path[1]
 
 
 class FunctionNodeTC(TestCase):
@@ -206,7 +238,7 @@ def nested_args(a, (b, c, d)):
         method = MODULE2['AbstractClass']['to_override']
         self.assert_(method.is_abstract(pass_is_abstract=False))
         self.failUnlessEqual(method.qname(), 'data.module2.AbstractClass.to_override')
-        self.failUnlessEqual(method.pytype(), '__builtin__.instancemethod')
+        self.failUnlessEqual(method.pytype(), '%s.instancemethod' % BUILTINS_MODULE)
         method = MODULE2['AbstractClass']['return_something']
         self.assert_(not method.is_abstract(pass_is_abstract=False))
         # non regression : test raise "string" doesn't cause an exception in is_abstract
@@ -231,7 +263,7 @@ def f():
         '''
         astng = abuilder.string_build(data, __name__, __file__)
         g = list(astng['f'].ilookup('g'))[0]
-        self.failUnlessEqual(g.pytype(), '__builtin__.function')
+        self.failUnlessEqual(g.pytype(), '%s.function' % BUILTINS_MODULE)
 
     def test_is_method(self):
         data = '''

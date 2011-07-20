@@ -26,6 +26,8 @@ __docformat__ = "restructuredtext en"
 
 
 from logilab.common.compat import builtins
+
+from logilab.astng import BUILTINS_MODULE
 from logilab.astng.exceptions import InferenceError, ASTNGError, \
                                        NotFoundError, UnresolvableName
 from logilab.astng.as_string import as_string
@@ -242,7 +244,7 @@ class UnboundMethod(Proxy):
         # If we're unbound method __new__ of builtin object, the result is an
         # instance of the class given as first argument.
         if (self._proxied.name == '__new__' and
-                self._proxied.parent.frame().qname() == '__builtin__.object'):
+                self._proxied.parent.frame().qname() == '%s.object' % BUILTINS_MODULE):
             return (x is YES and x or Instance(x) for x in caller.args[0].infer())
         return self._proxied.infer_call_result(caller, context)
 
@@ -268,7 +270,7 @@ class Generator(Instance):
         return True
 
     def pytype(self):
-        return '__builtin__.generator'
+        return '%s.generator' % BUILTINS_MODULE
 
     def display_type(self):
         return 'Generator'
@@ -336,6 +338,7 @@ class NodeNG(object):
     lineno = None
     fromlineno = None
     tolineno = None
+    col_offset = None
     # parent node in the tree
     parent = None
     # attributes containing child node(s) redefined in most concrete classes:

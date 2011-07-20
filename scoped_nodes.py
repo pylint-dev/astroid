@@ -1,4 +1,4 @@
-# copyright 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 # copyright 2003-2010 Sylvain Thenault, all rights reserved.
 # contact mailto:thenault@gmail.com
@@ -30,6 +30,7 @@ from itertools import chain
 from logilab.common.compat import builtins
 from logilab.common.decorators import cached
 
+from logilab.astng import BUILTINS_MODULE
 from logilab.astng.exceptions import NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
 from logilab.astng.node_classes import Const, DelName, DelAttr, \
@@ -257,19 +258,19 @@ class Module(LocalsDictNodeNG):
         return self._scope_lookup(node, name, offset)
 
     def pytype(self):
-        return '__builtin__.module'
+        return '%s.module' % BUILTINS_MODULE
 
     def display_type(self):
         return 'Module'
 
-    def getattr(self, name, context=None):
+    def getattr(self, name, context=None, ignore_locals=False):
         if name in self.special_attributes:
             if name == '__file__':
                 return [cf(self.file)] + self.locals.get(name, [])
             if name == '__path__' and self.package:
                 return [List()] + self.locals.get(name, [])
             return std_special_attributes(self, name)
-        if name in self.locals:
+        if not ignore_locals and name in self.locals:
             return self.locals[name]
         if self.package:
             try:
@@ -313,7 +314,7 @@ class Module(LocalsDictNodeNG):
         """module has no sibling"""
         return
 
-    if sys.version_info < (2, 7):
+    if sys.version_info < (2, 8):
         def absolute_import_activated(self):
             for stmt in self.locals.get('absolute_import', ()):
                 if isinstance(stmt, From) and stmt.modname == '__future__':
@@ -324,6 +325,8 @@ class Module(LocalsDictNodeNG):
 
     def import_module(self, modname, relative_only=False, level=None):
         """import the given module considering self as context"""
+        if relative_only and level is None:
+            level = 0
         absmodname = self.relative_to_absolute_name(modname, level)
         try:
             return MANAGER.astng_from_module_name(absmodname)
@@ -342,6 +345,8 @@ class Module(LocalsDictNodeNG):
         # XXX this returns non sens when called on an absolute import
         # like 'pylint.checkers.logilab.astng.utils'
         # XXX doesn't return absolute name if self.name isn't absolute name
+        if self.absolute_import_activated() and level is None:
+            return modname
         if level:
             if self.package:
                 level = level - 1
@@ -465,8 +470,8 @@ class Lambda(LocalsDictNodeNG, FilterStmtsMixin):
 
     def pytype(self):
         if 'method' in self.type:
-            return '__builtin__.instancemethod'
-        return '__builtin__.function'
+            return '%s.instancemethod' % BUILTINS_MODULE
+        return '%s.function' % BUILTINS_MODULE
 
     def display_type(self):
         if 'method' in self.type:
@@ -722,8 +727,8 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
 
     def pytype(self):
         if self.newstyle:
-            return '__builtin__.type'
-        return '__builtin__.classobj'
+            return '%s.type' % BUILTINS_MODULE
+        return '%s.classobj' % BUILTINS_MODULE
 
     def display_type(self):
         return 'Class'

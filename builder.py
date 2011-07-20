@@ -60,7 +60,7 @@ if sys.version_info >= (3, 0):
 else:
     import re
 
-    _ENCODING_RGX = re.compile("[^#]*#*.*coding[:=]\s*([^\s]+)")
+    _ENCODING_RGX = re.compile("\s*#+.*coding[:=]\s*([-\w.]+)")
 
     def _guess_encoding(string):
         """get encoding from a python file as string or return None if not found

@@ -35,7 +35,7 @@ import sys
 
 from logilab.common import testlib
 from logilab.astng.exceptions import ASTNGBuildingException, NotFoundError
-from logilab.astng import builder, nodes
+from logilab.astng import BUILTINS_MODULE, builder, nodes
 from logilab.astng.as_string import as_string
 
 from data import module as test_module
@@ -134,7 +134,7 @@ elif func():
 else:
     raise
     """
-        
+
     def test_if_elif_else_node(self):
         """test transformation for If node"""
         self.assertEqual(len(self.astng.body), 4)
@@ -231,25 +231,25 @@ MODULE2 = abuilder.file_build(join(DATA, 'module2.py'), 'data.module2')
 
 
 class ImportNodeTC(testlib.TestCase):
-    
+
     def test_import_self_resolve(self):
         myos = MODULE2.igetattr('myos').next()
         self.failUnless(isinstance(myos, nodes.Module), myos)
         self.failUnlessEqual(myos.name, 'os')
         self.failUnlessEqual(myos.qname(), 'os')
-        self.failUnlessEqual(myos.pytype(), '__builtin__.module')
+        self.failUnlessEqual(myos.pytype(), '%s.module' % BUILTINS_MODULE)
 
     def test_from_self_resolve(self):
         spawn = MODULE.igetattr('spawn').next()
         self.failUnless(isinstance(spawn, nodes.Class), spawn)
         self.failUnlessEqual(spawn.root().name, 'logilab.common.shellutils')
         self.failUnlessEqual(spawn.qname(), 'logilab.common.shellutils.Execute')
-        self.failUnlessEqual(spawn.pytype(), '__builtin__.classobj')
+        self.failUnlessEqual(spawn.pytype(), '%s.classobj' % BUILTINS_MODULE)
         abspath = MODULE2.igetattr('abspath').next()
         self.failUnless(isinstance(abspath, nodes.Function), abspath)
         self.failUnlessEqual(abspath.root().name, 'os.path')
         self.failUnlessEqual(abspath.qname(), 'os.path.abspath')
-        self.failUnlessEqual(abspath.pytype(), '__builtin__.function')
+        self.failUnlessEqual(abspath.pytype(), '%s.function' % BUILTINS_MODULE)
 
     def test_real_name(self):
         from_ = MODULE['spawn']
@@ -285,7 +285,7 @@ class CmpNodeTC(testlib.TestCase):
 
 
 class ConstNodeTC(testlib.TestCase):
-    
+
     def _test(self, value):
         node = nodes.const_factory(value)
         self.assertIsInstance(node._proxied, nodes.Class)
@@ -293,25 +293,25 @@ class ConstNodeTC(testlib.TestCase):
         self.assertIs(node.value, value)
         self.failUnless(node._proxied.parent)
         self.assertEqual(node._proxied.root().name, value.__class__.__module__)
-        
+
     def test_none(self):
         self._test(None)
-        
+
     def test_bool(self):
         self._test(True)
-        
+
     def test_int(self):
         self._test(1)
-        
+
     def test_float(self):
         self._test(1.0)
-        
+
     def test_complex(self):
         self._test(1.0j)
-        
+
     def test_str(self):
         self._test('a')
-        
+
     def test_unicode(self):
         self._test(u'a')
 
@@ -335,7 +335,7 @@ del True
             del_true = ast.body[2].targets[0]
             self.assertIsInstance(del_true, nodes.DelName)
             self.assertEqual(del_true.name, "True")
-            
+
 
 class ArgumentsNodeTC(testlib.TestCase):
     def test_linenumbering(self):
@@ -387,6 +387,6 @@ class EllipsisNodeTC(testlib.TestCase):
     def test(self):
         ast = abuilder.string_build('a[...]').body[0]
         self.assertEqual(ast.as_string(), 'a[...]')
-        
+
 if __name__ == '__main__':
     testlib.unittest_main()
