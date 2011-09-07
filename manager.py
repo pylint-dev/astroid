@@ -127,6 +127,9 @@ class ASTNGManager(OptionsProviderMixIn):
         """given a module name, return the astng object"""
         if modname in self.astng_cache:
             return self.astng_cache[modname]
+        if modname == '__main__':
+            from logilab.astng.builder import ASTNGBuilder
+            return ASTNGBuilder(self).string_build('', modname)
         old_cwd = os.getcwd()
         if context_file:
             os.chdir(dirname(context_file))

@@ -1,6 +1,9 @@
 Change log for the astng package
 ================================
 
+--
+    * #74746: should return empty module when __main__ is imported (patch by google)
+
 2011-07-18  --  0.22.0
     * added column offset information on nodes (patch by fawce)
 
