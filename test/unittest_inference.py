@@ -397,6 +397,7 @@ l = [1]
 t = (2,)
 d = {}
 s = ''
+s2 = '_'
         '''
         astng = builder.string_build(code, __name__, __file__)
         n = astng['l']
@@ -427,6 +428,9 @@ s = ''
         self.assertIsInstance(infered, Instance)
         self.failUnlessEqual(infered.name, 'str')
         self.failUnless('lower' in infered._proxied.locals)
+        n = astng['s2']
+        infered = n.infer().next()
+        self.failUnlessEqual(infered.getitem(0).value, '_')
 
     def test_unicode_type(self):
         if sys.version_info >= (3, 0):
