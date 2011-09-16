@@ -121,18 +121,14 @@ class ASTNGBuilder(InspectBuilder):
             raise ASTNGBuildingException(exc)
         except LookupError, exc: # unknown encoding
             raise ASTNGBuildingException(exc)
-        # get module name if necessary, *before modifying sys.path*
+        # get module name if necessary
         if modname is None:
             try:
                 modname = '.'.join(modpath_from_file(path))
             except ImportError:
                 modname = splitext(basename(path))[0]
         # build astng representation
-        try:
-            sys.path.insert(0, dirname(path)) # XXX (syt) iirk
-            node = self.string_build(data, modname, path)
-        finally:
-            sys.path.pop(0)
+        node = self.string_build(data, modname, path)
         node.file_encoding = encoding
         node.file_stream = stream
         return node

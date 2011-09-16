@@ -2,6 +2,9 @@ Change log for the astng package
 ================================
 
 --
+    * #76159: putting module's parent directory on the path causes problems
+      linting when file names clash
+
     * #74746: should return empty module when __main__ is imported (patch by
       google)
 
