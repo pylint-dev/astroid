@@ -52,7 +52,7 @@ Change log for the astng package
 
     * fix #37105: Crash on AttributeError: 'NoneType' object has no attribute '_infer_name'
 
-    * python2.4: drop python < 2.4 support
+    * python2.4: drop python < 2.5 support
 
 
 

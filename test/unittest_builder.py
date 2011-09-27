@@ -619,17 +619,6 @@ A.ass_type = A_ass_type
         self.assert_('ass_type' in lclass.locals, lclass.locals.keys())
         self.assert_('type' in lclass.locals.keys())
 
-#     def test_1(self):
-#         from logilab import astng
-#         import compiler
-#         sn = astng.MANAGER.astng_from_file(join(astng.__path__[0], 'inference.py'))
-#         astastng = astng.MANAGER.astng_from_file(join(compiler.__path__[0], 'ast.py'))
-#         # check monkey patching of the compiler module has been inferred
-#         lclass = list(astastng.igetattr('Function'))
-#         self.assertEqual(len(lclass), 1)
-#         lclass = lclass[0]
-#         self.assert_('ass_type' in lclass.locals, lclass.locals.keys())
-
     def test_augassign_attr(self):
         astng = self.builder.string_build("""class Counter:
     v = 0

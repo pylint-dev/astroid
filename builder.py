@@ -17,9 +17,7 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
-"""The ASTNGBuilder makes astng from living object and / or from compiler.ast
-
-With python >= 2.5, the internal _ast module is used instead
+"""The ASTNGBuilder makes astng from living object and / or from _ast
 
 The builder is not thread safe and can't be used to parse different sources
 at the same time.

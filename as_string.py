@@ -30,7 +30,8 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
 """This module renders ASTNG nodes to string representation.
-It will probably not work on compiler.ast or _ast trees.
+
+It will probably not work on bare _ast trees.
 """
 import sys
 
