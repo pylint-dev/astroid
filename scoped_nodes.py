@@ -508,6 +508,7 @@ class Lambda(LocalsDictNodeNG, FilterStmtsMixin):
             frame = self
         return frame._scope_lookup(node, name, offset)
 
+
 class Function(Statement, Lambda):
     _astng_fields = ('decorators', 'args', 'body')
 
@@ -766,7 +767,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         """
         # FIXME: should be possible to choose the resolution order
         # XXX inference make infinite loops possible here (see BaseTransformer
-        # manipulation in the builder module for instance !)
+        # manipulation in the builder module for instance)
         yielded = set([self])
         if context is None:
             context = InferenceContext()
@@ -835,7 +836,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
           its parent classes
         """
         values = self.instance_attrs.get(name, [])
-        # get if from the first parent implementing it if any
+        # get all values from parents
         for class_node in self.instance_attr_ancestors(name, context):
             values += class_node.instance_attrs[name]
         if not values:
