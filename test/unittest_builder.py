@@ -580,6 +580,7 @@ class FileBuildTC(TestCase):
             self.assertEqual(len(_locals), 3)
             self.assertEqual(keys, ['autre', 'local', 'self'])
 
+
 class ModuleBuildTC(FileBuildTC):
 
     def setUp(self):
@@ -660,6 +661,20 @@ def func():
         self.assertEqual(nothing, None)
         self.assertIsInstance(chain, nodes.Const)
         self.assertEqual(chain.value, 'None')
+
+
+    def test_lgc_classproperty(self):
+        '''test expected values of constants after rebuilding'''
+        code = '''
+from logilab.common.decorators import classproperty
+
+class A(object):
+    @classproperty
+    def hop(cls):
+        return None
+'''
+        astng = self.builder.string_build(code)
+        self.assertEqual(astng['A']['hop'].type, 'classmethod')
 
 
 if sys.version_info < (3, 0):

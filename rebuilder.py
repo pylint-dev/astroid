@@ -211,6 +211,8 @@ class TreeRebuilder(object):
                     if isinstance(meth, new.Function):
                         if func_name in ('classmethod', 'staticmethod'):
                             meth.type = func_name
+                        elif func_name == 'classproperty': # see lgc.decorators
+                            meth.type = 'classmethod'
                         meth.extra_decorators.append(newnode.value)
                 except (AttributeError, KeyError):
                     continue
@@ -486,9 +488,11 @@ class TreeRebuilder(object):
                 newnode.type = 'method'
         if newnode.decorators is not None:
             for decorator_expr in newnode.decorators.nodes:
-                if isinstance(decorator_expr, new.Name) and \
-                       decorator_expr.name in ('classmethod', 'staticmethod'):
-                    newnode.type = decorator_expr.name
+                if isinstance(decorator_expr, new.Name):
+                    if decorator_expr.name in ('classmethod', 'staticmethod'):
+                        newnode.type = decorator_expr.name
+                    elif decorator_expr.name == 'classproperty':
+                        newnode.type = 'classmethod'
         frame.set_local(newnode.name, newnode)
         return newnode
 

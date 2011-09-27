@@ -11,6 +11,8 @@ Change log for the astng package
     * #74748: getitem protocal return constant value instead of a Const node
       (patch by google)
 
+    * #77188: support lgc.decorators.classproperty
+
 
 2011-07-18  --  0.22.0
     * added column offset information on nodes (patch by fawce)
