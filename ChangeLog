@@ -2,6 +2,9 @@ Change log for the astng package
 ================================
 
 --
+    * #77187: ancestor() only returns the first class when inheriting
+      from two classes coming from the same module
+
     * #76159: putting module's parent directory on the path causes problems
       linting when file names clash
 

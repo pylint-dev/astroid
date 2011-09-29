@@ -21,6 +21,7 @@
 new local scope in the language definition : Module, Class, Function (and
 Lambda, GenExpr, DictComp and SetComp to some extent).
 """
+from __future__ import with_statement
 
 __doctype__ = "restructuredtext en"
 
@@ -772,24 +773,25 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         if context is None:
             context = InferenceContext()
         for stmt in self.bases:
-            try:
-                for baseobj in stmt.infer(context):
-                    if not isinstance(baseobj, Class):
-                        # duh ?
-                        continue
-                    if baseobj in yielded:
-                        continue # cf xxx above
-                    yielded.add(baseobj)
-                    yield baseobj
-                    if recurs:
-                        for grandpa in baseobj.ancestors(True, context):
-                            if grandpa in yielded:
-                                continue # cf xxx above
-                            yielded.add(grandpa)
-                            yield grandpa
-            except InferenceError:
-                # XXX log error ?
-                continue
+            with context.restore_path():
+                try:
+                    for baseobj in stmt.infer(context):
+                        if not isinstance(baseobj, Class):
+                            # duh ?
+                            continue
+                        if baseobj in yielded:
+                            continue # cf xxx above
+                        yielded.add(baseobj)
+                        yield baseobj
+                        if recurs:
+                            for grandpa in baseobj.ancestors(True, context):
+                                if grandpa in yielded:
+                                    continue # cf xxx above
+                                yielded.add(grandpa)
+                                yield grandpa
+                except InferenceError:
+                    # XXX log error ?
+                    continue
 
     def local_attr_ancestors(self, name, context=None):
         """return an iterator on astng representation of parent classes
