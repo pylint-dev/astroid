@@ -1,4 +1,4 @@
-# copyright 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 # copyright 2003-2010 Sylvain Thenault, all rights reserved.
 # contact mailto:thenault@gmail.com
@@ -43,6 +43,7 @@ class NonRegressionTC(TestCase):
         manager.__dict__ = {}
         manager.astng_cache = {}
         manager._mod_file_cache = {}
+        manager.transformers = {}
         return manager
 
     def test_module_path(self):

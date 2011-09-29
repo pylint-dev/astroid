@@ -86,7 +86,7 @@ class ASTNGManager(OptionsProviderMixIn):
             # NOTE: cache entries are added by the [re]builder
             self.astng_cache = {}
             self._mod_file_cache = {}
-
+            self.transformers = []
 
     def astng_from_file(self, filepath, modname=None, fallback=True, source=False):
         """given a module name, return the astng object"""
@@ -266,6 +266,8 @@ class ASTNGManager(OptionsProviderMixIn):
                     project.add_module(astng)
         return project
 
+    def register_transformer(self, transformer):
+        self.transformers.append(transformer)
 
 class Project:
     """a project handle a set of modules / packages"""

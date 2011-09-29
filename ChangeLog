@@ -16,6 +16,10 @@ Change log for the astng package
 
     * #77188: support lgc.decorators.classproperty
 
+    * #77253: provide a way for user code to register astng "transformers"
+      using manager.register_transformer(callable) where callable will be
+      called after an astng has been built and given the related module node
+      as argument
 
 2011-07-18  --  0.22.0
     * added column offset information on nodes (patch by fawce)
