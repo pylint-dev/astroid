@@ -1,8 +1,4 @@
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the GNU Lesser General Public License as published by the Free Software
-# Foundation; either version 2 of the License, or (at your option) any later
-# version.
-# copyright 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 # copyright 2003-2010 Sylvain Thenault, all rights reserved.
 # contact mailto:thenault@gmail.com
@@ -21,14 +17,6 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-
-# You should have received a copy of the GNU Lesser General Public License along with
-# this program; if not, write to the Free Software Foundation, Inc.,
-# 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """tests for the astng builder and rebuilder module"""
 
 import unittest
@@ -592,6 +580,7 @@ class FileBuildTC(TestCase):
             self.assertEqual(len(_locals), 3)
             self.assertEqual(keys, ['autre', 'local', 'self'])
 
+
 class ModuleBuildTC(FileBuildTC):
 
     def setUp(self):
@@ -618,17 +607,6 @@ A.ass_type = A_ass_type
         lclass = lclass[0]
         self.assert_('ass_type' in lclass.locals, lclass.locals.keys())
         self.assert_('type' in lclass.locals.keys())
-
-#     def test_1(self):
-#         from logilab import astng
-#         import compiler
-#         sn = astng.MANAGER.astng_from_file(join(astng.__path__[0], 'inference.py'))
-#         astastng = astng.MANAGER.astng_from_file(join(compiler.__path__[0], 'ast.py'))
-#         # check monkey patching of the compiler module has been inferred
-#         lclass = list(astastng.igetattr('Function'))
-#         self.assertEqual(len(lclass), 1)
-#         lclass = lclass[0]
-#         self.assert_('ass_type' in lclass.locals, lclass.locals.keys())
 
     def test_augassign_attr(self):
         astng = self.builder.string_build("""class Counter:
@@ -683,6 +661,20 @@ def func():
         self.assertEqual(nothing, None)
         self.assertIsInstance(chain, nodes.Const)
         self.assertEqual(chain.value, 'None')
+
+
+    def test_lgc_classproperty(self):
+        '''test expected values of constants after rebuilding'''
+        code = '''
+from logilab.common.decorators import classproperty
+
+class A(object):
+    @classproperty
+    def hop(cls):
+        return None
+'''
+        astng = self.builder.string_build(code)
+        self.assertEqual(astng['A']['hop'].type, 'classmethod')
 
 
 if sys.version_info < (3, 0):

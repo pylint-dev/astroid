@@ -3,7 +3,7 @@ Section: python
 Priority: optional
 Maintainer: Debian Python Modules Team <python-modules-team@lists.alioth.debian.org>
 Uploaders: Sylvain Thénault <sylvain.thenault@logilab.fr>, Alexandre Fayolle <afayolle@debian.org>, Sandro Tosi <morph@debian.org>
-Build-Depends: debhelper (>= 5.0.37.2), python (>= 2.4)
+Build-Depends: debhelper (>= 5.0.37.2), python (>= 2.5)
 Build-Depends-Indep: python-support
 XS-Python-Version: all
 Standards-Version: 3.8.2

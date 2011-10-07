@@ -397,6 +397,7 @@ l = [1]
 t = (2,)
 d = {}
 s = ''
+s2 = '_'
         '''
         astng = builder.string_build(code, __name__, __file__)
         n = astng['l']
@@ -427,6 +428,9 @@ s = ''
         self.assertIsInstance(infered, Instance)
         self.failUnlessEqual(infered.name, 'str')
         self.failUnless('lower' in infered._proxied.locals)
+        n = astng['s2']
+        infered = n.infer().next()
+        self.failUnlessEqual(infered.getitem(0).value, '_')
 
     def test_unicode_type(self):
         if sys.version_info >= (3, 0):
@@ -1125,6 +1129,17 @@ n = NewTest()
         n = astng['n'].infer().next()
         infered = list(n.igetattr('arg'))
         self.assertEqual(len(infered), 1, infered)
+
+
+    def test_two_parents_from_same_module(self):
+        code = '''
+from data import nonregr
+class Xxx(nonregr.Aaa, nonregr.Ccc):
+    "doc"
+        '''
+        astng = builder.string_build(code, __name__, __file__)
+        parents = list(astng['Xxx'].ancestors())
+        self.assertEqual(len(parents), 3, parents) # Aaa, Ccc, object
 
 if __name__ == '__main__':
     unittest_main()

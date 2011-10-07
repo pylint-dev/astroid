@@ -1,6 +1,28 @@
 Change log for the astng package
 ================================
 
+2011-10-07  --  0.23.0
+    * #77187: ancestor() only returns the first class when inheriting
+      from two classes coming from the same module
+
+    * #76159: putting module's parent directory on the path causes problems
+      linting when file names clash
+
+    * #74746: should return empty module when __main__ is imported (patch by
+      google)
+
+    * #74748: getitem protocal return constant value instead of a Const node
+      (patch by google)
+
+    * #77188: support lgc.decorators.classproperty
+
+    * #77253: provide a way for user code to register astng "transformers"
+      using manager.register_transformer(callable) where callable will be
+      called after an astng has been built and given the related module node
+      as argument
+
+
+
 2011-07-18  --  0.22.0
     * added column offset information on nodes (patch by fawce)
 
@@ -41,7 +63,7 @@ Change log for the astng package
 
     * fix #37105: Crash on AttributeError: 'NoneType' object has no attribute '_infer_name'
 
-    * python2.4: drop python < 2.4 support
+    * python2.4: drop python < 2.5 support
 
 
 

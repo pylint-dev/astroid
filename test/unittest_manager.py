@@ -89,6 +89,11 @@ class ASTNGManagerTC(TestCase):
                     'data.nonregr', 'data.notall']
         self.assertListEqual(sorted(k for k in obj.keys()), expected)
 
+    def test_do_not_expose_main(self):
+      obj = self.manager.astng_from_module_name('__main__')
+      self.assertEqual(obj.name, '__main__')
+      self.assertEqual(obj.items(), [])
+
 
 class BorgASTNGManagerTC(TestCase):
 
