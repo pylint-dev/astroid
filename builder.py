@@ -141,8 +141,9 @@ class ASTNGBuilder(InspectBuilder):
         # handle delayed assattr nodes
         for delayed in module._delayed_assattr:
             self.delayed_assattr(delayed)
-        for transformer in self._manager.transformers:
-            transformer(module)
+        if modname:
+            for transformer in self._manager.transformers:
+                transformer(module)
         return module
 
     def _data_build(self, data, modname, path):
