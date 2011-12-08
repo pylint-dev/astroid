@@ -43,3 +43,12 @@ python-project@lists.logilab.org mailing list for support. See
 http://lists.logilab.org/mailman/listinfo/python-projects for
 subscription information and archives.
 
+Test
+----
+
+Tests are in the 'test' subdirectory. To launch the whole tests suite
+at once, you may use the 'pytest' utility from logilab-common (simply
+type 'pytest' from within this directory) or if you're running python
+>= 2.7, using discover, for instance::
+
+  python -m unittest discover -p "unittest*.py"

@@ -1,19 +1,15 @@
 Python3
 =======
 
-Source
-------
+Approach
+--------
 
-Python3 portage is made by running the 2to3 script on all modules::
+We maintain a Python 2 base and use 2to3 to generate Python 3 code.
 
-  find . ! -path "*/test/*py" -name "*py" -exec 2to3-3.1 -wn {} \;
+2to3 is integrated into the distutils installation process and will be run as a
+build step when invoked by the python3 interpreter::
 
-
-Dev
----
-
-If you want to run the tests, simply remove the "! -path ..." option, hence
-also refactoring the test files, including all data files.
+  python3 setup.py install --no-compile
 
 
 Debian
@@ -24,3 +20,7 @@ the debian/ folder::
 
   cp debian.py3k/* debian/
 
+
+Resources
+---------
+http://wiki.python.org/moin/PortingPythonToPy3k
