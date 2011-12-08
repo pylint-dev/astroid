@@ -460,6 +460,7 @@ else:
 
 class Lambda(LocalsDictNodeNG, FilterStmtsMixin):
     _astng_fields = ('args', 'body',)
+    name = '<lambda>'
 
     # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
     type = 'function'
@@ -968,5 +969,3 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                 yield iface
         if missing:
             raise InferenceError()
-
-
