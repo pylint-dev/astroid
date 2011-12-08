@@ -243,6 +243,12 @@ class Module(LocalsDictNodeNG):
         self.locals = self.globals = {}
         self.body = []
 
+    @property
+    def file_stream(self):
+        if self.file is not None:
+            return file(self.file)
+        return None
+
     def block_range(self, lineno):
         """return block line numbers.
 

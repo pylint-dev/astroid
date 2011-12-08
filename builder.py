@@ -128,7 +128,6 @@ class ASTNGBuilder(InspectBuilder):
         # build astng representation
         node = self.string_build(data, modname, path)
         node.file_encoding = encoding
-        node.file_stream = stream
         return node
 
     def string_build(self, data, modname='', path=None):

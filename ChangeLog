@@ -1,6 +1,10 @@
 Change log for the astng package
 ================================
 
+--
+    * #62295: avoid "OSError: Too many open files" by moving
+      .file_stream as a Module property opening the file only when needed
+
 2011-10-07  --  0.23.0
     * #77187: ancestor() only returns the first class when inheriting
       from two classes coming from the same module
