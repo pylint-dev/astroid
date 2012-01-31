@@ -60,6 +60,7 @@ include_dirs = getattr(__pkginfo__, 'include_dirs', [])
 ext_modules = getattr(__pkginfo__, 'ext_modules', None)
 install_requires = getattr(__pkginfo__, 'install_requires', None)
 dependency_links = getattr(__pkginfo__, 'dependency_links', [])
+classifiers = getattr(__pkginfo__, 'classifiers', [])
 
 STD_BLACKLIST = ('CVS', '.svn', '.hg', 'debian', 'dist', 'build')
 
@@ -155,6 +156,7 @@ def install(**kwargs):
                  license = license,
                  description = description,
                  long_description = long_description,
+                 classifiers = classifiers,
                  author = author,
                  author_email = author_email,
                  url = web,

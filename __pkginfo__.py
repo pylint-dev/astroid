@@ -1,4 +1,4 @@
-# copyright 2003-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2012 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 # copyright 2003-2010 Sylvain Thenault, all rights reserved.
 # contact mailto:thenault@gmail.com
@@ -42,3 +42,10 @@ description = "rebuild a new abstract syntax tree from Python's ast"
 from os.path import join
 include_dirs = [join('test', 'regrtest_data'),
                 join('test', 'data'), join('test', 'data2')]
+
+classifiers = ["Topic :: Software Development :: Libraries :: Python Modules",
+               "Topic :: Software Development :: Quality Assurance",
+               "Programming Language :: Python",
+               "Programming Language :: Python :: 2",
+               "Programming Language :: Python :: 3",
+               ]
