@@ -246,7 +246,7 @@ class Module(LocalsDictNodeNG):
     @property
     def file_stream(self):
         if self.file is not None:
-            return file(self.file)
+            return open(self.file)
         return None
 
     def block_range(self, lineno):

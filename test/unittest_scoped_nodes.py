@@ -269,7 +269,7 @@ def f():
         astng = abuilder.string_build('''
 lmbd = lambda: None
 ''', __name__, __file__)
-        self.assertEqual('unittest_scoped_nodes.<lambda>', astng['lmbd'].parent.value.qname())
+        self.assertEqual('%s.<lambda>' % __name__, astng['lmbd'].parent.value.qname())
 
     def test_is_method(self):
         data = '''
