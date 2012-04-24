@@ -1,6 +1,9 @@
 Change log for the astng package
 ================================
 
+  --
+ * #92362: fix pyreverse crash on relative import
+
 2011-12-08  --  0.23.1
     * #62295: avoid "OSError: Too many open files" by moving
       .file_stream as a Module property opening the file only when needed
