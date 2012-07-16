@@ -2,7 +2,9 @@ Change log for the astng package
 ================================
 
   --
- * #92362: fix pyreverse crash on relative import
+    * #92362: fix pyreverse crash on relative import
+    * #99583: fix raw_building.object_build for pypy implementation
+    * use `open` rather than `file` in scoped_nodes as 2to3 miss it
 
 2011-12-08  --  0.23.1
     * #62295: avoid "OSError: Too many open files" by moving
