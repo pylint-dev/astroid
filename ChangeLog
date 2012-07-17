@@ -2,7 +2,11 @@ Change log for the astng package
 ================================
 
 --
+    * include pylint brain extension, describing some stuff not properly understood until then.
+      (#100013, #53049, #23986, #72355)
+
     * #99583: fix raw_building.object_build for pypy implementation
+
     * use `open` rather than `file` in scoped_nodes as 2to3 miss it
 
 2011-12-08  --  0.23.1
