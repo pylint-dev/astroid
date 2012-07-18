@@ -6,3 +6,4 @@ include test/fulltest.sh
 recursive-include test/data *.py *.zip *.egg
 recursive-include test/data2 *.py
 recursive-include test/regrtest_data *.py
+recursive-include brain *.py
