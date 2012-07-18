@@ -40,5 +40,6 @@ ftp = "ftp://ftp.logilab.org/pub/%s" % modname
 description = "rebuild a new abstract syntax tree from Python's ast"
 
 from os.path import join
-include_dirs = [join('test', 'regrtest_data'),
+include_dirs = ['brain',
+                join('test', 'regrtest_data'),
                 join('test', 'data'), join('test', 'data2')]
