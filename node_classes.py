@@ -745,7 +745,7 @@ class Slice(NodeNG):
     upper = None
     step = None
 
-class Starred(NodeNG):
+class Starred(NodeNG, ParentAssignTypeMixin):
     """class representing a Starred node"""
     _astng_fields = ('value',)
     value = None
