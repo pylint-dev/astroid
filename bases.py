@@ -131,6 +131,8 @@ class _Yes(object):
     def __repr__(self):
         return 'YES'
     def __getattribute__(self, name):
+        if name == 'next':
+            raise AttributeError('next method should not be called')
         if name.startswith('__') and name.endswith('__'):
             # to avoid inspection pb
             return super(_Yes, self).__getattribute__(name)
