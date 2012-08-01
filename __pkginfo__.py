@@ -24,7 +24,7 @@ distname = 'logilab-astng'
 modname = 'astng'
 subpackage_of = 'logilab'
 
-numversion = (0, 23, 1)
+numversion = (0, 24, 0)
 version = '.'.join([str(num) for num in numversion])
 
 install_requires = ['logilab-common >= 0.53.0']
@@ -40,7 +40,8 @@ ftp = "ftp://ftp.logilab.org/pub/%s" % modname
 description = "rebuild a new abstract syntax tree from Python's ast"
 
 from os.path import join
-include_dirs = [join('test', 'regrtest_data'),
+include_dirs = ['brain',
+                join('test', 'regrtest_data'),
                 join('test', 'data'), join('test', 'data2')]
 
 classifiers = ["Topic :: Software Development :: Libraries :: Python Modules",

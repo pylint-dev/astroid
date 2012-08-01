@@ -34,6 +34,8 @@
 import sys
 
 from logilab.common import testlib
+from logilab.astng.node_classes import unpack_infer
+from logilab.astng.bases import YES
 from logilab.astng.exceptions import ASTNGBuildingException, NotFoundError
 from logilab.astng import BUILTINS_MODULE, builder, nodes
 from logilab.astng.as_string import as_string
@@ -277,6 +279,32 @@ from .store import bread
 from ..cave import wine\n\n"""
         ast = abuilder.string_build(code)
         self.assertMultiLineEqual(ast.as_string(), code)
+
+    def test_bad_import_inference(self):
+        # Explication of bug
+        '''When we import PickleError from nonexistent, a call to the infer
+        method of this From node will be made by unpack_infer.
+        inference.infer_from will try to import this module, which will fail and
+        raise a InferenceException (by mixins.do_import_module). The infer_name
+        will catch this exception and yield and YES instead.
+        '''
+
+        code = '''try:
+    from pickle import PickleError
+except ImportError:
+    from nonexistent import PickleError
+
+try:
+    pass
+except PickleError:
+    pass
+        '''
+
+        astng = abuilder.string_build(code)
+        from_node = astng.body[1].handlers[0].body[0]
+        handler_type = astng.body[1].handlers[0].type
+
+        excs = list(unpack_infer(handler_type))
 
 class CmpNodeTC(testlib.TestCase):
     def test_as_string(self):

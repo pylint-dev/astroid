@@ -1,4 +1,4 @@
-# copyright 2003-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2012 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 # copyright 2003-2010 Sylvain Thenault, all rights reserved.
 # contact mailto:thenault@gmail.com
@@ -39,13 +39,18 @@ def unpack_infer(stmt, context=None):
             for infered_elt in unpack_infer(elt, context):
                 yield infered_elt
         return
+    # if infered is a final node, return it and stop
     infered = stmt.infer(context).next()
-    if infered is stmt or infered is YES:
+    if infered is stmt:
         yield infered
         return
+    # else, infer recursivly, except YES object that should be returned as is
     for infered in stmt.infer(context):
-        for inf_inf in unpack_infer(infered, context):
-            yield inf_inf
+        if infered is YES:
+            yield infered
+        else:
+            for inf_inf in unpack_infer(infered, context):
+                yield inf_inf
 
 
 def are_exclusive(stmt1, stmt2, exceptions=None):
@@ -745,7 +750,7 @@ class Slice(NodeNG):
     upper = None
     step = None
 
-class Starred(NodeNG):
+class Starred(NodeNG, ParentAssignTypeMixin):
     """class representing a Starred node"""
     _astng_fields = ('value',)
     value = None
