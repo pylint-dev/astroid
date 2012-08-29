@@ -220,6 +220,9 @@ class Module(LocalsDictNodeNG):
     # the file from which as been extracted the astng representation. It may
     # be None if the representation has been built from a built-in module
     file = None
+    # encoding of python source file, so we can get unicode out of it (python2
+    # only)
+    file_encoding = None
     # the module name
     name = None
     # boolean for astng built from source (i.e. ast)

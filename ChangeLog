@@ -3,6 +3,7 @@ Change log for the astng package
 
   --
     * #92362: fix pyreverse crash on relative import
+    * #104041: fix crash 'module object has no file_encoding attribute'
 
 2012-07-18  --  0.24.0
     * include pylint brain extension, describing some stuff not properly understood until then.
