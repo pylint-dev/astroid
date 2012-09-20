@@ -2,6 +2,8 @@ Change log for the astng package
 ================================
 
   --
+    * #50395: fix function fromlineno when some decorator is splited on
+      multiple lines (patch by Mark Gius)
     * #92362: fix pyreverse crash on relative import
     * #104041: fix crash 'module object has no file_encoding attribute'
 
