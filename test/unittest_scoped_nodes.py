@@ -617,6 +617,24 @@ class Past(Present):
         self.assertIsInstance(attr1, nodes.AssName)
         self.assertEqual(attr1.name, 'attr')
 
+    def test_function_with_decorator_lineno(self):
+        data = '''
+@f(a=2,
+   b=3)
+def g1(x):
+    print x
+
+@f(a=2,
+   b=3)
+def g2():
+    pass
+'''
+        astng = abuilder.string_build(data)
+        self.assertEqual(astng['g1'].fromlineno, 4)
+        self.assertEqual(astng['g1'].tolineno, 5)
+        self.assertEqual(astng['g2'].fromlineno, 9)
+        self.assertEqual(astng['g2'].tolineno, 10)
+
 
 __all__ = ('ModuleNodeTC', 'ImportNodeTC', 'FunctionNodeTC', 'ClassNodeTC')
 

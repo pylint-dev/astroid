@@ -95,16 +95,59 @@ def cleanup_resources(force=False):
     for func_name, func in fake.locals.items():
         module.locals[func_name] = func
 
-    # for func in ('resource_exists', 'resource_isdir', 'resource_filename',
-    #     'resource_stream', 'resource_string', 'resource_listdir',
-    #     'extraction_error', 'get_cache_path', 'postprocess',
-    #     'set_extraction_path', 'cleanup_resources'):
 
-    #     module.locals[func] = fake.locals[func]
+def urlparse_transform(module):
+    fake = ASTNGBuilder(MANAGER).string_build('''
+
+def urlparse(urlstring, default_scheme='', allow_fragments=True):
+    return ParseResult()
+
+class ParseResult(object):
+    def __init__(self):
+        self.scheme = ''
+        self.netloc = ''
+        self.path = ''
+        self.params = ''
+        self.query = ''
+        self.fragment = ''
+        self.username = None
+        self.password = None
+        self.hostname = None
+        self.port = None
+
+    def geturl(self):
+        return ''
+''')
+
+    for func_name, func in fake.locals.items():
+        module.locals[func_name] = func
+
+def subprocess_transform(module):
+    fake = ASTNGBuilder(MANAGER).string_build('''
+
+class Popen(object):
+
+    def __init__(self, args, bufsize=0, executable=None,
+                 stdin=None, stdout=None, stderr=None,
+                 preexec_fn=None, close_fds=False, shell=False,
+                 cwd=None, env=None, universal_newlines=False,
+                 startupinfo=None, creationflags=0):
+        pass
+
+    def communicate(self, input=None):
+        return ('string', 'string')
+    ''')
+
+    for func_name, func in fake.locals.items():
+        module.locals[func_name] = func
+
+
 
 MODULE_TRANSFORMS['hashlib'] = hashlib_transform
 MODULE_TRANSFORMS['collections'] = collections_transform
 MODULE_TRANSFORMS['pkg_resources'] = pkg_resources_transform
+MODULE_TRANSFORMS['urlparse'] = urlparse_transform
+MODULE_TRANSFORMS['subprocess'] = subprocess_transform
 
 
 def transform(module):
@@ -117,3 +160,5 @@ def transform(module):
 
 from logilab.astng import MANAGER
 MANAGER.register_transformer(transform)
+
+

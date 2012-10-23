@@ -24,7 +24,7 @@ distname = 'logilab-astng'
 modname = 'astng'
 subpackage_of = 'logilab'
 
-numversion = (0, 24, 0)
+numversion = (0, 24, 1)
 version = '.'.join([str(num) for num in numversion])
 
 install_requires = ['logilab-common >= 0.53.0']
@@ -43,3 +43,10 @@ from os.path import join
 include_dirs = ['brain',
                 join('test', 'regrtest_data'),
                 join('test', 'data'), join('test', 'data2')]
+
+classifiers = ["Topic :: Software Development :: Libraries :: Python Modules",
+               "Topic :: Software Development :: Quality Assurance",
+               "Programming Language :: Python",
+               "Programming Language :: Python :: 2",
+               "Programming Language :: Python :: 3",
+               ]

@@ -35,7 +35,7 @@ import sys
 
 from logilab.common import testlib
 from logilab.astng.node_classes import unpack_infer
-from logilab.astng.bases import YES
+from logilab.astng.bases import YES, InferenceContext
 from logilab.astng.exceptions import ASTNGBuildingException, NotFoundError
 from logilab.astng import BUILTINS_MODULE, builder, nodes
 from logilab.astng.as_string import as_string
@@ -305,6 +305,17 @@ except PickleError:
         handler_type = astng.body[1].handlers[0].type
 
         excs = list(unpack_infer(handler_type))
+
+    def test_absolute_import(self):
+        astng = abuilder.file_build(self.datapath('absimport.py'))
+        ctx = InferenceContext()
+        ctx.lookupname = 'message'
+        # will fail if absolute import failed
+        astng['message'].infer(ctx).next()
+        ctx.lookupname = 'email'
+        m = astng['email'].infer(ctx).next()
+        self.assertFalse(m.file.startswith(self.datapath('email.py')))
+
 
 class CmpNodeTC(testlib.TestCase):
     def test_as_string(self):

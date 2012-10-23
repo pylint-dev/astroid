@@ -1,4 +1,4 @@
-# copyright 2003-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2012 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 # copyright 2003-2010 Sylvain Thenault, all rights reserved.
 # contact mailto:thenault@gmail.com
@@ -220,6 +220,9 @@ class Module(LocalsDictNodeNG):
     # the file from which as been extracted the astng representation. It may
     # be None if the representation has been built from a built-in module
     file = None
+    # encoding of python source file, so we can get unicode out of it (python2
+    # only)
+    file_encoding = None
     # the module name
     name = None
     # boolean for astng built from source (i.e. ast)
@@ -540,7 +543,8 @@ class Function(Statement, Lambda):
         self.fromlineno = self.lineno
         # lineno is the line number of the first decorator, we want the def statement lineno
         if self.decorators is not None:
-            self.fromlineno += len(self.decorators.nodes)
+            self.fromlineno += sum(node.tolineno - node.lineno + 1
+                                   for node in self.decorators.nodes)
         self.tolineno = lastchild.tolineno
         self.blockstart_tolineno = self.args.tolineno
 

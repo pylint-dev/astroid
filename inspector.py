@@ -254,7 +254,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
             if fullname.find('.') > -1:
                 try:
                     # XXX: don't use get_module_part, missing package precedence
-                    fullname = get_module_part(fullname)
+                    fullname = get_module_part(fullname, context_file)
                 except ImportError:
                     continue
             if fullname != basename:

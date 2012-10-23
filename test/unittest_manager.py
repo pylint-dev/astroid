@@ -83,8 +83,9 @@ class ASTNGManagerTC(TestCase):
         obj = self.manager.project_from_files([DATA], _silent_no_wrap, 'data')
         expected = set(['SSL1', '__init__', 'all', 'appl', 'format', 'module',
                         'module2', 'noendingnewline', 'nonregr', 'notall'])
-        expected = ['data', 'data.SSL1', 'data.SSL1.Connection1', 'data.all',
-                    'data.appl', 'data.appl.myConnection', 'data.format',
+        expected = ['data', 'data.SSL1', 'data.SSL1.Connection1',
+                    'data.absimport', 'data.all',
+                    'data.appl', 'data.appl.myConnection', 'data.email', 'data.format',
                     'data.module', 'data.module2', 'data.noendingnewline',
                     'data.nonregr', 'data.notall']
         self.assertListEqual(sorted(k for k in obj.keys()), expected)
