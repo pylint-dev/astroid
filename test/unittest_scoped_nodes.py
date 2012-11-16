@@ -1,7 +1,5 @@
-# copyright 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2012 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
-# copyright 2003-2010 Sylvain Thenault, all rights reserved.
-# contact mailto:thenault@gmail.com
 #
 # This file is part of logilab-astng.
 #
@@ -622,7 +620,7 @@ class Past(Present):
 @f(a=2,
    b=3)
 def g1(x):
-    print x
+    print(x)
 
 @f(a=2,
    b=3)

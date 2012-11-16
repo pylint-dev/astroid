@@ -1,5 +1,5 @@
-# copyright 2003-2010 Sylvain Thenault, all rights reserved.
-# contact mailto:thenault@gmail.com
+# copyright 2003-2012 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of logilab-astng.
 #
@@ -937,7 +937,7 @@ def f(x):
         infered = get_name_node(astng, 'string').infer().next()
         self.assertIsInstance(infered, nodes.Module)
         self.assertEqual(infered.name, 'string')
-        self.failUnless('lower' in infered.locals)
+        self.failUnless('ascii_letters' in infered.locals)
 
     def test_mechanize_open(self):
         try:
