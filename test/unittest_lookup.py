@@ -1,11 +1,5 @@
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the GNU Lesser General Public License as published by the Free Software
-# Foundation; either version 2 of the License, or (at your option) any later
-# version.
-# copyright 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2012 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
-# copyright 2003-2010 Sylvain Thenault, all rights reserved.
-# contact mailto:thenault@gmail.com
 #
 # This file is part of logilab-astng.
 #
@@ -21,14 +15,6 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-
-# You should have received a copy of the GNU Lesser General Public License along with
-# this program; if not, write to the Free Software Foundation, Inc.,
-# 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """tests for the astng variable lookup capabilities
 """
 import sys
@@ -66,29 +52,29 @@ def func():
         a = astng.nodes_of_class(nodes.Name).next()
         self.assertEqual(a.lineno, 2)
         if sys.version_info < (3, 0):
-            self.failUnlessEqual(len(astng.lookup('b')[1]), 2)
-            self.failUnlessEqual(len(astng.lookup('a')[1]), 3)
+            self.assertEqual(len(astng.lookup('b')[1]), 2)
+            self.assertEqual(len(astng.lookup('a')[1]), 3)
             b = astng.locals['b'][1]
         else:
-            self.failUnlessEqual(len(astng.lookup('b')[1]), 1)
-            self.failUnlessEqual(len(astng.lookup('a')[1]), 2)
+            self.assertEqual(len(astng.lookup('b')[1]), 1)
+            self.assertEqual(len(astng.lookup('a')[1]), 2)
             b = astng.locals['b'][0]
         stmts = a.lookup('a')[1]
-        self.failUnlessEqual(len(stmts), 1)
+        self.assertEqual(len(stmts), 1)
         self.assertEqual(b.lineno, 6)
         b_infer = b.infer()
         b_value = b_infer.next()
-        self.failUnlessEqual(b_value.value, 1)
+        self.assertEqual(b_value.value, 1)
         # c
-        self.failUnlessRaises(StopIteration, b_infer.next)
+        self.assertRaises(StopIteration, b_infer.next)
         func = astng.locals['func'][0]
-        self.failUnlessEqual(len(func.lookup('c')[1]), 1)
+        self.assertEqual(len(func.lookup('c')[1]), 1)
 
     def test_module(self):
         astng = builder.string_build('pass', __name__, __file__)
         # built-in objects
         none = astng.ilookup('None').next()
-        self.assertEqual(none.value, None)
+        self.assertIsNone(none.value)
         obj = astng.ilookup('object').next()
         self.assertIsInstance(obj, nodes.Class)
         self.assertEqual(obj.name, 'object')
@@ -115,16 +101,16 @@ class A(A):
     def test_method(self):
         method = MODULE['YOUPI']['method']
         my_dict = method.ilookup('MY_DICT').next()
-        self.assert_(isinstance(my_dict, nodes.Dict), my_dict)
+        self.assertTrue(isinstance(my_dict, nodes.Dict), my_dict)
         none = method.ilookup('None').next()
-        self.assertEqual(none.value, None)
+        self.assertIsNone(none.value)
         self.assertRaises(InferenceError, method.ilookup('YOAA').next)
 
 
     def test_function_argument_with_default(self):
         make_class = MODULE2['make_class']
         base = make_class.ilookup('base').next()
-        self.assert_(isinstance(base, nodes.Class), base.__class__)
+        self.assertTrue(isinstance(base, nodes.Class), base.__class__)
         self.assertEqual(base.name, 'YO')
         self.assertEqual(base.root().name, 'data.module')
 
@@ -134,7 +120,7 @@ class A(A):
         my_dict = klass.ilookup('MY_DICT').next()
         self.assertIsInstance(my_dict, nodes.Dict)
         none = klass.ilookup('None').next()
-        self.assertEqual(none.value, None)
+        self.assertIsNone(none.value)
         obj = klass.ilookup('object').next()
         self.assertIsInstance(obj, nodes.Class)
         self.assertEqual(obj.name, 'object')
@@ -260,10 +246,10 @@ p3 = NoName()
 '''
         astng = builder.string_build(code, __name__, __file__)
         p1 = astng['p1'].infer().next()
-        self.failUnless(p1.getattr('__name__'))
+        self.assertTrue(p1.getattr('__name__'))
         p2 = astng['p2'].infer().next()
-        self.failUnless(p2.getattr('__name__'))
-        self.failUnless(astng['NoName'].getattr('__name__'))
+        self.assertTrue(p2.getattr('__name__'))
+        self.assertTrue(astng['NoName'].getattr('__name__'))
         p3 = astng['p3'].infer().next()
         self.assertRaises(NotFoundError, p3.getattr, '__name__')
 
@@ -365,9 +351,9 @@ def run1():
 '''
         astng = builder.string_build(code, __name__, __file__)
         stmts = astng['run2'].lookup('Frobbel')[1]
-        self.failUnlessEqual(len(stmts), 0)
+        self.assertEqual(len(stmts), 0)
         stmts = astng['run1'].lookup('Frobbel')[1]
-        self.failUnlessEqual(len(stmts), 0)
+        self.assertEqual(len(stmts), 0)
 
 if __name__ == '__main__':
     unittest_main()
