@@ -126,6 +126,8 @@ def subprocess_transform(module):
     fake = ASTNGBuilder(MANAGER).string_build('''
 
 class Popen(object):
+    returncode = pid = 0
+    stdin = stdout = stderr = file()
 
     def __init__(self, args, bufsize=0, executable=None,
                  stdin=None, stdout=None, stderr=None,
@@ -136,7 +138,17 @@ class Popen(object):
 
     def communicate(self, input=None):
         return ('string', 'string')
-    ''')
+    def wait(self):
+        return self.returncode
+    def poll(self):
+        return self.returncode
+    def send_signal(self, signal):
+        pass
+    def terminate(self):
+        pass
+    def kill(self):
+        pass
+   ''')
 
     for func_name, func in fake.locals.items():
         module.locals[func_name] = func
