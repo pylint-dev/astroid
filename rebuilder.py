@@ -1,7 +1,5 @@
-# copyright 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
-# copyright 2003-2010 Sylvain Thenault, all rights reserved.
-# contact mailto:thenault@gmail.com
 #
 # This file is part of logilab-astng.
 #
@@ -788,13 +786,13 @@ class TreeRebuilder(object):
         return newnode
 
     def visit_with(self, node, parent):
-        """visit a With node by returning a fresh instance of it"""
         newnode = new.With()
         _lineno_parent(node, newnode, parent)
-        newnode.expr = self.visit(node.context_expr, newnode)
+        _node = getattr(node, 'items', [node])[0] # python 3.3 XXX
+        newnode.expr = self.visit(_node.context_expr, newnode)
         self.asscontext = "Ass"
-        if node.optional_vars is not None:
-            newnode.vars = self.visit(node.optional_vars, newnode)
+        if _node.optional_vars is not None:
+            newnode.vars = self.visit(_node.optional_vars, newnode)
         self.asscontext = None
         newnode.body = [self.visit(child, newnode) for child in node.body]
         newnode.set_line_info(newnode.last_child())
@@ -854,6 +852,30 @@ class TreeRebuilder3k(TreeRebuilder):
         newnode = new.Starred()
         _lineno_parent(node, newnode, parent)
         newnode.value = self.visit(node.value, newnode)
+        newnode.set_line_info(newnode.last_child())
+        return newnode
+
+    def visit_try(self, node, parent):
+        # python 3.3 introduce a new Try node replacing TryFinally/TryExcept nodes
+        if node.finalbody:
+            newnode = new.TryFinally()
+            _lineno_parent(node, newnode, parent)
+            newnode.finalbody = [self.visit(n, newnode) for n in node.finalbody]
+            if node.handlers:
+                excnode = new.TryExcept()
+                _lineno_parent(node, excnode, parent)
+                excnode.body = [self.visit(child, newnode) for child in node.body]
+                excnode.handlers = [self.visit(child, newnode) for child in node.handlers]
+                excnode.orelse = [self.visit(child, newnode) for child in node.orelse]
+                newnode.body = [excnode]
+            else:
+                newnode.body = [self.visit(child, newnode) for child in node.body]
+        elif node.handlers:
+            newnode = new.TryExcept()
+            _lineno_parent(node, newnode, parent)
+            newnode.body = [self.visit(child, newnode) for child in node.body]
+            newnode.handlers = [self.visit(child, newnode) for child in node.handlers]
+            newnode.orelse = [self.visit(child, newnode) for child in node.orelse]
         newnode.set_line_info(newnode.last_child())
         return newnode
 
