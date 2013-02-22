@@ -2,6 +2,11 @@ Change log for the astng package
 ================================
 
   --
+
+    * #109562 [jython]: java modules have no __doc__, causing crash
+    * #109988 [py3]: test fixes
+
+2012-10-05  -- 0.24.1
     * #106191: fix __future__ absolute import w/ From node
     * #50395: fix function fromlineno when some decorator is splited on
       multiple lines (patch by Mark Gius)
