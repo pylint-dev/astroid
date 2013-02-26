@@ -1,7 +1,5 @@
-# copyright 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2012 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
-# copyright 2003-2010 Sylvain Thenault, all rights reserved.
-# contact mailto:thenault@gmail.com
 #
 # This file is part of logilab-astng.
 #
@@ -47,7 +45,7 @@ class ASTNGManagerTC(TestCase):
         astng = self.manager.astng_from_class(object)
         self.assertEqual(astng.name, 'object')
         self.assertEqual(astng.parent.frame().name, BUILTINS_NAME)
-        self.failUnless('__setattr__' in astng)
+        self.assertIn('__setattr__', astng)
 
     def _test_astng_from_zip(self, archive):
         origpath = sys.path[:]
@@ -57,7 +55,7 @@ class ASTNGManagerTC(TestCase):
         try:
             module = self.manager.astng_from_module_name('mypypa')
             self.assertEqual(module.name, 'mypypa')
-            self.failUnless(module.file.endswith('%s/mypypa' % archive),
+            self.assertTrue(module.file.endswith('%s/mypypa' % archive),
                             module.file)
         finally:
             # remove the module, else after importing egg, we don't get the zip
@@ -106,7 +104,7 @@ class BorgASTNGManagerTC(TestCase):
 
         second_manager = ASTNGManager()
         second_built = first_manager.astng_from_module_name(BUILTINS_NAME)
-        self.assertTrue(built is second_built)
+        self.assertIs(built, second_built)
 
 
 if __name__ == '__main__':

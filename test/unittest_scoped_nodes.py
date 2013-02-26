@@ -1,7 +1,5 @@
-# copyright 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2012 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
-# copyright 2003-2010 Sylvain Thenault, all rights reserved.
-# contact mailto:thenault@gmail.com
 #
 # This file is part of logilab-astng.
 #
@@ -40,8 +38,8 @@ NONREGR = abuilder.file_build(join(DATA, 'nonregr.py'), 'data.nonregr')
 PACK = abuilder.file_build(join(DATA, '__init__.py'), 'data')
 
 def _test_dict_interface(self, node, test_attr):
-    self.assert_(node[test_attr] is node[test_attr])
-    self.assert_(test_attr in node)
+    self.assertIs(node[test_attr], node[test_attr])
+    self.assertIn(test_attr, node)
     node.keys()
     node.values()
     node.items()
@@ -189,7 +187,7 @@ class FunctionNodeTC(TestCase):
         self.assertRaises(scoped_nodes.NoDefault, func.args.default_value, 'any')
         #self.assertIsInstance(func.mularg_class('args'), nodes.Tuple)
         #self.assertIsInstance(func.mularg_class('kwargs'), nodes.Dict)
-        #self.assertEqual(func.mularg_class('base'), None)
+        #self.assertIsNone(func.mularg_class('base'))
 
     def test_navigation(self):
         function = MODULE['global_access']
@@ -198,16 +196,16 @@ class FunctionNodeTC(TestCase):
         # check taking parent if child is not a stmt
         self.assertIsInstance(l_sibling, nodes.Assign)
         child = function.args.args[0]
-        self.assert_(l_sibling is child.previous_sibling())
+        self.assertIs(l_sibling, child.previous_sibling())
         r_sibling = function.next_sibling()
         self.assertIsInstance(r_sibling, nodes.Class)
         self.assertEqual(r_sibling.name, 'YO')
-        self.assert_(r_sibling is child.next_sibling())
+        self.assertIs(r_sibling, child.next_sibling())
         last = r_sibling.next_sibling().next_sibling().next_sibling()
         self.assertIsInstance(last, nodes.Assign)
-        self.assertEqual(last.next_sibling(), None)
+        self.assertIsNone(last.next_sibling())
         first = l_sibling.previous_sibling().previous_sibling().previous_sibling().previous_sibling().previous_sibling()
-        self.assertEqual(first.previous_sibling(), None)
+        self.assertIsNone(first.previous_sibling())
 
     def test_nested_args(self):
         if sys.version_info >= (3, 0):
@@ -236,14 +234,14 @@ def nested_args(a, (b, c, d)):
 
     def test_is_abstract(self):
         method = MODULE2['AbstractClass']['to_override']
-        self.assert_(method.is_abstract(pass_is_abstract=False))
-        self.failUnlessEqual(method.qname(), 'data.module2.AbstractClass.to_override')
-        self.failUnlessEqual(method.pytype(), '%s.instancemethod' % BUILTINS_MODULE)
+        self.assertTrue(method.is_abstract(pass_is_abstract=False))
+        self.assertEqual(method.qname(), 'data.module2.AbstractClass.to_override')
+        self.assertEqual(method.pytype(), '%s.instancemethod' % BUILTINS_MODULE)
         method = MODULE2['AbstractClass']['return_something']
-        self.assert_(not method.is_abstract(pass_is_abstract=False))
+        self.assertFalse(method.is_abstract(pass_is_abstract=False))
         # non regression : test raise "string" doesn't cause an exception in is_abstract
         func = MODULE2['raise_string']
-        self.assert_(not func.is_abstract(pass_is_abstract=False))
+        self.assertFalse(func.is_abstract(pass_is_abstract=False))
 
 ##     def test_raises(self):
 ##         method = MODULE2['AbstractClass']['to_override']
@@ -263,7 +261,7 @@ def f():
         '''
         astng = abuilder.string_build(data, __name__, __file__)
         g = list(astng['f'].ilookup('g'))[0]
-        self.failUnlessEqual(g.pytype(), '%s.function' % BUILTINS_MODULE)
+        self.assertEqual(g.pytype(), '%s.function' % BUILTINS_MODULE)
 
     def test_lambda_qname(self):
         astng = abuilder.string_build('''
@@ -291,11 +289,11 @@ def sfunction():
     return -1
         '''
         astng = abuilder.string_build(data, __name__, __file__)
-        self.failUnless(astng['A']['meth1'].is_method())
-        self.failUnless(astng['A']['meth2'].is_method())
-        self.failUnless(astng['A']['meth3'].is_method())
-        self.failIf(astng['function'].is_method())
-        self.failIf(astng['sfunction'].is_method())
+        self.assertTrue(astng['A']['meth1'].is_method())
+        self.assertTrue(astng['A']['meth2'].is_method())
+        self.assertTrue(astng['A']['meth3'].is_method())
+        self.assertFalse(astng['function'].is_method())
+        self.assertFalse(astng['sfunction'].is_method())
 
     def test_argnames(self):
         if sys.version_info < (3, 0):
@@ -318,7 +316,7 @@ a = func()
         func_vals = call.infered()
         self.assertEqual(len(func_vals), 1)
         self.assertIsInstance(func_vals[0], nodes.Const)
-        self.assertEqual(func_vals[0].value, None)
+        self.assertIsNone(func_vals[0].value)
 
     def test_func_instance_attr(self):
         """test instance attributes for functions"""
@@ -389,7 +387,7 @@ A.__bases__ += (B,)
         klass = MODULE['YO']
         self.assertEqual(klass.statement(), klass)
         l_sibling = klass.previous_sibling()
-        self.assert_(isinstance(l_sibling, nodes.Function), l_sibling)
+        self.assertTrue(isinstance(l_sibling, nodes.Function), l_sibling)
         self.assertEqual(l_sibling.name, 'global_access')
         r_sibling = klass.next_sibling()
         self.assertIsInstance(r_sibling, nodes.Class)
@@ -622,7 +620,7 @@ class Past(Present):
 @f(a=2,
    b=3)
 def g1(x):
-    print x
+    print(x)
 
 @f(a=2,
    b=3)

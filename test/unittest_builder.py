@@ -1,7 +1,5 @@
-# copyright 2003-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2012 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
-# copyright 2003-2010 Sylvain Thenault, all rights reserved.
-# contact mailto:thenault@gmail.com
 #
 # This file is part of logilab-astng.
 #
@@ -270,15 +268,15 @@ class BuilderTC(TestCase):
         builtin_astng = MANAGER.astng_from_module_name(BUILTINS_NAME)
         if sys.version_info < (3, 0):
             fclass = builtin_astng['file']
-            self.assert_('name' in fclass)
-            self.assert_('mode' in fclass)
-            self.assert_('read' in fclass)
-            self.assert_(fclass.newstyle)
-            self.assert_(fclass.pytype(), '%s.type' % BUILTINS_MODULE)
+            self.assertIn('name', fclass)
+            self.assertIn('mode', fclass)
+            self.assertIn('read', fclass)
+            self.assertTrue(fclass.newstyle)
+            self.assertTrue(fclass.pytype(), '%s.type' % BUILTINS_MODULE)
             self.assertIsInstance(fclass['read'], nodes.Function)
             # check builtin function has args.args == None
             dclass = builtin_astng['dict']
-            self.assertEqual(dclass['has_key'].args.args, None)
+            self.assertIsNone(dclass['has_key'].args.args)
         # just check type and object are there
         builtin_astng.getattr('type')
         objectastng = builtin_astng.getattr('object')[0]
@@ -289,7 +287,7 @@ class BuilderTC(TestCase):
         builtin_astng.getattr('help')
         # check property has __init__
         pclass = builtin_astng['property']
-        self.assert_('__init__' in pclass)
+        self.assertIn('__init__', pclass)
         self.assertIsInstance(builtin_astng['None'], nodes.Const)
         self.assertIsInstance(builtin_astng['True'], nodes.Const)
         self.assertIsInstance(builtin_astng['False'], nodes.Const)
@@ -302,7 +300,7 @@ class BuilderTC(TestCase):
 
     def test_inspect_build1(self):
         time_astng = MANAGER.astng_from_module_name('time')
-        self.assert_(time_astng)
+        self.assertTrue(time_astng)
         self.assertEqual(time_astng['time'].args.defaults, [])
 
     def test_inspect_build2(self):
@@ -330,9 +328,9 @@ class BuilderTC(TestCase):
         # things like OSError.strerror are now (2.5) data descriptors on the
         # class instead of entries in the __dict__ of an instance
         container = fclass
-        self.assert_('errno' in container)
-        self.assert_('strerror' in container)
-        self.assert_('filename' in container)
+        self.assertIn('errno', container)
+        self.assertIn('strerror', container)
+        self.assertIn('filename', container)
 
     def test_inspect_build_type_object(self):
         builtin_astng = MANAGER.astng_from_module_name(BUILTINS_NAME)
@@ -376,7 +374,7 @@ def yiell():
 
     def test_object(self):
         obj_astng = self.builder.inspect_build(object)
-        self.failUnless('__setattr__' in obj_astng)
+        self.assertIn('__setattr__', obj_astng)
 
     def test_newstyle_detection(self):
         data = '''
@@ -401,12 +399,12 @@ class F:
     "new style"
 '''
         mod_astng = self.builder.string_build(data, __name__, __file__)
-        self.failIf(mod_astng['A'].newstyle)
-        self.failIf(mod_astng['B'].newstyle)
-        self.failUnless(mod_astng['C'].newstyle)
-        self.failUnless(mod_astng['D'].newstyle)
-        self.failIf(mod_astng['E'].newstyle)
-        self.failUnless(mod_astng['F'].newstyle)
+        self.assertFalse(mod_astng['A'].newstyle)
+        self.assertFalse(mod_astng['B'].newstyle)
+        self.assertTrue(mod_astng['C'].newstyle)
+        self.assertTrue(mod_astng['D'].newstyle)
+        self.assertFalse(mod_astng['E'].newstyle)
+        self.assertTrue(mod_astng['F'].newstyle)
 
     def test_globals(self):
         data = '''
@@ -421,10 +419,10 @@ def global_no_effect():
     print (CSTE)
 '''
         astng = self.builder.string_build(data, __name__, __file__)
-        self.failUnlessEqual(len(astng.getattr('CSTE')), 2)
+        self.assertEqual(len(astng.getattr('CSTE')), 2)
         self.assertIsInstance(astng.getattr('CSTE')[0], nodes.AssName)
-        self.failUnlessEqual(astng.getattr('CSTE')[0].fromlineno, 2)
-        self.failUnlessEqual(astng.getattr('CSTE')[1].fromlineno, 6)
+        self.assertEqual(astng.getattr('CSTE')[0].fromlineno, 2)
+        self.assertEqual(astng.getattr('CSTE')[1].fromlineno, 6)
         self.assertRaises(NotFoundError,
                           astng.getattr, 'CSTE2')
         self.assertRaises(InferenceError,
@@ -438,21 +436,21 @@ def global_no_effect():
         # set and astng is missing this.
         for fclass in astng.igetattr('socket'):
             #print fclass.root().name, fclass.name, fclass.lineno
-            self.assert_('connect' in fclass)
-            self.assert_('send' in fclass)
-            self.assert_('close' in fclass)
+            self.assertIn('connect', fclass)
+            self.assertIn('send', fclass)
+            self.assertIn('close', fclass)
             break
 
     def test_gen_expr_var_scope(self):
         data = 'l = list(n for n in range(10))\n'
         astng = self.builder.string_build(data, __name__, __file__)
         # n unavailable outside gen expr scope
-        self.failIf('n' in astng)
+        self.assertNotIn('n', astng)
         # test n is inferable anyway
         n = get_name_node(astng, 'n')
-        self.failIf(n.scope() is astng)
-        self.failUnlessEqual([i.__class__ for i in n.infer()],
-                             [YES.__class__])
+        self.assertIsNot(n.scope(), astng)
+        self.assertEqual([i.__class__ for i in n.infer()],
+                         [YES.__class__])
 
 class FileBuildTC(TestCase):
 
@@ -464,13 +462,13 @@ class FileBuildTC(TestCase):
         self.assertEqual(module.name, 'data.module')
         self.assertEqual(module.doc, "test module for astng\n")
         self.assertEqual(module.fromlineno, 0)
-        self.assertEqual(module.parent, None)
+        self.assertIsNone(module.parent)
         self.assertEqual(module.frame(), module)
         self.assertEqual(module.root(), module)
         self.assertEqual(module.file, join(abspath(data.__path__[0]), 'module.py'))
         self.assertEqual(module.pure_python, 1)
         self.assertEqual(module.package, 0)
-        self.assert_(not module.is_statement)
+        self.assertFalse(module.is_statement)
         self.assertEqual(module.statement(), module)
         self.assertEqual(module.statement(), module)
 
@@ -478,7 +476,7 @@ class FileBuildTC(TestCase):
         """test the 'locals' dictionary of a astng module"""
         module = self.module
         _locals = module.locals
-        self.assert_(_locals is module.globals)
+        self.assertIs(_locals, module.globals)
         keys = sorted(_locals.keys())
         should = ['MY_DICT', 'YO', 'YOUPI',
                 '__revision__',  'global_access','modutils', 'four_args',
@@ -493,7 +491,7 @@ class FileBuildTC(TestCase):
         self.assertEqual(function.name, 'global_access')
         self.assertEqual(function.doc, 'function test')
         self.assertEqual(function.fromlineno, 11)
-        self.assert_(function.parent)
+        self.assertTrue(function.parent)
         self.assertEqual(function.frame(), function)
         self.assertEqual(function.parent.frame(), module)
         self.assertEqual(function.root(), module)
@@ -514,7 +512,7 @@ class FileBuildTC(TestCase):
         self.assertEqual(klass.name, 'YO')
         self.assertEqual(klass.doc, 'hehe')
         self.assertEqual(klass.fromlineno, 25)
-        self.assert_(klass.parent)
+        self.assertTrue(klass.parent)
         self.assertEqual(klass.frame(), klass)
         self.assertEqual(klass.parent.frame(), module)
         self.assertEqual(klass.root(), module)
@@ -605,8 +603,8 @@ A.ass_type = A_ass_type
         lclass = list(astng.igetattr('A'))
         self.assertEqual(len(lclass), 1)
         lclass = lclass[0]
-        self.assert_('ass_type' in lclass.locals, lclass.locals.keys())
-        self.assert_('type' in lclass.locals.keys())
+        self.assertIn('ass_type', lclass.locals)
+        self.assertIn('type', lclass.locals)
 
     def test_augassign_attr(self):
         astng = self.builder.string_build("""class Counter:
@@ -628,23 +626,23 @@ def func2(a={}):
     '''
         astng = self.builder.string_build(code)
         nonetype = nodes.const_factory(None)
-        self.failIf('custom_attr' in nonetype.locals)
-        self.failIf('custom_attr' in nonetype.instance_attrs)
+        self.assertNotIn('custom_attr', nonetype.locals)
+        self.assertNotIn('custom_attr', nonetype.instance_attrs)
         nonetype = nodes.const_factory({})
-        self.failIf('custom_attr' in nonetype.locals)
-        self.failIf('custom_attr' in nonetype.instance_attrs)
+        self.assertNotIn('custom_attr', nonetype.locals)
+        self.assertNotIn('custom_attr', nonetype.instance_attrs)
 
 
     def test_asstuple(self):
         code = 'a, b = range(2)'
         astng = self.builder.string_build(code)
-        self.failUnless('b' in astng.locals)
+        self.assertIn('b', astng.locals)
         code = '''
 def visit_if(self, node):
     node.test, body = node.tests[0]
 '''
         astng = self.builder.string_build(code)
-        self.failUnless('body' in astng['visit_if'].locals)
+        self.assertIn('body', astng['visit_if'].locals)
 
     def test_build_constants(self):
         '''test expected values of constants after rebuilding'''
@@ -657,8 +655,8 @@ def func():
         astng = self.builder.string_build(code)
         none, nothing, chain = [ret.value for ret in astng.body[0].body]
         self.assertIsInstance(none, nodes.Const)
-        self.assertEqual(none.value, None)
-        self.assertEqual(nothing, None)
+        self.assertIsNone(none.value)
+        self.assertIsNone(nothing)
         self.assertIsInstance(chain, nodes.Const)
         self.assertEqual(chain.value, 'None')
 
@@ -684,49 +682,49 @@ if sys.version_info < (3, 0):
 
         def testEmacs(self):
             e = guess_encoding('# -*- coding: UTF-8  -*-')
-            self.failUnlessEqual(e, 'UTF-8')
+            self.assertEqual(e, 'UTF-8')
             e = guess_encoding('# -*- coding:UTF-8 -*-')
-            self.failUnlessEqual(e, 'UTF-8')
+            self.assertEqual(e, 'UTF-8')
             e = guess_encoding('''
             ### -*- coding: ISO-8859-1  -*-
             ''')
-            self.failUnlessEqual(e, 'ISO-8859-1')
+            self.assertEqual(e, 'ISO-8859-1')
             e = guess_encoding('''
 
             ### -*- coding: ISO-8859-1  -*-
             ''')
-            self.failUnlessEqual(e, None)
+            self.assertIsNone(e)
 
         def testVim(self):
             e = guess_encoding('# vim:fileencoding=UTF-8')
-            self.failUnlessEqual(e, 'UTF-8')
+            self.assertEqual(e, 'UTF-8')
             e = guess_encoding('''
             ### vim:fileencoding=ISO-8859-1
             ''')
-            self.failUnlessEqual(e, 'ISO-8859-1')
+            self.assertEqual(e, 'ISO-8859-1')
             e = guess_encoding('''
 
             ### vim:fileencoding= ISO-8859-1
             ''')
-            self.failUnlessEqual(e, None)
+            self.assertIsNone(e)
 
         def test_wrong_coding(self):
             # setting "coding" varaible
             e = guess_encoding("coding = UTF-8")
-            self.failUnlessEqual(e, None)
+            self.assertIsNone(e)
             # setting a dictionnary entry
             e = guess_encoding("coding:UTF-8")
-            self.failUnlessEqual(e, None)
+            self.assertIsNone(e)
             # setting an arguement
             e = guess_encoding("def do_something(a_word_with_coding=None):")
-            self.failUnlessEqual(e, None)
+            self.assertIsNone(e)
 
 
         def testUTF8(self):
             e = guess_encoding('\xef\xbb\xbf any UTF-8 data')
-            self.failUnlessEqual(e, 'UTF-8')
+            self.assertEqual(e, 'UTF-8')
             e = guess_encoding(' any UTF-8 data \xef\xbb\xbf')
-            self.failUnlessEqual(e, None)
+            self.assertIsNone(e)
 
 if __name__ == '__main__':
     unittest_main()

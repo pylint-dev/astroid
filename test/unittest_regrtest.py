@@ -50,13 +50,13 @@ class NonRegressionTC(TestCase):
         man = self.brainless_manager()
         mod = man.astng_from_module_name('package.import_package_subpackage_module')
         package = mod.igetattr('package').next()
-        self.failUnlessEqual(package.name, 'package')
+        self.assertEqual(package.name, 'package')
         subpackage = package.igetattr('subpackage').next()
         self.assertIsInstance(subpackage, nodes.Module)
         self.assertTrue(subpackage.package)
-        self.failUnlessEqual(subpackage.name, 'package.subpackage')
+        self.assertEqual(subpackage.name, 'package.subpackage')
         module = subpackage.igetattr('module').next()
-        self.failUnlessEqual(module.name, 'package.subpackage.module')
+        self.assertEqual(module.name, 'package.subpackage.module')
 
 
     def test_package_sidepackage(self):
@@ -68,7 +68,7 @@ class NonRegressionTC(TestCase):
         subpackage = package.getattr('sidepackage')[0].infer().next()
         self.assertIsInstance(subpackage, nodes.Module)
         self.assertTrue(subpackage.package)
-        self.failUnlessEqual(subpackage.name, 'absimp.sidepackage')
+        self.assertEqual(subpackage.name, 'absimp.sidepackage')
 
 
     def test_living_property(self):
@@ -96,7 +96,7 @@ class A(gobject.GObject):
 """
         astng = builder.string_build(data, __name__, __file__)
         a = astng['A']
-        self.failUnless(a.newstyle)
+        self.assertTrue(a.newstyle)
 
 
     def test_pylint_config_attr(self):
@@ -111,7 +111,7 @@ class A(gobject.GObject):
                   'OptionsProviderMixIn', 'ASTWalker']
         self.assertListEqual([c.name for c in pylinter.ancestors()],
                              expect)
-        self.assert_(list(Instance(pylinter).getattr('config')))
+        self.assertTrue(list(Instance(pylinter).getattr('config')))
         infered = list(Instance(pylinter).igetattr('config'))
         self.assertEqual(len(infered), 1)
         self.assertEqual(infered[0].root().name, 'optparse')

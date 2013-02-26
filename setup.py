@@ -50,7 +50,7 @@ sys.modules.pop('__pkginfo__', None)
 __pkginfo__ = __import__("__pkginfo__")
 # import required features
 from __pkginfo__ import modname, version, license, description, \
-     web, author, author_email
+    web, author, author_email
 
 distname = getattr(__pkginfo__, 'distname', modname)
 scripts = getattr(__pkginfo__, 'scripts', [])
@@ -137,7 +137,11 @@ class MyBuildPy(build_py):
                 dest = join(basedir, directory)
                 shutil.rmtree(dest, ignore_errors=True)
                 shutil.copytree(directory, dest)
-
+                if sys.version_info >= (3, 0):
+                    # process manually python file in include_dirs (test data)
+                    from subprocess import check_call
+                    print('running 2to3 on', dest) # parens are NOT optional here for py3k compat
+                    check_call(['2to3', '-wn', dest])
 
 def install(**kwargs):
     """setup entry point"""

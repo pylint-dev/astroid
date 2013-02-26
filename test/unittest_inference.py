@@ -1,5 +1,5 @@
-# copyright 2003-2010 Sylvain Thenault, all rights reserved.
-# contact mailto:thenault@gmail.com
+# copyright 2003-2012 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of logilab-astng.
 #
@@ -42,9 +42,9 @@ class InferenceUtilsTC(TestCase):
             raise InferenceError
         infer_default = path_wrapper(infer_default)
         infer_end = path_wrapper(inference_infer_end)
-        self.failUnlessRaises(InferenceError,
+        self.assertRaises(InferenceError,
                               infer_default(1).next)
-        self.failUnlessEqual(infer_end(1).next(), 1)
+        self.assertEqual(infer_end(1).next(), 1)
 
 if sys.version_info < (3, 0):
     EXC_MODULE = 'exceptions'
@@ -90,185 +90,185 @@ a, b= b, a # Gasp !
     def test_module_inference(self):
         infered = self.astng.infer()
         obj = infered.next()
-        self.failUnlessEqual(obj.name, __name__)
-        self.failUnlessEqual(obj.root().name, __name__)
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertEqual(obj.name, __name__)
+        self.assertEqual(obj.root().name, __name__)
+        self.assertRaises(StopIteration, infered.next)
 
     def test_class_inference(self):
         infered = self.astng['C'].infer()
         obj = infered.next()
-        self.failUnlessEqual(obj.name, 'C')
-        self.failUnlessEqual(obj.root().name, __name__)
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertEqual(obj.name, 'C')
+        self.assertEqual(obj.root().name, __name__)
+        self.assertRaises(StopIteration, infered.next)
 
     def test_function_inference(self):
         infered = self.astng['C']['meth1'].infer()
         obj = infered.next()
-        self.failUnlessEqual(obj.name, 'meth1')
-        self.failUnlessEqual(obj.root().name, __name__)
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertEqual(obj.name, 'meth1')
+        self.assertEqual(obj.root().name, __name__)
+        self.assertRaises(StopIteration, infered.next)
 
     def test_builtin_name_inference(self):
         infered = self.astng['C']['meth1']['var'].infer()
         var = infered.next()
-        self.failUnlessEqual(var.name, 'object')
-        self.failUnlessEqual(var.root().name, BUILTINS_NAME)
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertEqual(var.name, 'object')
+        self.assertEqual(var.root().name, BUILTINS_NAME)
+        self.assertRaises(StopIteration, infered.next)
 
     def test_tupleassign_name_inference(self):
         infered = self.astng['a'].infer()
         exc = infered.next()
         self.assertIsInstance(exc, Instance)
-        self.failUnlessEqual(exc.name, 'Exception')
-        self.failUnlessEqual(exc.root().name, EXC_MODULE)
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertEqual(exc.name, 'Exception')
+        self.assertEqual(exc.root().name, EXC_MODULE)
+        self.assertRaises(StopIteration, infered.next)
         infered = self.astng['b'].infer()
         const = infered.next()
         self.assertIsInstance(const, nodes.Const)
-        self.failUnlessEqual(const.value, 1)
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertEqual(const.value, 1)
+        self.assertRaises(StopIteration, infered.next)
         infered = self.astng['c'].infer()
         const = infered.next()
         self.assertIsInstance(const, nodes.Const)
-        self.failUnlessEqual(const.value, "bonjour")
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertEqual(const.value, "bonjour")
+        self.assertRaises(StopIteration, infered.next)
 
     def test_listassign_name_inference(self):
         infered = self.astng['d'].infer()
         exc = infered.next()
         self.assertIsInstance(exc, Instance)
-        self.failUnlessEqual(exc.name, 'Exception')
-        self.failUnlessEqual(exc.root().name, EXC_MODULE)
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertEqual(exc.name, 'Exception')
+        self.assertEqual(exc.root().name, EXC_MODULE)
+        self.assertRaises(StopIteration, infered.next)
         infered = self.astng['e'].infer()
         const = infered.next()
         self.assertIsInstance(const, nodes.Const)
-        self.failUnlessEqual(const.value, 1.0)
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertEqual(const.value, 1.0)
+        self.assertRaises(StopIteration, infered.next)
         infered = self.astng['f'].infer()
         const = infered.next()
         self.assertIsInstance(const, nodes.Tuple)
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, infered.next)
 
     def test_advanced_tupleassign_name_inference1(self):
         infered = self.astng['g'].infer()
         const = infered.next()
         self.assertIsInstance(const, nodes.Const)
-        self.failUnlessEqual(const.value, "bonjour")
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertEqual(const.value, "bonjour")
+        self.assertRaises(StopIteration, infered.next)
         infered = self.astng['h'].infer()
         var = infered.next()
-        self.failUnlessEqual(var.name, 'object')
-        self.failUnlessEqual(var.root().name, BUILTINS_NAME)
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertEqual(var.name, 'object')
+        self.assertEqual(var.root().name, BUILTINS_NAME)
+        self.assertRaises(StopIteration, infered.next)
 
     def test_advanced_tupleassign_name_inference2(self):
         infered = self.astng['i'].infer()
         const = infered.next()
         self.assertIsInstance(const, nodes.Const)
-        self.failUnlessEqual(const.value, u"glup")
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertEqual(const.value, u"glup")
+        self.assertRaises(StopIteration, infered.next)
         infered = self.astng['j'].infer()
         const = infered.next()
         self.assertIsInstance(const, nodes.Const)
-        self.failUnlessEqual(const.value, "bonjour")
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertEqual(const.value, "bonjour")
+        self.assertRaises(StopIteration, infered.next)
         infered = self.astng['k'].infer()
         var = infered.next()
-        self.failUnlessEqual(var.name, 'object')
-        self.failUnlessEqual(var.root().name, BUILTINS_NAME)
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertEqual(var.name, 'object')
+        self.assertEqual(var.root().name, BUILTINS_NAME)
+        self.assertRaises(StopIteration, infered.next)
 
     def test_swap_assign_inference(self):
         infered = self.astng.locals['a'][1].infer()
         const = infered.next()
         self.assertIsInstance(const, nodes.Const)
-        self.failUnlessEqual(const.value, 1)
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertEqual(const.value, 1)
+        self.assertRaises(StopIteration, infered.next)
         infered = self.astng.locals['b'][1].infer()
         exc = infered.next()
         self.assertIsInstance(exc, Instance)
-        self.failUnlessEqual(exc.name, 'Exception')
-        self.failUnlessEqual(exc.root().name, EXC_MODULE)
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertEqual(exc.name, 'Exception')
+        self.assertEqual(exc.root().name, EXC_MODULE)
+        self.assertRaises(StopIteration, infered.next)
 
     def test_getattr_inference1(self):
         infered = self.astng['ex'].infer()
         exc = infered.next()
         self.assertIsInstance(exc, Instance)
-        self.failUnlessEqual(exc.name, 'Exception')
-        self.failUnlessEqual(exc.root().name, EXC_MODULE)
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertEqual(exc.name, 'Exception')
+        self.assertEqual(exc.root().name, EXC_MODULE)
+        self.assertRaises(StopIteration, infered.next)
 
     def test_getattr_inference2(self):
         infered = get_node_of_class(self.astng['C']['meth2'], nodes.Getattr).infer()
         meth1 = infered.next()
-        self.failUnlessEqual(meth1.name, 'meth1')
-        self.failUnlessEqual(meth1.root().name, __name__)
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertEqual(meth1.name, 'meth1')
+        self.assertEqual(meth1.root().name, __name__)
+        self.assertRaises(StopIteration, infered.next)
 
     def test_getattr_inference3(self):
         infered = self.astng['C']['meth3']['b'].infer()
         const = infered.next()
         self.assertIsInstance(const, nodes.Const)
-        self.failUnlessEqual(const.value, 4)
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertEqual(const.value, 4)
+        self.assertRaises(StopIteration, infered.next)
 
     def test_getattr_inference4(self):
         infered = self.astng['C']['meth3']['c'].infer()
         const = infered.next()
         self.assertIsInstance(const, nodes.Const)
-        self.failUnlessEqual(const.value, "hop")
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertEqual(const.value, "hop")
+        self.assertRaises(StopIteration, infered.next)
 
     def test_callfunc_inference(self):
         infered = self.astng['v'].infer()
         meth1 = infered.next()
         self.assertIsInstance(meth1, Instance)
-        self.failUnlessEqual(meth1.name, 'object')
-        self.failUnlessEqual(meth1.root().name, BUILTINS_NAME)
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertEqual(meth1.name, 'object')
+        self.assertEqual(meth1.root().name, BUILTINS_NAME)
+        self.assertRaises(StopIteration, infered.next)
 
     def test_unbound_method_inference(self):
         infered = self.astng['m_unbound'].infer()
         meth1 = infered.next()
         self.assertIsInstance(meth1, UnboundMethod)
-        self.failUnlessEqual(meth1.name, 'meth1')
-        self.failUnlessEqual(meth1.parent.frame().name, 'C')
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertEqual(meth1.name, 'meth1')
+        self.assertEqual(meth1.parent.frame().name, 'C')
+        self.assertRaises(StopIteration, infered.next)
 
     def test_bound_method_inference(self):
         infered = self.astng['m_bound'].infer()
         meth1 = infered.next()
         self.assertIsInstance(meth1, BoundMethod)
-        self.failUnlessEqual(meth1.name, 'meth1')
-        self.failUnlessEqual(meth1.parent.frame().name, 'C')
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertEqual(meth1.name, 'meth1')
+        self.assertEqual(meth1.parent.frame().name, 'C')
+        self.assertRaises(StopIteration, infered.next)
 
     def test_args_default_inference1(self):
         optarg = get_name_node(self.astng['C']['meth1'], 'optarg')
         infered = optarg.infer()
         obj1 = infered.next()
         self.assertIsInstance(obj1, nodes.Const)
-        self.failUnlessEqual(obj1.value, 0)
+        self.assertEqual(obj1.value, 0)
         obj1 = infered.next()
         self.assertIs(obj1, YES, obj1)
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, infered.next)
 
     def test_args_default_inference2(self):
         infered = self.astng['C']['meth3'].ilookup('d')
         obj1 = infered.next()
         self.assertIsInstance(obj1, nodes.Const)
-        self.failUnlessEqual(obj1.value, 4)
+        self.assertEqual(obj1.value, 4)
         obj1 = infered.next()
         self.assertIs(obj1, YES, obj1)
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, infered.next)
 
     def test_inference_restrictions(self):
         infered = get_name_node(self.astng['C']['meth1'], 'arg1').infer()
         obj1 = infered.next()
         self.assertIs(obj1, YES, obj1)
-        self.failUnlessRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, infered.next)
 
     def test_ancestors_inference(self):
         code = '''
@@ -282,8 +282,8 @@ class A(A):
         a1 = astng.locals['A'][0]
         a2 = astng.locals['A'][1]
         a2_ancestors = list(a2.ancestors())
-        self.failUnlessEqual(len(a2_ancestors), 1)
-        self.failUnless(a2_ancestors[0] is a1)
+        self.assertEqual(len(a2_ancestors), 1)
+        self.assertIs(a2_ancestors[0], a1)
 
     def test_ancestors_inference2(self):
         code = '''
@@ -299,9 +299,9 @@ class A(B):
         a1 = astng.locals['A'][0]
         a2 = astng.locals['A'][1]
         a2_ancestors = list(a2.ancestors())
-        self.failUnlessEqual(len(a2_ancestors), 2)
-        self.failUnless(a2_ancestors[0] is astng.locals['B'][0])
-        self.failUnless(a2_ancestors[1] is a1, a2_ancestors[1])
+        self.assertEqual(len(a2_ancestors), 2)
+        self.assertIs(a2_ancestors[0], astng.locals['B'][0])
+        self.assertIs(a2_ancestors[1], a1)
 
 
     def test_f_arg_f(self):
@@ -314,7 +314,7 @@ a = f()
         astng = builder.string_build(code, __name__, __file__)
         a = astng['a']
         a_infered = a.infered()
-        self.failUnlessEqual(a_infered[0].value, 1)
+        self.assertEqual(a_infered[0].value, 1)
         self.assertEqual(len(a_infered), 1)
 
     def test_exc_ancestors(self):
@@ -328,9 +328,9 @@ def f():
         self.assertIsInstance(nie, nodes.Class)
         nie_ancestors = [c.name for c in nie.ancestors()]
         if sys.version_info < (3, 0):
-            self.failUnlessEqual(nie_ancestors, ['RuntimeError', 'StandardError', 'Exception', 'BaseException', 'object'])
+            self.assertEqual(nie_ancestors, ['RuntimeError', 'StandardError', 'Exception', 'BaseException', 'object'])
         else:
-            self.failUnlessEqual(nie_ancestors, ['RuntimeError', 'Exception', 'BaseException', 'object'])
+            self.assertEqual(nie_ancestors, ['RuntimeError', 'Exception', 'BaseException', 'object'])
 
     def test_except_inference(self):
         code = '''
@@ -349,21 +349,21 @@ except Exception, ex:
         ex1_infer = ex1.infer()
         ex1 = ex1_infer.next()
         self.assertIsInstance(ex1, Instance)
-        self.failUnlessEqual(ex1.name, 'NameError')
-        self.failUnlessRaises(StopIteration, ex1_infer.next)
+        self.assertEqual(ex1.name, 'NameError')
+        self.assertRaises(StopIteration, ex1_infer.next)
         ex2 = astng['ex2']
         ex2_infer = ex2.infer()
         ex2 = ex2_infer.next()
         self.assertIsInstance(ex2, Instance)
-        self.failUnlessEqual(ex2.name, 'Exception')
-        self.failUnlessRaises(StopIteration, ex2_infer.next)
+        self.assertEqual(ex2.name, 'Exception')
+        self.assertRaises(StopIteration, ex2_infer.next)
 
     def test_del1(self):
         code = '''
 del undefined_attr
         '''
         delete = builder.string_build(code, __name__, __file__).body[0]
-        self.failUnlessRaises(InferenceError, delete.infer)
+        self.assertRaises(InferenceError, delete.infer)
 
     def test_del2(self):
         code = '''
@@ -379,17 +379,17 @@ d = a
         n_infer = n.infer()
         infered = n_infer.next()
         self.assertIsInstance(infered, nodes.Const)
-        self.failUnlessEqual(infered.value, 1)
-        self.failUnlessRaises(StopIteration, n_infer.next)
+        self.assertEqual(infered.value, 1)
+        self.assertRaises(StopIteration, n_infer.next)
         n = astng['c']
         n_infer = n.infer()
-        self.failUnlessRaises(InferenceError, n_infer.next)
+        self.assertRaises(InferenceError, n_infer.next)
         n = astng['d']
         n_infer = n.infer()
         infered = n_infer.next()
         self.assertIsInstance(infered, nodes.Const)
-        self.failUnlessEqual(infered.value, 2)
-        self.failUnlessRaises(StopIteration, n_infer.next)
+        self.assertEqual(infered.value, 2)
+        self.assertRaises(StopIteration, n_infer.next)
 
     def test_builtin_types(self):
         code = '''
@@ -404,33 +404,33 @@ s2 = '_'
         infered = n.infer().next()
         self.assertIsInstance(infered, nodes.List)
         self.assertIsInstance(infered, Instance)
-        self.failUnlessEqual(infered.getitem(0).value, 1)
+        self.assertEqual(infered.getitem(0).value, 1)
         self.assertIsInstance(infered._proxied, nodes.Class)
-        self.failUnlessEqual(infered._proxied.name, 'list')
-        self.failUnless('append' in infered._proxied.locals)
+        self.assertEqual(infered._proxied.name, 'list')
+        self.assertIn('append', infered._proxied.locals)
         n = astng['t']
         infered = n.infer().next()
         self.assertIsInstance(infered, nodes.Tuple)
         self.assertIsInstance(infered, Instance)
-        self.failUnlessEqual(infered.getitem(0).value, 2)
+        self.assertEqual(infered.getitem(0).value, 2)
         self.assertIsInstance(infered._proxied, nodes.Class)
-        self.failUnlessEqual(infered._proxied.name, 'tuple')
+        self.assertEqual(infered._proxied.name, 'tuple')
         n = astng['d']
         infered = n.infer().next()
         self.assertIsInstance(infered, nodes.Dict)
         self.assertIsInstance(infered, Instance)
         self.assertIsInstance(infered._proxied, nodes.Class)
-        self.failUnlessEqual(infered._proxied.name, 'dict')
-        self.failUnless('get' in infered._proxied.locals)
+        self.assertEqual(infered._proxied.name, 'dict')
+        self.assertIn('get', infered._proxied.locals)
         n = astng['s']
         infered = n.infer().next()
         self.assertIsInstance(infered, nodes.Const)
         self.assertIsInstance(infered, Instance)
-        self.failUnlessEqual(infered.name, 'str')
-        self.failUnless('lower' in infered._proxied.locals)
+        self.assertEqual(infered.name, 'str')
+        self.assertIn('lower', infered._proxied.locals)
         n = astng['s2']
         infered = n.infer().next()
-        self.failUnlessEqual(infered.getitem(0).value, '_')
+        self.assertEqual(infered.getitem(0).value, '_')
 
     def test_unicode_type(self):
         if sys.version_info >= (3, 0):
@@ -441,8 +441,8 @@ s2 = '_'
         infered = n.infer().next()
         self.assertIsInstance(infered, nodes.Const)
         self.assertIsInstance(infered, Instance)
-        self.failUnlessEqual(infered.name, 'unicode')
-        self.failUnless('lower' in infered._proxied.locals)
+        self.assertEqual(infered.name, 'unicode')
+        self.assertIn('lower', infered._proxied.locals)
 
     def test_descriptor_are_callable(self):
         code = '''
@@ -452,9 +452,9 @@ class A:
         '''
         astng = builder.string_build(code, __name__, __file__)
         statm = astng['A'].igetattr('statm').next()
-        self.failUnless(statm.callable())
+        self.assertTrue(statm.callable())
         clsm = astng['A'].igetattr('clsm').next()
-        self.failUnless(clsm.callable())
+        self.assertTrue(clsm.callable())
 
     def test_bt_ancestor_crash(self):
         code = '''
@@ -465,18 +465,18 @@ class Warning(Warning):
         w = astng['Warning']
         ancestors = w.ancestors()
         ancestor = ancestors.next()
-        self.failUnlessEqual(ancestor.name, 'Warning')
-        self.failUnlessEqual(ancestor.root().name, EXC_MODULE)
+        self.assertEqual(ancestor.name, 'Warning')
+        self.assertEqual(ancestor.root().name, EXC_MODULE)
         ancestor = ancestors.next()
-        self.failUnlessEqual(ancestor.name, 'Exception')
-        self.failUnlessEqual(ancestor.root().name, EXC_MODULE)
+        self.assertEqual(ancestor.name, 'Exception')
+        self.assertEqual(ancestor.root().name, EXC_MODULE)
         ancestor = ancestors.next()
-        self.failUnlessEqual(ancestor.name, 'BaseException')
-        self.failUnlessEqual(ancestor.root().name, EXC_MODULE)
+        self.assertEqual(ancestor.name, 'BaseException')
+        self.assertEqual(ancestor.root().name, EXC_MODULE)
         ancestor = ancestors.next()
-        self.failUnlessEqual(ancestor.name, 'object')
-        self.failUnlessEqual(ancestor.root().name, BUILTINS_NAME)
-        self.failUnlessRaises(StopIteration, ancestors.next)
+        self.assertEqual(ancestor.name, 'object')
+        self.assertEqual(ancestor.root().name, BUILTINS_NAME)
+        self.assertRaises(StopIteration, ancestors.next)
 
     def test_qqch(self):
         code = '''
@@ -501,20 +501,20 @@ class ErudiEntitySchema:
         '''
         astng = builder.string_build(code, __name__, __file__)
         arg = get_name_node(astng['ErudiEntitySchema']['__init__'], 'e_type')
-        self.failUnlessEqual([n.__class__ for n in arg.infer()],
-                             [YES.__class__])
+        self.assertEqual([n.__class__ for n in arg.infer()],
+                         [YES.__class__])
         arg = get_name_node(astng['ErudiEntitySchema']['__init__'], 'kwargs')
-        self.failUnlessEqual([n.__class__ for n in arg.infer()],
-                             [nodes.Dict])
+        self.assertEqual([n.__class__ for n in arg.infer()],
+                         [nodes.Dict])
         arg = get_name_node(astng['ErudiEntitySchema']['meth'], 'e_type')
-        self.failUnlessEqual([n.__class__ for n in arg.infer()],
-                             [YES.__class__])
+        self.assertEqual([n.__class__ for n in arg.infer()],
+                         [YES.__class__])
         arg = get_name_node(astng['ErudiEntitySchema']['meth'], 'args')
-        self.failUnlessEqual([n.__class__ for n in arg.infer()],
-                             [nodes.Tuple])
+        self.assertEqual([n.__class__ for n in arg.infer()],
+                         [nodes.Tuple])
         arg = get_name_node(astng['ErudiEntitySchema']['meth'], 'kwargs')
-        self.failUnlessEqual([n.__class__ for n in arg.infer()],
-                             [nodes.Dict])
+        self.assertEqual([n.__class__ for n in arg.infer()],
+                         [nodes.Dict])
 
 
     def test_tuple_then_list(self):
@@ -527,9 +527,9 @@ def test_view(rql, vid, tags=()):
         name = get_name_node(astng['test_view'], 'tags', -1)
         it = name.infer()
         tags = it.next()
-        self.failUnlessEqual(tags.__class__, Instance)
-        self.failUnlessEqual(tags._proxied.name, 'list')
-        self.failUnlessRaises(StopIteration, it.next)
+        self.assertEqual(tags.__class__, Instance)
+        self.assertEqual(tags._proxied.name, 'list')
+        self.assertRaises(StopIteration, it.next)
 
 
 
@@ -569,12 +569,12 @@ if __name__ == '__main__':
             fct(a_line)
 '''
         astng = builder.string_build(code, __name__, __file__)
-        self.failUnlessEqual(len(list(astng['process_line'].infer_call_result(
+        self.assertEqual(len(list(astng['process_line'].infer_call_result(
                                                                 None))), 3)
-        self.failUnlessEqual(len(list(astng['tupletest'].infer())), 3)
+        self.assertEqual(len(list(astng['tupletest'].infer())), 3)
         values = ['Function(first_word)', 'Function(last_word)', 'Const(NoneType)']
-        self.failUnlessEqual([str(infered)
-                              for infered in astng['fct'].infer()], values)
+        self.assertEqual([str(infered)
+                          for infered in astng['fct'].infer()], values)
 
     def test_float_complex_ambiguity(self):
         code = '''
@@ -589,9 +589,9 @@ def no_conjugate_member(magic_flag):
     return something.conjugate()
         '''
         astng = builder.string_build(code, __name__, __file__)
-        self.failUnlessEqual([i.value for i in
+        self.assertEqual([i.value for i in
             astng['no_conjugate_member'].ilookup('something')], [1.0, 1.0j])
-        self.failUnlessEqual([i.value for i in
+        self.assertEqual([i.value for i in
                 get_name_node(astng, 'something', -1).infer()], [1.0, 1.0j])
 
     def test_lookup_cond_branches(self):
@@ -604,7 +604,7 @@ def no_conjugate_member(magic_flag):
     return something.conjugate()
         '''
         astng = builder.string_build(code, __name__, __file__)
-        self.failUnlessEqual([i.value for i in
+        self.assertEqual([i.value for i in
                 get_name_node(astng, 'something', -1).infer()], [1.0, 1.0j])
 
 
@@ -617,13 +617,13 @@ d = a + b + c
 print (d)
         '''
         astng = builder.string_build(code, __name__, __file__)
-        self.failUnlessEqual([i.value for i in
+        self.assertEqual([i.value for i in
                                 get_name_node(astng, 'a', -1).infer()], [1])
-        self.failUnlessEqual([i.value for i in
+        self.assertEqual([i.value for i in
                                 get_name_node(astng, 'b', -1).infer()], [2])
-        self.failUnlessEqual([i.value for i in
+        self.assertEqual([i.value for i in
                                 get_name_node(astng, 'c', -1).infer()], [3])
-        self.failUnlessEqual([i.value for i in
+        self.assertEqual([i.value for i in
                                 get_name_node(astng, 'd', -1).infer()], [6])
 
     #def test_simple_tuple(self):
@@ -635,7 +635,7 @@ print (d)
 #some = a + b
 #"""
         #astng = builder.string_build(code, __name__, __file__)
-        #self.failUnlessEqual(astng['some'].infer.next().as_string(), "(1, 22)")
+        #self.assertEqual(astng['some'].infer.next().as_string(), "(1, 22)")
 
     def test_simple_for(self):
         code = '''
@@ -648,15 +648,15 @@ for b,c in [(1,2), (3,4)]:
 print ([(d,e) for e,d in ([1,2], [3,4])])
         '''
         astng = builder.string_build(code, __name__, __file__)
-        self.failUnlessEqual([i.value for i in
+        self.assertEqual([i.value for i in
                             get_name_node(astng, 'a', -1).infer()], [1, 2, 3])
-        self.failUnlessEqual([i.value for i in
+        self.assertEqual([i.value for i in
                             get_name_node(astng, 'b', -1).infer()], [1, 3])
-        self.failUnlessEqual([i.value for i in
+        self.assertEqual([i.value for i in
                             get_name_node(astng, 'c', -1).infer()], [2, 4])
-        self.failUnlessEqual([i.value for i in
+        self.assertEqual([i.value for i in
                             get_name_node(astng, 'd', -1).infer()], [2, 4])
-        self.failUnlessEqual([i.value for i in
+        self.assertEqual([i.value for i in
                             get_name_node(astng, 'e', -1).infer()], [1, 3])
 
 
@@ -665,9 +665,9 @@ print ([(d,e) for e,d in ([1,2], [3,4])])
 print ((d,e) for e,d in ([1,2], [3,4]))
         '''
         astng = builder.string_build(code, __name__, __file__)
-        self.failUnlessEqual([i.value for i in
+        self.assertEqual([i.value for i in
                             get_name_node(astng, 'd', -1).infer()], [2, 4])
-        self.failUnlessEqual([i.value for i in
+        self.assertEqual([i.value for i in
                             get_name_node(astng, 'e', -1).infer()], [1, 3])
 
 
@@ -680,9 +680,9 @@ help()
         astng = builder.string_build(code, __name__, __file__)
         node = get_name_node(astng, 'help', -1)
         infered = list(node.infer())
-        self.failUnlessEqual(len(infered), 1, infered)
+        self.assertEqual(len(infered), 1, infered)
         self.assertIsInstance(infered[0], Instance)
-        self.failUnlessEqual(str(infered[0]),
+        self.assertEqual(str(infered[0]),
                              'Instance of site._Helper')
 
     def test_builtin_open(self):
@@ -692,9 +692,9 @@ open("toto.txt")
         astng = builder.string_build(code, __name__, __file__)
         node = get_name_node(astng, 'open', -1)
         infered = list(node.infer())
-        self.failUnlessEqual(len(infered), 1)
+        self.assertEqual(len(infered), 1)
         self.assertIsInstance(infered[0], nodes.Function)
-        self.failUnlessEqual(infered[0].name, 'open')
+        self.assertEqual(infered[0].name, 'open')
 
     def test_callfunc_context_func(self):
         code = '''
@@ -705,9 +705,9 @@ un = mirror(1)
         '''
         astng = builder.string_build(code, __name__, __file__)
         infered = list(astng.igetattr('un'))
-        self.failUnlessEqual(len(infered), 1)
+        self.assertEqual(len(infered), 1)
         self.assertIsInstance(infered[0], nodes.Const)
-        self.failUnlessEqual(infered[0].value, 1)
+        self.assertEqual(infered[0].value, 1)
 
     def test_callfunc_context_lambda(self):
         code = '''
@@ -717,12 +717,12 @@ un = mirror(1)
         '''
         astng = builder.string_build(code, __name__, __file__)
         infered = list(astng.igetattr('mirror'))
-        self.failUnlessEqual(len(infered), 1)
+        self.assertEqual(len(infered), 1)
         self.assertIsInstance(infered[0], nodes.Lambda)
         infered = list(astng.igetattr('un'))
-        self.failUnlessEqual(len(infered), 1)
+        self.assertEqual(len(infered), 1)
         self.assertIsInstance(infered[0], nodes.Const)
-        self.failUnlessEqual(infered[0].value, 1)
+        self.assertEqual(infered[0].value, 1)
 
     def test_factory_method(self):
         code = '''
@@ -739,9 +739,9 @@ sub = Sub.instance()
         '''
         astng = builder.string_build(code, __name__, __file__)
         infered = list(astng.igetattr('sub'))
-        self.failUnlessEqual(len(infered), 1)
+        self.assertEqual(len(infered), 1)
         self.assertIsInstance(infered[0], Instance)
-        self.failUnlessEqual(infered[0]._proxied.name, 'Sub')
+        self.assertEqual(infered[0]._proxied.name, 'Sub')
 
 
     def test_import_as(self):
@@ -757,26 +757,26 @@ print (make_code)
         '''
         astng = builder.string_build(code, __name__, __file__)
         infered = list(astng.igetattr('osp'))
-        self.failUnlessEqual(len(infered), 1)
+        self.assertEqual(len(infered), 1)
         self.assertIsInstance(infered[0], nodes.Module)
-        self.failUnlessEqual(infered[0].name, 'os.path')
+        self.assertEqual(infered[0].name, 'os.path')
         infered = list(astng.igetattr('e'))
-        self.failUnlessEqual(len(infered), 1)
+        self.assertEqual(len(infered), 1)
         self.assertIsInstance(infered[0], nodes.Function)
-        self.failUnlessEqual(infered[0].name, 'exists')
+        self.assertEqual(infered[0].name, 'exists')
         if sys.version_info >= (3, 0):
             self.skipTest('<new> module has been removed')
         infered = list(astng.igetattr('make_code'))
-        self.failUnlessEqual(len(infered), 1)
+        self.assertEqual(len(infered), 1)
         self.assertIsInstance(infered[0], Instance)
-        self.failUnlessEqual(str(infered[0]),
+        self.assertEqual(str(infered[0]),
                              'Instance of %s.type' % BUILTINS_NAME)
 
     def _test_const_infered(self, node, value):
         infered = list(node.infer())
-        self.failUnlessEqual(len(infered), 1)
+        self.assertEqual(len(infered), 1)
         self.assertIsInstance(infered[0], nodes.Const)
-        self.failUnlessEqual(infered[0].value, value)
+        self.assertEqual(infered[0].value, value)
 
     def test_unary_not(self):
         for code in ('a = not (1,); b = not ()',
@@ -826,9 +826,9 @@ print (make_code)
         for code in ('a = [[]] * 2', 'a = 2 * [[]]'):
             astng = builder.string_build(code, __name__, __file__)
             infered = list(astng['a'].infer())
-            self.failUnlessEqual(len(infered), 1)
+            self.assertEqual(len(infered), 1)
             self.assertIsInstance(infered[0], nodes.List)
-            self.failUnlessEqual(len(infered[0].elts), 2)
+            self.assertEqual(len(infered[0].elts), 2)
             self.assertIsInstance(infered[0].elts[0], nodes.List)
             self.assertIsInstance(infered[0].elts[1], nodes.List)
 
@@ -846,11 +846,11 @@ print (make_code)
     def test_binary_op_tuple_add(self):
         astng = builder.string_build('a = (1,) + (2,)', __name__, __file__)
         infered = list(astng['a'].infer())
-        self.failUnlessEqual(len(infered), 1)
+        self.assertEqual(len(infered), 1)
         self.assertIsInstance(infered[0], nodes.Tuple)
-        self.failUnlessEqual(len(infered[0].elts), 2)
-        self.failUnlessEqual(infered[0].elts[0].value, 1)
-        self.failUnlessEqual(infered[0].elts[1].value, 2)
+        self.assertEqual(len(infered[0].elts), 2)
+        self.assertEqual(infered[0].elts[0].value, 1)
+        self.assertEqual(infered[0].elts[1].value, 2)
 
     def test_binary_op_custom_class(self):
         code = '''
@@ -872,7 +872,7 @@ x = randint(1)
         '''
         astng = builder.string_build(code, __name__, __file__)
         infered = list(astng.igetattr('x'))
-        self.failUnlessEqual(len(infered), 2)
+        self.assertEqual(len(infered), 2)
         value = [str(v) for v in infered]
         # The __name__ trick here makes it work when invoked directly
         # (__name__ == '__main__') and through pytest (__name__ ==
@@ -888,10 +888,10 @@ def f(g = lambda: None):
         astng = builder.string_build(code, __name__, __file__)
         callfuncnode = astng['f'].body[0].value.expr
         infered = list(callfuncnode.infer())
-        self.failUnlessEqual(len(infered), 2, infered)
+        self.assertEqual(len(infered), 2, infered)
         infered.remove(YES)
         self.assertIsInstance(infered[0], nodes.Const)
-        self.failUnlessEqual(infered[0].value, None)
+        self.assertIsNone(infered[0].value)
 
     def test_nonregr_getitem_empty_tuple(self):
         code = '''
@@ -900,8 +900,8 @@ def f(x):
         '''
         astng = builder.string_build(code, __name__, __file__)
         infered = list(astng['f'].ilookup('a'))
-        self.failUnlessEqual(len(infered), 1)
-        self.failUnlessEqual(infered[0], YES)
+        self.assertEqual(len(infered), 1)
+        self.assertEqual(infered[0], YES)
 
     def test_python25_generator_exit(self):
         sys.stderr = StringIO()
@@ -910,7 +910,7 @@ def f(x):
         list(astng['b'].infer())
         output = sys.stderr.getvalue()
         # I have no idea how to test for this in another way...
-        self.failIf("RuntimeError" in output, "Exception exceptions.RuntimeError: 'generator ignored GeneratorExit' in <generator object> ignored")
+        self.assertNotIn("RuntimeError", output, "Exception exceptions.RuntimeError: 'generator ignored GeneratorExit' in <generator object> ignored")
         sys.stderr = sys.__stderr__
 
     def test_python25_relative_import(self):
@@ -925,19 +925,19 @@ def f(x):
     def test_python25_no_relative_import(self):
         fname = join(abspath(dirname(__file__)), 'regrtest_data', 'package', 'absimport.py')
         astng = builder.file_build(fname, 'absimport')
-        self.failUnless(astng.absolute_import_activated(), True)
+        self.assertTrue(astng.absolute_import_activated(), True)
         infered = get_name_node(astng, 'import_package_subpackage_module').infer().next()
         # failed to import since absolute_import is activated
-        self.failUnless(infered is YES)
+        self.assertIs(infered, YES)
 
     def test_nonregr_absolute_import(self):
         fname = join(abspath(dirname(__file__)), 'regrtest_data', 'absimp', 'string.py')
         astng = builder.file_build(fname, 'absimp.string')
-        self.failUnless(astng.absolute_import_activated(), True)
+        self.assertTrue(astng.absolute_import_activated(), True)
         infered = get_name_node(astng, 'string').infer().next()
         self.assertIsInstance(infered, nodes.Module)
         self.assertEqual(infered.name, 'string')
-        self.failUnless('lower' in infered.locals)
+        self.assertIn('ascii_letters', infered.locals)
 
     def test_mechanize_open(self):
         try:
@@ -955,13 +955,13 @@ b = Browser()
         self.skipTest('the commit said: "huum, see that later"')
         self.assertEqual(len(bopen), 1)
         self.assertIsInstance(bopen[0], nodes.Function)
-        self.failUnless(bopen[0].callable())
+        self.assertTrue(bopen[0].callable())
         b = get_name_node(astng, 'b').infer().next()
         self.assertIsInstance(b, Instance)
         bopen = list(b.igetattr('open'))
         self.assertEqual(len(bopen), 1)
         self.assertIsInstance(bopen[0], BoundMethod)
-        self.failUnless(bopen[0].callable())
+        self.assertTrue(bopen[0].callable())
 
     def test_property(self):
         code = '''

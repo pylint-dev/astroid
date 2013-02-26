@@ -1,11 +1,5 @@
-# This program is free software; you can redistribute it and/or modify it under
-# the terms of the GNU Lesser General Public License as published by the Free Software
-# Foundation; either version 2 of the License, or (at your option) any later
-# version.
-# copyright 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2012 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
-# copyright 2003-2010 Sylvain Thenault, all rights reserved.
-# contact mailto:thenault@gmail.com
 #
 # This file is part of logilab-astng.
 #
@@ -21,14 +15,6 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
-
-# This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-
-# You should have received a copy of the GNU Lesser General Public License along with
-# this program; if not, write to the Free Software Foundation, Inc.,
-# 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """tests for specific behaviour of astng nodes
 """
 import sys
@@ -142,7 +128,7 @@ else:
         self.assertEqual(len(self.astng.body), 4)
         for stmt in self.astng.body:
             self.assertIsInstance( stmt, nodes.If)
-        self.failIf(self.astng.body[0].orelse) # simple If
+        self.assertFalse(self.astng.body[0].orelse) # simple If
         self.assertIsInstance(self.astng.body[1].orelse[0], nodes.Pass) # If / else
         self.assertIsInstance(self.astng.body[2].orelse[0], nodes.If) # If / elif
         self.assertIsInstance(self.astng.body[3].orelse[0].orelse[0], nodes.If)
@@ -236,22 +222,22 @@ class ImportNodeTC(testlib.TestCase):
 
     def test_import_self_resolve(self):
         myos = MODULE2.igetattr('myos').next()
-        self.failUnless(isinstance(myos, nodes.Module), myos)
-        self.failUnlessEqual(myos.name, 'os')
-        self.failUnlessEqual(myos.qname(), 'os')
-        self.failUnlessEqual(myos.pytype(), '%s.module' % BUILTINS_MODULE)
+        self.assertTrue(isinstance(myos, nodes.Module), myos)
+        self.assertEqual(myos.name, 'os')
+        self.assertEqual(myos.qname(), 'os')
+        self.assertEqual(myos.pytype(), '%s.module' % BUILTINS_MODULE)
 
     def test_from_self_resolve(self):
         spawn = MODULE.igetattr('spawn').next()
-        self.failUnless(isinstance(spawn, nodes.Class), spawn)
-        self.failUnlessEqual(spawn.root().name, 'logilab.common.shellutils')
-        self.failUnlessEqual(spawn.qname(), 'logilab.common.shellutils.Execute')
-        self.failUnlessEqual(spawn.pytype(), '%s.classobj' % BUILTINS_MODULE)
+        self.assertTrue(isinstance(spawn, nodes.Class), spawn)
+        self.assertEqual(spawn.root().name, 'logilab.common.shellutils')
+        self.assertEqual(spawn.qname(), 'logilab.common.shellutils.Execute')
+        self.assertEqual(spawn.pytype(), '%s.classobj' % BUILTINS_MODULE)
         abspath = MODULE2.igetattr('abspath').next()
-        self.failUnless(isinstance(abspath, nodes.Function), abspath)
-        self.failUnlessEqual(abspath.root().name, 'os.path')
-        self.failUnlessEqual(abspath.qname(), 'os.path.abspath')
-        self.failUnlessEqual(abspath.pytype(), '%s.function' % BUILTINS_MODULE)
+        self.assertTrue(isinstance(abspath, nodes.Function), abspath)
+        self.assertEqual(abspath.root().name, 'os.path')
+        self.assertEqual(abspath.qname(), 'os.path.abspath')
+        self.assertEqual(abspath.pytype(), '%s.function' % BUILTINS_MODULE)
 
     def test_real_name(self):
         from_ = MODULE['spawn']
@@ -330,7 +316,7 @@ class ConstNodeTC(testlib.TestCase):
         self.assertIsInstance(node._proxied, nodes.Class)
         self.assertEqual(node._proxied.name, value.__class__.__name__)
         self.assertIs(node.value, value)
-        self.failUnless(node._proxied.parent)
+        self.assertTrue(node._proxied.parent)
         self.assertEqual(node._proxied.root().name, value.__class__.__module__)
 
     def test_none(self):
@@ -384,11 +370,11 @@ def func(a,
 x = lambda x: None
         ''')
         self.assertEqual(ast['func'].args.fromlineno, 2)
-        self.failIf(ast['func'].args.is_statement)
+        self.assertFalse(ast['func'].args.is_statement)
         xlambda = ast['x'].infer().next()
         self.assertEqual(xlambda.args.fromlineno, 4)
         self.assertEqual(xlambda.args.tolineno, 4)
-        self.failIf(xlambda.args.is_statement)
+        self.assertFalse(xlambda.args.is_statement)
         if sys.version_info < (3, 0):
             self.assertEqual(ast['func'].args.tolineno, 3)
         else:
