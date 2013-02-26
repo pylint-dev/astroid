@@ -214,7 +214,11 @@ class InspectBuilder(object):
         self._module = module
         if modname is None:
             modname = module.__name__
-        node = build_module(modname, module.__doc__)
+        try:
+            node = build_module(modname, module.__doc__)
+        except AttributeError:
+            # in jython, java modules have no __doc__ (see #109562)
+            node = build_module(modname)
         node.file = node.path = path and abspath(path) or path
         MANAGER.astng_cache[modname] = node
         node.package = hasattr(module, '__path__')
