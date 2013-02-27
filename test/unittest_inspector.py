@@ -14,17 +14,19 @@
 # this program; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 """
-unittest for the visitors.diadefs module
+ for the visitors.diadefs module
 """
 
-import unittest
 import sys
 from os.path import join, abspath, dirname
+
+from logilab.common.testlib import TestCase, unittest_main
 
 from logilab.astng import nodes, inspector
 from logilab.astng.bases import Instance, YES
 
 from logilab.astng.manager import ASTNGManager, _silent_no_wrap
+
 MANAGER = ASTNGManager()
 
 def astng_wrapper(func, modname):
@@ -33,9 +35,8 @@ def astng_wrapper(func, modname):
 
 DATA2 = join(dirname(abspath(__file__)), 'data2')
 
-from os.path import join, abspath, dirname
 
-class LinkerTC(unittest.TestCase):
+class LinkerTC(TestCase):
 
     def setUp(self):
         self.project = MANAGER.project_from_files([DATA2], astng_wrapper)
@@ -89,4 +90,4 @@ __all__ = ('LinkerTC', 'LinkerTC2')
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest_main()
