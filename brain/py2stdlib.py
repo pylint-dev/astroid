@@ -99,7 +99,7 @@ def cleanup_resources(force=False):
 def urlparse_transform(module):
     fake = ASTNGBuilder(MANAGER).string_build('''
 
-def urlparse(urlstring, default_scheme='', allow_fragments=True):
+def urlparse(url, scheme='', allow_fragments=True):
     return ParseResult()
 
 class ParseResult(object):
