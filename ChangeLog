@@ -9,6 +9,7 @@ Change log for the astng package
       in lambdas.
     * #123068: Make sure .as_string() returns valid code for yields in
       expressions.
+    * #47957: Set literals are now correctly treated as inference leaves.
 
 2013-02-27  -- 0.24.2
     * pylint-brain: more subprocess.Popen faking (see #46273)

@@ -1,4 +1,4 @@
-# copyright 2003-2012 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of logilab-astng.
@@ -431,6 +431,18 @@ s2 = '_'
         n = astng['s2']
         infered = n.infer().next()
         self.assertEqual(infered.getitem(0).value, '_')
+
+    def test_builtin_types_py27(self):
+        if sys.version_info < (2, 7):
+            self.skipTest('set literal introduced in python 2.7')
+        code = 's = {1}'
+        astng = builder.string_build(code, __name__, __file__)
+        n = astng['s']
+        infered = n.infer().next()
+        self.assertIsInstance(infered, nodes.Set)
+        self.assertIsInstance(infered, Instance)
+        self.assertEqual(infered.name, 'set')
+        self.assertIn('remove', infered._proxied.locals)
 
     def test_unicode_type(self):
         if sys.version_info >= (3, 0):

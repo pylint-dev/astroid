@@ -698,7 +698,7 @@ class TreeRebuilder(object):
         return newnode
 
     def visit_set(self, node, parent):
-        """visit a Tuple node by returning a fresh instance of it"""
+        """visit a Set node by returning a fresh instance of it"""
         newnode = new.Set()
         _lineno_parent(node, newnode, parent)
         newnode.elts = [self.visit(child, newnode) for child in node.elts]

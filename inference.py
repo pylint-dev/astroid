@@ -137,7 +137,7 @@ nodes.Const.infer = infer_end
 nodes.List.infer = infer_end
 nodes.Tuple.infer = infer_end
 nodes.Dict.infer = infer_end
-
+nodes.Set.infer = infer_end
 
 def infer_name(self, context=None):
     """infer a Name: use name lookup rules"""
