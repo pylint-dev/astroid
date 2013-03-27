@@ -608,7 +608,7 @@ class Function(Statement, Lambda):
         """return true if this is a generator function"""
         # XXX should be flagged, not computed
         try:
-            return self.nodes_of_class(Yield, skip_klass=Function).next()
+            return self.nodes_of_class(Yield, skip_klass=(Function, Lambda)).next()
         except StopIteration:
             return False
 

@@ -232,6 +232,11 @@ def nested_args(a, (b, c, d)):
         func = MODULE['four_args']
         self.assertEqual(func.args.format_args(), 'a, b, c, d')
 
+    def test_is_generator(self):
+        self.assertTrue(MODULE2['generator'].is_generator())
+        self.assertFalse(MODULE2['not_a_generator'].is_generator())
+        self.assertFalse(MODULE2['make_class'].is_generator())
+
     def test_is_abstract(self):
         method = MODULE2['AbstractClass']['to_override']
         self.assertTrue(method.is_abstract(pass_is_abstract=False))
