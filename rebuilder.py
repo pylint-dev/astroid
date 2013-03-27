@@ -879,6 +879,8 @@ class TreeRebuilder3k(TreeRebuilder):
         newnode.set_line_info(newnode.last_child())
         return newnode
 
+    def visit_yieldfrom(self, node, parent):
+        return self.visit_yield(node, parent)
 
 if sys.version_info >= (3, 0):
     TreeRebuilder = TreeRebuilder3k

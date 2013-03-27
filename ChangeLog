@@ -2,7 +2,7 @@ Change log for the astng package
 ================================
 
 --
-
+    * #124360 [py3.3]: Don't crash on 'yield from' nodes
     * #123062 [pylint-brain]: Use correct names for keywords for urlparse
     * #123056 [pylint-brain]: Add missing methods for hashlib
     * #123068: Fix inference for generator methods to correctly handle yields
