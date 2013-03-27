@@ -15,11 +15,17 @@ def hashlib_transform(module):
 
 class md5(object):
   def __init__(self, value): pass
+  def digest():
+    return u''
+  def update(self, value): pass
   def hexdigest(self):
     return u''
 
 class sha1(object):
   def __init__(self, value): pass
+  def digest():
+    return u''
+  def update(self, value): pass
   def hexdigest(self):
     return u''
 

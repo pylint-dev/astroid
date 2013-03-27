@@ -4,6 +4,7 @@ Change log for the astng package
 --
 
     * #123062 [pylint-brain]: Use correct names for keywords for urlparse
+    * #123056 [pylint-brain]: Add missing methods for hashlib
 
 2013-02-27  -- 0.24.2
     * pylint-brain: more subprocess.Popen faking (see #46273)
