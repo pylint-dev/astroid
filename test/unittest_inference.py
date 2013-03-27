@@ -627,6 +627,9 @@ b = (1, 2, 3)[1]
 c = (1, 2, 3)[-1]
 d = a + b + c
 print (d)
+e = {'key': 'value'}
+f = e['key']
+print (f)
         '''
         astng = builder.string_build(code, __name__, __file__)
         self.assertEqual([i.value for i in
@@ -637,6 +640,8 @@ print (d)
                                 get_name_node(astng, 'c', -1).infer()], [3])
         self.assertEqual([i.value for i in
                                 get_name_node(astng, 'd', -1).infer()], [6])
+        self.assertEqual([i.value for i in
+                          get_name_node(astng, 'f', -1).infer()], ['value'])
 
     #def test_simple_tuple(self):
         #"""test case for a simple tuple value"""

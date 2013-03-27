@@ -1,4 +1,4 @@
-# copyright 2003-2012 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 # copyright 2003-2010 Sylvain Thenault, all rights reserved.
 # contact mailto:thenault@gmail.com
@@ -513,14 +513,16 @@ class Dict(NodeNG, Instance):
     def itered(self):
         return self.items[::2]
 
-    def getitem(self, key, context=None):
-        for i in xrange(0, len(self.items), 2):
-            for inferedkey in self.items[i].infer(context):
+    def getitem(self, lookup_key, context=None):
+        for key, value in self.items:
+            for inferedkey in key.infer(context):
                 if inferedkey is YES:
                     continue
-                if isinstance(inferedkey, Const) and inferedkey.value == key:
-                    return self.items[i+1]
-        raise IndexError(key)
+                if isinstance(inferedkey, Const) and inferedkey.value == lookup_key:
+                    return value
+        # This should raise KeyError, but all call sites only catch
+        # IndexError. Let's leave it like that for now.
+        raise IndexError(lookup_key)
 
 
 class Discard(Statement):

@@ -1,4 +1,4 @@
-# copyright 2003-2011 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 # copyright 2003-2010 Sylvain Thenault, all rights reserved.
 # contact mailto:thenault@gmail.com
@@ -238,15 +238,19 @@ nodes.Global.infer = path_wrapper(infer_global)
 
 def infer_subscript(self, context=None):
     """infer simple subscription such as [1,2,3][0] or (1,2,3)[-1]"""
-    if isinstance(self.slice, nodes.Index):
-        index = self.slice.value.infer(context).next()
-        if index is YES:
-            yield YES
-            return
+    value = self.value.infer(context).next()
+    if value is YES:
+        yield YES
+        return
+
+    index = self.slice.infer(context).next()
+    if index is YES:
+        yield YES
+        return
+
+    if isinstance(index, nodes.Const):
         try:
-            # suppose it's a Tuple/List node (attribute error else)
-            # XXX infer self.value?
-            assigned = self.value.getitem(index.value, context)
+            assigned = value.getitem(index.value, context)
         except AttributeError:
             raise InferenceError()
         except (IndexError, TypeError):
@@ -381,3 +385,7 @@ def infer_empty_node(self, context=None):
             yield YES
 nodes.EmptyNode.infer = path_wrapper(infer_empty_node)
 
+
+def infer_index(self, context=None):
+    return self.value.infer(context)
+nodes.Index.infer = infer_index
