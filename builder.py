@@ -88,6 +88,7 @@ class ASTNGBuilder(InspectBuilder):
     rebuilder = TreeRebuilder()
 
     def __init__(self, manager=None):
+        InspectBuilder.__init__(self)
         self._manager = manager or MANAGER
 
     def module_build(self, module, modname=None):
