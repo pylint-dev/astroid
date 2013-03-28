@@ -21,10 +21,9 @@ import sys
 
 from logilab.common import testlib
 from logilab.astng.node_classes import unpack_infer
-from logilab.astng.bases import YES, InferenceContext
+from logilab.astng.bases import BUILTINS, YES, InferenceContext
 from logilab.astng.exceptions import ASTNGBuildingException, NotFoundError
-from logilab.astng import BUILTINS_MODULE, builder, nodes
-from logilab.astng.as_string import as_string
+from logilab.astng import builder, nodes
 
 from data import module as test_module
 
@@ -229,19 +228,19 @@ class ImportNodeTC(testlib.TestCase):
         self.assertTrue(isinstance(myos, nodes.Module), myos)
         self.assertEqual(myos.name, 'os')
         self.assertEqual(myos.qname(), 'os')
-        self.assertEqual(myos.pytype(), '%s.module' % BUILTINS_MODULE)
+        self.assertEqual(myos.pytype(), '%s.module' % BUILTINS)
 
     def test_from_self_resolve(self):
         spawn = MODULE.igetattr('spawn').next()
         self.assertTrue(isinstance(spawn, nodes.Class), spawn)
         self.assertEqual(spawn.root().name, 'logilab.common.shellutils')
         self.assertEqual(spawn.qname(), 'logilab.common.shellutils.Execute')
-        self.assertEqual(spawn.pytype(), '%s.classobj' % BUILTINS_MODULE)
+        self.assertEqual(spawn.pytype(), '%s.classobj' % BUILTINS)
         abspath = MODULE2.igetattr('abspath').next()
         self.assertTrue(isinstance(abspath, nodes.Function), abspath)
         self.assertEqual(abspath.root().name, 'os.path')
         self.assertEqual(abspath.qname(), 'os.path.abspath')
-        self.assertEqual(abspath.pytype(), '%s.function' % BUILTINS_MODULE)
+        self.assertEqual(abspath.pytype(), '%s.function' % BUILTINS)
 
     def test_real_name(self):
         from_ = MODULE['spawn']

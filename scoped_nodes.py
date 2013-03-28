@@ -31,7 +31,6 @@ from itertools import chain
 from logilab.common.compat import builtins
 from logilab.common.decorators import cached
 
-from logilab.astng import BUILTINS_MODULE
 from logilab.astng.exceptions import NotFoundError, NoDefault, \
      ASTNGBuildingException, InferenceError
 from logilab.astng.node_classes import Const, DelName, DelAttr, \
@@ -39,7 +38,7 @@ from logilab.astng.node_classes import Const, DelName, DelAttr, \
      are_exclusive, LookupMixIn, const_factory as cf, unpack_infer
 from logilab.astng.bases import NodeNG, InferenceContext, Instance,\
      YES, Generator, UnboundMethod, BoundMethod, _infer_stmts, copy_context, \
-     BUILTINS_NAME
+     BUILTINS
 from logilab.astng.mixins import FilterStmtsMixin
 from logilab.astng.bases import Statement
 from logilab.astng.manager import ASTNGManager
@@ -268,7 +267,7 @@ class Module(LocalsDictNodeNG):
         return self._scope_lookup(node, name, offset)
 
     def pytype(self):
-        return '%s.module' % BUILTINS_MODULE
+        return '%s.module' % BUILTINS
 
     def display_type(self):
         return 'Module'
@@ -481,8 +480,8 @@ class Lambda(LocalsDictNodeNG, FilterStmtsMixin):
 
     def pytype(self):
         if 'method' in self.type:
-            return '%s.instancemethod' % BUILTINS_MODULE
-        return '%s.function' % BUILTINS_MODULE
+            return '%s.instancemethod' % BUILTINS
+        return '%s.function' % BUILTINS
 
     def display_type(self):
         if 'method' in self.type:
@@ -740,8 +739,8 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
 
     def pytype(self):
         if self.newstyle:
-            return '%s.type' % BUILTINS_MODULE
-        return '%s.classobj' % BUILTINS_MODULE
+            return '%s.type' % BUILTINS
+        return '%s.classobj' % BUILTINS
 
     def display_type(self):
         return 'Class'
@@ -931,7 +930,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             #if self.newstyle: XXX cause an infinite recursion error
             try:
                 getattribute = self.getattr('__getattribute__', context)[0]
-                if getattribute.root().name != BUILTINS_NAME:
+                if getattribute.root().name != BUILTINS:
                     # class has a custom __getattribute__ defined
                     return True
             except NotFoundError:

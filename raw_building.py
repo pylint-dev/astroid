@@ -28,11 +28,10 @@ from os.path import abspath
 from inspect import (getargspec, isdatadescriptor, isfunction, ismethod,
                      ismethoddescriptor, isclass, isbuiltin)
 
-from logilab.astng import BUILTINS_MODULE
 from logilab.astng.node_classes import CONST_CLS
 from logilab.astng.nodes import (Module, Class, Const, const_factory, From,
     Function, EmptyNode, Name, Arguments, Dict, List, Set, Tuple)
-from logilab.astng.bases import Generator
+from logilab.astng.bases import BUILTINS, Generator
 from logilab.astng.manager import ASTNGManager
 MANAGER = ASTNGManager()
 
@@ -301,7 +300,7 @@ class InspectBuilder(object):
                 # Python 2.5.1 (r251:54863, Sep  1 2010, 22:03:14)
                 # >>> print object.__new__.__module__
                 # None
-                modname = BUILTINS_MODULE
+                modname = BUILTINS
             else:
                 attach_dummy_node(node, name, member)
                 return True

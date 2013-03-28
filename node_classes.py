@@ -22,10 +22,9 @@
 
 import sys
 
-from logilab.astng import BUILTINS_MODULE
 from logilab.astng.exceptions import NoDefault
 from logilab.astng.bases import (NodeNG, Statement, Instance, InferenceContext,
-                                 _infer_stmts, YES)
+                                 _infer_stmts, YES, BUILTINS)
 from logilab.astng.mixins import BlockRangeMixIn, AssignTypeMixin, \
                                  ParentAssignTypeMixin, FromImportMixIn
 
@@ -495,7 +494,7 @@ class Dict(NodeNG, Instance):
                           for k,v in items.iteritems()]
 
     def pytype(self):
-        return '%s.dict' % BUILTINS_MODULE
+        return '%s.dict' % BUILTINS
 
     def get_children(self):
         """get children of a Dict node"""
@@ -672,7 +671,7 @@ class List(NodeNG, Instance, ParentAssignTypeMixin):
             self.elts = [const_factory(e) for e in elts]
 
     def pytype(self):
-        return '%s.list' % BUILTINS_MODULE
+        return '%s.list' % BUILTINS
 
     def getitem(self, index, context=None):
         return self.elts[index]
@@ -739,7 +738,7 @@ class Set(NodeNG, Instance, ParentAssignTypeMixin):
             self.elts = [const_factory(e) for e in elts]
 
     def pytype(self):
-        return '%s.set' % BUILTINS_MODULE
+        return '%s.set' % BUILTINS
 
     def itered(self):
         return self.elts
@@ -821,7 +820,7 @@ class Tuple(NodeNG, Instance, ParentAssignTypeMixin):
             self.elts = [const_factory(e) for e in elts]
 
     def pytype(self):
-        return '%s.tuple' % BUILTINS_MODULE
+        return '%s.tuple' % BUILTINS
 
     def getitem(self, index, context=None):
         return self.elts[index]

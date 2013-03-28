@@ -24,20 +24,23 @@ inference utils.
 
 __docformat__ = "restructuredtext en"
 
+import sys
 from contextlib import contextmanager
 
-from logilab.common.compat import builtins
-
-from logilab.astng import BUILTINS_MODULE
-from logilab.astng.exceptions import InferenceError, ASTNGError, \
-                                       NotFoundError, UnresolvableName
+from logilab.astng.exceptions import (InferenceError, ASTNGError,
+                                      NotFoundError, UnresolvableName)
 from logilab.astng.as_string import as_string
 
-BUILTINS_NAME = builtins.__name__
+
+if sys.version_info >= (3, 0):
+    BUILTINS = 'builtins'
+else:
+    BUILTINS = '__builtin__'
 
 class Proxy(object):
     """a simple proxy object"""
-    _proxied = None
+
+    _proxied = None # proxied object may be set by class or by instance
 
     def __init__(self, proxied=None):
         if proxied is not None:
@@ -188,7 +191,7 @@ class Instance(Proxy):
         """wrap bound methods of attrs in a InstanceMethod proxies"""
         for attr in attrs:
             if isinstance(attr, UnboundMethod):
-                if BUILTINS_NAME + '.property' in attr.decoratornames():
+                if BUILTINS + '.property' in attr.decoratornames():
                     for infered in attr.infer_call_result(self, context):
                         yield infered
                 else:
@@ -253,7 +256,7 @@ class UnboundMethod(Proxy):
         # If we're unbound method __new__ of builtin object, the result is an
         # instance of the class given as first argument.
         if (self._proxied.name == '__new__' and
-                self._proxied.parent.frame().qname() == '%s.object' % BUILTINS_MODULE):
+                self._proxied.parent.frame().qname() == '%s.object' % BUILTINS):
             return (x is YES and x or Instance(x) for x in caller.args[0].infer())
         return self._proxied.infer_call_result(caller, context)
 
@@ -279,7 +282,7 @@ class Generator(Instance):
         return True
 
     def pytype(self):
-        return '%s.generator' % BUILTINS_MODULE
+        return '%s.generator' % BUILTINS
 
     def display_type(self):
         return 'Generator'

@@ -25,8 +25,8 @@ from os.path import join, abspath, dirname
 from logilab.common.testlib import TestCase, unittest_main
 
 from logilab.astng import builder, nodes, scoped_nodes, \
-     BUILTINS_MODULE, InferenceError, NotFoundError
-from logilab.astng.bases import Instance, BoundMethod, UnboundMethod
+     InferenceError, NotFoundError
+from logilab.astng.bases import BUILTINS, Instance, BoundMethod, UnboundMethod
 
 abuilder = builder.ASTNGBuilder()
 DATA = join(dirname(abspath(__file__)), 'data')
@@ -241,7 +241,7 @@ def nested_args(a, (b, c, d)):
         method = MODULE2['AbstractClass']['to_override']
         self.assertTrue(method.is_abstract(pass_is_abstract=False))
         self.assertEqual(method.qname(), 'data.module2.AbstractClass.to_override')
-        self.assertEqual(method.pytype(), '%s.instancemethod' % BUILTINS_MODULE)
+        self.assertEqual(method.pytype(), '%s.instancemethod' % BUILTINS)
         method = MODULE2['AbstractClass']['return_something']
         self.assertFalse(method.is_abstract(pass_is_abstract=False))
         # non regression : test raise "string" doesn't cause an exception in is_abstract
@@ -266,7 +266,7 @@ def f():
         '''
         astng = abuilder.string_build(data, __name__, __file__)
         g = list(astng['f'].ilookup('g'))[0]
-        self.assertEqual(g.pytype(), '%s.function' % BUILTINS_MODULE)
+        self.assertEqual(g.pytype(), '%s.function' % BUILTINS)
 
     def test_lambda_qname(self):
         astng = abuilder.string_build('''
