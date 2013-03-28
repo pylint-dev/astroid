@@ -1,4 +1,4 @@
-# copyright 2003-2012 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of logilab-astng.
@@ -45,6 +45,10 @@ class AsString(testlib.TestCase):
         """
         data = open(join(DATA, 'module.py')).read()
         self.assertMultiLineEqual(as_string(MODULE), data)
+
+    def test_module2_as_string(self):
+        """check as_string on a whole module prepared to be returned identically
+        """
         data = open(join(DATA, 'module2.py')).read()
         self.assertMultiLineEqual(as_string(MODULE2), data)
 
