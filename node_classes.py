@@ -893,18 +893,19 @@ _update_const_classes()
 
 def const_factory(value):
     """return an astng node for a python value"""
-    # since const_factory is called to evaluate content of container (eg list,
-    # tuple), it may be called with some node as argument that should be left
-    # untouched
+    # XXX we should probably be stricter here and only consider stuff in
+    # CONST_CLS or do better treatment:
+    #
+    # * shall we really support nodes as argument? if so, detail cases where
+    # * this may occurs
+    #
+    # * in case where value is not in CONST_CLS, we should rather recall the
+    #   builder on this value than returning an empty node
     if isinstance(value, NodeNG):
         return value
     try:
         return CONST_CLS[value.__class__](value)
     except (KeyError, AttributeError):
-        # some constants (like from gtk._gtk) don't have their class in
-        # CONST_CLS, though we can "assert isinstance(value, tuple(CONST_CLS))"
-        if isinstance(value, tuple(CONST_CLS)):
-            return Const(value)
         node = EmptyNode()
         node.object = value
         return node

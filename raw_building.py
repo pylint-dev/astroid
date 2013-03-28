@@ -277,7 +277,7 @@ class InspectBuilder(object):
             elif isdatadescriptor(member):
                 assert isinstance(member, object)
                 object_build_datadescriptor(node, member, name)
-            elif isinstance(member, _CONSTANTS):
+            elif type(member) in _CONSTANTS:
                 attach_const_node(node, name, member)
             else:
                 # create an empty node so that the name is actually defined
