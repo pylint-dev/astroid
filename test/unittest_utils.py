@@ -1,7 +1,5 @@
-# copyright 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
-# copyright 2003-2010 Sylvain Thenault, all rights reserved.
-# contact mailto:thenault@gmail.com
 #
 # This file is part of logilab-astng.
 #
@@ -30,7 +28,7 @@ class AreExclusiveTC(TestCase):
 x = 10
 for x in range(5):
     print (x)
-   
+
 if x > 0:
     print ('#' * x)
         """, __name__, __file__)
@@ -41,7 +39,7 @@ if x > 0:
         assert xnames[1].lineno == 6
         self.assertEqual(are_exclusive(xass1, xnames[1]), False)
         self.assertEqual(are_exclusive(xass1, xnames[2]), False)
-        
+
     def test_if(self):
         astng = builder.string_build('''
 
@@ -67,7 +65,7 @@ else:
         self.assertEqual(are_exclusive(a3, a5), True)
         self.assertEqual(are_exclusive(a3, a4), False)
         self.assertEqual(are_exclusive(a5, a6), False)
-        
+
     def test_try_except(self):
         astng = builder.string_build('''
 try:
@@ -94,11 +92,11 @@ else:
         self.assertEqual(are_exclusive(f2, f4), True)
         self.assertEqual(are_exclusive(f3, f4), True)
         self.assertEqual(are_exclusive(f3, f2), True)
-        
+
         self.assertEqual(are_exclusive(f2, f1), True)
         self.assertEqual(are_exclusive(f4, f1), False)
         self.assertEqual(are_exclusive(f4, f2), True)
 
 if __name__ == '__main__':
     unittest_main()
-   
+
