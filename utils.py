@@ -22,6 +22,7 @@ extract information from it
 __docformat__ = "restructuredtext en"
 
 from logilab.astng.exceptions import ASTNGBuildingException
+from logilab.astng.builder import parse
 
 
 class ASTWalker:
@@ -125,10 +126,6 @@ def _check_children(node):
             raise ASTNGBuildingException
         _check_children(child)
 
-
-from _ast import PyCF_ONLY_AST
-def parse(string):
-    return compile(string, "<string>", 'exec', PyCF_ONLY_AST)
 
 class TreeTester(object):
     '''A helper class to see _ast tree and compare with astng tree
