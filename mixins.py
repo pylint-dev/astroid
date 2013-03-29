@@ -41,6 +41,7 @@ class BlockRangeMixIn(object):
             return lineno, orelse[0].fromlineno - 1
         return lineno, last or self.tolineno
 
+
 class FilterStmtsMixin(object):
     """Mixin for statement filtering and assignment type"""
 
@@ -76,7 +77,6 @@ class ParentAssignTypeMixin(AssignTypeMixin):
 
     def ass_type(self):
         return self.parent.ass_type()
-
 
 
 class FromImportMixIn(FilterStmtsMixin):

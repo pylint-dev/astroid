@@ -22,9 +22,8 @@ from various source and using a cache of built modules)
 
 __docformat__ = "restructuredtext en"
 
-import sys
 import os
-from os.path import dirname, basename, abspath, join, isdir, exists
+from os.path import dirname, join, isdir, exists
 
 from logilab.common.modutils import NoSourceFile, is_python_source, \
      file_from_modpath, load_module_from_name, modpath_from_file, \

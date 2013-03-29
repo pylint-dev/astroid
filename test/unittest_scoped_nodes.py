@@ -25,7 +25,7 @@ from os.path import join, abspath, dirname
 from logilab.common.testlib import TestCase, unittest_main
 
 from logilab.astng import builder, nodes, scoped_nodes, \
-     InferenceError, NotFoundError
+     InferenceError, NotFoundError, NoDefault
 from logilab.astng.bases import BUILTINS, Instance, BoundMethod, UnboundMethod
 
 abuilder = builder.ASTNGBuilder()
@@ -182,9 +182,9 @@ class FunctionNodeTC(TestCase):
     def test_default_value(self):
         func = MODULE2['make_class']
         self.assertIsInstance(func.args.default_value('base'), nodes.Getattr)
-        self.assertRaises(scoped_nodes.NoDefault, func.args.default_value, 'args')
-        self.assertRaises(scoped_nodes.NoDefault, func.args.default_value, 'kwargs')
-        self.assertRaises(scoped_nodes.NoDefault, func.args.default_value, 'any')
+        self.assertRaises(NoDefault, func.args.default_value, 'args')
+        self.assertRaises(NoDefault, func.args.default_value, 'kwargs')
+        self.assertRaises(NoDefault, func.args.default_value, 'any')
         #self.assertIsInstance(func.mularg_class('args'), nodes.Tuple)
         #self.assertIsInstance(func.mularg_class('kwargs'), nodes.Dict)
         #self.assertIsNone(func.mularg_class('base'))

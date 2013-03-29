@@ -28,7 +28,7 @@ from inspect import (getargspec, isdatadescriptor, isfunction, ismethod,
 
 from logilab.astng.node_classes import CONST_CLS
 from logilab.astng.nodes import (Module, Class, Const, const_factory, From,
-    Function, EmptyNode, Name, Arguments, Dict, List, Set, Tuple)
+    Function, EmptyNode, Name, Arguments)
 from logilab.astng.bases import BUILTINS, Generator
 from logilab.astng.manager import ASTNGManager
 MANAGER = ASTNGManager()

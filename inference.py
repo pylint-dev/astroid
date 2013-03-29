@@ -21,14 +21,13 @@
 __doctype__ = "restructuredtext en"
 
 from itertools import chain
-import sys
 
 from logilab.astng import nodes
 
 from logilab.astng.manager import ASTNGManager
-from logilab.astng.exceptions import (ASTNGBuildingException, ASTNGError,
+from logilab.astng.exceptions import (ASTNGError,
     InferenceError, NoDefault, NotFoundError, UnresolvableName)
-from logilab.astng.bases import YES, Instance, InferenceContext, Generator, \
+from logilab.astng.bases import YES, Instance, InferenceContext, \
      _infer_stmts, copy_context, path_wrapper, raise_if_nothing_infered
 from logilab.astng.protocols import _arguments_infer_argname
 

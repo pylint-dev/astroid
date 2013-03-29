@@ -29,11 +29,11 @@ from itertools import chain
 from logilab.common.compat import builtins
 from logilab.common.decorators import cached
 
-from logilab.astng.exceptions import NotFoundError, NoDefault, \
+from logilab.astng.exceptions import NotFoundError, \
      ASTNGBuildingException, InferenceError
 from logilab.astng.node_classes import Const, DelName, DelAttr, \
-     Dict, From, List, Name, Pass, Raise, Return, Tuple, Yield, \
-     are_exclusive, LookupMixIn, const_factory as cf, unpack_infer
+     Dict, From, List, Pass, Raise, Return, Tuple, Yield, \
+     LookupMixIn, const_factory as cf, unpack_infer
 from logilab.astng.bases import NodeNG, InferenceContext, Instance,\
      YES, Generator, UnboundMethod, BoundMethod, _infer_stmts, copy_context, \
      BUILTINS

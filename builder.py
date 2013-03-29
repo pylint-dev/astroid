@@ -23,8 +23,8 @@ at the same time.
 
 __docformat__ = "restructuredtext en"
 
-import sys, re
-from os.path import splitext, basename, dirname, exists, abspath
+import sys
+from os.path import splitext, basename, exists, abspath
 
 from logilab.common.modutils import modpath_from_file
 

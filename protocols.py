@@ -24,7 +24,7 @@ __doctype__ = "restructuredtext en"
 from logilab.astng.exceptions import InferenceError, NoDefault
 from logilab.astng.node_classes import unpack_infer
 from logilab.astng.bases import copy_context, \
-     raise_if_nothing_infered, yes_if_nothing_infered, Instance, Generator, YES
+     raise_if_nothing_infered, yes_if_nothing_infered, Instance, YES
 from logilab.astng.nodes import const_factory
 from logilab.astng import nodes
 
