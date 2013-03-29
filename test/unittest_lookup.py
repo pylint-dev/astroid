@@ -19,7 +19,8 @@
 """
 import sys
 from os.path import join, abspath, dirname
-from logilab.common.testlib import TestCase, unittest_main
+
+from logilab.common.testlib import TestCase, unittest_main, require_version
 
 from logilab.astng import builder, nodes, scoped_nodes, \
      InferenceError, NotFoundError, UnresolvableName
@@ -174,10 +175,8 @@ var
         else:
             self.assertRaises(UnresolvableName, var.infered)
 
-
+    @require_version('2.7')
     def test_dict_comps(self):
-        if sys.version_info < (2, 7):
-            self.skipTest('this test require python >= 2.7')
         astng = builder.string_build("""
 print ({ i: j for i in range(10) for j in range(10) })
 print ({ i: j for i in range(10) for j in range(10) })
@@ -194,10 +193,8 @@ print ({ i: j for i in range(10) for j in range(10) })
         self.assertEqual(len(xnames[1].lookup('i')[1]), 1)
         self.assertEqual(xnames[1].lookup('i')[1][0].lineno, 3)
 
-
+    @require_version('2.7')
     def test_set_comps(self):
-        if sys.version_info < (2, 7):
-            self.skipTest('this test require python >= 2.7')
         astng = builder.string_build("""
 print ({ i for i in range(10) })
 print ({ i for i in range(10) })
@@ -208,9 +205,8 @@ print ({ i for i in range(10) })
         self.assertEqual(len(xnames[1].lookup('i')[1]), 1)
         self.assertEqual(xnames[1].lookup('i')[1][0].lineno, 3)
 
+    @require_version('2.7')
     def test_set_comp_closure(self):
-        if sys.version_info < (2, 7):
-            self.skipTest('this test require python >= 2.7')
         astng = builder.string_build("""
 ten = { var for var in range(10) }
 var

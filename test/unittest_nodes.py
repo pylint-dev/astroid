@@ -51,20 +51,18 @@ class AsString(testlib.TestCase):
         data = open(join(DATA, 'module2.py')).read()
         self.assertMultiLineEqual(as_string(MODULE2), data)
 
+    @testlib.require_version('2.7')
     def test_2_7_as_string(self):
         """check as_string for python syntax >= 2.7"""
-        if sys.version_info < (2, 7):
-            self.skipTest("test python >= 2.7 specific")
         code = '''one_two = {1, 2}
 b = {v: k for (k, v) in enumerate('string')}
 cdd = {k for k in b}\n\n'''
         ast = abuilder.string_build(code)
         self.assertMultiLineEqual(as_string(ast), code)
 
+    @testlib.require_version('3.0')
     def test_3k_as_string(self):
         """check as_string for python 3k syntax"""
-        if sys.version_info < (3, 0):
-            self.skipTest("test python 3k specific")
         code = '''print()
 
 def function(var):

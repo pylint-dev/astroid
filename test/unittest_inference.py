@@ -20,7 +20,8 @@
 from os.path import join, dirname, abspath
 import sys
 from StringIO import StringIO
-from logilab.common.testlib import TestCase, unittest_main
+
+from logilab.common.testlib import TestCase, unittest_main, require_version
 
 from logilab.astng import InferenceError, builder, nodes
 from logilab.astng.inference import infer_end as inference_infer_end
@@ -432,9 +433,8 @@ s2 = '_'
         infered = n.infer().next()
         self.assertEqual(infered.getitem(0).value, '_')
 
+    @require_version('2.7')
     def test_builtin_types_py27(self):
-        if sys.version_info < (2, 7):
-            self.skipTest('set literal introduced in python 2.7')
         code = 's = {1}'
         astng = builder.string_build(code, __name__, __file__)
         n = astng['s']
