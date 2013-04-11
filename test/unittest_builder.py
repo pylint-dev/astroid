@@ -338,13 +338,13 @@ class BuilderTC(TestCase):
         self.assertEqual(len(infered), 1)
         infered = infered[0]
         self.assertEqual(infered.name, 'object')
-        as_string(infered)
+        infered.as_string() # no crash test
 
         infered = list(builtin_astng.igetattr('type'))
         self.assertEqual(len(infered), 1)
         infered = infered[0]
         self.assertEqual(infered.name, 'type')
-        as_string(infered)
+        infered.as_string() # no crash test
 
     def test_package_name(self):
         """test base properties and method of a astng module"""

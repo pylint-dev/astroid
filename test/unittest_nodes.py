@@ -37,19 +37,19 @@ class AsString(testlib.TestCase):
 
     def test_varargs_kwargs_as_string(self):
         ast = abuilder.string_build( 'raise_string(*args, **kwargs)').body[0]
-        self.assertEqual(as_string(ast), 'raise_string(*args, **kwargs)')
+        self.assertEqual(ast.as_string(), 'raise_string(*args, **kwargs)')
 
     def test_module_as_string(self):
         """check as_string on a whole module prepared to be returned identically
         """
         data = open(join(DATA, 'module.py')).read()
-        self.assertMultiLineEqual(as_string(MODULE), data)
+        self.assertMultiLineEqual(MODULE.as_string(), data)
 
     def test_module2_as_string(self):
         """check as_string on a whole module prepared to be returned identically
         """
         data = open(join(DATA, 'module2.py')).read()
-        self.assertMultiLineEqual(as_string(MODULE2), data)
+        self.assertMultiLineEqual(MODULE2.as_string(), data)
 
     @testlib.require_version('2.7')
     def test_2_7_as_string(self):
@@ -58,7 +58,7 @@ class AsString(testlib.TestCase):
 b = {v: k for (k, v) in enumerate('string')}
 cdd = {k for k in b}\n\n'''
         ast = abuilder.string_build(code)
-        self.assertMultiLineEqual(as_string(ast), code)
+        self.assertMultiLineEqual(ast.as_string(), code)
 
     @testlib.require_version('3.0')
     def test_3k_as_string(self):
@@ -82,7 +82,7 @@ class Language(metaclass=Natural):
     """natural language"""
         '''
         ast = abuilder.string_build(code)
-        self.assertEqual(as_string(ast), code)
+        self.assertEqual(ast.as_string(), code)
 
 
 class _NodeTC(testlib.TestCase):
@@ -255,11 +255,11 @@ class ImportNodeTC(testlib.TestCase):
 
     def test_as_string(self):
         ast = MODULE['modutils']
-        self.assertEqual(as_string(ast), "from logilab.common import modutils")
+        self.assertEqual(ast.as_string(), "from logilab.common import modutils")
         ast = MODULE['spawn']
-        self.assertEqual(as_string(ast), "from logilab.common.shellutils import Execute as spawn")
+        self.assertEqual(ast.as_string(), "from logilab.common.shellutils import Execute as spawn")
         ast = MODULE['os']
-        self.assertEqual(as_string(ast), "import os.path")
+        self.assertEqual(ast.as_string(), "import os.path")
         code = """from . import here
 from .. import door
 from .store import bread
@@ -307,7 +307,7 @@ except PickleError:
 class CmpNodeTC(testlib.TestCase):
     def test_as_string(self):
         ast = abuilder.string_build("a == 2").body[0]
-        self.assertEqual(as_string(ast), "a == 2")
+        self.assertEqual(ast.as_string(), "a == 2")
 
 
 class ConstNodeTC(testlib.TestCase):
