@@ -274,9 +274,12 @@ class BoundMethod(UnboundMethod):
 
 
 class Generator(Instance):
-    """a special node representing a generator"""
+    """a special node representing a generator.
+
+    Proxied class is set once for all in raw_building.
+    """
     def callable(self):
-        return True
+        return False
 
     def pytype(self):
         return '%s.generator' % BUILTINS

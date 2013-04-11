@@ -1,4 +1,4 @@
-# copyright 2003-2012 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of logilab-astng.
@@ -612,7 +612,7 @@ class Function(Statement, Lambda):
     def infer_call_result(self, caller, context=None):
         """infer what a function is returning when called"""
         if self.is_generator():
-            yield Generator(self)
+            yield Generator()
             return
         returns = self.nodes_of_class(Return, skip_klass=Function)
         for returnnode in returns:

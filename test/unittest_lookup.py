@@ -1,4 +1,4 @@
-# copyright 2003-2012 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of logilab-astng.
@@ -24,7 +24,7 @@ from logilab.common.testlib import TestCase, unittest_main, require_version
 
 from logilab.astng import builder, nodes, scoped_nodes, \
      InferenceError, NotFoundError, UnresolvableName
-from logilab.astng.scoped_nodes import builtin_lookup
+from logilab.astng.scoped_nodes import builtin_lookup, Function
 from logilab.astng.bases import YES
 from unittest_inference import get_name_node
 
@@ -217,16 +217,18 @@ var
     def test_generator_attributes(self):
         tree = builder.string_build("""
 def count():
-    "ntesxt"
+    "test"
     yield 0
 
 iterer = count()
 num = iterer.next()
         """)
         next = tree.body[2].value.func # Getattr
-        gener = next.expr.infered()[0] # Genrator
-        # XXX gener._proxied is a Function which has no instance_attr
-        self.assertRaises(AttributeError, gener.getattr, 'next')
+        gener = next.expr.infered()[0] # Generator
+        self.assertIsInstance(gener.getattr('next')[0], Function)
+        self.assertIsInstance(gener.getattr('send')[0], Function)
+        self.assertIsInstance(gener.getattr('throw')[0], Function)
+        self.assertIsInstance(gener.getattr('close')[0], Function)
 
     def test_explicit___name__(self):
         code = '''
