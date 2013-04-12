@@ -316,6 +316,7 @@ class InspectBuilder(object):
 
 
 ### astng boot strapping ################################################### ###
+ASTNG_BUILDER = InspectBuilder()
 
 _CONST_PROXY = {}
 def astng_boot_strapping():
@@ -323,8 +324,7 @@ def astng_boot_strapping():
     # this boot strapping is necessary since we need the Const nodes to
     # inspect_build builtins, and then we can proxy Const
     from logilab.common.compat import builtins
-    astng_builder = InspectBuilder()
-    astng_builtin = astng_builder.inspect_build(builtins)
+    astng_builtin = ASTNG_BUILDER.inspect_build(builtins)
     for cls, node_cls in CONST_CLS.items():
         if cls is type(None):
             proxy = build_class('NoneType')
