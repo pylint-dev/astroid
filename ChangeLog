@@ -1,32 +1,52 @@
 Change log for the astng package
 ================================
 
---
+2013-04-16  --  0.24.3
     * #124360 [py3.3]: Don't crash on 'yield from' nodes
+
     * #123062 [pylint-brain]: Use correct names for keywords for urlparse
+
     * #123056 [pylint-brain]: Add missing methods for hashlib
+
     * #123068: Fix inference for generator methods to correctly handle yields
       in lambdas.
+
     * #123068: Make sure .as_string() returns valid code for yields in
       expressions.
+
     * #47957: Set literals are now correctly treated as inference leaves.
-    * #123074: Add support for inference of subscript operations on dict 
+
+    * #123074: Add support for inference of subscript operations on dict
       literals.
 
-2013-02-27  -- 0.24.2
+
+
+2013-02-27  --  0.24.2
     * pylint-brain: more subprocess.Popen faking (see #46273)
+
     * #109562 [jython]: java modules have no __doc__, causing crash
+
     * #120646 [py3]: fix for python3.3 _ast changes which may cause crash
+
     * #109988 [py3]: test fixes
 
-2012-10-05  -- 0.24.1
+
+
+2012-10-05  --  0.24.1
     * #106191: fix __future__ absolute import w/ From node
+
     * #50395: fix function fromlineno when some decorator is splited on
       multiple lines (patch by Mark Gius)
+
     * #92362: fix pyreverse crash on relative import
+
     * #104041: fix crash 'module object has no file_encoding attribute'
+
     * #4294 (pylint-brain): bad inference on mechanize.Browser.open
+
     * #46273 (pylint-brain): bad inference subprocess.Popen.communicate
+
+
 
 2012-07-18  --  0.24.0
     * include pylint brain extension, describing some stuff not properly understood until then.
