@@ -122,3 +122,14 @@ class A(A):
     pass
 
 
+def generator():
+    """A generator."""
+    yield
+
+def not_a_generator():
+    """A function that contains generator, but is not one."""
+    
+    def generator():
+        yield
+    genl = lambda : (yield)
+

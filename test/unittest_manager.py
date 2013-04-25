@@ -1,4 +1,4 @@
-# copyright 2003-2012 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of logilab-astng.
@@ -20,7 +20,7 @@ from logilab.common.testlib import TestCase, unittest_main
 import sys
 from os.path import join, abspath, dirname
 from logilab.astng.manager import ASTNGManager, _silent_no_wrap
-from logilab.astng.bases import  BUILTINS_NAME
+from logilab.astng.bases import  BUILTINS
 
 DATA = join(dirname(abspath(__file__)), 'data')
 
@@ -40,11 +40,11 @@ class ASTNGManagerTC(TestCase):
     def test_astng_from_class(self):
         astng = self.manager.astng_from_class(int)
         self.assertEqual(astng.name, 'int')
-        self.assertEqual(astng.parent.frame().name, BUILTINS_NAME)
+        self.assertEqual(astng.parent.frame().name, BUILTINS)
 
         astng = self.manager.astng_from_class(object)
         self.assertEqual(astng.name, 'object')
-        self.assertEqual(astng.parent.frame().name, BUILTINS_NAME)
+        self.assertEqual(astng.parent.frame().name, BUILTINS)
         self.assertIn('__setattr__', astng)
 
     def _test_astng_from_zip(self, archive):
@@ -100,10 +100,10 @@ class BorgASTNGManagerTC(TestCase):
         """test that the ASTNGManager is really a borg, i.e. that two different
         instances has same cache"""
         first_manager = ASTNGManager()
-        built = first_manager.astng_from_module_name(BUILTINS_NAME)
+        built = first_manager.astng_from_module_name(BUILTINS)
 
         second_manager = ASTNGManager()
-        second_built = first_manager.astng_from_module_name(BUILTINS_NAME)
+        second_built = first_manager.astng_from_module_name(BUILTINS)
         self.assertIs(built, second_built)
 
 

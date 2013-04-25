@@ -1,4 +1,4 @@
-# copyright 2003-2012 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of logilab-astng.
@@ -20,12 +20,13 @@
 from os.path import join, dirname, abspath
 import sys
 from StringIO import StringIO
-from logilab.common.testlib import TestCase, unittest_main
+
+from logilab.common.testlib import TestCase, unittest_main, require_version
 
 from logilab.astng import InferenceError, builder, nodes
 from logilab.astng.inference import infer_end as inference_infer_end
 from logilab.astng.bases import YES, Instance, BoundMethod, UnboundMethod,\
-                                path_wrapper, BUILTINS_NAME
+                                path_wrapper, BUILTINS
 
 def get_name_node(start_from, name, index=0):
     return [n for n in start_from.nodes_of_class(nodes.Name) if n.name == name][index]
@@ -49,7 +50,7 @@ class InferenceUtilsTC(TestCase):
 if sys.version_info < (3, 0):
     EXC_MODULE = 'exceptions'
 else:
-    EXC_MODULE = BUILTINS_NAME
+    EXC_MODULE = BUILTINS
 
 class InferenceTC(TestCase):
 
@@ -112,7 +113,7 @@ a, b= b, a # Gasp !
         infered = self.astng['C']['meth1']['var'].infer()
         var = infered.next()
         self.assertEqual(var.name, 'object')
-        self.assertEqual(var.root().name, BUILTINS_NAME)
+        self.assertEqual(var.root().name, BUILTINS)
         self.assertRaises(StopIteration, infered.next)
 
     def test_tupleassign_name_inference(self):
@@ -159,7 +160,7 @@ a, b= b, a # Gasp !
         infered = self.astng['h'].infer()
         var = infered.next()
         self.assertEqual(var.name, 'object')
-        self.assertEqual(var.root().name, BUILTINS_NAME)
+        self.assertEqual(var.root().name, BUILTINS)
         self.assertRaises(StopIteration, infered.next)
 
     def test_advanced_tupleassign_name_inference2(self):
@@ -176,7 +177,7 @@ a, b= b, a # Gasp !
         infered = self.astng['k'].infer()
         var = infered.next()
         self.assertEqual(var.name, 'object')
-        self.assertEqual(var.root().name, BUILTINS_NAME)
+        self.assertEqual(var.root().name, BUILTINS)
         self.assertRaises(StopIteration, infered.next)
 
     def test_swap_assign_inference(self):
@@ -226,7 +227,7 @@ a, b= b, a # Gasp !
         meth1 = infered.next()
         self.assertIsInstance(meth1, Instance)
         self.assertEqual(meth1.name, 'object')
-        self.assertEqual(meth1.root().name, BUILTINS_NAME)
+        self.assertEqual(meth1.root().name, BUILTINS)
         self.assertRaises(StopIteration, infered.next)
 
     def test_unbound_method_inference(self):
@@ -432,6 +433,17 @@ s2 = '_'
         infered = n.infer().next()
         self.assertEqual(infered.getitem(0).value, '_')
 
+    @require_version('2.7')
+    def test_builtin_types_py27(self):
+        code = 's = {1}'
+        astng = builder.string_build(code, __name__, __file__)
+        n = astng['s']
+        infered = n.infer().next()
+        self.assertIsInstance(infered, nodes.Set)
+        self.assertIsInstance(infered, Instance)
+        self.assertEqual(infered.name, 'set')
+        self.assertIn('remove', infered._proxied.locals)
+
     def test_unicode_type(self):
         if sys.version_info >= (3, 0):
             self.skipTest('unicode removed on py >= 3.0')
@@ -475,7 +487,7 @@ class Warning(Warning):
         self.assertEqual(ancestor.root().name, EXC_MODULE)
         ancestor = ancestors.next()
         self.assertEqual(ancestor.name, 'object')
-        self.assertEqual(ancestor.root().name, BUILTINS_NAME)
+        self.assertEqual(ancestor.root().name, BUILTINS)
         self.assertRaises(StopIteration, ancestors.next)
 
     def test_qqch(self):
@@ -615,6 +627,9 @@ b = (1, 2, 3)[1]
 c = (1, 2, 3)[-1]
 d = a + b + c
 print (d)
+e = {'key': 'value'}
+f = e['key']
+print (f)
         '''
         astng = builder.string_build(code, __name__, __file__)
         self.assertEqual([i.value for i in
@@ -625,6 +640,8 @@ print (d)
                                 get_name_node(astng, 'c', -1).infer()], [3])
         self.assertEqual([i.value for i in
                                 get_name_node(astng, 'd', -1).infer()], [6])
+        self.assertEqual([i.value for i in
+                          get_name_node(astng, 'f', -1).infer()], ['value'])
 
     #def test_simple_tuple(self):
         #"""test case for a simple tuple value"""
@@ -770,7 +787,7 @@ print (make_code)
         self.assertEqual(len(infered), 1)
         self.assertIsInstance(infered[0], Instance)
         self.assertEqual(str(infered[0]),
-                             'Instance of %s.type' % BUILTINS_NAME)
+                             'Instance of %s.type' % BUILTINS)
 
     def _test_const_infered(self, node, value):
         infered = list(node.infer())
@@ -878,7 +895,7 @@ x = randint(1)
         # (__name__ == '__main__') and through pytest (__name__ ==
         # 'unittest_inference')
         self.assertEqual(value, ['Instance of %s.myarray' % __name__,
-                                 'Instance of %s.int' % BUILTINS_NAME])
+                                 'Instance of %s.int' % BUILTINS])
 
     def test_nonregr_lambda_arg(self):
         code = '''
@@ -979,7 +996,7 @@ class SendMailController(object):
 my_smtp = SendMailController().smtp
 my_me = SendMailController().me
 '''
-        decorators = set(['%s.property' % BUILTINS_NAME])
+        decorators = set(['%s.property' % BUILTINS])
         astng = builder.string_build(code, __name__, __file__)
         self.assertEqual(astng['SendMailController']['smtp'].decoratornames(),
                           decorators)

@@ -1,7 +1,5 @@
-# copyright 2003-2010 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
-# copyright 2003-2010 Sylvain Thenault, all rights reserved.
-# contact mailto:thenault@gmail.com
 #
 # This file is part of logilab-astng.
 #
@@ -19,7 +17,7 @@
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
 import sys
 
-from logilab.common.testlib import TestCase, unittest_main
+from logilab.common.testlib import TestCase, unittest_main, require_version
 
 from logilab.astng.node_classes import Assign
 from logilab.astng.manager import ASTNGManager
@@ -32,9 +30,8 @@ class Python3TC(TestCase):
         self.builder = ASTNGBuilder(self.manager)
         self.manager.astng_cache.clear()
 
+    @require_version('3.0')
     def test_starred_notation(self):
-        if sys.version_info < (3, 0):
-            self.skipTest("test python 3k specific")
         astng = self.builder.string_build("*a, b = [1, 2, 3]", 'test', 'test')
 
         # Get the star node

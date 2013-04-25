@@ -1,4 +1,4 @@
-# copyright 2003-2012 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of logilab-astng.
@@ -24,10 +24,9 @@ from os.path import join, abspath, dirname
 from logilab.common.testlib import TestCase, unittest_main
 from pprint import pprint
 
-from logilab.astng import BUILTINS_MODULE, builder, nodes, InferenceError, NotFoundError
+from logilab.astng import builder, nodes, InferenceError, NotFoundError
 from logilab.astng.nodes import Module
-from logilab.astng.bases import YES, BUILTINS_NAME
-from logilab.astng.as_string import as_string
+from logilab.astng.bases import YES, BUILTINS
 from logilab.astng.manager import ASTNGManager
 
 MANAGER = ASTNGManager()
@@ -265,14 +264,14 @@ class BuilderTC(TestCase):
 
     def test_inspect_build0(self):
         """test astng tree build from a living object"""
-        builtin_astng = MANAGER.astng_from_module_name(BUILTINS_NAME)
+        builtin_astng = MANAGER.astng_from_module_name(BUILTINS)
         if sys.version_info < (3, 0):
             fclass = builtin_astng['file']
             self.assertIn('name', fclass)
             self.assertIn('mode', fclass)
             self.assertIn('read', fclass)
             self.assertTrue(fclass.newstyle)
-            self.assertTrue(fclass.pytype(), '%s.type' % BUILTINS_MODULE)
+            self.assertTrue(fclass.pytype(), '%s.type' % BUILTINS)
             self.assertIsInstance(fclass['read'], nodes.Function)
             # check builtin function has args.args == None
             dclass = builtin_astng['dict']
@@ -333,19 +332,19 @@ class BuilderTC(TestCase):
         self.assertIn('filename', container)
 
     def test_inspect_build_type_object(self):
-        builtin_astng = MANAGER.astng_from_module_name(BUILTINS_NAME)
+        builtin_astng = MANAGER.astng_from_module_name(BUILTINS)
 
         infered = list(builtin_astng.igetattr('object'))
         self.assertEqual(len(infered), 1)
         infered = infered[0]
         self.assertEqual(infered.name, 'object')
-        as_string(infered)
+        infered.as_string() # no crash test
 
         infered = list(builtin_astng.igetattr('type'))
         self.assertEqual(len(infered), 1)
         infered = infered[0]
         self.assertEqual(infered.name, 'type')
-        as_string(infered)
+        infered.as_string() # no crash test
 
     def test_package_name(self):
         """test base properties and method of a astng module"""
