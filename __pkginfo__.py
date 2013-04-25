@@ -32,8 +32,7 @@ license = 'LGPL'
 author = 'Logilab'
 author_email = 'python-projects@lists.logilab.org'
 mailinglist = "mailto://%s" % author_email
-web = "http://www.logilab.org/project/%s" % distname
-ftp = "ftp://ftp.logilab.org/pub/%s" % modname
+web = 'http://bitbucket.org/logilab/astng'
 
 description = "rebuild a new abstract syntax tree from Python's ast"
 
