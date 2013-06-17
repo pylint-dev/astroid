@@ -225,7 +225,10 @@ num = iterer.next()
         """)
         next = tree.body[2].value.func # Getattr
         gener = next.expr.infered()[0] # Generator
-        self.assertIsInstance(gener.getattr('next')[0], Function)
+        if sys.version_info < (3, 0):
+            self.assertIsInstance(gener.getattr('next')[0], Function)
+        else:
+            self.assertIsInstance(gener.getattr('__next__')[0], Function)
         self.assertIsInstance(gener.getattr('send')[0], Function)
         self.assertIsInstance(gener.getattr('throw')[0], Function)
         self.assertIsInstance(gener.getattr('close')[0], Function)
