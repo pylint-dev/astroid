@@ -1,17 +1,17 @@
-"""ASTNG hooks for the Python 2 standard library.
+"""Astroid hooks for the Python 2 standard library.
 
 Currently help understanding of :
 
 * hashlib.md5 and hashlib.sha1
 """
 
-from logilab.astng import MANAGER
-from logilab.astng.builder import ASTNGBuilder
+from astroid import MANAGER
+from astroid.builder import AstroidBuilder
 
 MODULE_TRANSFORMS = {}
 
 def hashlib_transform(module):
-    fake = ASTNGBuilder(MANAGER).string_build('''
+    fake = AstroidBuilder(MANAGER).string_build('''
 
 class md5(object):
   def __init__(self, value): pass
@@ -34,7 +34,7 @@ class sha1(object):
         module.locals[hashfunc] = fake.locals[hashfunc]
 
 def collections_transform(module):
-    fake = ASTNGBuilder(MANAGER).string_build('''
+    fake = AstroidBuilder(MANAGER).string_build('''
 
 class defaultdict(dict):
     default_factory = None
@@ -61,7 +61,7 @@ class deque(object):
         module.locals[klass] = fake.locals[klass]
 
 def pkg_resources_transform(module):
-    fake = ASTNGBuilder(MANAGER).string_build('''
+    fake = AstroidBuilder(MANAGER).string_build('''
 
 def resource_exists(package_or_requirement, resource_name):
     pass
@@ -103,7 +103,7 @@ def cleanup_resources(force=False):
 
 
 def urlparse_transform(module):
-    fake = ASTNGBuilder(MANAGER).string_build('''
+    fake = AstroidBuilder(MANAGER).string_build('''
 
 def urlparse(url, scheme='', allow_fragments=True):
     return ParseResult()
@@ -129,7 +129,7 @@ class ParseResult(object):
         module.locals[func_name] = func
 
 def subprocess_transform(module):
-    fake = ASTNGBuilder(MANAGER).string_build('''
+    fake = AstroidBuilder(MANAGER).string_build('''
 
 class Popen(object):
     returncode = pid = 0
@@ -176,7 +176,7 @@ def transform(module):
     else:
         tr(module)
 
-from logilab.astng import MANAGER
+from astroid import MANAGER
 MANAGER.register_transformer(transform)
 
 

@@ -1,20 +1,20 @@
 # copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
-# This file is part of logilab-astng.
+# This file is part of astroid.
 #
-# logilab-astng is free software: you can redistribute it and/or modify it
+# astroid is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published by the
 # Free Software Foundation, either version 2.1 of the License, or (at your
 # option) any later version.
 #
-# logilab-astng is distributed in the hope that it will be useful, but
+# astroid is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
 # for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License along
-# with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
+# with astroid. If not, see <http://www.gnu.org/licenses/>.
 """This module contains base classes and functions for the nodes and some
 inference utils.
 """
@@ -24,7 +24,7 @@ __docformat__ = "restructuredtext en"
 import sys
 from contextlib import contextmanager
 
-from logilab.astng.exceptions import (InferenceError, ASTNGError,
+from astroid.exceptions import (InferenceError, AstroidError,
                                       NotFoundError, UnresolvableName)
 
 
@@ -339,7 +339,7 @@ def raise_if_nothing_infered(func):
 # Node  ######################################################################
 
 class NodeNG(object):
-    """Base Class for all ASTNG node classes.
+    """Base Class for all Astroid node classes.
 
     It represents a node of the new abstract syntax tree.
     """
@@ -354,7 +354,7 @@ class NodeNG(object):
     # parent node in the tree
     parent = None
     # attributes containing child node(s) redefined in most concrete classes:
-    _astng_fields = ()
+    _astroid_fields = ()
 
     def _repr_name(self):
         """return self.name or self.attrname or '' for nice representation"""
@@ -377,7 +377,7 @@ class NodeNG(object):
         return func(self)
 
     def get_children(self):
-        for field in self._astng_fields:
+        for field in self._astroid_fields:
             attr = getattr(self, field)
             if attr is None:
                 continue
@@ -389,7 +389,7 @@ class NodeNG(object):
 
     def last_child(self):
         """an optimized version of list(get_children())[-1]"""
-        for field in self._astng_fields[::-1]:
+        for field in self._astroid_fields[::-1]:
             attr = getattr(self, field)
             if not attr: # None or empty listy / tuple
                 continue
@@ -433,7 +433,7 @@ class NodeNG(object):
 
     def child_sequence(self, child):
         """search for the right sequence where the child lies in"""
-        for field in self._astng_fields:
+        for field in self._astroid_fields:
             node_or_sequence = getattr(self, field)
             if node_or_sequence is child:
                 return [node_or_sequence]
@@ -442,11 +442,11 @@ class NodeNG(object):
                 return node_or_sequence
         else:
             msg = 'Could not found %s in %s\'s children'
-            raise ASTNGError(msg % (repr(child), repr(self)))
+            raise AstroidError(msg % (repr(child), repr(self)))
 
     def locate_child(self, child):
         """return a 2-uple (child attribute name, sequence or node)"""
-        for field in self._astng_fields:
+        for field in self._astroid_fields:
             node_or_sequence = getattr(self, field)
             # /!\ compiler.ast Nodes have an __iter__ walking over child nodes
             if child is node_or_sequence:
@@ -454,7 +454,7 @@ class NodeNG(object):
             if isinstance(node_or_sequence, (tuple, list)) and child in node_or_sequence:
                 return field, node_or_sequence
         msg = 'Could not found %s in %s\'s children'
-        raise ASTNGError(msg % (repr(child), repr(self)))
+        raise AstroidError(msg % (repr(child), repr(self)))
     # FIXME : should we merge child_sequence and locate_child ? locate_child
     # is only used in are_exclusive, child_sequence one time in pylint.
 
@@ -566,11 +566,11 @@ class NodeNG(object):
         return False
 
     def as_string(self):
-        from logilab.astng.as_string import to_code
+        from astroid.as_string import to_code
         return to_code(self)
 
     def repr_tree(self, ids=False):
-        from logilab.astng.as_string import dump
+        from astroid.as_string import dump
         return dump(self)
 
 

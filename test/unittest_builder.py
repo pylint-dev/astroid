@@ -1,21 +1,21 @@
 # copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
-# This file is part of logilab-astng.
+# This file is part of astroid.
 #
-# logilab-astng is free software: you can redistribute it and/or modify it
+# astroid is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published by the
 # Free Software Foundation, either version 2.1 of the License, or (at your
 # option) any later version.
 #
-# logilab-astng is distributed in the hope that it will be useful, but
+# astroid is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
 # for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License along
-# with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
-"""tests for the astng builder and rebuilder module"""
+# with astroid. If not, see <http://www.gnu.org/licenses/>.
+"""tests for the astroid builder and rebuilder module"""
 
 import unittest
 import sys
@@ -24,12 +24,12 @@ from os.path import join, abspath, dirname
 from logilab.common.testlib import TestCase, unittest_main
 from pprint import pprint
 
-from logilab.astng import builder, nodes, InferenceError, NotFoundError
-from logilab.astng.nodes import Module
-from logilab.astng.bases import YES, BUILTINS
-from logilab.astng.manager import ASTNGManager
+from astroid import builder, nodes, InferenceError, NotFoundError
+from astroid.nodes import Module
+from astroid.bases import YES, BUILTINS
+from astroid.manager import AstroidManager
 
-MANAGER = ASTNGManager()
+MANAGER = AstroidManager()
 
 
 from unittest_inference import get_name_node
@@ -41,10 +41,10 @@ DATA = join(dirname(abspath(__file__)), 'data')
 
 class FromToLineNoTC(TestCase):
 
-    astng = builder.ASTNGBuilder().file_build(join(DATA, 'format.py'))
+    astroid = builder.AstroidBuilder().file_build(join(DATA, 'format.py'))
 
     def test_callfunc_lineno(self):
-        stmts = self.astng.body
+        stmts = self.astroid.body
         # on line 4:
         #    function('aeozrijz\
         #    earzer', hop)
@@ -91,7 +91,7 @@ class FromToLineNoTC(TestCase):
             self.assertEqual(arg.tolineno, 10+i)
 
     def test_function_lineno(self):
-        stmts = self.astng.body
+        stmts = self.astroid.body
         # on line 15:
         #    def definition(a,
         #                   b,
@@ -112,13 +112,13 @@ class FromToLineNoTC(TestCase):
                           '(no line number on function args)')
 
     def test_decorated_function_lineno(self):
-        astng = builder.ASTNGBuilder().string_build('''
+        astroid = builder.AstroidBuilder().string_build('''
 @decorator
 def function(
     arg):
     print (arg)
 ''', __name__, __file__)
-        function = astng['function']
+        function = astroid['function']
         self.assertEqual(function.fromlineno, 3) # XXX discussable, but that's what is expected by pylint right now
         self.assertEqual(function.tolineno, 5)
         self.assertEqual(function.decorators.fromlineno, 2)
@@ -131,7 +131,7 @@ def function(
 
 
     def test_class_lineno(self):
-        stmts = self.astng.body
+        stmts = self.astroid.body
         # on line 20:
         #    class debile(dict,
         #                 object):
@@ -147,7 +147,7 @@ def function(
         self.assertEqual(pass_.tolineno, 22)
 
     def test_if_lineno(self):
-        stmts = self.astng.body
+        stmts = self.astroid.body
         # on line 20:
         #    if aaaa: pass
         #    else:
@@ -176,8 +176,8 @@ else:
   print ("bouh")
 ''',
                      ):
-            astng = builder.ASTNGBuilder().string_build(code, __name__, __file__)
-            stmt = astng.body[0]
+            astroid = builder.AstroidBuilder().string_build(code, __name__, __file__)
+            stmt = astroid.body[0]
             self.assertEqual(stmt.fromlineno, 2)
             self.assertEqual(stmt.tolineno, 6)
             self.assertEqual(stmt.blockstart_tolineno, 2)
@@ -186,7 +186,7 @@ else:
 
 
     def test_try_except_lineno(self):
-        astng = builder.ASTNGBuilder().string_build('''
+        astroid = builder.AstroidBuilder().string_build('''
 try:
   print (a)
 except:
@@ -194,7 +194,7 @@ except:
 else:
   print ("bouh")
 ''', __name__, __file__)
-        try_ = astng.body[0]
+        try_ = astroid.body[0]
         self.assertEqual(try_.fromlineno, 2)
         self.assertEqual(try_.tolineno, 7)
         self.assertEqual(try_.blockstart_tolineno, 2)
@@ -207,13 +207,13 @@ else:
 
 
     def test_try_finally_lineno(self):
-        astng = builder.ASTNGBuilder().string_build('''
+        astroid = builder.AstroidBuilder().string_build('''
 try:
   print (a)
 finally:
   print ("bouh")
 ''', __name__, __file__)
-        try_ = astng.body[0]
+        try_ = astroid.body[0]
         self.assertEqual(try_.fromlineno, 2)
         self.assertEqual(try_.tolineno, 5)
         self.assertEqual(try_.blockstart_tolineno, 2)
@@ -222,7 +222,7 @@ finally:
 
 
     def test_try_finally_25_lineno(self):
-        astng = builder.ASTNGBuilder().string_build('''
+        astroid = builder.AstroidBuilder().string_build('''
 try:
   print (a)
 except:
@@ -230,7 +230,7 @@ except:
 finally:
   print ("bouh")
 ''', __name__, __file__)
-        try_ = astng.body[0]
+        try_ = astroid.body[0]
         self.assertEqual(try_.fromlineno, 2)
         self.assertEqual(try_.tolineno, 7)
         self.assertEqual(try_.blockstart_tolineno, 2)
@@ -239,12 +239,12 @@ finally:
 
 
     def test_with_lineno(self):
-        astng = builder.ASTNGBuilder().string_build('''
+        astroid = builder.AstroidBuilder().string_build('''
 from __future__ import with_statement
 with file("/tmp/pouet") as f:
     print (f)
 ''', __name__, __file__)
-        with_ = astng.body[1]
+        with_ = astroid.body[1]
         self.assertEqual(with_.fromlineno, 3)
         self.assertEqual(with_.tolineno, 4)
         self.assertEqual(with_.blockstart_tolineno, 3)
@@ -254,19 +254,19 @@ with file("/tmp/pouet") as f:
 class BuilderTC(TestCase):
 
     def setUp(self):
-        self.builder = builder.ASTNGBuilder()
+        self.builder = builder.AstroidBuilder()
 
     def test_border_cases(self):
         """check that a file with no trailing new line is parseable"""
         self.builder.file_build(join(DATA, 'noendingnewline.py'), 'data.noendingnewline')
-        self.assertRaises(builder.ASTNGBuildingException,
+        self.assertRaises(builder.AstroidBuildingException,
                           self.builder.file_build, join(DATA, 'inexistant.py'), 'whatever')
 
     def test_inspect_build0(self):
-        """test astng tree build from a living object"""
-        builtin_astng = MANAGER.astng_from_module_name(BUILTINS)
+        """test astroid tree build from a living object"""
+        builtin_astroid = MANAGER.astroid_from_module_name(BUILTINS)
         if sys.version_info < (3, 0):
-            fclass = builtin_astng['file']
+            fclass = builtin_astroid['file']
             self.assertIn('name', fclass)
             self.assertIn('mode', fclass)
             self.assertIn('read', fclass)
@@ -274,56 +274,56 @@ class BuilderTC(TestCase):
             self.assertTrue(fclass.pytype(), '%s.type' % BUILTINS)
             self.assertIsInstance(fclass['read'], nodes.Function)
             # check builtin function has args.args == None
-            dclass = builtin_astng['dict']
+            dclass = builtin_astroid['dict']
             self.assertIsNone(dclass['has_key'].args.args)
         # just check type and object are there
-        builtin_astng.getattr('type')
-        objectastng = builtin_astng.getattr('object')[0]
-        self.assertIsInstance(objectastng.getattr('__new__')[0], nodes.Function)
+        builtin_astroid.getattr('type')
+        objectastroid = builtin_astroid.getattr('object')[0]
+        self.assertIsInstance(objectastroid.getattr('__new__')[0], nodes.Function)
         # check open file alias
-        builtin_astng.getattr('open')
+        builtin_astroid.getattr('open')
         # check 'help' is there (defined dynamically by site.py)
-        builtin_astng.getattr('help')
+        builtin_astroid.getattr('help')
         # check property has __init__
-        pclass = builtin_astng['property']
+        pclass = builtin_astroid['property']
         self.assertIn('__init__', pclass)
-        self.assertIsInstance(builtin_astng['None'], nodes.Const)
-        self.assertIsInstance(builtin_astng['True'], nodes.Const)
-        self.assertIsInstance(builtin_astng['False'], nodes.Const)
+        self.assertIsInstance(builtin_astroid['None'], nodes.Const)
+        self.assertIsInstance(builtin_astroid['True'], nodes.Const)
+        self.assertIsInstance(builtin_astroid['False'], nodes.Const)
         if sys.version_info < (3, 0):
-            self.assertIsInstance(builtin_astng['Exception'], nodes.From)
-            self.assertIsInstance(builtin_astng['NotImplementedError'], nodes.From)
+            self.assertIsInstance(builtin_astroid['Exception'], nodes.From)
+            self.assertIsInstance(builtin_astroid['NotImplementedError'], nodes.From)
         else:
-            self.assertIsInstance(builtin_astng['Exception'], nodes.Class)
-            self.assertIsInstance(builtin_astng['NotImplementedError'], nodes.Class)
+            self.assertIsInstance(builtin_astroid['Exception'], nodes.Class)
+            self.assertIsInstance(builtin_astroid['NotImplementedError'], nodes.Class)
 
     def test_inspect_build1(self):
-        time_astng = MANAGER.astng_from_module_name('time')
-        self.assertTrue(time_astng)
-        self.assertEqual(time_astng['time'].args.defaults, [])
+        time_astroid = MANAGER.astroid_from_module_name('time')
+        self.assertTrue(time_astroid)
+        self.assertEqual(time_astroid['time'].args.defaults, [])
 
     def test_inspect_build2(self):
-        """test astng tree build from a living object"""
+        """test astroid tree build from a living object"""
         try:
             from mx import DateTime
         except ImportError:
             self.skipTest('test skipped: mxDateTime is not available')
         else:
-            dt_astng = self.builder.inspect_build(DateTime)
-            dt_astng.getattr('DateTime')
+            dt_astroid = self.builder.inspect_build(DateTime)
+            dt_astroid.getattr('DateTime')
             # this one is failing since DateTimeType.__module__ = 'builtins' !
-            #dt_astng.getattr('DateTimeType')
+            #dt_astroid.getattr('DateTimeType')
 
     def test_inspect_build3(self):
         self.builder.inspect_build(unittest)
 
     def test_inspect_build_instance(self):
-        """test astng tree build from a living object"""
+        """test astroid tree build from a living object"""
         if sys.version_info >= (3, 0):
             self.skipTest('The module "exceptions" is gone in py3.x')
         import exceptions
-        builtin_astng = self.builder.inspect_build(exceptions)
-        fclass = builtin_astng['OSError']
+        builtin_astroid = self.builder.inspect_build(exceptions)
+        fclass = builtin_astroid['OSError']
         # things like OSError.strerror are now (2.5) data descriptors on the
         # class instead of entries in the __dict__ of an instance
         container = fclass
@@ -332,22 +332,22 @@ class BuilderTC(TestCase):
         self.assertIn('filename', container)
 
     def test_inspect_build_type_object(self):
-        builtin_astng = MANAGER.astng_from_module_name(BUILTINS)
+        builtin_astroid = MANAGER.astroid_from_module_name(BUILTINS)
 
-        infered = list(builtin_astng.igetattr('object'))
+        infered = list(builtin_astroid.igetattr('object'))
         self.assertEqual(len(infered), 1)
         infered = infered[0]
         self.assertEqual(infered.name, 'object')
         infered.as_string() # no crash test
 
-        infered = list(builtin_astng.igetattr('type'))
+        infered = list(builtin_astroid.igetattr('type'))
         self.assertEqual(len(infered), 1)
         infered = infered[0]
         self.assertEqual(infered.name, 'type')
         infered.as_string() # no crash test
 
     def test_package_name(self):
-        """test base properties and method of a astng module"""
+        """test base properties and method of a astroid module"""
         datap = self.builder.file_build(join(DATA, '__init__.py'), 'data')
         self.assertEqual(datap.name, 'data')
         self.assertEqual(datap.package, 1)
@@ -372,8 +372,8 @@ def yiell():
         self.assertIsInstance(func.body[1].body[0].value, nodes.Yield)
 
     def test_object(self):
-        obj_astng = self.builder.inspect_build(object)
-        self.assertIn('__setattr__', obj_astng)
+        obj_astroid = self.builder.inspect_build(object)
+        self.assertIn('__setattr__', obj_astroid)
 
     def test_newstyle_detection(self):
         data = '''
@@ -397,13 +397,13 @@ class E(A):
 class F:
     "new style"
 '''
-        mod_astng = self.builder.string_build(data, __name__, __file__)
-        self.assertFalse(mod_astng['A'].newstyle)
-        self.assertFalse(mod_astng['B'].newstyle)
-        self.assertTrue(mod_astng['C'].newstyle)
-        self.assertTrue(mod_astng['D'].newstyle)
-        self.assertFalse(mod_astng['E'].newstyle)
-        self.assertTrue(mod_astng['F'].newstyle)
+        mod_astroid = self.builder.string_build(data, __name__, __file__)
+        self.assertFalse(mod_astroid['A'].newstyle)
+        self.assertFalse(mod_astroid['B'].newstyle)
+        self.assertTrue(mod_astroid['C'].newstyle)
+        self.assertTrue(mod_astroid['D'].newstyle)
+        self.assertFalse(mod_astroid['E'].newstyle)
+        self.assertTrue(mod_astroid['F'].newstyle)
 
     def test_globals(self):
         data = '''
@@ -417,23 +417,23 @@ def global_no_effect():
     global CSTE2
     print (CSTE)
 '''
-        astng = self.builder.string_build(data, __name__, __file__)
-        self.assertEqual(len(astng.getattr('CSTE')), 2)
-        self.assertIsInstance(astng.getattr('CSTE')[0], nodes.AssName)
-        self.assertEqual(astng.getattr('CSTE')[0].fromlineno, 2)
-        self.assertEqual(astng.getattr('CSTE')[1].fromlineno, 6)
+        astroid = self.builder.string_build(data, __name__, __file__)
+        self.assertEqual(len(astroid.getattr('CSTE')), 2)
+        self.assertIsInstance(astroid.getattr('CSTE')[0], nodes.AssName)
+        self.assertEqual(astroid.getattr('CSTE')[0].fromlineno, 2)
+        self.assertEqual(astroid.getattr('CSTE')[1].fromlineno, 6)
         self.assertRaises(NotFoundError,
-                          astng.getattr, 'CSTE2')
+                          astroid.getattr, 'CSTE2')
         self.assertRaises(InferenceError,
-                          astng['global_no_effect'].ilookup('CSTE2').next)
+                          astroid['global_no_effect'].ilookup('CSTE2').next)
 
     def test_socket_build(self):
         import socket
-        astng = self.builder.module_build(socket)
+        astroid = self.builder.module_build(socket)
         # XXX just check the first one. Actually 3 objects are inferred (look at
         # the socket module) but the last one as those attributes dynamically
-        # set and astng is missing this.
-        for fclass in astng.igetattr('socket'):
+        # set and astroid is missing this.
+        for fclass in astroid.igetattr('socket'):
             #print fclass.root().name, fclass.name, fclass.lineno
             self.assertIn('connect', fclass)
             self.assertIn('send', fclass)
@@ -442,24 +442,24 @@ def global_no_effect():
 
     def test_gen_expr_var_scope(self):
         data = 'l = list(n for n in range(10))\n'
-        astng = self.builder.string_build(data, __name__, __file__)
+        astroid = self.builder.string_build(data, __name__, __file__)
         # n unavailable outside gen expr scope
-        self.assertNotIn('n', astng)
+        self.assertNotIn('n', astroid)
         # test n is inferable anyway
-        n = get_name_node(astng, 'n')
-        self.assertIsNot(n.scope(), astng)
+        n = get_name_node(astroid, 'n')
+        self.assertIsNot(n.scope(), astroid)
         self.assertEqual([i.__class__ for i in n.infer()],
                          [YES.__class__])
 
 class FileBuildTC(TestCase):
 
-    module = builder.ASTNGBuilder().file_build(join(DATA, 'module.py'), 'data.module')
+    module = builder.AstroidBuilder().file_build(join(DATA, 'module.py'), 'data.module')
 
     def test_module_base_props(self):
-        """test base properties and method of a astng module"""
+        """test base properties and method of a astroid module"""
         module = self.module
         self.assertEqual(module.name, 'data.module')
-        self.assertEqual(module.doc, "test module for astng\n")
+        self.assertEqual(module.doc, "test module for astroid\n")
         self.assertEqual(module.fromlineno, 0)
         self.assertIsNone(module.parent)
         self.assertEqual(module.frame(), module)
@@ -472,7 +472,7 @@ class FileBuildTC(TestCase):
         self.assertEqual(module.statement(), module)
 
     def test_module_locals(self):
-        """test the 'locals' dictionary of a astng module"""
+        """test the 'locals' dictionary of a astroid module"""
         module = self.module
         _locals = module.locals
         self.assertIs(_locals, module.globals)
@@ -484,7 +484,7 @@ class FileBuildTC(TestCase):
         self.assertEqual(keys, should)
 
     def test_function_base_props(self):
-        """test base properties and method of a astng function"""
+        """test base properties and method of a astroid function"""
         module = self.module
         function = module['global_access']
         self.assertEqual(function.name, 'global_access')
@@ -498,14 +498,14 @@ class FileBuildTC(TestCase):
         self.assertEqual(function.type, 'function')
 
     def test_function_locals(self):
-        """test the 'locals' dictionary of a astng function"""
+        """test the 'locals' dictionary of a astroid function"""
         _locals = self.module['global_access'].locals
         self.assertEqual(len(_locals), 4)
         keys = sorted(_locals.keys())
         self.assertEqual(keys, ['i', 'key', 'local', 'val'])
 
     def test_class_base_props(self):
-        """test base properties and method of a astng class"""
+        """test base properties and method of a astroid class"""
         module = self.module
         klass = module['YO']
         self.assertEqual(klass.name, 'YO')
@@ -519,7 +519,7 @@ class FileBuildTC(TestCase):
         self.assertEqual(klass.newstyle, False)
 
     def test_class_locals(self):
-        """test the 'locals' dictionary of a astng class"""
+        """test the 'locals' dictionary of a astroid class"""
         module = self.module
         klass1 = module['YO']
         locals1 = klass1.locals
@@ -547,7 +547,7 @@ class FileBuildTC(TestCase):
         self.assertEqual(klass2.basenames, ['YO'])
 
     def test_method_base_props(self):
-        """test base properties and method of a astng method"""
+        """test base properties and method of a astroid method"""
         klass2 = self.module['YOUPI']
         # "normal" method
         method = klass2['method']
@@ -566,7 +566,7 @@ class FileBuildTC(TestCase):
         self.assertEqual(method.type, 'staticmethod')
 
     def test_method_locals(self):
-        """test the 'locals' dictionary of a astng method"""
+        """test the 'locals' dictionary of a astroid method"""
         method = self.module['YOUPI']['method']
         _locals = method.locals
         keys = sorted(_locals)
@@ -581,14 +581,14 @@ class FileBuildTC(TestCase):
 class ModuleBuildTC(FileBuildTC):
 
     def setUp(self):
-        abuilder = builder.ASTNGBuilder()
+        abuilder = builder.AstroidBuilder()
         self.module = abuilder.module_build(test_module)
 
 
 class MoreTC(TestCase):
 
     def setUp(self):
-        self.builder = builder.ASTNGBuilder()
+        self.builder = builder.AstroidBuilder()
 
     def test_infered_build(self):
         code = '''class A: pass
@@ -598,15 +598,15 @@ def A_ass_type(self):
     print (self)
 A.ass_type = A_ass_type
     '''
-        astng = self.builder.string_build(code)
-        lclass = list(astng.igetattr('A'))
+        astroid = self.builder.string_build(code)
+        lclass = list(astroid.igetattr('A'))
         self.assertEqual(len(lclass), 1)
         lclass = lclass[0]
         self.assertIn('ass_type', lclass.locals)
         self.assertIn('type', lclass.locals)
 
     def test_augassign_attr(self):
-        astng = self.builder.string_build("""class Counter:
+        astroid = self.builder.string_build("""class Counter:
     v = 0
     def inc(self):
         self.v += 1
@@ -614,7 +614,7 @@ A.ass_type = A_ass_type
         # Check self.v += 1 generate AugAssign(AssAttr(...)), not AugAssign(GetAttr(AssName...))
 
     def test_dumb_module(self):
-        astng = self.builder.string_build("pouet")
+        astroid = self.builder.string_build("pouet")
 
     def test_infered_dont_pollute(self):
         code = '''
@@ -623,7 +623,7 @@ def func(a=None):
 def func2(a={}):
     a.custom_attr = 0
     '''
-        astng = self.builder.string_build(code)
+        astroid = self.builder.string_build(code)
         nonetype = nodes.const_factory(None)
         self.assertNotIn('custom_attr', nonetype.locals)
         self.assertNotIn('custom_attr', nonetype.instance_attrs)
@@ -634,14 +634,14 @@ def func2(a={}):
 
     def test_asstuple(self):
         code = 'a, b = range(2)'
-        astng = self.builder.string_build(code)
-        self.assertIn('b', astng.locals)
+        astroid = self.builder.string_build(code)
+        self.assertIn('b', astroid.locals)
         code = '''
 def visit_if(self, node):
     node.test, body = node.tests[0]
 '''
-        astng = self.builder.string_build(code)
-        self.assertIn('body', astng['visit_if'].locals)
+        astroid = self.builder.string_build(code)
+        self.assertIn('body', astroid['visit_if'].locals)
 
     def test_build_constants(self):
         '''test expected values of constants after rebuilding'''
@@ -651,8 +651,8 @@ def func():
     return
     return 'None'
 '''
-        astng = self.builder.string_build(code)
-        none, nothing, chain = [ret.value for ret in astng.body[0].body]
+        astroid = self.builder.string_build(code)
+        none, nothing, chain = [ret.value for ret in astroid.body[0].body]
         self.assertIsInstance(none, nodes.Const)
         self.assertIsNone(none.value)
         self.assertIsNone(nothing)
@@ -670,8 +670,8 @@ class A(object):
     def hop(cls):
         return None
 '''
-        astng = self.builder.string_build(code)
-        self.assertEqual(astng['A']['hop'].type, 'classmethod')
+        astroid = self.builder.string_build(code)
+        self.assertEqual(astroid['A']['hop'].type, 'classmethod')
 
 
 if sys.version_info < (3, 0):

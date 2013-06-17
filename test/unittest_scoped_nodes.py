@@ -1,21 +1,21 @@
 # copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
-# This file is part of logilab-astng.
+# This file is part of astroid.
 #
-# logilab-astng is free software: you can redistribute it and/or modify it
+# astroid is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published by the
 # Free Software Foundation, either version 2.1 of the License, or (at your
 # option) any later version.
 #
-# logilab-astng is distributed in the hope that it will be useful, but
+# astroid is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
 # for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License along
-# with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
-"""tests for specific behaviour of astng scoped nodes (i.e. module, class and
+# with astroid. If not, see <http://www.gnu.org/licenses/>.
+"""tests for specific behaviour of astroid scoped nodes (i.e. module, class and
 function)
 """
 
@@ -24,11 +24,11 @@ from os.path import join, abspath, dirname
 
 from logilab.common.testlib import TestCase, unittest_main
 
-from logilab.astng import builder, nodes, scoped_nodes, \
+from astroid import builder, nodes, scoped_nodes, \
      InferenceError, NotFoundError, NoDefault
-from logilab.astng.bases import BUILTINS, Instance, BoundMethod, UnboundMethod
+from astroid.bases import BUILTINS, Instance, BoundMethod, UnboundMethod
 
-abuilder = builder.ASTNGBuilder()
+abuilder = builder.AstroidBuilder()
 DATA = join(dirname(abspath(__file__)), 'data')
 REGRTEST_DATA = join(dirname(abspath(__file__)), 'regrtest_data')
 MODULE = abuilder.file_build(join(DATA, 'module.py'), 'data.module')
@@ -54,7 +54,7 @@ class ModuleNodeTC(TestCase):
         self.assertEqual(MODULE.getattr('__name__')[0].value, 'data.module')
         self.assertEqual(len(MODULE.getattr('__doc__')), 1)
         self.assertIsInstance(MODULE.getattr('__doc__')[0], nodes.Const)
-        self.assertEqual(MODULE.getattr('__doc__')[0].value, 'test module for astng\n')
+        self.assertEqual(MODULE.getattr('__doc__')[0].value, 'test module for astroid\n')
         self.assertEqual(len(MODULE.getattr('__file__')), 1)
         self.assertIsInstance(MODULE.getattr('__file__')[0], nodes.Const)
         self.assertEqual(MODULE.getattr('__file__')[0].value, join(DATA, 'module.py'))
@@ -106,10 +106,10 @@ appli = application
 appli += 2
 del appli
         '''
-        astng = abuilder.string_build(data, __name__, __file__)
+        astroid = abuilder.string_build(data, __name__, __file__)
         # test del statement not returned by getattr
-        self.assertEqual(len(astng.getattr('appli')), 2,
-                          astng.getattr('appli'))
+        self.assertEqual(len(astroid.getattr('appli')), 2,
+                          astroid.getattr('appli'))
 
     def test_relative_to_absolute_name(self):
         # package
@@ -137,12 +137,12 @@ del appli
 
     def test_import_1(self):
         data = '''from . import subpackage'''
-        astng = abuilder.string_build(data, 'package', join(REGRTEST_DATA, 'package', '__init__.py'))
+        astroid = abuilder.string_build(data, 'package', join(REGRTEST_DATA, 'package', '__init__.py'))
         sys.path.insert(1, REGRTEST_DATA)
         try:
-            m = astng.import_module('', level=1)
+            m = astroid.import_module('', level=1)
             self.assertEqual(m.name, 'package')
-            infered = list(astng.igetattr('subpackage'))
+            infered = list(astroid.igetattr('subpackage'))
             self.assertEqual(len(infered), 1)
             self.assertEqual(infered[0].name, 'package.subpackage')
         finally:
@@ -151,12 +151,12 @@ del appli
 
     def test_import_2(self):
         data = '''from . import subpackage as pouet'''
-        astng = abuilder.string_build(data, 'package', join(dirname(abspath(__file__)), 'regrtest_data', 'package', '__init__.py'))
+        astroid = abuilder.string_build(data, 'package', join(dirname(abspath(__file__)), 'regrtest_data', 'package', '__init__.py'))
         sys.path.insert(1, REGRTEST_DATA)
         try:
-            m = astng.import_module('', level=1)
+            m = astroid.import_module('', level=1)
             self.assertEqual(m.name, 'package')
-            infered = list(astng.igetattr('pouet'))
+            infered = list(astroid.igetattr('pouet'))
             self.assertEqual(len(infered), 1)
             self.assertEqual(infered[0].name, 'package.subpackage')
         finally:
@@ -264,15 +264,15 @@ def nested_args(a, (b, c, d)):
 def f():
         g = lambda: None
         '''
-        astng = abuilder.string_build(data, __name__, __file__)
-        g = list(astng['f'].ilookup('g'))[0]
+        astroid = abuilder.string_build(data, __name__, __file__)
+        g = list(astroid['f'].ilookup('g'))[0]
         self.assertEqual(g.pytype(), '%s.function' % BUILTINS)
 
     def test_lambda_qname(self):
-        astng = abuilder.string_build('''
+        astroid = abuilder.string_build('''
 lmbd = lambda: None
 ''', __name__, __file__)
-        self.assertEqual('%s.<lambda>' % __name__, astng['lmbd'].parent.value.qname())
+        self.assertEqual('%s.<lambda>' % __name__, astroid['lmbd'].parent.value.qname())
 
     def test_is_method(self):
         data = '''
@@ -293,20 +293,20 @@ def function():
 def sfunction():
     return -1
         '''
-        astng = abuilder.string_build(data, __name__, __file__)
-        self.assertTrue(astng['A']['meth1'].is_method())
-        self.assertTrue(astng['A']['meth2'].is_method())
-        self.assertTrue(astng['A']['meth3'].is_method())
-        self.assertFalse(astng['function'].is_method())
-        self.assertFalse(astng['sfunction'].is_method())
+        astroid = abuilder.string_build(data, __name__, __file__)
+        self.assertTrue(astroid['A']['meth1'].is_method())
+        self.assertTrue(astroid['A']['meth2'].is_method())
+        self.assertTrue(astroid['A']['meth3'].is_method())
+        self.assertFalse(astroid['function'].is_method())
+        self.assertFalse(astroid['sfunction'].is_method())
 
     def test_argnames(self):
         if sys.version_info < (3, 0):
             code = 'def f(a, (b, c), *args, **kwargs): pass'
         else:
             code = 'def f(a, b, c, *args, **kwargs): pass'
-        astng = abuilder.string_build(code, __name__, __file__)
-        self.assertEqual(astng['f'].argnames(), ['a', 'b', 'c', 'args', 'kwargs'])
+        astroid = abuilder.string_build(code, __name__, __file__)
+        self.assertEqual(astroid['f'].argnames(), ['a', 'b', 'c', 'args', 'kwargs'])
 
     def test_return_nothing(self):
         """test infered value on a function with empty return"""
@@ -316,8 +316,8 @@ def func():
 
 a = func()
 '''
-        astng = abuilder.string_build(data, __name__, __file__)
-        call = astng.body[1].value
+        astroid = abuilder.string_build(data, __name__, __file__)
+        call = astroid.body[1].value
         func_vals = call.infered()
         self.assertEqual(len(func_vals), 1)
         self.assertIsInstance(func_vals[0], nodes.Const)
@@ -332,8 +332,8 @@ def test():
 test.bar = 1
 test()
         """
-        astng = abuilder.string_build(data, 'mod', __file__)
-        func = astng.body[2].value.func.infered()[0]
+        astroid = abuilder.string_build(data, 'mod', __file__)
+        func = astroid.body[2].value.func.infered()[0]
         self.assertIsInstance(func, nodes.Function)
         self.assertEqual(func.name, 'test')
         one = func.getattr('bar')[0].infered()[0]
@@ -370,15 +370,15 @@ class ClassNodeTC(TestCase):
             self.assertEqual(len(cls.getattr('__mro__')), 1)
 
     def test_cls_special_attributes_2(self):
-        astng = abuilder.string_build('''
+        astroid = abuilder.string_build('''
 class A: pass
 class B: pass
 
 A.__bases__ += (B,)
 ''', __name__, __file__)
-        self.assertEqual(len(astng['A'].getattr('__bases__')), 2)
-        self.assertIsInstance(astng['A'].getattr('__bases__')[0], nodes.Tuple)
-        self.assertIsInstance(astng['A'].getattr('__bases__')[1], nodes.AssAttr)
+        self.assertEqual(len(astroid['A'].getattr('__bases__')), 2)
+        self.assertIsInstance(astroid['A'].getattr('__bases__')[0], nodes.Tuple)
+        self.assertIsInstance(astroid['A'].getattr('__bases__')[1], nodes.AssAttr)
 
     def test_instance_special_attributes(self):
         for inst in (Instance(MODULE['YO']), nodes.List(), nodes.Const(1)):
@@ -479,7 +479,7 @@ A.__bases__ += (B,)
                               interfaces)
 
     def test_concat_interfaces(self):
-        astng = abuilder.string_build('''
+        astroid = abuilder.string_build('''
 class IMachin: pass
 
 class Correct2:
@@ -495,7 +495,7 @@ class InterfaceCanNowBeFound:
     __implements__ = BadArgument.__implements__ + Correct2.__implements__
 
         ''')
-        self.assertEqual([i.name for i in astng['InterfaceCanNowBeFound'].interfaces()],
+        self.assertEqual([i.name for i in astroid['InterfaceCanNowBeFound'].interfaces()],
                           ['IMachin'])
 
     def test_inner_classes(self):
@@ -513,8 +513,8 @@ class WebAppObject(object):
         return cls
     registered = classmethod(registered)
         '''
-        astng = abuilder.string_build(data, __name__, __file__)
-        cls = astng['WebAppObject']
+        astroid = abuilder.string_build(data, __name__, __file__)
+        cls = astroid['WebAppObject']
         self.assertEqual(sorted(cls.locals.keys()),
                           ['appli', 'config', 'registered', 'schema'])
 
@@ -526,8 +526,8 @@ class WebAppObject(object):
     appli += 2
     del self.appli
         '''
-        astng = abuilder.string_build(data, __name__, __file__)
-        cls = astng['WebAppObject']
+        astroid = abuilder.string_build(data, __name__, __file__)
+        cls = astroid['WebAppObject']
         # test del statement not returned by getattr
         self.assertEqual(len(cls.getattr('appli')), 2)
 
@@ -540,8 +540,8 @@ class WebAppObject(object):
         self.appli += 2
         del self.appli
          '''
-        astng = abuilder.string_build(data, __name__, __file__)
-        inst = Instance(astng['WebAppObject'])
+        astroid = abuilder.string_build(data, __name__, __file__)
+        inst = Instance(astroid['WebAppObject'])
         # test del statement not returned by getattr
         self.assertEqual(len(inst.getattr('appli')), 2)
 
@@ -564,8 +564,8 @@ class Klass(Parent):
             val = self.bb
         self.aa += val
         '''
-        astng = abuilder.string_build(data, __name__, __file__)
-        inst = Instance(astng['Klass'])
+        astroid = abuilder.string_build(data, __name__, __file__)
+        inst = Instance(astroid['Klass'])
         self.assertEqual(len(inst.getattr('aa')), 3, inst.getattr('aa'))
         self.assertEqual(len(inst.getattr('bb')), 1, inst.getattr('bb'))
         self.assertEqual(len(inst.getattr('cc')), 2, inst.getattr('cc'))
@@ -587,8 +587,8 @@ Clazz.m3 = func
 inst = Clazz()
 inst.m4 = func
         '''
-        astng = abuilder.string_build(data, __name__, __file__)
-        cls = astng['Clazz']
+        astroid = abuilder.string_build(data, __name__, __file__)
+        cls = astroid['Clazz']
         # test del statement not returned by getattr
         for method in ('m1', 'm2', 'm3'):
             inferred = list(cls.igetattr(method))
@@ -612,8 +612,8 @@ class Present(Future):
 class Past(Present):
     pass
 '''
-        astng = abuilder.string_build(data)
-        past = astng['Past']
+        astroid = abuilder.string_build(data)
+        past = astroid['Past']
         attr = past.getattr('attr')
         self.assertEqual(len(attr), 1)
         attr1 = attr[0]
@@ -632,11 +632,11 @@ def g1(x):
 def g2():
     pass
 '''
-        astng = abuilder.string_build(data)
-        self.assertEqual(astng['g1'].fromlineno, 4)
-        self.assertEqual(astng['g1'].tolineno, 5)
-        self.assertEqual(astng['g2'].fromlineno, 9)
-        self.assertEqual(astng['g2'].tolineno, 10)
+        astroid = abuilder.string_build(data)
+        self.assertEqual(astroid['g1'].fromlineno, 4)
+        self.assertEqual(astroid['g1'].tolineno, 5)
+        self.assertEqual(astroid['g2'].fromlineno, 9)
+        self.assertEqual(astroid['g2'].tolineno, 10)
 
 
 __all__ = ('ModuleNodeTC', 'ImportNodeTC', 'FunctionNodeTC', 'ClassNodeTC')

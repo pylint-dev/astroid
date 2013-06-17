@@ -1,8 +1,8 @@
-from logilab.astng import MANAGER
-from logilab.astng.builder import ASTNGBuilder
+from astroid import MANAGER
+from astroid.builder import AstroidBuilder
 
 def mechanize_transform(module):
-    fake = ASTNGBuilder(MANAGER).string_build('''
+    fake = AstroidBuilder(MANAGER).string_build('''
 
 class Browser(object):
     def open(self, url, data=None, timeout=None):

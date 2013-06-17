@@ -22,14 +22,14 @@ from os.path import join, abspath, dirname
 
 from logilab.common.testlib import TestCase, unittest_main
 
-from logilab.astng import nodes, inspector
-from logilab.astng.bases import Instance, YES
+from astroid import nodes, inspector
+from astroid.bases import Instance, YES
 
-from logilab.astng.manager import ASTNGManager, _silent_no_wrap
+from astroid.manager import AstroidManager, _silent_no_wrap
 
-MANAGER = ASTNGManager()
+MANAGER = AstroidManager()
 
-def astng_wrapper(func, modname):
+def astroid_wrapper(func, modname):
     return func(modname)
 
 
@@ -39,7 +39,7 @@ DATA2 = join(dirname(abspath(__file__)), 'data2')
 class LinkerTC(TestCase):
 
     def setUp(self):
-        self.project = MANAGER.project_from_files([DATA2], astng_wrapper)
+        self.project = MANAGER.project_from_files([DATA2], astroid_wrapper)
         self.linker = inspector.Linker(self.project)
         self.linker.visit(self.project)
 

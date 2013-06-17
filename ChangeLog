@@ -1,5 +1,8 @@
-Change log for the astng package
-================================
+Change log for the astroid package (used to be astng)
+=====================================================
+
+--
+    * rename the project as astroid
 
 2013-04-16  --  0.24.3
     * #124360 [py3.3]: Don't crash on 'yield from' nodes

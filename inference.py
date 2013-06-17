@@ -1,37 +1,37 @@
 # copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
-# This file is part of logilab-astng.
+# This file is part of astroid.
 #
-# logilab-astng is free software: you can redistribute it and/or modify it
+# astroid is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published by the
 # Free Software Foundation, either version 2.1 of the License, or (at your
 # option) any later version.
 #
-# logilab-astng is distributed in the hope that it will be useful, but
+# astroid is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
 # for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License along
-# with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
-"""this module contains a set of functions to handle inference on astng trees
+# with astroid. If not, see <http://www.gnu.org/licenses/>.
+"""this module contains a set of functions to handle inference on astroid trees
 """
 
 __doctype__ = "restructuredtext en"
 
 from itertools import chain
 
-from logilab.astng import nodes
+from astroid import nodes
 
-from logilab.astng.manager import ASTNGManager
-from logilab.astng.exceptions import (ASTNGError,
+from astroid.manager import AstroidManager
+from astroid.exceptions import (AstroidError,
     InferenceError, NoDefault, NotFoundError, UnresolvableName)
-from logilab.astng.bases import YES, Instance, InferenceContext, \
+from astroid.bases import YES, Instance, InferenceContext, \
      _infer_stmts, copy_context, path_wrapper, raise_if_nothing_infered
-from logilab.astng.protocols import _arguments_infer_argname
+from astroid.protocols import _arguments_infer_argname
 
-MANAGER = ASTNGManager()
+MANAGER = AstroidManager()
 
 
 class CallContext:
@@ -55,7 +55,7 @@ class CallContext:
         try:
             return self.nargs[name].infer(context)
         except KeyError:
-            # Function.args.args can be None in astng (means that we don't have
+            # Function.args.args can be None in astroid (means that we don't have
             # information on argnames)
             argindex = funcnode.args.find_argname(name)[0]
             if argindex is not None:
@@ -375,10 +375,10 @@ def infer_empty_node(self, context=None):
         yield YES
     else:
         try:
-            for infered in MANAGER.infer_astng_from_something(self.object,
+            for infered in MANAGER.infer_astroid_from_something(self.object,
                                                               context=context):
                 yield infered
-        except ASTNGError:
+        except AstroidError:
             yield YES
 nodes.EmptyNode.infer = path_wrapper(infer_empty_node)
 

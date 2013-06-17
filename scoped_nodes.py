@@ -1,20 +1,20 @@
 # copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
-# This file is part of logilab-astng.
+# This file is part of astroid.
 #
-# logilab-astng is free software: you can redistribute it and/or modify it
+# astroid is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published by the
 # Free Software Foundation, either version 2.1 of the License, or (at your
 # option) any later version.
 #
-# logilab-astng is distributed in the hope that it will be useful, but
+# astroid is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
 # for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License along
-# with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
+# with astroid. If not, see <http://www.gnu.org/licenses/>.
 """This module contains the classes for "scoped" node, i.e. which are opening a
 new local scope in the language definition : Module, Class, Function (and
 Lambda, GenExpr, DictComp and SetComp to some extent).
@@ -29,17 +29,17 @@ from itertools import chain
 from logilab.common.compat import builtins
 from logilab.common.decorators import cached
 
-from logilab.astng.exceptions import NotFoundError, \
-     ASTNGBuildingException, InferenceError
-from logilab.astng.node_classes import Const, DelName, DelAttr, \
+from astroid.exceptions import NotFoundError, \
+     AstroidBuildingException, InferenceError
+from astroid.node_classes import Const, DelName, DelAttr, \
      Dict, From, List, Pass, Raise, Return, Tuple, Yield, \
      LookupMixIn, const_factory as cf, unpack_infer
-from logilab.astng.bases import NodeNG, InferenceContext, Instance,\
+from astroid.bases import NodeNG, InferenceContext, Instance,\
      YES, Generator, UnboundMethod, BoundMethod, _infer_stmts, copy_context, \
      BUILTINS
-from logilab.astng.mixins import FilterStmtsMixin
-from logilab.astng.bases import Statement
-from logilab.astng.manager import ASTNGManager
+from astroid.mixins import FilterStmtsMixin
+from astroid.bases import Statement
+from astroid.manager import AstroidManager
 
 
 def remove_nodes(func, cls):
@@ -72,20 +72,20 @@ def std_special_attributes(self, name, add_locals=True):
         return [Dict()] + locals.get(name, [])
     raise NotFoundError(name)
 
-MANAGER = ASTNGManager()
+MANAGER = AstroidManager()
 def builtin_lookup(name):
     """lookup a name into the builtin module
-    return the list of matching statements and the astng for the builtin
+    return the list of matching statements and the astroid for the builtin
     module
     """
-    builtin_astng = MANAGER.astng_from_module(builtins)
+    builtin_astroid = MANAGER.astroid_from_module(builtins)
     if name == '__dict__':
-        return builtin_astng, ()
+        return builtin_astroid, ()
     try:
-        stmts = builtin_astng.locals[name]
+        stmts = builtin_astroid.locals[name]
     except KeyError:
         stmts = ()
-    return builtin_astng, stmts
+    return builtin_astroid, stmts
 
 
 # TODO move this Mixin to mixins.py; problem: 'Function' in _scope_lookup
@@ -207,14 +207,14 @@ class LocalsDictNodeNG(LookupMixIn, NodeNG):
 # Module  #####################################################################
 
 class Module(LocalsDictNodeNG):
-    _astng_fields = ('body',)
+    _astroid_fields = ('body',)
 
     fromlineno = 0
     lineno = 0
 
     # attributes below are set by the builder module or by raw factories
 
-    # the file from which as been extracted the astng representation. It may
+    # the file from which as been extracted the astroid representation. It may
     # be None if the representation has been built from a built-in module
     file = None
     # encoding of python source file, so we can get unicode out of it (python2
@@ -222,7 +222,7 @@ class Module(LocalsDictNodeNG):
     file_encoding = None
     # the module name
     name = None
-    # boolean for astng built from source (i.e. ast)
+    # boolean for astroid built from source (i.e. ast)
     pure_python = None
     # boolean for package module
     package = None
@@ -282,7 +282,7 @@ class Module(LocalsDictNodeNG):
         if self.package:
             try:
                 return [self.import_module(name, relative_only=True)]
-            except ASTNGBuildingException:
+            except AstroidBuildingException:
                 raise NotFoundError(name)
             except Exception:# XXX pylint tests never pass here; do we need it?
                 import traceback
@@ -336,13 +336,13 @@ class Module(LocalsDictNodeNG):
             level = 0
         absmodname = self.relative_to_absolute_name(modname, level)
         try:
-            return MANAGER.astng_from_module_name(absmodname)
-        except ASTNGBuildingException:
+            return MANAGER.astroid_from_module_name(absmodname)
+        except AstroidBuildingException:
             # we only want to import a sub module or package of this module,
             # skip here
             if relative_only:
                 raise
-        return MANAGER.astng_from_module_name(modname)
+        return MANAGER.astroid_from_module_name(modname)
 
     def relative_to_absolute_name(self, modname, level):
         """return the absolute module name for a relative import.
@@ -350,7 +350,7 @@ class Module(LocalsDictNodeNG):
         The relative import can be implicit or explicit.
         """
         # XXX this returns non sens when called on an absolute import
-        # like 'pylint.checkers.logilab.astng.utils'
+        # like 'pylint.checkers.astroid.utils'
         # XXX doesn't return absolute name if self.name isn't absolute name
         if self.absolute_import_activated() and level is None:
             return modname
@@ -387,7 +387,7 @@ class Module(LocalsDictNodeNG):
             except AttributeError:
                 return [name for name in living.__dict__.keys()
                         if not name.startswith('_')]
-        # else lookup the astng
+        # else lookup the astroid
         #
         # We separate the different steps of lookup in try/excepts
         # to avoid catching too many Exceptions
@@ -419,7 +419,7 @@ class ComprehensionScope(LocalsDictNodeNG):
 
 
 class GenExpr(ComprehensionScope):
-    _astng_fields = ('elt', 'generators')
+    _astroid_fields = ('elt', 'generators')
 
     def __init__(self):
         self.locals = {}
@@ -428,7 +428,7 @@ class GenExpr(ComprehensionScope):
 
 
 class DictComp(ComprehensionScope):
-    _astng_fields = ('key', 'value', 'generators')
+    _astroid_fields = ('key', 'value', 'generators')
 
     def __init__(self):
         self.locals = {}
@@ -438,7 +438,7 @@ class DictComp(ComprehensionScope):
 
 
 class SetComp(ComprehensionScope):
-    _astng_fields = ('elt', 'generators')
+    _astroid_fields = ('elt', 'generators')
 
     def __init__(self):
         self.locals = {}
@@ -448,7 +448,7 @@ class SetComp(ComprehensionScope):
 
 class _ListComp(NodeNG):
     """class representing a ListComp node"""
-    _astng_fields = ('elt', 'generators')
+    _astroid_fields = ('elt', 'generators')
     elt = None
     generators = None
 
@@ -465,7 +465,7 @@ else:
 
 
 class Lambda(LocalsDictNodeNG, FilterStmtsMixin):
-    _astng_fields = ('args', 'body',)
+    _astroid_fields = ('args', 'body',)
     name = '<lambda>'
 
     # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
@@ -518,7 +518,7 @@ class Lambda(LocalsDictNodeNG, FilterStmtsMixin):
 
 
 class Function(Statement, Lambda):
-    _astng_fields = ('decorators', 'args', 'body')
+    _astroid_fields = ('decorators', 'args', 'body')
 
     special_attributes = set(('__name__', '__doc__', '__dict__'))
     is_function = True
@@ -683,7 +683,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
     # by a raw factories
 
     # a dictionary of class instances attributes
-    _astng_fields = ('decorators', 'bases', 'body') # name
+    _astroid_fields = ('decorators', 'bases', 'body') # name
 
     decorators = None
     special_attributes = set(('__name__', '__doc__', '__dict__', '__module__',
@@ -802,20 +802,20 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                     continue
 
     def local_attr_ancestors(self, name, context=None):
-        """return an iterator on astng representation of parent classes
+        """return an iterator on astroid representation of parent classes
         which have <name> defined in their locals
         """
-        for astng in self.ancestors(context=context):
-            if name in astng:
-                yield astng
+        for astroid in self.ancestors(context=context):
+            if name in astroid:
+                yield astroid
 
     def instance_attr_ancestors(self, name, context=None):
-        """return an iterator on astng representation of parent classes
+        """return an iterator on astroid representation of parent classes
         which have <name> defined in their instance attribute dictionary
         """
-        for astng in self.ancestors(context=context):
-            if name in astng.instance_attrs:
-                yield astng
+        for astroid in self.ancestors(context=context):
+            if name in astroid.instance_attrs:
+                yield astroid
 
     def has_base(self, node):
         return node in self.bases
@@ -838,7 +838,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
     local_attr = remove_nodes(local_attr, DelAttr)
 
     def instance_attr(self, name, context=None):
-        """return the astng nodes associated to name in this class instance
+        """return the astroid nodes associated to name in this class instance
         attributes dictionary and in its parents
 
         :raises `NotFoundError`:
@@ -940,8 +940,8 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         its ancestors
         """
         done = {}
-        for astng in chain(iter((self,)), self.ancestors()):
-            for meth in astng.mymethods():
+        for astroid in chain(iter((self,)), self.ancestors()):
+            for meth in astroid.mymethods():
                 if meth.name in done:
                     continue
                 done[meth.name] = None

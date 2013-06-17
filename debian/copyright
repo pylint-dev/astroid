@@ -1,6 +1,6 @@
 This package was debianized by Sylvain Thenault <sylvain.thenault@logilab.fr>  Sat, 13 Apr 2002 19:05:23 +0200.
 
-It was downloaded from ftp://ftp.logilab.org/pub/astng
+It was downloaded from http://bitbucket.org/logilab/astroid
 
 Upstream Author:
 
@@ -9,9 +9,9 @@ Upstream Author:
 
 Copyright:
 
-    Copyright (c) 2003-2010 LOGILAB S.A. (Paris, FRANCE).
+    Copyright (c) 2003-2013 LOGILAB S.A. (Paris, FRANCE).
       http://www.logilab.fr/ -- mailto:contact@logilab.fr
-    Copyright (C) 2003-2010 Sylvain Thenault
+    Copyright (C) 2003-2013 Sylvain Thenault
 
 License:
 

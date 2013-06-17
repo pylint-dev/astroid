@@ -1,2 +1,2 @@
 version=3
-opts=pasv ftp://ftp.logilab.org/pub/astng/logilab-astng-(.*)\.tar\.gz
+https://bitbucket.org/logilab/astroid/downloads /logilab/astroid/get/astroid-version-(.*).tar.gz

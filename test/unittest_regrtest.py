@@ -1,27 +1,27 @@
 # copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
-# This file is part of logilab-astng.
+# This file is part of astroid.
 #
-# logilab-astng is free software: you can redistribute it and/or modify it
+# astroid is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published by the
 # Free Software Foundation, either version 2.1 of the License, or (at your
 # option) any later version.
 #
-# logilab-astng is distributed in the hope that it will be useful, but
+# astroid is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
 # for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License along
-# with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
+# with astroid. If not, see <http://www.gnu.org/licenses/>.
 
 from logilab.common.testlib import unittest_main, TestCase
 
-from logilab.astng import ResolveError, MANAGER, Instance, nodes, YES, InferenceError
-from logilab.astng.builder import ASTNGBuilder
-from logilab.astng.raw_building import build_module
-from logilab.astng.manager import ASTNGManager
+from astroid import ResolveError, MANAGER, Instance, nodes, YES, InferenceError
+from astroid.builder import AstroidBuilder
+from astroid.raw_building import build_module
+from astroid.manager import AstroidManager
 
 import sys
 from os.path import join, abspath, dirname
@@ -35,18 +35,18 @@ class NonRegressionTC(TestCase):
         sys.path.pop(0)
 
     def brainless_manager(self):
-        manager = ASTNGManager()
-        # avoid caching into the ASTNGManager borg since we get problems
+        manager = AstroidManager()
+        # avoid caching into the AstroidManager borg since we get problems
         # with other tests :
         manager.__dict__ = {}
-        manager.astng_cache = {}
+        manager.astroid_cache = {}
         manager._mod_file_cache = {}
         manager.transformers = {}
         return manager
 
     def test_module_path(self):
         man = self.brainless_manager()
-        mod = man.astng_from_module_name('package.import_package_subpackage_module')
+        mod = man.astroid_from_module_name('package.import_package_subpackage_module')
         package = mod.igetattr('package').next()
         self.assertEqual(package.name, 'package')
         subpackage = package.igetattr('subpackage').next()
@@ -59,8 +59,8 @@ class NonRegressionTC(TestCase):
 
     def test_package_sidepackage(self):
         manager = self.brainless_manager()
-        assert 'package.sidepackage' not in MANAGER.astng_cache
-        package = manager.astng_from_module_name('absimp')
+        assert 'package.sidepackage' not in MANAGER.astroid_cache
+        package = manager.astroid_from_module_name('absimp')
         self.assertIsInstance(package, nodes.Module)
         self.assertTrue(package.package)
         subpackage = package.getattr('sidepackage')[0].infer().next()
@@ -70,7 +70,7 @@ class NonRegressionTC(TestCase):
 
 
     def test_living_property(self):
-        builder = ASTNGBuilder()
+        builder = AstroidBuilder()
         builder._done = {}
         builder._module = sys.modules[__name__]
         builder.object_build(build_module('module_name', ''), Whatever)
@@ -83,7 +83,7 @@ class NonRegressionTC(TestCase):
             self.skipTest('test skipped: pygtk is not available')
         # XXX may fail on some pygtk version, because objects in
         # gobject._gobject have __module__ set to gobject :(
-        builder = ASTNGBuilder()
+        builder = AstroidBuilder()
         data = """
 import pygtk
 pygtk.require("2.6")
@@ -92,8 +92,8 @@ import gobject
 class A(gobject.GObject):
     pass
 """
-        astng = builder.string_build(data, __name__, __file__)
-        a = astng['A']
+        astroid = builder.string_build(data, __name__, __file__)
+        a = astroid['A']
         self.assertTrue(a.newstyle)
 
 
@@ -102,7 +102,7 @@ class A(gobject.GObject):
             from pylint import lint
         except ImportError:
             self.skipTest('pylint not available')
-        mod = MANAGER.astng_from_module_name('pylint.lint')
+        mod = MANAGER.astroid_from_module_name('pylint.lint')
         pylinter = mod['PyLinter']
         expect = ['OptionsManagerMixIn', 'object', 'MessagesHandlerMixIn',
                   'ReportsHandlerMixIn', 'BaseTokenChecker', 'BaseChecker',
@@ -123,14 +123,14 @@ class A(gobject.GObject):
             import numpy
         except ImportError:
             self.skipTest('test skipped: numpy is not available')
-        builder = ASTNGBuilder()
+        builder = AstroidBuilder()
         data = """
 from numpy import multiply
 
 multiply(1, 2, 3)
 """
-        astng = builder.string_build(data, __name__, __file__)
-        callfunc = astng.body[1].value.func
+        astroid = builder.string_build(data, __name__, __file__)
+        callfunc = astroid.body[1].value.func
         infered = callfunc.infered()
         self.assertEqual(len(infered), 1)
         self.assertIsInstance(infered[0], Instance)

@@ -13,8 +13,8 @@
 
 include /usr/share/python/python.mk
 
-PACKAGE:=$(call py_pkgname,python-logilab-astng,python)
-PACKAGE3:=$(call py_pkgname,python-logilab-astng,python3.)
+PACKAGE:=$(call py_pkgname,python-astroid,python)
+PACKAGE3:=$(call py_pkgname,python-astroid,python3.)
 
 %:
 	dh $@ --with python2,python3
@@ -26,8 +26,7 @@ override_dh_install:
 	NO_SETUPTOOLS=1 python3 setup.py -q install --no-compile \
 	                --root=$(CURDIR)/debian/$(PACKAGE3)/ \
 	                ${py_setup_install_args}
-	rm -rf debian/*/usr/lib/python*/*-packages/logilab/astng/test
-	rm -rf debian/*/usr/lib/python*/*-packages/logilab/__init__.py
+	rm -rf debian/*/usr/lib/python*/*-packages/astroid/test
 
 override_dh_installdocs:
 	dh_installdocs -i README*

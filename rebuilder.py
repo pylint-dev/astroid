@@ -1,22 +1,22 @@
 # copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
-# This file is part of logilab-astng.
+# This file is part of astroid.
 #
-# logilab-astng is free software: you can redistribute it and/or modify it
+# astroid is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published by the
 # Free Software Foundation, either version 2.1 of the License, or (at your
 # option) any later version.
 #
-# logilab-astng is distributed in the hope that it will be useful, but
+# astroid is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
 # for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License along
-# with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
+# with astroid. If not, see <http://www.gnu.org/licenses/>.
 """this module contains utilities for rebuilding a _ast tree in
-order to get a single ASTNG representation
+order to get a single Astroid representation
 """
 
 import sys
@@ -32,7 +32,7 @@ from _ast import (Expr as Discard, Str,
     Eq, Gt, GtE, In, Is, IsNot, Lt, LtE, NotEq, NotIn,
     )
 
-from logilab.astng import nodes as new
+from astroid import nodes as new
 
 
 _BIN_OP_CLASSES = {Add: '+',
@@ -117,7 +117,7 @@ def _set_infos(oldnode, newnode, parent):
 
 
 class TreeRebuilder(object):
-    """Rebuilds the _ast tree to become an ASTNG tree"""
+    """Rebuilds the _ast tree to become an Astroid tree"""
 
     _visit_meths = {}
     def __init__(self):
@@ -287,7 +287,7 @@ class TreeRebuilder(object):
         return newnode
 
     def visit_class(self, node, parent):
-        """visit a Class node to become astng"""
+        """visit a Class node to become astroid"""
         self._metaclass.append(self._metaclass[-1])
         newnode = new.Class(node.name, None)
         _lineno_parent(node, newnode, parent)
@@ -342,7 +342,7 @@ class TreeRebuilder(object):
     def visit_decorators(self, node, parent):
         """visit a Decorators node by returning a fresh instance of it"""
         # /!\ node is actually a _ast.Function node while
-        # parent is a astng.nodes.Function node
+        # parent is a astroid.nodes.Function node
         newnode = new.Decorators()
         _lineno_parent(node, newnode, parent)
         if 'decorators' in node._fields: # py < 2.6, i.e. 2.5
@@ -461,7 +461,7 @@ class TreeRebuilder(object):
         return newnode
 
     def visit_function(self, node, parent):
-        """visit an Function node to become astng"""
+        """visit an Function node to become astroid"""
         self._global_names.append({})
         newnode = new.Function(node.name, None)
         _lineno_parent(node, newnode, parent)
@@ -523,7 +523,7 @@ class TreeRebuilder(object):
         return newnode
 
     def visit_global(self, node, parent):
-        """visit an Global node to become astng"""
+        """visit an Global node to become astroid"""
         newnode = new.Global(node.names)
         _set_infos(node, newnode, parent)
         if self._global_names: # global at the module level, no effect
@@ -813,7 +813,7 @@ class TreeRebuilder3k(TreeRebuilder):
     def visit_arg(self, node, parent):
         """visit a arg node by returning a fresh AssName instance"""
         # the <arg> node is coming from py>=3.0, but we use AssName in py2.x
-        # XXX or we should instead introduce a Arg node in astng ?
+        # XXX or we should instead introduce a Arg node in astroid ?
         return self.visit_assname(node, parent, node.arg)
 
     def visit_excepthandler(self, node, parent):

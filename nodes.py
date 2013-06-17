@@ -1,20 +1,20 @@
 # copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
-# This file is part of logilab-astng.
+# This file is part of astroid.
 #
-# logilab-astng is free software: you can redistribute it and/or modify it
+# astroid is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published by the
 # Free Software Foundation, either version 2.1 of the License, or (at your
 # option) any later version.
 #
-# logilab-astng is distributed in the hope that it will be useful, but
+# astroid is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
 # for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License along
-# with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
+# with astroid. If not, see <http://www.gnu.org/licenses/>.
 """
 on all nodes :
  .is_statement, returning true if the node should be considered as a
@@ -26,7 +26,7 @@ on all nodes :
  .frame(), returning the first node defining a new local scope (i.e.
   Module, Function or Class)
  .set_local(name, node), define an identifier <name> on the first parent frame,
-  with the node defining it. This is used by the astng builder and should not
+  with the node defining it. This is used by the astroid builder and should not
   be used from out there.
 
 on From and Import :
@@ -37,7 +37,7 @@ on From and Import :
 
 __docformat__ = "restructuredtext en"
 
-from logilab.astng.node_classes import Arguments, AssAttr, Assert, Assign, \
+from astroid.node_classes import Arguments, AssAttr, Assert, Assign, \
     AssName, AugAssign, Backquote, BinOp, BoolOp, Break, CallFunc, Compare, \
     Comprehension, Const, Continue, Decorators, DelAttr, DelName, Delete, \
     Dict, Discard, Ellipsis, EmptyNode, ExceptHandler, Exec, ExtSlice, For, \
@@ -45,7 +45,7 @@ from logilab.astng.node_classes import Arguments, AssAttr, Assert, Assign, \
     List, Name, Nonlocal, Pass, Print, Raise, Return, Set, Slice, Starred, Subscript, \
     TryExcept, TryFinally, Tuple, UnaryOp, While, With, Yield, \
     const_factory
-from logilab.astng.scoped_nodes import Module, GenExpr, Lambda, DictComp, \
+from astroid.scoped_nodes import Module, GenExpr, Lambda, DictComp, \
     ListComp, SetComp, Function, Class
 
 ALL_NODE_CLASSES = (

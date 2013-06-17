@@ -1,34 +1,34 @@
 # copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
-# This file is part of logilab-astng.
+# This file is part of astroid.
 #
-# logilab-astng is free software: you can redistribute it and/or modify it
+# astroid is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published by the
 # Free Software Foundation, either version 2.1 of the License, or (at your
 # option) any later version.
 #
-# logilab-astng is distributed in the hope that it will be useful, but
+# astroid is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
 # for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License along
-# with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
-"""tests for the astng variable lookup capabilities
+# with astroid. If not, see <http://www.gnu.org/licenses/>.
+"""tests for the astroid variable lookup capabilities
 """
 import sys
 from os.path import join, abspath, dirname
 
 from logilab.common.testlib import TestCase, unittest_main, require_version
 
-from logilab.astng import builder, nodes, scoped_nodes, \
+from astroid import builder, nodes, scoped_nodes, \
      InferenceError, NotFoundError, UnresolvableName
-from logilab.astng.scoped_nodes import builtin_lookup, Function
-from logilab.astng.bases import YES
+from astroid.scoped_nodes import builtin_lookup, Function
+from astroid.bases import YES
 from unittest_inference import get_name_node
 
-builder = builder.ASTNGBuilder()
+builder = builder.AstroidBuilder()
 DATA = join(dirname(abspath(__file__)), 'data')
 MODULE = builder.file_build(join(DATA, 'module.py'), 'data.module')
 MODULE2 = builder.file_build(join(DATA, 'module2.py'), 'data.module2')
@@ -48,18 +48,18 @@ a = None
 def func():
     c = 1
         '''
-        astng = builder.string_build(code, __name__, __file__)
+        astroid = builder.string_build(code, __name__, __file__)
         # a & b
-        a = astng.nodes_of_class(nodes.Name).next()
+        a = astroid.nodes_of_class(nodes.Name).next()
         self.assertEqual(a.lineno, 2)
         if sys.version_info < (3, 0):
-            self.assertEqual(len(astng.lookup('b')[1]), 2)
-            self.assertEqual(len(astng.lookup('a')[1]), 3)
-            b = astng.locals['b'][1]
+            self.assertEqual(len(astroid.lookup('b')[1]), 2)
+            self.assertEqual(len(astroid.lookup('a')[1]), 3)
+            b = astroid.locals['b'][1]
         else:
-            self.assertEqual(len(astng.lookup('b')[1]), 1)
-            self.assertEqual(len(astng.lookup('a')[1]), 2)
-            b = astng.locals['b'][0]
+            self.assertEqual(len(astroid.lookup('b')[1]), 1)
+            self.assertEqual(len(astroid.lookup('a')[1]), 2)
+            b = astroid.locals['b'][0]
         stmts = a.lookup('a')[1]
         self.assertEqual(len(stmts), 1)
         self.assertEqual(b.lineno, 6)
@@ -68,18 +68,18 @@ def func():
         self.assertEqual(b_value.value, 1)
         # c
         self.assertRaises(StopIteration, b_infer.next)
-        func = astng.locals['func'][0]
+        func = astroid.locals['func'][0]
         self.assertEqual(len(func.lookup('c')[1]), 1)
 
     def test_module(self):
-        astng = builder.string_build('pass', __name__, __file__)
+        astroid = builder.string_build('pass', __name__, __file__)
         # built-in objects
-        none = astng.ilookup('None').next()
+        none = astroid.ilookup('None').next()
         self.assertIsNone(none.value)
-        obj = astng.ilookup('object').next()
+        obj = astroid.ilookup('object').next()
         self.assertIsInstance(obj, nodes.Class)
         self.assertEqual(obj.name, 'object')
-        self.assertRaises(InferenceError, astng.ilookup('YOAA').next)
+        self.assertRaises(InferenceError, astroid.ilookup('YOAA').next)
 
         # XXX
         self.assertEqual(len(list(NONREGR.ilookup('enumerate'))), 2)
@@ -92,9 +92,9 @@ class A:
 class A(A):
     pass
         '''
-        astng = builder.string_build(code, __name__, __file__)
-        cls1 = astng.locals['A'][0]
-        cls2 = astng.locals['A'][1]
+        astroid = builder.string_build(code, __name__, __file__)
+        cls1 = astroid.locals['A'][0]
+        cls2 = astroid.locals['A'][1]
         name = cls2.nodes_of_class(nodes.Name).next()
         self.assertEqual(name.infer().next(), cls1)
 
@@ -134,7 +134,7 @@ class A(A):
 
 
     def test_loopvar_hiding(self):
-        astng = builder.string_build("""
+        astroid = builder.string_build("""
 x = 10
 for x in range(5):
     print (x)
@@ -142,7 +142,7 @@ for x in range(5):
 if x > 0:
     print ('#' * x)
         """, __name__, __file__)
-        xnames = [n for n in astng.nodes_of_class(nodes.Name) if n.name == 'x']
+        xnames = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == 'x']
         # inside the loop, only one possible assignment
         self.assertEqual(len(xnames[0].lookup('x')[1]), 1)
         # outside the loop, two possible assignments
@@ -150,12 +150,12 @@ if x > 0:
         self.assertEqual(len(xnames[2].lookup('x')[1]), 2)
 
     def test_list_comps(self):
-        astng = builder.string_build("""
+        astroid = builder.string_build("""
 print ([ i for i in range(10) ])
 print ([ i for i in range(10) ])
 print ( list( i for i in range(10) ) )
         """, __name__, __file__)
-        xnames = [n for n in astng.nodes_of_class(nodes.Name) if n.name == 'i']
+        xnames = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == 'i']
         self.assertEqual(len(xnames[0].lookup('i')[1]), 1)
         self.assertEqual(xnames[0].lookup('i')[1][0].lineno, 2)
         self.assertEqual(len(xnames[1].lookup('i')[1]), 1)
@@ -165,11 +165,11 @@ print ( list( i for i in range(10) ) )
 
     def test_list_comp_target(self):
         """test the list comprehension target"""
-        astng = builder.string_build("""
+        astroid = builder.string_build("""
 ten = [ var for var in range(10) ]
 var
         """)
-        var = astng.body[1].value
+        var = astroid.body[1].value
         if sys.version_info < (3, 0):
             self.assertEqual(var.infered(), [YES])
         else:
@@ -177,17 +177,17 @@ var
 
     @require_version('2.7')
     def test_dict_comps(self):
-        astng = builder.string_build("""
+        astroid = builder.string_build("""
 print ({ i: j for i in range(10) for j in range(10) })
 print ({ i: j for i in range(10) for j in range(10) })
         """, __name__, __file__)
-        xnames = [n for n in astng.nodes_of_class(nodes.Name) if n.name == 'i']
+        xnames = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == 'i']
         self.assertEqual(len(xnames[0].lookup('i')[1]), 1)
         self.assertEqual(xnames[0].lookup('i')[1][0].lineno, 2)
         self.assertEqual(len(xnames[1].lookup('i')[1]), 1)
         self.assertEqual(xnames[1].lookup('i')[1][0].lineno, 3)
 
-        xnames = [n for n in astng.nodes_of_class(nodes.Name) if n.name == 'j']
+        xnames = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == 'j']
         self.assertEqual(len(xnames[0].lookup('i')[1]), 1)
         self.assertEqual(xnames[0].lookup('i')[1][0].lineno, 2)
         self.assertEqual(len(xnames[1].lookup('i')[1]), 1)
@@ -195,11 +195,11 @@ print ({ i: j for i in range(10) for j in range(10) })
 
     @require_version('2.7')
     def test_set_comps(self):
-        astng = builder.string_build("""
+        astroid = builder.string_build("""
 print ({ i for i in range(10) })
 print ({ i for i in range(10) })
         """, __name__, __file__)
-        xnames = [n for n in astng.nodes_of_class(nodes.Name) if n.name == 'i']
+        xnames = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == 'i']
         self.assertEqual(len(xnames[0].lookup('i')[1]), 1)
         self.assertEqual(xnames[0].lookup('i')[1][0].lineno, 2)
         self.assertEqual(len(xnames[1].lookup('i')[1]), 1)
@@ -207,11 +207,11 @@ print ({ i for i in range(10) })
 
     @require_version('2.7')
     def test_set_comp_closure(self):
-        astng = builder.string_build("""
+        astroid = builder.string_build("""
 ten = { var for var in range(10) }
 var
         """)
-        var = astng.body[1].value
+        var = astroid.body[1].value
         self.assertRaises(UnresolvableName, var.infered)
 
     def test_generator_attributes(self):
@@ -242,23 +242,23 @@ p2 = Pouet()
 class NoName: pass
 p3 = NoName()
 '''
-        astng = builder.string_build(code, __name__, __file__)
-        p1 = astng['p1'].infer().next()
+        astroid = builder.string_build(code, __name__, __file__)
+        p1 = astroid['p1'].infer().next()
         self.assertTrue(p1.getattr('__name__'))
-        p2 = astng['p2'].infer().next()
+        p2 = astroid['p2'].infer().next()
         self.assertTrue(p2.getattr('__name__'))
-        self.assertTrue(astng['NoName'].getattr('__name__'))
-        p3 = astng['p3'].infer().next()
+        self.assertTrue(astroid['NoName'].getattr('__name__'))
+        p3 = astroid['p3'].infer().next()
         self.assertRaises(NotFoundError, p3.getattr, '__name__')
 
 
     def test_function_module_special(self):
-        astng = builder.string_build('''
+        astroid = builder.string_build('''
 def initialize(linter):
     """initialize linter with checkers in this package """
     package_load(linter, __path__[0])
         ''', 'data.__init__', 'data/__init__.py')
-        path = [n for n in astng.nodes_of_class(nodes.Name) if n.name == '__path__'][0]
+        path = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == '__path__'][0]
         self.assertEqual(len(path.lookup('__path__')[1]), 1)
 
 
@@ -285,8 +285,8 @@ class foo:
     def test(self):
         pass
         '''
-        astng = builder.string_build(code, __name__, __file__)
-        member = get_name_node(astng['foo'], 'member')
+        astroid = builder.string_build(code, __name__, __file__)
+        member = get_name_node(astroid['foo'], 'member')
         it = member.infer()
         obj = it.next()
         self.assertIsInstance(obj, nodes.Const)
@@ -304,8 +304,8 @@ class FileA:
     def funcA():
         return 4
         '''
-        astng = builder.string_build(code, __name__, __file__)
-        decname = get_name_node(astng['FileA'], 'decorator')
+        astroid = builder.string_build(code, __name__, __file__)
+        decname = get_name_node(astroid['FileA'], 'decorator')
         it = decname.infer()
         obj = it.next()
         self.assertIsInstance(obj, nodes.Function)
@@ -326,8 +326,8 @@ class Test:
     def __init__(self):
         print (FileA.funcA())
         '''
-        astng = builder.string_build(code, __name__, __file__)
-        it = astng['Test']['__init__'].ilookup('FileA')
+        astroid = builder.string_build(code, __name__, __file__)
+        it = astroid['Test']['__init__'].ilookup('FileA')
         obj = it.next()
         self.assertIsInstance(obj, nodes.Class)
         self.assertRaises(StopIteration, it.next)
@@ -347,10 +347,10 @@ del Frobble
 def run1():
     f = Frobble()
 '''
-        astng = builder.string_build(code, __name__, __file__)
-        stmts = astng['run2'].lookup('Frobbel')[1]
+        astroid = builder.string_build(code, __name__, __file__)
+        stmts = astroid['run2'].lookup('Frobbel')[1]
         self.assertEqual(len(stmts), 0)
-        stmts = astng['run1'].lookup('Frobbel')[1]
+        stmts = astroid['run1'].lookup('Frobbel')[1]
         self.assertEqual(len(stmts), 0)
 
 if __name__ == '__main__':

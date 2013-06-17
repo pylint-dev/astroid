@@ -1,16 +1,16 @@
-"""ASTNG hooks for the Python 2 qt4 module.
+"""Astroid hooks for the Python 2 qt4 module.
 
 Currently help understanding of :
 
 * PyQT4.QtCore
 """
 
-from logilab.astng import MANAGER
-from logilab.astng.builder import ASTNGBuilder
+from astroid import MANAGER
+from astroid.builder import AstroidBuilder
 
 
 def pyqt4_qtcore_transform(module):
-    fake = ASTNGBuilder(MANAGER).string_build('''
+    fake = AstroidBuilder(MANAGER).string_build('''
 
 def SIGNAL(signal_name): pass
 

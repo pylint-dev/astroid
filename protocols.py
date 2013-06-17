@@ -1,32 +1,32 @@
 # copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
-# This file is part of logilab-astng.
+# This file is part of astroid.
 #
-# logilab-astng is free software: you can redistribute it and/or modify it
+# astroid is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published by the
 # Free Software Foundation, either version 2.1 of the License, or (at your
 # option) any later version.
 #
-# logilab-astng is distributed in the hope that it will be useful, but
+# astroid is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
 # for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License along
-# with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
+# with astroid. If not, see <http://www.gnu.org/licenses/>.
 """this module contains a set of functions to handle python protocols for nodes
 where it makes sense.
 """
 
 __doctype__ = "restructuredtext en"
 
-from logilab.astng.exceptions import InferenceError, NoDefault
-from logilab.astng.node_classes import unpack_infer
-from logilab.astng.bases import copy_context, \
+from astroid.exceptions import InferenceError, NoDefault
+from astroid.node_classes import unpack_infer
+from astroid.bases import copy_context, \
      raise_if_nothing_infered, yes_if_nothing_infered, Instance, YES
-from logilab.astng.nodes import const_factory
-from logilab.astng import nodes
+from astroid.nodes import const_factory
+from astroid import nodes
 
 # unary operations ############################################################
 

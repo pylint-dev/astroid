@@ -1,76 +1,76 @@
 # copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
-# This file is part of logilab-astng.
+# This file is part of astroid.
 #
-# logilab-astng is free software: you can redistribute it and/or modify it
+# astroid is free software: you can redistribute it and/or modify it
 # under the terms of the GNU Lesser General Public License as published by the
 # Free Software Foundation, either version 2.1 of the License, or (at your
 # option) any later version.
 #
-# logilab-astng is distributed in the hope that it will be useful, but
+# astroid is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License
 # for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License along
-# with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
+# with astroid. If not, see <http://www.gnu.org/licenses/>.
 from logilab.common.testlib import TestCase, unittest_main
 
 import sys
 from os.path import join, abspath, dirname
-from logilab.astng.manager import ASTNGManager, _silent_no_wrap
-from logilab.astng.bases import  BUILTINS
+from astroid.manager import AstroidManager, _silent_no_wrap
+from astroid.bases import  BUILTINS
 
 DATA = join(dirname(abspath(__file__)), 'data')
 
-class ASTNGManagerTC(TestCase):
+class AstroidManagerTC(TestCase):
     def setUp(self):
-        self.manager = ASTNGManager()
-        self.manager.astng_cache.clear()
+        self.manager = AstroidManager()
+        self.manager.astroid_cache.clear()
 
-    def test_astng_from_module(self):
+    def test_astroid_from_module(self):
         import unittest
-        astng = self.manager.astng_from_module(unittest)
-        self.assertEqual(astng.pure_python, True)
+        astroid = self.manager.astroid_from_module(unittest)
+        self.assertEqual(astroid.pure_python, True)
         import time
-        astng = self.manager.astng_from_module(time)
-        self.assertEqual(astng.pure_python, False)
+        astroid = self.manager.astroid_from_module(time)
+        self.assertEqual(astroid.pure_python, False)
 
-    def test_astng_from_class(self):
-        astng = self.manager.astng_from_class(int)
-        self.assertEqual(astng.name, 'int')
-        self.assertEqual(astng.parent.frame().name, BUILTINS)
+    def test_astroid_from_class(self):
+        astroid = self.manager.astroid_from_class(int)
+        self.assertEqual(astroid.name, 'int')
+        self.assertEqual(astroid.parent.frame().name, BUILTINS)
 
-        astng = self.manager.astng_from_class(object)
-        self.assertEqual(astng.name, 'object')
-        self.assertEqual(astng.parent.frame().name, BUILTINS)
-        self.assertIn('__setattr__', astng)
+        astroid = self.manager.astroid_from_class(object)
+        self.assertEqual(astroid.name, 'object')
+        self.assertEqual(astroid.parent.frame().name, BUILTINS)
+        self.assertIn('__setattr__', astroid)
 
-    def _test_astng_from_zip(self, archive):
+    def _test_astroid_from_zip(self, archive):
         origpath = sys.path[:]
         sys.modules.pop('mypypa', None)
         archive_path = join(DATA, archive)
         sys.path.insert(0, archive_path)
         try:
-            module = self.manager.astng_from_module_name('mypypa')
+            module = self.manager.astroid_from_module_name('mypypa')
             self.assertEqual(module.name, 'mypypa')
             self.assertTrue(module.file.endswith('%s/mypypa' % archive),
                             module.file)
         finally:
             # remove the module, else after importing egg, we don't get the zip
-            if 'mypypa' in self.manager.astng_cache:
-                del self.manager.astng_cache['mypypa']
+            if 'mypypa' in self.manager.astroid_cache:
+                del self.manager.astroid_cache['mypypa']
                 del self.manager._mod_file_cache[('mypypa', None)]
             if archive_path in sys.path_importer_cache:
                 del sys.path_importer_cache[archive_path]
             sys.path = origpath
 
-    def test_astng_from_module_name_egg(self):
-        self._test_astng_from_zip('MyPyPa-0.1.0-py2.5.egg')
+    def test_astroid_from_module_name_egg(self):
+        self._test_astroid_from_zip('MyPyPa-0.1.0-py2.5.egg')
 
-    def test_astng_from_module_name_zip(self):
-        self._test_astng_from_zip('MyPyPa-0.1.0-py2.5.zip')
+    def test_astroid_from_module_name_zip(self):
+        self._test_astroid_from_zip('MyPyPa-0.1.0-py2.5.zip')
 
     def test_from_directory(self):
         obj = self.manager.project_from_files([DATA], _silent_no_wrap, 'data')
@@ -89,21 +89,21 @@ class ASTNGManagerTC(TestCase):
         self.assertListEqual(sorted(k for k in obj.keys()), expected)
 
     def test_do_not_expose_main(self):
-      obj = self.manager.astng_from_module_name('__main__')
+      obj = self.manager.astroid_from_module_name('__main__')
       self.assertEqual(obj.name, '__main__')
       self.assertEqual(obj.items(), [])
 
 
-class BorgASTNGManagerTC(TestCase):
+class BorgAstroidManagerTC(TestCase):
 
     def test_borg(self):
-        """test that the ASTNGManager is really a borg, i.e. that two different
+        """test that the AstroidManager is really a borg, i.e. that two different
         instances has same cache"""
-        first_manager = ASTNGManager()
-        built = first_manager.astng_from_module_name(BUILTINS)
+        first_manager = AstroidManager()
+        built = first_manager.astroid_from_module_name(BUILTINS)
 
-        second_manager = ASTNGManager()
-        second_built = first_manager.astng_from_module_name(BUILTINS)
+        second_manager = AstroidManager()
+        second_built = first_manager.astroid_from_module_name(BUILTINS)
         self.assertIs(built, second_built)
 
 
