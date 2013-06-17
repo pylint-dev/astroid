@@ -866,6 +866,7 @@ class TreeRebuilder3k(TreeRebuilder):
                 excnode.body = [self.visit(child, newnode) for child in node.body]
                 excnode.handlers = [self.visit(child, newnode) for child in node.handlers]
                 excnode.orelse = [self.visit(child, newnode) for child in node.orelse]
+                excnode.set_line_info(excnode.last_child())
                 newnode.body = [excnode]
             else:
                 newnode.body = [self.visit(child, newnode) for child in node.body]
