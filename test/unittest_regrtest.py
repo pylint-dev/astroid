@@ -105,7 +105,7 @@ class A(gobject.GObject):
         mod = MANAGER.astng_from_module_name('pylint.lint')
         pylinter = mod['PyLinter']
         expect = ['OptionsManagerMixIn', 'object', 'MessagesHandlerMixIn',
-                  'ReportsHandlerMixIn', 'BaseRawChecker', 'BaseChecker',
+                  'ReportsHandlerMixIn', 'BaseTokenChecker', 'BaseChecker',
                   'OptionsProviderMixIn', 'ASTWalker']
         self.assertListEqual([c.name for c in pylinter.ancestors()],
                              expect)
