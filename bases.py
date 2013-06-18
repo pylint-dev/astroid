@@ -358,7 +358,7 @@ class NodeNG(object):
     # instance specific inference function infer(node, context)
     _explicit_inference = None
 
-    def infer(self, context=None):
+    def infer(self, context=None, **kwargs):
         """main interface to the interface system, return a generator on infered
         values.
 
@@ -368,10 +368,10 @@ class NodeNG(object):
         if self._explicit_inference is not None:
             # explicit_inference is not bound, give it self explicitly
             try:
-                return self._explicit_inference(self, context)
+                return self._explicit_inference(self, context, **kwargs)
             except UseInferenceDefault:
                 pass
-        return self._infer(context)
+        return self._infer(context, **kwargs)
 
     def _repr_name(self):
         """return self.name or self.attrname or '' for nice representation"""
