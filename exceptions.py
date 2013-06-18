@@ -36,6 +36,11 @@ class NotFoundError(ResolveError):
 class InferenceError(ResolveError):
     """raised when we are unable to infer a node"""
 
+class UseInferenceDefault(Exception):
+    """exception to be raised in custom inference function to indicate that it
+    should go back to the default behaviour
+    """
+
 class UnresolvableName(InferenceError):
     """raised when we are unable to resolve a name"""
 

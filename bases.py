@@ -24,8 +24,8 @@ __docformat__ = "restructuredtext en"
 import sys
 from contextlib import contextmanager
 
-from astroid.exceptions import (InferenceError, AstroidError,
-                                      NotFoundError, UnresolvableName)
+from astroid.exceptions import (InferenceError, AstroidError, NotFoundError,
+                                UnresolvableName, UseInferenceDefault)
 
 
 if sys.version_info >= (3, 0):
@@ -355,6 +355,23 @@ class NodeNG(object):
     parent = None
     # attributes containing child node(s) redefined in most concrete classes:
     _astroid_fields = ()
+    # instance specific inference function infer(node, context)
+    _explicit_inference = None
+
+    def infer(self, context=None):
+        """main interface to the interface system, return a generator on infered
+        values.
+
+        If the instance has some explicit inference function set, it will be
+        called instead of the default interface.
+        """
+        if self._explicit_inference is not None:
+            # explicit_inference is not bound, give it self explicitly
+            try:
+                return self._explicit_inference(self, context)
+            except UseInferenceDefault:
+                pass
+        return self._infer(context)
 
     def _repr_name(self):
         """return self.name or self.attrname or '' for nice representation"""
@@ -543,7 +560,7 @@ class NodeNG(object):
         # overridden for From, Import, Global, TryExcept and Arguments
         return None
 
-    def infer(self, context=None):
+    def _infer(self, context=None):
         """we don't know how to resolve a statement by default"""
         # this method is overridden by most concrete classes
         raise InferenceError(self.__class__.__name__)
