@@ -42,6 +42,8 @@ Main modules are:
 __doctype__ = "restructuredtext en"
 
 import sys
+import re
+from operator import attrgetter
 
 # WARNING: internal imports order matters !
 
@@ -65,6 +67,43 @@ from astroid.scoped_nodes import builtin_lookup
 from astroid.manager import AstroidManager, Project
 MANAGER = AstroidManager()
 del AstroidManager
+
+# transform utilities (filters and decorator)
+
+class AsStringRegexpPredicate(object):
+    """Class to be used as predicate that may be given to `register_transform`
+
+    First argument is a regular expression that will be searched against the `as_string`
+    representation of the node onto which it's applied.
+
+    If specified, the second argument is an `attrgetter` expression that will be
+    applied on the node first to get the actual node on which `as_string` should
+    be called.
+    """
+    def __init__(self, regexp, expression=None):
+        self.regexp = re.compile(regexp)
+        self.expression = expression
+
+    def __call__(self, node):
+        if self.expression is not None:
+            node = attrgetter(self.expression)(node)
+        return self.regexp.search(node.as_string())
+
+def inference_tip(infer_function):
+    """Given an instance specific inference function, return a function to be
+    given to MANAGER.register_transform to set this inference function.
+
+    Typical usage
+
+    .. sourcecode:: python
+
+       MANAGER.register_transform(CallFunc, inference_tip(infer_named_tuple),
+                                  AsStringRegexpPredicate('namedtuple', 'func'))
+    """
+    def transform(node, infer_function=infer_function):
+        node._explicit_inference = infer_function
+        return node
+    return transform
 
 # load brain plugins
 from os import listdir
