@@ -2,6 +2,8 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * Added the test_utils module for building ASTs and
+      extracting deeply nested nodes for easier testing.
     * rename the project as astroid
 
 2013-04-16  --  0.24.3
