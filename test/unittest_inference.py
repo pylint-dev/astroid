@@ -1158,5 +1158,22 @@ class Xxx(nonregr.Aaa, nonregr.Ccc):
         parents = list(astroid['Xxx'].ancestors())
         self.assertEqual(len(parents), 3, parents) # Aaa, Ccc, object
 
+    def test_pluggable_inference(self):
+        code = '''
+from collections import namedtuple
+A = namedtuple('A', ['a', 'b'])
+B = namedtuple('B', 'a b')
+        '''
+        astroid = builder.string_build(code, __name__, __file__)
+        aclass = astroid['A'].infered()[0]
+        self.assertIsInstance(aclass, nodes.Class)
+        self.assertIn('a', aclass.instance_attrs)
+        self.assertIn('b', aclass.instance_attrs)
+        bclass = astroid['B'].infered()[0]
+        self.assertIsInstance(bclass, nodes.Class)
+        self.assertIn('a', bclass.instance_attrs)
+        self.assertIn('b', bclass.instance_attrs)
+
+
 if __name__ == '__main__':
     unittest_main()

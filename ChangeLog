@@ -6,6 +6,9 @@ Change log for the astroid package (used to be astng)
       `register_transform` function on the manager instead of the 
      `register_transformer` to make it more flexible wrt node selection
 
+    * Use the new transformation API to provide support for namedtuple
+      (actually in pylint-brain, closes #8766)
+
     * Added the test_utils module for building ASTs and
       extracting deeply nested nodes for easier testing.
 

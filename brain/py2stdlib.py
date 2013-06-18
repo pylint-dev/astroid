@@ -5,11 +5,23 @@ Currently help understanding of :
 * hashlib.md5 and hashlib.sha1
 """
 
-from astroid import MANAGER, nodes
+from astroid import MANAGER, AsStringRegexpPredicate, UseInferenceDefault, inference_tip
+from astroid import nodes
 from astroid.builder import AstroidBuilder
 
 MODULE_TRANSFORMS = {}
 
+
+# module specific transformation functions #####################################
+
+def transform(module):
+    try:
+        tr = MODULE_TRANSFORMS[module.name]
+    except KeyError:
+        pass
+    else:
+        tr(module)
+MANAGER.register_transform(nodes.Module, transform)
 
 # module specific transformation functions #####################################
 
@@ -170,16 +182,38 @@ MODULE_TRANSFORMS['pkg_resources'] = pkg_resources_transform
 MODULE_TRANSFORMS['urlparse'] = urlparse_transform
 MODULE_TRANSFORMS['subprocess'] = subprocess_transform
 
+# namedtuple support ###########################################################
 
-def transform(module):
+def infer_named_tuple(node, context=None):
+    """Specific inference function for namedtuple CallFunc node"""
+    # node is a CallFunc node, class name as first argument and generated class
+    # attributes as second argument
+    if len(node.args) != 2:
+        # something weird here, go back to class implementation
+        raise UseInferenceDefault()
+    # namedtuple list of attributes can be a list of strings or a
+    # whitespace-separate string
     try:
-        tr = MODULE_TRANSFORMS[module.name]
-    except KeyError:
-        pass
-    else:
-        tr(module)
+        name = node.args[0].value
+        try:
+            attributes = node.args[1].value.split()
+        except AttributeError:
+            attributes = [const.value for const in node.args[1].elts]
+    except AttributeError:
+        raise UseInferenceDefault()
+    # we want to return a Class node instance with proper attributes set
+    class_node = nodes.Class(name, 'docstring')
+    # set base class=tuple
+    class_node.bases.append(nodes.Tuple)
+    # XXX add __init__(*attributes) method
+    for attr in attributes:
+        fake_node = nodes.EmptyNode()
+        fake_node.parent = class_node
+        class_node.instance_attrs[attr] = [fake_node]
+    # we use UseInferenceDefault, we can't be a generator so return an iterator
+    return iter([class_node])
 
-from astroid import MANAGER
-MANAGER.register_transform(nodes.Module, transform)
+MANAGER.register_transform(nodes.CallFunc, inference_tip(infer_named_tuple),
+                           AsStringRegexpPredicate('namedtuple', 'func'))
 
 
