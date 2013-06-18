@@ -542,6 +542,8 @@ class Function(Statement, Lambda):
         if self.decorators is not None:
             self.fromlineno += sum(node.tolineno - node.lineno + 1
                                    for node in self.decorators.nodes)
+        if self.args.fromlineno < self.fromlineno:
+            self.args.fromlineno = self.fromlineno
         self.tolineno = lastchild.tolineno
         self.blockstart_tolineno = self.args.tolineno
 
