@@ -41,7 +41,7 @@ class NonRegressionTC(TestCase):
         manager.__dict__ = {}
         manager.astroid_cache = {}
         manager._mod_file_cache = {}
-        manager.transformers = {}
+        manager.transforms = {}
         return manager
 
     def test_module_path(self):

@@ -138,9 +138,6 @@ class AstroidBuilder(InspectBuilder):
         # handle delayed assattr nodes
         for delayed in module._delayed_assattr:
             self.delayed_assattr(delayed)
-        if modname:
-            for transformer in self._manager.transformers:
-                transformer(module)
         return module
 
     def _data_build(self, data, modname, path):
@@ -156,7 +153,7 @@ class AstroidBuilder(InspectBuilder):
             package = True
         else:
             package = path and path.find('__init__.py') > -1 or False
-        rebuilder = TreeRebuilder()
+        rebuilder = TreeRebuilder(self._manager)
         module = rebuilder.visit_module(node, modname, package)
         module.file = module.path = node_file
         module._from_nodes = rebuilder._from_nodes

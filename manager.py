@@ -83,7 +83,7 @@ class AstroidManager(OptionsProviderMixIn):
             # NOTE: cache entries are added by the [re]builder
             self.astroid_cache = {}
             self._mod_file_cache = {}
-            self.transformers = []
+            self.transforms = {}
 
     def astroid_from_file(self, filepath, modname=None, fallback=True, source=False):
         """given a module name, return the astroid object"""
@@ -263,8 +263,15 @@ class AstroidManager(OptionsProviderMixIn):
                     project.add_module(astroid)
         return project
 
-    def register_transformer(self, transformer):
-        self.transformers.append(transformer)
+    def register_transform(self, node_class, transform, predicate=None):
+        """Register `transform(node)` function to be applied on the given
+        Astroid's `node_class` if `predicate` is None or return a true value
+        when called with the node as argument.
+
+        The transform function may return a value which is then used to
+        substitute the original node in the tree.
+        """
+        self.transforms.setdefault(node_class, []).append( (transform, predicate) )
 
 class Project:
     """a project handle a set of modules / packages"""

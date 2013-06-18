@@ -2,8 +2,13 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * Allow transformation functions on any node, providing a
+      `register_transform` function on the manager instead of the 
+     `register_transformer` to make it more flexible wrt node selection
+
     * Added the test_utils module for building ASTs and
       extracting deeply nested nodes for easier testing.
+
     * rename the project as astroid
 
 2013-04-16  --  0.24.3

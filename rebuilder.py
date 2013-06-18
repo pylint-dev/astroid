@@ -20,6 +20,7 @@ order to get a single Astroid representation
 """
 
 import sys
+from warnings import warn
 from _ast import (Expr as Discard, Str,
     # binary operators
     Add, Div, FloorDiv,  Mod, Mult, Pow, Sub, BitAnd, BitOr, BitXor,
@@ -119,13 +120,33 @@ def _set_infos(oldnode, newnode, parent):
 class TreeRebuilder(object):
     """Rebuilds the _ast tree to become an Astroid tree"""
 
-    def __init__(self):
+    def __init__(self, manager):
+        self._manager = manager
         self.asscontext = None
         self._metaclass = ['']
         self._global_names = []
         self._from_nodes = []
         self._delayed_assattr = []
         self._visit_meths = {}
+
+    def _transform(self, node):
+        try:
+            transforms = self._manager.transforms[type(node)]
+        except KeyError:
+            return node # no transform registered for this class of node
+        orig_node = node # copy the reference
+        for transform_func, predicate in transforms:
+            if predicate is not None and predicate(node):
+                ret = transform_func(node)
+                # if the transformation function returns something, it's
+                # expected to be a replacement for the node
+                if ret is not None:
+                    if node is not orig_node:
+                        # node has already be modified by some previous
+                        # transformation, warn about it
+                        warn('node %s substitued multiple times' % node)
+                    node = ret
+        return node
 
     def visit_module(self, node, modname, package):
         """visit a Module node by returning a fresh instance of it"""
@@ -135,18 +156,18 @@ class TreeRebuilder(object):
         _init_set_doc(node, newnode)
         newnode.body = [self.visit(child, newnode) for child in node.body]
         newnode.set_line_info(newnode.last_child())
-        return newnode
+        return self._transform(newnode)
 
     def visit(self, node, parent):
         cls = node.__class__
         if cls in self._visit_meths:
-            return self._visit_meths[cls](node, parent)
+            visit_method = self._visit_meths[cls]
         else:
             cls_name = cls.__name__
             visit_name = 'visit_' + REDIRECT.get(cls_name, cls_name).lower()
             visit_method = getattr(self, visit_name)
             self._visit_meths[cls] = visit_method
-            return visit_method(node, parent)
+        return self._transform(visit_method(node, parent))
 
     def _save_assignment(self, node, name=None):
         """save assignement situation since node.parent is not available yet"""

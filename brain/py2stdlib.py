@@ -5,10 +5,13 @@ Currently help understanding of :
 * hashlib.md5 and hashlib.sha1
 """
 
-from astroid import MANAGER
+from astroid import MANAGER, nodes
 from astroid.builder import AstroidBuilder
 
 MODULE_TRANSFORMS = {}
+
+
+# module specific transformation functions #####################################
 
 def hashlib_transform(module):
     fake = AstroidBuilder(MANAGER).string_build('''
@@ -177,6 +180,6 @@ def transform(module):
         tr(module)
 
 from astroid import MANAGER
-MANAGER.register_transformer(transform)
+MANAGER.register_transform(nodes.Module, transform)
 
 
