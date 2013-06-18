@@ -119,16 +119,13 @@ def _set_infos(oldnode, newnode, parent):
 class TreeRebuilder(object):
     """Rebuilds the _ast tree to become an Astroid tree"""
 
-    _visit_meths = {}
     def __init__(self):
-        self.init()
-
-    def init(self):
         self.asscontext = None
         self._metaclass = ['']
         self._global_names = []
         self._from_nodes = []
         self._delayed_assattr = []
+        self._visit_meths = {}
 
     def visit(self, node, parent):
         cls = node.__class__

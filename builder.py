@@ -83,7 +83,6 @@ MANAGER = AstroidManager()
 
 class AstroidBuilder(InspectBuilder):
     """provide astroid building methods"""
-    rebuilder = TreeRebuilder()
 
     def __init__(self, manager=None):
         InspectBuilder.__init__(self)
@@ -157,11 +156,11 @@ class AstroidBuilder(InspectBuilder):
             package = True
         else:
             package = path and path.find('__init__.py') > -1 or False
-        self.rebuilder.init()
-        module = self.rebuilder.visit_module(node, modname, package)
+        rebuilder = TreeRebuilder()
+        module = rebuilder.visit_module(node, modname, package)
         module.file = module.path = node_file
-        module._from_nodes = self.rebuilder._from_nodes
-        module._delayed_assattr = self.rebuilder._delayed_assattr
+        module._from_nodes = rebuilder._from_nodes
+        module._delayed_assattr = rebuilder._delayed_assattr
         return module
 
     def add_from_names_to_locals(self, node):
