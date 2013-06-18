@@ -127,6 +127,16 @@ class TreeRebuilder(object):
         self._delayed_assattr = []
         self._visit_meths = {}
 
+    def visit_module(self, node, modname, package):
+        """visit a Module node by returning a fresh instance of it"""
+        newnode = new.Module(modname, None)
+        newnode.package = package
+        _lineno_parent(node, newnode, parent=None)
+        _init_set_doc(node, newnode)
+        newnode.body = [self.visit(child, newnode) for child in node.body]
+        newnode.set_line_info(newnode.last_child())
+        return newnode
+
     def visit(self, node, parent):
         cls = node.__class__
         if cls in self._visit_meths:
@@ -600,16 +610,6 @@ class TreeRebuilder(object):
         newnode.elt = self.visit(node.elt, newnode)
         newnode.generators = [self.visit(child, newnode)
                               for child in node.generators]
-        newnode.set_line_info(newnode.last_child())
-        return newnode
-
-    def visit_module(self, node, modname, package):
-        """visit a Module node by returning a fresh instance of it"""
-        newnode = new.Module(modname, None)
-        newnode.package = package
-        _lineno_parent(node, newnode, parent=None)
-        _init_set_doc(node, newnode)
-        newnode.body = [self.visit(child, newnode) for child in node.body]
         newnode.set_line_info(newnode.last_child())
         return newnode
 
