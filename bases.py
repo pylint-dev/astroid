@@ -458,7 +458,7 @@ class NodeNG(object):
             if isinstance(node_or_sequence, (tuple, list)) and child in node_or_sequence:
                 return node_or_sequence
         else:
-            msg = 'Could not found %s in %s\'s children'
+            msg = 'Could not find %s in %s\'s children'
             raise AstroidError(msg % (repr(child), repr(self)))
 
     def locate_child(self, child):
@@ -470,7 +470,7 @@ class NodeNG(object):
                 return field, child
             if isinstance(node_or_sequence, (tuple, list)) and child in node_or_sequence:
                 return field, node_or_sequence
-        msg = 'Could not found %s in %s\'s children'
+        msg = 'Could not find %s in %s\'s children'
         raise AstroidError(msg % (repr(child), repr(self)))
     # FIXME : should we merge child_sequence and locate_child ? locate_child
     # is only used in are_exclusive, child_sequence one time in pylint.
