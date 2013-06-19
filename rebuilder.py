@@ -880,10 +880,10 @@ class TreeRebuilder3k(TreeRebuilder):
             newnode.finalbody = [self.visit(n, newnode) for n in node.finalbody]
             if node.handlers:
                 excnode = new.TryExcept()
-                _lineno_parent(node, excnode, parent)
-                excnode.body = [self.visit(child, newnode) for child in node.body]
-                excnode.handlers = [self.visit(child, newnode) for child in node.handlers]
-                excnode.orelse = [self.visit(child, newnode) for child in node.orelse]
+                _lineno_parent(node, excnode, newnode)
+                excnode.body = [self.visit(child, excnode) for child in node.body]
+                excnode.handlers = [self.visit(child, excnode) for child in node.handlers]
+                excnode.orelse = [self.visit(child, excnode) for child in node.orelse]
                 excnode.set_line_info(excnode.last_child())
                 newnode.body = [excnode]
             else:
