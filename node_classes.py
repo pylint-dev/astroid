@@ -850,17 +850,20 @@ class While(BlockRangeMixIn, Statement):
 
 class With(BlockRangeMixIn, AssignTypeMixin, Statement):
     """class representing a With node"""
-    _astroid_fields = ('expr', 'vars', 'body')
-    expr = None
-    vars = None
+    _astroid_fields = ('items', 'body')
+    items = None
     body = None
 
     def _blockstart_toline(self):
-        if self.vars:
-            return self.vars.tolineno
-        else:
-            return self.expr.tolineno
+        return self.items[-1][0].tolineno
 
+    def get_children(self):
+        for expr, var in self.items:
+            yield expr
+            if var:
+                yield var
+        for elt in self.body:
+            yield elt
 
 class Yield(NodeNG):
     """class representing a Yield node"""

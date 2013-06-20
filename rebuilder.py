@@ -805,12 +805,14 @@ class TreeRebuilder(object):
     def visit_with(self, node, parent):
         newnode = new.With()
         _lineno_parent(node, newnode, parent)
-        _node = getattr(node, 'items', [node])[0] # python 3.3 XXX
-        newnode.expr = self.visit(_node.context_expr, newnode)
+        expr = self.visit(node.context_expr, newnode)
         self.asscontext = "Ass"
-        if _node.optional_vars is not None:
-            newnode.vars = self.visit(_node.optional_vars, newnode)
+        if node.optional_vars is not None:
+            vars = self.visit(node.optional_vars, newnode)
+        else:
+            vars = None
         self.asscontext = None
+        newnode.items = [(expr, vars)]
         newnode.body = [self.visit(child, newnode) for child in node.body]
         newnode.set_line_info(newnode.last_child())
         return newnode
@@ -894,6 +896,28 @@ class TreeRebuilder3k(TreeRebuilder):
             newnode.body = [self.visit(child, newnode) for child in node.body]
             newnode.handlers = [self.visit(child, newnode) for child in node.handlers]
             newnode.orelse = [self.visit(child, newnode) for child in node.orelse]
+        newnode.set_line_info(newnode.last_child())
+        return newnode
+
+    def visit_with(self, node, parent):
+        if 'items' not in node._fields:
+            # python < 3.3
+            return super(TreeRebuilder3k, self).visit_with(node, parent)
+
+        newnode = new.With()
+        _lineno_parent(node, newnode, parent)
+        def visit_child(child):
+            expr = self.visit(child.context_expr, newnode)
+            self.asscontext = 'Ass'
+            if child.optional_vars:
+                var = self.visit(child.optional_vars, newnode)
+            else:
+                var = None
+            self.asscontext = None
+            return expr, var
+        newnode.items = [visit_child(child)
+                         for child in node.items]
+        newnode.body = [self.visit(child, newnode) for child in node.body]
         newnode.set_line_info(newnode.last_child())
         return newnode
 

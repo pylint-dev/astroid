@@ -310,10 +310,11 @@ nodes.ExceptHandler.assigned_stmts = raise_if_nothing_infered(excepthandler_assi
 
 def with_assigned_stmts(self, node, context=None, asspath=None):
     if asspath is None:
-        for lst in self.vars.infer(context):
-            if isinstance(lst, (nodes.Tuple, nodes.List)):
-                for item in lst.nodes:
-                    yield item
+        for _, vars in self.items:
+            for lst in vars.infer(context):
+                if isinstance(lst, (nodes.Tuple, nodes.List)):
+                    for item in lst.nodes:
+                        yield item
 nodes.With.assigned_stmts = raise_if_nothing_infered(with_assigned_stmts)
 
 
