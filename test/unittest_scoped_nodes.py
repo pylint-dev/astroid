@@ -27,6 +27,7 @@ from logilab.common.testlib import TestCase, unittest_main
 from astroid import builder, nodes, scoped_nodes, \
      InferenceError, NotFoundError, NoDefault
 from astroid.bases import BUILTINS, Instance, BoundMethod, UnboundMethod
+from astroid.test_utils import extract_node
 
 abuilder = builder.AstroidBuilder()
 DATA = join(dirname(abspath(__file__)), 'data')
@@ -247,6 +248,29 @@ def nested_args(a, (b, c, d)):
         # non regression : test raise "string" doesn't cause an exception in is_abstract
         func = MODULE2['raise_string']
         self.assertFalse(func.is_abstract(pass_is_abstract=False))
+        
+    def test_is_abstract_decorated(self):
+        methods = extract_node("""
+        import abc
+
+        class Klass(object):
+            @abc.abstractproperty
+            def prop(self):  #@
+               pass
+            
+            @abc.abstractmethod
+            def method1(self):  #@
+               pass
+             
+            some_other_decorator = lambda x: x
+            @some_other_decorator
+            def method2(self):  #@
+               pass
+
+         """)
+        self.assertTrue(methods[0].is_abstract(pass_is_abstract=False))
+        self.assertTrue(methods[1].is_abstract(pass_is_abstract=False))
+        self.assertFalse(methods[2].is_abstract(pass_is_abstract=False))
 
 ##     def test_raises(self):
 ##         method = MODULE2['AbstractClass']['to_override']

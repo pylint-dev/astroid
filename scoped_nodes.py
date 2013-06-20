@@ -588,10 +588,23 @@ class Function(Statement, Lambda):
         return self.type == 'classmethod'
 
     def is_abstract(self, pass_is_abstract=True):
-        """return true if the method is abstract
-        It's considered as abstract if the only statement is a raise of
-        NotImplementError, or, if pass_is_abstract, a pass statement
+        """Returns True if the method is abstract.
+        
+        A method is considered abstract if
+         - the only statement is 'raise NotImplementedError', or
+         - the only statement is 'pass' and pass_is_abstract is True, or
+         - the method is annotated with abc.astractproperty/abc.abstractmethod
         """
+        if self.decorators:
+            for node in self.decorators.nodes:
+                try:
+                    infered = node.infer().next()
+                except InferenceError:
+                    continue
+                if infered and infered.qname() in ('abc.abstractproperty',
+                                                   'abc.abstractmethod'):
+                    return True
+
         for child_node in self.body:
             if isinstance(child_node, Raise):
                 if child_node.raises_not_implemented():

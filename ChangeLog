@@ -2,6 +2,9 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * Properly recognize methods annotated with abc.abstract{property,method}
+      as abstract.
+
     * Allow transformation functions on any node, providing a
       `register_transform` function on the manager instead of the 
      `register_transformer` to make it more flexible wrt node selection
