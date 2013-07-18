@@ -506,7 +506,7 @@ class Lambda(LocalsDictNodeNG, FilterStmtsMixin):
         return self.body.infer(context)
 
     def scope_lookup(self, node, name, offset=0):
-        if node in self.args.defaults:
+        if node in self.args.defaults or node in self.args.kw_defaults:
             frame = self.parent.frame()
             # line offset to avoid that def func(f=func) resolve the default
             # value to the defined function

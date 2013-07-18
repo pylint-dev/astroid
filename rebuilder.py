@@ -185,6 +185,8 @@ class TreeRebuilder(object):
         newnode.args = [self.visit(child, newnode) for child in node.args]
         self.asscontext = None
         newnode.defaults = [self.visit(child, newnode) for child in node.defaults]
+        newnode.kwonlyargs = []
+        newnode.kw_defaults = []
         newnode.vararg = node.vararg
         newnode.kwarg = node.kwarg
         # save argument names in locals:
@@ -835,6 +837,14 @@ class TreeRebuilder3k(TreeRebuilder):
         # the <arg> node is coming from py>=3.0, but we use AssName in py2.x
         # XXX or we should instead introduce a Arg node in astroid ?
         return self.visit_assname(node, parent, node.arg)
+
+    def visit_arguments(self, node, parent):
+        newnode = super(TreeRebuilder3k, self).visit_arguments(node, parent)
+        self.asscontext = "Ass"
+        newnode.kwonlyargs = [self.visit(child, newnode) for child in node.kwonlyargs]
+        self.asscontext = None
+        newnode.kw_defaults = [self.visit(child, newnode) if child else None for child in node.kw_defaults]
+        return newnode
 
     def visit_excepthandler(self, node, parent):
         """visit an ExceptHandler node by returning a fresh instance of it"""

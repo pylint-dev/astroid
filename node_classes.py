@@ -253,9 +253,11 @@ class Name(LookupMixIn, NodeNG):
 
 class Arguments(NodeNG, AssignTypeMixin):
     """class representing an Arguments node"""
-    _astroid_fields = ('args', 'defaults')
+    _astroid_fields = ('args', 'defaults', 'kwonlyargs', 'kw_defaults')
     args = None
     defaults = None
+    kwonlyargs = None
+    kw_defaults = None
 
     def __init__(self, vararg=None, kwarg=None):
         self.vararg = vararg
@@ -275,6 +277,10 @@ class Arguments(NodeNG, AssignTypeMixin):
             result.append('*%s' % self.vararg)
         if self.kwarg:
             result.append('**%s' % self.kwarg)
+        if self.kwonlyargs:
+            if not self.vararg:
+                result.append('*')
+            result.append(_format_args(self.kwonlyargs, self.kw_defaults))
         return ', '.join(result)
 
     def default_value(self, argname):
@@ -287,6 +293,9 @@ class Arguments(NodeNG, AssignTypeMixin):
             idx = i - (len(self.args) - len(self.defaults))
             if idx >= 0:
                 return self.defaults[idx]
+        i = _find_arg(argname, self.kwonlyargs)[0]
+        if i is not None and self.kw_defaults[i] is not None:
+            return self.kw_defaults[i]
         raise NoDefault()
 
     def is_argument(self, name):
@@ -302,6 +311,12 @@ class Arguments(NodeNG, AssignTypeMixin):
         if self.args: # self.args may be None in some cases (builtin function)
             return _find_arg(argname, self.args, rec)
         return None, None
+
+    def get_children(self):
+        """override get_children to skip over None elements in kw_defaults"""
+        for child in super(Arguments, self).get_children():
+            if child is not None:
+                yield child
 
 
 def _find_arg(argname, args, rec=False):
@@ -328,7 +343,8 @@ def _format_args(args, defaults=None):
         else:
             values.append(arg.name)
             if defaults is not None and i >= default_offset:
-                values[-1] += '=' + defaults[i-default_offset].as_string()
+                if defaults[i-default_offset] is not None:
+                    values[-1] += '=' + defaults[i-default_offset].as_string()
     return ', '.join(values)
 
 
