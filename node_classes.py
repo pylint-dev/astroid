@@ -268,7 +268,9 @@ class Arguments(NodeNG, AssignTypeMixin):
 
     def format_args(self):
         """return arguments formatted as string"""
-        result = [_format_args(self.args, self.defaults)]
+        result = []
+        if self.args:
+            result.append(_format_args(self.args, self.defaults))
         if self.vararg:
             result.append('*%s' % self.vararg)
         if self.kwarg:
