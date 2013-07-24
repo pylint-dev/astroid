@@ -1002,5 +1002,8 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         except NotFoundError:
             return
 
-        return meta.infered()[0]
+        # XXX: We could return the actual class instance, not the string
+        # representing its name, but I don't know how to handle this
+        # with Py3's metaclass keyword..
+        return meta.infered()[0].name
             
