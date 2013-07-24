@@ -990,3 +990,14 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                 yield iface
         if missing:
             raise InferenceError()
+
+    def metaclass(self):
+        """ return the metaclass of this class """
+        # TODO: handle class A(metaclass=B) for Python 3
+        try:
+            meta = Instance(self).getattr('__metaclass__')[0]
+        except NotFoundError:
+            return
+
+        return meta.infered()[0]
+            
