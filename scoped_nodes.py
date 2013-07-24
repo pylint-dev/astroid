@@ -991,9 +991,12 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         if missing:
             raise InferenceError()
 
+    _metaclass = None
     def metaclass(self):
         """ return the metaclass of this class """
-        # TODO: handle class A(metaclass=B) for Python 3
+        if self._metaclass:
+            return self._metaclass
+
         try:
             meta = Instance(self).getattr('__metaclass__')[0]
         except NotFoundError:

@@ -21,7 +21,7 @@ order to get a single Astroid representation
 
 import sys
 from warnings import warn
-from _ast import (Expr as Discard, Str,
+from _ast import (Expr as Discard, Str, Name, Attribute,
     # binary operators
     Add, Div, FloorDiv,  Mod, Mult, Pow, Sub, BitAnd, BitOr, BitXor,
     LShift, RShift,
@@ -98,6 +98,13 @@ def _init_set_doc(node, newnode):
 
     except IndexError:
         pass # ast built from scratch
+
+def _infer_metaclass(node):    
+    if isinstance(node, Name):
+        return node.id
+    elif isinstance(node, Attribute):
+        # TODO: should we retrieve the fully qualified name of the class?
+        return node.attr
 
 def _lineno_parent(oldnode, newnode, parent):
     newnode.parent = parent
@@ -933,6 +940,14 @@ class TreeRebuilder3k(TreeRebuilder):
 
     def visit_yieldfrom(self, node, parent):
         return self.visit_yield(node, parent)
+
+    def visit_class(self, node, parent):
+        newnode = super(TreeRebuilder3k, self).visit_class(node, parent)
+        for keyword in node.keywords:
+            if keyword.arg == 'metaclass':
+                newnode._metaclass = _infer_metaclass(keyword.value)
+                break
+        return newnode
 
 if sys.version_info >= (3, 0):
     TreeRebuilder = TreeRebuilder3k
