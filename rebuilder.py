@@ -136,7 +136,7 @@ class TreeRebuilder(object):
             return node # no transform registered for this class of node
         orig_node = node # copy the reference
         for transform_func, predicate in transforms:
-            if predicate is not None and predicate(node):
+            if predicate is None or predicate(node):
                 ret = transform_func(node)
                 # if the transformation function returns something, it's
                 # expected to be a replacement for the node

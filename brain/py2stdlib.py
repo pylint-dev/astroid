@@ -29,16 +29,16 @@ def hashlib_transform(module):
     fake = AstroidBuilder(MANAGER).string_build('''
 
 class md5(object):
-  def __init__(self, value): pass
-  def digest():
+  def __init__(self, value=''): pass
+  def digest(self):
     return u''
   def update(self, value): pass
   def hexdigest(self):
     return u''
 
 class sha1(object):
-  def __init__(self, value): pass
-  def digest():
+  def __init__(self, value=''): pass
+  def digest(self):
     return u''
   def update(self, value): pass
   def hexdigest(self):

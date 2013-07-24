@@ -2,6 +2,9 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * Fix some omissions in py2stdlib's version of hashlib and
+      add a small test for it.
+
     * Properly recognize methods annotated with abc.abstract{property,method}
       as abstract.
 
