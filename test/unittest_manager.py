@@ -29,31 +29,31 @@ class AstroidManagerTC(TestCase):
         self.manager = AstroidManager()
         self.manager.astroid_cache.clear()
 
-    def test_astroid_from_module(self):
+    def test_ast_from_module(self):
         import unittest
-        astroid = self.manager.astroid_from_module(unittest)
+        astroid = self.manager.ast_from_module(unittest)
         self.assertEqual(astroid.pure_python, True)
         import time
-        astroid = self.manager.astroid_from_module(time)
+        astroid = self.manager.ast_from_module(time)
         self.assertEqual(astroid.pure_python, False)
 
-    def test_astroid_from_class(self):
-        astroid = self.manager.astroid_from_class(int)
+    def test_ast_from_class(self):
+        astroid = self.manager.ast_from_class(int)
         self.assertEqual(astroid.name, 'int')
         self.assertEqual(astroid.parent.frame().name, BUILTINS)
 
-        astroid = self.manager.astroid_from_class(object)
+        astroid = self.manager.ast_from_class(object)
         self.assertEqual(astroid.name, 'object')
         self.assertEqual(astroid.parent.frame().name, BUILTINS)
         self.assertIn('__setattr__', astroid)
 
-    def _test_astroid_from_zip(self, archive):
+    def _test_ast_from_zip(self, archive):
         origpath = sys.path[:]
         sys.modules.pop('mypypa', None)
         archive_path = join(DATA, archive)
         sys.path.insert(0, archive_path)
         try:
-            module = self.manager.astroid_from_module_name('mypypa')
+            module = self.manager.ast_from_module_name('mypypa')
             self.assertEqual(module.name, 'mypypa')
             self.assertTrue(module.file.endswith('%s/mypypa' % archive),
                             module.file)
@@ -66,11 +66,11 @@ class AstroidManagerTC(TestCase):
                 del sys.path_importer_cache[archive_path]
             sys.path = origpath
 
-    def test_astroid_from_module_name_egg(self):
-        self._test_astroid_from_zip('MyPyPa-0.1.0-py2.5.egg')
+    def test_ast_from_module_name_egg(self):
+        self._test_ast_from_zip('MyPyPa-0.1.0-py2.5.egg')
 
-    def test_astroid_from_module_name_zip(self):
-        self._test_astroid_from_zip('MyPyPa-0.1.0-py2.5.zip')
+    def test_ast_from_module_name_zip(self):
+        self._test_ast_from_zip('MyPyPa-0.1.0-py2.5.zip')
 
     def test_from_directory(self):
         obj = self.manager.project_from_files([DATA], _silent_no_wrap, 'data')
@@ -89,7 +89,7 @@ class AstroidManagerTC(TestCase):
         self.assertListEqual(sorted(k for k in obj.keys()), expected)
 
     def test_do_not_expose_main(self):
-      obj = self.manager.astroid_from_module_name('__main__')
+      obj = self.manager.ast_from_module_name('__main__')
       self.assertEqual(obj.name, '__main__')
       self.assertEqual(obj.items(), [])
 
@@ -100,10 +100,10 @@ class BorgAstroidManagerTC(TestCase):
         """test that the AstroidManager is really a borg, i.e. that two different
         instances has same cache"""
         first_manager = AstroidManager()
-        built = first_manager.astroid_from_module_name(BUILTINS)
+        built = first_manager.ast_from_module_name(BUILTINS)
 
         second_manager = AstroidManager()
-        second_built = first_manager.astroid_from_module_name(BUILTINS)
+        second_built = first_manager.ast_from_module_name(BUILTINS)
         self.assertIs(built, second_built)
 
 

@@ -78,7 +78,7 @@ def builtin_lookup(name):
     return the list of matching statements and the astroid for the builtin
     module
     """
-    builtin_astroid = MANAGER.astroid_from_module(builtins)
+    builtin_astroid = MANAGER.ast_from_module(builtins)
     if name == '__dict__':
         return builtin_astroid, ()
     try:
@@ -336,13 +336,13 @@ class Module(LocalsDictNodeNG):
             level = 0
         absmodname = self.relative_to_absolute_name(modname, level)
         try:
-            return MANAGER.astroid_from_module_name(absmodname)
+            return MANAGER.ast_from_module_name(absmodname)
         except AstroidBuildingException:
             # we only want to import a sub module or package of this module,
             # skip here
             if relative_only:
                 raise
-        return MANAGER.astroid_from_module_name(modname)
+        return MANAGER.ast_from_module_name(modname)
 
     def relative_to_absolute_name(self, modname, level):
         """return the absolute module name for a relative import.

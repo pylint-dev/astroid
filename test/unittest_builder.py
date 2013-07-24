@@ -264,7 +264,7 @@ class BuilderTC(TestCase):
 
     def test_inspect_build0(self):
         """test astroid tree build from a living object"""
-        builtin_astroid = MANAGER.astroid_from_module_name(BUILTINS)
+        builtin_astroid = MANAGER.ast_from_module_name(BUILTINS)
         if sys.version_info < (3, 0):
             fclass = builtin_astroid['file']
             self.assertIn('name', fclass)
@@ -298,7 +298,7 @@ class BuilderTC(TestCase):
             self.assertIsInstance(builtin_astroid['NotImplementedError'], nodes.Class)
 
     def test_inspect_build1(self):
-        time_astroid = MANAGER.astroid_from_module_name('time')
+        time_astroid = MANAGER.ast_from_module_name('time')
         self.assertTrue(time_astroid)
         self.assertEqual(time_astroid['time'].args.defaults, [])
 
@@ -332,7 +332,7 @@ class BuilderTC(TestCase):
         self.assertIn('filename', container)
 
     def test_inspect_build_type_object(self):
-        builtin_astroid = MANAGER.astroid_from_module_name(BUILTINS)
+        builtin_astroid = MANAGER.ast_from_module_name(BUILTINS)
 
         infered = list(builtin_astroid.igetattr('object'))
         self.assertEqual(len(infered), 1)

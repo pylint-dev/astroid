@@ -375,7 +375,7 @@ def infer_empty_node(self, context=None):
         yield YES
     else:
         try:
-            for infered in MANAGER.infer_astroid_from_something(self.object,
+            for infered in MANAGER.infer_ast_from_something(self.object,
                                                               context=context):
                 yield infered
         except AstroidError:

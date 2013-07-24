@@ -46,7 +46,7 @@ class NonRegressionTC(TestCase):
 
     def test_module_path(self):
         man = self.brainless_manager()
-        mod = man.astroid_from_module_name('package.import_package_subpackage_module')
+        mod = man.ast_from_module_name('package.import_package_subpackage_module')
         package = mod.igetattr('package').next()
         self.assertEqual(package.name, 'package')
         subpackage = package.igetattr('subpackage').next()
@@ -60,7 +60,7 @@ class NonRegressionTC(TestCase):
     def test_package_sidepackage(self):
         manager = self.brainless_manager()
         assert 'package.sidepackage' not in MANAGER.astroid_cache
-        package = manager.astroid_from_module_name('absimp')
+        package = manager.ast_from_module_name('absimp')
         self.assertIsInstance(package, nodes.Module)
         self.assertTrue(package.package)
         subpackage = package.getattr('sidepackage')[0].infer().next()
@@ -102,7 +102,7 @@ class A(gobject.GObject):
             from pylint import lint
         except ImportError:
             self.skipTest('pylint not available')
-        mod = MANAGER.astroid_from_module_name('pylint.lint')
+        mod = MANAGER.ast_from_module_name('pylint.lint')
         pylinter = mod['PyLinter']
         expect = ['OptionsManagerMixIn', 'object', 'MessagesHandlerMixIn',
                   'ReportsHandlerMixIn', 'BaseTokenChecker', 'BaseChecker',

@@ -85,7 +85,7 @@ class AstroidManager(OptionsProviderMixIn):
             self._mod_file_cache = {}
             self.transforms = {}
 
-    def astroid_from_file(self, filepath, modname=None, fallback=True, source=False):
+    def ast_from_file(self, filepath, modname=None, fallback=True, source=False):
         """given a module name, return the astroid object"""
         try:
             filepath = get_source_file(filepath, include_no_ext=True)
@@ -103,11 +103,11 @@ class AstroidManager(OptionsProviderMixIn):
             from astroid.builder import AstroidBuilder
             return AstroidBuilder(self).file_build(filepath, modname)
         elif fallback and modname:
-            return self.astroid_from_module_name(modname)
+            return self.ast_from_module_name(modname)
         raise AstroidBuildingException('unable to get astroid for file %s' %
                                      filepath)
 
-    def astroid_from_module_name(self, modname, context_file=None):
+    def ast_from_module_name(self, modname, context_file=None):
         """given a module name, return the astroid object"""
         if modname in self.astroid_cache:
             return self.astroid_cache[modname]
@@ -129,8 +129,8 @@ class AstroidManager(OptionsProviderMixIn):
                 except Exception, ex:
                     msg = 'Unable to load module %s (%s)' % (modname, ex)
                     raise AstroidBuildingException(msg)
-                return self.astroid_from_module(module, modname)
-            return self.astroid_from_file(filepath, modname, fallback=False)
+                return self.ast_from_module(module, modname)
+            return self.ast_from_file(filepath, modname, fallback=False)
         finally:
             os.chdir(old_cwd)
 
@@ -171,7 +171,7 @@ class AstroidManager(OptionsProviderMixIn):
             raise value
         return value
 
-    def astroid_from_module(self, module, modname=None):
+    def ast_from_module(self, module, modname=None):
         """given an imported module, return the astroid object"""
         modname = modname or module.__name__
         if modname in self.astroid_cache:
@@ -180,13 +180,13 @@ class AstroidManager(OptionsProviderMixIn):
             # some builtin modules don't have __file__ attribute
             filepath = module.__file__
             if is_python_source(filepath):
-                return self.astroid_from_file(filepath, modname)
+                return self.ast_from_file(filepath, modname)
         except AttributeError:
             pass
         from astroid.builder import AstroidBuilder
         return AstroidBuilder(self).module_build(module, modname)
 
-    def astroid_from_class(self, klass, modname=None):
+    def ast_from_class(self, klass, modname=None):
         """get astroid for the given class"""
         if modname is None:
             try:
@@ -194,11 +194,11 @@ class AstroidManager(OptionsProviderMixIn):
             except AttributeError:
                 raise AstroidBuildingException(
                     'Unable to get module for class %s' % safe_repr(klass))
-        modastroid = self.astroid_from_module_name(modname)
+        modastroid = self.ast_from_module_name(modname)
         return modastroid.getattr(klass.__name__)[0] # XXX
 
 
-    def infer_astroid_from_something(self, obj, context=None):
+    def infer_ast_from_something(self, obj, context=None):
         """infer astroid for the given class"""
         if hasattr(obj, '__class__') and not isinstance(obj, type):
             klass = obj.__class__
@@ -223,7 +223,7 @@ class AstroidManager(OptionsProviderMixIn):
                 'Unexpected error while retrieving name for %s: %s'
                 % (safe_repr(klass), ex))
         # take care, on living object __module__ is regularly wrong :(
-        modastroid = self.astroid_from_module_name(modname)
+        modastroid = self.ast_from_module_name(modname)
         if klass is obj:
             for  infered in modastroid.igetattr(name, context):
                 yield infered
@@ -245,7 +245,7 @@ class AstroidManager(OptionsProviderMixIn):
                 fpath = join(something, '__init__.py')
             else:
                 fpath = something
-            astroid = func_wrapper(self.astroid_from_file, fpath)
+            astroid = func_wrapper(self.ast_from_file, fpath)
             if astroid is None:
                 continue
             # XXX why is first file defining the project.path ?
@@ -257,7 +257,7 @@ class AstroidManager(OptionsProviderMixIn):
                 # recurse on others packages / modules if this is a package
                 for fpath in get_module_files(dirname(astroid.file),
                                               black_list):
-                    astroid = func_wrapper(self.astroid_from_file, fpath)
+                    astroid = func_wrapper(self.ast_from_file, fpath)
                     if astroid is None or astroid.name == base_name:
                         continue
                     project.add_module(astroid)
