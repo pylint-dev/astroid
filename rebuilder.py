@@ -250,9 +250,8 @@ class TreeRebuilder(object):
                         meth.extra_decorators.append(newnode.value)
                 except (AttributeError, KeyError):
                     continue
-        elif getattr(newnode.targets[0], 'name', None) == '__metaclass__':
-            # XXX check more...
-            self._metaclass[-1] = 'type' # XXX get the actual metaclass
+        elif getattr(node.targets[0], 'id', None) == '__metaclass__':
+            self._metaclass[-1] = _infer_metaclass(node.value) or 'type'
         newnode.set_line_info(newnode.last_child())
         return newnode
 
@@ -945,7 +944,7 @@ class TreeRebuilder3k(TreeRebuilder):
         newnode = super(TreeRebuilder3k, self).visit_class(node, parent)
         for keyword in node.keywords:
             if keyword.arg == 'metaclass':
-                newnode._metaclass = _infer_metaclass(keyword.value)
+                newnode._metaclass = _infer_metaclass(keyword.value) or 'type'
                 break
         return newnode
 
