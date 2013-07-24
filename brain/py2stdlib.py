@@ -26,26 +26,23 @@ MANAGER.register_transform(nodes.Module, transform)
 # module specific transformation functions #####################################
 
 def hashlib_transform(module):
-    fake = AstroidBuilder(MANAGER).string_build('''
+    template = '''
 
-class md5(object):
+class %s(object):
   def __init__(self, value=''): pass
   def digest(self):
     return u''
   def update(self, value): pass
   def hexdigest(self):
     return u''
+'''
 
-class sha1(object):
-  def __init__(self, value=''): pass
-  def digest(self):
-    return u''
-  def update(self, value): pass
-  def hexdigest(self):
-    return u''
+    algorithms = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')
+    classes = "".join(template % hashfunc for hashfunc in algorithms)
 
-''')
-    for hashfunc in ('sha1', 'md5'):
+    fake = AstroidBuilder(MANAGER).string_build(classes)
+
+    for hashfunc in algorithms:
         module.locals[hashfunc] = fake.locals[hashfunc]
 
 def collections_transform(module):
@@ -215,5 +212,4 @@ def infer_named_tuple(node, context=None):
 
 MANAGER.register_transform(nodes.CallFunc, inference_tip(infer_named_tuple),
                            AsStringRegexpPredicate('namedtuple', 'func'))
-
 
