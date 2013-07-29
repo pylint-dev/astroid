@@ -17,7 +17,7 @@ Package: python-astroid
 Architecture: all
 Depends: ${python:Depends},
          ${misc:Depends},
-	 python-logilab-common (>= 0.53.0-1),
+	 python-logilab-common (>= 0.60.0-1),
 XB-Python-Version: ${python:Versions}
 Description: rebuild a new abstract syntax tree from Python's ast
  The aim of this module is to provide a common base representation of

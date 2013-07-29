@@ -1,7 +1,7 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
---
+2013-07-29  --  1.0.0
     * Fix some omissions in py2stdlib's version of hashlib and
       add a small test for it.
 
@@ -20,7 +20,9 @@ Change log for the astroid package (used to be astng)
 
     * Add support for py3k's keyword only arguments (PEP 3102)
 
-    * rename the project as astroid
+    * RENAME THE PROJECT to astroid
+
+
 
 2013-04-16  --  0.24.3
     * #124360 [py3.3]: Don't crash on 'yield from' nodes
