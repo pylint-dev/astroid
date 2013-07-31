@@ -201,7 +201,7 @@ def infer_named_tuple(node, context=None):
     # we want to return a Class node instance with proper attributes set
     class_node = nodes.Class(name, 'docstring')
     # set base class=tuple
-    class_node.bases.append(nodes.Tuple)
+    class_node.bases.append(nodes.Tuple._proxied)
     # XXX add __init__(*attributes) method
     for attr in attributes:
         fake_node = nodes.EmptyNode()
