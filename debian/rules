@@ -5,7 +5,7 @@
 # adapted by Logilab for automatic generation by debianize
 # (part of the devtools project, http://www.logilab.org/projects/devtools)
 #
-# Copyright (c) 2003-2010 LOGILAB S.A. (Paris, FRANCE).
+# Copyright (c) 2003-2013 LOGILAB S.A. (Paris, FRANCE).
 # http://www.logilab.fr/ -- mailto:contact@logilab.fr
 
 # Uncomment this to turn on verbose mode.
@@ -40,13 +40,9 @@ install: build
 		--root=$(CURDIR)/debian/python-astroid/ \
 		--install-layout=deb
 
-	# remove sub-package __init__ file (created in postinst)
-	rm debian/python-astroid/usr/lib/python*/*-packages/logilab/__init__.py
-	# remove test directory (installed in a separated package)
-	rm -rf debian/python-astroid/usr/lib/python*/*-packages/logilab/astroid/test
-
-	# install tests
-	(cd test && find . -type f -not \( -path '*/CVS/*' -or -name '*.pyc' \) -exec install -D --mode=644 {} ../debian/python-astroid/usr/share/doc/python-astroid/test/{} \;)
+	# remove test directory from *-packages and install them in /usr/share/doc/ 
+	rm -rf debian/python-astroid/usr/lib/python*/*-packages/astroid/test
+	(cd test && find . -type f -not \( -name '*.pyc' \) -exec install -D --mode=644 {} ../debian/python-astroid/usr/share/doc/python-astroid/test/{} \;)
 
 # Build architecture-independent files here.
 binary-indep: build install

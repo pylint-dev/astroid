@@ -3,3 +3,4 @@
 (^|/)\.hgtags($|/)
 \.pyc$
 ^log$
+^doc/build$
