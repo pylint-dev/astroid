@@ -21,8 +21,9 @@ function)
 
 import sys
 from os.path import join, abspath, dirname
+from textwrap import dedent
 
-from logilab.common.testlib import TestCase, unittest_main
+from logilab.common.testlib import TestCase, unittest_main, require_version
 
 from astroid import builder, nodes, scoped_nodes, \
      InferenceError, NotFoundError, NoDefault
@@ -661,6 +662,38 @@ def g2():
         self.assertEqual(astroid['g1'].tolineno, 5)
         self.assertEqual(astroid['g2'].fromlineno, 9)
         self.assertEqual(astroid['g2'].tolineno, 10)
+
+    def test_simple_metaclass(self):
+        astroid = abuilder.string_build(dedent("""
+        class Test(object):
+            __metaclass__ = type
+        """))
+        klass = astroid.body[0]
+
+        metaclass = klass.metaclass()
+        self.assertIsInstance(metaclass, scoped_nodes.Class)
+        self.assertEqual(metaclass.name, 'type')
+
+    def test_metaclass_error(self):
+        astroid = abuilder.string_build(dedent("""
+        class Test(object):
+            __metaclass__ = typ
+        """))
+        klass = astroid.body[0]
+        self.assertFalse(klass.metaclass())
+
+    @require_version('2.7')
+    def test_metaclass_imported(self): 
+        astroid = abuilder.string_build(dedent("""
+        from abc import ABCMeta 
+        class Test(object):
+            __metaclass__ = ABCMeta
+        """))
+        klass = astroid.body[1]
+
+        metaclass = klass.metaclass()
+        self.assertIsInstance(metaclass, scoped_nodes.Class)
+        self.assertEqual(metaclass.name, 'ABCMeta')
 
 
 __all__ = ('ModuleNodeTC', 'ImportNodeTC', 'FunctionNodeTC', 'ClassNodeTC')

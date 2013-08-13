@@ -16,12 +16,14 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 import sys
+from textwrap import dedent
 
 from logilab.common.testlib import TestCase, unittest_main, require_version
 
 from astroid.node_classes import Assign
 from astroid.manager import AstroidManager
 from astroid.builder import AstroidBuilder
+from astroid.scoped_nodes import Class
 
 
 class Python3TC(TestCase):
@@ -38,6 +40,34 @@ class Python3TC(TestCase):
         node = next(next(next(astroid.get_children()).get_children()).get_children())
 
         self.assertTrue(isinstance(node.ass_type(), Assign))
+
+    # metaclass tests
+
+    @require_version('3.0')
+    def test_simple_metaclass(self):
+        astroid = self.builder.string_build("class Test(metaclass=type): pass")
+        klass = astroid.body[0]
+
+        metaclass = klass.metaclass()
+        self.assertIsInstance(metaclass, Class)
+        self.assertEqual(metaclass.name, 'type')
+
+    @require_version('3.0')
+    def test_metaclass_error(self):
+        astroid = self.builder.string_build("class Test(metaclass=typ): pass")
+        klass = astroid.body[0]
+        self.assertFalse(klass.metaclass())
+
+    @require_version('3.0')
+    def test_metaclass_imported(self): 
+        astroid = self.builder.string_build(dedent("""
+        from abc import ABCMeta 
+        class Test(metaclass=ABCMeta): pass"""))
+        klass = astroid.body[1]
+
+        metaclass = klass.metaclass()
+        self.assertIsInstance(metaclass, Class)
+        self.assertEqual(metaclass.name, 'ABCMeta')       
 
 if __name__ == '__main__':
     unittest_main()

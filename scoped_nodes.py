@@ -992,7 +992,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             raise InferenceError()
 
     _metaclass = None
-    def _metaclass_search(self):
+    def metaclass(self):
         """ Return the metaclass of this class """
         if self._metaclass:
             # Expects this from Py3k TreeRebuilder
