@@ -992,18 +992,23 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             raise InferenceError()
 
     _metaclass = None
-    def metaclass(self):
-        """ return the metaclass of this class """
+    def _metaclass_search(self):
+        """ Return the metaclass of this class """
         if self._metaclass:
-            return self._metaclass
+            # Expects this from Py3k TreeRebuilder
+            try:
+                return self._metaclass.infered()[0]
+            except InferenceError:
+                return 
 
         try:
-            meta = Instance(self).getattr('__metaclass__')[0]
+            meta = self.getattr('__metaclass__')[0]
         except NotFoundError:
             return
-
-        # XXX: We could return the actual class instance, not the string
-        # representing its name, but I don't know how to handle this
-        # with Py3's metaclass keyword..
-        return meta.infered()[0].name
-            
+        try:
+            infered = meta.infered()[0]
+        except InferenceError:
+            return
+        if infered is YES: # don't expose this
+            return None
+        return infered
