@@ -695,6 +695,24 @@ def g2():
         self.assertIsInstance(metaclass, scoped_nodes.Class)
         self.assertEqual(metaclass.name, 'ABCMeta')
 
+    @require_version('2.7')
+    def test_newstyle_and_metaclass_good(self):
+        astroid = abuilder.string_build(dedent("""
+        from abc import ABCMeta 
+        class Test:
+            __metaclass__ = ABCMeta
+        """))
+        klass = astroid.body[1]
+        self.assertTrue(klass.newstyle)
+
+    def test_newstyle_and_metaclass_bad(self):
+        astroid = abuilder.string_build(dedent("""
+        class Test:
+            __metaclass__ = int
+        """))
+        klass = astroid.body[1]
+        self.assertFalse(klass.newstyle)
+
 
 __all__ = ('ModuleNodeTC', 'ImportNodeTC', 'FunctionNodeTC', 'ClassNodeTC')
 
