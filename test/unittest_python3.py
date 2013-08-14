@@ -69,5 +69,17 @@ class Python3TC(TestCase):
         self.assertIsInstance(metaclass, Class)
         self.assertEqual(metaclass.name, 'ABCMeta')       
 
+    @require_version('3.0')
+    def test_as_string(self):
+        body = dedent("""
+        from abc import ABCMeta 
+        class Test(metaclass=ABCMeta): pass""")
+        astroid = self.builder.string_build(body)
+        klass = astroid.body[1]
+
+        self.assertEqual(klass.as_string(), 
+                         '\n\nclass Test(metaclass=ABCMeta):\n    pass\n')
+                         
+
 if __name__ == '__main__':
     unittest_main()
