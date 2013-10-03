@@ -132,7 +132,13 @@ class MyBuildPy(build_py):
             else:
                 base = modname
             basedir = os.path.join(self.build_lib, base)
-            for directory in include_dirs:
+            if sys.platform == 'win32':
+                two_to_three = [sys.executable]
+                exe_path = os.path.dirname(sys.executable)
+                two_to_three.append(os.path.join(exe_path, 'Tools\\Scripts\\2to3.py'))
+            else:
+                two_to_three = ['2to3']
+            for directory in include_idirs:
                 dest = join(basedir, directory)
                 shutil.rmtree(dest, ignore_errors=True)
                 shutil.copytree(directory, dest)
@@ -140,7 +146,7 @@ class MyBuildPy(build_py):
                     # process manually python file in include_dirs (test data)
                     from subprocess import check_call
                     print('running 2to3 on', dest) # parens are NOT optional here for py3k compat
-                    check_call(['2to3', '-wn', dest])
+                    check_call(two_to_three + ['-wn', dest])
 
 def install(**kwargs):
     """setup entry point"""
