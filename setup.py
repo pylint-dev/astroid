@@ -138,7 +138,7 @@ class MyBuildPy(build_py):
                 two_to_three.append(os.path.join(exe_path, 'Tools\\Scripts\\2to3.py'))
             else:
                 two_to_three = ['2to3']
-            for directory in include_idirs:
+            for directory in include_dirs:
                 dest = join(basedir, directory)
                 shutil.rmtree(dest, ignore_errors=True)
                 shutil.copytree(directory, dest)
