@@ -668,7 +668,7 @@ def g2():
         class Test(object):
             __metaclass__ = type
         """))
-        klass = astroid.body[0]
+        klass = astroid['Test']
 
         metaclass = klass.metaclass()
         self.assertIsInstance(metaclass, scoped_nodes.Class)
@@ -679,7 +679,7 @@ def g2():
         class Test(object):
             __metaclass__ = typ
         """))
-        klass = astroid.body[0]
+        klass = astroid['Test']
         self.assertFalse(klass.metaclass())
 
     @require_version('2.7')
@@ -689,7 +689,7 @@ def g2():
         class Test(object):
             __metaclass__ = ABCMeta
         """))
-        klass = astroid.body[1]
+        klass = astroid['Test']
 
         metaclass = klass.metaclass()
         self.assertIsInstance(metaclass, scoped_nodes.Class)
@@ -702,7 +702,7 @@ def g2():
         class Test:
             __metaclass__ = ABCMeta
         """))
-        klass = astroid.body[1]
+        klass = astroid['Test']
         self.assertTrue(klass.newstyle)
 
     def test_newstyle_and_metaclass_bad(self):
@@ -710,8 +710,22 @@ def g2():
         class Test:
             __metaclass__ = int
         """))
-        klass = astroid.body[1]
+        klass = astroid['Test']
         self.assertFalse(klass.newstyle)
+
+    @require_version('2.7')
+    def test_parent_metaclass(self):
+        astroid = abuilder.string_build(dedent("""
+        from abc import ABCMeta
+        class Test:
+            __metaclass__ = ABCMeta
+        class SubTest(Test): pass
+        """))
+        klass = astroid['SubTest']
+        self.assertTrue(klass.newstyle)
+        metaclass = klass.metaclass()
+        self.assertIsInstance(metaclass, scoped_nodes.Class)
+        self.assertEqual(metaclass.name, 'ABCMeta')
 
 
 __all__ = ('ModuleNodeTC', 'ImportNodeTC', 'FunctionNodeTC', 'ClassNodeTC')
