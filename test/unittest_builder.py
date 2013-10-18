@@ -62,8 +62,12 @@ class FromToLineNoTC(TestCase):
         self.assertEqual(name.tolineno, 4)
         strarg = callfunc.args[0]
         self.assertIsInstance(strarg, nodes.Const)
-        self.assertEqual(strarg.fromlineno, 5) # no way for this one (is 4 actually)
-        self.assertEqual(strarg.tolineno, 5)
+        if hasattr(sys, 'pypy_version_info'):
+            lineno = 4
+        else:
+            lineno = 5 # no way for this one in CPython (is 4 actually)
+        self.assertEqual(strarg.fromlineno, lineno)
+        self.assertEqual(strarg.tolineno, lineno)
         namearg = callfunc.args[1]
         self.assertIsInstance(namearg, nodes.Name)
         self.assertEqual(namearg.fromlineno, 5)
