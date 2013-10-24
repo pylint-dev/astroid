@@ -29,23 +29,58 @@ class AstroidManagerTC(TestCase):
         self.manager = AstroidManager()
         self.manager.astroid_cache.clear()
 
-    def test_ast_from_module(self):
+    def test_ast_from_file(self):
+        """check if the method return a good astroid object"""
         import unittest
-        astroid = self.manager.ast_from_module(unittest)
-        self.assertEqual(astroid.pure_python, True)
-        import time
-        astroid = self.manager.ast_from_module(time)
+        filepath = unittest.__file__
+        astroid = self.manager.ast_from_file(filepath)
+        self.assertEqual(astroid.name, 'unittest')
+        self.assertIn('unittest', self.manager.astroid_cache)
+
+    def test_ast_from_file_cache(self):
+        """check if the cache works"""
+        import unittest
+        filepath = unittest.__file__
+        self.manager.ast_from_file(filepath)
+        astroid = self.manager.ast_from_file('unhandledName', 'unittest')
+        self.assertEqual(astroid.name, 'unittest')
+        self.assertIn('unittest', self.manager.astroid_cache)
+
+    def test_ast_from_file_astro_builder(self):
+        """check if the source is at True, AstroidBuilder build a good astroid"""
+        import unittest
+        filepath = unittest.__file__
+        astroid = self.manager.ast_from_file(filepath, None, True, True)
+        self.assertEqual(astroid.name, 'unittest')
+        self.assertIn('unittest', self.manager.astroid_cache)
+
+    def test_ast_from_file_name_astro_builder_exception(self):
+        """check if the raise is throw if we give a wrong filepath"""
+        from astroid.exceptions import AstroidBuildingException
+        self.assertRaises(AstroidBuildingException, self.manager.ast_from_file, 'unhandledName')
+
+    def test_do_not_expose_main(self):
+        obj = self.manager.ast_from_module_name('__main__')
+        self.assertEqual(obj.name, '__main__')
+        self.assertEqual(obj.items(), [])
+
+    def test_ast_from_module_name(self):
+        """check if the ast_from_module_name method return a good astroid"""
+        astroid = self.manager.ast_from_module_name('unittest')
+        self.assertEqual(astroid.name, 'unittest')
+        self.assertIn('unittest', self.manager.astroid_cache)
+
+    def test_ast_from_module_name_not_python_source(self):
+        """check if the ast_from_module_name method return a good astroid with a no python source module"""
+        astroid = self.manager.ast_from_module_name('time')
+        self.assertEqual(astroid.name, 'time')
+        self.assertIn('time', self.manager.astroid_cache)
         self.assertEqual(astroid.pure_python, False)
 
-    def test_ast_from_class(self):
-        astroid = self.manager.ast_from_class(int)
-        self.assertEqual(astroid.name, 'int')
-        self.assertEqual(astroid.parent.frame().name, BUILTINS)
-
-        astroid = self.manager.ast_from_class(object)
-        self.assertEqual(astroid.name, 'object')
-        self.assertEqual(astroid.parent.frame().name, BUILTINS)
-        self.assertIn('__setattr__', astroid)
+    def test_ast_from_module_name_astro_builder_exception(self):
+        """check if the method raise an exception if we give a wrong module"""
+        from astroid.exceptions import AstroidBuildingException
+        self.assertRaises(AstroidBuildingException, self.manager.ast_from_module_name, 'unhandledModule')
 
     def _test_ast_from_zip(self, archive):
         origpath = sys.path[:]
@@ -72,6 +107,61 @@ class AstroidManagerTC(TestCase):
     def test_ast_from_module_name_zip(self):
         self._test_ast_from_zip('MyPyPa-0.1.0-py2.5.zip')
 
+    def test_zip_import_data_without_zipimport(self):
+        """check if zip_import_data works"""
+        self.assertEqual(self.manager.zip_import_data('path'), None)
+
+    def test_file_from_module(self):
+        """check if the unittest filepath is equals to the result of the method""" 
+        import unittest
+        self.assertEqual(unittest.__file__, self.manager.file_from_module_name('unittest', None)+'c')
+
+    def test_file_from_module_name_astro_building_exception(self):
+        """check if the method launch a exception with a wrong module name"""
+        from astroid.exceptions import AstroidBuildingException
+        self.assertRaises(AstroidBuildingException, self.manager.file_from_module_name, 'unhandledModule', None)
+
+    def test_ast_from_module(self):
+        import unittest
+        astroid = self.manager.ast_from_module(unittest)
+        self.assertEqual(astroid.pure_python, True)
+        import time
+        astroid = self.manager.ast_from_module(time)
+        self.assertEqual(astroid.pure_python, False)
+
+    def test_ast_from_module_cache(self):
+        """check if the module is in the cache manager"""
+        import unittest
+        astroid = self.manager.ast_from_module(unittest)
+        self.assertEqual(astroid.name, 'unittest')
+        self.assertIn('unittest', self.manager.astroid_cache)
+
+    def test_ast_from_class(self):
+        astroid = self.manager.ast_from_class(int)
+        self.assertEqual(astroid.name, 'int')
+        self.assertEqual(astroid.parent.frame().name, BUILTINS)
+
+        astroid = self.manager.ast_from_class(object)
+        self.assertEqual(astroid.name, 'object')
+        self.assertEqual(astroid.parent.frame().name, BUILTINS)
+        self.assertIn('__setattr__', astroid)
+
+    def test_ast_from_class_with_module(self):
+        """check if the method works with the module name"""
+        astroid = self.manager.ast_from_class(int, int.__module__)
+        self.assertEqual(astroid.name, 'int')
+        self.assertEqual(astroid.parent.frame().name, BUILTINS)
+
+        astroid = self.manager.ast_from_class(object, object.__module__)
+        self.assertEqual(astroid.name, 'object')
+        self.assertEqual(astroid.parent.frame().name, BUILTINS)
+        self.assertIn('__setattr__', astroid)
+
+    def test_ast_from_class_attr_error(self):
+        """give a wrong class at the ast_from_class method"""
+        from astroid.exceptions import AstroidBuildingException
+        self.assertRaises(AstroidBuildingException, self.manager.ast_from_class, None)
+
     def test_from_directory(self):
         obj = self.manager.project_from_files([DATA], _silent_no_wrap, 'data')
         self.assertEqual(obj.name, 'data')
@@ -87,12 +177,6 @@ class AstroidManagerTC(TestCase):
                     'data.module', 'data.module2', 'data.noendingnewline',
                     'data.nonregr', 'data.notall']
         self.assertListEqual(sorted(k for k in obj.keys()), expected)
-
-    def test_do_not_expose_main(self):
-      obj = self.manager.ast_from_module_name('__main__')
-      self.assertEqual(obj.name, '__main__')
-      self.assertEqual(obj.items(), [])
-
 
 class BorgAstroidManagerTC(TestCase):
 
