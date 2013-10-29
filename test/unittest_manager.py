@@ -21,6 +21,7 @@ import sys
 from os.path import join, abspath, dirname
 from astroid.manager import AstroidManager, _silent_no_wrap
 from astroid.bases import  BUILTINS
+from astroid.exceptions import AstroidBuildingException
 
 DATA = join(dirname(abspath(__file__)), 'data')
 
@@ -55,8 +56,7 @@ class AstroidManagerTC(TestCase):
         self.assertIn('unittest', self.manager.astroid_cache)
 
     def test_ast_from_file_name_astro_builder_exception(self):
-        """check if the raise is throw if we give a wrong filepath"""
-        from astroid.exceptions import AstroidBuildingException
+        """check if an exception is thrown if we give a wrong filepath"""
         self.assertRaises(AstroidBuildingException, self.manager.ast_from_file, 'unhandledName')
 
     def test_do_not_expose_main(self):
@@ -79,7 +79,6 @@ class AstroidManagerTC(TestCase):
 
     def test_ast_from_module_name_astro_builder_exception(self):
         """check if the method raise an exception if we give a wrong module"""
-        from astroid.exceptions import AstroidBuildingException
         self.assertRaises(AstroidBuildingException, self.manager.ast_from_module_name, 'unhandledModule')
 
     def _test_ast_from_zip(self, archive):
@@ -107,18 +106,23 @@ class AstroidManagerTC(TestCase):
     def test_ast_from_module_name_zip(self):
         self._test_ast_from_zip('MyPyPa-0.1.0-py2.5.zip')
 
-    def test_zip_import_data_without_zipimport(self):
+    def test_zip_import_data(self):
         """check if zip_import_data works"""
+        filepath = self.datapath('MyPyPa-0.1.0-py2.5.zip/mypypa')
+        astroid = self.manager.zip_import_data(filepath)
+        self.assertEqual(astroid.name, 'mypypa')
+
+    def test_zip_import_data_without_zipimport(self):
+        """check if zip_import_data return None without zipimport"""
         self.assertEqual(self.manager.zip_import_data('path'), None)
 
     def test_file_from_module(self):
         """check if the unittest filepath is equals to the result of the method""" 
         import unittest
-        self.assertEqual(unittest.__file__, self.manager.file_from_module_name('unittest', None)+'c')
+        self.assertEqual(unittest.__file__[:-1], self.manager.file_from_module_name('unittest', None))
 
     def test_file_from_module_name_astro_building_exception(self):
         """check if the method launch a exception with a wrong module name"""
-        from astroid.exceptions import AstroidBuildingException
         self.assertRaises(AstroidBuildingException, self.manager.file_from_module_name, 'unhandledModule', None)
 
     def test_ast_from_module(self):
@@ -159,7 +163,6 @@ class AstroidManagerTC(TestCase):
 
     def test_ast_from_class_attr_error(self):
         """give a wrong class at the ast_from_class method"""
-        from astroid.exceptions import AstroidBuildingException
         self.assertRaises(AstroidBuildingException, self.manager.ast_from_class, None)
 
     def test_from_directory(self):
