@@ -200,6 +200,7 @@ def infer_named_tuple(node, context=None):
         raise UseInferenceDefault()
     # we want to return a Class node instance with proper attributes set
     class_node = nodes.Class(name, 'docstring')
+    class_node.parent = node.parent
     # set base class=tuple
     class_node.bases.append(nodes.Tuple._proxied)
     # XXX add __init__(*attributes) method
@@ -212,4 +213,3 @@ def infer_named_tuple(node, context=None):
 
 MANAGER.register_transform(nodes.CallFunc, inference_tip(infer_named_tuple),
                            AsStringRegexpPredicate('namedtuple', 'func'))
-

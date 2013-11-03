@@ -16,9 +16,11 @@
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
 """Tests for basic functionality in astroid.brain."""
 
-from astroid import MANAGER
 from logilab.common.testlib import TestCase, unittest_main
 
+from astroid import MANAGER
+from astroid import test_utils
+import astroid
 
 class HashlibTC(TestCase):
     def test_hashlib(self):
@@ -34,6 +36,21 @@ class HashlibTC(TestCase):
             self.assertEqual(len(class_obj['update'].args.args), 2)
             self.assertEqual(len(class_obj['digest'].args.args), 1)
             self.assertEqual(len(class_obj['hexdigest'].args.args), 1)
+
+
+class NamedTupleTest(TestCase):
+    def test_namedtuple_base(self):
+        klass = test_utils.extract_node("""
+        from collections import namedtuple
+
+        class X(namedtuple("X", ["a", "b", "c"])):
+           pass
+        """)
+        self.assertEqual(
+            [anc.name for anc in klass.ancestors()],
+            ['X', 'tuple', 'object'])
+        for anc in klass.ancestors():
+            self.assertFalse(anc.parent is None)
 
 if __name__ == '__main__':
     unittest_main()

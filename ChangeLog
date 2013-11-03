@@ -1,6 +1,10 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+--
+    * Make sure that objects returned for namedtuple
+      inference have parents.
+
 2013-10-18  --  1.0.1
     * fix py3k/windows installation issue (issue #4)
 
