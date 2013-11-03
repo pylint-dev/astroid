@@ -19,6 +19,7 @@
 from logilab.common.testlib import TestCase, unittest_main
 
 from astroid import MANAGER
+from astroid import bases
 from astroid import test_utils
 import astroid
 
@@ -51,6 +52,30 @@ class NamedTupleTest(TestCase):
             ['X', 'tuple', 'object'])
         for anc in klass.ancestors():
             self.assertFalse(anc.parent is None)
+
+    def test_namedtuple_inference(self):
+        klass = test_utils.extract_node("""
+        from collections import namedtuple
+
+        name = "X"
+        fields = ["a", "b", "c"]
+        class X(namedtuple(name, fields)):
+           pass
+        """)
+        for base in klass.ancestors():
+            if base.name == 'X':
+                break
+        self.assertItemsEqual(["a", "b", "c"], base.instance_attrs.keys())
+
+    def test_namedtuple_inference_failure(self):
+        klass = test_utils.extract_node("""
+        from collections import namedtuple
+
+        def foo(fields):
+           return __(namedtuple("foo", fields))
+        """)
+        self.assertIs(bases.YES, klass.infer().next())
+
 
 if __name__ == '__main__':
     unittest_main()

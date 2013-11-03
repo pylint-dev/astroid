@@ -2,6 +2,8 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * Add support for inferring arguments to namedtuple invocations.
+
     * Make sure that objects returned for namedtuple
       inference have parents.
 
