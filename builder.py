@@ -124,13 +124,18 @@ class AstroidBuilder(InspectBuilder):
             except ImportError:
                 modname = splitext(basename(path))[0]
         # build astroid representation
-        node = self.string_build(data, modname, path)
-        node.file_encoding = encoding
-        return node
+        module = self._post_build(self._data_build(data, modname, path))
+        module.file_encoding = encoding
+        return module
 
     def string_build(self, data, modname='', path=None):
         """build astroid from source code string and return rebuilded astroid"""
-        module = self._data_build(data, modname, path)
+        module = self._post_build(self._data_build(data, modname, path))
+        module.file_bytes = data.encode('utf-8')
+        module.file_encoding = 'utf-8'
+        return module
+
+    def _post_build(self, module):
         self._manager.astroid_cache[module.name] = module
         # post tree building steps after we stored the module in the cache:
         for from_node in module._from_nodes:
