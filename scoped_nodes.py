@@ -24,6 +24,7 @@ from __future__ import with_statement
 __doctype__ = "restructuredtext en"
 
 import sys
+from io import BytesIO
 from itertools import chain
 
 from logilab.common.compat import builtins
@@ -217,6 +218,8 @@ class Module(LocalsDictNodeNG):
     # the file from which as been extracted the astroid representation. It may
     # be None if the representation has been built from a built-in module
     file = None
+    # Alternatively, if built from a string/bytes, this can be set
+    file_bytes = None
     # encoding of python source file, so we can get unicode out of it (python2
     # only)
     file_encoding = None
@@ -245,6 +248,8 @@ class Module(LocalsDictNodeNG):
 
     @property
     def file_stream(self):
+        if self.file_bytes is not None:
+            return BytesIO(self.file_bytes)
         if self.file is not None:
             return open(self.file, 'rb')
         return None
