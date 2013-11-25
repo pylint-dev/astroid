@@ -24,8 +24,11 @@ from __future__ import with_statement
 __doctype__ = "restructuredtext en"
 
 import sys
-from io import BytesIO
 from itertools import chain
+try:
+    from io import BytesIO
+except ImportError:
+    from cStringIO import StringIO as BytesIO
 
 from logilab.common.compat import builtins
 from logilab.common.decorators import cached
