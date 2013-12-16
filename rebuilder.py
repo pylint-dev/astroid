@@ -71,7 +71,6 @@ _CMP_OP_CLASSES = {Eq: '==',
 CONST_NAME_TRANSFORMS = {'None':  None,
                          'True':  True,
                          'False': False}
-
 REDIRECT = {'arguments': 'Arguments',
             'Attribute': 'Getattr',
             'comprehension': 'Comprehension',
@@ -837,6 +836,12 @@ class TreeRebuilder3k(TreeRebuilder):
         # the <arg> node is coming from py>=3.0, but we use AssName in py2.x
         # XXX or we should instead introduce a Arg node in astroid ?
         return self.visit_assname(node, parent, node.arg)
+
+    def visit_nameconstant(self, node, parent):
+       # in Python 3.4 we have NameConstant for True/False/None
+       newnode = new.Const(node.value)
+       _set_infos(node, newnode, parent)
+       return newnode
 
     def visit_arguments(self, node, parent):
         newnode = super(TreeRebuilder3k, self).visit_arguments(node, parent)
