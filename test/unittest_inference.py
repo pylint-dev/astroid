@@ -710,8 +710,12 @@ open("toto.txt")
         node = get_name_node(astroid, 'open', -1)
         infered = list(node.infer())
         self.assertEqual(len(infered), 1)
-        self.assertIsInstance(infered[0], nodes.Function)
-        self.assertEqual(infered[0].name, 'open')
+        if hasattr(sys, 'pypy_version_info'):
+            self.assertIsInstance(infered[0], nodes.Class)
+            self.assertEqual(infered[0].name, 'file')
+        else:
+            self.assertIsInstance(infered[0], nodes.Function)
+            self.assertEqual(infered[0].name, 'open')
 
     def test_callfunc_context_func(self):
         code = '''

@@ -3,7 +3,6 @@ import textwrap
 
 from astroid import nodes
 from astroid import builder
-
 # The name of the transient function that is used to
 # wrap expressions to be extracted when calling
 # extract_node.
@@ -37,7 +36,7 @@ def _extract_expressions(node):
         # be lists or tuples, in which case the elements need to be checked.
         # When we find it, replace it by real_expr, so that the AST looks
         # like no call to _TRANSIENT_FUNCTION ever took place.
-        for name in node.parent._astng_fields:
+        for name in node.parent._astroid_fields:
             child = getattr(node.parent, name)
             if isinstance(child, (list, tuple)):
                 for idx, compound_child in enumerate(child):
@@ -145,7 +144,7 @@ def extract_node(code, module_name=''):
             return node.value
         else:
             return node
-    
+
     requested_lines = []
     for idx, line in enumerate(code.splitlines()):
         if line.strip().endswith(_STATEMENT_SELECTOR):

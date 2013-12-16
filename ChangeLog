@@ -1,6 +1,24 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+--
+    * Add support for inferring arguments to namedtuple invocations.
+
+    * Make sure that objects returned for namedtuple
+      inference have parents.
+
+2013-10-18  --  1.0.1
+    * fix py3k/windows installation issue (issue #4)
+
+    * fix bug with namedtuple inference (issue #3)
+
+    * get back gobject introspection from pylint-brain
+
+    * fix some test failures under pypy and py3.3, though there is one remaining
+      in each of these platform (2.7 tests are all green)
+
+
+
 2013-07-29  --  1.0.0
     * Fix some omissions in py2stdlib's version of hashlib and
       add a small test for it.

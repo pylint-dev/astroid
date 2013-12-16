@@ -5,7 +5,8 @@ Currently help understanding of :
 * hashlib.md5 and hashlib.sha1
 """
 
-from astroid import MANAGER, AsStringRegexpPredicate, UseInferenceDefault, inference_tip
+from astroid import MANAGER, AsStringRegexpPredicate, UseInferenceDefault, inference_tip, YES
+from astroid import exceptions
 from astroid import nodes
 from astroid.builder import AstroidBuilder
 
@@ -183,6 +184,16 @@ MODULE_TRANSFORMS['subprocess'] = subprocess_transform
 
 def infer_named_tuple(node, context=None):
     """Specific inference function for namedtuple CallFunc node"""
+    def infer_first(node):
+        try:
+            value = node.infer().next()
+            if value is YES:
+                raise UseInferenceDefault()
+            else:
+                return value
+        except StopIteration:
+            raise InferenceError()
+
     # node is a CallFunc node, class name as first argument and generated class
     # attributes as second argument
     if len(node.args) != 2:
@@ -191,17 +202,19 @@ def infer_named_tuple(node, context=None):
     # namedtuple list of attributes can be a list of strings or a
     # whitespace-separate string
     try:
-        name = node.args[0].value
+        name = infer_first(node.args[0]).value
+        names = infer_first(node.args[1])
         try:
-            attributes = node.args[1].value.split()
+            attributes = names.value.split()
         except AttributeError:
-            attributes = [const.value for const in node.args[1].elts]
-    except AttributeError:
+            attributes = [infer_first(const).value for const in names.elts]
+    except (AttributeError, exceptions.InferenceError):
         raise UseInferenceDefault()
     # we want to return a Class node instance with proper attributes set
     class_node = nodes.Class(name, 'docstring')
+    class_node.parent = node.parent
     # set base class=tuple
-    class_node.bases.append(nodes.Tuple)
+    class_node.bases.append(nodes.Tuple._proxied)
     # XXX add __init__(*attributes) method
     for attr in attributes:
         fake_node = nodes.EmptyNode()
@@ -212,4 +225,3 @@ def infer_named_tuple(node, context=None):
 
 MANAGER.register_transform(nodes.CallFunc, inference_tip(infer_named_tuple),
                            AsStringRegexpPredicate('namedtuple', 'func'))
-
