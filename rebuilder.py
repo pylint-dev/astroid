@@ -71,6 +71,7 @@ _CMP_OP_CLASSES = {Eq: '==',
 CONST_NAME_TRANSFORMS = {'None':  None,
                          'True':  True,
                          'False': False}
+
 REDIRECT = {'arguments': 'Arguments',
             'Attribute': 'Getattr',
             'comprehension': 'Comprehension',
