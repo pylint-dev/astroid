@@ -2,6 +2,9 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * Add a `metaclass` function to `Class` nodes to 
+      retrieve their metaclass.
+ 
     * Add support for inferring arguments to namedtuple invocations.
 
     * Make sure that objects returned for namedtuple

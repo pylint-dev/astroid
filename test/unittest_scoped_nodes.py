@@ -21,8 +21,9 @@ function)
 
 import sys
 from os.path import join, abspath, dirname
+from textwrap import dedent
 
-from logilab.common.testlib import TestCase, unittest_main
+from logilab.common.testlib import TestCase, unittest_main, require_version
 
 from astroid import builder, nodes, scoped_nodes, \
      InferenceError, NotFoundError, NoDefault
@@ -661,6 +662,70 @@ def g2():
         self.assertEqual(astroid['g1'].tolineno, 5)
         self.assertEqual(astroid['g2'].fromlineno, 9)
         self.assertEqual(astroid['g2'].tolineno, 10)
+
+    def test_simple_metaclass(self):
+        astroid = abuilder.string_build(dedent("""
+        class Test(object):
+            __metaclass__ = type
+        """))
+        klass = astroid['Test']
+
+        metaclass = klass.metaclass()
+        self.assertIsInstance(metaclass, scoped_nodes.Class)
+        self.assertEqual(metaclass.name, 'type')
+
+    def test_metaclass_error(self):
+        astroid = abuilder.string_build(dedent("""
+        class Test(object):
+            __metaclass__ = typ
+        """))
+        klass = astroid['Test']
+        self.assertFalse(klass.metaclass())
+
+    @require_version('2.7')
+    def test_metaclass_imported(self): 
+        astroid = abuilder.string_build(dedent("""
+        from abc import ABCMeta 
+        class Test(object):
+            __metaclass__ = ABCMeta
+        """))
+        klass = astroid['Test']
+
+        metaclass = klass.metaclass()
+        self.assertIsInstance(metaclass, scoped_nodes.Class)
+        self.assertEqual(metaclass.name, 'ABCMeta')
+
+    @require_version('2.7')
+    def test_newstyle_and_metaclass_good(self):
+        astroid = abuilder.string_build(dedent("""
+        from abc import ABCMeta 
+        class Test:
+            __metaclass__ = ABCMeta
+        """))
+        klass = astroid['Test']
+        self.assertTrue(klass.newstyle)
+
+    def test_newstyle_and_metaclass_bad(self):
+        astroid = abuilder.string_build(dedent("""
+        class Test:
+            __metaclass__ = int
+        """))
+        klass = astroid['Test']
+        self.assertFalse(klass.newstyle)
+
+    @require_version('2.7')
+    def test_parent_metaclass(self):
+        astroid = abuilder.string_build(dedent("""
+        from abc import ABCMeta
+        class Test:
+            __metaclass__ = ABCMeta
+        class SubTest(Test): pass
+        """))
+        klass = astroid['SubTest']
+        self.assertTrue(klass.newstyle)
+        metaclass = klass.metaclass()
+        self.assertIsInstance(metaclass, scoped_nodes.Class)
+        self.assertEqual(metaclass.name, 'ABCMeta')
 
 
 __all__ = ('ModuleNodeTC', 'ImportNodeTC', 'FunctionNodeTC', 'ClassNodeTC')
