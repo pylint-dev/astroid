@@ -1006,7 +1006,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         except NotFoundError:
             return
         try:
-            infered = meta.infered()[0]
+            infered = meta.infer().next()
         except InferenceError:
             return
         if infered is YES: # don't expose this
