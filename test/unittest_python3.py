@@ -79,7 +79,18 @@ class Python3TC(TestCase):
 
         self.assertEqual(klass.as_string(), 
                          '\n\nclass Test(metaclass=ABCMeta):\n    pass\n')
-                         
 
+    @require_version('3.0')
+    def test_old_syntax_works(self):
+        astroid = self.builder.string_build(dedent("""
+        class Test:
+            __metaclass__ = type
+        class SubTest(Test): pass
+        """))
+        klass = astroid['SubTest']
+        metaclass = klass.metaclass()
+        self.assertIsInstance(metaclass, Class)
+        self.assertEqual(metaclass.name, 'type')
+                         
 if __name__ == '__main__':
     unittest_main()

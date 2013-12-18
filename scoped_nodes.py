@@ -997,7 +997,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         if self._metaclass:
             # Expects this from Py3k TreeRebuilder
             try:
-                return self._metaclass.infered()[0]
+                return next(self._metaclass.infer())
             except InferenceError:
                 return 
 
