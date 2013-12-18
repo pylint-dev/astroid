@@ -2,9 +2,8 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
-    * Add `metaclass` function to `Class` nodes,
-      for retrieving the metaclass of a class node, working
-      for py3k as well. 
+    * Add a `metaclass` function to `Class` nodes to 
+      retrieve their metaclass. (including on py3K)      
  
     * Add support for inferring arguments to namedtuple invocations.
 
