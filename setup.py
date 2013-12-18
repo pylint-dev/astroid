@@ -138,9 +138,9 @@ class MyBuildPy(build_py):
                 shutil.copytree(directory, dest)
                 if sys.version_info >= (3, 0):
                     # process manually python file in include_dirs (test data)
-                    from subprocess import check_call
-                    print('running 2to3 on', dest) # parens are NOT optional here for py3k compat
-                    check_call(['2to3', '-wn', dest])
+                    from distutils.util import run_2to3
+                    print('running 2to3 on', dest)
+                    run_2to3([dest])
 
 def install(**kwargs):
     """setup entry point"""

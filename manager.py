@@ -273,7 +273,8 @@ class AstroidManager(OptionsProviderMixIn):
         """
         self.transforms.setdefault(node_class, []).append( (transform, predicate) )
 
-class Project:
+
+class Project(object):
     """a project handle a set of modules / packages"""
     def __init__(self, name=''):
         self.name = name
