@@ -35,6 +35,15 @@ abuilder = builder.AstroidBuilder()
 
 class AsString(testlib.TestCase):
 
+    def test_tuple_as_string(self):
+        def build(string):
+            return abuilder.string_build(string).body[0].value
+
+        self.assertEqual(build('1,').as_string(), '(1, )')
+        self.assertEqual(build('1, 2, 3').as_string(), '(1, 2, 3)')
+        self.assertEqual(build('(1, )').as_string(), '(1, )')
+        self.assertEqual(build('1, 2, 3').as_string(), '(1, 2, 3)')
+
     def test_varargs_kwargs_as_string(self):
         ast = abuilder.string_build( 'raise_string(*args, **kwargs)').body[0]
         self.assertEqual(ast.as_string(), 'raise_string(*args, **kwargs)')

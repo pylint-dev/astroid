@@ -399,6 +399,8 @@ class AsStringVisitor(object):
 
     def visit_tuple(self, node):
         """return an astroid.Tuple node as string"""
+        if len(node.elts) == 1:
+            return '(%s, )' % node.elts[0].accept(self) 
         return '(%s)' % ', '.join([child.accept(self) for child in node.elts])
 
     def visit_unaryop(self, node):
