@@ -2,7 +2,7 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
-    * all class nodes are marked as new style classes for Py3k
+    * All class nodes are marked as new style classes for Py3k.
 
     * Add a `metaclass` function to `Class` nodes to 
       retrieve their metaclass.
