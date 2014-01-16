@@ -87,6 +87,7 @@ REDIRECT = {'arguments': 'Arguments',
             'keyword': 'Keyword',
             'Repr': 'Backquote',
             }
+PY3K = sys.version_info >= (3, 0)
 
 def _init_set_doc(node, newnode):
     newnode.doc = None
@@ -335,7 +336,7 @@ class TreeRebuilder(object):
         if not newnode.bases:
             # no base classes, detect new / style old style according to
             # current scope
-            if sys.version_info >= (3, 0):
+            if PY3K:
                 newnode._newstyle = True
             else:
                 newnode._newstyle = metaclass in ('type', 'ABCMeta')
