@@ -30,7 +30,7 @@ from astroid.bases import YES, BUILTINS
 from astroid.manager import AstroidManager
 
 MANAGER = AstroidManager()
-
+PY3K = sys.version_info >= (3, 0)
 
 from unittest_inference import get_name_node
 
@@ -402,11 +402,16 @@ class F:
     "new style"
 '''
         mod_astroid = self.builder.string_build(data, __name__, __file__)
-        self.assertFalse(mod_astroid['A'].newstyle)
-        self.assertFalse(mod_astroid['B'].newstyle)
+        if PY3K:
+            self.assertTrue(mod_astroid['A'].newstyle)
+            self.assertTrue(mod_astroid['B'].newstyle)
+            self.assertTrue(mod_astroid['E'].newstyle)
+        else:
+            self.assertFalse(mod_astroid['A'].newstyle)
+            self.assertFalse(mod_astroid['B'].newstyle)
+            self.assertFalse(mod_astroid['E'].newstyle)
         self.assertTrue(mod_astroid['C'].newstyle)
         self.assertTrue(mod_astroid['D'].newstyle)
-        self.assertFalse(mod_astroid['E'].newstyle)
         self.assertTrue(mod_astroid['F'].newstyle)
 
     def test_globals(self):
@@ -520,7 +525,10 @@ class FileBuildTC(TestCase):
         self.assertEqual(klass.parent.frame(), module)
         self.assertEqual(klass.root(), module)
         self.assertEqual(klass.basenames, [])
-        self.assertEqual(klass.newstyle, False)
+        if PY3K:
+            self.assertTrue(klass.newstyle)
+        else:
+            self.assertFalse(klass.newstyle)
 
     def test_class_locals(self):
         """test the 'locals' dictionary of a astroid class"""

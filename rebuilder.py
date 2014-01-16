@@ -335,7 +335,10 @@ class TreeRebuilder(object):
         if not newnode.bases:
             # no base classes, detect new / style old style according to
             # current scope
-            newnode._newstyle = metaclass in ('type', 'ABCMeta')
+            if sys.version_info >= (3, 0):
+                newnode._newstyle = True
+            else:
+                newnode._newstyle = metaclass in ('type', 'ABCMeta')
         newnode.parent.frame().set_local(newnode.name, newnode)
         return newnode
 

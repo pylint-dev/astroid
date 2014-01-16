@@ -242,7 +242,10 @@ class ImportNodeTC(testlib.TestCase):
         self.assertTrue(isinstance(spawn, nodes.Class), spawn)
         self.assertEqual(spawn.root().name, 'logilab.common.shellutils')
         self.assertEqual(spawn.qname(), 'logilab.common.shellutils.Execute')
-        self.assertEqual(spawn.pytype(), '%s.classobj' % BUILTINS)
+        if spawn.newstyle:
+            self.assertEqual(spawn.pytype(), '%s.type' % BUILTINS)
+        else:
+            self.assertEqual(spawn.pytype(), '%s.classobj' % BUILTINS)
         abspath = MODULE2.igetattr('abspath').next()
         self.assertTrue(isinstance(abspath, nodes.Function), abspath)
         self.assertEqual(abspath.root().name, 'os.path')

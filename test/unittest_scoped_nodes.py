@@ -38,6 +38,7 @@ MODULE2 = abuilder.file_build(join(DATA, 'module2.py'), 'data.module2')
 NONREGR = abuilder.file_build(join(DATA, 'nonregr.py'), 'data.nonregr')
 
 PACK = abuilder.file_build(join(DATA, '__init__.py'), 'data')
+PY3K = sys.version_info >= (3, 0)
 
 def _test_dict_interface(self, node, test_attr):
     self.assertIs(node[test_attr], node[test_attr])
@@ -384,7 +385,8 @@ class ClassNodeTC(TestCase):
         self.assertIsInstance(cls.getattr('__module__')[0], nodes.Const)
         self.assertEqual(cls.getattr('__module__')[0].value, 'data.module')
         self.assertEqual(len(cls.getattr('__dict__')), 1)
-        self.assertRaises(NotFoundError, cls.getattr, '__mro__')
+        if not cls.newstyle:
+            self.assertRaises(NotFoundError, cls.getattr, '__mro__')
         for cls in (nodes.List._proxied, nodes.Const(1)._proxied):
             self.assertEqual(len(cls.getattr('__bases__')), 1)
             self.assertEqual(len(cls.getattr('__name__')), 1)
@@ -711,7 +713,10 @@ def g2():
             __metaclass__ = int
         """))
         klass = astroid['Test']
-        self.assertFalse(klass.newstyle)
+        if PY3K:
+            self.assertTrue(klass.newstyle)
+        else:
+            self.assertFalse(klass.newstyle)
 
     @require_version('2.7')
     def test_parent_metaclass(self):
