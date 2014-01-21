@@ -333,12 +333,12 @@ class TreeRebuilder(object):
             newnode.decorators = self.visit_decorators(node, newnode)
         newnode.set_line_info(newnode.last_child())
         metaclass = self._metaclass.pop()
-        if not newnode.bases:
-            # no base classes, detect new / style old style according to
-            # current scope
-            if PY3K:
-                newnode._newstyle = True
-            else:
+        if PY3K:
+            newnode._newstyle = True
+        else:
+            if not newnode.bases:
+                # no base classes, detect new / style old style according to
+                # current scope
                 newnode._newstyle = metaclass in ('type', 'ABCMeta')
         newnode.parent.frame().set_local(newnode.name, newnode)
         return newnode
