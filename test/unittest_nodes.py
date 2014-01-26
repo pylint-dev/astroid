@@ -35,6 +35,15 @@ abuilder = builder.AstroidBuilder()
 
 class AsString(testlib.TestCase):
 
+    def test_tuple_as_string(self):
+        def build(string):
+            return abuilder.string_build(string).body[0].value
+
+        self.assertEqual(build('1,').as_string(), '(1, )')
+        self.assertEqual(build('1, 2, 3').as_string(), '(1, 2, 3)')
+        self.assertEqual(build('(1, )').as_string(), '(1, )')
+        self.assertEqual(build('1, 2, 3').as_string(), '(1, 2, 3)')
+
     def test_varargs_kwargs_as_string(self):
         ast = abuilder.string_build( 'raise_string(*args, **kwargs)').body[0]
         self.assertEqual(ast.as_string(), 'raise_string(*args, **kwargs)')
@@ -233,7 +242,10 @@ class ImportNodeTC(testlib.TestCase):
         self.assertTrue(isinstance(spawn, nodes.Class), spawn)
         self.assertEqual(spawn.root().name, 'logilab.common.shellutils')
         self.assertEqual(spawn.qname(), 'logilab.common.shellutils.Execute')
-        self.assertEqual(spawn.pytype(), '%s.classobj' % BUILTINS)
+        if spawn.newstyle:
+            self.assertEqual(spawn.pytype(), '%s.type' % BUILTINS)
+        else:
+            self.assertEqual(spawn.pytype(), '%s.classobj' % BUILTINS)
         abspath = MODULE2.igetattr('abspath').next()
         self.assertTrue(isinstance(abspath, nodes.Function), abspath)
         self.assertEqual(abspath.root().name, 'os.path')

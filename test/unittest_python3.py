@@ -16,12 +16,14 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 import sys
+from textwrap import dedent
 
 from logilab.common.testlib import TestCase, unittest_main, require_version
 
 from astroid.node_classes import Assign
 from astroid.manager import AstroidManager
 from astroid.builder import AstroidBuilder
+from astroid.scoped_nodes import Class
 
 
 class Python3TC(TestCase):
@@ -39,12 +41,63 @@ class Python3TC(TestCase):
 
         self.assertTrue(isinstance(node.ass_type(), Assign))
 
+    # metaclass tests
+
+    @require_version('3.0')
+    def test_simple_metaclass(self):
+        astroid = self.builder.string_build("class Test(metaclass=type): pass")
+        klass = astroid.body[0]
+
+        metaclass = klass.metaclass()
+        self.assertIsInstance(metaclass, Class)
+        self.assertEqual(metaclass.name, 'type')
+
+    @require_version('3.0')
+    def test_metaclass_error(self):
+        astroid = self.builder.string_build("class Test(metaclass=typ): pass")
+        klass = astroid.body[0]
+        self.assertFalse(klass.metaclass())
+
+    @require_version('3.0')
+    def test_metaclass_imported(self): 
+        astroid = self.builder.string_build(dedent("""
+        from abc import ABCMeta 
+        class Test(metaclass=ABCMeta): pass"""))
+        klass = astroid.body[1]
+
+        metaclass = klass.metaclass()
+        self.assertIsInstance(metaclass, Class)
+        self.assertEqual(metaclass.name, 'ABCMeta')       
+
+    @require_version('3.0')
+    def test_as_string(self):
+        body = dedent("""
+        from abc import ABCMeta 
+        class Test(metaclass=ABCMeta): pass""")
+        astroid = self.builder.string_build(body)
+        klass = astroid.body[1]
+
+        self.assertEqual(klass.as_string(), 
+                         '\n\nclass Test(metaclass=ABCMeta):\n    pass\n')
+
+    @require_version('3.0')
+    def test_old_syntax_works(self):
+        astroid = self.builder.string_build(dedent("""
+        class Test:
+            __metaclass__ = type
+        class SubTest(Test): pass
+        """))
+        klass = astroid['SubTest']
+        metaclass = klass.metaclass()
+        self.assertIsInstance(metaclass, Class)
+        self.assertEqual(metaclass.name, 'type')
+
     @require_version('3.4')
     def test_nameconstant(self):
         astroid = self.builder.string_build("def test(x=True): pass")
         default = astroid.body[0].args.args[0]
         self.assertEqual(default.name, 'x')
         self.assertEqual(next(default.infer()).value, True)
-
+                         
 if __name__ == '__main__':
     unittest_main()
