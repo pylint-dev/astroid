@@ -52,6 +52,11 @@ if sys.version_info < (3, 0):
 else:
     EXC_MODULE = BUILTINS
 
+if sys.version_info < (3, 4):
+    SITE = 'site'
+else:
+    SITE = '_sitebuiltins'
+
 class InferenceTC(TestCase):
 
     CODE = '''
@@ -700,7 +705,7 @@ help()
         self.assertEqual(len(infered), 1, infered)
         self.assertIsInstance(infered[0], Instance)
         self.assertEqual(str(infered[0]),
-                             'Instance of site._Helper')
+                             'Instance of %s._Helper' % SITE)
 
     def test_builtin_open(self):
         code = '''
