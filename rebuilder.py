@@ -116,7 +116,7 @@ def _set_infos(oldnode, newnode, parent):
         newnode.col_offset = oldnode.col_offset
     newnode.set_line_info(newnode.last_child()) # set_line_info accepts None
 
-def _infer_metaclass(node):    
+def _infer_metaclass(node):
     if isinstance(node, Name):
         return node.id
     elif isinstance(node, Attribute):
@@ -193,13 +193,20 @@ class TreeRebuilder(object):
         newnode.defaults = [self.visit(child, newnode) for child in node.defaults]
         newnode.kwonlyargs = []
         newnode.kw_defaults = []
-        newnode.vararg = node.vararg
-        newnode.kwarg = node.kwarg
+        vararg, kwarg = node.vararg, node.kwarg
+        # change added in 82732 (7c5c678e4164), vararg and kwarg
+        # are instances of `_ast.arg`, not strings
+        if vararg and PY34:
+            vararg = vararg.arg
+        if kwarg and PY34:
+            kwarg = kwarg.arg
+        newnode.vararg = vararg
+        newnode.kwarg = kwarg
         # save argument names in locals:
-        if node.vararg:
-            newnode.parent.set_local(newnode.vararg, newnode)
-        if node.kwarg:
-            newnode.parent.set_local(newnode.kwarg, newnode)
+        if vararg:
+            newnode.parent.set_local(vararg, newnode)
+        if kwarg:
+            newnode.parent.set_local(kwarg, newnode)
         newnode.set_line_info(newnode.last_child())
         return newnode
 
@@ -848,20 +855,13 @@ class TreeRebuilder3k(TreeRebuilder):
         return self.visit_assname(node, parent, node.arg)
 
     def visit_nameconstant(self, node, parent):
-       # in Python 3.4 we have NameConstant for True/False/None
-       newnode = new.Const(node.value)
-       _set_infos(node, newnode, parent)
-       return newnode
+        # in Python 3.4 we have NameConstant for True/False/None
+        newnode = new.Const(node.value)
+        _set_infos(node, newnode, parent)
+        return newnode
 
     def visit_arguments(self, node, parent):
         newnode = super(TreeRebuilder3k, self).visit_arguments(node, parent)
-        if PY34:
-            # change added in 82732 (7c5c678e4164), vararg and kwarg
-            # are instances of `_ast.arg`, not strings
-            if node.vararg:
-                newnode.vararg = node.vararg.arg
-            if node.kwarg:
-                newnode.kwarg = node.kwarg.arg
         self.asscontext = "Ass"
         newnode.kwonlyargs = [self.visit(child, newnode) for child in node.kwonlyargs]
         self.asscontext = None
