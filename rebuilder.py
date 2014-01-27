@@ -88,6 +88,7 @@ REDIRECT = {'arguments': 'Arguments',
             'Repr': 'Backquote',
             }
 PY3K = sys.version_info >= (3, 0)
+PY34 = sys.version_info >= (3, 4)
 
 def _init_set_doc(node, newnode):
     newnode.doc = None
@@ -854,6 +855,13 @@ class TreeRebuilder3k(TreeRebuilder):
 
     def visit_arguments(self, node, parent):
         newnode = super(TreeRebuilder3k, self).visit_arguments(node, parent)
+        if PY34:
+            # change added in 82732 (7c5c678e4164), vararg and kwarg
+            # are instances of `_ast.arg`, not strings
+            if node.vararg:
+                newnode.vararg = node.vararg.arg
+            if node.kwarg:
+                newnode.kwarg = node.kwarg.arg
         self.asscontext = "Ass"
         newnode.kwonlyargs = [self.visit(child, newnode) for child in node.kwonlyargs]
         self.asscontext = None
