@@ -855,7 +855,7 @@ class TreeRebuilder3k(TreeRebuilder):
         return self.visit_assname(node, parent, node.arg)
 
     def visit_nameconstant(self, node, parent):
-        # in Python 3.4 we have NameConstant for True/False/None
+        # in Python 3.4 we have NameConstant for True / False / None
         newnode = new.Const(node.value)
         _set_infos(node, newnode, parent)
         return newnode
