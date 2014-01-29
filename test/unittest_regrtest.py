@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 
-from logilab.common.testlib import unittest_main, TestCase
+from logilab.common.testlib import unittest_main, TestCase, require_version
 
 from astroid import ResolveError, MANAGER, Instance, nodes, YES, InferenceError
 from astroid.builder import AstroidBuilder
@@ -134,6 +134,15 @@ multiply(1, 2, 3)
         infered = callfunc.infered()
         self.assertEqual(len(infered), 1)
         self.assertIsInstance(infered[0], Instance)
+
+    @require_version('3.0')
+    def test_nameconstant(self):
+        # used to fail for Python 3.4
+        builder = AstroidBuilder()
+        astroid = builder.string_build("def test(x=True): pass")
+        default = astroid.body[0].args.args[0]
+        self.assertEqual(default.name, 'x')
+        self.assertEqual(next(default.infer()).value, True)
 
 
 class Whatever(object):

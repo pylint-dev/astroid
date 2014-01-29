@@ -91,13 +91,6 @@ class Python3TC(TestCase):
         metaclass = klass.metaclass()
         self.assertIsInstance(metaclass, Class)
         self.assertEqual(metaclass.name, 'type')
-
-    @require_version('3.4')
-    def test_nameconstant(self):
-        astroid = self.builder.string_build("def test(x=True): pass")
-        default = astroid.body[0].args.args[0]
-        self.assertEqual(default.name, 'x')
-        self.assertEqual(next(default.infer()).value, True)
                          
 if __name__ == '__main__':
     unittest_main()
