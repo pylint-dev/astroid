@@ -35,6 +35,12 @@ MANAGER = AstroidManager()
 
 _CONSTANTS = tuple(CONST_CLS) # the keys of CONST_CLS eg python builtin types
 
+def _io_discrepancy(member):
+    member_self = getattr(member, '__self__', None)
+    return (member_self and
+            member_self.__name__ == '_io' and
+            member.__module__ == 'io')
+
 def _attach_local_node(parent, node, name):
     node.name = name # needed by add_local_node
     parent.add_local_node(node)
@@ -249,8 +255,9 @@ class InspectBuilder(object):
                     attach_dummy_node(node, name, member)
                 else:
                     object_build_function(node, member, name)
-            elif isbuiltin(member):
-                if self.imported_member(node, member, name):
+            elif isbuiltin(member):                 
+                if (not _io_discrepancy(member) and
+                    self.imported_member(node, member, name)):
                     #if obj is object:
                     #    print 'skippp', obj, name, member
                     continue
