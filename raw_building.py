@@ -36,6 +36,7 @@ MANAGER = AstroidManager()
 _CONSTANTS = tuple(CONST_CLS) # the keys of CONST_CLS eg python builtin types
 
 def _io_discrepancy(member):
+    # _io modules names itself `io`: http://bugs.python.org/issue18602
     member_self = getattr(member, '__self__', None)
     return (member_self and
             member_self.__name__ == '_io' and
