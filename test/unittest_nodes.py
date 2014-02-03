@@ -238,14 +238,14 @@ class ImportNodeTC(testlib.TestCase):
         self.assertEqual(myos.pytype(), '%s.module' % BUILTINS)
 
     def test_from_self_resolve(self):
-        spawn = MODULE.igetattr('spawn').next()
-        self.assertTrue(isinstance(spawn, nodes.Class), spawn)
-        self.assertEqual(spawn.root().name, 'logilab.common.shellutils')
-        self.assertEqual(spawn.qname(), 'logilab.common.shellutils.Execute')
-        if spawn.newstyle:
-            self.assertEqual(spawn.pytype(), '%s.type' % BUILTINS)
+        pb = MODULE.igetattr('pb').next()
+        self.assertTrue(isinstance(pb, nodes.Class), pb)
+        self.assertEqual(pb.root().name, 'logilab.common.shellutils')
+        self.assertEqual(pb.qname(), 'logilab.common.shellutils.ProgressBar')
+        if pb.newstyle:
+            self.assertEqual(pb.pytype(), '%s.type' % BUILTINS)
         else:
-            self.assertEqual(spawn.pytype(), '%s.classobj' % BUILTINS)
+            self.assertEqual(pb.pytype(), '%s.classobj' % BUILTINS)
         abspath = MODULE2.igetattr('abspath').next()
         self.assertTrue(isinstance(abspath, nodes.Function), abspath)
         self.assertEqual(abspath.root().name, 'os.path')
@@ -253,14 +253,14 @@ class ImportNodeTC(testlib.TestCase):
         self.assertEqual(abspath.pytype(), '%s.function' % BUILTINS)
 
     def test_real_name(self):
-        from_ = MODULE['spawn']
-        self.assertEqual(from_.real_name('spawn'), 'Execute')
+        from_ = MODULE['pb']
+        self.assertEqual(from_.real_name('pb'), 'ProgressBar')
         imp_ = MODULE['os']
         self.assertEqual(imp_.real_name('os'), 'os')
         self.assertRaises(NotFoundError, imp_.real_name, 'os.path')
-        imp_ = MODULE['spawn']
-        self.assertEqual(imp_.real_name('spawn'), 'Execute')
-        self.assertRaises(NotFoundError, imp_.real_name, 'Execute')
+        imp_ = MODULE['pb']
+        self.assertEqual(imp_.real_name('pb'), 'ProgressBar')
+        self.assertRaises(NotFoundError, imp_.real_name, 'ProgressBar')
         imp_ = MODULE2['YO']
         self.assertEqual(imp_.real_name('YO'), 'YO')
         self.assertRaises(NotFoundError, imp_.real_name, 'data')
@@ -268,8 +268,8 @@ class ImportNodeTC(testlib.TestCase):
     def test_as_string(self):
         ast = MODULE['modutils']
         self.assertEqual(ast.as_string(), "from logilab.common import modutils")
-        ast = MODULE['spawn']
-        self.assertEqual(ast.as_string(), "from logilab.common.shellutils import Execute as spawn")
+        ast = MODULE['pb']
+        self.assertEqual(ast.as_string(), "from logilab.common.shellutils import ProgressBar as pb")
         ast = MODULE['os']
         self.assertEqual(ast.as_string(), "import os.path")
         code = """from . import here

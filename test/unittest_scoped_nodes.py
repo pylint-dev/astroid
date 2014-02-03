@@ -79,9 +79,9 @@ class ModuleNodeTC(TestCase):
         red = MODULE.igetattr('redirect').next()
         self.assertIsInstance(red, nodes.Function)
         self.assertEqual(red.name, 'four_args')
-        spawn = MODULE.igetattr('spawn').next()
-        self.assertIsInstance(spawn, nodes.Class)
-        self.assertEqual(spawn.name, 'Execute')
+        pb = MODULE.igetattr('pb').next()
+        self.assertIsInstance(pb, nodes.Class)
+        self.assertEqual(pb.name, 'ProgressBar')
         # resolve packageredirection
         sys.path.insert(1, DATA)
         mod = abuilder.file_build(join(DATA, 'appl/myConnection.py'),
