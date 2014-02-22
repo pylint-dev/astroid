@@ -144,6 +144,16 @@ multiply(1, 2, 3)
         self.assertEqual(default.name, 'x')
         self.assertEqual(next(default.infer()).value, True)
 
+    def test_with_infer_assnames(self):
+        builder = AstroidBuilder()
+        data = """
+with open('a.txt') as stream, open('b.txt'):
+    stream.read()
+"""
+        astroid = builder.string_build(data, __name__, __file__)
+        # Used to crash due to the fact that the second
+        # context manager didn't use an assignment name.
+        list(astroid.nodes_of_class(nodes.CallFunc))[-1].infered()
 
 class Whatever(object):
     a = property(lambda x: x, lambda x: x)
