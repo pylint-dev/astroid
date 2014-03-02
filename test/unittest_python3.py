@@ -20,10 +20,10 @@ from textwrap import dedent
 
 from logilab.common.testlib import TestCase, unittest_main, require_version
 
-from astroid.node_classes import Assign
+from astroid.node_classes import Assign, Discard, Yield
 from astroid.manager import AstroidManager
 from astroid.builder import AstroidBuilder
-from astroid.scoped_nodes import Class
+from astroid.scoped_nodes import Class, Function
 
 
 class Python3TC(TestCase):
@@ -40,6 +40,28 @@ class Python3TC(TestCase):
         node = next(next(next(astroid.get_children()).get_children()).get_children())
 
         self.assertTrue(isinstance(node.ass_type(), Assign))
+
+    @require_version('3.3')
+    def test_yield_from(self):
+        body = dedent("""
+        def func():
+            yield from iter([1, 2])
+            yield 1
+        """)
+        astroid = self.builder.string_build(body)
+        func = astroid.body[0]
+        self.assertIsInstance(func, Function)
+        yield_from = func.body[0]
+        yield_ = func.body[1]
+        self.assertIsInstance(yield_from, Discard)
+        self.assertIsInstance(yield_from.value, Yield)
+        self.assertTrue(yield_from.value.yield_from)
+        self.assertEqual(yield_from.as_string(),
+                         'yield from iter([1, 2])')
+
+        self.assertIsInstance(yield_, Discard)
+        self.assertIsInstance(yield_.value, Yield)
+        self.assertFalse(yield_.value.yield_from)
 
     # metaclass tests
 

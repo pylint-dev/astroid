@@ -429,7 +429,11 @@ class AsStringVisitor(object):
     def visit_yield(self, node):
         """yield an ast.Yield node as string"""
         yi_val = node.value and (" " + node.value.accept(self)) or ""
-        expr = 'yield' + yi_val
+        if node.yield_from:
+            yield_ = 'yield from'
+        else:
+            yield_ = 'yield'
+        expr = yield_ + yi_val
         if node.parent.is_statement:
             return expr
         else:

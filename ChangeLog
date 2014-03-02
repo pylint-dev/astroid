@@ -14,6 +14,9 @@ Change log for the astroid package (used to be astng)
 
     * Don't crash when inferring nodes from `with` clauses
       with multiple context managers. Closes #18.
+
+    * Add `yield_from` property to `Yield` nodes, in order
+      to differentiate between the classic `yield` and `yield from`.
       
 
 2013-10-18  --  1.0.1

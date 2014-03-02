@@ -954,7 +954,9 @@ class TreeRebuilder3k(TreeRebuilder):
         return newnode
 
     def visit_yieldfrom(self, node, parent):
-        return self.visit_yield(node, parent)
+        newnode = self.visit_yield(node, parent)
+        newnode._from = True
+        return newnode
 
     def visit_class(self, node, parent):
         newnode = super(TreeRebuilder3k, self).visit_class(node, parent)
