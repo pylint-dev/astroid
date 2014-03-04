@@ -886,11 +886,10 @@ class With(BlockRangeMixIn, AssignTypeMixin, Statement):
 class Yield(NodeNG):
     """class representing a Yield node"""
     _astroid_fields = ('value',)
-    value = _from = None
+    value = None
 
-    @property
-    def yield_from(self):
-        return self._from
+class YieldFrom(Yield):
+    """ Class representing a YieldFrom node. """    
 
 # constants ##############################################################
 

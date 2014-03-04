@@ -122,6 +122,14 @@ def _infer_metaclass(node):
     elif isinstance(node, Attribute):
         return node.attr
 
+def _create_yield_node(node, parent, rebuilder, factory):
+    newnode = factory()
+    _lineno_parent(node, newnode, parent)
+    if node.value is not None:
+        newnode.value = rebuilder.visit(node.value, newnode)
+    newnode.set_line_info(newnode.last_child())
+    return newnode
+
 
 class TreeRebuilder(object):
     """Rebuilds the _ast tree to become an Astroid tree"""
@@ -837,13 +845,7 @@ class TreeRebuilder(object):
 
     def visit_yield(self, node, parent):
         """visit a Yield node by returning a fresh instance of it"""
-        newnode = new.Yield()
-        _lineno_parent(node, newnode, parent)
-        if node.value is not None:
-            newnode.value = self.visit(node.value, newnode)
-        newnode.set_line_info(newnode.last_child())
-        return newnode
-
+        return _create_yield_node(node, parent, self, new.Yield)
 
 class TreeRebuilder3k(TreeRebuilder):
     """extend and overwrite TreeRebuilder for python3k"""
@@ -954,9 +956,7 @@ class TreeRebuilder3k(TreeRebuilder):
         return newnode
 
     def visit_yieldfrom(self, node, parent):
-        newnode = self.visit_yield(node, parent)
-        newnode._from = True
-        return newnode
+        return _create_yield_node(node, parent, self, new.YieldFrom)
 
     def visit_class(self, node, parent):
         newnode = super(TreeRebuilder3k, self).visit_class(node, parent)

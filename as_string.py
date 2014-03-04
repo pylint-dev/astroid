@@ -429,11 +429,7 @@ class AsStringVisitor(object):
     def visit_yield(self, node):
         """yield an ast.Yield node as string"""
         yi_val = node.value and (" " + node.value.accept(self)) or ""
-        if node.yield_from:
-            yield_ = 'yield from'
-        else:
-            yield_ = 'yield'
-        expr = yield_ + yi_val
+        expr = 'yield' + yi_val
         if node.parent.is_statement:
             return expr
         else:
@@ -470,6 +466,15 @@ class AsStringVisitor3k(AsStringVisitor):
     def visit_starred(self, node):
         """return Starred node as string"""
         return "*" + node.value.accept(self)
+
+    def visit_yieldfrom(self, node):
+        """ Return an astroid.YieldFrom node as string. """
+        yi_val = node.value and (" " + node.value.accept(self)) or ""
+        expr = 'yield from' + yi_val
+        if node.parent.is_statement:
+            return expr
+        else:
+            return "(%s)" % (expr,)
 
 
 def _import_string(names):

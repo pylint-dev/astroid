@@ -46,22 +46,38 @@ class Python3TC(TestCase):
         body = dedent("""
         def func():
             yield from iter([1, 2])
-            yield 1
         """)
         astroid = self.builder.string_build(body)
         func = astroid.body[0]
         self.assertIsInstance(func, Function)
-        yield_from = func.body[0]
-        yield_ = func.body[1]
-        self.assertIsInstance(yield_from, Discard)
-        self.assertIsInstance(yield_from.value, Yield)
-        self.assertTrue(yield_from.value.yield_from)
-        self.assertEqual(yield_from.as_string(),
+        yieldfrom_stmt = func.body[0]
+
+        self.assertIsInstance(yieldfrom_stmt, Discard)
+        self.assertIsInstance(yieldfrom_stmt.value, YieldFrom)
+        self.assertEqual(yieldfrom_stmt.as_string(),
                          'yield from iter([1, 2])')
 
-        self.assertIsInstance(yield_, Discard)
-        self.assertIsInstance(yield_.value, Yield)
-        self.assertFalse(yield_.value.yield_from)
+    @require_version('3.3')
+    def test_yield_from_is_generator(self):
+        body = dedent("""
+        def func():
+            yield from iter([1, 2])
+        """)
+        astroid = self.builder.string_build(body)
+        func = astroid.body[0]
+        self.assertIsInstance(func, Function)
+        self.assertTrue(func.is_generator())
+
+    @require_version('3.3')
+    def test_yield_from_as_string(self):
+        body = dedent("""
+        def func():
+            yield from iter([1, 2])
+            value = yield from other()
+        """)
+        astroid = self.builder.string_build(body)
+        func = astroid.body[0]
+        self.assertEqual(func.as_string(), body.strip())
 
     # metaclass tests
 
