@@ -20,7 +20,7 @@ from textwrap import dedent
 
 from logilab.common.testlib import TestCase, unittest_main, require_version
 
-from astroid.node_classes import Assign, Discard, Yield
+from astroid.node_classes import Assign, Discard, YieldFrom
 from astroid.manager import AstroidManager
 from astroid.builder import AstroidBuilder
 from astroid.scoped_nodes import Class, Function
@@ -77,7 +77,7 @@ class Python3TC(TestCase):
         """)
         astroid = self.builder.string_build(body)
         func = astroid.body[0]
-        self.assertEqual(func.as_string(), body.strip())
+        self.assertEqual(func.as_string().strip(), body.strip())
 
     # metaclass tests
 
