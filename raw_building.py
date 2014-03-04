@@ -24,7 +24,7 @@ __docformat__ = "restructuredtext en"
 import sys
 from os.path import abspath
 from inspect import (getargspec, isdatadescriptor, isfunction, ismethod,
-                     ismethoddescriptor, isclass, isbuiltin)
+                     ismethoddescriptor, isclass, isbuiltin, ismodule)
 
 from astroid.node_classes import CONST_CLS
 from astroid.nodes import (Module, Class, Const, const_factory, From,
@@ -39,6 +39,7 @@ def _io_discrepancy(member):
     # _io module names itself `io`: http://bugs.python.org/issue18602
     member_self = getattr(member, '__self__', None)
     return (member_self and
+            ismodule(member_self) and
             member_self.__name__ == '_io' and
             member.__module__ == 'io')
 
