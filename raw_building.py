@@ -26,7 +26,7 @@ from os.path import abspath
 from inspect import (getargspec, isdatadescriptor, isfunction, ismethod,
                      ismethoddescriptor, isclass, isbuiltin, ismodule)
 
-from astroid.node_classes import CONST_CLS
+from astroid.node_classes import CONST_CLS, Tuple
 from astroid.nodes import (Module, Class, Const, const_factory, From,
     Function, EmptyNode, Name, Arguments)
 from astroid.bases import BUILTINS, Generator
@@ -42,6 +42,21 @@ def _io_discrepancy(member):
             ismodule(member_self) and
             member_self.__name__ == '_io' and
             member.__module__ == 'io')
+
+def _set_exception_attr(node, member, name):
+    """ Resolve trouble with dynamic exception attributes,
+    like `args` or `message`, which are defined in C as
+    descriptors and set to a real value when an exception
+    is caught.
+    """
+    if (isdatadescriptor(member) and
+        hasattr(member, '__objclass__') and
+        member.__objclass__ is BaseException):
+
+        if name == "args":
+            node.locals[name] = [Tuple()]
+        elif name == "message":
+            node.locals[name] = [Const("")]
 
 def _attach_local_node(parent, node, name):
     node.name = name # needed by add_local_node
@@ -175,6 +190,9 @@ def _base_class_object_build(node, member, basenames, name=None, localname=None)
                         basenames, member.__doc__)
     klass._newstyle = isinstance(member, type)
     node.add_local_node(klass, localname)
+
+    _set_exception_attr(node, member, name)
+
     try:
         # limit the instantiation trick since it's too dangerous
         # (such as infinite test execution...)

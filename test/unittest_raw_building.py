@@ -1,5 +1,10 @@
+from textwrap import dedent
+
 from logilab.common.testlib import TestCase, unittest_main
 from astroid.raw_building import (attach_dummy_node, build_module, build_class, build_function, build_from_import)
+from astroid.builder import AstroidBuilder
+from astroid.manager import AstroidManager
+from astroid.node_classes import Tuple
 
 class RawBuildingTC(TestCase):
 
@@ -41,3 +46,20 @@ class RawBuildingTC(TestCase):
         names = ['exceptions, inference, inspector']
         node = build_from_import('astroid', names)
         self.assertEqual(len(names), len(node.names))
+
+    def test_exception_dynamic_attr(self):
+        # Pylint issue 32: e1101-false-positives-for-exception
+        manager = AstroidManager()
+        builder = AstroidBuilder(manager)
+        node = builder.string_build(dedent("""
+        try:
+            x[0]
+        except IndexError as err:
+            pass
+        """))
+        handler = node.body[0].handlers[0]
+        instance = handler.name.infered()[0]
+        args = instance.getattr('args')
+        for arg in args:
+            self.assertIsInstance(arg, Tuple)
+        
