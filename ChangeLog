@@ -14,7 +14,8 @@ Change log for the astroid package (used to be astng)
 
     * Don't crash when inferring nodes from `with` clauses
       with multiple context managers. Closes #18.
-      
+
+    * Add a new YieldFrom node.      
 
 2013-10-18  --  1.0.1
     * fix py3k/windows installation issue (issue #4)

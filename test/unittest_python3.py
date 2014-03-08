@@ -20,10 +20,10 @@ from textwrap import dedent
 
 from logilab.common.testlib import TestCase, unittest_main, require_version
 
-from astroid.node_classes import Assign
+from astroid.node_classes import Assign, Discard, YieldFrom
 from astroid.manager import AstroidManager
 from astroid.builder import AstroidBuilder
-from astroid.scoped_nodes import Class
+from astroid.scoped_nodes import Class, Function
 
 
 class Python3TC(TestCase):
@@ -40,6 +40,44 @@ class Python3TC(TestCase):
         node = next(next(next(astroid.get_children()).get_children()).get_children())
 
         self.assertTrue(isinstance(node.ass_type(), Assign))
+
+    @require_version('3.3')
+    def test_yield_from(self):
+        body = dedent("""
+        def func():
+            yield from iter([1, 2])
+        """)
+        astroid = self.builder.string_build(body)
+        func = astroid.body[0]
+        self.assertIsInstance(func, Function)
+        yieldfrom_stmt = func.body[0]
+
+        self.assertIsInstance(yieldfrom_stmt, Discard)
+        self.assertIsInstance(yieldfrom_stmt.value, YieldFrom)
+        self.assertEqual(yieldfrom_stmt.as_string(),
+                         'yield from iter([1, 2])')
+
+    @require_version('3.3')
+    def test_yield_from_is_generator(self):
+        body = dedent("""
+        def func():
+            yield from iter([1, 2])
+        """)
+        astroid = self.builder.string_build(body)
+        func = astroid.body[0]
+        self.assertIsInstance(func, Function)
+        self.assertTrue(func.is_generator())
+
+    @require_version('3.3')
+    def test_yield_from_as_string(self):
+        body = dedent("""
+        def func():
+            yield from iter([1, 2])
+            value = yield from other()
+        """)
+        astroid = self.builder.string_build(body)
+        func = astroid.body[0]
+        self.assertEqual(func.as_string().strip(), body.strip())
 
     # metaclass tests
 
