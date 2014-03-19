@@ -350,6 +350,19 @@ class BuilderTC(TestCase):
         self.assertEqual(infered.name, 'type')
         infered.as_string() # no crash test
 
+    def test_inspect_transform_module(self):
+        # ensure no cached version of the time module
+        MANAGER._mod_file_cache.pop(('time', None), None)
+        def transform_time(node):
+            if node.name == 'time':
+                node.transformed = True
+        MANAGER.register_transform(nodes.Module, transform_time)
+        try:
+            time_ast = MANAGER.ast_from_module_name('time')
+            self.assertTrue(getattr(time_ast, 'transformed', False))
+        finally:
+            MANAGER.unregister_transform(nodes.Module, transform_time)
+
     def test_package_name(self):
         """test base properties and method of a astroid module"""
         datap = self.builder.file_build(join(DATA, '__init__.py'), 'data')

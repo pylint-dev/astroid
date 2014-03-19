@@ -142,25 +142,7 @@ class TreeRebuilder(object):
         self._from_nodes = []
         self._delayed_assattr = []
         self._visit_meths = {}
-
-    def _transform(self, node):
-        try:
-            transforms = self._manager.transforms[type(node)]
-        except KeyError:
-            return node # no transform registered for this class of node
-        orig_node = node # copy the reference
-        for transform_func, predicate in transforms:
-            if predicate is None or predicate(node):
-                ret = transform_func(node)
-                # if the transformation function returns something, it's
-                # expected to be a replacement for the node
-                if ret is not None:
-                    if node is not orig_node:
-                        # node has already be modified by some previous
-                        # transformation, warn about it
-                        warn('node %s substitued multiple times' % node)
-                    node = ret
-        return node
+        self._transform = manager.transform
 
     def visit_module(self, node, modname, package):
         """visit a Module node by returning a fresh instance of it"""
