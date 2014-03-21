@@ -7,7 +7,7 @@ Currently help understanding of :
 
 import sys
 
-from astroid import MANAGER, AsStringRegexpPredicate, UseInferenceDefault, inference_tip, YES
+from astroid import MANAGER, UseInferenceDefault, inference_tip, YES
 from astroid import exceptions
 from astroid import nodes
 from astroid.builder import AstroidBuilder
@@ -248,5 +248,13 @@ class %(name)s(tuple):
     # we use UseInferenceDefault, we can't be a generator so return an iterator
     return iter([class_node])
 
+
+def looks_like_namedtuple(node):
+    func = node.func
+    if type(func) is nodes.Getattr:
+        return func.attrname == 'namedtuple'
+    if type(func) is nodes.Name:
+        return func.name == 'namedtuple'
+    return False
 MANAGER.register_transform(nodes.CallFunc, inference_tip(infer_named_tuple),
-                           AsStringRegexpPredicate('namedtuple', 'func'))
+                           looks_like_namedtuple)
