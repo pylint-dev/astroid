@@ -171,6 +171,9 @@ class Instance(Proxy):
     def igetattr(self, name, context=None):
         """inferred getattr"""
         try:
+            # avoid recursively inferring the same attr on the same class
+            if context:
+                context.push((self._proxied, name))
             # XXX frame should be self._proxied, or not ?
             get_attr = self.getattr(name, context, lookupclass=False)
             return _infer_stmts(self._wrap_attr(get_attr, context), context,
