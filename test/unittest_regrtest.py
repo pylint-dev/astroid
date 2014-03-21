@@ -144,6 +144,7 @@ multiply(1, 2, 3)
         self.assertEqual(default.name, 'x')
         self.assertEqual(next(default.infer()).value, True)
 
+    @require_version('2.7')
     def test_with_infer_assnames(self):
         builder = AstroidBuilder()
         data = """
