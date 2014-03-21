@@ -281,11 +281,13 @@ class AstroidManager(OptionsProviderMixIn):
         """Call matching transforms for the given node if any and return the
         transformed node.
         """
-        try:
-            transforms = self.transforms[type(node)]
-        except KeyError:
-            return node # no transform registered for this class of node
-        orig_node = node # copy the reference
+        cls = node.__class__
+        if cls not in self.transforms:
+            # no transform registered for this class of node
+            return node
+
+        transforms = self.transforms[cls]
+        orig_node = node  # copy the reference
         for transform_func, predicate in transforms:
             if predicate is None or predicate(node):
                 ret = transform_func(node)
