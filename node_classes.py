@@ -125,8 +125,7 @@ class LookupMixIn(object):
         the lookup method
         """
         frame, stmts = self.lookup(name)
-        context = InferenceContext()
-        return _infer_stmts(stmts, context, frame)
+        return _infer_stmts(stmts, None, frame)
 
     def _filter_stmts(self, stmts, frame, offset):
         """filter statements to remove ignorable statements.
@@ -889,7 +888,7 @@ class Yield(NodeNG):
     value = None
 
 class YieldFrom(Yield):
-    """ Class representing a YieldFrom node. """    
+    """ Class representing a YieldFrom node. """
 
 # constants ##############################################################
 

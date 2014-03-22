@@ -96,7 +96,8 @@ class ModuleNodeTC(TestCase):
             del sys.path[1]
         self.assertEqual(len(NONREGR.getattr('enumerate')), 2)
         # raise ResolveError
-        self.assertRaises(InferenceError, MODULE.igetattr, 'YOAA')
+        gen = MODULE.igetattr('YOAA')
+        self.assertRaises(InferenceError, list, gen)
 
     def test_wildard_import_names(self):
         m = abuilder.file_build(join(DATA, 'all.py'), 'all')

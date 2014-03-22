@@ -912,7 +912,7 @@ def f(g = lambda: None):
         g().x
 '''
         astroid = builder.string_build(code, __name__, __file__)
-        callfuncnode = astroid['f'].body[0].value.expr
+        callfuncnode = astroid['f'].body[0].value.expr  # 'g()'
         infered = list(callfuncnode.infer())
         self.assertEqual(len(infered), 2, infered)
         infered.remove(YES)

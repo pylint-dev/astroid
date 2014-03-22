@@ -56,6 +56,31 @@ class Proxy(object):
 
 # Inference ##################################################################
 
+MISSING = object()
+
+
+class InferenceContextPathContext(object):
+    """Implementation of InferenceContext.push.
+
+    Can't be a @contextmanager because it raises StopIteration.
+    """
+    def __init__(self, context, node):
+        self.original_path = context.path.copy()
+        self.context = context
+        self.node = node
+
+    def __enter__(self):
+        name = self.context.lookupname
+        if (self.node, name) in self.context.path:
+            raise StopIteration
+
+        self.context.path.add((self.node, name))
+        return self
+
+    def __exit__(self, *exc_info):
+        self.context.path = self.original_path
+
+
 class InferenceContext(object):
     __slots__ = ('path', 'lookupname', 'callcontext', 'boundnode')
 
@@ -69,17 +94,21 @@ class InferenceContext(object):
         self.boundnode = None
 
     def push(self, node):
-        name = self.lookupname
-        if (node, name) in self.path:
-            raise StopIteration()
-        self.path.add( (node, name) )
+        return InferenceContextPathContext(self, node)
 
-    def clone(self):
-        # XXX copy lookupname/callcontext ?
-        clone = InferenceContext(self.path)
-        clone.callcontext = self.callcontext
-        clone.boundnode = self.boundnode
-        return clone
+    @contextmanager
+    def scope(self, lookupname=MISSING, callcontext=MISSING, boundnode=MISSING):
+        try:
+            orig = self.lookupname, self.callcontext, self.boundnode
+            if lookupname is not MISSING:
+                self.lookupname = lookupname
+            if callcontext is not MISSING:
+                self.callcontext = callcontext
+            if boundnode is not MISSING:
+                self.boundnode = boundnode
+            yield
+        finally:
+            self.lookupname, self.callcontext, self.boundnode = orig
 
     @contextmanager
     def restore_path(self):
@@ -87,39 +116,30 @@ class InferenceContext(object):
         yield
         self.path = path
 
-def copy_context(context):
-    if context is not None:
-        return context.clone()
-    else:
-        return InferenceContext()
-
 
 def _infer_stmts(stmts, context, frame=None):
     """return an iterator on statements inferred by each statement in <stmts>
     """
     stmt = None
     infered = False
-    if context is not None:
-        name = context.lookupname
-        context = context.clone()
-    else:
-        name = None
+    if context is None:
         context = InferenceContext()
+    name = context.lookupname
     for stmt in stmts:
         if stmt is YES:
             yield stmt
             infered = True
             continue
-        context.lookupname = stmt._infer_name(frame, name)
-        try:
-            for infered in stmt.infer(context):
-                yield infered
+        with context.scope(lookupname=stmt._infer_name(frame, name)):
+            try:
+                for infered in stmt.infer(context):
+                    yield infered
+                    infered = True
+            except UnresolvableName:
+                continue
+            except InferenceError:
+                yield YES
                 infered = True
-        except UnresolvableName:
-            continue
-        except InferenceError:
-            yield YES
-            infered = True
     if not infered:
         raise InferenceError(str(stmt))
 
@@ -170,20 +190,23 @@ class Instance(Proxy):
 
     def igetattr(self, name, context=None):
         """inferred getattr"""
+        if not context:
+            context = InferenceContext()
         try:
             # avoid recursively inferring the same attr on the same class
-            if context:
-                context.push((self._proxied, name))
-            # XXX frame should be self._proxied, or not ?
-            get_attr = self.getattr(name, context, lookupclass=False)
-            return _infer_stmts(self._wrap_attr(get_attr, context), context,
-                                frame=self)
+            with context.push((self._proxied, name)):
+                # XXX frame should be self._proxied, or not ?
+                get_attr = self.getattr(name, context, lookupclass=False)
+                for infered in _infer_stmts(self._wrap_attr(get_attr, context), context,
+                                            frame=self):
+                    yield infered
         except NotFoundError:
             try:
                 # fallback to class'igetattr since it has some logic to handle
                 # descriptors
-                return self._wrap_attr(self._proxied.igetattr(name, context),
-                                       context)
+                for attr in self._wrap_attr(self._proxied.igetattr(name, context),
+                                            context):
+                    yield attr
             except NotFoundError:
                 raise InferenceError(name)
 
@@ -274,9 +297,9 @@ class BoundMethod(UnboundMethod):
         return True
 
     def infer_call_result(self, caller, context):
-        context = context.clone()
-        context.boundnode = self.bound
-        return self._proxied.infer_call_result(caller, context)
+        with context.scope(boundnode=self.bound, lookupname=None):
+            for infered in self._proxied.infer_call_result(caller, context):
+                yield infered
 
 
 class Generator(Instance):
@@ -308,17 +331,17 @@ def path_wrapper(func):
         """wrapper function handling context"""
         if context is None:
             context = InferenceContext()
-        context.push(node)
-        yielded = set()
-        for res in _func(node, context, **kwargs):
-            # unproxy only true instance, not const, tuple, dict...
-            if res.__class__ is Instance:
-                ares = res._proxied
-            else:
-                ares = res
-            if not ares in yielded:
-                yield res
-                yielded.add(ares)
+        with context.push(node):
+            yielded = set()
+            for res in _func(node, context, **kwargs):
+                # unproxy only true instance, not const, tuple, dict...
+                if res.__class__ is Instance:
+                    ares = res._proxied
+                else:
+                    ares = res
+                if not ares in yielded:
+                    yield res
+                    yielded.add(ares)
     return wrapped
 
 def yes_if_nothing_infered(func):
@@ -377,6 +400,7 @@ class NodeNG(object):
                 return self._explicit_inference(self, context, **kwargs)
             except UseInferenceDefault:
                 pass
+
         return self._infer(context, **kwargs)
 
     def _repr_name(self):
