@@ -64,17 +64,16 @@ class InferenceContextPathContext(object):
 
     Can't be a @contextmanager because it raises StopIteration.
     """
-    def __init__(self, context, node):
+    def __init__(self, context, key):
         self.original_path = context.path.copy()
         self.context = context
-        self.node = node
+        self.key = key
 
     def __enter__(self):
-        name = self.context.lookupname
-        if (self.node, name) in self.context.path:
+        if self.key in self.context.path:
             raise StopIteration
 
-        self.context.path.add((self.node, name))
+        self.context.path.add(self.key)
         return self
 
     def __exit__(self, *exc_info):
@@ -82,33 +81,30 @@ class InferenceContextPathContext(object):
 
 
 class InferenceContext(object):
-    __slots__ = ('path', 'lookupname', 'callcontext', 'boundnode')
+    __slots__ = ('path', 'callcontext', 'boundnode')
 
     def __init__(self, path=None):
         if path is None:
             self.path = set()
         else:
             self.path = path
-        self.lookupname = None
         self.callcontext = None
         self.boundnode = None
 
-    def push(self, node):
-        return InferenceContextPathContext(self, node)
+    def push(self, key):
+        return InferenceContextPathContext(self, key)
 
     @contextmanager
-    def scope(self, lookupname=MISSING, callcontext=MISSING, boundnode=MISSING):
+    def scope(self, callcontext=MISSING, boundnode=MISSING):
         try:
-            orig = self.lookupname, self.callcontext, self.boundnode
-            if lookupname is not MISSING:
-                self.lookupname = lookupname
+            orig = self.callcontext, self.boundnode
             if callcontext is not MISSING:
                 self.callcontext = callcontext
             if boundnode is not MISSING:
                 self.boundnode = boundnode
             yield
         finally:
-            self.lookupname, self.callcontext, self.boundnode = orig
+            self.callcontext, self.boundnode = orig
 
     @contextmanager
     def restore_path(self):
@@ -117,29 +113,34 @@ class InferenceContext(object):
         self.path = path
 
 
-def _infer_stmts(stmts, context, frame=None):
+def _infer_stmts(stmts, context, frame=None, lookupname=None):
     """return an iterator on statements inferred by each statement in <stmts>
     """
     stmt = None
     infered = False
     if context is None:
         context = InferenceContext()
-    name = context.lookupname
     for stmt in stmts:
         if stmt is YES:
             yield stmt
             infered = True
             continue
-        with context.scope(lookupname=stmt._infer_name(frame, name)):
-            try:
-                for infered in stmt.infer(context):
-                    yield infered
-                    infered = True
-            except UnresolvableName:
-                continue
-            except InferenceError:
-                yield YES
+
+        kw = {}
+        infered_name = stmt._infer_name(frame, lookupname)
+        if infered_name is not None:
+            # only returns not None if .infer() accepts a lookupname kwarg
+            kw['lookupname'] = infered_name
+
+        try:
+            for infered in stmt.infer(context, **kw):
+                yield infered
                 infered = True
+        except UnresolvableName:
+            continue
+        except InferenceError:
+            yield YES
+            infered = True
     if not infered:
         raise InferenceError(str(stmt))
 
@@ -297,7 +298,7 @@ class BoundMethod(UnboundMethod):
         return True
 
     def infer_call_result(self, caller, context):
-        with context.scope(boundnode=self.bound, lookupname=None):
+        with context.scope(boundnode=self.bound):
             for infered in self._proxied.infer_call_result(caller, context):
                 yield infered
 
@@ -331,7 +332,7 @@ def path_wrapper(func):
         """wrapper function handling context"""
         if context is None:
             context = InferenceContext()
-        with context.push(node):
+        with context.push((node, kwargs.get('lookupname'))):
             yielded = set()
             for res in _func(node, context, **kwargs):
                 # unproxy only true instance, not const, tuple, dict...

@@ -310,12 +310,10 @@ class Module(LocalsDictNodeNG):
         # instance
         if not context:
             context = InferenceContext()
-        with context.scope(lookupname=name):
-            try:
-                for infered in _infer_stmts(self.getattr(name, context), context, frame=self):
-                    yield infered
-            except NotFoundError:
-                raise InferenceError(name)
+        try:
+            return _infer_stmts(self.getattr(name, context), context, frame=self, lookupname=name)
+        except NotFoundError:
+            raise InferenceError(name)
 
     def fully_defined(self):
         """return True if this module has been built from a .py file
@@ -997,26 +995,25 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         # instance
         if not context:
             context = InferenceContext()
-        with context.scope(lookupname=name):
-            try:
-                for infered in _infer_stmts(self.getattr(name, context), context,
-                                            frame=self):
-                    # yield YES object instead of descriptors when necessary
-                    if not isinstance(infered, Const) and isinstance(infered, Instance):
-                        try:
-                            infered._proxied.getattr('__get__', context)
-                        except NotFoundError:
-                            yield infered
-                        else:
-                            yield YES
+        try:
+            for infered in _infer_stmts(self.getattr(name, context), context,
+                                        frame=self, lookupname=name):
+                # yield YES object instead of descriptors when necessary
+                if not isinstance(infered, Const) and isinstance(infered, Instance):
+                    try:
+                        infered._proxied.getattr('__get__', context)
+                    except NotFoundError:
+                        yield infered
                     else:
-                        yield function_to_method(infered, self)
-            except NotFoundError:
-                if not name.startswith('__') and self.has_dynamic_getattr(context):
-                    # class handle some dynamic attributes, return a YES object
-                    yield YES
+                        yield YES
                 else:
-                    raise InferenceError(name)
+                    yield function_to_method(infered, self)
+        except NotFoundError:
+            if not name.startswith('__') and self.has_dynamic_getattr(context):
+                # class handle some dynamic attributes, return a YES object
+                yield YES
+            else:
+                raise InferenceError(name)
 
     def has_dynamic_getattr(self, context=None):
         """return True if the class has a custom __getattr__ or

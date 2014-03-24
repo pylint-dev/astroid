@@ -241,9 +241,8 @@ def _arguments_infer_argname(self, name, context):
     try:
         if context is None:
             context = InferenceContext()
-        with context.scope(lookupname=None):
-            for infered in self.default_value(name).infer(context):
-                yield infered
+        for infered in self.default_value(name).infer(context):
+            yield infered
         yield YES
     except NoDefault:
         yield YES
@@ -253,12 +252,8 @@ def arguments_assigned_stmts(self, node, context, asspath=None):
     if context.callcontext:
         # reset call context/name
         callcontext = context.callcontext
-        with context.scope(callcontext=None, lookupname=None):
-            for infered in callcontext.infer_argument(self.parent, node.name, context):
-                yield infered
-            return
-    for infered in _arguments_infer_argname(self, node.name, context):
-        yield infered
+        return callcontext.infer_argument(self.parent, node.name, context)
+    return _arguments_infer_argname(self, node.name, context)
 nodes.Arguments.assigned_stmts = arguments_assigned_stmts
 
 
