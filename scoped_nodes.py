@@ -580,16 +580,20 @@ class Function(Statement, Lambda):
         self.extra_decorators = []
         self.instance_attrs = {}
 
-    def set_line_info(self, lastchild):
-        self.fromlineno = self.lineno
-        # lineno is the line number of the first decorator, we want the def statement lineno
+    @cachedproperty
+    def fromlineno(self):
+        # lineno is the line number of the first decorator, we want the def
+        # statement lineno
+        lineno = self.lineno
         if self.decorators is not None:
-            self.fromlineno += sum(node.tolineno - node.lineno + 1
+            lineno += sum(node.tolineno - node.lineno + 1
                                    for node in self.decorators.nodes)
-        if self.args.fromlineno < self.fromlineno:
-            self.args.fromlineno = self.fromlineno
-        self.tolineno = lastchild.tolineno
-        self.blockstart_tolineno = self.args.tolineno
+
+        return lineno
+
+    @cachedproperty
+    def blockstart_tolineno(self):
+        return self.args.tolineno
 
     def block_range(self, lineno):
         """return block line numbers.
@@ -819,12 +823,12 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                         doc="boolean indicating if it's a new style class"
                         "or not")
 
-    def set_line_info(self, lastchild):
-        self.fromlineno = self.lineno
-        self.blockstart_tolineno = self.bases and self.bases[-1].tolineno or self.fromlineno
-        if lastchild is not None:
-            self.tolineno = lastchild.tolineno
-        # else this is a class with only a docstring, then tolineno is (should be) already ok
+    @cachedproperty
+    def blockstart_tolineno(self):
+        if self.bases:
+            return self.bases[-1].tolineno
+        else:
+            return self.fromlineno
 
     def block_range(self, lineno):
         """return block line numbers.

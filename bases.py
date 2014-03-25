@@ -24,6 +24,8 @@ __docformat__ = "restructuredtext en"
 import sys
 from contextlib import contextmanager
 
+from logilab.common.decorators import cachedproperty
+
 from astroid.exceptions import (InferenceError, AstroidError, NotFoundError,
                                 UnresolvableName, UseInferenceDefault)
 
@@ -441,7 +443,7 @@ class NodeNG(object):
             attr = getattr(self, field)
             if not attr: # None or empty listy / tuple
                 continue
-            if isinstance(attr, (list, tuple)):
+            if attr.__class__ in (list, tuple):
                 return attr[-1]
             else:
                 return attr
@@ -532,16 +534,28 @@ class NodeNG(object):
         # FIXME: raise an exception if nearest is None ?
         return nearest[0]
 
-    def set_line_info(self, lastchild):
+    # these are lazy because they're relatively expensive to compute for every
+    # single node, and they rarely get looked at
+
+    @cachedproperty
+    def fromlineno(self):
         if self.lineno is None:
-            self.fromlineno = self._fixed_source_line()
+            return self._fixed_source_line()
         else:
-            self.fromlineno = self.lineno
+            return self.lineno
+
+    @cachedproperty
+    def tolineno(self):
+        if not self._astroid_fields:
+            # can't have children
+            lastchild = None
+        else:
+            lastchild = self.last_child()
         if lastchild is None:
-            self.tolineno = self.fromlineno
+            return self.fromlineno
         else:
-            self.tolineno = lastchild.tolineno
-        return
+            return lastchild.tolineno
+
         # TODO / FIXME:
         assert self.fromlineno is not None, self
         assert self.tolineno is not None, self

@@ -20,6 +20,8 @@
 
 import sys
 
+from logilab.common.decorators import cachedproperty
+
 from astroid.exceptions import NoDefault
 from astroid.bases import (NodeNG, Statement, Instance, InferenceContext,
                                  _infer_stmts, YES, BUILTINS)
@@ -266,6 +268,11 @@ class Arguments(NodeNG, AssignTypeMixin):
         if self.parent is frame:
             return name
         return None
+
+    @cachedproperty
+    def fromlineno(self):
+        lineno = super(Arguments, self).fromlineno
+        return max(lineno, self.parent.fromlineno)
 
     def format_args(self):
         """return arguments formatted as string"""
@@ -560,18 +567,14 @@ class ExceptHandler(Statement, AssignTypeMixin):
     name = None
     body = None
 
-    def _blockstart_toline(self):
+    @cachedproperty
+    def blockstart_tolineno(self):
         if self.name:
             return self.name.tolineno
         elif self.type:
             return self.type.tolineno
         else:
             return self.lineno
-
-    def set_line_info(self, lastchild):
-        self.fromlineno = self.lineno
-        self.tolineno = lastchild.tolineno
-        self.blockstart_tolineno = self._blockstart_toline()
 
     def catch(self, exceptions):
         if self.type is None or exceptions is None:
@@ -603,7 +606,8 @@ class For(BlockRangeMixIn, AssignTypeMixin, Statement):
     orelse = None
 
     optional_assign = True
-    def _blockstart_toline(self):
+    @cachedproperty
+    def blockstart_tolineno(self):
         return self.iter.tolineno
 
 
@@ -638,7 +642,8 @@ class If(BlockRangeMixIn, Statement):
     body = None
     orelse = None
 
-    def _blockstart_toline(self):
+    @cachedproperty
+    def blockstart_tolineno(self):
         return self.test.tolineno
 
     def block_range(self, lineno):
@@ -789,9 +794,6 @@ class TryExcept(BlockRangeMixIn, Statement):
     def _infer_name(self, frame, name):
         return name
 
-    def _blockstart_toline(self):
-        return self.lineno
-
     def block_range(self, lineno):
         """handle block line numbers range for try/except statements"""
         last = None
@@ -810,9 +812,6 @@ class TryFinally(BlockRangeMixIn, Statement):
     _astroid_fields = ('body', 'finalbody',)
     body = None
     finalbody = None
-
-    def _blockstart_toline(self):
-        return self.lineno
 
     def block_range(self, lineno):
         """handle block line numbers range for try/finally statements"""
@@ -857,7 +856,8 @@ class While(BlockRangeMixIn, Statement):
     body = None
     orelse = None
 
-    def _blockstart_toline(self):
+    @cachedproperty
+    def blockstart_tolineno(self):
         return self.test.tolineno
 
     def block_range(self, lineno):
@@ -871,7 +871,8 @@ class With(BlockRangeMixIn, AssignTypeMixin, Statement):
     items = None
     body = None
 
-    def _blockstart_toline(self):
+    @cachedproperty
+    def blockstart_tolineno(self):
         return self.items[-1][0].tolineno
 
     def get_children(self):

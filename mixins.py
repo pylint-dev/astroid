@@ -18,16 +18,18 @@
 """This module contains some mixins for the different nodes.
 """
 
+from logilab.common.decorators import cachedproperty
+
 from astroid.exceptions import (AstroidBuildingException, InferenceError,
                                       NotFoundError)
 
 
 class BlockRangeMixIn(object):
     """override block range """
-    def set_line_info(self, lastchild):
-        self.fromlineno = self.lineno
-        self.tolineno = lastchild.tolineno
-        self.blockstart_tolineno = self._blockstart_toline()
+
+    @cachedproperty
+    def blockstart_tolineno(self):
+        return self.lineno
 
     def _elsed_block_range(self, lineno, orelse, last=None):
         """handle block line numbers range for try/finally, for, if and while
