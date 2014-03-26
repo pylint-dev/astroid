@@ -19,6 +19,8 @@
 function)
 """
 
+from __future__ import with_statement
+
 import sys
 from os.path import join, abspath, dirname
 from textwrap import dedent
@@ -164,6 +166,18 @@ del appli
             self.assertEqual(infered[0].name, 'package.subpackage')
         finally:
             del sys.path[1]
+
+
+    def test_file_stream_in_memory(self):
+        data = '''irrelevant_variable is irrelevant'''
+        astroid = abuilder.string_build(data, 'in_memory')
+        self.assertEqual(astroid.file_stream.read(), data)
+
+    def test_file_stream_physical(self):
+        path = join(DATA, 'all.py')
+        astroid = abuilder.file_build(path, 'all')
+        with open(path, 'rb') as file_io:
+            self.assertEqual(astroid.file_stream.read(), file_io.read())
 
 
 class FunctionNodeTC(TestCase):
