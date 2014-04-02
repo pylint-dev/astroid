@@ -171,7 +171,7 @@ del appli
     def test_file_stream_in_memory(self):
         data = '''irrelevant_variable is irrelevant'''
         astroid = abuilder.string_build(data, 'in_memory')
-        self.assertEqual(astroid.file_stream.read(), data)
+        self.assertEqual(astroid.file_stream.read().decode(), data)
 
     def test_file_stream_physical(self):
         path = join(DATA, 'all.py')

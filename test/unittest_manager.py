@@ -24,6 +24,7 @@ from astroid.bases import  BUILTINS
 from astroid.exceptions import AstroidBuildingException
 
 DATA = join(dirname(abspath(__file__)), 'data')
+PY3K = sys.version_info > (3, 0)
 
 class AstroidManagerTC(TestCase):
     def setUp(self):
@@ -89,7 +90,8 @@ class AstroidManagerTC(TestCase):
         try:
             module = self.manager.ast_from_module_name('mypypa')
             self.assertEqual(module.name, 'mypypa')
-            self.assertTrue(module.file.endswith('%s/mypypa' % archive),
+            end = join(archive, 'mypypa') 
+            self.assertTrue(module.file.endswith(end),
                             module.file)
         finally:
             # remove the module, else after importing egg, we don't get the zip
@@ -119,7 +121,12 @@ class AstroidManagerTC(TestCase):
     def test_file_from_module(self):
         """check if the unittest filepath is equals to the result of the method""" 
         import unittest
-        self.assertEqual(unittest.__file__[:-1], self.manager.file_from_module_name('unittest', None))
+        if PY3K:
+            unittest_file = unittest.__file__
+        else:
+            unittest_file = unittest.__file__[:-1]
+        self.assertEqual(unittest_file,
+                        self.manager.file_from_module_name('unittest', None))
 
     def test_file_from_module_name_astro_building_exception(self):
         """check if the method launch a exception with a wrong module name"""
