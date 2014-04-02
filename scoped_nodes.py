@@ -284,6 +284,8 @@ class Module(LocalsDictNodeNG):
                 return [self.import_module(name, relative_only=True)]
             except AstroidBuildingException:
                 raise NotFoundError(name)
+            except SyntaxError:
+                raise NotFoundError(name)
             except Exception:# XXX pylint tests never pass here; do we need it?
                 import traceback
                 traceback.print_exc()
