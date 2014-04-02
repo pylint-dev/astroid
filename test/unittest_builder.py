@@ -268,9 +268,9 @@ class BuilderTC(TestCase):
 
     def test_inspect_build0(self):
         """test astroid tree build from a living object"""
-        builtin_astroid = MANAGER.ast_from_module_name(BUILTINS)
+        builtin_ast = MANAGER.ast_from_module_name(BUILTINS)
         if sys.version_info < (3, 0):
-            fclass = builtin_astroid['file']
+            fclass = builtin_ast['file']
             self.assertIn('name', fclass)
             self.assertIn('mode', fclass)
             self.assertIn('read', fclass)
@@ -278,33 +278,33 @@ class BuilderTC(TestCase):
             self.assertTrue(fclass.pytype(), '%s.type' % BUILTINS)
             self.assertIsInstance(fclass['read'], nodes.Function)
             # check builtin function has args.args == None
-            dclass = builtin_astroid['dict']
+            dclass = builtin_ast['dict']
             self.assertIsNone(dclass['has_key'].args.args)
         # just check type and object are there
-        builtin_astroid.getattr('type')
-        objectastroid = builtin_astroid.getattr('object')[0]
+        builtin_ast.getattr('type')
+        objectastroid = builtin_ast.getattr('object')[0]
         self.assertIsInstance(objectastroid.getattr('__new__')[0], nodes.Function)
         # check open file alias
-        builtin_astroid.getattr('open')
+        builtin_ast.getattr('open')
         # check 'help' is there (defined dynamically by site.py)
-        builtin_astroid.getattr('help')
+        builtin_ast.getattr('help')
         # check property has __init__
-        pclass = builtin_astroid['property']
+        pclass = builtin_ast['property']
         self.assertIn('__init__', pclass)
-        self.assertIsInstance(builtin_astroid['None'], nodes.Const)
-        self.assertIsInstance(builtin_astroid['True'], nodes.Const)
-        self.assertIsInstance(builtin_astroid['False'], nodes.Const)
+        self.assertIsInstance(builtin_ast['None'], nodes.Const)
+        self.assertIsInstance(builtin_ast['True'], nodes.Const)
+        self.assertIsInstance(builtin_ast['False'], nodes.Const)
         if sys.version_info < (3, 0):
-            self.assertIsInstance(builtin_astroid['Exception'], nodes.From)
-            self.assertIsInstance(builtin_astroid['NotImplementedError'], nodes.From)
+            self.assertIsInstance(builtin_ast['Exception'], nodes.From)
+            self.assertIsInstance(builtin_ast['NotImplementedError'], nodes.From)
         else:
-            self.assertIsInstance(builtin_astroid['Exception'], nodes.Class)
-            self.assertIsInstance(builtin_astroid['NotImplementedError'], nodes.Class)
+            self.assertIsInstance(builtin_ast['Exception'], nodes.Class)
+            self.assertIsInstance(builtin_ast['NotImplementedError'], nodes.Class)
 
     def test_inspect_build1(self):
-        time_astroid = MANAGER.ast_from_module_name('time')
-        self.assertTrue(time_astroid)
-        self.assertEqual(time_astroid['time'].args.defaults, [])
+        time_ast = MANAGER.ast_from_module_name('time')
+        self.assertTrue(time_ast)
+        self.assertEqual(time_ast['time'].args.defaults, [])
 
     def test_inspect_build2(self):
         """test astroid tree build from a living object"""
@@ -313,10 +313,10 @@ class BuilderTC(TestCase):
         except ImportError:
             self.skipTest('test skipped: mxDateTime is not available')
         else:
-            dt_astroid = self.builder.inspect_build(DateTime)
-            dt_astroid.getattr('DateTime')
+            dt_ast = self.builder.inspect_build(DateTime)
+            dt_ast.getattr('DateTime')
             # this one is failing since DateTimeType.__module__ = 'builtins' !
-            #dt_astroid.getattr('DateTimeType')
+            #dt_ast.getattr('DateTimeType')
 
     def test_inspect_build3(self):
         self.builder.inspect_build(unittest)
@@ -326,8 +326,8 @@ class BuilderTC(TestCase):
         if sys.version_info >= (3, 0):
             self.skipTest('The module "exceptions" is gone in py3.x')
         import exceptions
-        builtin_astroid = self.builder.inspect_build(exceptions)
-        fclass = builtin_astroid['OSError']
+        builtin_ast = self.builder.inspect_build(exceptions)
+        fclass = builtin_ast['OSError']
         # things like OSError.strerror are now (2.5) data descriptors on the
         # class instead of entries in the __dict__ of an instance
         container = fclass
@@ -336,19 +336,32 @@ class BuilderTC(TestCase):
         self.assertIn('filename', container)
 
     def test_inspect_build_type_object(self):
-        builtin_astroid = MANAGER.ast_from_module_name(BUILTINS)
+        builtin_ast = MANAGER.ast_from_module_name(BUILTINS)
 
-        infered = list(builtin_astroid.igetattr('object'))
+        infered = list(builtin_ast.igetattr('object'))
         self.assertEqual(len(infered), 1)
         infered = infered[0]
         self.assertEqual(infered.name, 'object')
         infered.as_string() # no crash test
 
-        infered = list(builtin_astroid.igetattr('type'))
+        infered = list(builtin_ast.igetattr('type'))
         self.assertEqual(len(infered), 1)
         infered = infered[0]
         self.assertEqual(infered.name, 'type')
         infered.as_string() # no crash test
+
+    def test_inspect_transform_module(self):
+        # ensure no cached version of the time module
+        MANAGER._mod_file_cache.pop(('time', None), None)
+        def transform_time(node):
+            if node.name == 'time':
+                node.transformed = True
+        MANAGER.register_transform(nodes.Module, transform_time)
+        try:
+            time_ast = MANAGER.ast_from_module_name('time')
+            self.assertTrue(getattr(time_ast, 'transformed', False))
+        finally:
+            MANAGER.unregister_transform(nodes.Module, transform_time)
 
     def test_package_name(self):
         """test base properties and method of a astroid module"""
@@ -376,8 +389,8 @@ def yiell():
         self.assertIsInstance(func.body[1].body[0].value, nodes.Yield)
 
     def test_object(self):
-        obj_astroid = self.builder.inspect_build(object)
-        self.assertIn('__setattr__', obj_astroid)
+        obj_ast = self.builder.inspect_build(object)
+        self.assertIn('__setattr__', obj_ast)
 
     def test_newstyle_detection(self):
         data = '''
@@ -401,18 +414,18 @@ class E(A):
 class F:
     "new style"
 '''
-        mod_astroid = self.builder.string_build(data, __name__, __file__)
+        mod_ast = self.builder.string_build(data, __name__, __file__)
         if PY3K:
-            self.assertTrue(mod_astroid['A'].newstyle)
-            self.assertTrue(mod_astroid['B'].newstyle)
-            self.assertTrue(mod_astroid['E'].newstyle)
+            self.assertTrue(mod_ast['A'].newstyle)
+            self.assertTrue(mod_ast['B'].newstyle)
+            self.assertTrue(mod_ast['E'].newstyle)
         else:
-            self.assertFalse(mod_astroid['A'].newstyle)
-            self.assertFalse(mod_astroid['B'].newstyle)
-            self.assertFalse(mod_astroid['E'].newstyle)
-        self.assertTrue(mod_astroid['C'].newstyle)
-        self.assertTrue(mod_astroid['D'].newstyle)
-        self.assertTrue(mod_astroid['F'].newstyle)
+            self.assertFalse(mod_ast['A'].newstyle)
+            self.assertFalse(mod_ast['B'].newstyle)
+            self.assertFalse(mod_ast['E'].newstyle)
+        self.assertTrue(mod_ast['C'].newstyle)
+        self.assertTrue(mod_ast['D'].newstyle)
+        self.assertTrue(mod_ast['F'].newstyle)
 
     def test_globals(self):
         data = '''
