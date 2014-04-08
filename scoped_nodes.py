@@ -336,13 +336,17 @@ class Module(LocalsDictNodeNG):
         return
 
     if sys.version_info < (2, 8):
-        def absolute_import_activated(self):
+        @cachedproperty
+        def _absolute_import_activated(self):
             for stmt in self.locals.get('absolute_import', ()):
                 if isinstance(stmt, From) and stmt.modname == '__future__':
                     return True
             return False
     else:
-        absolute_import_activated = lambda self: True
+        _absolute_import_activated = True
+
+    def absolute_import_activated(self):
+        return self._absolute_import_activated
 
     def import_module(self, modname, relative_only=False, level=None):
         """import the given module considering self as context"""
@@ -574,7 +578,6 @@ class Function(Statement, Lambda):
         self.locals = {}
         self.args = []
         self.body = []
-        self.decorators = None
         self.name = name
         self.doc = doc
         self.extra_decorators = []

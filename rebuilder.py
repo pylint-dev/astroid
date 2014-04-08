@@ -292,7 +292,8 @@ class TreeRebuilder(object):
             newnode.starargs = self.visit(node.starargs, newnode)
         if node.kwargs is not None:
             newnode.kwargs = self.visit(node.kwargs, newnode)
-        newnode.args.extend(self.visit(child, newnode) for child in node.keywords)
+        for child in node.keywords:
+            newnode.args.append(self.visit(child, newnode))
         return newnode
 
     def visit_class(self, node, parent):
