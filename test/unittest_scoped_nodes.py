@@ -27,7 +27,7 @@ from textwrap import dedent
 
 from logilab.common.testlib import TestCase, unittest_main, require_version
 
-from astroid import builder, nodes, scoped_nodes, \
+from astroid import YES, builder, nodes, scoped_nodes, \
      InferenceError, NotFoundError, NoDefault
 from astroid.bases import BUILTINS, Instance, BoundMethod, UnboundMethod
 from astroid.test_utils import extract_node
@@ -746,6 +746,22 @@ def g2():
         self.assertIsInstance(metaclass, scoped_nodes.Class)
         self.assertEqual(metaclass.name, 'ABCMeta')
 
+    def test_nonregr_infer_callresult(self):
+        astroid = abuilder.string_build(dedent("""
+        class Delegate(object):
+            def __get__(self, obj, cls):
+                return getattr(obj._subject, self.attribute)
+
+        class CompositeBuilder(object):
+            __call__ = Delegate()
+
+        builder = CompositeBuilder(result, composite)
+        tgts = builder()
+        """))
+        instance = astroid['tgts']
+        # used to raise "'_Yes' object is not iterable", see
+        # https://bitbucket.org/logilab/astroid/issue/17
+        self.assertEqual(list(instance.infer()), [YES])
 
 __all__ = ('ModuleNodeTC', 'ImportNodeTC', 'FunctionNodeTC', 'ClassNodeTC')
 

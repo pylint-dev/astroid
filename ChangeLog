@@ -4,9 +4,11 @@ Change log for the astroid package (used to be astng)
 --
     * All class nodes are marked as new style classes for Py3k.
 
-    * Add a `metaclass` function to `Class` nodes to 
+    * Add a `metaclass` function to `Class` nodes to
       retrieve their metaclass.
- 
+
+    * Add a new YieldFrom node.
+
     * Add support for inferring arguments to namedtuple invocations.
 
     * Make sure that objects returned for namedtuple
@@ -15,7 +17,9 @@ Change log for the astroid package (used to be astng)
     * Don't crash when inferring nodes from `with` clauses
       with multiple context managers. Closes #18.
 
-    * Add a new YieldFrom node.      
+    * Don't crash when a class has some __call__ method that is not
+      inferable. Closes #17.
+
 
 2013-10-18  --  1.0.1
     * fix py3k/windows installation issue (issue #4)
@@ -37,7 +41,7 @@ Change log for the astroid package (used to be astng)
       as abstract.
 
     * Allow transformation functions on any node, providing a
-      `register_transform` function on the manager instead of the 
+      `register_transform` function on the manager instead of the
      `register_transformer` to make it more flexible wrt node selection
 
     * Use the new transformation API to provide support for namedtuple

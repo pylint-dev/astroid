@@ -200,6 +200,8 @@ class Instance(Proxy):
         """infer what a class instance is returning when called"""
         infered = False
         for node in self._proxied.igetattr('__call__', context):
+            if node is YES:
+                continue
             for res in node.infer_call_result(caller, context):
                 infered = True
                 yield res
