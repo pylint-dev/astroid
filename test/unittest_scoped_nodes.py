@@ -1,4 +1,4 @@
-# copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2014 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of astroid.
@@ -264,7 +264,7 @@ def nested_args(a, (b, c, d)):
         # non regression : test raise "string" doesn't cause an exception in is_abstract
         func = MODULE2['raise_string']
         self.assertFalse(func.is_abstract(pass_is_abstract=False))
-        
+
     def test_is_abstract_decorated(self):
         methods = extract_node("""
         import abc
@@ -273,11 +273,11 @@ def nested_args(a, (b, c, d)):
             @abc.abstractproperty
             def prop(self):  #@
                pass
-            
+
             @abc.abstractmethod
             def method1(self):  #@
                pass
-             
+
             some_other_decorator = lambda x: x
             @some_other_decorator
             def method2(self):  #@
@@ -699,9 +699,9 @@ def g2():
         self.assertFalse(klass.metaclass())
 
     @require_version('2.7')
-    def test_metaclass_imported(self): 
+    def test_metaclass_imported(self):
         astroid = abuilder.string_build(dedent("""
-        from abc import ABCMeta 
+        from abc import ABCMeta
         class Test(object):
             __metaclass__ = ABCMeta
         """))
@@ -714,7 +714,7 @@ def g2():
     @require_version('2.7')
     def test_newstyle_and_metaclass_good(self):
         astroid = abuilder.string_build(dedent("""
-        from abc import ABCMeta 
+        from abc import ABCMeta
         class Test:
             __metaclass__ = ABCMeta
         """))
