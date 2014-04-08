@@ -83,7 +83,7 @@ class InferenceContextPathContext(object):
 
 
 class InferenceContext(object):
-    __slots__ = ('path', 'callcontext', 'boundnode')
+    __slots__ = ('path', 'callcontext', 'boundnode', 'infered')
 
     def __init__(self, path=None):
         if path is None:
@@ -92,6 +92,7 @@ class InferenceContext(object):
             self.path = path
         self.callcontext = None
         self.boundnode = None
+        self.infered = {}
 
     def push(self, key):
         return InferenceContextPathContext(self, key)
@@ -404,7 +405,16 @@ class NodeNG(object):
             except UseInferenceDefault:
                 pass
 
-        return self._infer(context, **kwargs)
+        if not context:
+            return self._infer(context, **kwargs)
+
+        key = (self, kwargs.get('lookupname'), context.callcontext, context.boundnode)
+        if key in context.infered:
+            return iter(context.infered[key])
+
+        eager = tuple(self._infer(context, **kwargs))
+        context.infered[key] = eager
+        return iter(eager)
 
     def _repr_name(self):
         """return self.name or self.attrname or '' for nice representation"""
