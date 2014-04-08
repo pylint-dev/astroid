@@ -353,6 +353,7 @@ class BuilderTC(TestCase):
     def test_inspect_transform_module(self):
         # ensure no cached version of the time module
         MANAGER._mod_file_cache.pop(('time', None), None)
+        MANAGER.astroid_cache.pop('time', None)
         def transform_time(node):
             if node.name == 'time':
                 node.transformed = True
