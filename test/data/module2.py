@@ -133,3 +133,11 @@ def not_a_generator():
         yield
     genl = lambda : (yield)
 
+def with_metaclass(meta, *bases):
+    return meta('NewBase', bases, {})
+
+
+class NotMetaclass(with_metaclass(Metaclass)):
+    pass
+
+

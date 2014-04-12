@@ -509,6 +509,8 @@ A.__bases__ += (B,)
         self.assertEqual(klass.type, 'interface')
         klass = MODULE2['MyError']
         self.assertEqual(klass.type, 'exception')
+        klass = MODULE2['NotMetaclass']
+        self.assertEqual(klass.type, 'class')
 
     def test_interfaces(self):
         for klass, interfaces in (('Concrete0', ['MyIFace']),

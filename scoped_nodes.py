@@ -666,6 +666,28 @@ def _rec_get_names(args, names=None):
 
 # Class ######################################################################
 
+
+def _is_metaclass(klass):
+    """ Return if the given class can be
+    used as a metaclass.
+    """
+    if klass.name == 'type':
+        return True
+    for base in klass.bases:
+        try:
+            for baseobj in base.infer():
+                if isinstance(baseobj, Instance):
+                    # not abstract
+                    return False
+                if baseobj is YES:
+                    continue
+                if _is_metaclass(baseobj):
+                    return True
+        except InferenceError:
+            continue
+    return False
+
+
 def _class_type(klass, ancestors=None):
     """return a Class node type to differ metaclass, interface and exception
     from 'regular' classes
@@ -673,7 +695,7 @@ def _class_type(klass, ancestors=None):
     # XXX we have to store ancestors in case we have a ancestor loop
     if klass._type is not None:
         return klass._type
-    if klass.name == 'type':
+    if _is_metaclass(klass):
         klass._type = 'metaclass'
     elif klass.name.endswith('Interface'):
         klass._type = 'interface'
@@ -689,9 +711,14 @@ def _class_type(klass, ancestors=None):
         ancestors.add(klass)
         # print >> sys.stderr, '_class_type', repr(klass)
         for base in klass.ancestors(recurs=False):
-            if _class_type(base, ancestors) != 'class':
-                klass._type = base.type
-                break
+            name = _class_type(base, ancestors)
+            if name != 'class':
+                 if name == 'metaclass' and not _is_metaclass(klass):
+                     # don't propagate it if the current class
+                     # can't be a metaclass
+                     continue
+                 klass._type = base.type
+                 break
     if klass._type is None:
         klass._type = 'class'
     return klass._type
@@ -811,8 +838,11 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                 try:
                     for baseobj in stmt.infer(context):
                         if not isinstance(baseobj, Class):
-                            # duh ?
-                            continue
+                            if isinstance(baseobj, Instance):
+                                baseobj = baseobj._proxied
+                            else:
+                                # duh ?
+                                continue
                         if baseobj in yielded:
                             continue # cf xxx above
                         yielded.add(baseobj)
