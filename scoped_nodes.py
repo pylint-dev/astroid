@@ -681,6 +681,8 @@ def _is_metaclass(klass):
                     return False
                 if baseobj is YES:
                     continue
+                if baseobj._type == 'metaclass':
+                    return True
                 if _is_metaclass(baseobj):
                     return True
         except InferenceError:
