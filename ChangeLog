@@ -20,6 +20,9 @@ Change log for the astroid package (used to be astng)
     * Don't crash when a class has some __call__ method that is not
       inferable. Closes #17.
 
+    * Unwrap instances found in `.ancestors()`, by using their _proxied
+      class.
+
 
 2013-10-18  --  1.0.1
     * fix py3k/windows installation issue (issue #4)
