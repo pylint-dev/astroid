@@ -156,6 +156,27 @@ with open('a.txt') as stream, open('b.txt'):
         # context manager didn't use an assignment name.
         list(astroid.nodes_of_class(nodes.CallFunc))[-1].infered()
 
+    def test_recursion_regression_issue25(self):
+        builder = AstroidBuilder()
+        data = """
+import recursion as base
+
+_real_Base = base.Base
+
+class Derived(_real_Base):
+    pass
+
+def run():
+    base.Base = Derived
+"""
+        astroid = builder.string_build(data, __name__, __file__)
+        # Used to crash in _is_metaclass, due to wrong
+        # ancestors chain
+        classes = astroid.nodes_of_class(nodes.Class)
+        for klass in classes:
+            # triggers the _is_metaclass call
+            klass.type
+
 class Whatever(object):
     a = property(lambda x: x, lambda x: x)
 
