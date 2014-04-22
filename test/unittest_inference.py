@@ -1183,6 +1183,42 @@ B = namedtuple('B', 'a b')
         self.assertIn('a', bclass.instance_attrs)
         self.assertIn('b', bclass.instance_attrs)
 
+    def test_infer_arguments(self):
+        code = '''
+class A(object):
+    def first(self, arg1, arg2):
+        return arg1
+    @classmethod
+    def method(cls, arg1, arg2):
+        return arg2
+    @classmethod
+    def empty(cls):
+        return 2
+    @staticmethod
+    def static(arg1, arg2):
+        return arg1
+    def empty_method(self):
+        return []
+x = A().first(1, [])
+y = A.method(1, [])
+z = A.static(1, [])
+empty = A.empty()
+empty_list = A().empty_method()
+        '''
+        astroid = builder.string_build(code, __name__, __file__)
+        int_node = astroid['x'].infered()[0]
+        self.assertIsInstance(int_node, nodes.Const)
+        self.assertEqual(int_node.value, 1)
+        list_node = astroid['y'].infered()[0]
+        self.assertIsInstance(list_node, nodes.List)
+        int_node = astroid['z'].infered()[0]
+        self.assertIsInstance(int_node, nodes.Const)
+        self.assertEqual(int_node.value, 1)
+        empty = astroid['empty'].infered()[0]
+        self.assertIsInstance(empty, nodes.Const)
+        self.assertEqual(empty.value, 2)
+        empty_list = astroid['empty_list'].infered()[0]
+        self.assertIsInstance(empty_list, nodes.List)
 
 if __name__ == '__main__':
     unittest_main()
