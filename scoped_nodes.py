@@ -683,6 +683,8 @@ def _is_metaclass(klass):
                     continue
                 if baseobj is klass:
                     continue
+                if not isinstance(baseobj, Class):
+                    continue
                 if baseobj._type == 'metaclass':
                     return True
                 if _is_metaclass(baseobj):
