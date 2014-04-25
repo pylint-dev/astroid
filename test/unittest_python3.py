@@ -129,6 +129,34 @@ class Python3TC(TestCase):
         metaclass = klass.metaclass()
         self.assertIsInstance(metaclass, Class)
         self.assertEqual(metaclass.name, 'type')
+
+    @require_version('3.0')
+    def test_metaclass_ancestors(self):
+        astroid = self.builder.string_build(dedent("""
+        from abc import ABCMeta
+
+        class FirstMeta(metaclass=ABCMeta): pass
+        class SecondMeta(metaclass=type):
+            pass
+
+        class Simple:
+            pass
+
+        class FirstImpl(FirstMeta): pass
+        class SecondImpl(FirstImpl): pass
+        class ThirdImpl(Simple, SecondMeta):
+            pass
+        """))
+        classes = {
+            'ABCMeta': ('FirstImpl', 'SecondImpl'),
+            'type': ('ThirdImpl', )
+        }
+        for metaclass, names in classes.items():
+            for name in names:
+                impl = astroid[name]
+                meta = impl.metaclass()
+                self.assertIsInstance(meta, Class)
+                self.assertEqual(meta.name, metaclass)
                          
 if __name__ == '__main__':
     unittest_main()
