@@ -138,7 +138,7 @@ class Python3TC(TestCase):
         class Meta(metaclass=ABCMeta): pass
         """))
         klass = astroid['Meta']
-        self.assertFalse(klass.metaclass())
+        self.assertIsNone(klass.metaclass())
 
     @require_version('3.0')
     def test_metaclass_ancestors(self):

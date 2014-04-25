@@ -724,7 +724,7 @@ def g2():
             __metaclass__ = ABCMeta
         """))
         klass = astroid['Meta']
-        self.assertFalse(klass.metaclass())
+        self.assertIsNone(klass.metaclass())
 
     @require_version('2.7')
     def test_newstyle_and_metaclass_good(self):
@@ -761,7 +761,6 @@ def g2():
         self.assertIsInstance(metaclass, scoped_nodes.Class)
         self.assertEqual(metaclass.name, 'ABCMeta')
 
-    @require_version('2.7')
     def test_metaclass_ancestors(self):
         astroid = abuilder.string_build(dedent("""
         from abc import ABCMeta
