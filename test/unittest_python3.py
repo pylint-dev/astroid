@@ -131,6 +131,16 @@ class Python3TC(TestCase):
         self.assertEqual(metaclass.name, 'type')
 
     @require_version('3.0')
+    def test_metaclass_yes_leak(self):
+        astroid = self.builder.string_build(dedent("""
+        from ab import ABCMeta
+
+        class Meta(metaclass=ABCMeta): pass
+        """))
+        klass = astroid['Meta']
+        self.assertFalse(klass.metaclass())
+
+    @require_version('3.0')
     def test_metaclass_ancestors(self):
         astroid = self.builder.string_build(dedent("""
         from abc import ABCMeta

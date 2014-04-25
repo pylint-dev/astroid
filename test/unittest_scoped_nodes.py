@@ -716,6 +716,16 @@ def g2():
         self.assertIsInstance(metaclass, scoped_nodes.Class)
         self.assertEqual(metaclass.name, 'ABCMeta')
 
+    def test_metaclass_yes_leak(self):
+        astroid = abuilder.string_build(dedent("""
+        from ab import ABCMeta
+
+        class Meta(object):
+            __metaclass__ = ABCMeta
+        """))
+        klass = astroid['Meta']
+        self.assertFalse(klass.metaclass())
+
     @require_version('2.7')
     def test_newstyle_and_metaclass_good(self):
         astroid = abuilder.string_build(dedent("""
