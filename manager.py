@@ -97,7 +97,7 @@ class AstroidManager(OptionsProviderMixIn):
                 modname = '.'.join(modpath_from_file(filepath))
             except ImportError:
                 modname = filepath
-        if modname in self.astroid_cache:
+        if modname in self.astroid_cache and self.astroid_cache[modname].file == filepath:
             return self.astroid_cache[modname]
         if source:
             from astroid.builder import AstroidBuilder
@@ -301,6 +301,9 @@ class AstroidManager(OptionsProviderMixIn):
                     node = ret
         return node
 
+    def cache_module(self, module):
+        """Cache a module if no module with the same name is known yet."""
+        self.astroid_cache.setdefault(module.name, module)
 
 
 class Project(object):

@@ -1,6 +1,11 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+    * Do not cache modules if a module with the same qname is already
+      known, and only return cached modules if both name and filepath
+      match. Fixes pylint Bitbucket issue #136.
+
+
 2014-04-18  --  1.1.0
     * All class nodes are marked as new style classes for Py3k.
 

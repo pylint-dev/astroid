@@ -145,7 +145,7 @@ class AstroidBuilder(InspectBuilder):
         after a module has been built
         """
         module.file_encoding = encoding
-        self._manager.astroid_cache[module.name] = module
+        self._manager.cache_module(module)
         # post tree building steps after we stored the module in the cache:
         for from_node in module._from_nodes:
             if from_node.modname == '__future__':
