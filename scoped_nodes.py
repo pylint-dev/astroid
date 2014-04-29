@@ -1043,14 +1043,24 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             raise InferenceError()
 
     _metaclass = None
-    def metaclass(self):
-        """ Return the metaclass of this class """
+    def _explicit_metaclass(self):
+        """ Return the explicit defined metaclass
+        for the current class.
+
+        An explicit defined metaclass is defined
+        either by passing the ``metaclass`` keyword argument
+        in the class definition line (Python 3) or by
+        having a ``__metaclass__`` class attribute.
+        """
         if self._metaclass:
             # Expects this from Py3k TreeRebuilder
             try:
-                return next(self._metaclass.infer())
+                infered = next(self._metaclass.infer())
             except InferenceError:
-                return 
+                return
+            if infered is YES: # don't expose it
+                return None 
+            return infered
 
         try:
             meta = self.getattr('__metaclass__')[0]
@@ -1063,3 +1073,18 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         if infered is YES: # don't expose this
             return None
         return infered
+
+    def metaclass(self):
+        """ Return the metaclass of this class.
+
+        If this class does not define explicitly a metaclass,
+        then the first defined metaclass in ancestors will be used
+        instead.
+        """
+        klass = self._explicit_metaclass()
+        if klass is None:
+            for parent in self.ancestors():
+                klass = parent.metaclass()
+                if klass is not None:
+                    break
+        return klass
