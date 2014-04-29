@@ -145,9 +145,12 @@ class AstroidBuilder(InspectBuilder):
         after a module has been built
         """
         module.file_encoding = encoding
-        self._manager.astroid_cache[module.name] = module
+        self._manager.cache_module(module)
         # post tree building steps after we stored the module in the cache:
         for from_node in module._from_nodes:
+            if from_node.modname == '__future__':
+                for symbol, _ in from_node.names:
+                    module.future_imports.add(symbol)
             self.add_from_names_to_locals(from_node)
         # handle delayed assattr nodes
         for delayed in module._delayed_assattr:

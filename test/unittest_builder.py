@@ -28,6 +28,7 @@ from astroid import builder, nodes, InferenceError, NotFoundError
 from astroid.nodes import Module
 from astroid.bases import YES, BUILTINS
 from astroid.manager import AstroidManager
+from astroid import test_utils
 
 MANAGER = AstroidManager()
 PY3K = sys.version_info >= (3, 0)
@@ -473,6 +474,21 @@ def global_no_effect():
         self.assertIsNot(n.scope(), astroid)
         self.assertEqual([i.__class__ for i in n.infer()],
                          [YES.__class__])
+
+    def test_no_future_imports(self):
+        mod = test_utils.build_module("import sys")
+        self.assertEqual(set(), mod.future_imports)
+
+    def test_future_imports(self):
+        mod = test_utils.build_module("from __future__ import print_function")
+        self.assertEqual(set(['print_function']), mod.future_imports)
+
+    def test_two_future_imports(self):
+        mod = test_utils.build_module("""
+            from __future__ import print_function
+            from __future__ import absolute_import
+            """)
+        self.assertEqual(set(['print_function', 'absolute_import']), mod.future_imports)
 
 class FileBuildTC(TestCase):
 

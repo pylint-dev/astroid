@@ -236,6 +236,9 @@ class Module(LocalsDictNodeNG):
     # as value
     globals = None
 
+    # Future imports
+    future_imports = None
+
     # names of python special attributes (handled by getattr impl.)
     special_attributes = set(('__name__', '__doc__', '__file__', '__path__',
                               '__dict__'))
@@ -248,6 +251,7 @@ class Module(LocalsDictNodeNG):
         self.pure_python = pure_python
         self.locals = self.globals = {}
         self.body = []
+        self.future_imports = set()
 
     @property
     def file_stream(self):
