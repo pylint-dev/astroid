@@ -79,9 +79,9 @@ class ModuleNodeTC(TestCase):
         red = MODULE.igetattr('redirect').next()
         self.assertIsInstance(red, nodes.Function)
         self.assertEqual(red.name, 'four_args')
-        spawn = MODULE.igetattr('spawn').next()
-        self.assertIsInstance(spawn, nodes.Class)
-        self.assertEqual(spawn.name, 'Execute')
+        pb = MODULE.igetattr('pb').next()
+        self.assertIsInstance(pb, nodes.Class)
+        self.assertEqual(pb.name, 'ProgressBar')
         # resolve packageredirection
         sys.path.insert(1, DATA)
         mod = abuilder.file_build(join(DATA, 'appl/myConnection.py'),
@@ -716,6 +716,16 @@ def g2():
         self.assertIsInstance(metaclass, scoped_nodes.Class)
         self.assertEqual(metaclass.name, 'ABCMeta')
 
+    def test_metaclass_yes_leak(self):
+        astroid = abuilder.string_build(dedent("""
+        from ab import ABCMeta
+
+        class Meta(object):
+            __metaclass__ = ABCMeta
+        """))
+        klass = astroid['Meta']
+        self.assertIsNone(klass.metaclass())
+
     @require_version('2.7')
     def test_newstyle_and_metaclass_good(self):
         astroid = abuilder.string_build(dedent("""
@@ -750,6 +760,35 @@ def g2():
         metaclass = klass.metaclass()
         self.assertIsInstance(metaclass, scoped_nodes.Class)
         self.assertEqual(metaclass.name, 'ABCMeta')
+
+    def test_metaclass_ancestors(self):
+        astroid = abuilder.string_build(dedent("""
+        from abc import ABCMeta
+
+        class FirstMeta(object):
+            __metaclass__ = ABCMeta
+
+        class SecondMeta(object):
+            __metaclass__ = type
+
+        class Simple(object):
+            pass
+
+        class FirstImpl(FirstMeta): pass
+        class SecondImpl(FirstImpl): pass
+        class ThirdImpl(Simple, SecondMeta):
+            pass
+        """))
+        classes = {
+            'ABCMeta': ('FirstImpl', 'SecondImpl'),
+            'type': ('ThirdImpl', )
+        }
+        for metaclass, names in classes.items():
+            for name in names:
+                impl = astroid[name]
+                meta = impl.metaclass()
+                self.assertIsInstance(meta, nodes.Class)
+                self.assertEqual(meta.name, metaclass)
 
     def test_nonregr_infer_callresult(self):
         astroid = abuilder.string_build(dedent("""

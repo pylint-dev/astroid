@@ -3,7 +3,7 @@
 
 __revision__ = '$Id: module.py,v 1.2 2005-11-02 11:56:54 syt Exp $'
 from logilab.common import modutils
-from logilab.common.shellutils import Execute as spawn
+from logilab.common.shellutils import ProgressBar as pb
 from astroid.utils import *
 import os.path
 MY_DICT = {}
