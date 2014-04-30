@@ -718,6 +718,7 @@ def g2():
 
     def test_metaclass_yes_leak(self):
         astroid = abuilder.string_build(dedent("""
+        # notice `ab` instead of `abc`
         from ab import ABCMeta
 
         class Meta(object):
