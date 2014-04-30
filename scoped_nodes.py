@@ -1055,12 +1055,10 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         if self._metaclass:
             # Expects this from Py3k TreeRebuilder
             try:
-                infered = next(self._metaclass.infer())
-            except InferenceError:
-                return
-            if infered is YES: # don't expose it
-                return None 
-            return infered
+                return next(node for node in self._metaclass.infer()
+                            if node is not YES)
+            except (InferenceError, StopIteration):
+                return 
 
         try:
             meta = self.getattr('__metaclass__')[0]

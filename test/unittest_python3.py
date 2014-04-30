@@ -133,6 +133,7 @@ class Python3TC(TestCase):
     @require_version('3.0')
     def test_metaclass_yes_leak(self):
         astroid = self.builder.string_build(dedent("""
+        # notice `ab` instead of `abc`
         from ab import ABCMeta
 
         class Meta(metaclass=ABCMeta): pass
