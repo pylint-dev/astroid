@@ -2,6 +2,10 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * Function nodes can detect if they are decorated with subclasses
+      of builtin descriptors when determining their type
+      (`classmethod` and `staticmethod`).
+
     * `Class.metaclass()` looks in ancestors when the current class
       does not define explicitly a metaclass.
 

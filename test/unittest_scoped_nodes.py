@@ -380,6 +380,37 @@ test()
         self.assertIsInstance(one, nodes.Const)
         self.assertEqual(one.value, 1)
 
+    def test_type_builtin_descriptor_subclasses(self):
+        astroid = abuilder.string_build(dedent("""
+        class classonlymethod(classmethod):
+            pass
+        class staticonlymethod(staticmethod):
+            pass
+
+        class Node:
+            @classonlymethod
+            def clsmethod_subclass(cls):
+                pass
+            @classmethod
+            def clsmethod(cls):
+                pass
+            @staticonlymethod
+            def staticmethod_subclass(cls):
+                pass
+            @staticmethod
+            def stcmethod(cls):
+                pass
+        """))
+        node = astroid.locals['Node'][0]
+        self.assertEqual(node.locals['clsmethod_subclass'][0].type,
+                         'classmethod')
+        self.assertEqual(node.locals['clsmethod'][0].type,
+                         'classmethod')
+        self.assertEqual(node.locals['staticmethod_subclass'][0].type,
+                         'staticmethod')
+        self.assertEqual(node.locals['stcmethod'][0].type,
+                         'staticmethod')
+
 
 class ClassNodeTC(TestCase):
 
