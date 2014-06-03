@@ -387,7 +387,7 @@ class NodeNG(object):
         return '%s(%s)' % (self.__class__.__name__, self._repr_name())
 
     def __repr__(self):
-        return '<%s(%s) l.%s [%s] at Ox%x>' % (self.__class__.__name__,
+        return '<%s(%s) l.%s [%s] at 0x%x>' % (self.__class__.__name__,
                                            self._repr_name(),
                                            self.fromlineno,
                                            self.root().name,
