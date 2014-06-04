@@ -24,6 +24,7 @@ __docformat__ = "restructuredtext en"
 
 import os
 from os.path import dirname, join, isdir, exists
+from warnings import warn
 
 from logilab.common.modutils import NoSourceFile, is_python_source, \
      file_from_modpath, load_module_from_name, modpath_from_file, \
@@ -297,7 +298,7 @@ class AstroidManager(OptionsProviderMixIn):
                     if node is not orig_node:
                         # node has already be modified by some previous
                         # transformation, warn about it
-                        warn('node %s substitued multiple times' % node)
+                        warn('node %s substituted multiple times' % node)
                     node = ret
         return node
 
