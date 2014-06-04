@@ -45,6 +45,8 @@ from astroid.mixins import FilterStmtsMixin
 from astroid.bases import Statement
 from astroid.manager import AstroidManager
 
+ITER_METHODS = ('__iter__', '__getitem__')
+
 
 def remove_nodes(func, cls):
     def wrapper(*args, **kwargs):
@@ -476,7 +478,7 @@ else:
         """class representing a ListComp node"""
 
 # Function  ###################################################################
-    
+
 def _function_type(self):
     """
     Function type, possible values are:
@@ -633,7 +635,7 @@ class Function(Statement, Lambda):
 
     def is_abstract(self, pass_is_abstract=True):
         """Returns True if the method is abstract.
-        
+
         A method is considered abstract if
          - the only statement is 'raise NotImplementedError', or
          - the only statement is 'pass' and pass_is_abstract is True, or
@@ -1116,3 +1118,53 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                 if klass is not None:
                     break
         return klass
+
+    def islots(self):
+        """ Return an iterator with the inferred slots. """
+        for slots in self.igetattr('__slots__'):
+            # check if __slots__ is a valid type
+            for meth in ITER_METHODS:
+                try:
+                    slots.getattr(meth)
+                    break
+                except NotFoundError:
+                    continue
+            else:
+                continue
+
+            if isinstance(slots, Const):
+                # a string. Ignore the following checks,
+                # but yield the node, only if it has a value
+                if slots.value:
+                    yield slots
+                continue
+            if not hasattr(slots, 'itered'):
+                # we can't obtain the values, maybe a .deque?
+                continue
+
+            if isinstance(slots, Dict):
+                values = [item[0] for item in slots.items]
+            else:
+                values = slots.itered()
+            if values is YES:
+                continue
+
+            for elt in values:
+                try:
+                    for infered in elt.infer():
+                        if infered is YES:
+                            continue
+                        if (not isinstance(infered, Const) or
+                            not isinstance(infered.value, str)):
+                            continue
+                        if not infered.value:
+                            continue
+                        yield infered
+                except InferenceError:
+                    continue
+
+    # Cached, because inferring them all the time is expensive
+    @cached
+    def slots(self):
+        """ Return all the slots for this node. """
+        return list(self.islots())
