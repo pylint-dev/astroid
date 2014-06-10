@@ -116,12 +116,6 @@ def _set_infos(oldnode, newnode, parent):
         newnode.col_offset = oldnode.col_offset
     newnode.set_line_info(newnode.last_child()) # set_line_info accepts None
 
-def _infer_metaclass(node):
-    if isinstance(node, Name):
-        return node.id
-    elif isinstance(node, Attribute):
-        return node.attr
-
 def _create_yield_node(node, parent, rebuilder, factory):
     newnode = factory()
     _lineno_parent(node, newnode, parent)
@@ -137,7 +131,6 @@ class TreeRebuilder(object):
     def __init__(self, manager):
         self._manager = manager
         self.asscontext = None
-        self._metaclass = ['']
         self._global_names = []
         self._from_nodes = []
         self._delayed_assattr = []
@@ -246,9 +239,6 @@ class TreeRebuilder(object):
                         meth.extra_decorators.append(newnode.value)
                 except (AttributeError, KeyError):
                     continue
-        elif getattr(newnode.targets[0], 'name', None) == '__metaclass__':
-            # XXX check more...
-            self._metaclass[-1] = _infer_metaclass(node.value)
         newnode.set_line_info(newnode.last_child())
         return newnode
 
@@ -321,7 +311,6 @@ class TreeRebuilder(object):
 
     def visit_class(self, node, parent):
         """visit a Class node to become astroid"""
-        self._metaclass.append(self._metaclass[-1])
         newnode = new.Class(node.name, None)
         _lineno_parent(node, newnode, parent)
         _init_set_doc(node, newnode)
@@ -330,14 +319,6 @@ class TreeRebuilder(object):
         if 'decorator_list' in node._fields and node.decorator_list:# py >= 2.6
             newnode.decorators = self.visit_decorators(node, newnode)
         newnode.set_line_info(newnode.last_child())
-        metaclass = self._metaclass.pop()
-        if PY3K:
-            newnode._newstyle = True
-        else:
-            if not newnode.bases:
-                # no base classes, detect new / style old style according to
-                # current scope
-                newnode._newstyle = metaclass in ('type', 'ABCMeta')
         newnode.parent.frame().set_local(newnode.name, newnode)
         return newnode
 
@@ -942,6 +923,7 @@ class TreeRebuilder3k(TreeRebuilder):
 
     def visit_class(self, node, parent):
         newnode = super(TreeRebuilder3k, self).visit_class(node, parent)
+        newnode._newstyle = True
         for keyword in node.keywords:
             if keyword.arg == 'metaclass':
                 newnode._metaclass = self.visit(keyword, newnode).value

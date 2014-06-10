@@ -767,17 +767,38 @@ def g2():
         """))
         klass = astroid['Test']
         self.assertTrue(klass.newstyle)
-
-    def test_newstyle_and_metaclass_bad(self):
+        self.assertEqual(klass.metaclass().name, 'ABCMeta')
         astroid = abuilder.string_build(dedent("""
+        from abc import ABCMeta
+        __metaclass__ = ABCMeta
         class Test:
-            __metaclass__ = int
+            pass
         """))
         klass = astroid['Test']
-        if PY3K:
-            self.assertTrue(klass.newstyle)
-        else:
-            self.assertFalse(klass.newstyle)
+        self.assertTrue(klass.newstyle)
+        self.assertEqual(klass.metaclass().name, 'ABCMeta')
+
+    def test_nested_metaclass(self):
+        astroid = abuilder.string_build(dedent("""
+        from abc import ABCMeta
+        class A(object):
+            __metaclass__ = ABCMeta
+            class B: pass
+
+        __metaclass__ = ABCMeta
+        class C:
+           __metaclass__ = type
+           class D: pass
+        """))
+        a = astroid['A']
+        b = a.locals['B'][0]
+        c = astroid['C']
+        d = c.locals['D'][0]
+        self.assertEqual(a.metaclass().name, 'ABCMeta')
+        self.assertFalse(b.newstyle)
+        self.assertIsNone(b.metaclass())
+        self.assertEqual(c.metaclass().name, 'type')
+        self.assertEqual(d.metaclass().name, 'ABCMeta')
 
     @require_version('2.7')
     def test_parent_metaclass(self):

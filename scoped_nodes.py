@@ -476,7 +476,7 @@ else:
         """class representing a ListComp node"""
 
 # Function  ###################################################################
-    
+
 def _function_type(self):
     """
     Function type, possible values are:
@@ -633,7 +633,7 @@ class Function(Statement, Lambda):
 
     def is_abstract(self, pass_is_abstract=True):
         """Returns True if the method is abstract.
-        
+
         A method is considered abstract if
          - the only statement is 'raise NotImplementedError', or
          - the only statement is 'pass' and pass_is_abstract is True, or
@@ -805,6 +805,11 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             if base._newstyle_impl(context):
                 self._newstyle = True
                 break
+        klass = self._explicit_metaclass()
+        # could be any callable, we'd need to infer the result of klass(name,
+        # bases, dict).  punt if it's not a class node.
+        if klass is not None and isinstance(klass, Class):
+            self._newstyle = klass._newstyle_impl(context)
         if self._newstyle is None:
             self._newstyle = False
         return self._newstyle
@@ -1080,7 +1085,8 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         An explicit defined metaclass is defined
         either by passing the ``metaclass`` keyword argument
         in the class definition line (Python 3) or by
-        having a ``__metaclass__`` class attribute.
+        having a ``__metaclass__`` class attribute, or (Python 2) if there are
+        no explicit bases but there is a global ``__metaclass__`` variable.
         """
         if self._metaclass:
             # Expects this from Py3k TreeRebuilder
@@ -1088,14 +1094,22 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                 return next(node for node in self._metaclass.infer()
                             if node is not YES)
             except (InferenceError, StopIteration):
-                return 
+                return None
+
+        if '__metaclass__' in self.locals:
+            assignment = self.locals['__metaclass__'][-1]
+        elif self.bases or sys.version_info >= (3, ):
+            return None
+        elif '__metaclass__' in self.root().locals:
+            assignments = [ass for ass in self.root().locals['__metaclass__'] if ass.lineno < self.lineno]
+            if not assignments:
+                return None
+            assignment = assignments[-1]
+        else:
+            return None
 
         try:
-            meta = self.getattr('__metaclass__')[0]
-        except NotFoundError:
-            return
-        try:
-            infered = meta.infer().next()
+            infered = assignment.infer().next()
         except InferenceError:
             return
         if infered is YES: # don't expose this
