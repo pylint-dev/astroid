@@ -127,8 +127,7 @@ class Python3TC(TestCase):
         """))
         klass = astroid['SubTest']
         metaclass = klass.metaclass()
-        self.assertIsInstance(metaclass, Class)
-        self.assertEqual(metaclass.name, 'type')
+        self.assertIsNone(metaclass)
 
     @require_version('3.0')
     def test_metaclass_yes_leak(self):

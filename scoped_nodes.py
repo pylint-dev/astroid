@@ -1084,8 +1084,8 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
 
         An explicit defined metaclass is defined
         either by passing the ``metaclass`` keyword argument
-        in the class definition line (Python 3) or by
-        having a ``__metaclass__`` class attribute, or (Python 2) if there are
+        in the class definition line (Python 3) or (Python 2) by
+        having a ``__metaclass__`` class attribute, or if there are
         no explicit bases but there is a global ``__metaclass__`` variable.
         """
         if self._metaclass:
@@ -1095,13 +1095,16 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                             if node is not YES)
             except (InferenceError, StopIteration):
                 return None
+        if sys.version_info >= (3, ):
+            return None
 
         if '__metaclass__' in self.locals:
             assignment = self.locals['__metaclass__'][-1]
-        elif self.bases or sys.version_info >= (3, ):
+        elif self.bases:
             return None
         elif '__metaclass__' in self.root().locals:
-            assignments = [ass for ass in self.root().locals['__metaclass__'] if ass.lineno < self.lineno]
+            assignments = [ass for ass in self.root().locals['__metaclass__']
+                               if ass.lineno < self.lineno]
             if not assignments:
                 return None
             assignment = assignments[-1]

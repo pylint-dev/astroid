@@ -716,6 +716,8 @@ def g2():
         self.assertEqual(astroid['g2'].tolineno, 10)
 
     def test_simple_metaclass(self):
+        if PY3K:
+            self.skipTest('__metaclass__ syntax is python2-specific')
         astroid = abuilder.string_build(dedent("""
         class Test(object):
             __metaclass__ = type
@@ -734,8 +736,9 @@ def g2():
         klass = astroid['Test']
         self.assertFalse(klass.metaclass())
 
-    @require_version('2.7')
     def test_metaclass_imported(self):
+        if PY3K:
+            self.skipTest('__metaclass__ syntax is python2-specific')
         astroid = abuilder.string_build(dedent("""
         from abc import ABCMeta
         class Test(object):
@@ -758,8 +761,9 @@ def g2():
         klass = astroid['Meta']
         self.assertIsNone(klass.metaclass())
 
-    @require_version('2.7')
     def test_newstyle_and_metaclass_good(self):
+        if PY3K:
+            self.skipTest('__metaclass__ syntax is python2-specific')
         astroid = abuilder.string_build(dedent("""
         from abc import ABCMeta
         class Test:
@@ -779,6 +783,8 @@ def g2():
         self.assertEqual(klass.metaclass().name, 'ABCMeta')
 
     def test_nested_metaclass(self):
+        if PY3K:
+            self.skipTest('__metaclass__ syntax is python2-specific')
         astroid = abuilder.string_build(dedent("""
         from abc import ABCMeta
         class A(object):
@@ -800,8 +806,9 @@ def g2():
         self.assertEqual(c.metaclass().name, 'type')
         self.assertEqual(d.metaclass().name, 'ABCMeta')
 
-    @require_version('2.7')
     def test_parent_metaclass(self):
+        if PY3K:
+            self.skipTest('__metaclass__ syntax is python2-specific')
         astroid = abuilder.string_build(dedent("""
         from abc import ABCMeta
         class Test:
@@ -815,6 +822,8 @@ def g2():
         self.assertEqual(metaclass.name, 'ABCMeta')
 
     def test_metaclass_ancestors(self):
+        if PY3K:
+            self.skipTest('__metaclass__ syntax is python2-specific')
         astroid = abuilder.string_build(dedent("""
         from abc import ABCMeta
 
