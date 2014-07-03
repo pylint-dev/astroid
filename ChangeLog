@@ -2,6 +2,9 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * `Class.metaclass()` now handles module-level __metaclass__ declaration
+      on python 2, and no longer looks at the __metaclass__ class attribute on
+      python 3.
     * Function nodes can detect if they are decorated with subclasses
       of builtin descriptors when determining their type
       (`classmethod` and `staticmethod`).

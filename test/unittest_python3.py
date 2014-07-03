@@ -127,8 +127,7 @@ class Python3TC(TestCase):
         """))
         klass = astroid['SubTest']
         metaclass = klass.metaclass()
-        self.assertIsInstance(metaclass, Class)
-        self.assertEqual(metaclass.name, 'type')
+        self.assertIsNone(metaclass)
 
     @require_version('3.0')
     def test_metaclass_yes_leak(self):
@@ -140,6 +139,19 @@ class Python3TC(TestCase):
         """))
         klass = astroid['Meta']
         self.assertIsNone(klass.metaclass())
+
+    @require_version('3.0')
+    def test_parent_metaclass(self):
+        astroid = self.builder.string_build(dedent("""
+        from abc import ABCMeta
+        class Test(metaclass=ABCMeta): pass
+        class SubTest(Test): pass
+        """))
+        klass = astroid['SubTest']
+        self.assertTrue(klass.newstyle)
+        metaclass = klass.metaclass()
+        self.assertIsInstance(metaclass, Class)
+        self.assertEqual(metaclass.name, 'ABCMeta')
 
     @require_version('3.0')
     def test_metaclass_ancestors(self):
