@@ -869,6 +869,66 @@ def g2():
         # https://bitbucket.org/logilab/astroid/issue/17
         self.assertEqual(list(instance.infer()), [YES])
 
+    def test_slots(self):
+        astroid = abuilder.string_build(dedent("""
+        from collections import deque
+        from textwrap import dedent
+
+        class First(object):
+            __slots__ = ("a", "b", 1)
+        class Second(object):
+            __slots__ = "a"
+        class Third(object):
+            __slots__ = deque(["a", "b", "c"])
+        class Fourth(object):
+            __slots__ = {"a": "a", "b": "b"}
+        class Fifth(object):
+            __slots__ = list
+        class Sixth(object):
+            __slots__ = ""
+        class Seventh(object):
+            __slots__ = dedent.__name__
+        class Eight(object):
+            __slots__ = ("parens")
+        """))
+        first = astroid['First']
+        first_slots = first.slots()
+        self.assertEqual(len(first_slots), 2)
+        self.assertIsInstance(first_slots[0], nodes.Const)
+        self.assertIsInstance(first_slots[1], nodes.Const)
+        self.assertEqual(first_slots[0].value, "a")
+        self.assertEqual(first_slots[1].value, "b")
+
+        second_slots = astroid['Second'].slots()
+        self.assertEqual(len(second_slots), 1)
+        self.assertIsInstance(second_slots[0], nodes.Const)
+        self.assertEqual(second_slots[0].value, "a")
+
+        third_slots = astroid['Third'].slots()
+        self.assertEqual(third_slots, [])
+
+        fourth_slots = astroid['Fourth'].slots()
+        self.assertEqual(len(fourth_slots), 2)
+        self.assertIsInstance(fourth_slots[0], nodes.Const)
+        self.assertIsInstance(fourth_slots[1], nodes.Const)
+        self.assertEqual(fourth_slots[0].value, "a")
+        self.assertEqual(fourth_slots[1].value, "b")
+
+        fifth_slots = astroid['Fifth'].slots()
+        self.assertEqual(fifth_slots, [])
+
+        sixth_slots = astroid['Sixth'].slots()
+        self.assertEqual(sixth_slots, [])
+
+        seventh_slots = astroid['Seventh'].slots()
+        self.assertEqual(len(seventh_slots), 0)
+
+        eight_slots = astroid['Eight'].slots()
+        self.assertEqual(len(eight_slots), 1)
+        self.assertIsInstance(eight_slots[0], nodes.Const)
+        self.assertEqual(eight_slots[0].value, "parens")
+
+
 __all__ = ('ModuleNodeTC', 'ImportNodeTC', 'FunctionNodeTC', 'ClassNodeTC')
 
 if __name__ == '__main__':
