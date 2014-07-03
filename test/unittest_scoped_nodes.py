@@ -898,7 +898,6 @@ def g2():
         self.assertIsInstance(first_slots[1], nodes.Const)
         self.assertEqual(first_slots[0].value, "a")
         self.assertEqual(first_slots[1].value, "b")
-        self.assertEqual(list(first.islots()), first_slots)
 
         second_slots = astroid['Second'].slots()
         self.assertEqual(len(second_slots), 1)

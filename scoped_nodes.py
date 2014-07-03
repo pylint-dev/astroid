@@ -1136,8 +1136,10 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                     break
         return klass
 
-    def islots(self):
+    def _islots(self):
         """ Return an iterator with the inferred slots. """
+        if '__slots__' not in self.locals:
+            return
         for slots in self.igetattr('__slots__'):
             # check if __slots__ is a valid type
             for meth in ITER_METHODS:
@@ -1184,4 +1186,4 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
     @cached
     def slots(self):
         """ Return all the slots for this node. """
-        return list(self.islots())
+        return list(self._islots())
