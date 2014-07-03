@@ -886,28 +886,27 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         if context is None:
             context = InferenceContext()
         for stmt in self.bases:
-            with context.restore_path():
-                try:
-                    for baseobj in stmt.infer(context):
-                        if not isinstance(baseobj, Class):
-                            if isinstance(baseobj, Instance):
-                                baseobj = baseobj._proxied
-                            else:
-                                # duh ?
-                                continue
-                        if baseobj in yielded:
-                            continue # cf xxx above
-                        yielded.add(baseobj)
-                        yield baseobj
-                        if recurs:
-                            for grandpa in baseobj.ancestors(True, context):
-                                if grandpa in yielded:
-                                    continue # cf xxx above
-                                yielded.add(grandpa)
-                                yield grandpa
-                except InferenceError:
-                    # XXX log error ?
-                    continue
+            try:
+                for baseobj in stmt.infer(context):
+                    if not isinstance(baseobj, Class):
+                        if isinstance(baseobj, Instance):
+                            baseobj = baseobj._proxied
+                        else:
+                            # duh ?
+                            continue
+                    if baseobj in yielded:
+                        continue # cf xxx above
+                    yielded.add(baseobj)
+                    yield baseobj
+                    if recurs:
+                        for grandpa in baseobj.ancestors(True, context):
+                            if grandpa in yielded:
+                                continue # cf xxx above
+                            yielded.add(grandpa)
+                            yield grandpa
+            except InferenceError:
+                # XXX log error ?
+                continue
 
     def local_attr_ancestors(self, name, context=None):
         """return an iterator on astroid representation of parent classes
