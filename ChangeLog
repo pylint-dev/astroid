@@ -13,6 +13,10 @@ Change log for the astroid package (used to be astng)
     * Add `slots` method to `Class` nodes, for retrieving
       the list of valid slots it defines.
 
+    * Expose function annotation to astroid: `Arguments` node
+      exposes 'varargannotation', 'kwargannotation' and 'annotations'
+      attributes, while `Function` node has the 'returns' attribute.
+
 2014-04-30  --  1.1.1
     * `Class.metaclass()` looks in ancestors when the current class
       does not define explicitly a metaclass.

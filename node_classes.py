@@ -26,6 +26,8 @@ from astroid.bases import (NodeNG, Statement, Instance, InferenceContext,
 from astroid.mixins import BlockRangeMixIn, AssignTypeMixin, \
                                  ParentAssignTypeMixin, FromImportMixIn
 
+PY3K = sys.version_info >= (3, 0)
+
 
 def unpack_infer(stmt, context=None):
     """recursively generate nodes inferred by the given statement.
@@ -253,7 +255,26 @@ class Name(LookupMixIn, NodeNG):
 
 class Arguments(NodeNG, AssignTypeMixin):
     """class representing an Arguments node"""
-    _astroid_fields = ('args', 'defaults', 'kwonlyargs', 'kw_defaults')
+    if PY3K:
+        # Python 3.4+ uses a different approach regarding annotations,
+        # each argument is a new class, _ast.arg, which exposes an
+        # 'annotation' attribute. In astroid though, arguments are exposed
+        # as is in the Arguments node and the only way to expose annotations
+        # is by using something similar with Python 3.3:
+        #  - we expose 'varargannotation' and 'kwargannotation' of annotations
+        #    of varargs and kwargs.
+        #  - we expose 'annotation', a list with annotations for
+        #    for each normal argument. If an argument doesn't have an
+        #    annotation, its value will be None.
+
+        _astroid_fields = ('args', 'defaults', 'kwonlyargs',
+                           'kw_defaults', 'annotations',
+                           'varargannotation', 'kwargannotation')
+        annotations = None
+        varargannotation = None
+        kwargannotation = None
+    else:
+        _astroid_fields = ('args', 'defaults', 'kwonlyargs', 'kw_defaults')
     args = None
     defaults = None
     kwonlyargs = None

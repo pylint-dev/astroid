@@ -15,12 +15,12 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
-import sys
+
 from textwrap import dedent
 
 from logilab.common.testlib import TestCase, unittest_main, require_version
 
-from astroid.node_classes import Assign, Discard, YieldFrom
+from astroid.node_classes import Assign, Discard, YieldFrom, Name, Const
 from astroid.manager import AstroidManager
 from astroid.builder import AstroidBuilder
 from astroid.scoped_nodes import Class, Function
@@ -97,7 +97,7 @@ class Python3TC(TestCase):
         self.assertFalse(klass.metaclass())
 
     @require_version('3.0')
-    def test_metaclass_imported(self): 
+    def test_metaclass_imported(self):
         astroid = self.builder.string_build(dedent("""
         from abc import ABCMeta 
         class Test(metaclass=ABCMeta): pass"""))
@@ -105,7 +105,7 @@ class Python3TC(TestCase):
 
         metaclass = klass.metaclass()
         self.assertIsInstance(metaclass, Class)
-        self.assertEqual(metaclass.name, 'ABCMeta')       
+        self.assertEqual(metaclass.name, 'ABCMeta')
 
     @require_version('3.0')
     def test_as_string(self):
@@ -115,7 +115,7 @@ class Python3TC(TestCase):
         astroid = self.builder.string_build(body)
         klass = astroid.body[1]
 
-        self.assertEqual(klass.as_string(), 
+        self.assertEqual(klass.as_string(),
                          '\n\nclass Test(metaclass=ABCMeta):\n    pass\n')
 
     @require_version('3.0')
@@ -180,6 +180,42 @@ class Python3TC(TestCase):
                 meta = impl.metaclass()
                 self.assertIsInstance(meta, Class)
                 self.assertEqual(meta.name, metaclass)
-                         
+
+    @require_version('3.0')
+    def test_annotation_support(self):
+        astroid = self.builder.string_build(dedent("""
+        def test(a: int, b: str, c: None, d, e,
+                 *args: float, **kwargs: int)->int:
+            pass
+        """))
+        func = astroid['test']
+        self.assertIsInstance(func.args.varargannotation, Name)
+        self.assertEqual(func.args.varargannotation.name, 'float')
+        self.assertIsInstance(func.args.kwargannotation, Name)
+        self.assertEqual(func.args.kwargannotation.name, 'int')
+        self.assertIsInstance(func.returns, Name)
+        self.assertEqual(func.returns.name, 'int')
+        arguments = func.args
+        self.assertIsInstance(arguments.annotations[0], Name)
+        self.assertEqual(arguments.annotations[0].name, 'int')
+        self.assertIsInstance(arguments.annotations[1], Name)
+        self.assertEqual(arguments.annotations[1].name, 'str')
+        self.assertIsInstance(arguments.annotations[2], Const)
+        self.assertIsNone(arguments.annotations[2].value)
+        self.assertIsNone(arguments.annotations[3])
+        self.assertIsNone(arguments.annotations[4])
+
+        astroid = self.builder.string_build(dedent("""
+        def test(a: int=1, b: str=2):
+            pass
+        """))
+        func = astroid['test']
+        self.assertIsInstance(func.args.annotations[0], Name)
+        self.assertEqual(func.args.annotations[0].name, 'int')
+        self.assertIsInstance(func.args.annotations[1], Name)
+        self.assertEqual(func.args.annotations[1].name, 'str')
+        self.assertIsNone(func.returns)
+
+
 if __name__ == '__main__':
     unittest_main()

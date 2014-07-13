@@ -46,6 +46,7 @@ from astroid.bases import Statement
 from astroid.manager import AstroidManager
 
 ITER_METHODS = ('__iter__', '__getitem__')
+PY3K = sys.version_info >= (3, 0)
 
 
 def remove_nodes(func, cls):
@@ -562,7 +563,11 @@ class Lambda(LocalsDictNodeNG, FilterStmtsMixin):
 
 
 class Function(Statement, Lambda):
-    _astroid_fields = ('decorators', 'args', 'body')
+    if PY3K:
+        _astroid_fields = ('decorators', 'args', 'body', 'returns')
+        returns = None
+    else:
+        _astroid_fields = ('decorators', 'args', 'body')
 
     special_attributes = set(('__name__', '__doc__', '__dict__'))
     is_function = True

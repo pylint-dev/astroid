@@ -179,10 +179,26 @@ class TreeRebuilder(object):
         vararg, kwarg = node.vararg, node.kwarg
         # change added in 82732 (7c5c678e4164), vararg and kwarg
         # are instances of `_ast.arg`, not strings
-        if vararg and PY34:
-            vararg = vararg.arg
-        if kwarg and PY34:
-            kwarg = kwarg.arg
+        if vararg:
+            annotation = None
+            if PY34:
+                if vararg.annotation:
+                    annotation = self.visit(vararg.annotation, newnode)
+                vararg = vararg.arg
+            elif PY3K:
+                if node.varargannotation:
+                    annotation = self.visit(node.varargannotation, newnode)
+            newnode.varargannotation = annotation
+        if kwarg:
+            annotation = None
+            if PY34:
+                if kwarg.annotation:
+                    annotation = self.visit(kwarg.annotation, newnode)
+                kwarg = kwarg.arg
+            elif PY3K:
+                if node.kwargannotation:
+                    annotation = self.visit(node.kwargannotation, newnode)
+            newnode.kwargannotation = annotation
         newnode.vararg = vararg
         newnode.kwarg = kwarg
         # save argument names in locals:
@@ -492,6 +508,8 @@ class TreeRebuilder(object):
         decorators = getattr(node, attr)
         if decorators:
             newnode.decorators = self.visit_decorators(node, newnode)
+        if PY3K and node.returns:
+            newnode.returns = self.visit(node.returns, newnode)
         newnode.set_line_info(newnode.last_child())
         self._global_names.pop()
         frame = newnode.parent.frame()
@@ -831,6 +849,9 @@ class TreeRebuilder3k(TreeRebuilder):
         newnode.kwonlyargs = [self.visit(child, newnode) for child in node.kwonlyargs]
         self.asscontext = None
         newnode.kw_defaults = [self.visit(child, newnode) if child else None for child in node.kw_defaults]
+        newnode.annotations = [
+            self.visit(arg.annotation, newnode) if arg.annotation else None
+            for arg in node.args]
         return newnode
 
     def visit_excepthandler(self, node, parent):
