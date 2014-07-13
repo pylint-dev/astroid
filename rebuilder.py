@@ -180,25 +180,24 @@ class TreeRebuilder(object):
         # change added in 82732 (7c5c678e4164), vararg and kwarg
         # are instances of `_ast.arg`, not strings
         if vararg:
-            annotation = None
             if PY34:
                 if vararg.annotation:
-                    annotation = self.visit(vararg.annotation, newnode)
+                    newnode.varargannotation = self.visit(vararg.annotation,
+                                                          newnode)
                 vararg = vararg.arg
-            elif PY3K:
-                if node.varargannotation:
-                    annotation = self.visit(node.varargannotation, newnode)
-            newnode.varargannotation = annotation
+            elif PY3K and node.varargannotation:
+                newnode.varargannotation = self.visit(node.varargannotation,
+                                                      newnode)
         if kwarg:
-            annotation = None
             if PY34:
                 if kwarg.annotation:
-                    annotation = self.visit(kwarg.annotation, newnode)
+                    newnode.kwargannotation = self.visit(kwarg.annotation,
+                                                         newnode)
                 kwarg = kwarg.arg
             elif PY3K:
                 if node.kwargannotation:
-                    annotation = self.visit(node.kwargannotation, newnode)
-            newnode.kwargannotation = annotation
+                    newnode.kwargannotation = self.visit(node.kwargannotation,
+                                                         newnode)
         newnode.vararg = vararg
         newnode.kwarg = kwarg
         # save argument names in locals:
