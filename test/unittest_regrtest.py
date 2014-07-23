@@ -106,7 +106,7 @@ class A(gobject.GObject):
         pylinter = mod['PyLinter']
         expect = ['OptionsManagerMixIn', 'object', 'MessagesHandlerMixIn',
                   'ReportsHandlerMixIn', 'BaseTokenChecker', 'BaseChecker',
-                  'OptionsProviderMixIn', 'ASTWalker']
+                  'OptionsProviderMixIn']
         self.assertListEqual([c.name for c in pylinter.ancestors()],
                              expect)
         self.assertTrue(list(Instance(pylinter).getattr('config')))
