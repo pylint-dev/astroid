@@ -26,13 +26,12 @@ __docformat__ = "restructuredtext en"
 import sys
 from os.path import splitext, basename, exists, abspath
 
-from logilab.common.modutils import modpath_from_file
-
 from astroid.exceptions import AstroidBuildingException, InferenceError
 from astroid.raw_building import InspectBuilder
 from astroid.rebuilder import TreeRebuilder
 from astroid.manager import AstroidManager
 from astroid.bases import YES, Instance
+from astroid.modutils import modpath_from_file
 
 from _ast import PyCF_ONLY_AST
 def parse(string):

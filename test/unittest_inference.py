@@ -497,7 +497,7 @@ class Warning(Warning):
 
     def test_qqch(self):
         code = '''
-from logilab.common.modutils import load_module_from_name
+from astroid.modutils import load_module_from_name
 xxx = load_module_from_name('__pkginfo__')
         '''
         astroid = builder.string_build(code, __name__, __file__)

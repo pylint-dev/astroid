@@ -26,12 +26,13 @@ import os
 from os.path import dirname, join, isdir, exists
 from warnings import warn
 
-from logilab.common.modutils import NoSourceFile, is_python_source, \
-     file_from_modpath, load_module_from_name, modpath_from_file, \
-     get_module_files, get_source_file, zipimport
 from logilab.common.configuration import OptionsProviderMixIn
 
 from astroid.exceptions import AstroidBuildingException
+from astroid.modutils import NoSourceFile, is_python_source, \
+     file_from_modpath, load_module_from_name, modpath_from_file, \
+     get_module_files, get_source_file, zipimport
+
 
 def astroid_wrapper(func, modname):
     """wrapper to give to AstroidManager.project_from_files"""

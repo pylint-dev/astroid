@@ -17,6 +17,10 @@ Change log for the astroid package (used to be astng)
       exposes 'varargannotation', 'kwargannotation' and 'annotations'
       attributes, while `Function` node has the 'returns' attribute.
 
+    * Backported most of the logilab.common.modutils module there, as
+      most things there are for pylint/astroid only and we want to be
+      able to fix them without requiring a new logilab.common release
+
 2014-04-30  --  1.1.1
     * `Class.metaclass()` looks in ancestors when the current class
       does not define explicitly a metaclass.

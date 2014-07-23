@@ -267,7 +267,7 @@ class ImportNodeTC(testlib.TestCase):
 
     def test_as_string(self):
         ast = MODULE['modutils']
-        self.assertEqual(ast.as_string(), "from logilab.common import modutils")
+        self.assertEqual(ast.as_string(), "from astroid import modutils")
         ast = MODULE['pb']
         self.assertEqual(ast.as_string(), "from logilab.common.shellutils import ProgressBar as pb")
         ast = MODULE['os']
