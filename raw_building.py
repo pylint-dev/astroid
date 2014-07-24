@@ -325,11 +325,11 @@ class InspectBuilder(object):
         return False
 
 
-### astroid boot strapping ################################################### ###
+### astroid bootstrapping ######################################################
 Astroid_BUILDER = InspectBuilder()
 
 _CONST_PROXY = {}
-def astroid_boot_strapping():
+def astroid_bootstrapping():
     """astroid boot strapping the builtins module"""
     # this boot strapping is necessary since we need the Const nodes to
     # inspect_build builtins, and then we can proxy Const
@@ -346,7 +346,7 @@ def astroid_boot_strapping():
         else:
             _CONST_PROXY[cls] = proxy
 
-astroid_boot_strapping()
+astroid_bootstrapping()
 
 # TODO : find a nicer way to handle this situation;
 # However __proxied introduced an
