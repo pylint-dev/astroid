@@ -90,9 +90,9 @@ class AstroidManagerTC(TestCase):
         try:
             module = self.manager.ast_from_module_name('mypypa')
             self.assertEqual(module.name, 'mypypa')
-            end = join(archive, 'mypypa') 
+            end = join(archive, 'mypypa')
             self.assertTrue(module.file.endswith(end),
-                            module.file)
+                            "%s doesn't endswith %s" % (module.file, end))
         finally:
             # remove the module, else after importing egg, we don't get the zip
             if 'mypypa' in self.manager.astroid_cache:
@@ -119,7 +119,7 @@ class AstroidManagerTC(TestCase):
         self.assertEqual(self.manager.zip_import_data('path'), None)
 
     def test_file_from_module(self):
-        """check if the unittest filepath is equals to the result of the method""" 
+        """check if the unittest filepath is equals to the result of the method"""
         import unittest
         if PY3K:
             unittest_file = unittest.__file__
