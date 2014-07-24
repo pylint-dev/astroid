@@ -1,4 +1,4 @@
-# copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2014 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of astroid.
@@ -30,12 +30,7 @@ PY3K = sys.version_info > (3, 0)
 class AstroidManagerTC(TestCase):
     def setUp(self):
         self.manager = AstroidManager()
-        self.manager.astroid_cache.clear()
-        # force bootstrap again, else we may ends up with cache inconsistency
-        # between the manager and CONST_PROXY, making
-        # unittest_lookup.LookupTC.test_builtin_lookup fail depending on the
-        # test order
-        astroid_bootstrapping()
+        self.manager.clear_cache() # take care of borg
 
     def test_ast_from_file(self):
         """check if the method return a good astroid object"""

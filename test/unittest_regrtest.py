@@ -1,4 +1,4 @@
-# copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2014 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of astroid.
@@ -42,6 +42,7 @@ class NonRegressionTC(TestCase):
         manager.astroid_cache = {}
         manager._mod_file_cache = {}
         manager.transforms = {}
+        manager.clear_cache() # trigger proper bootstraping
         return manager
 
     def test_module_path(self):

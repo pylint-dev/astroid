@@ -331,7 +331,6 @@ Astroid_BUILDER = InspectBuilder()
 _CONST_PROXY = {}
 def astroid_bootstrapping():
     """astroid boot strapping the builtins module"""
-    print 'astroid_bootstrapping'
     # this boot strapping is necessary since we need the Const nodes to
     # inspect_build builtins, and then we can proxy Const
     from logilab.common.compat import builtins
@@ -346,7 +345,7 @@ def astroid_bootstrapping():
             node_cls._proxied = proxy
         else:
             _CONST_PROXY[cls] = proxy
-    MANAGER.astroid_cache[builtins.__name__] = astroid_builtin
+
 astroid_bootstrapping()
 
 # TODO : find a nicer way to handle this situation;

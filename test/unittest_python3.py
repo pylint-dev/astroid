@@ -1,4 +1,4 @@
-# copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2014 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of astroid.
@@ -29,8 +29,8 @@ from astroid.scoped_nodes import Class, Function
 class Python3TC(TestCase):
     def setUp(self):
         self.manager = AstroidManager()
+        self.manager.clear_cache() # take care of borg
         self.builder = AstroidBuilder(self.manager)
-        self.manager.astroid_cache.clear()
 
     @require_version('3.0')
     def test_starred_notation(self):
