@@ -22,6 +22,7 @@ from os.path import join, abspath, dirname
 from astroid.manager import AstroidManager, _silent_no_wrap
 from astroid.bases import  BUILTINS
 from astroid.exceptions import AstroidBuildingException
+from astroid.raw_building import astroid_bootstrapping
 
 DATA = join(dirname(abspath(__file__)), 'data')
 PY3K = sys.version_info > (3, 0)
@@ -30,6 +31,11 @@ class AstroidManagerTC(TestCase):
     def setUp(self):
         self.manager = AstroidManager()
         self.manager.astroid_cache.clear()
+        # force bootstrap again, else we may ends up with cache inconsistency
+        # between the manager and CONST_PROXY, making
+        # unittest_lookup.LookupTC.test_builtin_lookup fail depending on the
+        # test order
+        astroid_bootstrapping()
 
     def test_ast_from_file(self):
         """check if the method return a good astroid object"""
