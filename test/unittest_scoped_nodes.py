@@ -852,6 +852,18 @@ def g2():
                 self.assertIsInstance(meta, nodes.Class)
                 self.assertEqual(meta.name, metaclass)
 
+    def test_metaclass_type(self):
+        klass = extract_node("""
+        def with_metaclass(meta, base=object):
+            return meta("NewBase", (base, ), {})
+
+        class ClassWithMeta(with_metaclass(type)): #@
+            pass
+        """)
+        self.assertEqual(
+            ['NewBase', 'object'],
+            [base.name for base in klass.ancestors()])
+
     def test_nonregr_infer_callresult(self):
         astroid = abuilder.string_build(dedent("""
         class Delegate(object):

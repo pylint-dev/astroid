@@ -2,6 +2,10 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+   
+    * infer_call_result called on a subtype of the builtin type will now
+      return a new `Class` rather than an `Instance`.
+
     * `Class.metaclass()` now handles module-level __metaclass__ declaration
       on python 2, and no longer looks at the __metaclass__ class attribute on
       python 3.

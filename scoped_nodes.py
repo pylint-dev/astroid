@@ -851,9 +851,32 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
     def callable(self):
         return True
 
+    def _is_subtype_of(self, type_name):
+        if self.qname() == type_name:
+            return True
+        for anc in self.ancestors():
+            if anc.qname() == type_name:
+                return True
+
     def infer_call_result(self, caller, context=None):
         """infer what a class is returning when called"""
-        yield Instance(self)
+        if self._is_subtype_of('%s.type' % (BUILTINS,)) and len(caller.args) == 3:
+            name_node = caller.args[0].infer().next()
+            if isinstance(name_node, Const) and isinstance(name_node.value, basestring):
+                name = name_node.value
+            else:
+                yield YES
+                return
+            result = Class(name, None)
+            bases = caller.args[1].infer().next()
+            if isinstance(bases, (Tuple, List)):
+                result.bases = bases.itered()
+            else:
+                result.bases = [YES]
+            result.parent = caller.parent
+            yield result
+        else:
+           yield Instance(self)
 
     def scope_lookup(self, node, name, offset=0):
         if node in self.bases:
