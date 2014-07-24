@@ -496,10 +496,10 @@ def _search_zip(modpath, pic):
     for filepath, importer in pic.items():
         if importer is not None:
             if importer.find_module(modpath[0]):
-                if not importer.find_module('/'.join(modpath)):
+                if not importer.find_module(os.path.sep.join(modpath)):
                     raise ImportError('No module named %s in %s/%s' % (
                         '.'.join(modpath[1:]), filepath, modpath))
-                return ZIPFILE, abspath(filepath) + '/' + '/'.join(modpath), filepath
+                return ZIPFILE, abspath(filepath) + os.path.sep + os.path.sep.join(modpath), filepath
     raise ImportError('No module named %s' % '.'.join(modpath))
 
 try:
