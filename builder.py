@@ -20,6 +20,7 @@
 The builder is not thread safe and can't be used to parse different sources
 at the same time.
 """
+from __future__ import with_statement
 
 __docformat__ = "restructuredtext en"
 
