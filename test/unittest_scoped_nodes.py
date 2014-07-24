@@ -411,6 +411,47 @@ test()
         self.assertEqual(node.locals['stcmethod'][0].type,
                          'staticmethod')
 
+    def test_decorator_builtin_descriptors(self):
+        astroid = abuilder.string_build(dedent("""
+        def static_decorator(platform=None, order=50):
+            def wrapper(f):
+                f.cgm_module = True
+                f.cgm_module_order = order
+                f.cgm_module_platform = platform
+                return staticmethod(f)
+            return wrapper
+
+        def classmethod_decorator(platform=None):
+            def wrapper(f):
+                f.platform = platform
+                return classmethod(f)
+            return wrapper
+
+        class SomeClass(object):
+            @static_decorator()
+            def static(node, cfg):
+                pass
+            @classmethod_decorator()
+            def classmethod(cls):
+                pass
+            @static_decorator
+            def not_so_static(node):
+                pass
+            @classmethod_decorator
+            def not_so_classmethod(node):
+                pass
+            
+        """))
+        node = astroid.locals['SomeClass'][0]
+        self.assertEqual(node.locals['static'][0].type,
+                         'staticmethod')
+        self.assertEqual(node.locals['classmethod'][0].type,
+                         'classmethod')
+        self.assertEqual(node.locals['not_so_static'][0].type,
+                         'method')
+        self.assertEqual(node.locals['not_so_classmethod'][0].type,
+                         'method')
+
 
 class ClassNodeTC(TestCase):
 

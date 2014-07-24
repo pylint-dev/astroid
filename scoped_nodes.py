@@ -37,7 +37,7 @@ from astroid.exceptions import NotFoundError, \
      AstroidBuildingException, InferenceError
 from astroid.node_classes import Const, DelName, DelAttr, \
      Dict, From, List, Pass, Raise, Return, Tuple, Yield, YieldFrom, \
-     LookupMixIn, const_factory as cf, unpack_infer, Name
+     LookupMixIn, const_factory as cf, unpack_infer, Name, CallFunc
 from astroid.bases import NodeNG, InferenceContext, Instance,\
      YES, Generator, UnboundMethod, BoundMethod, _infer_stmts, copy_context, \
      BUILTINS
@@ -480,6 +480,49 @@ else:
 
 # Function  ###################################################################
 
+def _infer_decorator_callchain(node):
+    """ Detect decorator call chaining and see if the
+    end result is a static or a classmethod.
+    """
+    current = node
+    ignored = set((None, YES))
+    while True:
+        if isinstance(current, CallFunc):
+            try:
+                current = current.func.infer().next()
+            except InferenceError:
+                return
+        elif isinstance(current, Function):
+            if not current.parent:
+                return
+            try:
+                # TODO: We don't handle multiple inference results right now,
+                #       because there's no flow to reason when the return
+                #       is what we are looking for, a static or a class method.
+                result = current.infer_call_result(current.parent).next()
+            except InferenceError:
+                return
+            if isinstance(result, (Function, CallFunc)):                
+                current = result
+            else:
+                if isinstance(result, Instance):
+                    result = result._proxied
+                if isinstance(result, Class):
+                    if (result.name == 'classmethod' and
+                        result.root().name == BUILTINS):
+                        return 'classmethod'
+                    elif (result.name == 'staticmethod' and
+                          result.root().name == BUILTINS):
+                        return 'staticmethod'
+                    else:
+                        return
+                else:
+                    # We aren't interested in anything else returned,
+                    # so go back to the function type inference.
+                    return
+        else:
+            return
+            
 def _function_type(self):
     """
     Function type, possible values are:
@@ -490,6 +533,12 @@ def _function_type(self):
     # so do it here.
     if self.decorators:
         for node in self.decorators.nodes:
+            if isinstance(node, CallFunc):
+                _type = _infer_decorator_callchain(node)
+                if _type is None:
+                    continue
+                else:
+                    return _type
             if not isinstance(node, Name):
                 continue
             try:

@@ -2,6 +2,9 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+
+    * Function nodes can detect decorator call chain and see if they are
+      decorated with builtin descriptors (`classmethod` and `staticmethod`).
    
     * infer_call_result called on a subtype of the builtin type will now
       return a new `Class` rather than an `Instance`.
