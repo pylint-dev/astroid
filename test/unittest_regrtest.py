@@ -32,6 +32,10 @@ class NonRegressionTC(TestCase):
         sys.path.insert(0, join(dirname(abspath(__file__)), 'regrtest_data'))
 
     def tearDown(self):
+        # Since we may have created a brainless manager, leading
+        # to a new cache builtin module and proxy classes in the constants,
+        # clear out the global manager cache.
+        MANAGER.clear_cache()
         sys.path.pop(0)
 
     def brainless_manager(self):

@@ -178,9 +178,6 @@ class AstroidManager(OptionsProviderMixIn):
         modname = modname or module.__name__
         if modname in self.astroid_cache:
             return self.astroid_cache[modname]
-        from logilab.common.compat import builtins
-        if module is builtins:
-            print 'BT LOOKUP'
         try:
             # some builtin modules don't have __file__ attribute
             filepath = module.__file__
