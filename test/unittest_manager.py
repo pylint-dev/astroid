@@ -194,7 +194,9 @@ class AstroidManagerTC(TestCase):
             'data.format',
             'data.lmfp',
             'data.lmfp.foo',
-            'data.module', 'data.module2', 'data.noendingnewline',
+            'data.module',
+            'data.module1abs', 'data.module1abs.core',
+            'data.module2', 'data.noendingnewline',
             'data.nonregr', 'data.notall']
         self.assertListEqual(sorted(k for k in obj.keys()), expected)
 

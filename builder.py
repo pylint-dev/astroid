@@ -1,4 +1,4 @@
-# copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2014 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of astroid.
@@ -186,8 +186,8 @@ class AstroidBuilder(InspectBuilder):
         for (name, asname) in node.names:
             if name == '*':
                 try:
-                    imported = node.root().import_module(node.modname)
-                except AstroidBuildingException:
+                    imported = node.do_import_module()
+                except InferenceError:
                     continue
                 for name in imported.wildcard_import_names():
                     node.parent.set_local(name, node)

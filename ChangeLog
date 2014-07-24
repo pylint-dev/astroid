@@ -21,6 +21,10 @@ Change log for the astroid package (used to be astng)
       most things there are for pylint/astroid only and we want to be
       able to fix them without requiring a new logilab.common release
 
+    * Fix names grabed using wildcard import in "absolute import mode" 
+      (ie with absolute_import activated from the __future__ or with 
+      python 3). Fix pylint issue #58.
+
 2014-04-30  --  1.1.1
     * `Class.metaclass()` looks in ancestors when the current class
       does not define explicitly a metaclass.

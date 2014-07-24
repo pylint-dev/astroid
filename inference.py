@@ -197,7 +197,7 @@ def infer_from(self, context=None, asname=True):
         raise InferenceError()
     if asname:
         name = self.real_name(name)
-    module = self.do_import_module(self.modname)
+    module = self.do_import_module()
     try:
         context = copy_context(context)
         context.lookupname = name

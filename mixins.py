@@ -85,7 +85,7 @@ class FromImportMixIn(FilterStmtsMixin):
     def _infer_name(self, frame, name):
         return name
 
-    def do_import_module(self, modname):
+    def do_import_module(self, modname=None):
         """return the ast for a module whose name is <modname> imported by <self>
         """
         # handle special case where we are on a package node importing a module
@@ -94,6 +94,8 @@ class FromImportMixIn(FilterStmtsMixin):
         # XXX: no more needed ?
         mymodule = self.root()
         level = getattr(self, 'level', None) # Import as no level
+        if modname is None:
+            modname = self.modname
         # XXX we should investigate deeper if we really want to check
         # importing itself: modname and mymodule.name be relative or absolute
         if mymodule.relative_to_absolute_name(modname, level) == mymodule.name:

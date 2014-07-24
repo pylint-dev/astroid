@@ -315,6 +315,14 @@ except PickleError:
         m = astroid['email'].infer(ctx).next()
         self.assertFalse(m.file.startswith(self.datapath('email.py')))
 
+    def test_more_absolute_import(self):
+        sys.path.insert(0, self.datapath('moreabsimport'))
+        try:
+            astroid = abuilder.file_build(self.datapath('module1abs/__init__.py'))
+            self.assertIn('sys', astroid.locals)
+        finally:
+            sys.path.pop(0)
+
 
 class CmpNodeTC(testlib.TestCase):
     def test_as_string(self):
