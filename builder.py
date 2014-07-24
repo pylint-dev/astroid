@@ -41,9 +41,8 @@ if sys.version_info >= (3, 0):
     from tokenize import detect_encoding
 
     def open_source_file(filename):
-        byte_stream = open(filename, 'bU')
-        encoding = detect_encoding(byte_stream.readline)[0]
-        byte_stream.close()
+        with open(filename, 'bU') as byte_stream:
+            encoding = detect_encoding(byte_stream.readline)[0]
         stream = open(filename, 'U', encoding=encoding)
         try:
             data = stream.read()
