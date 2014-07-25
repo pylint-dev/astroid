@@ -6,6 +6,7 @@ Currently help understanding of :
 """
 
 import sys
+from textwrap import dedent
 
 from astroid import MANAGER, AsStringRegexpPredicate, UseInferenceDefault, inference_tip, YES
 from astroid import exceptions
@@ -280,7 +281,46 @@ def infer_enum(node, context=None):
     class_node = infer_func_form(node, enum_meta, context=context)[0]
     return iter([class_node.instanciate_class()])
 
+def infer_enum_class(node, context=None):
+    """ Specific inference for enums. """
+    names = set(('Enum', 'IntEnum', 'enum.Enum', 'enum.IntEnum'))
+    for basename in node.basenames:
+        # TODO: doesn't handle subclasses yet.
+        if basename not in names:
+            break
+        if node.root().name == 'enum':
+            # Skip if the class is directly from enum module.
+            break
+        for local, values in node.locals.items():
+            if any(not isinstance(value, nodes.AssName)
+                   for value in values):
+                continue
+            parent = values[0].parent
+            real_value = parent.value
+            new_targets = []
+            for target in parent.targets:
+                # Replace all the assignments with our mocked class.
+                classdef = dedent('''
+                class %(name)s(%(base_name)s):
+                    @property
+                    def value(self):
+                        return %(value)r
+                    @property
+                    def name(self):
+                        return %(name)r
+                    %(name)s = %(value)r
+                ''' % {'base_name': 'int' if 'Int' in basename else 'str',
+                       'name': target.name,
+                       'value': real_value.value})
+                fake = AstroidBuilder(MANAGER).string_build(classdef)[target.name]
+                fake.parent = target.parent
+                new_targets.append(fake.instanciate_class())
+            node.locals[local] = new_targets
+        break
+    return node
+
 MANAGER.register_transform(nodes.CallFunc, inference_tip(infer_named_tuple),
                            AsStringRegexpPredicate('namedtuple', 'func'))
 MANAGER.register_transform(nodes.CallFunc, inference_tip(infer_enum),
                            AsStringRegexpPredicate('Enum', 'func'))
+MANAGER.register_transform(nodes.Class, infer_enum_class)
