@@ -32,9 +32,9 @@ __docformat__ = "restructuredtext en"
 
 import sys
 import os
-from os.path import splitext, join, abspath, isdir, dirname, exists, basename
+from os.path import splitext, join, abspath, isdir, dirname, exists
 from imp import find_module, load_module, C_BUILTIN, PY_COMPILED, PKG_DIRECTORY
-from distutils.sysconfig import get_config_var, get_python_lib, get_python_version
+from distutils.sysconfig import get_python_lib
 from distutils.errors import DistutilsPlatformError
 
 try:
@@ -44,7 +44,7 @@ except ImportError:
 
 ZIPFILE = object()
 
-from logilab.common import STD_BLACKLIST, _handle_blacklist
+from logilab.common import _handle_blacklist
 
 # Notes about STD_LIB_DIR
 # Consider arch-specific installation for STD_LIB_DIR definition
@@ -148,8 +148,8 @@ def load_module_from_modpath(parts, path=None, use_sys=1):
             setattr(prevmodule, part, module)
         _file = getattr(module, '__file__', '')
         if not _file and len(modpath) != len(parts):
-            raise ImportError('no module in %s' % '.'.join(parts[len(modpath):]) )
-        path = [dirname( _file )]
+            raise ImportError('no module in %s' % '.'.join(parts[len(modpath):]))
+        path = [dirname(_file)]
         prevmodule = module
     return module
 
@@ -326,8 +326,8 @@ def get_module_part(dotted_name, context_file=None):
         context_file = dirname(context_file)
     for i in range(starti, len(parts)):
         try:
-            file_from_modpath(parts[starti:i+1],
-                    path=path, context_file=context_file)
+            file_from_modpath(parts[starti:i+1], path=path,
+                              context_file=context_file)
         except ImportError:
             if not i >= max(1, len(parts) - 2):
                 raise
@@ -419,7 +419,7 @@ def is_standard_module(modname, std_path=(STD_LIB_DIR,)):
     modname = modname.split('.')[0]
     try:
         filename = file_from_modpath([modname])
-    except ImportError, ex:
+    except ImportError:
         # import failed, i'm probably not so wrong by supposing it's
         # not standard...
         return False
@@ -503,7 +503,7 @@ def _search_zip(modpath, pic):
     raise ImportError('No module named %s' % '.'.join(modpath))
 
 
-def _abspath(path, _abspathcache={}):
+def _abspath(path, _abspathcache={}): #pylint: disable=dangerous-default-value
     """abspath with caching"""
     # _module_file calls abspath on every path in sys.path every time it's
     # called; on a larger codebase this easily adds up to half a second just

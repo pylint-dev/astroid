@@ -22,9 +22,9 @@ import sys
 
 from astroid.exceptions import NoDefault
 from astroid.bases import (NodeNG, Statement, Instance, InferenceContext,
-                                 _infer_stmts, YES, BUILTINS)
-from astroid.mixins import BlockRangeMixIn, AssignTypeMixin, \
-                                 ParentAssignTypeMixin, FromImportMixIn
+                           _infer_stmts, YES, BUILTINS)
+from astroid.mixins import (BlockRangeMixIn, AssignTypeMixin,
+                            ParentAssignTypeMixin, FromImportMixIn)
 
 PY3K = sys.version_info >= (3, 0)
 
@@ -84,16 +84,16 @@ def are_exclusive(stmt1, stmt2, exceptions=None):
             # nodes are in exclusive branches
             if isinstance(node, If) and exceptions is None:
                 if (node.locate_child(previous)[1]
-                    is not node.locate_child(children[node])[1]):
+                        is not node.locate_child(children[node])[1]):
                     return True
             elif isinstance(node, TryExcept):
                 c2attr, c2node = node.locate_child(previous)
                 c1attr, c1node = node.locate_child(children[node])
                 if c1node is not c2node:
                     if ((c2attr == 'body' and c1attr == 'handlers' and children[node].catch(exceptions)) or
-                        (c2attr == 'handlers' and c1attr == 'body' and previous.catch(exceptions)) or
-                        (c2attr == 'handlers' and c1attr == 'orelse') or
-                        (c2attr == 'orelse' and c1attr == 'handlers')):
+                            (c2attr == 'handlers' and c1attr == 'body' and previous.catch(exceptions)) or
+                            (c2attr == 'handlers' and c1attr == 'orelse') or
+                            (c2attr == 'orelse' and c1attr == 'handlers')):
                         return True
                 elif c2attr == 'handlers' and c1attr == 'handlers':
                     return previous is not children[node]
@@ -110,13 +110,13 @@ class LookupMixIn(object):
     def lookup(self, name):
         """lookup a variable name
 
-        return the scope node and the list of assignments associated to the given
-        name according to the scope where it has been found (locals, globals or
-        builtin)
+        return the scope node and the list of assignments associated to the
+        given name according to the scope where it has been found (locals,
+        globals or builtin)
 
-        The lookup is starting from self's scope. If self is not a frame itself and
-        the name is found in the inner frame locals, statements will be filtered
-        to remove ignorable statements according to self's location
+        The lookup is starting from self's scope. If self is not a frame itself
+        and the name is found in the inner frame locals, statements will be
+        filtered to remove ignorable statements according to self's location
         """
         return self.scope().scope_lookup(self, name)
 
@@ -444,7 +444,7 @@ class Compare(NodeNG):
 
 class Comprehension(NodeNG):
     """class representing a Comprehension node"""
-    _astroid_fields = ('target', 'iter' ,'ifs')
+    _astroid_fields = ('target', 'iter', 'ifs')
     target = None
     iter = None
     ifs = None
@@ -528,7 +528,7 @@ class Dict(NodeNG, Instance):
             self.items = []
         else:
             self.items = [(const_factory(k), const_factory(v))
-                          for k,v in items.iteritems()]
+                          for k, v in items.iteritems()]
 
     def pytype(self):
         return '%s.dict' % BUILTINS
@@ -554,7 +554,8 @@ class Dict(NodeNG, Instance):
             for inferedkey in key.infer(context):
                 if inferedkey is YES:
                     continue
-                if isinstance(inferedkey, Const) and inferedkey.value == lookup_key:
+                if isinstance(inferedkey, Const) \
+                        and inferedkey.value == lookup_key:
                     return value
         # This should raise KeyError, but all call sites only catch
         # IndexError. Let's leave it like that for now.
@@ -632,7 +633,7 @@ class For(BlockRangeMixIn, AssignTypeMixin, Statement):
 class From(FromImportMixIn, Statement):
     """class representing a From node"""
 
-    def __init__(self,  fromname, names, level=0):
+    def __init__(self, fromname, names, level=0):
         self.modname = fromname
         self.names = names
         self.level = level
@@ -841,7 +842,7 @@ class TryFinally(BlockRangeMixIn, Statement):
         child = self.body[0]
         # py2.5 try: except: finally:
         if (isinstance(child, TryExcept) and child.fromlineno == self.fromlineno
-            and lineno > self.fromlineno and lineno <= child.tolineno):
+                and lineno > self.fromlineno and lineno <= child.tolineno):
             return child.block_range(lineno)
         return self._elsed_block_range(lineno, self.finalbody)
 
@@ -910,7 +911,7 @@ class Yield(NodeNG):
     value = None
 
 class YieldFrom(Yield):
-    """ Class representing a YieldFrom node. """    
+    """ Class representing a YieldFrom node. """
 
 # constants ##############################################################
 

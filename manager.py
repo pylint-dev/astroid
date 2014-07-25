@@ -75,7 +75,7 @@ class AstroidManager(OptionsProviderMixIn):
                 {'default': "No Name", 'type' : 'string', 'short': 'p',
                  'metavar' : '<project name>',
                  'help' : 'set the project name.'}),
-               )
+              )
     brain = {}
     def __init__(self):
         self.__dict__ = AstroidManager.brain
@@ -107,7 +107,7 @@ class AstroidManager(OptionsProviderMixIn):
         elif fallback and modname:
             return self.ast_from_module_name(modname)
         raise AstroidBuildingException('unable to get astroid for file %s' %
-                                     filepath)
+                                       filepath)
 
     def ast_from_module_name(self, modname, context_file=None):
         """given a module name, return the astroid object"""
@@ -150,7 +150,7 @@ class AstroidManager(OptionsProviderMixIn):
                 importer = zipimport.zipimporter(eggpath + ext)
                 zmodname = resource.replace('/', '.')
                 if importer.is_package(resource):
-                    zmodname =  zmodname + '.__init__'
+                    zmodname = zmodname + '.__init__'
                 module = builder.string_build(importer.get_source(resource),
                                               zmodname, filepath)
                 return module
@@ -273,11 +273,11 @@ class AstroidManager(OptionsProviderMixIn):
         The transform function may return a value which is then used to
         substitute the original node in the tree.
         """
-        self.transforms.setdefault(node_class, []).append( (transform, predicate) )
+        self.transforms.setdefault(node_class, []).append((transform, predicate))
 
     def unregister_transform(self, node_class, transform, predicate=None):
         """Unregister the given transform."""
-        self.transforms[node_class].remove( (transform, predicate) )
+        self.transforms[node_class].remove((transform, predicate))
 
     def transform(self, node):
         """Call matching transforms for the given node if any and return the

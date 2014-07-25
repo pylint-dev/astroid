@@ -72,7 +72,7 @@ class InferenceContext(object):
         name = self.lookupname
         if (node, name) in self.path:
             raise StopIteration()
-        self.path.add( (node, name) )
+        self.path.add((node, name))
 
     def clone(self):
         # XXX copy lookupname/callcontext ?
@@ -266,7 +266,7 @@ class UnboundMethod(Proxy):
 
 class BoundMethod(UnboundMethod):
     """a special node representing a method bound to an instance"""
-    def __init__(self,  proxy, bound):
+    def __init__(self, proxy, bound):
         UnboundMethod.__init__(self, proxy)
         self.bound = bound
 
@@ -388,14 +388,13 @@ class NodeNG(object):
 
     def __repr__(self):
         return '<%s(%s) l.%s [%s] at 0x%x>' % (self.__class__.__name__,
-                                           self._repr_name(),
-                                           self.fromlineno,
-                                           self.root().name,
-                                           id(self))
+                                               self._repr_name(),
+                                               self.fromlineno,
+                                               self.root().name,
+                                               id(self))
 
 
     def accept(self, visitor):
-        klass = self.__class__.__name__
         func = getattr(visitor, "visit_" + self.__class__.__name__.lower())
         return func(self)
 

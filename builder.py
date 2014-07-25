@@ -42,12 +42,12 @@ if sys.version_info >= (3, 0):
     from tokenize import detect_encoding
 
     def open_source_file(filename):
-        with open(filename, 'bU') as byte_stream:
+        with open(filename, 'rb') as byte_stream:
             encoding = detect_encoding(byte_stream.readline)[0]
-        stream = open(filename, 'U', encoding=encoding)
+        stream = open(filename, 'rU', encoding=encoding)
         try:
             data = stream.read()
-        except UnicodeError, uex: # wrong encodingg
+        except UnicodeError: # wrong encodingg
             # detect_encoding returns utf-8 if no encoding specified
             msg = 'Wrong (%s) or no encoding specified' % encoding
             raise AstroidBuildingException(msg)
@@ -56,7 +56,7 @@ if sys.version_info >= (3, 0):
 else:
     import re
 
-    _ENCODING_RGX = re.compile("\s*#+.*coding[:=]\s*([-\w.]+)")
+    _ENCODING_RGX = re.compile(r"\s*#+.*coding[:=]\s*([-\w.]+)")
 
     def _guess_encoding(string):
         """get encoding from a python file as string or return None if not found
@@ -115,7 +115,7 @@ class AstroidBuilder(InspectBuilder):
         path is expected to be a python source file
         """
         try:
-            stream, encoding, data = open_source_file(path)
+            _, encoding, data = open_source_file(path)
         except IOError, exc:
             msg = 'Unable to load file %r (%s)' % (path, exc)
             raise AstroidBuildingException(msg)

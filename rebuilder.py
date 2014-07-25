@@ -20,8 +20,8 @@ order to get a single Astroid representation
 """
 
 import sys
-from warnings import warn
-from _ast import (Expr as Discard, Str, Name, Attribute,
+from _ast import (
+    Expr as Discard, Str,
     # binary operators
     Add, Div, FloorDiv,  Mod, Mult, Pow, Sub, BitAnd, BitOr, BitXor,
     LShift, RShift,
@@ -47,15 +47,18 @@ _BIN_OP_CLASSES = {Add: '+',
                    Pow: '**',
                    Sub: '-',
                    LShift: '<<',
-                   RShift: '>>'}
+                   RShift: '>>',
+                  }
 
 _BOOL_OP_CLASSES = {And: 'and',
-                    Or: 'or'}
+                    Or: 'or',
+                   }
 
 _UNARY_OP_CLASSES = {UAdd: '+',
                      USub: '-',
                      Not: 'not',
-                     Invert: '~'}
+                     Invert: '~',
+                    }
 
 _CMP_OP_CLASSES = {Eq: '==',
                    Gt: '>',
@@ -66,11 +69,13 @@ _CMP_OP_CLASSES = {Eq: '==',
                    Lt: '<',
                    LtE: '<=',
                    NotEq: '!=',
-                   NotIn: 'not in'}
+                   NotIn: 'not in',
+                  }
 
 CONST_NAME_TRANSFORMS = {'None':  None,
                          'True':  True,
-                         'False': False}
+                         'False': False,
+                        }
 
 REDIRECT = {'arguments': 'Arguments',
             'Attribute': 'Getattr',
@@ -86,7 +91,7 @@ REDIRECT = {'arguments': 'Arguments',
             'ImportFrom': 'From',
             'keyword': 'Keyword',
             'Repr': 'Backquote',
-            }
+           }
 PY3K = sys.version_info >= (3, 0)
 PY34 = sys.version_info >= (3, 4)
 
@@ -240,8 +245,8 @@ class TreeRebuilder(object):
         # set some function or metaclass infos  XXX explain ?
         klass = newnode.parent.frame()
         if (isinstance(klass, new.Class)
-            and isinstance(newnode.value, new.CallFunc)
-            and isinstance(newnode.value.func, new.Name)):
+                and isinstance(newnode.value, new.CallFunc)
+                and isinstance(newnode.value.func, new.Name)):
             func_name = newnode.value.func.name
             for ass_node in newnode.targets:
                 try:
@@ -355,7 +360,7 @@ class TreeRebuilder(object):
         _lineno_parent(node, newnode, parent)
         newnode.left = self.visit(node.left, newnode)
         newnode.ops = [(_CMP_OP_CLASSES[op.__class__], self.visit(expr, newnode))
-                    for (op, expr) in zip(node.ops, node.comparators)]
+                       for (op, expr) in zip(node.ops, node.comparators)]
         newnode.set_line_info(newnode.last_child())
         return newnode
 
@@ -380,7 +385,7 @@ class TreeRebuilder(object):
         if 'decorators' in node._fields: # py < 2.6, i.e. 2.5
             decorators = node.decorators
         else:
-            decorators= node.decorator_list
+            decorators = node.decorator_list
         newnode.nodes = [self.visit(child, newnode) for child in decorators]
         newnode.set_line_info(newnode.last_child())
         return newnode
@@ -400,7 +405,7 @@ class TreeRebuilder(object):
         newnode = new.Dict()
         _lineno_parent(node, newnode, parent)
         newnode.items = [(self.visit(key, newnode), self.visit(value, newnode))
-                          for key, value in zip(node.keys, node.values)]
+                         for key, value in zip(node.keys, node.values)]
         newnode.set_line_info(newnode.last_child())
         return newnode
 

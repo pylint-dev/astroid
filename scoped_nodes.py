@@ -485,7 +485,6 @@ def _infer_decorator_callchain(node):
     end result is a static or a classmethod.
     """
     current = node
-    ignored = set((None, YES))
     while True:
         if isinstance(current, CallFunc):
             try:
@@ -502,14 +501,14 @@ def _infer_decorator_callchain(node):
                 result = current.infer_call_result(current.parent).next()
             except InferenceError:
                 return
-            if isinstance(result, (Function, CallFunc)):                
+            if isinstance(result, (Function, CallFunc)):
                 current = result
             else:
                 if isinstance(result, Instance):
                     result = result._proxied
                 if isinstance(result, Class):
                     if (result.name == 'classmethod' and
-                        result.root().name == BUILTINS):
+                            result.root().name == BUILTINS):
                         return 'classmethod'
                     elif (result.name == 'staticmethod' and
                           result.root().name == BUILTINS):
@@ -522,7 +521,7 @@ def _infer_decorator_callchain(node):
                     return
         else:
             return
-            
+
 def _function_type(self):
     """
     Function type, possible values are:
@@ -548,7 +547,7 @@ def _function_type(self):
                     for ancestor in infered.ancestors():
                         if isinstance(ancestor, Class):
                             if (ancestor.name == 'classmethod' and
-                                ancestor.root().name == BUILTINS):
+                                    ancestor.root().name == BUILTINS):
                                 return 'classmethod'
                             elif (ancestor.name == 'staticmethod' and
                                   ancestor.root().name == BUILTINS):
@@ -809,12 +808,12 @@ def _class_type(klass, ancestors=None):
         for base in klass.ancestors(recurs=False):
             name = _class_type(base, ancestors)
             if name != 'class':
-                 if name == 'metaclass' and not _is_metaclass(klass):
-                     # don't propagate it if the current class
-                     # can't be a metaclass
-                     continue
-                 klass._type = base.type
-                 break
+                if name == 'metaclass' and not _is_metaclass(klass):
+                    # don't propagate it if the current class
+                    # can't be a metaclass
+                    continue
+                klass._type = base.type
+                break
     if klass._type is None:
         klass._type = 'class'
     return klass._type
@@ -929,7 +928,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             result.parent = caller.parent
             yield result
         else:
-           yield Instance(self)
+            yield Instance(self)
 
     def scope_lookup(self, node, name, offset=0):
         if node in self.bases:
@@ -1187,7 +1186,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             return None
         elif '__metaclass__' in self.root().locals:
             assignments = [ass for ass in self.root().locals['__metaclass__']
-                               if ass.lineno < self.lineno]
+                           if ass.lineno < self.lineno]
             if not assignments:
                 return None
             assignment = assignments[-1]
@@ -1255,7 +1254,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                         if infered is YES:
                             continue
                         if (not isinstance(infered, Const) or
-                            not isinstance(infered.value, str)):
+                                not isinstance(infered.value, str)):
                             continue
                         if not infered.value:
                             continue

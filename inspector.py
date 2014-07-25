@@ -30,7 +30,7 @@ from astroid.exceptions import InferenceError
 from astroid.utils import LocalsVisitor
 from astroid.modutils import get_module_part, is_relative, is_standard_module
 
-class IdGeneratorMixIn:
+class IdGeneratorMixIn(object):
     """
     Mixin adding the ability to generate integer uid
     """

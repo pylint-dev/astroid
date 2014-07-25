@@ -27,8 +27,8 @@ def _extract_expressions(node):
     expression can be found.
     """
     if (isinstance(node, nodes.CallFunc)
-        and isinstance(node.func, nodes.Name)
-        and node.func.name == _TRANSIENT_FUNCTION):
+            and isinstance(node.func, nodes.Name)
+            and node.func.name == _TRANSIENT_FUNCTION):
         real_expr = node.args[0]
         real_expr.parent = node.parent
         # Search for node in all _astng_fields (the fields checked when
@@ -128,7 +128,7 @@ def extract_node(code, module_name=''):
     If no statements or expressions are selected, the last toplevel
     statement will be returned.
 
-    If the selected statement is a discard statement, (i.e. an expression 
+    If the selected statement is a discard statement, (i.e. an expression
     turned into a statement), the wrapped expression is returned instead.
 
     For convenience, singleton lists are unpacked.

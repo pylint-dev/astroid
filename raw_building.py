@@ -28,7 +28,7 @@ from inspect import (getargspec, isdatadescriptor, isfunction, ismethod,
 
 from astroid.node_classes import CONST_CLS
 from astroid.nodes import (Module, Class, Const, const_factory, From,
-    Function, EmptyNode, Name, Arguments)
+                           Function, EmptyNode, Name, Arguments)
 from astroid.bases import BUILTINS, Generator
 from astroid.manager import AstroidManager
 MANAGER = AstroidManager()
@@ -258,9 +258,9 @@ class InspectBuilder(object):
                     attach_dummy_node(node, name, member)
                 else:
                     object_build_function(node, member, name)
-            elif isbuiltin(member):                 
+            elif isbuiltin(member):
                 if (not _io_discrepancy(member) and
-                    self.imported_member(node, member, name)):
+                        self.imported_member(node, member, name)):
                     #if obj is object:
                     #    print 'skippp', obj, name, member
                     continue

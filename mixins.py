@@ -19,7 +19,7 @@
 """
 
 from astroid.exceptions import (AstroidBuildingException, InferenceError,
-                                      NotFoundError)
+                                NotFoundError)
 
 
 class BlockRangeMixIn(object):
@@ -119,6 +119,4 @@ class FromImportMixIn(FilterStmtsMixin):
             if asname == _asname:
                 return name
         raise NotFoundError(asname)
-
-
 
