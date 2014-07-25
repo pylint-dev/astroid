@@ -1,7 +1,7 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
---
+2014-07-25  --  1.2.0
 
     * Function nodes can detect decorator call chain and see if they are
       decorated with builtin descriptors (`classmethod` and `staticmethod`).
