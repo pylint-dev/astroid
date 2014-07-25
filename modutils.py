@@ -429,7 +429,7 @@ def is_standard_module(modname, std_path=(STD_LIB_DIR,)):
         return True
     filename = abspath(filename)
     if filename.startswith(EXT_LIB_DIR):
-        return True
+        return False
     for path in std_path:
         if filename.startswith(abspath(path)):
             return True
