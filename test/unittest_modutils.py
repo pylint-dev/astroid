@@ -196,10 +196,12 @@ class is_standard_module_tc(TestCase):
 
     def test_4(self):
         import astroid
-        if (sys.version_info > (3, 0) and sys.platform.startswith('win')):
-            self.skipTest('imp module has a broken behaviour in Python 3 on '
-                          'Windows, returning the module path with different '
-                          'case than it should be.')
+        if sys.version_info > (3, 0):
+            skip = sys.platform.startswith('win') or '.tox' in astroid.__file__
+            if skip:
+                self.skipTest('imp module has a broken behaviour in Python 3 on '
+                              'Windows, returning the module path with different '
+                              'case than it should be.')
         self.assertEqual(modutils.is_standard_module('hashlib'), True)
         self.assertEqual(modutils.is_standard_module('pickle'), True)
         self.assertEqual(modutils.is_standard_module('email'), True)
