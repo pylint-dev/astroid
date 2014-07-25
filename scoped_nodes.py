@@ -921,7 +921,11 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             if isinstance(bases, (Tuple, List)):
                 result.bases = bases.itered()
             else:
-                result.bases = [YES]
+                # There is currently no AST node that can represent an 'unknown'
+                # node (YES is not an AST node), therefore we simply return YES here
+                # although we know at least the name of the class.
+                yield YES
+                return
             result.parent = caller.parent
             yield result
         else:
