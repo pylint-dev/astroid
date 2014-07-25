@@ -287,7 +287,7 @@ def infer_enum_class(node, context=None):
     for basename in node.basenames:
         # TODO: doesn't handle subclasses yet.
         if basename not in names:
-            break
+            continue
         if node.root().name == 'enum':
             # Skip if the class is directly from enum module.
             break
