@@ -422,17 +422,17 @@ def is_standard_module(modname, std_path=(STD_LIB_DIR,)):
     except ImportError, ex:
         # import failed, i'm probably not so wrong by supposing it's
         # not standard...
-        return 0
+        return False
     # modules which are not living in a file are considered standard
     # (sys and __builtin__ for instance)
     if filename is None:
-        return 1
+        return True
     filename = abspath(filename)
     if filename.startswith(EXT_LIB_DIR):
-        return 0
+        return True
     for path in std_path:
         if filename.startswith(abspath(path)):
-            return 1
+            return return True
     return False
 
 
