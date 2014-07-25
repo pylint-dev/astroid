@@ -212,14 +212,14 @@ def modpath_from_file(filename, extrapath=None):
     base = splitext(abspath(filename))[0]
     if extrapath is not None:
         for path_ in extrapath:
-            path = abspath(path_)
+            path = _abspath(path_)
             if path and base[:len(path)] == path:
                 submodpath = [pkg for pkg in base[len(path):].split(os.sep)
                               if pkg]
                 if _check_init(path, submodpath[:-1]):
                     return extrapath[path_].split('.') + submodpath
     for path in sys.path:
-        path = abspath(path)
+        path = _abspath(path)
         if path and base.startswith(path):
             modpath = [pkg for pkg in base[len(path):].split(os.sep) if pkg]
             if _check_init(path, modpath[:-1]):
@@ -431,7 +431,7 @@ def is_standard_module(modname, std_path=(STD_LIB_DIR,)):
     if filename.startswith(EXT_LIB_DIR):
         return False
     for path in std_path:
-        if filename.startswith(abspath(path)):
+        if filename.startswith(_abspath(path)):
             return True
     return False
 
@@ -502,6 +502,20 @@ def _search_zip(modpath, pic):
                 return ZIPFILE, abspath(filepath) + os.path.sep + os.path.sep.join(modpath), filepath
     raise ImportError('No module named %s' % '.'.join(modpath))
 
+
+def _abspath(path, _abspathcache={}):
+    """abspath with caching"""
+    # _module_file calls abspath on every path in sys.path every time it's
+    # called; on a larger codebase this easily adds up to half a second just
+    # assembling path components. This cache alleviates that.
+    try:
+        return _abspathcache[path]
+    except KeyError:
+        if not path: # don't cache result for ''
+            return abspath(path)
+        _abspathcache[path] = abspath(path)
+        return _abspathcache[path]
+
 try:
     import pkg_resources
 except ImportError:
@@ -563,7 +577,7 @@ def _module_file(modpath, path=None):
             raise
         else:
             if checkeggs and mp_filename:
-                fullabspath = [abspath(x) for x in _path]
+                fullabspath = [_abspath(x) for x in _path]
                 try:
                     pathindex = fullabspath.index(dirname(abspath(mp_filename)))
                     emtype, emp_filename, zippath = _search_zip(modpath, pic)
