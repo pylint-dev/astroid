@@ -301,17 +301,16 @@ def infer_enum_class(node, context=None):
             for target in parent.targets:
                 # Replace all the assignments with our mocked class.
                 classdef = dedent('''
-                class %(name)s(%(base_name)s):
+                class %(name)s(object):
                     @property
                     def value(self):
-                        return %(value)r
+                        return %(value)s
                     @property
                     def name(self):
                         return %(name)r
-                    %(name)s = %(value)r
-                ''' % {'base_name': 'int' if 'Int' in basename else 'str',
-                       'name': target.name,
-                       'value': real_value.value})
+                    %(name)s = %(value)s
+                ''' % {'name': target.name,
+                       'value': real_value.as_string()})                
                 fake = AstroidBuilder(MANAGER).string_build(classdef)[target.name]
                 fake.parent = target.parent
                 new_targets.append(fake.instanciate_class())
