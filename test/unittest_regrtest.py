@@ -182,6 +182,24 @@ def run():
             # triggers the _is_metaclass call
             klass.type
 
+    def test_decorator_callchain_issue42(self):
+        builder = AstroidBuilder()
+        data = """
+
+def test():
+    def factory(func):
+        def newfunc():
+            func()
+        return newfunc
+    return factory
+
+@test()
+def crash():
+    pass
+"""
+        astroid = builder.string_build(data, __name__, __file__)
+        self.assertEqual(astroid['crash'].type, 'function')
+
 class Whatever(object):
     a = property(lambda x: x, lambda x: x)
 

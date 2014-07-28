@@ -499,7 +499,7 @@ def _infer_decorator_callchain(node):
                 #       because there's no flow to reason when the return
                 #       is what we are looking for, a static or a class method.
                 result = current.infer_call_result(current.parent).next()
-            except InferenceError:
+            except (StopIteration, InferenceError):
                 return
             if isinstance(result, (Function, CallFunc)):
                 current = result
