@@ -5,6 +5,9 @@ Change log for the astroid package (used to be astng)
     * Fix a crash occurred when inferring decorator call chain.
       Closes issue #42.
 
+    * Set the parent of vararg and kwarg nodes when inferring them.
+      Closes issue #43.
+
 2014-07-25  --  1.2.0
 
     * Function nodes can detect decorator call chain and see if they are

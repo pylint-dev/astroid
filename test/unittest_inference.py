@@ -1220,5 +1220,25 @@ empty_list = A().empty_method()
         empty_list = astroid['empty_list'].infered()[0]
         self.assertIsInstance(empty_list, nodes.List)
 
+    def test_infer_variable_arguments(self):
+        code = '''
+def test(*args, **kwargs):
+    vararg = args
+    kwarg = kwargs
+        '''
+        astroid = builder.string_build(code, __name__, __file__)
+        func = astroid['test']
+        vararg = func.body[0].value
+        kwarg = func.body[1].value
+
+        kwarg_infered = kwarg.infered()[0]
+        self.assertIsInstance(kwarg_infered, nodes.Dict)
+        self.assertIs(kwarg_infered.parent, func.args)
+
+        vararg_infered = vararg.infered()[0]
+        self.assertIsInstance(vararg_infered, nodes.Tuple)
+        self.assertIs(vararg_infered.parent, func.args)
+
+
 if __name__ == '__main__':
     unittest_main()
