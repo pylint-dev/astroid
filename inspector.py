@@ -25,25 +25,23 @@ __docformat__ = "restructuredtext en"
 
 from os.path import dirname
 
-from logilab.common.modutils import get_module_part, is_relative, \
-     is_standard_module
-
 import astroid
 from astroid.exceptions import InferenceError
 from astroid.utils import LocalsVisitor
+from astroid.modutils import get_module_part, is_relative, is_standard_module
 
-class IdGeneratorMixIn:
+class IdGeneratorMixIn(object):
     """
     Mixin adding the ability to generate integer uid
     """
     def __init__(self, start_value=0):
         self.id_count = start_value
-    
+
     def init_counter(self, start_value=0):
         """init the id counter
         """
         self.id_count = start_value
-        
+
     def generate_id(self):
         """generate a new identifier
         """
@@ -54,14 +52,14 @@ class IdGeneratorMixIn:
 class Linker(IdGeneratorMixIn, LocalsVisitor):
     """
     walk on the project tree and resolve relationships.
-    
+
     According to options the following attributes may be added to visited nodes:
-    
+
     * uid,
       a unique identifier for the node (on astroid.Project, astroid.Module,
       astroid.Class and astroid.locals_type). Only if the linker has been instantiated
       with tag=True parameter (False by default).
-            
+
     * Function
       a mapping from locals names to their bounded value, which may be a
       constant like a string or an integer, or an astroid node (on astroid.Module,
@@ -69,11 +67,11 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
 
     * instance_attrs_type
       as locals_type but for klass member attributes (only on astroid.Class)
-      
+
     * implements,
       list of implemented interface _objects_ (only on astroid.Class nodes)
     """
-    
+
     def __init__(self, project, inherited_interfaces=0, tag=False):
         IdGeneratorMixIn.__init__(self)
         LocalsVisitor.__init__(self)
@@ -84,30 +82,30 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
         # visited project
         self.project = project
 
-        
+
     def visit_project(self, node):
         """visit an astroid.Project node
-        
+
          * optionally tag the node with a unique id
         """
         if self.tag:
             node.uid = self.generate_id()
         for module in node.modules:
             self.visit(module)
-            
+
     def visit_package(self, node):
         """visit an astroid.Package node
-        
+
          * optionally tag the node with a unique id
         """
         if self.tag:
             node.uid = self.generate_id()
         for subelmt in node.values():
             self.visit(subelmt)
-            
+
     def visit_module(self, node):
         """visit an astroid.Module node
-        
+
          * set the locals_type mapping
          * set the depends mapping
          * optionally tag the node with a unique id
@@ -118,10 +116,10 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
         node.depends = []
         if self.tag:
             node.uid = self.generate_id()
-    
+
     def visit_class(self, node):
         """visit an astroid.Class node
-        
+
          * set the locals_type and instance_attrs_type mappings
          * set the implements list and build it
          * optionally tag the node with a unique id
@@ -149,7 +147,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
 
     def visit_function(self, node):
         """visit an astroid.Function node
-        
+
          * set the locals_type mapping
          * optionally tag the node with a unique id
         """
@@ -158,12 +156,12 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
         node.locals_type = {}
         if self.tag:
             node.uid = self.generate_id()
-            
+
     link_project = visit_project
     link_module = visit_module
     link_class = visit_class
     link_function = visit_function
-        
+
     def visit_assname(self, node):
         """visit an astroid.AssName node
 
@@ -178,7 +176,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
             frame = node.frame()
         else:
             # the name has been defined as 'global' in the frame and belongs
-            # there. Btw the frame is not yet visited as the name is in the 
+            # there. Btw the frame is not yet visited as the name is in the
             # root locals; the frame hence has no locals_type attribute
             frame = node.root()
         try:
@@ -209,21 +207,21 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
                 parent.instance_attrs_type[node.attrname] = values
         except astroid.InferenceError:
             pass
-            
+
     def visit_import(self, node):
         """visit an astroid.Import node
-        
+
         resolve module dependencies
         """
         context_file = node.root().file
         for name in node.names:
             relative = is_relative(name[0], context_file)
             self._imported_module(node, name[0], relative)
-        
+
 
     def visit_from(self, node):
         """visit an astroid.From node
-        
+
         resolve module dependencies
         """
         basename = node.modname
@@ -246,7 +244,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
             if fullname != basename:
                 self._imported_module(node, fullname, relative)
 
-        
+
     def compute_module(self, context_name, mod_path):
         """return true if the module should be added to dependencies"""
         package_dir = dirname(self.project.path)
@@ -255,7 +253,7 @@ class Linker(IdGeneratorMixIn, LocalsVisitor):
         elif is_standard_module(mod_path, (package_dir,)):
             return 1
         return 0
-    
+
     # protected methods ########################################################
 
     def _imported_module(self, node, mod_path, relative):

@@ -26,12 +26,13 @@ import os
 from os.path import dirname, join, isdir, exists
 from warnings import warn
 
-from logilab.common.modutils import NoSourceFile, is_python_source, \
-     file_from_modpath, load_module_from_name, modpath_from_file, \
-     get_module_files, get_source_file, zipimport
 from logilab.common.configuration import OptionsProviderMixIn
 
 from astroid.exceptions import AstroidBuildingException
+from astroid.modutils import NoSourceFile, is_python_source, \
+     file_from_modpath, load_module_from_name, modpath_from_file, \
+     get_module_files, get_source_file, zipimport
+
 
 def astroid_wrapper(func, modname):
     """wrapper to give to AstroidManager.project_from_files"""
@@ -74,7 +75,7 @@ class AstroidManager(OptionsProviderMixIn):
                 {'default': "No Name", 'type' : 'string', 'short': 'p',
                  'metavar' : '<project name>',
                  'help' : 'set the project name.'}),
-               )
+              )
     brain = {}
     def __init__(self):
         self.__dict__ = AstroidManager.brain
@@ -106,7 +107,7 @@ class AstroidManager(OptionsProviderMixIn):
         elif fallback and modname:
             return self.ast_from_module_name(modname)
         raise AstroidBuildingException('unable to get astroid for file %s' %
-                                     filepath)
+                                       filepath)
 
     def ast_from_module_name(self, modname, context_file=None):
         """given a module name, return the astroid object"""
@@ -149,7 +150,7 @@ class AstroidManager(OptionsProviderMixIn):
                 importer = zipimport.zipimporter(eggpath + ext)
                 zmodname = resource.replace('/', '.')
                 if importer.is_package(resource):
-                    zmodname =  zmodname + '.__init__'
+                    zmodname = zmodname + '.__init__'
                 module = builder.string_build(importer.get_source(resource),
                                               zmodname, filepath)
                 return module
@@ -272,11 +273,11 @@ class AstroidManager(OptionsProviderMixIn):
         The transform function may return a value which is then used to
         substitute the original node in the tree.
         """
-        self.transforms.setdefault(node_class, []).append( (transform, predicate) )
+        self.transforms.setdefault(node_class, []).append((transform, predicate))
 
     def unregister_transform(self, node_class, transform, predicate=None):
         """Unregister the given transform."""
-        self.transforms[node_class].remove( (transform, predicate) )
+        self.transforms[node_class].remove((transform, predicate))
 
     def transform(self, node):
         """Call matching transforms for the given node if any and return the
@@ -305,6 +306,15 @@ class AstroidManager(OptionsProviderMixIn):
     def cache_module(self, module):
         """Cache a module if no module with the same name is known yet."""
         self.astroid_cache.setdefault(module.name, module)
+
+    def clear_cache(self):
+        self.astroid_cache.clear()
+        # force bootstrap again, else we may ends up with cache inconsistency
+        # between the manager and CONST_PROXY, making
+        # unittest_lookup.LookupTC.test_builtin_lookup fail depending on the
+        # test order
+        from astroid.raw_building import astroid_bootstrapping
+        astroid_bootstrapping()
 
 
 class Project(object):

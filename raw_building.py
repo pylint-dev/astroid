@@ -28,7 +28,7 @@ from inspect import (getargspec, isdatadescriptor, isfunction, ismethod,
 
 from astroid.node_classes import CONST_CLS
 from astroid.nodes import (Module, Class, Const, const_factory, From,
-    Function, EmptyNode, Name, Arguments)
+                           Function, EmptyNode, Name, Arguments)
 from astroid.bases import BUILTINS, Generator
 from astroid.manager import AstroidManager
 MANAGER = AstroidManager()
@@ -258,9 +258,9 @@ class InspectBuilder(object):
                     attach_dummy_node(node, name, member)
                 else:
                     object_build_function(node, member, name)
-            elif isbuiltin(member):                 
+            elif isbuiltin(member):
                 if (not _io_discrepancy(member) and
-                    self.imported_member(node, member, name)):
+                        self.imported_member(node, member, name)):
                     #if obj is object:
                     #    print 'skippp', obj, name, member
                     continue
@@ -325,11 +325,11 @@ class InspectBuilder(object):
         return False
 
 
-### astroid boot strapping ################################################### ###
+### astroid bootstrapping ######################################################
 Astroid_BUILDER = InspectBuilder()
 
 _CONST_PROXY = {}
-def astroid_boot_strapping():
+def astroid_bootstrapping():
     """astroid boot strapping the builtins module"""
     # this boot strapping is necessary since we need the Const nodes to
     # inspect_build builtins, and then we can proxy Const
@@ -346,7 +346,7 @@ def astroid_boot_strapping():
         else:
             _CONST_PROXY[cls] = proxy
 
-astroid_boot_strapping()
+astroid_bootstrapping()
 
 # TODO : find a nicer way to handle this situation;
 # However __proxied introduced an

@@ -1,4 +1,4 @@
-# copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2014 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of astroid.
@@ -22,6 +22,7 @@ from os.path import join, abspath, dirname
 from astroid.manager import AstroidManager, _silent_no_wrap
 from astroid.bases import  BUILTINS
 from astroid.exceptions import AstroidBuildingException
+from astroid.raw_building import astroid_bootstrapping
 
 DATA = join(dirname(abspath(__file__)), 'data')
 PY3K = sys.version_info > (3, 0)
@@ -29,7 +30,7 @@ PY3K = sys.version_info > (3, 0)
 class AstroidManagerTC(TestCase):
     def setUp(self):
         self.manager = AstroidManager()
-        self.manager.astroid_cache.clear()
+        self.manager.clear_cache() # take care of borg
 
     def test_ast_from_file(self):
         """check if the method return a good astroid object"""
@@ -90,9 +91,9 @@ class AstroidManagerTC(TestCase):
         try:
             module = self.manager.ast_from_module_name('mypypa')
             self.assertEqual(module.name, 'mypypa')
-            end = join(archive, 'mypypa') 
+            end = join(archive, 'mypypa')
             self.assertTrue(module.file.endswith(end),
-                            module.file)
+                            "%s doesn't endswith %s" % (module.file, end))
         finally:
             # remove the module, else after importing egg, we don't get the zip
             if 'mypypa' in self.manager.astroid_cache:
@@ -119,7 +120,7 @@ class AstroidManagerTC(TestCase):
         self.assertEqual(self.manager.zip_import_data('path'), None)
 
     def test_file_from_module(self):
-        """check if the unittest filepath is equals to the result of the method""" 
+        """check if the unittest filepath is equals to the result of the method"""
         import unittest
         if PY3K:
             unittest_file = unittest.__file__
@@ -181,11 +182,22 @@ class AstroidManagerTC(TestCase):
         obj = self.manager.project_from_files([DATA], _silent_no_wrap, 'data')
         expected = set(['SSL1', '__init__', 'all', 'appl', 'format', 'module',
                         'module2', 'noendingnewline', 'nonregr', 'notall'])
-        expected = ['data', 'data.SSL1', 'data.SSL1.Connection1',
-                    'data.absimport', 'data.all',
-                    'data.appl', 'data.appl.myConnection', 'data.email', 'data.format',
-                    'data.module', 'data.module2', 'data.noendingnewline',
-                    'data.nonregr', 'data.notall']
+        expected = [
+            'data', 'data.SSL1', 'data.SSL1.Connection1',
+            'data.absimport', 'data.all',
+            'data.appl', 'data.appl.myConnection', 'data.email',
+            'data.find_test',
+            'data.find_test.module',
+            'data.find_test.module2',
+            'data.find_test.noendingnewline',
+            'data.find_test.nonregr',
+            'data.format',
+            'data.lmfp',
+            'data.lmfp.foo',
+            'data.module',
+            'data.module1abs', 'data.module1abs.core',
+            'data.module2', 'data.noendingnewline',
+            'data.nonregr', 'data.notall']
         self.assertListEqual(sorted(k for k in obj.keys()), expected)
 
 class BorgAstroidManagerTC(TestCase):

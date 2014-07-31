@@ -70,7 +70,7 @@ BIN_OP_IMPL = {'+':  lambda a, b: a + b,
                '^':  lambda a, b: a ^ b,
                '<<': lambda a, b: a << b,
                '>>': lambda a, b: a >> b,
-               }
+              }
 for key, impl in BIN_OP_IMPL.items():
     BIN_OP_IMPL[key+'='] = impl
 
@@ -166,7 +166,7 @@ def _resolve_looppart(parts, asspath, context):
                 assigned = stmt.getitem(index, context)
             except (AttributeError, IndexError):
                 continue
-            except TypeError, exc: # stmt is unsubscriptable Const
+            except TypeError: # stmt is unsubscriptable Const
                 continue
             if not asspath:
                 # we achieved to resolved the assignment path,
@@ -231,10 +231,14 @@ def _arguments_infer_argname(self, name, context):
             yield self.parent.parent.frame()
             return
     if name == self.vararg:
-        yield const_factory(())
+        vararg = const_factory(())
+        vararg.parent = self
+        yield vararg
         return
     if name == self.kwarg:
-        yield const_factory({})
+        kwarg = const_factory({})
+        kwarg.parent = self
+        yield kwarg
         return
     # if there is a default value, yield it. And then yield YES to reflect
     # we can't guess given argument value

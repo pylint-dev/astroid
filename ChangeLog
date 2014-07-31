@@ -2,12 +2,44 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * Fix a crash occurred when inferring decorator call chain.
+      Closes issue #42.
+
+    * Set the parent of vararg and kwarg nodes when inferring them.
+      Closes issue #43.
+
+2014-07-25  --  1.2.0
+
+    * Function nodes can detect decorator call chain and see if they are
+      decorated with builtin descriptors (`classmethod` and `staticmethod`).
+   
+    * infer_call_result called on a subtype of the builtin type will now
+      return a new `Class` rather than an `Instance`.
+
     * `Class.metaclass()` now handles module-level __metaclass__ declaration
       on python 2, and no longer looks at the __metaclass__ class attribute on
       python 3.
+
     * Function nodes can detect if they are decorated with subclasses
       of builtin descriptors when determining their type
       (`classmethod` and `staticmethod`).
+
+    * Add `slots` method to `Class` nodes, for retrieving
+      the list of valid slots it defines.
+
+    * Expose function annotation to astroid: `Arguments` node
+      exposes 'varargannotation', 'kwargannotation' and 'annotations'
+      attributes, while `Function` node has the 'returns' attribute.
+
+    * Backported most of the logilab.common.modutils module there, as
+      most things there are for pylint/astroid only and we want to be
+      able to fix them without requiring a new logilab.common release
+
+    * Fix names grabed using wildcard import in "absolute import mode" 
+      (ie with absolute_import activated from the __future__ or with 
+      python 3). Fix pylint issue #58.
+
+    * Add support in pylint-brain for understanding enum classes.
 
 2014-04-30  --  1.1.1
     * `Class.metaclass()` looks in ancestors when the current class

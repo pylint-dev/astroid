@@ -25,7 +25,7 @@ from astroid.exceptions import AstroidBuildingException
 from astroid.builder import parse
 
 
-class ASTWalker:
+class ASTWalker(object):
     """a walker visiting a tree in preorder, calling on the handler:
 
     * visit_<class name> on entering a node, where class name is the class of
@@ -98,7 +98,7 @@ class LocalsVisitor(ASTWalker):
         if methods[0] is not None:
             methods[0](node)
         if 'locals' in node.__dict__: # skip Instance and other proxy
-            for name, local_node in node.items():
+            for local_node in node.values():
                 self.visit(local_node)
         if methods[1] is not None:
             return methods[1](node)
@@ -112,12 +112,14 @@ def _check_children(node):
             print "Hm, child of %s is None" % node
             continue
         if not hasattr(child, 'parent'):
-            print " ERROR: %s has child %s %x with no parent" % (node, child, id(child))
+            print " ERROR: %s has child %s %x with no parent" % (
+                node, child, id(child))
         elif not child.parent:
-            print " ERROR: %s has child %s %x with parent %r" % (node, child, id(child), child.parent)
+            print " ERROR: %s has child %s %x with parent %r" % (
+                node, child, id(child), child.parent)
         elif child.parent is not node:
-            print " ERROR: %s %x has child %s %x with wrong parent %s" % (node,
-                                      id(node), child, id(child), child.parent)
+            print " ERROR: %s %x has child %s %x with wrong parent %s" % (
+                node, id(node), child, id(child), child.parent)
         else:
             ok = True
         if not ok:
@@ -145,7 +147,7 @@ class TreeTester(object):
     Module()
         body = [
         Print()
-            dest = 
+            dest =
             values = [
             ]
         ]
@@ -180,8 +182,8 @@ class TreeTester(object):
         if _done is None:
             _done = set()
         if node in _done:
-            self._string += '\nloop in tree: %r (%s)' % (node,
-                                            getattr(node, 'lineno', None))
+            self._string += '\nloop in tree: %r (%s)' % (
+                node, getattr(node, 'lineno', None))
             return
         _done.add(node)
         self._string += '\n' + indent +  '<%s>' % node.__class__.__name__
@@ -197,7 +199,7 @@ class TreeTester(object):
                     continue
                 if a in ("lineno", "col_offset") and not self.lineno:
                     continue
-                self._string +='\n' +  indent + a + " = " + repr(attr)
+                self._string += '\n' +  indent + a + " = " + repr(attr)
         for field in node._fields or ():
             attr = node_dict[field]
             if attr is None:

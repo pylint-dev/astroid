@@ -1,4 +1,4 @@
-# copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2014 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of astroid.
@@ -20,19 +20,19 @@
 The builder is not thread safe and can't be used to parse different sources
 at the same time.
 """
+from __future__ import with_statement
 
 __docformat__ = "restructuredtext en"
 
 import sys
 from os.path import splitext, basename, exists, abspath
 
-from logilab.common.modutils import modpath_from_file
-
 from astroid.exceptions import AstroidBuildingException, InferenceError
 from astroid.raw_building import InspectBuilder
 from astroid.rebuilder import TreeRebuilder
 from astroid.manager import AstroidManager
 from astroid.bases import YES, Instance
+from astroid.modutils import modpath_from_file
 
 from _ast import PyCF_ONLY_AST
 def parse(string):
@@ -42,13 +42,12 @@ if sys.version_info >= (3, 0):
     from tokenize import detect_encoding
 
     def open_source_file(filename):
-        byte_stream = open(filename, 'bU')
-        encoding = detect_encoding(byte_stream.readline)[0]
-        byte_stream.close()
-        stream = open(filename, 'U', encoding=encoding)
+        with open(filename, 'rb') as byte_stream:
+            encoding = detect_encoding(byte_stream.readline)[0]
+        stream = open(filename, 'rU', encoding=encoding)
         try:
             data = stream.read()
-        except UnicodeError, uex: # wrong encodingg
+        except UnicodeError: # wrong encodingg
             # detect_encoding returns utf-8 if no encoding specified
             msg = 'Wrong (%s) or no encoding specified' % encoding
             raise AstroidBuildingException(msg)
@@ -57,7 +56,7 @@ if sys.version_info >= (3, 0):
 else:
     import re
 
-    _ENCODING_RGX = re.compile("\s*#+.*coding[:=]\s*([-\w.]+)")
+    _ENCODING_RGX = re.compile(r"\s*#+.*coding[:=]\s*([-\w.]+)")
 
     def _guess_encoding(string):
         """get encoding from a python file as string or return None if not found
@@ -116,7 +115,7 @@ class AstroidBuilder(InspectBuilder):
         path is expected to be a python source file
         """
         try:
-            stream, encoding, data = open_source_file(path)
+            _, encoding, data = open_source_file(path)
         except IOError, exc:
             msg = 'Unable to load file %r (%s)' % (path, exc)
             raise AstroidBuildingException(msg)
@@ -188,8 +187,8 @@ class AstroidBuilder(InspectBuilder):
         for (name, asname) in node.names:
             if name == '*':
                 try:
-                    imported = node.root().import_module(node.modname)
-                except AstroidBuildingException:
+                    imported = node.do_import_module()
+                except InferenceError:
                     continue
                 for name in imported.wildcard_import_names():
                     node.parent.set_local(name, node)

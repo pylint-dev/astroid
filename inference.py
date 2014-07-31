@@ -25,16 +25,17 @@ from itertools import chain
 from astroid import nodes
 
 from astroid.manager import AstroidManager
-from astroid.exceptions import (AstroidError,
-    InferenceError, NoDefault, NotFoundError, UnresolvableName)
-from astroid.bases import YES, Instance, InferenceContext, \
-     _infer_stmts, path_wrapper, raise_if_nothing_infered
+from astroid.exceptions import (AstroidError, InferenceError, NoDefault,
+                                NotFoundError, UnresolvableName)
+from astroid.bases import (YES, Instance, InferenceContext,
+                           _infer_stmts, path_wrapper,
+                           raise_if_nothing_infered)
 from astroid.protocols import _arguments_infer_argname
 
 MANAGER = AstroidManager()
 
 
-class CallContext:
+class CallContext(object):
     """when inferring a function call, this class is used to remember values
     given as argument
     """
@@ -195,7 +196,7 @@ def infer_from(self, context=None, asname=True, lookupname=None):
         raise InferenceError()
     if asname:
         lookupname = self.real_name(lookupname)
-    module = self.do_import_module(self.modname)
+    module = self.do_import_module()
     try:
         return _infer_stmts(module.getattr(lookupname, ignore_locals=module is self.root()), context, lookupname=lookupname)
     except NotFoundError:
@@ -303,7 +304,7 @@ BIN_OP_METHOD = {'+':  '__add__',
                  '^':  '__xor__',
                  '<<': '__lshift__',
                  '>>': '__rshift__',
-                 }
+                }
 
 def _infer_binop(operator, operand1, operand2, context, failures=None):
     if operand1 is YES:
@@ -376,7 +377,7 @@ def infer_empty_node(self, context=None):
     else:
         try:
             for infered in MANAGER.infer_ast_from_something(self.object,
-                                                              context=context):
+                                                            context=context):
                 yield infered
         except AstroidError:
             yield YES

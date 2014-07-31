@@ -411,6 +411,47 @@ test()
         self.assertEqual(node.locals['stcmethod'][0].type,
                          'staticmethod')
 
+    def test_decorator_builtin_descriptors(self):
+        astroid = abuilder.string_build(dedent("""
+        def static_decorator(platform=None, order=50):
+            def wrapper(f):
+                f.cgm_module = True
+                f.cgm_module_order = order
+                f.cgm_module_platform = platform
+                return staticmethod(f)
+            return wrapper
+
+        def classmethod_decorator(platform=None):
+            def wrapper(f):
+                f.platform = platform
+                return classmethod(f)
+            return wrapper
+
+        class SomeClass(object):
+            @static_decorator()
+            def static(node, cfg):
+                pass
+            @classmethod_decorator()
+            def classmethod(cls):
+                pass
+            @static_decorator
+            def not_so_static(node):
+                pass
+            @classmethod_decorator
+            def not_so_classmethod(node):
+                pass
+            
+        """))
+        node = astroid.locals['SomeClass'][0]
+        self.assertEqual(node.locals['static'][0].type,
+                         'staticmethod')
+        self.assertEqual(node.locals['classmethod'][0].type,
+                         'classmethod')
+        self.assertEqual(node.locals['not_so_static'][0].type,
+                         'method')
+        self.assertEqual(node.locals['not_so_classmethod'][0].type,
+                         'method')
+
 
 class ClassNodeTC(TestCase):
 
@@ -852,6 +893,18 @@ def g2():
                 self.assertIsInstance(meta, nodes.Class)
                 self.assertEqual(meta.name, metaclass)
 
+    def test_metaclass_type(self):
+        klass = extract_node("""
+        def with_metaclass(meta, base=object):
+            return meta("NewBase", (base, ), {})
+
+        class ClassWithMeta(with_metaclass(type)): #@
+            pass
+        """)
+        self.assertEqual(
+            ['NewBase', 'object'],
+            [base.name for base in klass.ancestors()])
+
     def test_nonregr_infer_callresult(self):
         astroid = abuilder.string_build(dedent("""
         class Delegate(object):
@@ -868,6 +921,66 @@ def g2():
         # used to raise "'_Yes' object is not iterable", see
         # https://bitbucket.org/logilab/astroid/issue/17
         self.assertEqual(list(instance.infer()), [YES])
+
+    def test_slots(self):
+        astroid = abuilder.string_build(dedent("""
+        from collections import deque
+        from textwrap import dedent
+
+        class First(object):
+            __slots__ = ("a", "b", 1)
+        class Second(object):
+            __slots__ = "a"
+        class Third(object):
+            __slots__ = deque(["a", "b", "c"])
+        class Fourth(object):
+            __slots__ = {"a": "a", "b": "b"}
+        class Fifth(object):
+            __slots__ = list
+        class Sixth(object):
+            __slots__ = ""
+        class Seventh(object):
+            __slots__ = dedent.__name__
+        class Eight(object):
+            __slots__ = ("parens")
+        """))
+        first = astroid['First']
+        first_slots = first.slots()
+        self.assertEqual(len(first_slots), 2)
+        self.assertIsInstance(first_slots[0], nodes.Const)
+        self.assertIsInstance(first_slots[1], nodes.Const)
+        self.assertEqual(first_slots[0].value, "a")
+        self.assertEqual(first_slots[1].value, "b")
+
+        second_slots = astroid['Second'].slots()
+        self.assertEqual(len(second_slots), 1)
+        self.assertIsInstance(second_slots[0], nodes.Const)
+        self.assertEqual(second_slots[0].value, "a")
+
+        third_slots = astroid['Third'].slots()
+        self.assertEqual(third_slots, [])
+
+        fourth_slots = astroid['Fourth'].slots()
+        self.assertEqual(len(fourth_slots), 2)
+        self.assertIsInstance(fourth_slots[0], nodes.Const)
+        self.assertIsInstance(fourth_slots[1], nodes.Const)
+        self.assertEqual(fourth_slots[0].value, "a")
+        self.assertEqual(fourth_slots[1].value, "b")
+
+        fifth_slots = astroid['Fifth'].slots()
+        self.assertEqual(fifth_slots, [])
+
+        sixth_slots = astroid['Sixth'].slots()
+        self.assertEqual(sixth_slots, [])
+
+        seventh_slots = astroid['Seventh'].slots()
+        self.assertEqual(len(seventh_slots), 0)
+
+        eight_slots = astroid['Eight'].slots()
+        self.assertEqual(len(eight_slots), 1)
+        self.assertIsInstance(eight_slots[0], nodes.Const)
+        self.assertEqual(eight_slots[0].value, "parens")
+
 
 __all__ = ('ModuleNodeTC', 'ImportNodeTC', 'FunctionNodeTC', 'ClassNodeTC')
 

@@ -267,7 +267,7 @@ class ImportNodeTC(testlib.TestCase):
 
     def test_as_string(self):
         ast = MODULE['modutils']
-        self.assertEqual(ast.as_string(), "from logilab.common import modutils")
+        self.assertEqual(ast.as_string(), "from astroid import modutils")
         ast = MODULE['pb']
         self.assertEqual(ast.as_string(), "from logilab.common.shellutils import ProgressBar as pb")
         ast = MODULE['os']
@@ -312,6 +312,14 @@ except PickleError:
         astroid['message'].infer(ctx, lookupname='message').next()
         m = astroid['email'].infer(ctx, lookupname='email').next()
         self.assertFalse(m.file.startswith(self.datapath('email.py')))
+
+    def test_more_absolute_import(self):
+        sys.path.insert(0, self.datapath('moreabsimport'))
+        try:
+            astroid = abuilder.file_build(self.datapath('module1abs/__init__.py'))
+            self.assertIn('sys', astroid.locals)
+        finally:
+            sys.path.pop(0)
 
 
 class CmpNodeTC(testlib.TestCase):

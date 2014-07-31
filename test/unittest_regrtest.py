@@ -1,4 +1,4 @@
-# copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2014 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of astroid.
@@ -32,6 +32,10 @@ class NonRegressionTC(TestCase):
         sys.path.insert(0, join(dirname(abspath(__file__)), 'regrtest_data'))
 
     def tearDown(self):
+        # Since we may have created a brainless manager, leading
+        # to a new cache builtin module and proxy classes in the constants,
+        # clear out the global manager cache.
+        MANAGER.clear_cache()
         sys.path.pop(0)
 
     def brainless_manager(self):
@@ -42,6 +46,7 @@ class NonRegressionTC(TestCase):
         manager.astroid_cache = {}
         manager._mod_file_cache = {}
         manager.transforms = {}
+        manager.clear_cache() # trigger proper bootstraping
         return manager
 
     def test_module_path(self):
@@ -106,7 +111,7 @@ class A(gobject.GObject):
         pylinter = mod['PyLinter']
         expect = ['OptionsManagerMixIn', 'object', 'MessagesHandlerMixIn',
                   'ReportsHandlerMixIn', 'BaseTokenChecker', 'BaseChecker',
-                  'OptionsProviderMixIn', 'ASTWalker']
+                  'OptionsProviderMixIn']
         self.assertListEqual([c.name for c in pylinter.ancestors()],
                              expect)
         self.assertTrue(list(Instance(pylinter).getattr('config')))
@@ -176,6 +181,24 @@ def run():
         for klass in classes:
             # triggers the _is_metaclass call
             klass.type
+
+    def test_decorator_callchain_issue42(self):
+        builder = AstroidBuilder()
+        data = """
+
+def test():
+    def factory(func):
+        def newfunc():
+            func()
+        return newfunc
+    return factory
+
+@test()
+def crash():
+    pass
+"""
+        astroid = builder.string_build(data, __name__, __file__)
+        self.assertEqual(astroid['crash'].type, 'function')
 
 class Whatever(object):
     a = property(lambda x: x, lambda x: x)

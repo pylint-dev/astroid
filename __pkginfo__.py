@@ -21,7 +21,7 @@ distname = 'astroid'
 
 modname = 'astroid'
 
-numversion = (1, 1, 1)
+numversion = (1, 2, 0)
 version = '.'.join([str(num) for num in numversion])
 
 install_requires = ['logilab-common >= 0.60.0']
@@ -38,11 +38,12 @@ description = "rebuild a new abstract syntax tree from Python's ast"
 from os.path import join
 include_dirs = ['brain',
                 join('test', 'regrtest_data'),
-                join('test', 'data'), join('test', 'data2')]
+                join('test', 'data'), join('test', 'data2')
+               ]
 
 classifiers = ["Topic :: Software Development :: Libraries :: Python Modules",
                "Topic :: Software Development :: Quality Assurance",
                "Programming Language :: Python",
                "Programming Language :: Python :: 2",
                "Programming Language :: Python :: 3",
-               ]
+              ]
