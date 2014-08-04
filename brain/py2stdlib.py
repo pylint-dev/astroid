@@ -258,6 +258,7 @@ def infer_named_tuple(node, context=None):
                                                    context=context)
     fake = AstroidBuilder(MANAGER).string_build('''
 class %(name)s(tuple):
+    _fields = %(fields)r
     def _asdict(self):
         return self.__dict__
     @classmethod
@@ -272,6 +273,7 @@ class %(name)s(tuple):
     class_node.locals['_asdict'] = fake.body[0].locals['_asdict']
     class_node.locals['_make'] = fake.body[0].locals['_make']
     class_node.locals['_replace'] = fake.body[0].locals['_replace']
+    class_node.locals['_fields'] = fake.body[0].locals['_fields']
     # we use UseInferenceDefault, we can't be a generator so return an iterator
     return iter([class_node])
 

@@ -8,6 +8,8 @@ Change log for the astroid package (used to be astng)
     * Set the parent of vararg and kwarg nodes when inferring them.
       Closes issue #43.
 
+    * namedtuple inference knows about '_fields' attribute.
+
 2014-07-25  --  1.2.0
 
     * Function nodes can detect decorator call chain and see if they are
