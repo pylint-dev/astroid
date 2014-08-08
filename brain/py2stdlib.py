@@ -315,6 +315,8 @@ def infer_enum_class(node, context=None):
                        'value': real_value.as_string()})
                 fake = AstroidBuilder(MANAGER).string_build(classdef)[target.name]
                 fake.parent = target.parent
+                for method in node.mymethods():
+                    fake.locals[method.name] = [method]
                 new_targets.append(fake.instanciate_class())
             node.locals[local] = new_targets
         break

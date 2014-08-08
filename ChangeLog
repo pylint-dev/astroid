@@ -10,6 +10,8 @@ Change log for the astroid package (used to be astng)
 
     * namedtuple inference knows about '_fields' attribute.
 
+    * enum members knows about the methods from the enum class.
+
 2014-07-25  --  1.2.0
 
     * Function nodes can detect decorator call chain and see if they are
