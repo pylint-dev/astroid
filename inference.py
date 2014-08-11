@@ -142,11 +142,37 @@ nodes.Tuple._infer = infer_end
 nodes.Dict._infer = infer_end
 nodes.Set._infer = infer_end
 
+def _higher_function_scope(node):
+    """ Search for the first function which encloses the given
+    scope. This can be used for looking up in that function's
+    scope, in case looking up in a lower scope for a particular
+    name fails.
+
+    :param node: A scope node.
+    :returns:
+        ``None``, if no parent function scope was found,
+        otherwise an instance of :class:`astroid.scoped_nodes.Function`,
+        which encloses the given node.
+    """
+    current = node
+    while current.parent and not isinstance(current.parent, nodes.Function):
+        current = current.parent
+    if current and current.parent:
+        return current.parent
+
 def infer_name(self, context=None):
     """infer a Name: use name lookup rules"""
     frame, stmts = self.lookup(self.name)
     if not stmts:
-        raise UnresolvableName(self.name)
+        # Try to see if the name is enclosed in a nested function
+        # and use the higher (first function) scope for searching.
+        # TODO: should this be promoted to other nodes as well?
+        parent_function = _higher_function_scope(self.scope())
+        if parent_function:
+            _, stmts = parent_function.lookup(self.name)
+
+        if not stmts:
+            raise UnresolvableName(self.name)
     context = context.clone()
     context.lookupname = self.name
     return _infer_stmts(stmts, context, frame)

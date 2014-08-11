@@ -20,6 +20,7 @@
 from os.path import join, dirname, abspath
 import sys
 from StringIO import StringIO
+from textwrap import dedent
 
 from logilab.common.testlib import TestCase, unittest_main, require_version
 
@@ -1239,6 +1240,22 @@ def test(*args, **kwargs):
         self.assertIsInstance(vararg_infered, nodes.Tuple)
         self.assertIs(vararg_infered.parent, func.args)
 
+    def test_infer_nested(self):
+        code = dedent("""
+        def nested():
+            from threading import Thread
+    
+            class NestedThread(Thread):
+                def __init__(self):
+                    Thread.__init__(self)
+        """)
+        # Test that inferring Thread.__init__ looks up in
+        # the nested scope.
+        astroid = builder.string_build(code, __name__, __file__)
+        callfunc = next(astroid.nodes_of_class(nodes.CallFunc))
+        func = callfunc.func
+        infered = func.infered()[0]
+        self.assertIsInstance(infered, UnboundMethod)
 
 if __name__ == '__main__':
     unittest_main()

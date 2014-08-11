@@ -12,6 +12,10 @@ Change log for the astroid package (used to be astng)
 
     * enum members knows about the methods from the enum class.
 
+    * Name inference will lookup in the parent function
+      of the current scope, in case searching in the current scope
+      fails.
+
 2014-07-25  --  1.2.0
 
     * Function nodes can detect decorator call chain and see if they are
