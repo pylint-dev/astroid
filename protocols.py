@@ -21,12 +21,32 @@ where it makes sense.
 
 __doctype__ = "restructuredtext en"
 
-from astroid.exceptions import InferenceError, NoDefault
+from astroid.exceptions import InferenceError, NoDefault, NotFoundError
 from astroid.node_classes import unpack_infer
 from astroid.bases import copy_context, \
      raise_if_nothing_infered, yes_if_nothing_infered, Instance, YES
 from astroid.nodes import const_factory
 from astroid import nodes
+
+BIN_OP_METHOD = {'+':  '__add__',
+                 '-':  '__sub__',
+                 '/':  '__div__',
+                 '//': '__floordiv__',
+                 '*':  '__mul__',
+                 '**': '__power__',
+                 '%':  '__mod__',
+                 '&':  '__and__',
+                 '|':  '__or__',
+                 '^':  '__xor__',
+                 '<<': '__lshift__',
+                 '>>': '__rshift__',
+                }
+
+UNARY_OP_METHOD = {'+': '__pos__',
+                   '-': '__neg__',
+                   '~': '__invert__',
+                   'not': None, # XXX not '__nonzero__'
+                  }
 
 # unary operations ############################################################
 
@@ -132,6 +152,25 @@ def dict_infer_binary_op(self, operator, other, context):
             yield YES
         # XXX else log TypeError
 nodes.Dict.infer_binary_op = yes_if_nothing_infered(dict_infer_binary_op)
+
+def instance_infer_binary_op(self, operator, other, context):
+    try:
+        methods = self.getattr(BIN_OP_METHOD[operator])
+    except (NotFoundError, KeyError):
+        # Unknown operator
+        yield YES
+    else:
+        for method in methods:
+            if not isinstance(method, nodes.Function):
+                continue
+            for result in method.infer_call_result(self, context):
+                if result is not YES:
+                    yield result
+            # We are interested only in the first infered method,
+            # don't go looking in the rest of the methods of the ancestors.
+            break
+
+Instance.infer_binary_op = yes_if_nothing_infered(instance_infer_binary_op)
 
 
 # assignment ##################################################################

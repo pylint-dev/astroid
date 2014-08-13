@@ -1257,5 +1257,63 @@ def test(*args, **kwargs):
         infered = func.infered()[0]
         self.assertIsInstance(infered, UnboundMethod)
 
+    def test_instance_binary_operations(self):
+        code = dedent("""
+        class A(object):
+            def __mul__(self, other):
+                return 42
+        a = A()
+        b = A()
+        sub = a - b
+        mul = a * b
+        """)
+        astroid = builder.string_build(code, __name__, __file__)
+        sub = astroid['sub'].infered()[0]
+        mul = astroid['mul'].infered()[0]
+        self.assertIs(sub, YES)
+        self.assertIsInstance(mul, nodes.Const)
+        self.assertEqual(mul.value, 42)
+
+    def test_instance_binary_operations_parent(self):
+        code = dedent("""
+        class A(object):
+            def __mul__(self, other):
+                return 42
+        class B(A):
+            pass
+        a = B()
+        b = B()
+        sub = a - b
+        mul = a * b
+        """)
+        astroid = builder.string_build(code, __name__, __file__)
+        sub = astroid['sub'].infered()[0]
+        mul = astroid['mul'].infered()[0]
+        self.assertIs(sub, YES)
+        self.assertIsInstance(mul, nodes.Const)
+        self.assertEqual(mul.value, 42)
+
+    def test_instance_binary_operations_multiple_methods(self):
+        code = dedent("""
+        class A(object):
+            def __mul__(self, other):
+                return 42
+        class B(A):
+            def __mul__(self, other):
+                return [42]
+        a = B()
+        b = B()
+        sub = a - b
+        mul = a * b
+        """)
+        astroid = builder.string_build(code, __name__, __file__)
+        sub = astroid['sub'].infered()[0]
+        mul = astroid['mul'].infered()[0]
+        self.assertIs(sub, YES)
+        self.assertIsInstance(mul, nodes.List)
+        self.assertIsInstance(mul.elts[0], nodes.Const)
+        self.assertEqual(mul.elts[0].value, 42)
+
+
 if __name__ == '__main__':
     unittest_main()

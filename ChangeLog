@@ -19,6 +19,9 @@ Change log for the astroid package (used to be astng)
     * Inference of the functional form of the enums takes into
       consideration the various inputs that enums accepts.
 
+    * The inference engine handles binary operations (add, mul etc.)
+      between instances.
+
 2014-07-25  --  1.2.0
 
     * Function nodes can detect decorator call chain and see if they are

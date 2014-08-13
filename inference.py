@@ -30,7 +30,9 @@ from astroid.exceptions import (AstroidError, InferenceError, NoDefault,
 from astroid.bases import (YES, Instance, InferenceContext,
                            _infer_stmts, copy_context, path_wrapper,
                            raise_if_nothing_infered)
-from astroid.protocols import _arguments_infer_argname
+from astroid.protocols import (
+    _arguments_infer_argname,
+    BIN_OP_METHOD, UNARY_OP_METHOD)
 
 MANAGER = AstroidManager()
 
@@ -292,13 +294,6 @@ def infer_subscript(self, context=None):
 nodes.Subscript._infer = path_wrapper(infer_subscript)
 nodes.Subscript.infer_lhs = raise_if_nothing_infered(infer_subscript)
 
-
-UNARY_OP_METHOD = {'+': '__pos__',
-                   '-': '__neg__',
-                   '~': '__invert__',
-                   'not': None, # XXX not '__nonzero__'
-                  }
-
 def infer_unaryop(self, context=None):
     for operand in self.operand.infer(context):
         try:
@@ -320,21 +315,6 @@ def infer_unaryop(self, context=None):
                 except:
                     yield YES
 nodes.UnaryOp._infer = path_wrapper(infer_unaryop)
-
-
-BIN_OP_METHOD = {'+':  '__add__',
-                 '-':  '__sub__',
-                 '/':  '__div__',
-                 '//': '__floordiv__',
-                 '*':  '__mul__',
-                 '**': '__power__',
-                 '%':  '__mod__',
-                 '&':  '__and__',
-                 '|':  '__or__',
-                 '^':  '__xor__',
-                 '<<': '__lshift__',
-                 '>>': '__rshift__',
-                }
 
 def _infer_binop(operator, operand1, operand2, context, failures=None):
     if operand1 is YES:
