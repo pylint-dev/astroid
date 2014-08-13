@@ -16,6 +16,9 @@ Change log for the astroid package (used to be astng)
       of the current scope, in case searching in the current scope
       fails.
 
+    * Inference of the functional form of the enums takes into
+      consideration the various inputs that enums accepts.
+
 2014-07-25  --  1.2.0
 
     * Function nodes can detect decorator call chain and see if they are

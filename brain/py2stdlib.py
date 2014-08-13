@@ -8,7 +8,10 @@ Currently help understanding of :
 import sys
 from textwrap import dedent
 
-from astroid import MANAGER, AsStringRegexpPredicate, UseInferenceDefault, inference_tip, YES
+from astroid import (
+    MANAGER, AsStringRegexpPredicate,
+    UseInferenceDefault, inference_tip,
+    YES, InferenceError)
 from astroid import exceptions
 from astroid import nodes
 from astroid.builder import AstroidBuilder
@@ -19,7 +22,7 @@ PY33 = sys.version_info >= (3, 3)
 
 # general function
 
-def infer_func_form(node, base_type, context=None):
+def infer_func_form(node, base_type, context=None, enum=False):
     """Specific inference function for namedtuple or Python 3 enum. """
     def infer_first(node):
         try:
@@ -44,8 +47,25 @@ def infer_func_form(node, base_type, context=None):
         try:
             attributes = names.value.replace(',', ' ').split()
         except AttributeError:
-            attributes = [infer_first(const).value for const in names.elts]
-    except (AttributeError, exceptions.InferenceError):
+            if not enum:
+                attributes = [infer_first(const).value for const in names.elts]
+            else:
+                # Enums supports either iterator of (name, value) pairs
+                # or mappings.
+                # TODO: support only list and mappings.
+                if hasattr(names, 'items') and isinstance(names.items, list):
+                    attributes = [infer_first(const[0]).value
+                                  for const in names.items
+                                  if isinstance(const[0], nodes.Const)]
+                elif hasattr(names, 'elts'):
+                    attributes = [infer_first(const.elts[0]).value
+                                  for const in names.elts
+                                  if isinstance(const, nodes.Tuple)]
+                else:
+                    raise AttributeError
+                if not attributes:
+                    raise AttributeError
+    except (AttributeError, exceptions.InferenceError) as exc:
         raise UseInferenceDefault()
     # we want to return a Class node instance with proper attributes set
     class_node = nodes.Class(name, 'docstring')
@@ -280,7 +300,8 @@ class %(name)s(tuple):
 def infer_enum(node, context=None):
     """ Specific inference function for enum CallFunc node. """
     enum_meta = nodes.Class("EnumMeta", 'docstring')
-    class_node = infer_func_form(node, enum_meta, context=context)[0]
+    class_node = infer_func_form(node, enum_meta,
+                                 context=context, enum=True)[0]
     return iter([class_node.instanciate_class()])
 
 def infer_enum_class(node, context=None):
