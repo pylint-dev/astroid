@@ -52,15 +52,23 @@ def infer_func_form(node, base_type, context=None, enum=False):
             else:
                 # Enums supports either iterator of (name, value) pairs
                 # or mappings.
-                # TODO: support only list and mappings.
+                # TODO: support only list, tuples and mappings.
                 if hasattr(names, 'items') and isinstance(names.items, list):
                     attributes = [infer_first(const[0]).value
                                   for const in names.items
                                   if isinstance(const[0], nodes.Const)]
                 elif hasattr(names, 'elts'):
-                    attributes = [infer_first(const.elts[0]).value
-                                  for const in names.elts
-                                  if isinstance(const, nodes.Tuple)]
+                    # Enums can support either ["a", "b", "c"]
+                    # or [("a", 1), ("b", 2), ...], but they can't
+                    # be mixed.
+                    if all(isinstance(const, nodes.Tuple)
+                           for const in names.elts):
+                        attributes = [infer_first(const.elts[0]).value
+                                      for const in names.elts
+                                      if isinstance(const, nodes.Tuple)]
+                    else:
+                        attributes = [infer_first(const).value
+                                      for const in names.elts]
                 else:
                     raise AttributeError
                 if not attributes:
