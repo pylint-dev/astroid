@@ -22,6 +22,10 @@ Change log for the astroid package (used to be astng)
     * The inference engine handles binary operations (add, mul etc.)
       between instances.
 
+    * Fix an infinite loop in the inference, by returning a copy
+      of instance attributes, when calling 'instance_attr'.
+      Closes issue #34 (patch by Emile Anclin).
+
 2014-07-25  --  1.2.0
 
     * Function nodes can detect decorator call chain and see if they are

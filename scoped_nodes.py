@@ -1028,7 +1028,9 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
           if no attribute with this name has been find in this class or
           its parent classes
         """
-        values = self.instance_attrs.get(name, [])
+        # Return a copy, so we don't modify self.instance_attrs,
+        # which could lead to infinite loop.
+        values = list(self.instance_attrs.get(name, []))
         # get all values from parents
         for class_node in self.instance_attr_ancestors(name, context):
             values += class_node.instance_attrs[name]

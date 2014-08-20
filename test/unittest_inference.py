@@ -930,6 +930,35 @@ def f(x):
         self.assertEqual(len(infered), 1)
         self.assertEqual(infered[0], YES)
 
+    def test_nonregr_instance_attrs(self):
+        """non regression for instance_attrs infinite loop : pylint / #4"""
+
+        code = """
+class Foo(object):
+
+    def set_42(self):
+        self.attr = 42
+
+class Bar(Foo):
+
+    def __init__(self):
+        self.attr = 41
+        """
+        astroid = builder.string_build(code, __name__, __file__)
+        foo_class = astroid['Foo']
+        bar_class = astroid['Bar']
+        bar_self = astroid['Bar']['__init__']['self']
+        assattr = bar_class.instance_attrs['attr'][0]
+        self.assertEqual(len(foo_class.instance_attrs['attr']), 1)
+        self.assertEqual(len(bar_class.instance_attrs['attr']), 1)
+        self.assertEqual(bar_class.instance_attrs, {'attr': [assattr]})
+        # call 'instance_attr' via 'Instance.getattr' to trigger the bug:
+        instance = bar_self.infered()[0]
+        _attr = instance.getattr('attr')
+        self.assertEqual(len(bar_class.instance_attrs['attr']), 1)
+        self.assertEqual(len(foo_class.instance_attrs['attr']), 1)
+        self.assertEqual(bar_class.instance_attrs, {'attr': [assattr]})
+
     def test_python25_generator_exit(self):
         sys.stderr = StringIO()
         data = "b = {}[str(0)+''].a"
