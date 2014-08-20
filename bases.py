@@ -259,8 +259,8 @@ class UnboundMethod(Proxy):
         # instance of the class given as first argument.
         if (self._proxied.name == '__new__' and
                 self._proxied.parent.frame().qname() == '%s.object' % BUILTINS):
-            return ((x is YES and x or Instance(x))
-                    for x in caller.args[0].infer())
+            infer = caller.args[0].infer() if caller.args else []
+            return ((x is YES and x or Instance(x)) for x in infer)
         return self._proxied.infer_call_result(caller, context)
 
 

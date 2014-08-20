@@ -1343,6 +1343,21 @@ def test(*args, **kwargs):
         self.assertIsInstance(mul.elts[0], nodes.Const)
         self.assertEqual(mul.elts[0].value, 42)
 
+    def test_infer_call_result_crash(self):
+        # Test for issue 11.
+        code = dedent("""
+        class A(object):
+            def __mul__(self, other):
+                return type.__new__()
+
+        a = A()
+        b = A()
+        c = a * b
+        """)
+        astroid = builder.string_build(code, __name__, __file__)
+        node = astroid['c']
+        self.assertEqual(node.infered(), [YES])
+
 
 if __name__ == '__main__':
     unittest_main()

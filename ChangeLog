@@ -26,6 +26,9 @@ Change log for the astroid package (used to be astng)
       of instance attributes, when calling 'instance_attr'.
       Closes issue #34 (patch by Emile Anclin).
 
+    * Don't crash when trying to infer unbound object.__new__ call.
+      Closes issue #11.
+
 2014-07-25  --  1.2.0
 
     * Function nodes can detect decorator call chain and see if they are
