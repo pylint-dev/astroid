@@ -191,32 +191,6 @@ def cleanup_resources(force=False):
         module.locals[func_name] = func
 
 
-def urlparse_transform(module):
-    fake = AstroidBuilder(MANAGER).string_build('''
-
-def urlparse(url, scheme='', allow_fragments=True):
-    return ParseResult()
-
-class ParseResult(object):
-    def __init__(self):
-        self.scheme = ''
-        self.netloc = ''
-        self.path = ''
-        self.params = ''
-        self.query = ''
-        self.fragment = ''
-        self.username = None
-        self.password = None
-        self.hostname = None
-        self.port = None
-
-    def geturl(self):
-        return ''
-''')
-
-    for func_name, func in fake.locals.items():
-        module.locals[func_name] = func
-
 def subprocess_transform(module):
     if PY3K:
         communicate = (bytes('string', 'ascii'), bytes('string', 'ascii'))
@@ -275,7 +249,6 @@ class Popen(object):
 MODULE_TRANSFORMS['hashlib'] = hashlib_transform
 MODULE_TRANSFORMS['collections'] = collections_transform
 MODULE_TRANSFORMS['pkg_resources'] = pkg_resources_transform
-MODULE_TRANSFORMS['urlparse'] = urlparse_transform
 MODULE_TRANSFORMS['subprocess'] = subprocess_transform
 
 # namedtuple support ###########################################################
