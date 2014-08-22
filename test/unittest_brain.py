@@ -66,7 +66,7 @@ class NamedTupleTest(TestCase):
         for base in klass.ancestors():
             if base.name == 'X':
                 break
-        self.assertItemsEqual(["a", "b", "c"], base.instance_attrs.keys())
+        self.assertCountEqual(["a", "b", "c"], base.instance_attrs.keys())
 
     def test_namedtuple_inference_failure(self):
         klass = test_utils.extract_node("""
