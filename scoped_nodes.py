@@ -756,15 +756,21 @@ def _rec_get_names(args, names=None):
 # Class ######################################################################
 
 
-def _is_metaclass(klass):
+def _is_metaclass(klass, seen=None):
     """ Return if the given class can be
     used as a metaclass.
     """
     if klass.name == 'type':
         return True
+    if seen is None:
+        seen = set()
     for base in klass.bases:
         try:
             for baseobj in base.infer():
+                if baseobj in seen:
+                    continue
+                else:
+                    seen.add(baseobj)
                 if isinstance(baseobj, Instance):
                     # not abstract
                     return False
@@ -776,7 +782,7 @@ def _is_metaclass(klass):
                     continue
                 if baseobj._type == 'metaclass':
                     return True
-                if _is_metaclass(baseobj):
+                if _is_metaclass(baseobj, seen):
                     return True
         except InferenceError:
             continue
