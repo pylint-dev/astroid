@@ -1,7 +1,8 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
---
+2014-08-24 -- 1.2.1
+
     * Fix a crash occurred when inferring decorator call chain.
       Closes issue #42.
 
