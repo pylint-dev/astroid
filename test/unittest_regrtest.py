@@ -200,6 +200,23 @@ def crash():
         astroid = builder.string_build(data, __name__, __file__)
         self.assertEqual(astroid['crash'].type, 'function')
 
+    def test_filter_stmts_scoping(self):
+        builder = AstroidBuilder()
+        data = """
+def test():
+    compiler = int()
+    class B(compiler.__class__):
+        pass
+    compiler = B()
+    return compiler
+"""
+        astroid = builder.string_build(data, __name__, __file__)
+        test = astroid['test']
+        result = next(test.infer_call_result(astroid))
+        self.assertIsInstance(result, Instance)
+        base = next(result._proxied.bases[0].infer())
+        self.assertEqual(base.name, 'int')
+
 class Whatever(object):
     a = property(lambda x: x, lambda x: x)
 

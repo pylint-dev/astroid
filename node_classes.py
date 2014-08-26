@@ -146,6 +146,20 @@ class LookupMixIn(object):
             myframe = self.frame().parent.frame()
         else:
             myframe = self.frame()
+            # If the frame of this node is the same as the statement
+            # of this node, then the node is part of a class or
+            # a function definition and the frame of this node should be the
+            # the upper frame, not the frame of the definition.
+            # For more information why this is important,
+            # see Pylint issue #295.
+            # For example, for 'b', the statement is the same
+            # as the frame / scope:
+            #
+            # def test(b=1):
+            #     ...
+
+            if self.statement() is myframe and myframe.parent:
+                myframe = myframe.parent.frame()
         if not myframe is frame or self is frame:
             return stmts
         mystmt = self.statement()
