@@ -104,17 +104,23 @@ MANAGER.register_transform(nodes.Module, transform)
 def hashlib_transform(module):
     template = '''
 
-class %s(object):
+class %(name)s(object):
   def __init__(self, value=''): pass
   def digest(self):
     return u''
+  def copy(self):
+    return self
   def update(self, value): pass
   def hexdigest(self):
     return u''
+  @property
+  def name(self):
+    return %(name)r
 '''
 
     algorithms = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')
-    classes = "".join(template % hashfunc for hashfunc in algorithms)
+    classes = "".join(template % {'name': hashfunc}
+                      for hashfunc in algorithms)
 
     fake = AstroidBuilder(MANAGER).string_build(classes)
 
