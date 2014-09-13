@@ -4,6 +4,7 @@ Helps with understanding everything imported from 'gi.repository'
 """
 
 import inspect
+import itertools
 import sys
 import re
 
@@ -134,17 +135,26 @@ def _new_import_module(self, modname, relative_only=False, level=None):
     # build astroid representation unless we already tried so
     if modname not in _inspected_modules:
         modnames = [modname]
-        # GLib and GObject have some special case handling
-        # in pygobject that we need to cope with
+        optional_modnames = []
+
+        # GLib and GObject may have some special case handling
+        # in pygobject that we need to cope with. However at
+        # least as of pygobject3-3.13.91 the _glib module doesn't
+        # exist anymore, so if treat these modules as optional.
         if modname == 'gi.repository.GLib':
-            modnames.append('gi._glib')
+            optional_modnames.append('gi._glib')
         elif modname == 'gi.repository.GObject':
-            modnames.append('gi._gobject')
+            optional_modnames.append('gi._gobject')
+
         try:
             modcode = ''
-            for m in modnames:
-                __import__(m)
-                modcode += _gi_build_stub(sys.modules[m])
+            for m in itertools.chain(modnames, optional_modnames):
+                try:
+                    __import__(m)
+                    modcode += _gi_build_stub(sys.modules[m])
+                except ImportError:
+                    if m not in optional_modnames:
+                        raise
         except ImportError:
             astng = _inspected_modules[modname] = None
         else:
