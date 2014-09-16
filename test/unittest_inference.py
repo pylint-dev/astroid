@@ -1358,6 +1358,11 @@ def test(*args, **kwargs):
         node = astroid['c']
         self.assertEqual(node.infered(), [YES])
 
+    def test_infer_empty_nodes(self):
+        # Should not crash when trying to infer EmptyNodes.
+        node = nodes.EmptyNode()
+        self.assertEqual(node.infered(), [YES])
+
 
 if __name__ == '__main__':
     unittest_main()

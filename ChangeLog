@@ -6,6 +6,9 @@ Change log for the astroid package (used to be astng)
       where statements with the same name weren't filtered properly.
       Closes pylint issue #295.
 
+    * Check that EmptyNode has an underlying object in
+      EmptyNode.has_underlying_object.
+
 2014-08-24 -- 1.2.1
 
     * Fix a crash occurred when inferring decorator call chain.

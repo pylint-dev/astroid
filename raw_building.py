@@ -57,7 +57,10 @@ def attach_dummy_node(node, name, object=_marker):
     enode.object = object
     _attach_local_node(node, enode, name)
 
-EmptyNode.has_underlying_object = lambda self: self.object is not _marker
+def _has_underlying_object(self):
+    return hasattr(self, 'object') and self.object is not _marker
+
+EmptyNode.has_underlying_object = _has_underlying_object
 
 def attach_const_node(node, name, value):
     """create a Const node and register it in the locals of the given
