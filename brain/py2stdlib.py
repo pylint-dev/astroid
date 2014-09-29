@@ -295,7 +295,8 @@ def infer_enum_class(node, context=None):
     """ Specific inference for enums. """
     names = set(('Enum', 'IntEnum', 'enum.Enum', 'enum.IntEnum'))
     for basename in node.basenames:
-        # TODO: doesn't handle subclasses yet.
+        # TODO: doesn't handle subclasses yet. This implementation
+        # is a hack to support enums.
         if basename not in names:
             continue
         if node.root().name == 'enum':
@@ -305,22 +306,26 @@ def infer_enum_class(node, context=None):
             if any(not isinstance(value, nodes.AssName)
                    for value in values):
                 continue
-            parent = values[0].parent
-            real_value = parent.value
+
+            stmt = values[0].statement()
+            if isinstance(stmt.targets[0], nodes.Tuple):
+                targets = stmt.targets[0].itered()
+            else:
+                targets = stmt.targets
+
             new_targets = []
-            for target in parent.targets:
+            for target in targets:
                 # Replace all the assignments with our mocked class.
                 classdef = dedent('''
                 class %(name)s(object):
                     @property
                     def value(self):
-                        return %(value)s
+                        # Not the best return.
+                        return None 
                     @property
                     def name(self):
                         return %(name)r
-                    %(name)s = %(value)s
-                ''' % {'name': target.name,
-                       'value': real_value.as_string()})
+                ''' % {'name': target.name})
                 fake = AstroidBuilder(MANAGER).string_build(classdef)[target.name]
                 fake.parent = target.parent
                 for method in node.mymethods():
