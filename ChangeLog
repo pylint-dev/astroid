@@ -11,6 +11,9 @@ Change log for the astroid package (used to be astng)
 
     * Simplify the understanding of enum members.
 
+    * Fix an infinite loop with decorator call chain inference,
+      where the decorator returns itself. Closes issue #50.
+
 2014-08-24 -- 1.2.1
 
     * Fix a crash occurred when inferring decorator call chain.

@@ -1363,6 +1363,22 @@ def test(*args, **kwargs):
         node = nodes.EmptyNode()
         self.assertEqual(node.infered(), [YES])
 
+    def test_infinite_loop_for_decorators(self):
+        # Issue https://bitbucket.org/logilab/astroid/issue/50
+        # A decorator that returns itself leads to an infinite loop.
+        code = dedent("""
+        def decorator():
+            def wrapper():
+                return decorator()
+            return wrapper
+
+        @decorator()
+        def do_a_thing():
+            pass""")
+        astroid = builder.string_build(code, __name__, __file__)
+        node = astroid['do_a_thing']
+        self.assertEqual(node.type, 'function')
+
 
 if __name__ == '__main__':
     unittest_main()
