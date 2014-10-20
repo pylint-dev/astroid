@@ -259,6 +259,14 @@ MODULE_TRANSFORMS['subprocess'] = subprocess_transform
 
 # namedtuple support ###########################################################
 
+def looks_like_namedtuple(node):
+    func = node.func
+    if type(func) is nodes.Getattr:
+        return func.attrname == 'namedtuple'
+    if type(func) is nodes.Name:
+        return func.name == 'namedtuple'
+    return False
+
 def infer_named_tuple(node, context=None):
     """Specific inference function for namedtuple CallFunc node"""
     class_node, name, attributes = infer_func_form(node, nodes.Tuple._proxied,
@@ -336,7 +344,7 @@ def infer_enum_class(node, context=None):
     return node
 
 MANAGER.register_transform(nodes.CallFunc, inference_tip(infer_named_tuple),
-                           AsStringRegexpPredicate('namedtuple', 'func'))
+                           looks_like_namedtuple)
 MANAGER.register_transform(nodes.CallFunc, inference_tip(infer_enum),
                            AsStringRegexpPredicate('Enum', 'func'))
 MANAGER.register_transform(nodes.Class, infer_enum_class)

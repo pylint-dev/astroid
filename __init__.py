@@ -79,6 +79,9 @@ class AsStringRegexpPredicate(object):
     If specified, the second argument is an `attrgetter` expression that will be
     applied on the node first to get the actual node on which `as_string` should
     be called.
+
+    WARNING: This can be fairly slow, as it has to convert every AST node back
+    to Python code; you should consider examining the AST directly instead.
     """
     def __init__(self, regexp, expression=None):
         self.regexp = re.compile(regexp)
@@ -98,7 +101,7 @@ def inference_tip(infer_function):
     .. sourcecode:: python
 
        MANAGER.register_transform(CallFunc, inference_tip(infer_named_tuple),
-                                  AsStringRegexpPredicate('namedtuple', 'func'))
+                                  predicate)
     """
     def transform(node, infer_function=infer_function):
         node._explicit_inference = infer_function

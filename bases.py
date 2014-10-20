@@ -24,6 +24,8 @@ __docformat__ = "restructuredtext en"
 import sys
 from contextlib import contextmanager
 
+from logilab.common.decorators import cachedproperty
+
 from astroid.exceptions import (InferenceError, AstroidError, NotFoundError,
                                 UnresolvableName, UseInferenceDefault)
 
@@ -56,63 +58,84 @@ class Proxy(object):
 
 # Inference ##################################################################
 
-class InferenceContext(object):
-    __slots__ = ('path', 'lookupname', 'callcontext', 'boundnode')
+MISSING = object()
 
-    def __init__(self, path=None):
+
+class InferenceContext(object):
+    __slots__ = ('path', 'callcontext', 'boundnode', 'infered')
+
+    def __init__(self,
+            path=None, callcontext=None, boundnode=None, infered=None):
         if path is None:
-            self.path = set()
+            self.path = frozenset()
         else:
             self.path = path
-        self.lookupname = None
-        self.callcontext = None
-        self.boundnode = None
+        self.callcontext = callcontext
+        self.boundnode = boundnode
+        if infered is None:
+            self.infered = {}
+        else:
+            self.infered = infered
 
-    def push(self, node):
-        name = self.lookupname
-        if (node, name) in self.path:
-            raise StopIteration()
-        self.path.add((node, name))
+    def push(self, key):
+        # This returns a NEW context with the same attributes, but a new key
+        # added to `path`.  The intention is that it's only passed to callees
+        # and then destroyed; otherwise scope() may not work correctly.
+        # The cache will be shared, since it's the same exact dict.
+        if key in self.path:
+            # End the containing generator
+            raise StopIteration
 
-    def clone(self):
-        # XXX copy lookupname/callcontext ?
-        clone = InferenceContext(self.path)
-        clone.callcontext = self.callcontext
-        clone.boundnode = self.boundnode
-        return clone
+        return InferenceContext(
+            self.path.union([key]),
+            self.callcontext,
+            self.boundnode,
+            self.infered,
+        )
 
     @contextmanager
-    def restore_path(self):
-        path = set(self.path)
-        yield
-        self.path = path
+    def scope(self, callcontext=MISSING, boundnode=MISSING):
+        try:
+            orig = self.callcontext, self.boundnode
+            if callcontext is not MISSING:
+                self.callcontext = callcontext
+            if boundnode is not MISSING:
+                self.boundnode = boundnode
+            yield
+        finally:
+            self.callcontext, self.boundnode = orig
 
-def copy_context(context):
-    if context is not None:
-        return context.clone()
-    else:
-        return InferenceContext()
+    def cache_generator(self, key, generator):
+        results = []
+        for result in generator:
+            results.append(result)
+            yield result
+
+        self.infered[key] = tuple(results)
+        return
 
 
-def _infer_stmts(stmts, context, frame=None):
+def _infer_stmts(stmts, context, frame=None, lookupname=None):
     """return an iterator on statements inferred by each statement in <stmts>
     """
     stmt = None
     infered = False
-    if context is not None:
-        name = context.lookupname
-        context = context.clone()
-    else:
-        name = None
+    if context is None:
         context = InferenceContext()
     for stmt in stmts:
         if stmt is YES:
             yield stmt
             infered = True
             continue
-        context.lookupname = stmt._infer_name(frame, name)
+
+        kw = {}
+        infered_name = stmt._infer_name(frame, lookupname)
+        if infered_name is not None:
+            # only returns not None if .infer() accepts a lookupname kwarg
+            kw['lookupname'] = infered_name
+
         try:
-            for infered in stmt.infer(context):
+            for infered in stmt.infer(context, **kw):
                 yield infered
                 infered = True
         except UnresolvableName:
@@ -170,20 +193,24 @@ class Instance(Proxy):
 
     def igetattr(self, name, context=None):
         """inferred getattr"""
+        if not context:
+            context = InferenceContext()
         try:
             # avoid recursively inferring the same attr on the same class
-            if context:
-                context.push((self._proxied, name))
+            new_context = context.push((self._proxied, name))
             # XXX frame should be self._proxied, or not ?
-            get_attr = self.getattr(name, context, lookupclass=False)
-            return _infer_stmts(self._wrap_attr(get_attr, context), context,
-                                frame=self)
+            get_attr = self.getattr(name, new_context, lookupclass=False)
+            return _infer_stmts(
+                self._wrap_attr(get_attr, new_context),
+                new_context,
+                frame=self,
+            )
         except NotFoundError:
             try:
                 # fallback to class'igetattr since it has some logic to handle
                 # descriptors
                 return self._wrap_attr(self._proxied.igetattr(name, context),
-                                       context)
+                                            context)
             except NotFoundError:
                 raise InferenceError(name)
 
@@ -274,9 +301,9 @@ class BoundMethod(UnboundMethod):
         return True
 
     def infer_call_result(self, caller, context):
-        context = context.clone()
-        context.boundnode = self.bound
-        return self._proxied.infer_call_result(caller, context)
+        with context.scope(boundnode=self.bound):
+            for infered in self._proxied.infer_call_result(caller, context):
+                yield infered
 
 
 class Generator(Instance):
@@ -308,7 +335,8 @@ def path_wrapper(func):
         """wrapper function handling context"""
         if context is None:
             context = InferenceContext()
-        context.push(node)
+        context = context.push((node, kwargs.get('lookupname')))
+
         yielded = set()
         for res in _func(node, context, **kwargs):
             # unproxy only true instance, not const, tuple, dict...
@@ -377,7 +405,15 @@ class NodeNG(object):
                 return self._explicit_inference(self, context, **kwargs)
             except UseInferenceDefault:
                 pass
-        return self._infer(context, **kwargs)
+
+        if not context:
+            return self._infer(context, **kwargs)
+
+        key = (self, kwargs.get('lookupname'), context.callcontext, context.boundnode)
+        if key in context.infered:
+            return iter(context.infered[key])
+
+        return context.cache_generator(key, self._infer(context, **kwargs))
 
     def _repr_name(self):
         """return self.name or self.attrname or '' for nice representation"""
@@ -415,7 +451,7 @@ class NodeNG(object):
             attr = getattr(self, field)
             if not attr: # None or empty listy / tuple
                 continue
-            if isinstance(attr, (list, tuple)):
+            if attr.__class__ in (list, tuple):
                 return attr[-1]
             else:
                 return attr
@@ -506,16 +542,28 @@ class NodeNG(object):
         # FIXME: raise an exception if nearest is None ?
         return nearest[0]
 
-    def set_line_info(self, lastchild):
+    # these are lazy because they're relatively expensive to compute for every
+    # single node, and they rarely get looked at
+
+    @cachedproperty
+    def fromlineno(self):
         if self.lineno is None:
-            self.fromlineno = self._fixed_source_line()
+            return self._fixed_source_line()
         else:
-            self.fromlineno = self.lineno
+            return self.lineno
+
+    @cachedproperty
+    def tolineno(self):
+        if not self._astroid_fields:
+            # can't have children
+            lastchild = None
+        else:
+            lastchild = self.last_child()
         if lastchild is None:
-            self.tolineno = self.fromlineno
+            return self.fromlineno
         else:
-            self.tolineno = lastchild.tolineno
-        return
+            return lastchild.tolineno
+
         # TODO / FIXME:
         assert self.fromlineno is not None, self
         assert self.tolineno is not None, self

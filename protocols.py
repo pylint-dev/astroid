@@ -23,7 +23,7 @@ __doctype__ = "restructuredtext en"
 
 from astroid.exceptions import InferenceError, NoDefault, NotFoundError
 from astroid.node_classes import unpack_infer
-from astroid.bases import copy_context, \
+from astroid.bases import InferenceContext, \
      raise_if_nothing_infered, yes_if_nothing_infered, Instance, YES
 from astroid.nodes import const_factory
 from astroid import nodes
@@ -282,7 +282,8 @@ def _arguments_infer_argname(self, name, context):
     # if there is a default value, yield it. And then yield YES to reflect
     # we can't guess given argument value
     try:
-        context = copy_context(context)
+        if context is None:
+            context = InferenceContext()
         for infered in self.default_value(name).infer(context):
             yield infered
         yield YES
@@ -294,13 +295,8 @@ def arguments_assigned_stmts(self, node, context, asspath=None):
     if context.callcontext:
         # reset call context/name
         callcontext = context.callcontext
-        context = copy_context(context)
-        context.callcontext = None
-        for infered in callcontext.infer_argument(self.parent, node.name, context):
-            yield infered
-        return
-    for infered in _arguments_infer_argname(self, node.name, context):
-        yield infered
+        return callcontext.infer_argument(self.parent, node.name, context)
+    return _arguments_infer_argname(self, node.name, context)
 nodes.Arguments.assigned_stmts = arguments_assigned_stmts
 
 

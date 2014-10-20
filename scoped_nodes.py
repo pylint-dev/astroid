@@ -39,7 +39,7 @@ from astroid.node_classes import Const, DelName, DelAttr, \
      Dict, From, List, Pass, Raise, Return, Tuple, Yield, YieldFrom, \
      LookupMixIn, const_factory as cf, unpack_infer, Name, CallFunc
 from astroid.bases import NodeNG, InferenceContext, Instance,\
-     YES, Generator, UnboundMethod, BoundMethod, _infer_stmts, copy_context, \
+     YES, Generator, UnboundMethod, BoundMethod, _infer_stmts, \
      BUILTINS
 from astroid.mixins import FilterStmtsMixin
 from astroid.bases import Statement
@@ -311,10 +311,10 @@ class Module(LocalsDictNodeNG):
         """inferred getattr"""
         # set lookup name since this is necessary to infer on import nodes for
         # instance
-        context = copy_context(context)
-        context.lookupname = name
+        if not context:
+            context = InferenceContext()
         try:
-            return _infer_stmts(self.getattr(name, context), context, frame=self)
+            return _infer_stmts(self.getattr(name, context), context, frame=self, lookupname=name)
         except NotFoundError:
             raise InferenceError(name)
 
@@ -339,13 +339,17 @@ class Module(LocalsDictNodeNG):
         return
 
     if sys.version_info < (2, 8):
-        def absolute_import_activated(self):
+        @cachedproperty
+        def _absolute_import_activated(self):
             for stmt in self.locals.get('absolute_import', ()):
                 if isinstance(stmt, From) and stmt.modname == '__future__':
                     return True
             return False
     else:
-        absolute_import_activated = lambda self: True
+        _absolute_import_activated = True
+
+    def absolute_import_activated(self):
+        return self._absolute_import_activated
 
     def import_module(self, modname, relative_only=False, level=None):
         """import the given module considering self as context"""
@@ -633,22 +637,25 @@ class Function(Statement, Lambda):
         self.locals = {}
         self.args = []
         self.body = []
-        self.decorators = None
         self.name = name
         self.doc = doc
         self.extra_decorators = []
         self.instance_attrs = {}
 
-    def set_line_info(self, lastchild):
-        self.fromlineno = self.lineno
-        # lineno is the line number of the first decorator, we want the def statement lineno
+    @cachedproperty
+    def fromlineno(self):
+        # lineno is the line number of the first decorator, we want the def
+        # statement lineno
+        lineno = self.lineno
         if self.decorators is not None:
-            self.fromlineno += sum(node.tolineno - node.lineno + 1
+            lineno += sum(node.tolineno - node.lineno + 1
                                    for node in self.decorators.nodes)
-        if self.args.fromlineno < self.fromlineno:
-            self.args.fromlineno = self.fromlineno
-        self.tolineno = lastchild.tolineno
-        self.blockstart_tolineno = self.args.tolineno
+
+        return lineno
+
+    @cachedproperty
+    def blockstart_tolineno(self):
+        return self.args.tolineno
 
     def block_range(self, lineno):
         """return block line numbers.
@@ -884,12 +891,12 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                         doc="boolean indicating if it's a new style class"
                         "or not")
 
-    def set_line_info(self, lastchild):
-        self.fromlineno = self.lineno
-        self.blockstart_tolineno = self.bases and self.bases[-1].tolineno or self.fromlineno
-        if lastchild is not None:
-            self.tolineno = lastchild.tolineno
-        # else this is a class with only a docstring, then tolineno is (should be) already ok
+    @cachedproperty
+    def blockstart_tolineno(self):
+        if self.bases:
+            return self.bases[-1].tolineno
+        else:
+            return self.fromlineno
 
     def block_range(self, lineno):
         """return block line numbers.
@@ -971,28 +978,27 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         if context is None:
             context = InferenceContext()
         for stmt in self.bases:
-            with context.restore_path():
-                try:
-                    for baseobj in stmt.infer(context):
-                        if not isinstance(baseobj, Class):
-                            if isinstance(baseobj, Instance):
-                                baseobj = baseobj._proxied
-                            else:
-                                # duh ?
-                                continue
-                        if baseobj in yielded:
-                            continue # cf xxx above
-                        yielded.add(baseobj)
-                        yield baseobj
-                        if recurs:
-                            for grandpa in baseobj.ancestors(True, context):
-                                if grandpa in yielded:
-                                    continue # cf xxx above
-                                yielded.add(grandpa)
-                                yield grandpa
-                except InferenceError:
-                    # XXX log error ?
-                    continue
+            try:
+                for baseobj in stmt.infer(context):
+                    if not isinstance(baseobj, Class):
+                        if isinstance(baseobj, Instance):
+                            baseobj = baseobj._proxied
+                        else:
+                            # duh ?
+                            continue
+                    if baseobj in yielded:
+                        continue # cf xxx above
+                    yielded.add(baseobj)
+                    yield baseobj
+                    if recurs:
+                        for grandpa in baseobj.ancestors(True, context):
+                            if grandpa in yielded:
+                                continue # cf xxx above
+                            yielded.add(grandpa)
+                            yield grandpa
+            except InferenceError:
+                # XXX log error ?
+                continue
 
     def local_attr_ancestors(self, name, context=None):
         """return an iterator on astroid representation of parent classes
@@ -1087,11 +1093,11 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         """
         # set lookup name since this is necessary to infer on import nodes for
         # instance
-        context = copy_context(context)
-        context.lookupname = name
+        if not context:
+            context = InferenceContext()
         try:
             for infered in _infer_stmts(self.getattr(name, context), context,
-                                        frame=self):
+                                        frame=self, lookupname=name):
                 # yield YES object instead of descriptors when necessary
                 if not isinstance(infered, Const) and isinstance(infered, Instance):
                     try:

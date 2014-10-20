@@ -308,11 +308,9 @@ except PickleError:
     def test_absolute_import(self):
         astroid = abuilder.file_build(self.datapath('absimport.py'))
         ctx = InferenceContext()
-        ctx.lookupname = 'message'
         # will fail if absolute import failed
-        astroid['message'].infer(ctx).next()
-        ctx.lookupname = 'email'
-        m = astroid['email'].infer(ctx).next()
+        astroid['message'].infer(ctx, lookupname='message').next()
+        m = astroid['email'].infer(ctx, lookupname='email').next()
         self.assertFalse(m.file.startswith(self.datapath('email.py')))
 
     def test_more_absolute_import(self):
