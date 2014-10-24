@@ -552,7 +552,10 @@ def _module_file(modpath, path=None):
     except AttributeError:
         checkeggs = False
     # pkg_resources support (aka setuptools namespace packages)
-    if pkg_resources is not None and modpath[0] in pkg_resources._namespace_packages and len(modpath) > 1:
+    if (pkg_resources is not None
+            and modpath[0] in pkg_resources._namespace_packages
+            and modpath[0] in sys.modules
+            and len(modpath) > 1):
         # setuptools has added into sys.modules a module object with proper
         # __path__, get back information from there
         module = sys.modules[modpath.pop(0)]
