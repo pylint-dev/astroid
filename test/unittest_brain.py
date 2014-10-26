@@ -75,7 +75,7 @@ class NamedTupleTest(TestCase):
         def foo(fields):
            return __(namedtuple("foo", fields))
         """)
-        self.assertIs(bases.YES, klass.infer().next())
+        self.assertIs(bases.YES, next(klass.infer()))
 
 
     def test_namedtuple_advanced_inference(self):
@@ -88,7 +88,7 @@ class NamedTupleTest(TestCase):
 
         result = __(urlparse.urlparse('gopher://'))
         """)
-        instance = result.infer().next()
+        instance = next(result.infer())
         self.assertEqual(len(instance.getattr('scheme')), 1)
         self.assertEqual(len(instance.getattr('port')), 1)
         with self.assertRaises(astroid.NotFoundError):

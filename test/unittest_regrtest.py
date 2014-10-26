@@ -52,13 +52,13 @@ class NonRegressionTC(TestCase):
     def test_module_path(self):
         man = self.brainless_manager()
         mod = man.ast_from_module_name('package.import_package_subpackage_module')
-        package = mod.igetattr('package').next()
+        package = next(mod.igetattr('package'))
         self.assertEqual(package.name, 'package')
-        subpackage = package.igetattr('subpackage').next()
+        subpackage = next(package.igetattr('subpackage'))
         self.assertIsInstance(subpackage, nodes.Module)
         self.assertTrue(subpackage.package)
         self.assertEqual(subpackage.name, 'package.subpackage')
-        module = subpackage.igetattr('module').next()
+        module = next(subpackage.igetattr('module'))
         self.assertEqual(module.name, 'package.subpackage.module')
 
 
@@ -68,7 +68,7 @@ class NonRegressionTC(TestCase):
         package = manager.ast_from_module_name('absimp')
         self.assertIsInstance(package, nodes.Module)
         self.assertTrue(package.package)
-        subpackage = package.getattr('sidepackage')[0].infer().next()
+        subpackage = next(package.getattr('sidepackage')[0].infer())
         self.assertIsInstance(subpackage, nodes.Module)
         self.assertTrue(subpackage.package)
         self.assertEqual(subpackage.name, 'absimp.sidepackage')

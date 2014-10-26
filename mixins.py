@@ -107,7 +107,7 @@ class FromImportMixIn(FilterStmtsMixin):
             return mymodule.import_module(modname, level=level)
         except AstroidBuildingException:
             raise InferenceError(modname)
-        except SyntaxError, ex:
+        except SyntaxError as ex:
             raise InferenceError(str(ex))
 
     def real_name(self, asname):

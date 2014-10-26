@@ -265,12 +265,12 @@ nodes.Global._infer = path_wrapper(infer_global)
 
 def infer_subscript(self, context=None):
     """infer simple subscription such as [1,2,3][0] or (1,2,3)[-1]"""
-    value = self.value.infer(context).next()
+    value = next(self.value.infer(context))
     if value is YES:
         yield YES
         return
 
-    index = self.slice.infer(context).next()
+    index = next(self.slice.infer(context))
     if index is YES:
         yield YES
         return

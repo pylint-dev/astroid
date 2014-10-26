@@ -20,6 +20,7 @@
 
 import sys
 
+import six
 from logilab.common.decorators import cachedproperty
 
 from astroid.exceptions import NoDefault
@@ -41,7 +42,7 @@ def unpack_infer(stmt, context=None):
                 yield infered_elt
         return
     # if infered is a final node, return it and stop
-    infered = stmt.infer(context).next()
+    infered = next(stmt.infer(context))
     if infered is stmt:
         yield infered
         return
@@ -495,7 +496,7 @@ class Const(NodeNG, Instance):
         self.value = value
 
     def getitem(self, index, context=None):
-        if isinstance(self.value, basestring):
+        if isinstance(self.value, six.string_types):
             return Const(self.value[index])
         raise TypeError('%r (value=%s)' % (self, self.value))
 
@@ -503,7 +504,7 @@ class Const(NodeNG, Instance):
         return False
 
     def itered(self):
-        if isinstance(self.value, basestring):
+        if isinstance(self.value, six.string_types):
             return self.value
         raise TypeError()
 
@@ -548,7 +549,7 @@ class Dict(NodeNG, Instance):
             self.items = []
         else:
             self.items = [(const_factory(k), const_factory(v))
-                          for k, v in items.iteritems()]
+                          for k, v in items.items()]
 
     def pytype(self):
         return '%s.dict' % BUILTINS

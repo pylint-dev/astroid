@@ -116,12 +116,12 @@ class AstroidBuilder(InspectBuilder):
         """
         try:
             _, encoding, data = open_source_file(path)
-        except IOError, exc:
+        except IOError as exc:
             msg = 'Unable to load file %r (%s)' % (path, exc)
             raise AstroidBuildingException(msg)
-        except SyntaxError, exc: # py3k encoding specification error
+        except SyntaxError as exc: # py3k encoding specification error
             raise AstroidBuildingException(exc)
-        except LookupError, exc: # unknown encoding
+        except LookupError as exc: # unknown encoding
             raise AstroidBuildingException(exc)
         # get module name if necessary
         if modname is None:

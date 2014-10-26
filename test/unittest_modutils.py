@@ -39,7 +39,7 @@ class ModuleFileTC(TestCase):
 
     def tearDown(self):
         super(ModuleFileTC, self).tearDown()
-        for k in sys.path_importer_cache.keys():
+        for k in list(sys.path_importer_cache.keys()):
             if 'MyPyPa' in k:
                 del sys.path_importer_cache[k]
 
@@ -211,8 +211,6 @@ class is_standard_module_tc(TestCase):
     def test_custom_path(self):
         if DATADIR.startswith(modutils.EXT_LIB_DIR):
             self.skipTest('known breakage of is_standard_module on installed package')
-        print repr(DATADIR)
-        print modutils.EXT_LIB_DIR
         self.assertEqual(modutils.is_standard_module('data.module', (DATADIR,)), True)
         self.assertEqual(modutils.is_standard_module('data.module', (path.abspath(DATADIR),)), True)
 

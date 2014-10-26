@@ -19,6 +19,7 @@
 possible by providing a class responsible to get astroid representation
 from various source and using a cache of built modules)
 """
+from __future__ import print_function
 
 __docformat__ = "restructuredtext en"
 
@@ -36,12 +37,12 @@ from astroid.modutils import NoSourceFile, is_python_source, \
 
 def astroid_wrapper(func, modname):
     """wrapper to give to AstroidManager.project_from_files"""
-    print 'parsing %s...' % modname
+    print('parsing %s...' % modname)
     try:
         return func(modname)
-    except AstroidBuildingException, exc:
-        print exc
-    except Exception, exc:
+    except AstroidBuildingException as exc:
+        print(exc)
+    except Exception as exc:
         import traceback
         traceback.print_exc()
 
@@ -128,7 +129,7 @@ class AstroidManager(OptionsProviderMixIn):
             if filepath is None or not is_python_source(filepath):
                 try:
                     module = load_module_from_name(modname)
-                except Exception, ex:
+                except Exception as ex:
                     msg = 'Unable to load module %s (%s)' % (modname, ex)
                     raise AstroidBuildingException(msg)
                 return self.ast_from_module(module, modname)
@@ -165,7 +166,7 @@ class AstroidManager(OptionsProviderMixIn):
             try:
                 value = file_from_modpath(modname.split('.'),
                                           context_file=contextfile)
-            except ImportError, ex:
+            except ImportError as ex:
                 msg = 'Unable to load module %s (%s)' % (modname, ex)
                 value = AstroidBuildingException(msg)
             self._mod_file_cache[(modname, contextfile)] = value
@@ -211,7 +212,7 @@ class AstroidManager(OptionsProviderMixIn):
         except AttributeError:
             raise AstroidBuildingException(
                 'Unable to get module for %s' % safe_repr(klass))
-        except Exception, ex:
+        except Exception as ex:
             raise AstroidBuildingException(
                 'Unexpected error while retrieving module for %s: %s'
                 % (safe_repr(klass), ex))
@@ -220,7 +221,7 @@ class AstroidManager(OptionsProviderMixIn):
         except AttributeError:
             raise AstroidBuildingException(
                 'Unable to get name for %s' % safe_repr(klass))
-        except Exception, ex:
+        except Exception as ex:
             raise AstroidBuildingException(
                 'Unexpected error while retrieving name for %s: %s'
                 % (safe_repr(klass), ex))

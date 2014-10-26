@@ -578,7 +578,7 @@ class NodeNG(object):
         _node = self
         try:
             while line is None:
-                _node = _node.get_children().next()
+                _node = next(_node.get_children())
                 line = _node.lineno
         except StopIteration:
             _node = self.parent

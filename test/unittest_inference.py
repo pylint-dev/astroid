@@ -19,8 +19,10 @@
 """
 from os.path import join, dirname, abspath
 import sys
-from StringIO import StringIO
+from functools import partial
 from textwrap import dedent
+
+import six
 
 from logilab.common.testlib import TestCase, unittest_main, require_version
 
@@ -33,7 +35,7 @@ def get_name_node(start_from, name, index=0):
     return [n for n in start_from.nodes_of_class(nodes.Name) if n.name == name][index]
 
 def get_node_of_class(start_from, klass):
-    return start_from.nodes_of_class(klass).next()
+    return next(start_from.nodes_of_class(klass))
 
 builder = builder.AstroidBuilder()
 
@@ -45,8 +47,8 @@ class InferenceUtilsTC(TestCase):
         infer_default = path_wrapper(infer_default)
         infer_end = path_wrapper(inference_infer_end)
         self.assertRaises(InferenceError,
-                              infer_default(1).next)
-        self.assertEqual(infer_end(1).next(), 1)
+                          partial(next, infer_default(1)))
+        self.assertEqual(next(infer_end(1)), 1)
 
 if sys.version_info < (3, 0):
     EXC_MODULE = 'exceptions'
@@ -96,186 +98,186 @@ a, b= b, a # Gasp !
 
     def test_module_inference(self):
         infered = self.astroid.infer()
-        obj = infered.next()
+        obj = next(infered)
         self.assertEqual(obj.name, __name__)
         self.assertEqual(obj.root().name, __name__)
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
 
     def test_class_inference(self):
         infered = self.astroid['C'].infer()
-        obj = infered.next()
+        obj = next(infered)
         self.assertEqual(obj.name, 'C')
         self.assertEqual(obj.root().name, __name__)
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
 
     def test_function_inference(self):
         infered = self.astroid['C']['meth1'].infer()
-        obj = infered.next()
+        obj = next(infered)
         self.assertEqual(obj.name, 'meth1')
         self.assertEqual(obj.root().name, __name__)
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
 
     def test_builtin_name_inference(self):
         infered = self.astroid['C']['meth1']['var'].infer()
-        var = infered.next()
+        var = next(infered)
         self.assertEqual(var.name, 'object')
         self.assertEqual(var.root().name, BUILTINS)
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
 
     def test_tupleassign_name_inference(self):
         infered = self.astroid['a'].infer()
-        exc = infered.next()
+        exc = next(infered)
         self.assertIsInstance(exc, Instance)
         self.assertEqual(exc.name, 'Exception')
         self.assertEqual(exc.root().name, EXC_MODULE)
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
         infered = self.astroid['b'].infer()
-        const = infered.next()
+        const = next(infered)
         self.assertIsInstance(const, nodes.Const)
         self.assertEqual(const.value, 1)
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
         infered = self.astroid['c'].infer()
-        const = infered.next()
+        const = next(infered)
         self.assertIsInstance(const, nodes.Const)
         self.assertEqual(const.value, "bonjour")
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
 
     def test_listassign_name_inference(self):
         infered = self.astroid['d'].infer()
-        exc = infered.next()
+        exc = next(infered)
         self.assertIsInstance(exc, Instance)
         self.assertEqual(exc.name, 'Exception')
         self.assertEqual(exc.root().name, EXC_MODULE)
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
         infered = self.astroid['e'].infer()
-        const = infered.next()
+        const = next(infered)
         self.assertIsInstance(const, nodes.Const)
         self.assertEqual(const.value, 1.0)
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
         infered = self.astroid['f'].infer()
-        const = infered.next()
+        const = next(infered)
         self.assertIsInstance(const, nodes.Tuple)
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
 
     def test_advanced_tupleassign_name_inference1(self):
         infered = self.astroid['g'].infer()
-        const = infered.next()
+        const = next(infered)
         self.assertIsInstance(const, nodes.Const)
         self.assertEqual(const.value, "bonjour")
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
         infered = self.astroid['h'].infer()
-        var = infered.next()
+        var = next(infered)
         self.assertEqual(var.name, 'object')
         self.assertEqual(var.root().name, BUILTINS)
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
 
     def test_advanced_tupleassign_name_inference2(self):
         infered = self.astroid['i'].infer()
-        const = infered.next()
+        const = next(infered)
         self.assertIsInstance(const, nodes.Const)
         self.assertEqual(const.value, u"glup")
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
         infered = self.astroid['j'].infer()
-        const = infered.next()
+        const = next(infered)
         self.assertIsInstance(const, nodes.Const)
         self.assertEqual(const.value, "bonjour")
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
         infered = self.astroid['k'].infer()
-        var = infered.next()
+        var = next(infered)
         self.assertEqual(var.name, 'object')
         self.assertEqual(var.root().name, BUILTINS)
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
 
     def test_swap_assign_inference(self):
         infered = self.astroid.locals['a'][1].infer()
-        const = infered.next()
+        const = next(infered)
         self.assertIsInstance(const, nodes.Const)
         self.assertEqual(const.value, 1)
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
         infered = self.astroid.locals['b'][1].infer()
-        exc = infered.next()
+        exc = next(infered)
         self.assertIsInstance(exc, Instance)
         self.assertEqual(exc.name, 'Exception')
         self.assertEqual(exc.root().name, EXC_MODULE)
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
 
     def test_getattr_inference1(self):
         infered = self.astroid['ex'].infer()
-        exc = infered.next()
+        exc = next(infered)
         self.assertIsInstance(exc, Instance)
         self.assertEqual(exc.name, 'Exception')
         self.assertEqual(exc.root().name, EXC_MODULE)
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
 
     def test_getattr_inference2(self):
         infered = get_node_of_class(self.astroid['C']['meth2'], nodes.Getattr).infer()
-        meth1 = infered.next()
+        meth1 = next(infered)
         self.assertEqual(meth1.name, 'meth1')
         self.assertEqual(meth1.root().name, __name__)
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
 
     def test_getattr_inference3(self):
         infered = self.astroid['C']['meth3']['b'].infer()
-        const = infered.next()
+        const = next(infered)
         self.assertIsInstance(const, nodes.Const)
         self.assertEqual(const.value, 4)
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
 
     def test_getattr_inference4(self):
         infered = self.astroid['C']['meth3']['c'].infer()
-        const = infered.next()
+        const = next(infered)
         self.assertIsInstance(const, nodes.Const)
         self.assertEqual(const.value, "hop")
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
 
     def test_callfunc_inference(self):
         infered = self.astroid['v'].infer()
-        meth1 = infered.next()
+        meth1 = next(infered)
         self.assertIsInstance(meth1, Instance)
         self.assertEqual(meth1.name, 'object')
         self.assertEqual(meth1.root().name, BUILTINS)
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
 
     def test_unbound_method_inference(self):
         infered = self.astroid['m_unbound'].infer()
-        meth1 = infered.next()
+        meth1 = next(infered)
         self.assertIsInstance(meth1, UnboundMethod)
         self.assertEqual(meth1.name, 'meth1')
         self.assertEqual(meth1.parent.frame().name, 'C')
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
 
     def test_bound_method_inference(self):
         infered = self.astroid['m_bound'].infer()
-        meth1 = infered.next()
+        meth1 = next(infered)
         self.assertIsInstance(meth1, BoundMethod)
         self.assertEqual(meth1.name, 'meth1')
         self.assertEqual(meth1.parent.frame().name, 'C')
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
 
     def test_args_default_inference1(self):
         optarg = get_name_node(self.astroid['C']['meth1'], 'optarg')
         infered = optarg.infer()
-        obj1 = infered.next()
+        obj1 = next(infered)
         self.assertIsInstance(obj1, nodes.Const)
         self.assertEqual(obj1.value, 0)
-        obj1 = infered.next()
+        obj1 = next(infered)
         self.assertIs(obj1, YES, obj1)
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
 
     def test_args_default_inference2(self):
         infered = self.astroid['C']['meth3'].ilookup('d')
-        obj1 = infered.next()
+        obj1 = next(infered)
         self.assertIsInstance(obj1, nodes.Const)
         self.assertEqual(obj1.value, 4)
-        obj1 = infered.next()
+        obj1 = next(infered)
         self.assertIs(obj1, YES, obj1)
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
 
     def test_inference_restrictions(self):
         infered = get_name_node(self.astroid['C']['meth1'], 'arg1').infer()
-        obj1 = infered.next()
+        obj1 = next(infered)
         self.assertIs(obj1, YES, obj1)
-        self.assertRaises(StopIteration, infered.next)
+        self.assertRaises(StopIteration, partial(next, infered))
 
     def test_ancestors_inference(self):
         code = '''
@@ -330,7 +332,7 @@ def f():
     raise NotImplementedError
         '''
         astroid = builder.string_build(code, __name__, __file__)
-        error = astroid.nodes_of_class(nodes.Name).next()
+        error = next(astroid.nodes_of_class(nodes.Name))
         nie = error.infered()[0]
         self.assertIsInstance(nie, nodes.Class)
         nie_ancestors = [c.name for c in nie.ancestors()]
@@ -354,16 +356,16 @@ except Exception, ex:
         astroid = builder.string_build(code, __name__, __file__)
         ex1 = astroid['ex1']
         ex1_infer = ex1.infer()
-        ex1 = ex1_infer.next()
+        ex1 = next(ex1_infer)
         self.assertIsInstance(ex1, Instance)
         self.assertEqual(ex1.name, 'NameError')
-        self.assertRaises(StopIteration, ex1_infer.next)
+        self.assertRaises(StopIteration, partial(next, ex1_infer))
         ex2 = astroid['ex2']
         ex2_infer = ex2.infer()
-        ex2 = ex2_infer.next()
+        ex2 = next(ex2_infer)
         self.assertIsInstance(ex2, Instance)
         self.assertEqual(ex2.name, 'Exception')
-        self.assertRaises(StopIteration, ex2_infer.next)
+        self.assertRaises(StopIteration, partial(next, ex2_infer))
 
     def test_del1(self):
         code = '''
@@ -384,19 +386,19 @@ d = a
         astroid = builder.string_build(code, __name__, __file__)
         n = astroid['b']
         n_infer = n.infer()
-        infered = n_infer.next()
+        infered = next(n_infer)
         self.assertIsInstance(infered, nodes.Const)
         self.assertEqual(infered.value, 1)
-        self.assertRaises(StopIteration, n_infer.next)
+        self.assertRaises(StopIteration, partial(next, n_infer))
         n = astroid['c']
         n_infer = n.infer()
-        self.assertRaises(InferenceError, n_infer.next)
+        self.assertRaises(InferenceError, partial(next, n_infer))
         n = astroid['d']
         n_infer = n.infer()
-        infered = n_infer.next()
+        infered = next(n_infer)
         self.assertIsInstance(infered, nodes.Const)
         self.assertEqual(infered.value, 2)
-        self.assertRaises(StopIteration, n_infer.next)
+        self.assertRaises(StopIteration, partial(next, n_infer))
 
     def test_builtin_types(self):
         code = '''
@@ -408,7 +410,7 @@ s2 = '_'
         '''
         astroid = builder.string_build(code, __name__, __file__)
         n = astroid['l']
-        infered = n.infer().next()
+        infered = next(n.infer())
         self.assertIsInstance(infered, nodes.List)
         self.assertIsInstance(infered, Instance)
         self.assertEqual(infered.getitem(0).value, 1)
@@ -416,27 +418,27 @@ s2 = '_'
         self.assertEqual(infered._proxied.name, 'list')
         self.assertIn('append', infered._proxied.locals)
         n = astroid['t']
-        infered = n.infer().next()
+        infered = next(n.infer())
         self.assertIsInstance(infered, nodes.Tuple)
         self.assertIsInstance(infered, Instance)
         self.assertEqual(infered.getitem(0).value, 2)
         self.assertIsInstance(infered._proxied, nodes.Class)
         self.assertEqual(infered._proxied.name, 'tuple')
         n = astroid['d']
-        infered = n.infer().next()
+        infered = next(n.infer())
         self.assertIsInstance(infered, nodes.Dict)
         self.assertIsInstance(infered, Instance)
         self.assertIsInstance(infered._proxied, nodes.Class)
         self.assertEqual(infered._proxied.name, 'dict')
         self.assertIn('get', infered._proxied.locals)
         n = astroid['s']
-        infered = n.infer().next()
+        infered = next(n.infer())
         self.assertIsInstance(infered, nodes.Const)
         self.assertIsInstance(infered, Instance)
         self.assertEqual(infered.name, 'str')
         self.assertIn('lower', infered._proxied.locals)
         n = astroid['s2']
-        infered = n.infer().next()
+        infered = next(n.infer())
         self.assertEqual(infered.getitem(0).value, '_')
 
     @require_version('2.7')
@@ -444,7 +446,7 @@ s2 = '_'
         code = 's = {1}'
         astroid = builder.string_build(code, __name__, __file__)
         n = astroid['s']
-        infered = n.infer().next()
+        infered = next(n.infer())
         self.assertIsInstance(infered, nodes.Set)
         self.assertIsInstance(infered, Instance)
         self.assertEqual(infered.name, 'set')
@@ -456,7 +458,7 @@ s2 = '_'
         code = '''u = u""'''
         astroid = builder.string_build(code, __name__, __file__)
         n = astroid['u']
-        infered = n.infer().next()
+        infered = next(n.infer())
         self.assertIsInstance(infered, nodes.Const)
         self.assertIsInstance(infered, Instance)
         self.assertEqual(infered.name, 'unicode')
@@ -469,9 +471,9 @@ class A:
     clsm = classmethod('whatever')
         '''
         astroid = builder.string_build(code, __name__, __file__)
-        statm = astroid['A'].igetattr('statm').next()
+        statm = next(astroid['A'].igetattr('statm'))
         self.assertTrue(statm.callable())
-        clsm = astroid['A'].igetattr('clsm').next()
+        clsm = next(astroid['A'].igetattr('clsm'))
         self.assertTrue(clsm.callable())
 
     def test_bt_ancestor_crash(self):
@@ -482,19 +484,19 @@ class Warning(Warning):
         astroid = builder.string_build(code, __name__, __file__)
         w = astroid['Warning']
         ancestors = w.ancestors()
-        ancestor = ancestors.next()
+        ancestor = next(ancestors)
         self.assertEqual(ancestor.name, 'Warning')
         self.assertEqual(ancestor.root().name, EXC_MODULE)
-        ancestor = ancestors.next()
+        ancestor = next(ancestors)
         self.assertEqual(ancestor.name, 'Exception')
         self.assertEqual(ancestor.root().name, EXC_MODULE)
-        ancestor = ancestors.next()
+        ancestor = next(ancestors)
         self.assertEqual(ancestor.name, 'BaseException')
         self.assertEqual(ancestor.root().name, EXC_MODULE)
-        ancestor = ancestors.next()
+        ancestor = next(ancestors)
         self.assertEqual(ancestor.name, 'object')
         self.assertEqual(ancestor.root().name, BUILTINS)
-        self.assertRaises(StopIteration, ancestors.next)
+        self.assertRaises(StopIteration, partial(next, ancestors))
 
     def test_qqch(self):
         code = '''
@@ -544,10 +546,10 @@ def test_view(rql, vid, tags=()):
         astroid = builder.string_build(code, __name__, __file__)
         name = get_name_node(astroid['test_view'], 'tags', -1)
         it = name.infer()
-        tags = it.next()
+        tags = next(it)
         self.assertEqual(tags.__class__, Instance)
         self.assertEqual(tags._proxied.name, 'list')
-        self.assertRaises(StopIteration, it.next)
+        self.assertRaises(StopIteration, partial(next, it))
 
 
 
@@ -960,7 +962,7 @@ class Bar(Foo):
         self.assertEqual(bar_class.instance_attrs, {'attr': [assattr]})
 
     def test_python25_generator_exit(self):
-        sys.stderr = StringIO()
+        sys.stderr = six.StringIO()
         data = "b = {}[str(0)+''].a"
         astroid = builder.string_build(data, __name__, __file__)
         list(astroid['b'].infer())
@@ -974,7 +976,7 @@ class Bar(Foo):
         # !! FIXME also this relative import would not work 'in real' (no __init__.py in test/)
         # the test works since we pretend we have a package by passing the full modname
         astroid = builder.string_build(data, 'astroid.test.unittest_inference', __file__)
-        infered = get_name_node(astroid, 'date').infer().next()
+        infered = next(get_name_node(astroid, 'date').infer())
         self.assertIsInstance(infered, nodes.Module)
         self.assertEqual(infered.name, 'logilab.common.date')
 
@@ -982,7 +984,7 @@ class Bar(Foo):
         fname = join(abspath(dirname(__file__)), 'regrtest_data', 'package', 'absimport.py')
         astroid = builder.file_build(fname, 'absimport')
         self.assertTrue(astroid.absolute_import_activated(), True)
-        infered = get_name_node(astroid, 'import_package_subpackage_module').infer().next()
+        infered = next(get_name_node(astroid, 'import_package_subpackage_module').infer())
         # failed to import since absolute_import is activated
         self.assertIs(infered, YES)
 
@@ -990,7 +992,7 @@ class Bar(Foo):
         fname = join(abspath(dirname(__file__)), 'regrtest_data', 'absimp', 'string.py')
         astroid = builder.file_build(fname, 'absimp.string')
         self.assertTrue(astroid.absolute_import_activated(), True)
-        infered = get_name_node(astroid, 'string').infer().next()
+        infered = next(get_name_node(astroid, 'string').infer())
         self.assertIsInstance(infered, nodes.Module)
         self.assertEqual(infered.name, 'string')
         self.assertIn('ascii_letters', infered.locals)
@@ -1005,14 +1007,14 @@ print (Browser)
 b = Browser()
 '''
         astroid = builder.string_build(data, __name__, __file__)
-        browser = get_name_node(astroid, 'Browser').infer().next()
+        browser = next(get_name_node(astroid, 'Browser').infer())
         self.assertIsInstance(browser, nodes.Class)
         bopen = list(browser.igetattr('open'))
         self.skipTest('the commit said: "huum, see that later"')
         self.assertEqual(len(bopen), 1)
         self.assertIsInstance(bopen[0], nodes.Function)
         self.assertTrue(bopen[0].callable())
-        b = get_name_node(astroid, 'b').infer().next()
+        b = next(get_name_node(astroid, 'b').infer())
         self.assertIsInstance(b, Instance)
         bopen = list(b.igetattr('open'))
         self.assertEqual(len(bopen), 1)
@@ -1182,7 +1184,7 @@ n = NewTest()
         '''
         astroid = builder.string_build(code, __name__, __file__)
         self.assertRaises(InferenceError, list, astroid['NewTest'].igetattr('arg'))
-        n = astroid['n'].infer().next()
+        n = next(astroid['n'].infer())
         infered = list(n.igetattr('arg'))
         self.assertEqual(len(infered), 1, infered)
 

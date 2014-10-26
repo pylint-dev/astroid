@@ -18,6 +18,7 @@
 """this module contains some utilities to navigate in the tree or to
 extract information from it
 """
+from __future__ import print_function
 
 __docformat__ = "restructuredtext en"
 
@@ -109,22 +110,22 @@ def _check_children(node):
     for child in node.get_children():
         ok = False
         if child is None:
-            print "Hm, child of %s is None" % node
+            print("Hm, child of %s is None" % node)
             continue
         if not hasattr(child, 'parent'):
-            print " ERROR: %s has child %s %x with no parent" % (
-                node, child, id(child))
+            print(" ERROR: %s has child %s %x with no parent" % (
+                node, child, id(child)))
         elif not child.parent:
-            print " ERROR: %s has child %s %x with parent %r" % (
-                node, child, id(child), child.parent)
+            print(" ERROR: %s has child %s %x with parent %r" % (
+                node, child, id(child), child.parent))
         elif child.parent is not node:
-            print " ERROR: %s %x has child %s %x with wrong parent %s" % (
-                node, id(node), child, id(child), child.parent)
+            print(" ERROR: %s %x has child %s %x with wrong parent %s" % (
+                node, id(node), child, id(child), child.parent))
         else:
             ok = True
         if not ok:
-            print "lines;", node.lineno, child.lineno
-            print "of module", node.root(), node.root().name
+            print("lines;", node.lineno, child.lineno)
+            print("of module", node.root(), node.root().name)
             raise AstroidBuildingException
         _check_children(child)
 

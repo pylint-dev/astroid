@@ -30,6 +30,7 @@ try:
 except ImportError:
     from cStringIO import StringIO as BytesIO
 
+import six
 from logilab.common.compat import builtins
 from logilab.common.decorators import cached, cachedproperty
 
@@ -191,7 +192,7 @@ class LocalsDictNodeNG(LookupMixIn, NodeNG):
         """method from the `dict` interface returning a tuple containing
         locally defined names
         """
-        return self.locals.keys()
+        return list(self.locals.keys())
 
     def values(self):
         """method from the `dict` interface returning a tuple containing
@@ -204,7 +205,7 @@ class LocalsDictNodeNG(LookupMixIn, NodeNG):
         containing each locally defined name with its associated node,
         which is an instance of `Function` or `Class`
         """
-        return zip(self.keys(), self.values())
+        return list(zip(self.keys(), self.values()))
 
 
     def __contains__(self, name):
@@ -418,7 +419,7 @@ class Module(LocalsDictNodeNG):
         except KeyError:
             return [name for name in self.keys() if not name.startswith('_')]
         try:
-            explicit = all.assigned_stmts().next()
+            explicit = next(all.assigned_stmts())
         except InferenceError:
             return [name for name in self.keys() if not name.startswith('_')]
         except AttributeError:
@@ -492,7 +493,7 @@ def _infer_decorator_callchain(node):
     while True:
         if isinstance(current, CallFunc):
             try:
-                current = current.func.infer().next()
+                current = next(current.func.infer())
             except InferenceError:
                 return
         elif isinstance(current, Function):
@@ -502,7 +503,7 @@ def _infer_decorator_callchain(node):
                 # TODO: We don't handle multiple inference results right now,
                 #       because there's no flow to reason when the return
                 #       is what we are looking for, a static or a class method.
-                result = current.infer_call_result(current.parent).next()
+                result = next(current.infer_call_result(current.parent))
                 if current is result:
                     # This will lead to an infinite loop, where a decorator
                     # returns itself.
@@ -708,7 +709,7 @@ class Function(Statement, Lambda):
         if self.decorators:
             for node in self.decorators.nodes:
                 try:
-                    infered = node.infer().next()
+                    infered = next(node.infer())
                 except InferenceError:
                     continue
                 if infered and infered.qname() in ('abc.abstractproperty',
@@ -729,11 +730,8 @@ class Function(Statement, Lambda):
     def is_generator(self):
         """return true if this is a generator function"""
         # XXX should be flagged, not computed
-        try:
-            return self.nodes_of_class((Yield, YieldFrom),
-                                       skip_klass=(Function, Lambda)).next()
-        except StopIteration:
-            return False
+        return next(self.nodes_of_class((Yield, YieldFrom),
+                                        skip_klass=(Function, Lambda)), False)
 
     def infer_call_result(self, caller, context=None):
         """infer what a function is returning when called"""
@@ -821,7 +819,6 @@ def _class_type(klass, ancestors=None):
             klass._type = 'class'
             return 'class'
         ancestors.add(klass)
-        # print >> sys.stderr, '_class_type', repr(klass)
         for base in klass.ancestors(recurs=False):
             name = _class_type(base, ancestors)
             if name != 'class':
@@ -926,14 +923,15 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
     def infer_call_result(self, caller, context=None):
         """infer what a class is returning when called"""
         if self._is_subtype_of('%s.type' % (BUILTINS,)) and len(caller.args) == 3:
-            name_node = caller.args[0].infer().next()
-            if isinstance(name_node, Const) and isinstance(name_node.value, basestring):
+            name_node = next(caller.args[0].infer())
+            if (isinstance(name_node, Const) and
+                    isinstance(name_node.value, six.string_types)):
                 name = name_node.value
             else:
                 yield YES
                 return
             result = Class(name, None)
-            bases = caller.args[1].infer().next()
+            bases = next(caller.args[1].infer())
             if isinstance(bases, (Tuple, List)):
                 result.bases = bases.itered()
             else:
@@ -1212,7 +1210,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             return None
 
         try:
-            infered = assignment.infer().next()
+            infered = next(assignment.infer())
         except InferenceError:
             return
         if infered is YES: # don't expose this

@@ -37,12 +37,7 @@ except ImportError:
     from distutils.command import install_lib
     USE_SETUPTOOLS = 0
 
-try:
-    # python3
-    from distutils.command.build_py import build_py_2to3 as build_py
-except ImportError:
-    # python2.x
-    from distutils.command.build_py import build_py
+from distutils.command.build_py import build_py
 
 sys.modules.pop('__pkginfo__', None)
 # import optional features

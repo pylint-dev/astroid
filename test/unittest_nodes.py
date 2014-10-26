@@ -231,14 +231,14 @@ MODULE2 = abuilder.file_build(join(DATA, 'module2.py'), 'data.module2')
 class ImportNodeTC(testlib.TestCase):
 
     def test_import_self_resolve(self):
-        myos = MODULE2.igetattr('myos').next()
+        myos = next(MODULE2.igetattr('myos'))
         self.assertTrue(isinstance(myos, nodes.Module), myos)
         self.assertEqual(myos.name, 'os')
         self.assertEqual(myos.qname(), 'os')
         self.assertEqual(myos.pytype(), '%s.module' % BUILTINS)
 
     def test_from_self_resolve(self):
-        pb = MODULE.igetattr('pb').next()
+        pb = next(MODULE.igetattr('pb'))
         self.assertTrue(isinstance(pb, nodes.Class), pb)
         self.assertEqual(pb.root().name, 'logilab.common.shellutils')
         self.assertEqual(pb.qname(), 'logilab.common.shellutils.ProgressBar')
@@ -246,7 +246,7 @@ class ImportNodeTC(testlib.TestCase):
             self.assertEqual(pb.pytype(), '%s.type' % BUILTINS)
         else:
             self.assertEqual(pb.pytype(), '%s.classobj' % BUILTINS)
-        abspath = MODULE2.igetattr('abspath').next()
+        abspath = next(MODULE2.igetattr('abspath'))
         self.assertTrue(isinstance(abspath, nodes.Function), abspath)
         self.assertEqual(abspath.root().name, 'os.path')
         self.assertEqual(abspath.qname(), 'os.path.abspath')
@@ -309,8 +309,8 @@ except PickleError:
         astroid = abuilder.file_build(self.datapath('absimport.py'))
         ctx = InferenceContext()
         # will fail if absolute import failed
-        astroid['message'].infer(ctx, lookupname='message').next()
-        m = astroid['email'].infer(ctx, lookupname='email').next()
+        next(astroid['message'].infer(ctx, lookupname='message'))
+        m = next(astroid['email'].infer(ctx, lookupname='email'))
         self.assertFalse(m.file.startswith(self.datapath('email.py')))
 
     def test_more_absolute_import(self):
@@ -390,7 +390,7 @@ x = lambda x: None
         ''')
         self.assertEqual(ast['func'].args.fromlineno, 2)
         self.assertFalse(ast['func'].args.is_statement)
-        xlambda = ast['x'].infer().next()
+        xlambda = next(ast['x'].infer())
         self.assertEqual(xlambda.args.fromlineno, 4)
         self.assertEqual(xlambda.args.tolineno, 4)
         self.assertFalse(xlambda.args.is_statement)

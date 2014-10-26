@@ -20,6 +20,7 @@
 import unittest
 import sys
 from os.path import join, abspath, dirname
+from functools import partial
 
 from logilab.common.testlib import TestCase, unittest_main
 from pprint import pprint
@@ -449,7 +450,7 @@ def global_no_effect():
         self.assertRaises(NotFoundError,
                           astroid.getattr, 'CSTE2')
         self.assertRaises(InferenceError,
-                          astroid['global_no_effect'].ilookup('CSTE2').next)
+                          partial(next, astroid['global_no_effect'].ilookup('CSTE2')))
 
     def test_socket_build(self):
         import socket
@@ -570,16 +571,16 @@ class FileBuildTC(TestCase):
         klass2 = module['YOUPI']
         locals2 = klass2.locals
         keys = locals2.keys()
-        keys.sort()
-        self.assertEqual(keys, ['__init__', 'class_attr', 'class_method',
-                                 'method', 'static_method'])
+        self.assertEqual(sorted(keys),
+                         ['__init__', 'class_attr', 'class_method',
+                         'method', 'static_method'])
 
     def test_class_instance_attrs(self):
         module = self.module
         klass1 = module['YO']
         klass2 = module['YOUPI']
-        self.assertEqual(klass1.instance_attrs.keys(), ['yo'])
-        self.assertEqual(klass2.instance_attrs.keys(), ['member'])
+        self.assertEqual(list(klass1.instance_attrs.keys()), ['yo'])
+        self.assertEqual(list(klass2.instance_attrs.keys()), ['member'])
 
     def test_class_basenames(self):
         module = self.module

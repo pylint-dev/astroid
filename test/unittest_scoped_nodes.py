@@ -23,6 +23,7 @@ from __future__ import with_statement
 
 import sys
 from os.path import join, abspath, dirname
+from functools import partial
 from textwrap import dedent
 
 from logilab.common.testlib import TestCase, unittest_main, require_version
@@ -76,10 +77,10 @@ class ModuleNodeTC(TestCase):
         yo = MODULE.getattr('YO')[0]
         self.assertIsInstance(yo, nodes.Class)
         self.assertEqual(yo.name, 'YO')
-        red = MODULE.igetattr('redirect').next()
+        red = next(MODULE.igetattr('redirect'))
         self.assertIsInstance(red, nodes.Function)
         self.assertEqual(red.name, 'four_args')
-        pb = MODULE.igetattr('pb').next()
+        pb = next(MODULE.igetattr('pb'))
         self.assertIsInstance(pb, nodes.Class)
         self.assertEqual(pb.name, 'ProgressBar')
         # resolve packageredirection
@@ -87,8 +88,8 @@ class ModuleNodeTC(TestCase):
         mod = abuilder.file_build(join(DATA, 'appl/myConnection.py'),
                                   'appl.myConnection')
         try:
-            ssl = mod.igetattr('SSL1').next()
-            cnx = ssl.igetattr('Connection').next()
+            ssl = next(mod.igetattr('SSL1'))
+            cnx = next(ssl.igetattr('Connection'))
             self.assertEqual(cnx.__class__, nodes.Class)
             self.assertEqual(cnx.name, 'Connection')
             self.assertEqual(cnx.root().name, 'SSL1.Connection1')
@@ -514,23 +515,23 @@ A.__bases__ += (B,)
     def test_local_attr_ancestors(self):
         klass2 = MODULE['YOUPI']
         it = klass2.local_attr_ancestors('__init__')
-        anc_klass = it.next()
+        anc_klass = next(it)
         self.assertIsInstance(anc_klass, nodes.Class)
         self.assertEqual(anc_klass.name, 'YO')
-        self.assertRaises(StopIteration, it.next)
+        self.assertRaises(StopIteration, partial(next, it))
         it = klass2.local_attr_ancestors('method')
-        self.assertRaises(StopIteration, it.next)
+        self.assertRaises(StopIteration, partial(next, it))
 
     def test_instance_attr_ancestors(self):
         klass2 = MODULE['YOUPI']
         it = klass2.instance_attr_ancestors('yo')
-        anc_klass = it.next()
+        anc_klass = next(it)
         self.assertIsInstance(anc_klass, nodes.Class)
         self.assertEqual(anc_klass.name, 'YO')
-        self.assertRaises(StopIteration, it.next)
+        self.assertRaises(StopIteration, partial(next, it))
         klass2 = MODULE['YOUPI']
         it = klass2.instance_attr_ancestors('member')
-        self.assertRaises(StopIteration, it.next)
+        self.assertRaises(StopIteration, partial(next, it))
 
     def test_methods(self):
         klass2 = MODULE['YOUPI']

@@ -19,6 +19,7 @@
 """
 import sys
 from os.path import join, abspath, dirname
+from functools import partial
 
 from logilab.common.testlib import TestCase, unittest_main, require_version
 
@@ -50,7 +51,7 @@ def func():
         '''
         astroid = builder.string_build(code, __name__, __file__)
         # a & b
-        a = astroid.nodes_of_class(nodes.Name).next()
+        a = next(astroid.nodes_of_class(nodes.Name))
         self.assertEqual(a.lineno, 2)
         if sys.version_info < (3, 0):
             self.assertEqual(len(astroid.lookup('b')[1]), 2)
@@ -64,22 +65,22 @@ def func():
         self.assertEqual(len(stmts), 1)
         self.assertEqual(b.lineno, 6)
         b_infer = b.infer()
-        b_value = b_infer.next()
+        b_value = next(b_infer)
         self.assertEqual(b_value.value, 1)
         # c
-        self.assertRaises(StopIteration, b_infer.next)
+        self.assertRaises(StopIteration, partial(next, b_infer))
         func = astroid.locals['func'][0]
         self.assertEqual(len(func.lookup('c')[1]), 1)
 
     def test_module(self):
         astroid = builder.string_build('pass', __name__, __file__)
         # built-in objects
-        none = astroid.ilookup('None').next()
+        none = next(astroid.ilookup('None'))
         self.assertIsNone(none.value)
-        obj = astroid.ilookup('object').next()
+        obj = next(astroid.ilookup('object'))
         self.assertIsInstance(obj, nodes.Class)
         self.assertEqual(obj.name, 'object')
-        self.assertRaises(InferenceError, astroid.ilookup('YOAA').next)
+        self.assertRaises(InferenceError, partial(next, astroid.ilookup('YOAA')))
 
         # XXX
         self.assertEqual(len(list(NONREGR.ilookup('enumerate'))), 2)
@@ -95,22 +96,22 @@ class A(A):
         astroid = builder.string_build(code, __name__, __file__)
         cls1 = astroid.locals['A'][0]
         cls2 = astroid.locals['A'][1]
-        name = cls2.nodes_of_class(nodes.Name).next()
-        self.assertEqual(name.infer().next(), cls1)
+        name = next(cls2.nodes_of_class(nodes.Name))
+        self.assertEqual(next(name.infer()), cls1)
 
     ### backport those test to inline code
     def test_method(self):
         method = MODULE['YOUPI']['method']
-        my_dict = method.ilookup('MY_DICT').next()
+        my_dict = next(method.ilookup('MY_DICT'))
         self.assertTrue(isinstance(my_dict, nodes.Dict), my_dict)
-        none = method.ilookup('None').next()
+        none = next(method.ilookup('None'))
         self.assertIsNone(none.value)
-        self.assertRaises(InferenceError, method.ilookup('YOAA').next)
+        self.assertRaises(InferenceError, partial(next, method.ilookup('YOAA')))
 
 
     def test_function_argument_with_default(self):
         make_class = MODULE2['make_class']
-        base = make_class.ilookup('base').next()
+        base = next(make_class.ilookup('base'))
         self.assertTrue(isinstance(base, nodes.Class), base.__class__)
         self.assertEqual(base.name, 'YO')
         self.assertEqual(base.root().name, 'data.module')
@@ -118,14 +119,14 @@ class A(A):
 
     def test_class(self):
         klass = MODULE['YOUPI']
-        my_dict = klass.ilookup('MY_DICT').next()
+        my_dict = next(klass.ilookup('MY_DICT'))
         self.assertIsInstance(my_dict, nodes.Dict)
-        none = klass.ilookup('None').next()
+        none = next(klass.ilookup('None'))
         self.assertIsNone(none.value)
-        obj = klass.ilookup('object').next()
+        obj = next(klass.ilookup('object'))
         self.assertIsInstance(obj, nodes.Class)
         self.assertEqual(obj.name, 'object')
-        self.assertRaises(InferenceError, klass.ilookup('YOAA').next)
+        self.assertRaises(InferenceError, partial(next, klass.ilookup('YOAA')))
 
 
     def test_inner_classes(self):
@@ -246,12 +247,12 @@ class NoName: pass
 p3 = NoName()
 '''
         astroid = builder.string_build(code, __name__, __file__)
-        p1 = astroid['p1'].infer().next()
+        p1 = next(astroid['p1'].infer())
         self.assertTrue(p1.getattr('__name__'))
-        p2 = astroid['p2'].infer().next()
+        p2 = next(astroid['p2'].infer())
         self.assertTrue(p2.getattr('__name__'))
         self.assertTrue(astroid['NoName'].getattr('__name__'))
-        p3 = astroid['p3'].infer().next()
+        p3 = next(astroid['p3'].infer())
         self.assertRaises(NotFoundError, p3.getattr, '__name__')
 
 
@@ -291,10 +292,10 @@ class foo:
         astroid = builder.string_build(code, __name__, __file__)
         member = get_name_node(astroid['foo'], 'member')
         it = member.infer()
-        obj = it.next()
+        obj = next(it)
         self.assertIsInstance(obj, nodes.Const)
         self.assertEqual(obj.value, 10)
-        self.assertRaises(StopIteration, it.next)
+        self.assertRaises(StopIteration, partial(next, it))
 
 
     def test_inner_decorator_member_lookup(self):
@@ -310,9 +311,9 @@ class FileA:
         astroid = builder.string_build(code, __name__, __file__)
         decname = get_name_node(astroid['FileA'], 'decorator')
         it = decname.infer()
-        obj = it.next()
+        obj = next(it)
         self.assertIsInstance(obj, nodes.Function)
-        self.assertRaises(StopIteration, it.next)
+        self.assertRaises(StopIteration, partial(next, it))
 
 
     def test_static_method_lookup(self):
@@ -331,9 +332,9 @@ class Test:
         '''
         astroid = builder.string_build(code, __name__, __file__)
         it = astroid['Test']['__init__'].ilookup('FileA')
-        obj = it.next()
+        obj = next(it)
         self.assertIsInstance(obj, nodes.Class)
-        self.assertRaises(StopIteration, it.next)
+        self.assertRaises(StopIteration, partial(next, it))
 
 
     def test_global_delete(self):
