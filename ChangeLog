@@ -18,6 +18,10 @@ Change log for the astroid package (used to be astng)
 
     * Add pytest brain plugin. Patch by Robbie Coomber.
 
+    * Port source code to be Python 2/3 compatible. This drops the
+      need for 2to3, but does drop support for Python 2.5.
+
+
 2014-08-24 -- 1.2.1
 
     * Fix a crash occurred when inferring decorator call chain.
