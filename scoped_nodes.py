@@ -429,8 +429,13 @@ class Module(LocalsDictNodeNG):
 
         # Try our best to detect the exported name.
         infered = []
-        if not isinstance(explicit, Tuple):
+        try:
+            explicit = next(explicit.infer())
+        except InferenceError:
             return default
+        if not isinstance(explicit, (Tuple, List)):
+            return default
+
         str_const = lambda node: (isinstance(node, Const) and
                                   isinstance(node.value, six.string_types))
         for node in explicit.elts:

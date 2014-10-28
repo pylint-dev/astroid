@@ -112,7 +112,14 @@ class ModuleNodeTC(TestCase):
         __all__ = (trop, "test1", tzop, 42)
         '''))
         res = sorted(m.wildcard_import_names())
-        self.assertEqual(res, ["test", "test1"])        
+        self.assertEqual(res, ["test", "test1"])
+
+        m = abuilder.string_build(dedent('''
+        test = tzop = 42
+        __all__ = ('test', ) + ('tzop', )
+        '''))
+        res = sorted(m.wildcard_import_names())
+        self.assertEqual(res, ['test', 'tzop'])
 
     def test_module_getattr(self):
         data = '''
