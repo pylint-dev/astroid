@@ -413,24 +413,38 @@ class Module(LocalsDictNodeNG):
         #
         # We separate the different steps of lookup in try/excepts
         # to avoid catching too many Exceptions
-        # However, we can not analyse dynamically constructed __all__
+        default = [name for name in self.keys() if not name.startswith('_')]
         try:
             all = self['__all__']
         except KeyError:
-            return [name for name in self.keys() if not name.startswith('_')]
+            return default
         try:
             explicit = next(all.assigned_stmts())
         except InferenceError:
-            return [name for name in self.keys() if not name.startswith('_')]
+            return default
         except AttributeError:
             # not an assignment node
             # XXX infer?
-            return [name for name in self.keys() if not name.startswith('_')]
-        try:
-            # should be a Tuple/List of constant string / 1 string not allowed
-            return [const.value for const in explicit.elts]
-        except AttributeError:
-            return [name for name in self.keys() if not name.startswith('_')]
+            return default
+
+        # Try our best to detect the exported name.
+        infered = []
+        if not isinstance(explicit, Tuple):
+            return default
+        str_const = lambda node: (isinstance(node, Const) and
+                                  isinstance(node.value, six.string_types))
+        for node in explicit.elts:
+            if str_const(node):
+                infered.append(node.value)
+            else:
+                try:
+                    infered_node = next(node.infer())
+                except InferenceError:
+                    continue
+                if str_const(infered_node):
+                    infered.append(infered_node.value)
+        return infered
+
 
 
 class ComprehensionScope(LocalsDictNodeNG):
