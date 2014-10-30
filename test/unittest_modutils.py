@@ -156,6 +156,15 @@ class file_from_modpath_tc(TestCase):
     def test_unexisting(self):
         self.assertRaises(ImportError, modutils.file_from_modpath, ['turlututu'])
 
+    def test_unicode_in_package_init(self):
+        # file_from_modpath should not crash when reading an __init__
+        # file with unicode characters.
+        sys.path.insert(0, path.join(path.dirname(path.abspath(__file__)),
+                                     'regrtest_data'))
+        self.addCleanup(sys.path.pop, 0)
+
+        modutils.file_from_modpath(["unicode_package", "core"])
+
 
 class get_source_file_tc(TestCase):
 

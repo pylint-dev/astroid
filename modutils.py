@@ -599,12 +599,12 @@ def _module_file(modpath, path=None):
             # XXX guess if package is using pkgutil.extend_path by looking for
             # those keywords in the first four Kbytes
             try:
-                with open(join(mp_filename, '__init__.py')) as stream:
+                with open(join(mp_filename, '__init__.py'), 'rb') as stream:
                     data = stream.read(4096)
             except IOError:
                 path = [mp_filename]
             else:
-                if 'pkgutil' in data and 'extend_path' in data:
+                if b'pkgutil' in data and b'extend_path' in data:
                     # extend_path is called, search sys.path for module/packages
                     # of this name see pkgutil.extend_path documentation
                     path = [join(p, *imported) for p in sys.path

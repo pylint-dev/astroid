@@ -21,6 +21,9 @@ Change log for the astroid package (used to be astng)
     * Port source code to be Python 2/3 compatible. This drops the
       need for 2to3, but does drop support for Python 2.5.
 
+    * modutils._module_file opens __init__.py in binary mode.
+      Closes issues #51 and #13.
+
 
 2014-08-24 -- 1.2.1
 
