@@ -1007,7 +1007,8 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                     yielded.add(baseobj)
                     yield baseobj
                     if recurs:
-                        for grandpa in baseobj.ancestors(True, context):
+                        for grandpa in baseobj.ancestors(recurs=True,
+                                                         context=context):
                             if grandpa in yielded:
                                 continue # cf xxx above
                             yielded.add(grandpa)
