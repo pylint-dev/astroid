@@ -989,8 +989,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
           ancestors only
         """
         # FIXME: should be possible to choose the resolution order
-        # XXX inference make infinite loops possible here (see BaseTransformer
-        # manipulation in the builder module for instance)
+        # FIXME: inference make infinite loops possible here
         yielded = set([self])
         if context is None:
             context = InferenceContext()
