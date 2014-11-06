@@ -20,22 +20,28 @@
 import sys
 from os.path import join, abspath, dirname
 from functools import partial
-
-from logilab.common.testlib import TestCase, unittest_main, require_version
+import unittest
 
 from astroid import builder, nodes, scoped_nodes, \
      InferenceError, NotFoundError, UnresolvableName
 from astroid.scoped_nodes import builtin_lookup, Function
 from astroid.bases import YES
 from unittest_inference import get_name_node
+from astroid.test_utils import require_version
 
 builder = builder.AstroidBuilder()
-DATA = join(dirname(abspath(__file__)), 'data')
+PY3K = sys.version_info >= (3, 0)
+
+if PY3K:
+    DATA = join(dirname(abspath(__file__)), 'data_py3')
+else:
+    DATA = join(dirname(abspath(__file__)), 'data')
+
 MODULE = builder.file_build(join(DATA, 'module.py'), 'data.module')
 MODULE2 = builder.file_build(join(DATA, 'module2.py'), 'data.module2')
 NONREGR = builder.file_build(join(DATA, 'nonregr.py'), 'data.nonregr')
 
-class LookupTC(TestCase):
+class LookupTC(unittest.TestCase):
 
     def test_limit(self):
         code = '''
@@ -358,4 +364,4 @@ def run1():
         self.assertEqual(len(stmts), 0)
 
 if __name__ == '__main__':
-    unittest_main()
+    unittest.main()

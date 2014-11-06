@@ -18,30 +18,31 @@
 """tests for specific behaviour of astroid scoped nodes (i.e. module, class and
 function)
 """
-
-from __future__ import with_statement
-
 import sys
 from os.path import join, abspath, dirname
 from functools import partial
 from textwrap import dedent
-
-from logilab.common.testlib import TestCase, unittest_main, require_version
+import unittest
 
 from astroid import YES, builder, nodes, scoped_nodes, \
      InferenceError, NotFoundError, NoDefault
 from astroid.bases import BUILTINS, Instance, BoundMethod, UnboundMethod
-from astroid.test_utils import extract_node
+from astroid.test_utils import extract_node, require_version
 
 abuilder = builder.AstroidBuilder()
-DATA = join(dirname(abspath(__file__)), 'data')
+PY3K = sys.version_info >= (3, 0)
+
+if PY3K:
+    DATA = join(dirname(abspath(__file__)), 'data_py3')
+else:
+    DATA = join(dirname(abspath(__file__)), 'data')
+
 REGRTEST_DATA = join(dirname(abspath(__file__)), 'regrtest_data')
 MODULE = abuilder.file_build(join(DATA, 'module.py'), 'data.module')
 MODULE2 = abuilder.file_build(join(DATA, 'module2.py'), 'data.module2')
 NONREGR = abuilder.file_build(join(DATA, 'nonregr.py'), 'data.nonregr')
 
 PACK = abuilder.file_build(join(DATA, '__init__.py'), 'data')
-PY3K = sys.version_info >= (3, 0)
 
 def _test_dict_interface(self, node, test_attr):
     self.assertIs(node[test_attr], node[test_attr])
@@ -52,7 +53,7 @@ def _test_dict_interface(self, node, test_attr):
     iter(node)
 
 
-class ModuleNodeTC(TestCase):
+class ModuleNodeTC(unittest.TestCase):
 
     def test_special_attributes(self):
         self.assertEqual(len(MODULE.getattr('__name__')), 1)
@@ -196,7 +197,7 @@ del appli
             self.assertEqual(astroid.file_stream.read(), file_io.read())
 
 
-class FunctionNodeTC(TestCase):
+class FunctionNodeTC(unittest.TestCase):
 
     def test_special_attributes(self):
         func = MODULE2['make_class']
@@ -469,7 +470,7 @@ test()
                          'method')
 
 
-class ClassNodeTC(TestCase):
+class ClassNodeTC(unittest.TestCase):
 
     def test_dict_interface(self):
         _test_dict_interface(self, MODULE['YOUPI'], 'method')
@@ -1001,4 +1002,4 @@ def g2():
 __all__ = ('ModuleNodeTC', 'ImportNodeTC', 'FunctionNodeTC', 'ClassNodeTC')
 
 if __name__ == '__main__':
-    unittest_main()
+    unittest.main()

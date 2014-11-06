@@ -131,20 +131,12 @@ class MyBuildPy(build_py):
                 dest = join(basedir, directory)
                 shutil.rmtree(dest, ignore_errors=True)
                 shutil.copytree(directory, dest)
-                if sys.version_info >= (3, 0):
-                    # process manually python file in include_dirs (test data)
-                    from distutils.util import run_2to3
-                    print('running 2to3 on', dest)
-                    run_2to3([dest])
 
 def install(**kwargs):
     """setup entry point"""
     if USE_SETUPTOOLS:
         if '--force-manifest' in sys.argv:
             sys.argv.remove('--force-manifest')
-    # install-layout option was introduced in 2.5.3-1~exp1
-    elif sys.version_info < (2, 5, 4) and '--install-layout=deb' in sys.argv:
-        sys.argv.remove('--install-layout=deb')
     if subpackage_of:
         package = subpackage_of + '.' + modname
         kwargs['package_dir'] = {package : '.'}

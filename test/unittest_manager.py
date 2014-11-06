@@ -15,19 +15,23 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
-from logilab.common.testlib import TestCase, unittest_main
+import unittest
 
 import sys
 from os.path import join, abspath, dirname
 from astroid.manager import AstroidManager, _silent_no_wrap
 from astroid.bases import  BUILTINS
 from astroid.exceptions import AstroidBuildingException
-from astroid.raw_building import astroid_bootstrapping
 
-DATA = join(dirname(abspath(__file__)), 'data')
-PY3K = sys.version_info > (3, 0)
+PY3K = sys.version_info >= (3, 0)
 
-class AstroidManagerTC(TestCase):
+if PY3K:
+    DATA = join(dirname(abspath(__file__)), 'data_py3')
+else:
+    DATA = join(dirname(abspath(__file__)), 'data')
+
+
+class AstroidManagerTC(unittest.TestCase):
     def setUp(self):
         self.manager = AstroidManager()
         self.manager.clear_cache() # take care of borg
@@ -111,7 +115,7 @@ class AstroidManagerTC(TestCase):
 
     def test_zip_import_data(self):
         """check if zip_import_data works"""
-        filepath = self.datapath('MyPyPa-0.1.0-py2.5.zip/mypypa')
+        filepath = join(DATA, 'MyPyPa-0.1.0-py2.5.zip/mypypa')
         astroid = self.manager.zip_import_data(filepath)
         self.assertEqual(astroid.name, 'mypypa')
 
@@ -180,12 +184,15 @@ class AstroidManagerTC(TestCase):
 
     def test_project_node(self):
         obj = self.manager.project_from_files([DATA], _silent_no_wrap, 'data')
-        expected = set(['SSL1', '__init__', 'all', 'appl', 'format', 'module',
-                        'module2', 'noendingnewline', 'nonregr', 'notall'])
         expected = [
-            'data', 'data.SSL1', 'data.SSL1.Connection1',
-            'data.absimport', 'data.all',
-            'data.appl', 'data.appl.myConnection', 'data.email',
+            'data', 
+            'data.SSL1', 
+            'data.SSL1.Connection1',
+            'data.absimport', 
+            'data.all',
+            'data.appl', 
+            'data.appl.myConnection', 
+            'data.email',
             'data.find_test',
             'data.find_test.module',
             'data.find_test.module2',
@@ -195,12 +202,17 @@ class AstroidManagerTC(TestCase):
             'data.lmfp',
             'data.lmfp.foo',
             'data.module',
-            'data.module1abs', 'data.module1abs.core',
-            'data.module2', 'data.noendingnewline',
-            'data.nonregr', 'data.notall']
+            'data.module1abs', 
+            'data.module1abs.core',
+            'data.module2', 
+            'data.noendingnewline',
+            'data.nonregr',
+            'data.notall']
+        if PY3K:
+            expected = [e.replace('data', 'data_py3') for e in expected]
         self.assertListEqual(sorted(k for k in obj.keys()), expected)
 
-class BorgAstroidManagerTC(TestCase):
+class BorgAstroidManagerTC(unittest.TestCase):
 
     def test_borg(self):
         """test that the AstroidManager is really a borg, i.e. that two different
@@ -214,6 +226,6 @@ class BorgAstroidManagerTC(TestCase):
 
 
 if __name__ == '__main__':
-    unittest_main()
+    unittest.main()
 
 

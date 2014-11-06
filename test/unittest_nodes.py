@@ -17,23 +17,28 @@
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 """tests for specific behaviour of astroid nodes
 """
+from os.path import join, abspath, dirname
 import sys
+import unittest
 
-from logilab.common import testlib
 from astroid.node_classes import unpack_infer
 from astroid.bases import BUILTINS, YES, InferenceContext
 from astroid.exceptions import AstroidBuildingException, NotFoundError
 from astroid import builder, nodes
+from astroid.test_utils import require_version
 
-from data import module as test_module
+PY3K = sys.version_info >= (3, 0)
 
-from os.path import join, abspath, dirname
-
-DATA = join(dirname(abspath(__file__)), 'data')
+if PY3K:
+    from data_py3 import module as test_module
+    DATA = join(dirname(abspath(__file__)), 'data_py3')
+else:
+    from data import module as test_module
+    DATA = join(dirname(abspath(__file__)), 'data')
 
 abuilder = builder.AstroidBuilder()
 
-class AsString(testlib.TestCase):
+class AsString(unittest.TestCase):
 
     def test_tuple_as_string(self):
         def build(string):
@@ -60,7 +65,7 @@ class AsString(testlib.TestCase):
         data = open(join(DATA, 'module2.py')).read()
         self.assertMultiLineEqual(MODULE2.as_string(), data)
 
-    @testlib.require_version('2.7')
+    @require_version('2.7')
     def test_2_7_as_string(self):
         """check as_string for python syntax >= 2.7"""
         code = '''one_two = {1, 2}
@@ -69,7 +74,7 @@ cdd = {k for k in b}\n\n'''
         ast = abuilder.string_build(code)
         self.assertMultiLineEqual(ast.as_string(), code)
 
-    @testlib.require_version('3.0')
+    @require_version('3.0')
     def test_3k_as_string(self):
         """check as_string for python 3k syntax"""
         code = '''print()
@@ -94,7 +99,7 @@ class Language(metaclass=Natural):
         self.assertEqual(ast.as_string(), code)
 
 
-class _NodeTC(testlib.TestCase):
+class _NodeTC(unittest.TestCase):
     """test transformation of If Node"""
     CODE = None
     @property
@@ -228,7 +233,7 @@ MODULE = abuilder.module_build(test_module)
 MODULE2 = abuilder.file_build(join(DATA, 'module2.py'), 'data.module2')
 
 
-class ImportNodeTC(testlib.TestCase):
+class ImportNodeTC(unittest.TestCase):
 
     def test_import_self_resolve(self):
         myos = next(MODULE2.igetattr('myos'))
@@ -306,29 +311,29 @@ except PickleError:
         excs = list(unpack_infer(handler_type))
 
     def test_absolute_import(self):
-        astroid = abuilder.file_build(self.datapath('absimport.py'))
+        astroid = abuilder.file_build(join(DATA, 'absimport.py'))
         ctx = InferenceContext()
         # will fail if absolute import failed
         next(astroid['message'].infer(ctx, lookupname='message'))
         m = next(astroid['email'].infer(ctx, lookupname='email'))
-        self.assertFalse(m.file.startswith(self.datapath('email.py')))
+        self.assertFalse(m.file.startswith(join(DATA, 'email.py')))
 
     def test_more_absolute_import(self):
-        sys.path.insert(0, self.datapath('moreabsimport'))
+        sys.path.insert(0, join(DATA, 'moreabsimport'))
         try:
-            astroid = abuilder.file_build(self.datapath('module1abs/__init__.py'))
+            astroid = abuilder.file_build(join(DATA, 'module1abs/__init__.py'))
             self.assertIn('sys', astroid.locals)
         finally:
             sys.path.pop(0)
 
 
-class CmpNodeTC(testlib.TestCase):
+class CmpNodeTC(unittest.TestCase):
     def test_as_string(self):
         ast = abuilder.string_build("a == 2").body[0]
         self.assertEqual(ast.as_string(), "a == 2")
 
 
-class ConstNodeTC(testlib.TestCase):
+class ConstNodeTC(unittest.TestCase):
 
     def _test(self, value):
         node = nodes.const_factory(value)
@@ -360,7 +365,7 @@ class ConstNodeTC(testlib.TestCase):
         self._test(u'a')
 
 
-class NameNodeTC(testlib.TestCase):
+class NameNodeTC(unittest.TestCase):
     def test_assign_to_True(self):
         """test that True and False assignements don't crash"""
         code = """True = False
@@ -381,7 +386,7 @@ del True
             self.assertEqual(del_true.name, "True")
 
 
-class ArgumentsNodeTC(testlib.TestCase):
+class ArgumentsNodeTC(unittest.TestCase):
     def test_linenumbering(self):
         ast = abuilder.string_build('''
 def func(a,
@@ -401,7 +406,7 @@ x = lambda x: None
                           '(no line number on function args)')
 
 
-class SliceNodeTC(testlib.TestCase):
+class SliceNodeTC(unittest.TestCase):
     def test(self):
         for code in ('a[0]', 'a[1:3]', 'a[:-1:step]', 'a[:,newaxis]',
                      'a[newaxis,:]', 'del L[::2]', 'del A[1]', 'del Br[:]'):
@@ -427,10 +432,10 @@ if all[1] == bord[0:]:
         ast = abuilder.string_build(code)
         self.assertEqual(ast.as_string(), code)
 
-class EllipsisNodeTC(testlib.TestCase):
+class EllipsisNodeTC(unittest.TestCase):
     def test(self):
         ast = abuilder.string_build('a[...]').body[0]
         self.assertEqual(ast.as_string(), 'a[...]')
 
 if __name__ == '__main__':
-    testlib.unittest_main()
+    unittest.main()

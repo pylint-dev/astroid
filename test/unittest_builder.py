@@ -22,7 +22,6 @@ import sys
 from os.path import join, abspath, dirname
 from functools import partial
 
-from logilab.common.testlib import TestCase, unittest_main
 from pprint import pprint
 
 from astroid import builder, nodes, InferenceError, NotFoundError
@@ -32,16 +31,25 @@ from astroid.manager import AstroidManager
 from astroid import test_utils
 
 MANAGER = AstroidManager()
+
 PY3K = sys.version_info >= (3, 0)
+
+if PY3K:
+    DATA = join(dirname(abspath(__file__)), 'data_py3')
+else:
+    DATA = join(dirname(abspath(__file__)), 'data')
 
 from unittest_inference import get_name_node
 
-import data
-from data import module as test_module
+if PY3K:
+    import data_py3 as data
+    from data_py3 import module as test_module
+else:
+    import data
+    from data import module as test_module
 
-DATA = join(dirname(abspath(__file__)), 'data')
 
-class FromToLineNoTC(TestCase):
+class FromToLineNoTC(unittest.TestCase):
 
     astroid = builder.AstroidBuilder().file_build(join(DATA, 'format.py'))
 
@@ -257,7 +265,7 @@ with file("/tmp/pouet") as f:
 
 
 
-class BuilderTC(TestCase):
+class BuilderTC(unittest.TestCase):
 
     def setUp(self):
         self.builder = builder.AstroidBuilder()
@@ -491,14 +499,15 @@ def global_no_effect():
             """)
         self.assertEqual(set(['print_function', 'absolute_import']), mod.future_imports)
 
-class FileBuildTC(TestCase):
-
-    module = builder.AstroidBuilder().file_build(join(DATA, 'module.py'), 'data.module')
+class FileBuildTC(unittest.TestCase):
+    module = builder.AstroidBuilder().file_build(
+        join(DATA, 'module.py'), 
+        '%s.module' % (data.__name__,))
 
     def test_module_base_props(self):
         """test base properties and method of a astroid module"""
         module = self.module
-        self.assertEqual(module.name, 'data.module')
+        self.assertEqual(module.name, '%s.module' % (data.__name__))
         self.assertEqual(module.doc, "test module for astroid\n")
         self.assertEqual(module.fromlineno, 0)
         self.assertIsNone(module.parent)
@@ -628,7 +637,7 @@ class ModuleBuildTC(FileBuildTC):
         self.module = abuilder.module_build(test_module)
 
 
-class MoreTC(TestCase):
+class MoreTC(unittest.TestCase):
 
     def setUp(self):
         self.builder = builder.AstroidBuilder()
@@ -720,7 +729,7 @@ class A(object):
 if sys.version_info < (3, 0):
     guess_encoding = builder._guess_encoding
 
-    class TestGuessEncoding(TestCase):
+    class TestGuessEncoding(unittest.TestCase):
 
         def testEmacs(self):
             e = guess_encoding('# -*- coding: UTF-8  -*-')
@@ -769,4 +778,4 @@ if sys.version_info < (3, 0):
             self.assertIsNone(e)
 
 if __name__ == '__main__':
-    unittest_main()
+    unittest.main()

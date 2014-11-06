@@ -19,8 +19,8 @@
 
 import sys
 from os.path import join, abspath, dirname
+import unittest
 
-from logilab.common.testlib import TestCase, unittest_main
 
 from astroid import nodes, inspector
 from astroid.bases import Instance, YES
@@ -36,7 +36,7 @@ def astroid_wrapper(func, modname):
 DATA2 = join(dirname(abspath(__file__)), 'data2')
 
 
-class LinkerTC(TestCase):
+class LinkerTC(unittest.TestCase):
 
     def setUp(self):
         self.project = MANAGER.project_from_files([DATA2], astroid_wrapper)
@@ -90,4 +90,4 @@ __all__ = ('LinkerTC', 'LinkerTC2')
 
 
 if __name__ == '__main__':
-    unittest_main()
+    unittest.main()

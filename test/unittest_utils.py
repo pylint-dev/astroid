@@ -15,14 +15,14 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
-from logilab.common.testlib import TestCase, unittest_main
+import unittest
 
 from astroid import builder, nodes
 from astroid.node_classes import are_exclusive
 
 builder = builder.AstroidBuilder()
 
-class AreExclusiveTC(TestCase):
+class AreExclusiveTC(unittest.TestCase):
     def test_not_exclusive(self):
         astroid = builder.string_build("""
 x = 10
@@ -98,5 +98,5 @@ else:
         self.assertEqual(are_exclusive(f4, f2), True)
 
 if __name__ == '__main__':
-    unittest_main()
+    unittest.main()
 

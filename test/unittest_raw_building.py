@@ -1,7 +1,8 @@
-from logilab.common.testlib import TestCase, unittest_main
+import unittest
+
 from astroid.raw_building import (attach_dummy_node, build_module, build_class, build_function, build_from_import)
 
-class RawBuildingTC(TestCase):
+class RawBuildingTC(unittest.TestCase):
 
     def test_attach_dummy_node(self):
         node = build_module('MyModule')
@@ -41,3 +42,7 @@ class RawBuildingTC(TestCase):
         names = ['exceptions, inference, inspector']
         node = build_from_import('astroid', names)
         self.assertEqual(len(names), len(node.names))
+
+
+if __name__ == '__main__':
+    unittest.main()

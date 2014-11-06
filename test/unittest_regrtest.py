@@ -15,18 +15,18 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
-
-from logilab.common.testlib import unittest_main, TestCase, require_version
+from os.path import join, abspath, dirname
+import sys
+import unittest
 
 from astroid import ResolveError, MANAGER, Instance, nodes, YES, InferenceError
 from astroid.builder import AstroidBuilder
 from astroid.raw_building import build_module
 from astroid.manager import AstroidManager
+from astroid.test_utils import require_version
 
-import sys
-from os.path import join, abspath, dirname
 
-class NonRegressionTC(TestCase):
+class NonRegressionTC(unittest.TestCase):
 
     def setUp(self):
         sys.path.insert(0, join(dirname(abspath(__file__)), 'regrtest_data'))
@@ -221,4 +221,4 @@ class Whatever(object):
     a = property(lambda x: x, lambda x: x)
 
 if __name__ == '__main__':
-    unittest_main()
+    unittest.main()

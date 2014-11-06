@@ -21,15 +21,16 @@ from os.path import join, dirname, abspath
 import sys
 from functools import partial
 from textwrap import dedent
+import unittest
 
 import six
-
-from logilab.common.testlib import TestCase, unittest_main, require_version
 
 from astroid import InferenceError, builder, nodes
 from astroid.inference import infer_end as inference_infer_end
 from astroid.bases import YES, Instance, BoundMethod, UnboundMethod,\
                                 path_wrapper, BUILTINS
+from astroid.test_utils import require_version
+
 
 def get_name_node(start_from, name, index=0):
     return [n for n in start_from.nodes_of_class(nodes.Name) if n.name == name][index]
@@ -39,7 +40,7 @@ def get_node_of_class(start_from, klass):
 
 builder = builder.AstroidBuilder()
 
-class InferenceUtilsTC(TestCase):
+class InferenceUtilsTC(unittest.TestCase):
 
     def test_path_wrapper(self):
         def infer_default(self, *args):
@@ -56,7 +57,7 @@ else:
     EXC_MODULE = BUILTINS
 
 
-class InferenceTC(TestCase):
+class InferenceTC(unittest.TestCase):
 
     CODE = '''
 
@@ -1378,4 +1379,4 @@ def test(*args, **kwargs):
 
 
 if __name__ == '__main__':
-    unittest_main()
+    unittest.main()

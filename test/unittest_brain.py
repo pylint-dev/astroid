@@ -17,14 +17,14 @@
 """Tests for basic functionality in astroid.brain."""
 import sys
 
-from logilab.common.testlib import TestCase, unittest_main
+import unittest
 
 from astroid import MANAGER
 from astroid import bases
 from astroid import test_utils
 import astroid
 
-class HashlibTC(TestCase):
+class HashlibTC(unittest.TestCase):
     def test_hashlib(self):
         """Tests that brain extensions for hashlib work."""
         hashlib_module = MANAGER.ast_from_module_name('hashlib')
@@ -40,7 +40,7 @@ class HashlibTC(TestCase):
             self.assertEqual(len(class_obj['hexdigest'].args.args), 1)
 
 
-class NamedTupleTest(TestCase):
+class NamedTupleTest(unittest.TestCase):
     def test_namedtuple_base(self):
         klass = test_utils.extract_node("""
         from collections import namedtuple
@@ -66,7 +66,7 @@ class NamedTupleTest(TestCase):
         for base in klass.ancestors():
             if base.name == 'X':
                 break
-        self.assertCountEqual(["a", "b", "c"], base.instance_attrs.keys())
+        self.assertSetEqual({"a", "b", "c"}, set(base.instance_attrs))
 
     def test_namedtuple_inference_failure(self):
         klass = test_utils.extract_node("""
@@ -96,4 +96,4 @@ class NamedTupleTest(TestCase):
 
 
 if __name__ == '__main__':
-    unittest_main()
+    unittest.main()

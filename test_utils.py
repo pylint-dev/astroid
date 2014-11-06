@@ -1,4 +1,6 @@
 """Utility functions for test code that uses astroid ASTs as input."""
+import functools
+import sys
 import textwrap
 
 from astroid import nodes
@@ -180,3 +182,32 @@ def build_module(code, module_name=''):
     """
     code = textwrap.dedent(code)
     return builder.AstroidBuilder(None).string_build(code, modname=module_name)
+
+
+def require_version(minver=None, maxver=None):
+    """ Compare version of python interpreter to the given one. Skip the test
+    if older.
+    """
+    def parse(string, default=None):
+        string = string or default
+        try:
+            return tuple(int(v) for v in string.split('.'))
+        except ValueError:
+            raise ValueError('%s is not a correct version : should be X.Y[.Z].' % version)
+
+    def check_require_version(f):
+        current = sys.version_info[:3]
+        if parse(minver, "0") < current <= parse(maxver, "4"):
+            return f
+        else:
+            str_version = '.'.join(str(v) for v in sys.version_info)
+            @functools.wraps(f)
+            def new_f(self, *args, **kwargs):
+                if minver is not None:
+                    self.skipTest('Needs Python > %s. Current version is %s.' % (minver, str_version))
+                elif maxver is not None:
+                    self.skipTest('Needs Python <= %s. Current version is %s.' % (maxver, str_version))
+            return new_f
+
+
+    return check_require_version

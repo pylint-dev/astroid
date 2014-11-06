@@ -20,12 +20,12 @@ unit tests for module modutils (module manipulation utilities)
 """
 
 import sys
+import unittest
+
 try:
     __file__
 except NameError:
     __file__ = sys.argv[0]
-
-from logilab.common.testlib import TestCase, unittest_main
 
 from os import path, getcwd, sep
 from astroid import modutils
@@ -34,7 +34,7 @@ sys.path.insert(0, path.dirname(__file__))
 DATADIR = path.abspath(path.normpath(path.join(path.dirname(__file__), 'data')))
 
 
-class ModuleFileTC(TestCase):
+class ModuleFileTC(unittest.TestCase):
     package = "mypypa"
 
     def tearDown(self):
@@ -54,7 +54,7 @@ class ModuleFileTC(TestCase):
         self.assertEqual(mfile.split(sep)[-4:], ["test", "data", "MyPyPa-0.1.0-py2.5.egg", self.package])
 
 
-class load_module_from_name_tc(TestCase):
+class load_module_from_name_tc(unittest.TestCase):
     """ load a python module from it's name """
 
     def test_knownValues_load_module_from_name_1(self):
@@ -68,7 +68,7 @@ class load_module_from_name_tc(TestCase):
                           modutils.load_module_from_name, 'os.path', use_sys=0)
 
 
-class get_module_part_tc(TestCase):
+class get_module_part_tc(unittest.TestCase):
     """given a dotted name return the module part of the name"""
 
     def test_knownValues_get_module_part_1(self):
@@ -97,7 +97,7 @@ class get_module_part_tc(TestCase):
                           modutils.__file__)
 
 
-class modpath_from_file_tc(TestCase):
+class modpath_from_file_tc(unittest.TestCase):
     """ given an absolute file path return the python module's path as a list """
 
     def test_knownValues_modpath_from_file_1(self):
@@ -113,10 +113,10 @@ class modpath_from_file_tc(TestCase):
         self.assertRaises(Exception, modutils.modpath_from_file, '/turlututu')
 
 
-class load_module_from_path_tc(TestCase):
+class load_module_from_path_tc(unittest.TestCase):
 
     def test_do_not_load_twice(self):
-        sys.path.insert(0, self.datadir)
+        sys.path.insert(0, DATADIR)
         foo = modutils.load_module_from_modpath(['lmfp', 'foo'])
         lmfp = modutils.load_module_from_modpath(['lmfp'])
         self.assertEqual(len(sys.just_once), 1)
@@ -124,7 +124,7 @@ class load_module_from_path_tc(TestCase):
         del sys.just_once
 
 
-class file_from_modpath_tc(TestCase):
+class file_from_modpath_tc(unittest.TestCase):
     """given a mod path (i.e. splited module / package name), return the
     corresponding file, giving priority to source file over precompiled file
     if it exists"""
@@ -166,7 +166,7 @@ class file_from_modpath_tc(TestCase):
         modutils.file_from_modpath(["unicode_package", "core"])
 
 
-class get_source_file_tc(TestCase):
+class get_source_file_tc(unittest.TestCase):
 
     def test(self):
         from os import path
@@ -177,7 +177,7 @@ class get_source_file_tc(TestCase):
         self.assertRaises(modutils.NoSourceFile, modutils.get_source_file, 'whatever')
 
 
-class is_standard_module_tc(TestCase):
+class is_standard_module_tc(unittest.TestCase):
     """
     return true if the module may be considered as a module from the standard
     library
@@ -234,7 +234,7 @@ class is_standard_module_tc(TestCase):
         self.assertEqual(modutils.is_standard_module('logilab.whatever', common.__path__), False)
 
 
-class is_relative_tc(TestCase):
+class is_relative_tc(unittest.TestCase):
 
 
     def test_knownValues_is_relative_1(self):
@@ -253,7 +253,7 @@ class is_relative_tc(TestCase):
                          False)
 
 
-class get_module_files_tc(TestCase):
+class get_module_files_tc(unittest.TestCase):
 
     def test_knownValues_get_module_files_1(self): #  XXXFIXME: TOWRITE
         """given a directory return a list of all available python module's files, even
@@ -276,14 +276,5 @@ class get_module_files_tc(TestCase):
         self.assertTrue( m is logilab.common.fileutils )
 
 
-from logilab.common.testlib import DocTest
-
-class ModuleDocTest(DocTest):
-    """test doc test in this module"""
-    from astroid import modutils as module
-
-del DocTest # necessary if we don't want it to be executed (we don't...)
-
-
 if __name__ == '__main__':
-    unittest_main()
+    unittest.main()
