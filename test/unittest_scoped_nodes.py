@@ -34,8 +34,10 @@ PY3K = sys.version_info >= (3, 0)
 
 if PY3K:
     DATA = join(dirname(abspath(__file__)), 'data_py3')
+    import data_py3 as data
 else:
     DATA = join(dirname(abspath(__file__)), 'data')
+    import data
 
 REGRTEST_DATA = join(dirname(abspath(__file__)), 'regrtest_data')
 MODULE = abuilder.file_build(join(DATA, 'module.py'), 'data.module')
@@ -262,7 +264,8 @@ def nested_args(a, (b, c, d)):
 
     def test_format_args(self):
         func = MODULE2['make_class']
-        self.assertEqual(func.args.format_args(), 'any, base=data.module.YO, *args, **kwargs')
+        self.assertEqual(func.args.format_args(), 
+                         'any, base=%s.module.YO, *args, **kwargs' % (data.__name__,))
         func = MODULE['four_args']
         self.assertEqual(func.args.format_args(), 'a, b, c, d')
 

@@ -34,8 +34,10 @@ PY3K = sys.version_info >= (3, 0)
 
 if PY3K:
     DATA = join(dirname(abspath(__file__)), 'data_py3')
+    import data_py3 as data
 else:
     DATA = join(dirname(abspath(__file__)), 'data')
+    import data
 
 MODULE = builder.file_build(join(DATA, 'module.py'), 'data.module')
 MODULE2 = builder.file_build(join(DATA, 'module2.py'), 'data.module2')
@@ -120,7 +122,7 @@ class A(A):
         base = next(make_class.ilookup('base'))
         self.assertTrue(isinstance(base, nodes.Class), base.__class__)
         self.assertEqual(base.name, 'YO')
-        self.assertEqual(base.root().name, 'data.module')
+        self.assertEqual(base.root().name, '%s.module' % (data.__name__,))
 
 
     def test_class(self):

@@ -1,5 +1,5 @@
 from data_py3.module import YO, YOUPI
-import data
+import data_py3
 
 
 class Specialization(YOUPI, YO):
@@ -100,7 +100,7 @@ raise_string(*args, **kwargs)
 print('bonjour', file=stream)
 print('salut', end=' ', file=stream)
 
-def make_class(any, base=data.module.YO, *args, **kwargs):
+def make_class(any, base=data_py3.module.YO, *args, **kwargs):
     """check base is correctly resolved to Concrete0"""
     
     
