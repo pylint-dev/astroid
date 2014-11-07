@@ -38,7 +38,7 @@ description = "rebuild a new abstract syntax tree from Python's ast"
 from os.path import join
 include_dirs = ['brain',
                 join('test', 'regrtest_data'),
-                join('test', 'data'), join('test', 'data2')
+                join('test', 'data'), join('test', 'data_py3'), join('test', 'data2')
                ]
 
 classifiers = ["Topic :: Software Development :: Libraries :: Python Modules",
