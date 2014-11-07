@@ -1186,11 +1186,12 @@ n = NewTest()
 
 
     def test_two_parents_from_same_module(self):
+        module = 'data_py3' if sys.version[0] == 3 else 'data'
         code = '''
-from data import nonregr
+from %s import nonregr
 class Xxx(nonregr.Aaa, nonregr.Ccc):
     "doc"
-        '''
+        ''' % (module,)
         astroid = builder.string_build(code, __name__, __file__)
         parents = list(astroid['Xxx'].ancestors())
         self.assertEqual(len(parents), 3, parents) # Aaa, Ccc, object
