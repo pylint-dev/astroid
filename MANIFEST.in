@@ -1,10 +1,9 @@
 include ChangeLog
-include README*
+include README
 include COPYING
 include COPYING.LESSER
-include test/fulltest.sh
 recursive-include test/data *.py *.zip *.egg
 recursive-include test/data_py3 *.py *.zip *.egg
 recursive-include test/data2 *.py
 recursive-include test/regrtest_data *.py
-recursive-include brain *.py
+recursive-include brain/ *.py

@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 """astroid packaging information"""
-
 distname = 'astroid'
 
 modname = 'astroid'
@@ -34,12 +33,6 @@ mailinglist = "mailto://%s" % author_email
 web = 'http://bitbucket.org/logilab/astroid'
 
 description = "rebuild a new abstract syntax tree from Python's ast"
-
-from os.path import join
-include_dirs = ['brain',
-                join('test', 'regrtest_data'),
-                join('test', 'data'), join('test', 'data_py3'), join('test', 'data2')
-               ]
 
 classifiers = ["Topic :: Software Development :: Libraries :: Python Modules",
                "Topic :: Software Development :: Quality Assurance",

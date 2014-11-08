@@ -45,12 +45,17 @@ http://mail.python.org/mailman/listinfo/code-quality for subscription
 information and archives. You may find older archives at
 http://lists.logilab.org/mailman/listinfo/python-projects .
 
+Python Versions
+---------------
+
+astroid is compatible with Python 2.7 as well as 3.3 and later. astroid uses
+the same code base for both Python versions, using six.
+
 Test
 ----
 
 Tests are in the 'test' subdirectory. To launch the whole tests suite
 at once, you may use the 'pytest' utility from logilab-common (simply
-type 'pytest' from within this directory) or if you're running python
->= 2.7, using discover, for instance::
+type 'pytest' from within this directory) or using unittest discover::
 
   python -m unittest discover -p "unittest*.py"
