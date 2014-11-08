@@ -41,7 +41,7 @@ def install():
                  url = web,
                  include_package_data = True,
                  install_requires = install_requires,
-                 packages = find_packages(),
+                 packages = ['astroid', 'astroid.tests'],
                  )
 
 
