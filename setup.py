@@ -19,9 +19,11 @@
 # with astroid.  If not, see <http://www.gnu.org/licenses/>.
 """Setup script for astroid."""
 from setuptools import setup, find_packages
-from astroid import __pkginfo__
-from astroid.__pkginfo__ import modname, version, license, description, \
-    web, author, author_email, distname, install_requires, classifiers
+
+pkginfo = 'astroid/__pkginfo__.py'
+
+with open(pkginfo, 'rb') as fobj:
+    exec(compile(fobj.read(), pkginfo, 'exec'), locals())
 
 with open('README') as fobj:
     long_description = fobj.read()
