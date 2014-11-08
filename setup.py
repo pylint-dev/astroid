@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid.  If not, see <http://www.gnu.org/licenses/>.
 """Setup script for astroid."""
-from setuptools import setup, find_packages
+from setuptools import setup
 
 pkginfo = 'astroid/__pkginfo__.py'
 
@@ -41,6 +41,7 @@ def install():
                  url = web,
                  include_package_data = True,
                  install_requires = install_requires,
+                 # find_packages() does not work on drone.io (or maybe inside venv).
                  packages = ['astroid', 'astroid.tests'],
                  )
 
