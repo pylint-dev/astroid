@@ -46,12 +46,12 @@ class ModuleFileTC(unittest.TestCase):
     def test_find_zipped_module(self):
         mtype, mfile = modutils._module_file([self.package], [path.join(DATADIR, 'MyPyPa-0.1.0-py2.5.zip')])
         self.assertEqual(mtype, modutils.ZIPFILE)
-        self.assertEqual(mfile.split(sep)[-4:], ["test", "data", "MyPyPa-0.1.0-py2.5.zip", self.package])
+        self.assertEqual(mfile.split(sep)[-4:], ["tests", "data", "MyPyPa-0.1.0-py2.5.zip", self.package])
 
     def test_find_egg_module(self):
         mtype, mfile = modutils._module_file([self.package], [path.join(DATADIR, 'MyPyPa-0.1.0-py2.5.egg')])
         self.assertEqual(mtype, modutils.ZIPFILE)
-        self.assertEqual(mfile.split(sep)[-4:], ["test", "data", "MyPyPa-0.1.0-py2.5.egg", self.package])
+        self.assertEqual(mfile.split(sep)[-4:], ["tests", "data", "MyPyPa-0.1.0-py2.5.egg", self.package])
 
 
 class load_module_from_name_tc(unittest.TestCase):
