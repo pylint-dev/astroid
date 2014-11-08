@@ -4,3 +4,6 @@
 \.pyc$
 ^log$
 ^doc/build$
+^dist/
+^astroid\.egg-info/
+^\.tox/
