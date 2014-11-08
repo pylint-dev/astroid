@@ -1186,7 +1186,7 @@ n = NewTest()
 
 
     def test_two_parents_from_same_module(self):
-        module = 'data_py3' if sys.version[0] == 3 else 'data'
+        module = 'data_py3' if sys.version_info[0] == 3 else 'data'
         code = '''
 from %s import nonregr
 class Xxx(nonregr.Aaa, nonregr.Ccc):
