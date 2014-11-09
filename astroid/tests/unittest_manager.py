@@ -131,7 +131,7 @@ class AstroidManagerTC(unittest.TestCase):
         else:
             unittest_file = unittest.__file__[:-1]
         self.assertEqual(unittest_file,
-                        self.manager.file_from_module_name('unittest', None))
+                        self.manager.file_from_module_name('unittest', None)[0])
 
     def test_file_from_module_name_astro_building_exception(self):
         """check if the method launch a exception with a wrong module name"""

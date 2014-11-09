@@ -138,7 +138,7 @@ multiply(1, 2, 3)
         callfunc = astroid.body[1].value.func
         infered = callfunc.infered()
         self.assertEqual(len(infered), 1)
-        self.assertIsInstance(infered[0], Instance)
+        self.assertIs(infered[0], YES)
 
     @require_version('3.0')
     def test_nameconstant(self):

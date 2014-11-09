@@ -45,12 +45,12 @@ class ModuleFileTC(unittest.TestCase):
 
     def test_find_zipped_module(self):
         mtype, mfile = modutils._module_file([self.package], [path.join(DATADIR, 'MyPyPa-0.1.0-py2.5.zip')])
-        self.assertEqual(mtype, modutils.ZIPFILE)
+        self.assertEqual(mtype, modutils.PY_ZIPMODULE)
         self.assertEqual(mfile.split(sep)[-4:], ["tests", "data", "MyPyPa-0.1.0-py2.5.zip", self.package])
 
     def test_find_egg_module(self):
         mtype, mfile = modutils._module_file([self.package], [path.join(DATADIR, 'MyPyPa-0.1.0-py2.5.egg')])
-        self.assertEqual(mtype, modutils.ZIPFILE)
+        self.assertEqual(mtype, modutils.PY_ZIPMODULE)
         self.assertEqual(mfile.split(sep)[-4:], ["tests", "data", "MyPyPa-0.1.0-py2.5.egg", self.package])
 
 
@@ -203,14 +203,10 @@ class is_standard_module_tc(unittest.TestCase):
     def test_builtin(self):
         self.assertEqual(modutils.is_standard_module('marshal'), True)
 
+    @unittest.skipIf(sys.version_info > (3, 0) and sys.platform.startswith("win"),
+                     "Python 3's imp module on Windows is broken since it returns "
+                     "the module path with wrong casing.")
     def test_4(self):
-        import astroid
-        if sys.version_info > (3, 0):
-            skip = sys.platform.startswith('win') or '.tox' in astroid.__file__
-            if skip:
-                self.skipTest('imp module has a broken behaviour in Python 3 on '
-                              'Windows, returning the module path with different '
-                              'case than it should be.')
         self.assertEqual(modutils.is_standard_module('hashlib'), True)
         self.assertEqual(modutils.is_standard_module('pickle'), True)
         self.assertEqual(modutils.is_standard_module('email'), True)

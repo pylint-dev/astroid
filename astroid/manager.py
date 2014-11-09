@@ -23,16 +23,16 @@ from __future__ import print_function
 
 __docformat__ = "restructuredtext en"
 
+import imp
 import os
 from os.path import dirname, join, isdir, exists
 from warnings import warn
+import zipimport
 
 from logilab.common.configuration import OptionsProviderMixIn
 
 from astroid.exceptions import AstroidBuildingException
-from astroid.modutils import NoSourceFile, is_python_source, \
-     file_from_modpath, load_module_from_name, modpath_from_file, \
-     get_module_files, get_source_file, zipimport
+from astroid import modutils
 
 
 def astroid_wrapper(func, modname):
@@ -91,13 +91,13 @@ class AstroidManager(OptionsProviderMixIn):
     def ast_from_file(self, filepath, modname=None, fallback=True, source=False):
         """given a module name, return the astroid object"""
         try:
-            filepath = get_source_file(filepath, include_no_ext=True)
+            filepath = modutils.get_source_file(filepath, include_no_ext=True)
             source = True
-        except NoSourceFile:
+        except modutils.NoSourceFile:
             pass
         if modname is None:
             try:
-                modname = '.'.join(modpath_from_file(filepath))
+                modname = '.'.join(modutils.modpath_from_file(filepath))
             except ImportError:
                 modname = filepath
         if modname in self.astroid_cache and self.astroid_cache[modname].file == filepath:
@@ -110,29 +110,36 @@ class AstroidManager(OptionsProviderMixIn):
         raise AstroidBuildingException('unable to get astroid for file %s' %
                                        filepath)
 
+    def _build_stub_module(self, modname):
+        from astroid.builder import AstroidBuilder
+        return AstroidBuilder(self).string_build('', modname)
+
     def ast_from_module_name(self, modname, context_file=None):
         """given a module name, return the astroid object"""
         if modname in self.astroid_cache:
             return self.astroid_cache[modname]
         if modname == '__main__':
-            from astroid.builder import AstroidBuilder
-            return AstroidBuilder(self).string_build('', modname)
+            return self._build_stub_module(modname)
         old_cwd = os.getcwd()
         if context_file:
             os.chdir(dirname(context_file))
         try:
-            filepath = self.file_from_module_name(modname, context_file)
-            if filepath is not None and not is_python_source(filepath):
+            filepath, mp_type = self.file_from_module_name(modname, context_file)
+            if mp_type == modutils.PY_ZIPMODULE:
                 module = self.zip_import_data(filepath)
                 if module is not None:
                     return module
-            if filepath is None or not is_python_source(filepath):
+            elif mp_type in (imp.C_BUILTIN, imp.C_EXTENSION):
+                if mp_type == imp.C_EXTENSION and not modutils.is_standard_module(modname):
+                    return self._build_stub_module(modname)
                 try:
-                    module = load_module_from_name(modname)
+                    module = modutils.load_module_from_name(modname)
                 except Exception as ex:
                     msg = 'Unable to load module %s (%s)' % (modname, ex)
                     raise AstroidBuildingException(msg)
                 return self.ast_from_module(module, modname)
+            elif mp_type == imp.PY_COMPILED:
+                raise AstroidBuildingException("Unable to load compiled module %s" % (modname,))
             return self.ast_from_file(filepath, modname, fallback=False)
         finally:
             os.chdir(old_cwd)
@@ -164,8 +171,8 @@ class AstroidManager(OptionsProviderMixIn):
             value = self._mod_file_cache[(modname, contextfile)]
         except KeyError:
             try:
-                value = file_from_modpath(modname.split('.'),
-                                          context_file=contextfile)
+                value = modutils.file_info_from_modpath(
+                    modname.split('.'), context_file=contextfile)
             except ImportError as ex:
                 msg = 'Unable to load module %s (%s)' % (modname, ex)
                 value = AstroidBuildingException(msg)
@@ -182,7 +189,7 @@ class AstroidManager(OptionsProviderMixIn):
         try:
             # some builtin modules don't have __file__ attribute
             filepath = module.__file__
-            if is_python_source(filepath):
+            if modutils.is_python_source(filepath):
                 return self.ast_from_file(filepath, modname)
         except AttributeError:
             pass
@@ -243,7 +250,7 @@ class AstroidManager(OptionsProviderMixIn):
         project = Project(project_name)
         for something in files:
             if not exists(something):
-                fpath = file_from_modpath(something.split('.'))
+                fpath = modutils.file_from_modpath(something.split('.'))
             elif isdir(something):
                 fpath = join(something, '__init__.py')
             else:
@@ -258,8 +265,8 @@ class AstroidManager(OptionsProviderMixIn):
             # recurse in package except if __init__ was explicitly given
             if astroid.package and something.find('__init__') == -1:
                 # recurse on others packages / modules if this is a package
-                for fpath in get_module_files(dirname(astroid.file),
-                                              black_list):
+                for fpath in modutils.get_module_files(dirname(astroid.file),
+                                                       black_list):
                     astroid = func_wrapper(self.ast_from_file, fpath)
                     if astroid is None or astroid.name == base_name:
                         continue
