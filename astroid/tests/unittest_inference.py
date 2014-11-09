@@ -29,11 +29,8 @@ from astroid import InferenceError, builder, nodes
 from astroid.inference import infer_end as inference_infer_end
 from astroid.bases import YES, Instance, BoundMethod, UnboundMethod,\
                                 path_wrapper, BUILTINS
-from astroid.test_utils import require_version
+from astroid.test_utils import require_version, get_name_node
 
-
-def get_name_node(start_from, name, index=0):
-    return [n for n in start_from.nodes_of_class(nodes.Name) if n.name == name][index]
 
 def get_node_of_class(start_from, klass):
     return next(start_from.nodes_of_class(klass))

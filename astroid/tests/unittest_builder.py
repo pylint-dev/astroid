@@ -39,8 +39,6 @@ if PY3K:
 else:
     DATA = join(dirname(abspath(__file__)), 'data')
 
-from unittest_inference import get_name_node
-
 if PY3K:
     import data_py3 as data
     from data_py3 import module as test_module
@@ -479,7 +477,7 @@ def global_no_effect():
         # n unavailable outside gen expr scope
         self.assertNotIn('n', astroid)
         # test n is inferable anyway
-        n = get_name_node(astroid, 'n')
+        n = test_utils.get_name_node(astroid, 'n')
         self.assertIsNot(n.scope(), astroid)
         self.assertEqual([i.__class__ for i in n.infer()],
                          [YES.__class__])
@@ -503,7 +501,7 @@ class FileBuildTC(unittest.TestCase):
     module = builder.AstroidBuilder().file_build(
         join(DATA, 'module.py'), 
         '%s.module' % (data.__name__,))
-
+    
     def test_module_base_props(self):
         """test base properties and method of a astroid module"""
         module = self.module
@@ -634,7 +632,7 @@ class ModuleBuildTC(FileBuildTC):
 
     def setUp(self):
         abuilder = builder.AstroidBuilder()
-        self.module = abuilder.module_build(test_module)
+        self.module = abuilder.module_build(test_module, test_module.__name__)
 
 
 class MoreTC(unittest.TestCase):

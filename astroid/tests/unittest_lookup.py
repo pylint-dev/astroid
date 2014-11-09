@@ -26,8 +26,7 @@ from astroid import builder, nodes, scoped_nodes, \
      InferenceError, NotFoundError, UnresolvableName
 from astroid.scoped_nodes import builtin_lookup, Function
 from astroid.bases import YES
-from unittest_inference import get_name_node
-from astroid.test_utils import require_version
+from astroid.test_utils import require_version, get_name_node
 
 builder = builder.AstroidBuilder()
 PY3K = sys.version_info >= (3, 0)
@@ -124,7 +123,6 @@ class A(A):
         self.assertEqual(base.name, 'YO')
         self.assertEqual(base.root().name, '%s.module' % (data.__name__,))
 
-
     def test_class(self):
         klass = MODULE['YOUPI']
         my_dict = next(klass.ilookup('MY_DICT'))
@@ -135,7 +133,6 @@ class A(A):
         self.assertIsInstance(obj, nodes.Class)
         self.assertEqual(obj.name, 'object')
         self.assertRaises(InferenceError, partial(next, klass.ilookup('YOAA')))
-
 
     def test_inner_classes(self):
         ddd = list(NONREGR['Ccc'].ilookup('Ddd'))
