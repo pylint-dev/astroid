@@ -140,6 +140,8 @@ class AstroidManager(OptionsProviderMixIn):
                 return self.ast_from_module(module, modname)
             elif mp_type == imp.PY_COMPILED:
                 raise AstroidBuildingException("Unable to load compiled module %s" % (modname,))
+            if filepath is None:
+                raise AstroidBuildingException("Unable to load module %s" % (modname,))
             return self.ast_from_file(filepath, modname, fallback=False)
         finally:
             os.chdir(old_cwd)
