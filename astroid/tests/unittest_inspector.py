@@ -24,8 +24,8 @@ import unittest
 
 from astroid import nodes, inspector
 from astroid.bases import Instance, YES
-
 from astroid.manager import AstroidManager, _silent_no_wrap
+from astroid.tests import resources
 
 MANAGER = AstroidManager()
 
@@ -33,28 +33,26 @@ def astroid_wrapper(func, modname):
     return func(modname)
 
 
-DATA2 = join(dirname(abspath(__file__)), 'data2')
-
-
-class LinkerTC(unittest.TestCase):
+class LinkerTest(resources.SysPathSetup, unittest.TestCase):
 
     def setUp(self):
-        self.project = MANAGER.project_from_files([DATA2], astroid_wrapper)
+        super(LinkerTest, self).setUp()
+        self.project = MANAGER.project_from_files([resources.find('data')], astroid_wrapper)
         self.linker = inspector.Linker(self.project)
         self.linker.visit(self.project)
 
     def test_class_implements(self):
-        klass = self.project.get_module('data2.clientmodule_test')['Ancestor']
+        klass = self.project.get_module('data.clientmodule_test')['Ancestor']
         self.assertTrue(hasattr(klass, 'implements'))
         self.assertEqual(len(klass.implements), 1)
         self.assertTrue(isinstance(klass.implements[0], nodes.Class))
         self.assertEqual(klass.implements[0].name, "Interface")
-        klass = self.project.get_module('data2.clientmodule_test')['Specialization']
+        klass = self.project.get_module('data.clientmodule_test')['Specialization']
         self.assertTrue(hasattr(klass, 'implements'))
         self.assertEqual(len(klass.implements), 0)
 
     def test_locals_assignment_resolution(self):
-        klass = self.project.get_module('data2.clientmodule_test')['Specialization']
+        klass = self.project.get_module('data.clientmodule_test')['Specialization']
         self.assertTrue(hasattr(klass, 'locals_type'))
         type_dict = klass.locals_type
         self.assertEqual(len(type_dict), 2)
@@ -66,7 +64,7 @@ class LinkerTC(unittest.TestCase):
         self.assertEqual(type_dict['top'][0].value, 'class')
 
     def test_instance_attrs_resolution(self):
-        klass = self.project.get_module('data2.clientmodule_test')['Specialization']
+        klass = self.project.get_module('data.clientmodule_test')['Specialization']
         self.assertTrue(hasattr(klass, 'instance_attrs_type'))
         type_dict = klass.instance_attrs_type
         self.assertEqual(len(type_dict), 3)
@@ -79,14 +77,14 @@ class LinkerTC(unittest.TestCase):
         self.assertIs(type_dict['_id'][0], YES)
 
 
-class LinkerTC2(LinkerTC):
+class LinkerTest2(LinkerTest):
 
     def setUp(self):
-        self.project = MANAGER.project_from_files([DATA2], func_wrapper=_silent_no_wrap)
+        resources.SysPathSetup.setUp(self)
+        self.project = MANAGER.project_from_files(
+            [resources.find('data')], func_wrapper=_silent_no_wrap)
         self.linker = inspector.Linker(self.project)
         self.linker.visit(self.project)
-
-__all__ = ('LinkerTC', 'LinkerTC2')
 
 
 if __name__ == '__main__':

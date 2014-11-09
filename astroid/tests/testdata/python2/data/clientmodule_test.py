@@ -1,5 +1,5 @@
 """ docstring for file clientmodule.py """
-from data2.suppliermodule_test import Interface as IFace, DoNothing
+from data.suppliermodule_test import Interface as IFace, DoNothing
 
 class Toto: pass
 

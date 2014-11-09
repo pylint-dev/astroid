@@ -18,57 +18,51 @@
 """
 unit tests for module modutils (module manipulation utilities)
 """
-
+import os
 import sys
 import unittest
 
-try:
-    __file__
-except NameError:
-    __file__ = sys.argv[0]
-
-from os import path, getcwd, sep
+from logilab.common import configuration
 from astroid import modutils
-
-sys.path.insert(0, path.dirname(__file__))
-DATADIR = path.abspath(path.normpath(path.join(path.dirname(__file__), 'data')))
+from astroid.tests import resources
 
 
-class ModuleFileTC(unittest.TestCase):
+class ModuleFileTest(unittest.TestCase):
     package = "mypypa"
 
     def tearDown(self):
-        super(ModuleFileTC, self).tearDown()
         for k in list(sys.path_importer_cache.keys()):
             if 'MyPyPa' in k:
                 del sys.path_importer_cache[k]
 
     def test_find_zipped_module(self):
-        mtype, mfile = modutils._module_file([self.package], [path.join(DATADIR, 'MyPyPa-0.1.0-py2.5.zip')])
+        mtype, mfile = modutils._module_file(
+            [self.package], [resources.find('data/MyPyPa-0.1.0-py2.5.zip')])
         self.assertEqual(mtype, modutils.PY_ZIPMODULE)
-        self.assertEqual(mfile.split(sep)[-4:], ["tests", "data", "MyPyPa-0.1.0-py2.5.zip", self.package])
+        self.assertEqual(mfile.split(os.sep)[-3:], ["data", "MyPyPa-0.1.0-py2.5.zip", self.package])
 
     def test_find_egg_module(self):
-        mtype, mfile = modutils._module_file([self.package], [path.join(DATADIR, 'MyPyPa-0.1.0-py2.5.egg')])
+        mtype, mfile = modutils._module_file(
+            [self.package], [resources.find('data/MyPyPa-0.1.0-py2.5.egg')])
         self.assertEqual(mtype, modutils.PY_ZIPMODULE)
-        self.assertEqual(mfile.split(sep)[-4:], ["tests", "data", "MyPyPa-0.1.0-py2.5.egg", self.package])
+        self.assertEqual(mfile.split(os.sep)[-3:], ["data", "MyPyPa-0.1.0-py2.5.egg", self.package])
 
 
-class load_module_from_name_tc(unittest.TestCase):
+class LoadModuleFromNameTest(unittest.TestCase):
     """ load a python module from it's name """
 
     def test_knownValues_load_module_from_name_1(self):
         self.assertEqual(modutils.load_module_from_name('sys'), sys)
 
     def test_knownValues_load_module_from_name_2(self):
-        self.assertEqual(modutils.load_module_from_name('os.path'), path)
+        self.assertEqual(modutils.load_module_from_name('os.path'), os.path)
 
     def test_raise_load_module_from_name_1(self):
         self.assertRaises(ImportError,
                           modutils.load_module_from_name, 'os.path', use_sys=0)
 
 
-class get_module_part_tc(unittest.TestCase):
+class GetModulePartTest(unittest.TestCase):
     """given a dotted name return the module part of the name"""
 
     def test_knownValues_get_module_part_1(self):
@@ -97,46 +91,44 @@ class get_module_part_tc(unittest.TestCase):
                           modutils.__file__)
 
 
-class modpath_from_file_tc(unittest.TestCase):
+class ModPathFromFileTest(unittest.TestCase):
     """ given an absolute file path return the python module's path as a list """
 
     def test_knownValues_modpath_from_file_1(self):
-        self.assertEqual(modutils.modpath_from_file(modutils.__file__),
-                         ['astroid', 'modutils'])
+        self.assertEqual(modutils.modpath_from_file(configuration.__file__),
+                         ['logilab', 'common', 'configuration'])
 
     def test_knownValues_modpath_from_file_2(self):
         self.assertEqual(modutils.modpath_from_file('unittest_modutils.py',
-                                                    {getcwd(): 'arbitrary.pkg'}),
+                                                    {os.getcwd(): 'arbitrary.pkg'}),
                          ['arbitrary', 'pkg', 'unittest_modutils'])
 
     def test_raise_modpath_from_file_Exception(self):
         self.assertRaises(Exception, modutils.modpath_from_file, '/turlututu')
 
 
-class load_module_from_path_tc(unittest.TestCase):
+class LoadModuleFromPathTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_do_not_load_twice(self):
-        sys.path.insert(0, DATADIR)
-        foo = modutils.load_module_from_modpath(['lmfp', 'foo'])
-        lmfp = modutils.load_module_from_modpath(['lmfp'])
+        foo = modutils.load_module_from_modpath(['data', 'lmfp', 'foo'])
+        lmfp = modutils.load_module_from_modpath(['data', 'lmfp'])
         self.assertEqual(len(sys.just_once), 1)
-        sys.path.pop(0)
         del sys.just_once
 
 
-class file_from_modpath_tc(unittest.TestCase):
+class FileFromModPathTest(resources.SysPathSetup, unittest.TestCase):
     """given a mod path (i.e. splited module / package name), return the
     corresponding file, giving priority to source file over precompiled file
     if it exists"""
 
     def test_site_packages(self):
-        self.assertEqual(path.realpath(modutils.file_from_modpath(['astroid', 'modutils'])),
-                         path.realpath(modutils.__file__.replace('.pyc', '.py')))
+        self.assertEqual(os.path.realpath(modutils.file_from_modpath(['astroid', 'modutils'])),
+                         os.path.realpath(modutils.__file__.replace('.pyc', '.py')))
 
     def test_std_lib(self):
         from os import path
-        self.assertEqual(path.realpath(modutils.file_from_modpath(['os', 'path']).replace('.pyc', '.py')),
-                         path.realpath(path.__file__.replace('.pyc', '.py')))
+        self.assertEqual(os.path.realpath(modutils.file_from_modpath(['os', 'path']).replace('.pyc', '.py')),
+                         os.path.realpath(path.__file__.replace('.pyc', '.py')))
 
     def test_xmlplus(self):
         try:
@@ -145,8 +137,8 @@ class file_from_modpath_tc(unittest.TestCase):
         except ImportError:
             pass
         else:
-            self.assertEqual(path.realpath(modutils.file_from_modpath(['xml', 'dom', 'ext']).replace('.pyc', '.py')),
-                             path.realpath(ext.__file__.replace('.pyc', '.py')))
+            self.assertEqual(os.path.realpath(modutils.file_from_modpath(['xml', 'dom', 'ext']).replace('.pyc', '.py')),
+                             os.path.realpath(ext.__file__.replace('.pyc', '.py')))
 
     def test_builtin(self):
         self.assertEqual(modutils.file_from_modpath(['sys']),
@@ -159,25 +151,20 @@ class file_from_modpath_tc(unittest.TestCase):
     def test_unicode_in_package_init(self):
         # file_from_modpath should not crash when reading an __init__
         # file with unicode characters.
-        sys.path.insert(0, path.join(path.dirname(path.abspath(__file__)),
-                                     'regrtest_data'))
-        self.addCleanup(sys.path.pop, 0)
-
-        modutils.file_from_modpath(["unicode_package", "core"])
+        modutils.file_from_modpath(["data", "unicode_package", "core"])
 
 
-class get_source_file_tc(unittest.TestCase):
+class GetSourceFileTest(unittest.TestCase):
 
     def test(self):
-        from os import path
-        self.assertEqual(modutils.get_source_file(path.__file__),
-                         path.normpath(path.__file__.replace('.pyc', '.py')))
+        self.assertEqual(modutils.get_source_file(os.path.__file__),
+                         os.path.normpath(os.path.__file__.replace('.pyc', '.py')))
 
     def test_raise(self):
         self.assertRaises(modutils.NoSourceFile, modutils.get_source_file, 'whatever')
 
 
-class is_standard_module_tc(unittest.TestCase):
+class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
     """
     return true if the module may be considered as a module from the standard
     library
@@ -214,10 +201,11 @@ class is_standard_module_tc(unittest.TestCase):
         self.assertEqual(modutils.is_standard_module('StringIO'), sys.version_info < (3, 0))
 
     def test_custom_path(self):
-        if DATADIR.startswith(modutils.EXT_LIB_DIR):
+        datadir = resources.find('')
+        if datadir.startswith(modutils.EXT_LIB_DIR):
             self.skipTest('known breakage of is_standard_module on installed package')
-        self.assertEqual(modutils.is_standard_module('data.module', (DATADIR,)), True)
-        self.assertEqual(modutils.is_standard_module('data.module', (path.abspath(DATADIR),)), True)
+        self.assertEqual(modutils.is_standard_module('data.module', (datadir,)), True)
+        self.assertEqual(modutils.is_standard_module('data.module', (os.path.abspath(datadir),)), True)
 
     def test_failing_edge_cases(self):
         from logilab import common
@@ -230,7 +218,7 @@ class is_standard_module_tc(unittest.TestCase):
         self.assertEqual(modutils.is_standard_module('logilab.whatever', common.__path__), False)
 
 
-class is_relative_tc(unittest.TestCase):
+class IsRelativeTest(unittest.TestCase):
 
 
     def test_knownValues_is_relative_1(self):
@@ -249,17 +237,17 @@ class is_relative_tc(unittest.TestCase):
                          False)
 
 
-class get_module_files_tc(unittest.TestCase):
+class GetModuleFilesTest(unittest.TestCase):
 
-    def test_knownValues_get_module_files_1(self): #  XXXFIXME: TOWRITE
+    def test_get_module_files_1(self):
         """given a directory return a list of all available python module's files, even
         in subdirectories
         """
-        import data
-        modules = sorted(modutils.get_module_files(path.join(DATADIR, 'find_test'),
-                                                   data.__path__[0]))
-        self.assertEqual(modules,
-                         [path.join(DATADIR, 'find_test', x) for x in ['__init__.py', 'module.py', 'module2.py', 'noendingnewline.py', 'nonregr.py']])
+        package = resources.find('data/find_test')
+        modules = set(modutils.get_module_files(package, []))
+        self.assertEqual(
+            modules,
+            {os.path.join(package, x) for x in ['__init__.py', 'module.py', 'module2.py', 'noendingnewline.py', 'nonregr.py']})
 
     def test_load_module_set_attribute(self):
         import logilab.common.fileutils

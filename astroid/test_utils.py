@@ -157,9 +157,9 @@ def extract_node(code, module_name=''):
     if requested_lines:
         for line in requested_lines:
             extracted.append(_find_statement_by_line(tree, line))
-    else:
-        # Modifies the tree.
-        extracted = list(_extract_expressions(tree))
+
+    # Modifies the tree.
+    extracted.extend(_extract_expressions(tree))
 
     if not extracted:
         extracted.append(tree.body[-1])
@@ -171,17 +171,19 @@ def extract_node(code, module_name=''):
         return extracted
 
 
-def build_module(code, module_name=''):
+def build_module(code, module_name='', path=None):
     """Parses a string module with a builder.
     :param code: The code for the module.
     :type code: str
     :param module_name: The name for the module
     :type module_name: str
+    :param path: The path for the module
+    :type module_name: str
     :returns: The module AST.
     :rtype:  astroid.bases.NodeNG
     """
     code = textwrap.dedent(code)
-    return builder.AstroidBuilder(None).string_build(code, modname=module_name)
+    return builder.AstroidBuilder(None).string_build(code, modname=module_name, path=path)
 
 
 def require_version(minver=None, maxver=None):

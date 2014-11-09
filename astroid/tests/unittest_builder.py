@@ -17,39 +17,25 @@
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 """tests for the astroid builder and rebuilder module"""
 
-import unittest
+import os
 import sys
-from os.path import join, abspath, dirname
-from functools import partial
-
-from pprint import pprint
+import unittest
 
 from astroid import builder, nodes, InferenceError, NotFoundError
 from astroid.nodes import Module
 from astroid.bases import YES, BUILTINS
 from astroid.manager import AstroidManager
 from astroid import test_utils
+from astroid.tests import resources
 
 MANAGER = AstroidManager()
-
-PY3K = sys.version_info >= (3, 0)
-
-if PY3K:
-    DATA = join(dirname(abspath(__file__)), 'data_py3')
-else:
-    DATA = join(dirname(abspath(__file__)), 'data')
-
-if PY3K:
-    import data_py3 as data
-    from data_py3 import module as test_module
-else:
-    import data
-    from data import module as test_module
+IS_PY3 = sys.version_info[0] == 3
 
 
-class FromToLineNoTC(unittest.TestCase):
+class FromToLineNoTest(unittest.TestCase):
 
-    astroid = builder.AstroidBuilder().file_build(join(DATA, 'format.py'))
+    def setUp(self):
+        self.astroid = resources.build_file('data/format.py')
 
     def test_callfunc_lineno(self):
         stmts = self.astroid.body
@@ -124,12 +110,12 @@ class FromToLineNoTC(unittest.TestCase):
                           '(no line number on function args)')
 
     def test_decorated_function_lineno(self):
-        astroid = builder.AstroidBuilder().string_build('''
-@decorator
-def function(
-    arg):
-    print (arg)
-''', __name__, __file__)
+        astroid = test_utils.build_module('''
+            @decorator
+            def function(
+                arg):
+                print (arg)
+            ''', __name__)
         function = astroid['function']
         self.assertEqual(function.fromlineno, 3) # XXX discussable, but that's what is expected by pylint right now
         self.assertEqual(function.tolineno, 5)
@@ -175,20 +161,19 @@ def function(
 
     def test_for_while_lineno(self):
         for code in ('''
-for a in range(4):
-  print (a)
-  break
-else:
-  print ("bouh")
-''', '''
-while a:
-  print (a)
-  break
-else:
-  print ("bouh")
-''',
-                     ):
-            astroid = builder.AstroidBuilder().string_build(code, __name__, __file__)
+            for a in range(4):
+              print (a)
+              break
+            else:
+              print ("bouh")
+            ''', '''
+            while a:
+              print (a)
+              break
+            else:
+              print ("bouh")
+            '''):
+            astroid = test_utils.build_module(code, __name__)
             stmt = astroid.body[0]
             self.assertEqual(stmt.fromlineno, 2)
             self.assertEqual(stmt.tolineno, 6)
@@ -196,16 +181,15 @@ else:
             self.assertEqual(stmt.orelse[0].fromlineno, 6) # XXX
             self.assertEqual(stmt.orelse[0].tolineno, 6)
 
-
     def test_try_except_lineno(self):
-        astroid = builder.AstroidBuilder().string_build('''
-try:
-  print (a)
-except:
-  pass
-else:
-  print ("bouh")
-''', __name__, __file__)
+        astroid = test_utils.build_module('''
+            try:
+              print (a)
+            except:
+              pass
+            else:
+              print ("bouh")
+            ''', __name__)
         try_ = astroid.body[0]
         self.assertEqual(try_.fromlineno, 2)
         self.assertEqual(try_.tolineno, 7)
@@ -219,12 +203,12 @@ else:
 
 
     def test_try_finally_lineno(self):
-        astroid = builder.AstroidBuilder().string_build('''
-try:
-  print (a)
-finally:
-  print ("bouh")
-''', __name__, __file__)
+        astroid = test_utils.build_module('''
+            try:
+              print (a)
+            finally:
+              print ("bouh")
+            ''', __name__)
         try_ = astroid.body[0]
         self.assertEqual(try_.fromlineno, 2)
         self.assertEqual(try_.tolineno, 5)
@@ -234,14 +218,14 @@ finally:
 
 
     def test_try_finally_25_lineno(self):
-        astroid = builder.AstroidBuilder().string_build('''
-try:
-  print (a)
-except:
-  pass
-finally:
-  print ("bouh")
-''', __name__, __file__)
+        astroid = test_utils.build_module('''
+            try:
+              print (a)
+            except:
+              pass
+            finally:
+              print ("bouh")
+            ''', __name__)
         try_ = astroid.body[0]
         self.assertEqual(try_.fromlineno, 2)
         self.assertEqual(try_.tolineno, 7)
@@ -251,33 +235,34 @@ finally:
 
 
     def test_with_lineno(self):
-        astroid = builder.AstroidBuilder().string_build('''
-from __future__ import with_statement
-with file("/tmp/pouet") as f:
-    print (f)
-''', __name__, __file__)
+        astroid = test_utils.build_module('''
+            from __future__ import with_statement
+            with file("/tmp/pouet") as f:
+                print (f)
+            ''', __name__)
         with_ = astroid.body[1]
         self.assertEqual(with_.fromlineno, 3)
         self.assertEqual(with_.tolineno, 4)
         self.assertEqual(with_.blockstart_tolineno, 3)
 
 
-
-class BuilderTC(unittest.TestCase):
+class BuilderTest(unittest.TestCase):
 
     def setUp(self):
         self.builder = builder.AstroidBuilder()
 
-    def test_border_cases(self):
+    def test_missing_newline(self):
         """check that a file with no trailing new line is parseable"""
-        self.builder.file_build(join(DATA, 'noendingnewline.py'), 'data.noendingnewline')
-        self.assertRaises(builder.AstroidBuildingException,
-                          self.builder.file_build, join(DATA, 'inexistant.py'), 'whatever')
+        resources.build_file('data/noendingnewline.py')
+
+    def test_missing_file(self):
+        with self.assertRaises(builder.AstroidBuildingException):
+            resources.build_file('data/inexistant.py')
 
     def test_inspect_build0(self):
         """test astroid tree build from a living object"""
         builtin_ast = MANAGER.ast_from_module_name(BUILTINS)
-        if sys.version_info < (3, 0):
+        if not IS_PY3:
             fclass = builtin_ast['file']
             self.assertIn('name', fclass)
             self.assertIn('mode', fclass)
@@ -302,12 +287,12 @@ class BuilderTC(unittest.TestCase):
         self.assertIsInstance(builtin_ast['None'], nodes.Const)
         self.assertIsInstance(builtin_ast['True'], nodes.Const)
         self.assertIsInstance(builtin_ast['False'], nodes.Const)
-        if sys.version_info < (3, 0):
-            self.assertIsInstance(builtin_ast['Exception'], nodes.From)
-            self.assertIsInstance(builtin_ast['NotImplementedError'], nodes.From)
-        else:
+        if IS_PY3:
             self.assertIsInstance(builtin_ast['Exception'], nodes.Class)
             self.assertIsInstance(builtin_ast['NotImplementedError'], nodes.Class)
+        else:
+            self.assertIsInstance(builtin_ast['Exception'], nodes.From)
+            self.assertIsInstance(builtin_ast['NotImplementedError'], nodes.From)
 
     def test_inspect_build1(self):
         time_ast = MANAGER.ast_from_module_name('time')
@@ -329,10 +314,9 @@ class BuilderTC(unittest.TestCase):
     def test_inspect_build3(self):
         self.builder.inspect_build(unittest)
 
+    @test_utils.require_version(maxver='3.0')
     def test_inspect_build_instance(self):
         """test astroid tree build from a living object"""
-        if sys.version_info >= (3, 0):
-            self.skipTest('The module "exceptions" is gone in py3.x')
         import exceptions
         builtin_ast = self.builder.inspect_build(exceptions)
         fclass = builtin_ast['OSError']
@@ -374,22 +358,22 @@ class BuilderTC(unittest.TestCase):
 
     def test_package_name(self):
         """test base properties and method of a astroid module"""
-        datap = self.builder.file_build(join(DATA, '__init__.py'), 'data')
+        datap = resources.build_file('data/__init__.py', 'data')
         self.assertEqual(datap.name, 'data')
         self.assertEqual(datap.package, 1)
-        datap = self.builder.file_build(join(DATA, '__init__.py'), 'data.__init__')
+        datap = resources.build_file('data/__init__.py', 'data.__init__')
         self.assertEqual(datap.name, 'data')
         self.assertEqual(datap.package, 1)
 
     def test_yield_parent(self):
         """check if we added discard nodes as yield parent (w/ compiler)"""
-        data = """
-def yiell():
-    yield 0
-    if noe:
-        yield more
-"""
-        func = self.builder.string_build(data).body[0]
+        code = """
+            def yiell(): #@
+                yield 0
+                if noe:
+                    yield more
+        """
+        func = test_utils.extract_node(code)
         self.assertIsInstance(func, nodes.Function)
         stmt = func.body[0]
         self.assertIsInstance(stmt, nodes.Discard)
@@ -403,28 +387,28 @@ def yiell():
 
     def test_newstyle_detection(self):
         data = '''
-class A:
-    "old style"
+            class A:
+                "old style"
 
-class B(A):
-    "old style"
+            class B(A):
+                "old style"
 
-class C(object):
-    "new style"
+            class C(object):
+                "new style"
 
-class D(C):
-    "new style"
+            class D(C):
+                "new style"
 
-__metaclass__ = type
+            __metaclass__ = type
 
-class E(A):
-    "old style"
+            class E(A):
+                "old style"
 
-class F:
-    "new style"
-'''
-        mod_ast = self.builder.string_build(data, __name__, __file__)
-        if PY3K:
+            class F:
+                "new style"
+        '''
+        mod_ast = test_utils.build_module(data, __name__)
+        if IS_PY3:
             self.assertTrue(mod_ast['A'].newstyle)
             self.assertTrue(mod_ast['B'].newstyle)
             self.assertTrue(mod_ast['E'].newstyle)
@@ -438,25 +422,25 @@ class F:
 
     def test_globals(self):
         data = '''
-CSTE = 1
+            CSTE = 1
 
-def update_global():
-    global CSTE
-    CSTE += 1
+            def update_global():
+                global CSTE
+                CSTE += 1
 
-def global_no_effect():
-    global CSTE2
-    print (CSTE)
-'''
-        astroid = self.builder.string_build(data, __name__, __file__)
+            def global_no_effect():
+                global CSTE2
+                print (CSTE)
+        '''
+        astroid = test_utils.build_module(data, __name__)
         self.assertEqual(len(astroid.getattr('CSTE')), 2)
         self.assertIsInstance(astroid.getattr('CSTE')[0], nodes.AssName)
         self.assertEqual(astroid.getattr('CSTE')[0].fromlineno, 2)
         self.assertEqual(astroid.getattr('CSTE')[1].fromlineno, 6)
-        self.assertRaises(NotFoundError,
-                          astroid.getattr, 'CSTE2')
-        self.assertRaises(InferenceError,
-                          partial(next, astroid['global_no_effect'].ilookup('CSTE2')))
+        with self.assertRaises(NotFoundError):
+            astroid.getattr('CSTE2')
+        with self.assertRaises(InferenceError):
+            next(astroid['global_no_effect'].ilookup('CSTE2'))
 
     def test_socket_build(self):
         import socket
@@ -473,7 +457,7 @@ def global_no_effect():
 
     def test_gen_expr_var_scope(self):
         data = 'l = list(n for n in range(10))\n'
-        astroid = self.builder.string_build(data, __name__, __file__)
+        astroid = test_utils.build_module(data, __name__)
         # n unavailable outside gen expr scope
         self.assertNotIn('n', astroid)
         # test n is inferable anyway
@@ -497,21 +481,101 @@ def global_no_effect():
             """)
         self.assertEqual(set(['print_function', 'absolute_import']), mod.future_imports)
 
-class FileBuildTC(unittest.TestCase):
-    module = builder.AstroidBuilder().file_build(
-        join(DATA, 'module.py'), 
-        '%s.module' % (data.__name__,))
-    
+    def test_infered_build(self):
+        code = '''
+            class A: pass
+            A.type = "class"
+
+            def A_ass_type(self):
+                print (self)
+            A.ass_type = A_ass_type
+            '''
+        astroid = test_utils.build_module(code)
+        lclass = list(astroid.igetattr('A'))
+        self.assertEqual(len(lclass), 1)
+        lclass = lclass[0]
+        self.assertIn('ass_type', lclass.locals)
+        self.assertIn('type', lclass.locals)
+
+    def test_augassign_attr(self):
+        astroid = test_utils.build_module("""
+            class Counter:
+                v = 0
+                def inc(self):
+                    self.v += 1
+            """, __name__)
+        # Check self.v += 1 generate AugAssign(AssAttr(...)), not AugAssign(GetAttr(AssName...))
+
+    def test_infered_dont_pollute(self):
+        code = '''
+            def func(a=None):
+                a.custom_attr = 0
+            def func2(a={}):
+                a.custom_attr = 0
+            '''
+        astroid = test_utils.build_module(code)
+        nonetype = nodes.const_factory(None)
+        self.assertNotIn('custom_attr', nonetype.locals)
+        self.assertNotIn('custom_attr', nonetype.instance_attrs)
+        nonetype = nodes.const_factory({})
+        self.assertNotIn('custom_attr', nonetype.locals)
+        self.assertNotIn('custom_attr', nonetype.instance_attrs)
+
+    def test_asstuple(self):
+        code = 'a, b = range(2)'
+        astroid = test_utils.build_module(code)
+        self.assertIn('b', astroid.locals)
+        code = '''
+            def visit_if(self, node):
+                node.test, body = node.tests[0]
+            '''
+        astroid = test_utils.build_module(code)
+        self.assertIn('body', astroid['visit_if'].locals)
+
+    def test_build_constants(self):
+        '''test expected values of constants after rebuilding'''
+        code = '''
+            def func():
+                return None
+                return
+                return 'None'
+            '''
+        astroid = test_utils.build_module(code)
+        none, nothing, chain = [ret.value for ret in astroid.body[0].body]
+        self.assertIsInstance(none, nodes.Const)
+        self.assertIsNone(none.value)
+        self.assertIsNone(nothing)
+        self.assertIsInstance(chain, nodes.Const)
+        self.assertEqual(chain.value, 'None')
+
+    def test_lgc_classproperty(self):
+        '''test expected values of constants after rebuilding'''
+        code = '''
+            from logilab.common.decorators import classproperty
+
+            class A(object):
+                @classproperty
+                def hop(cls): #@
+                    return None
+            '''
+        method = test_utils.extract_node(code)
+        self.assertEqual('classmethod', method.type)
+
+
+class FileBuildTest(unittest.TestCase):
+    def setUp(self):
+        self.module = resources.build_file('data/module.py', 'data.module')
+
     def test_module_base_props(self):
         """test base properties and method of a astroid module"""
         module = self.module
-        self.assertEqual(module.name, '%s.module' % (data.__name__))
+        self.assertEqual(module.name, 'data.module')
         self.assertEqual(module.doc, "test module for astroid\n")
         self.assertEqual(module.fromlineno, 0)
         self.assertIsNone(module.parent)
         self.assertEqual(module.frame(), module)
         self.assertEqual(module.root(), module)
-        self.assertEqual(module.file, join(abspath(data.__path__[0]), 'module.py'))
+        self.assertEqual(module.file, os.path.abspath(resources.find('data/module.py')))
         self.assertEqual(module.pure_python, 1)
         self.assertEqual(module.package, 0)
         self.assertFalse(module.is_statement)
@@ -563,7 +627,7 @@ class FileBuildTC(unittest.TestCase):
         self.assertEqual(klass.parent.frame(), module)
         self.assertEqual(klass.root(), module)
         self.assertEqual(klass.basenames, [])
-        if PY3K:
+        if IS_PY3:
             self.assertTrue(klass.newstyle)
         else:
             self.assertFalse(klass.newstyle)
@@ -628,152 +692,64 @@ class FileBuildTC(unittest.TestCase):
             self.assertEqual(keys, ['autre', 'local', 'self'])
 
 
-class ModuleBuildTC(FileBuildTC):
+class ModuleBuildTest(resources.SysPathSetup, FileBuildTest):
 
     def setUp(self):
+        super(ModuleBuildTest, self).setUp()
         abuilder = builder.AstroidBuilder()
-        self.module = abuilder.module_build(test_module, test_module.__name__)
+        import data.module
+        self.module = abuilder.module_build(data.module, 'data.module')
 
-
-class MoreTC(unittest.TestCase):
-
+@unittest.skipIf(IS_PY3, "guess_encoding not used on Python 3")
+class TestGuessEncoding(unittest.TestCase):
     def setUp(self):
-        self.builder = builder.AstroidBuilder()
+        self.guess_encoding = builder._guess_encoding
 
-    def test_infered_build(self):
-        code = '''class A: pass
-A.type = "class"
+    def testEmacs(self):
+        e = self.guess_encoding('# -*- coding: UTF-8  -*-')
+        self.assertEqual(e, 'UTF-8')
+        e = self.guess_encoding('# -*- coding:UTF-8 -*-')
+        self.assertEqual(e, 'UTF-8')
+        e = self.guess_encoding('''
+        ### -*- coding: ISO-8859-1  -*-
+        ''')
+        self.assertEqual(e, 'ISO-8859-1')
+        e = self.guess_encoding('''
 
-def A_ass_type(self):
-    print (self)
-A.ass_type = A_ass_type
-    '''
-        astroid = self.builder.string_build(code)
-        lclass = list(astroid.igetattr('A'))
-        self.assertEqual(len(lclass), 1)
-        lclass = lclass[0]
-        self.assertIn('ass_type', lclass.locals)
-        self.assertIn('type', lclass.locals)
+        ### -*- coding: ISO-8859-1  -*-
+        ''')
+        self.assertIsNone(e)
 
-    def test_augassign_attr(self):
-        astroid = self.builder.string_build("""class Counter:
-    v = 0
-    def inc(self):
-        self.v += 1
-        """, __name__, __file__)
-        # Check self.v += 1 generate AugAssign(AssAttr(...)), not AugAssign(GetAttr(AssName...))
+    def testVim(self):
+        e = self.guess_encoding('# vim:fileencoding=UTF-8')
+        self.assertEqual(e, 'UTF-8')
+        e = self.guess_encoding('''
+        ### vim:fileencoding=ISO-8859-1
+        ''')
+        self.assertEqual(e, 'ISO-8859-1')
+        e = self.guess_encoding('''
 
-    def test_dumb_module(self):
-        astroid = self.builder.string_build("pouet")
+        ### vim:fileencoding= ISO-8859-1
+        ''')
+        self.assertIsNone(e)
 
-    def test_infered_dont_pollute(self):
-        code = '''
-def func(a=None):
-    a.custom_attr = 0
-def func2(a={}):
-    a.custom_attr = 0
-    '''
-        astroid = self.builder.string_build(code)
-        nonetype = nodes.const_factory(None)
-        self.assertNotIn('custom_attr', nonetype.locals)
-        self.assertNotIn('custom_attr', nonetype.instance_attrs)
-        nonetype = nodes.const_factory({})
-        self.assertNotIn('custom_attr', nonetype.locals)
-        self.assertNotIn('custom_attr', nonetype.instance_attrs)
+    def test_wrong_coding(self):
+        # setting "coding" varaible
+        e = self.guess_encoding("coding = UTF-8")
+        self.assertIsNone(e)
+        # setting a dictionnary entry
+        e = self.guess_encoding("coding:UTF-8")
+        self.assertIsNone(e)
+        # setting an arguement
+        e = self.guess_encoding("def do_something(a_word_with_coding=None):")
+        self.assertIsNone(e)
 
+    def testUTF8(self):
+        e = self.guess_encoding('\xef\xbb\xbf any UTF-8 data')
+        self.assertEqual(e, 'UTF-8')
+        e = self.guess_encoding(' any UTF-8 data \xef\xbb\xbf')
+        self.assertIsNone(e)
 
-    def test_asstuple(self):
-        code = 'a, b = range(2)'
-        astroid = self.builder.string_build(code)
-        self.assertIn('b', astroid.locals)
-        code = '''
-def visit_if(self, node):
-    node.test, body = node.tests[0]
-'''
-        astroid = self.builder.string_build(code)
-        self.assertIn('body', astroid['visit_if'].locals)
-
-    def test_build_constants(self):
-        '''test expected values of constants after rebuilding'''
-        code = '''
-def func():
-    return None
-    return
-    return 'None'
-'''
-        astroid = self.builder.string_build(code)
-        none, nothing, chain = [ret.value for ret in astroid.body[0].body]
-        self.assertIsInstance(none, nodes.Const)
-        self.assertIsNone(none.value)
-        self.assertIsNone(nothing)
-        self.assertIsInstance(chain, nodes.Const)
-        self.assertEqual(chain.value, 'None')
-
-
-    def test_lgc_classproperty(self):
-        '''test expected values of constants after rebuilding'''
-        code = '''
-from logilab.common.decorators import classproperty
-
-class A(object):
-    @classproperty
-    def hop(cls):
-        return None
-'''
-        astroid = self.builder.string_build(code)
-        self.assertEqual(astroid['A']['hop'].type, 'classmethod')
-
-
-if sys.version_info < (3, 0):
-    guess_encoding = builder._guess_encoding
-
-    class TestGuessEncoding(unittest.TestCase):
-
-        def testEmacs(self):
-            e = guess_encoding('# -*- coding: UTF-8  -*-')
-            self.assertEqual(e, 'UTF-8')
-            e = guess_encoding('# -*- coding:UTF-8 -*-')
-            self.assertEqual(e, 'UTF-8')
-            e = guess_encoding('''
-            ### -*- coding: ISO-8859-1  -*-
-            ''')
-            self.assertEqual(e, 'ISO-8859-1')
-            e = guess_encoding('''
-
-            ### -*- coding: ISO-8859-1  -*-
-            ''')
-            self.assertIsNone(e)
-
-        def testVim(self):
-            e = guess_encoding('# vim:fileencoding=UTF-8')
-            self.assertEqual(e, 'UTF-8')
-            e = guess_encoding('''
-            ### vim:fileencoding=ISO-8859-1
-            ''')
-            self.assertEqual(e, 'ISO-8859-1')
-            e = guess_encoding('''
-
-            ### vim:fileencoding= ISO-8859-1
-            ''')
-            self.assertIsNone(e)
-
-        def test_wrong_coding(self):
-            # setting "coding" varaible
-            e = guess_encoding("coding = UTF-8")
-            self.assertIsNone(e)
-            # setting a dictionnary entry
-            e = guess_encoding("coding:UTF-8")
-            self.assertIsNone(e)
-            # setting an arguement
-            e = guess_encoding("def do_something(a_word_with_coding=None):")
-            self.assertIsNone(e)
-
-
-        def testUTF8(self):
-            e = guess_encoding('\xef\xbb\xbf any UTF-8 data')
-            self.assertEqual(e, 'UTF-8')
-            e = guess_encoding(' any UTF-8 data \xef\xbb\xbf')
-            self.assertIsNone(e)
 
 if __name__ == '__main__':
     unittest.main()

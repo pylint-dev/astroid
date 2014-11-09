@@ -22,41 +22,34 @@ from os.path import join, abspath, dirname
 from functools import partial
 import unittest
 
-from astroid import builder, nodes, scoped_nodes, \
-     InferenceError, NotFoundError, UnresolvableName
-from astroid.scoped_nodes import builtin_lookup, Function
+from astroid import nodes, InferenceError, NotFoundError, UnresolvableName
+from astroid.scoped_nodes import builtin_lookup
 from astroid.bases import YES
-from astroid.test_utils import require_version, get_name_node
+from astroid import test_utils
+from astroid.tests import resources
 
-builder = builder.AstroidBuilder()
-PY3K = sys.version_info >= (3, 0)
 
-if PY3K:
-    DATA = join(dirname(abspath(__file__)), 'data_py3')
-    import data_py3 as data
-else:
-    DATA = join(dirname(abspath(__file__)), 'data')
-    import data
+class LookupTest(resources.SysPathSetup, unittest.TestCase):
 
-MODULE = builder.file_build(join(DATA, 'module.py'), 'data.module')
-MODULE2 = builder.file_build(join(DATA, 'module2.py'), 'data.module2')
-NONREGR = builder.file_build(join(DATA, 'nonregr.py'), 'data.nonregr')
-
-class LookupTC(unittest.TestCase):
+    def setUp(self):
+        super(LookupTest, self).setUp()
+        self.module = resources.build_file('data/module.py', 'data.module')
+        self.module2 = resources.build_file('data/module2.py', 'data.module2')
+        self.nonregr = resources.build_file('data/nonregr.py', 'data.nonregr')
 
     def test_limit(self):
         code = '''
-l = [a
-     for a,b in list]
+            l = [a
+                 for a,b in list]
 
-a = 1
-b = a
-a = None
+            a = 1
+            b = a
+            a = None
 
-def func():
-    c = 1
+            def func():
+                c = 1
         '''
-        astroid = builder.string_build(code, __name__, __file__)
+        astroid = test_utils.build_module(code, __name__)
         # a & b
         a = next(astroid.nodes_of_class(nodes.Name))
         self.assertEqual(a.lineno, 2)
@@ -80,7 +73,7 @@ def func():
         self.assertEqual(len(func.lookup('c')[1]), 1)
 
     def test_module(self):
-        astroid = builder.string_build('pass', __name__, __file__)
+        astroid = test_utils.build_module('pass', __name__)
         # built-in objects
         none = next(astroid.ilookup('None'))
         self.assertIsNone(none.value)
@@ -90,17 +83,17 @@ def func():
         self.assertRaises(InferenceError, partial(next, astroid.ilookup('YOAA')))
 
         # XXX
-        self.assertEqual(len(list(NONREGR.ilookup('enumerate'))), 2)
+        self.assertEqual(len(list(self.nonregr.ilookup('enumerate'))), 2)
 
     def test_class_ancestor_name(self):
         code = '''
-class A:
-    pass
+            class A:
+                pass
 
-class A(A):
-    pass
+            class A(A):
+                pass
         '''
-        astroid = builder.string_build(code, __name__, __file__)
+        astroid = test_utils.build_module(code, __name__)
         cls1 = astroid.locals['A'][0]
         cls2 = astroid.locals['A'][1]
         name = next(cls2.nodes_of_class(nodes.Name))
@@ -108,7 +101,7 @@ class A(A):
 
     ### backport those test to inline code
     def test_method(self):
-        method = MODULE['YOUPI']['method']
+        method = self.module['YOUPI']['method']
         my_dict = next(method.ilookup('MY_DICT'))
         self.assertTrue(isinstance(my_dict, nodes.Dict), my_dict)
         none = next(method.ilookup('None'))
@@ -117,14 +110,14 @@ class A(A):
 
 
     def test_function_argument_with_default(self):
-        make_class = MODULE2['make_class']
+        make_class = self.module2['make_class']
         base = next(make_class.ilookup('base'))
         self.assertTrue(isinstance(base, nodes.Class), base.__class__)
         self.assertEqual(base.name, 'YO')
-        self.assertEqual(base.root().name, '%s.module' % (data.__name__,))
+        self.assertEqual(base.root().name, 'data.module')
 
     def test_class(self):
-        klass = MODULE['YOUPI']
+        klass = self.module['YOUPI']
         my_dict = next(klass.ilookup('MY_DICT'))
         self.assertIsInstance(my_dict, nodes.Dict)
         none = next(klass.ilookup('None'))
@@ -135,19 +128,19 @@ class A(A):
         self.assertRaises(InferenceError, partial(next, klass.ilookup('YOAA')))
 
     def test_inner_classes(self):
-        ddd = list(NONREGR['Ccc'].ilookup('Ddd'))
+        ddd = list(self.nonregr['Ccc'].ilookup('Ddd'))
         self.assertEqual(ddd[0].name, 'Ddd')
 
 
     def test_loopvar_hiding(self):
-        astroid = builder.string_build("""
-x = 10
-for x in range(5):
-    print (x)
+        astroid = test_utils.build_module("""
+            x = 10
+            for x in range(5):
+                print (x)
 
-if x > 0:
-    print ('#' * x)
-        """, __name__, __file__)
+            if x > 0:
+                print ('#' * x)
+        """, __name__)
         xnames = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == 'x']
         # inside the loop, only one possible assignment
         self.assertEqual(len(xnames[0].lookup('x')[1]), 1)
@@ -156,11 +149,11 @@ if x > 0:
         self.assertEqual(len(xnames[2].lookup('x')[1]), 2)
 
     def test_list_comps(self):
-        astroid = builder.string_build("""
-print ([ i for i in range(10) ])
-print ([ i for i in range(10) ])
-print ( list( i for i in range(10) ) )
-        """, __name__, __file__)
+        astroid = test_utils.build_module("""
+            print ([ i for i in range(10) ])
+            print ([ i for i in range(10) ])
+            print ( list( i for i in range(10) ) )
+        """, __name__)
         xnames = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == 'i']
         self.assertEqual(len(xnames[0].lookup('i')[1]), 1)
         self.assertEqual(xnames[0].lookup('i')[1][0].lineno, 2)
@@ -171,9 +164,9 @@ print ( list( i for i in range(10) ) )
 
     def test_list_comp_target(self):
         """test the list comprehension target"""
-        astroid = builder.string_build("""
-ten = [ var for var in range(10) ]
-var
+        astroid = test_utils.build_module("""
+            ten = [ var for var in range(10) ]
+            var
         """)
         var = astroid.body[1].value
         if sys.version_info < (3, 0):
@@ -181,12 +174,11 @@ var
         else:
             self.assertRaises(UnresolvableName, var.infered)
 
-    @require_version('2.7')
     def test_dict_comps(self):
-        astroid = builder.string_build("""
-print ({ i: j for i in range(10) for j in range(10) })
-print ({ i: j for i in range(10) for j in range(10) })
-        """, __name__, __file__)
+        astroid = test_utils.build_module("""
+            print ({ i: j for i in range(10) for j in range(10) })
+            print ({ i: j for i in range(10) for j in range(10) })
+        """, __name__)
         xnames = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == 'i']
         self.assertEqual(len(xnames[0].lookup('i')[1]), 1)
         self.assertEqual(xnames[0].lookup('i')[1][0].lineno, 2)
@@ -199,59 +191,57 @@ print ({ i: j for i in range(10) for j in range(10) })
         self.assertEqual(len(xnames[1].lookup('i')[1]), 1)
         self.assertEqual(xnames[1].lookup('i')[1][0].lineno, 3)
 
-    @require_version('2.7')
     def test_set_comps(self):
-        astroid = builder.string_build("""
-print ({ i for i in range(10) })
-print ({ i for i in range(10) })
-        """, __name__, __file__)
+        astroid = test_utils.build_module("""
+            print ({ i for i in range(10) })
+            print ({ i for i in range(10) })
+        """, __name__)
         xnames = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == 'i']
         self.assertEqual(len(xnames[0].lookup('i')[1]), 1)
         self.assertEqual(xnames[0].lookup('i')[1][0].lineno, 2)
         self.assertEqual(len(xnames[1].lookup('i')[1]), 1)
         self.assertEqual(xnames[1].lookup('i')[1][0].lineno, 3)
 
-    @require_version('2.7')
     def test_set_comp_closure(self):
-        astroid = builder.string_build("""
-ten = { var for var in range(10) }
-var
+        astroid = test_utils.build_module("""
+            ten = { var for var in range(10) }
+            var
         """)
         var = astroid.body[1].value
         self.assertRaises(UnresolvableName, var.infered)
 
     def test_generator_attributes(self):
-        tree = builder.string_build("""
-def count():
-    "test"
-    yield 0
+        tree = test_utils.build_module("""
+            def count():
+                "test"
+                yield 0
 
-iterer = count()
-num = iterer.next()
+            iterer = count()
+            num = iterer.next()
         """)
         next = tree.body[2].value.func # Getattr
         gener = next.expr.infered()[0] # Generator
         if sys.version_info < (3, 0):
-            self.assertIsInstance(gener.getattr('next')[0], Function)
+            self.assertIsInstance(gener.getattr('next')[0], nodes.Function)
         else:
-            self.assertIsInstance(gener.getattr('__next__')[0], Function)
-        self.assertIsInstance(gener.getattr('send')[0], Function)
-        self.assertIsInstance(gener.getattr('throw')[0], Function)
-        self.assertIsInstance(gener.getattr('close')[0], Function)
+            self.assertIsInstance(gener.getattr('__next__')[0], nodes.Function)
+        self.assertIsInstance(gener.getattr('send')[0], nodes.Function)
+        self.assertIsInstance(gener.getattr('throw')[0], nodes.Function)
+        self.assertIsInstance(gener.getattr('close')[0], nodes.Function)
 
     def test_explicit___name__(self):
         code = '''
-class Pouet:
-    __name__ = "pouet"
-p1 = Pouet()
+            class Pouet:
+                __name__ = "pouet"
+            p1 = Pouet()
 
-class PouetPouet(Pouet): pass
-p2 = Pouet()
+            class PouetPouet(Pouet): pass
+            p2 = Pouet()
 
-class NoName: pass
-p3 = NoName()
-'''
-        astroid = builder.string_build(code, __name__, __file__)
+            class NoName: pass
+            p3 = NoName()
+        '''
+        astroid = test_utils.build_module(code, __name__)
         p1 = next(astroid['p1'].infer())
         self.assertTrue(p1.getattr('__name__'))
         p2 = next(astroid['p2'].infer())
@@ -262,11 +252,11 @@ p3 = NoName()
 
 
     def test_function_module_special(self):
-        astroid = builder.string_build('''
-def initialize(linter):
-    """initialize linter with checkers in this package """
-    package_load(linter, __path__[0])
-        ''', 'data.__init__', 'data/__init__.py')
+        astroid = test_utils.build_module('''
+        def initialize(linter):
+            """initialize linter with checkers in this package """
+            package_load(linter, __path__[0])
+        ''', 'data.__init__')
         path = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == '__path__'][0]
         self.assertEqual(len(path.lookup('__path__')[1]), 1)
 
@@ -282,20 +272,19 @@ def initialize(linter):
 
     def test_decorator_arguments_lookup(self):
         code = '''
-def decorator(value):
-    def wrapper(function):
-        return function
-    return wrapper
+            def decorator(value):
+                def wrapper(function):
+                    return function
+                return wrapper
 
-class foo:
-    member = 10
+            class foo:
+                member = 10  #@
 
-    @decorator(member) #This will cause pylint to complain
-    def test(self):
-        pass
+                @decorator(member) #This will cause pylint to complain
+                def test(self):
+                    pass
         '''
-        astroid = builder.string_build(code, __name__, __file__)
-        member = get_name_node(astroid['foo'], 'member')
+        member = test_utils.extract_node(code, __name__).targets[0]
         it = member.infer()
         obj = next(it)
         self.assertIsInstance(obj, nodes.Const)
@@ -305,16 +294,15 @@ class foo:
 
     def test_inner_decorator_member_lookup(self):
         code = '''
-class FileA:
-    def decorator(bla):
-        return bla
+            class FileA:
+                def decorator(bla):
+                    return bla
 
-    @decorator
-    def funcA():
-        return 4
+                @__(decorator)
+                def funcA():
+                    return 4
         '''
-        astroid = builder.string_build(code, __name__, __file__)
-        decname = get_name_node(astroid['FileA'], 'decorator')
+        decname = test_utils.extract_node(code, __name__)
         it = decname.infer()
         obj = next(it)
         self.assertIsInstance(obj, nodes.Function)
@@ -323,19 +311,19 @@ class FileA:
 
     def test_static_method_lookup(self):
         code = '''
-class FileA:
-    @staticmethod
-    def funcA():
-        return 4
+            class FileA:
+                @staticmethod
+                def funcA():
+                    return 4
 
 
-class Test:
-    FileA = [1,2,3]
+            class Test:
+                FileA = [1,2,3]
 
-    def __init__(self):
-        print (FileA.funcA())
+                def __init__(self):
+                    print (FileA.funcA())
         '''
-        astroid = builder.string_build(code, __name__, __file__)
+        astroid = test_utils.build_module(code, __name__)
         it = astroid['Test']['__init__'].ilookup('FileA')
         obj = next(it)
         self.assertIsInstance(obj, nodes.Class)
@@ -344,23 +332,24 @@ class Test:
 
     def test_global_delete(self):
         code = '''
-def run2():
-    f = Frobble()
+            def run2():
+                f = Frobble()
 
-class Frobble:
-    pass
-Frobble.mumble = True
+            class Frobble:
+                pass
+            Frobble.mumble = True
 
-del Frobble
+            del Frobble
 
-def run1():
-    f = Frobble()
-'''
-        astroid = builder.string_build(code, __name__, __file__)
+            def run1():
+                f = Frobble()
+        '''
+        astroid = test_utils.build_module(code, __name__)
         stmts = astroid['run2'].lookup('Frobbel')[1]
         self.assertEqual(len(stmts), 0)
         stmts = astroid['run1'].lookup('Frobbel')[1]
         self.assertEqual(len(stmts), 0)
+
 
 if __name__ == '__main__':
     unittest.main()

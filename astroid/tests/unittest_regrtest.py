@@ -24,12 +24,12 @@ from astroid.builder import AstroidBuilder
 from astroid.raw_building import build_module
 from astroid.manager import AstroidManager
 from astroid.test_utils import require_version
+from astroid.tests import resources
 
-
-class NonRegressionTC(unittest.TestCase):
+class NonRegressionTests(unittest.TestCase):
 
     def setUp(self):
-        sys.path.insert(0, join(dirname(abspath(__file__)), 'regrtest_data'))
+        sys.path.insert(0, resources.find('data'))
 
     def tearDown(self):
         # Since we may have created a brainless manager, leading
@@ -37,6 +37,7 @@ class NonRegressionTC(unittest.TestCase):
         # clear out the global manager cache.
         MANAGER.clear_cache()
         sys.path.pop(0)
+        sys.path_importer_cache.pop(resources.find('data'), None)
 
     def brainless_manager(self):
         manager = AstroidManager()

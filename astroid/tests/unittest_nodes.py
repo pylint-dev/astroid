@@ -17,7 +17,7 @@
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 """tests for specific behaviour of astroid nodes
 """
-from os.path import join, abspath, dirname
+import os
 import sys
 import unittest
 
@@ -25,20 +25,13 @@ from astroid.node_classes import unpack_infer
 from astroid.bases import BUILTINS, YES, InferenceContext
 from astroid.exceptions import AstroidBuildingException, NotFoundError
 from astroid import builder, nodes
-from astroid.test_utils import require_version
-
-PY3K = sys.version_info >= (3, 0)
-
-if PY3K:
-    from data_py3 import module as test_module
-    DATA = join(dirname(abspath(__file__)), 'data_py3')
-else:
-    from data import module as test_module
-    DATA = join(dirname(abspath(__file__)), 'data')
+from astroid import test_utils
+from astroid.tests import resources
 
 abuilder = builder.AstroidBuilder()
 
-class AsString(unittest.TestCase):
+
+class AsStringTest(unittest.TestCase):
 
     def test_tuple_as_string(self):
         def build(string):
@@ -56,17 +49,18 @@ class AsString(unittest.TestCase):
     def test_module_as_string(self):
         """check as_string on a whole module prepared to be returned identically
         """
-        data = open(join(DATA, 'module.py')).read()
-        self.assertMultiLineEqual(MODULE.as_string(), data)
+        module = resources.build_file('data/module.py', 'data.module')
+        with open(resources.find('data/module.py'), 'r') as fobj:
+            self.assertMultiLineEqual(module.as_string(), fobj.read())
 
     def test_module2_as_string(self):
         """check as_string on a whole module prepared to be returned identically
         """
-        data = open(join(DATA, 'module2.py')).read()
-        self.assertMultiLineEqual(MODULE2.as_string(), data)
+        module2 = resources.build_file('data/module2.py', 'data.module2')
+        with open(resources.find('data/module2.py'), 'r') as fobj:
+            self.assertMultiLineEqual(module2.as_string(), fobj.read())
 
-    @require_version('2.7')
-    def test_2_7_as_string(self):
+    def test_as_string(self):
         """check as_string for python syntax >= 2.7"""
         code = '''one_two = {1, 2}
 b = {v: k for (k, v) in enumerate('string')}
@@ -74,7 +68,7 @@ cdd = {k for k in b}\n\n'''
         ast = abuilder.string_build(code)
         self.assertMultiLineEqual(ast.as_string(), code)
 
-    @require_version('3.0')
+    @test_utils.require_version('3.0')
     def test_3k_as_string(self):
         """check as_string for python 3k syntax"""
         code = '''print()
@@ -98,44 +92,74 @@ class Language(metaclass=Natural):
         ast = abuilder.string_build(code)
         self.assertEqual(ast.as_string(), code)
 
+    def test_ellipsis(self):
+        ast = abuilder.string_build('a[...]').body[0]
+        self.assertEqual(ast.as_string(), 'a[...]')
 
-class _NodeTC(unittest.TestCase):
+    def test_slices(self):
+        for code in ('a[0]', 'a[1:3]', 'a[:-1:step]', 'a[:,newaxis]',
+                     'a[newaxis,:]', 'del L[::2]', 'del A[1]', 'del Br[:]'):
+            ast = abuilder.string_build(code).body[0]
+            self.assertEqual(ast.as_string(), code)
+
+    def test_slice_and_subscripts(self):
+        code = """a[:1] = bord[2:]
+a[:1] = bord[2:]
+del bree[3:d]
+bord[2:]
+del av[d::f], a[df:]
+a[:1] = bord[2:]
+del SRC[::1,newaxis,1:]
+tous[vals] = 1010
+del thousand[key]
+del a[::2], a[:-1:step]
+del Fee.form[left:]
+aout.vals = miles.of_stuff
+del (ccok, (name.thing, foo.attrib.value)), Fee.form[left:]
+if all[1] == bord[0:]:
+    pass\n\n"""
+        ast = abuilder.string_build(code)
+        self.assertEqual(ast.as_string(), code)
+
+
+class _NodeTest(unittest.TestCase):
     """test transformation of If Node"""
     CODE = None
+
     @property
     def astroid(self):
         try:
             return self.__class__.__dict__['CODE_Astroid']
         except KeyError:
-            astroid = abuilder.string_build(self.CODE)
+            astroid = test_utils.build_module(self.CODE)
             self.__class__.CODE_Astroid = astroid
             return astroid
 
 
-class IfNodeTC(_NodeTC):
+class IfNodeTest(_NodeTest):
     """test transformation of If Node"""
     CODE = """
-if 0:
-    print()
+        if 0:
+            print()
 
-if True:
-    print()
-else:
-    pass
+        if True:
+            print()
+        else:
+            pass
 
-if "":
-    print()
-elif []:
-    raise
+        if "":
+            print()
+        elif []:
+            raise
 
-if 1:
-    print()
-elif True:
-    print()
-elif func():
-    pass
-else:
-    raise
+        if 1:
+            print()
+        elif True:
+            print()
+        elif func():
+            pass
+        else:
+            raise
     """
 
     def test_if_elif_else_node(self):
@@ -158,17 +182,18 @@ else:
         self.assertEqual(self.astroid.body[1].orelse[0].block_range(8), (8, 8))
 
 
-class TryExceptNodeTC(_NodeTC):
+class TryExceptNodeTest(_NodeTest):
     CODE = """
-try:
-    print ('pouet')
-except IOError:
-    pass
-except UnicodeError:
-    print()
-else:
-    print()
+        try:
+            print ('pouet')
+        except IOError:
+            pass
+        except UnicodeError:
+            print()
+        else:
+            print()
     """
+
     def test_block_range(self):
         # XXX ensure expected values
         self.assertEqual(self.astroid.body[0].block_range(1), (1, 8))
@@ -181,13 +206,14 @@ else:
         self.assertEqual(self.astroid.body[0].block_range(8), (8, 8))
 
 
-class TryFinallyNodeTC(_NodeTC):
+class TryFinallyNodeTest(_NodeTest):
     CODE = """
-try:
-    print ('pouet')
-finally:
-    print ('pouet')
+        try:
+            print ('pouet')
+        finally:
+            print ('pouet')
     """
+
     def test_block_range(self):
         # XXX ensure expected values
         self.assertEqual(self.astroid.body[0].block_range(1), (1, 4))
@@ -196,15 +222,16 @@ finally:
         self.assertEqual(self.astroid.body[0].block_range(4), (4, 4))
 
 
-class TryFinally25NodeTC(_NodeTC):
+class TryExceptFinallyNodeTest(_NodeTest):
     CODE = """
-try:
-    print('pouet')
-except Exception:
-    print ('oops')
-finally:
-    print ('pouet')
+        try:
+            print('pouet')
+        except Exception:
+            print ('oops')
+        finally:
+            print ('pouet')
     """
+
     def test_block_range(self):
         # XXX ensure expected values
         self.assertEqual(self.astroid.body[0].block_range(1), (1, 6))
@@ -215,12 +242,12 @@ finally:
         self.assertEqual(self.astroid.body[0].block_range(6), (6, 6))
 
 
-class TryExcept2xNodeTC(_NodeTC):
+class TryExcept2xNodeTest(_NodeTest):
     CODE = """
-try:
-    hello
-except AttributeError, (retval, desc):
-    pass
+        try:
+            hello
+        except AttributeError, (retval, desc):
+            pass
     """
     def test_tuple_attribute(self):
         if sys.version_info >= (3, 0):
@@ -229,21 +256,21 @@ except AttributeError, (retval, desc):
         self.assertIsInstance(handler.name, nodes.Tuple)
 
 
-MODULE = abuilder.module_build(test_module)
-MODULE2 = abuilder.file_build(join(DATA, 'module2.py'), 'data.module2')
-
-
-class ImportNodeTC(unittest.TestCase):
+class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
+    def setUp(self):
+        super(ImportNodeTest, self).setUp()
+        self.module = resources.build_file('data/module.py', 'data.module')
+        self.module2 = resources.build_file('data/module2.py', 'data.module2')
 
     def test_import_self_resolve(self):
-        myos = next(MODULE2.igetattr('myos'))
+        myos = next(self.module2.igetattr('myos'))
         self.assertTrue(isinstance(myos, nodes.Module), myos)
         self.assertEqual(myos.name, 'os')
         self.assertEqual(myos.qname(), 'os')
         self.assertEqual(myos.pytype(), '%s.module' % BUILTINS)
 
     def test_from_self_resolve(self):
-        pb = next(MODULE.igetattr('pb'))
+        pb = next(self.module.igetattr('pb'))
         self.assertTrue(isinstance(pb, nodes.Class), pb)
         self.assertEqual(pb.root().name, 'logilab.common.shellutils')
         self.assertEqual(pb.qname(), 'logilab.common.shellutils.ProgressBar')
@@ -251,31 +278,31 @@ class ImportNodeTC(unittest.TestCase):
             self.assertEqual(pb.pytype(), '%s.type' % BUILTINS)
         else:
             self.assertEqual(pb.pytype(), '%s.classobj' % BUILTINS)
-        abspath = next(MODULE2.igetattr('abspath'))
+        abspath = next(self.module2.igetattr('abspath'))
         self.assertTrue(isinstance(abspath, nodes.Function), abspath)
         self.assertEqual(abspath.root().name, 'os.path')
         self.assertEqual(abspath.qname(), 'os.path.abspath')
         self.assertEqual(abspath.pytype(), '%s.function' % BUILTINS)
 
     def test_real_name(self):
-        from_ = MODULE['pb']
+        from_ = self.module['pb']
         self.assertEqual(from_.real_name('pb'), 'ProgressBar')
-        imp_ = MODULE['os']
+        imp_ = self.module['os']
         self.assertEqual(imp_.real_name('os'), 'os')
         self.assertRaises(NotFoundError, imp_.real_name, 'os.path')
-        imp_ = MODULE['pb']
+        imp_ = self.module['pb']
         self.assertEqual(imp_.real_name('pb'), 'ProgressBar')
         self.assertRaises(NotFoundError, imp_.real_name, 'ProgressBar')
-        imp_ = MODULE2['YO']
+        imp_ = self.module2['YO']
         self.assertEqual(imp_.real_name('YO'), 'YO')
         self.assertRaises(NotFoundError, imp_.real_name, 'data')
 
     def test_as_string(self):
-        ast = MODULE['modutils']
+        ast = self.module['modutils']
         self.assertEqual(ast.as_string(), "from astroid import modutils")
-        ast = MODULE['pb']
+        ast = self.module['pb']
         self.assertEqual(ast.as_string(), "from logilab.common.shellutils import ProgressBar as pb")
-        ast = MODULE['os']
+        ast = self.module['os']
         self.assertEqual(ast.as_string(), "import os.path")
         code = """from . import here
 from .. import door
@@ -293,47 +320,42 @@ from ..cave import wine\n\n"""
         will catch this exception and yield and YES instead.
         '''
 
-        code = '''try:
-    from pickle import PickleError
-except ImportError:
-    from nonexistent import PickleError
+        code = '''
+            try:
+                from pickle import PickleError
+            except ImportError:
+                from nonexistent import PickleError
 
-try:
-    pass
-except PickleError:
-    pass
+            try:
+                pass
+            except PickleError:
+                pass
         '''
-
-        astroid = abuilder.string_build(code)
-        from_node = astroid.body[1].handlers[0].body[0]
+        astroid = test_utils.build_module(code)
         handler_type = astroid.body[1].handlers[0].type
 
         excs = list(unpack_infer(handler_type))
 
     def test_absolute_import(self):
-        astroid = abuilder.file_build(join(DATA, 'absimport.py'))
+        astroid = resources.build_file('data/absimport.py')
         ctx = InferenceContext()
         # will fail if absolute import failed
         next(astroid['message'].infer(ctx, lookupname='message'))
         m = next(astroid['email'].infer(ctx, lookupname='email'))
-        self.assertFalse(m.file.startswith(join(DATA, 'email.py')))
+        self.assertFalse(m.file.startswith(os.path.join('data', 'email.py')))
 
     def test_more_absolute_import(self):
-        sys.path.insert(0, join(DATA, 'moreabsimport'))
-        try:
-            astroid = abuilder.file_build(join(DATA, 'module1abs/__init__.py'))
-            self.assertIn('sys', astroid.locals)
-        finally:
-            sys.path.pop(0)
+        astroid = resources.build_file('data/module1abs/__init__.py', 'data.module1abs')
+        self.assertIn('sys', astroid.locals)
 
 
-class CmpNodeTC(unittest.TestCase):
+class CmpNodeTest(unittest.TestCase):
     def test_as_string(self):
         ast = abuilder.string_build("a == 2").body[0]
         self.assertEqual(ast.as_string(), "a == 2")
 
 
-class ConstNodeTC(unittest.TestCase):
+class ConstNodeTest(unittest.TestCase):
 
     def _test(self, value):
         node = nodes.const_factory(value)
@@ -365,19 +387,20 @@ class ConstNodeTC(unittest.TestCase):
         self._test(u'a')
 
 
-class NameNodeTC(unittest.TestCase):
+class NameNodeTest(unittest.TestCase):
     def test_assign_to_True(self):
         """test that True and False assignements don't crash"""
-        code = """True = False
-def hello(False):
-    pass
-del True
-    """
+        code = """
+            True = False
+            def hello(False):
+                pass
+            del True
+        """
         if sys.version_info >= (3, 0):
-            self.assertRaises(SyntaxError,#might become AstroidBuildingException
-                              abuilder.string_build, code)
+            with self.assertRaises(SyntaxError):
+                test_utils.build_module(code)
         else:
-            ast = abuilder.string_build(code)
+            ast = test_utils.build_module(code)
             ass_true = ast['True']
             self.assertIsInstance(ass_true, nodes.AssName)
             self.assertEqual(ass_true.name, "True")
@@ -388,10 +411,10 @@ del True
 
 class ArgumentsNodeTC(unittest.TestCase):
     def test_linenumbering(self):
-        ast = abuilder.string_build('''
-def func(a,
-    b): pass
-x = lambda x: None
+        ast = test_utils.build_module('''
+            def func(a,
+                b): pass
+            x = lambda x: None
         ''')
         self.assertEqual(ast['func'].args.fromlineno, 2)
         self.assertFalse(ast['func'].args.is_statement)
@@ -406,36 +429,6 @@ x = lambda x: None
                           '(no line number on function args)')
 
 
-class SliceNodeTC(unittest.TestCase):
-    def test(self):
-        for code in ('a[0]', 'a[1:3]', 'a[:-1:step]', 'a[:,newaxis]',
-                     'a[newaxis,:]', 'del L[::2]', 'del A[1]', 'del Br[:]'):
-            ast = abuilder.string_build(code).body[0]
-            self.assertEqual(ast.as_string(), code)
-
-    def test_slice_and_subscripts(self):
-        code = """a[:1] = bord[2:]
-a[:1] = bord[2:]
-del bree[3:d]
-bord[2:]
-del av[d::f], a[df:]
-a[:1] = bord[2:]
-del SRC[::1,newaxis,1:]
-tous[vals] = 1010
-del thousand[key]
-del a[::2], a[:-1:step]
-del Fee.form[left:]
-aout.vals = miles.of_stuff
-del (ccok, (name.thing, foo.attrib.value)), Fee.form[left:]
-if all[1] == bord[0:]:
-    pass\n\n"""
-        ast = abuilder.string_build(code)
-        self.assertEqual(ast.as_string(), code)
-
-class EllipsisNodeTC(unittest.TestCase):
-    def test(self):
-        ast = abuilder.string_build('a[...]').body[0]
-        self.assertEqual(ast.as_string(), 'a[...]')
 
 if __name__ == '__main__':
     unittest.main()

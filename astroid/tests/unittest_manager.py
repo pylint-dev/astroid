@@ -15,24 +15,19 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
+import os
+import sys
 import unittest
 
-import sys
-from os.path import join, abspath, dirname
 from astroid.manager import AstroidManager, _silent_no_wrap
 from astroid.bases import  BUILTINS
 from astroid.exceptions import AstroidBuildingException
-
-PY3K = sys.version_info >= (3, 0)
-
-if PY3K:
-    DATA = join(dirname(abspath(__file__)), 'data_py3')
-else:
-    DATA = join(dirname(abspath(__file__)), 'data')
+from astroid.tests import resources
 
 
-class AstroidManagerTC(unittest.TestCase):
+class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
     def setUp(self):
+        super(AstroidManagerTest, self).setUp()
         self.manager = AstroidManager()
         self.manager.clear_cache() # take care of borg
 
@@ -90,12 +85,12 @@ class AstroidManagerTC(unittest.TestCase):
     def _test_ast_from_zip(self, archive):
         origpath = sys.path[:]
         sys.modules.pop('mypypa', None)
-        archive_path = join(DATA, archive)
+        archive_path = resources.find(archive)
         sys.path.insert(0, archive_path)
         try:
             module = self.manager.ast_from_module_name('mypypa')
             self.assertEqual(module.name, 'mypypa')
-            end = join(archive, 'mypypa')
+            end = os.path.join(archive, 'mypypa')
             self.assertTrue(module.file.endswith(end),
                             "%s doesn't endswith %s" % (module.file, end))
         finally:
@@ -108,14 +103,14 @@ class AstroidManagerTC(unittest.TestCase):
             sys.path = origpath
 
     def test_ast_from_module_name_egg(self):
-        self._test_ast_from_zip('MyPyPa-0.1.0-py2.5.egg')
+        self._test_ast_from_zip('data/MyPyPa-0.1.0-py2.5.egg')
 
     def test_ast_from_module_name_zip(self):
-        self._test_ast_from_zip('MyPyPa-0.1.0-py2.5.zip')
+        self._test_ast_from_zip('data/MyPyPa-0.1.0-py2.5.zip')
 
     def test_zip_import_data(self):
         """check if zip_import_data works"""
-        filepath = join(DATA, 'MyPyPa-0.1.0-py2.5.zip/mypypa')
+        filepath = resources.find('data/MyPyPa-0.1.0-py2.5.zip/mypypa')
         astroid = self.manager.zip_import_data(filepath)
         self.assertEqual(astroid.name, 'mypypa')
 
@@ -126,7 +121,7 @@ class AstroidManagerTC(unittest.TestCase):
     def test_file_from_module(self):
         """check if the unittest filepath is equals to the result of the method"""
         import unittest
-        if PY3K:
+        if sys.version_info > (3, 0):
             unittest_file = unittest.__file__
         else:
             unittest_file = unittest.__file__[:-1]
@@ -178,20 +173,25 @@ class AstroidManagerTC(unittest.TestCase):
         self.assertRaises(AstroidBuildingException, self.manager.ast_from_class, None)
 
     def test_from_directory(self):
-        obj = self.manager.project_from_files([DATA], _silent_no_wrap, 'data')
+        obj = self.manager.project_from_files([resources.find('data')], _silent_no_wrap, 'data')
         self.assertEqual(obj.name, 'data')
-        self.assertEqual(obj.path, join(DATA, '__init__.py'))
+        self.assertEqual(obj.path, os.path.abspath(resources.find('data/__init__.py')))
 
     def test_project_node(self):
-        obj = self.manager.project_from_files([DATA], _silent_no_wrap, 'data')
+        obj = self.manager.project_from_files([resources.find('data')], _silent_no_wrap, 'data')
         expected = [
             'data', 
             'data.SSL1', 
             'data.SSL1.Connection1',
+            'data.absimp',
+            'data.absimp.sidepackage',
+            'data.absimp.string',
             'data.absimport', 
             'data.all',
             'data.appl', 
-            'data.appl.myConnection', 
+            'data.appl.myConnection',
+            'data.clientmodule_test',
+            'data.descriptor_crash', 
             'data.email',
             'data.find_test',
             'data.find_test.module',
@@ -207,10 +207,19 @@ class AstroidManagerTC(unittest.TestCase):
             'data.module2', 
             'data.noendingnewline',
             'data.nonregr',
-            'data.notall']
-        if PY3K:
-            expected = [e.replace('data', 'data_py3') for e in expected]
-        self.assertListEqual(sorted(k for k in obj.keys()), expected)
+            'data.notall',
+            'data.package',
+            'data.package.absimport',
+            'data.package.hello',
+            'data.package.import_package_subpackage_module',
+            'data.package.subpackage',
+            'data.package.subpackage.module',
+            'data.recursion',
+            'data.suppliermodule_test',
+            'data.unicode_package',
+            'data.unicode_package.core']
+        self.assertListEqual(sorted(obj.keys()), expected)
+
 
 class BorgAstroidManagerTC(unittest.TestCase):
 
