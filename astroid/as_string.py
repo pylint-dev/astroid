@@ -148,7 +148,7 @@ class AsStringVisitor(object):
             bases = bases and '(%s)' % bases or ''
         else:
             metaclass = node.metaclass()
-            if metaclass:
+            if metaclass and not node.has_metaclass_hack():
                 if bases:
                     bases = '(%s, metaclass=%s)' % (bases, metaclass.name)
                 else:

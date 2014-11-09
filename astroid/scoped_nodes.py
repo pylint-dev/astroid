@@ -757,20 +757,24 @@ class Function(Statement, Lambda):
         if self.is_generator():
             yield Generator()
             return
-        if self.qname() in ('six.with_metaclass', 'future.utils.with_metaclass'):
-            # This is really a gigantic hack to work around metaclass generators
-            # that return transient class-generating functions. Pylint's AST structure
-            # cannot handle a base class object that is only used for calling __new__,
-            # but does not contribute to the inheritance structure itself. We inject
-            # a fake class into the hierarchy here for several well-known metaclass
-            # generators, and filter it out later.
-            c = Class('<idontexist>', None)
-            c.hide = True
-            c.parent = caller.parent
-            c.bases = [next(b.infer(context)) for b in caller.args[1:]]
-            c._metaclass = caller.args[0]
-            yield c
-            return
+        # This is really a gigantic hack to work around metaclass generators
+        # that return transient class-generating functions. Pylint's AST structure
+        # cannot handle a base class object that is only used for calling __new__,
+        # but does not contribute to the inheritance structure itself. We inject
+        # a fake class into the hierarchy here for several well-known metaclass
+        # generators, and filter it out later.
+        if (self.name == 'with_metaclass' and 
+                len(self.args.args) == 1 and 
+                self.args.vararg is not None):
+            metaclass = next(caller.args[0].infer(context))
+            if isinstance(metaclass, Class):
+                c = Class('temporary_class', None)
+                c.hide = True
+                c.parent = self
+                c.bases = [next(b.infer(context)) for b in caller.args[1:]]
+                c._metaclass = metaclass
+                yield c
+                return
         returns = self.nodes_of_class(Return, skip_klass=Function)
         for returnnode in returns:
             if returnnode.value is None:
@@ -886,6 +890,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
     blockstart_tolineno = None
 
     _type = None
+    _metaclass_hack = False
     hide = False
     type = property(_class_type,
                     doc="class'type, possible values are 'class' | "
@@ -1226,6 +1231,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                 for baseobj in base.infer():
                     if isinstance(baseobj, Class) and baseobj.hide:
                         self._metaclass = baseobj._metaclass
+                        self._metaclass_hack = True
                         break
             except InferenceError:
                 pass
@@ -1275,6 +1281,9 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                 if klass is not None:
                     break
         return klass
+
+    def has_metaclass_hack(self):
+        return self._metaclass_hack
 
     def _islots(self):
         """ Return an iterator with the inferred slots. """

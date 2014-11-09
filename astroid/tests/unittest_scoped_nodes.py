@@ -925,7 +925,7 @@ def g2():
             ['NewBase', 'object'],
             [base.name for base in klass.ancestors()])
 
-    def test_metaclass_type_six_hack(self):
+    def test_metaclass_generator_hack(self):
         klass = extract_node("""
         import six
 
