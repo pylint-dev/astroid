@@ -925,6 +925,19 @@ def g2():
             ['NewBase', 'object'],
             [base.name for base in klass.ancestors()])
 
+    def test_metaclass_type_six_hack(self):
+        klass = extract_node("""
+        import six
+
+        class WithMeta(six.with_metaclass(type, object)): #@
+            pass
+        """)
+        self.assertEqual(
+            ['object'],
+            [base.name for base in klass.ancestors()])
+        self.assertEqual(
+            'type', klass.metaclass().name)
+
     def test_nonregr_infer_callresult(self):
         astroid = abuilder.string_build(dedent("""
         class Delegate(object):

@@ -757,6 +757,20 @@ class Function(Statement, Lambda):
         if self.is_generator():
             yield Generator()
             return
+        if self.qname() in ('six.with_metaclass', 'future.utils.with_metaclass'):
+            # This is really a gigantic hack to work around metaclass generators
+            # that return transient class-generating functions. Pylint's AST structure
+            # cannot handle a base class object that is only used for calling __new__,
+            # but does not contribute to the inheritance structure itself. We inject
+            # a fake class into the hierarchy here for several well-known metaclass
+            # generators, and filter it out later.
+            c = Class('<idontexist>', None)
+            c.hide = True
+            c.parent = caller.parent
+            c.bases = [next(b.infer(context)) for b in caller.args[1:]]
+            c._metaclass = caller.args[0]
+            yield c
+            return
         returns = self.nodes_of_class(Return, skip_klass=Function)
         for returnnode in returns:
             if returnnode.value is None:
@@ -872,6 +886,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
     blockstart_tolineno = None
 
     _type = None
+    hide = False
     type = property(_class_type,
                     doc="class'type, possible values are 'class' | "
                     "'metaclass' | 'interface' | 'exception'")
@@ -1002,10 +1017,11 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                         else:
                             # duh ?
                             continue
-                    if baseobj in yielded:
-                        continue # cf xxx above
-                    yielded.add(baseobj)
-                    yield baseobj
+                    if not baseobj.hide:
+                        if baseobj in yielded:
+                            continue # cf xxx above
+                        yielded.add(baseobj)
+                        yield baseobj
                     if recurs:
                         for grandpa in baseobj.ancestors(recurs=True,
                                                          context=context):
@@ -1205,6 +1221,15 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         having a ``__metaclass__`` class attribute, or if there are
         no explicit bases but there is a global ``__metaclass__`` variable.
         """
+        for base in self.bases:
+            try:
+                for baseobj in base.infer():
+                    if isinstance(baseobj, Class) and baseobj.hide:
+                        self._metaclass = baseobj._metaclass
+                        break
+            except InferenceError:
+                pass
+
         if self._metaclass:
             # Expects this from Py3k TreeRebuilder
             try:
