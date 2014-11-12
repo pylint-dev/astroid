@@ -222,8 +222,8 @@ class IsRelativeTest(unittest.TestCase):
 
 
     def test_knownValues_is_relative_1(self):
-        import astroid
-        self.assertEqual(modutils.is_relative('modutils', astroid.__path__[0]),
+        import email
+        self.assertEqual(modutils.is_relative('utils', email.__path__[0]),
                          True)
 
     def test_knownValues_is_relative_2(self):
