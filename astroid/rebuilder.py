@@ -137,13 +137,14 @@ class TreeRebuilder(object):
         self._visit_meths = {}
         self._transform = manager.transform
 
-    def visit_module(self, node, modname, package):
+    def visit_module(self, node, modname, modpath, package):
         """visit a Module node by returning a fresh instance of it"""
         newnode = new.Module(modname, None)
         newnode.package = package
         newnode.parent = None
         _init_set_doc(node, newnode)
         newnode.body = [self.visit(child, newnode) for child in node.body]
+        newnode.file = newnode.path = modpath
         return self._transform(newnode)
 
     def visit(self, node, parent):
