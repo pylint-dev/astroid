@@ -153,12 +153,12 @@ class AstroidManager(OptionsProviderMixIn):
         builder = AstroidBuilder(self)
         for ext in ('.zip', '.egg'):
             try:
-                eggpath, resource = filepath.rsplit(ext + '/', 1)
+                eggpath, resource = filepath.rsplit(ext + os.path.sep, 1)
             except ValueError:
                 continue
             try:
                 importer = zipimport.zipimporter(eggpath + ext)
-                zmodname = resource.replace('/', '.')
+                zmodname = resource.replace(os.path.sep, '.')
                 if importer.is_package(resource):
                     zmodname = zmodname + '.__init__'
                 module = builder.string_build(importer.get_source(resource),
