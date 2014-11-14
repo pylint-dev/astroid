@@ -190,8 +190,8 @@ class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
     def test_builtin(self):
         self.assertEqual(modutils.is_standard_module('marshal'), True)
 
-    @unittest.skipIf(sys.version_info > (3, 0) and sys.platform.startswith("win"),
-                     "Python 3's imp module on Windows is broken since it returns "
+    @unittest.skipIf(sys.platform.startswith("win"),
+                     "Python's imp module on Windows is broken since it returns "
                      "the module path with wrong casing.")
     def test_4(self):
         self.assertEqual(modutils.is_standard_module('hashlib'), True)
