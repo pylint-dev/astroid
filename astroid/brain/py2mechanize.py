@@ -1,8 +1,8 @@
-from astroid import MANAGER
+from astroid import MANAGER, register_module_extender
 from astroid.builder import AstroidBuilder
 
-def mechanize_transform(module):
-    fake = AstroidBuilder(MANAGER).string_build('''
+def mechanize_transform():
+    return AstroidBuilder(MANAGER).string_build('''
 
 class Browser(object):
     def open(self, url, data=None, timeout=None):
@@ -13,8 +13,6 @@ class Browser(object):
         return None
 
 ''')
-    module.locals['Browser'] = fake.locals['Browser']
 
-import py2stdlib
-py2stdlib.MODULE_TRANSFORMS['mechanize'] = mechanize_transform
 
+register_module_extender(MANAGER, 'mechanize', mechanize_transform)

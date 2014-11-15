@@ -108,6 +108,16 @@ def inference_tip(infer_function):
         return node
     return transform
 
+
+def register_module_extender(manager, module_name, get_extension_mod):
+    def transform(node):
+        extension_module = get_extension_mod()
+        for name, obj in extension_module.locals.items():
+            node.locals[name] = obj
+
+    manager.register_transform(Module, transform, lambda n: n.name == module_name)
+
+
 # load brain plugins
 from os import listdir
 from os.path import join, dirname

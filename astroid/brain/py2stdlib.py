@@ -11,12 +11,11 @@ from textwrap import dedent
 from astroid import (
     MANAGER, AsStringRegexpPredicate,
     UseInferenceDefault, inference_tip,
-    YES, InferenceError)
+    YES, InferenceError, register_module_extender)
 from astroid import exceptions
 from astroid import nodes
 from astroid.builder import AstroidBuilder
 
-MODULE_TRANSFORMS = {}
 PY3K = sys.version_info > (3, 0)
 PY33 = sys.version_info >= (3, 3)
 
@@ -90,18 +89,7 @@ def infer_func_form(node, base_type, context=None, enum=False):
 
 # module specific transformation functions #####################################
 
-def transform(module):
-    try:
-        tr = MODULE_TRANSFORMS[module.name]
-    except KeyError:
-        pass
-    else:
-        tr(module)
-MANAGER.register_transform(nodes.Module, transform)
-
-# module specific transformation functions #####################################
-
-def hashlib_transform(module):
+def hashlib_transform():
     template = '''
 
 class %(name)s(object):
@@ -121,14 +109,11 @@ class %(name)s(object):
     algorithms = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')
     classes = "".join(template % {'name': hashfunc}
                       for hashfunc in algorithms)
+    return AstroidBuilder(MANAGER).string_build(classes)
 
-    fake = AstroidBuilder(MANAGER).string_build(classes)
 
-    for hashfunc in algorithms:
-        module.locals[hashfunc] = fake.locals[hashfunc]
-
-def collections_transform(module):
-    fake = AstroidBuilder(MANAGER).string_build('''
+def collections_transform():
+    return AstroidBuilder(MANAGER).string_build('''
 
 class defaultdict(dict):
     default_factory = None
@@ -152,11 +137,9 @@ class deque(object):
 
 ''')
 
-    for klass in ('deque', 'defaultdict'):
-        module.locals[klass] = fake.locals[klass]
 
-def pkg_resources_transform(module):
-    fake = AstroidBuilder(MANAGER).string_build('''
+def pkg_resources_transform():
+    return AstroidBuilder(MANAGER).string_build('''
 
 def resource_exists(package_or_requirement, resource_name):
     pass
@@ -193,11 +176,8 @@ def cleanup_resources(force=False):
 
 ''')
 
-    for func_name, func in fake.locals.items():
-        module.locals[func_name] = func
 
-
-def subprocess_transform(module):
+def subprocess_transform():
     if PY3K:
         communicate = (bytes('string', 'ascii'), bytes('string', 'ascii'))
         init = """
@@ -223,7 +203,7 @@ def subprocess_transform(module):
         wait_signature = 'def wait(self, timeout=None)'
     else:
         wait_signature = 'def wait(self)'
-    fake = AstroidBuilder(MANAGER).string_build('''
+    return AstroidBuilder(MANAGER).string_build('''
 
 class Popen(object):
     returncode = pid = 0
@@ -247,15 +227,6 @@ class Popen(object):
           'communicate': communicate,
           'wait_signature': wait_signature})
 
-    for func_name, func in fake.locals.items():
-        module.locals[func_name] = func
-
-
-
-MODULE_TRANSFORMS['hashlib'] = hashlib_transform
-MODULE_TRANSFORMS['collections'] = collections_transform
-MODULE_TRANSFORMS['pkg_resources'] = pkg_resources_transform
-MODULE_TRANSFORMS['subprocess'] = subprocess_transform
 
 # namedtuple support ###########################################################
 
@@ -343,8 +314,13 @@ def infer_enum_class(node, context=None):
         break
     return node
 
+
 MANAGER.register_transform(nodes.CallFunc, inference_tip(infer_named_tuple),
                            looks_like_namedtuple)
 MANAGER.register_transform(nodes.CallFunc, inference_tip(infer_enum),
                            AsStringRegexpPredicate('Enum', 'func'))
 MANAGER.register_transform(nodes.Class, infer_enum_class)
+register_module_extender(MANAGER, 'hashlib', hashlib_transform)
+register_module_extender(MANAGER, 'collections', collections_transform)
+register_module_extender(MANAGER, 'pkg_resourcds', pkg_resources_transform)
+register_module_extender(MANAGER, 'subprocess', subprocess_transform)

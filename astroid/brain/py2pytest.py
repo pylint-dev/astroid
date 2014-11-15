@@ -1,23 +1,10 @@
 """Astroid hooks for pytest."""
 
-from astroid import MANAGER
-from astroid import nodes
+from astroid import MANAGER, register_module_extender
 from astroid.builder import AstroidBuilder
 
 
-MODULE_TRANSFORMS = {}
-
-
-def transform(module):
-    try:
-        tr = MODULE_TRANSFORMS[module.name]
-    except KeyError:
-        pass
-    else:
-        tr(module)
-
-
-def pytest_transform(module):
+def pytest_transform():
     fake = AstroidBuilder(MANAGER).string_build('''
 
 try:
@@ -40,11 +27,5 @@ else:
 
 ''')
 
-    for item_name, item in fake.locals.items():
-        module.locals[item_name] = item
-
-
-MODULE_TRANSFORMS['pytest'] = pytest_transform
-MODULE_TRANSFORMS['py.test'] = pytest_transform
-
-MANAGER.register_transform(nodes.Module, transform)
+register_module_extender(MANAGER, 'pytest', pytest_transform)
+register_module_extender(MANAGER, 'py.test', pytest_transform)

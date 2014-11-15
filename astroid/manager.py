@@ -23,6 +23,7 @@ from __future__ import print_function
 
 __docformat__ = "restructuredtext en"
 
+import collections
 import imp
 import os
 from os.path import dirname, join, isdir, exists
@@ -86,7 +87,7 @@ class AstroidManager(OptionsProviderMixIn):
             # NOTE: cache entries are added by the [re]builder
             self.astroid_cache = {}
             self._mod_file_cache = {}
-            self.transforms = {}
+            self.transforms = collections.defaultdict(list)
 
     def ast_from_file(self, filepath, modname=None, fallback=True, source=False):
         """given a module name, return the astroid object"""
@@ -277,13 +278,13 @@ class AstroidManager(OptionsProviderMixIn):
 
     def register_transform(self, node_class, transform, predicate=None):
         """Register `transform(node)` function to be applied on the given
-        Astroid's `node_class` if `predicate` is None or return a true value
+        Astroid's `node_class` if `predicate` is None or returns true
         when called with the node as argument.
 
         The transform function may return a value which is then used to
         substitute the original node in the tree.
         """
-        self.transforms.setdefault(node_class, []).append((transform, predicate))
+        self.transforms[node_class].append((transform, predicate))
 
     def unregister_transform(self, node_class, transform, predicate=None):
         """Unregister the given transform."""
