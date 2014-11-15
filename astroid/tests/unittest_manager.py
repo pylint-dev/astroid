@@ -124,7 +124,6 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_file_from_module(self):
         """check if the unittest filepath is equals to the result of the method"""
-        import unittest
         if sys.version_info > (3, 0):
             unittest_file = unittest.__file__
         else:
@@ -137,7 +136,6 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
         self.assertRaises(AstroidBuildingException, self.manager.file_from_module_name, 'unhandledModule', None)
 
     def test_ast_from_module(self):
-        import unittest
         astroid = self.manager.ast_from_module(unittest)
         self.assertEqual(astroid.pure_python, True)
         import time
@@ -146,7 +144,6 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_ast_from_module_cache(self):
         """check if the module is in the cache manager"""
-        import unittest
         astroid = self.manager.ast_from_module(unittest)
         self.assertEqual(astroid.name, 'unittest')
         self.assertIn('unittest', self.manager.astroid_cache)
@@ -223,6 +220,21 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
             'data.unicode_package',
             'data.unicode_package.core']
         self.assertListEqual(sorted(obj.keys()), expected)
+
+    def testFailedImportHooks(self):
+        def hook(modname):
+            if modname == 'foo.bar':
+                return unittest
+            else:
+                raise AstroidBuildingException()
+
+        with self.assertRaises(AstroidBuildingException):
+            self.manager.ast_from_module_name('foo.bar')
+        self.manager.register_failed_import_hook(hook)
+        self.assertEqual(unittest, self.manager.ast_from_module_name('foo.bar'))
+        with self.assertRaises(AstroidBuildingException):
+            self.manager.ast_from_module_name('foo.bar.baz')
+        del self.manager._failed_import_hooks[0]
 
 
 class BorgAstroidManagerTC(unittest.TestCase):

@@ -88,6 +88,7 @@ class AstroidManager(OptionsProviderMixIn):
             self.astroid_cache = {}
             self._mod_file_cache = {}
             self.transforms = collections.defaultdict(list)
+            self._failed_import_hooks = []
 
     def ast_from_file(self, filepath, modname=None, fallback=True, source=False):
         """given a module name, return the astroid object"""
@@ -144,6 +145,13 @@ class AstroidManager(OptionsProviderMixIn):
             if filepath is None:
                 raise AstroidBuildingException("Unable to load module %s" % (modname,))
             return self.ast_from_file(filepath, modname, fallback=False)
+        except AstroidBuildingException as e:
+            for hook in self._failed_import_hooks:
+                try:
+                    return hook(modname)
+                except AstroidBuildingException:
+                    pass
+            raise e
         finally:
             os.chdir(old_cwd)
 
@@ -289,6 +297,16 @@ class AstroidManager(OptionsProviderMixIn):
     def unregister_transform(self, node_class, transform, predicate=None):
         """Unregister the given transform."""
         self.transforms[node_class].remove((transform, predicate))
+
+    def register_failed_import_hook(self, hook):
+        """"Registers a hook to resolve imports that cannot be found otherwise.
+
+        `hook` must be a function that accepts a single argument `modname` which
+        contains the name of the module or package that could not be imported.
+        If `hook` can resolve the import, must return a node of type `astroid.Module`,
+        otherwise, it must raise `AstroidBuildingException`.
+        """
+        self._failed_import_hooks.append(hook)
 
     def transform(self, node):
         """Call matching transforms for the given node if any and return the

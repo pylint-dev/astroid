@@ -112,26 +112,10 @@ def _gi_build_stub(parent):
 
     return ret
 
-# Overwrite Module.module_import to _actually_ import the introspected module if
-# it's a gi module, then build stub code by examining its info and get an astng
-# from that
-
-from astroid.scoped_nodes import Module
-_orig_import_module = Module.import_module
-
-def _new_import_module(self, modname, relative_only=False, level=None):
-    # Could be a static piece of gi.repository or whatever unrelated module,
-    # let that fall through
-    try:
-        return _orig_import_module(self, modname, relative_only, level)
-    except AstroidBuildingException:
-        # we only consider gi.repository submodules
-        if not modname.startswith('gi.repository.'):
-            if relative_only and level is None:
-                level = 0
-            modname = self.relative_to_absolute_name(modname, level)
-        if not modname.startswith('gi.repository.'):
-            raise
+def _import_gi_module(modname):
+    # we only consider gi.repository submodules
+    if not modname.startswith('gi.repository.'):
+        raise AstroidBuildingException()
     # build astroid representation unless we already tried so
     if modname not in _inspected_modules:
         modnames = [modname]
@@ -166,4 +150,6 @@ def _new_import_module(self, modname, relative_only=False, level=None):
         raise AstroidBuildingException('Failed to import module %r' % modname)
     return astng
 
-Module.import_module = _new_import_module
+
+MANAGER.register_failed_import_hook(_import_gi_module)
+
