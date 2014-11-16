@@ -94,7 +94,7 @@ class NoSourceFile(Exception):
 def _normalize_path(path):
     return os.path.normcase(os.path.abspath(path))
 
- 
+
 _NORM_PATH_CACHE = {}
 
 def _cache_normalize_path(path):
@@ -359,7 +359,7 @@ def get_module_part(dotted_name, context_file=None):
         starti = 1
     while parts[starti] == '': # for all further dots: change context
         starti += 1
-        context_file = dirname(context_file)
+        context_file = os.path.dirname(context_file)
     for i in range(starti, len(parts)):
         try:
             file_from_modpath(parts[starti:i+1], path=path,
@@ -641,7 +641,7 @@ def _module_file(modpath, path=None):
                     # extend_path is called, search sys.path for module/packages
                     # of this name see pkgutil.extend_path documentation
                     path = [os.path.join(p, *imported) for p in sys.path
-                            if os.path.isdir(join(p, *imported))]
+                            if os.path.isdir(os.path.join(p, *imported))]
                 else:
                     path = [mp_filename]
     return mtype, mp_filename
