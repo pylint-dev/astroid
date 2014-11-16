@@ -115,7 +115,7 @@ class AstroidBuilder(InspectBuilder):
         path is expected to be a python source file
         """
         try:
-            _, encoding, data = open_source_file(path)
+            stream, encoding, data = open_source_file(path)
         except IOError as exc:
             msg = 'Unable to load file %r (%s)' % (path, exc)
             raise AstroidBuildingException(msg)
@@ -123,15 +123,16 @@ class AstroidBuilder(InspectBuilder):
             raise AstroidBuildingException(exc)
         except LookupError as exc: # unknown encoding
             raise AstroidBuildingException(exc)
-        # get module name if necessary
-        if modname is None:
-            try:
-                modname = '.'.join(modpath_from_file(path))
-            except ImportError:
-                modname = splitext(basename(path))[0]
-        # build astroid representation
-        module = self._data_build(data, modname, path)
-        return self._post_build(module, encoding)
+        with stream:
+            # get module name if necessary
+            if modname is None:
+                try:
+                    modname = '.'.join(modpath_from_file(path))
+                except ImportError:
+                    modname = splitext(basename(path))[0]
+            # build astroid representation
+            module = self._data_build(data, modname, path)
+            return self._post_build(module, encoding)
 
     def string_build(self, data, modname='', path=None):
         """build astroid from source code string and return rebuilded astroid"""
