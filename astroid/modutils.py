@@ -68,6 +68,13 @@ try:
     STD_LIB_DIRS = [
         get_python_lib(standard_lib=True, prefix=sys.prefix),
         get_python_lib(standard_lib=True)]
+    if os.name == 'nt':
+        STD_LIB_DIRS.append(os.path.join(sys.prefix, 'dlls'))
+        try:
+            # real_prefix is defined when running inside virtualenv.
+            STD_LIB_DIRS.append(os.path.join(sys.real_prefix, 'dlls'))
+        except AttributeError:
+            pass
 # get_python_lib(standard_lib=1) is not available on pypy, set STD_LIB_DIR to
 # non-valid path, see https://bugs.pypy.org/issue1164
 except DistutilsPlatformError:

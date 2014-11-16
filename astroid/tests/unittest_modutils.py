@@ -196,6 +196,7 @@ class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(modutils.is_standard_module('email'), True)
         self.assertEqual(modutils.is_standard_module('io'), sys.version_info >= (2, 6))
         self.assertEqual(modutils.is_standard_module('StringIO'), sys.version_info < (3, 0))
+        self.assertEqual(modutils.is_standard_module('unicodedata'), True)
 
     def test_custom_path(self):
         datadir = resources.find('')
