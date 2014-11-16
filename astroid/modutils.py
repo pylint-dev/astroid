@@ -176,6 +176,9 @@ def load_module_from_modpath(parts, path=None, use_sys=1):
         if module is None:
             mp_file, mp_filename, mp_desc = imp.find_module(part, path)
             module = imp.load_module(curname, mp_file, mp_filename, mp_desc)
+            # mp_file still needs to be closed.
+            if mp_file:
+                mp_file.close()
         if prevmodule:
             setattr(prevmodule, part, module)
         _file = getattr(module, '__file__', '')
@@ -492,7 +495,11 @@ def is_relative(modname, from_file):
     if from_file in sys.path:
         return False
     try:
-        imp.find_module(modname.split('.')[0], [from_file])
+        stream, _, _ = imp.find_module(modname.split('.')[0], [from_file])
+
+        # Close the stream to avoid ResourceWarnings.
+        if stream:
+            stream.close()
         return True
     except ImportError:
         return False
@@ -591,12 +598,17 @@ def _module_file(modpath, path=None):
         # >>> imp.find_module('posix')
         # (None, None, ('', '', 6))
         try:
-            _, mp_filename, mp_desc = imp.find_module(modname, path)
+            stream, mp_filename, mp_desc = imp.find_module(modname, path)
         except ImportError:
             if checkeggs:
                 return _search_zip(modpath, pic)[:2]
             raise
         else:
+            # Don't forget to close the stream to avoid
+            # spurious ResourceWarnings.
+            if stream:
+               stream.close()
+
             if checkeggs and mp_filename:
                 fullabspath = [_cache_normalize_path(x) for x in _path]
                 try:
