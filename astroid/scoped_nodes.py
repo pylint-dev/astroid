@@ -257,7 +257,7 @@ class Module(LocalsDictNodeNG):
         self.body = []
         self.future_imports = set()
 
-    @property
+    @cachedproperty
     def file_stream(self):
         if self.file_bytes is not None:
             return BytesIO(self.file_bytes)
