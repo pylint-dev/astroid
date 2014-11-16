@@ -104,12 +104,12 @@ class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_ast_from_module_name_egg(self):
         self._test_ast_from_zip(
-            os.path.sep.join(['data', 'MyPyPa-0.1.0-py2.5.egg'])
+            os.path.sep.join(['data', os.path.normcase('MyPyPa-0.1.0-py2.5.egg')])
         )
 
     def test_ast_from_module_name_zip(self):
         self._test_ast_from_zip(
-            os.path.sep.join(['data', 'MyPyPa-0.1.0-py2.5.zip'])
+            os.path.sep.join(['data', os.path.normcase('MyPyPa-0.1.0-py2.5.zip')])
         )
 
     def test_zip_import_data(self):
