@@ -42,7 +42,7 @@ class SysPathSetup(object):
         del sys.path[0]
         datadir = find('')
         for key in list(sys.path_importer_cache):
-            if key.startswith(key):
+            if key.startswith(datadir):
                 del sys.path_importer_cache[key]
 
 

@@ -443,11 +443,7 @@ class BuilderTest(unittest.TestCase):
             next(astroid['global_no_effect'].ilookup('CSTE2'))
 
     def test_socket_build(self):
-        try:
-            import socket
-        except ImportError:
-            print(sys.path)
-            raise
+        import socket
         astroid = self.builder.module_build(socket)
         # XXX just check the first one. Actually 3 objects are inferred (look at
         # the socket module) but the last one as those attributes dynamically
