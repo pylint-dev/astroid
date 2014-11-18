@@ -160,7 +160,10 @@ class AstroidBuilder(InspectBuilder):
     def _data_build(self, data, modname, path):
         """build tree node from data and add some informations"""
         # this method could be wrapped with a pickle/cache function
-        node = parse(data + '\n')
+        try:
+            node = parse(data + '\n')
+        except TypeError as exc:
+            raise AstroidBuildingException(exc)
         if path is not None:
             node_file = abspath(path)
         else:

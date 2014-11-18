@@ -251,6 +251,10 @@ class BuilderTest(unittest.TestCase):
     def setUp(self):
         self.builder = builder.AstroidBuilder()
 
+    def test_data_build_null_bytes(self):
+        with self.assertRaises(builder.AstroidBuildingException):
+            self.builder.string_build('\x00')
+
     def test_missing_newline(self):
         """check that a file with no trailing new line is parseable"""
         resources.build_file('data/noendingnewline.py')
