@@ -40,8 +40,11 @@ Change log for the astroid package (used to be astng)
     * astroid.register_module_extender has been added to generalize
       the support for module extenders as used by many brain plugins.
 
-    * brain plugins can now registers hooks to handle failed imports, 
+    * brain plugins can now register hooks to handle failed imports, 
       as done by the gobject-introspection plugin.
+
+    * The modules have been moved to a separate package directory,
+      `setup.py develop` now works correctly.
 
 
 2014-08-24 -- 1.2.1
