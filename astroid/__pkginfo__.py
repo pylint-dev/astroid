@@ -20,7 +20,7 @@ distname = 'astroid'
 
 modname = 'astroid'
 
-numversion = (1, 2, 1)
+numversion = (1, 3, 0)
 version = '.'.join([str(num) for num in numversion])
 
 install_requires = ['logilab-common >= 0.60.0', 'six']
@@ -28,11 +28,11 @@ install_requires = ['logilab-common >= 0.60.0', 'six']
 license = 'LGPL'
 
 author = 'Logilab'
-author_email = 'python-projects@lists.logilab.org'
+author_email = 'pylint-dev@lists.logilab.org'
 mailinglist = "mailto://%s" % author_email
 web = 'http://bitbucket.org/logilab/astroid'
 
-description = "rebuild a new abstract syntax tree from Python's ast"
+description = "A abstract syntax tree for Python with inference support."
 
 classifiers = ["Topic :: Software Development :: Libraries :: Python Modules",
                "Topic :: Software Development :: Quality Assurance",
