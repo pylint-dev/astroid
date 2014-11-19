@@ -77,7 +77,7 @@ Change log for the astroid package (used to be astng)
 
     * Function nodes can detect decorator call chain and see if they are
       decorated with builtin descriptors (`classmethod` and `staticmethod`).
-   
+
     * infer_call_result called on a subtype of the builtin type will now
       return a new `Class` rather than an `Instance`.
 
@@ -100,8 +100,8 @@ Change log for the astroid package (used to be astng)
       most things there are for pylint/astroid only and we want to be
       able to fix them without requiring a new logilab.common release
 
-    * Fix names grabed using wildcard import in "absolute import mode" 
-      (ie with absolute_import activated from the __future__ or with 
+    * Fix names grabed using wildcard import in "absolute import mode"
+      (ie with absolute_import activated from the __future__ or with
       python 3). Fix pylint issue #58.
 
     * Add support in pylint-brain for understanding enum classes.
