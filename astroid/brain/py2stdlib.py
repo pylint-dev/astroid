@@ -270,7 +270,7 @@ def infer_enum(node, context=None):
                                  context=context, enum=True)[0]
     return iter([class_node.instanciate_class()])
 
-def infer_enum_class(node, context=None):
+def infer_enum_class(node):
     """ Specific inference for enums. """
     names = set(('Enum', 'IntEnum', 'enum.Enum', 'enum.IntEnum'))
     for basename in node.basenames:
