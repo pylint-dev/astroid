@@ -337,6 +337,7 @@ class AstroidManager(OptionsProviderMixIn):
         self.astroid_cache.setdefault(module.name, module)
 
     def clear_cache(self):
+        # XXX clear transforms
         self.astroid_cache.clear()
         # force bootstrap again, else we may ends up with cache inconsistency
         # between the manager and CONST_PROXY, making
