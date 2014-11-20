@@ -44,7 +44,7 @@ if sys.version_info >= (3, 0):
     def open_source_file(filename):
         with open(filename, 'rb') as byte_stream:
             encoding = detect_encoding(byte_stream.readline)[0]
-        stream = open(filename, 'rU', encoding=encoding)
+        stream = open(filename, 'r', newline=None, encoding=encoding)
         try:
             data = stream.read()
         except UnicodeError: # wrong encodingg
