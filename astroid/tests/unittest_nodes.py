@@ -31,7 +31,7 @@ from astroid.tests import resources
 abuilder = builder.AstroidBuilder()
 
 
-class AsStringTest(unittest.TestCase):
+class AsStringTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_tuple_as_string(self):
         def build(string):
@@ -427,7 +427,6 @@ class ArgumentsNodeTC(unittest.TestCase):
         else:
             self.skipTest('FIXME  http://bugs.python.org/issue10445 '
                           '(no line number on function args)')
-
 
 
 if __name__ == '__main__':
