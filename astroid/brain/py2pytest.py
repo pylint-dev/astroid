@@ -5,7 +5,7 @@ from astroid.builder import AstroidBuilder
 
 
 def pytest_transform():
-    fake = AstroidBuilder(MANAGER).string_build('''
+    return AstroidBuilder(MANAGER).string_build('''
 
 try:
     import _pytest.mark
