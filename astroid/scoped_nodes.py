@@ -1013,6 +1013,11 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         yielded = set([self])
         if context is None:
             context = InferenceContext()
+        if sys.version_info[0] >= 3:
+            if not self.bases and self.qname() != 'builtins.object':
+                yield builtin_lookup("object")[1][0]
+                return
+
         for stmt in self.bases:
             try:
                 for baseobj in stmt.infer(context):

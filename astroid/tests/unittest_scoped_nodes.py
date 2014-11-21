@@ -530,7 +530,14 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         anc_klass = next(it)
         self.assertIsInstance(anc_klass, nodes.Class)
         self.assertEqual(anc_klass.name, 'YO')
-        self.assertRaises(StopIteration, partial(next, it))
+        if sys.version_info[0] == 2:
+            self.assertRaises(StopIteration, partial(next, it))
+        else:
+            anc_klass = next(it)
+            self.assertIsInstance(anc_klass, nodes.Class)
+            self.assertEqual(anc_klass.name, 'object')
+            self.assertRaises(StopIteration, partial(next, it))
+
         it = klass2.local_attr_ancestors('method')
         self.assertRaises(StopIteration, partial(next, it))
 
@@ -546,26 +553,22 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertRaises(StopIteration, partial(next, it))
 
     def test_methods(self):
+        expected_methods = {'__init__', 'class_method', 'method', 'static_method'}
         klass2 = self.module['YOUPI']
-        methods = sorted([m.name for m in klass2.methods()])
-        self.assertEqual(methods, ['__init__', 'class_method',
-                                   'method', 'static_method'])
-        methods = [m.name for m in klass2.mymethods()]
-        methods.sort()
-        self.assertEqual(methods, ['__init__', 'class_method',
-                                   'method', 'static_method'])
+        methods = {m.name for m in klass2.methods()}
+        self.assertTrue(
+            methods.issuperset(expected_methods))
+        methods = {m.name for m in klass2.mymethods()}
+        self.assertSetEqual(expected_methods, methods)
         klass2 = self.module2['Specialization']
-        methods = [m.name for m in klass2.mymethods()]
-        methods.sort()
-        self.assertEqual(methods, [])
+        methods = {m.name for m in klass2.mymethods()}
+        self.assertSetEqual(set([]), methods)
         method_locals = klass2.local_attr('method')
         self.assertEqual(len(method_locals), 1)
         self.assertEqual(method_locals[0].name, 'method')
         self.assertRaises(NotFoundError, klass2.local_attr, 'nonexistant')
-        methods = [m.name for m in klass2.methods()]
-        methods.sort()
-        self.assertEqual(methods, ['__init__', 'class_method',
-                                   'method', 'static_method'])
+        methods = {m.name for m in klass2.methods()}
+        self.assertTrue(methods.issuperset(expected_methods))
 
     #def test_rhs(self):
     #    my_dict = self.module['MY_DICT']
@@ -575,13 +578,19 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
     #    self.assertIsInstance(value, nodes.Const)
     #    self.assertEqual(value.value, 1)
 
+    @unittest.skipIf(sys.version_info[0] >= 3, "Python 2 class semantics required.")
     def test_ancestors(self):
         klass = self.module['YOUPI']
-        ancs = [a.name for a in klass.ancestors()]
-        self.assertEqual(ancs, ['YO'])
+        self.assertEqual(['YO'], [a.name for a in klass.ancestors()])
         klass = self.module2['Specialization']
-        ancs = [a.name for a in klass.ancestors()]
-        self.assertEqual(ancs, ['YOUPI', 'YO'])
+        self.assertEqual(['YOUPI', 'YO'], [a.name for a in klass.ancestors()])
+
+    @unittest.skipIf(sys.version_info[0] < 3, "Python 3 class semantics required.")
+    def test_ancestors_py3(self):
+        klass = self.module['YOUPI']
+        self.assertEqual(['YO', 'object'], [a.name for a in klass.ancestors()])
+        klass = self.module2['Specialization']
+        self.assertEqual(['YOUPI', 'YO', 'object'], [a.name for a in klass.ancestors()])
 
     def test_type(self):
         klass = self.module['YOUPI']

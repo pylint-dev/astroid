@@ -273,7 +273,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_ancestors_inference(self):
         code = '''
-            class A:  #@
+            class A(object):  #@
                 pass
 
             class A(A):  #@
@@ -281,12 +281,12 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         '''
         a1, a2 = test_utils.extract_node(code, __name__)
         a2_ancestors = list(a2.ancestors())
-        self.assertEqual(len(a2_ancestors), 1)
+        self.assertEqual(len(a2_ancestors), 2)
         self.assertIs(a2_ancestors[0], a1)
 
     def test_ancestors_inference2(self):
         code = '''
-            class A:  #@
+            class A(object):  #@
                 pass
 
             class B(A):  #@
@@ -297,7 +297,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         '''
         a1, b, a2 = test_utils.extract_node(code, __name__)
         a2_ancestors = list(a2.ancestors())
-        self.assertEqual(len(a2_ancestors), 2)
+        self.assertEqual(len(a2_ancestors), 3)
         self.assertIs(a2_ancestors[0], b)
         self.assertIs(a2_ancestors[1], a1)
 
