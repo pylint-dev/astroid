@@ -1357,6 +1357,20 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         node = astroid['do_a_thing']
         self.assertEqual(node.type, 'function')
 
+    def test_no_infinite_ancestor_loop(self):
+        klass = test_utils.extract_node("""
+            import datetime
+
+            def method(self):
+                datetime.datetime = something()
+
+            class something(datetime.datetime):  #@
+                pass
+        """)
+        self.assertIn(
+            'object', 
+            [base.name for base in klass.ancestors()])
+
 
 if __name__ == '__main__':
     unittest.main()

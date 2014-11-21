@@ -952,17 +952,17 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
     def callable(self):
         return True
 
-    def _is_subtype_of(self, type_name):
+    def _is_subtype_of(self, type_name, context):
         if self.qname() == type_name:
             return True
-        for anc in self.ancestors():
+        for anc in self.ancestors(context=context):
             if anc.qname() == type_name:
                 return True
 
     def infer_call_result(self, caller, context=None):
         """infer what a class is returning when called"""
-        if self._is_subtype_of('%s.type' % (BUILTINS,)) and len(caller.args) == 3:
-            name_node = next(caller.args[0].infer())
+        if self._is_subtype_of('%s.type' % (BUILTINS,), context) and len(caller.args) == 3:
+            name_node = next(caller.args[0].infer(context))
             if (isinstance(name_node, Const) and
                     isinstance(name_node.value, six.string_types)):
                 name = name_node.value
@@ -970,7 +970,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                 yield YES
                 return
             result = Class(name, None)
-            bases = next(caller.args[1].infer())
+            bases = next(caller.args[1].infer(context))
             if isinstance(bases, (Tuple, List)):
                 result.bases = bases.itered()
             else:
