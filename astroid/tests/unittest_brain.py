@@ -21,10 +21,12 @@ import unittest
 
 from astroid import MANAGER
 from astroid import bases
+from astroid import nodes
 from astroid import test_utils
 import astroid
 
-class HashlibTC(unittest.TestCase):
+
+class HashlibTest(unittest.TestCase):
     def test_hashlib(self):
         """Tests that brain extensions for hashlib work."""
         hashlib_module = MANAGER.ast_from_module_name('hashlib')
@@ -78,9 +80,9 @@ class NamedTupleTest(unittest.TestCase):
         self.assertIs(bases.YES, next(klass.infer()))
 
 
+    @unittest.skipIf(sys.version_info[0] > 2, 
+                     'namedtuple inference is broken on Python 3')
     def test_namedtuple_advanced_inference(self):
-        if sys.version_info[0] > 2:
-            self.skipTest('Currently broken for Python 3.')
         # urlparse return an object of class ParseResult, which has a
         # namedtuple call and a mixin as base classes
         result = test_utils.extract_node("""
@@ -93,6 +95,14 @@ class NamedTupleTest(unittest.TestCase):
         self.assertEqual(len(instance.getattr('port')), 1)
         with self.assertRaises(astroid.NotFoundError):
             instance.getattr('foo')
+
+
+class ModuleExtenderTest(unittest.TestCase):
+    def testExtensionModules(self):
+        for extender, _ in MANAGER.transforms[nodes.Module]:
+            n = nodes.Module('__main__', None)
+            extender(n)
+
 
 
 if __name__ == '__main__':
