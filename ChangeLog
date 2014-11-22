@@ -1,7 +1,8 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
---
+2014-11-22 -- 1.3.2
+
     * Fixed a crash with invalid subscript index.
  
     * Implement proper base class semantics for Python 3, where
