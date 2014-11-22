@@ -1371,6 +1371,17 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             'object', 
             [base.name for base in klass.ancestors()])
 
+    def test_stop_iteration_leak(self):
+         code = """
+             class Test:
+                 def __init__(self):
+                     self.config = {0: self.config[0]}
+                     self.config[0].test() #@
+         """
+         astroid = test_utils.extract_node(code, __name__)
+         expr = astroid.func.expr
+         self.assertIs(next(expr.infer()), YES)
+                                      
 
 if __name__ == '__main__':
     unittest.main()

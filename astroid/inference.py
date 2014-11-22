@@ -283,6 +283,12 @@ def infer_subscript(self, context=None):
         except (IndexError, TypeError):
             yield YES
             return
+
+        # Prevent inferring if the infered subscript
+        # is the same as the original subscripted object.
+        if self is assigned:
+            yield YES
+            return
         for infered in assigned.infer(context):
             yield infered
     else:
