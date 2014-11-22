@@ -1,12 +1,18 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+--
+    * Fixed a crash with invalid subscript index.
+ 
+    * Implement proper base class semantics for Python 3, where
+      every class derives from object.
+
+    * Allow more fine-grained control over C extension loading
+      in the manager.
+
 2014-11-21 -- 1.3.1
    
     * Fixed a crash issue with the pytest brain module.
-
-    * Fixed a crash with invalid subscript index.
-
 
 2014-11-20 -- 1.3.0
 
