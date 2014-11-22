@@ -89,6 +89,8 @@ class AstroidManager(OptionsProviderMixIn):
             self._mod_file_cache = {}
             self.transforms = collections.defaultdict(list)
             self._failed_import_hooks = []
+            self.always_load_extensions = False
+            self.extension_package_whitelist = set()
 
     def ast_from_file(self, filepath, modname=None, fallback=True, source=False):
         """given a module name, return the astroid object"""
@@ -116,6 +118,16 @@ class AstroidManager(OptionsProviderMixIn):
         from astroid.builder import AstroidBuilder
         return AstroidBuilder(self).string_build('', modname)
 
+    def _can_load_extension(self, modname):
+        if self.always_load_extensions:
+            return True
+        if modutils.is_standard_module(modname):
+            return True
+        parts = modname.split('.')
+        return any(
+            '.'.join(parts[:x]) in self.extension_package_whitelist
+            for x in range(1, len(parts) + 1))
+
     def ast_from_module_name(self, modname, context_file=None):
         """given a module name, return the astroid object"""
         if modname in self.astroid_cache:
@@ -132,7 +144,7 @@ class AstroidManager(OptionsProviderMixIn):
                 if module is not None:
                     return module
             elif mp_type in (imp.C_BUILTIN, imp.C_EXTENSION):
-                if mp_type == imp.C_EXTENSION and not modutils.is_standard_module(modname):
+                if mp_type == imp.C_EXTENSION and not self._can_load_extension(modname): 
                     return self._build_stub_module(modname)
                 try:
                     module = modutils.load_module_from_name(modname)
