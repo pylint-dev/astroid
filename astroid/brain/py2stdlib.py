@@ -95,20 +95,20 @@ def hashlib_transform():
 class %(name)s(object):
   def __init__(self, value=''): pass
   def digest(self):
-    return u''
+    return %(digest)s
   def copy(self):
     return self
   def update(self, value): pass
   def hexdigest(self):
-    return u''
+    return ''
   @property
   def name(self):
     return %(name)r
 '''
-
     algorithms = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')
-    classes = "".join(template % {'name': hashfunc}
-                      for hashfunc in algorithms)
+    classes = "".join(
+        template % {'name': hashfunc, 'digest': 'b""' if PY3K else '""'} 
+        for hashfunc in algorithms)
     return AstroidBuilder(MANAGER).string_build(classes)
 
 
