@@ -18,7 +18,9 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid.  If not, see <http://www.gnu.org/licenses/>.
 """Setup script for astroid."""
+import os
 from setuptools import setup, find_packages
+from setuptools.command import install_lib
 
 pkginfo = 'astroid/__pkginfo__.py'
 
@@ -27,6 +29,13 @@ with open(pkginfo, 'rb') as fobj:
 
 with open('README') as fobj:
     long_description = fobj.read()
+
+class AstroidInstallLib(install_lib.install_lib):
+    def byte_compile(self, files):
+        test_datadir = os.path.join('astroid', 'tests', 'testdata')
+        files = [f for f in files if test_datadir not in f]
+        install_lib.install_lib.byte_compile(self, files)
+
 
 
 def install():
@@ -42,6 +51,7 @@ def install():
                  include_package_data = True,
                  install_requires = install_requires,
                  packages = find_packages(),
+                 cmdclass={'install_lib': AstroidInstallLib}
                  )
 
 
