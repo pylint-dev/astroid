@@ -256,14 +256,23 @@ class Module(LocalsDictNodeNG):
         self.locals = self.globals = {}
         self.body = []
         self.future_imports = set()
+        self._streams = []
 
-    @cachedproperty
+    @property
     def file_stream(self):
         if self.file_bytes is not None:
             return BytesIO(self.file_bytes)
         if self.file is not None:
-            return open(self.file, 'rb')
+            stream = open(self.file, 'rb')
+            self._streams.append(stream)
+            return stream
         return None
+
+    def close(self):
+        """Close the underlying file streams."""
+        for stream in self._streams:
+            stream.close()
+        self._streams[:] = []
 
     def block_range(self, lineno):
         """return block line numbers.

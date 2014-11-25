@@ -188,12 +188,15 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         with open(path, 'rb') as file_io:
             self.assertEqual(astroid.file_stream.read(), file_io.read())
 
-    def test_file_stream_cached(self):
-        # Test that file_stream is cached. Previously,
-        # a new file was opened each time file_stream was requested.
-        data = '''stub'''
-        astroid = test_utils.build_module(data, 'in_memory')
-        self.assertIs(astroid.file_stream, astroid.file_stream)
+    def test_file_stream_api(self):
+        path = resources.find('data/all.py')
+        astroid = builder.AstroidBuilder().file_build(path, 'all')
+        self.assertIsNot(astroid.file_stream, astroid.file_stream)
+        self.assertEqual(len(astroid._streams), 2)
+        for stream in astroid._streams:
+            self.assertFalse(stream.closed)
+        astroid.close()
+        self.assertEqual(astroid._streams, [])
 
 
 class FunctionNodeTest(ModuleLoader, unittest.TestCase):
