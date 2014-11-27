@@ -20,7 +20,7 @@
 :type PY_SOURCE_EXTS: tuple(str)
 :var PY_SOURCE_EXTS: list of possible python source file extension
 
-:type STD_LIB_DIRS: list of str
+:type STD_LIB_DIRS: set of str
 :var STD_LIB_DIRS: directories where standard modules are located
 
 :type BUILTIN_MODULES: dict
@@ -54,31 +54,33 @@ else:
     PY_COMPILED_EXTS = ('so',)
 
 # Notes about STD_LIB_DIRS
-# Consider arch-specific installation for STD_LIB_DIR definition
+# Consider arch-specific installation for STD_LIB_DIRS definition
 # :mod:`distutils.sysconfig` contains to much hardcoded values to rely on
 #
 # :see: `Problems with /usr/lib64 builds <http://bugs.python.org/issue1294959>`_
 # :see: `FHS <http://www.pathname.com/fhs/pub/fhs-2.3.html#LIBLTQUALGTALTERNATEFORMATESSENTIAL>`_
 try:
-    # The explicit prefix is to work around a patch in virtualenv that
+    # The explicit sys.prefix is to work around a patch in virtualenv that
     # replaces the 'real' sys.prefix (i.e. the location of the binary)
     # with the prefix from which the virtualenv was created. This throws
     # off the detection logic for standard library modules, thus the
     # workaround.
-    STD_LIB_DIRS = [
+    STD_LIB_DIRS = {
         get_python_lib(standard_lib=True, prefix=sys.prefix),
-        get_python_lib(standard_lib=True)]
+        # Take care of installations where exec_prefix != prefix.
+        get_python_lib(standard_lib=True, prefix=sys.exec_prefix),
+        get_python_lib(standard_lib=True)}
     if os.name == 'nt':
-        STD_LIB_DIRS.append(os.path.join(sys.prefix, 'dlls'))
+        STD_LIB_DIRS.add(os.path.join(sys.prefix, 'dlls'))
         try:
             # real_prefix is defined when running inside virtualenv.
-            STD_LIB_DIRS.append(os.path.join(sys.real_prefix, 'dlls'))
+            STD_LIB_DIRS.add(os.path.join(sys.real_prefix, 'dlls'))
         except AttributeError:
             pass
 # get_python_lib(standard_lib=1) is not available on pypy, set STD_LIB_DIR to
 # non-valid path, see https://bugs.pypy.org/issue1164
 except DistutilsPlatformError:
-    STD_LIB_DIRS = []
+    STD_LIB_DIRS = set()
 
 EXT_LIB_DIR = get_python_lib()
 
