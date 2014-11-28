@@ -105,5 +105,3 @@ infer_set = partial(
 register_builtin_transform(infer_tuple, 'tuple')
 register_builtin_transform(infer_set, 'set')
 register_builtin_transform(infer_list, 'list')
-# Not exactly the same as set, though.
-register_builtin_transform(infer_set, 'frozenset')

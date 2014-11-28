@@ -1429,9 +1429,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
          set({1: 2}) #@
          set(var) #@
          set(tuple([1])) #@
-         frozenset([1, 2, 1]) #@
-         frozenset({1: 2, 2: 3}) #@
-         frozenset() #@
 
          set(set(tuple([4, 5, set([2])]))) #@         
          set(None) #@
@@ -1448,11 +1445,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
          tuple_inference(astroid[4], [1])
          tuple_inference(astroid[5], [1, 2])
          tuple_inference(astroid[6], [1])
-         tuple_inference(astroid[7], [1, 2])
-         tuple_inference(astroid[8], [1, 2])
-         tuple_inference(astroid[9], [])
 
-         for node in astroid[10:]:
+         for node in astroid[7:]:
              infered = next(node.infer())
              self.assertIsInstance(infered, Instance)
              self.assertEqual(infered.qname(), "{}.set".format(BUILTINS))
@@ -1495,13 +1489,11 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
          list(b"abc") #@
          tuple(b"abc") #@
          set(b"abc") #@
-         frozenset(b"abc") #@
          """
          astroid = test_utils.extract_node(code, __name__)
          self._test_builtin_inference(nodes.List, astroid[0], [97, 98, 99])
          self._test_builtin_inference(nodes.Tuple, astroid[1], [97, 98, 99])
          self._test_builtin_inference(nodes.Set, astroid[2], [97, 98, 99])
-         self._test_builtin_inference(nodes.Set, astroid[3], [97, 98, 99])
 
 
 if __name__ == '__main__':
