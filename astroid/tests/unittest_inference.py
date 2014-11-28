@@ -529,8 +529,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         name = test_utils.extract_node(code, __name__)
         it = name.infer()
         tags = next(it)
-        self.assertEqual(tags.__class__, Instance)
-        self.assertEqual(tags._proxied.name, 'list')
+        self.assertIsInstance(tags, nodes.List)
+        self.assertEqual(tags.elts, [])
         with self.assertRaises(StopIteration):
             next(it)
 
@@ -1368,7 +1368,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 pass
         """)
         self.assertIn(
-            'object', 
+            'object',
             [base.name for base in klass.ancestors()])
 
     def test_stop_iteration_leak(self):
@@ -1381,7 +1381,114 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
          astroid = test_utils.extract_node(code, __name__)
          expr = astroid.func.expr
          self.assertIs(next(expr.infer()), YES)
-                                      
+
+    def _test_builtin_inference(self, node_type, node, elts):
+         infered = next(node.infer())
+         self.assertIsInstance(infered, node_type)
+         self.assertEqual(sorted(elt.value for elt in infered.elts),
+                          elts)
+
+    def test_tuple_builtin_inference(self):
+         code = """
+         var = (1, 2)
+         tuple() #@
+         tuple([1]) #@
+         tuple({2}) #@
+         tuple("abc") #@
+         tuple({1: 2}) #@
+         tuple(var) #@
+         tuple(tuple([1])) #@
+         
+         tuple(None) #@
+         tuple(1) #@
+         tuple(1, 2) #@
+         """
+         astroid = test_utils.extract_node(code, __name__)
+         tuple_inference = partial(self._test_builtin_inference, nodes.Tuple)
+
+         tuple_inference(astroid[0], [])
+         tuple_inference(astroid[1], [1])
+         tuple_inference(astroid[2], [2])
+         tuple_inference(astroid[3], ["a", "b", "c"])
+         tuple_inference(astroid[4], [1])
+         tuple_inference(astroid[5], [1, 2])
+         tuple_inference(astroid[6], [1])
+
+         for node in astroid[7:]:
+             infered = next(node.infer())
+             self.assertIsInstance(infered, Instance)
+             self.assertEqual(infered.qname(), "{}.tuple".format(BUILTINS))
+
+    def test_set_builtin_inference(self):
+         code = """
+         var = (1, 2)
+         set() #@
+         set([1, 2, 1]) #@
+         set({2, 3, 1}) #@
+         set("abcab") #@
+         set({1: 2}) #@
+         set(var) #@
+         set(tuple([1])) #@
+         frozenset([1, 2, 1]) #@
+         frozenset({1: 2, 2: 3}) #@
+         frozenset() #@
+
+         set(set(tuple([4, 5, set([2])]))) #@         
+         set(None) #@
+         set(1) #@
+         set(1, 2) #@
+         """
+         astroid = test_utils.extract_node(code, __name__)
+         tuple_inference = partial(self._test_builtin_inference, nodes.Set)
+
+         tuple_inference(astroid[0], [])
+         tuple_inference(astroid[1], [1, 2])
+         tuple_inference(astroid[2], [1, 2, 3])
+         tuple_inference(astroid[3], ["a", "b", "c"])
+         tuple_inference(astroid[4], [1])
+         tuple_inference(astroid[5], [1, 2])
+         tuple_inference(astroid[6], [1])
+         tuple_inference(astroid[7], [1, 2])
+         tuple_inference(astroid[8], [1, 2])
+         tuple_inference(astroid[9], [])
+
+         for node in astroid[10:]:
+             infered = next(node.infer())
+             self.assertIsInstance(infered, Instance)
+             self.assertEqual(infered.qname(), "{}.set".format(BUILTINS))
+
+    def test_list_builtin_inference(self):
+         code = """
+         var = (1, 2)
+         list() #@
+         list([1, 2, 1]) #@
+         list({2, 3, 1}) #@
+         list("abcab") #@
+         list({1: 2}) #@
+         list(var) #@
+         list(tuple([1])) #@
+
+         list(list(tuple([4, 5, list([2])]))) #@         
+         list(None) #@
+         list(1) #@
+         list(1, 2) #@
+         """
+         astroid = test_utils.extract_node(code, __name__)
+         tuple_inference = partial(self._test_builtin_inference, nodes.List)
+
+         tuple_inference(astroid[0], [])
+         tuple_inference(astroid[1], [1, 1, 2])
+         tuple_inference(astroid[2], [1, 2, 3])
+         tuple_inference(astroid[3], ["a", "a", "b", "b", "c"])
+         tuple_inference(astroid[4], [1])
+         tuple_inference(astroid[5], [1, 2])
+         tuple_inference(astroid[6], [1])
+
+         for node in astroid[7:]:
+             infered = next(node.infer())
+             self.assertIsInstance(infered, Instance)
+             self.assertEqual(infered.qname(), "{}.list".format(BUILTINS))
+
 
 if __name__ == '__main__':
     unittest.main()
