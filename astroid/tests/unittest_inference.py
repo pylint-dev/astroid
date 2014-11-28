@@ -983,7 +983,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             print(Browser)
             b = Browser()
         '''
-        astroid = test_utils.build_string(data, __name__)
+        astroid = test_utils.build_module(data, __name__)
         browser = next(test_utils.get_name_node(astroid, 'Browser').infer())
         self.assertIsInstance(browser, nodes.Class)
         bopen = list(browser.igetattr('open'))
