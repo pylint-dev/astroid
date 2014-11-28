@@ -64,7 +64,7 @@ def _generic_transform(arg, klass, iterables, build_elts):
             raise UseInferenceDefault()
         elts = [item[0].value for item in arg.items]
     elif (isinstance(arg, nodes.Const) and
-          isinstance(arg.value, six.text_type)):
+          isinstance(arg.value, (six.string_types, six.binary_type))):
         elts = arg.value
     else:
         return

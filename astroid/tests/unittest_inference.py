@@ -1489,6 +1489,20 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
              self.assertIsInstance(infered, Instance)
              self.assertEqual(infered.qname(), "{}.list".format(BUILTINS))
 
+    @test_utils.require_version('3.0')
+    def test_builtin_inference_py3k(self):
+         code = """
+         list(b"abc") #@
+         tuple(b"abc") #@
+         set(b"abc") #@
+         frozenset(b"abc") #@
+         """
+         astroid = test_utils.extract_node(code, __name__)
+         self._test_builtin_inference(nodes.List, astroid[0], [97, 98, 99])
+         self._test_builtin_inference(nodes.Tuple, astroid[1], [97, 98, 99])
+         self._test_builtin_inference(nodes.Set, astroid[2], [97, 98, 99])
+         self._test_builtin_inference(nodes.Set, astroid[3], [97, 98, 99])
+
 
 if __name__ == '__main__':
     unittest.main()
