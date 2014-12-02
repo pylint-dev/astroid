@@ -18,6 +18,7 @@ def register_builtin_transform(transform, builtin_name):
         if result:
             result.parent = node
             result.lineno = node.lineno
+            result.col_offset = node.col_offset
         return iter([result])
 
     MANAGER.register_transform(nodes.CallFunc,
