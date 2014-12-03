@@ -1388,6 +1388,14 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
          self.assertEqual(sorted(elt.value for elt in infered.elts),
                           elts)
 
+    def _test_dict_inference(self, node, expected):
+        infered = next(node.infer())
+        self.assertIsInstance(infered, nodes.Dict)
+
+        elts = set([(key.value, value.value)
+                    for (key, value) in infered.items])
+        self.assertEqual(sorted(elts), sorted(expected.items()))
+
     def test_tuple_builtin_inference(self):
          code = """
          var = (1, 2)
@@ -1494,6 +1502,50 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
          self._test_builtin_inference(nodes.List, astroid[0], [97, 98, 99])
          self._test_builtin_inference(nodes.Tuple, astroid[1], [97, 98, 99])
          self._test_builtin_inference(nodes.Set, astroid[2], [97, 98, 99])
+
+    def test_dict_inference(self):
+        code = """
+        dict() #@
+        dict(a=1, b=2, c=3) #@
+        dict([(1, 2), (2, 3)]) #@
+        dict([[1, 2], [2, 3]]) #@
+        dict([(1, 2), [2, 3]]) #@
+        dict([('a', 2)], b=2, c=3) #@
+        dict({1: 2}) #@
+        dict({'c': 2}, a=4, b=5) #@
+        def func():
+            return dict(a=1, b=2)
+        func() #@
+        var = {'x': 2, 'y': 3}
+        dict(var, a=1, b=2) #@
+         
+        dict([1, 2, 3]) #@
+        dict([(1, 2), (1, 2, 3)]) #@
+        dict({1: 2}, {1: 2}) #@
+        dict({1: 2}, (1, 2)) #@
+        dict({1: 2}, (1, 2), a=4) #@
+        dict([(1, 2), ([4, 5], 2)]) #@
+        dict([None,  None]) #@
+
+        def using_unknown_kwargs(**kwargs):
+            return dict(**kwargs)
+        using_unknown_kwargs(a=1, b=2) #@
+        """
+        astroid = test_utils.extract_node(code, __name__)
+        self._test_dict_inference(astroid[0], {})
+        self._test_dict_inference(astroid[1], {'a': 1, 'b': 2, 'c': 3})
+        for i in range(2, 5):
+            self._test_dict_inference(astroid[i], {1: 2, 2: 3})
+        self._test_dict_inference(astroid[5], {'a': 2, 'b': 2, 'c': 3})
+        self._test_dict_inference(astroid[6], {1: 2})
+        self._test_dict_inference(astroid[7], {'c': 2, 'a': 4, 'b': 5})
+        self._test_dict_inference(astroid[8], {'a': 1, 'b': 2})
+        self._test_dict_inference(astroid[9], {'x': 2, 'y': 3, 'a': 1, 'b': 2})
+
+        for node in astroid[10:]:
+            infered = next(node.infer())
+            self.assertIsInstance(infered, Instance)
+            self.assertEqual(infered.qname(), "{}.dict".format(BUILTINS))
 
 
 if __name__ == '__main__':
