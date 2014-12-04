@@ -590,7 +590,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         '''
         func, retval = test_utils.extract_node(code, __name__)
         self.assertEqual(
-            [i.value for i in func.ilookup('something')], 
+            [i.value for i in func.ilookup('something')],
             [1.0, 1.0j])
         self.assertEqual(
             [i.value for i in retval.infer()],
@@ -1251,7 +1251,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         code = """
             def nested():
                 from threading import Thread
-        
+
                 class NestedThread(Thread):
                     def __init__(self):
                         Thread.__init__(self)
@@ -1406,7 +1406,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
          tuple({1: 2}) #@
          tuple(var) #@
          tuple(tuple([1])) #@
-         
+
          tuple(None) #@
          tuple(1) #@
          tuple(1, 2) #@
@@ -1438,7 +1438,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
          set(var) #@
          set(tuple([1])) #@
 
-         set(set(tuple([4, 5, set([2])]))) #@         
+         set(set(tuple([4, 5, set([2])]))) #@
          set(None) #@
          set(1) #@
          set(1, 2) #@
@@ -1470,7 +1470,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
          list(var) #@
          list(tuple([1])) #@
 
-         list(list(tuple([4, 5, list([2])]))) #@         
+         list(list(tuple([4, 5, list([2])]))) #@
          list(None) #@
          list(1) #@
          list(1, 2) #@
@@ -1518,7 +1518,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         func() #@
         var = {'x': 2, 'y': 3}
         dict(var, a=1, b=2) #@
-         
+
         dict([1, 2, 3]) #@
         dict([(1, 2), (1, 2, 3)]) #@
         dict({1: 2}, {1: 2}) #@
