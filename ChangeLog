@@ -11,6 +11,9 @@ Change log for the astroid package (used to be astng)
 
     * Add inference tips for 'tuple', 'list', 'dict' and 'set' builtins.
 
+    * Add brain definition for most string and unicode methods
+
+
 2014-11-22 -- 1.3.2
 
     * Fixed a crash with invalid subscript index.

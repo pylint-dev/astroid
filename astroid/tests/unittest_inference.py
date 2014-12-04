@@ -68,6 +68,13 @@ def partialmethod(func, arg):
 
 class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
+    # additional assertInfer* method for builtin types
+
+    def assertInferConst(self, node, expected):
+        infered = next(node.infer())
+        self.assertIsInstance(infered, nodes.Const)
+        self.assertEqual(infered.value, expected)
+
     def assertInferDict(self, node, expected):
         infered = next(node.infer())
         self.assertIsInstance(infered, nodes.Dict)
@@ -75,7 +82,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         elts = set([(key.value, value.value)
                     for (key, value) in infered.items])
         self.assertEqual(sorted(elts), sorted(expected.items()))
-    # additional assertInfer* method for builtin container types
+
     assertInferTuple = partialmethod(_assertInferElts, nodes.Tuple)
     assertInferList = partialmethod(_assertInferElts, nodes.List)
     assertInferSet = partialmethod(_assertInferElts, nodes.Set)
@@ -1555,6 +1562,68 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertIsInstance(infered, Instance)
             self.assertEqual(infered.qname(), "{}.dict".format(BUILTINS))
 
+
+    def test_str_methods(self):
+         code = """
+         ' '.decode() #@
+
+         ' '.encode() #@
+         ' '.join('abcd') #@
+         ' '.replace('a', 'b') #@
+         ' '.format('a') #@
+         ' '.capitalize() #@
+         ' '.title() #@
+         ' '.lower() #@
+         ' '.upper() #@
+         ' '.swapcase() #@
+         ' '.strip() #@
+         ' '.rstrip() #@
+         ' '.lstrip() #@
+         ' '.rjust() #@
+         ' '.ljust() #@
+         ' '.center() #@
+
+         ' '.index() #@
+         ' '.find() #@
+         ' '.count() #@
+         """
+         ast = test_utils.extract_node(code, __name__)
+         self.assertInferConst(ast[0], u'')
+         for i in range(1, 16):
+             self.assertInferConst(ast[i], '')
+         for i in range(16, 19):
+             self.assertInferConst(ast[i], 0)
+
+    def test_unicode_methods(self):
+         code = """
+         u' '.encode() #@
+
+         u' '.decode() #@
+         u' '.join('abcd') #@
+         u' '.replace('a', 'b') #@
+         u' '.format('a') #@
+         u' '.capitalize() #@
+         u' '.title() #@
+         u' '.lower() #@
+         u' '.upper() #@
+         u' '.swapcase() #@
+         u' '.strip() #@
+         u' '.rstrip() #@
+         u' '.lstrip() #@
+         u' '.rjust() #@
+         u' '.ljust() #@
+         u' '.center() #@
+
+         u' '.index() #@
+         u' '.find() #@
+         u' '.count() #@
+         """
+         ast = test_utils.extract_node(code, __name__)
+         self.assertInferConst(ast[0], '')
+         for i in range(1, 16):
+             self.assertInferConst(ast[i], u'')
+         for i in range(16, 19):
+             self.assertInferConst(ast[i], 0)
 
 if __name__ == '__main__':
     unittest.main()
