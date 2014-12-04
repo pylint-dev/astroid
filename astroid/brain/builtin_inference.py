@@ -13,6 +13,9 @@ from astroid.builder import AstroidBuilder
 
 def _extend_str(class_node, rvalue):
     """function to extend builtin str/unicode class"""
+    # TODO(cpopa): this approach will make astroid to believe
+    # that some arguments can be passed by keyword, but
+    # unfortunately, strings and bytes don't accept keyword arguments.
     code = dedent('''
     class whatever(object):
         def join(self, iterable):
@@ -25,16 +28,35 @@ def _extend_str(class_node, rvalue):
             return ''
         def decode(self, encoding='ascii', errors=None):
             return u''
+        def capitalize(self):
+            return {rvalue}
+        def title(self):
+            return {rvalue}
+        def lower(self):
+            return {rvalue}
+        def upper(self):
+            return {rvalue}
+        def swapcase(self):
+            return {rvalue}
+        def index(self, sub, start=None, end=None):
+            return 0
+        def find(self, sub, start=None, end=None):
+            return 0
+        def count(self, sub, start=None, end=None):
+            return 0
+        def strip(self, chars=None):
+            return {rvalue}
+        def lstrip(self, chars=None):
+            return {rvalue}
+        def rstrip(self, chars=None):
+            return {rvalue}
+        def rjust(self, width, fillchar=None):
+            return {rvalue} 
+        def center(self, width, fillchar=None):
+            return {rvalue}
+        def ljust(self, width, fillchar=None):
+            return {rvalue}
     ''')
-    int_meth_str = '    def %s(self, sub, start=None, end=None): return 0'
-    int_methods = [int_meth_str % meth for meth in ('index', 'find', 'count')]
-    code += '\n' + '\n'.join(int_methods)
-    str_meth_str = "    def %s(self): return {rvalue}  "
-    str_methods = [str_meth_str % meth for meth in ('capitalize', 'title', 'lower', 'upper', 'swapcase',
-                                                    'strip', 'rstrip', 'lstrip',
-                                                    'rjust', 'ljust', 'center')]
-    code += '\n' + '\n'.join(str_methods)
-    code += '\n'
     code = code.format(rvalue=rvalue)
     fake = AstroidBuilder(MANAGER).string_build(code)['whatever']
     for method in fake.mymethods():
