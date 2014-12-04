@@ -1513,7 +1513,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
          set(b"abc") #@
          """
          ast = test_utils.extract_node(code, __name__)
-         # XXX why ints? would expect not list('abc')
          self.assertInferList(ast[0], [97, 98, 99])
          self.assertInferTuple(ast[1], [97, 98, 99])
          self.assertInferSet(ast[2], [97, 98, 99])
