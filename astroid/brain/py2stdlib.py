@@ -327,47 +327,4 @@ register_module_extender(MANAGER, 'collections', collections_transform)
 register_module_extender(MANAGER, 'pkg_resourcds', pkg_resources_transform)
 register_module_extender(MANAGER, 'subprocess', subprocess_transform)
 
-def _extend_str(class_node, rvalue):
-    """function to extend builtin str/unicode class"""
-    code = dedent('''
-    class whatever(object):
-        def join(self, iterable):
-            return {rvalue}
-        def replace(self, old, new, count=None):
-            return {rvalue}
-        def format(self, *args, **kwargs):
-            return {rvalue}
-        def encode(self, encoding='ascii', errors=None):
-            return ''
-        def decode(self, encoding='ascii', errors=None):
-            return u''
-    ''')
-    int_meth_str = '    def %s(self, sub, start=None, end=None): return 0'
-    int_methods = [int_meth_str % meth for meth in ('index', 'find', 'count')]
-    code += '\n' + '\n'.join(int_methods)
-    str_meth_str = "    def %s(self): return {rvalue}  "
-    str_methods = [str_meth_str % meth for meth in ('capitalize', 'title', 'lower', 'upper', 'swapcase',
-                                                    'strip', 'rstrip', 'lstrip',
-                                                    'rjust', 'ljust', 'center')]
-    code += '\n' + '\n'.join(str_methods)
-    code += '\n'
-    code = code.format(rvalue=rvalue)
-    fake = AstroidBuilder(MANAGER).string_build(code)['whatever']
-    for method in fake.mymethods():
-        class_node.locals[method.name] = [method]
-        method.parent = class_node
-
-def extend_builtins(class_transforms):
-    from astroid.bases import BUILTINS
-    builtin_ast = MANAGER.astroid_cache[BUILTINS]
-    for class_name, transform in class_transforms.items():
-        transform(builtin_ast[class_name])
-
-if PY3K:
-    extend_builtins({'bytes': partial(_extend_str, rvalue="b''"),
-                     'str': partial(_extend_str, rvalue="''")})
-else:
-    extend_builtins({'str': partial(_extend_str, rvalue="''"),
-                     'unicode': partial(_extend_str, rvalue="u''")})
-
 

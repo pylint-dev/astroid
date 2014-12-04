@@ -1,10 +1,15 @@
 """Astroid hooks for various builtins."""
+
+import sys
 from functools import partial
+from textwrap import dedent
 
 import six
 from astroid import (MANAGER, UseInferenceDefault,
                      inference_tip, YES, InferenceError, UnresolvableName)
 from astroid import nodes
+from astroid.builder import AstroidBuilder
+
 
 def _extend_str(class_node, rvalue):
     """function to extend builtin str/unicode class"""
@@ -42,7 +47,7 @@ def extend_builtins(class_transforms):
     for class_name, transform in class_transforms.items():
         transform(builtin_ast[class_name])
 
-if PY3K:
+if sys.version_info > (3, 0):
     extend_builtins({'bytes': partial(_extend_str, rvalue="b''"),
                      'str': partial(_extend_str, rvalue="''")})
 else:
