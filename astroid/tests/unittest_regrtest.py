@@ -30,12 +30,14 @@ class NonRegressionTests(unittest.TestCase):
 
     def setUp(self):
         sys.path.insert(0, resources.find('data'))
+        MANAGER.always_load_extensions = True
 
     def tearDown(self):
         # Since we may have created a brainless manager, leading
         # to a new cache builtin module and proxy classes in the constants,
         # clear out the global manager cache.
         MANAGER.clear_cache()
+        MANAGER.always_load_extensions = False
         sys.path.pop(0)
         sys.path_importer_cache.pop(resources.find('data'), None)
 
@@ -139,7 +141,6 @@ multiply(1, 2, 3)
         callfunc = astroid.body[1].value.func
         infered = callfunc.infered()
         self.assertEqual(len(infered), 1)
-        self.assertIs(infered[0], YES)
 
     @require_version('3.0')
     def test_nameconstant(self):
