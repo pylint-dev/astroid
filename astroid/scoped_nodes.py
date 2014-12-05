@@ -1348,5 +1348,18 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
     # Cached, because inferring them all the time is expensive
     @cached
     def slots(self):
-        """ Return all the slots for this node. """
-        return list(self._islots())
+        """Get all the slots for this node.
+
+        If the class doesn't define any slot, through `__slots__`
+        variable, then this function will return a None.
+        Also, it will return None in the case the slots weren't inferred.
+        Otherwise, it will return a list of slot names.
+        """
+        slots = self._islots()
+        try:
+            first = next(slots)
+        except StopIteration:
+            # The class doesn't have a __slots__ definition.
+            return None
+        return [first] + list(slots)
+

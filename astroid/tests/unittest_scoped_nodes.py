@@ -973,6 +973,10 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                 __slots__ = dedent.__name__
             class Eight(object):
                 __slots__ = ("parens")
+            class Ninth(object):
+                pass
+            class Ten(object):
+                __slots__ = dict({"a": "b", "c": "d"})
         """)
         first = astroid['First']
         first_slots = first.slots()
@@ -988,7 +992,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(second_slots[0].value, "a")
 
         third_slots = astroid['Third'].slots()
-        self.assertEqual(third_slots, [])
+        self.assertIsNone(third_slots)
 
         fourth_slots = astroid['Fourth'].slots()
         self.assertEqual(len(fourth_slots), 2)
@@ -998,18 +1002,26 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(fourth_slots[1].value, "b")
 
         fifth_slots = astroid['Fifth'].slots()
-        self.assertEqual(fifth_slots, [])
+        self.assertIsNone(fifth_slots)
 
         sixth_slots = astroid['Sixth'].slots()
-        self.assertEqual(sixth_slots, [])
+        self.assertIsNone(sixth_slots)
 
         seventh_slots = astroid['Seventh'].slots()
-        self.assertEqual(len(seventh_slots), 0)
+        self.assertIsNone(seventh_slots)
 
         eight_slots = astroid['Eight'].slots()
         self.assertEqual(len(eight_slots), 1)
         self.assertIsInstance(eight_slots[0], nodes.Const)
         self.assertEqual(eight_slots[0].value, "parens")
+
+        self.assertIsNone(astroid['Ninth'].slots())
+
+        tenth_slots = astroid['Ten'].slots()
+        self.assertEqual(len(tenth_slots), 2)
+        self.assertEqual(
+            [slot.value for slot in tenth_slots],
+            ["a", "c"])
 
 
 if __name__ == '__main__':

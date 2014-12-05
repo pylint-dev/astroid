@@ -13,6 +13,11 @@ Change log for the astroid package (used to be astng)
 
     * Add brain definition for most string and unicode methods
 
+    * Changed the API for Class.slots. It returns None when the class
+      doesn't define any slots. Previously, for both the cases where
+      the class didn't have slots defined and when it had an empty list
+      of slots, Class.slots returned an empty list.
+
 
 2014-11-22 -- 1.3.2
 
