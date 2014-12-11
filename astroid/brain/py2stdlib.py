@@ -324,7 +324,7 @@ MANAGER.register_transform(nodes.CallFunc, inference_tip(infer_enum),
 MANAGER.register_transform(nodes.Class, infer_enum_class)
 register_module_extender(MANAGER, 'hashlib', hashlib_transform)
 register_module_extender(MANAGER, 'collections', collections_transform)
-register_module_extender(MANAGER, 'pkg_resourcds', pkg_resources_transform)
+register_module_extender(MANAGER, 'pkg_resources', pkg_resources_transform)
 register_module_extender(MANAGER, 'subprocess', subprocess_transform)
 
 
