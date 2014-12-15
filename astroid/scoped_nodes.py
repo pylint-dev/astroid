@@ -36,7 +36,7 @@ from logilab.common.compat import builtins
 from logilab.common.decorators import cached, cachedproperty
 
 from astroid.exceptions import NotFoundError, \
-     AstroidBuildingException, InferenceError
+     AstroidBuildingException, InferenceError, ResolveError
 from astroid.node_classes import Const, DelName, DelAttr, \
      Dict, From, List, Pass, Raise, Return, Tuple, Yield, YieldFrom, \
      LookupMixIn, const_factory as cf, unpack_infer, Name, CallFunc
@@ -49,6 +49,33 @@ from astroid.manager import AstroidManager
 
 ITER_METHODS = ('__iter__', '__getitem__')
 PY3K = sys.version_info >= (3, 0)
+
+def _c3_merge(sequences):
+    """Merges MROs in *sequences* to a single MRO using the C3 algorithm.
+
+    Adapted from http://www.python.org/download/releases/2.3/mro/.
+
+    """
+    result = []
+    while True:
+        sequences = [s for s in sequences if s]   # purge empty sequences
+        if not sequences:
+            return result
+        for s1 in sequences:   # find merge candidates among seq heads
+            candidate = s1[0]
+            for s2 in sequences:
+                if candidate in s2[1:]:
+                    candidate = None
+                    break      # reject the current head, it appears later
+            else:
+                break
+        if not candidate:
+            raise ResolveError("Inconsistent hierarchy")
+        result.append(candidate)
+        # remove the chosen candidate
+        for seq in sequences:
+            if seq[0] == candidate:
+                del seq[0]
 
 
 def remove_nodes(func, cls):
@@ -1378,3 +1405,16 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             return None
         return [first] + list(slots)
 
+    def mro(self):
+        """Get the method resolution order, using C3 linearization.
+
+        It returns the list of ancestors sorted by the mro.
+        This will raise `NotImplementedError` for old-style classes, since
+        they don't have the concept of MRO.
+        """
+        if not self.newstyle:
+            raise NotImplementedError(
+                "Could not obtain mro for newstyle classes.")
+
+        bases = list(self.ancestors(recurs=False))
+        return _c3_merge([[self]] + [base.mro() for base in bases] + [bases])

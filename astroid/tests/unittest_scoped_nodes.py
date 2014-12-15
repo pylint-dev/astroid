@@ -25,7 +25,7 @@ import unittest
 import warnings
 
 from astroid import YES, builder, nodes, scoped_nodes, \
-     InferenceError, NotFoundError, NoDefault
+     InferenceError, NotFoundError, NoDefault, ResolveError
 from astroid.bases import BUILTINS, Instance, BoundMethod, UnboundMethod
 from astroid import __pkginfo__
 from astroid import test_utils
@@ -1042,6 +1042,64 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(
             [slot.value for slot in tenth_slots],
             ["a", "c"])
+
+    def assertEqualMro(self, klass, expected_mro):
+        self.assertEqual(
+            [member.name for member in klass.mro()],
+            expected_mro)
+
+    @test_utils.require_version(maxver='3.0')
+    def test_no_mro_for_old_style(self):
+        node = test_utils.extract_node("""
+        class Old: pass""")
+        with self.assertRaises(NotImplementedError) as cm:
+            node.mro()
+        self.assertEqual(str(cm.exception), "Could not obtain mro for "
+                                            "newstyle classes.")
+
+    def test_mro(self):
+        astroid = test_utils.build_module("""
+        class C(object): pass
+        class D(dict, C): pass
+
+        class A1(object): pass
+        class B1(A1): pass
+        class C1(A1): pass
+        class D1(B1, C1): pass
+        class E1(C1, B1): pass
+        class F1(D1, E1): pass
+        class G1(E1, D1): pass
+
+        class Boat(object): pass
+        class DayBoat(Boat): pass
+        class WheelBoat(Boat): pass
+        class EngineLess(DayBoat): pass
+        class SmallMultihull(DayBoat): pass
+        class PedalWheelBoat(EngineLess, WheelBoat): pass
+        class SmallCatamaran(SmallMultihull): pass
+        class Pedalo(PedalWheelBoat, SmallCatamaran): pass
+        
+        """)
+        self.assertEqualMro(astroid['D'], ['D', 'dict', 'C', 'object'])
+        self.assertEqualMro(astroid['D1'], ['D1', 'B1', 'C1', 'A1', 'object'])
+        self.assertEqualMro(astroid['E1'], ['E1', 'C1', 'B1', 'A1', 'object'])
+        with self.assertRaises(ResolveError):
+            astroid['F1'].mro()
+        with self.assertRaises(ResolveError):
+            astroid['G1'].mro()
+        self.assertEqualMro(
+            astroid['PedalWheelBoat'],
+            ["PedalWheelBoat", "EngineLess",
+             "DayBoat", "WheelBoat", "Boat", "object"])
+
+        self.assertEqualMro(
+            astroid["SmallCatamaran"],
+            ["SmallCatamaran", "SmallMultihull", "DayBoat", "Boat", "object"])
+
+        self.assertEqualMro(
+            astroid["Pedalo"],
+            ["Pedalo", "PedalWheelBoat", "EngineLess", "SmallCatamaran",
+             "SmallMultihull", "DayBoat", "WheelBoat", "Boat", "object"])
 
 
 if __name__ == '__main__':

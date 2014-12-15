@@ -22,6 +22,9 @@ Change log for the astroid package (used to be astng)
       the class didn't have slots defined and when it had an empty list
       of slots, Class.slots returned an empty list.
 
+    * Add a new method to Class nodes, 'mro', for obtaining the
+      the method resolution order of the class.
+
 
 2014-11-22 -- 1.3.2
 
