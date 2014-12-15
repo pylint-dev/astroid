@@ -3,11 +3,15 @@ Change log for the astroid package (used to be astng)
 
 --
 
-    * Restore the file_stream API. Module.file_stream is again
-      a property, but each opened file is cached. Module node
-      gains a new API, 'close', which should be called for closing
-      all the gathered file streams. This is consistent with how
-      the API worked pre-astroid 1.3 (meaning that no seek is required).
+    * Restore file_stream to a property, but deprecate it in favour of
+      the newly added method Module.stream. By using a method instead of a
+      property, it will be easier to properly close the file right
+      after it is used, which will ensure that no file descriptors are
+      leaked. Until now, due to the fact that a module was cached,
+      it was not possible to close the file_stream anywhere.
+      file_stream will start emitting PendingDeprecationWarnings in
+      astroid 1.4, DeprecationWarnings in astroid 1.5 and it will
+      be finally removed in astroid 1.6.
 
     * Add inference tips for 'tuple', 'list', 'dict' and 'set' builtins.
 

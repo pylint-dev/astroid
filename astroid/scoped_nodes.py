@@ -24,6 +24,7 @@ from __future__ import with_statement
 __doctype__ = "restructuredtext en"
 
 import sys
+import warnings
 from itertools import chain
 try:
     from io import BytesIO
@@ -256,23 +257,37 @@ class Module(LocalsDictNodeNG):
         self.locals = self.globals = {}
         self.body = []
         self.future_imports = set()
-        self._streams = []
 
-    @property
-    def file_stream(self):
+    def _get_stream(self):
         if self.file_bytes is not None:
             return BytesIO(self.file_bytes)
         if self.file is not None:
             stream = open(self.file, 'rb')
-            self._streams.append(stream)
             return stream
         return None
 
+    @property
+    def file_stream(self):
+        warnings.warn("file_stream property is deprecated and "
+                      "it is slated for removal in Pylint 1.6."
+                      "Use the new method 'stream' instead.",
+                      PendingDeprecationWarning,
+                      stacklevel=2)
+        return self._get_stream()
+
+    def stream(self):
+        """Get a stream to the underlying file or bytes."""
+        return self._get_stream()
+
     def close(self):
         """Close the underlying file streams."""
-        for stream in self._streams:
-            stream.close()
-        self._streams[:] = []
+        warnings.warn("close method is deprecated and it is "
+                      "slated for removal in Pylint 1.6, along "
+                      "with 'file_stream' property. "
+                      "Its behaviour is replaced by managing each "
+                      "file stream returned by the 'stream' method.",
+                      PendingDeprecationWarning,
+                      stacklevel=2)
 
     def block_range(self, lineno):
         """return block line numbers.

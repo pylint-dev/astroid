@@ -22,10 +22,12 @@ import os
 import sys
 from functools import partial
 import unittest
+import warnings
 
 from astroid import YES, builder, nodes, scoped_nodes, \
      InferenceError, NotFoundError, NoDefault
 from astroid.bases import BUILTINS, Instance, BoundMethod, UnboundMethod
+from astroid import __pkginfo__
 from astroid import test_utils
 from astroid.tests import resources
 
@@ -191,12 +193,30 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
     def test_file_stream_api(self):
         path = resources.find('data/all.py')
         astroid = builder.AstroidBuilder().file_build(path, 'all')
-        self.assertIsNot(astroid.file_stream, astroid.file_stream)
-        self.assertEqual(len(astroid._streams), 2)
-        for stream in astroid._streams:
-            self.assertFalse(stream.closed)
-        astroid.close()
-        self.assertEqual(astroid._streams, [])
+        if __pkginfo__.numversion >= (1, 6):
+            # file_stream is slated for removal in astroid 1.6.
+            with self.assertRaises(AttributeError):
+                astroid.file_stream
+        else:
+            # Until astroid 1.6, Module.file_stream will emit
+            # PendingDeprecationWarning in 1.4, DeprecationWarning
+            # in 1.5 and finally it will be removed in 1.6, leaving
+            # only Module.stream as the recommended way to retrieve
+            # its file stream.
+            with warnings.catch_warnings(record=True) as cm:
+                warnings.simplefilter("always")
+                self.assertIsNot(astroid.file_stream, astroid.file_stream)
+            self.assertGreater(len(cm), 1)
+            self.assertEqual(cm[0].category, PendingDeprecationWarning)
+
+    def test_stream_api(self):
+        path = resources.find('data/all.py')
+        astroid = builder.AstroidBuilder().file_build(path, 'all')
+        stream = astroid.stream()
+        self.assertTrue(hasattr(stream, 'close'))
+        with stream:
+            with open(path, 'rb') as file_io:
+                self.assertEqual(stream.read(), file_io.read())
 
 
 class FunctionNodeTest(ModuleLoader, unittest.TestCase):
