@@ -269,7 +269,7 @@ class Module(LocalsDictNodeNG):
     @property
     def file_stream(self):
         warnings.warn("file_stream property is deprecated and "
-                      "it is slated for removal in Pylint 1.6."
+                      "it is slated for removal in astroid 1.6."
                       "Use the new method 'stream' instead.",
                       PendingDeprecationWarning,
                       stacklevel=2)
@@ -282,7 +282,7 @@ class Module(LocalsDictNodeNG):
     def close(self):
         """Close the underlying file streams."""
         warnings.warn("close method is deprecated and it is "
-                      "slated for removal in Pylint 1.6, along "
+                      "slated for removal in astroid 1.6, along "
                       "with 'file_stream' property. "
                       "Its behaviour is replaced by managing each "
                       "file stream returned by the 'stream' method.",
