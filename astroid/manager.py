@@ -311,7 +311,7 @@ class AstroidManager(OptionsProviderMixIn):
         self.transforms[node_class].remove((transform, predicate))
 
     def register_failed_import_hook(self, hook):
-        """"Registers a hook to resolve imports that cannot be found otherwise.
+        """Registers a hook to resolve imports that cannot be found otherwise.
 
         `hook` must be a function that accepts a single argument `modname` which
         contains the name of the module or package that could not be imported.
