@@ -25,6 +25,8 @@ Change log for the astroid package (used to be astng)
     * Add a new method to Class nodes, 'mro', for obtaining the
       the method resolution order of the class.
 
+    * Add brain tips for six.moves. Closes issue #63.
+
 
 2014-11-22 -- 1.3.2
 
