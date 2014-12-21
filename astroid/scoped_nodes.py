@@ -1414,7 +1414,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         """
         if not self.newstyle:
             raise NotImplementedError(
-                "Could not obtain mro for newstyle classes.")
+                "Could not obtain mro for old-style classes.")
 
         bases = list(self.ancestors(recurs=False))
         return _c3_merge([[self]] + [base.mro() for base in bases] + [bases])

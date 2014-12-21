@@ -1055,7 +1055,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         with self.assertRaises(NotImplementedError) as cm:
             node.mro()
         self.assertEqual(str(cm.exception), "Could not obtain mro for "
-                                            "newstyle classes.")
+                                            "old-style classes.")
 
     def test_mro(self):
         astroid = test_utils.build_module("""
