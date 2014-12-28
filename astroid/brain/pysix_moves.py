@@ -143,6 +143,8 @@ def six_moves_transform_py2():
         urllib_error = UrllibError()
         urllib = DummyModule()
         urllib.request = UrllibRequest()
+        urllib.parse = UrllibParse()
+        urllib.error = UrllibError()
 
     moves = Moves()
 
