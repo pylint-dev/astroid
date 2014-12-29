@@ -556,50 +556,28 @@ else:
 # Function  ###################################################################
 
 def _infer_decorator_callchain(node):
-    """ Detect decorator call chaining and see if the
-    end result is a static or a classmethod.
+    """Detect decorator call chaining and see if the end result is a
+    static or a classmethod.
     """
-    current = node
-    while True:
-        if isinstance(current, CallFunc):
-            try:
-                current = next(current.func.infer())
-            except InferenceError:
-                return
-        elif isinstance(current, Function):
-            if not current.parent:
-                return
-            try:
-                # TODO: We don't handle multiple inference results right now,
-                #       because there's no flow to reason when the return
-                #       is what we are looking for, a static or a class method.
-                result = next(current.infer_call_result(current.parent))
-                if current is result:
-                    # This will lead to an infinite loop, where a decorator
-                    # returns itself.
-                    return
-            except (StopIteration, InferenceError):
-                return
-            if isinstance(result, (Function, CallFunc)):
-                current = result
-            else:
-                if isinstance(result, Instance):
-                    result = result._proxied
-                if isinstance(result, Class):
-                    if (result.name == 'classmethod' and
-                            result.root().name == BUILTINS):
-                        return 'classmethod'
-                    elif (result.name == 'staticmethod' and
-                          result.root().name == BUILTINS):
-                        return 'staticmethod'
-                    else:
-                        return
-                else:
-                    # We aren't interested in anything else returned,
-                    # so go back to the function type inference.
-                    return
-        else:
-            return
+    if not isinstance(node, Function):
+        return
+    if not node.parent:
+        return
+    try:
+       # TODO: We don't handle multiple inference results right now,
+       #       because there's no flow to reason when the return
+       #       is what we are looking for, a static or a class method.
+       result = next(node.infer_call_result(node.parent))
+    except (StopIteration, InferenceError):
+       return
+    if isinstance(result, Instance):
+       result = result._proxied
+    if isinstance(result, Class):
+       if result.is_subtype_of('%s.classmethod' % BUILTINS):
+           return 'classmethod'
+       if result.is_subtype_of('%s.staticmethod' % BUILTINS):
+           return 'staticmethod'
+
 
 def _function_type(self):
     """
@@ -612,25 +590,34 @@ def _function_type(self):
     if self.decorators:
         for node in self.decorators.nodes:
             if isinstance(node, CallFunc):
-                _type = _infer_decorator_callchain(node)
-                if _type is None:
+                # Handle the following case:
+                # @some_decorator(arg1, arg2)
+                # def func(...)
+                #
+                try:
+                    current = next(node.func.infer())
+                except InferenceError:
                     continue
-                else:
+                _type = _infer_decorator_callchain(current)
+                if _type is not None:
                     return _type
-            if not isinstance(node, Name):
-                continue
+
             try:
                 for infered in node.infer():
+                    # Check to see if this returns a static or a class method.
+                    _type = _infer_decorator_callchain(infered)
+                    if _type is not None:
+                        return _type
+
                     if not isinstance(infered, Class):
                         continue
                     for ancestor in infered.ancestors():
-                        if isinstance(ancestor, Class):
-                            if (ancestor.name == 'classmethod' and
-                                    ancestor.root().name == BUILTINS):
-                                return 'classmethod'
-                            elif (ancestor.name == 'staticmethod' and
-                                  ancestor.root().name == BUILTINS):
-                                return 'staticmethod'
+                        if not isinstance(ancestor, Class):
+                            continue
+                        if ancestor.is_subtype_of('%s.classmethod' % BUILTINS):
+                            return 'classmethod'
+                        elif ancestor.is_subtype_of('%s.staticmethod' % BUILTINS):
+                            return 'staticmethod'
             except InferenceError:
                 pass
     return self._type

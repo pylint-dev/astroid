@@ -458,11 +458,35 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
                     return staticmethod(f)
                 return wrapper
 
+            def long_classmethod_decorator(platform=None, order=50):
+                def wrapper(f):
+                    def wrapper2(f):
+                        def wrapper3(f):
+                            f.cgm_module = True
+                            f.cgm_module_order = order
+                            f.cgm_module_platform = platform
+                            return classmethod(f)
+                        return wrapper3(f)
+                    return wrapper2(f)
+                return wrapper
+
             def classmethod_decorator(platform=None):
                 def wrapper(f):
                     f.platform = platform
                     return classmethod(f)
                 return wrapper
+
+            def classmethod_wrapper(fn):
+                def wrapper(cls, *args, **kwargs):
+                    result = fn(cls, *args, **kwargs)
+                    return result
+
+                return classmethod(wrapper)
+
+            def staticmethod_wrapper(fn):
+                def wrapper(*args, **kwargs):
+                    return fn(*args, **kwargs)
+                return staticmethod(wrapper)
 
             class SomeClass(object):
                 @static_decorator()
@@ -477,6 +501,15 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
                 @classmethod_decorator
                 def not_so_classmethod(node):
                     pass
+                @classmethod_wrapper
+                def classmethod_wrapped(cls):
+                    pass
+                @staticmethod_wrapper
+                def staticmethod_wrapped():
+                    pass
+                @long_classmethod_decorator()
+                def long_classmethod(cls): 
+                    pass
         """)
         node = astroid.locals['SomeClass'][0]
         self.assertEqual(node.locals['static'][0].type,
@@ -487,6 +520,12 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
                          'method')
         self.assertEqual(node.locals['not_so_classmethod'][0].type,
                          'method')
+        self.assertEqual(node.locals['classmethod_wrapped'][0].type,
+                         'classmethod')
+        self.assertEqual(node.locals['staticmethod_wrapped'][0].type,
+                         'staticmethod')
+        self.assertEqual(node.locals['long_classmethod'][0].type,
+                         'classmethod')
 
 
 class ClassNodeTest(ModuleLoader, unittest.TestCase):
