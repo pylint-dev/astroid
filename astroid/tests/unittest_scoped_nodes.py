@@ -1084,6 +1084,18 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             [slot.value for slot in tenth_slots],
             ["a", "c"])
 
+    @test_utils.require_version(maxver='3.0')
+    def test_slots_py2(self):
+        module = test_utils.build_module("""
+        class UnicodeSlots(object):
+            __slots__ = (u"a", u"b", "c")
+        """)
+        slots = module['UnicodeSlots'].slots()
+        self.assertEqual(len(slots), 3)
+        self.assertEqual(slots[0].value, "a")
+        self.assertEqual(slots[1].value, "b")
+        self.assertEqual(slots[2].value, "c")
+
     def assertEqualMro(self, klass, expected_mro):
         self.assertEqual(
             [member.name for member in klass.mro()],

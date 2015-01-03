@@ -1366,7 +1366,8 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                         if infered is YES:
                             continue
                         if (not isinstance(infered, Const) or
-                                not isinstance(infered.value, str)):
+                                not isinstance(infered.value,
+                                               six.string_types)):
                             continue
                         if not infered.value:
                             continue
