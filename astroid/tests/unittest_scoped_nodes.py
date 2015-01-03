@@ -182,13 +182,15 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
     def test_file_stream_in_memory(self):
         data = '''irrelevant_variable is irrelevant'''
         astroid = test_utils.build_module(data, 'in_memory')
-        self.assertEqual(astroid.file_stream.read().decode(), data)
+        with warnings.catch_warnings(record=True):
+            self.assertEqual(astroid.file_stream.read().decode(), data)
 
     def test_file_stream_physical(self):
         path = resources.find('data/all.py')
         astroid = builder.AstroidBuilder().file_build(path, 'all')
         with open(path, 'rb') as file_io:
-            self.assertEqual(astroid.file_stream.read(), file_io.read())
+            with warnings.catch_warnings(record=True):
+                self.assertEqual(astroid.file_stream.read(), file_io.read())
 
     def test_file_stream_api(self):
         path = resources.find('data/all.py')
