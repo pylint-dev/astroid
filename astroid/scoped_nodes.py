@@ -1392,7 +1392,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             return None
         return [first] + list(slots)
 
-    def mro(self):
+    def mro(self, context=None):
         """Get the method resolution order, using C3 linearization.
 
         It returns the list of ancestors sorted by the mro.
@@ -1403,5 +1403,5 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             raise NotImplementedError(
                 "Could not obtain mro for old-style classes.")
 
-        bases = list(self.ancestors(recurs=False))
+        bases = list(self.ancestors(recurs=False, context=context))
         return _c3_merge([[self]] + [base.mro() for base in bases] + [bases])
