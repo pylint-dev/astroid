@@ -106,6 +106,12 @@ class %(name)s(object):
   @property
   def name(self):
     return %(name)r
+  @property
+  def block_size(self):
+    return 1L
+  @property
+  def digest_size(self):
+    return 1L
 '''
     algorithms = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')
     classes = "".join(

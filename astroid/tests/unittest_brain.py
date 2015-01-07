@@ -35,6 +35,8 @@ class HashlibTest(unittest.TestCase):
             self.assertIn('update', class_obj)
             self.assertIn('digest', class_obj)
             self.assertIn('hexdigest', class_obj)
+            self.assertIn('block_size', class_obj)
+            self.assertIn('digest_size', class_obj)
             self.assertEqual(len(class_obj['__init__'].args.args), 2)
             self.assertEqual(len(class_obj['__init__'].args.defaults), 1)
             self.assertEqual(len(class_obj['update'].args.args), 2)
