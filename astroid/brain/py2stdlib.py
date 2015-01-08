@@ -108,10 +108,10 @@ class %(name)s(object):
     return %(name)r
   @property
   def block_size(self):
-    return 1L
+    return 1
   @property
   def digest_size(self):
-    return 1L
+    return 1
 '''
     algorithms = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')
     classes = "".join(
