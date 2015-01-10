@@ -593,7 +593,7 @@ class FileBuildTest(unittest.TestCase):
         self.assertIs(_locals, module.globals)
         keys = sorted(_locals.keys())
         should = ['MY_DICT', 'YO', 'YOUPI',
-                '__revision__',  'global_access','modutils', 'four_args',
+                '__revision__', 'global_access', 'modutils', 'four_args',
                  'os', 'redirect', 'pb', 'LocalsVisitor', 'ASTWalker']
         should.sort()
         self.assertEqual(keys, should)

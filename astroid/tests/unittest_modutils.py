@@ -253,9 +253,9 @@ class GetModuleFilesTest(unittest.TestCase):
         del logilab.common.fileutils
         del sys.modules['logilab.common.fileutils']
         m = modutils.load_module_from_modpath(['logilab', 'common', 'fileutils'])
-        self.assertTrue( hasattr(logilab, 'common') )
-        self.assertTrue( hasattr(logilab.common, 'fileutils') )
-        self.assertTrue( m is logilab.common.fileutils )
+        self.assertTrue(hasattr(logilab, 'common'))
+        self.assertTrue(hasattr(logilab.common, 'fileutils'))
+        self.assertTrue(m is logilab.common.fileutils)
 
 
 if __name__ == '__main__':

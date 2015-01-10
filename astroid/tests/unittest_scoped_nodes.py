@@ -404,7 +404,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
 
     def test_func_instance_attr(self):
         """test instance attributes for functions"""
-        data= """
+        data = """
             def test():
                 print(test.bar)
 

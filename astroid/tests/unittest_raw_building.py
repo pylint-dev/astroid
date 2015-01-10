@@ -34,7 +34,7 @@ class RawBuildingTC(unittest.TestCase):
         self.assertEqual(2, len(node.args.args))
 
     def test_build_function_defaults(self):
-        defaults = [ 'defaults1', 'defaults2' ]
+        defaults = ['defaults1', 'defaults2']
         node = build_function('MyFunction', None, defaults)
         self.assertEqual(2, len(node.args.defaults))
 

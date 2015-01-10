@@ -874,7 +874,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_binary_op_list_mul_none(self):
         'test correct handling on list multiplied by None'
-        ast = builder.string_build( 'a = [1] * None\nb = [1] * "r"')
+        ast = builder.string_build('a = [1] * None\nb = [1] * "r"')
         infered = ast['a'].infered()
         self.assertEqual(len(infered), 1)
         self.assertEqual(infered[0], YES)

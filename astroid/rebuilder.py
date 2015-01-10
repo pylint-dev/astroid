@@ -23,7 +23,7 @@ import sys
 from _ast import (
     Expr as Discard, Str,
     # binary operators
-    Add, Div, FloorDiv,  Mod, Mult, Pow, Sub, BitAnd, BitOr, BitXor,
+    Add, Div, FloorDiv, Mod, Mult, Pow, Sub, BitAnd, BitOr, BitXor,
     LShift, RShift,
     # logical operators
     And, Or,

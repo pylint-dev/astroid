@@ -43,7 +43,7 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(build('1, 2, 3').as_string(), '(1, 2, 3)')
 
     def test_varargs_kwargs_as_string(self):
-        ast = abuilder.string_build( 'raise_string(*args, **kwargs)').body[0]
+        ast = abuilder.string_build('raise_string(*args, **kwargs)').body[0]
         self.assertEqual(ast.as_string(), 'raise_string(*args, **kwargs)')
 
     def test_module_as_string(self):
@@ -166,7 +166,7 @@ class IfNodeTest(_NodeTest):
         """test transformation for If node"""
         self.assertEqual(len(self.astroid.body), 4)
         for stmt in self.astroid.body:
-            self.assertIsInstance( stmt, nodes.If)
+            self.assertIsInstance(stmt, nodes.If)
         self.assertFalse(self.astroid.body[0].orelse) # simple If
         self.assertIsInstance(self.astroid.body[1].orelse[0], nodes.Pass) # If / else
         self.assertIsInstance(self.astroid.body[2].orelse[0], nodes.If) # If / elif
