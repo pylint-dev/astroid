@@ -20,6 +20,7 @@ import sys
 import unittest
 
 from astroid import ResolveError, MANAGER, Instance, nodes, YES, InferenceError
+from astroid.bases import BUILTINS
 from astroid.builder import AstroidBuilder
 from astroid.raw_building import build_module
 from astroid.manager import AstroidManager
@@ -27,6 +28,21 @@ from astroid.test_utils import require_version
 from astroid.tests import resources
 
 class NonRegressionTests(unittest.TestCase):
+
+    # Save the builtins module and make sure to add it
+    # back to the astroid_cache after the tests finishes.
+    # The builtins module is special, since some of the
+    # transforms for a couple of its objects (str, bytes etc)
+    # are executed only once, so astroid_bootstrapping will be
+    # useless for retrieving the original builtins module.
+
+    @classmethod
+    def setUpClass(cls):
+        cls._builtins = MANAGER.astroid_cache[BUILTINS]
+
+    @classmethod
+    def tearDownClass(cls):
+        MANAGER.astroid_cache[BUILTINS] = cls._builtins
 
     def setUp(self):
         sys.path.insert(0, resources.find('data'))

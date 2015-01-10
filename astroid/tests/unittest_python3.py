@@ -19,17 +19,15 @@ from textwrap import dedent
 import unittest
 
 from astroid.node_classes import Assign, Discard, YieldFrom, Name, Const
-from astroid.manager import AstroidManager
 from astroid.builder import AstroidBuilder
 from astroid.scoped_nodes import Class, Function
 from astroid.test_utils import require_version
 
 
 class Python3TC(unittest.TestCase):
-    def setUp(self):
-        self.manager = AstroidManager()
-        self.manager.clear_cache() # take care of borg
-        self.builder = AstroidBuilder(self.manager)
+    @classmethod
+    def setUpClass(cls):
+        cls.builder = AstroidBuilder()
 
     @require_version('3.0')
     def test_starred_notation(self):
