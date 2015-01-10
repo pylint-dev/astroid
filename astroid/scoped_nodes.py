@@ -78,6 +78,13 @@ def _c3_merge(sequences):
                 del seq[0]
 
 
+def _verify_duplicates_mro(sequences):
+    for sequence in sequences:
+        names = [node.qname() for node in sequence]
+        if len(names) != len(set(names)):
+            raise ResolveError('Duplicates found in the mro.')
+
+
 def remove_nodes(func, cls):
     def wrapper(*args, **kwargs):
         nodes = [n for n in func(*args, **kwargs) if not isinstance(n, cls)]
@@ -1393,6 +1400,41 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             return None
         return [first] + list(slots)
 
+    def _inferred_bases(self, recurs=True, context=None):
+        # TODO(cpopa): really similar with .ancestors,
+        # but the difference is when one base is inferred,
+        # only the first object is wanted. That's because
+        # we aren't interested in superclasses, as in the following
+        # example:
+        #
+        # class SomeSuperClass(object): pass
+        # class SomeClass(SomeSuperClass): pass
+        # class Test(SomeClass): pass
+        #
+        # Inferring SomeClass from the Test's bases will give
+        # us both SomeClass and SomeSuperClass, but we are interested
+        # only in SomeClass.
+
+        if context is None:
+            context = InferenceContext()
+        if sys.version_info[0] >= 3:
+            if not self.bases and self.qname() != 'builtins.object':
+                yield builtin_lookup("object")[1][0]
+                return
+
+        for stmt in self.bases:
+            try:
+                baseobj = next(stmt.infer(context=context))
+            except InferenceError:
+                # XXX log error ?
+                continue
+            if isinstance(baseobj, Instance):
+                baseobj = baseobj._proxied
+            if not isinstance(baseobj, Class):
+                continue
+            if not baseobj.hide:
+                yield baseobj
+
     def mro(self, context=None):
         """Get the method resolution order, using C3 linearization.
 
@@ -1404,5 +1446,8 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             raise NotImplementedError(
                 "Could not obtain mro for old-style classes.")
 
-        bases = list(self.ancestors(recurs=False, context=context))
-        return _c3_merge([[self]] + [base.mro() for base in bases] + [bases])
+        bases = list(self._inferred_bases(context=context))
+        unmerged_mro = [[self]] + [base.mro() for base in bases] + [bases]
+
+        _verify_duplicates_mro(unmerged_mro)
+        return _c3_merge(unmerged_mro)

@@ -1131,6 +1131,19 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         class PedalWheelBoat(EngineLess, WheelBoat): pass
         class SmallCatamaran(SmallMultihull): pass
         class Pedalo(PedalWheelBoat, SmallCatamaran): pass
+
+        class OuterA(object):
+            class Inner(object):
+                pass
+        class OuterB(OuterA):
+            class Inner(OuterA.Inner):
+                pass
+        class OuterC(OuterA):
+            class Inner(OuterA.Inner):
+                pass
+        class OuterD(OuterC):
+            class Inner(OuterC.Inner, OuterB.Inner):
+                pass
         
         """)
         self.assertEqualMro(astroid['D'], ['D', 'dict', 'C', 'object'])
@@ -1153,6 +1166,10 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             astroid["Pedalo"],
             ["Pedalo", "PedalWheelBoat", "EngineLess", "SmallCatamaran",
              "SmallMultihull", "DayBoat", "WheelBoat", "Boat", "object"])
+
+        self.assertEqualMro(
+            astroid['OuterD']['Inner'],
+            ['Inner', 'Inner', 'Inner', 'Inner', 'object'])
 
 
 if __name__ == '__main__':
