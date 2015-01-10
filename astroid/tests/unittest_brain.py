@@ -82,7 +82,7 @@ class NamedTupleTest(unittest.TestCase):
         self.assertIs(bases.YES, next(klass.infer()))
 
 
-    @unittest.skipIf(sys.version_info[0] > 2, 
+    @unittest.skipIf(sys.version_info[0] > 2,
                      'namedtuple inference is broken on Python 3')
     def test_namedtuple_advanced_inference(self):
         # urlparse return an object of class ParseResult, which has a

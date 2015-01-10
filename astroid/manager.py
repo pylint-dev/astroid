@@ -144,7 +144,7 @@ class AstroidManager(OptionsProviderMixIn):
                 if module is not None:
                     return module
             elif mp_type in (imp.C_BUILTIN, imp.C_EXTENSION):
-                if mp_type == imp.C_EXTENSION and not self._can_load_extension(modname): 
+                if mp_type == imp.C_EXTENSION and not self._can_load_extension(modname):
                     return self._build_stub_module(modname)
                 try:
                     module = modutils.load_module_from_name(modname)

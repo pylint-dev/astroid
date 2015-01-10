@@ -46,7 +46,7 @@ def unpack_infer(stmt, context=None):
     if infered is stmt:
         yield infered
         return
-    # else, infer recursivly, except YES object that should be returned as is    
+    # else, infer recursivly, except YES object that should be returned as is
     for infered in stmt.infer(context):
         if infered is YES:
             yield infered

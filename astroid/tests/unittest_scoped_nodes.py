@@ -61,7 +61,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(self.module.getattr('__doc__')[0].value, 'test module for astroid\n')
         self.assertEqual(len(self.module.getattr('__file__')), 1)
         self.assertIsInstance(self.module.getattr('__file__')[0], nodes.Const)
-        self.assertEqual(self.module.getattr('__file__')[0].value, 
+        self.assertEqual(self.module.getattr('__file__')[0].value,
                          os.path.abspath(resources.find('data/module.py')))
         self.assertEqual(len(self.module.getattr('__dict__')), 1)
         self.assertIsInstance(self.module.getattr('__dict__')[0], nodes.Dict)
@@ -286,7 +286,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
 
     def test_format_args(self):
         func = self.module2['make_class']
-        self.assertEqual(func.args.format_args(), 
+        self.assertEqual(func.args.format_args(),
                          'any, base=data.module.YO, *args, **kwargs')
         func = self.module['four_args']
         self.assertEqual(func.args.format_args(), 'a, b, c, d')

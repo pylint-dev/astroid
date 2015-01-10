@@ -808,8 +808,8 @@ class Function(Statement, Lambda):
         # but does not contribute to the inheritance structure itself. We inject
         # a fake class into the hierarchy here for several well-known metaclass
         # generators, and filter it out later.
-        if (self.name == 'with_metaclass' and 
-                len(self.args.args) == 1 and 
+        if (self.name == 'with_metaclass' and
+                len(self.args.args) == 1 and
                 self.args.vararg is not None):
             metaclass = next(caller.args[0].infer(context))
             if isinstance(metaclass, Class):
