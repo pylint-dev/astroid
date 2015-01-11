@@ -1149,10 +1149,20 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqualMro(astroid['D'], ['D', 'dict', 'C', 'object'])
         self.assertEqualMro(astroid['D1'], ['D1', 'B1', 'C1', 'A1', 'object'])
         self.assertEqualMro(astroid['E1'], ['E1', 'C1', 'B1', 'A1', 'object'])
-        with self.assertRaises(ResolveError):
+        with self.assertRaises(ResolveError) as cm:
             astroid['F1'].mro()
-        with self.assertRaises(ResolveError):
+        self.assertEqual(str(cm.exception),
+                         "Cannot create a consistent method resolution order "
+                         "for bases (B1, C1, A1, object), "
+                         "(C1, B1, A1, object)")
+
+        with self.assertRaises(ResolveError) as cm:
             astroid['G1'].mro()
+        self.assertEqual(str(cm.exception),
+                         "Cannot create a consistent method resolution order "
+                         "for bases (C1, B1, A1, object), "
+                         "(B1, C1, A1, object)")
+
         self.assertEqualMro(
             astroid['PedalWheelBoat'],
             ["PedalWheelBoat", "EngineLess",

@@ -70,7 +70,13 @@ def _c3_merge(sequences):
             else:
                 break
         if not candidate:
-            raise ResolveError("Inconsistent hierarchy")
+            # Show all the remaining bases, which were considered as
+            # candidates for the next mro sequence.
+            bases = ["({})".format(", ".join(base.name
+                                             for base in subsequence))
+                     for subsequence in sequences]
+            raise ResolveError("Cannot create a consistent method resolution "
+                               "order for bases %s" % ", ".join(bases))
         result.append(candidate)
         # remove the chosen candidate
         for seq in sequences:
