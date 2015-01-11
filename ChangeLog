@@ -32,6 +32,8 @@ Change log for the astroid package (used to be astng)
 
     * .slots() can contain unicode strings on Python 2.
 
+    * Add inference tips for nose.tools.
+
 
 2014-11-22 -- 1.3.2
 
