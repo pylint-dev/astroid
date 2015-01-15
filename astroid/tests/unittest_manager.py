@@ -25,11 +25,14 @@ from astroid.exceptions import AstroidBuildingException
 from astroid.tests import resources
 
 
-class AstroidManagerTest(resources.SysPathSetup, unittest.TestCase):
+class AstroidManagerTest(resources.SysPathSetup,
+                         resources.AstroidCacheSetupMixin,
+                         unittest.TestCase):
+
     def setUp(self):
         super(AstroidManagerTest, self).setUp()
         self.manager = AstroidManager()
-        self.manager.clear_cache() # take care of borg
+        self.manager.clear_cache(self._builtins) # take care of borg
 
     def test_ast_from_file(self):
         """check if the method return a good astroid object"""

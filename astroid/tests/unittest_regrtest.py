@@ -27,22 +27,8 @@ from astroid.manager import AstroidManager
 from astroid.test_utils import require_version
 from astroid.tests import resources
 
-class NonRegressionTests(unittest.TestCase):
-
-    # Save the builtins module and make sure to add it
-    # back to the astroid_cache after the tests finishes.
-    # The builtins module is special, since some of the
-    # transforms for a couple of its objects (str, bytes etc)
-    # are executed only once, so astroid_bootstrapping will be
-    # useless for retrieving the original builtins module.
-
-    @classmethod
-    def setUpClass(cls):
-        cls._builtins = MANAGER.astroid_cache[BUILTINS]
-
-    @classmethod
-    def tearDownClass(cls):
-        MANAGER.astroid_cache[BUILTINS] = cls._builtins
+class NonRegressionTests(resources.AstroidCacheSetupMixin,
+                         unittest.TestCase):
 
     def setUp(self):
         sys.path.insert(0, resources.find('data'))
@@ -52,7 +38,7 @@ class NonRegressionTests(unittest.TestCase):
         # Since we may have created a brainless manager, leading
         # to a new cache builtin module and proxy classes in the constants,
         # clear out the global manager cache.
-        MANAGER.clear_cache()
+        MANAGER.clear_cache(self._builtins)
         MANAGER.always_load_extensions = False
         sys.path.pop(0)
         sys.path_importer_cache.pop(resources.find('data'), None)

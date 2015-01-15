@@ -348,15 +348,16 @@ class AstroidManager(OptionsProviderMixIn):
         """Cache a module if no module with the same name is known yet."""
         self.astroid_cache.setdefault(module.name, module)
 
-    def clear_cache(self):
+    def clear_cache(self, astroid_builtin=None):
         # XXX clear transforms
         self.astroid_cache.clear()
         # force bootstrap again, else we may ends up with cache inconsistency
         # between the manager and CONST_PROXY, making
         # unittest_lookup.LookupTC.test_builtin_lookup fail depending on the
         # test order
-        from astroid.raw_building import astroid_bootstrapping
-        astroid_bootstrapping()
+        import astroid.raw_building        
+        astroid.raw_building._astroid_bootstrapping(
+            astroid_builtin=astroid_builtin)
 
 
 class Project(object):
