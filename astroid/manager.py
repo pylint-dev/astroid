@@ -355,7 +355,7 @@ class AstroidManager(OptionsProviderMixIn):
         # between the manager and CONST_PROXY, making
         # unittest_lookup.LookupTC.test_builtin_lookup fail depending on the
         # test order
-        import astroid.raw_building        
+        import astroid.raw_building
         astroid.raw_building._astroid_bootstrapping(
             astroid_builtin=astroid_builtin)
 
