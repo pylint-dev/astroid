@@ -1,6 +1,10 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+--
+    * Get the first element from the method list when obtaining
+      the functions from nose.tools.trivial. Closes Pylint issue #448.
+
 2015-01-16 -- 1.3.3
 
     * Restore file_stream to a property, but deprecate it in favour of

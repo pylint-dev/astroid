@@ -42,7 +42,7 @@ def nose_transform():
         if method_name.startswith('assert') and '_' not in method_name:
             pep8_name = _pep8(method_name)
             all_entries.append(pep8_name)
-            stub[pep8_name] = method
+            stub[pep8_name] = method[0]
 
     # Update the __all__ variable, since nose.tools
     # does this manually with .append.
