@@ -1,7 +1,7 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
---
+2015-01-16 -- 1.3.3
 
     * Restore file_stream to a property, but deprecate it in favour of
       the newly added method Module.stream. By using a method instead of a
