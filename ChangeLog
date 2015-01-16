@@ -1,7 +1,8 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
---
+2015-01-17 -- 1.3.4
+
     * Get the first element from the method list when obtaining
       the functions from nose.tools.trivial. Closes Pylint issue #448.
 
