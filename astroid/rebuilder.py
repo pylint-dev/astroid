@@ -298,7 +298,7 @@ class TreeRebuilder(object):
             # ("a" + "b" + # one thousand more + "c")
             newnode = self._peepholer.optimize_binop(node)
             if newnode:
-                _lineno_parent(node, newnode, parent) 
+                _lineno_parent(node, newnode, parent)
                 return newnode
 
         newnode = new.BinOp()
