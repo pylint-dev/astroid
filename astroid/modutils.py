@@ -65,11 +65,11 @@ try:
     # with the prefix from which the virtualenv was created. This throws
     # off the detection logic for standard library modules, thus the
     # workaround.
-    STD_LIB_DIRS = {
+    STD_LIB_DIRS = set([
         get_python_lib(standard_lib=True, prefix=sys.prefix),
         # Take care of installations where exec_prefix != prefix.
         get_python_lib(standard_lib=True, prefix=sys.exec_prefix),
-        get_python_lib(standard_lib=True)}
+        get_python_lib(standard_lib=True)])
     if os.name == 'nt':
         STD_LIB_DIRS.add(os.path.join(sys.prefix, 'dlls'))
         try:
