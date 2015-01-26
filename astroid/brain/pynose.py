@@ -19,7 +19,7 @@
 """Hooks for nose library."""
 
 import re
-import unittest
+import textwrap
 
 from astroid import List, MANAGER, register_module_extender
 from astroid.builder import AstroidBuilder
@@ -34,8 +34,13 @@ def nose_transform():
 
     builder = AstroidBuilder(MANAGER)
     stub = AstroidBuilder(MANAGER).string_build('''__all__ = []''')
-    unittest_module = builder.module_build(unittest.case)
-    case = unittest_module['TestCase']
+    module = builder.string_build(textwrap.dedent('''
+    import unittest
+
+    class A(unittest.TestCase):
+        pass
+    '''))
+    case = module['A']
     all_entries = ['ok_', 'eq_']
 
     for method_name, method in case.locals.items():
