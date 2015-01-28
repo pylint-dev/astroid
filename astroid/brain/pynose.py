@@ -21,41 +21,59 @@
 import re
 import textwrap
 
-from astroid import List, MANAGER, register_module_extender
-from astroid.builder import AstroidBuilder
+import astroid
+import astroid.builder
+
+_BUILDER = astroid.builder.AstroidBuilder(astroid.MANAGER)
 
 
 def _pep8(name, caps=re.compile('([A-Z])')):
     return caps.sub(lambda m: '_' + m.groups()[0].lower(), name)
 
 
-def nose_transform():
-    """Custom transform for the nose.tools module."""
-
-    builder = AstroidBuilder(MANAGER)
-    stub = AstroidBuilder(MANAGER).string_build('''__all__ = []''')
-    module = builder.string_build(textwrap.dedent('''
+def _nose_tools_functions():
+    """Get an iterator of names and bound methods."""
+    module = _BUILDER.string_build(textwrap.dedent('''
     import unittest
 
-    class A(unittest.TestCase):
+    class Test(unittest.TestCase):
         pass
+    a = Test()
     '''))
-    case = module['A']
+    try:
+        case = next(module['a'].infer())
+    except astroid.InferenceError:
+        return
+    for method in case.methods():
+        if method.name.startswith('assert') and '_' not in method.name:
+            pep8_name = _pep8(method.name)
+            yield pep8_name, astroid.BoundMethod(method, case)
+
+
+def _nose_tools_transform(node):
+    for method_name, method in _nose_tools_functions():
+        node.locals[method_name] = [method]
+
+
+def _nose_tools_trivial_transform():
+    """Custom transform for the nose.tools module."""
+    stub = _BUILDER.string_build('''__all__ = []''')
     all_entries = ['ok_', 'eq_']
 
-    for method_name, method in case.locals.items():
-        if method_name.startswith('assert') and '_' not in method_name:
-            pep8_name = _pep8(method_name)
-            all_entries.append(pep8_name)
-            stub[pep8_name] = method[0]
+    for pep8_name, method in _nose_tools_functions():
+        all_entries.append(pep8_name)
+        stub[pep8_name] = method
 
     # Update the __all__ variable, since nose.tools
     # does this manually with .append.
     all_assign = stub['__all__'].parent
-    all_object = List(all_entries)
+    all_object = astroid.List(all_entries)
     all_object.parent = all_assign
     all_assign.value = all_object
     return stub
 
 
-register_module_extender(MANAGER, 'nose.tools.trivial', nose_transform)
+astroid.register_module_extender(astroid.MANAGER, 'nose.tools.trivial',
+                                 _nose_tools_trivial_transform)
+astroid.MANAGER.register_transform(astroid.Module, _nose_tools_transform,
+                                   lambda n: n.name == 'nose.tools')

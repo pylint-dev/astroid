@@ -106,6 +106,26 @@ class ModuleExtenderTest(unittest.TestCase):
             extender(n)
 
 
+class NoseBrainTest(unittest.TestCase):
+
+    def test_nose_tools(self):
+        methods = test_utils.extract_node("""
+        from nose.tools import assert_equal
+        from nose.tools import assert_true
+        assert_equal = assert_equal #@
+        assert_true = assert_true #@
+        """)
+
+        assert_equal = next(methods[0].value.infer())
+        assert_true = next(methods[1].value.infer())
+
+        self.assertIsInstance(assert_equal, astroid.BoundMethod)
+        self.assertIsInstance(assert_true, astroid.BoundMethod)
+        self.assertEqual(assert_equal.qname(),
+                         'unittest.case.TestCase.assertEqual')
+        self.assertEqual(assert_true.qname(),
+                         'unittest.case.TestCase.assertTrue')
+
 
 if __name__ == '__main__':
     unittest.main()
