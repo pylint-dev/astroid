@@ -26,6 +26,13 @@ from astroid import test_utils
 import astroid
 
 
+try:
+    import nose
+    HAS_NOSE = True
+except ImportError:
+    HAS_NOSE = False
+
+
 class HashlibTest(unittest.TestCase):
     def test_hashlib(self):
         """Tests that brain extensions for hashlib work."""
@@ -106,6 +113,7 @@ class ModuleExtenderTest(unittest.TestCase):
             extender(n)
 
 
+@unittest.skipUnless(HAS_NOSE, "This test requires nose library.")
 class NoseBrainTest(unittest.TestCase):
 
     def test_nose_tools(self):
