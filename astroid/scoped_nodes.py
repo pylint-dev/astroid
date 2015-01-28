@@ -1453,7 +1453,9 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                 "Could not obtain mro for old-style classes.")
 
         bases = list(self._inferred_bases(context=context))
-        unmerged_mro = [[self]] + [base.mro() for base in bases if base is not self] + [bases]
+        unmerged_mro = ([[self]] +
+                        [base.mro() for base in bases if base is not self] +
+                        [bases])
 
         _verify_duplicates_mro(unmerged_mro)
         return _c3_merge(unmerged_mro)
