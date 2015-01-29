@@ -25,7 +25,9 @@ import textwrap
 from astroid.node_classes import unpack_infer
 from astroid.bases import BUILTINS, InferenceContext
 from astroid.exceptions import NotFoundError
-from astroid import builder, nodes
+from astroid import bases
+from astroid import builder
+from astroid import nodes
 from astroid import test_utils
 from astroid.tests import resources
 
@@ -342,6 +344,13 @@ from ..cave import wine\n\n"""
         handler_type = astroid.body[1].handlers[0].type
 
         excs = list(unpack_infer(handler_type))
+        # The number of returned object can differ on Python 2
+        # and Python 3. In one version, an additional item will
+        # be returned, from the _pickle module, which is not
+        # present in the other version.
+        self.assertIsInstance(excs[0], nodes.Class)
+        self.assertEqual(excs[0].name, 'PickleError')
+        self.assertIs(excs[-1], bases.YES)
 
     def test_absolute_import(self):
         astroid = resources.build_file('data/absimport.py')
