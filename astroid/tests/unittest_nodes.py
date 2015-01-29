@@ -20,6 +20,7 @@
 import os
 import sys
 import unittest
+import textwrap
 
 from astroid.node_classes import unpack_infer
 from astroid.bases import BUILTINS, InferenceContext
@@ -80,17 +81,23 @@ def function(var):
     except NameError as nexc:
         (*hell, o) = b'hello'
         raise AttributeError from nexc
-\n'''
-        # TODO : annotations and keywords for class definition are not yet implemented
-        _todo = '''
-def function(var:int):
-    nonlocal counter
-
-class Language(metaclass=Natural):
-    """natural language"""
-        '''
+\n'''        
         ast = abuilder.string_build(code)
         self.assertEqual(ast.as_string(), code)
+
+    @test_utils.require_version('3.0')
+    @unittest.expectedFailure
+    def test_3k_annotations_and_metaclass(self):
+        code_annotations = textwrap.dedent('''
+        def function(var:int):
+            nonlocal counter
+
+        class Language(metaclass=Natural):
+            """natural language"""
+        ''')
+
+        ast = abuilder.string_build(code_annotations)
+        self.assertEqual(ast.as_string(), code_annotations)
 
     def test_ellipsis(self):
         ast = abuilder.string_build('a[...]').body[0]
