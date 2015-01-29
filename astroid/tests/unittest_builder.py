@@ -507,7 +507,8 @@ class BuilderTest(unittest.TestCase):
                 def inc(self):
                     self.v += 1
             """, __name__)
-        # Check self.v += 1 generate AugAssign(AssAttr(...)), not AugAssign(GetAttr(AssName...))
+        # TODO: Check self.v += 1 generate AugAssign(AssAttr(...)),
+        # not AugAssign(GetAttr(AssName...))
 
     def test_infered_dont_pollute(self):
         code = '''
