@@ -966,7 +966,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(bar_class.instance_attrs, {'attr': [assattr]})
         # call 'instance_attr' via 'Instance.getattr' to trigger the bug:
         instance = bar_self.infered()[0]
-        _attr = instance.getattr('attr')
+        instance.getattr('attr')
         self.assertEqual(len(bar_class.instance_attrs['attr']), 1)
         self.assertEqual(len(foo_class.instance_attrs['attr']), 1)
         self.assertEqual(bar_class.instance_attrs, {'attr': [assattr]})
@@ -1007,7 +1007,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_mechanize_open(self):
         try:
-            import mechanize
+            import mechanize  # pylint: disable=unused-variable
         except ImportError:
             self.skipTest('require mechanize installed')
         data = '''

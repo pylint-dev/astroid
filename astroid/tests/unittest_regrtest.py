@@ -87,7 +87,7 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin,
 
     def test_new_style_class_detection(self):
         try:
-            import pygtk
+            import pygtk # pylint: disable=unused-variable
         except ImportError:
             self.skipTest('test skipped: pygtk is not available')
         # XXX may fail on some pygtk version, because objects in
@@ -108,7 +108,7 @@ class A(gobject.GObject):
 
     def test_pylint_config_attr(self):
         try:
-            from pylint import lint
+            from pylint import lint # pylint: disable=unused-variable
         except ImportError:
             self.skipTest('pylint not available')
         mod = MANAGER.ast_from_module_name('pylint.lint')
@@ -129,7 +129,7 @@ class A(gobject.GObject):
         #a crash occured somewhere in the past, and an
         # InferenceError instead of a crash was better, but now we even infer!
         try:
-            import numpy
+            import numpy # pylint: disable=unused-variable
         except ImportError:
             self.skipTest('test skipped: numpy is not available')
         builder = AstroidBuilder()

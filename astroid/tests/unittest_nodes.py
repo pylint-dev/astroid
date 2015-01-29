@@ -83,7 +83,7 @@ def function(var):
     except NameError as nexc:
         (*hell, o) = b'hello'
         raise AttributeError from nexc
-\n'''        
+\n'''
         ast = abuilder.string_build(code)
         self.assertEqual(ast.as_string(), code)
 

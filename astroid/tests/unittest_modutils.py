@@ -110,8 +110,8 @@ class ModPathFromFileTest(unittest.TestCase):
 class LoadModuleFromPathTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_do_not_load_twice(self):
-        foo = modutils.load_module_from_modpath(['data', 'lmfp', 'foo'])
-        lmfp = modutils.load_module_from_modpath(['data', 'lmfp'])
+        modutils.load_module_from_modpath(['data', 'lmfp', 'foo'])
+        modutils.load_module_from_modpath(['data', 'lmfp'])
         self.assertEqual(len(sys.just_once), 1)
         del sys.just_once
 

@@ -250,11 +250,9 @@ class BorgAstroidManagerTC(unittest.TestCase):
         built = first_manager.ast_from_module_name(BUILTINS)
 
         second_manager = AstroidManager()
-        second_built = first_manager.ast_from_module_name(BUILTINS)
+        second_built = second_manager.ast_from_module_name(BUILTINS)
         self.assertIs(built, second_built)
 
 
 if __name__ == '__main__':
     unittest.main()
-
-

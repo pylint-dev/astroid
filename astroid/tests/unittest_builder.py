@@ -501,7 +501,7 @@ class BuilderTest(unittest.TestCase):
         self.assertIn('type', lclass.locals)
 
     def test_augassign_attr(self):
-        astroid = test_utils.build_module("""
+        test_utils.build_module("""
             class Counter:
                 v = 0
                 def inc(self):
@@ -517,7 +517,7 @@ class BuilderTest(unittest.TestCase):
             def func2(a={}):
                 a.custom_attr = 0
             '''
-        astroid = test_utils.build_module(code)
+        test_utils.build_module(code)
         nonetype = nodes.const_factory(None)
         self.assertNotIn('custom_attr', nonetype.locals)
         self.assertNotIn('custom_attr', nonetype.instance_attrs)
