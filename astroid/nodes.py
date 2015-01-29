@@ -34,6 +34,7 @@ on From and Import :
 
 
 """
+# pylint: disable=unused-import
 
 __docformat__ = "restructuredtext en"
 

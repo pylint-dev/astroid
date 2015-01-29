@@ -24,7 +24,7 @@ import six
 from logilab.common.decorators import cachedproperty
 
 from astroid.exceptions import NoDefault
-from astroid.bases import (NodeNG, Statement, Instance, InferenceContext,
+from astroid.bases import (NodeNG, Statement, Instance,
                            _infer_stmts, YES, BUILTINS)
 from astroid.mixins import (BlockRangeMixIn, AssignTypeMixin,
                             ParentAssignTypeMixin, FromImportMixIn)

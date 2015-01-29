@@ -18,7 +18,6 @@
 """tests for the astroid variable lookup capabilities
 """
 import sys
-from os.path import join, abspath, dirname
 from functools import partial
 import unittest
 

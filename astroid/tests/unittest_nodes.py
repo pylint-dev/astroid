@@ -22,8 +22,8 @@ import sys
 import unittest
 
 from astroid.node_classes import unpack_infer
-from astroid.bases import BUILTINS, YES, InferenceContext
-from astroid.exceptions import AstroidBuildingException, NotFoundError
+from astroid.bases import BUILTINS, InferenceContext
+from astroid.exceptions import NotFoundError
 from astroid import builder, nodes
 from astroid import test_utils
 from astroid.tests import resources

@@ -15,13 +15,11 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
-from os.path import join, abspath, dirname
 import sys
 import unittest
 import textwrap
 
-from astroid import ResolveError, MANAGER, Instance, nodes, YES, InferenceError
-from astroid.bases import BUILTINS
+from astroid import MANAGER, Instance, nodes
 from astroid.builder import AstroidBuilder
 from astroid.raw_building import build_module
 from astroid.manager import AstroidManager

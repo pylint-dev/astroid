@@ -22,7 +22,6 @@ import sys
 import unittest
 
 from astroid import builder, nodes, InferenceError, NotFoundError
-from astroid.nodes import Module
 from astroid.bases import YES, BUILTINS
 from astroid.manager import AstroidManager
 from astroid import test_utils

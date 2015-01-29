@@ -27,7 +27,7 @@ import astroid
 
 
 try:
-    import nose
+    import nose # pylint: disable=unused-import
     HAS_NOSE = True
 except ImportError:
     HAS_NOSE = False

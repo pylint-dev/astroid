@@ -39,7 +39,7 @@ from astroid.exceptions import NotFoundError, \
      AstroidBuildingException, InferenceError, ResolveError
 from astroid.node_classes import Const, DelName, DelAttr, \
      Dict, From, List, Pass, Raise, Return, Tuple, Yield, YieldFrom, \
-     LookupMixIn, const_factory as cf, unpack_infer, Name, CallFunc
+     LookupMixIn, const_factory as cf, unpack_infer, CallFunc
 from astroid.bases import NodeNG, InferenceContext, Instance,\
      YES, Generator, UnboundMethod, BoundMethod, _infer_stmts, \
      BUILTINS
