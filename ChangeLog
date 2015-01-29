@@ -10,6 +10,9 @@ Change log for the astroid package (used to be astng)
 
     * Obtain the methods for the nose brain tip through an
       unittest.TestCase instance. Closes Pylint issue #457.
+
+    * Fix a crash which occurred when a class was the ancestor
+      of itself. Closes issue #78.
            
 
 2015-01-17 -- 1.3.4

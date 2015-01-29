@@ -18,6 +18,7 @@
 from os.path import join, abspath, dirname
 import sys
 import unittest
+import textwrap
 
 from astroid import ResolveError, MANAGER, Instance, nodes, YES, InferenceError
 from astroid.bases import BUILTINS
@@ -220,6 +221,28 @@ def test():
         self.assertIsInstance(result, Instance)
         base = next(result._proxied.bases[0].infer())
         self.assertEqual(base.name, 'int')
+
+    def test_ancestors_patching_class_recursion(self):
+        node = AstroidBuilder().string_build(textwrap.dedent("""
+        import string
+        Template = string.Template
+
+        class A(Template):
+            pass
+
+        class B(A):
+            pass
+
+        def test(x=False):
+            if x:
+                string.Template = A
+            else:
+                string.Template = B
+        """))
+        klass = node['A']
+        ancestors = list(klass.ancestors())
+        self.assertEqual(ancestors[0].qname(), 'string.Template')
+
 
 class Whatever(object):
     a = property(lambda x: x, lambda x: x)

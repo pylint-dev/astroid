@@ -1086,6 +1086,9 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                     if recurs:
                         for grandpa in baseobj.ancestors(recurs=True,
                                                          context=context):
+                            if grandpa is self:
+                                # This class is the ancestor of itself.
+                                break
                             if grandpa in yielded:
                                 continue # cf xxx above
                             yielded.add(grandpa)
