@@ -13,6 +13,16 @@ Change log for the astroid package (used to be astng)
 
     * Fix a crash which occurred when a class was the ancestor
       of itself. Closes issue #78.
+
+    * Improve the scope_lookup method for Classes regarding qualified
+      objects, with an attribute name exactly as one provided in the
+      class itself.
+
+      For example, a class containing an attribute 'first',
+      which was also an import and which had, as a base, a qualified name
+      or a Gettattr node, in the form 'module.first', then Pylint would
+      have inferred the `first` name as the function from the Class,
+      not the import. Closes Pylint issue #466. 
            
 
 2015-01-17 -- 1.3.4

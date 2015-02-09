@@ -1624,5 +1624,21 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
          for i in range(16, 19):
              self.assertInferConst(ast[i], 0)
 
+    def test_scope_lookup_same_attributes(self):
+        code = '''
+        import collections
+        class Second(collections.Counter):
+            def collections(self):
+                return "second"
+
+        '''
+        ast = test_utils.build_module(code, __name__)
+        bases = ast['Second'].bases[0]
+        inferred = next(bases.infer())
+        self.assertTrue(inferred)
+        self.assertIsInstance(inferred, nodes.Class)
+        self.assertEqual(inferred.qname(), 'collections.Counter')
+
+
 if __name__ == '__main__':
     unittest.main()

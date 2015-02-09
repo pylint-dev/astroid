@@ -1036,7 +1036,21 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             yield Instance(self)
 
     def scope_lookup(self, node, name, offset=0):
-        if node in self.bases:
+        if any(node == base or base.parent_of(node)
+               for base in self.bases):
+            # Handle the case where we have either a name
+            # in the bases of a class, which exists before
+            # the actual definition or the case where we have
+            # a Getattr node, with that name.
+            #
+            # name = ...
+            # class A(name):
+            #     def name(self): ...
+            #
+            # import name
+            # class A(name.Name):
+            #     def name(self): ...
+
             frame = self.parent.frame()
             # line offset to avoid that class A(A) resolve the ancestor to
             # the defined class
