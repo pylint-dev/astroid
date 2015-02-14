@@ -154,7 +154,7 @@ def object_build_function(node, member, localname):
     if varkw is not None:
         args.append(varkw)
     func = build_function(getattr(member, '__name__', None) or localname, args,
-                          defaults, member.func_code.co_flags, member.__doc__)
+                          defaults, six.get_function_code(member).co_flags, member.__doc__)
     node.add_local_node(func, localname)
 
 def object_build_datadescriptor(node, member, name):
