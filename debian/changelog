@@ -1,3 +1,9 @@
+astroid (1.3.4-1) precise; urgency=low
+
+  * new upstream release
+
+ -- Ionel Cristian Maries <contact@ionelmc.ro>  Sun, 15 Feb 2015 23:55:27 +0200
+
 astroid (1.1.1-1) unstable; urgency=low
 
   * new upstream release
