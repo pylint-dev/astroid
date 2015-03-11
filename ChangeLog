@@ -1,7 +1,8 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
---
+2015-03-11 -- 1.3.5
+
     * Add the ability to optimize small ast subtrees,
       with the first use in the optimization of multiple
       BinOp nodes. This removes recursivity in the rebuilder
