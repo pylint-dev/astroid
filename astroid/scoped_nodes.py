@@ -40,7 +40,7 @@ from astroid.exceptions import NotFoundError, \
 from astroid.node_classes import Const, DelName, DelAttr, \
      Dict, From, List, Pass, Raise, Return, Tuple, Yield, YieldFrom, \
      LookupMixIn, const_factory as cf, unpack_infer, CallFunc
-from astroid.bases import NodeNG, InferenceContext, Instance,\
+from astroid.bases import NodeNG, InferenceContext, Instance, copy_context, \
      YES, Generator, UnboundMethod, BoundMethod, _infer_stmts, \
      BUILTINS
 from astroid.mixins import FilterStmtsMixin
@@ -376,10 +376,10 @@ class Module(LocalsDictNodeNG):
         """inferred getattr"""
         # set lookup name since this is necessary to infer on import nodes for
         # instance
-        if not context:
-            context = InferenceContext()
+        context = copy_context(context)
+        context.lookupname = name
         try:
-            return _infer_stmts(self.getattr(name, context), context, frame=self, lookupname=name)
+            return _infer_stmts(self.getattr(name, context), context, frame=self)
         except NotFoundError:
             raise InferenceError(name)
 
@@ -1084,32 +1084,33 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                 return
 
         for stmt in self.bases:
-            try:
-                for baseobj in stmt.infer(context):
-                    if not isinstance(baseobj, Class):
-                        if isinstance(baseobj, Instance):
-                            baseobj = baseobj._proxied
-                        else:
-                            # duh ?
-                            continue
-                    if not baseobj.hide:
-                        if baseobj in yielded:
-                            continue # cf xxx above
-                        yielded.add(baseobj)
-                        yield baseobj
-                    if recurs:
-                        for grandpa in baseobj.ancestors(recurs=True,
-                                                         context=context):
-                            if grandpa is self:
-                                # This class is the ancestor of itself.
-                                break
-                            if grandpa in yielded:
+            with context.restore_path():
+                try:
+                    for baseobj in stmt.infer(context):
+                        if not isinstance(baseobj, Class):
+                            if isinstance(baseobj, Instance):
+                                baseobj = baseobj._proxied
+                            else:
+                                # duh ?
+                                continue
+                        if not baseobj.hide:
+                            if baseobj in yielded:
                                 continue # cf xxx above
-                            yielded.add(grandpa)
-                            yield grandpa
-            except InferenceError:
-                # XXX log error ?
-                continue
+                            yielded.add(baseobj)
+                            yield baseobj
+                        if recurs:
+                            for grandpa in baseobj.ancestors(recurs=True,
+                                                             context=context):
+                                if grandpa is self:
+                                    # This class is the ancestor of itself.
+                                    break
+                                if grandpa in yielded:
+                                    continue # cf xxx above
+                                yielded.add(grandpa)
+                                yield grandpa
+                except InferenceError:
+                    # XXX log error ?
+                    continue
 
     def local_attr_ancestors(self, name, context=None):
         """return an iterator on astroid representation of parent classes
@@ -1204,11 +1205,11 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         """
         # set lookup name since this is necessary to infer on import nodes for
         # instance
-        if not context:
-            context = InferenceContext()
+        context = copy_context(context)
+        context.lookupname = name
         try:
             for infered in _infer_stmts(self.getattr(name, context), context,
-                                        frame=self, lookupname=name):
+                                        frame=self):
                 # yield YES object instead of descriptors when necessary
                 if not isinstance(infered, Const) and isinstance(infered, Instance):
                     try:

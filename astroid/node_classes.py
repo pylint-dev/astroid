@@ -24,7 +24,7 @@ import six
 from logilab.common.decorators import cachedproperty
 
 from astroid.exceptions import NoDefault
-from astroid.bases import (NodeNG, Statement, Instance,
+from astroid.bases import (NodeNG, Statement, Instance, InferenceContext,
                            _infer_stmts, YES, BUILTINS)
 from astroid.mixins import (BlockRangeMixIn, AssignTypeMixin,
                             ParentAssignTypeMixin, FromImportMixIn)
@@ -130,7 +130,8 @@ class LookupMixIn(object):
         the lookup method
         """
         frame, stmts = self.lookup(name)
-        return _infer_stmts(stmts, None, frame)
+        context = InferenceContext()
+        return _infer_stmts(stmts, context, frame)
 
     def _filter_stmts(self, stmts, frame, offset):
         """filter statements to remove ignorable statements.

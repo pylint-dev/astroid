@@ -356,8 +356,10 @@ from ..cave import wine\n\n"""
         astroid = resources.build_file('data/absimport.py')
         ctx = InferenceContext()
         # will fail if absolute import failed
-        next(astroid['message'].infer(ctx, lookupname='message'))
-        m = next(astroid['email'].infer(ctx, lookupname='email'))
+        ctx.lookupname = 'message'
+        next(astroid['message'].infer(ctx))
+        ctx.lookupname = 'email'
+        m = next(astroid['email'].infer(ctx))
         self.assertFalse(m.file.startswith(os.path.join('data', 'email.py')))
 
     def test_more_absolute_import(self):

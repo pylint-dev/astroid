@@ -58,52 +58,28 @@ class Proxy(object):
 
 # Inference ##################################################################
 
-MISSING = object()
-
-
 class InferenceContext(object):
-    __slots__ = ('path', 'callcontext', 'boundnode', 'infered')
+    __slots__ = ('path', 'lookupname', 'callcontext', 'boundnode', 'infered')
 
-    def __init__(self,
-            path=None, callcontext=None, boundnode=None, infered=None):
-        if path is None:
-            self.path = frozenset()
-        else:
-            self.path = path
-        self.callcontext = callcontext
-        self.boundnode = boundnode
-        if infered is None:
-            self.infered = {}
-        else:
-            self.infered = infered
+    def __init__(self, path=None, infered=None):
+        self.path = path or set()
+        self.lookupname = None
+        self.callcontext = None
+        self.boundnode = None
+        self.infered = infered or {}
 
-    def push(self, key):
-        # This returns a NEW context with the same attributes, but a new key
-        # added to `path`.  The intention is that it's only passed to callees
-        # and then destroyed; otherwise scope() may not work correctly.
-        # The cache will be shared, since it's the same exact dict.
-        if key in self.path:
-            # End the containing generator
-            raise StopIteration
+    def push(self, node):
+        name = self.lookupname
+        if (node, name) in self.path:
+            raise StopIteration()
+        self.path.add((node, name))
 
-        return InferenceContext(
-            self.path.union([key]),
-            self.callcontext,
-            self.boundnode,
-            self.infered,
-        )
-
-    @contextmanager
-    def scope(self, callcontext=MISSING, boundnode=MISSING):
-        try:
-            orig = self.callcontext, self.boundnode
-            if callcontext is not MISSING:
-                self.callcontext = callcontext
-            if boundnode is not MISSING:
-                self.boundnode = boundnode
-            yield
-        finally:
-            self.callcontext, self.boundnode = orig
+    def clone(self):
+        # XXX copy lookupname/callcontext ?
+        clone = InferenceContext(self.path, infered=self.infered)
+        clone.callcontext = self.callcontext
+        clone.boundnode = self.boundnode
+        return clone
 
     def cache_generator(self, key, generator):
         results = []
@@ -114,28 +90,38 @@ class InferenceContext(object):
         self.infered[key] = tuple(results)
         return
 
+    @contextmanager
+    def restore_path(self):
+        path = set(self.path)
+        yield
+        self.path = path
 
-def _infer_stmts(stmts, context, frame=None, lookupname=None):
+def copy_context(context):
+    if context is not None:
+        return context.clone()
+    else:
+        return InferenceContext()
+
+
+def _infer_stmts(stmts, context, frame=None):
     """return an iterator on statements inferred by each statement in <stmts>
     """
     stmt = None
     infered = False
-    if context is None:
+    if context is not None:
+        name = context.lookupname
+        context = context.clone()
+    else:
+        name = None
         context = InferenceContext()
     for stmt in stmts:
         if stmt is YES:
             yield stmt
             infered = True
             continue
-
-        kw = {}
-        infered_name = stmt._infer_name(frame, lookupname)
-        if infered_name is not None:
-            # only returns not None if .infer() accepts a lookupname kwarg
-            kw['lookupname'] = infered_name
-
+        context.lookupname = stmt._infer_name(frame, name)
         try:
-            for infered in stmt.infer(context, **kw):
+            for infered in stmt.infer(context):
                 yield infered
                 infered = True
         except UnresolvableName:
@@ -197,12 +183,13 @@ class Instance(Proxy):
             context = InferenceContext()
         try:
             # avoid recursively inferring the same attr on the same class
-            new_context = context.push((self._proxied, name))
+            
+            context.push((self._proxied, name))
             # XXX frame should be self._proxied, or not ?
-            get_attr = self.getattr(name, new_context, lookupclass=False)
+            get_attr = self.getattr(name, context, lookupclass=False)
             return _infer_stmts(
-                self._wrap_attr(get_attr, new_context),
-                new_context,
+                self._wrap_attr(get_attr, context),
+                context,
                 frame=self,
             )
         except NotFoundError:
@@ -210,7 +197,7 @@ class Instance(Proxy):
                 # fallback to class'igetattr since it has some logic to handle
                 # descriptors
                 return self._wrap_attr(self._proxied.igetattr(name, context),
-                                            context)
+                                       context)
             except NotFoundError:
                 raise InferenceError(name)
 
@@ -301,9 +288,9 @@ class BoundMethod(UnboundMethod):
         return True
 
     def infer_call_result(self, caller, context):
-        with context.scope(boundnode=self.bound):
-            for infered in self._proxied.infer_call_result(caller, context):
-                yield infered
+        context = context.clone()
+        context.boundnode = self.bound
+        return self._proxied.infer_call_result(caller, context)
 
 
 class Generator(Instance):
@@ -335,8 +322,7 @@ def path_wrapper(func):
         """wrapper function handling context"""
         if context is None:
             context = InferenceContext()
-        context = context.push((node, kwargs.get('lookupname')))
-
+        context.push(node)
         yielded = set()
         for res in _func(node, context, **kwargs):
             # unproxy only true instance, not const, tuple, dict...
@@ -409,7 +395,8 @@ class NodeNG(object):
         if not context:
             return self._infer(context, **kwargs)
 
-        key = (self, kwargs.get('lookupname'), context.callcontext, context.boundnode)
+        key = (self, context.lookupname,
+               context.callcontext, context.boundnode)
         if key in context.infered:
             return iter(context.infered[key])
 

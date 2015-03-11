@@ -28,7 +28,7 @@ from astroid.manager import AstroidManager
 from astroid.exceptions import (AstroidError, InferenceError, NoDefault,
                                 NotFoundError, UnresolvableName)
 from astroid.bases import (YES, Instance, InferenceContext,
-                           _infer_stmts, path_wrapper,
+                           _infer_stmts, copy_context, path_wrapper,
                            raise_if_nothing_infered)
 from astroid.protocols import (
     _arguments_infer_argname,
@@ -175,89 +175,92 @@ def infer_name(self, context=None):
 
         if not stmts:
             raise UnresolvableName(self.name)
-    return _infer_stmts(stmts, context, frame, self.name)
+    context = context.clone()
+    context.lookupname = self.name
+    return _infer_stmts(stmts, context, frame)
 nodes.Name._infer = path_wrapper(infer_name)
 nodes.AssName.infer_lhs = infer_name # won't work with a path wrapper
 
 
 def infer_callfunc(self, context=None):
     """infer a CallFunc node by trying to guess what the function returns"""
-    if context is None:
-        context = InferenceContext()
+    callcontext = context.clone()
+    callcontext.callcontext = CallContext(self.args, self.starargs, self.kwargs)
+    callcontext.boundnode = None
     for callee in self.func.infer(context):
-        with context.scope(
-            callcontext=CallContext(self.args, self.starargs, self.kwargs),
-            boundnode=None,
-        ):
-            if callee is YES:
-                yield callee
-                continue
-            try:
-                if hasattr(callee, 'infer_call_result'):
-                    for infered in callee.infer_call_result(self, context):
-                        yield infered
-            except InferenceError:
-                ## XXX log error ?
-                continue
+        if callee is YES:
+            yield callee
+            continue
+        try:
+            if hasattr(callee, 'infer_call_result'):
+                for infered in callee.infer_call_result(self, callcontext):
+                    yield infered
+        except InferenceError:
+            ## XXX log error ?
+            continue
 nodes.CallFunc._infer = path_wrapper(raise_if_nothing_infered(infer_callfunc))
 
 
-def infer_import(self, context=None, asname=True, lookupname=None):
+def infer_import(self, context=None, asname=True):
     """infer an Import node: return the imported module/object"""
-    if lookupname is None:
+    name = context.lookupname
+    if name is None:
         raise InferenceError()
     if asname:
-        yield self.do_import_module(self.real_name(lookupname))
+        yield self.do_import_module(self.real_name(name))
     else:
-        yield self.do_import_module(lookupname)
+        yield self.do_import_module(name)
 nodes.Import._infer = path_wrapper(infer_import)
 
 def infer_name_module(self, name):
     context = InferenceContext()
-    return self.infer(context, asname=False, lookupname=name)
+    context.lookupname = name
+    return self.infer(context, asname=False)
 nodes.Import.infer_name_module = infer_name_module
 
 
-def infer_from(self, context=None, asname=True, lookupname=None):
+def infer_from(self, context=None, asname=True):
     """infer a From nodes: return the imported module/object"""
-    if lookupname is None:
+    name = context.lookupname
+    if name is None:
         raise InferenceError()
     if asname:
-        lookupname = self.real_name(lookupname)
+        name = self.real_name(name)
     module = self.do_import_module()
     try:
-        return _infer_stmts(module.getattr(lookupname, ignore_locals=module is self.root()), context, lookupname=lookupname)
+        context = copy_context(context)
+        context.lookupname = name
+        return _infer_stmts(module.getattr(name, ignore_locals=module is self.root()), context)
     except NotFoundError:
-        raise InferenceError(lookupname)
+        raise InferenceError(name)
 nodes.From._infer = path_wrapper(infer_from)
 
 
 def infer_getattr(self, context=None):
     """infer a Getattr node by using getattr on the associated object"""
-    if not context:
-        context = InferenceContext()
     for owner in self.expr.infer(context):
         if owner is YES:
             yield owner
             continue
         try:
-            with context.scope(boundnode=owner):
-                for obj in owner.igetattr(self.attrname, context):
-                    yield obj
+            context.boundnode = owner
+            for obj in owner.igetattr(self.attrname, context):
+                yield obj
+            context.boundnode = None
         except (NotFoundError, InferenceError):
-            pass
+            context.boundnode = None
         except AttributeError:
             # XXX method / function
-            pass
+            context.boundnode = None
 nodes.Getattr._infer = path_wrapper(raise_if_nothing_infered(infer_getattr))
 nodes.AssAttr.infer_lhs = raise_if_nothing_infered(infer_getattr) # # won't work with a path wrapper
 
 
-def infer_global(self, context=None, lookupname=None):
-    if lookupname is None:
+def infer_global(self, context=None):
+    if context.lookupname is None:
         raise InferenceError()
     try:
-        return _infer_stmts(self.root().getattr(lookupname), context)
+        return _infer_stmts(self.root().getattr(context.lookupname), context)
     except NotFoundError:
         raise InferenceError()
 nodes.Global._infer = path_wrapper(infer_global)
@@ -349,10 +352,11 @@ def infer_binop(self, context=None):
 nodes.BinOp._infer = path_wrapper(infer_binop)
 
 
-def infer_arguments(self, context=None, lookupname=None):
-    if lookupname is None:
+def infer_arguments(self, context=None):
+    name = context.lookupname
+    if name is None:
         raise InferenceError()
-    return _arguments_infer_argname(self, lookupname, context)
+    return _arguments_infer_argname(self, name, context)
 nodes.Arguments._infer = infer_arguments
 
 
