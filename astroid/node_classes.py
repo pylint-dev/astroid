@@ -309,7 +309,7 @@ class Arguments(NodeNG, AssignTypeMixin):
     @cachedproperty
     def fromlineno(self):
         lineno = super(Arguments, self).fromlineno
-        return max(lineno, self.parent.fromlineno)
+        return max(lineno, self.parent.fromlineno or 0)
 
     def format_args(self):
         """return arguments formatted as string"""

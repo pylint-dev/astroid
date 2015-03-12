@@ -446,6 +446,14 @@ class ArgumentsNodeTC(unittest.TestCase):
             self.skipTest('FIXME  http://bugs.python.org/issue10445 '
                           '(no line number on function args)')
 
+    def test_builtin_fromlineno_missing(self):
+        cls = test_utils.extract_node('''
+        class Foo(Exception): #@
+            pass
+        ''')
+        new = cls.local_attr('__new__')[-1]
+        self.assertEqual(new.args.fromlineno, 0)
+
 
 if __name__ == '__main__':
     unittest.main()
