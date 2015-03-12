@@ -451,7 +451,7 @@ class ArgumentsNodeTC(unittest.TestCase):
         class Foo(Exception): #@
             pass
         ''')
-        new = cls.local_attr('__new__')[-1]
+        new = cls.getattr('__new__')[-1]
         self.assertEqual(new.args.fromlineno, 0)
 
 
