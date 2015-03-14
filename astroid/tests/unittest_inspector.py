@@ -35,7 +35,10 @@ class LinkerTest(resources.SysPathSetup, unittest.TestCase):
 
     def setUp(self):
         super(LinkerTest, self).setUp()
-        self.project = MANAGER.project_from_files([resources.find('data')], astroid_wrapper)
+        self.project = MANAGER.project_from_files(
+            [resources.find('data')],
+            astroid_wrapper,
+            black_list=['joined_strings.py'])
         self.linker = inspector.Linker(self.project)
         self.linker.visit(self.project)
 
@@ -80,7 +83,9 @@ class LinkerTest2(LinkerTest):
     def setUp(self):
         resources.SysPathSetup.setUp(self)
         self.project = MANAGER.project_from_files(
-            [resources.find('data')], func_wrapper=_silent_no_wrap)
+            [resources.find('data')],
+            func_wrapper=_silent_no_wrap,
+            black_list=['joined_strings.py'])
         self.linker = inspector.Linker(self.project)
         self.linker.visit(self.project)
 

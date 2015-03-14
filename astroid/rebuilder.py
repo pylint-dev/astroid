@@ -283,7 +283,7 @@ class TreeRebuilder(object):
 
     def visit_binop(self, node, parent):
         """visit a BinOp node by returning a fresh instance of it"""
-        if isinstance(node.left, BinOp):
+        if isinstance(node.left, BinOp) and self._manager.optimize_ast:
             # Optimize BinOp operations in order to remove
             # redundant recursion. For instance, if the
             # following code is parsed in order to obtain

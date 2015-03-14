@@ -90,6 +90,7 @@ class AstroidManager(OptionsProviderMixIn):
             self.transforms = collections.defaultdict(list)
             self._failed_import_hooks = []
             self.always_load_extensions = False
+            self.optimize_ast = False
             self.extension_package_whitelist = set()
 
     def ast_from_file(self, filepath, modname=None, fallback=True, source=False):

@@ -24,11 +24,23 @@ import unittest
 
 import astroid
 from astroid import astpeephole
+from astroid import manager
 from astroid import test_utils
 from astroid.tests import resources
 
 
+MANAGER = manager.AstroidManager()
+
+
 class PeepholeOptimizer(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        MANAGER.optimize_ast = True
+
+    @classmethod
+    def tearDownClass(cls):
+        MANAGER.optimize_ast = False
+
     def setUp(self):
         self._optimizer = astpeephole.ASTPeepholeOptimizer()
 
@@ -88,6 +100,20 @@ class PeepholeOptimizer(unittest.TestCase):
         element = next(module['x'].infer())
         self.assertIsInstance(element, astroid.Const)
         self.assertEqual(len(element.value), 61660)
+
+    def test_optimisation_disabled(self):
+        try:
+            MANAGER.optimize_ast = False
+            module = test_utils.build_module("""
+            '1' + '2' + '3'
+            """)
+            self.assertIsInstance(module.body[0], astroid.Discard)
+            self.assertIsInstance(module.body[0].value, astroid.BinOp)
+            self.assertIsInstance(module.body[0].value.left, astroid.BinOp)
+            self.assertIsInstance(module.body[0].value.left.left,
+                                  astroid.Const)
+        finally:
+            MANAGER.optimize_ast = True
 
 
 if __name__ == '__main__':

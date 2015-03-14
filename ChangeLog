@@ -5,6 +5,12 @@ Change log for the astroid package (used to be astng)
     * Class.slots raises NotImplementedError for old style classes.
       Closes issue #67.
 
+    * Add a new option to AstroidManager, `optimize_ast`, which
+      controls if peephole optimizer should be enabled or not.
+      This prevents a regression, where the visit_binop method
+      wasn't called anymore with astroid 1.3.5, due to the differences
+      in the resulting AST. Closes issue #82.
+
 
 2015-03-11 -- 1.3.5
 
