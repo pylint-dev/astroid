@@ -1096,6 +1096,17 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(slots[1].value, "b")
         self.assertEqual(slots[2].value, "c")
 
+    @test_utils.require_version(maxver='3.0')
+    def test_slots_py2_not_implemented(self):
+        module = test_utils.build_module("""
+        class OldStyle:
+            __slots__ = ("a", "b")
+        """)
+        msg = "The concept of slots is undefined for old-style classes."
+        with self.assertRaises(NotImplementedError) as cm:
+            module['OldStyle'].slots()
+        self.assertEqual(str(cm.exception), msg)
+
     def assertEqualMro(self, klass, expected_mro):
         self.assertEqual(
             [member.name for member in klass.mro()],

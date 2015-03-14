@@ -1416,6 +1416,10 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         Also, it will return None in the case the slots weren't inferred.
         Otherwise, it will return a list of slot names.
         """
+        if not self.newstyle:
+            raise NotImplementedError(
+                "The concept of slots is undefined for old-style classes.")
+
         slots = self._islots()
         try:
             first = next(slots)
