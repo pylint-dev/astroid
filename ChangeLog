@@ -1,6 +1,7 @@
 Change log for the astroid package (used to be astng)
 =====================================================
---
+
+2015-03-14 -- 1.3.6
 
     * Class.slots raises NotImplementedError for old style classes.
       Closes issue #67.
