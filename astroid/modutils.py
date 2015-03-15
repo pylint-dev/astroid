@@ -538,7 +538,7 @@ def _file_from_modpath(modpath, path=None, context=None):
     return mp_filename, mtype
 
 def _search_zip(modpath, pic):
-    for filepath, importer in pic.items():
+    for filepath, importer in list(pic.items()):
         if importer is not None:
             if importer.find_module(modpath[0]):
                 if not importer.find_module(os.path.sep.join(modpath)):
