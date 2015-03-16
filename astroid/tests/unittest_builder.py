@@ -254,6 +254,10 @@ class BuilderTest(unittest.TestCase):
         with self.assertRaises(builder.AstroidBuildingException):
             self.builder.string_build('\x00')
 
+    def test_data_build_invalid_x_escape(self):
+        with self.assertRaises(builder.AstroidBuildingException):
+            self.builder.string_build('"\\x1"')
+
     def test_missing_newline(self):
         """check that a file with no trailing new line is parseable"""
         resources.build_file('data/noendingnewline.py')

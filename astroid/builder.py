@@ -162,7 +162,7 @@ class AstroidBuilder(InspectBuilder):
         # this method could be wrapped with a pickle/cache function
         try:
             node = parse(data + '\n')
-        except TypeError as exc:
+        except (TypeError, ValueError) as exc:
             raise AstroidBuildingException(exc)
         if path is not None:
             node_file = abspath(path)
