@@ -983,6 +983,28 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             ['NewBase', 'object'],
             [base.name for base in klass.ancestors()])
 
+    def test_no_infinite_metaclass_loop(self):
+        klass = test_utils.extract_node("""
+            class SSS(object):
+
+                class JJJ(object):
+                    pass
+
+                @classmethod
+                def Init(cls):
+                    cls.JJJ = type('JJJ', (cls.JJJ,), {})
+
+            class AAA(SSS):
+                pass
+
+            class BBB(AAA.JJJ):
+                pass
+        """)
+        self.assertFalse(scoped_nodes._is_metaclass(klass))
+        ancestors = [base.name for base in klass.ancestors()]
+        self.assertIn('object', ancestors)
+        self.assertIn('JJJ', ancestors)
+
     def test_metaclass_generator_hack(self):
         klass = test_utils.extract_node("""
             import six

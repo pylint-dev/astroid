@@ -864,10 +864,11 @@ def _is_metaclass(klass, seen=None):
     for base in klass.bases:
         try:
             for baseobj in base.infer():
-                if baseobj in seen:
+                baseobj_name = baseobj.qname()
+                if baseobj_name in seen:
                     continue
                 else:
-                    seen.add(baseobj)
+                    seen.add(baseobj_name)
                 if isinstance(baseobj, Instance):
                     # not abstract
                     return False
@@ -902,11 +903,12 @@ def _class_type(klass, ancestors=None):
     else:
         if ancestors is None:
             ancestors = set()
-        if klass in ancestors:
+        klass_name = klass.qname()
+        if klass_name in ancestors:
             # XXX we are in loop ancestors, and have found no type
             klass._type = 'class'
             return 'class'
-        ancestors.add(klass)
+        ancestors.add(klass_name)
         for base in klass.ancestors(recurs=False):
             name = _class_type(base, ancestors)
             if name != 'class':
