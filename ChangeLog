@@ -1,6 +1,13 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+--
+    * astroid.builder.AstroidBuilder.string_build and
+      astroid.builder.AstroidBuilder.file_build are now raising
+      AstroidBuildingException when the parsing of the string raises
+      a SyntaxError.
+
+
 2015-03-14 -- 1.3.6
 
     * Class.slots raises NotImplementedError for old style classes.

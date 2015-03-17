@@ -24,7 +24,7 @@ import textwrap
 
 from astroid.node_classes import unpack_infer
 from astroid.bases import BUILTINS, InferenceContext
-from astroid.exceptions import NotFoundError
+from astroid.exceptions import AstroidBuildingException, NotFoundError
 from astroid import bases
 from astroid import builder
 from astroid import nodes
@@ -415,7 +415,7 @@ class NameNodeTest(unittest.TestCase):
             del True
         """
         if sys.version_info >= (3, 0):
-            with self.assertRaises(SyntaxError):
+            with self.assertRaises(AstroidBuildingException):
                 test_utils.build_module(code)
         else:
             ast = test_utils.build_module(code)
