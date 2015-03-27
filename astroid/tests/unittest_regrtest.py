@@ -19,11 +19,14 @@ import sys
 import unittest
 import textwrap
 
+import six
+
 from astroid import MANAGER, Instance, nodes
+from astroid.bases import BUILTINS
 from astroid.builder import AstroidBuilder
 from astroid.raw_building import build_module
 from astroid.manager import AstroidManager
-from astroid.test_utils import require_version
+from astroid.test_utils import require_version, extract_node
 from astroid.tests import resources
 
 class NonRegressionTests(resources.AstroidCacheSetupMixin,
@@ -240,6 +243,30 @@ def test():
         klass = node['A']
         ancestors = list(klass.ancestors())
         self.assertEqual(ancestors[0].qname(), 'string.Template')
+
+    def test_ancestors_yes_in_bases(self):
+        # Test for issue https://bitbucket.org/logilab/astroid/issue/84
+        # This used to crash astroid with a TypeError, because an YES
+        # node was present in the bases
+        node = extract_node("""
+        def with_metaclass(meta, *bases):
+            class metaclass(meta):
+                def __new__(cls, name, this_bases, d):
+                    return meta(name, bases, d)
+        return type.__new__(metaclass, 'temporary_class', (), {})
+
+        import lala
+
+        class A(with_metaclass(object, lala.lala)): #@
+            pass
+        """)        
+        ancestors = list(node.ancestors())
+        if six.PY3:
+            self.assertEqual(len(ancestors), 1)
+            self.assertEqual(ancestors[0].qname(),
+                             "{}.object".format(BUILTINS))
+        else:
+            self.assertEqual(len(ancestors), 0)
 
 
 class Whatever(object):
