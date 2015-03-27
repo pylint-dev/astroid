@@ -822,7 +822,8 @@ class Function(Statement, Lambda):
                 c = Class('temporary_class', None)
                 c.hide = True
                 c.parent = self
-                c.bases = [next(b.infer(context)) for b in caller.args[1:]]
+                bases = [next(b.infer(context)) for b in caller.args[1:]]
+                c.bases = [base for base in bases if base != YES]
                 c._metaclass = metaclass
                 yield c
                 return
