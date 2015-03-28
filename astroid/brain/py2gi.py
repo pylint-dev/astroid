@@ -7,6 +7,7 @@ import inspect
 import itertools
 import sys
 import re
+import warnings
 
 from astroid import MANAGER, AstroidBuildingException
 from astroid.builder import AstroidBuilder
@@ -135,7 +136,16 @@ def _import_gi_module(modname):
             for m in itertools.chain(modnames, optional_modnames):
                 try:
                     __import__(m)
-                    modcode += _gi_build_stub(sys.modules[m])
+                    with warnings.catch_warnings():
+                        # Just inspecting the code can raise gi deprecation
+                        # warnings, so ignore them.
+                        try:
+                            from gi import PyGIDeprecationWarning
+                            warnings.simplefilter("ignore", PyGIDeprecationWarning)
+                        except Exception:
+                            pass
+
+                        modcode += _gi_build_stub(sys.modules[m])
                 except ImportError:
                     if m not in optional_modnames:
                         raise
