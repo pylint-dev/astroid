@@ -134,6 +134,8 @@ class NoseBrainTest(unittest.TestCase):
                          'unittest.case.TestCase.assertEqual')
         self.assertEqual(assert_true.qname(),
                          'unittest.case.TestCase.assertTrue')
+
+
 class SixBrainTest(unittest.TestCase):
 
     def test_attribute_access(self):
@@ -219,6 +221,61 @@ class SixBrainTest(unittest.TestCase):
             qname = 'httplib.HTTPSConnection'
         self.assertEqual(inferred.qname(), qname)
 
+
+class MultiprocessingBrainTest(unittest.TestCase):
+
+    def test_multiprocessing_manager(self):
+        # Test that we have the proper attributes
+        # for a multiprocessing.managers.SyncManager
+        module = test_utils.build_module("""
+        import multiprocessing
+        manager = multiprocessing.Manager()
+        queue = manager.Queue()
+        joinable_queue = manager.JoinableQueue()
+        event = manager.Event()
+        rlock = manager.RLock()
+        bounded_semaphore = manager.BoundedSemaphore()
+        condition = manager.Condition()
+        barrier = manager.Barrier()
+        pool = manager.Pool()
+        list = manager.list()
+        dict = manager.dict()
+        value = manager.Value()
+        array = manager.Array()
+        namespace = manager.Namespace()
+        """)
+        queue = next(module['queue'].infer())
+        self.assertEqual(queue.qname(),
+                         "{}.Queue".format(six.moves.queue.__name__))
+
+        joinable_queue = next(module['joinable_queue'].infer())
+        self.assertEqual(joinable_queue.qname(),
+                         "{}.Queue".format(six.moves.queue.__name__))
+
+        event = next(module['event'].infer())
+        event_name = "threading.{}".format("Event" if six.PY3 else "_Event")
+        self.assertEqual(event.qname(), event_name)
+
+        rlock = next(module['rlock'].infer())
+        rlock_name = "threading._RLock"
+        self.assertEqual(rlock.qname(), rlock_name)
+
+        bounded_semaphore = next(module['bounded_semaphore'].infer())
+        semaphore_name = "threading.{}".format(
+            "BoundedSemaphore" if six.PY3 else "_BoundedSemaphore")
+        self.assertEqual(bounded_semaphore.qname(), semaphore_name)
+
+        pool = next(module['pool'].infer())
+        pool_name = "multiprocessing.pool.Pool"
+        self.assertEqual(pool.qname(), pool_name)
+
+        for attr in ('list', 'dict'):
+            obj = next(module[attr].infer())
+            self.assertEqual(obj.qname(),
+                             "{}.{}".format(bases.BUILTINS, attr))
+
+        array = next(module['array'].infer())
+        self.assertEqual(array.qname(), "array.array")
 
 
 

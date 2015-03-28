@@ -322,6 +322,55 @@ def infer_enum_class(node):
         break
     return node
 
+def multiprocessing_transform():
+    return AstroidBuilder(MANAGER).string_build(dedent('''
+    from multiprocessing.managers import SyncManager
+    def Manager():
+        return SyncManager()
+    '''))
+
+
+def multiprocessing_managers_transform():
+    return AstroidBuilder(MANAGER).string_build(dedent('''
+    import array
+    import threading
+    import multiprocessing.pool as pool
+
+    import six
+
+    class Namespace(object):
+        pass
+
+    class Value(object):
+        def __init__(self, typecode, value, lock=True):
+            self._typecode = typecode
+            self._value = value
+        def get(self):
+            return self._value
+        def set(self, value):
+            self._value = value
+        def __repr__(self):
+            return '%s(%r, %r)'%(type(self).__name__, self._typecode, self._value)
+        value = property(get, set)
+
+    def Array(typecode, sequence, lock=True):
+        return array.array(typecode, sequence)
+
+    class SyncManager(object):
+        Queue = JoinableQueue = six.moves.queue.Queue
+        Event = threading.Event
+        RLock = threading.RLock
+        BoundedSemaphore = threading.BoundedSemaphore
+        Condition = threading.Condition
+        Barrier = threading.Barrier
+        Pool = pool.Pool
+        list = list
+        dict = dict
+        Value = Value
+        Array = Array
+        Namespace = Namespace 
+    '''))
+
 
 MANAGER.register_transform(nodes.CallFunc, inference_tip(infer_named_tuple),
                            looks_like_namedtuple)
@@ -332,3 +381,6 @@ register_module_extender(MANAGER, 'hashlib', hashlib_transform)
 register_module_extender(MANAGER, 'collections', collections_transform)
 register_module_extender(MANAGER, 'pkg_resources', pkg_resources_transform)
 register_module_extender(MANAGER, 'subprocess', subprocess_transform)
+register_module_extender(MANAGER, 'multiprocessing.managers',
+                         multiprocessing_managers_transform)
+register_module_extender(MANAGER, 'multiprocessing', multiprocessing_transform)
