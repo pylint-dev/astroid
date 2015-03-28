@@ -7,6 +7,9 @@ Change log for the astroid package (used to be astng)
       AstroidBuildingException when the parsing of the string raises
       a SyntaxError.
 
+    * Add brain tips for multiprocessing.Manager and
+      multiprocessing.managers.SyncManager.
+
 
 2015-03-14 -- 1.3.6
 
