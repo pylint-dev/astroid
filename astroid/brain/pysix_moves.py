@@ -65,6 +65,8 @@ def six_moves_transform_py2():
         import xmlrpclib as xmlrpc_client
         import _winreg as winreg
         import robotparser as urllib_robotparser
+        import Tkinter as tkinter
+        import tkFileDialog as tkinter_tkfiledialog
 
         input = raw_input
         intern = intern
