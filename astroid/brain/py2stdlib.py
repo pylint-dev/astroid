@@ -7,7 +7,6 @@ Currently help understanding of :
 """
 
 import sys
-from functools import partial
 from textwrap import dedent
 
 from astroid import (
@@ -74,7 +73,7 @@ def infer_func_form(node, base_type, context=None, enum=False):
                     raise AttributeError
                 if not attributes:
                     raise AttributeError
-    except (AttributeError, exceptions.InferenceError) as exc:
+    except (AttributeError, exceptions.InferenceError):
         raise UseInferenceDefault()
     # we want to return a Class node instance with proper attributes set
     class_node = nodes.Class(name, 'docstring')
@@ -115,7 +114,7 @@ class %(name)s(object):
 '''
     algorithms = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')
     classes = "".join(
-        template % {'name': hashfunc, 'digest': 'b""' if PY3K else '""'} 
+        template % {'name': hashfunc, 'digest': 'b""' if PY3K else '""'}
         for hashfunc in algorithms)
     return AstroidBuilder(MANAGER).string_build(classes)
 
@@ -240,9 +239,9 @@ class Popen(object):
 
 def looks_like_namedtuple(node):
     func = node.func
-    if type(func) is nodes.Getattr:
+    if isinstance(func, nodes.Getattr):
         return func.attrname == 'namedtuple'
-    if type(func) is nodes.Name:
+    if isinstance(func, nodes.Name):
         return func.name == 'namedtuple'
     return False
 
