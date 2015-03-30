@@ -127,9 +127,8 @@ class FileFromModPathTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_site_packages(self):
         filename = _get_file_from_object(modutils)
-        print(modutils, modutils.__file__, filename)
         result = modutils.file_from_modpath(['astroid', 'modutils'])
-        self.assertEqual(os.path.realpath(result), filename)
+        self.assertEqual(os.path.realpath(result), filename, (modutils, modutils.__file__, filename))
 
     def test_std_lib(self):
         from os import path
