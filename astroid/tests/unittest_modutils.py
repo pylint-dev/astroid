@@ -28,7 +28,7 @@ from astroid.tests import resources
 
 
 def _get_file_from_object(obj):
-    return modutils._path_from_filename(obj.__file__)
+    return os.path.realpath(modutils._path_from_filename(obj.__file__))
 
 
 class ModuleFileTest(unittest.TestCase):
@@ -128,7 +128,7 @@ class FileFromModPathTest(resources.SysPathSetup, unittest.TestCase):
     def test_site_packages(self):
         filename = _get_file_from_object(modutils)
         result = modutils.file_from_modpath(['astroid', 'modutils'])
-        self.assertEqual(os.path.realpath(result), filename, (modutils, modutils.__file__, filename))
+        self.assertEqual(os.path.realpath(result), filename)
 
     def test_std_lib(self):
         from os import path
