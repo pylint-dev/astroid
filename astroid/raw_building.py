@@ -271,7 +271,7 @@ class InspectBuilder(object):
                 member = six.get_method_function(member)
             if isfunction(member):
                 _build_from_function(node, name, member, self._module)
-            elif isbuiltin(member):    
+            elif isbuiltin(member):
                 if (not _io_discrepancy(member) and
                         self.imported_member(node, member, name)):
                    continue
