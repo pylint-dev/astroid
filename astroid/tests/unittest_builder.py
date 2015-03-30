@@ -306,6 +306,9 @@ class BuilderTest(unittest.TestCase):
         self.assertTrue(time_ast)
         self.assertEqual(time_ast['time'].args.defaults, [])
 
+    if os.name == 'java':
+        test_inspect_build1 = unittest.expectedFailure(test_inspect_build1)
+
     def test_inspect_build2(self):
         """test astroid tree build from a living object"""
         try:
@@ -449,6 +452,11 @@ class BuilderTest(unittest.TestCase):
         with self.assertRaises(InferenceError):
             next(astroid['global_no_effect'].ilookup('CSTE2'))
 
+    @unittest.skipIf(os.name == 'java',
+                     'This test is skipped on Jython, because the '
+                     'socket object is patched later on with the '
+                     'methods we are looking for. Since we do not '
+                     'understand setattr in for loops yet, we skip this')
     def test_socket_build(self):
         import socket
         astroid = self.builder.module_build(socket)
@@ -456,7 +464,6 @@ class BuilderTest(unittest.TestCase):
         # the socket module) but the last one as those attributes dynamically
         # set and astroid is missing this.
         for fclass in astroid.igetattr('socket'):
-            #print fclass.root().name, fclass.name, fclass.lineno
             self.assertIn('connect', fclass)
             self.assertIn('send', fclass)
             self.assertIn('close', fclass)

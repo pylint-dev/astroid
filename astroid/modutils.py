@@ -32,6 +32,7 @@ __docformat__ = "restructuredtext en"
 
 import imp
 import os
+import platform
 import sys
 from distutils.sysconfig import get_python_lib
 from distutils.errors import DistutilsPlatformError
@@ -83,7 +84,7 @@ except DistutilsPlatformError:
     STD_LIB_DIRS = set()
 
 EXT_LIB_DIR = get_python_lib()
-
+IS_JYTHON = platform.python_implementation() == 'Jython'
 BUILTIN_MODULES = dict(zip(sys.builtin_module_names,
                            [1]*len(sys.builtin_module_names)))
 
@@ -95,6 +96,20 @@ class NoSourceFile(Exception):
 
 def _normalize_path(path):
     return os.path.normcase(os.path.abspath(path))
+
+
+def _path_from_filename(filename, is_jython=IS_JYTHON):
+    if not is_jython:
+        if sys.version_info > (3, 0):
+            return filename
+        else:
+            if filename.endswith(".pyc"):
+                return filename[:-1]
+            return filename
+    head, has_pyclass, _ = filename.partition("$py.class")
+    if has_pyclass:
+        return head + ".py"
+    return filename
 
 
 _NORM_PATH_CACHE = {}
@@ -246,7 +261,9 @@ def modpath_from_file(filename, extrapath=None):
     :rtype: list(str)
     :return: the corresponding splitted module's name
     """
-    base = os.path.splitext(os.path.abspath(filename))[0]
+    filename = _path_from_filename(filename)
+    filename = os.path.abspath(filename)
+    base = os.path.splitext(filename)[0]
     if extrapath is not None:
         for path_ in extrapath:
             path = os.path.abspath(path_)
@@ -419,7 +436,8 @@ def get_source_file(filename, include_no_ext=False):
     :rtype: str
     :return: the absolute path of the source file if it exists
     """
-    base, orig_ext = os.path.splitext(os.path.abspath(filename))
+    filename = os.path.abspath(_path_from_filename(filename))
+    base, orig_ext = os.path.splitext(filename)
     for ext in PY_SOURCE_EXTS:
         source_path = '%s.%s' % (base, ext)
         if os.path.exists(source_path):

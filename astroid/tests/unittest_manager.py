@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 import os
+import platform
 import sys
 import unittest
 
@@ -23,6 +24,15 @@ from astroid.manager import AstroidManager, _silent_no_wrap
 from astroid.bases import  BUILTINS
 from astroid.exceptions import AstroidBuildingException
 from astroid.tests import resources
+
+
+def _get_file_from_object(obj):
+    if platform.python_implementation() == 'Jython':
+        return obj.__file__.split("$py.class")[0] + ".py"
+    if sys.version_info > (3, 0):
+        return obj.__file__
+    else:
+        return obj.__file__[:-1]
 
 
 class AstroidManagerTest(resources.SysPathSetup,
@@ -134,12 +144,9 @@ class AstroidManagerTest(resources.SysPathSetup,
 
     def test_file_from_module(self):
         """check if the unittest filepath is equals to the result of the method"""
-        if sys.version_info > (3, 0):
-            unittest_file = unittest.__file__
-        else:
-            unittest_file = unittest.__file__[:-1]
-        self.assertEqual(unittest_file,
-                        self.manager.file_from_module_name('unittest', None)[0])
+        self.assertEqual(
+            _get_file_from_object(unittest),
+            self.manager.file_from_module_name('unittest', None)[0])
 
     def test_file_from_module_name_astro_building_exception(self):
         """check if the method launch a exception with a wrong module name"""

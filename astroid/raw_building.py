@@ -24,7 +24,8 @@ __docformat__ = "restructuredtext en"
 import sys
 from os.path import abspath
 from inspect import (getargspec, isdatadescriptor, isfunction, ismethod,
-                     ismethoddescriptor, isclass, isbuiltin, ismodule)
+                     ismethoddescriptor, isclass, isbuiltin, ismodule,
+                     isroutine)
 import six
 
 from astroid.node_classes import CONST_CLS
@@ -200,6 +201,22 @@ def _base_class_object_build(node, member, basenames, name=None, localname=None)
     return klass
 
 
+def _build_from_function(node, name, member, module):
+    # verify this is not an imported function
+    try:
+        code = six.get_function_code(member)
+    except AttributeError:
+        # Some implementations don't provide the code object,
+        # such as Jython.
+        code = None
+    filename = getattr(code, 'co_filename', None)
+    if filename is None:
+        assert isinstance(member, object)
+        object_build_methoddescriptor(node, member, name)
+    elif filename != getattr(module, '__file__', None):
+        attach_dummy_node(node, name, member)
+    else:
+        object_build_function(node, member, name)
 
 
 class InspectBuilder(object):
@@ -253,20 +270,11 @@ class InspectBuilder(object):
             if ismethod(member):
                 member = six.get_method_function(member)
             if isfunction(member):
-                # verify this is not an imported function
-                filename = getattr(six.get_function_code(member),
-                                   'co_filename', None)
-                if filename is None:
-                    assert isinstance(member, object)
-                    object_build_methoddescriptor(node, member, name)
-                elif filename != getattr(self._module, '__file__', None):
-                    attach_dummy_node(node, name, member)
-                else:
-                    object_build_function(node, member, name)
-            elif isbuiltin(member):
+                _build_from_function(node, name, member, self._module)
+            elif isbuiltin(member):    
                 if (not _io_discrepancy(member) and
                         self.imported_member(node, member, name)):
-                    continue
+                   continue
                 object_build_methoddescriptor(node, member, name)
             elif isclass(member):
                 if self.imported_member(node, member, name):
@@ -289,6 +297,10 @@ class InspectBuilder(object):
                 object_build_datadescriptor(node, member, name)
             elif type(member) in _CONSTANTS:
                 attach_const_node(node, name, member)
+            elif isroutine(member):
+                # This should be called for Jython, where some builtin
+                # methods aren't catched by isbuiltin branch.
+                _build_from_function(node, name, member, self._module)
             else:
                 # create an empty node so that the name is actually defined
                 attach_dummy_node(node, name, member)

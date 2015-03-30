@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
 """Tests for basic functionality in astroid.brain."""
+import os
 import sys
 import unittest
 from textwrap import dedent
@@ -140,6 +141,8 @@ class NoseBrainTest(unittest.TestCase):
 
 class MultiprocessingBrainTest(unittest.TestCase):
 
+    @unittest.skipIf(os.name == 'java',
+                     'multiprocesing is not available on Jython')
     def test_multiprocessing_manager(self):
         # Test that we have the proper attributes
         # for a multiprocessing.managers.SyncManager

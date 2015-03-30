@@ -50,6 +50,7 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin,
         # avoid caching into the AstroidManager borg since we get problems
         # with other tests :
         manager.__dict__ = {}
+        manager._failed_import_hooks = []
         manager.astroid_cache = {}
         manager._mod_file_cache = {}
         manager.transforms = {}

@@ -11,6 +11,12 @@ Change log for the astroid package (used to be astng)
       multiprocessing.managers.SyncManager.
 
 
+    * Add some fixes which enhances the Jython support.
+      The fix mostly includes updates to modutils, which is
+      modified in order to properly lookup paths from live objects,
+      which ends in $py.class, not pyc as for Python 2,       
+      Closes issue #83.
+
 2015-03-14 -- 1.3.6
 
     * Class.slots raises NotImplementedError for old style classes.

@@ -17,6 +17,7 @@
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 """tests for the astroid inference capabilities
 """
+import os
 import sys
 from functools import partial
 import unittest
@@ -736,6 +737,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertIsInstance(infered[0], nodes.Function)
             self.assertEqual(infered[0].name, 'open')
 
+    if os.name == 'java':
+        test_builtin_open = unittest.expectedFailure(test_builtin_open)
+
     def test_callfunc_context_func(self):
         code = '''
             def mirror(arg=None):
@@ -791,9 +795,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
             from os.path import exists as e
             assert e(__file__)
-
-            from new import code as make_code
-            print (make_code)
         '''
         ast = test_utils.build_module(code, __name__)
         infered = list(ast.igetattr('osp'))
@@ -804,13 +805,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(infered), 1)
         self.assertIsInstance(infered[0], nodes.Function)
         self.assertEqual(infered[0].name, 'exists')
-        if sys.version_info >= (3, 0):
-            self.skipTest('<new> module has been removed')
-        infered = list(ast.igetattr('make_code'))
-        self.assertEqual(len(infered), 1)
-        self.assertIsInstance(infered[0], Instance)
-        self.assertEqual(str(infered[0]),
-                             'Instance of %s.type' % BUILTINS)
 
     def _test_const_infered(self, node, value):
         infered = list(node.infer())

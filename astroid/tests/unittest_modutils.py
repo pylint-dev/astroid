@@ -27,6 +27,10 @@ from astroid import modutils
 from astroid.tests import resources
 
 
+def _get_file_from_object(obj):
+    return modutils._path_from_filename(obj.__file__)
+
+
 class ModuleFileTest(unittest.TestCase):
     package = "mypypa"
 
@@ -122,8 +126,9 @@ class FileFromModPathTest(resources.SysPathSetup, unittest.TestCase):
     if it exists"""
 
     def test_site_packages(self):
-        self.assertEqual(os.path.realpath(modutils.file_from_modpath(['astroid', 'modutils'])),
-                         os.path.realpath(modutils.__file__.replace('.pyc', '.py')))
+        filename = _get_file_from_object(modutils)
+        result = modutils.file_from_modpath(['astroid', 'modutils'])
+        self.assertEqual(os.path.realpath(result), filename)
 
     def test_std_lib(self):
         from os import path
@@ -157,8 +162,9 @@ class FileFromModPathTest(resources.SysPathSetup, unittest.TestCase):
 class GetSourceFileTest(unittest.TestCase):
 
     def test(self):
+        filename = _get_file_from_object(os.path)
         self.assertEqual(modutils.get_source_file(os.path.__file__),
-                         os.path.normpath(os.path.__file__.replace('.pyc', '.py')))
+                         os.path.normpath(filename))
 
     def test_raise(self):
         self.assertRaises(modutils.NoSourceFile, modutils.get_source_file, 'whatever')

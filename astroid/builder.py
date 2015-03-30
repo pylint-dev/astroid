@@ -32,7 +32,7 @@ from astroid.raw_building import InspectBuilder
 from astroid.rebuilder import TreeRebuilder
 from astroid.manager import AstroidManager
 from astroid.bases import YES, Instance
-from astroid.modutils import modpath_from_file
+from astroid.modutils import modpath_from_file, _path_from_filename
 
 from _ast import PyCF_ONLY_AST
 def parse(string):
@@ -94,7 +94,7 @@ class AstroidBuilder(InspectBuilder):
         node = None
         path = getattr(module, '__file__', None)
         if path is not None:
-            path_, ext = splitext(module.__file__)
+            path_, ext = splitext(_path_from_filename(path))
             if ext in ('.py', '.pyc', '.pyo') and exists(path_ + '.py'):
                 node = self.file_build(path_ + '.py', modname)
         if node is None:
