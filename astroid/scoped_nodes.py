@@ -1463,6 +1463,9 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                 continue
             if not baseobj.hide:
                 yield baseobj
+            else:
+                for base in baseobj.bases:
+                    yield base
 
     def mro(self, context=None):
         """Get the method resolution order, using C3 linearization.
