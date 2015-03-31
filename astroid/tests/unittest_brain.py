@@ -36,6 +36,12 @@ try:
 except ImportError:
     HAS_NOSE = False
 
+try:
+    import multiprocessing # pylint: disable=unused-import
+    HAS_MULTIPROCESSING = True
+except ImportError:
+    HAS_MULTIPROCESSING = False
+
 
 class HashlibTest(unittest.TestCase):
     def test_hashlib(self):
@@ -141,8 +147,10 @@ class NoseBrainTest(unittest.TestCase):
 
 class MultiprocessingBrainTest(unittest.TestCase):
 
-    @unittest.skipIf(os.name == 'java',
-                     'multiprocesing is not available on Jython')
+    @unittest.skipUnless(HAS_MULTIPROCESSING,
+                         'multiprocesing is required for this test, but '
+                         'on some platforms it is missing '
+                         '(Jython for instance)')
     def test_multiprocessing_manager(self):
         # Test that we have the proper attributes
         # for a multiprocessing.managers.SyncManager
