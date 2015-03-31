@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
 """Tests for basic functionality in astroid.brain."""
-import os
 import sys
 import unittest
 from textwrap import dedent
