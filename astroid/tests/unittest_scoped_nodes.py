@@ -1143,6 +1143,19 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(str(cm.exception), "Could not obtain mro for "
                                             "old-style classes.")
 
+    def test_with_metaclass_mro(self):
+        astroid = test_utils.build_module("""
+        import six
+
+        class C(object):
+            pass
+        class B(C):
+            pass
+        class A(six.with_metaclass(type, B)):
+            pass
+        """)
+        self.assertEqualMro(astroid['A'], ['A', 'B', 'C', 'object'])
+
     def test_mro(self):
         astroid = test_utils.build_module("""
         class C(object): pass
