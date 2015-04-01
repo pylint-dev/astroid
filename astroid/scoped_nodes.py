@@ -806,9 +806,7 @@ class Function(Statement, Lambda):
     def infer_call_result(self, caller, context=None):
         """infer what a function is returning when called"""
         if self.is_generator():
-            result = Generator()
-            result.parent = self
-            yield result
+            yield Generator()
             return
         # This is really a gigantic hack to work around metaclass generators
         # that return transient class-generating functions. Pylint's AST structure

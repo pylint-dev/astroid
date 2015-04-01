@@ -17,10 +17,6 @@ Change log for the astroid package (used to be astng)
       which ends in $py.class, not pyc as for Python 2,       
       Closes issue #83.
 
-    * The Generator objects inferred with `infer_call_result`
-      from functions have as parent the function from which they
-      are returned.
-
 2015-03-14 -- 1.3.6
 
     * Class.slots raises NotImplementedError for old style classes.
