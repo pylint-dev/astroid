@@ -1240,7 +1240,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         """)
         result = next(func.infer_call_result(func))
         self.assertIsInstance(result, Generator)
-        self.assertEqual(result.parent, func)                 
+        self.assertEqual(result.parent, func)
 
 
 if __name__ == '__main__':
