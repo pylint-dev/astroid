@@ -238,6 +238,32 @@ nodes.From._infer = path_wrapper(infer_from)
 
 def infer_getattr(self, context=None):
     """infer a Getattr node by using getattr on the associated object"""
+    if context and context.boundnode:
+        # Handle the case where we do a getattr on an instance.
+        # This will look the attribute locally, returning the
+        # inferred results if any. If the local attribute is not
+        # found, the default inference for Getattr will be used.
+        # This handles nicely the case where a superclass attribute
+        # is dependent on a subclass attribute, as seen in the case
+        # of pylint issue https://bitbucket.org/logilab/pylint/issue/432.
+
+        if isinstance(context.boundnode, Instance):
+            try:
+                local_attr = context.boundnode.local_attr(self.attrname)
+            except NotFoundError:
+                pass
+            else:
+                #new_context = context.clone()
+                #new_context.boundnode = None
+                new_context = None
+                for attr in local_attr:
+                    try:
+                        for obj in attr.infer(new_context):
+                            yield obj
+                    except InferenceError:
+                        pass
+                return
+
     for owner in self.expr.infer(context):
         if owner is YES:
             yield owner
