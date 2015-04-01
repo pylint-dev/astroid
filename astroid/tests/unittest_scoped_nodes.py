@@ -26,7 +26,10 @@ import warnings
 
 from astroid import YES, builder, nodes, scoped_nodes, \
      InferenceError, NotFoundError, NoDefault, ResolveError
-from astroid.bases import BUILTINS, Instance, BoundMethod, UnboundMethod
+from astroid.bases import (
+    BUILTINS, Instance,
+    BoundMethod, UnboundMethod, Generator
+)
 from astroid import __pkginfo__
 from astroid import test_utils
 from astroid.tests import resources
@@ -1204,6 +1207,18 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqualMro(
             astroid['OuterD']['Inner'],
             ['Inner', 'Inner', 'Inner', 'Inner', 'object'])
+
+    def test_generator_from_infer_call_result_parent(self):
+        func = test_utils.extract_node("""
+        import contextlib
+
+        @contextlib.contextmanager
+        def test(): #@
+            yield
+        """)
+        result = next(func.infer_call_result(func))
+        self.assertIsInstance(result, Generator)
+        self.assertEqual(result.parent, func)                 
 
 
 if __name__ == '__main__':
