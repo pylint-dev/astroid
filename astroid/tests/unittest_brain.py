@@ -33,6 +33,12 @@ try:
 except ImportError:
     HAS_NOSE = False
 
+try:
+    import multiprocessing # pylint: disable=unused-import
+    HAS_MULTIPROCESSING = True
+except ImportError:
+    HAS_MULTIPROCESSING = False
+
 
 class HashlibTest(unittest.TestCase):
     def test_hashlib(self):
@@ -136,6 +142,7 @@ class NoseBrainTest(unittest.TestCase):
                          'unittest.case.TestCase.assertTrue')
 
 
+
 class SixBrainTest(unittest.TestCase):
 
     def test_attribute_access(self):
@@ -223,6 +230,21 @@ class SixBrainTest(unittest.TestCase):
 
 
 class MultiprocessingBrainTest(unittest.TestCase):
+
+
+    def test_multiprocessing_module_attributes(self):
+        # Test that module attributes are working,
+        # especially on Python 3.4+, where they are obtained
+        # from a context.
+        module = test_utils.extract_node("""
+        import multiprocessing
+        """)        
+        module = module.do_import_module('multiprocessing')
+        cpu_count = next(module.igetattr('cpu_count'))
+        if six.PY2:
+            self.assertIsInstance(cpu_count, nodes.Function)
+        else:
+            self.assertIsInstance(cpu_count, astroid.BoundMethod)
 
     def test_multiprocessing_manager(self):
         # Test that we have the proper attributes

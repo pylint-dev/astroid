@@ -6,6 +6,11 @@ Change log for the astroid package (used to be astng)
     * Add brain tips for multiprocessing.Manager and
       multiprocessing.managers.SyncManager.
 
+    * Add brain tips for multiprocessing post Python 3.4+,
+      where the module level functions are retrieved with getattr
+      from a context object, leading to many no-member errors
+      in Pylint.
+
     * The Generator objects inferred with `infer_call_result`
       from functions have as parent the function from which they
       are returned.
