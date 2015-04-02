@@ -238,10 +238,10 @@ class MultiprocessingBrainTest(unittest.TestCase):
         # from a context.
         module = test_utils.extract_node("""
         import multiprocessing
-        """)        
+        """)
         module = module.do_import_module('multiprocessing')
         cpu_count = next(module.igetattr('cpu_count'))
-        if six.PY2:
+        if sys.version_info < (3, 4):
             self.assertIsInstance(cpu_count, nodes.Function)
         else:
             self.assertIsInstance(cpu_count, astroid.BoundMethod)
