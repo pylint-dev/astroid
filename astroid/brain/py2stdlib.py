@@ -11,7 +11,7 @@ from textwrap import dedent
 
 from astroid import (
     MANAGER, AsStringRegexpPredicate,
-    UseInferenceDefault, inference_tip,
+    UseInferenceDefault, inference_tip, BoundMethod,
     YES, InferenceError, register_module_extender)
 from astroid import exceptions
 from astroid import nodes
@@ -19,6 +19,7 @@ from astroid.builder import AstroidBuilder
 
 PY3K = sys.version_info > (3, 0)
 PY33 = sys.version_info >= (3, 3)
+PY34 = sys.version_info >= (3, 4)
 
 # general function
 
@@ -307,7 +308,7 @@ def infer_enum_class(node):
                     @property
                     def value(self):
                         # Not the best return.
-                        return None 
+                        return None
                     @property
                     def name(self):
                         return %(name)r
@@ -322,12 +323,40 @@ def infer_enum_class(node):
     return node
 
 def multiprocessing_transform():
-    return AstroidBuilder(MANAGER).string_build(dedent('''
+    module = AstroidBuilder(MANAGER).string_build(dedent('''
     from multiprocessing.managers import SyncManager
     def Manager():
         return SyncManager()
     '''))
+    if not PY34:
+        return module
 
+    # On Python 3.4, multiprocessing uses a getattr lookup inside contexts,
+    # in order to get the attributes they need. Since it's extremely
+    # dynamic, we use this approach to fake it.
+    node = AstroidBuilder(MANAGER).string_build(dedent('''
+    from multiprocessing.context import DefaultContext, BaseContext
+    default = DefaultContext()
+    base = BaseContext()
+    '''))
+    try:
+        context = next(node['default'].infer())
+        base = next(node['base'].infer())
+    except InferenceError:
+        return module
+
+    for node in (context, base):
+        for key, value in node.locals.items():
+            if key.startswith("_"):
+                continue
+
+            value = value[0]
+            if isinstance(value, nodes.Function):
+                # We need to rebound this, since otherwise
+                # it will have an extra argument (self).
+                value = BoundMethod(value, node)
+            module[key] = value
+    return module
 
 def multiprocessing_managers_transform():
     return AstroidBuilder(MANAGER).string_build(dedent('''
@@ -367,7 +396,7 @@ def multiprocessing_managers_transform():
         dict = dict
         Value = Value
         Array = Array
-        Namespace = Namespace 
+        Namespace = Namespace
     '''))
 
 

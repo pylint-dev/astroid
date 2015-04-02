@@ -144,12 +144,26 @@ class NoseBrainTest(unittest.TestCase):
                          'unittest.case.TestCase.assertTrue')
 
 
+@unittest.skipUnless(HAS_MULTIPROCESSING,
+                     'multiprocesing is required for this test, but '
+                     'on some platforms it is missing '
+                     '(Jython for instance)')
 class MultiprocessingBrainTest(unittest.TestCase):
 
-    @unittest.skipUnless(HAS_MULTIPROCESSING,
-                         'multiprocesing is required for this test, but '
-                         'on some platforms it is missing '
-                         '(Jython for instance)')
+    def test_multiprocessing_module_attributes(self):
+        # Test that module attributes are working,
+        # especially on Python 3.4+, where they are obtained
+        # from a context.
+        module = test_utils.extract_node("""
+        import multiprocessing
+        """)        
+        module = module.do_import_module('multiprocessing')
+        cpu_count = next(module.igetattr('cpu_count'))
+        if six.PY2:
+            self.assertIsInstance(cpu_count, nodes.Function)
+        else:
+            self.assertIsInstance(cpu_count, astroid.BoundMethod)
+
     def test_multiprocessing_manager(self):
         # Test that we have the proper attributes
         # for a multiprocessing.managers.SyncManager
