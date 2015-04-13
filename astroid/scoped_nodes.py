@@ -1013,27 +1013,46 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             if anc.qname() == type_name:
                 return True
 
+    def _infer_type_call(self, caller, context):
+        name_node = next(caller.args[0].infer(context))
+        if (isinstance(name_node, Const) and
+                isinstance(name_node.value, six.string_types)):
+            name = name_node.value
+        else:
+            return YES
+
+        result = Class(name, None)
+
+        # Get the bases of the class.
+        bases = next(caller.args[1].infer(context))
+        if isinstance(bases, (Tuple, List)):
+            result.bases = bases.itered()
+        else:
+            # There is currently no AST node that can represent an 'unknown'
+            # node (YES is not an AST node), therefore we simply return YES here
+            # although we know at least the name of the class.
+            return YES
+
+        # Get the members of the class
+        try:
+            members = next(caller.args[2].infer(context))
+        except InferenceError:
+            members = None
+
+        if members and isinstance(members, Dict):
+            for attr, value in members.items:
+                if (isinstance(attr, Const) and
+                        isinstance(attr.value, six.string_types)):
+                    result.locals[attr.value] = [value]
+    
+        result.parent = caller.parent
+        return result
+
     def infer_call_result(self, caller, context=None):
         """infer what a class is returning when called"""
-        if self.is_subtype_of('%s.type' % (BUILTINS,), context) and len(caller.args) == 3:
-            name_node = next(caller.args[0].infer(context))
-            if (isinstance(name_node, Const) and
-                    isinstance(name_node.value, six.string_types)):
-                name = name_node.value
-            else:
-                yield YES
-                return
-            result = Class(name, None)
-            bases = next(caller.args[1].infer(context))
-            if isinstance(bases, (Tuple, List)):
-                result.bases = bases.itered()
-            else:
-                # There is currently no AST node that can represent an 'unknown'
-                # node (YES is not an AST node), therefore we simply return YES here
-                # although we know at least the name of the class.
-                yield YES
-                return
-            result.parent = caller.parent
+        if (self.is_subtype_of('%s.type' % (BUILTINS,), context)
+                and len(caller.args) == 3):
+            result = self._infer_type_call(caller, context)
             yield result
         else:
             yield Instance(self)
