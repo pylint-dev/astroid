@@ -1242,6 +1242,21 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(result, Generator)
         self.assertEqual(result.parent, func)
 
+    def test_type_three_arguments(self):
+        classes = test_utils.extract_node("""
+        type('A', (object, ), {"a": 1, "b": 2, missing: 3}) #@
+        """)
+        first = next(classes.infer())
+        self.assertIsInstance(first, nodes.Class)
+        self.assertEqual(first.name, "A")
+        self.assertEqual(first.basenames, ["object"])
+        self.assertIsInstance(first["a"], nodes.Const)
+        self.assertEqual(first["a"].value, 1)
+        self.assertIsInstance(first["b"], nodes.Const)
+        self.assertEqual(first["b"].value, 2)
+        with self.assertRaises(NotFoundError):
+            first.getattr("missing")
+
 
 if __name__ == '__main__':
     unittest.main()

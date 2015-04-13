@@ -25,6 +25,10 @@ Change log for the astroid package (used to be astng)
       from a context object, leading to many no-member errors
       in Pylint.
 
+    * Understand partially the 3-argument form of `type`.
+      The only change is that astroid understands members
+      passed in as dictionaries as the third argument.
+
 2015-03-14 -- 1.3.6
 
     * Class.slots raises NotImplementedError for old style classes.
