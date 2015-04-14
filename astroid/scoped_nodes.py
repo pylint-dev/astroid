@@ -1414,6 +1414,10 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                 values = slots.itered()
             if values is YES:
                 continue
+            if not values:
+                # Stop the iteration, because the class
+                # has an empty list of slots.
+                raise StopIteration(values)
 
             for elt in values:
                 try:
@@ -1447,8 +1451,10 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         slots = self._islots()
         try:
             first = next(slots)
-        except StopIteration:
-            # The class doesn't have a __slots__ definition.
+        except StopIteration as exc:
+            # The class doesn't have a __slots__ definition or empty slots.
+            if exc.args:
+                return exc.args[0]
             return None
         return [first] + list(slots)
 

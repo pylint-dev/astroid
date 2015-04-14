@@ -1132,6 +1132,14 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             module['OldStyle'].slots()
         self.assertEqual(str(cm.exception), msg)
 
+    def test_slots_empty_list_of_slots(self):
+        module = test_utils.build_module("""
+        class Klass(object):
+            __slots__ = ()
+        """)
+        cls = module['Klass']
+        self.assertEqual(cls.slots(), [])
+
     def assertEqualMro(self, klass, expected_mro):
         self.assertEqual(
             [member.name for member in klass.mro()],
