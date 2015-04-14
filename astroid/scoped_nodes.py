@@ -1046,7 +1046,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                 if (isinstance(attr, Const) and
                         isinstance(attr.value, six.string_types)):
                     result.locals[attr.value] = [value]
-    
+
         result.parent = caller.parent
         return result
 
