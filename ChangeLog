@@ -34,6 +34,15 @@ Change log for the astroid package (used to be astng)
       classes without slots at all. This was changed in order
       to better reflect what's actually happening.
 
+    * Improve the inference of Getattr nodes when dealing with
+      abstract properties from the abc module.
+
+      In astroid.bases.Instance._wrap_attr we had a detection
+      code for properties, which basically inferred whatever
+      a property returned, passing the results up the stack,
+      to the igetattr() method. It handled only the builtin property
+      but the new patch also handles abc.abstractproperty.
+
 
 2015-03-14 -- 1.3.6
 
