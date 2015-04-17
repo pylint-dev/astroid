@@ -1,3 +1,4 @@
+from __future__ import print_function
 from data.module import YO, YOUPI
 import data
 
