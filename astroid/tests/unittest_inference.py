@@ -120,6 +120,22 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     ast = test_utils.build_module(CODE, __name__)
 
+    def test_infer_abstract_property_return_values(self):
+        module = test_utils.build_module('''
+        import abc
+
+        class A(object):
+            @abc.abstractproperty
+            def test(self):
+                return 42
+
+        a = A()
+        x = a.test
+        ''')
+        inferred = next(module['x'].infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 42)
+
     def test_module_inference(self):
         infered = self.ast.infer()
         obj = next(infered)

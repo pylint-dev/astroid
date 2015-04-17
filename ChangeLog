@@ -19,6 +19,15 @@ Change log for the astroid package (used to be astng)
       The only change is that astroid understands members
       passed in as dictionaries as the third argument.
 
+    * Improve the inference of Getattr nodes when dealing with
+      abstract properties from the abc module.
+
+      In astroid.bases.Instance._wrap_attr we had a detection
+      code for properties, which basically inferred whatever
+      a property returned, passing the results up the stack,
+      to the igetattr() method. It handled only the builtin property
+      but the new patch also handles abc.abstractproperty.
+
 
 2015-08-02 -- 1.3.8
 

@@ -34,6 +34,7 @@ if sys.version_info >= (3, 0):
     BUILTINS = 'builtins'
 else:
     BUILTINS = '__builtin__'
+PROPERTIES = {BUILTINS + '.property', 'abc.abstractproperty'}
 
 
 class Proxy(object):
@@ -205,7 +206,7 @@ class Instance(Proxy):
         """wrap bound methods of attrs in a InstanceMethod proxies"""
         for attr in attrs:
             if isinstance(attr, UnboundMethod):
-                if BUILTINS + '.property' in attr.decoratornames():
+                if PROPERTIES.intersection(attr.decoratornames()):
                     for infered in attr.infer_call_result(self, context):
                         yield infered
                 else:
