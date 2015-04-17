@@ -26,7 +26,8 @@ Change log for the astroid package (used to be astng)
       code for properties, which basically inferred whatever
       a property returned, passing the results up the stack,
       to the igetattr() method. It handled only the builtin property
-      but the new patch also handles abc.abstractproperty.
+      but the new patch also handles a couple of other properties,
+      such as abc.abstractproperty.
 
     * UnboundMethod.getattr calls the getattr of its _proxied object
       and doesn't call super(...) anymore.

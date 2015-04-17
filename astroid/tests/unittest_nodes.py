@@ -476,5 +476,46 @@ class UnboundMethodNodeTest(unittest.TestCase):
         self.assertEqual(name.value, 'test')
 
 
+class BoundMethodNodeTest(unittest.TestCase):
+
+    def test_is_property(self):
+        ast = test_utils.build_module('''
+        import abc
+
+        def cached_property():
+            # Not a real decorator, but we don't care
+            pass
+        def reify():
+            # Same as cached_property
+            pass
+        class A(object):
+            @property
+            def builtin_property(self):
+                return 42
+            @abc.abstractproperty
+            def abc_property(self):
+                return 42
+            @cached_property
+            def cached_property(self): return 42
+            @reify
+            def reified(self): return 42
+            def not_prop(self): pass
+
+        cls = A()
+        builtin_property = cls.builtin_property
+        abc_property = cls.abc_property
+        cached_p = cls.cached_property
+        reified = cls.reified
+        not_prop = cls.not_prop
+        ''')
+        for prop in ('builtin_property', 'abc_property', 'cached_p', 'reified'):            
+            infered = next(ast[prop].infer())
+            self.assertIsInstance(infered, nodes.Const, prop)
+            self.assertEqual(infered.value, 42, prop)
+
+        infered = next(ast['not_prop'].infer())
+        self.assertIsInstance(infered, bases.BoundMethod)
+        
+
 if __name__ == '__main__':
     unittest.main()
