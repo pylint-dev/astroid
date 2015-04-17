@@ -458,7 +458,7 @@ class ArgumentsNodeTC(unittest.TestCase):
 class UnboundMethodNodeTest(unittest.TestCase):
 
     def test_no_super_getattr(self):
-        # This is a test for issue 
+        # This is a test for issue
         # https://bitbucket.org/logilab/astroid/issue/91, which tests
         # that UnboundMethod doesn't call super when doing .getattr.
 
