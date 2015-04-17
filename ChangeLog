@@ -43,6 +43,13 @@ Change log for the astroid package (used to be astng)
       to the igetattr() method. It handled only the builtin property
       but the new patch also handles abc.abstractproperty.
 
+    * UnboundMethod.getattr calls the getattr of its _proxied object
+      and doesn't call super(...) anymore.
+
+      It previously crashed, since the first ancestor in its mro was
+      bases.Proxy and bases.Proxy doesn't implement the .getattr method.
+      Closes issue #91.
+
 
 2015-03-14 -- 1.3.6
 
