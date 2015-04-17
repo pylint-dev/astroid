@@ -455,5 +455,26 @@ class ArgumentsNodeTC(unittest.TestCase):
         self.assertEqual(new.args.fromlineno, 0)
 
 
+class UnboundMethodNodeTest(unittest.TestCase):
+
+    def test_no_super_getattr(self):
+        # This is a test for issue 
+        # https://bitbucket.org/logilab/astroid/issue/91, which tests
+        # that UnboundMethod doesn't call super when doing .getattr.
+
+        ast = test_utils.build_module('''
+        class A(object):
+            def test(self):
+                pass
+        meth = A.test
+        ''')
+        node = next(ast['meth'].infer())
+        with self.assertRaises(NotFoundError):
+            node.getattr('__missssing__')
+        name = node.getattr('__name__')[0]
+        self.assertIsInstance(name, nodes.Const)
+        self.assertEqual(name.value, 'test')
+
+
 if __name__ == '__main__':
     unittest.main()

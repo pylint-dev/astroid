@@ -262,12 +262,12 @@ class UnboundMethod(Proxy):
     def getattr(self, name, context=None):
         if name == 'im_func':
             return [self._proxied]
-        return super(UnboundMethod, self).getattr(name, context)
+        return self._proxied.getattr(name, context)
 
     def igetattr(self, name, context=None):
         if name == 'im_func':
             return iter((self._proxied,))
-        return super(UnboundMethod, self).igetattr(name, context)
+        return self._proxied.igetattr(name, context)
 
     def infer_call_result(self, caller, context):
         # If we're unbound method __new__ of builtin object, the result is an
