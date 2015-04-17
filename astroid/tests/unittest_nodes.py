@@ -508,14 +508,14 @@ class BoundMethodNodeTest(unittest.TestCase):
         reified = cls.reified
         not_prop = cls.not_prop
         ''')
-        for prop in ('builtin_property', 'abc_property', 'cached_p', 'reified'):            
+        for prop in ('builtin_property', 'abc_property', 'cached_p', 'reified'):
             infered = next(ast[prop].infer())
             self.assertIsInstance(infered, nodes.Const, prop)
             self.assertEqual(infered.value, 42, prop)
 
         infered = next(ast['not_prop'].infer())
         self.assertIsInstance(infered, bases.BoundMethod)
-        
+
 
 if __name__ == '__main__':
     unittest.main()

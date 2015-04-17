@@ -36,21 +36,18 @@ else:
     BUILTINS = '__builtin__'
 PROPERTIES = {BUILTINS + '.property', 'abc.abstractproperty'}
 # List of possible property names. We use this list in order
-# to see (fast) if a method is a property or not. This should be
+# to see if a method is a property or not. This should be
 # pretty reliable and fast, the alternative being to check each
-# decorator to see if its a property a not, but that is too
-# complicated and can be error prone.
+# decorator to see if its a real property-like descriptor, which
+# can be too complicated.
 # Also, these aren't qualified, because each project can
 # define them, we shouldn't expect to know every possible
 # property-like decorator!
-POSSIBLE_PROPERTIES = {"cached_property",
-                       "cachedproperty",
-                       "lazyproperty",
-                       "lazyproperty",
-                       "reify"}
+POSSIBLE_PROPERTIES = {"cached_property", "cachedproperty",
+                       "lazyproperty", "lazyproperty", "reify"}
 
 
-def is_property(meth):
+def _is_property(meth):
     if PROPERTIES.intersection(meth.decoratornames()):
         return True
     stripped = {name.split(".")[-1] for name in meth.decoratornames()}
@@ -226,7 +223,7 @@ class Instance(Proxy):
         """wrap bound methods of attrs in a InstanceMethod proxies"""
         for attr in attrs:
             if isinstance(attr, UnboundMethod):
-                if is_property(attr):
+                if _is_property(attr):
                     for infered in attr.infer_call_result(self, context):
                         yield infered
                 else:
