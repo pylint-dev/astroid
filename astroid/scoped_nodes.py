@@ -867,10 +867,11 @@ def _is_metaclass(klass, seen=None):
     for base in klass.bases:
         try:
             for baseobj in base.infer():
-                if baseobj in seen:
+                baseobj_qname = baseobj.qname()
+                if baseobj_qname in seen:
                     continue
                 else:
-                    seen.add(baseobj)
+                    seen.add(baseobj_qname)
                 if isinstance(baseobj, Instance):
                     # not abstract
                     return False
@@ -905,11 +906,12 @@ def _class_type(klass, ancestors=None):
     else:
         if ancestors is None:
             ancestors = set()
-        if klass in ancestors:
+        klass_name = klass.qname()    
+        if klass_name in ancestors:
             # XXX we are in loop ancestors, and have found no type
             klass._type = 'class'
             return 'class'
-        ancestors.add(klass)
+        ancestors.add(klass_name)
         for base in klass.ancestors(recurs=False):
             name = _class_type(base, ancestors)
             if name != 'class':
@@ -1413,6 +1415,10 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             if values is YES:
                 continue
 
+            if not values:
+                # Stop the iteration, because the class
+                # has an empty list of slots.
+                raise StopIteration(values)
             for elt in values:
                 try:
                     for infered in elt.infer():
@@ -1445,7 +1451,10 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         slots = self._islots()
         try:
             first = next(slots)
-        except StopIteration:
+        except StopIteration as exc:
+            # The class doesn't have a __slots__ definition or empty slots.
+            if exc.args and exc.args[0] not in ('', None):
+                return exc.args[0]
             # The class doesn't have a __slots__ definition.
             return None
         return [first] + list(slots)
