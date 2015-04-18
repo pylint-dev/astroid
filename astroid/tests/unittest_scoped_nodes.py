@@ -608,6 +608,28 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         it = klass2.local_attr_ancestors('method')
         self.assertRaises(StopIteration, partial(next, it))
 
+    def test_local_attr_mro(self):
+        module = test_utils.build_module('''
+        class A(object):
+            def __init__(self): pass
+        class B(A):
+            def __init__(self, arg, arg2): pass
+        class C(A): pass
+        class D(C, B): pass
+        ''')
+        dclass = module['D']
+        init = dclass.local_attr('__init__')[0]
+        self.assertIsInstance(init, nodes.Function)
+        self.assertEqual(init.parent.name, 'B')
+
+        cclass = module['C']
+        init = cclass.local_attr('__init__')[0]
+        self.assertIsInstance(init, nodes.Function)
+        self.assertEqual(init.parent.name, 'A')
+
+        ancestors = list(dclass.local_attr_ancestors('__init__'))
+        self.assertEqual([node.name for node in ancestors], ['B', 'A', 'object'])
+
     def test_instance_attr_ancestors(self):
         klass2 = self.module['YOUPI']
         it = klass2.instance_attr_ancestors('yo')

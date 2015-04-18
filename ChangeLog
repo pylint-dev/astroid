@@ -58,6 +58,18 @@ Change log for the astroid package (used to be astng)
 
       .mro() fallbacks to using .ancestors() in that case.
 
+    * Class.local_attr and Class.local_attr_ancestors uses internally
+      a mro lookup, using .mro() method, if they can.
+
+      That means for newstyle classes, when trying to lookup a member
+      using one of these functions, the first one according to the
+      mro will be returned. This reflects nicely the reality,
+      but it can have as a drawback the fact that it is a behaviour
+      change (the previous behaviour was incorrect though). Also,
+      having bases which can return multiple values when inferred
+      will not work with the new approach, because .mro() only
+      retrieves the first value inferred from a base. 
+
 
 2015-03-14 -- 1.3.6
 

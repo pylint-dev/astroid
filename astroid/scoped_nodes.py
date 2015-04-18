@@ -1140,7 +1140,13 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         """return an iterator on astroid representation of parent classes
         which have <name> defined in their locals
         """
-        for astroid in self.ancestors(context=context):
+        if self.newstyle and all(n.newstyle for n in self.ancestors(context)):
+            # Look up in the mro if we can. This will result in the
+            # attribute being looked up just as Python does it.
+            ancestors = self.mro(context)[1:]
+        else:
+            ancestors = self.ancestors(context)
+        for astroid in ancestors:
             if name in astroid:
                 yield astroid
 
@@ -1166,7 +1172,6 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         try:
             return self.locals[name]
         except KeyError:
-            # get if from the first parent implementing it if any
             for class_node in self.local_attr_ancestors(name, context):
                 return class_node.locals[name]
         raise NotFoundError(name)
