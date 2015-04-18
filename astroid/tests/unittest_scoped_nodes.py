@@ -1154,6 +1154,23 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(str(cm.exception), "Could not obtain mro for "
                                             "old-style classes.")
 
+    @test_utils.require_version(maxver='3.0')
+    def test_combined_newstyle_oldstyle_in_mro(self):
+        node = test_utils.extract_node('''
+        class Old:
+            pass
+        class New(object):
+            pass
+        class New1(object):
+            pass
+        class New2(New, New1):
+            pass
+        class NewOld(New2, Old): #@
+            pass
+        ''')
+        self.assertEqualMro(node, ['NewOld', 'New2', 'New', 'New1', 'object', 'Old'])
+        self.assertTrue(node.newstyle)
+
     def test_with_metaclass_mro(self):
         astroid = test_utils.build_module("""
         import six
