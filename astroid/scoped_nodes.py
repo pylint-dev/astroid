@@ -1453,7 +1453,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             first = next(slots)
         except StopIteration as exc:
             # The class doesn't have a __slots__ definition or empty slots.
-            if exc.args:
+            if exc.args and exc.args[0] not in ('', None):
                 return exc.args[0]
             return None
         return [first] + list(slots)
