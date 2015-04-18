@@ -1459,7 +1459,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             return None
         return [first] + list(slots)
 
-    def _inferred_bases(self, recurs=True, context=None):
+    def _inferred_bases(self, context=None):
         # TODO(cpopa): really similar with .ancestors,
         # but the difference is when one base is inferred,
         # only the first object is wanted. That's because
@@ -1509,9 +1509,20 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                 "Could not obtain mro for old-style classes.")
 
         bases = list(self._inferred_bases(context=context))
-        unmerged_mro = ([[self]] +
-                        [base.mro() for base in bases if base is not self] +
-                        [bases])
+        bases_mro = []
+        for base in bases:
+            try:
+                mro = base.mro(context=context)
+                bases_mro.append(mro)
+            except NotImplementedError:
+                # Some classes have in their ancestors both newstyle and
+                # old style classes. For these we can't retrieve the .mro,
+                # although in Python it's possible, since the class we are
+                # currently working is in fact new style.
+                # So, we fallback to ancestors here.
+                ancestors = list(base.ancestors(context=context))
+                bases_mro.append(ancestors)
 
+        unmerged_mro = ([[self]] + bases_mro + [bases])
         _verify_duplicates_mro(unmerged_mro)
         return _c3_merge(unmerged_mro)
