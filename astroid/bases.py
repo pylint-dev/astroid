@@ -50,7 +50,8 @@ POSSIBLE_PROPERTIES = {"cached_property", "cachedproperty",
 def _is_property(meth):
     if PROPERTIES.intersection(meth.decoratornames()):
         return True
-    stripped = {name.split(".")[-1] for name in meth.decoratornames()}
+    stripped = {name.split(".")[-1] for name in meth.decoratornames()
+                if name is not YES}
     return any(name in stripped for name in POSSIBLE_PROPERTIES)
 
 
