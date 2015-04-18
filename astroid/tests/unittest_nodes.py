@@ -488,6 +488,10 @@ class BoundMethodNodeTest(unittest.TestCase):
         def reify():
             # Same as cached_property
             pass
+        def lazy_property():
+            pass
+        def lazyproperty():
+            pass
         class A(object):
             @property
             def builtin_property(self):
@@ -499,6 +503,10 @@ class BoundMethodNodeTest(unittest.TestCase):
             def cached_property(self): return 42
             @reify
             def reified(self): return 42
+            @lazy_property
+            def lazy_prop(self): return 42
+            @lazyproperty
+            def lazyprop(self): return 42
             def not_prop(self): pass
 
         cls = A()
@@ -507,8 +515,11 @@ class BoundMethodNodeTest(unittest.TestCase):
         cached_p = cls.cached_property
         reified = cls.reified
         not_prop = cls.not_prop
+        lazy_prop = cls.lazy_prop
+        lazyprop = cls.lazyprop
         ''')
-        for prop in ('builtin_property', 'abc_property', 'cached_p', 'reified'):
+        for prop in ('builtin_property', 'abc_property', 'cached_p', 'reified',
+                     'lazy_prop', 'lazyprop'):
             infered = next(ast[prop].infer())
             self.assertIsInstance(infered, nodes.Const, prop)
             self.assertEqual(infered.value, 42, prop)
