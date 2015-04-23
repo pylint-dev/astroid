@@ -223,3 +223,4 @@ else:
     TRANSFORM = six_moves_transform_py3
 
 register_module_extender(MANAGER, 'six', TRANSFORM)
+register_module_extender(MANAGER, 'requests.packages.urllib3.packages.six', TRANSFORM)
