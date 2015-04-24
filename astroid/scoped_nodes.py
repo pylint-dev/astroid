@@ -1318,6 +1318,17 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         if missing:
             raise InferenceError()
 
+    def implicit_metaclass(self):
+        """Get the implicit metaclass of the current class
+
+        For newstyle classes, this will return an instance of builtins.type.
+        For oldstyle classes, it will simply return None, since there's
+        no implicit metaclass there.
+        """
+
+        if self.newstyle:
+            return builtin_lookup('type')[1][0]
+
     _metaclass = None
     def _explicit_metaclass(self):
         """ Return the explicit defined metaclass
