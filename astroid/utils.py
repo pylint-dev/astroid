@@ -49,7 +49,6 @@ class ASTWalker(object):
         _done.add(node)
         self.visit(node)
         for child_node in node.get_children():
-            self.handler.set_context(node, child_node)
             assert child_node is not node
             self.walk(child_node, _done)
         self.leave(node)
