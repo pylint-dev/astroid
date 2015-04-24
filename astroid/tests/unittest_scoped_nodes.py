@@ -1274,6 +1274,21 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         with self.assertRaises(NotFoundError):
             first.getattr("missing")
 
+    def test_implicit_metaclass(self):
+        cls = test_utils.extract_node("""
+        class A(object):
+            pass
+        """)
+        type_cls = scoped_nodes.builtin_lookup("type")[1][0]
+        self.assertEqual(cls.implicit_metaclass(), type_cls)
+
+    @test_utils.require_version(maxver='3.0')
+    def test_implicit_metaclass_is_none(self):
+        cls = test_utils.extract_node("""
+        class A: pass
+        """)
+        self.assertIsNone(cls.implicit_metaclass())
+
 
 if __name__ == '__main__':
     unittest.main()
