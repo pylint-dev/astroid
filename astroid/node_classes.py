@@ -376,10 +376,12 @@ def _find_arg(argname, args, rec=False):
     return None, None
 
 
-def _format_args(args, annotations=[], defaults=None):
+def _format_args(args, annotations=None, defaults=None):
     values = []
     if args is None:
         return ''
+    if annotations is None:
+        annotations = []
     if defaults is not None:
         default_offset = len(args) - len(defaults)
     for i, (arg, annotation) in enumerate(zip(args, annotations)):
