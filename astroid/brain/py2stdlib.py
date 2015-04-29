@@ -398,6 +398,8 @@ def multiprocessing_managers_transform():
         Value = Value
         Array = Array
         Namespace = Namespace
+        __enter__ = lambda self: self
+        __exit__ = lambda *args: args
     '''))
 
 
