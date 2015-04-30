@@ -1143,7 +1143,12 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         if self.newstyle and all(n.newstyle for n in self.ancestors(context)):
             # Look up in the mro if we can. This will result in the
             # attribute being looked up just as Python does it.
-            ancestors = self.mro(context)[1:]
+            try:
+                ancestors = self.mro(context)[1:]
+            except ResolveError:
+                # Reraise it as NotFoundError, there's no reason
+                # for ResolveError to leak out.
+                six.raise_from(NotFoundError, ResolveError)
         else:
             ancestors = self.ancestors(context)
         for astroid in ancestors:

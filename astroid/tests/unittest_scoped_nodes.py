@@ -1289,6 +1289,13 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         """)
         self.assertIsNone(cls.implicit_metaclass())
 
+    def test_local_attr_invalid_mro(self):
+        cls = test_utils.extract_node("""
+        class A(object, object):
+            pass
+        """)
+        self.assertRaises(NotFoundError, cls.local_attr, 'test')
+
 
 if __name__ == '__main__':
     unittest.main()
