@@ -3,6 +3,9 @@ Change log for the astroid package (used to be astng)
 
 --
 
+    * Generated enum member stubs now support IntEnum and multiple
+      base classes.
+
     * Add brain tips for multiprocessing.Manager and
       multiprocessing.managers.SyncManager.
 
