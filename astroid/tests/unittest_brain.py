@@ -252,5 +252,38 @@ class EnumBrainTest(unittest.TestCase):
         meth = one.getattr('mymethod')[0]
         self.assertIsInstance(meth, astroid.Function)
 
+    def test_enum_multiple_base_classes(self):
+        module = AstroidBuilder().string_build(dedent("""
+        import enum
+
+        class Mixin:
+            pass
+
+        class MyEnum(Mixin, enum.Enum):
+            one = 1
+        """))
+        enum = next(module['MyEnum'].infer())
+        one = enum['one']
+
+        clazz = one.getattr('__class__')[0]
+        self.assertTrue(clazz.is_subtype_of('.Mixin'),
+                        'Enum instance should share base classes with generating class')
+
+    def test_int_enum(self):
+        module = AstroidBuilder().string_build(dedent("""
+        import enum
+
+        class MyEnum(enum.IntEnum):
+            one = 1
+        """))
+
+        enum = next(module['MyEnum'].infer())
+        one = enum['one']
+
+        clazz = one.getattr('__class__')[0]
+        int_type = '{}.{}'.format(bases.BUILTINS, 'int')
+        self.assertTrue(clazz.is_subtype_of(int_type),
+                        'IntEnum based enums should be a subtype of int')
+
 if __name__ == '__main__':
     unittest.main()
