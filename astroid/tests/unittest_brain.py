@@ -39,6 +39,11 @@ try:
 except ImportError:
     HAS_MULTIPROCESSING = False
 
+try:
+    import enum # pylint: disable=unused-import
+    HAS_ENUM = True
+except ImportError:
+    HAS_ENUM = False
 
 class HashlibTest(unittest.TestCase):
     def test_hashlib(self):
@@ -299,6 +304,35 @@ class MultiprocessingBrainTest(unittest.TestCase):
         array = next(module['array'].infer())
         self.assertEqual(array.qname(), "array.array")
 
+@unittest.skipUnless(HAS_ENUM,
+                     'The enum module was only added in Python 3.4. Support for older Python '
+                     'versions may be available through the enum34 compatibility module.')
+class EnumBrainTest(unittest.TestCase):
+
+    def test_simple_enum(self):
+        module = AstroidBuilder().string_build(dedent("""
+        import enum
+
+        class MyEnum(enum.Enum):
+            one = "one"
+            two = "two"
+
+            def mymethod(self, x):
+                return 5
+
+        """))
+
+        enum = next(module['MyEnum'].infer())
+        one = enum['one']
+        self.assertEqual(one.pytype(), '.MyEnum.one')
+
+        property_type = '{}.property'.format(bases.BUILTINS)
+        for propname in ('name', 'value'):
+            prop = next(iter(one.getattr(propname)))
+            self.assertIn(property_type, prop.decoratornames())
+
+        meth = one.getattr('mymethod')[0]
+        self.assertIsInstance(meth, astroid.Function)
 
 
 if __name__ == '__main__':
