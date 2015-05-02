@@ -2,6 +2,9 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * Generated enum member stubs now support IntEnum and multiple
+      base classes.
+
     * astroid.builder.AstroidBuilder.string_build and
       astroid.builder.AstroidBuilder.file_build are now raising
       AstroidBuildingException when the parsing of the string raises
