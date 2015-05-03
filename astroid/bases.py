@@ -44,7 +44,8 @@ PROPERTIES = {BUILTINS + '.property', 'abc.abstractproperty'}
 # define them, we shouldn't expect to know every possible
 # property-like decorator!
 POSSIBLE_PROPERTIES = {"cached_property", "cachedproperty",
-                       "lazyproperty", "lazy_property", "reify"}
+                       "lazyproperty", "lazy_property", "reify",
+                       "lazyattribute", "lazy_attribute"}
 
 
 def _is_property(meth):
