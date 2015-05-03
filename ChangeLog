@@ -61,6 +61,13 @@ Change log for the astroid package (used to be astng)
     * Expose a implicit_metaclass() method in Class. This will return
       a builtins.type instance for newstyle classes. 
 
+    * Add two new exceptions for handling MRO error cases. DuplicateBasesError
+      is emitted when duplicate bases are found in a class,
+      InconsistentMroError is raised when the method resolution is determined
+      to be inconsistent. They share a common class, MroError, which
+      is a subclass of ResolveError, meaning that this change is backwards
+      compatible.
+
 
 2015-08-02 -- 1.3.8
 

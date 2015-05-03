@@ -35,8 +35,12 @@ import six
 from logilab.common.compat import builtins
 from logilab.common.decorators import cached, cachedproperty
 
-from astroid.exceptions import NotFoundError, \
-     AstroidBuildingException, InferenceError, ResolveError
+from astroid.exceptions import (
+     NotFoundError,
+     AstroidBuildingException,
+     InferenceError, MroError,
+     DuplicateBasesError, InconsistentMroError,
+)
 from astroid.node_classes import Const, DelName, DelAttr, \
      Dict, From, List, Pass, Raise, Return, Tuple, Yield, YieldFrom, \
      LookupMixIn, const_factory as cf, unpack_infer, CallFunc
@@ -75,8 +79,10 @@ def _c3_merge(sequences):
             bases = ["({})".format(", ".join(base.name
                                              for base in subsequence))
                      for subsequence in sequences]
-            raise ResolveError("Cannot create a consistent method resolution "
-                               "order for bases %s" % ", ".join(bases))
+            raise InconsistentMroError(
+                "Cannot create a consistent method resolution "
+                "order for bases %s" % ", ".join(bases))
+
         result.append(candidate)
         # remove the chosen candidate
         for seq in sequences:
@@ -88,7 +94,7 @@ def _verify_duplicates_mro(sequences):
     for sequence in sequences:
         names = [node.qname() for node in sequence]
         if len(names) != len(set(names)):
-            raise ResolveError('Duplicates found in the mro.')
+            raise DuplicateBasesError('Duplicates found in the mro.')
 
 
 def remove_nodes(func, cls):
@@ -1145,10 +1151,10 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             # attribute being looked up just as Python does it.
             try:
                 ancestors = self.mro(context)[1:]
-            except ResolveError:
+            except MroError:
                 # Reraise it as NotFoundError, there's no reason
-                # for ResolveError to leak out.
-                six.raise_from(NotFoundError, ResolveError)
+                # for MroError to leak out.
+                six.raise_from(NotFoundError, MroError)
         else:
             ancestors = self.ancestors(context)
         for astroid in ancestors:

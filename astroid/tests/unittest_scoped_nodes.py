@@ -24,8 +24,12 @@ from functools import partial
 import unittest
 import warnings
 
-from astroid import YES, builder, nodes, scoped_nodes, \
-     InferenceError, NotFoundError, NoDefault, ResolveError
+from astroid import YES, builder, nodes, scoped_nodes
+from astroid.exceptions import (
+     InferenceError, NotFoundError,
+     NoDefault, ResolveError, MroError,
+     InconsistentMroError, DuplicateBasesError,
+)
 from astroid.bases import (
     BUILTINS, Instance,
     BoundMethod, UnboundMethod, Generator
@@ -1210,19 +1214,20 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         class OuterD(OuterC):
             class Inner(OuterC.Inner, OuterB.Inner):
                 pass
+        class Duplicates(str, str): pass
         
         """)
         self.assertEqualMro(astroid['D'], ['D', 'dict', 'C', 'object'])
         self.assertEqualMro(astroid['D1'], ['D1', 'B1', 'C1', 'A1', 'object'])
         self.assertEqualMro(astroid['E1'], ['E1', 'C1', 'B1', 'A1', 'object'])
-        with self.assertRaises(ResolveError) as cm:
+        with self.assertRaises(InconsistentMroError) as cm:
             astroid['F1'].mro()
         self.assertEqual(str(cm.exception),
                          "Cannot create a consistent method resolution order "
                          "for bases (B1, C1, A1, object), "
                          "(C1, B1, A1, object)")
 
-        with self.assertRaises(ResolveError) as cm:
+        with self.assertRaises(InconsistentMroError) as cm:
             astroid['G1'].mro()
         self.assertEqual(str(cm.exception),
                          "Cannot create a consistent method resolution order "
@@ -1246,6 +1251,12 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqualMro(
             astroid['OuterD']['Inner'],
             ['Inner', 'Inner', 'Inner', 'Inner', 'object'])
+
+        with self.assertRaises(DuplicateBasesError) as cm:
+            astroid['Duplicates'].mro()
+        self.assertEqual(str(cm.exception), "Duplicates found in the mro.")
+        self.assertTrue(issubclass(cm.exception.__class__, MroError))
+        self.assertTrue(issubclass(cm.exception.__class__, ResolveError))
 
     def test_generator_from_infer_call_result_parent(self):
         func = test_utils.extract_node("""
