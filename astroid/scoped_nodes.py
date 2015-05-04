@@ -1156,7 +1156,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                 # for MroError to leak out.
                 six.raise_from(NotFoundError, MroError)
         else:
-            ancestors = self.ancestors(context)
+            ancestors = self.ancestors(context=context)
         for astroid in ancestors:
             if name in astroid:
                 yield astroid

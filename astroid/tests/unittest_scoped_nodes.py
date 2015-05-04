@@ -596,11 +596,21 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(r_sibling.name, 'YOUPI')
 
     def test_local_attr_ancestors(self):
-        klass2 = self.module['YOUPI']
+        module = test_utils.build_module('''
+        class A():
+            def __init__(self): pass
+        class B(A): pass
+        class C(B): pass
+        class D(object): pass
+        class F(): pass
+        class E(F, D): pass
+        ''')
+        # Test old-style (Python 2) / new-style (Python 3+) ancestors lookups
+        klass2 = module['C']
         it = klass2.local_attr_ancestors('__init__')
         anc_klass = next(it)
         self.assertIsInstance(anc_klass, nodes.Class)
-        self.assertEqual(anc_klass.name, 'YO')
+        self.assertEqual(anc_klass.name, 'A')
         if sys.version_info[0] == 2:
             self.assertRaises(StopIteration, partial(next, it))
         else:
@@ -610,6 +620,14 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             self.assertRaises(StopIteration, partial(next, it))
 
         it = klass2.local_attr_ancestors('method')
+        self.assertRaises(StopIteration, partial(next, it))
+
+        # Test mixed-style ancestor lookups
+        klass2 = module['E']
+        it = klass2.local_attr_ancestors('__init__')
+        anc_klass = next(it)
+        self.assertIsInstance(anc_klass, nodes.Class)
+        self.assertEqual(anc_klass.name, 'object')
         self.assertRaises(StopIteration, partial(next, it))
 
     def test_local_attr_mro(self):
