@@ -710,8 +710,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(klass.type, 'metaclass')
         klass = self.module2['MyException']
         self.assertEqual(klass.type, 'exception')
-        klass = self.module2['MyIFace']
-        self.assertEqual(klass.type, 'interface')
         klass = self.module2['MyError']
         self.assertEqual(klass.type, 'exception')
         # the following class used to be detected as a metaclass
