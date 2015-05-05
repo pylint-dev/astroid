@@ -897,7 +897,7 @@ def _is_metaclass(klass, seen=None):
 
 
 def _class_type(klass, ancestors=None):
-    """return a Class node type to differ metaclass, interface and exception
+    """return a Class node type to differ metaclass and exception
     from 'regular' classes
     """
     # XXX we have to store ancestors in case we have a ancestor loop
@@ -905,8 +905,6 @@ def _class_type(klass, ancestors=None):
         return klass._type
     if _is_metaclass(klass):
         klass._type = 'metaclass'
-    elif klass.name.endswith('Interface'):
-        klass._type = 'interface'
     elif klass.name.endswith('Exception'):
         klass._type = 'exception'
     else:
@@ -956,7 +954,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
     hide = False
     type = property(_class_type,
                     doc="class'type, possible values are 'class' | "
-                    "'metaclass' | 'interface' | 'exception'")
+                    "'metaclass' | 'exception'")
 
     def __init__(self, name, doc):
         self.instance_attrs = {}
