@@ -1269,9 +1269,6 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         """return True if the class has a custom __getattr__ or
         __getattribute__ method
         """
-        # need to explicitly handle optparse.Values (setattr is not detected)
-        if self.name == 'Values' and self.root().name == 'optparse':
-            return True
         try:
             self.getattr('__getattr__', context)
             return True
