@@ -1266,8 +1266,13 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                 raise InferenceError(name)
 
     def has_dynamic_getattr(self, context=None):
-        """return True if the class has a custom __getattr__ or
-        __getattribute__ method
+        """
+        Check if the current instance has a custom __getattr__
+        or a custom __getattribute__.
+
+        If any such method is found and it is not from
+        builtins, nor from an extension module, then the function
+        will return True.
         """
         try:
             self.getattr('__getattr__', context)
