@@ -327,7 +327,13 @@ class InspectBuilder(object):
             else:
                 attach_dummy_node(node, name, member)
                 return True
-        if {'gtk': 'gtk._gtk'}.get(modname, modname) != self._module.__name__:
+
+        real_name = {
+            'gtk': 'gtk_gtk',
+            '_io': 'io',
+        }.get(modname, modname)
+
+        if real_name != self._module.__name__:
             # check if it sounds valid and then add an import node, else use a
             # dummy node
             try:
