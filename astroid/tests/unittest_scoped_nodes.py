@@ -1353,6 +1353,30 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         """)
         self.assertRaises(NotFoundError, cls.local_attr, 'test')
 
+    def test_has_dynamic_getattr(self):
+        module = test_utils.build_module("""
+        class Getattr(object):
+            def __getattr__(self, attrname):
+                pass
+
+        class Getattribute(object):
+            def __getattribute__(self, attrname):
+                pass
+
+        class ParentGetattr(Getattr):
+            pass
+        """)
+        self.assertTrue(module['Getattr'].has_dynamic_getattr())
+        self.assertTrue(module['Getattribute'].has_dynamic_getattr())
+        self.assertTrue(module['ParentGetattr'].has_dynamic_getattr())
+
+        # Test that objects analyzed through the live introspection
+        # aren't considered to have dynamic getattr implemented.
+        import datetime
+        astroid_builder = builder.AstroidBuilder()
+        module = astroid_builder.module_build(datetime)
+        self.assertFalse(module['timedelta'].has_dynamic_getattr())
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1274,16 +1274,17 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         builtins, nor from an extension module, then the function
         will return True.
         """
+        def _valid_getattr(node):
+            root = node.root()
+            return root.name != BUILTINS and root.pure_python
+
         try:
-            self.getattr('__getattr__', context)
-            return True
+            return _valid_getattr(self.getattr('__getattr__', context)[0])
         except NotFoundError:
             #if self.newstyle: XXX cause an infinite recursion error
             try:
                 getattribute = self.getattr('__getattribute__', context)[0]
-                if getattribute.root().name != BUILTINS:
-                    # class has a custom __getattribute__ defined
-                    return True
+                return _valid_getattr(getattribute)
             except NotFoundError:
                 pass
         return False

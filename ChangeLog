@@ -85,6 +85,13 @@ Change log for the astroid package (used to be astng)
 
     * Classes aren't marked as interfaces anymore, in the `type` attribute.
 
+    * Class.has_dynamic_getattr doesn't return True for special methods
+      which aren't implemented in pure Python, as it is the case for extension modules.
+
+      Since most likely the methods were coming from a live object, this implies
+      that all of them will have __getattr__ and __getattribute__ present and it
+      is wrong to consider that those methods were actually implemented.
+
 
 2015-03-14 -- 1.3.6
 
