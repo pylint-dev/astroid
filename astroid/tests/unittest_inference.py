@@ -982,14 +982,20 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(bar_class.instance_attrs, {'attr': [assattr]})
 
     def test_python25_generator_exit(self):
-        sys.stderr = six.StringIO()
-        data = "b = {}[str(0)+''].a"
-        ast = builder.string_build(data, __name__, __file__)
-        list(ast['b'].infer())
-        output = sys.stderr.getvalue()
+        buffer = six.StringIO()
+        sys.stderr = buffer
+        try:
+            data = "b = {}[str(0)+''].a"
+            ast = builder.string_build(data, __name__, __file__)
+            list(ast['b'].infer())
+            output = buffer.getvalue()
+        finally:
+            sys.stderr = sys.__stderr__
         # I have no idea how to test for this in another way...
-        self.assertNotIn("RuntimeError", output, "Exception exceptions.RuntimeError: 'generator ignored GeneratorExit' in <generator object> ignored")
-        sys.stderr = sys.__stderr__
+        msg = ("Exception exceptions.RuntimeError: "
+               "'generator ignored GeneratorExit' in <generator object> "
+               "ignored")
+        self.assertNotIn("RuntimeError", output, msg)
 
     def test_python25_relative_import(self):
         data = "from ...logilab.common import date; print (date)"
