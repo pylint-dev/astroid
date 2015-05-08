@@ -72,7 +72,7 @@ class RawBuildingTC(unittest.TestCase):
     @unittest.skipUnless(os.name == 'java', 'Requires Jython')
     def test_open_is_inferred_correctly(self):
         # Lot of Jython builtins don't have a __module__ attribute.
-        for name, meth in inspect.getmembers(builtins, predicate=inspect.isbuiltin):
+        for name, _ in inspect.getmembers(builtins, predicate=inspect.isbuiltin):
             if name == 'print':
                 continue
             node = test_utils.extract_node('{0} #@'.format(name))
