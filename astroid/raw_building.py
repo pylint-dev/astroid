@@ -37,6 +37,7 @@ MANAGER = AstroidManager()
 
 _CONSTANTS = tuple(CONST_CLS) # the keys of CONST_CLS eg python builtin types
 _JYTHON = os.name == 'java'
+_BUILTINS = vars(six.moves.builtins)
 
 def _io_discrepancy(member):
     # _io module names itself `io`: http://bugs.python.org/issue18602
@@ -310,7 +311,7 @@ class InspectBuilder(object):
             modname = None
         if modname is None:
             if (name in ('__new__', '__subclasshook__')
-                    or (name == 'open' and _JYTHON)):
+                    or (name in _BUILTINS and _JYTHON)):
                 # Python 2.5.1 (r251:54863, Sep  1 2010, 22:03:14)
                 # >>> print object.__new__.__module__
                 # None

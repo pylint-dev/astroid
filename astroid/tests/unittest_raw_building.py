@@ -1,5 +1,8 @@
+import inspect
 import os
 import unittest
+
+from six.moves import builtins # pylint: disable=import-error
 
 from astroid.builder import AstroidBuilder
 from astroid.raw_building import (
@@ -68,11 +71,14 @@ class RawBuildingTC(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'java', 'Requires Jython')
     def test_open_is_inferred_correctly(self):
-        # open doesn't have a __module__ attribute in Jython
-        node = AstroidBuilder().string_build('f = open')
-        inferred = next(node['f'].infer())
-        self.assertIsInstance(inferred, nodes.Function)
-        self.assertEqual(inferred.root().name, BUILTINS)
+        # Lot of Jython builtins don't have a __module__ attribute.
+        for name, meth in inspect.getmembers(builtins, predicate=inspect.isbuiltin):
+            if name == 'print':
+                continue
+            node = test_utils.extract_node('{0} #@'.format(name))
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, nodes.Function, name)
+            self.assertEqual(inferred.root().name, BUILTINS, name)
 
 
 if __name__ == '__main__':
