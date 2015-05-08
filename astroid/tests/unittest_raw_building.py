@@ -1,8 +1,14 @@
+import os
 import unittest
 
 from astroid.builder import AstroidBuilder
-from astroid.raw_building import (attach_dummy_node, build_module, build_class, build_function, build_from_import)
+from astroid.raw_building import (
+    attach_dummy_node, build_module,
+    build_class, build_function, build_from_import
+)
 from astroid import test_utils
+from astroid import nodes
+from astroid.bases import BUILTINS
 
 
 class RawBuildingTC(unittest.TestCase):
@@ -59,6 +65,14 @@ class RawBuildingTC(unittest.TestCase):
         module = builder.inspect_build(_io)
         buffered_reader = module.getattr('BufferedReader')[0]
         self.assertEqual(buffered_reader.root().name, 'io')
+
+    @unittest.skipUnless(os.name == 'java', 'Requires Jython')
+    def test_open_is_inferred_correctly(self):
+        # open doesn't have a __module__ attribute in Jython
+        node = AstroidBuilder().string_build('f = open')
+        inferred = next(node['f'].infer())
+        self.assertIsInstance(inferred, nodes.Function)
+        self.assertEqual(inferred.root().name, BUILTINS)
         
 
 if __name__ == '__main__':
