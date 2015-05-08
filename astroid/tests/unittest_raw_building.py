@@ -73,7 +73,7 @@ class RawBuildingTC(unittest.TestCase):
         inferred = next(node['f'].infer())
         self.assertIsInstance(inferred, nodes.Function)
         self.assertEqual(inferred.root().name, BUILTINS)
-        
+
 
 if __name__ == '__main__':
     unittest.main()
