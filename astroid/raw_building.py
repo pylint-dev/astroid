@@ -22,6 +22,7 @@
 __docformat__ = "restructuredtext en"
 
 import sys
+import os
 from os.path import abspath
 from inspect import (getargspec, isdatadescriptor, isfunction, ismethod,
                      ismethoddescriptor, isclass, isbuiltin, ismodule,
@@ -36,6 +37,7 @@ from astroid.manager import AstroidManager
 MANAGER = AstroidManager()
 
 _CONSTANTS = tuple(CONST_CLS) # the keys of CONST_CLS eg python builtin types
+_JYTHON = os.name == 'java'
 
 def _io_discrepancy(member):
     # _io module names itself `io`: http://bugs.python.org/issue18602
@@ -319,7 +321,8 @@ class InspectBuilder(object):
             traceback.print_exc()
             modname = None
         if modname is None:
-            if name in ('__new__', '__subclasshook__'):
+            if (name in ('__new__', '__subclasshook__')
+                    or (name == 'open' and _JYTHON)):
                 # Python 2.5.1 (r251:54863, Sep  1 2010, 22:03:14)
                 # >>> print object.__new__.__module__
                 # None
