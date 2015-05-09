@@ -351,7 +351,7 @@ def excepthandler_assigned_stmts(self, node, context=None, asspath=None):
             assigned = Instance(assigned)
         yield assigned
 nodes.ExceptHandler.assigned_stmts = raise_if_nothing_infered(excepthandler_assigned_stmts)
-    
+
 
 def _infer_context_manager(self, mgr, context):
     try:
@@ -401,7 +401,7 @@ def with_assigned_stmts(self, node, context=None, asspath=None):
             for index in asspath:
                 if not hasattr(obj, 'elts'):
                     raise InferenceError
-                obj = obj.elts[index]            
+                obj = obj.elts[index]
             yield obj
 
 

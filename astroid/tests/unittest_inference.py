@@ -1725,7 +1725,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         stderr = module['stderr']
         inferred = next(stderr.infer())
         self.assertIsInstance(inferred, nodes.Const)
-        self.assertEqual(inferred.value, 2)        
+        self.assertEqual(inferred.value, 2)
 
     @unittest.expectedFailure
     def test_inferring_with_contextlib_contextmanager(self):
