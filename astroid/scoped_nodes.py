@@ -1276,7 +1276,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         """
         def _valid_getattr(node):
             root = node.root()
-            return root.name != BUILTINS and root.pure_python
+            return root.name != BUILTINS and getattr(root, 'pure_python', None)
 
         try:
             return _valid_getattr(self.getattr('__getattr__', context)[0])
