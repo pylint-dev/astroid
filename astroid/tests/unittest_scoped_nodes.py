@@ -1358,7 +1358,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         local = cls.local_attr('test')[0]
         inferred = next(local.infer())
         self.assertIsInstance(inferred, nodes.Const)
-        self.assertEqual(inferred.value, 42)         
+        self.assertEqual(inferred.value, 42)
 
     def test_has_dynamic_getattr(self):
         module = test_utils.build_module("""
@@ -1395,6 +1395,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         """)
         self.assertRaises(DuplicateBasesError, module['B'].mro)
 
-        
+
 if __name__ == '__main__':
     unittest.main()
