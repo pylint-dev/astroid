@@ -1780,6 +1780,21 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(second, nodes.Const)
         self.assertEqual(second.value, 42)
 
+    def test_inferring_context_manager_skip_index_error(self):
+        # Raise an InferenceError when having multiple 'as' bindings
+        # from a context manager, but its result doesn't have those
+        # indices. This is the case of contextlib.nested, where the
+        # result is a list, which is mutated later on, so it's
+        # undetected by astroid.
+        module = test_utils.build_module('''
+        class Manager(object):
+            def __enter__(self):
+                return []
+        with Manager() as (a, b, c):
+            pass
+        ''')
+        self.assertRaises(InferenceError, next, module['a'].infer())
+
     def test_inferring_with_contextlib_contextmanager_failures(self):
         module = test_utils.build_module('''
         from contextlib import contextmanager

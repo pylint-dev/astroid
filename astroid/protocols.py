@@ -427,7 +427,10 @@ def with_assigned_stmts(self, node, context=None, asspath=None):
             for index in asspath:
                 if not hasattr(obj, 'elts'):
                     raise InferenceError
-                obj = obj.elts[index]
+                try:
+                    obj = obj.elts[index]
+                except IndexError:
+                    raise InferenceError
             yield obj
 
 
