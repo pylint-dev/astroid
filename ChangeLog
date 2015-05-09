@@ -92,6 +92,13 @@ Change log for the astroid package (used to be astng)
       that all of them will have __getattr__ and __getattribute__ present and it
       is wrong to consider that those methods were actually implemented.
 
+    * Add basic support for understanding context managers.
+
+      Currently, there's no way to understand whatever __enter__ returns in a
+      context manager and what it is binded using the ``as`` keyword. With these changes,
+      we can understand ``bar`` in ``with foo() as bar``, which will be the result of __enter__.
+      There's no support for contextlib.contextmanager yet.
+
 
 2015-03-14 -- 1.3.6
 

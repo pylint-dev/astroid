@@ -1655,6 +1655,94 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Class)
         self.assertEqual(inferred.qname(), 'collections.Counter')
 
+    def test_inferring_with_statement_failures(self):
+        module = test_utils.build_module('''
+        class NoEnter(object):
+            pass
+        class NoMethod(object):
+            __enter__ = None
+        class NoElts(object):
+            def __enter__(self):
+                return 42 
+                 
+        with NoEnter() as no_enter:
+            pass
+        with NoMethod() as no_method:
+            pass
+        with NoElts() as (no_elts, no_elts1):
+            pass
+        ''')
+        self.assertRaises(InferenceError, next, module['no_enter'].infer())
+        self.assertRaises(InferenceError, next, module['no_method'].infer())
+        self.assertRaises(InferenceError, next, module['no_elts'].infer())
+
+    def test_inferring_with_statement(self):
+        module = test_utils.build_module('''
+        class SelfContext(object):
+            def __enter__(self):
+                return self
+
+        class OtherContext(object):
+            def __enter__(self):
+                return SelfContext()
+
+        class MultipleReturns(object):
+            def __enter__(self):
+                return SelfContext(), OtherContext()
+
+        class MultipleReturns2(object):
+            def __enter__(self):
+                return [1, [2, 3]]
+        
+        with SelfContext() as self_context:
+            pass
+        with OtherContext() as other_context:
+            pass
+        with MultipleReturns(), OtherContext() as multiple_with:
+            pass
+        with MultipleReturns2() as (stdout, (stderr, stdin)):
+            pass
+        ''')
+        self_context = module['self_context']
+        inferred = next(self_context.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.name, 'SelfContext')
+
+        other_context = module['other_context']
+        inferred = next(other_context.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.name, 'SelfContext')
+
+        multiple_with = module['multiple_with']
+        inferred = next(multiple_with.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.name, 'SelfContext')
+
+        stdout = module['stdout']
+        inferred = next(stdout.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 1)
+        stderr = module['stderr']
+        inferred = next(stderr.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 2)        
+
+    @unittest.expectedFailure
+    def test_inferring_with_contextlib_contextmanager(self):
+        module = test_utils.build_module('''
+        from contextlib import contextmanager
+
+        @contextlib.contextmanager
+        def manager():
+            yield
+
+        with manager() as none: #@
+            pass
+        ''')
+        # TODO(cpopa): no support for contextlib.contextmanager yet.
+        none = module['none']
+        next(none.infer())
+
 
 if __name__ == '__main__':
     unittest.main()

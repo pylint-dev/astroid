@@ -24,8 +24,12 @@ import collections
 
 from astroid.exceptions import InferenceError, NoDefault, NotFoundError
 from astroid.node_classes import unpack_infer
-from astroid.bases import InferenceContext, copy_context, \
-     raise_if_nothing_infered, yes_if_nothing_infered, Instance, YES
+from astroid.bases import (
+     InferenceContext, copy_context,
+     raise_if_nothing_infered, yes_if_nothing_infered,
+     Instance, YES, BoundMethod,
+     Generator,
+)
 from astroid.nodes import const_factory
 from astroid import nodes
 
@@ -347,17 +351,60 @@ def excepthandler_assigned_stmts(self, node, context=None, asspath=None):
             assigned = Instance(assigned)
         yield assigned
 nodes.ExceptHandler.assigned_stmts = raise_if_nothing_infered(excepthandler_assigned_stmts)
+    
 
+def _infer_context_manager(self, mgr, context):
+    try:
+        inferred = next(mgr.infer(context=context))
+    except InferenceError:
+        return
+    if isinstance(inferred, Generator):
+        # TODO(cpopa): unsupported for now.
+        return
+    elif isinstance(inferred, Instance):
+        try:
+            enter = next(inferred.igetattr('__enter__', context=context))
+        except (InferenceError, NotFoundError):
+            return
+        if not isinstance(enter, BoundMethod):
+            return
+        for result in enter.infer_call_result(self, context):
+            yield result
 
 def with_assigned_stmts(self, node, context=None, asspath=None):
+    """Infer names and other nodes from a *with* statement.
+
+    This enables only inference for name binding in a *with* statement.
+    For instance, in the following code, inferring `func` will return
+    the `ContextManager` class, not whatever ``__enter__`` returns.
+    We are doing this intentionally, because we consider that the context
+    manager result is whatever __enter__ returns and what it is binded
+    using the ``as`` keyword.
+
+        class ContextManager(object):
+            def __enter__(self):
+                return 42
+        with ContextManager() as f:
+            pass
+        # ContextManager().infer() will return ContextManager
+        # f.infer() will return 42.
+    """
+
+    mgr = next(mgr for (mgr, vars) in self.items if vars == node)
     if asspath is None:
-        for _, vars in self.items:
-            if vars is None:
-                continue
-            for lst in vars.infer(context):
-                if isinstance(lst, (nodes.Tuple, nodes.List)):
-                    for item in lst.nodes:
-                        yield item
+        for result in _infer_context_manager(self, mgr, context):
+            yield result
+    else:
+        for result in _infer_context_manager(self, mgr, context):
+            # Walk the asspath and get the item at the final index.
+            obj = result
+            for index in asspath:
+                if not hasattr(obj, 'elts'):
+                    raise InferenceError
+                obj = obj.elts[index]            
+            yield obj
+
+
 nodes.With.assigned_stmts = raise_if_nothing_infered(with_assigned_stmts)
 
 
