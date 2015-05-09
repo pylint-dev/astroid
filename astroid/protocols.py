@@ -33,6 +33,7 @@ from astroid.bases import (
 from astroid.nodes import const_factory
 from astroid import nodes
 
+_CONTEXTLIB_MGR = 'contextlib.contextmanager'
 BIN_OP_METHOD = {'+':  '__add__',
                  '-':  '__sub__',
                  '/':  '__div__',
@@ -359,8 +360,33 @@ def _infer_context_manager(self, mgr, context):
     except InferenceError:
         return
     if isinstance(inferred, Generator):
-        # TODO(cpopa): unsupported for now.
-        return
+        # Check if it is decorated with contextlib.contextmanager.
+        func = inferred.parent
+        if not func.decorators:
+            return
+        for decorator_node in func.decorators.nodes:
+            decorator = next(decorator_node.infer(context))
+            if isinstance(decorator, nodes.Function):
+                if decorator.qname() == _CONTEXTLIB_MGR:
+                    break
+        else:
+            # It doesn't interest us.
+            return
+
+        # Get the first yield point. If it has multiple yields,
+        # then a RuntimeError will be raised.
+        # TODO(cpopa): Handle flows.
+        yield_point = next(func.nodes_of_class(nodes.Yield), None)
+        if yield_point:
+            if not yield_point.value:
+                # TODO(cpopa): an empty yield. Should be wrapped to Const.
+                const = nodes.Const(None)
+                const.parent = yield_point
+                const.lineno = yield_point.lineno
+                yield const
+            else:
+                for inferred in yield_point.value.infer(context=context):
+                    yield inferred
     elif isinstance(inferred, Instance):
         try:
             enter = next(inferred.igetattr('__enter__', context=context))

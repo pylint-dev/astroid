@@ -1727,21 +1727,82 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 2)
 
-    @unittest.expectedFailure
     def test_inferring_with_contextlib_contextmanager(self):
         module = test_utils.build_module('''
+        import contextlib
         from contextlib import contextmanager
 
         @contextlib.contextmanager
-        def manager():
-            yield
+        def manager_none():
+            try:
+                yield
+            finally:
+                pass
 
-        with manager() as none: #@
+        @contextlib.contextmanager
+        def manager_something():
+            try:
+                yield 42
+                yield 24 # This should be ignored.
+            finally:
+                pass
+
+        @contextmanager
+        def manager_multiple():
+            with manager_none() as foo:
+                with manager_something() as bar:
+                    yield foo, bar 
+
+        with manager_none() as none:
+            pass
+        with manager_something() as something:
+            pass
+        with manager_multiple() as (first, second):
             pass
         ''')
-        # TODO(cpopa): no support for contextlib.contextmanager yet.
         none = module['none']
-        next(none.infer())
+        inferred = next(none.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertIsNone(inferred.value)
+
+        something = module['something']
+        inferred = something.infered()
+        self.assertEqual(len(inferred), 1)
+        inferred = inferred[0]
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 42)
+
+        first, second = module['first'], module['second']
+        first = next(first.infer())
+        second = next(second.infer())
+        self.assertIsInstance(first, nodes.Const)
+        self.assertIsNone(first.value)
+        self.assertIsInstance(second, nodes.Const)
+        self.assertEqual(second.value, 42)
+
+    def test_inferring_with_contextlib_contextmanager_failures(self):
+        module = test_utils.build_module('''
+        from contextlib import contextmanager
+
+        def no_decorators_mgr():
+            yield        
+        @no_decorators_mgr
+        def other_decorators_mgr():
+            yield
+        @contextmanager
+        def no_yield_mgr():
+            pass
+
+        with no_decorators_mgr() as no_decorators:
+            pass
+        with other_decorators_mgr() as other_decorators:
+            pass
+        with no_yield_mgr() as no_yield:
+            pass
+        ''')
+        self.assertRaises(InferenceError, next, module['no_decorators'].infer())
+        self.assertRaises(InferenceError, next, module['other_decorators'].infer())
+        self.assertRaises(InferenceError, next, module['no_yield'].infer())
 
 
 if __name__ == '__main__':
