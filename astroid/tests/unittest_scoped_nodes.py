@@ -1318,10 +1318,17 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
     def test_local_attr_invalid_mro(self):
         cls = test_utils.extract_node("""
+        # A has an invalid MRO, local_attr should fallback
+        # to using .ancestors.
         class A(object, object):
+            test = 42
+        class B(A): #@
             pass
         """)
-        self.assertRaises(NotFoundError, cls.local_attr, 'test')
+        local = cls.local_attr('test')[0]
+        inferred = next(local.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 42)         
 
     def test_has_dynamic_getattr(self):
         module = test_utils.build_module("""

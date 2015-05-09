@@ -1150,9 +1150,9 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             try:
                 ancestors = self.mro(context)[1:]
             except MroError:
-                # Reraise it as NotFoundError, there's no reason
-                # for MroError to leak out.
-                six.raise_from(NotFoundError, MroError)
+                # Fallback to use ancestors, we can't determine
+                # a sane MRO.
+                ancestors = self.ancestors(context=context)
         else:
             ancestors = self.ancestors(context=context)
         for astroid in ancestors:
