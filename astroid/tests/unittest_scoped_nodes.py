@@ -1354,6 +1354,17 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         module = astroid_builder.module_build(datetime)
         self.assertFalse(module['timedelta'].has_dynamic_getattr())
 
+    def test_duplicate_bases_namedtuple(self):
+        module = test_utils.build_module("""
+        import collections
+        _A = collections.namedtuple('A', 'a')
 
+        class A(_A): pass
+
+        class B(A): pass
+        """)
+        self.assertRaises(DuplicateBasesError, module['B'].mro)
+
+        
 if __name__ == '__main__':
     unittest.main()
