@@ -222,9 +222,11 @@ class MultiprocessingBrainTest(unittest.TestCase):
         array = next(module['array'].infer())
         self.assertEqual(array.qname(), "array.array")
 
+
 @unittest.skipUnless(HAS_ENUM,
-                     'The enum module was only added in Python 3.4. Support for older Python '
-                     'versions may be available through the enum34 compatibility module.')
+                     'The enum module was only added in Python 3.4. Support for '
+                     'older Python versions may be available through the enum34 '
+                     'compatibility module.')
 class EnumBrainTest(unittest.TestCase):
 
     def test_simple_enum(self):
@@ -284,6 +286,7 @@ class EnumBrainTest(unittest.TestCase):
         int_type = '{}.{}'.format(bases.BUILTINS, 'int')
         self.assertTrue(clazz.is_subtype_of(int_type),
                         'IntEnum based enums should be a subtype of int')
+
 
 if __name__ == '__main__':
     unittest.main()
