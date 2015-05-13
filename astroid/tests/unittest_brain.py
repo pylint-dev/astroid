@@ -45,6 +45,12 @@ try:
 except ImportError:
     HAS_ENUM = False
 
+try:
+    import dateutil # pylint: disable=unused-import
+    HAS_DATEUTIL = True
+except ImportError:
+    HAS_DATEUTIL = False
+
 class HashlibTest(unittest.TestCase):
     def test_hashlib(self):
         """Tests that brain extensions for hashlib work."""
@@ -367,6 +373,17 @@ class EnumBrainTest(unittest.TestCase):
         int_type = '{}.{}'.format(bases.BUILTINS, 'int')
         self.assertTrue(clazz.is_subtype_of(int_type),
                         'IntEnum based enums should be a subtype of int')
+
+
+@unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
+class DateutilBrainTest(unittest.TestCase):
+    def test_parser(self):
+        module = test_utils.build_module("""
+        from dateutil.parser import parse
+        d = parse('2000-01-01')
+        """)
+        d_type = next(module['d'].infer())
+        self.assertEqual(d_type.qname(), "datetime.datetime")
 
 
 if __name__ == '__main__':
