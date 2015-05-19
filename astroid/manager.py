@@ -43,7 +43,7 @@ def astroid_wrapper(func, modname):
         return func(modname)
     except AstroidBuildingException as exc:
         print(exc)
-    except Exception as exc:
+    except Exception as exc: # pylint: disable=broad-except
         import traceback
         traceback.print_exc()
 
@@ -54,7 +54,7 @@ def _silent_no_wrap(func, modname):
 def safe_repr(obj):
     try:
         return repr(obj)
-    except:
+    except Exception: # pylint: disable=broad-except
         return '???'
 
 
@@ -186,7 +186,7 @@ class AstroidManager(OptionsProviderMixIn):
                 module = builder.string_build(importer.get_source(resource),
                                               zmodname, filepath)
                 return module
-            except:
+            except Exception: # pylint: disable=broad-except
                 continue
         return None
 

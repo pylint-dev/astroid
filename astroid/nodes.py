@@ -34,20 +34,24 @@ on From and Import :
 
 
 """
-# pylint: disable=unused-import
+# pylint: disable=unused-import,redefined-builtin
 
 __docformat__ = "restructuredtext en"
 
-from astroid.node_classes import Arguments, AssAttr, Assert, Assign, \
-    AssName, AugAssign, Backquote, BinOp, BoolOp, Break, CallFunc, Compare, \
-    Comprehension, Const, Continue, Decorators, DelAttr, DelName, Delete, \
-    Dict, Discard, Ellipsis, EmptyNode, ExceptHandler, Exec, ExtSlice, For, \
-    From, Getattr, Global, If, IfExp, Import, Index, Keyword, \
-    List, Name, Nonlocal, Pass, Print, Raise, Return, Set, Slice, Starred, Subscript, \
-    TryExcept, TryFinally, Tuple, UnaryOp, While, With, Yield, YieldFrom, \
+from astroid.node_classes import (
+    Arguments, AssAttr, Assert, Assign,
+    AssName, AugAssign, Backquote, BinOp, BoolOp, Break, CallFunc, Compare,
+    Comprehension, Const, Continue, Decorators, DelAttr, DelName, Delete,
+    Dict, Discard, Ellipsis, EmptyNode, ExceptHandler, Exec, ExtSlice, For,
+    From, Getattr, Global, If, IfExp, Import, Index, Keyword,
+    List, Name, Nonlocal, Pass, Print, Raise, Return, Set, Slice, Starred, Subscript,
+    TryExcept, TryFinally, Tuple, UnaryOp, While, With, Yield, YieldFrom,
     const_factory
-from astroid.scoped_nodes import Module, GenExpr, Lambda, DictComp, \
-    ListComp, SetComp, Function, Class
+)
+from astroid.scoped_nodes import (
+    Module, GenExpr, Lambda, DictComp,
+    ListComp, SetComp, Function, Class,
+)
 
 ALL_NODE_CLASSES = (
     Arguments, AssAttr, Assert, Assign, AssName, AugAssign,
@@ -71,4 +75,3 @@ ALL_NODE_CLASSES = (
     While, With,
     Yield, YieldFrom
     )
-

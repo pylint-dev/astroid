@@ -77,7 +77,7 @@ class ASTPeepholeOptimizer(object):
 
         # If we have inconsistent types, bail out.
         known = type(ast_nodes[0])
-        if any(type(element) is not known
+        if any(not isinstance(element, known)
                for element in ast_nodes[1:]):
             return
 

@@ -712,8 +712,13 @@ class ModuleBuildTest(resources.SysPathSetup, FileBuildTest):
     def setUp(self):
         super(ModuleBuildTest, self).setUp()
         abuilder = builder.AstroidBuilder()
-        import data.module
-        self.module = abuilder.module_build(data.module, 'data.module')
+        try:
+            import data.module
+        except ImportError:
+            # Make pylint happy.
+            self.skipTest('Unable to load data.module')
+        else:
+            self.module = abuilder.module_build(data.module, 'data.module')
 
 @unittest.skipIf(IS_PY3, "guess_encoding not used on Python 3")
 class TestGuessEncoding(unittest.TestCase):

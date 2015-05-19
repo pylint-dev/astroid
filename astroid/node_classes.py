@@ -93,7 +93,9 @@ def are_exclusive(stmt1, stmt2, exceptions=None):
                 c2attr, c2node = node.locate_child(previous)
                 c1attr, c1node = node.locate_child(children[node])
                 if c1node is not c2node:
-                    if ((c2attr == 'body' and c1attr == 'handlers' and children[node].catch(exceptions)) or
+                    if ((c2attr == 'body'
+                         and c1attr == 'handlers'
+                         and children[node].catch(exceptions)) or
                             (c2attr == 'handlers' and c1attr == 'body' and previous.catch(exceptions)) or
                             (c2attr == 'handlers' and c1attr == 'orelse') or
                             (c2attr == 'orelse' and c1attr == 'handlers')):
@@ -590,7 +592,7 @@ class Discard(Statement):
     value = None
 
 
-class Ellipsis(NodeNG):
+class Ellipsis(NodeNG): # pylint: disable=redefined-builtin
     """class representing an Ellipsis node"""
 
 

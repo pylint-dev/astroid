@@ -52,16 +52,12 @@ class AstroidManagerTest(resources.SysPathSetup,
         self.manager.clear_cache(self._builtins) # take care of borg
 
     def test_ast_from_file(self):
-        """check if the method return a good astroid object"""
-        import unittest
         filepath = unittest.__file__
         astroid = self.manager.ast_from_file(filepath)
         self.assertEqual(astroid.name, 'unittest')
         self.assertIn('unittest', self.manager.astroid_cache)
 
     def test_ast_from_file_cache(self):
-        """check if the cache works"""
-        import unittest
         filepath = unittest.__file__
         self.manager.ast_from_file(filepath)
         astroid = self.manager.ast_from_file('unhandledName', 'unittest')
@@ -69,15 +65,12 @@ class AstroidManagerTest(resources.SysPathSetup,
         self.assertIn('unittest', self.manager.astroid_cache)
 
     def test_ast_from_file_astro_builder(self):
-        """check if the source is at True, AstroidBuilder build a good astroid"""
-        import unittest
         filepath = unittest.__file__
         astroid = self.manager.ast_from_file(filepath, None, True, True)
         self.assertEqual(astroid.name, 'unittest')
         self.assertIn('unittest', self.manager.astroid_cache)
 
     def test_ast_from_file_name_astro_builder_exception(self):
-        """check if an exception is thrown if we give a wrong filepath"""
         self.assertRaises(AstroidBuildingException, self.manager.ast_from_file, 'unhandledName')
 
     def test_do_not_expose_main(self):
@@ -86,20 +79,17 @@ class AstroidManagerTest(resources.SysPathSetup,
         self.assertEqual(obj.items(), [])
 
     def test_ast_from_module_name(self):
-        """check if the ast_from_module_name method return a good astroid"""
         astroid = self.manager.ast_from_module_name('unittest')
         self.assertEqual(astroid.name, 'unittest')
         self.assertIn('unittest', self.manager.astroid_cache)
 
     def test_ast_from_module_name_not_python_source(self):
-        """check if the ast_from_module_name method return a good astroid with a no python source module"""
         astroid = self.manager.ast_from_module_name('time')
         self.assertEqual(astroid.name, 'time')
         self.assertIn('time', self.manager.astroid_cache)
         self.assertEqual(astroid.pure_python, False)
 
     def test_ast_from_module_name_astro_builder_exception(self):
-        """check if the method raise an exception if we give a wrong module"""
         self.assertRaises(AstroidBuildingException, self.manager.ast_from_module_name, 'unhandledModule')
 
     def _test_ast_from_zip(self, archive):

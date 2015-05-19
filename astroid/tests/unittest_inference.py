@@ -57,10 +57,10 @@ class InferenceUtilsTest(unittest.TestCase):
 
 
 def _assertInferElts(node_type, self, node, elts):
-     infered = next(node.infer())
-     self.assertIsInstance(infered, node_type)
-     self.assertEqual(sorted(elt.value for elt in infered.elts),
-                      elts)
+    infered = next(node.infer())
+    self.assertIsInstance(infered, node_type)
+    self.assertEqual(sorted(elt.value for elt in infered.elts),
+                     elts)
 
 def partialmethod(func, arg):
     """similar to functools.partial but return a lambda instead of a class so returned value may be
@@ -478,7 +478,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         infered = next(n.infer())
         self.assertEqual(infered.getitem(0).value, '_')
 
-    def test_builtin_types(self):
         code = 's = {1}'
         ast = test_utils.build_module(code, __name__)
         n = ast['s']
@@ -1420,149 +1419,149 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             [base.name for base in klass.ancestors()])
 
     def test_stop_iteration_leak(self):
-         code = """
-             class Test:
-                 def __init__(self):
-                     self.config = {0: self.config[0]}
-                     self.config[0].test() #@
-         """
-         ast = test_utils.extract_node(code, __name__)
-         expr = ast.func.expr
-         self.assertRaises(InferenceError, next, expr.infer())
+        code = """
+            class Test:
+                def __init__(self):
+                    self.config = {0: self.config[0]}
+                    self.config[0].test() #@
+        """
+        ast = test_utils.extract_node(code, __name__)
+        expr = ast.func.expr
+        self.assertRaises(InferenceError, next, expr.infer())
 
     def test_tuple_builtin_inference(self):
-         code = """
-         var = (1, 2)
-         tuple() #@
-         tuple([1]) #@
-         tuple({2}) #@
-         tuple("abc") #@
-         tuple({1: 2}) #@
-         tuple(var) #@
-         tuple(tuple([1])) #@
+        code = """
+        var = (1, 2)
+        tuple() #@
+        tuple([1]) #@
+        tuple({2}) #@
+        tuple("abc") #@
+        tuple({1: 2}) #@
+        tuple(var) #@
+        tuple(tuple([1])) #@
 
-         tuple(None) #@
-         tuple(1) #@
-         tuple(1, 2) #@
-         """
-         ast = test_utils.extract_node(code, __name__)
+        tuple(None) #@
+        tuple(1) #@
+        tuple(1, 2) #@
+        """
+        ast = test_utils.extract_node(code, __name__)
 
-         self.assertInferTuple(ast[0], [])
-         self.assertInferTuple(ast[1], [1])
-         self.assertInferTuple(ast[2], [2])
-         self.assertInferTuple(ast[3], ["a", "b", "c"])
-         self.assertInferTuple(ast[4], [1])
-         self.assertInferTuple(ast[5], [1, 2])
-         self.assertInferTuple(ast[6], [1])
+        self.assertInferTuple(ast[0], [])
+        self.assertInferTuple(ast[1], [1])
+        self.assertInferTuple(ast[2], [2])
+        self.assertInferTuple(ast[3], ["a", "b", "c"])
+        self.assertInferTuple(ast[4], [1])
+        self.assertInferTuple(ast[5], [1, 2])
+        self.assertInferTuple(ast[6], [1])
 
-         for node in ast[7:]:
-             infered = next(node.infer())
-             self.assertIsInstance(infered, Instance)
-             self.assertEqual(infered.qname(), "{}.tuple".format(BUILTINS))
+        for node in ast[7:]:
+            infered = next(node.infer())
+            self.assertIsInstance(infered, Instance)
+            self.assertEqual(infered.qname(), "{}.tuple".format(BUILTINS))
 
     def test_frozenset_builtin_inference(self):
-         code = """
-         var = (1, 2)
-         frozenset() #@
-         frozenset([1, 2, 1]) #@
-         frozenset({2, 3, 1}) #@
-         frozenset("abcab") #@
-         frozenset({1: 2}) #@
-         frozenset(var) #@
-         frozenset(tuple([1])) #@
+        code = """
+        var = (1, 2)
+        frozenset() #@
+        frozenset([1, 2, 1]) #@
+        frozenset({2, 3, 1}) #@
+        frozenset("abcab") #@
+        frozenset({1: 2}) #@
+        frozenset(var) #@
+        frozenset(tuple([1])) #@
 
-         frozenset(set(tuple([4, 5, set([2])]))) #@
-         frozenset(None) #@
-         frozenset(1) #@
-         frozenset(1, 2) #@
-         """
-         ast = test_utils.extract_node(code, __name__)
+        frozenset(set(tuple([4, 5, set([2])]))) #@
+        frozenset(None) #@
+        frozenset(1) #@
+        frozenset(1, 2) #@
+        """
+        ast = test_utils.extract_node(code, __name__)
 
-         self.assertInferFrozenSet(ast[0], [])
-         self.assertInferFrozenSet(ast[1], [1, 2])
-         self.assertInferFrozenSet(ast[2], [1, 2, 3])
-         self.assertInferFrozenSet(ast[3], ["a", "b", "c"])
-         self.assertInferFrozenSet(ast[4], [1])
-         self.assertInferFrozenSet(ast[5], [1, 2])
-         self.assertInferFrozenSet(ast[6], [1])
+        self.assertInferFrozenSet(ast[0], [])
+        self.assertInferFrozenSet(ast[1], [1, 2])
+        self.assertInferFrozenSet(ast[2], [1, 2, 3])
+        self.assertInferFrozenSet(ast[3], ["a", "b", "c"])
+        self.assertInferFrozenSet(ast[4], [1])
+        self.assertInferFrozenSet(ast[5], [1, 2])
+        self.assertInferFrozenSet(ast[6], [1])
 
-         for node in ast[7:]:
-             infered = next(node.infer())
-             self.assertIsInstance(infered, Instance)
-             self.assertEqual(infered.qname(), "{}.frozenset".format(BUILTINS))
+        for node in ast[7:]:
+            infered = next(node.infer())
+            self.assertIsInstance(infered, Instance)
+            self.assertEqual(infered.qname(), "{}.frozenset".format(BUILTINS))
 
     def test_set_builtin_inference(self):
-         code = """
-         var = (1, 2)
-         set() #@
-         set([1, 2, 1]) #@
-         set({2, 3, 1}) #@
-         set("abcab") #@
-         set({1: 2}) #@
-         set(var) #@
-         set(tuple([1])) #@
+        code = """
+        var = (1, 2)
+        set() #@
+        set([1, 2, 1]) #@
+        set({2, 3, 1}) #@
+        set("abcab") #@
+        set({1: 2}) #@
+        set(var) #@
+        set(tuple([1])) #@
 
-         set(set(tuple([4, 5, set([2])]))) #@
-         set(None) #@
-         set(1) #@
-         set(1, 2) #@
-         """
-         ast = test_utils.extract_node(code, __name__)
+        set(set(tuple([4, 5, set([2])]))) #@
+        set(None) #@
+        set(1) #@
+        set(1, 2) #@
+        """
+        ast = test_utils.extract_node(code, __name__)
 
-         self.assertInferSet(ast[0], [])
-         self.assertInferSet(ast[1], [1, 2])
-         self.assertInferSet(ast[2], [1, 2, 3])
-         self.assertInferSet(ast[3], ["a", "b", "c"])
-         self.assertInferSet(ast[4], [1])
-         self.assertInferSet(ast[5], [1, 2])
-         self.assertInferSet(ast[6], [1])
+        self.assertInferSet(ast[0], [])
+        self.assertInferSet(ast[1], [1, 2])
+        self.assertInferSet(ast[2], [1, 2, 3])
+        self.assertInferSet(ast[3], ["a", "b", "c"])
+        self.assertInferSet(ast[4], [1])
+        self.assertInferSet(ast[5], [1, 2])
+        self.assertInferSet(ast[6], [1])
 
-         for node in ast[7:]:
-             infered = next(node.infer())
-             self.assertIsInstance(infered, Instance)
-             self.assertEqual(infered.qname(), "{}.set".format(BUILTINS))
+        for node in ast[7:]:
+            infered = next(node.infer())
+            self.assertIsInstance(infered, Instance)
+            self.assertEqual(infered.qname(), "{}.set".format(BUILTINS))
 
     def test_list_builtin_inference(self):
-         code = """
-         var = (1, 2)
-         list() #@
-         list([1, 2, 1]) #@
-         list({2, 3, 1}) #@
-         list("abcab") #@
-         list({1: 2}) #@
-         list(var) #@
-         list(tuple([1])) #@
+        code = """
+        var = (1, 2)
+        list() #@
+        list([1, 2, 1]) #@
+        list({2, 3, 1}) #@
+        list("abcab") #@
+        list({1: 2}) #@
+        list(var) #@
+        list(tuple([1])) #@
 
-         list(list(tuple([4, 5, list([2])]))) #@
-         list(None) #@
-         list(1) #@
-         list(1, 2) #@
-         """
-         ast = test_utils.extract_node(code, __name__)
-         self.assertInferList(ast[0], [])
-         self.assertInferList(ast[1], [1, 1, 2])
-         self.assertInferList(ast[2], [1, 2, 3])
-         self.assertInferList(ast[3], ["a", "a", "b", "b", "c"])
-         self.assertInferList(ast[4], [1])
-         self.assertInferList(ast[5], [1, 2])
-         self.assertInferList(ast[6], [1])
+        list(list(tuple([4, 5, list([2])]))) #@
+        list(None) #@
+        list(1) #@
+        list(1, 2) #@
+        """
+        ast = test_utils.extract_node(code, __name__)
+        self.assertInferList(ast[0], [])
+        self.assertInferList(ast[1], [1, 1, 2])
+        self.assertInferList(ast[2], [1, 2, 3])
+        self.assertInferList(ast[3], ["a", "a", "b", "b", "c"])
+        self.assertInferList(ast[4], [1])
+        self.assertInferList(ast[5], [1, 2])
+        self.assertInferList(ast[6], [1])
 
-         for node in ast[7:]:
-             infered = next(node.infer())
-             self.assertIsInstance(infered, Instance)
-             self.assertEqual(infered.qname(), "{}.list".format(BUILTINS))
+        for node in ast[7:]:
+            infered = next(node.infer())
+            self.assertIsInstance(infered, Instance)
+            self.assertEqual(infered.qname(), "{}.list".format(BUILTINS))
 
     @test_utils.require_version('3.0')
     def test_builtin_inference_py3k(self):
-         code = """
-         list(b"abc") #@
-         tuple(b"abc") #@
-         set(b"abc") #@
-         """
-         ast = test_utils.extract_node(code, __name__)
-         self.assertInferList(ast[0], [97, 98, 99])
-         self.assertInferTuple(ast[1], [97, 98, 99])
-         self.assertInferSet(ast[2], [97, 98, 99])
+        code = """
+        list(b"abc") #@
+        tuple(b"abc") #@
+        set(b"abc") #@
+        """
+        ast = test_utils.extract_node(code, __name__)
+        self.assertInferList(ast[0], [97, 98, 99])
+        self.assertInferTuple(ast[1], [97, 98, 99])
+        self.assertInferSet(ast[2], [97, 98, 99])
 
     def test_dict_inference(self):
         code = """
@@ -1610,66 +1609,66 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
 
     def test_str_methods(self):
-         code = """
-         ' '.decode() #@
+        code = """
+        ' '.decode() #@
 
-         ' '.encode() #@
-         ' '.join('abcd') #@
-         ' '.replace('a', 'b') #@
-         ' '.format('a') #@
-         ' '.capitalize() #@
-         ' '.title() #@
-         ' '.lower() #@
-         ' '.upper() #@
-         ' '.swapcase() #@
-         ' '.strip() #@
-         ' '.rstrip() #@
-         ' '.lstrip() #@
-         ' '.rjust() #@
-         ' '.ljust() #@
-         ' '.center() #@
+        ' '.encode() #@
+        ' '.join('abcd') #@
+        ' '.replace('a', 'b') #@
+        ' '.format('a') #@
+        ' '.capitalize() #@
+        ' '.title() #@
+        ' '.lower() #@
+        ' '.upper() #@
+        ' '.swapcase() #@
+        ' '.strip() #@
+        ' '.rstrip() #@
+        ' '.lstrip() #@
+        ' '.rjust() #@
+        ' '.ljust() #@
+        ' '.center() #@
 
-         ' '.index() #@
-         ' '.find() #@
-         ' '.count() #@
-         """
-         ast = test_utils.extract_node(code, __name__)
-         self.assertInferConst(ast[0], u'')
-         for i in range(1, 16):
-             self.assertInferConst(ast[i], '')
-         for i in range(16, 19):
-             self.assertInferConst(ast[i], 0)
+        ' '.index() #@
+        ' '.find() #@
+        ' '.count() #@
+        """
+        ast = test_utils.extract_node(code, __name__)
+        self.assertInferConst(ast[0], u'')
+        for i in range(1, 16):
+            self.assertInferConst(ast[i], '')
+        for i in range(16, 19):
+            self.assertInferConst(ast[i], 0)
 
     def test_unicode_methods(self):
-         code = """
-         u' '.encode() #@
+        code = """
+        u' '.encode() #@
 
-         u' '.decode() #@
-         u' '.join('abcd') #@
-         u' '.replace('a', 'b') #@
-         u' '.format('a') #@
-         u' '.capitalize() #@
-         u' '.title() #@
-         u' '.lower() #@
-         u' '.upper() #@
-         u' '.swapcase() #@
-         u' '.strip() #@
-         u' '.rstrip() #@
-         u' '.lstrip() #@
-         u' '.rjust() #@
-         u' '.ljust() #@
-         u' '.center() #@
+        u' '.decode() #@
+        u' '.join('abcd') #@
+        u' '.replace('a', 'b') #@
+        u' '.format('a') #@
+        u' '.capitalize() #@
+        u' '.title() #@
+        u' '.lower() #@
+        u' '.upper() #@
+        u' '.swapcase() #@
+        u' '.strip() #@
+        u' '.rstrip() #@
+        u' '.lstrip() #@
+        u' '.rjust() #@
+        u' '.ljust() #@
+        u' '.center() #@
 
-         u' '.index() #@
-         u' '.find() #@
-         u' '.count() #@
-         """
-         ast = test_utils.extract_node(code, __name__)
-         self.assertInferConst(ast[0], '')
-         for i in range(1, 16):
-             self.assertInferConst(ast[i], u'')
-         for i in range(16, 19):
-             self.assertInferConst(ast[i], 0)
+        u' '.index() #@
+        u' '.find() #@
+        u' '.count() #@
+        """
+        ast = test_utils.extract_node(code, __name__)
+        self.assertInferConst(ast[0], '')
+        for i in range(1, 16):
+            self.assertInferConst(ast[i], u'')
+        for i in range(16, 19):
+            self.assertInferConst(ast[i], 0)
 
     def test_scope_lookup_same_attributes(self):
         code = '''

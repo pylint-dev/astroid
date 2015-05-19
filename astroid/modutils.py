@@ -562,7 +562,9 @@ def _search_zip(modpath, pic):
                 if not importer.find_module(os.path.sep.join(modpath)):
                     raise ImportError('No module named %s in %s/%s' % (
                         '.'.join(modpath[1:]), filepath, modpath))
-                return PY_ZIPMODULE, os.path.abspath(filepath) + os.path.sep + os.path.sep.join(modpath), filepath
+                return (PY_ZIPMODULE,
+                        os.path.abspath(filepath) + os.path.sep + os.path.sep.join(modpath),
+                        filepath)
     raise ImportError('No module named %s' % '.'.join(modpath))
 
 
@@ -627,7 +629,7 @@ def _module_file(modpath, path=None):
             # Don't forget to close the stream to avoid
             # spurious ResourceWarnings.
             if stream:
-               stream.close()
+                stream.close()
 
             if checkeggs and mp_filename:
                 fullabspath = [_cache_normalize_path(x) for x in _path]

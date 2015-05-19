@@ -47,6 +47,8 @@ from operator import attrgetter
 
 # WARNING: internal imports order matters !
 
+# pylint: disable=redefined-builtin, wildcard-import
+
 # make all exception classes accessible from astroid package
 from astroid.exceptions import *
 

@@ -186,15 +186,13 @@ class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_builtin(self):
         self.assertEqual(modutils.is_standard_module('sys'), True)
+        self.assertEqual(modutils.is_standard_module('marshal'), True)
 
     def test_nonstandard(self):
         self.assertEqual(modutils.is_standard_module('logilab'), False)
 
     def test_unknown(self):
         self.assertEqual(modutils.is_standard_module('unknown'), False)
-
-    def test_builtin(self):
-        self.assertEqual(modutils.is_standard_module('marshal'), True)
 
     def test_4(self):
         self.assertEqual(modutils.is_standard_module('hashlib'), True)

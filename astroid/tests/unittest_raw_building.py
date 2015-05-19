@@ -18,7 +18,7 @@ class RawBuildingTC(unittest.TestCase):
 
     def test_attach_dummy_node(self):
         node = build_module('MyModule')
-        dummy = attach_dummy_node(node, 'DummyNode')
+        attach_dummy_node(node, 'DummyNode')
         self.assertEqual(1, len(list(node.get_children())))
 
     def test_build_module(self):

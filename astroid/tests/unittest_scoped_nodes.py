@@ -205,6 +205,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         if __pkginfo__.numversion >= (1, 6):
             # file_stream is slated for removal in astroid 1.6.
             with self.assertRaises(AttributeError):
+                # pylint: disable=pointless-statement
                 astroid.file_stream
         else:
             # Until astroid 1.6, Module.file_stream will emit

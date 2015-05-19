@@ -97,8 +97,8 @@ BIN_OP_IMPL = {'+':  lambda a, b: a + b,
                '<<': lambda a, b: a << b,
                '>>': lambda a, b: a >> b,
               }
-for key, impl in list(BIN_OP_IMPL.items()):
-    BIN_OP_IMPL[key+'='] = impl
+for _KEY, _IMPL in list(BIN_OP_IMPL.items()):
+    BIN_OP_IMPL[_KEY + '='] = _IMPL
 
 def const_infer_binary_op(self, operator, other, context):
     for other in other.infer(context):
@@ -108,7 +108,7 @@ def const_infer_binary_op(self, operator, other, context):
 
                 try:
                     yield const_factory(impl(self.value, other.value))
-                except Exception:
+                except Exception: # pylint: disable=broad-except
                     # ArithmeticError is not enough: float >> float is a TypeError
                     # TODO : let pylint know about the problem
                     pass

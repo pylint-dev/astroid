@@ -54,6 +54,7 @@ def _attach_local_node(parent, node, name):
 
 _marker = object()
 
+
 def attach_dummy_node(node, name, object=_marker):
     """create a dummy node and register it in the locals of the given
     node with the specified name
@@ -192,7 +193,7 @@ def _base_class_object_build(node, member, basenames, name=None, localname=None)
             instdict = member().__dict__
         else:
             raise TypeError
-    except:
+    except: # pylint: disable=bare-except
         pass
     else:
         for name, obj in instdict.items():
@@ -277,7 +278,7 @@ class InspectBuilder(object):
             elif isbuiltin(member):
                 if (not _io_discrepancy(member) and
                         self.imported_member(node, member, name)):
-                   continue
+                    continue
                 object_build_methoddescriptor(node, member, name)
             elif isclass(member):
                 if self.imported_member(node, member, name):
@@ -298,7 +299,7 @@ class InspectBuilder(object):
             elif isdatadescriptor(member):
                 assert isinstance(member, object)
                 object_build_datadescriptor(node, member, name)
-            elif type(member) in _CONSTANTS:
+            elif isinstance(member, _CONSTANTS):
                 attach_const_node(node, name, member)
             elif isroutine(member):
                 # This should be called for Jython, where some builtin
@@ -315,7 +316,7 @@ class InspectBuilder(object):
         # (see http://www.logilab.org/ticket/57299 for instance)
         try:
             modname = getattr(member, '__module__', None)
-        except:
+        except: # pylint: disable=bare-except
             # XXX use logging
             print('unexpected error while building astroid from living object')
             import traceback
@@ -385,4 +386,3 @@ Const._proxied = property(_set_proxied)
 from types import GeneratorType
 Generator._proxied = Class(GeneratorType.__name__, GeneratorType.__doc__)
 Astroid_BUILDER.object_build(Generator._proxied, GeneratorType)
-

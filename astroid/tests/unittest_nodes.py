@@ -30,7 +30,7 @@ from astroid import builder
 from astroid import nodes
 from astroid import test_utils
 from astroid.tests import resources
-from astroid import test_utils
+
 
 abuilder = builder.AstroidBuilder()
 

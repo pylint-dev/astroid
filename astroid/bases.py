@@ -388,8 +388,6 @@ class NodeNG(object):
     is_function = False # True for Function nodes
     # attributes below are set by the builder module or by raw factories
     lineno = None
-    fromlineno = None
-    tolineno = None
     col_offset = None
     # parent node in the tree
     parent = None
@@ -408,6 +406,7 @@ class NodeNG(object):
         if self._explicit_inference is not None:
             # explicit_inference is not bound, give it self explicitly
             try:
+                # pylint: disable=not-callable
                 return self._explicit_inference(self, context, **kwargs)
             except UseInferenceDefault:
                 pass
@@ -503,11 +502,12 @@ class NodeNG(object):
             if node_or_sequence is child:
                 return [node_or_sequence]
             # /!\ compiler.ast Nodes have an __iter__ walking over child nodes
-            if isinstance(node_or_sequence, (tuple, list)) and child in node_or_sequence:
+            if (isinstance(node_or_sequence, (tuple, list))
+                    and child in node_or_sequence):
                 return node_or_sequence
-        else:
-            msg = 'Could not find %s in %s\'s children'
-            raise AstroidError(msg % (repr(child), repr(self)))
+
+        msg = 'Could not find %s in %s\'s children'
+        raise AstroidError(msg % (repr(child), repr(self)))
 
     def locate_child(self, child):
         """return a 2-uple (child attribute name, sequence or node)"""

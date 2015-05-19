@@ -376,9 +376,6 @@ class Module(LocalsDictNodeNG):
                 raise NotFoundError(name)
             except SyntaxError:
                 raise NotFoundError(name)
-            except Exception:# XXX pylint tests never pass here; do we need it?
-                import traceback
-                traceback.print_exc()
         raise NotFoundError(name)
     getattr = remove_nodes(getattr, DelName)
 
@@ -587,19 +584,19 @@ def _infer_decorator_callchain(node):
     if not node.parent:
         return
     try:
-       # TODO: We don't handle multiple inference results right now,
-       #       because there's no flow to reason when the return
-       #       is what we are looking for, a static or a class method.
-       result = next(node.infer_call_result(node.parent))
+        # TODO: We don't handle multiple inference results right now,
+        #       because there's no flow to reason when the return
+        #       is what we are looking for, a static or a class method.
+        result = next(node.infer_call_result(node.parent))
     except (StopIteration, InferenceError):
-       return
+        return
     if isinstance(result, Instance):
-       result = result._proxied
+        result = result._proxied
     if isinstance(result, Class):
-       if result.is_subtype_of('%s.classmethod' % BUILTINS):
-           return 'classmethod'
-       if result.is_subtype_of('%s.staticmethod' % BUILTINS):
-           return 'staticmethod'
+        if result.is_subtype_of('%s.classmethod' % BUILTINS):
+            return 'classmethod'
+        if result.is_subtype_of('%s.staticmethod' % BUILTINS):
+            return 'staticmethod'
 
 
 def _function_type(self):
@@ -709,7 +706,6 @@ class Function(Statement, Lambda):
     special_attributes = set(('__name__', '__doc__', '__dict__'))
     is_function = True
     # attributes below are set by the builder module or by raw factories
-    blockstart_tolineno = None
     decorators = None
     _type = "function"
     type = cachedproperty(_function_type)
@@ -951,7 +947,6 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
     decorators = None
     special_attributes = set(('__name__', '__doc__', '__dict__', '__module__',
                               '__bases__', '__mro__', '__subclasses__'))
-    blockstart_tolineno = None
 
     _type = None
     _metaclass_hack = False

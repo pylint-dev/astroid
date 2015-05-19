@@ -317,7 +317,7 @@ def infer_unaryop(self, context=None):
                     yield operand
                 except GeneratorExit:
                     raise
-                except:
+                except Exception: # pylint: disable=broad-except
                     yield YES
 nodes.UnaryOp._infer = path_wrapper(infer_unaryop)
 
@@ -334,7 +334,7 @@ def _infer_binop(operator, operand1, operand2, context, failures=None):
             # will be the same
             operand1.getattr(BIN_OP_METHOD[operator])
             yield operand1
-        except:
+        except Exception: # pylint: disable=broad-except
             if failures is None:
                 yield YES
             else:
