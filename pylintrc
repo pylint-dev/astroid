@@ -96,7 +96,9 @@ disable=invalid-name,protected-access,no-self-use,unused-argument,
         too-many-public-methods,too-many-instance-attributes,
         super-init-not-called,redefined-builtin,cyclic-import,
         too-many-return-statements,redefined-outer-name,undefined-variable,
-        too-many-locals,method-hidden,duplicate-code,attribute-defined-outside-init
+        too-many-locals,method-hidden,duplicate-code,attribute-defined-outside-init,
+        fixme,missing-docstring,too-many-lines,too-many-statements,undefined-loop-variable,
+        unpacking-non-sequence
 
 
 [BASIC]
