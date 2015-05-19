@@ -28,6 +28,7 @@ from astroid import InferenceError, builder, nodes
 from astroid.inference import infer_end as inference_infer_end
 from astroid.bases import YES, Instance, BoundMethod, UnboundMethod,\
                                 path_wrapper, BUILTINS
+from astroid import objects
 from astroid import test_utils
 from astroid.tests import resources
 
@@ -87,6 +88,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
     assertInferTuple = partialmethod(_assertInferElts, nodes.Tuple)
     assertInferList = partialmethod(_assertInferElts, nodes.List)
     assertInferSet = partialmethod(_assertInferElts, nodes.Set)
+    assertInferFrozenSet = partialmethod(_assertInferElts, objects.FrozenSet)
 
     CODE = '''
         class C(object):
@@ -1459,6 +1461,37 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
              infered = next(node.infer())
              self.assertIsInstance(infered, Instance)
              self.assertEqual(infered.qname(), "{}.tuple".format(BUILTINS))
+
+    def test_frozenset_builtin_inference(self):
+         code = """
+         var = (1, 2)
+         frozenset() #@
+         frozenset([1, 2, 1]) #@
+         frozenset({2, 3, 1}) #@
+         frozenset("abcab") #@
+         frozenset({1: 2}) #@
+         frozenset(var) #@
+         frozenset(tuple([1])) #@
+
+         frozenset(set(tuple([4, 5, set([2])]))) #@
+         frozenset(None) #@
+         frozenset(1) #@
+         frozenset(1, 2) #@
+         """
+         ast = test_utils.extract_node(code, __name__)
+
+         self.assertInferFrozenSet(ast[0], [])
+         self.assertInferFrozenSet(ast[1], [1, 2])
+         self.assertInferFrozenSet(ast[2], [1, 2, 3])
+         self.assertInferFrozenSet(ast[3], ["a", "b", "c"])
+         self.assertInferFrozenSet(ast[4], [1])
+         self.assertInferFrozenSet(ast[5], [1, 2])
+         self.assertInferFrozenSet(ast[6], [1])
+
+         for node in ast[7:]:
+             infered = next(node.infer())
+             self.assertIsInstance(infered, Instance)
+             self.assertEqual(infered.qname(), "{}.frozenset".format(BUILTINS))
 
     def test_set_builtin_inference(self):
          code = """

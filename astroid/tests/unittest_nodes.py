@@ -30,6 +30,7 @@ from astroid import builder
 from astroid import nodes
 from astroid import test_utils
 from astroid.tests import resources
+from astroid import test_utils
 
 abuilder = builder.AstroidBuilder()
 
@@ -44,6 +45,24 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(build('1, 2, 3').as_string(), '(1, 2, 3)')
         self.assertEqual(build('(1, )').as_string(), '(1, )')
         self.assertEqual(build('1, 2, 3').as_string(), '(1, 2, 3)')
+
+    def test_frozenset_as_string(self):
+        nodes = test_utils.extract_node('''
+        frozenset((1, 2, 3)) #@
+        frozenset({1, 2, 3}) #@
+        frozenset([1, 2, 3,]) #@
+
+        frozenset(None) #@
+        frozenset(1) #@
+        ''')
+        nodes = [next(node.infer()) for node in nodes]
+
+        self.assertEqual(nodes[0].as_string(), 'frozenset((1, 2, 3))')
+        self.assertEqual(nodes[1].as_string(), 'frozenset({1, 2, 3})')
+        self.assertEqual(nodes[2].as_string(), 'frozenset([1, 2, 3])')
+
+        self.assertNotEqual(nodes[3].as_string(), 'frozenset(None)')
+        self.assertNotEqual(nodes[4].as_string(), 'frozenset(1)')
 
     def test_varargs_kwargs_as_string(self):
         ast = abuilder.string_build('raise_string(*args, **kwargs)').body[0]

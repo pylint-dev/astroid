@@ -8,6 +8,7 @@ import six
 from astroid import (MANAGER, UseInferenceDefault,
                      inference_tip, YES, InferenceError, UnresolvableName)
 from astroid import nodes
+from astroid import objects
 from astroid.builder import AstroidBuilder
 
 
@@ -172,6 +173,12 @@ infer_set = partial(
     iterables=(nodes.List, nodes.Tuple),
     build_elts=set)
 
+infer_frozenset = partial(
+    _infer_builtin,
+    klass=objects.FrozenSet,
+    iterables=(nodes.List, nodes.Tuple, nodes.Set),
+    build_elts=frozenset)
+
 
 def _get_elts(arg, context):
     is_iterable = lambda n: isinstance(n,
@@ -243,3 +250,4 @@ register_builtin_transform(infer_tuple, 'tuple')
 register_builtin_transform(infer_set, 'set')
 register_builtin_transform(infer_list, 'list')
 register_builtin_transform(infer_dict, 'dict')
+register_builtin_transform(infer_frozenset, 'frozenset')
