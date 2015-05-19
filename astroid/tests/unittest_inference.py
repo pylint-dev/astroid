@@ -683,16 +683,17 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual([i.value for i in
                           test_utils.get_name_node(ast, 'f', -1).infer()], ['value'])
 
-    #def test_simple_tuple(self):
-        #"""test case for a simple tuple value"""
-        ## XXX tuple inference is not implemented ...
-        #code = """
-#a = (1,)
-#b = (22,)
-#some = a + b
-#"""
-        #ast = builder.string_build(code, __name__, __file__)
-        #self.assertEqual(ast['some'].infer.next().as_string(), "(1, 22)")
+    def test_simple_tuple(self):
+        module = test_utils.build_module("""
+        a = (1,)
+        b = (22,)
+        some = a + b #@
+        """)
+        ast = next(module['some'].infer())
+        self.assertIsInstance(ast, nodes.Tuple)
+        self.assertEqual(len(ast.elts), 2)
+        self.assertEqual(ast.elts[0].value, 1)
+        self.assertEqual(ast.elts[1].value, 22)
 
     def test_simple_for(self):
         code = '''
