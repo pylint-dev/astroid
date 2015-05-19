@@ -470,6 +470,13 @@ class AsStringVisitor(object):
         return "*" + node.value.accept(self)
 
 
+    # These aren't for real AST nodes, but for inference objects.
+
+    def visit_frozenset(self, node):
+        return node.parent.accept(self)
+
+
+
 class AsStringVisitor3k(AsStringVisitor):
     """AsStringVisitor3k overwrites some AsStringVisitor methods"""
 
