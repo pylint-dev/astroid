@@ -25,10 +25,10 @@ import collections
 from astroid.exceptions import InferenceError, NoDefault, NotFoundError
 from astroid.node_classes import unpack_infer
 from astroid.bases import (
-     InferenceContext, copy_context,
-     raise_if_nothing_infered, yes_if_nothing_infered,
-     Instance, YES, BoundMethod,
-     Generator,
+    InferenceContext, copy_context,
+    raise_if_nothing_infered, yes_if_nothing_infered,
+    Instance, YES, BoundMethod,
+    Generator,
 )
 from astroid.nodes import const_factory
 from astroid import nodes

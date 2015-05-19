@@ -36,17 +36,21 @@ from logilab.common.compat import builtins
 from logilab.common.decorators import cached, cachedproperty
 
 from astroid.exceptions import (
-     NotFoundError,
-     AstroidBuildingException,
-     InferenceError, MroError,
-     DuplicateBasesError, InconsistentMroError,
+    NotFoundError,
+    AstroidBuildingException,
+    InferenceError, MroError,
+    DuplicateBasesError, InconsistentMroError,
 )
-from astroid.node_classes import Const, DelName, DelAttr, \
-     Dict, From, List, Pass, Raise, Return, Tuple, Yield, YieldFrom, \
-     LookupMixIn, const_factory as cf, unpack_infer, CallFunc
-from astroid.bases import NodeNG, InferenceContext, Instance, copy_context, \
-     YES, Generator, UnboundMethod, BoundMethod, _infer_stmts, \
-     BUILTINS
+from astroid.node_classes import (
+    Const, DelName, DelAttr,
+    Dict, From, List, Pass, Raise, Return, Tuple, Yield, YieldFrom,
+    LookupMixIn, const_factory as cf, unpack_infer, CallFunc,
+)
+from astroid.bases import (
+    NodeNG, InferenceContext, Instance, copy_context,
+    YES, Generator, UnboundMethod, BoundMethod, _infer_stmts,
+    BUILTINS,
+)
 from astroid.mixins import FilterStmtsMixin
 from astroid.bases import Statement
 from astroid.manager import AstroidManager
@@ -726,7 +730,7 @@ class Function(Statement, Lambda):
         lineno = self.lineno
         if self.decorators is not None:
             lineno += sum(node.tolineno - node.lineno + 1
-                                   for node in self.decorators.nodes)
+                          for node in self.decorators.nodes)
 
         return lineno
 

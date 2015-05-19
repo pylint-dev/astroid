@@ -620,8 +620,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                         fct(a_line)
         '''
         ast = test_utils.build_module(code, __name__)
-        self.assertEqual(len(list(ast['process_line'].infer_call_result(
-                                                                None))), 3)
+        self.assertEqual(len(list(ast['process_line'].infer_call_result(None))), 3)
         self.assertEqual(len(list(ast['tupletest'].infer())), 3)
         values = ['Function(first_word)', 'Function(last_word)', 'Const(NoneType)']
         self.assertEqual([str(infered)
@@ -657,8 +656,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 return something.conjugate()
         '''
         ast = test_utils.build_module(code, __name__)
-        self.assertEqual([i.value for i in
-                test_utils.get_name_node(ast, 'something', -1).infer()], [1.0, 1.0j])
+        values = [i.value for i in test_utils.get_name_node(ast, 'something', -1).infer()]
+        self.assertEqual(values, [1.0, 1.0j])
 
 
     def test_simple_subscript(self):
@@ -674,13 +673,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         '''
         ast = test_utils.build_module(code, __name__)
         self.assertEqual([i.value for i in
-                                test_utils.get_name_node(ast, 'a', -1).infer()], [1])
+                          test_utils.get_name_node(ast, 'a', -1).infer()], [1])
         self.assertEqual([i.value for i in
-                                test_utils.get_name_node(ast, 'b', -1).infer()], [2])
+                          test_utils.get_name_node(ast, 'b', -1).infer()], [2])
         self.assertEqual([i.value for i in
-                                test_utils.get_name_node(ast, 'c', -1).infer()], [3])
+                          test_utils.get_name_node(ast, 'c', -1).infer()], [3])
         self.assertEqual([i.value for i in
-                                test_utils.get_name_node(ast, 'd', -1).infer()], [6])
+                          test_utils.get_name_node(ast, 'd', -1).infer()], [6])
         self.assertEqual([i.value for i in
                           test_utils.get_name_node(ast, 'f', -1).infer()], ['value'])
 
@@ -707,16 +706,15 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         '''
         ast = test_utils.build_module(code, __name__)
         self.assertEqual([i.value for i in
-                            test_utils.get_name_node(ast, 'a', -1).infer()], [1, 2, 3])
+                          test_utils.get_name_node(ast, 'a', -1).infer()], [1, 2, 3])
         self.assertEqual([i.value for i in
-                            test_utils.get_name_node(ast, 'b', -1).infer()], [1, 3])
+                          test_utils.get_name_node(ast, 'b', -1).infer()], [1, 3])
         self.assertEqual([i.value for i in
-                            test_utils.get_name_node(ast, 'c', -1).infer()], [2, 4])
+                          test_utils.get_name_node(ast, 'c', -1).infer()], [2, 4])
         self.assertEqual([i.value for i in
-                            test_utils.get_name_node(ast, 'd', -1).infer()], [2, 4])
+                          test_utils.get_name_node(ast, 'd', -1).infer()], [2, 4])
         self.assertEqual([i.value for i in
-                            test_utils.get_name_node(ast, 'e', -1).infer()], [1, 3])
-
+                          test_utils.get_name_node(ast, 'e', -1).infer()], [1, 3])
 
     def test_simple_for_genexpr(self):
         code = '''
@@ -724,9 +722,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         '''
         ast = test_utils.build_module(code, __name__)
         self.assertEqual([i.value for i in
-                            test_utils.get_name_node(ast, 'd', -1).infer()], [2, 4])
+                          test_utils.get_name_node(ast, 'd', -1).infer()], [2, 4])
         self.assertEqual([i.value for i in
-                            test_utils.get_name_node(ast, 'e', -1).infer()], [1, 3])
+                          test_utils.get_name_node(ast, 'e', -1).infer()], [1, 3])
 
 
     def test_builtin_help(self):
@@ -1067,7 +1065,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         decorators = set(['%s.property' % BUILTINS])
         ast = test_utils.build_module(code, __name__)
         self.assertEqual(ast['SendMailController']['smtp'].decoratornames(),
-                          decorators)
+                         decorators)
         propinfered = list(ast.body[2].value.infer())
         self.assertEqual(len(propinfered), 1)
         propinfered = propinfered[0]
@@ -1075,14 +1073,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(propinfered.name, 'SMTP')
         self.assertEqual(propinfered.root().name, 'smtplib')
         self.assertEqual(ast['SendMailController']['me'].decoratornames(),
-                          decorators)
+                         decorators)
         propinfered = list(ast.body[3].value.infer())
         self.assertEqual(len(propinfered), 1)
         propinfered = propinfered[0]
         self.assertIsInstance(propinfered, Instance)
         self.assertEqual(propinfered.name, 'SendMailController')
         self.assertEqual(propinfered.root().name, __name__)
-
 
     def test_im_func_unwrap(self):
         code = '''

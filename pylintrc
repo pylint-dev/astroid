@@ -92,7 +92,7 @@ confidence=
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
 disable=all
-enable=trailing-whitespace, bad-whitespace, unused-import, unused-variable
+enable=trailing-whitespace, bad-whitespace, unused-import, unused-variable,bad-continuation
 
 
 [BASIC]

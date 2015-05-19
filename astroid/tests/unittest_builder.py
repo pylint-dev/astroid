@@ -604,8 +604,8 @@ class FileBuildTest(unittest.TestCase):
         self.assertIs(_locals, module.globals)
         keys = sorted(_locals.keys())
         should = ['MY_DICT', 'YO', 'YOUPI',
-                '__revision__', 'global_access', 'modutils', 'four_args',
-                 'os', 'redirect', 'pb', 'LocalsVisitor', 'ASTWalker']
+                  '__revision__', 'global_access', 'modutils', 'four_args',
+                  'os', 'redirect', 'pb', 'LocalsVisitor', 'ASTWalker']
         should.sort()
         self.assertEqual(keys, should)
 
@@ -659,7 +659,7 @@ class FileBuildTest(unittest.TestCase):
         keys = locals2.keys()
         self.assertEqual(sorted(keys),
                          ['__init__', 'class_attr', 'class_method',
-                         'method', 'static_method'])
+                          'method', 'static_method'])
 
     def test_class_instance_attrs(self):
         module = self.module

@@ -26,9 +26,9 @@ import warnings
 
 from astroid import YES, builder, nodes, scoped_nodes
 from astroid.exceptions import (
-     InferenceError, NotFoundError,
-     NoDefault, ResolveError, MroError,
-     InconsistentMroError, DuplicateBasesError,
+    InferenceError, NotFoundError,
+    NoDefault, ResolveError, MroError,
+    InconsistentMroError, DuplicateBasesError,
 )
 from astroid.bases import (
     BUILTINS, Instance,
@@ -132,7 +132,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         astroid = test_utils.build_module(data, __name__)
         # test del statement not returned by getattr
         self.assertEqual(len(astroid.getattr('appli')), 2,
-                          astroid.getattr('appli'))
+                         astroid.getattr('appli'))
 
     def test_relative_to_absolute_name(self):
         # package
@@ -725,7 +725,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                                   ('Concrete23', ['MyIFace', 'AnotherIFace'])):
             klass = self.module2[klass]
             self.assertEqual([i.name for i in klass.interfaces()],
-                              interfaces)
+                             interfaces)
 
     def test_concat_interfaces(self):
         astroid = test_utils.build_module('''
@@ -744,7 +744,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                 __implements__ = BadArgument.__implements__ + Correct2.__implements__
         ''')
         self.assertEqual([i.name for i in astroid['InterfaceCanNowBeFound'].interfaces()],
-                          ['IMachin'])
+                         ['IMachin'])
 
     def test_inner_classes(self):
         eee = self.nonregr['Ccc']['Eee']
@@ -764,8 +764,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         astroid = test_utils.build_module(data, __name__)
         cls = astroid['WebAppObject']
         self.assertEqual(sorted(cls.locals.keys()),
-                          ['appli', 'config', 'registered', 'schema'])
-
+                         ['appli', 'config', 'registered', 'schema'])
 
     def test_class_getattr(self):
         data = '''
