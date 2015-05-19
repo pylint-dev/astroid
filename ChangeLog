@@ -100,7 +100,7 @@ Change log for the astroid package (used to be astng)
 
     * Add a new type of node, called *inference objects*. Inference objects are similar with
       AST nodes, but they can be obtained only after inference, so they can't be found
-      inside the AST tree. Their purpose is to handle at astroid level
+      inside the original AST tree. Their purpose is to handle at astroid level
       some operations which can't be handled when using brain transforms.
       For instance, the first object added is FrozenSet, which can be manipulated
       at astroid's level (inferred, itered etc). Code such as this 'frozenset((1,2))'
