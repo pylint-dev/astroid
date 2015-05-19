@@ -944,8 +944,7 @@ def _update_const_classes():
     klasses = (bool, int, float, complex, str)
     if sys.version_info < (3, 0):
         klasses += (unicode, long)
-    if sys.version_info >= (2, 6):
-        klasses += (bytes,)
+    klasses += (bytes,)
     for kls in klasses:
         CONST_CLS[kls] = Const
 _update_const_classes()
