@@ -22,6 +22,7 @@
 __docformat__ = "restructuredtext en"
 
 import sys
+import logging
 import os
 from os.path import abspath
 from inspect import (getargspec, isdatadescriptor, isfunction, ismethod,
@@ -34,11 +35,14 @@ from astroid.nodes import (Module, Class, Const, const_factory, From,
                            Function, EmptyNode, Name, Arguments)
 from astroid.bases import BUILTINS, Generator
 from astroid.manager import AstroidManager
-MANAGER = AstroidManager()
 
+
+MANAGER = AstroidManager()
 _CONSTANTS = tuple(CONST_CLS) # the keys of CONST_CLS eg python builtin types
 _JYTHON = os.name == 'java'
 _BUILTINS = vars(six.moves.builtins)
+_LOG = logging.getLogger(__name__)
+
 
 def _io_discrepancy(member):
     # _io module names itself `io`: http://bugs.python.org/issue18602
@@ -317,10 +321,8 @@ class InspectBuilder(object):
         try:
             modname = getattr(member, '__module__', None)
         except: # pylint: disable=bare-except
-            # XXX use logging
-            print('unexpected error while building astroid from living object')
-            import traceback
-            traceback.print_exc()
+            _LOG.exception('unexpected error while building '
+                           'astroid from living object')
             modname = None
         if modname is None:
             if (name in ('__new__', '__subclasshook__')

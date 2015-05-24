@@ -98,7 +98,7 @@ disable=invalid-name,protected-access,no-self-use,unused-argument,
         too-many-return-statements,redefined-outer-name,undefined-variable,
         too-many-locals,method-hidden,duplicate-code,attribute-defined-outside-init,
         fixme,missing-docstring,too-many-lines,too-many-statements,undefined-loop-variable,
-        unpacking-non-sequence
+        unpacking-non-sequence,import-error,no-name-in-module
 
 
 [BASIC]

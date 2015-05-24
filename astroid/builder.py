@@ -39,6 +39,7 @@ def parse(string):
     return compile(string, "<string>", 'exec', PyCF_ONLY_AST)
 
 if sys.version_info >= (3, 0):
+    # pylint: disable=no-name-in-module; We don't understand flows yet.
     from tokenize import detect_encoding
 
     def open_source_file(filename):
