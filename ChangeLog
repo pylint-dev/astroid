@@ -107,6 +107,16 @@ Change log for the astroid package (used to be astng)
       will not return an Instance of frozenset, without having access to its
       content, but a new objects.FrozenSet, which can be used just as a nodes.Set.
 
+    * Add a new *inference object* called Super, which also adds support for understanding
+      super calls. astroid understands the zero-argument form of super, specific to
+      Python 3, where the interpreter fills itself the arguments of the call. Also, we
+      are understanding the 2-argument form of super, both for bounded lookups
+      (super(X, instance)) as well as for unbounded lookups (super(X, Y)),
+      having as well support for validating that the object-or-type is a subtype
+      of the first argument. The unbounded form of super (one argument) is not
+      understood, since it's useless in practice and should be removed from
+      Python's specification. Closes issue #89.
+
 
 2015-03-14 -- 1.3.6
 
