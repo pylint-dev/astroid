@@ -69,13 +69,20 @@ class Super(NodeNG):
 
     This class offers almost the same behaviour as Python's super,
     which is MRO lookups for retrieving attributes from the parents.
+
+    The *mro_pointer* is the place in the MRO from where we should
+    start looking, not counting it. *mro_type* is the object which
+    provides the MRO, it can be both a type or an instance.
+    *self_class* is the class where the super call is, while
+    *scope* is the function where the super call is.
     """
 
-    def __init__(self, mro_pointer, mro_type, self_class):
+    def __init__(self, mro_pointer, mro_type, self_class, scope):
         self.type = mro_type
         self.mro_pointer = mro_pointer
         self._class_based = False
         self._self_class = self_class
+        self._scope = scope
         self._model = {
             '__thisclass__': self.mro_pointer,
             '__self_class__': self._self_class,
@@ -147,16 +154,20 @@ class Super(NodeNG):
 
             found = True
             for infered in _infer_stmts([cls[name]], context, frame=self):
-                if isinstance(infered, Function):
-                    if self._class_based:
-                        # The second argument to super is class, which
-                        # means that we are returning unbound methods
-                        # when accessing attributes.
-                        yield UnboundMethod(infered)
-                    else:
-                        yield BoundMethod(infered, cls)
-                else:
+                if not isinstance(infered, Function):
                     yield infered
+                    continue
+
+                # We can obtain different descriptors from a super depending
+                # on what we are accessing and where the super call is.
+                if infered.type == 'classmethod':
+                    yield BoundMethod(infered, cls)
+                elif self._scope.type == 'classmethod' and infered.type == 'method':
+                    yield infered
+                elif self._class_based:
+                    yield infered
+                else:
+                    yield BoundMethod(infered, cls)
 
         if not found:
             raise NotFoundError(name)

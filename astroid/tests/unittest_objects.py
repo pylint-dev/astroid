@@ -256,6 +256,59 @@ class SuperTests(unittest.TestCase):
         self.assertEqual(proxied.qname(), "%s.super" % bases.BUILTINS)
         self.assertIsInstance(proxied, nodes.Class)
 
+    def test_super_bound_model(self):
+        ast_nodes = test_utils.extract_node('''
+        class First(object):
+            def method(self):
+                pass
+            @classmethod
+            def class_method(cls):
+                pass
+        class Super_Type_Type(First):    
+            def method(self):
+                super(Super_Type_Type, Super_Type_Type).method #@
+                super(Super_Type_Type, Super_Type_Type).class_method #@
+            @classmethod
+            def class_method(cls):
+                super(Super_Type_Type, Super_Type_Type).method #@
+                super(Super_Type_Type, Super_Type_Type).class_method #@
+
+        class Super_Type_Object(First):    
+            def method(self):
+                super(Super_Type_Object, self).method #@
+                super(Super_Type_Object, self).class_method #@
+        ''')
+        # Super(type, type) is the same for both functions and classmethods.
+        first = next(ast_nodes[0].infer())
+        self.assertIsInstance(first, nodes.Function)
+        self.assertEqual(first.name, 'method')
+
+        second = next(ast_nodes[1].infer())
+        self.assertIsInstance(second, bases.BoundMethod)
+        self.assertEqual(second.bound.name, 'First')
+        self.assertEqual(second.type, 'classmethod')
+
+        third = next(ast_nodes[2].infer())
+        self.assertIsInstance(third, nodes.Function)
+        self.assertEqual(third.name, 'method')
+
+        fourth = next(ast_nodes[3].infer())
+        self.assertIsInstance(fourth, bases.BoundMethod)
+        self.assertEqual(fourth.bound.name, 'First')
+        self.assertEqual(fourth.type, 'classmethod')
+
+        # Super(type, obj) can lead to different attribute bindings
+        # depending on the type of the place where super was called.
+        fifth = next(ast_nodes[4].infer())
+        self.assertIsInstance(fifth, bases.BoundMethod)
+        self.assertEqual(fifth.bound.name, 'First')
+        self.assertEqual(fifth.type, 'method')
+
+        sixth = next(ast_nodes[5].infer())
+        self.assertIsInstance(sixth, bases.BoundMethod)
+        self.assertEqual(sixth.bound.name, 'First')
+        self.assertEqual(sixth.type, 'classmethod')
+
     def test_super_getattr_single_inheritance(self):
         ast_nodes = test_utils.extract_node('''
         class First(object):
@@ -293,14 +346,14 @@ class SuperTests(unittest.TestCase):
             next(fourth.igetattr('test3'))
 
         first_unbound = next(ast_nodes[4].infer())
-        self.assertIsInstance(first_unbound, bases.UnboundMethod)
-        self.assertEqual(first_unbound._proxied.name, 'test2')
-        self.assertEqual(first_unbound._proxied.parent.name, 'Second')
+        self.assertIsInstance(first_unbound, nodes.Function)
+        self.assertEqual(first_unbound.name, 'test2')
+        self.assertEqual(first_unbound.parent.name, 'Second')
 
         second_unbound = next(ast_nodes[5].infer())
-        self.assertIsInstance(second_unbound, bases.UnboundMethod)
-        self.assertEqual(second_unbound._proxied.name, 'test')
-        self.assertEqual(second_unbound._proxied.parent.name, 'First')
+        self.assertIsInstance(second_unbound, nodes.Function)
+        self.assertEqual(second_unbound.name, 'test')
+        self.assertEqual(second_unbound.parent.name, 'First')
 
     def test_super_invalid_mro(self):
         node = test_utils.extract_node('''
