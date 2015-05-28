@@ -317,7 +317,8 @@ def infer_super(node, context=None):
 
     super_obj = objects.Super(mro_pointer=mro_pointer,
                               mro_type=mro_type,
-                              self_class=cls)
+                              self_class=cls,
+                              scope=scope)
     super_obj.parent = node
     return iter([super_obj])
 
