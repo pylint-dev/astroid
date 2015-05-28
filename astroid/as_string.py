@@ -475,6 +475,9 @@ class AsStringVisitor(object):
     def visit_frozenset(self, node):
         return node.parent.accept(self)
 
+    def visit_super(self, node):
+        return node.parent.accept(self)
+
 
 
 class AsStringVisitor3k(AsStringVisitor):

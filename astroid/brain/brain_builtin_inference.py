@@ -255,7 +255,79 @@ def infer_dict(node, context=None):
     empty.items = items
     return empty
 
+
+def _node_class(node):
+    klass = node.frame()
+    while klass is not None and not isinstance(klass, nodes.Class):
+        if klass.parent is None:
+            klass = None
+        else:
+            klass = klass.parent.frame()
+    return klass
+
+
+def infer_super(node, context=None):
+    """Understand super calls.
+
+    There are some restrictions for what can be understood:
+
+        * unbounded super (one argument form) is not understood.
+
+        * if the super call is not inside a function (classmethod or method),
+          then the default inference will be used.
+
+        * if the super arguments can't be infered, the default inference
+          will be used.
+    """
+    if len(node.args) == 1:
+        # Ignore unbounded super.
+        raise UseInferenceDefault
+
+    scope = node.scope()
+    if not isinstance(scope, nodes.Function):
+        # Ignore non-method uses of super.
+        raise UseInferenceDefault
+    if scope.type not in ('classmethod', 'method'):
+        # Not interested in staticmethods.
+        raise UseInferenceDefault
+
+    cls = _node_class(scope)
+    if not len(node.args):
+        mro_pointer = cls
+        # In we are in a classmethod, the interpreter will fill
+        # automatically the class as the second argument, not an instance.
+        if scope.type == 'classmethod':
+            mro_type = cls
+        else:
+            mro_type = cls.instanciate_class()
+    else:
+        # TODO(cpopa): support flow control (multiple inference values).
+        try:
+            mro_pointer = next(node.args[0].infer(context=context))
+        except InferenceError:
+            raise UseInferenceDefault
+        try:
+            mro_type = next(node.args[1].infer(context=context))
+        except InferenceError:
+            raise UseInferenceDefault
+
+    if mro_pointer is YES or mro_type is YES:
+        # No way we could understand this.
+        raise UseInferenceDefault
+
+    super_obj = objects.Super(mro_pointer=mro_pointer,
+                              mro_type=mro_type,
+                              self_class=cls)
+    super_obj.parent = node
+    return iter([super_obj])
+
+
 # Builtins inference
+MANAGER.register_transform(nodes.Call,
+                           inference_tip(infer_super),
+                           lambda n: (isinstance(n.func, nodes.Name) and
+                                      n.func.name == 'super'))
+
 register_builtin_transform(infer_tuple, 'tuple')
 register_builtin_transform(infer_set, 'set')
 register_builtin_transform(infer_list, 'list')

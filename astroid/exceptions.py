@@ -42,6 +42,10 @@ class InconsistentMroError(MroError):
     """Error raised when a class's MRO is inconsistent."""
 
 
+class SuperError(ResolveError):
+    """Error raised when there is a problem with a super call."""
+
+
 class NotFoundError(ResolveError):
     """raised when we are unable to resolve a name"""
 

@@ -27,10 +27,16 @@ inferred FrozenSet:
 """
 
 from logilab.common.decorators import cachedproperty
+import six
 
 from astroid import MANAGER
-from astroid.bases import BUILTINS, NodeNG, Instance
+from astroid.bases import (
+    BUILTINS, NodeNG, Instance, _infer_stmts,
+    BoundMethod, UnboundMethod,
+)
+from astroid.exceptions import SuperError, NotFoundError, MroError
 from astroid.node_classes import const_factory
+from astroid.scoped_nodes import Class, Function
 from astroid.mixins import ParentAssignTypeMixin
 
 
@@ -56,3 +62,104 @@ class FrozenSet(NodeNG, Instance, ParentAssignTypeMixin):
     def _proxied(self):
         builtins = MANAGER.astroid_cache[BUILTINS]
         return builtins.getattr('frozenset')[0]
+
+
+class Super(NodeNG):
+    """Proxy class over a super call.
+
+    This class offers almost the same behaviour as Python's super,
+    which is MRO lookups for retrieving attributes from the parents.
+    """
+
+    def __init__(self, mro_pointer, mro_type, self_class):
+        self.type = mro_type
+        self.mro_pointer = mro_pointer
+        self._class_based = False
+        self._self_class = self_class
+        self._model = {
+            '__thisclass__': self.mro_pointer,
+            '__self_class__': self._self_class,
+            '__self__': self.type,
+            '__class__': self._proxied,
+        }
+
+    def _infer(self, context=None):
+        yield self
+
+    def super_mro(self):
+        """Get the MRO which will be used to lookup attributes in this super."""
+        if not isinstance(self.mro_pointer, Class):
+            raise SuperError("The first super argument must be type.")
+
+        if isinstance(self.type, Class):
+            # `super(type, type)`, most likely in a class method.
+            self._class_based = True
+            mro_type = self.type
+        else:
+            mro_type = self.type._proxied
+
+        if not mro_type.newstyle:
+            raise SuperError("Unable to call super on old-style classes.")
+
+        mro = mro_type.mro()
+        if self.mro_pointer not in mro:
+            raise SuperError("super(type, obj): obj must be an instance "
+                             "or subtype of type")
+
+        index = mro.index(self.mro_pointer)
+        return mro[index + 1:]
+
+    @cachedproperty
+    def _proxied(self):
+        builtins = MANAGER.astroid_cache[BUILTINS]
+        return builtins.getattr('super')[0]
+
+    def pytype(self):
+        return '%s.super' % BUILTINS
+
+    def display_type(self):
+        return 'Super of'
+
+    @property
+    def name(self):
+        """Get the name of the MRO pointer."""
+        return self.mro_pointer.name
+
+    def igetattr(self, name, context=None):
+        """Retrieve the inferred values of the given attribute name."""
+
+        local_name = self._model.get(name)
+        if local_name:
+            yield local_name
+            return
+
+        try:
+            mro = self.super_mro()
+        except (MroError, SuperError) as exc:
+            # Don't let invalid MROs or invalid super calls
+            # to leak out as is from this function.
+            six.raise_from(NotFoundError, exc)
+
+        found = False
+        for cls in mro:
+            if name not in cls.locals:
+                continue
+
+            found = True
+            for infered in _infer_stmts([cls[name]], context, frame=self):
+                if isinstance(infered, Function):
+                    if self._class_based:
+                        # The second argument to super is class, which
+                        # means that we are returning unbound methods
+                        # when accessing attributes.
+                        yield UnboundMethod(infered)
+                    else:
+                        yield BoundMethod(infered, cls)
+                else:
+                    yield infered
+
+        if not found:
+            raise NotFoundError(name)
+
+    def getattr(self, name, context=None):
+        return list(self.igetattr(name, context=context))
