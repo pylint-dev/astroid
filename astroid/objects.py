@@ -32,7 +32,7 @@ import six
 from astroid import MANAGER
 from astroid.bases import (
     BUILTINS, NodeNG, Instance, _infer_stmts,
-    BoundMethod, UnboundMethod,
+    BoundMethod,
 )
 from astroid.exceptions import SuperError, NotFoundError, MroError
 from astroid.node_classes import const_factory
