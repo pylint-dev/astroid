@@ -477,6 +477,17 @@ class SuperTests(unittest.TestCase):
         second = next(ast_nodes[1].infer())
         self.assertIsInstance(second, bases.Instance)
 
+    def test_super_invalid_types(self):
+        node = test_utils.extract_node('''
+        import collections
+        class A(object):
+            def __init__(self):
+                super(A, collections) #@
+        ''')
+        inferred = next(node.infer())
+        with self.assertRaises(exceptions.SuperError):
+            inferred.super_mro()            
+
 
 if __name__ == '__main__':
     unittest.main()

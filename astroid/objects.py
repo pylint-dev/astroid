@@ -103,7 +103,10 @@ class Super(NodeNG):
             self._class_based = True
             mro_type = self.type
         else:
-            mro_type = self.type._proxied
+            mro_type = getattr(self.type, '_proxied', None)
+            if not isinstance(mro_type, (Instance, Class)):
+                raise SuperError("super(type, obj): obj must be an instance "
+                                 "or subtype of type")                
 
         if not mro_type.newstyle:
             raise SuperError("Unable to call super on old-style classes.")
