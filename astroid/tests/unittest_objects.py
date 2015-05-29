@@ -239,7 +239,7 @@ class SuperTests(unittest.TestCase):
         for node in ast_nodes[1:]:
             inferred = next(node.infer())
             self.assertIsInstance(inferred, objects.Super, node)
-            with self.assertRaises(exceptions.SuperError) as cm:
+            with self.assertRaises(exceptions.SuperArgumentTypeError) as cm:
                 inferred.super_mro()
             self.assertEqual(str(cm.exception),
                              "super(type, obj): obj must be an instance "
@@ -486,7 +486,9 @@ class SuperTests(unittest.TestCase):
         ''')
         inferred = next(node.infer())
         with self.assertRaises(exceptions.SuperError):
-            inferred.super_mro()            
+            inferred.super_mro()
+        with self.assertRaises(exceptions.SuperArgumentTypeError):
+            inferred.super_mro()
 
 
 if __name__ == '__main__':

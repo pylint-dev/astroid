@@ -34,7 +34,10 @@ from astroid.bases import (
     BUILTINS, NodeNG, Instance, _infer_stmts,
     BoundMethod,
 )
-from astroid.exceptions import SuperError, NotFoundError, MroError
+from astroid.exceptions import (
+    SuperError, SuperArgumentTypeError,
+    NotFoundError, MroError
+)
 from astroid.node_classes import const_factory
 from astroid.scoped_nodes import Class, Function
 from astroid.mixins import ParentAssignTypeMixin
@@ -96,7 +99,7 @@ class Super(NodeNG):
     def super_mro(self):
         """Get the MRO which will be used to lookup attributes in this super."""
         if not isinstance(self.mro_pointer, Class):
-            raise SuperError("The first super argument must be type.")
+            raise SuperArgumentTypeError("The first super argument must be type.")
 
         if isinstance(self.type, Class):
             # `super(type, type)`, most likely in a class method.
@@ -105,16 +108,16 @@ class Super(NodeNG):
         else:
             mro_type = getattr(self.type, '_proxied', None)
             if not isinstance(mro_type, (Instance, Class)):
-                raise SuperError("super(type, obj): obj must be an instance "
-                                 "or subtype of type")                
+                raise SuperArgumentTypeError("super(type, obj): obj must be an "
+                                             "instance or subtype of type")
 
         if not mro_type.newstyle:
             raise SuperError("Unable to call super on old-style classes.")
 
         mro = mro_type.mro()
         if self.mro_pointer not in mro:
-            raise SuperError("super(type, obj): obj must be an instance "
-                             "or subtype of type")
+            raise SuperArgumentTypeError("super(type, obj): obj must be an "
+                                         "instance or subtype of type")
 
         index = mro.index(self.mro_pointer)
         return mro[index + 1:]

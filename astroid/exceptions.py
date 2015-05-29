@@ -46,6 +46,10 @@ class SuperError(ResolveError):
     """Error raised when there is a problem with a super call."""
 
 
+class SuperArgumentTypeError(SuperError):
+    """Error raised when the super arguments are invalid."""
+
+
 class NotFoundError(ResolveError):
     """raised when we are unable to resolve a name"""
 
