@@ -1,4 +1,4 @@
-from __future__ import generators
+from __future__ import generators, print_function
 
 try:
     enumerate = enumerate
@@ -13,7 +13,7 @@ except NameError:
 
 def toto(value):
     for k, v in value:
-        print v.get('yo')
+        print(v.get('yo'))
 
 
 import imp
