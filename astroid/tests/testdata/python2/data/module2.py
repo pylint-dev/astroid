@@ -70,7 +70,7 @@ class Concrete23(Concrete1):
 del YO.member
 del YO
 [SYN1, SYN2] = (Concrete0, Concrete1)
-assert `1`
+assert '1'
 b = (1) | (((2) & (3)) ^ (8))
 bb = ((1) | (two)) | (6)
 ccc = ((one) & (two)) & (three)
