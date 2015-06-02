@@ -607,7 +607,7 @@ class FileBuildTest(unittest.TestCase):
                   '__revision__', 'global_access', 'modutils', 'four_args',
                   'os', 'redirect', 'pb', 'LocalsVisitor', 'ASTWalker']
         should.sort()
-        self.assertEqual(keys, should)
+        self.assertEqual(keys, sorted(should))
 
     def test_function_base_props(self):
         """test base properties and method of a astroid function"""

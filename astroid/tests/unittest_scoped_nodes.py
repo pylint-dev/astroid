@@ -101,7 +101,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         # raise ResolveError
         self.assertRaises(InferenceError, self.nonregr.igetattr, 'YOAA')
 
-    def test_wildard_import_names(self):
+    def test_wildcard_import_names(self):
         m = resources.build_file('data/all.py', 'all')
         self.assertEqual(m.wildcard_import_names(), ['Aaa', '_bla', 'name'])
         m = resources.build_file('data/notall.py', 'notall')
@@ -270,7 +270,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         last = r_sibling.next_sibling().next_sibling().next_sibling()
         self.assertIsInstance(last, nodes.Assign)
         self.assertIsNone(last.next_sibling())
-        first = l_sibling.previous_sibling().previous_sibling().previous_sibling().previous_sibling().previous_sibling()
+        first = l_sibling.root().body[0]
         self.assertIsNone(first.previous_sibling())
 
     def test_nested_args(self):
