@@ -17,7 +17,6 @@
 """Tests for basic functionality in astroid.brain."""
 import sys
 import unittest
-from textwrap import dedent
 
 import six
 
@@ -25,7 +24,6 @@ from astroid import MANAGER
 from astroid import bases
 from astroid import nodes
 from astroid import test_utils
-from astroid.builder import AstroidBuilder
 import astroid
 
 
@@ -177,7 +175,7 @@ class MultiprocessingBrainTest(unittest.TestCase):
     def test_multiprocessing_manager(self):
         # Test that we have the proper attributes
         # for a multiprocessing.managers.SyncManager
-        module = AstroidBuilder().string_build(dedent("""
+        module = test_utils.build_module("""
         import multiprocessing
         manager = multiprocessing.Manager()
         queue = manager.Queue()
@@ -193,7 +191,7 @@ class MultiprocessingBrainTest(unittest.TestCase):
         value = manager.Value()
         array = manager.Array()
         namespace = manager.Namespace()
-        """))
+        """)
         queue = next(module['queue'].infer())
         self.assertEqual(queue.qname(),
                          "{}.Queue".format(six.moves.queue.__name__))
@@ -235,7 +233,7 @@ class MultiprocessingBrainTest(unittest.TestCase):
 class EnumBrainTest(unittest.TestCase):
 
     def test_simple_enum(self):
-        module = AstroidBuilder().string_build(dedent("""
+        module = test_utils.build_module("""
         import enum
 
         class MyEnum(enum.Enum):
@@ -245,7 +243,7 @@ class EnumBrainTest(unittest.TestCase):
             def mymethod(self, x):
                 return 5
 
-        """))
+        """)
 
         enum = next(module['MyEnum'].infer())
         one = enum['one']
@@ -260,7 +258,7 @@ class EnumBrainTest(unittest.TestCase):
         self.assertIsInstance(meth, astroid.Function)
 
     def test_enum_multiple_base_classes(self):
-        module = AstroidBuilder().string_build(dedent("""
+        module = test_utils.build_module("""
         import enum
 
         class Mixin:
@@ -268,7 +266,7 @@ class EnumBrainTest(unittest.TestCase):
 
         class MyEnum(Mixin, enum.Enum):
             one = 1
-        """))
+        """)
         enum = next(module['MyEnum'].infer())
         one = enum['one']
 
@@ -277,12 +275,12 @@ class EnumBrainTest(unittest.TestCase):
                         'Enum instance should share base classes with generating class')
 
     def test_int_enum(self):
-        module = AstroidBuilder().string_build(dedent("""
+        module = test_utils.build_module("""
         import enum
 
         class MyEnum(enum.IntEnum):
             one = 1
-        """))
+        """)
 
         enum = next(module['MyEnum'].infer())
         one = enum['one']
@@ -296,10 +294,10 @@ class EnumBrainTest(unittest.TestCase):
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
 class DateutilBrainTest(unittest.TestCase):
     def test_parser(self):
-        module = AstroidBuilder().string_build(dedent("""
+        module = test_utils.build_module("""
         from dateutil.parser import parse
         d = parse('2000-01-01')
-        """))
+        """)
         d_type = next(module['d'].infer())
         self.assertEqual(d_type.qname(), "datetime.datetime")
 
