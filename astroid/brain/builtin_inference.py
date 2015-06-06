@@ -310,15 +310,11 @@ def infer_super(node, context=None):
                               self_class=cls,
                               scope=scope)
     super_obj.parent = node
-    return iter([super_obj])
+    return super_obj
 
 
 # Builtins inference
-MANAGER.register_transform(nodes.CallFunc,
-                           inference_tip(infer_super),
-                           lambda n: (isinstance(n.func, nodes.Name) and
-                                      n.func.name == 'super'))
-
+register_builtin_transform(infer_super, 'super')
 register_builtin_transform(infer_tuple, 'tuple')
 register_builtin_transform(infer_set, 'set')
 register_builtin_transform(infer_list, 'list')
