@@ -348,7 +348,7 @@ def infer_getattr(node, context=None):
         raise UseInferenceDefault
 
     try:
-        return next(obj.igetattr(attr.value))
+        return next(obj.igetattr(attr.value, context=context))
     except (InferenceError, NotFoundError, StopIteration):
         if len(node.args) == 3:
             return node.args[2]
