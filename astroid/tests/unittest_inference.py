@@ -1850,5 +1850,110 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertRaises(InferenceError, next, module['no_yield'].infer())
 
 
+class GetattrTest(unittest.TestCase):
+
+    def test_yes(self):
+        ast_nodes = test_utils.extract_node('''
+        from missing import Missing
+        getattr(1, Unknown) #@
+        getattr(Unknown, 'a') #@
+        getattr(Unknown, Unknown) #@
+        getattr(Missing, 'a') #@
+        getattr(Missing, Missing) #@
+        getattr('a', Missing) #@  
+        ''')
+        for node in ast_nodes[:3]:
+            self.assertRaises(InferenceError, next, node.infer())
+
+        for node in ast_nodes[3:]:
+            inferred = next(node.infer())
+            self.assertEqual(inferred, YES, node)
+
+    def test_attrname_not_string(self):
+        ast_nodes = test_utils.extract_node('''
+        getattr(1, 1) #@
+        c = int
+        getattr(1, c) #@
+        ''')
+        for node in ast_nodes:
+            self.assertRaises(InferenceError, next, node.infer())
+
+    def test_attribute_missing(self):
+        ast_nodes = test_utils.extract_node('''
+        getattr(1, 'ala') #@
+        getattr(int, 'ala') #@
+        getattr(float, 'bala') #@
+        getattr({}, 'portocala') #@
+        ''')
+        for node in ast_nodes:
+            self.assertRaises(InferenceError, next, node.infer())
+
+    def test_default(self):
+        ast_nodes = test_utils.extract_node('''
+        getattr(1, 'ala', None) #@
+        getattr(int, 'bala', int) #@
+        getattr(int, 'bala', getattr(int, 'portocala', None)) #@
+        ''')
+        first = next(ast_nodes[0].infer())
+        self.assertIsInstance(first, nodes.Const)
+        self.assertIsNone(first.value)
+
+        second = next(ast_nodes[1].infer())
+        self.assertIsInstance(second, nodes.Name)
+        inferred = next(second.infer())
+        self.assertIsInstance(inferred, nodes.Class)
+        self.assertEqual(inferred.qname(), "%s.int" % BUILTINS)
+
+        third = next(ast_nodes[2].infer())
+        self.assertIsInstance(third, nodes.CallFunc)
+        inferred = next(third.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertIsNone(inferred.value)
+
+    def test_lookup(self):
+        ast_nodes = test_utils.extract_node('''
+        class A(object):
+            def test(self): pass
+        class B(A):
+            def test_b(self): pass
+        class C(A): pass
+        class E(C, B):
+            def test_e(self): pass
+
+        getattr(A(), 'test') #@
+        getattr(A, 'test') #@
+        getattr(E(), 'test_b') #@
+        getattr(E(), 'test') #@
+
+        class X(object):
+            def test(self):
+                getattr(self, 'test') #@
+        ''')
+
+        first = next(ast_nodes[0].infer())
+        self.assertIsInstance(first, BoundMethod)
+        self.assertEqual(first.bound.name, 'A')
+
+        second = next(ast_nodes[1].infer())
+        self.assertIsInstance(second, UnboundMethod)
+        self.assertIsInstance(second.parent, nodes.Class)
+        self.assertEqual(second.parent.name, 'A')
+
+        third = next(ast_nodes[2].infer())
+        self.assertIsInstance(third, BoundMethod)
+        # Bound to E, but the provider is B.
+        self.assertEqual(third.bound.name, 'E')
+        self.assertEqual(third._proxied._proxied.parent.name, 'B')
+
+        fourth = next(ast_nodes[3].infer())
+        self.assertIsInstance(fourth, BoundMethod)
+        self.assertEqual(fourth.bound.name, 'E')
+        self.assertEqual(third._proxied._proxied.parent.name, 'B')
+
+        fifth = next(ast_nodes[4].infer())
+        self.assertIsInstance(fifth, BoundMethod)
+        self.assertEqual(fifth.bound.name, 'X')
+
+
 if __name__ == '__main__':
     unittest.main()

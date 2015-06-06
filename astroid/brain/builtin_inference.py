@@ -5,7 +5,7 @@ from functools import partial
 from textwrap import dedent
 
 import six
-from astroid import (MANAGER, UseInferenceDefault,
+from astroid import (MANAGER, UseInferenceDefault, NotFoundError,
                      inference_tip, YES, InferenceError, UnresolvableName)
 from astroid import nodes
 from astroid import objects
@@ -87,7 +87,12 @@ def register_builtin_transform(transform, builtin_name):
     def _transform_wrapper(node, context=None):
         result = transform(node, context=context)
         if result:
-            result.parent = node
+            if not result.parent:
+                # Let the transformation function determine
+                # the parent for its result. Otherwise,
+                # we set it to be the node we transformed from.
+                result.parent = node
+
             result.lineno = node.lineno
             result.col_offset = node.col_offset
         return iter([result])
@@ -313,8 +318,46 @@ def infer_super(node, context=None):
     return super_obj
 
 
+def infer_getattr(node, context=None):
+    """Understand getattr calls
+
+    If the one of the arguments is an YES object, then the
+    result will be an YES object. Otherwise, the normal attribute
+    lookup will be done.
+    """
+    if len(node.args) not in (2, 3):
+        # Not a valid getattr call.
+        raise UseInferenceDefault
+
+    try:
+        # TODO(cpopa): follow all the values of the first argument?
+        obj = next(node.args[0].infer(context=context))
+        attr = next(node.args[1].infer(context=context))
+    except InferenceError:        
+        raise UseInferenceDefault
+
+    if obj is YES or attr is YES:
+        # If one of the arguments is something we can't infer,
+        # then also make the result of the getattr call something
+        # which is unknown.
+        return YES
+
+    is_string = (isinstance(attr, nodes.Const) and
+                 isinstance(attr.value, six.string_types))
+    if not is_string:
+        raise UseInferenceDefault
+
+    try:
+        return next(obj.igetattr(attr.value))
+    except (InferenceError, NotFoundError, StopIteration):
+        if len(node.args) == 3:
+            return node.args[2]
+
+    raise UseInferenceDefault   
+
 # Builtins inference
 register_builtin_transform(infer_super, 'super')
+register_builtin_transform(infer_getattr, 'getattr')
 register_builtin_transform(infer_tuple, 'tuple')
 register_builtin_transform(infer_set, 'set')
 register_builtin_transform(infer_list, 'list')

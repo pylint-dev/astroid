@@ -117,6 +117,9 @@ Change log for the astroid package (used to be astng)
       understood, since it's useless in practice and should be removed from
       Python's specification. Closes issue #89.
 
+    * Add inference support for getattr builtin. Now getattr builtins are
+      properly understood. Closes issue #103.
+
 
 2015-03-14 -- 1.3.6
 
