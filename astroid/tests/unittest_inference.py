@@ -1858,14 +1858,17 @@ class GetattrTest(unittest.TestCase):
         getattr(1, Unknown) #@
         getattr(Unknown, 'a') #@
         getattr(Unknown, Unknown) #@
+        getattr(Unknown, Unknown, Unknown) #@
+
         getattr(Missing, 'a') #@
         getattr(Missing, Missing) #@
-        getattr('a', Missing) #@  
+        getattr('a', Missing) #@
+        getattr('a', Missing, Missing) #@
         ''')
-        for node in ast_nodes[:3]:
+        for node in ast_nodes[:4]:
             self.assertRaises(InferenceError, next, node.infer())
 
-        for node in ast_nodes[3:]:
+        for node in ast_nodes[4:]:
             inferred = next(node.infer())
             self.assertEqual(inferred, YES, node)
 
@@ -1899,16 +1902,12 @@ class GetattrTest(unittest.TestCase):
         self.assertIsNone(first.value)
 
         second = next(ast_nodes[1].infer())
-        self.assertIsInstance(second, nodes.Name)
-        inferred = next(second.infer())
-        self.assertIsInstance(inferred, nodes.Class)
-        self.assertEqual(inferred.qname(), "%s.int" % BUILTINS)
+        self.assertIsInstance(second, nodes.Class)
+        self.assertEqual(second.qname(), "%s.int" % BUILTINS)
 
         third = next(ast_nodes[2].infer())
-        self.assertIsInstance(third, nodes.CallFunc)
-        inferred = next(third.infer())
-        self.assertIsInstance(inferred, nodes.Const)
-        self.assertIsNone(inferred.value)
+        self.assertIsInstance(third, nodes.Const)
+        self.assertIsNone(third.value)
 
     def test_lookup(self):
         ast_nodes = test_utils.extract_node('''
