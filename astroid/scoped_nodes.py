@@ -1086,11 +1086,10 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             frame = self
         return frame._scope_lookup(node, name, offset)
 
-    # list of parent class as a list of string (i.e. names as they appear
-    # in the class definition) XXX bw compat
+    @property
     def basenames(self):
+        """Get the list of parent class names, as they appear in the class definition."""
         return [bnode.as_string() for bnode in self.bases]
-    basenames = property(basenames)
 
     def ancestors(self, recurs=True, context=None):
         """return an iterator on the node base classes in a prefixed
@@ -1118,11 +1117,10 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                             if isinstance(baseobj, Instance):
                                 baseobj = baseobj._proxied
                             else:
-                                # duh ?
                                 continue
                         if not baseobj.hide:
                             if baseobj in yielded:
-                                continue # cf xxx above
+                                continue
                             yielded.add(baseobj)
                             yield baseobj
                         if recurs:
@@ -1132,11 +1130,10 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                                     # This class is the ancestor of itself.
                                     break
                                 if grandpa in yielded:
-                                    continue # cf xxx above
+                                    continue
                                 yielded.add(grandpa)
                                 yield grandpa
                 except InferenceError:
-                    # XXX log error ?
                     continue
 
     def local_attr_ancestors(self, name, context=None):
@@ -1511,7 +1508,6 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             try:
                 baseobj = next(stmt.infer(context=context))
             except InferenceError:
-                # XXX log error ?
                 continue
             if isinstance(baseobj, Instance):
                 baseobj = baseobj._proxied
