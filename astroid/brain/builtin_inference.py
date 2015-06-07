@@ -318,13 +318,7 @@ def infer_super(node, context=None):
     return super_obj
 
 
-def infer_getattr(node, context=None):
-    """Understand getattr calls
-
-    If the one of the arguments is an YES object, then the
-    result will be an YES object. Otherwise, the normal attribute
-    lookup will be done.
-    """
+def _infer_getattr_args(node, context):
     if len(node.args) not in (2, 3):
         # Not a valid getattr call.
         raise UseInferenceDefault
@@ -340,27 +334,66 @@ def infer_getattr(node, context=None):
         # If one of the arguments is something we can't infer,
         # then also make the result of the getattr call something
         # which is unknown.
-        return YES
+        return YES, YES
 
     is_string = (isinstance(attr, nodes.Const) and
                  isinstance(attr.value, six.string_types))
     if not is_string:
         raise UseInferenceDefault
 
+    return obj, attr.value
+
+
+def infer_getattr(node, context=None):
+    """Understand getattr calls
+
+    If one of the arguments is an YES object, then the
+    result will be an YES object. Otherwise, the normal attribute
+    lookup will be done.
+    """
+    obj, attr = _infer_getattr_args(node, context)
+    if obj is YES or attr is YES:
+        return YES
+
     try:
-        return next(obj.igetattr(attr.value, context=context))
-    except (InferenceError, NotFoundError, StopIteration):
+        return next(obj.igetattr(attr, context=context))
+    except (StopIteration, InferenceError, NotFoundError):
         if len(node.args) == 3:
+            # Try to infer the default and return it instead.
             try:
                 return next(node.args[2].infer(context=context))
             except InferenceError:
                 raise UseInferenceDefault
 
-    raise UseInferenceDefault   
+    raise UseInferenceDefault
+
+
+def infer_hasattr(node, context=None):
+    """Understand hasattr calls
+
+    This always guarantees three possible outcomes for calling
+    hasattr: Const(False) when we are sure that the object
+    doesn't have the intended attribute, Const(True) when
+    we know that the object has the attribute and YES
+    when we are unsure of the outcome of the function call.
+    """    
+    try:
+        obj, attr = _infer_getattr_args(node, context)        
+        if obj is YES or attr is YES:
+            return YES
+        obj.getattr(attr, context=context)
+    except UseInferenceDefault:
+        # Can't infer something from this function call.        
+        return YES
+    except NotFoundError:
+        # Doesn't have it.        
+        return nodes.Const(False)    
+    return nodes.Const(True)       
 
 # Builtins inference
 register_builtin_transform(infer_super, 'super')
 register_builtin_transform(infer_getattr, 'getattr')
+register_builtin_transform(infer_hasattr, 'hasattr')
 register_builtin_transform(infer_tuple, 'tuple')
 register_builtin_transform(infer_set, 'set')
 register_builtin_transform(infer_list, 'list')

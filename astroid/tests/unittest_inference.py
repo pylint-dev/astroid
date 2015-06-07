@@ -1954,5 +1954,57 @@ class GetattrTest(unittest.TestCase):
         self.assertEqual(fifth.bound.name, 'X')
 
 
+class HasattrTest(unittest.TestCase):
+
+    def test_inference_errors(self):
+        ast_nodes = test_utils.extract_node('''
+        from missing import Missing
+
+        hasattr(Unknown, 'ala') #@
+
+        hasattr(Missing, 'bala') #@
+        hasattr('portocala', Missing) #@
+        ''')
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            self.assertEqual(inferred, YES)
+
+    def test_attribute_is_missing(self):
+        ast_nodes = test_utils.extract_node('''
+        class A: pass
+        hasattr(int, 'ala') #@
+        hasattr({}, 'bala') #@
+        hasattr(A(), 'portocala') #@
+        ''')
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, nodes.Const)
+            self.assertFalse(inferred.value)
+
+    def test_attribute_is_not_missing(self):
+        ast_nodes = test_utils.extract_node('''
+        class A(object):
+            def test(self): pass
+        class B(A):
+            def test_b(self): pass
+        class C(A): pass
+        class E(C, B):
+            def test_e(self): pass
+
+        hasattr(A(), 'test') #@
+        hasattr(A, 'test') #@
+        hasattr(E(), 'test_b') #@
+        hasattr(E(), 'test') #@
+
+        class X(object):
+            def test(self):
+                hasattr(self, 'test') #@
+        ''')
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, nodes.Const)
+            self.assertTrue(inferred.value)
+
+
 if __name__ == '__main__':
     unittest.main()

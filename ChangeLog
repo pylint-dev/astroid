@@ -120,6 +120,8 @@ Change log for the astroid package (used to be astng)
     * Add inference support for getattr builtin. Now getattr builtins are
       properly understood. Closes issue #103.
 
+    * Add inference support for hasattr builtin. Closes issue #102.
+
 
 2015-03-14 -- 1.3.6
 
