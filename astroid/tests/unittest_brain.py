@@ -148,7 +148,7 @@ class NoseBrainTest(unittest.TestCase):
 
         self.assertIsInstance(assert_equal, astroid.BoundMethod)
         self.assertIsInstance(assert_true, astroid.BoundMethod)
-        self.assertIsinstance(assert_equals, astroid.BoundMethod)
+        self.assertIsInstance(assert_equals, astroid.BoundMethod)
         self.assertEqual(assert_equal.qname(),
                          'unittest.case.TestCase.assertEqual')
         self.assertEqual(assert_true.qname(),
