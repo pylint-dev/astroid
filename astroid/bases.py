@@ -76,8 +76,6 @@ class Proxy(object):
         yield self
 
 
-# Inference ##################################################################
-
 class InferenceContext(object):
     __slots__ = ('path', 'lookupname', 'callcontext', 'boundnode', 'infered')
 
@@ -124,8 +122,7 @@ def copy_context(context):
 
 
 def _infer_stmts(stmts, context, frame=None):
-    """return an iterator on statements inferred by each statement in <stmts>
-    """
+    """Return an iterator on statements inferred by each statement in *stmts*."""
     stmt = None
     infered = False
     if context is not None:
@@ -134,6 +131,7 @@ def _infer_stmts(stmts, context, frame=None):
     else:
         name = None
         context = InferenceContext()
+
     for stmt in stmts:
         if stmt is YES:
             yield stmt
@@ -141,7 +139,7 @@ def _infer_stmts(stmts, context, frame=None):
             continue
         context.lookupname = stmt._infer_name(frame, name)
         try:
-            for infered in stmt.infer(context):
+            for infered in stmt.infer(context=context):
                 yield infered
                 infered = True
         except UnresolvableName:
@@ -153,19 +151,18 @@ def _infer_stmts(stmts, context, frame=None):
         raise InferenceError(str(stmt))
 
 
-# special inference objects (e.g. may be returned as nodes by .infer()) #######
-
 class _Yes(object):
-    """a yes object"""
+    """Special inference object, which is returned when inference fails."""
     def __repr__(self):
         return 'YES'
+
     def __getattribute__(self, name):
         if name == 'next':
             raise AttributeError('next method should not be called')
         if name.startswith('__') and name.endswith('__'):
-            # to avoid inspection pb
             return super(_Yes, self).__getattribute__(name)
         return self
+
     def __call__(self, *args, **kwargs):
         return self
 
@@ -174,7 +171,8 @@ YES = _Yes()
 
 
 class Instance(Proxy):
-    """a special node representing a class instance"""
+    """A special node representing a class instance."""
+
     def getattr(self, name, context=None, lookupclass=True):
         try:
             values = self._proxied.instance_attr(name, context)
@@ -182,8 +180,8 @@ class Instance(Proxy):
             if name == '__class__':
                 return [self._proxied]
             if lookupclass:
-                # class attributes not available through the instance
-                # unless they are explicitly defined
+                # Class attributes not available through the instance
+                # unless they are explicitly defined.
                 if name in ('__name__', '__bases__', '__mro__', '__subclasses__'):
                     return self._proxied.local_attr(name)
                 return self._proxied.getattr(name, context)
