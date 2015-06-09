@@ -126,6 +126,12 @@ Change log for the astroid package (used to be astng)
 
     * Don't leak StopIteration when inferring invalid UnaryOps (+[], +None etc.).
 
+    * Improve the inference of UnaryOperands.
+
+      When inferring unary operands, astroid looks up the return value
+      of __pos__, __neg__ and __invert__ to determine the inferred value
+      of ``~node``, ``+node`` or ``-node``.
+
 
 2015-03-14 -- 1.3.6
 

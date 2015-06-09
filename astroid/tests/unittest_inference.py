@@ -1853,6 +1853,53 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         node = test_utils.extract_node('+[] #@')
         self.assertRaises(InferenceError, next, node.infer())
 
+    def test_unary_operands(self):
+        ast_nodes = test_utils.extract_node('''
+        import os
+        def func(): pass
+        from missing import missing
+        class GoodInstance(object):
+            def __pos__(self):
+                return 42
+            def __neg__(self):
+                return +self - 41
+            def __invert__(self):
+                return []
+        class BadInstance(object):
+            def __pos__(self):
+                return lala
+            def __neg__(self):
+                return missing
+        instance = GoodInstance()
+        +instance #@
+        -instance #@
+        ~instance #@
+
+        bad_instance = BadInstance()
+        +bad_instance #@
+        -bad_instance #@
+        ~bad_instance #@
+
+        # These should be TypeErrors.
+        ~BadInstance #@
+        ~os #@
+        -func #@
+        +BadInstance #@        
+        ''')
+        pos = next(ast_nodes[0].infer())
+        self.assertIsInstance(pos, nodes.Const)
+        self.assertEqual(pos.value, 42)
+        neg = next(ast_nodes[1].infer())
+        self.assertIsInstance(neg, nodes.Const)
+        self.assertEqual(neg.value, 1)
+        invert = next(ast_nodes[2].infer())
+        self.assertIsInstance(invert, nodes.List)
+        self.assertEqual(invert.elts, [])
+
+        for bad_node in ast_nodes[3:]:
+            inferred = next(bad_node.infer())
+            self.assertEqual(inferred, YES)
+
 
 class GetattrTest(unittest.TestCase):
 

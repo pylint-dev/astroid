@@ -300,24 +300,44 @@ nodes.Subscript._infer = path_wrapper(infer_subscript)
 nodes.Subscript.infer_lhs = raise_if_nothing_infered(infer_subscript)
 
 def infer_unaryop(self, context=None):
+    """Infer unary operands."""
+
     for operand in self.operand.infer(context):
         try:
             yield operand.infer_unary_op(self.op)
         except TypeError:
+            # TODO(cpopa): let pylint know about this.
             continue
         except AttributeError:
             meth = UNARY_OP_METHOD[self.op]
             if meth is None:
+                # TODO(cpopa): call operand.infer_truth_value.
                 yield YES
             else:
+                if not isinstance(operand, Instance):
+                    # TODO(cpopa): let pylint know about this?
+                    # It means that an unary operand was used on something
+                    # which doesn't support the operation, which will
+                    # result in a TypeError.
+                    yield YES
+                    continue
+
                 try:
-                    # XXX just suppose if the type implement meth, returned type
-                    # will be the same
-                    operand.getattr(meth)
-                    yield operand
-                except GeneratorExit:
-                    raise
-                except Exception: # pylint: disable=broad-except
+                    meths = operand.getattr(meth, context=context)
+                    if not meths:
+                        # TODO(cpopa): this should be a TypeError as well.
+                        yield YES
+                        continue
+
+                    meth = meths[0]
+                    result = next(meth.infer_call_result(self, context=context),
+                                  None)
+                    if result is None:
+                        # Failed to infer, return the same type.
+                        yield operand
+                    else:
+                        yield result
+                except (NotFoundError, InferenceError):
                     yield YES
 nodes.UnaryOp._infer = raise_if_nothing_infered(path_wrapper(infer_unaryop))
 
