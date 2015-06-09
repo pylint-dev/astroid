@@ -319,7 +319,7 @@ def infer_unaryop(self, context=None):
                     raise
                 except Exception: # pylint: disable=broad-except
                     yield YES
-nodes.UnaryOp._infer = path_wrapper(infer_unaryop)
+nodes.UnaryOp._infer = raise_if_nothing_infered(path_wrapper(infer_unaryop))
 
 def _infer_binop(operator, operand1, operand2, context, failures=None):
     if operand1 is YES:

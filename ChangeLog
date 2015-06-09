@@ -124,6 +124,8 @@ Change log for the astroid package (used to be astng)
 
     * Add 'assert_equals' method in nose.tools's brain plugin.
 
+    * Don't leak StopIteration when inferring invalid UnaryOps (+[], +None etc.).
+
 
 2015-03-14 -- 1.3.6
 

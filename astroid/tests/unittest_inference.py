@@ -1849,6 +1849,10 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertRaises(InferenceError, next, module['other_decorators'].infer())
         self.assertRaises(InferenceError, next, module['no_yield'].infer())
 
+    def test_unary_op_leaks_stop_iteration(self):
+        node = test_utils.extract_node('+[] #@')
+        self.assertRaises(InferenceError, next, node.infer())
+
 
 class GetattrTest(unittest.TestCase):
 
