@@ -137,20 +137,25 @@ class NoseBrainTest(unittest.TestCase):
     def test_nose_tools(self):
         methods = test_utils.extract_node("""
         from nose.tools import assert_equal
+        from nose.tools import assert_equals
         from nose.tools import assert_true
         assert_equal = assert_equal #@
         assert_true = assert_true #@
+        assert_equals = assert_equals #@
         """)
-
         assert_equal = next(methods[0].value.infer())
         assert_true = next(methods[1].value.infer())
+        assert_equals = next(methods[2].value.infer())
 
         self.assertIsInstance(assert_equal, astroid.BoundMethod)
         self.assertIsInstance(assert_true, astroid.BoundMethod)
+        self.assertIsinstance(assert_equals, astroid.BoundMethod)
         self.assertEqual(assert_equal.qname(),
                          'unittest.case.TestCase.assertEqual')
         self.assertEqual(assert_true.qname(),
                          'unittest.case.TestCase.assertTrue')
+        self.assertEqual(assert_equals.qname(),
+                         'unittest.case.TestCase.assertEqual')
 
 
 

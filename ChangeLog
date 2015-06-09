@@ -3,6 +3,8 @@ Change log for the astroid package (used to be astng)
 
 --
 
+    * Add 'assert_equals' method in nose.tools's brain plugin.
+
     * Generated enum member stubs now support IntEnum and multiple
       base classes.
 
