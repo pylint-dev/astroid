@@ -250,7 +250,9 @@ def six_moves_transform():
 def _six_fail_hook(modname):
     if modname != 'six.moves':
         raise AstroidBuildingException
-    return AstroidBuilder(MANAGER).string_build(_IMPORTS)
+    module = AstroidBuilder(MANAGER).string_build(_IMPORTS)
+    module.name = 'six.moves'
+    return module
 
 
 register_module_extender(MANAGER, 'six', six_moves_transform)
