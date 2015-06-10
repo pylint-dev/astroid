@@ -133,6 +133,92 @@ class NoseBrainTest(unittest.TestCase):
                          'unittest.case.TestCase.assertEqual')
         self.assertEqual(assert_true.qname(),
                          'unittest.case.TestCase.assertTrue')
+class SixBrainTest(unittest.TestCase):
+
+    def test_attribute_access(self):
+        ast_nodes = test_utils.extract_node('''
+        import six
+        six.moves.http_client #@
+        six.moves.urllib_parse #@
+        six.moves.urllib_error #@
+        six.moves.urllib.request #@
+        ''')
+        http_client = next(ast_nodes[0].infer())
+        self.assertIsInstance(http_client, nodes.Module)
+        self.assertEqual(http_client.name,
+                         'http.client' if six.PY3 else 'httplib')
+
+        urllib_parse = next(ast_nodes[1].infer())
+        if six.PY3:
+            self.assertIsInstance(urllib_parse, nodes.Module)
+            self.assertEqual(urllib_parse.name, 'urllib.parse')
+        else:
+            # On Python 2, this is a fake module, the same behaviour
+            # being mimicked in brain's tip for six.moves.
+            self.assertIsInstance(urllib_parse, astroid.Instance)
+        urljoin = next(urllib_parse.igetattr('urljoin'))
+        urlencode = next(urllib_parse.igetattr('urlencode'))
+        if six.PY2:
+            # In reality it's a function, but our implementations
+            # transforms it into a method.
+            self.assertIsInstance(urljoin, astroid.BoundMethod)
+            self.assertEqual(urljoin.qname(), 'urlparse.urljoin')
+            self.assertIsInstance(urlencode, astroid.BoundMethod)
+            self.assertEqual(urlencode.qname(), 'urllib.urlencode')
+        else:
+            self.assertIsInstance(urljoin, nodes.Function)
+            self.assertEqual(urljoin.qname(), 'urllib.parse.urljoin')
+            self.assertIsInstance(urlencode, nodes.Function)
+            self.assertEqual(urlencode.qname(), 'urllib.parse.urlencode')
+
+        urllib_error = next(ast_nodes[2].infer())
+        if six.PY3:
+            self.assertIsInstance(urllib_error, nodes.Module)
+            self.assertEqual(urllib_error.name, 'urllib.error')
+        else:
+            # On Python 2, this is a fake module, the same behaviour
+            # being mimicked in brain's tip for six.moves.
+            self.assertIsInstance(urllib_error, astroid.Instance)
+        urlerror = next(urllib_error.igetattr('URLError'))
+        self.assertIsInstance(urlerror, nodes.Class)
+        content_too_short = next(urllib_error.igetattr('ContentTooShortError'))
+        self.assertIsInstance(content_too_short, nodes.Class)
+
+        urllib_request = next(ast_nodes[3].infer())
+        if six.PY3:
+            self.assertIsInstance(urllib_request, nodes.Module)
+            self.assertEqual(urllib_request.name, 'urllib.request')
+        else:
+            self.assertIsInstance(urllib_request, astroid.Instance)
+        urlopen = next(urllib_request.igetattr('urlopen'))
+        urlretrieve = next(urllib_request.igetattr('urlretrieve'))
+        if six.PY2:
+            # In reality it's a function, but our implementations
+            # transforms it into a method.
+            self.assertIsInstance(urlopen, astroid.BoundMethod)
+            self.assertEqual(urlopen.qname(), 'urllib2.urlopen')
+            self.assertIsInstance(urlretrieve, astroid.BoundMethod)
+            self.assertEqual(urlretrieve.qname(), 'urllib.urlretrieve')
+        else:
+            self.assertIsInstance(urlopen, nodes.Function)
+            self.assertEqual(urlopen.qname(), 'urllib.request.urlopen')
+            self.assertIsInstance(urlretrieve, nodes.Function)
+            self.assertEqual(urlretrieve.qname(), 'urllib.request.urlretrieve')
+
+    def test_from_imports(self):
+        ast_node = test_utils.extract_node('''
+        from six.moves import http_client
+        http_client.HTTPSConnection #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.Class)
+        if six.PY3:
+            qname = 'http.client.HTTPSConnection'
+        else:
+            qname = 'httplib.HTTPSConnection'
+        self.assertEqual(inferred.qname(), qname)
+
+
 
 
 if __name__ == '__main__':
