@@ -69,3 +69,24 @@ class NoDefault(AstroidError):
     no default value
     """
 
+
+class OperationError(object):
+    """Object which describes a TypeError occurred somewhere in the inference chain
+
+    This is not an exception, but a container object which holds the types and
+    the error which occurred.
+    """
+
+
+class UnaryOperationError(OperationError):
+    """Object which describes operational failures on UnaryOps."""
+
+    def __init__(self, operand, op, error):
+        self.operand = operand
+        self.op = op
+        self.error = error
+
+    def __str__(self):
+        operand_type = self.operand.pytype()
+        msg = "bad operand type for unary {}: {}"
+        return msg.format(self.op, operand_type)

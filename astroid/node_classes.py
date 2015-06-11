@@ -23,7 +23,7 @@ import sys
 import six
 from logilab.common.decorators import cachedproperty
 
-from astroid.exceptions import NoDefault
+from astroid.exceptions import NoDefault, UnaryOperationError, InferenceError
 from astroid.bases import (NodeNG, Statement, Instance, InferenceContext,
                            _infer_stmts, YES, BUILTINS)
 from astroid.mixins import (BlockRangeMixIn, AssignTypeMixin,
@@ -887,6 +887,23 @@ class UnaryOp(NodeNG):
     """class representing an UnaryOp node"""
     _astroid_fields = ('operand',)
     operand = None
+
+    # This is set by inference.py
+    def _infer_unaryop(self, context=None):
+        raise NotImplementedError
+
+    def type_errors(self, context=None):
+        """Return a list of TypeErrors which can occur during inference.
+
+        Each TypeError is represented by a :class:`UnaryOperationError`,
+        which holds the original exception.
+        """
+        try:
+            results = self._infer_unaryop(context=context)
+            return [result for result in results
+                    if isinstance(result, UnaryOperationError)]
+        except InferenceError:
+            return []
 
 
 class While(BlockRangeMixIn, Statement):

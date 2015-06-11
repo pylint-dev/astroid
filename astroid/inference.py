@@ -25,8 +25,11 @@ from itertools import chain
 from astroid import nodes
 
 from astroid.manager import AstroidManager
-from astroid.exceptions import (AstroidError, InferenceError, NoDefault,
-                                NotFoundError, UnresolvableName)
+from astroid.exceptions import (
+    AstroidError, InferenceError, NoDefault,
+    NotFoundError, UnresolvableName,
+    UnaryOperationError
+)
 from astroid.bases import (YES, Instance, InferenceContext,
                            _infer_stmts, copy_context, path_wrapper,
                            raise_if_nothing_infered)
@@ -299,37 +302,28 @@ def infer_subscript(self, context=None):
 nodes.Subscript._infer = path_wrapper(infer_subscript)
 nodes.Subscript.infer_lhs = raise_if_nothing_infered(infer_subscript)
 
-def infer_unaryop(self, context=None):
-    """Infer unary operands."""
-
+def _infer_unaryop(self, context=None):
+    """Infer what an UnaryOp should return when evaluated."""
     for operand in self.operand.infer(context):
         try:
             yield operand.infer_unary_op(self.op)
-        except TypeError:
-            # TODO(cpopa): let pylint know about this.
-            continue
-        except AttributeError:
+        except TypeError as exc:
+            # The operand doesn't support this operation.
+            yield UnaryOperationError(operand, self.op, exc)
+        except AttributeError as exc:
             meth = UNARY_OP_METHOD[self.op]
             if meth is None:
                 # TODO(cpopa): call operand.infer_truth_value.
                 yield YES
             else:
                 if not isinstance(operand, Instance):
-                    # TODO(cpopa): let pylint know about this?
-                    # It means that an unary operand was used on something
-                    # which doesn't support the operation, which will
-                    # result in a TypeError.
-                    yield YES
+                    # The operation was used on something which
+                    # doesn't support it.
+                    yield UnaryOperationError(operand, self.op, exc)
                     continue
 
                 try:
-                    meths = operand.getattr(meth, context=context)
-                    if not meths:
-                        # TODO(cpopa): this should be a TypeError as well.
-                        yield YES
-                        continue
-
-                    meth = meths[0]
+                    meth = operand.getattr(meth, context=context)[0]
                     result = next(meth.infer_call_result(self, context=context),
                                   None)
                     if result is None:
@@ -337,9 +331,28 @@ def infer_unaryop(self, context=None):
                         yield operand
                     else:
                         yield result
-                except (NotFoundError, InferenceError):
+                except NotFoundError as exc:
+                    # The unary operation special method was not found.
+                    yield UnaryOperationError(operand, self.op, exc)
+                except InferenceError:
                     yield YES
-nodes.UnaryOp._infer = raise_if_nothing_infered(path_wrapper(infer_unaryop))
+
+
+@path_wrapper
+def infer_unaryop(self, context=None):
+    """Infer what an UnaryOp should return when evaluated."""
+    for result in _infer_unaryop(self, context):
+        if isinstance(result, UnaryOperationError):
+            # For the sake of .infer(), we don't care about operation
+            # errors, which is the job of pylint. So return something
+            # which shows that we can't infer the result.
+            yield YES
+        else:
+            yield result
+
+nodes.UnaryOp._infer_unaryop = _infer_unaryop
+nodes.UnaryOp._infer = raise_if_nothing_infered(infer_unaryop)
+
 
 def _infer_binop(operator, operand1, operand2, context, failures=None):
     if operand1 is YES:

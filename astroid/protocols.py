@@ -19,8 +19,8 @@
 where it makes sense.
 """
 
-__doctype__ = "restructuredtext en"
 import collections
+import operator
 
 from astroid.exceptions import InferenceError, NoDefault, NotFoundError
 from astroid.node_classes import unpack_infer
@@ -53,33 +53,25 @@ UNARY_OP_METHOD = {'+': '__pos__',
                    '~': '__invert__',
                    'not': None, # XXX not '__nonzero__'
                   }
-
-# unary operations ############################################################
-
-def tl_infer_unary_op(self, operator):
-    if operator == 'not':
-        return const_factory(not bool(self.elts))
-    raise TypeError() # XXX log unsupported operation
-nodes.Tuple.infer_unary_op = tl_infer_unary_op
-nodes.List.infer_unary_op = tl_infer_unary_op
+_UNARY_OPERATORS = {
+    '+': operator.pos,
+    '-': operator.neg,
+    '~': operator.invert,
+    'not': operator.not_,
+}    
 
 
-def dict_infer_unary_op(self, operator):
-    if operator == 'not':
-        return const_factory(not bool(self.items))
-    raise TypeError() # XXX log unsupported operation
-nodes.Dict.infer_unary_op = dict_infer_unary_op
+def _infer_unary_op(obj, op):
+    func = _UNARY_OPERATORS[op]
+    value = func(obj)
+    return const_factory(value)
 
+nodes.Tuple.infer_unary_op = lambda self, op: _infer_unary_op(tuple(self.elts), op)
+nodes.List.infer_unary_op = lambda self, op: _infer_unary_op(self.elts, op)
+nodes.Set.infer_unary_op = lambda self, op: _infer_unary_op(set(self.elts), op)
+nodes.Const.infer_unary_op = lambda self, op: _infer_unary_op(self.value, op)
+nodes.Dict.infer_unary_op = lambda self, op: _infer_unary_op(dict(self.items), op)
 
-def const_infer_unary_op(self, operator):
-    if operator == 'not':
-        return const_factory(not self.value)
-    # XXX log potentially raised TypeError
-    elif operator == '+':
-        return const_factory(+self.value)
-    else: # operator == '-':
-        return const_factory(-self.value)
-nodes.Const.infer_unary_op = const_infer_unary_op
 
 
 # binary operations ###########################################################

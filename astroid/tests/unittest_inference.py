@@ -830,10 +830,28 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_unary_not(self):
         for code in ('a = not (1,); b = not ()',
-                     'a = not {1:2}; b = not {}'):
+                     'a = not {1:2}; b = not {}',
+                     'a = not [1, 2]; b = not []',
+                     'a = not {1, 2}; b = not set()',
+                     'a = not 1; b = not 0',
+                     'a = not "a"; b = not ""',
+                     'a = not b"a"; b = not b""'):
             ast = builder.string_build(code, __name__, __file__)
             self._test_const_infered(ast['a'], False)
             self._test_const_infered(ast['b'], True)
+
+    def test_unary_op_numbers(self):
+        ast_nodes = test_utils.extract_node('''
+        +1 #@
+        -1 #@
+        ~1 #@
+        +2.0 #@
+        -2.0 #@
+        ''')
+        expected = [1, -1, -2, 2.0, -2.0]
+        for node, expected_value in zip(ast_nodes, expected):
+            inferred = next(node.infer())
+            self.assertEqual(inferred.value, expected_value)
 
     def test_binary_op_int_add(self):
         ast = builder.string_build('a = 1 + 2', __name__, __file__)
@@ -1851,7 +1869,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_unary_op_leaks_stop_iteration(self):
         node = test_utils.extract_node('+[] #@')
-        self.assertRaises(InferenceError, next, node.infer())
+        self.assertEqual(YES, next(node.infer()))
 
     def test_unary_operands(self):
         ast_nodes = test_utils.extract_node('''
@@ -1899,6 +1917,58 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         for bad_node in ast_nodes[3:]:
             inferred = next(bad_node.infer())
             self.assertEqual(inferred, YES)
+
+    def test_unary_type_errors(self):
+        ast_nodes = test_utils.extract_node('''
+        import collections
+        ~[] #@
+        ~() #@
+        ~dict() #@
+        ~{} #@
+        ~set() #@
+        -set() #@
+        -"" #@
+        ~"" #@
+        +"" #@
+        class A(object): pass
+        ~(lambda: None) #@
+        ~A #@
+        ~A() #@
+        ~collections #@
+        ~2.0 #@
+        ''')
+        msg = "bad operand type for unary {op}: {module}.{type}"
+        expected = [
+            msg.format(op="~", module=BUILTINS, type='list'),
+            msg.format(op="~", module=BUILTINS, type='tuple'),
+            msg.format(op="~", module=BUILTINS, type='dict'),
+            msg.format(op="~", module=BUILTINS, type='dict'),
+            msg.format(op="~", module=BUILTINS, type='set'),
+            msg.format(op="-", module=BUILTINS, type='set'),
+            msg.format(op="-", module=BUILTINS, type='str'),
+            msg.format(op="~", module=BUILTINS, type='str'),
+            msg.format(op="+", module=BUILTINS, type='str'),
+            msg.format(op="~", module=BUILTINS, type='function'),
+            msg.format(op="~", module=BUILTINS, type='type'),
+            msg.format(op="~", module='', type='A'),
+            msg.format(op="~", module=BUILTINS, type='module'),
+            msg.format(op="~", module=BUILTINS, type='float'),
+        ]
+        for node, expected_value in zip(ast_nodes, expected):
+            errors = node.type_errors()
+            self.assertEqual(len(errors), 1)
+            error = errors[0]
+            self.assertEqual(str(error), expected_value)
+
+    def test_unary_empty_type_errors(self):
+        # These aren't supported right now
+        ast_nodes = test_utils.extract_node('''
+        ~ (2 and []) #@
+        not (4 and ()) #@
+        - (0 or {}) #@
+        ''')
+        for node in ast_nodes:
+            self.assertEqual(node.type_errors(), [])
 
 
 class GetattrTest(unittest.TestCase):

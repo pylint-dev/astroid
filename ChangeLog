@@ -136,6 +136,17 @@ Change log for the astroid package (used to be astng)
       syntax. Also, we added a new fail import hook for six.moves, which fixes the
       import-error false positive from pylint. Closes issue #107.
 
+    * Make the first steps towards detecting type errors for unary and binary
+      operations.
+
+      In exceptions, one object was added for holding information about a possible
+      UnaryOp TypeError, object called `UnaryOperationError`. Even though the name
+      suggests it's an exception, it's actually not one. When inferring UnaryOps,
+      we use this special object to mark a possible TypeError,
+      object which can be interpreted by pylint in order to emit a new warning.
+      We are also exposing a new method for UnaryOps, called `type_errors`,
+      which returns a list of UnaryOperationsError.
+
 
 2015-03-14 -- 1.3.6
 
