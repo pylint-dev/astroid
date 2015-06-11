@@ -58,7 +58,7 @@ _UNARY_OPERATORS = {
     '-': operator.neg,
     '~': operator.invert,
     'not': operator.not_,
-}    
+}
 
 
 def _infer_unary_op(obj, op):
