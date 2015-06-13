@@ -1937,22 +1937,22 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ~collections #@
         ~2.0 #@
         ''')
-        msg = "bad operand type for unary {op}: {module}.{type}"
+        msg = "bad operand type for unary {op}: {type}"
         expected = [
-            msg.format(op="~", module=BUILTINS, type='list'),
-            msg.format(op="~", module=BUILTINS, type='tuple'),
-            msg.format(op="~", module=BUILTINS, type='dict'),
-            msg.format(op="~", module=BUILTINS, type='dict'),
-            msg.format(op="~", module=BUILTINS, type='set'),
-            msg.format(op="-", module=BUILTINS, type='set'),
-            msg.format(op="-", module=BUILTINS, type='str'),
-            msg.format(op="~", module=BUILTINS, type='str'),
-            msg.format(op="+", module=BUILTINS, type='str'),
-            msg.format(op="~", module=BUILTINS, type='function'),
-            msg.format(op="~", module=BUILTINS, type='type'),
-            msg.format(op="~", module='', type='A'),
-            msg.format(op="~", module=BUILTINS, type='module'),
-            msg.format(op="~", module=BUILTINS, type='float'),
+            msg.format(op="~", type='list'),
+            msg.format(op="~", type='tuple'),
+            msg.format(op="~", type='dict'),
+            msg.format(op="~", type='dict'),
+            msg.format(op="~", type='set'),
+            msg.format(op="-", type='set'),
+            msg.format(op="-", type='str'),
+            msg.format(op="~", type='str'),
+            msg.format(op="+", type='str'),
+            msg.format(op="~", type='<lambda>'),
+            msg.format(op="~", type='A'),
+            msg.format(op="~", type='A'),
+            msg.format(op="~", type='collections'),
+            msg.format(op="~", type='float'),
         ]
         for node, expected_value in zip(ast_nodes, expected):
             errors = node.type_errors()

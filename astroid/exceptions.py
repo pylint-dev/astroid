@@ -87,6 +87,6 @@ class UnaryOperationError(OperationError):
         self.error = error
 
     def __str__(self):
-        operand_type = self.operand.pytype()
+        operand_type = self.operand.name
         msg = "bad operand type for unary {}: {}"
         return msg.format(self.op, operand_type)
