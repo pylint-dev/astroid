@@ -1892,6 +1892,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         +instance #@
         -instance #@
         ~instance #@
+        --instance #@
 
         bad_instance = BadInstance()
         +bad_instance #@
@@ -1913,8 +1914,11 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         invert = next(ast_nodes[2].infer())
         self.assertIsInstance(invert, nodes.List)
         self.assertEqual(invert.elts, [])
+        neg_neg = next(ast_nodes[3].infer())
+        self.assertIsInstance(neg_neg, nodes.Const)
+        self.assertEqual(neg_neg.value, -1)
 
-        for bad_node in ast_nodes[3:]:
+        for bad_node in ast_nodes[4:]:
             inferred = next(bad_node.infer())
             self.assertEqual(inferred, YES)
 
