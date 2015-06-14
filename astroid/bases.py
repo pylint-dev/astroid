@@ -175,13 +175,13 @@ YES = _Yes()
 def _infer_method_result_truth(instance, method_name, context):
     # Get the method from the instance and try to infer
     # its return's truth value.
-    meth = next(instance.igetattr(method_name, context=context), None)                
+    meth = next(instance.igetattr(method_name, context=context), None)
     if meth and hasattr(meth, 'infer_call_result'):
         for value in meth.infer_call_result(instance, context=context):
             if value is YES:
                 return value
 
-            inferred = next(value.infer(context=context))                
+            inferred = next(value.infer(context=context))
             return inferred.bool_value()
     return YES
 
@@ -277,7 +277,7 @@ class Instance(Proxy):
         return self._proxied.qname()
 
     def display_type(self):
-        return 'Instance of'   
+        return 'Instance of'
 
     def bool_value(self):
         """Infer the truth value for an Instance
@@ -298,7 +298,7 @@ class Instance(Proxy):
         except (InferenceError, NotFoundError):
             # Fallback to __len__.
             try:
-                result = _infer_method_result_truth(self, '__len__', context)                
+                result = _infer_method_result_truth(self, '__len__', context)
             except (NotFoundError, InferenceError):
                 return True
         return result
@@ -720,7 +720,7 @@ class NodeNG(object):
         if len(set(values)) != len(values):
             # Too many inferred values, can't tell.
             return YES
-        return values[0]        
+        return values[0]
 
 
 class Statement(NodeNG):
