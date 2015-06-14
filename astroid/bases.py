@@ -32,8 +32,10 @@ from astroid.exceptions import (InferenceError, AstroidError, NotFoundError,
 
 if sys.version_info >= (3, 0):
     BUILTINS = 'builtins'
+    BOOL_SPECIAL_METHOD = '__bool__'
 else:
     BUILTINS = '__builtin__'
+    BOOL_SPECIAL_METHOD = '__nonzero__'
 PROPERTIES = {BUILTINS + '.property', 'abc.abstractproperty'}
 # List of possible property names. We use this list in order
 # to see if a method is a property or not. This should be
@@ -170,6 +172,20 @@ class _Yes(object):
 YES = _Yes()
 
 
+def _infer_method_result_truth(instance, method_name, context):
+    # Get the method from the instance and try to infer
+    # its return's truth value.
+    meth = next(instance.igetattr(method_name, context=context), None)                
+    if meth and hasattr(meth, 'infer_call_result'):
+        for value in meth.infer_call_result(instance, context=context):
+            if value is YES:
+                return value
+
+            inferred = next(value.infer(context=context))                
+            return inferred.bool_value()
+    return YES
+
+
 class Instance(Proxy):
     """A special node representing a class instance."""
 
@@ -201,7 +217,6 @@ class Instance(Proxy):
             context = InferenceContext()
         try:
             # avoid recursively inferring the same attr on the same class
-
             context.push((self._proxied, name))
             # XXX frame should be self._proxied, or not ?
             get_attr = self.getattr(name, context, lookupclass=False)
@@ -262,7 +277,31 @@ class Instance(Proxy):
         return self._proxied.qname()
 
     def display_type(self):
-        return 'Instance of'
+        return 'Instance of'   
+
+    def bool_value(self):
+        """Infer the truth value for an Instance
+
+        The truth value of an instance is determined by these conditions:
+
+           * if it implements __bool__ on Python 3 or __nonzero__
+             on Python 2, then its bool value will be determined by
+             calling this special method and checking its result.
+           * when this method is not defined, __len__() is called, if it
+             is defined, and the object is considered true if its result is
+             nonzero. If a class defines neither __len__() nor __bool__(),
+             all its instances are considered true.
+        """
+        context = InferenceContext()
+        try:
+            result = _infer_method_result_truth(self, BOOL_SPECIAL_METHOD, context)
+        except (InferenceError, NotFoundError):
+            # Fallback to __len__.
+            try:
+                result = _infer_method_result_truth(self, '__len__', context)                
+            except (NotFoundError, InferenceError):
+                return True
+        return result
 
 
 class UnboundMethod(Proxy):
@@ -295,6 +334,9 @@ class UnboundMethod(Proxy):
             return ((x is YES and x or Instance(x)) for x in infer)
         return self._proxied.infer_call_result(caller, context)
 
+    def bool_value(self):
+        return True
+
 
 class BoundMethod(UnboundMethod):
     """a special node representing a method bound to an instance"""
@@ -310,6 +352,9 @@ class BoundMethod(UnboundMethod):
         context.boundnode = self.bound
         return self._proxied.infer_call_result(caller, context)
 
+    def bool_value(self):
+        return True
+
 
 class Generator(Instance):
     """a special node representing a generator.
@@ -324,6 +369,9 @@ class Generator(Instance):
 
     def display_type(self):
         return 'Generator'
+
+    def bool_value(self):
+        return True
 
     def __repr__(self):
         return '<Generator(%s) l.%s at 0x%s>' % (self._proxied.name, self.lineno, id(self))
@@ -647,6 +695,32 @@ class NodeNG(object):
     def repr_tree(self, ids=False):
         from astroid.as_string import dump
         return dump(self)
+
+    def bool_value(self):
+        """Determine the bool value of this node
+
+        The boolean value of a node can have three
+        possible values:
+
+            * False. For instance, empty data structures,
+              False, empty strings, instances which return
+              explicitly False from the __nonzero__ / __bool__
+              method.
+            * True. Most of constructs are True by default:
+              classes, functions, modules etc
+            * YES: the inference engine is uncertain of the
+              node's value.
+        """
+        context = InferenceContext()
+        try:
+            values = [inferred.bool_value()
+                      for inferred in self.infer(context=context)]
+        except InferenceError:
+            return YES
+        if len(set(values)) != len(values):
+            # Too many inferred values, can't tell.
+            return YES
+        return values[0]        
 
 
 class Statement(NodeNG):

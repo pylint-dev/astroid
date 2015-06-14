@@ -268,10 +268,6 @@ class Name(LookupMixIn, NodeNG):
     """class representing a Name node"""
 
 
-
-
-#####################   node classes   ########################################
-
 class Arguments(NodeNG, AssignTypeMixin):
     """class representing an Arguments node"""
     if PY3K:
@@ -513,6 +509,9 @@ class Const(NodeNG, Instance):
 
     def pytype(self):
         return self._proxied.qname()
+
+    def bool_value(self):
+        return bool(self.value)
 
 
 class Continue(Statement):

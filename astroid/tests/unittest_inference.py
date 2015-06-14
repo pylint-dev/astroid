@@ -40,8 +40,10 @@ builder = builder.AstroidBuilder()
 
 if sys.version_info < (3, 0):
     EXC_MODULE = 'exceptions'
+    BOOL_SPECIAL_METHOD = '__nonzero__'
 else:
     EXC_MODULE = BUILTINS
+    BOOL_SPECIAL_METHOD = '__bool__'
 
 
 class InferenceUtilsTest(unittest.TestCase):
@@ -1973,6 +1975,102 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ''')
         for node in ast_nodes:
             self.assertEqual(node.type_errors(), [])
+
+    def test_bool_value(self):
+        # Verify the truth value of nodes.
+        module = test_utils.build_module('''
+        import collections
+        collections_module = collections
+        def function(): pass
+        class Class(object):
+            def method(self): pass
+        genexpr = (x for x in range(10))
+        dict_comp = {x:y for (x, y) in ((1, 2), (2, 3))}
+        set_comp = {x for x in range(10)}
+        list_comp = [x for x in range(10)]
+        lambda_func = lambda: None
+        unbound_method = Class.method
+        instance = Class()
+        bound_method = instance.method
+        def generator_func():
+             yield
+        generator = generator_func()
+        name = generator
+        bin_op = 1 + 2
+        bool_op = x and y
+        callfunc = test()
+        compare = 2 < 3
+        const_str_true = 'testconst'
+        const_str_false = ''
+        ''')
+        collections_module = next(module['collections_module'].infer())
+        self.assertTrue(collections_module.bool_value())
+        function = module['function']
+        self.assertTrue(function.bool_value())
+        klass = module['Class']
+        self.assertTrue(klass.bool_value())
+        genexpr = next(module['genexpr'].infer())
+        self.assertTrue(genexpr.bool_value())
+        dict_comp = next(module['dict_comp'].infer())
+        self.assertEqual(dict_comp, YES)
+        set_comp = next(module['set_comp'].infer())
+        self.assertEqual(set_comp, YES)
+        list_comp = next(module['list_comp'].infer())
+        self.assertEqual(list_comp, YES)
+        lambda_func = next(module['lambda_func'].infer())
+        self.assertTrue(lambda_func)
+        unbound_method = next(module['unbound_method'].infer())
+        self.assertTrue(unbound_method)
+        bound_method = next(module['bound_method'].infer())
+        self.assertTrue(bound_method)
+        generator = next(module['generator'].infer())
+        self.assertTrue(generator)
+        name = module['name'].parent.value
+        self.assertTrue(name.bool_value())
+        bin_op = module['bin_op'].parent.value
+        self.assertTrue(bin_op.bool_value())
+        bool_op = module['bool_op'].parent.value
+        self.assertEqual(bool_op.bool_value(), YES)
+        callfunc = module['callfunc'].parent.value
+        self.assertEqual(callfunc.bool_value(), YES)
+        compare = module['compare'].parent.value
+        self.assertEqual(compare.bool_value(), YES)
+
+    def test_bool_value_instances(self):
+        instances = test_utils.extract_node('''
+        class FalseBoolInstance(object):
+            def {bool}(self):
+                return False
+        class TrueBoolInstance(object):
+            def {bool}(self):
+                return True
+        class FalseLenInstance(object):
+            def __len__(self):
+                return 0
+        class TrueLenInstance(object):
+            def __len__(self):
+                return 14
+        class AlwaysTrueInstance(object):
+            pass
+        class ErrorInstance(object):
+            def __bool__(self):
+                return lala
+            def __len__(self):
+                return lala
+        class NonMethods(object):
+            __bool__ = 1
+            __len__ = 2
+        FalseBoolInstance() #@
+        TrueBoolInstance() #@
+        FalseLenInstance() #@
+        TrueLenInstance() #@
+        AlwaysTrueInstance() #@
+        ErrorInstance() #@
+        '''.format(bool=BOOL_SPECIAL_METHOD))
+        expected = (False, True, False, True, True, YES, YES)
+        for node, expected_value in zip(instances, expected):
+            inferred = next(node.infer())
+            self.assertEqual(inferred.bool_value(), expected_value)
 
 
 class GetattrTest(unittest.TestCase):

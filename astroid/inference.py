@@ -313,8 +313,14 @@ def _infer_unaryop(self, context=None):
         except AttributeError as exc:
             meth = UNARY_OP_METHOD[self.op]
             if meth is None:
-                # TODO(cpopa): call operand.infer_truth_value.
-                yield YES
+                # `not node`. Determine node's boolean
+                # value and negate its result, unless it is
+                # YES, which will be returned as is.
+                bool_value = operand.bool_value()
+                if bool_value is not YES:
+                    yield nodes.const_factory(not bool_value)
+                else:
+                    yield YES
             else:
                 if not isinstance(operand, Instance):
                     # The operation was used on something which

@@ -147,6 +147,15 @@ Change log for the astroid package (used to be astng)
       We are also exposing a new method for UnaryOps, called `type_errors`,
       which returns a list of UnaryOperationsError.
 
+    * A new method was added to the AST nodes, 'bool_value'. It is used to deduce
+      the value of a node when used in a boolean context, which is useful
+      for both inference, as well as for data flow analysis, where we are interested
+      in what branches will be followed when the program will be executed.
+      `bool_value` returns True, False or YES, if the node's boolean value can't
+      be deduced. The method is used when inferring the unary operand `not`.
+      Thus, `not something` will result in calling `something.bool_value` and
+      negating the result, if it is a boolean.
+
 
 2015-03-14 -- 1.3.6
 

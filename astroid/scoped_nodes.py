@@ -521,6 +521,8 @@ class Module(LocalsDictNodeNG):
                     infered.append(infered_node.value)
         return infered
 
+    def bool_value(self):
+        return True
 
 
 class ComprehensionScope(LocalsDictNodeNG):
@@ -538,6 +540,9 @@ class GenExpr(ComprehensionScope):
         self.elt = None
         self.generators = []
 
+    def bool_value(self):
+        return True
+
 
 class DictComp(ComprehensionScope):
     _astroid_fields = ('key', 'value', 'generators')
@@ -548,6 +553,9 @@ class DictComp(ComprehensionScope):
         self.value = None
         self.generators = []
 
+    def bool_value(self):
+        return YES
+
 
 class SetComp(ComprehensionScope):
     _astroid_fields = ('elt', 'generators')
@@ -557,12 +565,19 @@ class SetComp(ComprehensionScope):
         self.elt = None
         self.generators = []
 
+    def bool_value(self):
+        return YES
+
 
 class _ListComp(NodeNG):
     """class representing a ListComp node"""
     _astroid_fields = ('elt', 'generators')
     elt = None
     generators = None
+
+    def bool_value(self):
+        return YES
+
 
 if sys.version_info >= (3, 0):
     class ListComp(_ListComp, ComprehensionScope):
@@ -694,6 +709,9 @@ class Lambda(LocalsDictNodeNG, FilterStmtsMixin):
             # check this is not used in function decorators
             frame = self
         return frame._scope_lookup(node, name, offset)
+
+    def bool_value(self):
+        return True
 
 
 class Function(Statement, Lambda):
@@ -845,6 +863,9 @@ class Function(Statement, Lambda):
                         yield infered
                 except InferenceError:
                     yield YES
+
+    def bool_value(self):
+        return True
 
 
 def _rec_get_names(args, names=None):
@@ -1548,3 +1569,6 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         unmerged_mro = ([[self]] + bases_mro + [bases])
         _verify_duplicates_mro(unmerged_mro)
         return _c3_merge(unmerged_mro)
+
+    def bool_value(self):
+        return True
