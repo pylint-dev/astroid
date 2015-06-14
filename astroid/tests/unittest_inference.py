@@ -1459,6 +1459,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         tuple({1: 2}) #@
         tuple(var) #@
         tuple(tuple([1])) #@
+        tuple(frozenset((1, 2))) #@
 
         tuple(None) #@
         tuple(1) #@
@@ -1473,8 +1474,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertInferTuple(ast[4], [1])
         self.assertInferTuple(ast[5], [1, 2])
         self.assertInferTuple(ast[6], [1])
+        self.assertInferTuple(ast[7], [1, 2])
 
-        for node in ast[7:]:
+        for node in ast[8:]:
             infered = next(node.infer())
             self.assertIsInstance(infered, Instance)
             self.assertEqual(infered.qname(), "{}.tuple".format(BUILTINS))

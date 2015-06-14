@@ -163,25 +163,25 @@ def _infer_builtin(node, context,
 infer_tuple = partial(
     _infer_builtin,
     klass=nodes.Tuple,
-    iterables=(nodes.List, nodes.Set),
+    iterables=(nodes.List, nodes.Set, objects.FrozenSet),
     build_elts=tuple)
 
 infer_list = partial(
     _infer_builtin,
     klass=nodes.List,
-    iterables=(nodes.Tuple, nodes.Set),
+    iterables=(nodes.Tuple, nodes.Set, objects.FrozenSet),
     build_elts=list)
 
 infer_set = partial(
     _infer_builtin,
     klass=nodes.Set,
-    iterables=(nodes.List, nodes.Tuple),
+    iterables=(nodes.List, nodes.Tuple, objects.FrozenSet),
     build_elts=set)
 
 infer_frozenset = partial(
     _infer_builtin,
     klass=objects.FrozenSet,
-    iterables=(nodes.List, nodes.Tuple, nodes.Set),
+    iterables=(nodes.List, nodes.Tuple, nodes.Set, objects.FrozenSet),
     build_elts=frozenset)
 
 
