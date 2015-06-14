@@ -2074,6 +2074,22 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             inferred = next(node.infer())
             self.assertEqual(inferred.bool_value(), expected_value)
 
+    def test_infer_coercion_rules_for_floats_complex(self):
+        ast_nodes = test_utils.extract_node('''
+        1 + 1.0 #@
+        1 * 1.0 #@
+        2 - 1.0 #@
+        2 / 2.0 #@
+        1 + 1j #@
+        2 * 1j #@
+        2 - 1j #@
+        3 / 1j #@
+        ''')
+        expected_values = [2.0, 1.0, 1.0, 1.0, 1 + 1j, 2j, 2 - 1j, -3j]
+        for node, expected in zip(ast_nodes, expected_values):
+            inferred = next(node.infer())
+            self.assertEqual(inferred.value, expected)
+
 
 class GetattrTest(unittest.TestCase):
 
