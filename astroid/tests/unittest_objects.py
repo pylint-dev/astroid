@@ -372,6 +372,8 @@ class SuperTests(unittest.TestCase):
         class A(object):
             def spam(self): return "A"
             def foo(self): return "A"
+            @staticmethod
+            def static(self): pass
         class B(A):
             def boo(self): return "B"
             def spam(self): return "B"
@@ -383,6 +385,7 @@ class SuperTests(unittest.TestCase):
                 super(C, self).boo #@
                 super(E, self).spam #@
                 super(E, self).foo #@
+                super(E, self).static #@
         ''')
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, bases.BoundMethod)
@@ -395,6 +398,9 @@ class SuperTests(unittest.TestCase):
         self.assertEqual(third.bound.name, 'B')
         fourth = next(ast_nodes[3].infer())
         self.assertEqual(fourth.bound.name, 'A')
+        static = next(ast_nodes[4].infer())
+        self.assertIsInstance(static, nodes.Function)
+        self.assertEqual(static.parent.scope().name, 'A')
 
     def test_super_data_model(self):
         ast_nodes = test_utils.extract_node('''

@@ -170,7 +170,7 @@ class Super(NodeNG):
                     yield BoundMethod(infered, cls)
                 elif self._scope.type == 'classmethod' and infered.type == 'method':
                     yield infered
-                elif self._class_based:
+                elif self._class_based or infered.type == 'staticmethod':
                     yield infered
                 else:
                     yield BoundMethod(infered, cls)
