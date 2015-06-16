@@ -158,6 +158,8 @@ Change log for the astroid package (used to be astng)
 
     * Add inference support for boolean operations (`and` and `not`).
 
+    * Add inference support for the builtin `callable`.
+
 
 2015-03-14 -- 1.3.6
 

@@ -2322,5 +2322,83 @@ class BoolOpTest(unittest.TestCase):
         self.assertEqual(second.name, 'test')
 
 
+class TestCallable(unittest.TestCase):
+
+    def test_callable(self):
+        expected = [
+            ('callable(len)', True),
+            ('callable("a")', False),
+            ('callable(callable)', True),
+            ('callable(lambda x, y: x+y)', True),
+            ('import os; __(callable(os))', False),
+            ('callable(int)', True),
+            ('''
+             def test(): pass
+             callable(test) #@''', True),
+            ('''
+             class C1:
+                def meth(self): pass
+             callable(C1) #@''', True),             
+        ]
+        for code, expected_value in expected:
+            node = test_utils.extract_node(code)
+            inferred = next(node.infer())
+            self.assertEqual(inferred.value, expected_value)
+
+    def test_callable_methods(self):
+        ast_nodes = test_utils.extract_node('''
+        class C:
+            def test(self): pass
+            @staticmethod
+            def static(): pass
+            @classmethod
+            def class_method(cls): pass
+            def __call__(self): pass
+        class D(C):
+            pass
+        class NotReallyCallableDueToPythonMisfeature(object):
+            __call__ = 42
+        callable(C.test) #@
+        callable(C.static) #@
+        callable(C.class_method) #@
+        callable(C().test) #@
+        callable(C().static) #@
+        callable(C().class_method) #@
+        C #@
+        C() #@
+        NotReallyCallableDueToPythonMisfeature() #@
+        staticmethod #@
+        classmethod #@
+        property #@
+        D #@
+        D() #@
+        ''')
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            self.assertTrue(inferred)
+
+    def test_inference_errors(self):
+        ast_nodes = test_utils.extract_node('''
+        from unknown import unknown
+        callable(unknown) #@
+        def test():
+            return unknown
+        callable(test()) #@
+        ''')
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            self.assertEqual(inferred, YES)
+
+    def test_not_callable(self):
+        ast_nodes = test_utils.extract_node('''
+        callable("") #@
+        callable(1) #@
+        callable(True) #@
+        ''')
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            self.assertFalse(inferred.value)
+ 
+
 if __name__ == '__main__':
     unittest.main()

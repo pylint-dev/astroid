@@ -327,7 +327,7 @@ def _infer_getattr_args(node, context):
         # TODO(cpopa): follow all the values of the first argument?
         obj = next(node.args[0].infer(context=context))
         attr = next(node.args[1].infer(context=context))
-    except InferenceError:        
+    except InferenceError:
         raise UseInferenceDefault
 
     if obj is YES or attr is YES:
@@ -376,22 +376,45 @@ def infer_hasattr(node, context=None):
     doesn't have the intended attribute, Const(True) when
     we know that the object has the attribute and YES
     when we are unsure of the outcome of the function call.
-    """    
+    """
     try:
-        obj, attr = _infer_getattr_args(node, context)        
+        obj, attr = _infer_getattr_args(node, context)
         if obj is YES or attr is YES:
             return YES
         obj.getattr(attr, context=context)
     except UseInferenceDefault:
-        # Can't infer something from this function call.        
+        # Can't infer something from this function call.
         return YES
     except NotFoundError:
-        # Doesn't have it.        
-        return nodes.Const(False)    
-    return nodes.Const(True)       
+        # Doesn't have it.
+        return nodes.Const(False)
+    return nodes.Const(True)
+
+
+def infer_callable(node, context=None):
+    """Understand callable calls
+
+    This follows Python's semantics, where an object
+    is callable if it provides an attribute __call__,
+    even though that attribute is something which can't be
+    called.
+    """
+    if len(node.args) != 1:
+        # Invalid callable call.
+        raise UseInferenceDefault
+
+    argument = node.args[0]
+    try:
+        inferred = next(argument.infer(context=context))
+    except InferenceError:
+        return YES
+    if inferred is YES:
+        return YES
+    return nodes.Const(inferred.callable())
 
 # Builtins inference
 register_builtin_transform(infer_super, 'super')
+register_builtin_transform(infer_callable, 'callable')
 register_builtin_transform(infer_getattr, 'getattr')
 register_builtin_transform(infer_hasattr, 'hasattr')
 register_builtin_transform(infer_tuple, 'tuple')
