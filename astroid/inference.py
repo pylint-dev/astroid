@@ -18,12 +18,12 @@
 """this module contains a set of functions to handle inference on astroid trees
 """
 
-__doctype__ = "restructuredtext en"
+import itertools
+import operator
 
-from itertools import chain
+import six
 
 from astroid import nodes
-
 from astroid.manager import AstroidManager
 from astroid.exceptions import (
     AstroidError, InferenceError, NoDefault,
@@ -102,7 +102,7 @@ class CallContext(object):
                         except (IndexError, TypeError):
                             continue
                     if its:
-                        return chain(*its)
+                        return itertools.chain(*its)
         # 4. XXX search in **kwargs (.dstarargs)
         if self.dstarargs is not None:
             its = []
@@ -117,7 +117,7 @@ class CallContext(object):
                 except (IndexError, TypeError):
                     continue
             if its:
-                return chain(*its)
+                return itertools.chain(*its)
         # 5. */** argument, (Tuple or Dict)
         if name == funcnode.args.vararg:
             return iter((nodes.const_factory(())))
@@ -358,6 +358,60 @@ def infer_unaryop(self, context=None):
 
 nodes.UnaryOp._infer_unaryop = _infer_unaryop
 nodes.UnaryOp._infer = raise_if_nothing_infered(infer_unaryop)
+
+
+@raise_if_nothing_infered
+@path_wrapper
+def _infer_boolop(self, context=None):
+    """Infer a boolean operation (and / or / not).
+
+    The function will calculate the boolean operation
+    for all pairs generated through inference for each component
+    node.
+    """
+    values = self.values
+    op = self.op
+    try:
+        values = [value.infer(context=context) for value in values]
+    except InferenceError:
+        yield YES
+        return
+
+    for pair in itertools.product(*values):
+        if any(item is YES for item in pair):
+            # Can't infer the final result, just yield YES.
+            yield YES
+            continue
+
+        bool_values = [item.bool_value() for item in pair]
+        if any(item is YES for item in bool_values):
+            # Can't infer the final result, just yield YES.
+            yield YES
+            continue
+
+        if op == 'or':
+            predicate = operator.truth
+        else:
+            predicate = operator.not_
+
+        # Since the boolean operations are short circuited operations,
+        # this code yields the first value for which the predicate is True
+        # and if no value respected the predicate, then the last value will
+        # be returned (or YES if there was no last value).
+        # This is conforming to the semantics of `and` and `or`:
+        #   1 and 0 -> 1
+        #   0 and 1 -> 0
+        #   1 or 0 -> 1
+        #   0 or 1 -> 1
+        value = YES
+        for value, bool_value in zip(pair, bool_values):                
+            if predicate(bool_value):
+                yield value
+                break
+        else:
+             yield value
+
+nodes.BoolOp._infer = _infer_boolop
 
 
 def _infer_binop(operator, operand1, operand2, context, failures=None):

@@ -1971,12 +1971,17 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
     def test_unary_empty_type_errors(self):
         # These aren't supported right now
         ast_nodes = test_utils.extract_node('''
-        ~ (2 and []) #@
-        not (4 and ()) #@
-        - (0 or {}) #@
+        ~(2 and []) #@
+        -(0 or {}) #@
         ''')
-        for node in ast_nodes:
-            self.assertEqual(node.type_errors(), [])
+        expected = [
+            "bad operand type for unary ~: list",
+            "bad operand type for unary -: dict",
+        ]
+        for node, expected_value in zip(ast_nodes, expected):
+            errors = node.type_errors()
+            self.assertEqual(len(errors), 1, (expected, node))
+            self.assertEqual(str(errors[0]), expected_value)
 
     def test_bool_value_recursive(self):
         pairs = [
@@ -2266,6 +2271,55 @@ class HasattrTest(unittest.TestCase):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.Const)
             self.assertTrue(inferred.value)
+
+
+class BoolOpTest(unittest.TestCase):
+
+    def test_bool_ops(self):
+        expected = [
+            ('1 and 2', 2),
+            ('0 and 2', 0),
+            ('1 or 2', 1),
+            ('0 or 2', 2),
+            ('0 or 0 or 1', 1),
+            ('1 and 2 and 3', 3),
+            ('1 and 2 or 3', 2),
+            ('1 and 0 or 3', 3),
+            ('1 or 0 and 2', 1),
+            ('(1 and 2) and (2 and 3)', 3),
+            ('not 2 and 3', False),
+            ('2 and not 3', False),
+            ('not 0 and 3', 3),
+            ('True and False', False),
+            ('not (True or False) and True', False),
+        ]
+        for code, expected_value in expected:
+            node = test_utils.extract_node(code)
+            inferred = next(node.infer())
+            self.assertEqual(inferred.value, expected_value)
+
+    def test_yes_when_unknown(self):
+        ast_nodes = test_utils.extract_node('''
+        from unknown import unknown, any, not_any
+        0 and unknown #@
+        unknown or 0 #@
+        any or not_any and unknown #@        
+        ''')
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            self.assertEqual(inferred, YES)
+
+    def test_other_nodes(self):
+        ast_nodes = test_utils.extract_node('''
+        def test(): pass
+        test and 0 #@
+        1 and test #@        
+        ''')
+        first = next(ast_nodes[0].infer())
+        self.assertEqual(first.value, 0)
+        second = next(ast_nodes[1].infer())
+        self.assertIsInstance(second, nodes.Function)
+        self.assertEqual(second.name, 'test')
 
 
 if __name__ == '__main__':

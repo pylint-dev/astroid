@@ -156,6 +156,8 @@ Change log for the astroid package (used to be astng)
       Thus, `not something` will result in calling `something.bool_value` and
       negating the result, if it is a boolean.
 
+    * Add inference support for boolean operations (`and` and `not`).
+
 
 2015-03-14 -- 1.3.6
 

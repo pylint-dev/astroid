@@ -743,7 +743,7 @@ class List(NodeNG, Instance, ParentAssignTypeMixin):
 
     def itered(self):
         return self.elts
-    
+
     def bool_value(self):
         return bool(self.elts)
 
