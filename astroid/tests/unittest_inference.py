@@ -1978,6 +1978,22 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         for node in ast_nodes:
             self.assertEqual(node.type_errors(), [])
 
+    def test_bool_value_recursive(self):
+        pairs = [
+            ('{}', False),
+            ('{1:2}', True),
+            ('()', False),
+            ('(1, 2)', True),
+            ('[]', False),
+            ('[1,2]', True),
+            ('frozenset()', False),
+            ('frozenset((1, 2))', True),
+        ]
+        for code, expected in pairs:
+            node = test_utils.extract_node(code)
+            inferred = next(node.infer())
+            self.assertEqual(inferred.bool_value(), expected)
+
     def test_bool_value(self):
         # Verify the truth value of nodes.
         module = test_utils.build_module('''
@@ -1996,11 +2012,14 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         bound_method = instance.method
         def generator_func():
              yield
+        def true_value():
+             return True
         generator = generator_func()
         name = generator
         bin_op = 1 + 2
         bool_op = x and y
         callfunc = test()
+        good_callfunc = true_value()
         compare = 2 < 3
         const_str_true = 'testconst'
         const_str_false = ''
@@ -2035,6 +2054,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(bool_op.bool_value(), YES)
         callfunc = module['callfunc'].parent.value
         self.assertEqual(callfunc.bool_value(), YES)
+        good_callfunc = next(module['good_callfunc'].infer())
+        self.assertTrue(good_callfunc.bool_value())
         compare = module['compare'].parent.value
         self.assertEqual(compare.bool_value(), YES)
 

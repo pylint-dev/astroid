@@ -66,6 +66,9 @@ class FrozenSet(NodeNG, Instance, ParentAssignTypeMixin):
         builtins = MANAGER.astroid_cache[BUILTINS]
         return builtins.getattr('frozenset')[0]
 
+    def bool_value(self):
+        return bool(self.elts)
+
 
 class Super(NodeNG):
     """Proxy class over a super call.

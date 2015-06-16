@@ -711,16 +711,7 @@ class NodeNG(object):
             * YES: the inference engine is uncertain of the
               node's value.
         """
-        context = InferenceContext()
-        try:
-            values = [inferred.bool_value()
-                      for inferred in self.infer(context=context)]
-        except InferenceError:
-            return YES
-        if len(set(values)) != len(values):
-            # Too many inferred values, can't tell.
-            return YES
-        return values[0]
+        return YES
 
 
 class Statement(NodeNG):

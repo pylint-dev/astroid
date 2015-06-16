@@ -584,6 +584,9 @@ class Dict(NodeNG, Instance):
         # IndexError. Let's leave it like that for now.
         raise IndexError(lookup_key)
 
+    def bool_value(self):
+        return bool(self.items)
+
 
 class Discard(Statement):
     """class representing a Discard node"""
@@ -593,6 +596,9 @@ class Discard(Statement):
 
 class Ellipsis(NodeNG): # pylint: disable=redefined-builtin
     """class representing an Ellipsis node"""
+
+    def bool_value(self):
+        return True
 
 
 class EmptyNode(NodeNG):
@@ -737,6 +743,9 @@ class List(NodeNG, Instance, ParentAssignTypeMixin):
 
     def itered(self):
         return self.elts
+    
+    def bool_value(self):
+        return bool(self.elts)
 
 
 class Nonlocal(Statement):
@@ -801,6 +810,9 @@ class Set(NodeNG, Instance, ParentAssignTypeMixin):
 
     def itered(self):
         return self.elts
+
+    def bool_value(self):
+        return bool(self.elts)
 
 
 class Slice(NodeNG):
@@ -880,6 +892,9 @@ class Tuple(NodeNG, Instance, ParentAssignTypeMixin):
 
     def itered(self):
         return self.elts
+
+    def bool_value(self):
+        return bool(self.elts)
 
 
 class UnaryOp(NodeNG):
