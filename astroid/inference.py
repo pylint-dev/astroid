@@ -21,8 +21,6 @@
 import itertools
 import operator
 
-import six
-
 from astroid import nodes
 from astroid.manager import AstroidManager
 from astroid.exceptions import (
@@ -404,12 +402,12 @@ def _infer_boolop(self, context=None):
         #   1 or 0 -> 1
         #   0 or 1 -> 1
         value = YES
-        for value, bool_value in zip(pair, bool_values):                
+        for value, bool_value in zip(pair, bool_values):
             if predicate(bool_value):
                 yield value
                 break
         else:
-             yield value
+            yield value
 
 nodes.BoolOp._infer = _infer_boolop
 
