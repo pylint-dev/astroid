@@ -2400,5 +2400,47 @@ class TestCallable(unittest.TestCase):
             self.assertFalse(inferred.value)
 
 
+class TestBool(unittest.TestCase):
+
+    def test_bool(self):
+        pairs = [
+           ('bool()', False),
+           ('bool(1)', True),
+           ('bool(0)', False),
+           ('bool([])', False),
+           ('bool([1])', True),
+           ('bool({})', False),
+           ('bool(True)', True),
+           ('bool(False)', False),
+           ('bool(None)', False),
+           ('from unknown import Unknown; __(bool(Unknown))', YES),
+        ]
+        for code, expected in pairs:
+            node = test_utils.extract_node(code)
+            inferred = next(node.infer())
+            if expected is YES:
+                self.assertEqual(expected, inferred)
+            else:
+                self.assertEqual(inferred.value, expected)
+
+    def test_bool_bool_special_method(self):
+        ast_nodes = test_utils.extract_node('''
+        class FalseClass:
+           def {method}(self):
+               return False
+        class TrueClass:
+           def {method}(self):
+               return True
+        bool(FalseClass) #@
+        bool(TrueClass) #@
+        bool(FalseClass()) #@
+        bool(TrueClass()) #@           
+        '''.format(method=BOOL_SPECIAL_METHOD))
+        expected = [True, True, False, True]
+        for node, expected_value in zip(ast_nodes, expected):
+            inferred = next(node.infer())
+            self.assertEqual(inferred.value, expected_value)
+
+
 if __name__ == '__main__':
     unittest.main()

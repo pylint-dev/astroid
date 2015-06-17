@@ -412,7 +412,32 @@ def infer_callable(node, context=None):
         return YES
     return nodes.Const(inferred.callable())
 
+
+def infer_bool(node, context=None):
+    """Understand bool calls."""
+    if len(node.args) > 1:
+        # Invalid bool call.
+        raise UseInferenceDefault
+
+    if not node.args:
+        return nodes.Const(False)
+
+    argument = node.args[0]
+    try:
+        inferred = next(argument.infer(context=context))
+    except InferenceError:
+        return YES
+    if inferred is YES:
+        return YES
+
+    bool_value = inferred.bool_value()
+    if bool_value is YES:
+        return YES
+    return nodes.Const(bool_value)
+
+
 # Builtins inference
+register_builtin_transform(infer_bool, 'bool')
 register_builtin_transform(infer_super, 'super')
 register_builtin_transform(infer_callable, 'callable')
 register_builtin_transform(infer_getattr, 'getattr')

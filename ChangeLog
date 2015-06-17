@@ -167,6 +167,8 @@ Change log for the astroid package (used to be astng)
     * astroid.utils.ASTWalker and astroid.utils.LocalsVisitor
       were moved to pylint.pyreverse.utils.
 
+    * Add inference support for the builtin `bool`.
+
 
 2015-03-14 -- 1.3.6
 
