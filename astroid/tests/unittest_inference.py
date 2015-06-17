@@ -2404,16 +2404,16 @@ class TestBool(unittest.TestCase):
 
     def test_bool(self):
         pairs = [
-           ('bool()', False),
-           ('bool(1)', True),
-           ('bool(0)', False),
-           ('bool([])', False),
-           ('bool([1])', True),
-           ('bool({})', False),
-           ('bool(True)', True),
-           ('bool(False)', False),
-           ('bool(None)', False),
-           ('from unknown import Unknown; __(bool(Unknown))', YES),
+            ('bool()', False),
+            ('bool(1)', True),
+            ('bool(0)', False),
+            ('bool([])', False),
+            ('bool([1])', True),
+            ('bool({})', False),
+            ('bool(True)', True),
+            ('bool(False)', False),
+            ('bool(None)', False),
+            ('from unknown import Unknown; __(bool(Unknown))', YES),
         ]
         for code, expected in pairs:
             node = test_utils.extract_node(code)
