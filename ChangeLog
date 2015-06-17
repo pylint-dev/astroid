@@ -164,6 +164,9 @@ Change log for the astroid package (used to be astng)
       it is the only known client of this module. No other change
       was made to the exported API.
 
+    * astroid.utils.ASTWalker and astroid.utils.LocalsVisitor
+      were moved to pylint.pyreverse.utils.
+
 
 2015-03-14 -- 1.3.6
 

@@ -605,7 +605,7 @@ class FileBuildTest(unittest.TestCase):
         keys = sorted(_locals.keys())
         should = ['MY_DICT', 'YO', 'YOUPI',
                   '__revision__', 'global_access', 'modutils', 'four_args',
-                  'os', 'redirect', 'pb', 'LocalsVisitor', 'ASTWalker']
+                  'os', 'redirect', 'pb']
         should.sort()
         self.assertEqual(keys, sorted(should))
 
