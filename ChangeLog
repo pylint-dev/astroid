@@ -160,6 +160,10 @@ Change log for the astroid package (used to be astng)
 
     * Add inference support for the builtin `callable`.
 
+    * astroid.inspector was moved to pylint.pyreverse, since
+      it is the only known client of this module. No other change
+      was made to the exported API.
+
 
 2015-03-14 -- 1.3.6
 
