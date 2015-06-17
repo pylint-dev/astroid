@@ -2338,7 +2338,7 @@ class TestCallable(unittest.TestCase):
             ('''
              class C1:
                 def meth(self): pass
-             callable(C1) #@''', True),             
+             callable(C1) #@''', True),
         ]
         for code, expected_value in expected:
             node = test_utils.extract_node(code)
@@ -2398,7 +2398,7 @@ class TestCallable(unittest.TestCase):
         for node in ast_nodes:
             inferred = next(node.infer())
             self.assertFalse(inferred.value)
- 
+
 
 if __name__ == '__main__':
     unittest.main()

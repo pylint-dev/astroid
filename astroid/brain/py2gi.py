@@ -47,7 +47,7 @@ def _gi_build_stub(parent):
         elif (inspect.ismethod(obj) or
               inspect.ismethoddescriptor(obj)):
             methods[name] = obj
-        elif type(obj) in [int, str]:
+        elif isinstance(obj, (int, str)):
             constants[name] = obj
         elif (str(obj).startswith("<flags") or
               str(obj).startswith("<enum ") or
@@ -74,7 +74,7 @@ def _gi_build_stub(parent):
         val = constants[name]
 
         strval = str(val)
-        if type(val) is str:
+        if isinstance(val, str):
             strval = '"%s"' % str(val).replace("\\", "\\\\")
         ret += "%s = %s\n" % (name, strval)
 
@@ -83,7 +83,6 @@ def _gi_build_stub(parent):
     if functions:
         ret += "# %s functions\n\n" % parent.__name__
     for name in sorted(functions):
-        func = functions[name]
         ret += "def %s(*args, **kwargs):\n" % name
         ret += "    pass\n"
 
@@ -92,7 +91,6 @@ def _gi_build_stub(parent):
     if methods:
         ret += "# %s methods\n\n" % parent.__name__
     for name in sorted(methods):
-        func = methods[name]
         ret += "def %s(self, *args, **kwargs):\n" % name
         ret += "    pass\n"
 
