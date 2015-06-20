@@ -169,6 +169,8 @@ Change log for the astroid package (used to be astng)
 
     * Add inference support for the builtin `bool`.
 
+    * Add `igetattr` method to scoped_nodes.Function.
+
 
 2015-03-14 -- 1.3.6
 

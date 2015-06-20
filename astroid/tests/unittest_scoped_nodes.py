@@ -537,6 +537,20 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(node.locals['long_classmethod'][0].type,
                          'classmethod')
 
+    def test_igetattr(self):
+        func = test_utils.extract_node('''
+        def test():
+            pass
+        ''')
+        func.instance_attrs['value'] = [nodes.Const(42)]
+        value = func.getattr('value')
+        self.assertEqual(len(value), 1)
+        self.assertIsInstance(value[0], nodes.Const)
+        self.assertEqual(value[0].value, 42)
+        inferred = next(func.igetattr('value'))
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 42)
+
 
 class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
@@ -1136,7 +1150,9 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsNone(sixth_slots)
 
         seventh_slots = astroid['Seventh'].slots()
-        self.assertIsNone(seventh_slots)
+        self.assertEqual(len(seventh_slots), 1)
+        self.assertIsInstance(seventh_slots[0], nodes.Const)
+        self.assertEqual(seventh_slots[0].value, 'dedent')
 
         eight_slots = astroid['Eight'].slots()
         self.assertEqual(len(eight_slots), 1)
