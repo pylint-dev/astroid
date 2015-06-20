@@ -1099,73 +1099,46 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             from collections import deque
             from textwrap import dedent
 
-            class First(object):
+            class First(object): #@
                 __slots__ = ("a", "b", 1)
-            class Second(object):
+            class Second(object): #@
                 __slots__ = "a"
-            class Third(object):
+            class Third(object): #@
                 __slots__ = deque(["a", "b", "c"])
-            class Fourth(object):
+            class Fourth(object): #@
                 __slots__ = {"a": "a", "b": "b"}
-            class Fifth(object):
+            class Fifth(object): #@
                 __slots__ = list
-            class Sixth(object):
+            class Sixth(object): #@
                 __slots__ = ""
-            class Seventh(object):
+            class Seventh(object): #@
                 __slots__ = dedent.__name__
-            class Eight(object):
+            class Eight(object): #@
                 __slots__ = ("parens")
-            class Ninth(object):
+            class Ninth(object): #@
                 pass
-            class Ten(object):
+            class Ten(object): #@
                 __slots__ = dict({"a": "b", "c": "d"})
         """)
-        first = astroid['First']
-        first_slots = first.slots()
-        self.assertEqual(len(first_slots), 2)
-        self.assertIsInstance(first_slots[0], nodes.Const)
-        self.assertIsInstance(first_slots[1], nodes.Const)
-        self.assertEqual(first_slots[0].value, "a")
-        self.assertEqual(first_slots[1].value, "b")
-
-        second_slots = astroid['Second'].slots()
-        self.assertEqual(len(second_slots), 1)
-        self.assertIsInstance(second_slots[0], nodes.Const)
-        self.assertEqual(second_slots[0].value, "a")
-
-        third_slots = astroid['Third'].slots()
-        self.assertIsNone(third_slots)
-
-        fourth_slots = astroid['Fourth'].slots()
-        self.assertEqual(len(fourth_slots), 2)
-        self.assertIsInstance(fourth_slots[0], nodes.Const)
-        self.assertIsInstance(fourth_slots[1], nodes.Const)
-        self.assertEqual(fourth_slots[0].value, "a")
-        self.assertEqual(fourth_slots[1].value, "b")
-
-        fifth_slots = astroid['Fifth'].slots()
-        self.assertIsNone(fifth_slots)
-
-        sixth_slots = astroid['Sixth'].slots()
-        self.assertIsNone(sixth_slots)
-
-        seventh_slots = astroid['Seventh'].slots()
-        self.assertEqual(len(seventh_slots), 1)
-        self.assertIsInstance(seventh_slots[0], nodes.Const)
-        self.assertEqual(seventh_slots[0].value, 'dedent')
-
-        eight_slots = astroid['Eight'].slots()
-        self.assertEqual(len(eight_slots), 1)
-        self.assertIsInstance(eight_slots[0], nodes.Const)
-        self.assertEqual(eight_slots[0].value, "parens")
-
-        self.assertIsNone(astroid['Ninth'].slots())
-
-        tenth_slots = astroid['Ten'].slots()
-        self.assertEqual(len(tenth_slots), 2)
-        self.assertEqual(
-            [slot.value for slot in tenth_slots],
-            ["a", "c"])
+        expected = [
+            ('First', ('a', 'b')),
+            ('Second', ('a', )),
+            ('Third', None),
+            ('Fourth', ('a', 'b')),
+            ('Fifth', None),
+            ('Sixth', None),
+            ('Seventh', ('dedent', )),
+            ('Eight', ('parens', )),
+            ('Ninth', None),
+            ('Ten', ('a', 'c')),
+        ]
+        for cls, expected_value in expected:
+            slots = astroid[cls].slots()
+            if expected_value is None:
+                self.assertIsNone(slots)
+            else:
+                self.assertEqual(list(expected_value),
+                                 [node.value for node in slots])
 
     @test_utils.require_version(maxver='3.0')
     def test_slots_py2(self):
