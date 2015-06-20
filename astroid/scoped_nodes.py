@@ -751,6 +751,14 @@ class Function(Statement, Lambda):
             return self.instance_attrs[name]
         return std_special_attributes(self, name, False)
 
+    def igetattr(self, name, context=None):
+        """Inferred getattr, which returns an iterator of inferred statements."""
+        try:
+            return _infer_stmts(self.getattr(name, context),
+                                context, frame=self)
+        except NotFoundError:
+            raise InferenceError(name)
+
     def is_method(self):
         """return true if the function node should be considered as a method"""
         # check we are defined in a Class, because this is usually expected
