@@ -85,6 +85,7 @@ def infer_func_form(node, base_type, context=None, enum=False):
     for attr in attributes:
         fake_node = nodes.EmptyNode()
         fake_node.parent = class_node
+        fake_node.attrname = attr
         class_node.instance_attrs[attr] = [fake_node]
     return class_node, name, attributes
 

@@ -122,6 +122,15 @@ class NamedTupleTest(unittest.TestCase):
         with self.assertRaises(astroid.NotFoundError):
             instance.getattr('foo')
 
+    def test_namedtuple_instance_attrs(self):
+        result = test_utils.extract_node('''
+        from collections import namedtuple
+        namedtuple('a', 'a b c')(1, 2, 3) #@
+        ''')
+        inferred = next(result.infer())
+        for name, attr in inferred.instance_attrs.items():
+            self.assertEqual(attr[0].attrname, name)
+
 
 class ModuleExtenderTest(unittest.TestCase):
     def testExtensionModules(self):
