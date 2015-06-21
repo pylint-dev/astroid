@@ -171,6 +171,9 @@ Change log for the astroid package (used to be astng)
 
     * Add `igetattr` method to scoped_nodes.Function.
 
+    * Add support for Python 3.5's MatMul operation: see PEP 465 for more
+      details.
+
 
 2015-03-14 -- 1.3.6
 

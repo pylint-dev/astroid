@@ -21,6 +21,7 @@ where it makes sense.
 
 import collections
 import operator
+import sys
 
 from astroid.exceptions import InferenceError, NoDefault, NotFoundError
 from astroid.node_classes import unpack_infer
@@ -46,6 +47,7 @@ BIN_OP_METHOD = {'+':  '__add__',
                  '^':  '__xor__',
                  '<<': '__lshift__',
                  '>>': '__rshift__',
+                 '@': '__matmul__'
                 }
 
 UNARY_OP_METHOD = {'+': '__pos__',
@@ -89,6 +91,10 @@ BIN_OP_IMPL = {'+':  lambda a, b: a + b,
                '<<': lambda a, b: a << b,
                '>>': lambda a, b: a >> b,
               }
+if sys.version_info >= (3, 5):
+    # MatMult is available since Python 3.5+.
+    BIN_OP_IMPL['@'] = operator.matmul
+
 for _KEY, _IMPL in list(BIN_OP_IMPL.items()):
     BIN_OP_IMPL[_KEY + '='] = _IMPL
 
