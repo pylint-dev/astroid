@@ -50,6 +50,9 @@ _BIN_OP_CLASSES = {Add: '+',
                    LShift: '<<',
                    RShift: '>>',
                   }
+if sys.version_info >= (3, 5):
+    from _ast import MatMult
+    _BIN_OP_CLASSES[MatMult] = '@'
 
 _BOOL_OP_CLASSES = {And: 'and',
                     Or: 'or',
