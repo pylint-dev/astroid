@@ -855,7 +855,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             inferred = next(node.infer())
             self.assertEqual(inferred.value, expected_value)
 
-    @test_utils.require_version(min_version='3.5')
+    @test_utils.require_version(minver='3.5')
     def test_matmul(self):
         node = test_utils.extract_node('''
         class Array:
@@ -865,7 +865,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ''')
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Const)
-        self.assertEqual(inferred.value, 42)        
+        self.assertEqual(inferred.value, 42)
 
     def test_binary_op_int_add(self):
         ast = builder.string_build('a = 1 + 2', __name__, __file__)
