@@ -565,6 +565,14 @@ class BuilderTest(unittest.TestCase):
         method = test_utils.extract_node(code)
         self.assertEqual('classmethod', method.type)
 
+    def test_not_implemented(self):
+        node = test_utils.extract_node('''
+        NotImplemented #@
+        ''')
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, NotImplemented)
+
 
 class FileBuildTest(unittest.TestCase):
     def setUp(self):

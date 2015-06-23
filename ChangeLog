@@ -84,6 +84,11 @@ Change log for the astroid package (used to be astng)
     * Add support for Python 3.5's MatMul operation: see PEP 465 for more
       details.
 
+    * NotImplemented is detected properly now as being part of the
+      builtins module. Previously trying to infer the Name(NotImplemented)
+      returned an YES object.
+
+
 2015-08-02 -- 1.3.8
 
     * Backport of  40e3176, which fixes issue #84.

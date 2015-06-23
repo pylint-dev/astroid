@@ -354,6 +354,9 @@ def _astroid_bootstrapping(astroid_builtin=None):
         if cls is type(None):
             proxy = build_class('NoneType')
             proxy.parent = astroid_builtin
+        elif cls is type(NotImplemented):
+            proxy = build_class('NotImplementedType')
+            proxy.parent = astroid_builtin
         else:
             proxy = astroid_builtin.getattr(cls.__name__)[0]
         if cls in (dict, list, set, tuple):
