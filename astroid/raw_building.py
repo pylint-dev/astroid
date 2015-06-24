@@ -389,5 +389,7 @@ def _set_proxied(const):
 Const._proxied = property(_set_proxied)
 
 from types import GeneratorType
-Generator._proxied = Class(GeneratorType.__name__, GeneratorType.__doc__)
+_GeneratorType = Class(GeneratorType.__name__, GeneratorType.__doc__)
+_GeneratorType.parent = MANAGER.astroid_cache[BUILTINS]
+Generator._proxied = _GeneratorType
 Astroid_BUILDER.object_build(Generator._proxied, GeneratorType)
