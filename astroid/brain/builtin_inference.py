@@ -1,15 +1,16 @@
 """Astroid hooks for various builtins."""
 
-import sys
 from functools import partial
+import sys
 from textwrap import dedent
 
 import six
 from astroid import (MANAGER, UseInferenceDefault, NotFoundError,
                      inference_tip, YES, InferenceError, UnresolvableName)
+from astroid.builder import AstroidBuilder
+from astroid import helpers
 from astroid import nodes
 from astroid import objects
-from astroid.builder import AstroidBuilder
 
 
 def _extend_str(class_node, rvalue):
@@ -436,6 +437,14 @@ def infer_bool(node, context=None):
     return nodes.Const(bool_value)
 
 
+def infer_type(node, context=None):
+    """Understand the one-argument form of *type*."""
+    if len(node.args) != 1:
+        raise UseInferenceDefault
+
+    return helpers.object_type(node.args[0], context)
+
+
 # Builtins inference
 register_builtin_transform(infer_bool, 'bool')
 register_builtin_transform(infer_super, 'super')
@@ -447,3 +456,4 @@ register_builtin_transform(infer_set, 'set')
 register_builtin_transform(infer_list, 'list')
 register_builtin_transform(infer_dict, 'dict')
 register_builtin_transform(infer_frozenset, 'frozenset')
+register_builtin_transform(infer_type, 'type')

@@ -1727,8 +1727,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             __enter__ = None
         class NoElts(object):
             def __enter__(self):
-                return 42 
-                 
+                return 42
+
         with NoEnter() as no_enter:
             pass
         with NoMethod() as no_method:
@@ -1757,7 +1757,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         class MultipleReturns2(object):
             def __enter__(self):
                 return [1, [2, 3]]
-        
+
         with SelfContext() as self_context:
             pass
         with OtherContext() as other_context:
@@ -1815,7 +1815,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         def manager_multiple():
             with manager_none() as foo:
                 with manager_something() as bar:
-                    yield foo, bar 
+                    yield foo, bar
 
         with manager_none() as none:
             pass
@@ -1864,7 +1864,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         from contextlib import contextmanager
 
         def no_decorators_mgr():
-            yield        
+            yield
         @no_decorators_mgr
         def other_decorators_mgr():
             yield
@@ -1919,7 +1919,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ~BadInstance #@
         ~os #@
         -func #@
-        +BadInstance #@        
+        +BadInstance #@
         ''')
         pos = next(ast_nodes[0].infer())
         self.assertIsInstance(pos, nodes.Const)
@@ -2315,7 +2315,7 @@ class BoolOpTest(unittest.TestCase):
         from unknown import unknown, any, not_any
         0 and unknown #@
         unknown or 0 #@
-        any or not_any and unknown #@        
+        any or not_any and unknown #@
         ''')
         for node in ast_nodes:
             inferred = next(node.infer())
@@ -2325,7 +2325,7 @@ class BoolOpTest(unittest.TestCase):
         ast_nodes = test_utils.extract_node('''
         def test(): pass
         test and 0 #@
-        1 and test #@        
+        1 and test #@
         ''')
         first = next(ast_nodes[0].infer())
         self.assertEqual(first.value, 0)
@@ -2446,12 +2446,31 @@ class TestBool(unittest.TestCase):
         bool(FalseClass) #@
         bool(TrueClass) #@
         bool(FalseClass()) #@
-        bool(TrueClass()) #@           
+        bool(TrueClass()) #@
         '''.format(method=BOOL_SPECIAL_METHOD))
         expected = [True, True, False, True]
         for node, expected_value in zip(ast_nodes, expected):
             inferred = next(node.infer())
             self.assertEqual(inferred.value, expected_value)
+
+
+class TestType(unittest.TestCase):
+
+    def test_type(self):
+        pairs = [
+            ('type(1)', 'int'),
+            ('type(type)', 'type'),
+            ('type(None)', 'NoneType'),
+            ('type(object)', 'type'),
+            ('type(dict())', 'dict'),
+            ('type({})', 'dict'),
+            ('type(frozenset())', 'frozenset'),
+        ]
+        for code, expected in pairs:
+            node = test_utils.extract_node(code)
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, nodes.Class)
+            self.assertEqual(inferred.name, expected)
 
 
 if __name__ == '__main__':
