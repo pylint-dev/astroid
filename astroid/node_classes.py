@@ -969,7 +969,7 @@ CONST_CLS = {
     tuple: Tuple,
     dict: Dict,
     set: Set,
-    type(None): Const,    
+    type(None): Const,
     type(NotImplemented): Const,
     }
 
