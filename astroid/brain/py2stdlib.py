@@ -130,7 +130,8 @@ class defaultdict(dict):
 
 class deque(object):
     maxlen = 0
-    def __init__(self, iterable=None, maxlen=None): pass
+    def __init__(self, iterable=None, maxlen=None):
+        self.iterable = iterable
     def append(self, x): pass
     def appendleft(self, x): pass
     def clear(self): pass
@@ -143,7 +144,7 @@ class deque(object):
     def reverse(self): pass
     def rotate(self, n): pass
     def __iter__(self): return self
-
+    def __reversed__(self): return self.iterable[::-1]
 ''')
 
 
