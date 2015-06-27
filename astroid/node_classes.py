@@ -23,7 +23,10 @@ import sys
 import six
 from logilab.common.decorators import cachedproperty
 
-from astroid.exceptions import NoDefault, UnaryOperationError, InferenceError
+from astroid.exceptions import (
+    NoDefault, UnaryOperationError,
+    InferenceError, BinaryOperationError
+)
 from astroid.bases import (NodeNG, Statement, Instance, InferenceContext,
                            _infer_stmts, YES, BUILTINS)
 from astroid.mixins import (BlockRangeMixIn, AssignTypeMixin,
@@ -412,6 +415,24 @@ class AugAssign(Statement, AssignTypeMixin):
     target = None
     value = None
 
+    # This is set by inference.py
+    def _infer_augassign(self, context=None):
+        raise NotImplementedError
+
+    def type_errors(self, context=None):
+        """Return a list of TypeErrors which can occur during inference.
+
+        Each TypeError is represented by a :class:`BinaryOperationError`,
+        which holds the original exception.
+        """
+        try:
+            results = self._infer_augassign(context=context)
+            return [result for result in results
+                    if isinstance(result, BinaryOperationError)]
+        except InferenceError:
+            return []
+
+
 class Backquote(NodeNG):
     """class representing a Backquote node"""
     _astroid_fields = ('value',)
@@ -422,6 +443,24 @@ class BinOp(NodeNG):
     _astroid_fields = ('left', 'right',)
     left = None
     right = None
+
+    # This is set by inference.py
+    def _infer_binop(self, context=None):
+        raise NotImplementedError
+
+    def type_errors(self, context=None):
+        """Return a list of TypeErrors which can occur during inference.
+
+        Each TypeError is represented by a :class:`BinaryOperationError`,
+        which holds the original exception.
+        """
+        try:
+            results = self._infer_binop(context=context)
+            return [result for result in results
+                    if isinstance(result, BinaryOperationError)]
+        except InferenceError:
+            return []
+
 
 class BoolOp(NodeNG):
     """class representing a BoolOp node"""

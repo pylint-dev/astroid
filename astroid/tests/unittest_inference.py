@@ -1964,6 +1964,81 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             inferred = next(bad_node.infer())
             self.assertEqual(inferred, YES)
 
+    def test_binary_op_type_errors(self):
+        ast_nodes = test_utils.extract_node('''
+        import collections
+        1 + "a" #@
+        1 - [] #@
+        1 * {} #@
+        1 / collections #@
+        1 ** (lambda x: x) #@
+        {} * {} #@
+        {} - {} #@
+        {} | {} #@
+        {} >> {} #@
+        [] + () #@
+        () + [] #@
+        [] * 2.0 #@
+        () * 2.0 #@
+        2.0 >> 2.0 #@
+        class A(object): pass
+        class B(object): pass
+        A() + B() #@
+        class A1(object):
+            def __add__(self): return NotImplemented
+        A1() + A1() #@
+        class A(object):
+            def __add__(self, other): return NotImplemented
+        class B(object):
+            def __radd__(self, other): return NotImplemented
+        A() + B() #@
+        class Parent(object):
+            pass
+        class Child(Parent):
+            def __add__(self, other): return NotImplemented
+        Child() + Parent() #@
+        class A(object):
+            def __add__(self): return NotImplemented
+        class B(A):
+            def __radd__(self, other):
+                 return NotImplemented
+        A() + B() #@
+        # Augmented
+        f = 1
+        f+=A() #@
+        x = 1
+        x+=[] #@ 
+        ''')
+        msg = "unsupported operand type(s) for {op}: {lhs!r} and {rhs!r}"
+        expected = [
+            msg.format(op="+", lhs="int", rhs="str"),
+            msg.format(op="-", lhs="int", rhs="list"),
+            msg.format(op="*", lhs="int", rhs="dict"),
+            msg.format(op="/", lhs="int", rhs="module"),
+            msg.format(op="**", lhs="int", rhs="function"),
+            msg.format(op="*", lhs="dict", rhs="dict"),
+            msg.format(op="-", lhs="dict", rhs="dict"),
+            msg.format(op="|", lhs="dict", rhs="dict"),
+            msg.format(op=">>", lhs="dict", rhs="dict"),
+            msg.format(op="+", lhs="list", rhs="tuple"),
+            msg.format(op="+", lhs="tuple", rhs="list"),
+            msg.format(op="*", lhs="list", rhs="float"),
+            msg.format(op="*", lhs="tuple", rhs="float"),
+            msg.format(op=">>", lhs="float", rhs="float"),
+            msg.format(op="+", lhs="A", rhs="B"),
+            msg.format(op="+", lhs="A1", rhs="A1"),
+            msg.format(op="+", lhs="A", rhs="B"),
+            msg.format(op="+", lhs="Child", rhs="Parent"),
+            msg.format(op="+", lhs="A", rhs="B"),
+            msg.format(op="+=", lhs="int", rhs="A"),
+            msg.format(op="+=", lhs="int", rhs="list"),
+        ]
+        for node, expected_value in zip(ast_nodes, expected):
+            errors = node.type_errors()
+            self.assertEqual(len(errors), 1)
+            error = errors[0]
+            self.assertEqual(str(error), expected_value)
+
     def test_unary_type_errors(self):
         ast_nodes = test_utils.extract_node('''
         import collections
@@ -2177,7 +2252,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         class B(object):
             def __radd__(self, other):
                 return other
-        A() + B() #
+        A() + B() #@
         ''')
         inferred = next(node.infer())
         self.assertIsInstance(inferred, Instance)
@@ -2191,7 +2266,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         class B(object):
             def __radd__(self, other):
                 return other
-        A() + B() #
+        A() + B() #@
         ''')
         inferred = next(node.infer())
         self.assertIsInstance(inferred, Instance)
@@ -2202,7 +2277,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         class A(object):
             pass
         class B(object): pass
-        A() + B() #
+        A() + B() #@
         ''')
         inferred = next(node.infer())
         self.assertEqual(inferred, YES)
@@ -2213,7 +2288,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             def __add__(self, other): return NotImplemented
         class B(object):
             def __radd__(self, other): return NotImplemented
-        A() + B() #
+        A() + B() #@
         ''')
         inferred = next(node.infer())
         self.assertEqual(inferred, YES)

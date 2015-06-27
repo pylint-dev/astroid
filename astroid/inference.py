@@ -29,7 +29,8 @@ from astroid.manager import AstroidManager
 from astroid.exceptions import (
     AstroidError, InferenceError, NoDefault,
     NotFoundError, UnresolvableName,
-    UnaryOperationError
+    UnaryOperationError,
+    BinaryOperationError,
 )
 from astroid.bases import (YES, Instance, InferenceContext,
                            _infer_stmts, copy_context, path_wrapper,
@@ -357,6 +358,17 @@ nodes.BoolOp._infer = _infer_boolop
 
 # UnaryOp, BinOp and AugAssign inferences
 
+def _filter_operation_errors(self, infer_callable, context, error):
+    for result in infer_callable(self, context):
+        if isinstance(result, error):
+            # For the sake of .infer(), we don't care about operation
+            # errors, which is the job of pylint. So return something
+            # which shows that we can't infer the result.
+            yield YES
+        else:
+            yield result
+
+
 def _infer_unaryop(self, context=None):
     """Infer what an UnaryOp should return when evaluated."""
     for operand in self.operand.infer(context):
@@ -402,14 +414,8 @@ def _infer_unaryop(self, context=None):
 @path_wrapper
 def infer_unaryop(self, context=None):
     """Infer what an UnaryOp should return when evaluated."""
-    for result in _infer_unaryop(self, context):
-        if isinstance(result, UnaryOperationError):
-            # For the sake of .infer(), we don't care about operation
-            # errors, which is the job of pylint. So return something
-            # which shows that we can't infer the result.
-            yield YES
-        else:
-            yield result
+    return _filter_operation_errors(self, _infer_unaryop,
+                                    context, UnaryOperationError)
 
 nodes.UnaryOp._infer_unaryop = _infer_unaryop
 nodes.UnaryOp._infer = raise_if_nothing_infered(infer_unaryop)
@@ -579,11 +585,13 @@ def _infer_binary_operation(left, right, op, context, flow_factory):
             return
     # TODO(cpopa): yield a BinaryOperationError here,
     # since the operation is not supported
-    yield YES
+    yield BinaryOperationError(left_type, op, right_type)
 
 
 def _infer_binop(self, context):
     """Binary operation inferrence logic."""
+    if context is None:
+        context = InferenceContext()
     left = self.left
     right = self.right
     op = self.op
@@ -612,14 +620,19 @@ def _infer_binop(self, context):
                 yield result
 
 
+@path_wrapper
 def infer_binop(self, context=None):
-    return _infer_binop(self, context)
+    return _filter_operation_errors(self, _infer_binop,
+                                    context, BinaryOperationError)
 
-nodes.BinOp._infer = yes_if_nothing_infered(path_wrapper(infer_binop))
+nodes.BinOp._infer_binop = _infer_binop
+nodes.BinOp._infer = yes_if_nothing_infered(infer_binop)
 
 
-def infer_augassign(self, context=None):
+def _infer_augassign(self, context=None):
     """Inferrence logic for augmented binary operations."""
+    if context is None:
+        context = InferenceContext()
     op = self.op
 
     for lhs in self.target.infer_lhs(context=context):
@@ -646,7 +659,16 @@ def infer_augassign(self, context=None):
                 yield result
 
 
-nodes.AugAssign._infer = path_wrapper(infer_augassign)
+@path_wrapper
+def infer_augassign(self, context=None):
+    return _filter_operation_errors(self, _infer_augassign,
+                                    context, BinaryOperationError)
+
+nodes.AugAssign._infer_augassign = _infer_augassign
+nodes.AugAssign._infer = infer_augassign
+
+# End of binary operation inference.
+
 
 def infer_arguments(self, context=None):
     name = context.lookupname

@@ -90,3 +90,16 @@ class UnaryOperationError(OperationError):
         operand_type = self.operand.name
         msg = "bad operand type for unary {}: {}"
         return msg.format(self.op, operand_type)
+
+
+class BinaryOperationError(OperationError):
+    """Object which describes type errors for BinOps."""
+
+    def __init__(self, left_type, op, right_type):
+        self.left_type = left_type
+        self.right_type = right_type
+        self.op = op
+
+    def __str__(self):
+        msg = "unsupported operand type(s) for {}: {!r} and {!r}"
+        return msg.format(self.op, self.left_type.name, self.right_type.name)
