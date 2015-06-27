@@ -191,6 +191,9 @@ Change log for the astroid package (used to be astng)
     * Add helpers.is_supertype and helpers.is_subtype, two functions for
       checking if an object is a super/sub type of another.
 
+    * Improve the inference of binary arithmetic operations (normal
+      and augmented).
+
 
 2015-03-14 -- 1.3.6
 

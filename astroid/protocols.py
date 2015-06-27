@@ -23,6 +23,8 @@ import collections
 import operator
 import sys
 
+import six
+
 from astroid.exceptions import InferenceError, NoDefault, NotFoundError
 from astroid.node_classes import unpack_infer
 from astroid.bases import (
@@ -34,10 +36,18 @@ from astroid.bases import (
 from astroid.nodes import const_factory
 from astroid import nodes
 
+
+def _reflected_name(name):
+    return "__r" + name[2:]
+
+def _augmented_name(name):
+    return "__i" + name[2:]
+
+
 _CONTEXTLIB_MGR = 'contextlib.contextmanager'
 BIN_OP_METHOD = {'+':  '__add__',
                  '-':  '__sub__',
-                 '/':  '__div__',
+                 '/':  '__div__' if six.PY2 else '__truediv__',
                  '//': '__floordiv__',
                  '*':  '__mul__',
                  '**': '__power__',
@@ -49,6 +59,15 @@ BIN_OP_METHOD = {'+':  '__add__',
                  '>>': '__rshift__',
                  '@': '__matmul__'
                 }
+
+REFLECTED_BIN_OP_METHOD = {
+    key: _reflected_name(value)
+    for (key, value) in BIN_OP_METHOD.items()
+}
+AUGMENTED_OP_METHOD = {
+    key + "=": _augmented_name(value)
+    for (key, value) in BIN_OP_METHOD.items()
+}
 
 UNARY_OP_METHOD = {'+': '__pos__',
                    '-': '__neg__',
@@ -74,9 +93,7 @@ nodes.Set.infer_unary_op = lambda self, op: _infer_unary_op(set(self.elts), op)
 nodes.Const.infer_unary_op = lambda self, op: _infer_unary_op(self.value, op)
 nodes.Dict.infer_unary_op = lambda self, op: _infer_unary_op(dict(self.items), op)
 
-
-
-# binary operations ###########################################################
+# Binary operations
 
 BIN_OP_IMPL = {'+':  lambda a, b: a + b,
                '-':  lambda a, b: a - b,
@@ -98,81 +115,53 @@ if sys.version_info >= (3, 5):
 for _KEY, _IMPL in list(BIN_OP_IMPL.items()):
     BIN_OP_IMPL[_KEY + '='] = _IMPL
 
-def const_infer_binary_op(self, operator, other, context):
-    for other in other.infer(context):
-        if isinstance(other, nodes.Const):
+def const_infer_binary_op(self, operator, other, context, _):
+    not_implemented = nodes.Const(NotImplemented)
+    if isinstance(other, nodes.Const):
+        try:
+            impl = BIN_OP_IMPL[operator]
             try:
-                impl = BIN_OP_IMPL[operator]
+                yield const_factory(impl(self.value, other.value))
+            except Exception: # pylint: disable=broad-except
+                # ArithmeticError is not enough: float >> float is a TypeError
+                yield not_implemented
+        except TypeError:
+            yield not_implemented
+    else:
+        yield not_implemented
 
-                try:
-                    yield const_factory(impl(self.value, other.value))
-                except Exception: # pylint: disable=broad-except
-                    # ArithmeticError is not enough: float >> float is a TypeError
-                    # TODO : let pylint know about the problem
-                    pass
-            except TypeError:
-                # XXX log TypeError
-                continue
-        elif other is YES:
-            yield other
-        else:
-            try:
-                for val in other.infer_binary_op(operator, self, context):
-                    yield val
-            except AttributeError:
-                yield YES
 nodes.Const.infer_binary_op = yes_if_nothing_infered(const_infer_binary_op)
 
 
-def tl_infer_binary_op(self, operator, other, context):
-    for other in other.infer(context):
-        if isinstance(other, self.__class__) and operator == '+':
-            node = self.__class__()
-            elts = [n for elt in self.elts for n in elt.infer(context)
-                    if not n is YES]
-            elts += [n for elt in other.elts for n in elt.infer(context)
-                     if not n is YES]
-            node.elts = elts
-            yield node
-        elif isinstance(other, nodes.Const) and operator == '*':
-            if not isinstance(other.value, int):
-                yield YES
-                continue
-            node = self.__class__()
-            elts = [n for elt in self.elts for n in elt.infer(context)
-                    if not n is YES] * other.value
-            node.elts = elts
-            yield node
-        elif isinstance(other, Instance) and not isinstance(other, nodes.Const):
-            yield YES
-    # XXX else log TypeError
+def tl_infer_binary_op(self, operator, other, context, method):
+    not_implemented = nodes.Const(NotImplemented)
+    if isinstance(other, self.__class__) and operator == '+':
+        node = self.__class__()
+        elts = [n for elt in self.elts for n in elt.infer(context)
+                if not n is YES]
+        elts += [n for elt in other.elts for n in elt.infer(context)
+                 if not n is YES]
+        node.elts = elts
+        yield node
+    elif isinstance(other, nodes.Const) and operator == '*':
+        if not isinstance(other.value, int):
+            yield not_implemented
+            return
+
+        node = self.__class__()
+        elts = [n for elt in self.elts for n in elt.infer(context)
+                if not n is YES] * other.value
+        node.elts = elts
+        yield node
+    else:
+        yield not_implemented
+
 nodes.Tuple.infer_binary_op = yes_if_nothing_infered(tl_infer_binary_op)
 nodes.List.infer_binary_op = yes_if_nothing_infered(tl_infer_binary_op)
 
 
-def dict_infer_binary_op(self, operator, other, context):
-    for other in other.infer(context):
-        if isinstance(other, Instance) and isinstance(other._proxied, nodes.Class):
-            yield YES
-        # XXX else log TypeError
-nodes.Dict.infer_binary_op = yes_if_nothing_infered(dict_infer_binary_op)
-
-def instance_infer_binary_op(self, operator, other, context):
-    try:
-        methods = self.getattr(BIN_OP_METHOD[operator])
-    except (NotFoundError, KeyError):
-        # Unknown operator
-        yield YES
-    else:
-        for method in methods:
-            if not isinstance(method, nodes.Function):
-                continue
-            for result in method.infer_call_result(self, context):
-                if result is not YES:
-                    yield result
-            # We are interested only in the first infered method,
-            # don't go looking in the rest of the methods of the ancestors.
-            break
+def instance_infer_binary_op(self, operator, other, context, method):
+    return method.infer_call_result(self, context)
 
 Instance.infer_binary_op = yes_if_nothing_infered(instance_infer_binary_op)
 

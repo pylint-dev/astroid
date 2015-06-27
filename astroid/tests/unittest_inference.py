@@ -883,26 +883,65 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ast = builder.string_build('a = "*" * 40', __name__, __file__)
         self._test_const_infered(ast['a'], "*" * 40)
 
-    def test_binary_op_bitand(self):
+    def test_binary_op_int_bitand(self):
         ast = builder.string_build('a = 23&20', __name__, __file__)
         self._test_const_infered(ast['a'], 23&20)
 
-    def test_binary_op_bitor(self):
+    def test_binary_op_int_bitor(self):
         ast = builder.string_build('a = 23|8', __name__, __file__)
         self._test_const_infered(ast['a'], 23|8)
 
-    def test_binary_op_bitxor(self):
+    def test_binary_op_int_bitxor(self):
         ast = builder.string_build('a = 23^9', __name__, __file__)
         self._test_const_infered(ast['a'], 23^9)
 
-    def test_binary_op_shiftright(self):
+    def test_binary_op_int_shiftright(self):
         ast = builder.string_build('a = 23 >>1', __name__, __file__)
         self._test_const_infered(ast['a'], 23>>1)
 
-    def test_binary_op_shiftleft(self):
+    def test_binary_op_int_shiftleft(self):
         ast = builder.string_build('a = 23 <<1', __name__, __file__)
         self._test_const_infered(ast['a'], 23<<1)
 
+    def test_binary_op_other_type(self):
+        ast_nodes = test_utils.extract_node('''
+        class A:
+            def __add__(self, other):
+                return other + 42
+        A() + 1 #@
+        1 + A() #@
+        ''')
+        first = next(ast_nodes[0].infer())
+        self.assertIsInstance(first, nodes.Const)
+        self.assertEqual(first.value, 43)
+
+        second = next(ast_nodes[1].infer())
+        self.assertEqual(second, YES)
+
+    def test_binary_op_other_type_using_reflected_operands(self):
+        ast_nodes = test_utils.extract_node('''
+        class A(object):
+            def __radd__(self, other):
+                return other + 42
+        A() + 1 #@
+        1 + A() #@
+        ''')
+        first = next(ast_nodes[0].infer())
+        self.assertEqual(first, YES)
+
+        second = next(ast_nodes[1].infer())
+        self.assertIsInstance(second, nodes.Const)
+        self.assertEqual(second.value, 43)
+
+    def test_binary_op_reflected_and_not_implemented_is_type_error(self):
+        ast_node = test_utils.extract_node('''
+        class A(object):
+            def __radd__(self, other): return NotImplemented
+
+        1 + A() #@
+        ''')
+        first = next(ast_node.infer())
+        self.assertEqual(first, YES)
 
     def test_binary_op_list_mul(self):
         for code in ('a = [[]] * 2', 'a = 2 * [[]]'):
@@ -923,7 +962,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         infered = ast['b'].infered()
         self.assertEqual(len(infered), 1)
         self.assertEqual(infered[0], YES)
-
 
     def test_binary_op_tuple_add(self):
         ast = builder.string_build('a = (1,) + (2,)', __name__, __file__)
@@ -1197,34 +1235,22 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
     def test_list_inference(self):
         """#20464"""
         code = '''
-            import optparse
-
+            from unknown import Unknown
             A = []
             B = []
 
             def test():
               xyz = [
-                "foobar=%s" % options.ca,
+                Unknown
               ] + A + B
-
-              if options.bind is not None:
-                xyz.append("bind=%s" % options.bind)
               return xyz
-
-            def main():
-              global options
-
-              parser = optparse.OptionParser()
-              (options, args) = parser.parse_args()
 
             Z = test()
         '''
         ast = test_utils.build_module(code, __name__)
-        infered = list(ast['Z'].infer())
-        self.assertEqual(len(infered), 1, infered)
-        self.assertIsInstance(infered[0], Instance)
-        self.assertIsInstance(infered[0]._proxied, nodes.Class)
-        self.assertEqual(infered[0]._proxied.name, 'list')
+        infered = next(ast['Z'].infer())
+        self.assertIsInstance(infered, nodes.List)
+        self.assertEqual(len(infered.elts), 0)
 
     def test__new__(self):
         code = '''
@@ -2127,6 +2153,359 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         for node, expected in zip(ast_nodes, expected_values):
             inferred = next(node.infer())
             self.assertEqual(inferred.value, expected)
+
+    def test_binop_same_types(self):
+        ast_nodes = test_utils.extract_node('''
+        class A(object):
+            def __add__(self, other):
+                return 42
+        1 + 1 #@
+        1 - 1 #@
+        "a" + "b" #@
+        A() + A() #@
+        ''')
+        expected_values = [2, 0, "ab", 42]
+        for node, expected in zip(ast_nodes, expected_values):
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, nodes.Const)
+            self.assertEqual(inferred.value, expected)
+
+    def test_binop_different_types_reflected_only(self):
+        node = test_utils.extract_node('''
+        class A(object):
+            pass
+        class B(object):
+            def __radd__(self, other):
+                return other
+        A() + B() #
+        ''')
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.name, 'A')
+
+    def test_binop_different_types_normal_not_implemented_and_reflected(self):
+        node = test_utils.extract_node('''
+        class A(object):
+            def __add__(self, other):
+                return NotImplemented
+        class B(object):
+            def __radd__(self, other):
+                return other
+        A() + B() #
+        ''')
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.name, 'A')
+
+    def test_binop_different_types_no_method_implemented(self):
+        node = test_utils.extract_node('''
+        class A(object):
+            pass
+        class B(object): pass
+        A() + B() #
+        ''')
+        inferred = next(node.infer())
+        self.assertEqual(inferred, YES)
+
+    def test_binop_different_types_reflected_and_normal_not_implemented(self):
+        node = test_utils.extract_node('''
+        class A(object):
+            def __add__(self, other): return NotImplemented
+        class B(object):
+            def __radd__(self, other): return NotImplemented
+        A() + B() #
+        ''')
+        inferred = next(node.infer())
+        self.assertEqual(inferred, YES)
+
+    def test_binop_subtype(self):
+        node = test_utils.extract_node('''
+        class A(object): pass
+        class B(A):
+            def __add__(self, other): return other
+        B() + A() #@
+        ''')
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.name, 'A')
+
+    def test_binop_subtype_implemented_in_parent(self):
+        node = test_utils.extract_node('''
+        class A(object):
+            def __add__(self, other): return other
+        class B(A): pass
+        B() + A() #@
+        ''')
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.name, 'A')
+
+    def test_binop_subtype_not_implemented(self):
+        node = test_utils.extract_node('''
+        class A(object):
+            pass
+        class B(A):
+            def __add__(self, other): return NotImplemented
+        B() + A() #@
+        ''')
+        inferred = next(node.infer())
+        self.assertEqual(inferred, YES)
+
+    def test_binop_supertype(self):
+        node = test_utils.extract_node('''
+        class A(object):
+            pass
+        class B(A):
+            def __radd__(self, other):
+                 return other
+        A() + B() #@
+        ''')
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.name, 'A')
+
+    def test_binop_supertype_rop_not_implemented(self):
+        node = test_utils.extract_node('''
+        class A(object):
+            def __add__(self, other):
+                return other
+        class B(A):
+            def __radd__(self, other):
+                 return NotImplemented
+        A() + B() #@
+        ''')
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.name, 'B')
+
+    def test_binop_supertype_both_not_implemented(self):
+        node = test_utils.extract_node('''
+        class A(object):
+            def __add__(self): return NotImplemented
+        class B(A):
+            def __radd__(self, other):
+                 return NotImplemented
+        A() + B() #@
+        ''')
+        inferred = next(node.infer())
+        self.assertEqual(inferred, YES)
+
+    def test_binop_inferrence_errors(self):
+        ast_nodes = test_utils.extract_node('''
+        from unknown import Unknown
+        class A(object):
+           def __add__(self, other): return NotImplemented
+        class B(object):
+           def __add__(self, other): return Unknown
+        A() + Unknown #@
+        Unknown + A() #@
+        B() + A() #@
+        A() + B() #@
+        ''')
+        for node in ast_nodes:
+            self.assertEqual(next(node.infer()), YES)
+
+    def test_binop_ambiguity(self):
+        ast_nodes = test_utils.extract_node('''
+        class A(object):
+           def __add__(self, other):
+               if isinstance(other, B):
+                    return NotImplemented
+               if type(other) is type(self):
+                    return 42
+               return NotImplemented
+        class B(A): pass
+        class C(object):
+           def __radd__(self, other):
+               if isinstance(other, B):
+                   return 42
+               return NotImplemented
+        A() + B() #@
+        B() + A() #@
+        A() + C() #@
+        C() + A() #@
+        ''')
+        for node in ast_nodes:
+            self.assertEqual(next(node.infer()), YES)
+
+    def test_aug_op_same_type_not_implemented(self):
+        ast_node = test_utils.extract_node('''
+        class A(object):
+            def __iadd__(self, other): return NotImplemented
+            def __add__(self, other): return NotImplemented
+        A() + A() #@        
+        ''')
+        self.assertEqual(next(ast_node.infer()), YES)
+
+    def test_aug_op_same_type_aug_implemented(self):
+        ast_node = test_utils.extract_node('''
+        class A(object):
+            def __iadd__(self, other): return other
+        f = A()
+        f += A() #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.name, 'A')
+
+    def test_aug_op_same_type_aug_not_implemented_normal_implemented(self):
+        ast_node = test_utils.extract_node('''
+        class A(object):
+            def __iadd__(self, other): return NotImplemented
+            def __add__(self, other): return 42
+        f = A()
+        f += A() #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 42)
+
+    def test_aug_op_subtype_both_not_implemented(self):
+        ast_node = test_utils.extract_node('''
+        class A(object):
+            def __iadd__(self, other): return NotImplemented
+            def __add__(self, other): return NotImplemented
+        class B(A):
+            pass
+        b = B()
+        b+=A() #@
+        ''')
+        self.assertEqual(next(ast_node.infer()), YES)
+
+    def test_aug_op_subtype_aug_op_is_implemented(self):
+        ast_node = test_utils.extract_node('''
+        class A(object):
+            def __iadd__(self, other): return 42
+        class B(A):
+            pass
+        b = B()
+        b+=A() #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 42)
+
+    def test_aug_op_subtype_normal_op_is_implemented(self):
+        ast_node = test_utils.extract_node('''
+        class A(object):
+            def __add__(self, other): return 42
+        class B(A):
+            pass
+        b = B()
+        b+=A() #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 42)
+
+    def test_aug_different_types_no_method_implemented(self):
+        ast_node = test_utils.extract_node('''
+        class A(object): pass
+        class B(object): pass
+        f = A()
+        f += B() #@
+        ''')
+        self.assertEqual(next(ast_node.infer()), YES)
+
+    def test_aug_different_types_augop_implemented(self):
+        ast_node = test_utils.extract_node('''
+        class A(object):
+            def __iadd__(self, other): return other
+        class B(object): pass
+        f = A()
+        f += B() #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.name, 'B')
+
+    def test_aug_different_types_aug_not_implemented(self):
+        ast_node = test_utils.extract_node('''
+        class A(object):
+            def __iadd__(self, other): return NotImplemented
+            def __add__(self, other): return other
+        class B(object): pass
+        f = A()
+        f += B() #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.name, 'B')
+
+    def test_aug_different_types_aug_not_implemented_rop_fallback(self):
+        ast_node = test_utils.extract_node('''
+        class A(object):
+            def __iadd__(self, other): return NotImplemented
+            def __add__(self, other): return NotImplemented
+        class B(object):
+            def __radd__(self, other): return other
+        f = A()
+        f += B() #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.name, 'A')
+
+    def test_augop_supertypes_none_implemented(self):
+        ast_node = test_utils.extract_node('''
+        class A(object): pass
+        class B(object): pass
+        a = A()
+        a += B() #@
+        ''')
+        self.assertEqual(next(ast_node.infer()), YES)
+
+    def test_augop_supertypes_not_implemented_returned_for_all(self):
+        ast_node = test_utils.extract_node('''
+        class A(object):
+            def __iadd__(self, other): return NotImplemented
+            def __add__(self, other): return NotImplemented
+        class B(object):
+            def __add__(self, other): return NotImplemented
+        a = A()
+        a += B() #@
+        ''')
+        self.assertEqual(next(ast_node.infer()), YES)
+
+    def test_augop_supertypes_augop_implemented(self):
+        ast_node = test_utils.extract_node('''
+        class A(object):
+            def __iadd__(self, other): return other
+        class B(A): pass
+        a = A()
+        a += B() #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.name, 'B')
+
+    def test_augop_supertypes_reflected_binop_implemented(self):
+        ast_node = test_utils.extract_node('''
+        class A(object):
+            def __iadd__(self, other): return NotImplemented
+        class B(A):
+            def __radd__(self, other): return other
+        a = A()
+        a += B() #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.name, 'A')
+
+    def test_augop_supertypes_normal_binop_implemented(self):
+        ast_node = test_utils.extract_node('''
+        class A(object):
+            def __iadd__(self, other): return NotImplemented
+            def __add__(self, other): return other
+        class B(A):
+            def __radd__(self, other): return NotImplemented
+            
+        a = A()
+        a += B() #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.name, 'B')
 
 
 class GetattrTest(unittest.TestCase):

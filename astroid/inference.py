@@ -18,10 +18,13 @@
 """this module contains a set of functions to handle inference on astroid trees
 """
 
+import functools
 import itertools
 import operator
 
+from astroid import helpers
 from astroid import nodes
+from astroid import protocols
 from astroid.manager import AstroidManager
 from astroid.exceptions import (
     AstroidError, InferenceError, NoDefault,
@@ -30,10 +33,7 @@ from astroid.exceptions import (
 )
 from astroid.bases import (YES, Instance, InferenceContext,
                            _infer_stmts, copy_context, path_wrapper,
-                           raise_if_nothing_infered)
-from astroid.protocols import (
-    _arguments_infer_argname,
-    BIN_OP_METHOD, UNARY_OP_METHOD)
+                           raise_if_nothing_infered, yes_if_nothing_infered)
 
 MANAGER = AstroidManager()
 
@@ -309,7 +309,7 @@ def _infer_unaryop(self, context=None):
             # The operand doesn't support this operation.
             yield UnaryOperationError(operand, self.op, exc)
         except AttributeError as exc:
-            meth = UNARY_OP_METHOD[self.op]
+            meth = protocols.UNARY_OP_METHOD[self.op]
             if meth is None:
                 # `not node`. Determine node's boolean
                 # value and negate its result, unless it is
@@ -412,42 +412,246 @@ def _infer_boolop(self, context=None):
 nodes.BoolOp._infer = _infer_boolop
 
 
-def _infer_binop(operator, operand1, operand2, context, failures=None):
-    if operand1 is YES:
-        yield operand1
-        return
-    try:
-        for valnode in operand1.infer_binary_op(operator, operand2, context):
-            yield valnode
-    except AttributeError:
+# BinOp and AugAssign inferences
+
+def _is_not_implemented(const):
+    """Check if the given const node is NotImplemented."""
+    return isinstance(const, nodes.Const) and const.value is NotImplemented
+
+
+def  _invoke_binop_inference(instance, op, other, context, method_name):
+    """Invoke binary operation inference on the given instance."""
+    method = instance.getattr(method_name)[0]
+    return instance.infer_binary_op(op, other, context, method)
+
+def _aug_op(instance, op, other, context, reverse=False):
+    """Get an inference callable for an augmented binary operation."""
+    method_name = protocols.AUGMENTED_OP_METHOD[op]
+    return functools.partial(_invoke_binop_inference,
+                             instance=instance,
+                             op=op, other=other,
+                             context=context,
+                             method_name=method_name)
+
+def _bin_op(instance, op, other, context, reverse=False):
+    """Get an inference callable for a normal binary operation.
+
+    If *reverse* is True, then the reflected method will be used instead.
+    """
+    if reverse:
+        method_name = protocols.REFLECTED_BIN_OP_METHOD[op]
+    else:
+        method_name = protocols.BIN_OP_METHOD[op]
+    return functools.partial(_invoke_binop_inference,
+                             instance=instance,
+                             op=op, other=other,
+                             context=context,
+                             method_name=method_name)
+
+
+def _get_binop_contexts(context, left, right):
+    """Get contexts for binary operations.
+
+    This will return two inferrence contexts, the first one
+    for x.__op__(y), the other one for y.__rop__(x), where
+    only the arguments are inversed.
+    """
+    # The order is important, since the first one should be
+    # left.__op__(right).
+    for arg in (right, left):
+        new_context = context.clone()
+        new_context.callcontext = CallContext(
+            [arg], starargs=None, dstarargs=None)
+        new_context.boundnode = None
+        yield new_context
+
+def _same_type(type1, type2):
+    """Check if type1 is the same as type2."""
+    return type1.qname() == type2.qname()
+
+
+def _get_binop_flow(left, left_type, op, right, right_type,
+                    context, reverse_context):
+    """Get the flow for binary operations.
+
+    The rules are a bit messy:
+
+        * if left and right have the same type, then only one
+          method will be called, left.__op__(right)
+        * if left and right are unrelated typewise, then first
+          left.__op__(right) is tried and if this does not exist
+          or returns NotImplemented, then right.__rop__(left) is tried.
+        * if left is a subtype of right, then only left.__op__(right)
+          is tried.
+        * if left is a supertype of right, then right.__rop__(left)
+          is first tried and then left.__op__(right)
+    """
+    if _same_type(left_type, right_type):
+        methods = [_bin_op(left, op, right, context)]
+    elif helpers.is_subtype(left_type, right_type):
+        methods = [_bin_op(left, op, right, context)]
+    elif helpers.is_supertype(left_type, right_type):
+        methods = [_bin_op(right, op, left, reverse_context, reverse=True),
+                   _bin_op(left, op, right, context)]
+    else:
+        methods = [_bin_op(left, op, right, context),
+                   _bin_op(right, op, left, reverse_context, reverse=True)]
+    return methods
+
+
+def _get_aug_flow(left, left_type, aug_op, right, right_type,
+                  context, reverse_context):
+    """Get the flow for augmented binary operations.
+
+    The rules are a bit messy:
+
+        * if left and right have the same type, then left.__augop__(right)
+          is first tried and then left.__op__(right).
+        * if left and right are unrelated typewise, then
+          left.__augop__(right) is tried, then left.__op__(right)
+          is tried and then right.__rop__(left) is tried.
+        * if left is a subtype of right, then left.__augop__(right)
+          is tried and then left.__op__(right).
+        * if left is a supertype of right, then left.__augop__(right)
+          is tried, then right.__rop__(left) and then
+          left.__op__(right)
+    """
+    op = aug_op.strip("=")
+    if _same_type(left_type, right_type):
+        methods = [_aug_op(left, aug_op, right, context),
+                   _bin_op(left, op, right, context)]
+    elif helpers.is_subtype(left_type, right_type):
+        methods = [_aug_op(left, aug_op, right, context),
+                   _bin_op(left, op, right, context)]
+    elif helpers.is_supertype(left_type, right_type):
+        methods = [_aug_op(left, aug_op, right, context),
+                   _bin_op(right, op, left, reverse_context, reverse=True),
+                   _bin_op(left, op, right, context)]
+    else:
+        methods = [_aug_op(left, aug_op, right, context),
+                   _bin_op(left, op, right, context),
+                   _bin_op(right, op, left, reverse_context, reverse=True)]
+    return methods
+
+
+def _infer_binary_operation(left, right, op, context, flow_factory):
+    """Infer a binary operation between a left operand and a right operand
+
+    This is used by both normal binary operations and augmented binary
+    operations, the only difference is the flow factory used.
+    """
+
+    context, reverse_context = _get_binop_contexts(context, left, right)
+    left_type = helpers.object_type(left)
+    right_type = helpers.object_type(right)
+    methods = flow_factory(left, left_type, op, right, right_type,
+                           context, reverse_context)
+    for method in methods:
         try:
-            # XXX just suppose if the type implement meth, returned type
-            # will be the same
-            operand1.getattr(BIN_OP_METHOD[operator])
-            yield operand1
-        except Exception: # pylint: disable=broad-except
-            if failures is None:
+            results = list(method())
+        except AttributeError:
+            continue
+        except NotFoundError:
+            continue
+        except InferenceError:
+            yield YES
+            return
+        else:
+            if any(result is YES for result in results):
                 yield YES
-            else:
-                failures.append(operand1)
+                return
+
+            # TODO(cpopa): since the inferrence engine might return
+            # more values than are actually possible, we decide
+            # to return YES if we have union types.
+            if all(map(_is_not_implemented, results)):
+                continue
+            not_implemented = sum(1 for result in results
+                                  if _is_not_implemented(result))
+            if not_implemented and not_implemented != len(results):
+                # Can't decide yet what this is, not yet though.
+                yield YES
+                return
+
+            for result in results:
+                yield result
+            return
+    # TODO(cpopa): yield a BinaryOperationError here,
+    # since the operation is not supported
+    yield YES
+
+
+def _infer_binop(self, context):
+    """Binary operation inferrence logic."""
+    left = self.left
+    right = self.right
+    op = self.op
+
+    for lhs in left.infer(context=context):
+        if lhs is YES:
+            # Don't know how to process this.
+            yield YES
+            return
+
+        # TODO(cpopa): if we have A() * A(), trying to infer
+        # the rhs with the same context will result in an
+        # inferrence error, so we create another context for it.
+        # This is a bug which should be fixed in InferenceContext at some point.
+        rhs_context = context.clone()
+        rhs_context.path = set()
+        for rhs in right.infer(context=rhs_context):
+            if rhs is YES:
+                # Don't know how to process this.
+                yield YES
+                return
+
+            results = _infer_binary_operation(lhs, rhs, op,
+                                              context, _get_binop_flow)
+            for result in results:
+                yield result
+
 
 def infer_binop(self, context=None):
-    failures = []
-    for lhs in self.left.infer(context):
-        for val in _infer_binop(self.op, lhs, self.right, context, failures):
-            yield val
-    for lhs in failures:
-        for rhs in self.right.infer(context):
-            for val in _infer_binop(self.op, rhs, lhs, context):
-                yield val
-nodes.BinOp._infer = path_wrapper(infer_binop)
+    return _infer_binop(self, context)
 
+nodes.BinOp._infer = yes_if_nothing_infered(path_wrapper(infer_binop))
+
+
+def infer_augassign(self, context=None):
+    """Inferrence logic for augmented binary operations."""
+    op = self.op
+
+    for lhs in self.target.infer_lhs(context=context):
+        if lhs is YES:
+            # Don't know how to process this.
+            yield YES
+            return
+
+        # TODO(cpopa): if we have A() * A(), trying to infer
+        # the rhs with the same context will result in an
+        # inferrence error, so we create another context for it.
+        # This is a bug which should be fixed in InferenceContext at some point.
+        rhs_context = context.clone()
+        rhs_context.path = set()
+        for rhs in self.value.infer(context=rhs_context):
+            if rhs is YES:
+                # Don't know how to process this.
+                yield YES
+                return
+
+            results = _infer_binary_operation(lhs, rhs, op,
+                                              context, _get_aug_flow)
+            for result in results:
+                yield result
+
+
+nodes.AugAssign._infer = path_wrapper(infer_augassign)
 
 def infer_arguments(self, context=None):
     name = context.lookupname
     if name is None:
         raise InferenceError()
-    return _arguments_infer_argname(self, name, context)
+    return protocols._arguments_infer_argname(self, name, context)
 nodes.Arguments._infer = infer_arguments
 
 
@@ -462,17 +666,6 @@ def infer_ass(self, context=None):
     return _infer_stmts(stmts, context)
 nodes.AssName._infer = path_wrapper(infer_ass)
 nodes.AssAttr._infer = path_wrapper(infer_ass)
-
-def infer_augassign(self, context=None):
-    failures = []
-    for lhs in self.target.infer_lhs(context):
-        for val in _infer_binop(self.op, lhs, self.value, context, failures):
-            yield val
-    for lhs in failures:
-        for rhs in self.value.infer(context):
-            for val in _infer_binop(self.op, rhs, lhs, context):
-                yield val
-nodes.AugAssign._infer = path_wrapper(infer_augassign)
 
 
 # no infer method on DelName and DelAttr (expected InferenceError)
