@@ -1985,7 +1985,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         class B(object): pass
         A() + B() #@
         class A1(object):
-            def __add__(self): return NotImplemented
+            def __add__(self, other): return NotImplemented
         A1() + A1() #@
         class A(object):
             def __add__(self, other): return NotImplemented
@@ -1998,7 +1998,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             def __add__(self, other): return NotImplemented
         Child() + Parent() #@
         class A(object):
-            def __add__(self): return NotImplemented
+            def __add__(self, other): return NotImplemented
         class B(A):
             def __radd__(self, other):
                  return NotImplemented
