@@ -122,9 +122,11 @@ def const_infer_binary_op(self, operator, other, context, _):
             impl = BIN_OP_IMPL[operator]
             try:
                 yield const_factory(impl(self.value, other.value))
-            except Exception: # pylint: disable=broad-except
+            except TypeError:
                 # ArithmeticError is not enough: float >> float is a TypeError
                 yield not_implemented
+            except Exception: # pylint: disable=broad-except
+                yield YES
         except TypeError:
             yield not_implemented
     elif (isinstance(self.value, six.string_types)
