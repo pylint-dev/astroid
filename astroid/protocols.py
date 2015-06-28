@@ -127,6 +127,10 @@ def const_infer_binary_op(self, operator, other, context, _):
                 yield not_implemented
         except TypeError:
             yield not_implemented
+    elif (isinstance(self.value, six.string_types)
+              and isinstance(other, (nodes.Dict, nodes.Tuple))):
+        # TODO(cpopa): implement string interpolation
+        yield YES
     else:
         yield not_implemented
 

@@ -2582,6 +2582,18 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, 'B')
 
+    @unittest.expectedFailure
+    def test_string_interpolation(self):
+        ast_nodes = test_utils.extract_node('''
+        "a%d%d" % (1, 2) #@
+        "a%(x)s" % {"x": 42} #@
+        ''')
+        expected = ["a12", "a42"]
+        for node, expected_value in zip(ast_nodes, expected):
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, nodes.Const)
+            self.assertEqual(inferred.value, expected_value)
+
 
 class GetattrTest(unittest.TestCase):
 
