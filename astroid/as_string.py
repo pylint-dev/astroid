@@ -50,6 +50,7 @@ def _repr_tree(node, result, indent='', _done=None, ids=False):
     node_str = str(node)
     if ids:
         node_str += '  . \t%x' % id(node)
+    # pylint: disable=unsupported-binary-operation; false positive
     result.append(indent + node_str)
     indent += INDENT
     for field in node._astroid_fields:

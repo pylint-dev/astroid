@@ -771,6 +771,7 @@ class Function(bases.Statement, Lambda):
         result = set()
         decoratornodes = []
         if self.decorators is not None:
+            # pylint: disable=unsupported-binary-operation; damn flow control.
             decoratornodes += self.decorators.nodes
         decoratornodes += self.extra_decorators
         for decnode in decoratornodes:
@@ -1487,6 +1488,7 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
             if exc.args and exc.args[0] not in ('', None):
                 return exc.args[0]
             return None
+        # pylint: disable=unsupported-binary-operation; false positive
         return [first] + list(slots)
 
     def _inferred_bases(self, context=None):
