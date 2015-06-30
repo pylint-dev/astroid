@@ -88,6 +88,8 @@ Change log for the astroid package (used to be astng)
       builtins module. Previously trying to infer the Name(NotImplemented)
       returned an YES object.
 
+    * Lambdas found at class level, which have a `self` argument, are considered
+      BoundMethods when accessing them from instances of their class.
 
 2015-08-02 -- 1.3.8
 

@@ -26,9 +26,9 @@ import warnings
 
 from astroid import YES, builder, nodes, scoped_nodes
 from astroid.exceptions import (
-     InferenceError, NotFoundError,
-     NoDefault, ResolveError, MroError,
-     InconsistentMroError, DuplicateBasesError,
+    InferenceError, NotFoundError,
+    NoDefault, ResolveError, MroError,
+    InconsistentMroError, DuplicateBasesError,
 )
 from astroid.bases import (
     BUILTINS, Instance,
@@ -101,7 +101,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         # raise ResolveError
         self.assertRaises(InferenceError, self.nonregr.igetattr, 'YOAA')
 
-    def test_wildard_import_names(self):
+    def test_wildcard_import_names(self):
         m = resources.build_file('data/all.py', 'all')
         self.assertEqual(m.wildcard_import_names(), ['Aaa', '_bla', 'name'])
         m = resources.build_file('data/notall.py', 'notall')
@@ -132,7 +132,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         astroid = test_utils.build_module(data, __name__)
         # test del statement not returned by getattr
         self.assertEqual(len(astroid.getattr('appli')), 2,
-                          astroid.getattr('appli'))
+                         astroid.getattr('appli'))
 
     def test_relative_to_absolute_name(self):
         # package
@@ -205,6 +205,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         if __pkginfo__.numversion >= (1, 6):
             # file_stream is slated for removal in astroid 1.6.
             with self.assertRaises(AttributeError):
+                # pylint: disable=pointless-statement
                 astroid.file_stream
         else:
             # Until astroid 1.6, Module.file_stream will emit
@@ -269,7 +270,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         last = r_sibling.next_sibling().next_sibling().next_sibling()
         self.assertIsInstance(last, nodes.Assign)
         self.assertIsNone(last.next_sibling())
-        first = l_sibling.previous_sibling().previous_sibling().previous_sibling().previous_sibling().previous_sibling()
+        first = l_sibling.root().body[0]
         self.assertIsNone(first.previous_sibling())
 
     def test_nested_args(self):
@@ -739,7 +740,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                                   ('Concrete23', ['MyIFace', 'AnotherIFace'])):
             klass = self.module2[klass]
             self.assertEqual([i.name for i in klass.interfaces()],
-                              interfaces)
+                             interfaces)
 
     def test_concat_interfaces(self):
         astroid = test_utils.build_module('''
@@ -758,7 +759,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                 __implements__ = BadArgument.__implements__ + Correct2.__implements__
         ''')
         self.assertEqual([i.name for i in astroid['InterfaceCanNowBeFound'].interfaces()],
-                          ['IMachin'])
+                         ['IMachin'])
 
     def test_inner_classes(self):
         eee = self.nonregr['Ccc']['Eee']
@@ -778,8 +779,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         astroid = test_utils.build_module(data, __name__)
         cls = astroid['WebAppObject']
         self.assertEqual(sorted(cls.locals.keys()),
-                          ['appli', 'config', 'registered', 'schema'])
-
+                         ['appli', 'config', 'registered', 'schema'])
 
     def test_class_getattr(self):
         data = '''
@@ -1077,73 +1077,46 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             from collections import deque
             from textwrap import dedent
 
-            class First(object):
+            class First(object): #@
                 __slots__ = ("a", "b", 1)
-            class Second(object):
+            class Second(object): #@
                 __slots__ = "a"
-            class Third(object):
+            class Third(object): #@
                 __slots__ = deque(["a", "b", "c"])
-            class Fourth(object):
+            class Fourth(object): #@
                 __slots__ = {"a": "a", "b": "b"}
-            class Fifth(object):
+            class Fifth(object): #@
                 __slots__ = list
-            class Sixth(object):
+            class Sixth(object): #@
                 __slots__ = ""
-            class Seventh(object):
+            class Seventh(object): #@
                 __slots__ = dedent.__name__
-            class Eight(object):
+            class Eight(object): #@
                 __slots__ = ("parens")
-            class Ninth(object):
+            class Ninth(object): #@
                 pass
-            class Ten(object):
+            class Ten(object): #@
                 __slots__ = dict({"a": "b", "c": "d"})
         """)
-        first = astroid['First']
-        first_slots = first.slots()
-        self.assertEqual(len(first_slots), 2)
-        self.assertIsInstance(first_slots[0], nodes.Const)
-        self.assertIsInstance(first_slots[1], nodes.Const)
-        self.assertEqual(first_slots[0].value, "a")
-        self.assertEqual(first_slots[1].value, "b")
-
-        second_slots = astroid['Second'].slots()
-        self.assertEqual(len(second_slots), 1)
-        self.assertIsInstance(second_slots[0], nodes.Const)
-        self.assertEqual(second_slots[0].value, "a")
-
-        third_slots = astroid['Third'].slots()
-        self.assertIsNone(third_slots)
-
-        fourth_slots = astroid['Fourth'].slots()
-        self.assertEqual(len(fourth_slots), 2)
-        self.assertIsInstance(fourth_slots[0], nodes.Const)
-        self.assertIsInstance(fourth_slots[1], nodes.Const)
-        self.assertEqual(fourth_slots[0].value, "a")
-        self.assertEqual(fourth_slots[1].value, "b")
-
-        fifth_slots = astroid['Fifth'].slots()
-        self.assertIsNone(fifth_slots)
-
-        sixth_slots = astroid['Sixth'].slots()
-        self.assertIsNone(sixth_slots)
-
-        seventh_slots = astroid['Seventh'].slots()
-        self.assertEqual(len(seventh_slots), 1)
-        self.assertIsInstance(seventh_slots[0], nodes.Const)
-        self.assertEqual(seventh_slots[0].value, 'dedent')
-
-        eight_slots = astroid['Eight'].slots()
-        self.assertEqual(len(eight_slots), 1)
-        self.assertIsInstance(eight_slots[0], nodes.Const)
-        self.assertEqual(eight_slots[0].value, "parens")
-
-        self.assertIsNone(astroid['Ninth'].slots())
-
-        tenth_slots = astroid['Ten'].slots()
-        self.assertEqual(len(tenth_slots), 2)
-        self.assertEqual(
-            [slot.value for slot in tenth_slots],
-            ["a", "c"])
+        expected = [
+            ('First', ('a', 'b')),
+            ('Second', ('a', )),
+            ('Third', None),
+            ('Fourth', ('a', 'b')),
+            ('Fifth', None),
+            ('Sixth', None),
+            ('Seventh', ('dedent', )),
+            ('Eight', ('parens', )),
+            ('Ninth', None),
+            ('Ten', ('a', 'c')),
+        ]
+        for cls, expected_value in expected:
+            slots = astroid[cls].slots()
+            if expected_value is None:
+                self.assertIsNone(slots)
+            else:
+                self.assertEqual(list(expected_value),
+                                 [node.value for node in slots])
 
     @test_utils.require_version(maxver='3.0')
     def test_slots_py2(self):
@@ -1300,7 +1273,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         """)
         result = next(func.infer_call_result(func))
         self.assertIsInstance(result, Generator)
-        self.assertEqual(result.parent, func)                 
+        self.assertEqual(result.parent, func)
 
     def test_type_three_arguments(self):
         classes = test_utils.extract_node("""
@@ -1344,7 +1317,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         local = cls.local_attr('test')[0]
         inferred = next(local.infer())
         self.assertIsInstance(inferred, nodes.Const)
-        self.assertEqual(inferred.value, 42)         
+        self.assertEqual(inferred.value, 42)
 
     def test_has_dynamic_getattr(self):
         module = test_utils.build_module("""
@@ -1381,6 +1354,23 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         """)
         self.assertRaises(DuplicateBasesError, module['B'].mro)
 
-        
+    def test_instance_bound_method_lambdas(self):
+        ast_nodes = test_utils.extract_node('''
+        class Test(object): #@
+            lam = lambda self: self
+            not_method = lambda xargs: xargs
+        Test() #@
+        ''')
+        cls = next(ast_nodes[0].infer())
+        self.assertIsInstance(next(cls.igetattr('lam')), scoped_nodes.Lambda)
+        self.assertIsInstance(next(cls.igetattr('not_method')), scoped_nodes.Lambda)
+
+        instance = next(ast_nodes[1].infer())
+        lam = next(instance.igetattr('lam'))
+        self.assertIsInstance(lam, BoundMethod)
+        not_method = next(instance.igetattr('not_method'))
+        self.assertIsInstance(not_method, scoped_nodes.Lambda)
+
+
 if __name__ == '__main__':
     unittest.main()
