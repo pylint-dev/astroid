@@ -138,6 +138,14 @@ def const_infer_binary_op(self, operator, other, context, _):
 nodes.Const.infer_binary_op = yes_if_nothing_infered(const_infer_binary_op)
 
 
+def _multiply_seq_by_int(self, other, context):
+    node = self.__class__()
+    elts = [n for elt in self.elts for n in elt.infer(context)
+            if not n is YES] * other.value
+    node.elts = elts
+    return node
+
+
 def tl_infer_binary_op(self, operator, other, context, method):
     not_implemented = nodes.Const(NotImplemented)
     if isinstance(other, self.__class__) and operator == '+':
@@ -152,12 +160,14 @@ def tl_infer_binary_op(self, operator, other, context, method):
         if not isinstance(other.value, int):
             yield not_implemented
             return
-
-        node = self.__class__()
-        elts = [n for elt in self.elts for n in elt.infer(context)
-                if not n is YES] * other.value
-        node.elts = elts
-        yield node
+        yield _multiply_seq_by_int(self, other, context)
+    elif isinstance(other, Instance) and operator == '*':
+        # Verify if the instance supports __index__.
+        as_index = class_as_index(other, context)
+        if not as_index:
+            yield YES
+        else:
+            yield _multiply_seq_by_int(self, as_index, context)
     else:
         yield not_implemented
 
@@ -481,3 +491,23 @@ def starred_assigned_stmts(self, node=None, context=None, asspath=None):
                 break
 
 nodes.Starred.assigned_stmts = starred_assigned_stmts
+
+
+def class_as_index(node, context):
+    """Get the value as an index for the given node
+
+    It is expected that the node is an Instance. If it provides
+    an *__index__* method, we'll try to return its int value.
+    """  
+    try:
+        for infered in node.igetattr('__index__', context=context):
+            if not isinstance(infered, BoundMethod):
+                continue
+
+            for result in infered.infer_call_result(node, context=context):
+                if (isinstance(result, nodes.Const)
+                        and isinstance(result.value, int)):
+                    return result
+    except InferenceError:
+        pass
+   

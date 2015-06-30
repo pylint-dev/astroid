@@ -2594,6 +2594,26 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertIsInstance(inferred, nodes.Const)
             self.assertEqual(inferred.value, expected_value)
 
+    def test_mul_list_supports__index__(self):
+        ast_nodes = test_utils.extract_node('''
+        class Index(object):
+            def __index__(self): return 2
+        class NotIndex(object): pass
+        class NotIndex2(object):
+            def __index__(self): return None
+        a = [1, 2]
+        a * Index() #@
+        a * NotIndex() #@
+        a * NotIndex2() #@
+        ''')
+        first = next(ast_nodes[0].infer())
+        self.assertIsInstance(first, nodes.List)
+        self.assertEqual([node.value for node in first.itered()],
+                         [1, 2, 1, 2])
+        for rest in ast_nodes[1:]:
+            inferred = next(rest.infer())
+            self.assertEqual(inferred, YES)
+
 
 class GetattrTest(unittest.TestCase):
 
