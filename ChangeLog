@@ -201,6 +201,9 @@ Change log for the astroid package (used to be astng)
       to retrieve type errors occurred during inference. Also, a new
       exception object was added, BinaryOperationError.
 
+    * Lambdas found at class level, which have a `self` argument, are considered
+      BoundMethods when accessing them from instances of their class.
+
 
 2015-03-14 -- 1.3.6
 
