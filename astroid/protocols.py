@@ -368,6 +368,7 @@ def with_assigned_stmts(self, node, context=None, asspath=None):
 nodes.With.assigned_stmts = raise_if_nothing_infered(with_assigned_stmts)
 
 
+@yes_if_nothing_infered
 def starred_assigned_stmts(self, node=None, context=None, asspath=None):
     stmt = self.statement()
     if not isinstance(stmt, (nodes.Assign, nodes.For)):
@@ -415,8 +416,10 @@ def starred_assigned_stmts(self, node=None, context=None, asspath=None):
                     elts.pop()
                     continue
                 # We're done
-                for elt in elts:
-                    yield elt
+                packed = nodes.List()
+                packed.elts = elts
+                packed.parent = self
+                yield packed
                 break
 
 nodes.Starred.assigned_stmts = starred_assigned_stmts
