@@ -498,7 +498,7 @@ def class_as_index(node, context):
 
     It is expected that the node is an Instance. If it provides
     an *__index__* method, we'll try to return its int value.
-    """  
+    """
     try:
         for infered in node.igetattr('__index__', context=context):
             if not isinstance(infered, BoundMethod):
