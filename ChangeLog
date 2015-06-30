@@ -207,6 +207,9 @@ Change log for the astroid package (used to be astng)
     * Add support for multiplication of tuples and lists with instances
       which provides an __index__ returning-int method.
 
+    * Star unpacking in assignments returns properly a list,
+      not the individual components. Closes issue #138.
+
 
 2015-03-14 -- 1.3.6
 
