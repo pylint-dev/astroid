@@ -726,7 +726,7 @@ def instance_getitem(self, index, context=None):
     new_context.callcontext = CallContext(
         args=[index], starargs=None, dstarargs=None)
     new_context.boundnode = self
-        
+
     method = next(self.igetattr('__getitem__', context=context))
     if not isinstance(method, BoundMethod):
         raise InferenceError

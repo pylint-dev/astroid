@@ -388,7 +388,7 @@ def _format_args(args, annotations=None, defaults=None):
             values.append('(%s)' % _format_args(arg.elts))
         else:
             argname = arg.name
-            if annotation is not None:                
+            if annotation is not None:
                 argname += ':' + annotation.as_string()
             values.append(argname)
 
