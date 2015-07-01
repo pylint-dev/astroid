@@ -681,6 +681,15 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                                 test_utils.get_name_node(ast, 'd', -1).infer()], [6])
         self.assertEqual([i.value for i in
                           test_utils.get_name_node(ast, 'f', -1).infer()], ['value'])
+                          
+    def test_bytes_subscript(self):
+        node = test_utils.extract_node('''b'a'[0]''')
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        if six.PY2:
+            self.assertEqual(inferred.value, 'a')
+        else:
+            self.assertEqual(inferred.value, 97)
 
     #def test_simple_tuple(self):
         #"""test case for a simple tuple value"""
