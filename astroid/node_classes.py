@@ -316,7 +316,9 @@ class Arguments(NodeNG, AssignTypeMixin):
         """return arguments formatted as string"""
         result = []
         if self.args:
-            result.append(_format_args(self.args, self.defaults))
+            result.append(
+                _format_args(self.args, self.annotations, self.defaults)
+            )
         if self.vararg:
             result.append('*%s' % self.vararg)
         if self.kwarg:
@@ -375,17 +377,23 @@ def _find_arg(argname, args, rec=False):
     return None, None
 
 
-def _format_args(args, defaults=None):
+def _format_args(args, annotations=None, defaults=None):
     values = []
     if args is None:
         return ''
+    if annotations is None:
+        annotations = []
     if defaults is not None:
         default_offset = len(args) - len(defaults)
-    for i, arg in enumerate(args):
+    for i, (arg, annotation) in enumerate(zip(args, annotations)):
         if isinstance(arg, Tuple):
             values.append('(%s)' % _format_args(arg.elts))
         else:
-            values.append(arg.name)
+            argname = arg.name
+            if annotation is not None:
+                argname += ': ' + annotation.name
+            values.append(argname)
+
             if defaults is not None and i >= default_offset:
                 if defaults[i-default_offset] is not None:
                     values[-1] += '=' + defaults[i-default_offset].as_string()

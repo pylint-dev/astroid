@@ -268,8 +268,11 @@ class AsStringVisitor(object):
         """return an astroid.Function node as string"""
         decorate = node.decorators and node.decorators.accept(self)  or ''
         docs = node.doc and '\n%s"""%s"""' % (INDENT, node.doc) or ''
-        return '\n%sdef %s(%s):%s\n%s' % (decorate, node.name, node.args.accept(self),
-                                          docs, self._stmt_list(node.body))
+        return_annotation = ''
+        if node.returns:
+            return_annotation = ' -> ' + node.returns.name
+        return '\n%sdef %s(%s):%s%s\n%s' % (decorate, node.name, node.args.accept(self),
+                                          return_annotation, docs, self._stmt_list(node.body))
 
     def visit_genexpr(self, node):
         """return an astroid.GenExpr node as string"""
