@@ -214,6 +214,9 @@ Change log for the astroid package (used to be astng)
 
     * Add support for indexing bytes on Python 3.
 
+    * Add support for inferring subscript on instances, which will 
+      use __getitem__. Closes issue #124.
+
 
 2015-03-14 -- 1.3.6
 

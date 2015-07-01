@@ -664,6 +664,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_simple_subscript(self):
         code = '''
+            class A(object):
+                def __getitem__(self, index):
+                    return index + 42
             [1, 2, 3][0] #@
             (1, 2, 3)[1] #@
             (1, 2, 3)[-1] #@
@@ -673,13 +676,34 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             "first"[0] #@
             list([1, 2, 3])[-1] #@
             tuple((4, 5, 6))[2] #@
+            A()[0] #@
+            A()[-1] #@
         '''
         ast_nodes = test_utils.extract_node(code, __name__)
-        expected = [1, 2, 3, 6, 'value', 'f', 3, 6]
+        expected = [1, 2, 3, 6, 'value', 'f', 3, 6, 42, 41]
         for node, expected_value in zip(ast_nodes, expected):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.Const)
             self.assertEqual(inferred.value, expected_value)
+
+    def test_invalid_subscripts(self):
+        ast_nodes = test_utils.extract_node('''
+        class NoGetitem(object):
+            pass
+        class InvalidGetitem(object):
+            def __getitem__(self): pass
+        class InvalidGetitem2(object):
+            __getitem__ = 42
+        NoGetitem()[4] #@
+        InvalidGetitem()[5] #@
+        InvalidGetitem2()[10] #@
+        [1, 2, 3][None] #@
+        'lala'['bala'] #@        
+        ''')
+        for node in ast_nodes[:3]:
+            self.assertRaises(InferenceError, next, node.infer())
+        for node in ast_nodes[3:]:
+            self.assertEqual(next(node.infer()), YES)
 
     def test_bytes_subscript(self):
         node = test_utils.extract_node('''b'a'[0]''')

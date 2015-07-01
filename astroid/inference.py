@@ -32,7 +32,7 @@ from astroid.exceptions import (
     UnaryOperationError,
     BinaryOperationError,
 )
-from astroid.bases import (YES, Instance, InferenceContext,
+from astroid.bases import (YES, Instance, InferenceContext, BoundMethod,
                            _infer_stmts, copy_context, path_wrapper,
                            raise_if_nothing_infered, yes_if_nothing_infered)
 
@@ -291,7 +291,7 @@ def infer_subscript(self, context=None):
 
         # Prevent inferring if the infered subscript
         # is the same as the original subscripted object.
-        if self is assigned:
+        if self is assigned or assigned is YES:
             yield YES
             return
         for infered in assigned.infer(context):
@@ -710,3 +710,30 @@ nodes.EmptyNode._infer = path_wrapper(infer_empty_node)
 def infer_index(self, context=None):
     return self.value.infer(context)
 nodes.Index._infer = infer_index
+
+# TODO: move directly into bases.Instance when the dependency hell
+# will be solved.
+def instance_getitem(self, index, context=None):
+    # Rewrap index to Const for this case
+    index = nodes.Const(index)
+
+    if context:
+        new_context = context.clone()
+    else:
+        context = new_context = InferenceContext()
+
+    # Create a new callcontext for providing index as an argument.
+    new_context.callcontext = CallContext(
+        args=[index], starargs=None, dstarargs=None)
+    new_context.boundnode = self
+        
+    method = next(self.igetattr('__getitem__', context=context))
+    if not isinstance(method, BoundMethod):
+        raise InferenceError
+
+    try:
+        return next(method.infer_call_result(self, new_context))
+    except StopIteration:
+        raise InferenceError
+
+Instance.getitem = instance_getitem

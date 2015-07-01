@@ -314,6 +314,13 @@ class Instance(Proxy):
                 return True
         return result
 
+    # TODO(cpopa): this is set in inference.py
+    # The circular dependency hell goes deeper and deeper.
+    # pylint: disable=unused-argument
+    def getitem(self, index, context=None):
+        pass
+
+
 
 class UnboundMethod(Proxy):
     """a special node representing a method not bound to an instance"""
