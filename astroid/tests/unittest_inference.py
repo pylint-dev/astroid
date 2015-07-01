@@ -670,9 +670,10 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             [1, 2, 3][0] + (2, )[0] + (3, )[-1] #@
             e = {'key': 'value'}
             e['key'] #@
+            "first"[0] #@
         '''
         ast_nodes = test_utils.extract_node(code, __name__)
-        expected = [1, 2, 3, 6, 'value']
+        expected = [1, 2, 3, 6, 'value', 'f']
         for node, expected_value in zip(ast_nodes, expected):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.Const)
