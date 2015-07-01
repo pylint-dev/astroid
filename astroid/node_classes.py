@@ -18,8 +18,6 @@
 """Module for some node classes. More nodes in scoped_nodes.py
 """
 
-import sys
-
 import six
 from logilab.common.decorators import cachedproperty
 
@@ -31,8 +29,6 @@ from astroid.bases import (NodeNG, Statement, Instance, InferenceContext,
                            _infer_stmts, YES, BUILTINS)
 from astroid.mixins import (BlockRangeMixIn, AssignTypeMixin,
                             ParentAssignTypeMixin, FromImportMixIn)
-
-PY3K = sys.version_info >= (3, 0)
 
 
 def unpack_infer(stmt, context=None):
@@ -273,7 +269,7 @@ class Name(LookupMixIn, NodeNG):
 
 class Arguments(NodeNG, AssignTypeMixin):
     """class representing an Arguments node"""
-    if PY3K:
+    if six.PY3:
         # Python 3.4+ uses a different approach regarding annotations,
         # each argument is a new class, _ast.arg, which exposes an
         # 'annotation' attribute. In astroid though, arguments are exposed
@@ -826,7 +822,7 @@ class Print(Statement):
 class Raise(Statement):
     """class representing a Raise node"""
     exc = None
-    if sys.version_info < (3, 0):
+    if six.PY2:
         _astroid_fields = ('exc', 'inst', 'tback')
         inst = None
         tback = None
@@ -1030,7 +1026,7 @@ CONST_CLS = {
 def _update_const_classes():
     """update constant classes, so the keys of CONST_CLS can be reused"""
     klasses = (bool, int, float, complex, str)
-    if sys.version_info < (3, 0):
+    if six.PY2:
         klasses += (unicode, long)
     klasses += (bytes,)
     for kls in klasses:
