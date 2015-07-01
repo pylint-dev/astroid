@@ -210,6 +210,8 @@ Change log for the astroid package (used to be astng)
     * Star unpacking in assignments returns properly a list,
       not the individual components. Closes issue #138.
 
+    * Add annotation support for function.as_string(). Closes issue #37.
+
 
 2015-03-14 -- 1.3.6
 
