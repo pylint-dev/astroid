@@ -21,7 +21,7 @@ import unittest
 from astroid.node_classes import Assign, Discard, YieldFrom, Name, Const
 from astroid.builder import AstroidBuilder
 from astroid.scoped_nodes import Class, Function
-from astroid.test_utils import require_version
+from astroid.test_utils import require_version, extract_node
 
 
 class Python3TC(unittest.TestCase):
@@ -212,6 +212,18 @@ class Python3TC(unittest.TestCase):
         self.assertIsInstance(func.args.annotations[1], Name)
         self.assertEqual(func.args.annotations[1].name, 'str')
         self.assertIsNone(func.returns)
+
+    @require_version('3.0')
+    def test_annotation_as_string(self):
+        code1 = dedent('''
+        def test(a, b:int=4, c=2, f:'lala'=4)->2:
+            pass''')
+        code2 = dedent('''
+        def test(a:typing.Generic[T], c:typing.Any=24)->typing.Iterable:
+            pass''')
+        for code in (code1, code2):
+            func = extract_node(code)
+            self.assertEqual(func.as_string(), code)
 
 
 if __name__ == '__main__':

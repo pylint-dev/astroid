@@ -25,6 +25,8 @@
 
 import sys
 
+import six
+
 INDENT = '    ' # 4 spaces ; keep indentation variable
 
 
@@ -268,10 +270,18 @@ class AsStringVisitor(object):
         decorate = node.decorators and node.decorators.accept(self)  or ''
         docs = node.doc and '\n%s"""%s"""' % (INDENT, node.doc) or ''
         return_annotation = ''
-        if node.returns:
-            return_annotation = ' -> ' + node.returns.name
-        return '\n%sdef %s(%s):%s%s\n%s' % (decorate, node.name, node.args.accept(self),
-                                          return_annotation, docs, self._stmt_list(node.body))
+        if six.PY3 and node.returns:
+            return_annotation = '->' + node.returns.as_string()
+            trailer = return_annotation + ":"
+        else:
+            trailer = ":"
+        def_format = "\n{decorators}def {name}({args}){trailer}{docs}\n{body}"
+        return def_format.format(decorators=decorate,
+                                 name=node.name,
+                                 args=node.args.accept(self),
+                                 trailer=trailer,
+                                 docs=docs,
+                                 body=self._stmt_list(node.body))
 
     def visit_genexpr(self, node):
         """return an astroid.GenExpr node as string"""

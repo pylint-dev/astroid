@@ -316,7 +316,8 @@ class Arguments(NodeNG, AssignTypeMixin):
         result = []
         if self.args:
             result.append(
-                _format_args(self.args, self.annotations, self.defaults)
+                _format_args(self.args, getattr(self, 'annotations', None),
+                             self.defaults)
             )
         if self.vararg:
             result.append('*%s' % self.vararg)
@@ -384,13 +385,14 @@ def _format_args(args, annotations=None, defaults=None):
         annotations = []
     if defaults is not None:
         default_offset = len(args) - len(defaults)
-    for i, (arg, annotation) in enumerate(zip(args, annotations)):
+    packed = six.moves.zip_longest(args, annotations)
+    for i, (arg, annotation) in enumerate(packed):
         if isinstance(arg, Tuple):
             values.append('(%s)' % _format_args(arg.elts))
         else:
             argname = arg.name
-            if annotation is not None:
-                argname += ': ' + annotation.name
+            if annotation is not None:                
+                argname += ':' + annotation.as_string()
             values.append(argname)
 
             if defaults is not None and i >= default_offset:
