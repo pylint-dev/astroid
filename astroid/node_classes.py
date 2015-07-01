@@ -546,6 +546,11 @@ class Const(NodeNG, Instance):
     def getitem(self, index, context=None):
         if isinstance(self.value, six.string_types):
             return Const(self.value[index])
+        if isinstance(self.value, bytes) and six.PY3:
+            # Bytes aren't instances of six.string_types
+            # on Python 3. Also, indexing them should return
+            # integers.
+            return Const(self.value[index])
         raise TypeError('%r (value=%s)' % (self, self.value))
 
     def has_dynamic_getattr(self):
