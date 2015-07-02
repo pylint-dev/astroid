@@ -85,8 +85,7 @@ except DistutilsPlatformError:
 
 EXT_LIB_DIR = get_python_lib()
 IS_JYTHON = platform.python_implementation() == 'Jython'
-BUILTIN_MODULES = dict(zip(sys.builtin_module_names,
-                           [1]*len(sys.builtin_module_names)))
+BUILTIN_MODULES = dict.fromkeys(sys.builtin_module_names, True)
 
 
 class NoSourceFile(Exception):
@@ -127,7 +126,7 @@ def _cache_normalize_path(path):
         result = _NORM_PATH_CACHE[path] = _normalize_path(path)
         return result
 
-def load_module_from_name(dotted_name, path=None, use_sys=1):
+def load_module_from_name(dotted_name, path=None, use_sys=True):
     """Load a Python module from its name.
 
     :type dotted_name: str
@@ -199,14 +198,16 @@ def load_module_from_modpath(parts, path=None, use_sys=1):
         if prevmodule:
             setattr(prevmodule, part, module)
         _file = getattr(module, '__file__', '')
+        prevmodule = module
+        if not _file and _is_namespace(curname):
+            continue
         if not _file and len(modpath) != len(parts):
             raise ImportError('no module in %s' % '.'.join(parts[len(modpath):]))
-        path = [os.path.dirname(_file)]
-        prevmodule = module
+        path = [os.path.dirname(_file)]        
     return module
 
 
-def load_module_from_file(filepath, path=None, use_sys=1, extrapath=None):
+def load_module_from_file(filepath, path=None, use_sys=True, extrapath=None):
     """Load a Python module from it's path.
 
     :type filepath: str
@@ -234,9 +235,11 @@ def load_module_from_file(filepath, path=None, use_sys=1, extrapath=None):
 
 def _check_init(path, mod_path):
     """check there are some __init__.py all along the way"""
+    modpath = []
     for part in mod_path:
+        modpath.append(part)
         path = os.path.join(path, part)
-        if not _has_init(path):
+        if not _is_namespace('.'.join(modpath)) and not _has_init(path):
             return False
     return True
 
@@ -482,7 +485,8 @@ def is_standard_module(modname, std_path=None):
     # modules which are not living in a file are considered standard
     # (sys and __builtin__ for instance)
     if filename is None:
-        return True
+        # we assume there are no namespaces in stdlib
+        return not _is_namespace(modname)        
     filename = _normalize_path(filename)
     if filename.startswith(_cache_normalize_path(EXT_LIB_DIR)):
         return False
@@ -567,6 +571,16 @@ def _search_zip(modpath, pic):
                         filepath)
     raise ImportError('No module named %s' % '.'.join(modpath))
 
+try:
+    import pkg_resources
+except ImportError:
+    pkg_resources = None
+
+
+def _is_namespace(modname):
+    return (pkg_resources is not None
+            and modname in pkg_resources._namespace_packages)
+
 
 def _module_file(modpath, path=None):
     """get a module type / file path
@@ -599,14 +613,13 @@ def _module_file(modpath, path=None):
     except AttributeError:
         checkeggs = False
     # pkg_resources support (aka setuptools namespace packages)
-    if (pkg_resources is not None
-            and modpath[0] in pkg_resources._namespace_packages
-            and modpath[0] in sys.modules
-            and len(modpath) > 1):
+    if (_is_namespace(modpath[0]) and modpath[0] in sys.modules):
         # setuptools has added into sys.modules a module object with proper
         # __path__, get back information from there
         module = sys.modules[modpath.pop(0)]
         path = module.__path__
+        if not modpath:
+            return imp.C_BUILTIN, None
     imported = []
     while modpath:
         modname = modpath[0]
@@ -659,7 +672,11 @@ def _module_file(modpath, path=None):
             except IOError:
                 path = [mp_filename]
             else:
-                if b'pkgutil' in data and b'extend_path' in data:
+                extend_path = b'pkgutil' in data and b'extend_path' in data
+                declare_namespace = (
+                    b"pkg_resources" in data
+                    and b"declare_namespace(__name__)" in data)
+                if extend_path or declare_namespace:
                     # extend_path is called, search sys.path for module/packages
                     # of this name see pkgutil.extend_path documentation
                     path = [os.path.join(p, *imported) for p in sys.path
