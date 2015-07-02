@@ -2644,6 +2644,20 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             inferred = next(rest.infer())
             self.assertEqual(inferred, YES)
 
+    def test_special_method_masquerading_as_another(self):
+        ast_node = test_utils.extract_node('''
+        class Info(object):
+            def __add__(self, other):
+                return "lala"
+            __or__ = __add__
+
+        f = Info()
+        f | Info() #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, "lala")
+
 
 class GetattrTest(unittest.TestCase):
 

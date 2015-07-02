@@ -429,7 +429,8 @@ def _is_not_implemented(const):
 def  _invoke_binop_inference(instance, op, other, context, method_name):
     """Invoke binary operation inference on the given instance."""
     method = instance.getattr(method_name)[0]
-    return instance.infer_binary_op(op, other, context, method)
+    inferred = next(method.infer(context=context))
+    return instance.infer_binary_op(op, other, context, inferred)
 
 def _aug_op(instance, op, other, context, reverse=False):
     """Get an inference callable for an augmented binary operation."""
