@@ -203,7 +203,7 @@ def load_module_from_modpath(parts, path=None, use_sys=1):
             continue
         if not _file and len(modpath) != len(parts):
             raise ImportError('no module in %s' % '.'.join(parts[len(modpath):]))
-        path = [os.path.dirname(_file)]        
+        path = [os.path.dirname(_file)]
     return module
 
 
@@ -486,7 +486,7 @@ def is_standard_module(modname, std_path=None):
     # (sys and __builtin__ for instance)
     if filename is None:
         # we assume there are no namespaces in stdlib
-        return not _is_namespace(modname)        
+        return not _is_namespace(modname)
     filename = _normalize_path(filename)
     if filename.startswith(_cache_normalize_path(EXT_LIB_DIR)):
         return False
@@ -613,7 +613,7 @@ def _module_file(modpath, path=None):
     except AttributeError:
         checkeggs = False
     # pkg_resources support (aka setuptools namespace packages)
-    if (_is_namespace(modpath[0]) and modpath[0] in sys.modules):
+    if _is_namespace(modpath[0]) and modpath[0] in sys.modules:
         # setuptools has added into sys.modules a module object with proper
         # __path__, get back information from there
         module = sys.modules[modpath.pop(0)]
