@@ -397,8 +397,9 @@ def _infer_unaryop(self, context=None):
 
                 try:
                     meth = operand.getattr(meth, context=context)[0]
-                    result = next(meth.infer_call_result(self, context=context),
-                                  None)
+                    inferred = next(meth.infer(context=context))
+                    call_results = inferred.infer_call_result(self, context=context)
+                    result = next(call_results, None)
                     if result is None:
                         # Failed to infer, return the same type.
                         yield operand
