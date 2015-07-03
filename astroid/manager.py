@@ -26,30 +26,12 @@ __docformat__ = "restructuredtext en"
 import collections
 import imp
 import os
-from os.path import dirname, join, isdir, exists
-from warnings import warn
+import warnings
 import zipimport
-
-from logilab.common.configuration import OptionsProviderMixIn
 
 from astroid.exceptions import AstroidBuildingException
 from astroid import modutils
 
-
-def astroid_wrapper(func, modname):
-    """wrapper to give to AstroidManager.project_from_files"""
-    print('parsing %s...' % modname)
-    try:
-        return func(modname)
-    except AstroidBuildingException as exc:
-        print(exc)
-    except Exception as exc: # pylint: disable=broad-except
-        import traceback
-        traceback.print_exc()
-
-def _silent_no_wrap(func, modname):
-    """silent wrapper that doesn't do anything; can be used for tests"""
-    return func(modname)
 
 def safe_repr(obj):
     try:
@@ -58,8 +40,7 @@ def safe_repr(obj):
         return '???'
 
 
-
-class AstroidManager(OptionsProviderMixIn):
+class AstroidManager(object):
     """the astroid manager, responsible to build astroid from files
      or modules.
 
@@ -67,23 +48,11 @@ class AstroidManager(OptionsProviderMixIn):
     """
 
     name = 'astroid loader'
-    options = (("ignore",
-                {'type' : "csv", 'metavar' : "<file>",
-                 'dest' : "black_list", "default" : ('CVS',),
-                 'help' : "add <file> (may be a directory) to the black list\
-. It should be a base name, not a path. You may set this option multiple times\
-."}),
-               ("project",
-                {'default': "No Name", 'type' : 'string', 'short': 'p',
-                 'metavar' : '<project name>',
-                 'help' : 'set the project name.'}),
-              )
     brain = {}
+
     def __init__(self):
         self.__dict__ = AstroidManager.brain
         if not self.__dict__:
-            OptionsProviderMixIn.__init__(self)
-            self.load_defaults()
             # NOTE: cache entries are added by the [re]builder
             self.astroid_cache = {}
             self._mod_file_cache = {}
@@ -137,7 +106,7 @@ class AstroidManager(OptionsProviderMixIn):
             return self._build_stub_module(modname)
         old_cwd = os.getcwd()
         if context_file:
-            os.chdir(dirname(context_file))
+            os.chdir(os.path.dirname(context_file))
         try:
             filepath, mp_type = self.file_from_module_name(modname, context_file)
             if mp_type == modutils.PY_ZIPMODULE:
@@ -231,7 +200,6 @@ class AstroidManager(OptionsProviderMixIn):
         modastroid = self.ast_from_module_name(modname)
         return modastroid.getattr(klass.__name__)[0] # XXX
 
-
     def infer_ast_from_something(self, obj, context=None):
         """infer astroid for the given class"""
         if hasattr(obj, '__class__') and not isinstance(obj, type):
@@ -264,38 +232,6 @@ class AstroidManager(OptionsProviderMixIn):
         else:
             for infered in modastroid.igetattr(name, context):
                 yield infered.instanciate_class()
-
-    def project_from_files(self, files, func_wrapper=astroid_wrapper,
-                           project_name=None, black_list=None):
-        """return a Project from a list of files or modules"""
-        # build the project representation
-        project_name = project_name or self.config.project
-        black_list = black_list or self.config.black_list
-        project = Project(project_name)
-        for something in files:
-            if not exists(something):
-                fpath = modutils.file_from_modpath(something.split('.'))
-            elif isdir(something):
-                fpath = join(something, '__init__.py')
-            else:
-                fpath = something
-            astroid = func_wrapper(self.ast_from_file, fpath)
-            if astroid is None:
-                continue
-            # XXX why is first file defining the project.path ?
-            project.path = project.path or astroid.file
-            project.add_module(astroid)
-            base_name = astroid.name
-            # recurse in package except if __init__ was explicitly given
-            if astroid.package and something.find('__init__') == -1:
-                # recurse on others packages / modules if this is a package
-                for fpath in modutils.get_module_files(dirname(astroid.file),
-                                                       black_list):
-                    astroid = func_wrapper(self.ast_from_file, fpath)
-                    if astroid is None or astroid.name == base_name:
-                        continue
-                    project.add_module(astroid)
-        return project
 
     def register_transform(self, node_class, transform, predicate=None):
         """Register `transform(node)` function to be applied on the given
@@ -341,7 +277,7 @@ class AstroidManager(OptionsProviderMixIn):
                     if node is not orig_node:
                         # node has already be modified by some previous
                         # transformation, warn about it
-                        warn('node %s substituted multiple times' % node)
+                        warnings.warn('node %s substituted multiple times' % node)
                     node = ret
         return node
 
@@ -359,33 +295,3 @@ class AstroidManager(OptionsProviderMixIn):
         import astroid.raw_building
         astroid.raw_building._astroid_bootstrapping(
             astroid_builtin=astroid_builtin)
-
-
-class Project(object):
-    """a project handle a set of modules / packages"""
-    def __init__(self, name=''):
-        self.name = name
-        self.path = None
-        self.modules = []
-        self.locals = {}
-        self.__getitem__ = self.locals.__getitem__
-        self.__iter__ = self.locals.__iter__
-        self.values = self.locals.values
-        self.keys = self.locals.keys
-        self.items = self.locals.items
-
-    def add_module(self, node):
-        self.locals[node.name] = node
-        self.modules.append(node)
-
-    def get_module(self, name):
-        return self.locals[name]
-
-    def get_children(self):
-        return self.modules
-
-    def __repr__(self):
-        return '<Project %r at %s (%s modules)>' % (self.name, id(self),
-                                                    len(self.modules))
-
-
