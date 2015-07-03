@@ -191,51 +191,61 @@ def subprocess_transform():
     if PY3K:
         communicate = (bytes('string', 'ascii'), bytes('string', 'ascii'))
         init = """
-    def __init__(self, args, bufsize=0, executable=None,
-                 stdin=None, stdout=None, stderr=None,
-                 preexec_fn=None, close_fds=False, shell=False,
-                 cwd=None, env=None, universal_newlines=False,
-                 startupinfo=None, creationflags=0, restore_signals=True,
-                 start_new_session=False, pass_fds=()):
-        pass
+        def __init__(self, args, bufsize=0, executable=None,
+                     stdin=None, stdout=None, stderr=None,
+                     preexec_fn=None, close_fds=False, shell=False,
+                     cwd=None, env=None, universal_newlines=False,
+                     startupinfo=None, creationflags=0, restore_signals=True,
+                     start_new_session=False, pass_fds=()):
+            pass
         """
     else:
         communicate = ('string', 'string')
         init = """
-    def __init__(self, args, bufsize=0, executable=None,
-                 stdin=None, stdout=None, stderr=None,
-                 preexec_fn=None, close_fds=False, shell=False,
-                 cwd=None, env=None, universal_newlines=False,
-                 startupinfo=None, creationflags=0):
-        pass
+        def __init__(self, args, bufsize=0, executable=None,
+                     stdin=None, stdout=None, stderr=None,
+                     preexec_fn=None, close_fds=False, shell=False,
+                     cwd=None, env=None, universal_newlines=False,
+                     startupinfo=None, creationflags=0):
+            pass
         """
     if PY33:
         wait_signature = 'def wait(self, timeout=None)'
     else:
         wait_signature = 'def wait(self)'
-    return AstroidBuilder(MANAGER).string_build('''
+    if PY3K:
+        ctx_manager = '''
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+        '''
+    else:
+        ctx_manager = ''
+    code = dedent('''
 
-class Popen(object):
-    returncode = pid = 0
-    stdin = stdout = stderr = file()
+    class Popen(object):
+        returncode = pid = 0
+        stdin = stdout = stderr = file()
 
-    %(init)s
+        %(init)s
 
-    def communicate(self, input=None):
-        return %(communicate)r
-    %(wait_signature)s:
-        return self.returncode
-    def poll(self):
-        return self.returncode
-    def send_signal(self, signal):
-        pass
-    def terminate(self):
-        pass
-    def kill(self):
-        pass
-   ''' % {'init': init,
-          'communicate': communicate,
-          'wait_signature': wait_signature})
+        def communicate(self, input=None):
+            return %(communicate)r
+        %(wait_signature)s:
+            return self.returncode
+        def poll(self):
+            return self.returncode
+        def send_signal(self, signal):
+            pass
+        def terminate(self):
+            pass
+        def kill(self):
+            pass
+        %(ctx_manager)s
+       ''' % {'init': init,
+              'communicate': communicate,
+              'wait_signature': wait_signature,
+              'ctx_manager': ctx_manager})
+    return AstroidBuilder(MANAGER).string_build(code)
 
 
 # namedtuple support ###########################################################
