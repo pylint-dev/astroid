@@ -496,6 +496,17 @@ class SuperTests(unittest.TestCase):
         with self.assertRaises(exceptions.SuperArgumentTypeError):
             inferred.super_mro()
 
+    def test_super_pytype_display_type_name(self):
+        node = test_utils.extract_node('''
+        class A(object):
+            def __init__(self):
+                super(A, self) #@
+        ''')
+        inferred = next(node.infer())
+        self.assertEqual(inferred.pytype(), "%s.super" % bases.BUILTINS)
+        self.assertEqual(inferred.display_type(), 'Super of')
+        self.assertEqual(inferred.name, 'A')
+
 
 if __name__ == '__main__':
     unittest.main()
