@@ -271,11 +271,8 @@ class %(name)s(tuple):
     @classmethod
     def _make(cls, iterable, new=tuple.__new__, len=len):
         return new(cls, iterable)
-    def _replace(_self, **kwds):
-        result = _self._make(map(kwds.pop, %(fields)r, _self))
-        if kwds:
-            raise ValueError('Got unexpected field names: %%r' %% list(kwds))
-        return result
+    def _replace(self, **kwds):
+        return self
     ''' % {'name': name, 'fields': attributes})
     class_node.locals['_asdict'] = fake.body[0].locals['_asdict']
     class_node.locals['_make'] = fake.body[0].locals['_make']

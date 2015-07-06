@@ -122,6 +122,8 @@ class NamedTupleTest(unittest.TestCase):
         self.assertEqual(len(instance.getattr('port')), 1)
         with self.assertRaises(astroid.NotFoundError):
             instance.getattr('foo')
+        self.assertEqual(len(instance.getattr('geturl')), 1)
+        self.assertEqual(instance.name, 'ParseResult')
 
     def test_namedtuple_instance_attrs(self):
         result = test_utils.extract_node('''
