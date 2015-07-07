@@ -1049,6 +1049,30 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(
             'type', klass.metaclass().name)
 
+    def test_using_six_add_metaclass(self):
+        klass = test_utils.extract_node('''
+        import six
+        import abc
+
+        @six.add_metaclass(abc.ABCMeta)
+        class WithMeta(object):
+            pass
+        ''')
+        inferred = next(klass.infer())
+        metaclass = inferred.metaclass()
+        self.assertIsInstance(metaclass, scoped_nodes.Class)
+        self.assertEqual(metaclass.qname(), 'abc.ABCMeta')
+
+    def test_using_invalid_six_add_metaclass_call(self):
+        klass = test_utils.extract_node('''
+        import six
+        @six.add_metaclass()
+        class Invalid(object):
+            pass
+        ''')
+        inferred = next(klass.infer())
+        self.assertIsNone(inferred.metaclass())
+
     def test_nonregr_infer_callresult(self):
         astroid = test_utils.build_module("""
             class Delegate(object):
