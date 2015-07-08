@@ -77,7 +77,7 @@ def infer_func_form(node, base_type, context=None, enum=False):
     except (AttributeError, exceptions.InferenceError):
         raise UseInferenceDefault()
     # we want to return a Class node instance with proper attributes set
-    class_node = nodes.Class(name, 'docstring')
+    class_node = nodes.ClassDef(name, 'docstring')
     class_node.parent = node.parent
     # set base class=tuple
     class_node.bases.append(base_type)
@@ -242,7 +242,7 @@ class Popen(object):
 
 def looks_like_namedtuple(node):
     func = node.func
-    if isinstance(func, nodes.Getattr):
+    if isinstance(func, nodes.Attribute):
         return func.attrname == 'namedtuple'
     if isinstance(func, nodes.Name):
         return func.name == 'namedtuple'
@@ -275,7 +275,7 @@ class %(name)s(tuple):
 
 def infer_enum(node, context=None):
     """ Specific inference function for enum CallFunc node. """
-    enum_meta = nodes.Class("EnumMeta", 'docstring')
+    enum_meta = nodes.ClassDef("EnumMeta", 'docstring')
     class_node = infer_func_form(node, enum_meta,
                                  context=context, enum=True)[0]
     return iter([class_node.instanciate_class()])
@@ -292,7 +292,7 @@ def infer_enum_class(node):
             # Skip if the class is directly from enum module.
             break
         for local, values in node.locals.items():
-            if any(not isinstance(value, nodes.AssName)
+            if any(not isinstance(value, nodes.AssignName)
                    for value in values):
                 continue
 
@@ -353,7 +353,7 @@ def multiprocessing_transform():
                 continue
 
             value = value[0]
-            if isinstance(value, nodes.Function):
+            if isinstance(value, nodes.FunctionDef):
                 # We need to rebound this, since otherwise
                 # it will have an extra argument (self).
                 value = BoundMethod(value, node)
@@ -404,11 +404,11 @@ def multiprocessing_managers_transform():
     '''))
 
 
-MANAGER.register_transform(nodes.CallFunc, inference_tip(infer_named_tuple),
+MANAGER.register_transform(nodes.Call, inference_tip(infer_named_tuple),
                            looks_like_namedtuple)
-MANAGER.register_transform(nodes.CallFunc, inference_tip(infer_enum),
+MANAGER.register_transform(nodes.Call, inference_tip(infer_enum),
                            AsStringRegexpPredicate('Enum', 'func'))
-MANAGER.register_transform(nodes.Class, infer_enum_class)
+MANAGER.register_transform(nodes.ClassDef, infer_enum_class)
 register_module_extender(MANAGER, 'hashlib', hashlib_transform)
 register_module_extender(MANAGER, 'collections', collections_transform)
 register_module_extender(MANAGER, 'pkg_resources', pkg_resources_transform)

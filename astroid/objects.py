@@ -39,12 +39,25 @@ from astroid.exceptions import (
     NotFoundError, MroError
 )
 from astroid.node_classes import const_factory
-from astroid.scoped_nodes import Class, Function
+from astroid.scoped_nodes import ClassDef, FunctionDef
 from astroid.mixins import ParentAssignTypeMixin
 
 
 class FrozenSet(NodeNG, Instance, ParentAssignTypeMixin):
     """class representing a FrozenSet composite node"""
+    _astroid_fields = ('elts',)
+
+    def postinit(self, elts=None):
+        self.elts = elts
+
+    @classmethod
+    def from_constants(cls, elts=None):
+        node = cls()
+        if elts is None:
+            node.elts = []
+        else:
+            node.elts = [const_factory(e) for e in elts]
+        return node
 
     def __init__(self, elts=None):
         if elts is None:
@@ -101,16 +114,16 @@ class Super(NodeNG):
 
     def super_mro(self):
         """Get the MRO which will be used to lookup attributes in this super."""
-        if not isinstance(self.mro_pointer, Class):
+        if not isinstance(self.mro_pointer, ClassDef):
             raise SuperArgumentTypeError("The first super argument must be type.")
 
-        if isinstance(self.type, Class):
+        if isinstance(self.type, ClassDef):
             # `super(type, type)`, most likely in a class method.
             self._class_based = True
             mro_type = self.type
         else:
             mro_type = getattr(self.type, '_proxied', None)
-            if not isinstance(mro_type, (Instance, Class)):
+            if not isinstance(mro_type, (Instance, ClassDef)):
                 raise SuperArgumentTypeError("super(type, obj): obj must be an "
                                              "instance or subtype of type")
 
@@ -162,21 +175,21 @@ class Super(NodeNG):
                 continue
 
             found = True
-            for infered in _infer_stmts([cls[name]], context, frame=self):
-                if not isinstance(infered, Function):
-                    yield infered
+            for inferred in _infer_stmts([cls[name]], context, frame=self):
+                if not isinstance(inferred, FunctionDef):
+                    yield inferred
                     continue
 
                 # We can obtain different descriptors from a super depending
                 # on what we are accessing and where the super call is.
-                if infered.type == 'classmethod':
-                    yield BoundMethod(infered, cls)
-                elif self._scope.type == 'classmethod' and infered.type == 'method':
-                    yield infered
-                elif self._class_based or infered.type == 'staticmethod':
-                    yield infered
+                if inferred.type == 'classmethod':
+                    yield BoundMethod(inferred, cls)
+                elif self._scope.type == 'classmethod' and inferred.type == 'method':
+                    yield inferred
+                elif self._class_based or inferred.type == 'staticmethod':
+                    yield inferred
                 else:
-                    yield BoundMethod(infered, cls)
+                    yield BoundMethod(inferred, cls)
 
         if not found:
             raise NotFoundError(name)

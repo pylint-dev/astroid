@@ -77,7 +77,7 @@ class RawBuildingTC(unittest.TestCase):
                 continue
             node = test_utils.extract_node('{0} #@'.format(name))
             inferred = next(node.infer())
-            self.assertIsInstance(inferred, nodes.Function, name)
+            self.assertIsInstance(inferred, nodes.FunctionDef, name)
             self.assertEqual(inferred.root().name, BUILTINS, name)
 
 

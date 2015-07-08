@@ -123,10 +123,10 @@ class A(gobject.GObject):
         self.assertListEqual([c.name for c in pylinter.ancestors()],
                              expect)
         self.assertTrue(list(Instance(pylinter).getattr('config')))
-        infered = list(Instance(pylinter).igetattr('config'))
-        self.assertEqual(len(infered), 1)
-        self.assertEqual(infered[0].root().name, 'optparse')
-        self.assertEqual(infered[0].name, 'Values')
+        inferred = list(Instance(pylinter).igetattr('config'))
+        self.assertEqual(len(inferred), 1)
+        self.assertEqual(inferred[0].root().name, 'optparse')
+        self.assertEqual(inferred[0].name, 'Values')
 
     def test_numpy_crash(self):
         """test don't crash on numpy"""
@@ -144,8 +144,8 @@ multiply(1, 2, 3)
 """
         astroid = builder.string_build(data, __name__, __file__)
         callfunc = astroid.body[1].value.func
-        infered = callfunc.infered()
-        self.assertEqual(len(infered), 1)
+        inferred = callfunc.inferred()
+        self.assertEqual(len(inferred), 1)
 
     @require_version('3.0')
     def test_nameconstant(self):
@@ -166,7 +166,7 @@ with open('a.txt') as stream, open('b.txt'):
         astroid = builder.string_build(data, __name__, __file__)
         # Used to crash due to the fact that the second
         # context manager didn't use an assignment name.
-        list(astroid.nodes_of_class(nodes.CallFunc))[-1].infered()
+        list(astroid.nodes_of_class(nodes.Call))[-1].inferred()
 
     def test_recursion_regression_issue25(self):
         builder = AstroidBuilder()
@@ -184,7 +184,7 @@ def run():
         astroid = builder.string_build(data, __name__, __file__)
         # Used to crash in _is_metaclass, due to wrong
         # ancestors chain
-        classes = astroid.nodes_of_class(nodes.Class)
+        classes = astroid.nodes_of_class(nodes.ClassDef)
         for klass in classes:
             # triggers the _is_metaclass call
             klass.type # pylint: disable=pointless-statement

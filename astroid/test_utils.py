@@ -14,7 +14,6 @@ _TRANSIENT_FUNCTION = '__'
 # when calling extract_node.
 _STATEMENT_SELECTOR = '#@'
 
-
 def _extract_expressions(node):
     """Find expressions in a call to _TRANSIENT_FUNCTION and extract them.
 
@@ -28,7 +27,7 @@ def _extract_expressions(node):
     :yields: The sequence of wrapped expressions on the modified tree
     expression can be found.
     """
-    if (isinstance(node, nodes.CallFunc)
+    if (isinstance(node, nodes.Call)
             and isinstance(node.func, nodes.Name)
             and node.func.name == _TRANSIENT_FUNCTION):
         real_expr = node.args[0]
@@ -48,6 +47,7 @@ def _extract_expressions(node):
                 setattr(node.parent, name, real_expr)
         yield real_expr
     else:
+        # print(as_string.dump(node))
         for child in node.get_children():
             for result in _extract_expressions(child):
                 yield result
@@ -68,7 +68,7 @@ def _find_statement_by_line(node, line):
       can be found.
     :rtype:  astroid.bases.NodeNG or None
     """
-    if isinstance(node, (nodes.Class, nodes.Function)):
+    if isinstance(node, (nodes.ClassDef, nodes.FunctionDef)):
         # This is an inaccuracy in the AST: the nodes that can be
         # decorated do not carry explicit information on which line
         # the actual definition (class/def), but .fromline seems to
@@ -80,7 +80,12 @@ def _find_statement_by_line(node, line):
     if node_line == line:
         return node
 
+    # print(as_string.dump(node))
     for child in node.get_children():
+        # print(type(child))
+        # if isinstance(child, tuple):
+        #     # print(as_string.dump(node))
+        #     print(node.names)
         result = _find_statement_by_line(child, line)
         if result:
             return result
@@ -142,7 +147,7 @@ def extract_node(code, module_name=''):
     :rtype: astroid.bases.NodeNG, or a list of nodes.
     """
     def _extract(node):
-        if isinstance(node, nodes.Discard):
+        if isinstance(node, nodes.Expr):
             return node.value
         else:
             return node
@@ -154,6 +159,7 @@ def extract_node(code, module_name=''):
 
     tree = build_module(code, module_name=module_name)
     extracted = []
+    # print(as_string.dump(tree))
     if requested_lines:
         for line in requested_lines:
             extracted.append(_find_statement_by_line(tree, line))

@@ -18,9 +18,11 @@
 
 """
 This module contains the classes for "scoped" node, i.e. which are opening a
-new local scope in the language definition : Module, Class, Function (and
-Lambda, GenExpr, DictComp and SetComp to some extent).
+new local scope in the language definition : Module, ClassDef, FunctionDef (and
+Lambda, GeneratorExp, DictComp and SetComp to some extent).
 """
+
+from __future__ import print_function
 
 import functools
 import io
@@ -98,7 +100,7 @@ def remove_nodes(cls):
 
 
 def function_to_method(n, klass):
-    if isinstance(n, Function):
+    if isinstance(n, FunctionDef):
         if n.type == 'classmethod':
             return bases.BoundMethod(n, klass)
         if n.type != 'staticmethod':
@@ -136,10 +138,10 @@ def builtin_lookup(name):
     return builtin_astroid, stmts
 
 
-# TODO move this Mixin to mixins.py; problem: 'Function' in _scope_lookup
+# TODO move this Mixin to mixins.py; problem: 'FunctionDef' in _scope_lookup
 class LocalsDictNodeNG(node_classes.LookupMixIn, bases.NodeNG):
-    """ this class provides locals handling common to Module, Function
-    and Class nodes, including a dict like interface for direct access
+    """ this class provides locals handling common to Module, FunctionDef
+    and ClassDef nodes, including a dict like interface for direct access
     to locals information
     """
 
@@ -157,13 +159,13 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, bases.NodeNG):
         return '%s.%s' % (self.parent.frame().qname(), self.name)
 
     def frame(self):
-        """return the first parent frame node (i.e. Module, Function or Class)
+        """return the first parent frame node (i.e. Module, FunctionDef or ClassDef)
         """
         return self
 
     def scope(self):
         """return the first node defining a new scope (i.e. Module,
-        Function, Class, Lambda but also GenExpr, DictComp and SetComp)
+        FunctionDef, ClassDef, Lambda but also GeneratorExp, DictComp and SetComp)
         """
         return self
 
@@ -232,14 +234,14 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, bases.NodeNG):
 
     def values(self):
         """method from the `dict` interface returning a tuple containing
-        locally defined nodes which are instance of `Function` or `Class`
+        locally defined nodes which are instance of `FunctionDef` or `ClassDef`
         """
         return [self[key] for key in self.keys()]
 
     def items(self):
         """method from the `dict` interface returning a list of tuple
         containing each locally defined name with its associated node,
-        which is an instance of `Function` or `Class`
+        which is an instance of `FunctionDef` or `ClassDef`
         """
         return list(zip(self.keys(), self.values()))
 
@@ -252,7 +254,6 @@ class Module(LocalsDictNodeNG):
     _astroid_fields = ('body',)
 
     fromlineno = 0
-    lineno = 0
 
     # attributes below are set by the builder module or by raw factories
 
@@ -283,13 +284,24 @@ class Module(LocalsDictNodeNG):
     # names of module attributes available through the global scope
     scope_attrs = set(('__name__', '__doc__', '__file__', '__path__'))
 
-    def __init__(self, name, doc, pure_python=True):
+    _other_fields = ('name', 'doc', 'file', 'path', 'package',
+                     'pure_python', 'locals', 'globals', 'future_imports')
+
+    def __init__(self, name, doc, file=None, path=None, package=None,
+                 parent=None, pure_python=True):
         self.name = name
         self.doc = doc
+        self.file = file
+        self.path = path
+        self.package = package
+        self.parent = parent
         self.pure_python = pure_python
         self.locals = self.globals = {}
         self.body = []
         self.future_imports = set()
+
+    def postinit(self, body=None):
+        self.body = body
 
     def _get_stream(self):
         if self.file_bytes is not None:
@@ -398,7 +410,7 @@ class Module(LocalsDictNodeNG):
         @decorators_mod.cachedproperty
         def _absolute_import_activated(self):
             for stmt in self.locals.get('absolute_import', ()):
-                if isinstance(stmt, node_classes.From) and stmt.modname == '__future__':
+                if isinstance(stmt, node_classes.ImportFrom) and stmt.modname == '__future__':
                     return True
             return False
     else:
@@ -482,7 +494,7 @@ class Module(LocalsDictNodeNG):
             return default
 
         # Try our best to detect the exported name.
-        infered = []
+        inferred = []
         try:
             explicit = next(explicit.infer())
         except exceptions.InferenceError:
@@ -494,15 +506,15 @@ class Module(LocalsDictNodeNG):
                                   isinstance(node.value, six.string_types))
         for node in explicit.elts:
             if str_const(node):
-                infered.append(node.value)
+                inferred.append(node.value)
             else:
                 try:
-                    infered_node = next(node.infer())
+                    inferred_node = next(node.infer())
                 except exceptions.InferenceError:
                     continue
-                if str_const(infered_node):
-                    infered.append(infered_node.value)
-        return infered
+                if str_const(inferred_node):
+                    inferred.append(inferred_node.value)
+        return inferred
 
     def bool_value(self):
         return True
@@ -515,13 +527,23 @@ class ComprehensionScope(LocalsDictNodeNG):
     scope_lookup = LocalsDictNodeNG._scope_lookup
 
 
-class GenExpr(ComprehensionScope):
+# TODO: lots of code duplication in the comprehensions too.
+class GeneratorExp(ComprehensionScope):
     _astroid_fields = ('elt', 'generators')
+    _other_fields = ('locals',)
+    elt = None
+    generators = None
 
-    def __init__(self):
+    def __init__(self, lineno=None, col_offset=None, parent=None):
         self.locals = {}
-        self.elt = None
-        self.generators = []
+        super(GeneratorExp, self).__init__(lineno, col_offset, parent)
+
+    def postinit(self, elt=None, generators=None):
+        self.elt = elt
+        if generators is None:
+            self.generators = []
+        else:
+            self.generators = generators
 
     def bool_value(self):
         return True
@@ -529,12 +551,22 @@ class GenExpr(ComprehensionScope):
 
 class DictComp(ComprehensionScope):
     _astroid_fields = ('key', 'value', 'generators')
+    _other_fields = ('locals',)
+    key = None
+    value = None
+    generators = None
 
-    def __init__(self):
+    def __init__(self, lineno=None, col_offset=None, parent=None):
         self.locals = {}
-        self.key = None
-        self.value = None
-        self.generators = []
+        super(DictComp, self).__init__(lineno, col_offset, parent)
+
+    def postinit(self, key=None, value=None, generators=None):
+        self.key = key
+        self.value = value
+        if generators is None:
+            self.generators = []
+        else:
+            self.generators = generators
 
     def bool_value(self):
         return bases.YES
@@ -542,11 +574,20 @@ class DictComp(ComprehensionScope):
 
 class SetComp(ComprehensionScope):
     _astroid_fields = ('elt', 'generators')
+    _other_fields = ('locals',)
+    elt = None
+    generators = None
 
-    def __init__(self):
+    def __init__(self, lineno=None, col_offset=None, parent=None):
         self.locals = {}
-        self.elt = None
-        self.generators = []
+        super(SetComp, self).__init__(lineno, col_offset, parent)
+
+    def postinit(self, elt=None, generators=None):
+        self.elt = elt
+        if generators is None:
+            self.generators = []
+        else:
+            self.generators = generators
 
     def bool_value(self):
         return bases.YES
@@ -558,6 +599,10 @@ class _ListComp(bases.NodeNG):
     elt = None
     generators = None
 
+    def postinit(self, elt=None, generators=None):
+        self.elt = elt
+        self.generators = generators
+
     def bool_value(self):
         return bases.YES
 
@@ -565,8 +610,11 @@ class _ListComp(bases.NodeNG):
 if six.PY3:
     class ListComp(_ListComp, ComprehensionScope):
         """class representing a ListComp node"""
-        def __init__(self):
+        _other_fields = ('locals',)
+
+        def __init__(self, lineno=None, col_offset=None, parent=None):
             self.locals = {}
+            super(ListComp, self).__init__(lineno, col_offset, parent)
 else:
     class ListComp(_ListComp):
         """class representing a ListComp node"""
@@ -576,7 +624,7 @@ def _infer_decorator_callchain(node):
     """Detect decorator call chaining and see if the end result is a
     static or a classmethod.
     """
-    if not isinstance(node, Function):
+    if not isinstance(node, FunctionDef):
         return
     if not node.parent:
         return
@@ -589,7 +637,7 @@ def _infer_decorator_callchain(node):
         return
     if isinstance(result, bases.Instance):
         result = result._proxied
-    if isinstance(result, Class):
+    if isinstance(result, ClassDef):
         if result.is_subtype_of('%s.classmethod' % BUILTINS):
             return 'classmethod'
         if result.is_subtype_of('%s.staticmethod' % BUILTINS):
@@ -598,7 +646,7 @@ def _infer_decorator_callchain(node):
 
 def _function_type(self):
     """
-    Function type, possible values are:
+    FunctionDef type, possible values are:
     method, function, staticmethod, classmethod.
     """
     # Can't infer that this node is decorated
@@ -606,7 +654,7 @@ def _function_type(self):
     # so do it here.
     if self.decorators:
         for node in self.decorators.nodes:
-            if isinstance(node, node_classes.CallFunc):
+            if isinstance(node, node_classes.Call):
                 # Handle the following case:
                 # @some_decorator(arg1, arg2)
                 # def func(...)
@@ -620,16 +668,16 @@ def _function_type(self):
                     return _type
 
             try:
-                for infered in node.infer():
+                for inferred in node.infer():
                     # Check to see if this returns a static or a class method.
-                    _type = _infer_decorator_callchain(infered)
+                    _type = _infer_decorator_callchain(inferred)
                     if _type is not None:
                         return _type
 
-                    if not isinstance(infered, Class):
+                    if not isinstance(inferred, ClassDef):
                         continue
-                    for ancestor in infered.ancestors():
-                        if not isinstance(ancestor, Class):
+                    for ancestor in inferred.ancestors():
+                        if not isinstance(ancestor, ClassDef):
                             continue
                         if ancestor.is_subtype_of('%s.classmethod' % BUILTINS):
                             return 'classmethod'
@@ -642,15 +690,21 @@ def _function_type(self):
 
 class Lambda(LocalsDictNodeNG, mixins.FilterStmtsMixin):
     _astroid_fields = ('args', 'body',)
+    _other_fields = ('locals',)
     name = '<lambda>'
 
     # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
     type = 'function'
 
-    def __init__(self):
+    def __init__(self, lineno=None, col_offset=None, parent=None):
         self.locals = {}
         self.args = []
         self.body = []
+        super(Lambda, self).__init__(lineno, col_offset, parent)        
+
+    def postinit(self, args, body):
+        self.args = args
+        self.body = body
 
     def pytype(self):
         if 'method' in self.type:
@@ -660,7 +714,7 @@ class Lambda(LocalsDictNodeNG, mixins.FilterStmtsMixin):
     def display_type(self):
         if 'method' in self.type:
             return 'Method'
-        return 'Function'
+        return 'FunctionDef'
 
     def callable(self):
         return True
@@ -696,28 +750,50 @@ class Lambda(LocalsDictNodeNG, mixins.FilterStmtsMixin):
         return True
 
 
-class Function(bases.Statement, Lambda):
+class FunctionDef(bases.Statement, Lambda):
     if six.PY3:
         _astroid_fields = ('decorators', 'args', 'body', 'returns')
         returns = None
     else:
         _astroid_fields = ('decorators', 'args', 'body')
-
+    # args = None
+    # body = None
+    decorators = None
     special_attributes = set(('__name__', '__doc__', '__dict__'))
     is_function = True
     # attributes below are set by the builder module or by raw factories
     type = decorators_mod.cachedproperty(_function_type)
-    decorators = None
-    _type = "function"
 
-    def __init__(self, name, doc):
-        self.locals = {}
-        self.args = []
-        self.body = []
+    _type = "function"
+    _other_fields = ('locals', 'name', 'doc', '_type', 'decorators')
+
+    def __init__(self, name, doc, lineno=None, col_offset=None, parent=None):
         self.name = name
         self.doc = doc
         self.extra_decorators = []
         self.instance_attrs = {}
+        super(FunctionDef, self).__init__(lineno, col_offset, parent)
+        if parent:
+            frame = parent.frame()
+            if isinstance(frame, ClassDef):
+                if name == '__new__':
+                    self._type = 'classmethod'
+                else:
+                    self._type = 'method'
+            frame.set_local(name, self)
+
+    def postinit(self, args, body, decorators=None, returns=None):
+        self.args = args
+        self.body = body
+        self.decorators = decorators
+        if decorators is not None:
+            for decorator_expr in decorators.nodes:
+                if isinstance(decorator_expr, node_classes.Name):
+                    if decorator_expr.name in ('classmethod', 'staticmethod'):
+                        self._type = decorator_expr.name
+                    elif decorator_expr.name == 'classproperty':
+                        self._type = 'classmethod'
+        self.returns = returns
 
     @decorators_mod.cachedproperty
     def fromlineno(self):
@@ -761,9 +837,9 @@ class Function(bases.Statement, Lambda):
 
     def is_method(self):
         """return true if the function node should be considered as a method"""
-        # check we are defined in a Class, because this is usually expected
+        # check we are defined in a ClassDef, because this is usually expected
         # (e.g. pylint...) when is_method() return True
-        return self.type != 'function' and isinstance(self.parent.frame(), Class)
+        return self.type != 'function' and isinstance(self.parent.frame(), ClassDef)
 
     @decorators_mod.cached
     def decoratornames(self):
@@ -794,10 +870,10 @@ class Function(bases.Statement, Lambda):
         if self.decorators:
             for node in self.decorators.nodes:
                 try:
-                    infered = next(node.infer())
+                    inferred = next(node.infer())
                 except exceptions.InferenceError:
                     continue
-                if infered and infered.qname() in ('abc.abstractproperty',
+                if inferred and inferred.qname() in ('abc.abstractproperty',
                                                    'abc.abstractmethod'):
                     return True
 
@@ -814,7 +890,7 @@ class Function(bases.Statement, Lambda):
         """return true if this is a generator function"""
         yield_nodes = (node_classes.Yield, node_classes.YieldFrom)
         return next(self.nodes_of_class(yield_nodes,
-                                        skip_klass=(Function, Lambda)), False)
+                                        skip_klass=(FunctionDef, Lambda)), False)
 
     def infer_call_result(self, caller, context=None):
         """infer what a function is returning when called"""
@@ -833,8 +909,8 @@ class Function(bases.Statement, Lambda):
                 len(self.args.args) == 1 and
                 self.args.vararg is not None):
             metaclass = next(caller.args[0].infer(context))
-            if isinstance(metaclass, Class):
-                c = Class('temporary_class', None)
+            if isinstance(metaclass, ClassDef):
+                c = ClassDef('temporary_class', None)
                 c.hide = True
                 c.parent = self
                 class_bases = [next(b.infer(context)) for b in caller.args[1:]]
@@ -842,14 +918,14 @@ class Function(bases.Statement, Lambda):
                 c._metaclass = metaclass
                 yield c
                 return
-        returns = self.nodes_of_class(node_classes.Return, skip_klass=Function)
+        returns = self.nodes_of_class(node_classes.Return, skip_klass=FunctionDef)
         for returnnode in returns:
             if returnnode.value is None:
                 yield node_classes.Const(None)
             else:
                 try:
-                    for infered in returnnode.value.infer(context):
-                        yield infered
+                    for inferred in returnnode.value.infer(context):
+                        yield inferred
                 except exceptions.InferenceError:
                     yield bases.YES
 
@@ -892,7 +968,7 @@ def _is_metaclass(klass, seen=None):
                     continue
                 if baseobj is klass:
                     continue
-                if not isinstance(baseobj, Class):
+                if not isinstance(baseobj, ClassDef):
                     continue
                 if baseobj._type == 'metaclass':
                     return True
@@ -904,7 +980,7 @@ def _is_metaclass(klass, seen=None):
 
 
 def _class_type(klass, ancestors=None):
-    """return a Class node type to differ metaclass and exception
+    """return a ClassDef node type to differ metaclass and exception
     from 'regular' classes
     """
     # XXX we have to store ancestors in case we have a ancestor loop
@@ -943,7 +1019,7 @@ def _iface_hdlr(iface_node):
     return True
 
 
-class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
+class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
 
     # some of the attributes below are set by the builder module or
     # by a raw factories
@@ -961,16 +1037,30 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
     type = property(_class_type,
                     doc="class'type, possible values are 'class' | "
                     "'metaclass' | 'exception'")
+    _other_fields = ('locals', 'globals', 'name', 'doc')
 
-    def __init__(self, name, doc):
+    def __init__(self, name, doc, lineno=None, col_offset=None, parent=None):
         self.instance_attrs = {}
         self.locals = {}
         self.bases = []
         self.body = []
         self.name = name
         self.doc = doc
+        super(ClassDef, self).__init__(lineno, col_offset, parent)
+        if parent is not None:
+            parent.frame().set_local(name, self)
+
+    def postinit(self, bases, body, decorators, newstyle=None, metaclass=None):
+        self.bases = bases
+        self.body = body
+        self.decorators = decorators
+        # if newstyle is not None:
+        #     self._newstyle = newstyle
+        if metaclass is not None:
+            self._metaclass = metaclass
 
     def _newstyle_impl(self, context=None):
+        # import pdb; pdb.set_trace()
         if context is None:
             context = bases.InferenceContext()
         if self._newstyle is not None:
@@ -982,7 +1072,7 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
         klass = self._explicit_metaclass()
         # could be any callable, we'd need to infer the result of klass(name,
         # bases, dict).  punt if it's not a class node.
-        if klass is not None and isinstance(klass, Class):
+        if klass is not None and isinstance(klass, ClassDef):
             self._newstyle = klass._newstyle_impl(context)
         if self._newstyle is None:
             self._newstyle = False
@@ -1013,7 +1103,7 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
         return '%s.classobj' % BUILTINS
 
     def display_type(self):
-        return 'Class'
+        return 'ClassDef'
 
     def callable(self):
         return True
@@ -1033,7 +1123,7 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
         else:
             return bases.YES
 
-        result = Class(name, None)
+        result = ClassDef(name, None)
 
         # Get the bases of the class.
         class_bases = next(caller.args[1].infer(context))
@@ -1120,7 +1210,7 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
             with context.restore_path():
                 try:
                     for baseobj in stmt.infer(context):
-                        if not isinstance(baseobj, Class):
+                        if not isinstance(baseobj, ClassDef):
                             if isinstance(baseobj, bases.Instance):
                                 baseobj = baseobj._proxied
                             else:
@@ -1209,7 +1299,7 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
         return values
 
     def instanciate_class(self):
-        """return Instance of Class node, else return self"""
+        """return Instance of ClassDef node, else return self"""
         return bases.Instance(self)
 
     def getattr(self, name, context=None):
@@ -1249,19 +1339,19 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
         context = bases.copy_context(context)
         context.lookupname = name
         try:
-            for infered in bases._infer_stmts(self.getattr(name, context),
+            for inferred in bases._infer_stmts(self.getattr(name, context),
                                               context, frame=self):
                 # yield YES object instead of descriptors when necessary
-                if (not isinstance(infered, node_classes.Const)
-                        and isinstance(infered, bases.Instance)):
+                if (not isinstance(inferred, node_classes.Const)
+                        and isinstance(inferred, bases.Instance)):
                     try:
-                        infered._proxied.getattr('__get__', context)
+                        inferred._proxied.getattr('__get__', context)
                     except exceptions.NotFoundError:
-                        yield infered
+                        yield inferred
                     else:
                         yield bases.YES
                 else:
-                    yield function_to_method(infered, self)
+                    yield function_to_method(inferred, self)
         except exceptions.NotFoundError:
             if not name.startswith('__') and self.has_dynamic_getattr(context):
                 # class handle some dynamic attributes, return a YES object
@@ -1308,7 +1398,7 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
     def mymethods(self):
         """return an iterator on all methods defined in the class"""
         for member in self.values():
-            if isinstance(member, Function):
+            if isinstance(member, FunctionDef):
                 yield member
 
     def interfaces(self, herited=True, handler_func=_iface_hdlr):
@@ -1359,7 +1449,7 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
         for base in self.bases:
             try:
                 for baseobj in base.infer():
-                    if isinstance(baseobj, Class) and baseobj.hide:
+                    if isinstance(baseobj, ClassDef) and baseobj.hide:
                         self._metaclass = baseobj._metaclass
                         self._metaclass_hack = True
                         break
@@ -1390,12 +1480,12 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
             return None
 
         try:
-            infered = next(assignment.infer())
+            inferred = next(assignment.infer())
         except exceptions.InferenceError:
             return
-        if infered is bases.YES: # don't expose this
+        if inferred is bases.YES: # don't expose this
             return None
-        return infered
+        return inferred
 
     def metaclass(self):
         """ Return the metaclass of this class.
@@ -1453,16 +1543,16 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
 
             for elt in values:
                 try:
-                    for infered in elt.infer():
-                        if infered is bases.YES:
+                    for inferred in elt.infer():
+                        if inferred is bases.YES:
                             continue
-                        if (not isinstance(infered, node_classes.Const) or
-                                not isinstance(infered.value,
+                        if (not isinstance(inferred, node_classes.Const) or
+                                not isinstance(inferred.value,
                                                six.string_types)):
                             continue
-                        if not infered.value:
+                        if not inferred.value:
                             continue
-                        yield infered
+                        yield inferred
                 except exceptions.InferenceError:
                     continue
 
@@ -1520,7 +1610,7 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
                 continue
             if isinstance(baseobj, bases.Instance):
                 baseobj = baseobj._proxied
-            if not isinstance(baseobj, Class):
+            if not isinstance(baseobj, ClassDef):
                 continue
             if not baseobj.hide:
                 yield baseobj
@@ -1560,3 +1650,9 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
 
     def bool_value(self):
         return True
+
+
+# Backward-compatibility aliases
+Class = ClassDef
+Function = FunctionDef
+GenExpr = GeneratorExp

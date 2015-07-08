@@ -17,6 +17,9 @@
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 """tests for specific behaviour of astroid nodes
 """
+from __future__ import print_function
+from astroid.as_string import dump
+
 import os
 import sys
 import unittest
@@ -299,7 +302,7 @@ class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_from_self_resolve(self):
         pb = next(self.module.igetattr('pb'))
-        self.assertTrue(isinstance(pb, nodes.Class), pb)
+        self.assertTrue(isinstance(pb, nodes.ClassDef), pb)
         self.assertEqual(pb.root().name, 'logilab.common.shellutils')
         self.assertEqual(pb.qname(), 'logilab.common.shellutils.ProgressBar')
         if pb.newstyle:
@@ -307,7 +310,7 @@ class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
         else:
             self.assertEqual(pb.pytype(), '%s.classobj' % BUILTINS)
         abspath = next(self.module2.igetattr('abspath'))
-        self.assertTrue(isinstance(abspath, nodes.Function), abspath)
+        self.assertTrue(isinstance(abspath, nodes.FunctionDef), abspath)
         self.assertEqual(abspath.root().name, 'os.path')
         self.assertEqual(abspath.qname(), 'os.path.abspath')
         self.assertEqual(abspath.pytype(), '%s.function' % BUILTINS)
@@ -367,7 +370,7 @@ from ..cave import wine\n\n"""
         # and Python 3. In one version, an additional item will
         # be returned, from the _pickle module, which is not
         # present in the other version.
-        self.assertIsInstance(excs[0], nodes.Class)
+        self.assertIsInstance(excs[0], nodes.ClassDef)
         self.assertEqual(excs[0].name, 'PickleError')
         self.assertIs(excs[-1], bases.YES)
 
@@ -396,7 +399,7 @@ class ConstNodeTest(unittest.TestCase):
 
     def _test(self, value):
         node = nodes.const_factory(value)
-        self.assertIsInstance(node._proxied, nodes.Class)
+        self.assertIsInstance(node._proxied, nodes.ClassDef)
         self.assertEqual(node._proxied.name, value.__class__.__name__)
         self.assertIs(node.value, value)
         self.assertTrue(node._proxied.parent)
@@ -439,7 +442,7 @@ class NameNodeTest(unittest.TestCase):
         else:
             ast = test_utils.build_module(code)
             ass_true = ast['True']
-            self.assertIsInstance(ass_true, nodes.AssName)
+            self.assertIsInstance(ass_true, nodes.AssignName)
             self.assertEqual(ass_true.name, "True")
             del_true = ast.body[2].targets[0]
             self.assertIsInstance(del_true, nodes.DelName)
@@ -539,12 +542,12 @@ class BoundMethodNodeTest(unittest.TestCase):
         ''')
         for prop in ('builtin_property', 'abc_property', 'cached_p', 'reified',
                      'lazy_prop', 'lazyprop'):
-            infered = next(ast[prop].infer())
-            self.assertIsInstance(infered, nodes.Const, prop)
-            self.assertEqual(infered.value, 42, prop)
+            inferred = next(ast[prop].infer())
+            self.assertIsInstance(inferred, nodes.Const, prop)
+            self.assertEqual(inferred.value, 42, prop)
 
-        infered = next(ast['not_prop'].infer())
-        self.assertIsInstance(infered, bases.BoundMethod)
+        inferred = next(ast['not_prop'].infer())
+        self.assertIsInstance(inferred, bases.BoundMethod)
 
 
 if __name__ == '__main__':

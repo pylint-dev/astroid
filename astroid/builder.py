@@ -207,21 +207,21 @@ class AstroidBuilder(InspectBuilder):
         """
         try:
             frame = node.frame()
-            for infered in node.expr.infer():
-                if infered is YES:
+            for inferred in node.expr.infer():
+                if inferred is YES:
                     continue
                 try:
-                    if infered.__class__ is Instance:
-                        infered = infered._proxied
-                        iattrs = infered.instance_attrs
-                    elif isinstance(infered, Instance):
+                    if inferred.__class__ is Instance:
+                        inferred = inferred._proxied
+                        iattrs = inferred.instance_attrs
+                    elif isinstance(inferred, Instance):
                         # Const, Tuple, ... we may be wrong, may be not, but
                         # anyway we don't want to pollute builtin's namespace
                         continue
-                    elif infered.is_function:
-                        iattrs = infered.instance_attrs
+                    elif inferred.is_function:
+                        iattrs = inferred.instance_attrs
                     else:
-                        iattrs = infered.locals
+                        iattrs = inferred.locals
                 except AttributeError:
                     # XXX log error
                     #import traceback

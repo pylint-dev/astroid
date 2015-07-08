@@ -92,9 +92,9 @@ class AsStringVisitor(object):
         """return an astroid.Function node as string"""
         return node.format_args()
 
-    def visit_assattr(self, node):
+    def visit_assignattr(self, node):
         """return an astroid.AssAttr node as string"""
-        return self.visit_getattr(node)
+        return self.visit_attribute(node)
 
     def visit_assert(self, node):
         """return an astroid.Assert node as string"""
@@ -103,7 +103,7 @@ class AsStringVisitor(object):
                                       node.fail.accept(self))
         return 'assert %s' % node.test.accept(self)
 
-    def visit_assname(self, node):
+    def visit_assignname(self, node):
         """return an astroid.AssName node as string"""
         return node.name
 
@@ -116,7 +116,7 @@ class AsStringVisitor(object):
         """return an astroid.AugAssign node as string"""
         return '%s %s %s' % (node.target.accept(self), node.op, node.value.accept(self))
 
-    def visit_backquote(self, node):
+    def visit_repr(self, node):
         """return an astroid.Backquote node as string"""
         return '`%s`' % node.value.accept(self)
 
@@ -133,7 +133,7 @@ class AsStringVisitor(object):
         """return an astroid.Break node as string"""
         return 'break'
 
-    def visit_callfunc(self, node):
+    def visit_call(self, node):
         """return an astroid.CallFunc node as string"""
         expr_str = node.func.accept(self)
         args = [arg.accept(self) for arg in node.args]
@@ -143,7 +143,7 @@ class AsStringVisitor(object):
             args.append('**' + node.kwargs.accept(self))
         return '%s(%s)' % (expr_str, ', '.join(args))
 
-    def visit_class(self, node):
+    def visit_classdef(self, node):
         """return an astroid.Class node as string"""
         decorate = node.decorators and node.decorators.accept(self)  or ''
         bases = ', '.join([n.accept(self) for n in node.bases])
@@ -189,7 +189,7 @@ class AsStringVisitor(object):
 
     def visit_delattr(self, node):
         """return an astroid.DelAttr node as string"""
-        return self.visit_getattr(node)
+        return self.visit_attribute(node)
 
     def visit_delname(self, node):
         """return an astroid.DelName node as string"""
@@ -210,7 +210,7 @@ class AsStringVisitor(object):
         return '{%s: %s %s}' % (node.key.accept(self), node.value.accept(self),
                                 ' '.join([n.accept(self) for n in node.generators]))
 
-    def visit_discard(self, node):
+    def visit_expr(self, node):
         """return an astroid.Discard node as string"""
         return node.value.accept(self)
 
@@ -261,12 +261,12 @@ class AsStringVisitor(object):
             fors = '%s\nelse:\n%s' % (fors, self._stmt_list(node.orelse))
         return fors
 
-    def visit_from(self, node):
+    def visit_importfrom(self, node):
         """return an astroid.From node as string"""
         return 'from %s import %s' % ('.' * (node.level or 0) + node.modname,
                                       _import_string(node.names))
 
-    def visit_function(self, node):
+    def visit_functiondef(self, node):
         """return an astroid.Function node as string"""
         decorate = node.decorators and node.decorators.accept(self)  or ''
         docs = node.doc and '\n%s"""%s"""' % (INDENT, node.doc) or ''
@@ -284,12 +284,12 @@ class AsStringVisitor(object):
                                  docs=docs,
                                  body=self._stmt_list(node.body))
 
-    def visit_genexpr(self, node):
+    def visit_generatorexp(self, node):
         """return an astroid.GenExpr node as string"""
         return '(%s %s)' % (node.elt.accept(self),
                             ' '.join([n.accept(self) for n in node.generators]))
 
-    def visit_getattr(self, node):
+    def visit_attribute(self, node):
         """return an astroid.Getattr node as string"""
         return '%s.%s' % (node.expr.accept(self), node.attrname)
 

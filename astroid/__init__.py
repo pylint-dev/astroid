@@ -73,7 +73,7 @@ del AstroidManager
 # transform utilities (filters and decorator)
 
 class AsStringRegexpPredicate(object):
-    """Class to be used as predicate that may be given to `register_transform`
+    """ClassDef to be used as predicate that may be given to `register_transform`
 
     First argument is a regular expression that will be searched against the `as_string`
     representation of the node onto which it's applied.
@@ -102,7 +102,7 @@ def inference_tip(infer_function):
 
     .. sourcecode:: python
 
-       MANAGER.register_transform(CallFunc, inference_tip(infer_named_tuple),
+       MANAGER.register_transform(Call, inference_tip(infer_named_tuple),
                                   predicate)
     """
     def transform(node, infer_function=infer_function):

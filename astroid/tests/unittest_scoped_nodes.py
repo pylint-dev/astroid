@@ -81,20 +81,20 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
 
     def test_getattr(self):
         yo = self.module.getattr('YO')[0]
-        self.assertIsInstance(yo, nodes.Class)
+        self.assertIsInstance(yo, nodes.ClassDef)
         self.assertEqual(yo.name, 'YO')
         red = next(self.module.igetattr('redirect'))
-        self.assertIsInstance(red, nodes.Function)
+        self.assertIsInstance(red, nodes.FunctionDef)
         self.assertEqual(red.name, 'four_args')
         pb = next(self.module.igetattr('pb'))
-        self.assertIsInstance(pb, nodes.Class)
+        self.assertIsInstance(pb, nodes.ClassDef)
         self.assertEqual(pb.name, 'ProgressBar')
         # resolve packageredirection
         mod = resources.build_file('data/appl/myConnection.py',
                                    'data.appl.myConnection')
         ssl = next(mod.igetattr('SSL1'))
         cnx = next(ssl.igetattr('Connection'))
-        self.assertEqual(cnx.__class__, nodes.Class)
+        self.assertEqual(cnx.__class__, nodes.ClassDef)
         self.assertEqual(cnx.name, 'Connection')
         self.assertEqual(cnx.root().name, 'data.SSL1.Connection1')
         self.assertEqual(len(self.nonregr.getattr('enumerate')), 2)
@@ -165,9 +165,9 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         try:
             m = astroid.import_module('', level=1)
             self.assertEqual(m.name, 'package')
-            infered = list(astroid.igetattr('subpackage'))
-            self.assertEqual(len(infered), 1)
-            self.assertEqual(infered[0].name, 'package.subpackage')
+            inferred = list(astroid.igetattr('subpackage'))
+            self.assertEqual(len(inferred), 1)
+            self.assertEqual(inferred[0].name, 'package.subpackage')
         finally:
             del sys.path[0]
 
@@ -179,9 +179,9 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         try:
             m = astroid.import_module('', level=1)
             self.assertEqual(m.name, 'package')
-            infered = list(astroid.igetattr('pouet'))
-            self.assertEqual(len(infered), 1)
-            self.assertEqual(infered[0].name, 'package.subpackage')
+            inferred = list(astroid.igetattr('pouet'))
+            self.assertEqual(len(inferred), 1)
+            self.assertEqual(inferred[0].name, 'package.subpackage')
         finally:
             del sys.path[0]
 
@@ -247,7 +247,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
 
     def test_default_value(self):
         func = self.module2['make_class']
-        self.assertIsInstance(func.args.default_value('base'), nodes.Getattr)
+        self.assertIsInstance(func.args.default_value('base'), nodes.Attribute)
         self.assertRaises(NoDefault, func.args.default_value, 'args')
         self.assertRaises(NoDefault, func.args.default_value, 'kwargs')
         self.assertRaises(NoDefault, func.args.default_value, 'any')
@@ -264,7 +264,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         child = function.args.args[0]
         self.assertIs(l_sibling, child.previous_sibling())
         r_sibling = function.next_sibling()
-        self.assertIsInstance(r_sibling, nodes.Class)
+        self.assertIsInstance(r_sibling, nodes.ClassDef)
         self.assertEqual(r_sibling.name, 'YO')
         self.assertIs(r_sibling, child.next_sibling())
         last = r_sibling.next_sibling().next_sibling().next_sibling()
@@ -396,7 +396,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(astroid['f'].argnames(), ['a', 'b', 'c', 'args', 'kwargs'])
 
     def test_return_nothing(self):
-        """test infered value on a function with empty return"""
+        """test inferred value on a function with empty return"""
         data = '''
             def func():
                 return
@@ -405,7 +405,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         '''
         astroid = test_utils.build_module(data)
         call = astroid.body[1].value
-        func_vals = call.infered()
+        func_vals = call.inferred()
         self.assertEqual(len(func_vals), 1)
         self.assertIsInstance(func_vals[0], nodes.Const)
         self.assertIsNone(func_vals[0].value)
@@ -420,10 +420,10 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
             test()
         """
         astroid = test_utils.build_module(data, 'mod')
-        func = astroid.body[2].value.func.infered()[0]
-        self.assertIsInstance(func, nodes.Function)
+        func = astroid.body[2].value.func.inferred()[0]
+        self.assertIsInstance(func, nodes.FunctionDef)
         self.assertEqual(func.name, 'test')
-        one = func.getattr('bar')[0].infered()[0]
+        one = func.getattr('bar')[0].inferred()[0]
         self.assertIsInstance(one, nodes.Const)
         self.assertEqual(one.value, 1)
 
@@ -590,7 +590,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         ''', __name__)
         self.assertEqual(len(astroid['A'].getattr('__bases__')), 2)
         self.assertIsInstance(astroid['A'].getattr('__bases__')[0], nodes.Tuple)
-        self.assertIsInstance(astroid['A'].getattr('__bases__')[1], nodes.AssAttr)
+        self.assertIsInstance(astroid['A'].getattr('__bases__')[1], nodes.AssignAttr)
 
     def test_instance_special_attributes(self):
         for inst in (Instance(self.module['YO']), nodes.List(), nodes.Const(1)):
@@ -604,10 +604,10 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         klass = self.module['YO']
         self.assertEqual(klass.statement(), klass)
         l_sibling = klass.previous_sibling()
-        self.assertTrue(isinstance(l_sibling, nodes.Function), l_sibling)
+        self.assertTrue(isinstance(l_sibling, nodes.FunctionDef), l_sibling)
         self.assertEqual(l_sibling.name, 'global_access')
         r_sibling = klass.next_sibling()
-        self.assertIsInstance(r_sibling, nodes.Class)
+        self.assertIsInstance(r_sibling, nodes.ClassDef)
         self.assertEqual(r_sibling.name, 'YOUPI')
 
     def test_local_attr_ancestors(self):
@@ -624,13 +624,13 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         klass2 = module['C']
         it = klass2.local_attr_ancestors('__init__')
         anc_klass = next(it)
-        self.assertIsInstance(anc_klass, nodes.Class)
+        self.assertIsInstance(anc_klass, nodes.ClassDef)
         self.assertEqual(anc_klass.name, 'A')
         if sys.version_info[0] == 2:
             self.assertRaises(StopIteration, partial(next, it))
         else:
             anc_klass = next(it)
-            self.assertIsInstance(anc_klass, nodes.Class)
+            self.assertIsInstance(anc_klass, nodes.ClassDef)
             self.assertEqual(anc_klass.name, 'object')
             self.assertRaises(StopIteration, partial(next, it))
 
@@ -641,7 +641,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         klass2 = module['E']
         it = klass2.local_attr_ancestors('__init__')
         anc_klass = next(it)
-        self.assertIsInstance(anc_klass, nodes.Class)
+        self.assertIsInstance(anc_klass, nodes.ClassDef)
         self.assertEqual(anc_klass.name, 'object')
         self.assertRaises(StopIteration, partial(next, it))
 
@@ -656,12 +656,12 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         ''')
         dclass = module['D']
         init = dclass.local_attr('__init__')[0]
-        self.assertIsInstance(init, nodes.Function)
+        self.assertIsInstance(init, nodes.FunctionDef)
         self.assertEqual(init.parent.name, 'B')
 
         cclass = module['C']
         init = cclass.local_attr('__init__')[0]
-        self.assertIsInstance(init, nodes.Function)
+        self.assertIsInstance(init, nodes.FunctionDef)
         self.assertEqual(init.parent.name, 'A')
 
         ancestors = list(dclass.local_attr_ancestors('__init__'))
@@ -671,7 +671,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         klass2 = self.module['YOUPI']
         it = klass2.instance_attr_ancestors('yo')
         anc_klass = next(it)
-        self.assertIsInstance(anc_klass, nodes.Class)
+        self.assertIsInstance(anc_klass, nodes.ClassDef)
         self.assertEqual(anc_klass.name, 'YO')
         self.assertRaises(StopIteration, partial(next, it))
         klass2 = self.module['YOUPI']
@@ -861,7 +861,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             self.assertIsInstance(inferred[0], BoundMethod)
         inferred = list(Instance(cls).igetattr('m4'))
         self.assertEqual(len(inferred), 1)
-        self.assertIsInstance(inferred[0], nodes.Function)
+        self.assertIsInstance(inferred[0], nodes.FunctionDef)
 
     def test_getattr_from_grandpa(self):
         data = '''
@@ -879,7 +879,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         attr = past.getattr('attr')
         self.assertEqual(len(attr), 1)
         attr1 = attr[0]
-        self.assertIsInstance(attr1, nodes.AssName)
+        self.assertIsInstance(attr1, nodes.AssignName)
         self.assertEqual(attr1.name, 'attr')
 
     def test_function_with_decorator_lineno(self):
@@ -908,7 +908,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         """)
         klass = astroid['Test']
         metaclass = klass.metaclass()
-        self.assertIsInstance(metaclass, scoped_nodes.Class)
+        self.assertIsInstance(metaclass, scoped_nodes.ClassDef)
         self.assertEqual(metaclass.name, 'type')
 
     def test_metaclass_error(self):
@@ -929,7 +929,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         klass = astroid['Test']
 
         metaclass = klass.metaclass()
-        self.assertIsInstance(metaclass, scoped_nodes.Class)
+        self.assertIsInstance(metaclass, scoped_nodes.ClassDef)
         self.assertEqual(metaclass.name, 'ABCMeta')
 
     def test_metaclass_yes_leak(self):
@@ -997,7 +997,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         klass = astroid['SubTest']
         self.assertTrue(klass.newstyle)
         metaclass = klass.metaclass()
-        self.assertIsInstance(metaclass, scoped_nodes.Class)
+        self.assertIsInstance(metaclass, scoped_nodes.ClassDef)
         self.assertEqual(metaclass.name, 'ABCMeta')
 
     @test_utils.require_version(maxver='3.0')
@@ -1027,7 +1027,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             for name in names:
                 impl = astroid[name]
                 meta = impl.metaclass()
-                self.assertIsInstance(meta, nodes.Class)
+                self.assertIsInstance(meta, nodes.ClassDef)
                 self.assertEqual(meta.name, metaclass)
 
     def test_metaclass_type(self):
@@ -1310,7 +1310,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         type('A', (object, ), {"a": 1, "b": 2, missing: 3}) #@
         """)
         first = next(classes.infer())
-        self.assertIsInstance(first, nodes.Class)
+        self.assertIsInstance(first, nodes.ClassDef)
         self.assertEqual(first.name, "A")
         self.assertEqual(first.basenames, ["object"])
         self.assertIsInstance(first["a"], nodes.Const)

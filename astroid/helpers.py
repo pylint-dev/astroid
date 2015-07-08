@@ -63,7 +63,7 @@ def _object_type(node, context=None):
     context = context or bases.InferenceContext()
 
     for inferred in node.infer(context=context):
-        if isinstance(inferred, scoped_nodes.Class):
+        if isinstance(inferred, scoped_nodes.ClassDef):
             if inferred.newstyle:
                 metaclass = inferred.metaclass()
                 if metaclass:
@@ -124,7 +124,7 @@ def has_known_bases(klass, context=None):
     for base in klass.bases:
         result = safe_infer(base, context=context)
         # TODO: check for A->B->A->B pattern in class structure too?
-        if (not isinstance(result, scoped_nodes.Class) or
+        if (not isinstance(result, scoped_nodes.ClassDef) or
                 result is klass or
                 not has_known_bases(result, context=context)):
             klass._all_bases_known = False

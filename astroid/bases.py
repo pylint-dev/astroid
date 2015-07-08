@@ -18,6 +18,9 @@
 """This module contains base classes and functions for the nodes and some
 inference utils.
 """
+from __future__ import print_function
+from astroid.as_string import dump
+import pprint
 
 __docformat__ = "restructuredtext en"
 
@@ -79,14 +82,14 @@ class Proxy(object):
 
 
 class InferenceContext(object):
-    __slots__ = ('path', 'lookupname', 'callcontext', 'boundnode', 'infered')
+    __slots__ = ('path', 'lookupname', 'callcontext', 'boundnode', 'inferred')
 
-    def __init__(self, path=None, infered=None):
+    def __init__(self, path=None, inferred=None):
         self.path = path or set()
         self.lookupname = None
         self.callcontext = None
         self.boundnode = None
-        self.infered = infered or {}
+        self.inferred = inferred or {}
 
     def push(self, node):
         name = self.lookupname
@@ -96,7 +99,7 @@ class InferenceContext(object):
 
     def clone(self):
         # XXX copy lookupname/callcontext ?
-        clone = InferenceContext(self.path, infered=self.infered)
+        clone = InferenceContext(self.path, inferred=self.inferred)
         clone.callcontext = self.callcontext
         clone.boundnode = self.boundnode
         return clone
@@ -107,7 +110,7 @@ class InferenceContext(object):
             results.append(result)
             yield result
 
-        self.infered[key] = tuple(results)
+        self.inferred[key] = tuple(results)
         return
 
     @contextmanager
@@ -126,7 +129,7 @@ def copy_context(context):
 def _infer_stmts(stmts, context, frame=None):
     """Return an iterator on statements inferred by each statement in *stmts*."""
     stmt = None
-    infered = False
+    inferred = False
     if context is not None:
         name = context.lookupname
         context = context.clone()
@@ -137,19 +140,19 @@ def _infer_stmts(stmts, context, frame=None):
     for stmt in stmts:
         if stmt is YES:
             yield stmt
-            infered = True
+            inferred = True
             continue
         context.lookupname = stmt._infer_name(frame, name)
         try:
-            for infered in stmt.infer(context=context):
-                yield infered
-                infered = True
+            for inferred in stmt.infer(context=context):
+                yield inferred
+                inferred = True
         except UnresolvableName:
             continue
         except InferenceError:
             yield YES
-            infered = True
-    if not infered:
+            inferred = True
+    if not inferred:
         raise InferenceError(str(stmt))
 
 
@@ -239,8 +242,8 @@ class Instance(Proxy):
         for attr in attrs:
             if isinstance(attr, UnboundMethod):
                 if _is_property(attr):
-                    for infered in attr.infer_call_result(self, context):
-                        yield infered
+                    for inferred in attr.infer_call_result(self, context):
+                        yield inferred
                 else:
                     yield BoundMethod(attr, self)
             elif hasattr(attr, 'name') and attr.name == '<lambda>':
@@ -259,14 +262,14 @@ class Instance(Proxy):
 
     def infer_call_result(self, caller, context=None):
         """infer what a class instance is returning when called"""
-        infered = False
+        inferred = False
         for node in self._proxied.igetattr('__call__', context):
             if node is YES:
                 continue
             for res in node.infer_call_result(caller, context):
-                infered = True
+                inferred = True
                 yield res
-        if not infered:
+        if not inferred:
             raise InferenceError()
 
     def __repr__(self):
@@ -404,6 +407,7 @@ def path_wrapper(func):
     """return the given infer function wrapped to handle the path"""
     def wrapped(node, context=None, _func=func, **kwargs):
         """wrapper function handling context"""
+        # print(dump(node), file=sys.stderr)
         if context is None:
             context = InferenceContext()
         context.push(node)
@@ -419,23 +423,23 @@ def path_wrapper(func):
                 yielded.add(ares)
     return wrapped
 
-def yes_if_nothing_infered(func):
+def yes_if_nothing_inferred(func):
     def wrapper(*args, **kwargs):
-        infered = False
+        inferred = False
         for node in func(*args, **kwargs):
-            infered = True
+            inferred = True
             yield node
-        if not infered:
+        if not inferred:
             yield YES
     return wrapper
 
-def raise_if_nothing_infered(func):
+def raise_if_nothing_inferred(func):
     def wrapper(*args, **kwargs):
-        infered = False
+        inferred = False
         for node in func(*args, **kwargs):
-            infered = True
+            inferred = True
             yield node
-        if not infered:
+        if not inferred:
             raise InferenceError()
     return wrapper
 
@@ -460,13 +464,19 @@ class NodeNG(object):
     # instance specific inference function infer(node, context)
     _explicit_inference = None
 
+    def __init__(self, lineno=None, col_offset=None, parent=None):
+        self.lineno = lineno
+        self.col_offset = col_offset
+        self.parent = parent
+
     def infer(self, context=None, **kwargs):
-        """main interface to the interface system, return a generator on infered
+        """main interface to the interface system, return a generator on inferred
         values.
 
         If the instance has some explicit inference function set, it will be
         called instead of the default interface.
         """
+        # pprint.pprint(vars(context), stream=sys.stderr)
         if self._explicit_inference is not None:
             # explicit_inference is not bound, give it self explicitly
             try:
@@ -480,8 +490,8 @@ class NodeNG(object):
 
         key = (self, context.lookupname,
                context.callcontext, context.boundnode)
-        if key in context.infered:
-            return iter(context.infered[key])
+        if key in context.inferred:
+            return iter(context.inferred[key])
 
         return context.cache_generator(key, self._infer(context, **kwargs))
 
@@ -521,7 +531,7 @@ class NodeNG(object):
             attr = getattr(self, field)
             if not attr: # None or empty listy / tuple
                 continue
-            if attr.__class__ in (list, tuple):
+            if isinstance(attr, (list, tuple)):
                 return attr[-1]
             else:
                 return attr
@@ -689,8 +699,8 @@ class NodeNG(object):
         # this method is overridden by most concrete classes
         raise InferenceError(self.__class__.__name__)
 
-    def infered(self):
-        '''return list of infered values for a more simple inference usage'''
+    def inferred(self):
+        '''return list of inferred values for a more simple inference usage'''
         return list(self.infer())
 
     def instanciate_class(self):

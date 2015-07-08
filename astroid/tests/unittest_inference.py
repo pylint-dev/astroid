@@ -17,6 +17,9 @@
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 """tests for the astroid inference capabilities
 """
+from __future__ import print_function
+from astroid.as_string import dump
+
 import os
 import sys
 from functools import partial
@@ -59,9 +62,9 @@ class InferenceUtilsTest(unittest.TestCase):
 
 
 def _assertInferElts(node_type, self, node, elts):
-    infered = next(node.infer())
-    self.assertIsInstance(infered, node_type)
-    self.assertEqual(sorted(elt.value for elt in infered.elts),
+    inferred = next(node.infer())
+    self.assertIsInstance(inferred, node_type)
+    self.assertEqual(sorted(elt.value for elt in inferred.elts),
                      elts)
 
 def partialmethod(func, arg):
@@ -75,16 +78,16 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
     # additional assertInfer* method for builtin types
 
     def assertInferConst(self, node, expected):
-        infered = next(node.infer())
-        self.assertIsInstance(infered, nodes.Const)
-        self.assertEqual(infered.value, expected)
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, expected)
 
     def assertInferDict(self, node, expected):
-        infered = next(node.infer())
-        self.assertIsInstance(infered, nodes.Dict)
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, nodes.Dict)
 
         elts = set([(key.value, value.value)
-                    for (key, value) in infered.items])
+                    for (key, value) in inferred.items])
         self.assertEqual(sorted(elts), sorted(expected.items()))
 
     assertInferTuple = partialmethod(_assertInferElts, nodes.Tuple)
@@ -142,187 +145,187 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(inferred.value, 42)
 
     def test_module_inference(self):
-        infered = self.ast.infer()
-        obj = next(infered)
+        inferred = self.ast.infer()
+        obj = next(inferred)
         self.assertEqual(obj.name, __name__)
         self.assertEqual(obj.root().name, __name__)
-        self.assertRaises(StopIteration, partial(next, infered))
+        self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_class_inference(self):
-        infered = self.ast['C'].infer()
-        obj = next(infered)
+        inferred = self.ast['C'].infer()
+        obj = next(inferred)
         self.assertEqual(obj.name, 'C')
         self.assertEqual(obj.root().name, __name__)
-        self.assertRaises(StopIteration, partial(next, infered))
+        self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_function_inference(self):
-        infered = self.ast['C']['meth1'].infer()
-        obj = next(infered)
+        inferred = self.ast['C']['meth1'].infer()
+        obj = next(inferred)
         self.assertEqual(obj.name, 'meth1')
         self.assertEqual(obj.root().name, __name__)
-        self.assertRaises(StopIteration, partial(next, infered))
+        self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_builtin_name_inference(self):
-        infered = self.ast['C']['meth1']['var'].infer()
-        var = next(infered)
+        inferred = self.ast['C']['meth1']['var'].infer()
+        var = next(inferred)
         self.assertEqual(var.name, 'object')
         self.assertEqual(var.root().name, BUILTINS)
-        self.assertRaises(StopIteration, partial(next, infered))
+        self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_tupleassign_name_inference(self):
-        infered = self.ast['a'].infer()
-        exc = next(infered)
+        inferred = self.ast['a'].infer()
+        exc = next(inferred)
         self.assertIsInstance(exc, Instance)
         self.assertEqual(exc.name, 'Exception')
         self.assertEqual(exc.root().name, EXC_MODULE)
-        self.assertRaises(StopIteration, partial(next, infered))
-        infered = self.ast['b'].infer()
-        const = next(infered)
+        self.assertRaises(StopIteration, partial(next, inferred))
+        inferred = self.ast['b'].infer()
+        const = next(inferred)
         self.assertIsInstance(const, nodes.Const)
         self.assertEqual(const.value, 1)
-        self.assertRaises(StopIteration, partial(next, infered))
-        infered = self.ast['c'].infer()
-        const = next(infered)
+        self.assertRaises(StopIteration, partial(next, inferred))
+        inferred = self.ast['c'].infer()
+        const = next(inferred)
         self.assertIsInstance(const, nodes.Const)
         self.assertEqual(const.value, "bonjour")
-        self.assertRaises(StopIteration, partial(next, infered))
+        self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_listassign_name_inference(self):
-        infered = self.ast['d'].infer()
-        exc = next(infered)
+        inferred = self.ast['d'].infer()
+        exc = next(inferred)
         self.assertIsInstance(exc, Instance)
         self.assertEqual(exc.name, 'Exception')
         self.assertEqual(exc.root().name, EXC_MODULE)
-        self.assertRaises(StopIteration, partial(next, infered))
-        infered = self.ast['e'].infer()
-        const = next(infered)
+        self.assertRaises(StopIteration, partial(next, inferred))
+        inferred = self.ast['e'].infer()
+        const = next(inferred)
         self.assertIsInstance(const, nodes.Const)
         self.assertEqual(const.value, 1.0)
-        self.assertRaises(StopIteration, partial(next, infered))
-        infered = self.ast['f'].infer()
-        const = next(infered)
+        self.assertRaises(StopIteration, partial(next, inferred))
+        inferred = self.ast['f'].infer()
+        const = next(inferred)
         self.assertIsInstance(const, nodes.Tuple)
-        self.assertRaises(StopIteration, partial(next, infered))
+        self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_advanced_tupleassign_name_inference1(self):
-        infered = self.ast['g'].infer()
-        const = next(infered)
+        inferred = self.ast['g'].infer()
+        const = next(inferred)
         self.assertIsInstance(const, nodes.Const)
         self.assertEqual(const.value, "bonjour")
-        self.assertRaises(StopIteration, partial(next, infered))
-        infered = self.ast['h'].infer()
-        var = next(infered)
+        self.assertRaises(StopIteration, partial(next, inferred))
+        inferred = self.ast['h'].infer()
+        var = next(inferred)
         self.assertEqual(var.name, 'object')
         self.assertEqual(var.root().name, BUILTINS)
-        self.assertRaises(StopIteration, partial(next, infered))
+        self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_advanced_tupleassign_name_inference2(self):
-        infered = self.ast['i'].infer()
-        const = next(infered)
+        inferred = self.ast['i'].infer()
+        const = next(inferred)
         self.assertIsInstance(const, nodes.Const)
         self.assertEqual(const.value, u"glup")
-        self.assertRaises(StopIteration, partial(next, infered))
-        infered = self.ast['j'].infer()
-        const = next(infered)
+        self.assertRaises(StopIteration, partial(next, inferred))
+        inferred = self.ast['j'].infer()
+        const = next(inferred)
         self.assertIsInstance(const, nodes.Const)
         self.assertEqual(const.value, "bonjour")
-        self.assertRaises(StopIteration, partial(next, infered))
-        infered = self.ast['k'].infer()
-        var = next(infered)
+        self.assertRaises(StopIteration, partial(next, inferred))
+        inferred = self.ast['k'].infer()
+        var = next(inferred)
         self.assertEqual(var.name, 'object')
         self.assertEqual(var.root().name, BUILTINS)
-        self.assertRaises(StopIteration, partial(next, infered))
+        self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_swap_assign_inference(self):
-        infered = self.ast.locals['a'][1].infer()
-        const = next(infered)
+        inferred = self.ast.locals['a'][1].infer()
+        const = next(inferred)
         self.assertIsInstance(const, nodes.Const)
         self.assertEqual(const.value, 1)
-        self.assertRaises(StopIteration, partial(next, infered))
-        infered = self.ast.locals['b'][1].infer()
-        exc = next(infered)
+        self.assertRaises(StopIteration, partial(next, inferred))
+        inferred = self.ast.locals['b'][1].infer()
+        exc = next(inferred)
         self.assertIsInstance(exc, Instance)
         self.assertEqual(exc.name, 'Exception')
         self.assertEqual(exc.root().name, EXC_MODULE)
-        self.assertRaises(StopIteration, partial(next, infered))
+        self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_getattr_inference1(self):
-        infered = self.ast['ex'].infer()
-        exc = next(infered)
+        inferred = self.ast['ex'].infer()
+        exc = next(inferred)
         self.assertIsInstance(exc, Instance)
         self.assertEqual(exc.name, 'Exception')
         self.assertEqual(exc.root().name, EXC_MODULE)
-        self.assertRaises(StopIteration, partial(next, infered))
+        self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_getattr_inference2(self):
-        infered = get_node_of_class(self.ast['C']['meth2'], nodes.Getattr).infer()
-        meth1 = next(infered)
+        inferred = get_node_of_class(self.ast['C']['meth2'], nodes.Attribute).infer()
+        meth1 = next(inferred)
         self.assertEqual(meth1.name, 'meth1')
         self.assertEqual(meth1.root().name, __name__)
-        self.assertRaises(StopIteration, partial(next, infered))
+        self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_getattr_inference3(self):
-        infered = self.ast['C']['meth3']['b'].infer()
-        const = next(infered)
+        inferred = self.ast['C']['meth3']['b'].infer()
+        const = next(inferred)
         self.assertIsInstance(const, nodes.Const)
         self.assertEqual(const.value, 4)
-        self.assertRaises(StopIteration, partial(next, infered))
+        self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_getattr_inference4(self):
-        infered = self.ast['C']['meth3']['c'].infer()
-        const = next(infered)
+        inferred = self.ast['C']['meth3']['c'].infer()
+        const = next(inferred)
         self.assertIsInstance(const, nodes.Const)
         self.assertEqual(const.value, "hop")
-        self.assertRaises(StopIteration, partial(next, infered))
+        self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_callfunc_inference(self):
-        infered = self.ast['v'].infer()
-        meth1 = next(infered)
+        inferred = self.ast['v'].infer()
+        meth1 = next(inferred)
         self.assertIsInstance(meth1, Instance)
         self.assertEqual(meth1.name, 'object')
         self.assertEqual(meth1.root().name, BUILTINS)
-        self.assertRaises(StopIteration, partial(next, infered))
+        self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_unbound_method_inference(self):
-        infered = self.ast['m_unbound'].infer()
-        meth1 = next(infered)
+        inferred = self.ast['m_unbound'].infer()
+        meth1 = next(inferred)
         self.assertIsInstance(meth1, UnboundMethod)
         self.assertEqual(meth1.name, 'meth1')
         self.assertEqual(meth1.parent.frame().name, 'C')
-        self.assertRaises(StopIteration, partial(next, infered))
+        self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_bound_method_inference(self):
-        infered = self.ast['m_bound'].infer()
-        meth1 = next(infered)
+        inferred = self.ast['m_bound'].infer()
+        meth1 = next(inferred)
         self.assertIsInstance(meth1, BoundMethod)
         self.assertEqual(meth1.name, 'meth1')
         self.assertEqual(meth1.parent.frame().name, 'C')
-        self.assertRaises(StopIteration, partial(next, infered))
+        self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_args_default_inference1(self):
         optarg = test_utils.get_name_node(self.ast['C']['meth1'], 'optarg')
-        infered = optarg.infer()
-        obj1 = next(infered)
+        inferred = optarg.infer()
+        obj1 = next(inferred)
         self.assertIsInstance(obj1, nodes.Const)
         self.assertEqual(obj1.value, 0)
-        obj1 = next(infered)
+        obj1 = next(inferred)
         self.assertIs(obj1, YES, obj1)
-        self.assertRaises(StopIteration, partial(next, infered))
+        self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_args_default_inference2(self):
-        infered = self.ast['C']['meth3'].ilookup('d')
-        obj1 = next(infered)
+        inferred = self.ast['C']['meth3'].ilookup('d')
+        obj1 = next(inferred)
         self.assertIsInstance(obj1, nodes.Const)
         self.assertEqual(obj1.value, 4)
-        obj1 = next(infered)
+        obj1 = next(inferred)
         self.assertIs(obj1, YES, obj1)
-        self.assertRaises(StopIteration, partial(next, infered))
+        self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_inference_restrictions(self):
-        infered = test_utils.get_name_node(self.ast['C']['meth1'], 'arg1').infer()
-        obj1 = next(infered)
+        inferred = test_utils.get_name_node(self.ast['C']['meth1'], 'arg1').infer()
+        obj1 = next(inferred)
         self.assertIs(obj1, YES, obj1)
-        self.assertRaises(StopIteration, partial(next, infered))
+        self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_ancestors_inference(self):
         code = '''
@@ -364,9 +367,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         '''
         ast = test_utils.build_module(code, __name__)
         a = ast['a']
-        a_infered = a.infered()
-        self.assertEqual(a_infered[0].value, 1)
-        self.assertEqual(len(a_infered), 1)
+        a_inferred = a.inferred()
+        self.assertEqual(a_inferred[0].value, 1)
+        self.assertEqual(len(a_inferred), 1)
 
     def test_exc_ancestors(self):
         code = '''
@@ -374,8 +377,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             raise __(NotImplementedError)
         '''
         error = test_utils.extract_node(code, __name__)
-        nie = error.infered()[0]
-        self.assertIsInstance(nie, nodes.Class)
+        nie = error.inferred()[0]
+        self.assertIsInstance(nie, nodes.ClassDef)
         nie_ancestors = [c.name for c in nie.ancestors()]
         if sys.version_info < (3, 0):
             self.assertEqual(nie_ancestors, ['RuntimeError', 'StandardError', 'Exception', 'BaseException', 'object'])
@@ -425,18 +428,18 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ast = test_utils.build_module(code, __name__)
         n = ast['b']
         n_infer = n.infer()
-        infered = next(n_infer)
-        self.assertIsInstance(infered, nodes.Const)
-        self.assertEqual(infered.value, 1)
+        inferred = next(n_infer)
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 1)
         self.assertRaises(StopIteration, partial(next, n_infer))
         n = ast['c']
         n_infer = n.infer()
         self.assertRaises(InferenceError, partial(next, n_infer))
         n = ast['d']
         n_infer = n.infer()
-        infered = next(n_infer)
-        self.assertIsInstance(infered, nodes.Const)
-        self.assertEqual(infered.value, 2)
+        inferred = next(n_infer)
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 2)
         self.assertRaises(StopIteration, partial(next, n_infer))
 
     def test_builtin_types(self):
@@ -449,56 +452,56 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         '''
         ast = test_utils.build_module(code, __name__)
         n = ast['l']
-        infered = next(n.infer())
-        self.assertIsInstance(infered, nodes.List)
-        self.assertIsInstance(infered, Instance)
-        self.assertEqual(infered.getitem(0).value, 1)
-        self.assertIsInstance(infered._proxied, nodes.Class)
-        self.assertEqual(infered._proxied.name, 'list')
-        self.assertIn('append', infered._proxied.locals)
+        inferred = next(n.infer())
+        self.assertIsInstance(inferred, nodes.List)
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.getitem(0).value, 1)
+        self.assertIsInstance(inferred._proxied, nodes.ClassDef)
+        self.assertEqual(inferred._proxied.name, 'list')
+        self.assertIn('append', inferred._proxied.locals)
         n = ast['t']
-        infered = next(n.infer())
-        self.assertIsInstance(infered, nodes.Tuple)
-        self.assertIsInstance(infered, Instance)
-        self.assertEqual(infered.getitem(0).value, 2)
-        self.assertIsInstance(infered._proxied, nodes.Class)
-        self.assertEqual(infered._proxied.name, 'tuple')
+        inferred = next(n.infer())
+        self.assertIsInstance(inferred, nodes.Tuple)
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.getitem(0).value, 2)
+        self.assertIsInstance(inferred._proxied, nodes.ClassDef)
+        self.assertEqual(inferred._proxied.name, 'tuple')
         n = ast['d']
-        infered = next(n.infer())
-        self.assertIsInstance(infered, nodes.Dict)
-        self.assertIsInstance(infered, Instance)
-        self.assertIsInstance(infered._proxied, nodes.Class)
-        self.assertEqual(infered._proxied.name, 'dict')
-        self.assertIn('get', infered._proxied.locals)
+        inferred = next(n.infer())
+        self.assertIsInstance(inferred, nodes.Dict)
+        self.assertIsInstance(inferred, Instance)
+        self.assertIsInstance(inferred._proxied, nodes.ClassDef)
+        self.assertEqual(inferred._proxied.name, 'dict')
+        self.assertIn('get', inferred._proxied.locals)
         n = ast['s']
-        infered = next(n.infer())
-        self.assertIsInstance(infered, nodes.Const)
-        self.assertIsInstance(infered, Instance)
-        self.assertEqual(infered.name, 'str')
-        self.assertIn('lower', infered._proxied.locals)
+        inferred = next(n.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.name, 'str')
+        self.assertIn('lower', inferred._proxied.locals)
         n = ast['s2']
-        infered = next(n.infer())
-        self.assertEqual(infered.getitem(0).value, '_')
+        inferred = next(n.infer())
+        self.assertEqual(inferred.getitem(0).value, '_')
 
         code = 's = {1}'
         ast = test_utils.build_module(code, __name__)
         n = ast['s']
-        infered = next(n.infer())
-        self.assertIsInstance(infered, nodes.Set)
-        self.assertIsInstance(infered, Instance)
-        self.assertEqual(infered.name, 'set')
-        self.assertIn('remove', infered._proxied.locals)
+        inferred = next(n.infer())
+        self.assertIsInstance(inferred, nodes.Set)
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.name, 'set')
+        self.assertIn('remove', inferred._proxied.locals)
 
     @test_utils.require_version(maxver='3.0')
     def test_unicode_type(self):
         code = '''u = u""'''
         ast = test_utils.build_module(code, __name__)
         n = ast['u']
-        infered = next(n.infer())
-        self.assertIsInstance(infered, nodes.Const)
-        self.assertIsInstance(infered, Instance)
-        self.assertEqual(infered.name, 'unicode')
-        self.assertIn('lower', infered._proxied.locals)
+        inferred = next(n.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.name, 'unicode')
+        self.assertIn('lower', inferred._proxied.locals)
 
     @unittest.expectedFailure
     def test_descriptor_are_callable(self):
@@ -542,7 +545,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         '''
         ast = test_utils.build_module(code, __name__)
         xxx = ast['xxx']
-        self.assertSetEqual({n.__class__ for n in xxx.infered()},
+        self.assertSetEqual({n.__class__ for n in xxx.inferred()},
                             {nodes.Const, YES.__class__})
 
     def test_method_argument(self):
@@ -624,9 +627,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ast = test_utils.build_module(code, __name__)
         self.assertEqual(len(list(ast['process_line'].infer_call_result(None))), 3)
         self.assertEqual(len(list(ast['tupletest'].infer())), 3)
-        values = ['Function(first_word)', 'Function(last_word)', 'Const(NoneType)']
-        self.assertEqual([str(infered)
-                          for infered in ast['fct'].infer()], values)
+        values = ['FunctionDef(first_word)', 'FunctionDef(last_word)', 'Const(NoneType)']
+        self.assertEqual([str(inferred)
+                          for inferred in ast['fct'].infer()], values)
 
     def test_float_complex_ambiguity(self):
         code = '''
@@ -766,24 +769,24 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         # XXX failing since __builtin__.help assignment has
         #     been moved into a function...
         node = test_utils.extract_node(code, __name__)
-        infered = list(node.func.infer())
-        self.assertEqual(len(infered), 1, infered)
-        self.assertIsInstance(infered[0], Instance)
-        self.assertEqual(infered[0].name, "_Helper")
+        inferred = list(node.func.infer())
+        self.assertEqual(len(inferred), 1, inferred)
+        self.assertIsInstance(inferred[0], Instance)
+        self.assertEqual(inferred[0].name, "_Helper")
 
     def test_builtin_open(self):
         code = '''
             open("toto.txt")
         '''
         node = test_utils.extract_node(code, __name__).func
-        infered = list(node.infer())
-        self.assertEqual(len(infered), 1)
+        inferred = list(node.infer())
+        self.assertEqual(len(inferred), 1)
         if hasattr(sys, 'pypy_version_info'):
-            self.assertIsInstance(infered[0], nodes.Class)
-            self.assertEqual(infered[0].name, 'file')
+            self.assertIsInstance(inferred[0], nodes.ClassDef)
+            self.assertEqual(inferred[0].name, 'file')
         else:
-            self.assertIsInstance(infered[0], nodes.Function)
-            self.assertEqual(infered[0].name, 'open')
+            self.assertIsInstance(inferred[0], nodes.FunctionDef)
+            self.assertEqual(inferred[0].name, 'open')
 
     if os.name == 'java':
         test_builtin_open = unittest.expectedFailure(test_builtin_open)
@@ -796,10 +799,10 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             un = mirror(1)
         '''
         ast = test_utils.build_module(code, __name__)
-        infered = list(ast.igetattr('un'))
-        self.assertEqual(len(infered), 1)
-        self.assertIsInstance(infered[0], nodes.Const)
-        self.assertEqual(infered[0].value, 1)
+        inferred = list(ast.igetattr('un'))
+        self.assertEqual(len(inferred), 1)
+        self.assertIsInstance(inferred[0], nodes.Const)
+        self.assertEqual(inferred[0].value, 1)
 
     def test_callfunc_context_lambda(self):
         code = '''
@@ -808,13 +811,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             un = mirror(1)
         '''
         ast = test_utils.build_module(code, __name__)
-        infered = list(ast.igetattr('mirror'))
-        self.assertEqual(len(infered), 1)
-        self.assertIsInstance(infered[0], nodes.Lambda)
-        infered = list(ast.igetattr('un'))
-        self.assertEqual(len(infered), 1)
-        self.assertIsInstance(infered[0], nodes.Const)
-        self.assertEqual(infered[0].value, 1)
+        inferred = list(ast.igetattr('mirror'))
+        self.assertEqual(len(inferred), 1)
+        self.assertIsInstance(inferred[0], nodes.Lambda)
+        inferred = list(ast.igetattr('un'))
+        self.assertEqual(len(inferred), 1)
+        self.assertIsInstance(inferred[0], nodes.Const)
+        self.assertEqual(inferred[0].value, 1)
 
     def test_factory_method(self):
         code = '''
@@ -830,10 +833,10 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             sub = Sub.instance()
         '''
         ast = test_utils.build_module(code, __name__)
-        infered = list(ast.igetattr('sub'))
-        self.assertEqual(len(infered), 1)
-        self.assertIsInstance(infered[0], Instance)
-        self.assertEqual(infered[0]._proxied.name, 'Sub')
+        inferred = list(ast.igetattr('sub'))
+        self.assertEqual(len(inferred), 1)
+        self.assertIsInstance(inferred[0], Instance)
+        self.assertEqual(inferred[0]._proxied.name, 'Sub')
 
 
     def test_import_as(self):
@@ -845,20 +848,20 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             assert e(__file__)
         '''
         ast = test_utils.build_module(code, __name__)
-        infered = list(ast.igetattr('osp'))
-        self.assertEqual(len(infered), 1)
-        self.assertIsInstance(infered[0], nodes.Module)
-        self.assertEqual(infered[0].name, 'os.path')
-        infered = list(ast.igetattr('e'))
-        self.assertEqual(len(infered), 1)
-        self.assertIsInstance(infered[0], nodes.Function)
-        self.assertEqual(infered[0].name, 'exists')
+        inferred = list(ast.igetattr('osp'))
+        self.assertEqual(len(inferred), 1)
+        self.assertIsInstance(inferred[0], nodes.Module)
+        self.assertEqual(inferred[0].name, 'os.path')
+        inferred = list(ast.igetattr('e'))
+        self.assertEqual(len(inferred), 1)
+        self.assertIsInstance(inferred[0], nodes.FunctionDef)
+        self.assertEqual(inferred[0].name, 'exists')
 
-    def _test_const_infered(self, node, value):
-        infered = list(node.infer())
-        self.assertEqual(len(infered), 1)
-        self.assertIsInstance(infered[0], nodes.Const)
-        self.assertEqual(infered[0].value, value)
+    def _test_const_inferred(self, node, value):
+        inferred = list(node.infer())
+        self.assertEqual(len(inferred), 1)
+        self.assertIsInstance(inferred[0], nodes.Const)
+        self.assertEqual(inferred[0].value, value)
 
     def test_unary_not(self):
         for code in ('a = not (1,); b = not ()',
@@ -869,8 +872,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                      'a = not "a"; b = not ""',
                      'a = not b"a"; b = not b""'):
             ast = builder.string_build(code, __name__, __file__)
-            self._test_const_infered(ast['a'], False)
-            self._test_const_infered(ast['b'], True)
+            self._test_const_inferred(ast['a'], False)
+            self._test_const_inferred(ast['b'], True)
 
     def test_unary_op_numbers(self):
         ast_nodes = test_utils.extract_node('''
@@ -899,39 +902,39 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_binary_op_int_add(self):
         ast = builder.string_build('a = 1 + 2', __name__, __file__)
-        self._test_const_infered(ast['a'], 3)
+        self._test_const_inferred(ast['a'], 3)
 
     def test_binary_op_int_sub(self):
         ast = builder.string_build('a = 1 - 2', __name__, __file__)
-        self._test_const_infered(ast['a'], -1)
+        self._test_const_inferred(ast['a'], -1)
 
     def test_binary_op_float_div(self):
         ast = builder.string_build('a = 1 / 2.', __name__, __file__)
-        self._test_const_infered(ast['a'], 1 / 2.)
+        self._test_const_inferred(ast['a'], 1 / 2.)
 
     def test_binary_op_str_mul(self):
         ast = builder.string_build('a = "*" * 40', __name__, __file__)
-        self._test_const_infered(ast['a'], "*" * 40)
+        self._test_const_inferred(ast['a'], "*" * 40)
 
     def test_binary_op_int_bitand(self):
         ast = builder.string_build('a = 23&20', __name__, __file__)
-        self._test_const_infered(ast['a'], 23&20)
+        self._test_const_inferred(ast['a'], 23&20)
 
     def test_binary_op_int_bitor(self):
         ast = builder.string_build('a = 23|8', __name__, __file__)
-        self._test_const_infered(ast['a'], 23|8)
+        self._test_const_inferred(ast['a'], 23|8)
 
     def test_binary_op_int_bitxor(self):
         ast = builder.string_build('a = 23^9', __name__, __file__)
-        self._test_const_infered(ast['a'], 23^9)
+        self._test_const_inferred(ast['a'], 23^9)
 
     def test_binary_op_int_shiftright(self):
         ast = builder.string_build('a = 23 >>1', __name__, __file__)
-        self._test_const_infered(ast['a'], 23>>1)
+        self._test_const_inferred(ast['a'], 23>>1)
 
     def test_binary_op_int_shiftleft(self):
         ast = builder.string_build('a = 23 <<1', __name__, __file__)
-        self._test_const_infered(ast['a'], 23<<1)
+        self._test_const_inferred(ast['a'], 23<<1)
 
     def test_binary_op_other_type(self):
         ast_nodes = test_utils.extract_node('''
@@ -976,31 +979,31 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
     def test_binary_op_list_mul(self):
         for code in ('a = [[]] * 2', 'a = 2 * [[]]'):
             ast = builder.string_build(code, __name__, __file__)
-            infered = list(ast['a'].infer())
-            self.assertEqual(len(infered), 1)
-            self.assertIsInstance(infered[0], nodes.List)
-            self.assertEqual(len(infered[0].elts), 2)
-            self.assertIsInstance(infered[0].elts[0], nodes.List)
-            self.assertIsInstance(infered[0].elts[1], nodes.List)
+            inferred = list(ast['a'].infer())
+            self.assertEqual(len(inferred), 1)
+            self.assertIsInstance(inferred[0], nodes.List)
+            self.assertEqual(len(inferred[0].elts), 2)
+            self.assertIsInstance(inferred[0].elts[0], nodes.List)
+            self.assertIsInstance(inferred[0].elts[1], nodes.List)
 
     def test_binary_op_list_mul_none(self):
         'test correct handling on list multiplied by None'
         ast = builder.string_build('a = [1] * None\nb = [1] * "r"')
-        infered = ast['a'].infered()
-        self.assertEqual(len(infered), 1)
-        self.assertEqual(infered[0], YES)
-        infered = ast['b'].infered()
-        self.assertEqual(len(infered), 1)
-        self.assertEqual(infered[0], YES)
+        inferred = ast['a'].inferred()
+        self.assertEqual(len(inferred), 1)
+        self.assertEqual(inferred[0], YES)
+        inferred = ast['b'].inferred()
+        self.assertEqual(len(inferred), 1)
+        self.assertEqual(inferred[0], YES)
 
     def test_binary_op_tuple_add(self):
         ast = builder.string_build('a = (1,) + (2,)', __name__, __file__)
-        infered = list(ast['a'].infer())
-        self.assertEqual(len(infered), 1)
-        self.assertIsInstance(infered[0], nodes.Tuple)
-        self.assertEqual(len(infered[0].elts), 2)
-        self.assertEqual(infered[0].elts[0].value, 1)
-        self.assertEqual(infered[0].elts[1].value, 2)
+        inferred = list(ast['a'].infer())
+        self.assertEqual(len(inferred), 1)
+        self.assertIsInstance(inferred[0], nodes.Tuple)
+        self.assertEqual(len(inferred[0].elts), 2)
+        self.assertEqual(inferred[0].elts[0].value, 1)
+        self.assertEqual(inferred[0].elts[1].value, 2)
 
     def test_binary_op_custom_class(self):
         code = '''
@@ -1021,9 +1024,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         x = randint(1)
         '''
         ast = test_utils.build_module(code, __name__)
-        infered = list(ast.igetattr('x'))
-        self.assertEqual(len(infered), 2)
-        value = [str(v) for v in infered]
+        inferred = list(ast.igetattr('x'))
+        self.assertEqual(len(inferred), 2)
+        value = [str(v) for v in inferred]
         # The __name__ trick here makes it work when invoked directly
         # (__name__ == '__main__') and through pytest (__name__ ==
         # 'unittest_inference')
@@ -1036,11 +1039,11 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 __(g()).x
 '''
         callfuncnode = test_utils.extract_node(code)
-        infered = list(callfuncnode.infer())
-        self.assertEqual(len(infered), 2, infered)
-        infered.remove(YES)
-        self.assertIsInstance(infered[0], nodes.Const)
-        self.assertIsNone(infered[0].value)
+        inferred = list(callfuncnode.infer())
+        self.assertEqual(len(inferred), 2, inferred)
+        inferred.remove(YES)
+        self.assertIsInstance(inferred[0], nodes.Const)
+        self.assertIsNone(inferred[0].value)
 
     def test_nonregr_getitem_empty_tuple(self):
         code = '''
@@ -1048,9 +1051,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 a = ()[x]
         '''
         ast = test_utils.build_module(code, __name__)
-        infered = list(ast['f'].ilookup('a'))
-        self.assertEqual(len(infered), 1)
-        self.assertEqual(infered[0], YES)
+        inferred = list(ast['f'].ilookup('a'))
+        self.assertEqual(len(inferred), 1)
+        self.assertEqual(inferred[0], YES)
 
     def test_nonregr_instance_attrs(self):
         """non regression for instance_attrs infinite loop : pylint / #4"""
@@ -1075,7 +1078,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(bar_class.instance_attrs['attr']), 1)
         self.assertEqual(bar_class.instance_attrs, {'attr': [assattr]})
         # call 'instance_attr' via 'Instance.getattr' to trigger the bug:
-        instance = bar_self.infered()[0]
+        instance = bar_self.inferred()[0]
         instance.getattr('attr')
         self.assertEqual(len(bar_class.instance_attrs['attr']), 1)
         self.assertEqual(len(foo_class.instance_attrs['attr']), 1)
@@ -1102,24 +1105,24 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         # !! FIXME also this relative import would not work 'in real' (no __init__.py in test/)
         # the test works since we pretend we have a package by passing the full modname
         ast = builder.string_build(data, 'astroid.test.unittest_inference', __file__)
-        infered = next(test_utils.get_name_node(ast, 'date').infer())
-        self.assertIsInstance(infered, nodes.Module)
-        self.assertEqual(infered.name, 'logilab.common.date')
+        inferred = next(test_utils.get_name_node(ast, 'date').infer())
+        self.assertIsInstance(inferred, nodes.Module)
+        self.assertEqual(inferred.name, 'logilab.common.date')
 
     def test_python25_no_relative_import(self):
         ast = resources.build_file('data/package/absimport.py')
         self.assertTrue(ast.absolute_import_activated(), True)
-        infered = next(test_utils.get_name_node(ast, 'import_package_subpackage_module').infer())
+        inferred = next(test_utils.get_name_node(ast, 'import_package_subpackage_module').infer())
         # failed to import since absolute_import is activated
-        self.assertIs(infered, YES)
+        self.assertIs(inferred, YES)
 
     def test_nonregr_absolute_import(self):
         ast = resources.build_file('data/absimp/string.py', 'data.absimp.string')
         self.assertTrue(ast.absolute_import_activated(), True)
-        infered = next(test_utils.get_name_node(ast, 'string').infer())
-        self.assertIsInstance(infered, nodes.Module)
-        self.assertEqual(infered.name, 'string')
-        self.assertIn('ascii_letters', infered.locals)
+        inferred = next(test_utils.get_name_node(ast, 'string').infer())
+        self.assertIsInstance(inferred, nodes.Module)
+        self.assertEqual(inferred.name, 'string')
+        self.assertIn('ascii_letters', inferred.locals)
 
     def test_mechanize_open(self):
         try:
@@ -1133,11 +1136,11 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         '''
         ast = test_utils.build_module(data, __name__)
         browser = next(test_utils.get_name_node(ast, 'Browser').infer())
-        self.assertIsInstance(browser, nodes.Class)
+        self.assertIsInstance(browser, nodes.ClassDef)
         bopen = list(browser.igetattr('open'))
         self.skipTest('the commit said: "huum, see that later"')
         self.assertEqual(len(bopen), 1)
-        self.assertIsInstance(bopen[0], nodes.Function)
+        self.assertIsInstance(bopen[0], nodes.FunctionDef)
         self.assertTrue(bopen[0].callable())
         b = next(test_utils.get_name_node(ast, 'b').infer())
         self.assertIsInstance(b, Instance)
@@ -1166,20 +1169,20 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ast = test_utils.build_module(code, __name__)
         self.assertEqual(ast['SendMailController']['smtp'].decoratornames(),
                          decorators)
-        propinfered = list(ast.body[2].value.infer())
-        self.assertEqual(len(propinfered), 1)
-        propinfered = propinfered[0]
-        self.assertIsInstance(propinfered, Instance)
-        self.assertEqual(propinfered.name, 'SMTP')
-        self.assertEqual(propinfered.root().name, 'smtplib')
+        propinferred = list(ast.body[2].value.infer())
+        self.assertEqual(len(propinferred), 1)
+        propinferred = propinferred[0]
+        self.assertIsInstance(propinferred, Instance)
+        self.assertEqual(propinferred.name, 'SMTP')
+        self.assertEqual(propinferred.root().name, 'smtplib')
         self.assertEqual(ast['SendMailController']['me'].decoratornames(),
                          decorators)
-        propinfered = list(ast.body[3].value.infer())
-        self.assertEqual(len(propinfered), 1)
-        propinfered = propinfered[0]
-        self.assertIsInstance(propinfered, Instance)
-        self.assertEqual(propinfered.name, 'SendMailController')
-        self.assertEqual(propinfered.root().name, __name__)
+        propinferred = list(ast.body[3].value.infer())
+        self.assertEqual(len(propinferred), 1)
+        propinferred = propinferred[0]
+        self.assertIsInstance(propinferred, Instance)
+        self.assertEqual(propinferred.name, 'SendMailController')
+        self.assertEqual(propinferred.root().name, __name__)
 
     def test_im_func_unwrap(self):
         code = '''
@@ -1195,13 +1198,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             '''
         ast = test_utils.build_module(code, __name__)
         pactions = test_utils.get_name_node(ast, 'pactions')
-        infered = list(pactions.infer())
-        self.assertEqual(len(infered), 1)
-        self.assertIsInstance(infered[0], nodes.Function)
+        inferred = list(pactions.infer())
+        self.assertEqual(len(inferred), 1)
+        self.assertIsInstance(inferred[0], nodes.FunctionDef)
         pactions = test_utils.get_name_node(ast['EnvBasedTC2'], 'pactions')
-        infered = list(pactions.infer())
-        self.assertEqual(len(infered), 1)
-        self.assertIsInstance(infered[0], nodes.Function)
+        inferred = list(pactions.infer())
+        self.assertEqual(len(inferred), 1)
+        self.assertIsInstance(inferred[0], nodes.FunctionDef)
 
     def test_augassign(self):
         code = '''
@@ -1210,11 +1213,11 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             print (a)
         '''
         ast = test_utils.build_module(code, __name__)
-        infered = list(test_utils.get_name_node(ast, 'a').infer())
+        inferred = list(test_utils.get_name_node(ast, 'a').infer())
 
-        self.assertEqual(len(infered), 1)
-        self.assertIsInstance(infered[0], nodes.Const)
-        self.assertEqual(infered[0].value, 3)
+        self.assertEqual(len(inferred), 1)
+        self.assertIsInstance(inferred[0], nodes.Const)
+        self.assertEqual(inferred[0].value, 3)
 
     def test_nonregr_func_arg(self):
         code = '''
@@ -1227,9 +1230,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 print (spam)
             '''
         ast = test_utils.build_module(code, __name__)
-        infered = list(test_utils.get_name_node(ast['foo'], 'spam').infer())
-        self.assertEqual(len(infered), 1)
-        self.assertIs(infered[0], YES)
+        inferred = list(test_utils.get_name_node(ast['foo'], 'spam').infer())
+        self.assertEqual(len(inferred), 1)
+        self.assertIs(inferred[0], YES)
 
     def test_nonregr_func_global(self):
         code = '''
@@ -1252,15 +1255,15 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                  print (p)
         '''
         ast = test_utils.build_module(code, __name__)
-        infered = list(Instance(ast['DataManager']).igetattr('app'))
-        self.assertEqual(len(infered), 2, infered) # None / Instance(Application)
-        infered = list(test_utils.get_name_node(ast['DataManager']['test'], 'p').infer())
-        self.assertEqual(len(infered), 2, infered)
-        for node in infered:
+        inferred = list(Instance(ast['DataManager']).igetattr('app'))
+        self.assertEqual(len(inferred), 2, inferred) # None / Instance(Application)
+        inferred = list(test_utils.get_name_node(ast['DataManager']['test'], 'p').infer())
+        self.assertEqual(len(inferred), 2, inferred)
+        for node in inferred:
             if isinstance(node, Instance) and node.name == 'Application':
                 break
         else:
-            self.fail('expected to find an instance of Application in %s' % infered)
+            self.fail('expected to find an instance of Application in %s' % inferred)
 
     def test_list_inference(self):
         """#20464"""
@@ -1278,9 +1281,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             Z = test()
         '''
         ast = test_utils.build_module(code, __name__)
-        infered = next(ast['Z'].infer())
-        self.assertIsInstance(infered, nodes.List)
-        self.assertEqual(len(infered.elts), 0)
+        inferred = next(ast['Z'].infer())
+        self.assertIsInstance(inferred, nodes.List)
+        self.assertEqual(len(inferred.elts), 0)
 
     def test__new__(self):
         code = '''
@@ -1296,8 +1299,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ast = test_utils.build_module(code, __name__)
         self.assertRaises(InferenceError, list, ast['NewTest'].igetattr('arg'))
         n = next(ast['n'].infer())
-        infered = list(n.igetattr('arg'))
-        self.assertEqual(len(infered), 1, infered)
+        inferred = list(n.igetattr('arg'))
+        self.assertEqual(len(inferred), 1, inferred)
 
 
     def test_two_parents_from_same_module(self):
@@ -1317,12 +1320,12 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             B = namedtuple('B', 'a b')
         '''
         ast = test_utils.build_module(code, __name__)
-        aclass = ast['A'].infered()[0]
-        self.assertIsInstance(aclass, nodes.Class)
+        aclass = ast['A'].inferred()[0]
+        self.assertIsInstance(aclass, nodes.ClassDef)
         self.assertIn('a', aclass.instance_attrs)
         self.assertIn('b', aclass.instance_attrs)
-        bclass = ast['B'].infered()[0]
-        self.assertIsInstance(bclass, nodes.Class)
+        bclass = ast['B'].inferred()[0]
+        self.assertIsInstance(bclass, nodes.ClassDef)
         self.assertIn('a', bclass.instance_attrs)
         self.assertIn('b', bclass.instance_attrs)
 
@@ -1349,18 +1352,18 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             empty_list = A().empty_method()
         '''
         ast = test_utils.build_module(code, __name__)
-        int_node = ast['x'].infered()[0]
+        int_node = ast['x'].inferred()[0]
         self.assertIsInstance(int_node, nodes.Const)
         self.assertEqual(int_node.value, 1)
-        list_node = ast['y'].infered()[0]
+        list_node = ast['y'].inferred()[0]
         self.assertIsInstance(list_node, nodes.List)
-        int_node = ast['z'].infered()[0]
+        int_node = ast['z'].inferred()[0]
         self.assertIsInstance(int_node, nodes.Const)
         self.assertEqual(int_node.value, 1)
-        empty = ast['empty'].infered()[0]
+        empty = ast['empty'].inferred()[0]
         self.assertIsInstance(empty, nodes.Const)
         self.assertEqual(empty.value, 2)
-        empty_list = ast['empty_list'].infered()[0]
+        empty_list = ast['empty_list'].inferred()[0]
         self.assertIsInstance(empty_list, nodes.List)
 
     def test_infer_variable_arguments(self):
@@ -1370,17 +1373,19 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 kwarg = kwargs
         '''
         ast = test_utils.build_module(code, __name__)
+        print(dump(ast), file=sys.stderr)
+        
         func = ast['test']
         vararg = func.body[0].value
         kwarg = func.body[1].value
 
-        kwarg_infered = kwarg.infered()[0]
-        self.assertIsInstance(kwarg_infered, nodes.Dict)
-        self.assertIs(kwarg_infered.parent, func.args)
+        kwarg_inferred = kwarg.inferred()[0]
+        self.assertIsInstance(kwarg_inferred, nodes.Dict)
+        self.assertIs(kwarg_inferred.parent, func.args)
 
-        vararg_infered = vararg.infered()[0]
-        self.assertIsInstance(vararg_infered, nodes.Tuple)
-        self.assertIs(vararg_infered.parent, func.args)
+        vararg_inferred = vararg.inferred()[0]
+        self.assertIsInstance(vararg_inferred, nodes.Tuple)
+        self.assertIs(vararg_inferred.parent, func.args)
 
     def test_infer_nested(self):
         code = """
@@ -1394,10 +1399,10 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         # Test that inferring Thread.__init__ looks up in
         # the nested scope.
         ast = test_utils.build_module(code, __name__)
-        callfunc = next(ast.nodes_of_class(nodes.CallFunc))
+        callfunc = next(ast.nodes_of_class(nodes.Call))
         func = callfunc.func
-        infered = func.infered()[0]
-        self.assertIsInstance(infered, UnboundMethod)
+        inferred = func.inferred()[0]
+        self.assertIsInstance(inferred, UnboundMethod)
 
     def test_instance_binary_operations(self):
         code = """
@@ -1410,8 +1415,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             mul = a * b
         """
         ast = test_utils.build_module(code, __name__)
-        sub = ast['sub'].infered()[0]
-        mul = ast['mul'].infered()[0]
+        sub = ast['sub'].inferred()[0]
+        mul = ast['mul'].inferred()[0]
         self.assertIs(sub, YES)
         self.assertIsInstance(mul, nodes.Const)
         self.assertEqual(mul.value, 42)
@@ -1429,8 +1434,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             mul = a * b
         """
         ast = test_utils.build_module(code, __name__)
-        sub = ast['sub'].infered()[0]
-        mul = ast['mul'].infered()[0]
+        sub = ast['sub'].inferred()[0]
+        mul = ast['mul'].inferred()[0]
         self.assertIs(sub, YES)
         self.assertIsInstance(mul, nodes.Const)
         self.assertEqual(mul.value, 42)
@@ -1449,8 +1454,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             mul = a * b
         """
         ast = test_utils.build_module(code, __name__)
-        sub = ast['sub'].infered()[0]
-        mul = ast['mul'].infered()[0]
+        sub = ast['sub'].inferred()[0]
+        mul = ast['mul'].inferred()[0]
         self.assertIs(sub, YES)
         self.assertIsInstance(mul, nodes.List)
         self.assertIsInstance(mul.elts[0], nodes.Const)
@@ -1468,12 +1473,12 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """
         ast = test_utils.build_module(code, __name__)
         node = ast['c']
-        self.assertEqual(node.infered(), [YES])
+        self.assertEqual(node.inferred(), [YES])
 
     def test_infer_empty_nodes(self):
         # Should not crash when trying to infer EmptyNodes.
         node = nodes.EmptyNode()
-        self.assertEqual(node.infered(), [YES])
+        self.assertEqual(node.inferred(), [YES])
 
     def test_infinite_loop_for_decorators(self):
         # Issue https://bitbucket.org/logilab/astroid/issue/50
@@ -1545,9 +1550,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertInferTuple(ast[7], [1, 2])
 
         for node in ast[8:]:
-            infered = next(node.infer())
-            self.assertIsInstance(infered, Instance)
-            self.assertEqual(infered.qname(), "{}.tuple".format(BUILTINS))
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, Instance)
+            self.assertEqual(inferred.qname(), "{}.tuple".format(BUILTINS))
 
     def test_frozenset_builtin_inference(self):
         code = """
@@ -1576,9 +1581,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertInferFrozenSet(ast[6], [1])
 
         for node in ast[7:]:
-            infered = next(node.infer())
-            self.assertIsInstance(infered, Instance)
-            self.assertEqual(infered.qname(), "{}.frozenset".format(BUILTINS))
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, Instance)
+            self.assertEqual(inferred.qname(), "{}.frozenset".format(BUILTINS))
 
     def test_set_builtin_inference(self):
         code = """
@@ -1607,9 +1612,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertInferSet(ast[6], [1])
 
         for node in ast[7:]:
-            infered = next(node.infer())
-            self.assertIsInstance(infered, Instance)
-            self.assertEqual(infered.qname(), "{}.set".format(BUILTINS))
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, Instance)
+            self.assertEqual(inferred.qname(), "{}.set".format(BUILTINS))
 
     def test_list_builtin_inference(self):
         code = """
@@ -1637,9 +1642,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertInferList(ast[6], [1])
 
         for node in ast[7:]:
-            infered = next(node.infer())
-            self.assertIsInstance(infered, Instance)
-            self.assertEqual(infered.qname(), "{}.list".format(BUILTINS))
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, Instance)
+            self.assertEqual(inferred.qname(), "{}.list".format(BUILTINS))
 
     @test_utils.require_version('3.0')
     def test_builtin_inference_py3k(self):
@@ -1693,9 +1698,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertInferDict(ast[9], {'x': 2, 'y': 3, 'a': 1, 'b': 2})
 
         for node in ast[10:]:
-            infered = next(node.infer())
-            self.assertIsInstance(infered, Instance)
-            self.assertEqual(infered.qname(), "{}.dict".format(BUILTINS))
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, Instance)
+            self.assertEqual(inferred.qname(), "{}.dict".format(BUILTINS))
 
 
     def test_str_methods(self):
@@ -1772,7 +1777,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         bases = ast['Second'].bases[0]
         inferred = next(bases.infer())
         self.assertTrue(inferred)
-        self.assertIsInstance(inferred, nodes.Class)
+        self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.qname(), 'collections.Counter')
 
     def test_inferring_with_statement_failures(self):
@@ -1886,7 +1891,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsNone(inferred.value)
 
         something = module['something']
-        inferred = something.infered()
+        inferred = something.inferred()
         self.assertEqual(len(inferred), 1)
         inferred = inferred[0]
         self.assertIsInstance(inferred, nodes.Const)
@@ -2711,7 +2716,7 @@ class GetattrTest(unittest.TestCase):
         self.assertIsNone(first.value)
 
         second = next(ast_nodes[1].infer())
-        self.assertIsInstance(second, nodes.Class)
+        self.assertIsInstance(second, nodes.ClassDef)
         self.assertEqual(second.qname(), "%s.int" % BUILTINS)
 
         third = next(ast_nodes[2].infer())
@@ -2744,7 +2749,7 @@ class GetattrTest(unittest.TestCase):
 
         second = next(ast_nodes[1].infer())
         self.assertIsInstance(second, UnboundMethod)
-        self.assertIsInstance(second.parent, nodes.Class)
+        self.assertIsInstance(second.parent, nodes.ClassDef)
         self.assertEqual(second.parent.name, 'A')
 
         third = next(ast_nodes[2].infer())
@@ -2860,7 +2865,7 @@ class BoolOpTest(unittest.TestCase):
         first = next(ast_nodes[0].infer())
         self.assertEqual(first.value, 0)
         second = next(ast_nodes[1].infer())
-        self.assertIsInstance(second, nodes.Function)
+        self.assertIsInstance(second, nodes.FunctionDef)
         self.assertEqual(second.name, 'test')
 
 
@@ -2999,7 +3004,7 @@ class TestType(unittest.TestCase):
         for code, expected in pairs:
             node = test_utils.extract_node(code)
             inferred = next(node.infer())
-            self.assertIsInstance(inferred, nodes.Class)
+            self.assertIsInstance(inferred, nodes.ClassDef)
             self.assertEqual(inferred.name, expected)
 
 

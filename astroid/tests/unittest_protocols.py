@@ -22,7 +22,7 @@ from astroid import YES
 from astroid.test_utils import extract_node, require_version
 from astroid import InferenceError
 from astroid import nodes
-from astroid.node_classes import AssName, Const, Name, Starred
+from astroid.node_classes import AssignName, Const, Name, Starred
 
 
 class ProtocolTests(unittest.TestCase):
@@ -50,11 +50,11 @@ class ProtocolTests(unittest.TestCase):
           pass
         """)
 
-        for1_assnode = next(assign_stmts[0].nodes_of_class(AssName))
+        for1_assnode = next(assign_stmts[0].nodes_of_class(AssignName))
         assigned = list(for1_assnode.assigned_stmts())
         self.assertConstNodesEqual([1, 2, 3], assigned)
 
-        for2_assnode = next(assign_stmts[1].nodes_of_class(AssName))
+        for2_assnode = next(assign_stmts[1].nodes_of_class(AssignName))
         self.assertRaises(InferenceError,
                           list, for2_assnode.assigned_stmts())
 
@@ -139,11 +139,11 @@ class ProtocolTests(unittest.TestCase):
         d, e = b, c #@
         """)
 
-        simple_assnode = next(assign_stmts[0].nodes_of_class(AssName))
+        simple_assnode = next(assign_stmts[0].nodes_of_class(AssignName))
         assigned = list(simple_assnode.assigned_stmts())
         self.assertNameNodesEqual(['a'], assigned)
 
-        assnames = assign_stmts[1].nodes_of_class(AssName)
+        assnames = assign_stmts[1].nodes_of_class(AssignName)
         simple_mul_assnode_1 = next(assnames)
         assigned = list(simple_mul_assnode_1.assigned_stmts())
         self.assertNameNodesEqual(['b'], assigned)

@@ -34,7 +34,7 @@ except AttributeError:
 class ASTPeepholeOptimizer(object):
     """Class for applying small optimizations to generate new AST."""
 
-    def optimize_binop(self, node):
+    def optimize_binop(self, node, parent=None):
         """Optimize BinOps with string Const nodes on the lhs.
 
         This fixes an infinite recursion crash, where multiple
@@ -82,5 +82,5 @@ class ASTPeepholeOptimizer(object):
             return
 
         value = known().join(reversed(ast_nodes))
-        newnode = nodes.Const(value)
+        newnode = nodes.Const(value, node.lineno, node.col_offset, parent)
         return newnode

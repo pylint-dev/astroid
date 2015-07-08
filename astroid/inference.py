@@ -34,7 +34,7 @@ from astroid.exceptions import (
 )
 from astroid.bases import (YES, Instance, InferenceContext, BoundMethod,
                            _infer_stmts, copy_context, path_wrapper,
-                           raise_if_nothing_infered, yes_if_nothing_infered)
+                           raise_if_nothing_inferred, yes_if_nothing_inferred)
 
 MANAGER = AstroidManager()
 
@@ -90,12 +90,12 @@ class CallContext(object):
                 # 3. search in *args (.starargs)
                 if self.starargs is not None:
                     its = []
-                    for infered in self.starargs.infer(context):
-                        if infered is YES:
+                    for inferred in self.starargs.infer(context):
+                        if inferred is YES:
                             its.append((YES,))
                             continue
                         try:
-                            its.append(infered.getitem(argindex, context).infer(context))
+                            its.append(inferred.getitem(argindex, context).infer(context))
                         except (InferenceError, AttributeError):
                             its.append((YES,))
                         except (IndexError, TypeError):
@@ -105,12 +105,12 @@ class CallContext(object):
         # 4. XXX search in **kwargs (.dstarargs)
         if self.dstarargs is not None:
             its = []
-            for infered in self.dstarargs.infer(context):
-                if infered is YES:
+            for inferred in self.dstarargs.infer(context):
+                if inferred is YES:
                     its.append((YES,))
                     continue
                 try:
-                    its.append(infered.getitem(name, context).infer(context))
+                    its.append(inferred.getitem(name, context).infer(context))
                 except (InferenceError, AttributeError):
                     its.append((YES,))
                 except (IndexError, TypeError):
@@ -137,8 +137,8 @@ def infer_end(self, context=None):
     """
     yield self
 nodes.Module._infer = infer_end
-nodes.Class._infer = infer_end
-nodes.Function._infer = infer_end
+nodes.ClassDef._infer = infer_end
+nodes.FunctionDef._infer = infer_end
 nodes.Lambda._infer = infer_end
 nodes.Const._infer = infer_end
 nodes.List._infer = infer_end
@@ -159,7 +159,7 @@ def _higher_function_scope(node):
         which encloses the given node.
     """
     current = node
-    while current.parent and not isinstance(current.parent, nodes.Function):
+    while current.parent and not isinstance(current.parent, nodes.FunctionDef):
         current = current.parent
     if current and current.parent:
         return current.parent
@@ -181,7 +181,7 @@ def infer_name(self, context=None):
     context.lookupname = self.name
     return _infer_stmts(stmts, context, frame)
 nodes.Name._infer = path_wrapper(infer_name)
-nodes.AssName.infer_lhs = infer_name # won't work with a path wrapper
+nodes.AssignName.infer_lhs = infer_name # won't work with a path wrapper
 
 
 def infer_callfunc(self, context=None):
@@ -195,12 +195,12 @@ def infer_callfunc(self, context=None):
             continue
         try:
             if hasattr(callee, 'infer_call_result'):
-                for infered in callee.infer_call_result(self, callcontext):
-                    yield infered
+                for inferred in callee.infer_call_result(self, callcontext):
+                    yield inferred
         except InferenceError:
             ## XXX log error ?
             continue
-nodes.CallFunc._infer = path_wrapper(raise_if_nothing_infered(infer_callfunc))
+nodes.Call._infer = path_wrapper(raise_if_nothing_inferred(infer_callfunc))
 
 
 def infer_import(self, context=None, asname=True):
@@ -235,7 +235,7 @@ def infer_from(self, context=None, asname=True):
         return _infer_stmts(module.getattr(name, ignore_locals=module is self.root()), context)
     except NotFoundError:
         raise InferenceError(name)
-nodes.From._infer = path_wrapper(infer_from)
+nodes.ImportFrom._infer = path_wrapper(infer_from)
 
 
 def infer_getattr(self, context=None):
@@ -254,8 +254,8 @@ def infer_getattr(self, context=None):
         except AttributeError:
             # XXX method / function
             context.boundnode = None
-nodes.Getattr._infer = path_wrapper(raise_if_nothing_infered(infer_getattr))
-nodes.AssAttr.infer_lhs = raise_if_nothing_infered(infer_getattr) # # won't work with a path wrapper
+nodes.Attribute._infer = path_wrapper(raise_if_nothing_inferred(infer_getattr))
+nodes.AssignAttr.infer_lhs = raise_if_nothing_inferred(infer_getattr) # # won't work with a path wrapper
 
 
 def infer_global(self, context=None):
@@ -289,20 +289,20 @@ def infer_subscript(self, context=None):
             yield YES
             return
 
-        # Prevent inferring if the infered subscript
+        # Prevent inferring if the inferred subscript
         # is the same as the original subscripted object.
         if self is assigned or assigned is YES:
             yield YES
             return
-        for infered in assigned.infer(context):
-            yield infered
+        for inferred in assigned.infer(context):
+            yield inferred
     else:
         raise InferenceError()
 nodes.Subscript._infer = path_wrapper(infer_subscript)
-nodes.Subscript.infer_lhs = raise_if_nothing_infered(infer_subscript)
+nodes.Subscript.infer_lhs = raise_if_nothing_inferred(infer_subscript)
 
 
-@raise_if_nothing_infered
+@raise_if_nothing_inferred
 @path_wrapper
 def _infer_boolop(self, context=None):
     """Infer a boolean operation (and / or / not).
@@ -418,7 +418,7 @@ def infer_unaryop(self, context=None):
                                     context, UnaryOperationError)
 
 nodes.UnaryOp._infer_unaryop = _infer_unaryop
-nodes.UnaryOp._infer = raise_if_nothing_infered(infer_unaryop)
+nodes.UnaryOp._infer = raise_if_nothing_inferred(infer_unaryop)
 
 
 def _is_not_implemented(const):
@@ -627,7 +627,7 @@ def infer_binop(self, context=None):
                                     context, BinaryOperationError)
 
 nodes.BinOp._infer_binop = _infer_binop
-nodes.BinOp._infer = yes_if_nothing_infered(infer_binop)
+nodes.BinOp._infer = yes_if_nothing_inferred(infer_binop)
 
 
 def _infer_augassign(self, context=None):
@@ -688,8 +688,8 @@ def infer_ass(self, context=None):
         return stmt.infer(context)
     stmts = list(self.assigned_stmts(context=context))
     return _infer_stmts(stmts, context)
-nodes.AssName._infer = path_wrapper(infer_ass)
-nodes.AssAttr._infer = path_wrapper(infer_ass)
+nodes.AssignName._infer = path_wrapper(infer_ass)
+nodes.AssignAttr._infer = path_wrapper(infer_ass)
 
 
 # no infer method on DelName and DelAttr (expected InferenceError)
@@ -700,9 +700,9 @@ def infer_empty_node(self, context=None):
         yield YES
     else:
         try:
-            for infered in MANAGER.infer_ast_from_something(self.object,
+            for inferred in MANAGER.infer_ast_from_something(self.object,
                                                             context=context):
-                yield infered
+                yield inferred
         except AstroidError:
             yield YES
 nodes.EmptyNode._infer = path_wrapper(infer_empty_node)

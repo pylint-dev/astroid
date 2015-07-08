@@ -55,13 +55,13 @@ class FilterStmtsMixin(object):
             return [node], True
         return _stmts, False
 
-    def ass_type(self):
+    def assign_type(self):
         return self
 
 
 class AssignTypeMixin(object):
 
-    def ass_type(self):
+    def assign_type(self):
         return self
 
     def _get_filtered_stmts(self, lookup_node, node, _stmts, mystmt):
@@ -77,11 +77,11 @@ class AssignTypeMixin(object):
 
 class ParentAssignTypeMixin(AssignTypeMixin):
 
-    def ass_type(self):
-        return self.parent.ass_type()
+    def assign_type(self):
+        return self.parent.assign_type()
 
 
-class FromImportMixIn(FilterStmtsMixin):
+class ImportFromMixin(FilterStmtsMixin):
     """MixIn for From and Import Nodes"""
 
     def _infer_name(self, frame, name):

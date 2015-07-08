@@ -31,8 +31,8 @@ from inspect import (getargspec, isdatadescriptor, isfunction, ismethod,
 import six
 
 from astroid.node_classes import CONST_CLS
-from astroid.nodes import (Module, Class, Const, const_factory, From,
-                           Function, EmptyNode, Name, Arguments)
+from astroid.nodes import (Module, ClassDef, Const, const_factory, ImportFrom,
+                           FunctionDef, EmptyNode, Name, Arguments)
 from astroid.bases import BUILTINS, Generator
 from astroid.manager import AstroidManager
 
@@ -80,23 +80,20 @@ def attach_const_node(node, name, value):
         _attach_local_node(node, const_factory(value), name)
 
 def attach_import_node(node, modname, membername):
-    """create a From node and register it in the locals of the given
+    """create a ImportFrom node and register it in the locals of the given
     node with the specified name
     """
-    from_node = From(modname, [(membername, None)])
+    from_node = ImportFrom(modname, [(membername, None)])
     _attach_local_node(node, from_node, membername)
 
 
 def build_module(name, doc=None):
     """create and initialize a astroid Module node"""
-    node = Module(name, doc, pure_python=False)
-    node.package = False
-    node.parent = None
-    return node
+    return Module(name, doc, package=False, parent=None, pure_python=False)
 
 def build_class(name, basenames=(), doc=None):
-    """create and initialize a astroid Class node"""
-    node = Class(name, doc)
+    """create and initialize a astroid ClassDef node"""
+    node = ClassDef(name, doc)
     for base in basenames:
         basenode = Name()
         basenode.name = base
@@ -105,10 +102,10 @@ def build_class(name, basenames=(), doc=None):
     return node
 
 def build_function(name, args=None, defaults=None, flag=0, doc=None):
-    """create and initialize a astroid Function node"""
+    """create and initialize a astroid FunctionDef node"""
     args, defaults = args or [], defaults or []
     # first argument is now a list of decorators
-    func = Function(name, doc)
+    func = FunctionDef(name, doc)
     func.args = argsnode = Arguments()
     argsnode.args = []
     for arg in args:
@@ -128,8 +125,8 @@ def build_function(name, args=None, defaults=None, flag=0, doc=None):
 
 
 def build_from_import(fromname, names):
-    """create and initialize an astroid From import statement"""
-    return From(fromname, [(name, None) for name in names])
+    """create and initialize an astroid ImportFrom import statement"""
+    return ImportFrom(fromname, [(name, None) for name in names])
 
 def register_arguments(func, args=None):
     """add given arguments to local
@@ -231,7 +228,7 @@ class InspectBuilder(object):
     """class for building nodes from living object
 
     this is actually a really minimal representation, including only Module,
-    Function and Class nodes and some others as guessed.
+    FunctionDef and ClassDef nodes and some others as guessed.
     """
 
     # astroid from living objects ###############################################
@@ -389,7 +386,7 @@ def _set_proxied(const):
 Const._proxied = property(_set_proxied)
 
 from types import GeneratorType
-_GeneratorType = Class(GeneratorType.__name__, GeneratorType.__doc__)
+_GeneratorType = ClassDef(GeneratorType.__name__, GeneratorType.__doc__)
 _GeneratorType.parent = MANAGER.astroid_cache[BUILTINS]
 Generator._proxied = _GeneratorType
 Astroid_BUILDER.object_build(Generator._proxied, GeneratorType)

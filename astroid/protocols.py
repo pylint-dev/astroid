@@ -29,7 +29,7 @@ from astroid.exceptions import InferenceError, NoDefault, NotFoundError
 from astroid.node_classes import unpack_infer
 from astroid.bases import (
     InferenceContext, copy_context,
-    raise_if_nothing_infered, yes_if_nothing_infered,
+    raise_if_nothing_inferred, yes_if_nothing_inferred,
     Instance, YES, BoundMethod,
     Generator,
 )
@@ -135,7 +135,7 @@ def const_infer_binary_op(self, operator, other, context, _):
     else:
         yield not_implemented
 
-nodes.Const.infer_binary_op = yes_if_nothing_infered(const_infer_binary_op)
+nodes.Const.infer_binary_op = yes_if_nothing_inferred(const_infer_binary_op)
 
 
 def _multiply_seq_by_int(self, other, context):
@@ -171,14 +171,14 @@ def tl_infer_binary_op(self, operator, other, context, method):
     else:
         yield not_implemented
 
-nodes.Tuple.infer_binary_op = yes_if_nothing_infered(tl_infer_binary_op)
-nodes.List.infer_binary_op = yes_if_nothing_infered(tl_infer_binary_op)
+nodes.Tuple.infer_binary_op = yes_if_nothing_inferred(tl_infer_binary_op)
+nodes.List.infer_binary_op = yes_if_nothing_inferred(tl_infer_binary_op)
 
 
 def instance_infer_binary_op(self, operator, other, context, method):
     return method.infer_call_result(self, context)
 
-Instance.infer_binary_op = yes_if_nothing_infered(instance_infer_binary_op)
+Instance.infer_binary_op = yes_if_nothing_inferred(instance_infer_binary_op)
 
 
 # assignment ##################################################################
@@ -225,9 +225,9 @@ def _resolve_looppart(parts, asspath, context):
                 # we are not yet on the last part of the path
                 # search on each possibly inferred value
                 try:
-                    for infered in _resolve_looppart(assigned.infer(context),
+                    for inferred in _resolve_looppart(assigned.infer(context),
                                                      asspath, context):
-                        yield infered
+                        yield inferred
                 except InferenceError:
                     break
 
@@ -239,12 +239,12 @@ def for_assigned_stmts(self, node, context=None, asspath=None):
                 for item in lst.elts:
                     yield item
     else:
-        for infered in _resolve_looppart(self.iter.infer(context),
+        for inferred in _resolve_looppart(self.iter.infer(context),
                                          asspath, context):
-            yield infered
+            yield inferred
 
-nodes.For.assigned_stmts = raise_if_nothing_infered(for_assigned_stmts)
-nodes.Comprehension.assigned_stmts = raise_if_nothing_infered(for_assigned_stmts)
+nodes.For.assigned_stmts = raise_if_nothing_inferred(for_assigned_stmts)
+nodes.Comprehension.assigned_stmts = raise_if_nothing_inferred(for_assigned_stmts)
 
 
 def mulass_assigned_stmts(self, node, context=None, asspath=None):
@@ -258,8 +258,8 @@ nodes.List.assigned_stmts = mulass_assigned_stmts
 
 def assend_assigned_stmts(self, context=None):
     return self.parent.assigned_stmts(self, context=context)
-nodes.AssName.assigned_stmts = assend_assigned_stmts
-nodes.AssAttr.assigned_stmts = assend_assigned_stmts
+nodes.AssignName.assigned_stmts = assend_assigned_stmts
+nodes.AssignAttr.assigned_stmts = assend_assigned_stmts
 
 
 def _arguments_infer_argname(self, name, context):
@@ -291,8 +291,8 @@ def _arguments_infer_argname(self, name, context):
     # we can't guess given argument value
     try:
         context = copy_context(context)
-        for infered in self.default_value(name).infer(context):
-            yield infered
+        for inferred in self.default_value(name).infer(context):
+            yield inferred
         yield YES
     except NoDefault:
         yield YES
@@ -313,10 +313,10 @@ def assign_assigned_stmts(self, node, context=None, asspath=None):
     if not asspath:
         yield self.value
         return
-    for infered in _resolve_asspart(self.value.infer(context), asspath, context):
-        yield infered
-nodes.Assign.assigned_stmts = raise_if_nothing_infered(assign_assigned_stmts)
-nodes.AugAssign.assigned_stmts = raise_if_nothing_infered(assign_assigned_stmts)
+    for inferred in _resolve_asspart(self.value.infer(context), asspath, context):
+        yield inferred
+nodes.Assign.assigned_stmts = raise_if_nothing_inferred(assign_assigned_stmts)
+nodes.AugAssign.assigned_stmts = raise_if_nothing_inferred(assign_assigned_stmts)
 
 
 def _resolve_asspart(parts, asspath, context):
@@ -341,19 +341,19 @@ def _resolve_asspart(parts, asspath, context):
                 # we are not yet on the last part of the path search on each
                 # possibly inferred value
                 try:
-                    for infered in _resolve_asspart(assigned.infer(context),
+                    for inferred in _resolve_asspart(assigned.infer(context),
                                                     asspath, context):
-                        yield infered
+                        yield inferred
                 except InferenceError:
                     return
 
 
 def excepthandler_assigned_stmts(self, node, context=None, asspath=None):
     for assigned in unpack_infer(self.type):
-        if isinstance(assigned, nodes.Class):
+        if isinstance(assigned, nodes.ClassDef):
             assigned = Instance(assigned)
         yield assigned
-nodes.ExceptHandler.assigned_stmts = raise_if_nothing_infered(excepthandler_assigned_stmts)
+nodes.ExceptHandler.assigned_stmts = raise_if_nothing_inferred(excepthandler_assigned_stmts)
 
 
 def _infer_context_manager(self, mgr, context):
@@ -368,7 +368,7 @@ def _infer_context_manager(self, mgr, context):
             return
         for decorator_node in func.decorators.nodes:
             decorator = next(decorator_node.infer(context))
-            if isinstance(decorator, nodes.Function):
+            if isinstance(decorator, nodes.FunctionDef):
                 if decorator.qname() == _CONTEXTLIB_MGR:
                     break
         else:
@@ -436,10 +436,10 @@ def with_assigned_stmts(self, node, context=None, asspath=None):
             yield obj
 
 
-nodes.With.assigned_stmts = raise_if_nothing_infered(with_assigned_stmts)
+nodes.With.assigned_stmts = raise_if_nothing_inferred(with_assigned_stmts)
 
 
-@yes_if_nothing_infered
+@yes_if_nothing_inferred
 def starred_assigned_stmts(self, node=None, context=None, asspath=None):
     stmt = self.statement()
     if not isinstance(stmt, (nodes.Assign, nodes.For)):
@@ -503,11 +503,11 @@ def class_as_index(node, context):
     an *__index__* method, we'll try to return its int value.
     """
     try:
-        for infered in node.igetattr('__index__', context=context):
-            if not isinstance(infered, BoundMethod):
+        for inferred in node.igetattr('__index__', context=context):
+            if not isinstance(inferred, BoundMethod):
                 continue
 
-            for result in infered.infer_call_result(node, context=context):
+            for result in inferred.infer_call_result(node, context=context):
                 if (isinstance(result, nodes.Const)
                         and isinstance(result.value, int)):
                     return result
