@@ -175,8 +175,12 @@ def _looks_like_require_version(node):
 
 def _register_require_version(node):
     # Load the gi.require_version locally
-    import gi
-    gi.require_version(node.args[0].value, node.args[1].value)
+    try:
+        import gi
+        gi.require_version(node.args[0].value, node.args[1].value)
+    except Exception:
+        pass
+
     return node
 
 MANAGER.register_failed_import_hook(_import_gi_module)
