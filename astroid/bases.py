@@ -44,9 +44,11 @@ PROPERTIES = {BUILTINS + '.property', 'abc.abstractproperty'}
 # Also, these aren't qualified, because each project can
 # define them, we shouldn't expect to know every possible
 # property-like decorator!
+# TODO(cpopa): just implement descriptors already.
 POSSIBLE_PROPERTIES = {"cached_property", "cachedproperty",
                        "lazyproperty", "lazy_property", "reify",
-                       "lazyattribute", "lazy_attribute"}
+                       "lazyattribute", "lazy_attribute",
+                       "LazyProperty"}
 
 
 def _is_property(meth):

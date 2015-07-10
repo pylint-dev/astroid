@@ -2658,6 +2658,19 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, "lala")
 
+    def test_unary_op_assignment(self):
+        ast_node = test_utils.extract_node('''
+        class A(object): pass
+        def pos(self):
+            return 42
+        A.__pos__ = pos
+        f = A()
+        +f #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 42)
+
 
 class GetattrTest(unittest.TestCase):
 

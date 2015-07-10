@@ -219,6 +219,11 @@ Change log for the astroid package (used to be astng)
 
     * Add support for pkg_resources.declare_namespaces.
 
+    * Move pyreverse specific modules and functionality back into pyreverse
+      (astroid.manager.Project, astroid.manager.Manager.project_from_files).
+
+    * Understand metaclasses added with six.add_metaclass decorator. Closes issue #129.
+
 
 2015-03-14 -- 1.3.6
 

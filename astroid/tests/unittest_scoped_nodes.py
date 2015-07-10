@@ -733,34 +733,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         klass = self.module2['NotMetaclass']
         self.assertEqual(klass.type, 'class')
 
-    def test_interfaces(self):
-        for klass, interfaces in (('Concrete0', ['MyIFace']),
-                                  ('Concrete1', ['MyIFace', 'AnotherIFace']),
-                                  ('Concrete2', ['MyIFace', 'AnotherIFace']),
-                                  ('Concrete23', ['MyIFace', 'AnotherIFace'])):
-            klass = self.module2[klass]
-            self.assertEqual([i.name for i in klass.interfaces()],
-                             interfaces)
-
-    def test_concat_interfaces(self):
-        astroid = test_utils.build_module('''
-            class IMachin: pass
-
-            class Correct2:
-                """docstring"""
-                __implements__ = (IMachin,)
-
-            class BadArgument:
-                """docstring"""
-                __implements__ = (IMachin,)
-
-            class InterfaceCanNowBeFound:
-                """docstring"""
-                __implements__ = BadArgument.__implements__ + Correct2.__implements__
-        ''')
-        self.assertEqual([i.name for i in astroid['InterfaceCanNowBeFound'].interfaces()],
-                         ['IMachin'])
-
     def test_inner_classes(self):
         eee = self.nonregr['Ccc']['Eee']
         self.assertEqual([n.name for n in eee.ancestors()], ['Ddd', 'Aaa', 'object'])
@@ -1076,6 +1048,30 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             [base.name for base in klass.ancestors()])
         self.assertEqual(
             'type', klass.metaclass().name)
+
+    def test_using_six_add_metaclass(self):
+        klass = test_utils.extract_node('''
+        import six
+        import abc
+
+        @six.add_metaclass(abc.ABCMeta)
+        class WithMeta(object):
+            pass
+        ''')
+        inferred = next(klass.infer())
+        metaclass = inferred.metaclass()
+        self.assertIsInstance(metaclass, scoped_nodes.Class)
+        self.assertEqual(metaclass.qname(), 'abc.ABCMeta')
+
+    def test_using_invalid_six_add_metaclass_call(self):
+        klass = test_utils.extract_node('''
+        import six
+        @six.add_metaclass()
+        class Invalid(object):
+            pass
+        ''')
+        inferred = next(klass.infer())
+        self.assertIsNone(inferred.metaclass())
 
     def test_nonregr_infer_callresult(self):
         astroid = test_utils.build_module("""

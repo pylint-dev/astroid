@@ -9,7 +9,7 @@ import sys
 import re
 import warnings
 
-from astroid import MANAGER, AstroidBuildingException
+from astroid import MANAGER, AstroidBuildingException, nodes
 from astroid.builder import AstroidBuilder
 
 
@@ -158,6 +158,38 @@ def _import_gi_module(modname):
         raise AstroidBuildingException('Failed to import module %r' % modname)
     return astng
 
+def _looks_like_require_version(node):
+    # Return whether this looks like a call to gi.require_version(<name>, <version>)
+    # Only accept function calls with two constant arguments
+    if len(node.args) != 2:
+        return False
+
+    if not all(isinstance(arg, nodes.Const) for arg in node.args):
+        return False
+
+    func = node.func
+    if isinstance(func, nodes.Getattr):
+        if func.attrname != 'require_version':
+            return False
+        if isinstance(func.expr, nodes.Name) and func.expr.name == 'gi':
+            return True
+
+        return False
+
+    if isinstance(func, nodes.Name):
+        return func.name == 'require_version'
+
+    return False
+
+def _register_require_version(node):
+    # Load the gi.require_version locally
+    try:
+        import gi
+        gi.require_version(node.args[0].value, node.args[1].value)
+    except Exception:
+        pass
+
+    return node
 
 MANAGER.register_failed_import_hook(_import_gi_module)
-
+MANAGER.register_transform(nodes.CallFunc, _register_require_version, _looks_like_require_version)

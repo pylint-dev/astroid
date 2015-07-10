@@ -1009,12 +1009,6 @@ def _class_type(klass, ancestors=None):
         klass._type = 'class'
     return klass._type
 
-def _iface_hdlr(iface_node):
-    """a handler function used by interfaces to handle suspicious
-    interface nodes
-    """
-    return True
-
 
 class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
 
@@ -1396,29 +1390,6 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
         for member in self.values():
             if isinstance(member, FunctionDef):
                 yield member
-
-    def interfaces(self, herited=True, handler_func=_iface_hdlr):
-        """return an iterator on interfaces implemented by the given
-        class node
-        """
-        # FIXME: what if __implements__ = (MyIFace, MyParent.__implements__)...
-        try:
-            implements = bases.Instance(self).getattr('__implements__')[0]
-        except exceptions.NotFoundError:
-            return
-        if not herited and not implements.frame() is self:
-            return
-        found = set()
-        missing = False
-        for iface in node_classes.unpack_infer(implements):
-            if iface is bases.YES:
-                missing = True
-                continue
-            if iface not in found and handler_func(iface):
-                found.add(iface)
-                yield iface
-        if missing:
-            raise exceptions.InferenceError()
 
     def implicit_metaclass(self):
         """Get the implicit metaclass of the current class
