@@ -83,7 +83,7 @@ ALL_NODE_CLASSES = (
 # Backward-compatibility aliases
 def proxy_alias(alias_name, node_type):
     proxy = type(alias_name, (lazy_object_proxy.Proxy,),
-                {'__class__': object.__dict__['__class__']})
+                 {'__class__': object.__dict__['__class__']})
     return proxy(node_type)
 
 Backquote = proxy_alias('Backquote', Repr)

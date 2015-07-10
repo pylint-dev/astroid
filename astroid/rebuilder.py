@@ -349,7 +349,7 @@ class TreeRebuilder(object):
     def visit_const(self, node, parent, assign_ctx=None):
         """visit a Const node by returning a fresh instance of it"""
         return new.Const(node.value, getattr(node, 'lineno', None),
-                     getattr(node, 'col_offset', None), parent)
+                         getattr(node, 'col_offset', None), parent)
 
     def visit_continue(self, node, parent, assign_ctx=None):
         """visit a Continue node by returning a fresh instance of it"""
@@ -627,13 +627,13 @@ class TreeRebuilder(object):
     def visit_str(self, node, parent, assign_ctx=None):
         """visit a String/Bytes node by returning a fresh instance of Const"""
         return new.Const(node.s, getattr(node, 'lineno', None),
-                            getattr(node, 'col_offset', None), parent)
+                         getattr(node, 'col_offset', None), parent)
     visit_bytes = visit_str
 
     def visit_num(self, node, parent, assign_ctx=None):
         """visit a Num node by returning a fresh instance of Const"""
         return new.Const(node.n, getattr(node, 'lineno', None),
-                            getattr(node, 'col_offset', None), parent)
+                         getattr(node, 'col_offset', None), parent)
 
     def visit_pass(self, node, parent, assign_ctx=None):
         """visit a Pass node by returning a fresh instance of it"""

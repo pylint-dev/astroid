@@ -697,7 +697,7 @@ class Lambda(LocalsDictNodeNG, mixins.FilterStmtsMixin):
         self.locals = {}
         self.args = []
         self.body = []
-        super(Lambda, self).__init__(lineno, col_offset, parent)        
+        super(Lambda, self).__init__(lineno, col_offset, parent)
 
     def postinit(self, args, body):
         self.args = args
@@ -871,7 +871,7 @@ class FunctionDef(bases.Statement, Lambda):
                 except exceptions.InferenceError:
                     continue
                 if inferred and inferred.qname() in ('abc.abstractproperty',
-                                                   'abc.abstractmethod'):
+                                                     'abc.abstractmethod'):
                     return True
 
         for child_node in self.body:
@@ -1339,7 +1339,7 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
                                               context, frame=self):
                 # yield YES object instead of descriptors when necessary
                 if (not isinstance(inferred, node_classes.Const)
-                        and isinstance(inferred, bases.Instance)):
+                    and isinstance(inferred, bases.Instance)):
                     try:
                         inferred._proxied.getattr('__get__', context)
                     except exceptions.NotFoundError:
