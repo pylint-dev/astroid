@@ -18,14 +18,9 @@
 """this module contains utilities for rebuilding a _ast tree in
 order to get a single Astroid representation
 """
-
-from __future__ import print_function
-# from ast import dump
-# import as_string
-
 import sys
 from _ast import (
-    Expr, Str, # Expr as Discard
+    Expr, Str,
     # binary operators
     Add, BinOp, Div, FloorDiv, Mod, Mult, Pow, Sub, BitAnd, BitOr, BitXor,
     LShift, RShift,
@@ -85,19 +80,11 @@ CONST_NAME_TRANSFORMS = {'None':  None,
                         }
 
 REDIRECT = {'arguments': 'Arguments',
-            # 'Attribute': 'Getattr',
             'comprehension': 'Comprehension',
-            # 'Call': 'CallFunc',
-            # 'ClassDef': 'Class',
             "ListCompFor": 'Comprehension',
             "GenExprFor": 'Comprehension',
             'excepthandler': 'ExceptHandler',
-            # 'Expr': 'Discard',
-            # 'FunctionDef': 'Function',
-            # 'GeneratorExp': 'GenExpr',
-            # 'ImportFrom': 'FromImport',
             'keyword': 'Keyword',
-            # 'Repr': 'Backquote',
            }
 PY3 = sys.version_info >= (3, 0)
 PY34 = sys.version_info >= (3, 4)
@@ -177,27 +164,32 @@ class TreeRebuilder(object):
     def visit_arguments(self, node, parent, assign_ctx=None,
                         kwonlyargs=None, kw_defaults=None, annotations=None):
         """visit a Arguments node by returning a fresh instance of it"""
+        vararg, kwarg = node.vararg, node.kwarg
         if PY34:
-            newnode = new.Arguments(node.vararg.arg if node.vararg else None,
-                                    node.kwarg.arg if node.kwarg else None,
+            newnode = new.Arguments(vararg.arg if vararg else None,
+                                    kwarg.arg if kwarg else None,
                                     parent)
         else:
-            newnode = new.Arguments(node.vararg, node.kwarg, parent)
+            newnode = new.Arguments(vararg, kwarg, parent)
         args = [self.visit(child, newnode, "Assign") for child in node.args]
         defaults = [self.visit(child, newnode, assign_ctx)
                     for child in node.defaults]
         varargannotation = None
         kwargannotation = None
-        if node.vararg:
+        # change added in 82732 (7c5c678e4164), vararg and kwarg
+        # are instances of `_ast.arg`, not strings
+        if vararg:
             if PY34:
+                vararg = vararg.arg
                 if node.vararg.annotation:
                     varargannotation = self.visit(node.vararg.annotation,
                                                   newnode, assign_ctx)
                 elif PY3 and node.vararg.annotation:
                     varargannotation = self.visit(node.varargannotation,
                                                   newnode, assign_ctx)
-        if node.kwarg:
+        if kwarg:
             if PY34:
+                kwarg = kwarg.arg
                 if node.kwarg.annotation:
                     kwargannotation = self.visit(node.kwarg.annotation,
                                                  newnode, assign_ctx)
@@ -214,13 +206,11 @@ class TreeRebuilder(object):
                           arg.annotation else None for arg in node.args]
                          if PY3 else [],
                          varargannotation, kwargannotation)
-        # change added in 82732 (7c5c678e4164), vararg and kwarg
-        # are instances of `_ast.arg`, not strings
         # save argument names in locals:
-        if node.vararg:
-            newnode.parent.set_local(node.vararg, newnode)
-        if node.kwarg:
-            newnode.parent.set_local(node.kwarg, newnode)
+        if vararg:
+            newnode.parent.set_local(vararg, newnode)
+        if kwarg:
+            newnode.parent.set_local(kwarg, newnode)
         return newnode
 
     def visit_assignattr(self, node, parent, assign_ctx=None):

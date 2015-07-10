@@ -18,10 +18,6 @@
 """This module contains base classes and functions for the nodes and some
 inference utils.
 """
-from __future__ import print_function
-from astroid.as_string import dump
-import pprint
-
 __docformat__ = "restructuredtext en"
 
 import sys
@@ -476,7 +472,6 @@ class NodeNG(object):
         If the instance has some explicit inference function set, it will be
         called instead of the default interface.
         """
-        # pprint.pprint(vars(context), stream=sys.stderr)
         if self._explicit_inference is not None:
             # explicit_inference is not bound, give it self explicitly
             try:

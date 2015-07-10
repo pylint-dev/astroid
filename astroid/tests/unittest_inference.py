@@ -17,9 +17,6 @@
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 """tests for the astroid inference capabilities
 """
-from __future__ import print_function
-from astroid.as_string import dump
-
 import os
 import sys
 from functools import partial
@@ -1373,8 +1370,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 kwarg = kwargs
         '''
         ast = test_utils.build_module(code, __name__)
-        print(dump(ast), file=sys.stderr)
-        
         func = ast['test']
         vararg = func.body[0].value
         kwarg = func.body[1].value

@@ -1295,16 +1295,6 @@ class YieldFrom(Yield):
     """ Class representing a YieldFrom node. """
 
 
-# Backward-compatibility aliases
-
-Backquote = Repr
-Discard = Expr
-AssName = AssignName
-AssAttr = AssignAttr
-GetAttr = Attribute
-CallFunc = Call
-
-
 # constants ##############################################################
 
 CONST_CLS = {

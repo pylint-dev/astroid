@@ -17,9 +17,6 @@
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 """tests for specific behaviour of astroid nodes
 """
-from __future__ import print_function
-from astroid.as_string import dump
-
 import os
 import sys
 import unittest

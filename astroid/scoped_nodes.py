@@ -21,9 +21,6 @@ This module contains the classes for "scoped" node, i.e. which are opening a
 new local scope in the language definition : Module, ClassDef, FunctionDef (and
 Lambda, GeneratorExp, DictComp and SetComp to some extent).
 """
-
-from __future__ import print_function
-
 import functools
 import io
 import itertools
@@ -1060,7 +1057,6 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
             self._metaclass = metaclass
 
     def _newstyle_impl(self, context=None):
-        # import pdb; pdb.set_trace()
         if context is None:
             context = bases.InferenceContext()
         if self._newstyle is not None:
@@ -1650,9 +1646,3 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
 
     def bool_value(self):
         return True
-
-
-# Backward-compatibility aliases
-Class = ClassDef
-Function = FunctionDef
-GenExpr = GeneratorExp

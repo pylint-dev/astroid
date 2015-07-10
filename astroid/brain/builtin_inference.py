@@ -1,9 +1,4 @@
 """Astroid hooks for various builtins."""
-from __future__ import print_function
-from astroid import as_string
-import pprint
-import sys
-
 from functools import partial
 import sys
 from textwrap import dedent
