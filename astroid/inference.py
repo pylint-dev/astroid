@@ -702,7 +702,7 @@ def infer_empty_node(self, context=None):
     else:
         try:
             for inferred in MANAGER.infer_ast_from_something(self.object,
-                                                            context=context):
+                                                             context=context):
                 yield inferred
         except AstroidError:
             yield YES

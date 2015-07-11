@@ -764,7 +764,8 @@ class FunctionDef(bases.Statement, Lambda):
     _type = "function"
     _other_fields = ('locals', 'name', 'doc', '_type', 'decorators')
 
-    def __init__(self, name, doc, lineno=None, col_offset=None, parent=None):
+    def __init__(self, name=None, doc=None, lineno=None,
+                 col_offset=None, parent=None):
         self.name = name
         self.doc = doc
         self.extra_decorators = []
@@ -1030,7 +1031,8 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
                     "'metaclass' | 'exception'")
     _other_fields = ('locals', 'globals', 'name', 'doc')
 
-    def __init__(self, name, doc, lineno=None, col_offset=None, parent=None):
+    def __init__(self, name=None, doc=None, lineno=None,
+                 col_offset=None, parent=None):
         self.instance_attrs = {}
         self.locals = {}
         self.bases = []
@@ -1330,14 +1332,14 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
         context.lookupname = name
         try:
             for inferred in bases._infer_stmts(self.getattr(name, context),
-                                              context, frame=self):
+                                               context, frame=self):
                 # yield YES object instead of descriptors when necessary
                 if (not isinstance(inferred, node_classes.Const)
                     and isinstance(inferred, bases.Instance)):
                     try:
                         inferred._proxied.getattr('__get__', context)
                     except exceptions.NotFoundError:
-                        yield inferred
+                    yield inferred
                     else:
                         yield bases.YES
                 else:

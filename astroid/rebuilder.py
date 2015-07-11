@@ -142,7 +142,6 @@ class TreeRebuilder(object):
         return self._transform(newnode)
 
     def visit(self, node, parent, assign_ctx=None):
-        # print('Debug:', dump(node), parent)
         cls = node.__class__
         if cls in self._visit_meths:
             visit_method = self._visit_meths[cls]
@@ -774,7 +773,7 @@ class TreeRebuilder3(TreeRebuilder):
     def visit_nameconstant(self, node, parent, assign_ctx=None):
         # in Python 3.4 we have NameConstant for True / False / None
         return new.Const(node.value, getattr(node, 'lineno', None),
-                            getattr(node, 'col_offset', None), parent)
+                         getattr(node, 'col_offset', None), parent)
 
     # def visit_arguments(self, node, parent, assign_ctx=None):
     #     return super(TreeRebuilder3, self).visit_arguments(
@@ -833,7 +832,7 @@ class TreeRebuilder3(TreeRebuilder):
         if 'items' not in node._fields:
             # python < 3.3
             return super(TreeRebuilder3, self).visit_with(node, parent,
-                                                           assign_ctx)
+                                                          assign_ctx)
 
         newnode = new.With(node.lineno, node.col_offset, parent)
         def visit_child(child):
@@ -844,8 +843,8 @@ class TreeRebuilder3(TreeRebuilder):
                 var = None
             return expr, var
         newnode.postinit([visit_child(child) for child in node.items],
-                          [self.visit(child, newnode, None)
-                           for child in node.body])
+                         [self.visit(child, newnode, None)
+                          for child in node.body])
         return newnode
 
     def visit_yieldfrom(self, node, parent, assign_ctx=None):
@@ -856,8 +855,8 @@ class TreeRebuilder3(TreeRebuilder):
 
     def visit_classdef(self, node, parent, assign_ctx=None):
         return super(TreeRebuilder3, self).visit_classdef(node, parent,
-                                                           assign_ctx,
-                                                           True)
+                                                          assign_ctx,
+                                                          True)
 
 if sys.version_info >= (3, 0):
     TreeRebuilder = TreeRebuilder3

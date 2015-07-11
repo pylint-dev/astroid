@@ -1060,7 +1060,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         ''')
         inferred = next(klass.infer())
         metaclass = inferred.metaclass()
-        self.assertIsInstance(metaclass, scoped_nodes.Class)
+        self.assertIsInstance(metaclass, scoped_nodes.ClassDef)
         self.assertEqual(metaclass.qname(), 'abc.ABCMeta')
 
     def test_using_invalid_six_add_metaclass_call(self):
