@@ -1,7 +1,6 @@
 """Utility functions for test code that uses astroid ASTs as input."""
 import functools
 import sys
-import textwrap
 
 from astroid import nodes
 from astroid import builder

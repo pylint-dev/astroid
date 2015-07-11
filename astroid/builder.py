@@ -86,7 +86,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
     """Class for building an astroid tree from source code or from a live module."""
 
     def __init__(self, manager=None):
-        super(raw_building.InspectBuilder, self).__init__()
+        super(AstroidBuilder, self).__init__()
         self._manager = manager or MANAGER
 
     def module_build(self, module, modname=None):
