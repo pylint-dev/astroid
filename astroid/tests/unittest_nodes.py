@@ -281,7 +281,7 @@ class TryExcept2xNodeTest(_NodeTest):
             pass
     """
 
-    
+
     def test_tuple_attribute(self):
         handler = self.astroid.body[0].handlers[0]
         self.assertIsInstance(handler.name, nodes.Tuple)
