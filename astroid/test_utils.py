@@ -1,7 +1,6 @@
 """Utility functions for test code that uses astroid ASTs as input."""
 import functools
 import sys
-import textwrap
 
 from astroid import nodes
 from astroid import builder
@@ -157,7 +156,7 @@ def extract_node(code, module_name=''):
         if line.strip().endswith(_STATEMENT_SELECTOR):
             requested_lines.append(idx + 1)
 
-    tree = build_module(code, module_name=module_name)
+    tree = builder.parse(code, module_name=module_name)
     extracted = []
     # print(as_string.dump(tree))
     if requested_lines:
@@ -175,21 +174,6 @@ def extract_node(code, module_name=''):
         return extracted[0]
     else:
         return extracted
-
-
-def build_module(code, module_name='', path=None):
-    """Parses a string module with a builder.
-    :param code: The code for the module.
-    :type code: str
-    :param module_name: The name for the module
-    :type module_name: str
-    :param path: The path for the module
-    :type module_name: str
-    :returns: The module AST.
-    :rtype:  astroid.bases.NodeNG
-    """
-    code = textwrap.dedent(code)
-    return builder.AstroidBuilder(None).string_build(code, modname=module_name, path=path)
 
 
 def require_version(minver=None, maxver=None):

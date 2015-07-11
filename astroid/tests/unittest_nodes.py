@@ -19,20 +19,22 @@
 """
 import os
 import sys
-import unittest
 import textwrap
+import unittest
 
-from astroid.node_classes import unpack_infer
-from astroid.bases import BUILTINS, InferenceContext
-from astroid.exceptions import AstroidBuildingException, NotFoundError
+import six
+
 from astroid import bases
 from astroid import builder
+from astroid import exceptions
+from astroid import node_classes
 from astroid import nodes
 from astroid import test_utils
 from astroid.tests import resources
 
 
 abuilder = builder.AstroidBuilder()
+BUILTINS = six.moves.builtins.__name__
 
 
 class AsStringTest(resources.SysPathSetup, unittest.TestCase):
@@ -159,7 +161,7 @@ class _NodeTest(unittest.TestCase):
         try:
             return self.__class__.__dict__['CODE_Astroid']
         except KeyError:
-            astroid = test_utils.build_module(self.CODE)
+            astroid = builder.parse(self.CODE)
             self.__class__.CODE_Astroid = astroid
             return astroid
 
@@ -195,15 +197,15 @@ class IfNodeTest(_NodeTest):
         self.assertEqual(len(self.astroid.body), 4)
         for stmt in self.astroid.body:
             self.assertIsInstance(stmt, nodes.If)
-        self.assertFalse(self.astroid.body[0].orelse) # simple If
-        self.assertIsInstance(self.astroid.body[1].orelse[0], nodes.Pass) # If / else
-        self.assertIsInstance(self.astroid.body[2].orelse[0], nodes.If) # If / elif
+        self.assertFalse(self.astroid.body[0].orelse)  # simple If
+        self.assertIsInstance(self.astroid.body[1].orelse[0], nodes.Pass)  # If / else
+        self.assertIsInstance(self.astroid.body[2].orelse[0], nodes.If)  # If / elif
         self.assertIsInstance(self.astroid.body[3].orelse[0].orelse[0], nodes.If)
 
     def test_block_range(self):
         # XXX ensure expected values
         self.assertEqual(self.astroid.block_range(1), (0, 22))
-        self.assertEqual(self.astroid.block_range(10), (0, 22)) # XXX (10, 22) ?
+        self.assertEqual(self.astroid.block_range(10), (0, 22))  # XXX (10, 22) ?
         self.assertEqual(self.astroid.body[1].block_range(5), (5, 6))
         self.assertEqual(self.astroid.body[1].block_range(6), (6, 6))
         self.assertEqual(self.astroid.body[1].orelse[0].block_range(7), (7, 8))
@@ -270,6 +272,7 @@ class TryExceptFinallyNodeTest(_NodeTest):
         self.assertEqual(self.astroid.body[0].block_range(6), (6, 6))
 
 
+@unittest.skipIf(six.PY3, "Python 2 specific test.")
 class TryExcept2xNodeTest(_NodeTest):
     CODE = """
         try:
@@ -277,9 +280,9 @@ class TryExcept2xNodeTest(_NodeTest):
         except AttributeError, (retval, desc):
             pass
     """
+
+
     def test_tuple_attribute(self):
-        if sys.version_info >= (3, 0):
-            self.skipTest('syntax removed from py3.x')
         handler = self.astroid.body[0].handlers[0]
         self.assertIsInstance(handler.name, nodes.Tuple)
 
@@ -317,13 +320,13 @@ class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(from_.real_name('pb'), 'ProgressBar')
         imp_ = self.module['os']
         self.assertEqual(imp_.real_name('os'), 'os')
-        self.assertRaises(NotFoundError, imp_.real_name, 'os.path')
+        self.assertRaises(exceptions.NotFoundError, imp_.real_name, 'os.path')
         imp_ = self.module['pb']
         self.assertEqual(imp_.real_name('pb'), 'ProgressBar')
-        self.assertRaises(NotFoundError, imp_.real_name, 'ProgressBar')
+        self.assertRaises(exceptions.NotFoundError, imp_.real_name, 'ProgressBar')
         imp_ = self.module2['YO']
         self.assertEqual(imp_.real_name('YO'), 'YO')
-        self.assertRaises(NotFoundError, imp_.real_name, 'data')
+        self.assertRaises(exceptions.NotFoundError, imp_.real_name, 'data')
 
     def test_as_string(self):
         ast = self.module['modutils']
@@ -359,10 +362,10 @@ from ..cave import wine\n\n"""
             except PickleError:
                 pass
         '''
-        astroid = test_utils.build_module(code)
+        astroid = builder.parse(code)
         handler_type = astroid.body[1].handlers[0].type
 
-        excs = list(unpack_infer(handler_type))
+        excs = list(node_classes.unpack_infer(handler_type))
         # The number of returned object can differ on Python 2
         # and Python 3. In one version, an additional item will
         # be returned, from the _pickle module, which is not
@@ -373,7 +376,7 @@ from ..cave import wine\n\n"""
 
     def test_absolute_import(self):
         astroid = resources.build_file('data/absimport.py')
-        ctx = InferenceContext()
+        ctx = bases.InferenceContext()
         # will fail if absolute import failed
         ctx.lookupname = 'message'
         next(astroid['message'].infer(ctx))
@@ -434,10 +437,10 @@ class NameNodeTest(unittest.TestCase):
             del True
         """
         if sys.version_info >= (3, 0):
-            with self.assertRaises(AstroidBuildingException):
-                test_utils.build_module(code)
+            with self.assertRaises(exceptions.AstroidBuildingException):
+                builder.parse(code)
         else:
-            ast = test_utils.build_module(code)
+            ast = builder.parse(code)
             ass_true = ast['True']
             self.assertIsInstance(ass_true, nodes.AssignName)
             self.assertEqual(ass_true.name, "True")
@@ -448,7 +451,7 @@ class NameNodeTest(unittest.TestCase):
 
 class ArgumentsNodeTC(unittest.TestCase):
     def test_linenumbering(self):
-        ast = test_utils.build_module('''
+        ast = builder.parse('''
             def func(a,
                 b): pass
             x = lambda x: None
@@ -481,14 +484,14 @@ class UnboundMethodNodeTest(unittest.TestCase):
         # https://bitbucket.org/logilab/astroid/issue/91, which tests
         # that UnboundMethod doesn't call super when doing .getattr.
 
-        ast = test_utils.build_module('''
+        ast = builder.parse('''
         class A(object):
             def test(self):
                 pass
         meth = A.test
         ''')
         node = next(ast['meth'].infer())
-        with self.assertRaises(NotFoundError):
+        with self.assertRaises(exceptions.NotFoundError):
             node.getattr('__missssing__')
         name = node.getattr('__name__')[0]
         self.assertIsInstance(name, nodes.Const)
@@ -498,7 +501,7 @@ class UnboundMethodNodeTest(unittest.TestCase):
 class BoundMethodNodeTest(unittest.TestCase):
 
     def test_is_property(self):
-        ast = test_utils.build_module('''
+        ast = builder.parse('''
         import abc
 
         def cached_property():

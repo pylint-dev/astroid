@@ -1339,7 +1339,7 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
                     try:
                         inferred._proxied.getattr('__get__', context)
                     except exceptions.NotFoundError:
-                    yield inferred
+                        yield inferred
                     else:
                         yield bases.YES
                 else:

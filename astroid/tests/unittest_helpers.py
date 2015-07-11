@@ -22,6 +22,7 @@ import six
 from six.moves import builtins
 
 from astroid import bases
+from astroid import builder
 from astroid import helpers
 from astroid import manager
 from astroid import raw_building
@@ -117,7 +118,7 @@ class TestHelpers(unittest.TestCase):
 
     @test_utils.require_version(minver='3.0')
     def test_object_type_metaclasses(self):
-        module = test_utils.build_module('''
+        module = builder.parse('''
         import abc
         class Meta(metaclass=abc.ABCMeta):
             pass

@@ -24,6 +24,7 @@ import unittest
 
 import astroid
 from astroid import astpeephole
+from astroid import builder
 from astroid import manager
 from astroid import test_utils
 from astroid.tests import resources
@@ -104,7 +105,7 @@ class PeepholeOptimizer(unittest.TestCase):
     def test_optimisation_disabled(self):
         try:
             MANAGER.optimize_ast = False
-            module = test_utils.build_module("""
+            module = builder.parse("""
             '1' + '2' + '3'
             """)
             self.assertIsInstance(module.body[0], astroid.Expr)
