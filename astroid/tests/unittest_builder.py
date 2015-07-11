@@ -21,15 +21,18 @@ import os
 import sys
 import unittest
 
-from astroid import builder, nodes, InferenceError, NotFoundError
-from astroid.bases import YES, BUILTINS
+import six
+
+from astroid import bases
+from astroid import builder
 from astroid import exceptions
-from astroid.manager import AstroidManager
+from astroid import manager
+from astroid import nodes
 from astroid import test_utils
 from astroid.tests import resources
 
-MANAGER = AstroidManager()
-IS_PY3 = sys.version_info[0] == 3
+MANAGER = manager.AstroidManager()
+BUILTINS = six.moves.builtins.__name__
 
 
 class FromToLineNoTest(unittest.TestCase):
@@ -270,7 +273,7 @@ class BuilderTest(unittest.TestCase):
     def test_inspect_build0(self):
         """test astroid tree build from a living object"""
         builtin_ast = MANAGER.ast_from_module_name(BUILTINS)
-        if not IS_PY3:
+        if six.PY2:
             fclass = builtin_ast['file']
             self.assertIn('name', fclass)
             self.assertIn('mode', fclass)
@@ -295,7 +298,7 @@ class BuilderTest(unittest.TestCase):
         self.assertIsInstance(builtin_ast['None'], nodes.Const)
         self.assertIsInstance(builtin_ast['True'], nodes.Const)
         self.assertIsInstance(builtin_ast['False'], nodes.Const)
-        if IS_PY3:
+        if six.PY3:
             self.assertIsInstance(builtin_ast['Exception'], nodes.Class)
             self.assertIsInstance(builtin_ast['NotImplementedError'], nodes.Class)
         else:
@@ -419,7 +422,7 @@ class BuilderTest(unittest.TestCase):
                 "new style"
         '''
         mod_ast = builder.parse(data, __name__)
-        if IS_PY3:
+        if six.PY3:
             self.assertTrue(mod_ast['A'].newstyle)
             self.assertTrue(mod_ast['B'].newstyle)
             self.assertTrue(mod_ast['E'].newstyle)
@@ -448,9 +451,9 @@ class BuilderTest(unittest.TestCase):
         self.assertIsInstance(astroid.getattr('CSTE')[0], nodes.AssName)
         self.assertEqual(astroid.getattr('CSTE')[0].fromlineno, 2)
         self.assertEqual(astroid.getattr('CSTE')[1].fromlineno, 6)
-        with self.assertRaises(NotFoundError):
+        with self.assertRaises(exceptions.NotFoundError):
             astroid.getattr('CSTE2')
-        with self.assertRaises(InferenceError):
+        with self.assertRaises(exceptions.InferenceError):
             next(astroid['global_no_effect'].ilookup('CSTE2'))
 
     @unittest.skipIf(os.name == 'java',
@@ -479,7 +482,7 @@ class BuilderTest(unittest.TestCase):
         n = test_utils.get_name_node(astroid, 'n')
         self.assertIsNot(n.scope(), astroid)
         self.assertEqual([i.__class__ for i in n.infer()],
-                         [YES.__class__])
+                         [bases.YES.__class__])
 
     def test_no_future_imports(self):
         mod = builder.parse("import sys")
@@ -651,7 +654,7 @@ class FileBuildTest(unittest.TestCase):
         self.assertEqual(klass.parent.frame(), module)
         self.assertEqual(klass.root(), module)
         self.assertEqual(klass.basenames, [])
-        if IS_PY3:
+        if six.PY3:
             self.assertTrue(klass.newstyle)
         else:
             self.assertFalse(klass.newstyle)
@@ -729,7 +732,7 @@ class ModuleBuildTest(resources.SysPathSetup, FileBuildTest):
         else:
             self.module = abuilder.module_build(data.module, 'data.module')
 
-@unittest.skipIf(IS_PY3, "guess_encoding not used on Python 3")
+@unittest.skipIf(six.PY3, "guess_encoding not used on Python 3")
 class TestGuessEncoding(unittest.TestCase):
     def setUp(self):
         self.guess_encoding = builder._guess_encoding
