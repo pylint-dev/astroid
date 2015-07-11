@@ -22,21 +22,21 @@ at the same time.
 """
 from __future__ import with_statement
 
-__docformat__ = "restructuredtext en"
-
+import _ast
+import os
 import sys
-from os.path import splitext, basename, exists, abspath
 
-from astroid.exceptions import AstroidBuildingException, InferenceError
-from astroid.raw_building import InspectBuilder
-from astroid.rebuilder import TreeRebuilder
-from astroid.manager import AstroidManager
-from astroid.bases import YES, Instance
-from astroid.modutils import modpath_from_file, _path_from_filename
+from astroid import bases
+from astroid import exceptions
+from astroid import manager
+from astroid import modutils
+from astroid import raw_building
+from astroid import rebuilder
 
-from _ast import PyCF_ONLY_AST
-def parse(string):
-    return compile(string, "<string>", 'exec', PyCF_ONLY_AST)
+
+def _parse(string):
+    return compile(string, "<string>", 'exec', _ast.PyCF_ONLY_AST)
+
 
 if sys.version_info >= (3, 0):
     # pylint: disable=no-name-in-module; We don't understand flows yet.
@@ -48,10 +48,10 @@ if sys.version_info >= (3, 0):
         stream = open(filename, 'r', newline=None, encoding=encoding)
         try:
             data = stream.read()
-        except UnicodeError: # wrong encodingg
+        except UnicodeError:  # wrong encoding
             # detect_encoding returns utf-8 if no encoding specified
             msg = 'Wrong (%s) or no encoding specified' % encoding
-            raise AstroidBuildingException(msg)
+            raise exceptions.AstroidBuildingException(msg)
         return stream, encoding, data
 
 else:
@@ -60,8 +60,7 @@ else:
     _ENCODING_RGX = re.compile(r"\s*#+.*coding[:=]\s*([-\w.]+)")
 
     def _guess_encoding(string):
-        """get encoding from a python file as string or return None if not found
-        """
+        """get encoding from a python file as string or return None if not found"""
         # check for UTF-8 byte-order mark
         if string.startswith('\xef\xbb\xbf'):
             return 'UTF-8'
@@ -78,25 +77,24 @@ else:
         encoding = _guess_encoding(data)
         return stream, encoding, data
 
-# ast NG builder ##############################################################
 
-MANAGER = AstroidManager()
+MANAGER = manager.AstroidManager()
 
-class AstroidBuilder(InspectBuilder):
-    """provide astroid building methods"""
+
+class AstroidBuilder(raw_building.InspectBuilder):
+    """Class for building an astroid tree from source code or from a live module."""
 
     def __init__(self, manager=None):
-        InspectBuilder.__init__(self)
+        super(raw_building.InspectBuilder, self).__init__()
         self._manager = manager or MANAGER
 
     def module_build(self, module, modname=None):
-        """build an astroid from a living module instance
-        """
+        """Build an astroid from a living module instance."""
         node = None
         path = getattr(module, '__file__', None)
         if path is not None:
-            path_, ext = splitext(_path_from_filename(path))
-            if ext in ('.py', '.pyc', '.pyo') and exists(path_ + '.py'):
+            path_, ext = os.path.splitext(modutils._path_from_filename(path))
+            if ext in ('.py', '.pyc', '.pyo') and os.path.exists(path_ + '.py'):
                 node = self.file_build(path_ + '.py', modname)
         if node is None:
             # this is a built-in module
@@ -111,40 +109,38 @@ class AstroidBuilder(InspectBuilder):
         return node
 
     def file_build(self, path, modname=None):
-        """build astroid from a source code file (i.e. from an ast)
+        """Build astroid from a source code file (i.e. from an ast)
 
-        path is expected to be a python source file
+        *path* is expected to be a python source file
         """
         try:
             stream, encoding, data = open_source_file(path)
         except IOError as exc:
             msg = 'Unable to load file %r (%s)' % (path, exc)
-            raise AstroidBuildingException(msg)
-        except SyntaxError as exc: # py3k encoding specification error
-            raise AstroidBuildingException(exc)
-        except LookupError as exc: # unknown encoding
-            raise AstroidBuildingException(exc)
+            raise exceptions.AstroidBuildingException(msg)
+        except SyntaxError as exc:  # py3k encoding specification error
+            raise exceptions.AstroidBuildingException(exc)
+        except LookupError as exc:  # unknown encoding
+            raise exceptions.AstroidBuildingException(exc)
         with stream:
             # get module name if necessary
             if modname is None:
                 try:
-                    modname = '.'.join(modpath_from_file(path))
+                    modname = '.'.join(modutils.modpath_from_file(path))
                 except ImportError:
-                    modname = splitext(basename(path))[0]
+                    modname = os.path.splitext(os.path.basename(path))[0]
             # build astroid representation
             module = self._data_build(data, modname, path)
             return self._post_build(module, encoding)
 
     def string_build(self, data, modname='', path=None):
-        """build astroid from source code string and return rebuilded astroid"""
+        """Build astroid from source code string."""
         module = self._data_build(data, modname, path)
         module.file_bytes = data.encode('utf-8')
         return self._post_build(module, 'utf-8')
 
     def _post_build(self, module, encoding):
-        """handles encoding and delayed nodes
-        after a module has been built
-        """
+        """Handles encoding and delayed nodes after a module has been built"""
         module.file_encoding = encoding
         self._manager.cache_module(module)
         # post tree building steps after we stored the module in the cache:
@@ -159,14 +155,13 @@ class AstroidBuilder(InspectBuilder):
         return module
 
     def _data_build(self, data, modname, path):
-        """build tree node from data and add some informations"""
-        # this method could be wrapped with a pickle/cache function
+        """Build tree node from data and add some informations"""
         try:
-            node = parse(data + '\n')
+            node = _parse(data + '\n')
         except (TypeError, ValueError, SyntaxError) as exc:
-            raise AstroidBuildingException(exc)
+            raise exceptions.AstroidBuildingException(exc)
         if path is not None:
-            node_file = abspath(path)
+            node_file = os.path.abspath(path)
         else:
             node_file = '<?>'
         if modname.endswith('.__init__'):
@@ -174,25 +169,26 @@ class AstroidBuilder(InspectBuilder):
             package = True
         else:
             package = path and path.find('__init__.py') > -1 or False
-        rebuilder = TreeRebuilder(self._manager)
-        module = rebuilder.visit_module(node, modname, node_file, package)
-        module._from_nodes = rebuilder._from_nodes
-        module._delayed_assattr = rebuilder._delayed_assattr
+        builder = rebuilder.TreeRebuilder(self._manager)
+        module = builder.visit_module(node, modname, node_file, package)
+        module._from_nodes = builder._from_nodes
+        module._delayed_assattr = builder._delayed_assattr
         return module
 
     def add_from_names_to_locals(self, node):
-        """store imported names to the locals;
-        resort the locals if coming from a delayed node
-        """
+        """Store imported names to the locals
 
+        Resort the locals if coming from a delayed node
+        """
         _key_func = lambda node: node.fromlineno
         def sort_locals(my_list):
             my_list.sort(key=_key_func)
+
         for (name, asname) in node.names:
             if name == '*':
                 try:
                     imported = node.do_import_module()
-                except InferenceError:
+                except exceptions.InferenceError:
                     continue
                 for name in imported.wildcard_import_names():
                     node.parent.set_local(name, node)
@@ -202,19 +198,20 @@ class AstroidBuilder(InspectBuilder):
                 sort_locals(node.parent.scope().locals[asname or name])
 
     def delayed_assattr(self, node):
-        """visit a AssAttr node -> add name to locals, handle members
-        definition
+        """Visit a AssAttr node
+
+        This adds name to locals and handle members definition.
         """
         try:
             frame = node.frame()
             for infered in node.expr.infer():
-                if infered is YES:
+                if infered is bases.YES:
                     continue
                 try:
-                    if infered.__class__ is Instance:
+                    if infered.__class__ is bases.Instance:
                         infered = infered._proxied
                         iattrs = infered.instance_attrs
-                    elif isinstance(infered, Instance):
+                    elif isinstance(infered, bases.Instance):
                         # Const, Tuple, ... we may be wrong, may be not, but
                         # anyway we don't want to pollute builtin's namespace
                         continue
@@ -224,18 +221,15 @@ class AstroidBuilder(InspectBuilder):
                         iattrs = infered.locals
                 except AttributeError:
                     # XXX log error
-                    #import traceback
-                    #traceback.print_exc()
                     continue
                 values = iattrs.setdefault(node.attrname, [])
                 if node in values:
                     continue
                 # get assign in __init__ first XXX useful ?
-                if frame.name == '__init__' and values and not \
-                       values[0].frame().name == '__init__':
+                if (frame.name == '__init__' and values and
+                        not values[0].frame().name == '__init__'):
                     values.insert(0, node)
                 else:
                     values.append(node)
-        except InferenceError:
+        except exceptions.InferenceError:
             pass
-

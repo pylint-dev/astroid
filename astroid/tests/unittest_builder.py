@@ -23,6 +23,7 @@ import unittest
 
 from astroid import builder, nodes, InferenceError, NotFoundError
 from astroid.bases import YES, BUILTINS
+from astroid import exceptions
 from astroid.manager import AstroidManager
 from astroid import test_utils
 from astroid.tests import resources
@@ -251,11 +252,11 @@ class BuilderTest(unittest.TestCase):
         self.builder = builder.AstroidBuilder()
 
     def test_data_build_null_bytes(self):
-        with self.assertRaises(builder.AstroidBuildingException):
+        with self.assertRaises(exceptions.AstroidBuildingException):
             self.builder.string_build('\x00')
 
     def test_data_build_invalid_x_escape(self):
-        with self.assertRaises(builder.AstroidBuildingException):
+        with self.assertRaises(exceptions.AstroidBuildingException):
             self.builder.string_build('"\\x1"')
 
     def test_missing_newline(self):
@@ -263,7 +264,7 @@ class BuilderTest(unittest.TestCase):
         resources.build_file('data/noendingnewline.py')
 
     def test_missing_file(self):
-        with self.assertRaises(builder.AstroidBuildingException):
+        with self.assertRaises(exceptions.AstroidBuildingException):
             resources.build_file('data/inexistant.py')
 
     def test_inspect_build0(self):
