@@ -22,6 +22,7 @@ import six
 
 from astroid import MANAGER
 from astroid import bases
+from astroid import builder
 from astroid import nodes
 from astroid import test_utils
 import astroid
@@ -277,7 +278,7 @@ class MultiprocessingBrainTest(unittest.TestCase):
     def test_multiprocessing_manager(self):
         # Test that we have the proper attributes
         # for a multiprocessing.managers.SyncManager
-        module = test_utils.build_module("""
+        module = builder.parse("""
         import multiprocessing
         manager = multiprocessing.Manager()
         queue = manager.Queue()
@@ -335,7 +336,7 @@ class MultiprocessingBrainTest(unittest.TestCase):
 class EnumBrainTest(unittest.TestCase):
 
     def test_simple_enum(self):
-        module = test_utils.build_module("""
+        module = builder.parse("""
         import enum
 
         class MyEnum(enum.Enum):
@@ -360,7 +361,7 @@ class EnumBrainTest(unittest.TestCase):
         self.assertIsInstance(meth, astroid.Function)
 
     def test_enum_multiple_base_classes(self):
-        module = test_utils.build_module("""
+        module = builder.parse("""
         import enum
 
         class Mixin:
@@ -377,7 +378,7 @@ class EnumBrainTest(unittest.TestCase):
                         'Enum instance should share base classes with generating class')
 
     def test_int_enum(self):
-        module = test_utils.build_module("""
+        module = builder.parse("""
         import enum
 
         class MyEnum(enum.IntEnum):
@@ -396,7 +397,7 @@ class EnumBrainTest(unittest.TestCase):
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
 class DateutilBrainTest(unittest.TestCase):
     def test_parser(self):
-        module = test_utils.build_module("""
+        module = builder.parse("""
         from dateutil.parser import parse
         d = parse('2000-01-01')
         """)

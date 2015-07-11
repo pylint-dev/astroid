@@ -159,7 +159,7 @@ class _NodeTest(unittest.TestCase):
         try:
             return self.__class__.__dict__['CODE_Astroid']
         except KeyError:
-            astroid = test_utils.build_module(self.CODE)
+            astroid = builder.parse(self.CODE)
             self.__class__.CODE_Astroid = astroid
             return astroid
 
@@ -359,7 +359,7 @@ from ..cave import wine\n\n"""
             except PickleError:
                 pass
         '''
-        astroid = test_utils.build_module(code)
+        astroid = builder.parse(code)
         handler_type = astroid.body[1].handlers[0].type
 
         excs = list(unpack_infer(handler_type))
@@ -435,9 +435,9 @@ class NameNodeTest(unittest.TestCase):
         """
         if sys.version_info >= (3, 0):
             with self.assertRaises(AstroidBuildingException):
-                test_utils.build_module(code)
+                builder.parse(code)
         else:
-            ast = test_utils.build_module(code)
+            ast = builder.parse(code)
             ass_true = ast['True']
             self.assertIsInstance(ass_true, nodes.AssName)
             self.assertEqual(ass_true.name, "True")
@@ -448,7 +448,7 @@ class NameNodeTest(unittest.TestCase):
 
 class ArgumentsNodeTC(unittest.TestCase):
     def test_linenumbering(self):
-        ast = test_utils.build_module('''
+        ast = builder.parse('''
             def func(a,
                 b): pass
             x = lambda x: None
@@ -481,7 +481,7 @@ class UnboundMethodNodeTest(unittest.TestCase):
         # https://bitbucket.org/logilab/astroid/issue/91, which tests
         # that UnboundMethod doesn't call super when doing .getattr.
 
-        ast = test_utils.build_module('''
+        ast = builder.parse('''
         class A(object):
             def test(self):
                 pass
@@ -498,7 +498,7 @@ class UnboundMethodNodeTest(unittest.TestCase):
 class BoundMethodNodeTest(unittest.TestCase):
 
     def test_is_property(self):
-        ast = test_utils.build_module('''
+        ast = builder.parse('''
         import abc
 
         def cached_property():

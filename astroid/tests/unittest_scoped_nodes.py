@@ -34,6 +34,7 @@ from astroid.bases import (
     BUILTINS, Instance,
     BoundMethod, UnboundMethod, Generator
 )
+from astroid import builder
 from astroid import __pkginfo__
 from astroid import test_utils
 from astroid.tests import resources
@@ -108,7 +109,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         res = sorted(m.wildcard_import_names())
         self.assertEqual(res, ['Aaa', 'func', 'name', 'other'])
 
-        m = test_utils.build_module('''
+        m = builder.parse('''
             from missing import tzop
             trop = "test"
             __all__ = (trop, "test1", tzop, 42)
@@ -116,7 +117,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         res = sorted(m.wildcard_import_names())
         self.assertEqual(res, ["test", "test1"])
 
-        m = test_utils.build_module('''
+        m = builder.parse('''
             test = tzop = 42
             __all__ = ('test', ) + ('tzop', )
         ''')
@@ -129,7 +130,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
             appli += 2
             del appli
         '''
-        astroid = test_utils.build_module(data, __name__)
+        astroid = builder.parse(data, __name__)
         # test del statement not returned by getattr
         self.assertEqual(len(astroid.getattr('appli')), 2,
                          astroid.getattr('appli'))
@@ -161,7 +162,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
     def test_import_1(self):
         data = '''from . import subpackage'''
         sys.path.insert(0, resources.find('data'))
-        astroid = test_utils.build_module(data, 'package', 'data/package/__init__.py')
+        astroid = builder.parse(data, 'package', 'data/package/__init__.py')
         try:
             m = astroid.import_module('', level=1)
             self.assertEqual(m.name, 'package')
@@ -174,7 +175,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
 
     def test_import_2(self):
         data = '''from . import subpackage as pouet'''
-        astroid = test_utils.build_module(data, 'package', 'data/package/__init__.py')
+        astroid = builder.parse(data, 'package', 'data/package/__init__.py')
         sys.path.insert(0, resources.find('data'))
         try:
             m = astroid.import_module('', level=1)
@@ -188,7 +189,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
 
     def test_file_stream_in_memory(self):
         data = '''irrelevant_variable is irrelevant'''
-        astroid = test_utils.build_module(data, 'in_memory')
+        astroid = builder.parse(data, 'in_memory')
         with warnings.catch_warnings(record=True):
             self.assertEqual(astroid.file_stream.read().decode(), data)
 
@@ -280,7 +281,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
             def nested_args(a, (b, c, d)):
                 "nested arguments test"
         '''
-        tree = test_utils.build_module(code)
+        tree = builder.parse(code)
         func = tree['nested_args']
         self.assertEqual(sorted(func.locals), ['a', 'b', 'c', 'd'])
         self.assertEqual(func.args.format_args(), 'a, (b, c, d)')
@@ -353,12 +354,12 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
             def f():
                 g = lambda: None
         '''
-        astroid = test_utils.build_module(data)
+        astroid = builder.parse(data)
         g = list(astroid['f'].ilookup('g'))[0]
         self.assertEqual(g.pytype(), '%s.function' % BUILTINS)
 
     def test_lambda_qname(self):
-        astroid = test_utils.build_module('lmbd = lambda: None', __name__)
+        astroid = builder.parse('lmbd = lambda: None', __name__)
         self.assertEqual('%s.<lambda>' % __name__, astroid['lmbd'].parent.value.qname())
 
     def test_is_method(self):
@@ -380,7 +381,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
             def sfunction():
                 return -1
         '''
-        astroid = test_utils.build_module(data)
+        astroid = builder.parse(data)
         self.assertTrue(astroid['A']['meth1'].is_method())
         self.assertTrue(astroid['A']['meth2'].is_method())
         self.assertTrue(astroid['A']['meth3'].is_method())
@@ -392,7 +393,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
             code = 'def f(a, (b, c), *args, **kwargs): pass'
         else:
             code = 'def f(a, b, c, *args, **kwargs): pass'
-        astroid = test_utils.build_module(code, __name__)
+        astroid = builder.parse(code, __name__)
         self.assertEqual(astroid['f'].argnames(), ['a', 'b', 'c', 'args', 'kwargs'])
 
     def test_return_nothing(self):
@@ -403,7 +404,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
 
             a = func()
         '''
-        astroid = test_utils.build_module(data)
+        astroid = builder.parse(data)
         call = astroid.body[1].value
         func_vals = call.infered()
         self.assertEqual(len(func_vals), 1)
@@ -419,7 +420,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
             test.bar = 1
             test()
         """
-        astroid = test_utils.build_module(data, 'mod')
+        astroid = builder.parse(data, 'mod')
         func = astroid.body[2].value.func.infered()[0]
         self.assertIsInstance(func, nodes.Function)
         self.assertEqual(func.name, 'test')
@@ -428,7 +429,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(one.value, 1)
 
     def test_type_builtin_descriptor_subclasses(self):
-        astroid = test_utils.build_module("""
+        astroid = builder.parse("""
             class classonlymethod(classmethod):
                 pass
             class staticonlymethod(staticmethod):
@@ -459,7 +460,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
                          'staticmethod')
 
     def test_decorator_builtin_descriptors(self):
-        astroid = test_utils.build_module("""
+        astroid = builder.parse("""
             def static_decorator(platform=None, order=50):
                 def wrapper(f):
                     f.cgm_module = True
@@ -582,7 +583,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             self.assertEqual(len(cls.getattr('__mro__')), 1)
 
     def test_cls_special_attributes_2(self):
-        astroid = test_utils.build_module('''
+        astroid = builder.parse('''
             class A: pass
             class B: pass
 
@@ -611,7 +612,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(r_sibling.name, 'YOUPI')
 
     def test_local_attr_ancestors(self):
-        module = test_utils.build_module('''
+        module = builder.parse('''
         class A():
             def __init__(self): pass
         class B(A): pass
@@ -646,7 +647,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertRaises(StopIteration, partial(next, it))
 
     def test_local_attr_mro(self):
-        module = test_utils.build_module('''
+        module = builder.parse('''
         class A(object):
             def __init__(self): pass
         class B(A):
@@ -748,7 +749,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                     return cls
                 registered = classmethod(registered)
         '''
-        astroid = test_utils.build_module(data, __name__)
+        astroid = builder.parse(data, __name__)
         cls = astroid['WebAppObject']
         self.assertEqual(sorted(cls.locals.keys()),
                          ['appli', 'config', 'registered', 'schema'])
@@ -760,7 +761,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                 appli += 2
                 del self.appli
         '''
-        astroid = test_utils.build_module(data, __name__)
+        astroid = builder.parse(data, __name__)
         cls = astroid['WebAppObject']
         # test del statement not returned by getattr
         self.assertEqual(len(cls.getattr('appli')), 2)
@@ -774,7 +775,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                     self.appli += 2
                     del self.appli
          '''
-        astroid = test_utils.build_module(data)
+        astroid = builder.parse(data)
         inst = Instance(astroid['WebAppObject'])
         # test del statement not returned by getattr
         self.assertEqual(len(inst.getattr('appli')), 2)
@@ -798,7 +799,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                         val = self.bb
                     self.aa += val
         '''
-        astroid = test_utils.build_module(data)
+        astroid = builder.parse(data)
         inst = Instance(astroid['Klass'])
         self.assertEqual(len(inst.getattr('aa')), 3, inst.getattr('aa'))
         self.assertEqual(len(inst.getattr('bb')), 1, inst.getattr('bb'))
@@ -821,7 +822,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             inst = Clazz()
             inst.m4 = func
         '''
-        astroid = test_utils.build_module(data)
+        astroid = builder.parse(data)
         cls = astroid['Clazz']
         # test del statement not returned by getattr
         for method in ('m1', 'm2', 'm3'):
@@ -846,7 +847,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             class Past(Present):
                 pass
         '''
-        astroid = test_utils.build_module(data)
+        astroid = builder.parse(data)
         past = astroid['Past']
         attr = past.getattr('attr')
         self.assertEqual(len(attr), 1)
@@ -866,7 +867,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             def g2():
                 pass
         '''
-        astroid = test_utils.build_module(data)
+        astroid = builder.parse(data)
         self.assertEqual(astroid['g1'].fromlineno, 4)
         self.assertEqual(astroid['g1'].tolineno, 5)
         self.assertEqual(astroid['g2'].fromlineno, 9)
@@ -874,7 +875,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
     @test_utils.require_version(maxver='3.0')
     def test_simple_metaclass(self):
-        astroid = test_utils.build_module("""
+        astroid = builder.parse("""
             class Test(object):
                 __metaclass__ = type
         """)
@@ -884,7 +885,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(metaclass.name, 'type')
 
     def test_metaclass_error(self):
-        astroid = test_utils.build_module("""
+        astroid = builder.parse("""
             class Test(object):
                 __metaclass__ = typ
         """)
@@ -893,7 +894,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
     @test_utils.require_version(maxver='3.0')
     def test_metaclass_imported(self):
-        astroid = test_utils.build_module("""
+        astroid = builder.parse("""
             from abc import ABCMeta
             class Test(object):
                 __metaclass__ = ABCMeta
@@ -905,7 +906,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(metaclass.name, 'ABCMeta')
 
     def test_metaclass_yes_leak(self):
-        astroid = test_utils.build_module("""
+        astroid = builder.parse("""
             # notice `ab` instead of `abc`
             from ab import ABCMeta
 
@@ -917,7 +918,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
     @test_utils.require_version(maxver='3.0')
     def test_newstyle_and_metaclass_good(self):
-        astroid = test_utils.build_module("""
+        astroid = builder.parse("""
             from abc import ABCMeta
             class Test:
                 __metaclass__ = ABCMeta
@@ -925,7 +926,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         klass = astroid['Test']
         self.assertTrue(klass.newstyle)
         self.assertEqual(klass.metaclass().name, 'ABCMeta')
-        astroid = test_utils.build_module("""
+        astroid = builder.parse("""
             from abc import ABCMeta
             __metaclass__ = ABCMeta
             class Test:
@@ -937,7 +938,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
     @test_utils.require_version(maxver='3.0')
     def test_nested_metaclass(self):
-        astroid = test_utils.build_module("""
+        astroid = builder.parse("""
             from abc import ABCMeta
             class A(object):
                 __metaclass__ = ABCMeta
@@ -960,7 +961,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
     @test_utils.require_version(maxver='3.0')
     def test_parent_metaclass(self):
-        astroid = test_utils.build_module("""
+        astroid = builder.parse("""
             from abc import ABCMeta
             class Test:
                 __metaclass__ = ABCMeta
@@ -974,7 +975,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
     @test_utils.require_version(maxver='3.0')
     def test_metaclass_ancestors(self):
-        astroid = test_utils.build_module("""
+        astroid = builder.parse("""
             from abc import ABCMeta
 
             class FirstMeta(object):
@@ -1074,7 +1075,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsNone(inferred.metaclass())
 
     def test_nonregr_infer_callresult(self):
-        astroid = test_utils.build_module("""
+        astroid = builder.parse("""
             class Delegate(object):
                 def __get__(self, obj, cls):
                     return getattr(obj._subject, self.attribute)
@@ -1091,7 +1092,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(list(instance.infer()), [YES])
 
     def test_slots(self):
-        astroid = test_utils.build_module("""
+        astroid = builder.parse("""
             from collections import deque
             from textwrap import dedent
 
@@ -1138,7 +1139,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
     @test_utils.require_version(maxver='3.0')
     def test_slots_py2(self):
-        module = test_utils.build_module("""
+        module = builder.parse("""
         class UnicodeSlots(object):
             __slots__ = (u"a", u"b", "c")
         """)
@@ -1150,7 +1151,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
     @test_utils.require_version(maxver='3.0')
     def test_slots_py2_not_implemented(self):
-        module = test_utils.build_module("""
+        module = builder.parse("""
         class OldStyle:
             __slots__ = ("a", "b")
         """)
@@ -1160,7 +1161,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(str(cm.exception), msg)
 
     def test_slots_empty_list_of_slots(self):
-        module = test_utils.build_module("""
+        module = builder.parse("""
         class Klass(object):
             __slots__ = ()
         """)
@@ -1199,7 +1200,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertTrue(node.newstyle)
 
     def test_with_metaclass_mro(self):
-        astroid = test_utils.build_module("""
+        astroid = builder.parse("""
         import six
 
         class C(object):
@@ -1212,7 +1213,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqualMro(astroid['A'], ['A', 'B', 'C', 'object'])
 
     def test_mro(self):
-        astroid = test_utils.build_module("""
+        astroid = builder.parse("""
         class C(object): pass
         class D(dict, C): pass
 
@@ -1346,7 +1347,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(inferred.value, 42)
 
     def test_has_dynamic_getattr(self):
-        module = test_utils.build_module("""
+        module = builder.parse("""
         class Getattr(object):
             def __getattr__(self, attrname):
                 pass
@@ -1370,7 +1371,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertFalse(module['timedelta'].has_dynamic_getattr())
 
     def test_duplicate_bases_namedtuple(self):
-        module = test_utils.build_module("""
+        module = builder.parse("""
         import collections
         _A = collections.namedtuple('A', 'a')
 

@@ -63,6 +63,7 @@ from astroid import raw_building
 from astroid.bases import YES, Instance, BoundMethod, UnboundMethod
 from astroid.node_classes import are_exclusive, unpack_infer
 from astroid.scoped_nodes import builtin_lookup
+from astroid.builder import parse
 
 # make a manager instance (borg) accessible from astroid package
 from astroid.manager import AstroidManager

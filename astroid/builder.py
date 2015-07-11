@@ -25,6 +25,7 @@ from __future__ import with_statement
 import _ast
 import os
 import sys
+import textwrap
 
 from astroid import bases
 from astroid import exceptions
@@ -233,3 +234,15 @@ class AstroidBuilder(raw_building.InspectBuilder):
                     values.append(node)
         except exceptions.InferenceError:
             pass
+
+
+def parse(code, module_name='', path=None):
+    """Parses a source string in order to obtain an astroid AST from it
+
+    :param str code: The code for the module.
+    :param str module_name: The name for the module, if any
+    :param str path: The path for the module
+    """
+    code = textwrap.dedent(code)
+    return AstroidBuilder(MANAGER).string_build(
+        code, modname=module_name, path=path)
