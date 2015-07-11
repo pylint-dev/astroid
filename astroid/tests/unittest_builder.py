@@ -23,6 +23,7 @@ import unittest
 
 from astroid import builder, nodes, InferenceError, NotFoundError
 from astroid.bases import YES, BUILTINS
+from astroid import exceptions
 from astroid.manager import AstroidManager
 from astroid import test_utils
 from astroid.tests import resources
@@ -251,15 +252,19 @@ class BuilderTest(unittest.TestCase):
         self.builder = builder.AstroidBuilder()
 
     def test_data_build_null_bytes(self):
-        with self.assertRaises(builder.AstroidBuildingException):
+        with self.assertRaises(exceptions.AstroidBuildingException):
             self.builder.string_build('\x00')
+
+    def test_data_build_invalid_x_escape(self):
+        with self.assertRaises(exceptions.AstroidBuildingException):
+            self.builder.string_build('"\\x1"')
 
     def test_missing_newline(self):
         """check that a file with no trailing new line is parseable"""
         resources.build_file('data/noendingnewline.py')
 
     def test_missing_file(self):
-        with self.assertRaises(builder.AstroidBuildingException):
+        with self.assertRaises(exceptions.AstroidBuildingException):
             resources.build_file('data/inexistant.py')
 
     def test_inspect_build0(self):
@@ -301,6 +306,9 @@ class BuilderTest(unittest.TestCase):
         time_ast = MANAGER.ast_from_module_name('time')
         self.assertTrue(time_ast)
         self.assertEqual(time_ast['time'].args.defaults, [])
+
+    if os.name == 'java':
+        test_inspect_build1 = unittest.expectedFailure(test_inspect_build1)
 
     def test_inspect_build2(self):
         """test astroid tree build from a living object"""
@@ -445,6 +453,11 @@ class BuilderTest(unittest.TestCase):
         with self.assertRaises(InferenceError):
             next(astroid['global_no_effect'].ilookup('CSTE2'))
 
+    @unittest.skipIf(os.name == 'java',
+                     'This test is skipped on Jython, because the '
+                     'socket object is patched later on with the '
+                     'methods we are looking for. Since we do not '
+                     'understand setattr in for loops yet, we skip this')
     def test_socket_build(self):
         import socket
         astroid = self.builder.module_build(socket)
@@ -452,7 +465,6 @@ class BuilderTest(unittest.TestCase):
         # the socket module) but the last one as those attributes dynamically
         # set and astroid is missing this.
         for fclass in astroid.igetattr('socket'):
-            #print fclass.root().name, fclass.name, fclass.lineno
             self.assertIn('connect', fclass)
             self.assertIn('send', fclass)
             self.assertIn('close', fclass)
@@ -601,10 +613,10 @@ class FileBuildTest(unittest.TestCase):
         self.assertIs(_locals, module.globals)
         keys = sorted(_locals.keys())
         should = ['MY_DICT', 'YO', 'YOUPI',
-                '__revision__', 'global_access', 'modutils', 'four_args',
-                 'os', 'redirect', 'pb', 'LocalsVisitor', 'ASTWalker']
+                  '__revision__', 'global_access', 'modutils', 'four_args',
+                  'os', 'redirect', 'pb']
         should.sort()
-        self.assertEqual(keys, should)
+        self.assertEqual(keys, sorted(should))
 
     def test_function_base_props(self):
         """test base properties and method of a astroid function"""
@@ -656,7 +668,7 @@ class FileBuildTest(unittest.TestCase):
         keys = locals2.keys()
         self.assertEqual(sorted(keys),
                          ['__init__', 'class_attr', 'class_method',
-                         'method', 'static_method'])
+                          'method', 'static_method'])
 
     def test_class_instance_attrs(self):
         module = self.module
@@ -709,8 +721,13 @@ class ModuleBuildTest(resources.SysPathSetup, FileBuildTest):
     def setUp(self):
         super(ModuleBuildTest, self).setUp()
         abuilder = builder.AstroidBuilder()
-        import data.module
-        self.module = abuilder.module_build(data.module, 'data.module')
+        try:
+            import data.module
+        except ImportError:
+            # Make pylint happy.
+            self.skipTest('Unable to load data.module')
+        else:
+            self.module = abuilder.module_build(data.module, 'data.module')
 
 @unittest.skipIf(IS_PY3, "guess_encoding not used on Python 3")
 class TestGuessEncoding(unittest.TestCase):
