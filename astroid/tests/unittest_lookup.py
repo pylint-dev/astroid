@@ -24,6 +24,7 @@ import unittest
 from astroid import nodes, InferenceError, NotFoundError, UnresolvableName
 from astroid.scoped_nodes import builtin_lookup
 from astroid.bases import YES
+from astroid import builder
 from astroid import test_utils
 from astroid.tests import resources
 
@@ -48,7 +49,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
             def func():
                 c = 1
         '''
-        astroid = test_utils.build_module(code, __name__)
+        astroid = builder.parse(code, __name__)
         # a & b
         a = next(astroid.nodes_of_class(nodes.Name))
         self.assertEqual(a.lineno, 2)
@@ -72,7 +73,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(func.lookup('c')[1]), 1)
 
     def test_module(self):
-        astroid = test_utils.build_module('pass', __name__)
+        astroid = builder.parse('pass', __name__)
         # built-in objects
         none = next(astroid.ilookup('None'))
         self.assertIsNone(none.value)
@@ -92,7 +93,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
             class A(A):
                 pass
         '''
-        astroid = test_utils.build_module(code, __name__)
+        astroid = builder.parse(code, __name__)
         cls1 = astroid.locals['A'][0]
         cls2 = astroid.locals['A'][1]
         name = next(cls2.nodes_of_class(nodes.Name))
@@ -132,7 +133,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
 
 
     def test_loopvar_hiding(self):
-        astroid = test_utils.build_module("""
+        astroid = builder.parse("""
             x = 10
             for x in range(5):
                 print (x)
@@ -148,7 +149,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(xnames[2].lookup('x')[1]), 2)
 
     def test_list_comps(self):
-        astroid = test_utils.build_module("""
+        astroid = builder.parse("""
             print ([ i for i in range(10) ])
             print ([ i for i in range(10) ])
             print ( list( i for i in range(10) ) )
@@ -163,7 +164,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_list_comp_target(self):
         """test the list comprehension target"""
-        astroid = test_utils.build_module("""
+        astroid = builder.parse("""
             ten = [ var for var in range(10) ]
             var
         """)
@@ -174,7 +175,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
             self.assertRaises(UnresolvableName, var.infered)
 
     def test_dict_comps(self):
-        astroid = test_utils.build_module("""
+        astroid = builder.parse("""
             print ({ i: j for i in range(10) for j in range(10) })
             print ({ i: j for i in range(10) for j in range(10) })
         """, __name__)
@@ -191,7 +192,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(xnames[1].lookup('i')[1][0].lineno, 3)
 
     def test_set_comps(self):
-        astroid = test_utils.build_module("""
+        astroid = builder.parse("""
             print ({ i for i in range(10) })
             print ({ i for i in range(10) })
         """, __name__)
@@ -202,7 +203,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(xnames[1].lookup('i')[1][0].lineno, 3)
 
     def test_set_comp_closure(self):
-        astroid = test_utils.build_module("""
+        astroid = builder.parse("""
             ten = { var for var in range(10) }
             var
         """)
@@ -210,7 +211,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertRaises(UnresolvableName, var.infered)
 
     def test_generator_attributes(self):
-        tree = test_utils.build_module("""
+        tree = builder.parse("""
             def count():
                 "test"
                 yield 0
@@ -240,7 +241,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
             class NoName: pass
             p3 = NoName()
         '''
-        astroid = test_utils.build_module(code, __name__)
+        astroid = builder.parse(code, __name__)
         p1 = next(astroid['p1'].infer())
         self.assertTrue(p1.getattr('__name__'))
         p2 = next(astroid['p2'].infer())
@@ -251,7 +252,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
 
 
     def test_function_module_special(self):
-        astroid = test_utils.build_module('''
+        astroid = builder.parse('''
         def initialize(linter):
             """initialize linter with checkers in this package """
             package_load(linter, __path__[0])
@@ -322,7 +323,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
                 def __init__(self):
                     print (FileA.funcA())
         '''
-        astroid = test_utils.build_module(code, __name__)
+        astroid = builder.parse(code, __name__)
         it = astroid['Test']['__init__'].ilookup('FileA')
         obj = next(it)
         self.assertIsInstance(obj, nodes.Class)
@@ -343,7 +344,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
             def run1():
                 f = Frobble()
         '''
-        astroid = test_utils.build_module(code, __name__)
+        astroid = builder.parse(code, __name__)
         stmts = astroid['run2'].lookup('Frobbel')[1]
         self.assertEqual(len(stmts), 0)
         stmts = astroid['run1'].lookup('Frobbel')[1]

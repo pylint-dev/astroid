@@ -23,6 +23,7 @@ import unittest
 
 import six
 
+from astroid.builder import parse
 from astroid import InferenceError, builder, nodes
 from astroid.inference import infer_end as inference_infer_end
 from astroid.bases import YES, Instance, BoundMethod, UnboundMethod,\
@@ -118,10 +119,10 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         a, b= b, a # Gasp !
         '''
 
-    ast = test_utils.build_module(CODE, __name__)
+    ast = parse(CODE, __name__)
 
     def test_infer_abstract_property_return_values(self):
-        module = test_utils.build_module('''
+        module = parse('''
         import abc
 
         class A(object):
@@ -357,7 +358,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
             a = f()
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         a = ast['a']
         a_infered = a.infered()
         self.assertEqual(a_infered[0].value, 1)
@@ -387,7 +388,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 ex2 = ex
                 raise
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         ex1 = ast['ex1']
         ex1_infer = ex1.infer()
         ex1 = next(ex1_infer)
@@ -417,7 +418,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             a = 2
             d = a
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         n = ast['b']
         n_infer = n.infer()
         infered = next(n_infer)
@@ -442,7 +443,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             s = ''
             s2 = '_'
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         n = ast['l']
         infered = next(n.infer())
         self.assertIsInstance(infered, nodes.List)
@@ -477,7 +478,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_builtin_types(self):
         code = 's = {1}'
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         n = ast['s']
         infered = next(n.infer())
         self.assertIsInstance(infered, nodes.Set)
@@ -488,7 +489,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
     @test_utils.require_version(maxver='3.0')
     def test_unicode_type(self):
         code = '''u = u""'''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         n = ast['u']
         infered = next(n.infer())
         self.assertIsInstance(infered, nodes.Const)
@@ -503,7 +504,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 statm = staticmethod(open)
                 clsm = classmethod('whatever')
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         statm = next(ast['A'].igetattr('statm'))
         self.assertTrue(statm.callable())
         clsm = next(ast['A'].igetattr('clsm'))
@@ -514,7 +515,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             class Warning(Warning):
                 pass
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         w = ast['Warning']
         ancestors = w.ancestors()
         ancestor = next(ancestors)
@@ -536,7 +537,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             from astroid.modutils import load_module_from_name
             xxx = load_module_from_name('__pkginfo__')
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         xxx = ast['xxx']
         self.assertSetEqual({n.__class__ for n in xxx.infered()},
                             {nodes.Const, YES.__class__})
@@ -552,7 +553,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                     kwargs['e_type'] = e_type.capitalize().encode()
                     print(args)
             '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         arg = test_utils.get_name_node(ast['ErudiEntitySchema']['__init__'], 'e_type')
         self.assertEqual([n.__class__ for n in arg.infer()],
                          [YES.__class__])
@@ -617,7 +618,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                     if ok:
                         fct(a_line)
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         self.assertEqual(len(list(ast['process_line'].infer_call_result(
                                                                 None))), 3)
         self.assertEqual(len(list(ast['tupletest'].infer())), 3)
@@ -654,7 +655,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                     something = 1.0j
                 return something.conjugate()
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         self.assertEqual([i.value for i in
                 test_utils.get_name_node(ast, 'something', -1).infer()], [1.0, 1.0j])
 
@@ -732,7 +733,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
             print ([(d,e) for e,d in ([1,2], [3,4])])
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         self.assertEqual([i.value for i in
                             test_utils.get_name_node(ast, 'a', -1).infer()], [1, 2, 3])
         self.assertEqual([i.value for i in
@@ -749,7 +750,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         code = '''
             print ((d,e) for e,d in ([1,2], [3,4]))
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         self.assertEqual([i.value for i in
                             test_utils.get_name_node(ast, 'd', -1).infer()], [2, 4])
         self.assertEqual([i.value for i in
@@ -789,7 +790,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
             un = mirror(1)
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         infered = list(ast.igetattr('un'))
         self.assertEqual(len(infered), 1)
         self.assertIsInstance(infered[0], nodes.Const)
@@ -801,7 +802,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
             un = mirror(1)
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         infered = list(ast.igetattr('mirror'))
         self.assertEqual(len(infered), 1)
         self.assertIsInstance(infered[0], nodes.Lambda)
@@ -823,7 +824,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
             sub = Sub.instance()
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         infered = list(ast.igetattr('sub'))
         self.assertEqual(len(infered), 1)
         self.assertIsInstance(infered[0], Instance)
@@ -841,7 +842,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             from new import code as make_code
             print (make_code)
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         infered = list(ast.igetattr('osp'))
         self.assertEqual(len(infered), 1)
         self.assertIsInstance(infered[0], nodes.Module)
@@ -967,7 +968,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
         x = randint(1)
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         infered = list(ast.igetattr('x'))
         self.assertEqual(len(infered), 2)
         value = [str(v) for v in infered]
@@ -994,7 +995,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             def f(x):
                 a = ()[x]
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         infered = list(ast['f'].ilookup('a'))
         self.assertEqual(len(infered), 1)
         self.assertEqual(infered[0], YES)
@@ -1013,7 +1014,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 def __init__(self):
                     self.attr = 41
         """
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         foo_class = ast['Foo']
         bar_class = ast['Bar']
         bar_self = ast['Bar']['__init__']['self']
@@ -1078,7 +1079,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             print(Browser)
             b = Browser()
         '''
-        ast = test_utils.build_module(data, __name__)
+        ast = parse(data, __name__)
         browser = next(test_utils.get_name_node(ast, 'Browser').infer())
         self.assertIsInstance(browser, nodes.Class)
         bopen = list(browser.igetattr('open'))
@@ -1110,7 +1111,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             my_me = SendMailController().me
             '''
         decorators = set(['%s.property' % BUILTINS])
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         self.assertEqual(ast['SendMailController']['smtp'].decoratornames(),
                           decorators)
         propinfered = list(ast.body[2].value.infer())
@@ -1141,7 +1142,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 pactions = EnvBasedTC.pactions.im_func
                 print (pactions)
             '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         pactions = test_utils.get_name_node(ast, 'pactions')
         infered = list(pactions.infer())
         self.assertEqual(len(infered), 1)
@@ -1157,7 +1158,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             a += 2
             print (a)
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         infered = list(test_utils.get_name_node(ast, 'a').infer())
 
         self.assertEqual(len(infered), 1)
@@ -1174,7 +1175,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 spam = bar(None, qux)
                 print (spam)
             '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         infered = list(test_utils.get_name_node(ast['foo'], 'spam').infer())
         self.assertEqual(len(infered), 1)
         self.assertIs(infered[0], YES)
@@ -1199,7 +1200,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                  p = self.app
                  print (p)
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         infered = list(Instance(ast['DataManager']).igetattr('app'))
         self.assertEqual(len(infered), 2, infered) # None / Instance(Application)
         infered = list(test_utils.get_name_node(ast['DataManager']['test'], 'p').infer())
@@ -1235,7 +1236,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
             Z = test()
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         infered = list(ast['Z'].infer())
         self.assertEqual(len(infered), 1, infered)
         self.assertIsInstance(infered[0], Instance)
@@ -1253,7 +1254,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
             n = NewTest()
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         self.assertRaises(InferenceError, list, ast['NewTest'].igetattr('arg'))
         n = next(ast['n'].infer())
         infered = list(n.igetattr('arg'))
@@ -1266,7 +1267,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             class Xxx(nonregr.Aaa, nonregr.Ccc):
                 "doc"
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         parents = list(ast['Xxx'].ancestors())
         self.assertEqual(len(parents), 3, parents) # Aaa, Ccc, object
 
@@ -1276,7 +1277,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             A = namedtuple('A', ['a', 'b'])
             B = namedtuple('B', 'a b')
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         aclass = ast['A'].infered()[0]
         self.assertIsInstance(aclass, nodes.Class)
         self.assertIn('a', aclass.instance_attrs)
@@ -1308,7 +1309,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             empty = A.empty()
             empty_list = A().empty_method()
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         int_node = ast['x'].infered()[0]
         self.assertIsInstance(int_node, nodes.Const)
         self.assertEqual(int_node.value, 1)
@@ -1329,7 +1330,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 vararg = args
                 kwarg = kwargs
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         func = ast['test']
         vararg = func.body[0].value
         kwarg = func.body[1].value
@@ -1353,7 +1354,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """
         # Test that inferring Thread.__init__ looks up in
         # the nested scope.
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         callfunc = next(ast.nodes_of_class(nodes.CallFunc))
         func = callfunc.func
         infered = func.infered()[0]
@@ -1369,7 +1370,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             sub = a - b
             mul = a * b
         """
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         sub = ast['sub'].infered()[0]
         mul = ast['mul'].infered()[0]
         self.assertIs(sub, YES)
@@ -1388,7 +1389,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             sub = a - b
             mul = a * b
         """
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         sub = ast['sub'].infered()[0]
         mul = ast['mul'].infered()[0]
         self.assertIs(sub, YES)
@@ -1408,7 +1409,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             sub = a - b
             mul = a * b
         """
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         sub = ast['sub'].infered()[0]
         mul = ast['mul'].infered()[0]
         self.assertIs(sub, YES)
@@ -1426,7 +1427,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             b = A()
             c = a * b
         """
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         node = ast['c']
         self.assertEqual(node.infered(), [YES])
 
@@ -1448,7 +1449,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             def do_a_thing():
                 pass
         """
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         node = ast['do_a_thing']
         self.assertEqual(node.type, 'function')
 
@@ -1695,7 +1696,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 return "second"
 
         '''
-        ast = test_utils.build_module(code, __name__)
+        ast = parse(code, __name__)
         bases = ast['Second'].bases[0]
         inferred = next(bases.infer())
         self.assertTrue(inferred)

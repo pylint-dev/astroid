@@ -110,7 +110,7 @@ class FromToLineNoTest(unittest.TestCase):
                           '(no line number on function args)')
 
     def test_decorated_function_lineno(self):
-        astroid = test_utils.build_module('''
+        astroid = builder.parse('''
             @decorator
             def function(
                 arg):
@@ -173,7 +173,7 @@ class FromToLineNoTest(unittest.TestCase):
             else:
               print ("bouh")
             '''):
-            astroid = test_utils.build_module(code, __name__)
+            astroid = builder.parse(code, __name__)
             stmt = astroid.body[0]
             self.assertEqual(stmt.fromlineno, 2)
             self.assertEqual(stmt.tolineno, 6)
@@ -182,7 +182,7 @@ class FromToLineNoTest(unittest.TestCase):
             self.assertEqual(stmt.orelse[0].tolineno, 6)
 
     def test_try_except_lineno(self):
-        astroid = test_utils.build_module('''
+        astroid = builder.parse('''
             try:
               print (a)
             except:
@@ -203,7 +203,7 @@ class FromToLineNoTest(unittest.TestCase):
 
 
     def test_try_finally_lineno(self):
-        astroid = test_utils.build_module('''
+        astroid = builder.parse('''
             try:
               print (a)
             finally:
@@ -218,7 +218,7 @@ class FromToLineNoTest(unittest.TestCase):
 
 
     def test_try_finally_25_lineno(self):
-        astroid = test_utils.build_module('''
+        astroid = builder.parse('''
             try:
               print (a)
             except:
@@ -235,7 +235,7 @@ class FromToLineNoTest(unittest.TestCase):
 
 
     def test_with_lineno(self):
-        astroid = test_utils.build_module('''
+        astroid = builder.parse('''
             from __future__ import with_statement
             with file("/tmp/pouet") as f:
                 print (f)
@@ -418,7 +418,7 @@ class BuilderTest(unittest.TestCase):
             class F:
                 "new style"
         '''
-        mod_ast = test_utils.build_module(data, __name__)
+        mod_ast = builder.parse(data, __name__)
         if IS_PY3:
             self.assertTrue(mod_ast['A'].newstyle)
             self.assertTrue(mod_ast['B'].newstyle)
@@ -443,7 +443,7 @@ class BuilderTest(unittest.TestCase):
                 global CSTE2
                 print (CSTE)
         '''
-        astroid = test_utils.build_module(data, __name__)
+        astroid = builder.parse(data, __name__)
         self.assertEqual(len(astroid.getattr('CSTE')), 2)
         self.assertIsInstance(astroid.getattr('CSTE')[0], nodes.AssName)
         self.assertEqual(astroid.getattr('CSTE')[0].fromlineno, 2)
@@ -472,7 +472,7 @@ class BuilderTest(unittest.TestCase):
 
     def test_gen_expr_var_scope(self):
         data = 'l = list(n for n in range(10))\n'
-        astroid = test_utils.build_module(data, __name__)
+        astroid = builder.parse(data, __name__)
         # n unavailable outside gen expr scope
         self.assertNotIn('n', astroid)
         # test n is inferable anyway
@@ -482,15 +482,15 @@ class BuilderTest(unittest.TestCase):
                          [YES.__class__])
 
     def test_no_future_imports(self):
-        mod = test_utils.build_module("import sys")
+        mod = builder.parse("import sys")
         self.assertEqual(set(), mod.future_imports)
 
     def test_future_imports(self):
-        mod = test_utils.build_module("from __future__ import print_function")
+        mod = builder.parse("from __future__ import print_function")
         self.assertEqual(set(['print_function']), mod.future_imports)
 
     def test_two_future_imports(self):
-        mod = test_utils.build_module("""
+        mod = builder.parse("""
             from __future__ import print_function
             from __future__ import absolute_import
             """)
@@ -505,7 +505,7 @@ class BuilderTest(unittest.TestCase):
                 print (self)
             A.ass_type = A_ass_type
             '''
-        astroid = test_utils.build_module(code)
+        astroid = builder.parse(code)
         lclass = list(astroid.igetattr('A'))
         self.assertEqual(len(lclass), 1)
         lclass = lclass[0]
@@ -513,7 +513,7 @@ class BuilderTest(unittest.TestCase):
         self.assertIn('type', lclass.locals)
 
     def test_augassign_attr(self):
-        test_utils.build_module("""
+        builder.parse("""
             class Counter:
                 v = 0
                 def inc(self):
@@ -529,7 +529,7 @@ class BuilderTest(unittest.TestCase):
             def func2(a={}):
                 a.custom_attr = 0
             '''
-        test_utils.build_module(code)
+        builder.parse(code)
         nonetype = nodes.const_factory(None)
         self.assertNotIn('custom_attr', nonetype.locals)
         self.assertNotIn('custom_attr', nonetype.instance_attrs)
@@ -539,13 +539,13 @@ class BuilderTest(unittest.TestCase):
 
     def test_asstuple(self):
         code = 'a, b = range(2)'
-        astroid = test_utils.build_module(code)
+        astroid = builder.parse(code)
         self.assertIn('b', astroid.locals)
         code = '''
             def visit_if(self, node):
                 node.test, body = node.tests[0]
             '''
-        astroid = test_utils.build_module(code)
+        astroid = builder.parse(code)
         self.assertIn('body', astroid['visit_if'].locals)
 
     def test_build_constants(self):
@@ -556,7 +556,7 @@ class BuilderTest(unittest.TestCase):
                 return
                 return 'None'
             '''
-        astroid = test_utils.build_module(code)
+        astroid = builder.parse(code)
         none, nothing, chain = [ret.value for ret in astroid.body[0].body]
         self.assertIsInstance(none, nodes.Const)
         self.assertIsNone(none.value)
