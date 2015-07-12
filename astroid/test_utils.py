@@ -158,7 +158,6 @@ def extract_node(code, module_name=''):
 
     tree = builder.parse(code, module_name=module_name)
     extracted = []
-    # print(as_string.dump(tree))
     if requested_lines:
         for line in requested_lines:
             extracted.append(_find_statement_by_line(tree, line))

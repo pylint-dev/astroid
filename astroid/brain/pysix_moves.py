@@ -268,7 +268,7 @@ def transform_six_add_metaclass(node):
         return
 
     for decorator in node.decorators.nodes:
-        if not isinstance(decorator, nodes.CallFunc):
+        if not isinstance(decorator, nodes.Call):
             continue
 
         try:

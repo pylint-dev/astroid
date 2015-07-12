@@ -1619,3 +1619,12 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
 
     def bool_value(self):
         return True
+
+
+# Hack to get Pylint working without changing code.
+import wrapt
+def proxy_alias(alias_name, node_type):
+    proxy = type(alias_name, (wrapt.ObjectProxy,),
+                 {'__class__': object.__dict__['__class__']})
+    return proxy(node_type)
+GenExpr = proxy_alias('GenExpr', GeneratorExp)

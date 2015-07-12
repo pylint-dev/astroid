@@ -168,7 +168,7 @@ def _looks_like_require_version(node):
         return False
 
     func = node.func
-    if isinstance(func, nodes.Getattr):
+    if isinstance(func, nodes.Attribute):
         if func.attrname != 'require_version':
             return False
         if isinstance(func.expr, nodes.Name) and func.expr.name == 'gi':
