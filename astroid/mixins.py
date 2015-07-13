@@ -104,7 +104,8 @@ class FromImportMixIn(FilterStmtsMixin):
             # FIXME: we used to raise InferenceError here, but why ?
             return mymodule
         try:
-            return mymodule.import_module(modname, level=level)
+            return mymodule.import_module(modname, level=level,
+                                          relative_only=level and level >= 1)
         except AstroidBuildingException as ex:
             if isinstance(ex.args[0], SyntaxError):
                 raise InferenceError(str(ex))
