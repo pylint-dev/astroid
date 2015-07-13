@@ -1045,15 +1045,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                "ignored")
         self.assertNotIn("RuntimeError", output, msg)
 
-    def test_python25_relative_import(self):
-        data = "from ...logilab.common import date; print (date)"
-        # !! FIXME also this relative import would not work 'in real' (no __init__.py in test/)
-        # the test works since we pretend we have a package by passing the full modname
-        ast = builder.string_build(data, 'astroid.test.unittest_inference', __file__)
-        infered = next(test_utils.get_name_node(ast, 'date').infer())
-        self.assertIsInstance(infered, nodes.Module)
-        self.assertEqual(infered.name, 'logilab.common.date')
-
     def test_python25_no_relative_import(self):
         ast = resources.build_file('data/package/absimport.py')
         self.assertTrue(ast.absolute_import_activated(), True)
