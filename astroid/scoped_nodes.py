@@ -1621,10 +1621,7 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
         return True
 
 
-# Hack to get Pylint working without changing code.
-import lazy_object_proxy
-def proxy_alias(alias_name, node_type):
-    proxy = type(alias_name, (lazy_object_proxy.Proxy,),
-                 {'__class__': object.__dict__['__class__']})
-    return proxy(lambda: node_type)
-GenExpr = proxy_alias('GenExpr', GeneratorExp)
+# Backwards-compatibility aliases
+Class = node_classes.proxy_alias('Class', ClassDef)
+Function = node_classes.proxy_alias('Function', FunctionDef)
+GenExpr = node_classes.proxy_alias('GenExpr', GeneratorExp)

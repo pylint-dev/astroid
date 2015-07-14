@@ -18,7 +18,9 @@
 """Module for some node classes. More nodes in scoped_nodes.py
 """
 
+import lazy_object_proxy
 import six
+
 from logilab.common.decorators import cachedproperty
 
 from astroid.exceptions import (
@@ -1330,3 +1332,18 @@ def const_factory(value):
         node = EmptyNode()
         node.object = value
         return node
+
+
+# Backward-compatibility aliases
+def proxy_alias(alias_name, node_type):
+    proxy = type(alias_name, (lazy_object_proxy.Proxy,),
+                 {'__class__': object.__dict__['__class__']})
+    return proxy(lambda: node_type)
+
+Backquote = proxy_alias('Backquote', Repr)
+Discard = proxy_alias('Discard', Expr)
+AssName = proxy_alias('AssName', AssignName)
+AssAttr = proxy_alias('AssAttr', AssignAttr)
+Getattr = proxy_alias('Getattr', Attribute)
+CallFunc = proxy_alias('CallFunc', Call)
+From = proxy_alias('From', ImportFrom)

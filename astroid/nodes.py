@@ -38,8 +38,6 @@ on ImportFrom and Import :
 
 __docformat__ = "restructuredtext en"
 
-import lazy_object_proxy
-
 from astroid.node_classes import (
     Arguments, AssignAttr, Assert, Assign,
     AssignName, AugAssign, Repr, BinOp, BoolOp, Break, Call, Compare,
@@ -48,12 +46,17 @@ from astroid.node_classes import (
     ImportFrom, Attribute, Global, If, IfExp, Import, Index, Keyword,
     List, Name, Nonlocal, Pass, Print, Raise, Return, Set, Slice, Starred, Subscript,
     TryExcept, TryFinally, Tuple, UnaryOp, While, With, Yield, YieldFrom,
-    const_factory
+    const_factory,
+    # Backwards-compatibility aliases
+    Backquote, Discard, AssName, AssAttr, Getattr, CallFunc, From
 )
 from astroid.scoped_nodes import (
     Module, GeneratorExp, Lambda, DictComp,
     ListComp, SetComp, FunctionDef, ClassDef,
+    # Backwards-compatibility aliases
+    Class, Function, GenExpr,
 )
+
 
 
 ALL_NODE_CLASSES = (
@@ -78,21 +81,3 @@ ALL_NODE_CLASSES = (
     While, With,
     Yield, YieldFrom
     )
-
-
-# Backward-compatibility aliases
-def proxy_alias(alias_name, node_type):
-    proxy = type(alias_name, (lazy_object_proxy.Proxy,),
-                 {'__class__': object.__dict__['__class__']})
-    return proxy(lambda: node_type)
-
-Backquote = proxy_alias('Backquote', Repr)
-Discard = proxy_alias('Discard', Expr)
-AssName = proxy_alias('AssName', AssignName)
-AssAttr = proxy_alias('AssAttr', AssignAttr)
-Getattr = proxy_alias('Getattr', Attribute)
-CallFunc = proxy_alias('CallFunc', Call)
-Class = proxy_alias('Class', ClassDef)
-Function = proxy_alias('Function', FunctionDef)
-GenExpr = proxy_alias('GenExpr', GeneratorExp)
-From = proxy_alias('From', ImportFrom)
