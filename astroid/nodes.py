@@ -38,7 +38,7 @@ on ImportFrom and Import :
 
 __docformat__ = "restructuredtext en"
 
-import wrapt
+import lazy_object_proxy
 
 from astroid.node_classes import (
     Arguments, AssignAttr, Assert, Assign,
@@ -82,9 +82,9 @@ ALL_NODE_CLASSES = (
 
 # Backward-compatibility aliases
 def proxy_alias(alias_name, node_type):
-    proxy = type(alias_name, (wrapt.ObjectProxy,),
+    proxy = type(alias_name, (lazy_object_proxy.Proxy,),
                  {'__class__': object.__dict__['__class__']})
-    return proxy(node_type)
+    return proxy(lambda: node_type)
 
 Backquote = proxy_alias('Backquote', Repr)
 Discard = proxy_alias('Discard', Expr)

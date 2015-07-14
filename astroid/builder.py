@@ -145,7 +145,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         module.file_encoding = encoding
         self._manager.cache_module(module)
         # post tree building steps after we stored the module in the cache:
-        for from_node in module._from_nodes:
+        for from_node in module._import_from_nodes:
             if from_node.modname == '__future__':
                 for symbol, _ in from_node.names:
                     module.future_imports.add(symbol)
@@ -172,7 +172,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
             package = path and path.find('__init__.py') > -1 or False
         builder = rebuilder.TreeRebuilder(self._manager)
         module = builder.visit_module(node, modname, node_file, package)
-        module._from_nodes = builder._from_nodes
+        module._import_from_nodes = builder._import_from_nodes
         module._delayed_assattr = builder._delayed_assattr
         return module
 

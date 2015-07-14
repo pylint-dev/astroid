@@ -674,7 +674,7 @@ class Decorators(NodeNG):
     _astroid_fields = ('nodes',)
     nodes = None
 
-    def postinit(self, nodes=None):
+    def postinit(self, nodes):
         self.nodes = nodes
 
     def scope(self):
@@ -961,7 +961,6 @@ class Keyword(NodeNG):
         self.value = value
 
 
-# TODO: List, Set, and Tuple duplicate code
 class List(NodeNG, Instance, ParentAssignTypeMixin):
     """class representing a List node"""
     _astroid_fields = ('elts',)

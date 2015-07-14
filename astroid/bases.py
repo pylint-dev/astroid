@@ -21,6 +21,7 @@ inference utils.
 __docformat__ = "restructuredtext en"
 
 import sys
+import warnings
 from contextlib import contextmanager
 
 from logilab.common.decorators import cachedproperty
@@ -405,7 +406,6 @@ def path_wrapper(func):
     """return the given infer function wrapped to handle the path"""
     def wrapped(node, context=None, _func=func, **kwargs):
         """wrapper function handling context"""
-        # print(dump(node), file=sys.stderr)
         if context is None:
             context = InferenceContext()
         context.push(node)
@@ -688,7 +688,7 @@ class NodeNG(object):
                 yield matching
 
     def _infer_name(self, frame, name):
-        # overridden for From, Import, Global, TryExcept and Arguments
+        # overridden for ImportFrom, Import, Global, TryExcept and Arguments
         return None
 
     def _infer(self, context=None):
@@ -699,6 +699,12 @@ class NodeNG(object):
     def inferred(self):
         '''return list of inferred values for a more simple inference usage'''
         return list(self.infer())
+
+    def infered(self):
+        warnings.warn('%s.infered() is deprecated, use %s.inferred() instead.'
+                      % (type(self).__name__, type(self).__name__),
+                      PendingDeprecationWarning)
+        return self.inferred()
 
     def instanciate_class(self):
         """instanciate a node if it is a Class node, else return self"""

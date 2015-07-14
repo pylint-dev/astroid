@@ -251,6 +251,7 @@ class Module(LocalsDictNodeNG):
     _astroid_fields = ('body',)
 
     fromlineno = 0
+    lineno = 0
 
     # attributes below are set by the builder module or by raw factories
 
@@ -524,7 +525,6 @@ class ComprehensionScope(LocalsDictNodeNG):
     scope_lookup = LocalsDictNodeNG._scope_lookup
 
 
-# TODO: lots of code duplication in the comprehensions too.
 class GeneratorExp(ComprehensionScope):
     _astroid_fields = ('elt', 'generators')
     _other_fields = ('locals',)
@@ -1622,9 +1622,9 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
 
 
 # Hack to get Pylint working without changing code.
-import wrapt
+import lazy_object_proxy
 def proxy_alias(alias_name, node_type):
-    proxy = type(alias_name, (wrapt.ObjectProxy,),
+    proxy = type(alias_name, (lazy_object_proxy.Proxy,),
                  {'__class__': object.__dict__['__class__']})
-    return proxy(node_type)
+    return proxy(lambda: node_type)
 GenExpr = proxy_alias('GenExpr', GeneratorExp)

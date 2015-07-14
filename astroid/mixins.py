@@ -58,11 +58,25 @@ class FilterStmtsMixin(object):
     def assign_type(self):
         return self
 
+    def ass_type(self):
+        warnings.warn('%s.ass_type() is deprecated, '
+                      'use %s.assign_type() instead.'
+                      % (type(self).__name__, type(self).__name__),
+                      PendingDeprecationWarning)
+        return self.assign_type()
+
 
 class AssignTypeMixin(object):
 
     def assign_type(self):
         return self
+
+    def ass_type(self):
+        warnings.warn('%s.ass_type() is deprecated, '
+                      'use %s.assign_type() instead.'
+                      % (type(self).__name__, type(self).__name__),
+                      PendingDeprecationWarning)
+        return self.assign_type()
 
     def _get_filtered_stmts(self, lookup_node, node, _stmts, mystmt):
         """method used in filter_stmts"""
@@ -79,6 +93,13 @@ class ParentAssignTypeMixin(AssignTypeMixin):
 
     def assign_type(self):
         return self.parent.assign_type()
+
+    def ass_type(self):
+        warnings.warn('%s.ass_type() is deprecated, '
+                      'use %s.assign_type() instead.'
+                      % (type(self).__name__, type(self).__name__),
+                      PendingDeprecationWarning)
+        return self.assign_type()
 
 
 class ImportFromMixin(FilterStmtsMixin):
