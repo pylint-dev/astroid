@@ -228,6 +228,12 @@ Change log for the astroid package (used to be astng)
       an astroid AST from a source code string, similar to how ast.parse can be
       used to obtain a Python AST from a source string. This is the test_utils.build_module
       promoted to a public API.
+
+    * do_import_module passes the proper relative_only flag if the level is higher
+      than 1. This has the side effect that using `from .something import something`
+      in a non-package will finally result in an import-error on Pylint's side.
+      Until now relative_only was ignored, leading to the import of `something`,
+      if it was globally available.
      
 
 
