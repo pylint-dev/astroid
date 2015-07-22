@@ -35,6 +35,7 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin,
     def setUp(self):
         sys.path.insert(0, resources.find('data'))
         MANAGER.always_load_extensions = True
+        MANAGER.astroid_cache[BUILTINS] = self._builtins
 
     def tearDown(self):
         # Since we may have created a brainless manager, leading
