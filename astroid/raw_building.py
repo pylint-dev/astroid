@@ -19,8 +19,6 @@
 (build_* functions) or from living object (object_build_* functions)
 """
 
-__docformat__ = "restructuredtext en"
-
 import sys
 import logging
 import os

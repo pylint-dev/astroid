@@ -21,8 +21,6 @@ from various source and using a cache of built modules)
 """
 from __future__ import print_function
 
-__docformat__ = "restructuredtext en"
-
 import collections
 import imp
 import os

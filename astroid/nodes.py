@@ -36,8 +36,6 @@ on From and Import :
 """
 # pylint: disable=unused-import,redefined-builtin
 
-__docformat__ = "restructuredtext en"
-
 from astroid.node_classes import (
     Arguments, AssAttr, Assert, Assign,
     AssName, AugAssign, Backquote, BinOp, BoolOp, Break, CallFunc, Compare,
