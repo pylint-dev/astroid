@@ -18,6 +18,8 @@
 """This module contains some mixins for the different nodes.
 """
 
+import warnings
+
 from logilab.common.decorators import cachedproperty
 
 from astroid.exceptions import (AstroidBuildingException, InferenceError,
