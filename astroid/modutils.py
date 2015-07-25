@@ -412,9 +412,8 @@ def get_module_files(src_directory, blacklist):
       path of the directory corresponding to the package
 
     :type blacklist: list or tuple
-    :param blacklist:
-      optional list of files or directory to ignore, default to the value of
-      `logilab.common.STD_BLACKLIST`
+    :param blacklist: iterable
+      list of files or directories to ignore.
 
     :rtype: list
     :return:
