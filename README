@@ -59,7 +59,6 @@ Test
 ----
 
 Tests are in the 'test' subdirectory. To launch the whole tests suite
-at once, you may use the 'pytest' utility from logilab-common (simply
-type 'pytest' from within this directory) or using unittest discover::
+at once, you can use unittest discover::
 
   python -m unittest discover -p "unittest*.py"
