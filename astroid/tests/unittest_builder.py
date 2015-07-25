@@ -599,9 +599,9 @@ class FileBuildTest(unittest.TestCase):
         _locals = module.locals
         self.assertIs(_locals, module.globals)
         keys = sorted(_locals.keys())
-        should = ['MY_DICT', 'YO', 'YOUPI',
+        should = ['MY_DICT', 'NameNode', 'YO', 'YOUPI',
                   '__revision__', 'global_access', 'modutils', 'four_args',
-                  'os', 'redirect', 'pb']
+                  'os', 'redirect']
         should.sort()
         self.assertEqual(keys, sorted(should))
 

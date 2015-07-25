@@ -25,6 +25,7 @@ import textwrap
 from astroid.node_classes import unpack_infer
 from astroid.bases import BUILTINS, InferenceContext
 from astroid.exceptions import NotFoundError
+from astroid import exceptions
 from astroid import bases
 from astroid import builder
 from astroid import nodes
@@ -279,14 +280,11 @@ class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(myos.pytype(), '%s.module' % BUILTINS)
 
     def test_from_self_resolve(self):
-        pb = next(self.module.igetattr('pb'))
-        self.assertTrue(isinstance(pb, nodes.Class), pb)
-        self.assertEqual(pb.root().name, 'logilab.common.shellutils')
-        self.assertEqual(pb.qname(), 'logilab.common.shellutils.ProgressBar')
-        if pb.newstyle:
-            self.assertEqual(pb.pytype(), '%s.type' % BUILTINS)
-        else:
-            self.assertEqual(pb.pytype(), '%s.classobj' % BUILTINS)
+        namenode = next(self.module.igetattr('NameNode'))
+        self.assertTrue(isinstance(namenode, nodes.Class), namenode)
+        self.assertEqual(namenode.root().name, 'astroid.node_classes')
+        self.assertEqual(namenode.qname(), 'astroid.node_classes.Name')
+        self.assertEqual(namenode.pytype(), '%s.type' % BUILTINS)
         abspath = next(self.module2.igetattr('abspath'))
         self.assertTrue(isinstance(abspath, nodes.Function), abspath)
         self.assertEqual(abspath.root().name, 'os.path')
@@ -294,23 +292,23 @@ class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(abspath.pytype(), '%s.function' % BUILTINS)
 
     def test_real_name(self):
-        from_ = self.module['pb']
-        self.assertEqual(from_.real_name('pb'), 'ProgressBar')
+        from_ = self.module['NameNode']
+        self.assertEqual(from_.real_name('NameNode'), 'Name')
         imp_ = self.module['os']
         self.assertEqual(imp_.real_name('os'), 'os')
-        self.assertRaises(NotFoundError, imp_.real_name, 'os.path')
-        imp_ = self.module['pb']
-        self.assertEqual(imp_.real_name('pb'), 'ProgressBar')
-        self.assertRaises(NotFoundError, imp_.real_name, 'ProgressBar')
+        self.assertRaises(exceptions.NotFoundError, imp_.real_name, 'os.path')
+        imp_ = self.module['NameNode']
+        self.assertEqual(imp_.real_name('NameNode'), 'Name')
+        self.assertRaises(exceptions.NotFoundError, imp_.real_name, 'Name')
         imp_ = self.module2['YO']
         self.assertEqual(imp_.real_name('YO'), 'YO')
-        self.assertRaises(NotFoundError, imp_.real_name, 'data')
+        self.assertRaises(exceptions.NotFoundError, imp_.real_name, 'data')
 
     def test_as_string(self):
         ast = self.module['modutils']
         self.assertEqual(ast.as_string(), "from astroid import modutils")
-        ast = self.module['pb']
-        self.assertEqual(ast.as_string(), "from logilab.common.shellutils import ProgressBar as pb")
+        ast = self.module['NameNode']
+        self.assertEqual(ast.as_string(), "from astroid.node_classes import Name as NameNode")
         ast = self.module['os']
         self.assertEqual(ast.as_string(), "import os.path")
         code = """from . import here
