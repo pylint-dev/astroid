@@ -20,7 +20,6 @@
 # the same license.
 
 """ A few useful function/method decorators. """
-__docformat__ = "restructuredtext en"
 
 import functools
 
