@@ -15,44 +15,32 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
-"""This module contains the classes for "scoped" node, i.e. which are opening a
+
+"""
+This module contains the classes for "scoped" node, i.e. which are opening a
 new local scope in the language definition : Module, Class, Function (and
 Lambda, GenExpr, DictComp and SetComp to some extent).
 """
-from __future__ import with_statement
 
-__doctype__ = "restructuredtext en"
-
+import functools
+import io
+import itertools
 import sys
 import warnings
-from itertools import chain
-try:
-    from io import BytesIO
-except ImportError:
-    from cStringIO import StringIO as BytesIO
 
 import six
-from logilab.common.compat import builtins
-from logilab.common.decorators import cached, cachedproperty
 
-from astroid.exceptions import (
-     NotFoundError,
-     AstroidBuildingException,
-     InferenceError, MroError,
-     DuplicateBasesError, InconsistentMroError,
-)
-from astroid.node_classes import Const, DelName, DelAttr, \
-     Dict, From, List, Pass, Raise, Return, Tuple, Yield, YieldFrom, \
-     LookupMixIn, const_factory as cf, unpack_infer, CallFunc
-from astroid.bases import NodeNG, InferenceContext, Instance, copy_context, \
-     YES, Generator, UnboundMethod, BoundMethod, _infer_stmts, \
-     BUILTINS
-from astroid.mixins import FilterStmtsMixin
-from astroid.bases import Statement
-from astroid.manager import AstroidManager
+from astroid import bases
+from astroid import exceptions
+from astroid import manager
+from astroid import mixins
+from astroid import node_classes
+from astroid import decorators as decorators_mod
+from astroid import decorators as decorators_mod
 
+BUILTINS = six.moves.builtins.__name__
 ITER_METHODS = ('__iter__', '__getitem__')
-PY3K = sys.version_info >= (3, 0)
+
 
 def _c3_merge(sequences):
     """Merges MROs in *sequences* to a single MRO using the C3 algorithm.
@@ -79,7 +67,7 @@ def _c3_merge(sequences):
             bases = ["({})".format(", ".join(base.name
                                              for base in subsequence))
                      for subsequence in sequences]
-            raise InconsistentMroError(
+            raise exceptions.InconsistentMroError(
                 "Cannot create a consistent method resolution "
                 "order for bases %s" % ", ".join(bases))
 
@@ -94,25 +82,29 @@ def _verify_duplicates_mro(sequences):
     for sequence in sequences:
         names = [node.qname() for node in sequence]
         if len(names) != len(set(names)):
-            raise DuplicateBasesError('Duplicates found in the mro.')
+            raise exceptions.DuplicateBasesError('Duplicates found in the mro.')
 
 
-def remove_nodes(func, cls):
-    def wrapper(*args, **kwargs):
-        nodes = [n for n in func(*args, **kwargs) if not isinstance(n, cls)]
-        if not nodes:
-            raise NotFoundError()
-        return nodes
-    return wrapper
+def remove_nodes(cls):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            nodes = [n for n in func(*args, **kwargs) if not isinstance(n, cls)]
+            if not nodes:
+                raise exceptions.NotFoundError()
+            return nodes
+        return wrapper
+    return decorator
 
 
 def function_to_method(n, klass):
     if isinstance(n, Function):
         if n.type == 'classmethod':
-            return BoundMethod(n, klass)
+            return bases.BoundMethod(n, klass)
         if n.type != 'staticmethod':
-            return UnboundMethod(n)
+            return bases.UnboundMethod(n)
     return n
+
 
 def std_special_attributes(self, name, add_locals=True):
     if add_locals:
@@ -120,20 +112,21 @@ def std_special_attributes(self, name, add_locals=True):
     else:
         locals = {}
     if name == '__name__':
-        return [cf(self.name)] + locals.get(name, [])
+        return [node_classes.const_factory(self.name)] + locals.get(name, [])
     if name == '__doc__':
-        return [cf(self.doc)] + locals.get(name, [])
+        return [node_classes.const_factory(self.doc)] + locals.get(name, [])
     if name == '__dict__':
-        return [Dict()] + locals.get(name, [])
-    raise NotFoundError(name)
+        return [node_classes.Dict()] + locals.get(name, [])
+    raise exceptions.NotFoundError(name)
 
-MANAGER = AstroidManager()
+
+MANAGER = manager.AstroidManager()
 def builtin_lookup(name):
     """lookup a name into the builtin module
     return the list of matching statements and the astroid for the builtin
     module
     """
-    builtin_astroid = MANAGER.ast_from_module(builtins)
+    builtin_astroid = MANAGER.ast_from_module(six.moves.builtins)
     if name == '__dict__':
         return builtin_astroid, ()
     try:
@@ -144,7 +137,7 @@ def builtin_lookup(name):
 
 
 # TODO move this Mixin to mixins.py; problem: 'Function' in _scope_lookup
-class LocalsDictNodeNG(LookupMixIn, NodeNG):
+class LocalsDictNodeNG(node_classes.LookupMixIn, bases.NodeNG):
     """ this class provides locals handling common to Module, Function
     and Class nodes, including a dict like interface for direct access
     to locals information
@@ -174,7 +167,6 @@ class LocalsDictNodeNG(LookupMixIn, NodeNG):
         """
         return self
 
-
     def _scope_lookup(self, node, name, offset=0):
         """XXX method for interfacing the scope lookup"""
         try:
@@ -191,8 +183,6 @@ class LocalsDictNodeNG(LookupMixIn, NodeNG):
                 pscope = pscope.root()
             return pscope.scope_lookup(node, name)
         return builtin_lookup(name) # Module
-
-
 
     def set_local(self, name, stmt):
         """define <name> in locals (<stmt> is the node defining the name)
@@ -217,7 +207,6 @@ class LocalsDictNodeNG(LookupMixIn, NodeNG):
             # add __class__ node as a child will cause infinite recursion later!
             self._append_node(child_node)
         self.set_local(name or child_node.name, child_node)
-
 
     def __getitem__(self, item):
         """method from the `dict` interface returning the first node
@@ -254,12 +243,10 @@ class LocalsDictNodeNG(LookupMixIn, NodeNG):
         """
         return list(zip(self.keys(), self.values()))
 
-
     def __contains__(self, name):
         return name in self.locals
     has_key = __contains__
 
-# Module  #####################################################################
 
 class Module(LocalsDictNodeNG):
     _astroid_fields = ('body',)
@@ -306,7 +293,7 @@ class Module(LocalsDictNodeNG):
 
     def _get_stream(self):
         if self.file_bytes is not None:
-            return BytesIO(self.file_bytes)
+            return io.BytesIO(self.file_bytes)
         if self.file is not None:
             stream = open(self.file, 'rb')
             return stream
@@ -343,10 +330,10 @@ class Module(LocalsDictNodeNG):
         return self.fromlineno, self.tolineno
 
     def scope_lookup(self, node, name, offset=0):
-        if name in self.scope_attrs and not name in self.locals:
+        if name in self.scope_attrs and name not in self.locals:
             try:
                 return self, self.getattr(name)
-            except NotFoundError:
+            except exceptions.NotFoundError:
                 return self, ()
         return self._scope_lookup(node, name, offset)
 
@@ -356,38 +343,36 @@ class Module(LocalsDictNodeNG):
     def display_type(self):
         return 'Module'
 
+    @remove_nodes(node_classes.DelName)
     def getattr(self, name, context=None, ignore_locals=False):
         if name in self.special_attributes:
             if name == '__file__':
-                return [cf(self.file)] + self.locals.get(name, [])
+                return [node_classes.const_factory(self.file)] + self.locals.get(name, [])
             if name == '__path__' and self.package:
-                return [List()] + self.locals.get(name, [])
+                return [node_classes.List()] + self.locals.get(name, [])
             return std_special_attributes(self, name)
         if not ignore_locals and name in self.locals:
             return self.locals[name]
         if self.package:
             try:
                 return [self.import_module(name, relative_only=True)]
-            except AstroidBuildingException:
-                raise NotFoundError(name)
+            except exceptions.AstroidBuildingException:
+                raise exceptions.NotFoundError(name)
             except SyntaxError:
-                raise NotFoundError(name)
-            except Exception:# XXX pylint tests never pass here; do we need it?
-                import traceback
-                traceback.print_exc()
-        raise NotFoundError(name)
-    getattr = remove_nodes(getattr, DelName)
+                raise exceptions.NotFoundError(name)
+        raise exceptions.NotFoundError(name)
 
     def igetattr(self, name, context=None):
         """inferred getattr"""
         # set lookup name since this is necessary to infer on import nodes for
         # instance
-        context = copy_context(context)
+        context = bases.copy_context(context)
         context.lookupname = name
         try:
-            return _infer_stmts(self.getattr(name, context), context, frame=self)
-        except NotFoundError:
-            raise InferenceError(name)
+            return bases._infer_stmts(self.getattr(name, context),
+                                      context, frame=self)
+        except exceptions.NotFoundError:
+            raise exceptions.InferenceError(name)
 
     def fully_defined(self):
         """return True if this module has been built from a .py file
@@ -409,11 +394,11 @@ class Module(LocalsDictNodeNG):
         """module has no sibling"""
         return
 
-    if sys.version_info < (2, 8):
-        @cachedproperty
+    if six.PY2:
+        @decorators_mod.cachedproperty
         def _absolute_import_activated(self):
             for stmt in self.locals.get('absolute_import', ()):
-                if isinstance(stmt, From) and stmt.modname == '__future__':
+                if isinstance(stmt, node_classes.From) and stmt.modname == '__future__':
                     return True
             return False
     else:
@@ -429,7 +414,7 @@ class Module(LocalsDictNodeNG):
         absmodname = self.relative_to_absolute_name(modname, level)
         try:
             return MANAGER.ast_from_module_name(absmodname)
-        except AstroidBuildingException:
+        except exceptions.AstroidBuildingException:
             # we only want to import a sub module or package of this module,
             # skip here
             if relative_only:
@@ -460,7 +445,6 @@ class Module(LocalsDictNodeNG):
             return '%s.%s' % (package_name, modname)
         return modname
 
-
     def wildcard_import_names(self):
         """return the list of imported names when this module is 'wildcard
         imported'
@@ -490,7 +474,7 @@ class Module(LocalsDictNodeNG):
             return default
         try:
             explicit = next(all.assigned_stmts())
-        except InferenceError:
+        except exceptions.InferenceError:
             return default
         except AttributeError:
             # not an assignment node
@@ -501,12 +485,12 @@ class Module(LocalsDictNodeNG):
         infered = []
         try:
             explicit = next(explicit.infer())
-        except InferenceError:
+        except exceptions.InferenceError:
             return default
-        if not isinstance(explicit, (Tuple, List)):
+        if not isinstance(explicit, (node_classes.Tuple, node_classes.List)):
             return default
 
-        str_const = lambda node: (isinstance(node, Const) and
+        str_const = lambda node: (isinstance(node, node_classes.Const) and
                                   isinstance(node.value, six.string_types))
         for node in explicit.elts:
             if str_const(node):
@@ -514,12 +498,14 @@ class Module(LocalsDictNodeNG):
             else:
                 try:
                     infered_node = next(node.infer())
-                except InferenceError:
+                except exceptions.InferenceError:
                     continue
                 if str_const(infered_node):
                     infered.append(infered_node.value)
         return infered
 
+    def bool_value(self):
+        return True
 
 
 class ComprehensionScope(LocalsDictNodeNG):
@@ -537,6 +523,9 @@ class GenExpr(ComprehensionScope):
         self.elt = None
         self.generators = []
 
+    def bool_value(self):
+        return True
+
 
 class DictComp(ComprehensionScope):
     _astroid_fields = ('key', 'value', 'generators')
@@ -547,6 +536,9 @@ class DictComp(ComprehensionScope):
         self.value = None
         self.generators = []
 
+    def bool_value(self):
+        return bases.YES
+
 
 class SetComp(ComprehensionScope):
     _astroid_fields = ('elt', 'generators')
@@ -556,14 +548,21 @@ class SetComp(ComprehensionScope):
         self.elt = None
         self.generators = []
 
+    def bool_value(self):
+        return bases.YES
 
-class _ListComp(NodeNG):
+
+class _ListComp(bases.NodeNG):
     """class representing a ListComp node"""
     _astroid_fields = ('elt', 'generators')
     elt = None
     generators = None
 
-if sys.version_info >= (3, 0):
+    def bool_value(self):
+        return bases.YES
+
+
+if six.PY3:
     class ListComp(_ListComp, ComprehensionScope):
         """class representing a ListComp node"""
         def __init__(self):
@@ -572,7 +571,6 @@ else:
     class ListComp(_ListComp):
         """class representing a ListComp node"""
 
-# Function  ###################################################################
 
 def _infer_decorator_callchain(node):
     """Detect decorator call chaining and see if the end result is a
@@ -583,19 +581,19 @@ def _infer_decorator_callchain(node):
     if not node.parent:
         return
     try:
-       # TODO: We don't handle multiple inference results right now,
-       #       because there's no flow to reason when the return
-       #       is what we are looking for, a static or a class method.
-       result = next(node.infer_call_result(node.parent))
-    except (StopIteration, InferenceError):
-       return
-    if isinstance(result, Instance):
-       result = result._proxied
+        # TODO: We don't handle multiple inference results right now,
+        #       because there's no flow to reason when the return
+        #       is what we are looking for, a static or a class method.
+        result = next(node.infer_call_result(node.parent))
+    except (StopIteration, exceptions.InferenceError):
+        return
+    if isinstance(result, bases.Instance):
+        result = result._proxied
     if isinstance(result, Class):
-       if result.is_subtype_of('%s.classmethod' % BUILTINS):
-           return 'classmethod'
-       if result.is_subtype_of('%s.staticmethod' % BUILTINS):
-           return 'staticmethod'
+        if result.is_subtype_of('%s.classmethod' % BUILTINS):
+            return 'classmethod'
+        if result.is_subtype_of('%s.staticmethod' % BUILTINS):
+            return 'staticmethod'
 
 
 def _function_type(self):
@@ -608,14 +606,14 @@ def _function_type(self):
     # so do it here.
     if self.decorators:
         for node in self.decorators.nodes:
-            if isinstance(node, CallFunc):
+            if isinstance(node, node_classes.CallFunc):
                 # Handle the following case:
                 # @some_decorator(arg1, arg2)
                 # def func(...)
                 #
                 try:
                     current = next(node.func.infer())
-                except InferenceError:
+                except exceptions.InferenceError:
                     continue
                 _type = _infer_decorator_callchain(current)
                 if _type is not None:
@@ -637,12 +635,12 @@ def _function_type(self):
                             return 'classmethod'
                         elif ancestor.is_subtype_of('%s.staticmethod' % BUILTINS):
                             return 'staticmethod'
-            except InferenceError:
+            except exceptions.InferenceError:
                 pass
     return self._type
 
 
-class Lambda(LocalsDictNodeNG, FilterStmtsMixin):
+class Lambda(LocalsDictNodeNG, mixins.FilterStmtsMixin):
     _astroid_fields = ('args', 'body',)
     name = '<lambda>'
 
@@ -694,9 +692,12 @@ class Lambda(LocalsDictNodeNG, FilterStmtsMixin):
             frame = self
         return frame._scope_lookup(node, name, offset)
 
+    def bool_value(self):
+        return True
 
-class Function(Statement, Lambda):
-    if PY3K:
+
+class Function(bases.Statement, Lambda):
+    if six.PY3:
         _astroid_fields = ('decorators', 'args', 'body', 'returns')
         returns = None
     else:
@@ -705,10 +706,9 @@ class Function(Statement, Lambda):
     special_attributes = set(('__name__', '__doc__', '__dict__'))
     is_function = True
     # attributes below are set by the builder module or by raw factories
-    blockstart_tolineno = None
+    type = decorators_mod.cachedproperty(_function_type)
     decorators = None
     _type = "function"
-    type = cachedproperty(_function_type)
 
     def __init__(self, name, doc):
         self.locals = {}
@@ -719,18 +719,18 @@ class Function(Statement, Lambda):
         self.extra_decorators = []
         self.instance_attrs = {}
 
-    @cachedproperty
+    @decorators_mod.cachedproperty
     def fromlineno(self):
         # lineno is the line number of the first decorator, we want the def
         # statement lineno
         lineno = self.lineno
         if self.decorators is not None:
             lineno += sum(node.tolineno - node.lineno + 1
-                                   for node in self.decorators.nodes)
+                          for node in self.decorators.nodes)
 
         return lineno
 
-    @cachedproperty
+    @decorators_mod.cachedproperty
     def blockstart_tolineno(self):
         return self.args.tolineno
 
@@ -746,7 +746,7 @@ class Function(Statement, Lambda):
         done by an Instance proxy at inference time.
         """
         if name == '__module__':
-            return [cf(self.root().qname())]
+            return [node_classes.const_factory(self.root().qname())]
         if name in self.instance_attrs:
             return self.instance_attrs[name]
         return std_special_attributes(self, name, False)
@@ -754,10 +754,10 @@ class Function(Statement, Lambda):
     def igetattr(self, name, context=None):
         """Inferred getattr, which returns an iterator of inferred statements."""
         try:
-            return _infer_stmts(self.getattr(name, context),
-                                context, frame=self)
-        except NotFoundError:
-            raise InferenceError(name)
+            return bases._infer_stmts(self.getattr(name, context),
+                                      context, frame=self)
+        except exceptions.NotFoundError:
+            raise exceptions.InferenceError(name)
 
     def is_method(self):
         """return true if the function node should be considered as a method"""
@@ -765,18 +765,19 @@ class Function(Statement, Lambda):
         # (e.g. pylint...) when is_method() return True
         return self.type != 'function' and isinstance(self.parent.frame(), Class)
 
+    @decorators_mod.cached
     def decoratornames(self):
         """return a list of decorator qualified names"""
         result = set()
         decoratornodes = []
         if self.decorators is not None:
+            # pylint: disable=unsupported-binary-operation; damn flow control.
             decoratornodes += self.decorators.nodes
         decoratornodes += self.extra_decorators
         for decnode in decoratornodes:
             for infnode in decnode.infer():
                 result.add(infnode.qname())
         return result
-    decoratornames = cached(decoratornames)
 
     def is_bound(self):
         """return true if the function is bound to an Instance or a class"""
@@ -794,33 +795,31 @@ class Function(Statement, Lambda):
             for node in self.decorators.nodes:
                 try:
                     infered = next(node.infer())
-                except InferenceError:
+                except exceptions.InferenceError:
                     continue
                 if infered and infered.qname() in ('abc.abstractproperty',
                                                    'abc.abstractmethod'):
                     return True
 
         for child_node in self.body:
-            if isinstance(child_node, Raise):
+            if isinstance(child_node, node_classes.Raise):
                 if child_node.raises_not_implemented():
                     return True
-            if pass_is_abstract and isinstance(child_node, Pass):
-                return True
-            return False
+            return pass_is_abstract and isinstance(child_node, node_classes.Pass)
         # empty function is the same as function with a single "pass" statement
         if pass_is_abstract:
             return True
 
     def is_generator(self):
         """return true if this is a generator function"""
-        # XXX should be flagged, not computed
-        return next(self.nodes_of_class((Yield, YieldFrom),
+        yield_nodes = (node_classes.Yield, node_classes.YieldFrom)
+        return next(self.nodes_of_class(yield_nodes,
                                         skip_klass=(Function, Lambda)), False)
 
     def infer_call_result(self, caller, context=None):
         """infer what a function is returning when called"""
         if self.is_generator():
-            result = Generator()
+            result = bases.Generator()
             result.parent = self
             yield result
             return
@@ -838,21 +837,24 @@ class Function(Statement, Lambda):
                 c = Class('temporary_class', None)
                 c.hide = True
                 c.parent = self
-                bases = [next(b.infer(context)) for b in caller.args[1:]]
-                c.bases = [base for base in bases if base != YES]
+                class_bases = [next(b.infer(context)) for b in caller.args[1:]]
+                c.bases = [base for base in class_bases if base != bases.YES]
                 c._metaclass = metaclass
                 yield c
                 return
-        returns = self.nodes_of_class(Return, skip_klass=Function)
+        returns = self.nodes_of_class(node_classes.Return, skip_klass=Function)
         for returnnode in returns:
             if returnnode.value is None:
-                yield Const(None)
+                yield node_classes.Const(None)
             else:
                 try:
                     for infered in returnnode.value.infer(context):
                         yield infered
-                except InferenceError:
-                    yield YES
+                except exceptions.InferenceError:
+                    yield bases.YES
+
+    def bool_value(self):
+        return True
 
 
 def _rec_get_names(args, names=None):
@@ -860,14 +862,11 @@ def _rec_get_names(args, names=None):
     if names is None:
         names = []
     for arg in args:
-        if isinstance(arg, Tuple):
+        if isinstance(arg, node_classes.Tuple):
             _rec_get_names(arg.elts, names)
         else:
             names.append(arg.name)
     return names
-
-
-# Class ######################################################################
 
 
 def _is_metaclass(klass, seen=None):
@@ -881,15 +880,15 @@ def _is_metaclass(klass, seen=None):
     for base in klass.bases:
         try:
             for baseobj in base.infer():
-                baseobj_qname = baseobj.qname()
-                if baseobj_qname in seen:
+                baseobj_name = baseobj.qname()
+                if baseobj_name in seen:
                     continue
                 else:
-                    seen.add(baseobj_qname)
-                if isinstance(baseobj, Instance):
+                    seen.add(baseobj_name)
+                if isinstance(baseobj, bases.Instance):
                     # not abstract
                     return False
-                if baseobj is YES:
+                if baseobj is bases.YES:
                     continue
                 if baseobj is klass:
                     continue
@@ -899,7 +898,7 @@ def _is_metaclass(klass, seen=None):
                     return True
                 if _is_metaclass(baseobj, seen):
                     return True
-        except InferenceError:
+        except exceptions.InferenceError:
             continue
     return False
 
@@ -918,7 +917,7 @@ def _class_type(klass, ancestors=None):
     else:
         if ancestors is None:
             ancestors = set()
-        klass_name = klass.qname()    
+        klass_name = klass.qname()
         if klass_name in ancestors:
             # XXX we are in loop ancestors, and have found no type
             klass._type = 'class'
@@ -937,14 +936,8 @@ def _class_type(klass, ancestors=None):
         klass._type = 'class'
     return klass._type
 
-def _iface_hdlr(iface_node):
-    """a handler function used by interfaces to handle suspicious
-    interface nodes
-    """
-    return True
 
-
-class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
+class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
 
     # some of the attributes below are set by the builder module or
     # by a raw factories
@@ -955,7 +948,6 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
     decorators = None
     special_attributes = set(('__name__', '__doc__', '__dict__', '__module__',
                               '__bases__', '__mro__', '__subclasses__'))
-    blockstart_tolineno = None
 
     _type = None
     _metaclass_hack = False
@@ -974,7 +966,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
 
     def _newstyle_impl(self, context=None):
         if context is None:
-            context = InferenceContext()
+            context = bases.InferenceContext()
         if self._newstyle is not None:
             return self._newstyle
         for base in self.ancestors(recurs=False, context=context):
@@ -995,7 +987,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                         doc="boolean indicating if it's a new style class"
                         "or not")
 
-    @cachedproperty
+    @decorators_mod.cachedproperty
     def blockstart_tolineno(self):
         if self.bases:
             return self.bases[-1].tolineno
@@ -1029,36 +1021,36 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
 
     def _infer_type_call(self, caller, context):
         name_node = next(caller.args[0].infer(context))
-        if (isinstance(name_node, Const) and
+        if (isinstance(name_node, node_classes.Const) and
                 isinstance(name_node.value, six.string_types)):
             name = name_node.value
         else:
-            return YES
+            return bases.YES
 
         result = Class(name, None)
 
         # Get the bases of the class.
-        bases = next(caller.args[1].infer(context))
-        if isinstance(bases, (Tuple, List)):
-            result.bases = bases.itered()
+        class_bases = next(caller.args[1].infer(context))
+        if isinstance(class_bases, (node_classes.Tuple, node_classes.List)):
+            result.bases = class_bases.itered()
         else:
             # There is currently no AST node that can represent an 'unknown'
             # node (YES is not an AST node), therefore we simply return YES here
             # although we know at least the name of the class.
-            return YES
+            return bases.YES
 
         # Get the members of the class
         try:
             members = next(caller.args[2].infer(context))
-        except InferenceError:
+        except exceptions.InferenceError:
             members = None
 
-        if members and isinstance(members, Dict):
+        if members and isinstance(members, node_classes.Dict):
             for attr, value in members.items:
-                if (isinstance(attr, Const) and
+                if (isinstance(attr, node_classes.Const) and
                         isinstance(attr.value, six.string_types)):
                     result.locals[attr.value] = [value]
-    
+
         result.parent = caller.parent
         return result
 
@@ -1069,7 +1061,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             result = self._infer_type_call(caller, context)
             yield result
         else:
-            yield Instance(self)
+            yield bases.Instance(self)
 
     def scope_lookup(self, node, name, offset=0):
         if any(node == base or base.parent_of(node)
@@ -1095,11 +1087,10 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             frame = self
         return frame._scope_lookup(node, name, offset)
 
-    # list of parent class as a list of string (i.e. names as they appear
-    # in the class definition) XXX bw compat
+    @property
     def basenames(self):
+        """Get the list of parent class names, as they appear in the class definition."""
         return [bnode.as_string() for bnode in self.bases]
-    basenames = property(basenames)
 
     def ancestors(self, recurs=True, context=None):
         """return an iterator on the node base classes in a prefixed
@@ -1113,8 +1104,8 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         # FIXME: inference make infinite loops possible here
         yielded = set([self])
         if context is None:
-            context = InferenceContext()
-        if sys.version_info[0] >= 3:
+            context = bases.InferenceContext()
+        if six.PY3:
             if not self.bases and self.qname() != 'builtins.object':
                 yield builtin_lookup("object")[1][0]
                 return
@@ -1124,14 +1115,13 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                 try:
                     for baseobj in stmt.infer(context):
                         if not isinstance(baseobj, Class):
-                            if isinstance(baseobj, Instance):
+                            if isinstance(baseobj, bases.Instance):
                                 baseobj = baseobj._proxied
                             else:
-                                # duh ?
                                 continue
                         if not baseobj.hide:
                             if baseobj in yielded:
-                                continue # cf xxx above
+                                continue
                             yielded.add(baseobj)
                             yield baseobj
                         if recurs:
@@ -1141,11 +1131,10 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                                     # This class is the ancestor of itself.
                                     break
                                 if grandpa in yielded:
-                                    continue # cf xxx above
+                                    continue
                                 yielded.add(grandpa)
                                 yield grandpa
-                except InferenceError:
-                    # XXX log error ?
+                except exceptions.InferenceError:
                     continue
 
     def local_attr_ancestors(self, name, context=None):
@@ -1157,7 +1146,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             # attribute being looked up just as Python does it.
             try:
                 ancestors = self.mro(context)[1:]
-            except MroError:
+            except exceptions.MroError:
                 # Fallback to use ancestors, we can't determine
                 # a sane MRO.
                 ancestors = self.ancestors(context=context)
@@ -1178,6 +1167,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
     def has_base(self, node):
         return node in self.bases
 
+    @remove_nodes(node_classes.DelAttr)
     def local_attr(self, name, context=None):
         """return the list of assign node associated to name in this class
         locals or in its parents
@@ -1191,9 +1181,9 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         except KeyError:
             for class_node in self.local_attr_ancestors(name, context):
                 return class_node.locals[name]
-        raise NotFoundError(name)
-    local_attr = remove_nodes(local_attr, DelAttr)
+        raise exceptions.NotFoundError(name)
 
+    @remove_nodes(node_classes.DelAttr)
     def instance_attr(self, name, context=None):
         """return the astroid nodes associated to name in this class instance
         attributes dictionary and in its parents
@@ -1209,13 +1199,12 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         for class_node in self.instance_attr_ancestors(name, context):
             values += class_node.instance_attrs[name]
         if not values:
-            raise NotFoundError(name)
+            raise exceptions.NotFoundError(name)
         return values
-    instance_attr = remove_nodes(instance_attr, DelAttr)
 
     def instanciate_class(self):
         """return Instance of Class node, else return self"""
-        return Instance(self)
+        return bases.Instance(self)
 
     def getattr(self, name, context=None):
         """this method doesn't look in the instance_attrs dictionary since it's
@@ -1227,13 +1216,13 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         values = self.locals.get(name, [])
         if name in self.special_attributes:
             if name == '__module__':
-                return [cf(self.root().qname())] + values
+                return [node_classes.const_factory(self.root().qname())] + values
             # FIXME: do we really need the actual list of ancestors?
             # returning [Tuple()] + values don't break any test
             # this is ticket http://www.logilab.org/ticket/52785
             # XXX need proper meta class handling + MRO implementation
             if name == '__bases__' or (name == '__mro__' and self.newstyle):
-                node = Tuple()
+                node = node_classes.Tuple()
                 node.items = self.ancestors(recurs=True, context=context)
                 return [node] + values
             return std_special_attributes(self, name)
@@ -1242,7 +1231,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         for classnode in self.ancestors(recurs=True, context=context):
             values += classnode.locals.get(name, [])
         if not values:
-            raise NotFoundError(name)
+            raise exceptions.NotFoundError(name)
         return values
 
     def igetattr(self, name, context=None):
@@ -1251,27 +1240,28 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         """
         # set lookup name since this is necessary to infer on import nodes for
         # instance
-        context = copy_context(context)
+        context = bases.copy_context(context)
         context.lookupname = name
         try:
-            for infered in _infer_stmts(self.getattr(name, context), context,
-                                        frame=self):
+            for infered in bases._infer_stmts(self.getattr(name, context),
+                                              context, frame=self):
                 # yield YES object instead of descriptors when necessary
-                if not isinstance(infered, Const) and isinstance(infered, Instance):
+                if (not isinstance(infered, node_classes.Const)
+                        and isinstance(infered, bases.Instance)):
                     try:
                         infered._proxied.getattr('__get__', context)
-                    except NotFoundError:
+                    except exceptions.NotFoundError:
                         yield infered
                     else:
-                        yield YES
+                        yield bases.YES
                 else:
                     yield function_to_method(infered, self)
-        except NotFoundError:
+        except exceptions.NotFoundError:
             if not name.startswith('__') and self.has_dynamic_getattr(context):
                 # class handle some dynamic attributes, return a YES object
-                yield YES
+                yield bases.YES
             else:
-                raise InferenceError(name)
+                raise exceptions.InferenceError(name)
 
     def has_dynamic_getattr(self, context=None):
         """
@@ -1288,12 +1278,12 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
 
         try:
             return _valid_getattr(self.getattr('__getattr__', context)[0])
-        except NotFoundError:
+        except exceptions.NotFoundError:
             #if self.newstyle: XXX cause an infinite recursion error
             try:
                 getattribute = self.getattr('__getattribute__', context)[0]
                 return _valid_getattr(getattribute)
-            except NotFoundError:
+            except exceptions.NotFoundError:
                 pass
         return False
 
@@ -1302,7 +1292,7 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         its ancestors
         """
         done = {}
-        for astroid in chain(iter((self,)), self.ancestors()):
+        for astroid in itertools.chain(iter((self,)), self.ancestors()):
             for meth in astroid.mymethods():
                 if meth.name in done:
                     continue
@@ -1314,29 +1304,6 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         for member in self.values():
             if isinstance(member, Function):
                 yield member
-
-    def interfaces(self, herited=True, handler_func=_iface_hdlr):
-        """return an iterator on interfaces implemented by the given
-        class node
-        """
-        # FIXME: what if __implements__ = (MyIFace, MyParent.__implements__)...
-        try:
-            implements = Instance(self).getattr('__implements__')[0]
-        except NotFoundError:
-            return
-        if not herited and not implements.frame() is self:
-            return
-        found = set()
-        missing = False
-        for iface in unpack_infer(implements):
-            if iface is YES:
-                missing = True
-                continue
-            if not iface in found and handler_func(iface):
-                found.add(iface)
-                yield iface
-        if missing:
-            raise InferenceError()
 
     def implicit_metaclass(self):
         """Get the implicit metaclass of the current class
@@ -1367,17 +1334,17 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                         self._metaclass = baseobj._metaclass
                         self._metaclass_hack = True
                         break
-            except InferenceError:
+            except exceptions.InferenceError:
                 pass
 
         if self._metaclass:
             # Expects this from Py3k TreeRebuilder
             try:
                 return next(node for node in self._metaclass.infer()
-                            if node is not YES)
-            except (InferenceError, StopIteration):
+                            if node is not bases.YES)
+            except (exceptions.InferenceError, StopIteration):
                 return None
-        if sys.version_info >= (3, ):
+        if six.PY3:
             return None
 
         if '__metaclass__' in self.locals:
@@ -1395,9 +1362,9 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
 
         try:
             infered = next(assignment.infer())
-        except InferenceError:
+        except exceptions.InferenceError:
             return
-        if infered is YES: # don't expose this
+        if infered is bases.YES: # don't expose this
             return None
         return infered
 
@@ -1429,12 +1396,12 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                 try:
                     slots.getattr(meth)
                     break
-                except NotFoundError:
+                except exceptions.NotFoundError:
                     continue
             else:
                 continue
 
-            if isinstance(slots, Const):
+            if isinstance(slots, node_classes.Const):
                 # a string. Ignore the following checks,
                 # but yield the node, only if it has a value
                 if slots.value:
@@ -1444,34 +1411,34 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
                 # we can't obtain the values, maybe a .deque?
                 continue
 
-            if isinstance(slots, Dict):
+            if isinstance(slots, node_classes.Dict):
                 values = [item[0] for item in slots.items]
             else:
                 values = slots.itered()
-            if values is YES:
+            if values is bases.YES:
                 continue
-
             if not values:
                 # Stop the iteration, because the class
                 # has an empty list of slots.
                 raise StopIteration(values)
+
             for elt in values:
                 try:
                     for infered in elt.infer():
-                        if infered is YES:
+                        if infered is bases.YES:
                             continue
-                        if (not isinstance(infered, Const) or
+                        if (not isinstance(infered, node_classes.Const) or
                                 not isinstance(infered.value,
                                                six.string_types)):
                             continue
                         if not infered.value:
                             continue
                         yield infered
-                except InferenceError:
+                except exceptions.InferenceError:
                     continue
 
     # Cached, because inferring them all the time is expensive
-    @cached
+    @decorators_mod.cached
     def slots(self):
         """Get all the slots for this node.
 
@@ -1491,8 +1458,8 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
             # The class doesn't have a __slots__ definition or empty slots.
             if exc.args and exc.args[0] not in ('', None):
                 return exc.args[0]
-            # The class doesn't have a __slots__ definition.
             return None
+        # pylint: disable=unsupported-binary-operation; false positive
         return [first] + list(slots)
 
     def _inferred_bases(self, context=None):
@@ -1511,8 +1478,8 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         # only in SomeClass.
 
         if context is None:
-            context = InferenceContext()
-        if sys.version_info[0] >= 3:
+            context = bases.InferenceContext()
+        if six.PY3:
             if not self.bases and self.qname() != 'builtins.object':
                 yield builtin_lookup("object")[1][0]
                 return
@@ -1520,10 +1487,9 @@ class Class(Statement, LocalsDictNodeNG, FilterStmtsMixin):
         for stmt in self.bases:
             try:
                 baseobj = next(stmt.infer(context=context))
-            except InferenceError:
-                # XXX log error ?
+            except exceptions.InferenceError:
                 continue
-            if isinstance(baseobj, Instance):
+            if isinstance(baseobj, bases.Instance):
                 baseobj = baseobj._proxied
             if not isinstance(baseobj, Class):
                 continue

@@ -564,19 +564,6 @@ class BuilderTest(unittest.TestCase):
         self.assertIsInstance(chain, nodes.Const)
         self.assertEqual(chain.value, 'None')
 
-    def test_lgc_classproperty(self):
-        '''test expected values of constants after rebuilding'''
-        code = '''
-            from logilab.common.decorators import classproperty
-
-            class A(object):
-                @classproperty
-                def hop(cls): #@
-                    return None
-            '''
-        method = test_utils.extract_node(code)
-        self.assertEqual('classmethod', method.type)
-
     def test_not_implemented(self):
         node = test_utils.extract_node('''
         NotImplemented #@

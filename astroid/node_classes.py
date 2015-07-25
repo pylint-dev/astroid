@@ -21,13 +21,13 @@
 import sys
 
 import six
-from logilab.common.decorators import cachedproperty
 
 from astroid.exceptions import NoDefault
 from astroid.bases import (NodeNG, Statement, Instance, InferenceContext,
                            _infer_stmts, YES, BUILTINS)
 from astroid.mixins import (BlockRangeMixIn, AssignTypeMixin,
                             ParentAssignTypeMixin, FromImportMixIn)
+from astroid.decorators import cachedproperty
 
 PY3K = sys.version_info >= (3, 0)
 
