@@ -362,7 +362,7 @@ def _astroid_bootstrapping(astroid_builtin=None):
     # this boot strapping is necessary since we need the Const nodes to
     # inspect_build builtins, and then we can proxy Const
     if astroid_builtin is None:
-        from logilab.common.compat import builtins
+        from six.moves import builtins
         astroid_builtin = Astroid_BUILDER.inspect_build(builtins)
 
     for cls, node_cls in CONST_CLS.items():
