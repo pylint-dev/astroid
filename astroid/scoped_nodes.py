@@ -937,6 +937,23 @@ def _class_type(klass, ancestors=None):
     return klass._type
 
 
+def get_wrapping_class(node):
+    """Obtain the class that *wraps* this node
+
+    We consider that a class wraps a node if the class
+    is a parent for the said node.
+    """
+    
+    klass = node.frame()
+    while klass is not None and not isinstance(klass, Class):
+        if klass.parent is None:
+            klass = None
+        else:
+            klass = klass.parent.frame()
+    return klass
+
+
+
 class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
 
     # some of the attributes below are set by the builder module or

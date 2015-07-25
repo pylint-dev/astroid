@@ -237,6 +237,9 @@ Change log for the astroid package (used to be astng)
       in a non-package will finally result in an import-error on Pylint's side.
       Until now relative_only was ignored, leading to the import of `something`,
       if it was globally available.
+
+    * Add get_wrapping_class API to scoped_nodes, which can be used to
+      retrieve the class that wraps a node.
      
 
 

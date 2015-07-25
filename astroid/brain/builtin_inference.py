@@ -11,6 +11,7 @@ from astroid.builder import AstroidBuilder
 from astroid import helpers
 from astroid import nodes
 from astroid import objects
+from astroid import scoped_nodes
 
 
 def _extend_str(class_node, rvalue):
@@ -252,16 +253,6 @@ def infer_dict(node, context=None):
     return empty
 
 
-def _node_class(node):
-    klass = node.frame()
-    while klass is not None and not isinstance(klass, nodes.Class):
-        if klass.parent is None:
-            klass = None
-        else:
-            klass = klass.parent.frame()
-    return klass
-
-
 def infer_super(node, context=None):
     """Understand super calls.
 
@@ -287,7 +278,7 @@ def infer_super(node, context=None):
         # Not interested in staticmethods.
         raise UseInferenceDefault
 
-    cls = _node_class(scope)
+    cls = scoped_nodes.get_wrapping_class(scope)
     if not len(node.args):
         mro_pointer = cls
         # In we are in a classmethod, the interpreter will fill
