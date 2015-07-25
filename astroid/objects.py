@@ -26,7 +26,6 @@ leads to an inferred FrozenSet:
 
 """
 
-from logilab.common.decorators import cachedproperty
 import six
 
 from astroid import MANAGER
@@ -41,6 +40,7 @@ from astroid.exceptions import (
 from astroid.node_classes import const_factory
 from astroid.scoped_nodes import Class, Function
 from astroid.mixins import ParentAssignTypeMixin
+from astroid.decorators import cachedproperty
 
 
 class FrozenSet(NodeNG, Instance, ParentAssignTypeMixin):

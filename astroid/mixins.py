@@ -18,10 +18,9 @@
 """This module contains some mixins for the different nodes.
 """
 
-from logilab.common.decorators import cachedproperty
-
 from astroid.exceptions import (AstroidBuildingException, InferenceError,
                                 NotFoundError)
+from astroid.decorators import cachedproperty
 
 
 class BlockRangeMixIn(object):
