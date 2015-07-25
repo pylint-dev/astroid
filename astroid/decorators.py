@@ -28,13 +28,14 @@ def cached(func):
 
     @functools.wraps(func)
     def wrapped(wrapped_self):
-        if not getattr(wrapped_self, '__cache', None):
-            wrapped_self.__cache = {}
-        if func in wrapped_self.__cache:
-            return wrapped_self.__cache[func]
-        else:
+        cache = getattr(wrapped_self, '__cache', None)
+        if cache is None:
+            wrapped_self.__cache = cache = {}
+        try:
+            return cache[func]
+        except KeyError:
             result = func(wrapped_self)
-            wrapped_self.__cache[func] = result
+            cache[func] = result
             return result
 
     return wrapped
