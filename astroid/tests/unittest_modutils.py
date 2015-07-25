@@ -22,7 +22,6 @@ import os
 import sys
 import unittest
 
-from logilab.common import configuration
 from astroid import modutils
 from astroid.tests import resources
 
@@ -95,8 +94,9 @@ class ModPathFromFileTest(unittest.TestCase):
     """ given an absolute file path return the python module's path as a list """
 
     def test_knownValues_modpath_from_file_1(self):
-        self.assertEqual(modutils.modpath_from_file(configuration.__file__),
-                         ['logilab', 'common', 'configuration'])
+        from xml.etree import ElementTree
+        self.assertEqual(modutils.modpath_from_file(ElementTree.__file__),
+                         ['xml', 'etree', 'ElementTree'])
 
     def test_knownValues_modpath_from_file_2(self):
         self.assertEqual(modutils.modpath_from_file('unittest_modutils.py',
@@ -182,7 +182,7 @@ class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(modutils.is_standard_module('sys'), True)
 
     def test_nonstandard(self):
-        self.assertEqual(modutils.is_standard_module('logilab'), False)
+        self.assertEqual(modutils.is_standard_module('astroid'), False)
 
     def test_unknown(self):
         self.assertEqual(modutils.is_standard_module('unknown'), False)
@@ -206,14 +206,14 @@ class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(modutils.is_standard_module('data.module', (os.path.abspath(datadir),)), True)
 
     def test_failing_edge_cases(self):
-        from logilab import common
+        from xml import etree
         # using a subpackage/submodule path as std_path argument
-        self.assertEqual(modutils.is_standard_module('logilab.common', common.__path__), False)
+        self.assertEqual(modutils.is_standard_module('xml.etree', etree.__path__), False)
         # using a module + object name as modname argument
         self.assertEqual(modutils.is_standard_module('sys.path'), True)
         # this is because only the first package/module is considered
         self.assertEqual(modutils.is_standard_module('sys.whatever'), True)
-        self.assertEqual(modutils.is_standard_module('logilab.whatever', common.__path__), False)
+        self.assertEqual(modutils.is_standard_module('xml.whatever', etree.__path__), False)
 
 
 class IsRelativeTest(unittest.TestCase):
@@ -225,8 +225,8 @@ class IsRelativeTest(unittest.TestCase):
                          True)
 
     def test_knownValues_is_relative_2(self):
-        from logilab.common import tree
-        self.assertEqual(modutils.is_relative('modutils', tree.__file__),
+        from xml.etree import ElementTree
+        self.assertEqual(modutils.is_relative('ElementPath', ElementTree.__file__),
                          True)
 
     def test_knownValues_is_relative_3(self):
@@ -248,14 +248,14 @@ class GetModuleFilesTest(unittest.TestCase):
             {os.path.join(package, x) for x in ['__init__.py', 'module.py', 'module2.py', 'noendingnewline.py', 'nonregr.py']})
 
     def test_load_module_set_attribute(self):
-        import logilab.common.fileutils
-        import logilab
-        del logilab.common.fileutils
-        del sys.modules['logilab.common.fileutils']
-        m = modutils.load_module_from_modpath(['logilab', 'common', 'fileutils'])
-        self.assertTrue(hasattr(logilab, 'common'))
-        self.assertTrue(hasattr(logilab.common, 'fileutils'))
-        self.assertTrue(m is logilab.common.fileutils)
+        import xml.etree.ElementTree
+        import xml
+        del xml.etree.ElementTree
+        del sys.modules['xml.etree.ElementTree']
+        m = modutils.load_module_from_modpath(['xml', 'etree', 'ElementTree'])
+        self.assertTrue(hasattr(xml, 'etree'))
+        self.assertTrue(hasattr(xml.etree, 'ElementTree'))
+        self.assertTrue(m is xml.etree.ElementTree)
 
 
 if __name__ == '__main__':
