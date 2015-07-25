@@ -347,8 +347,8 @@ def file_info_from_modpath(modpath, path=None, context_file=None):
 def get_module_part(dotted_name, context_file=None):
     """given a dotted name return the module part of the name :
 
-    >>> get_module_part('logilab.common.modutils.get_module_part')
-    'logilab.common.modutils'
+    >>> get_module_part('astroid.as_string.dump')
+    'astroid.as_string'
 
     :type dotted_name: str
     :param dotted_name: full name of the identifier we are interested in
