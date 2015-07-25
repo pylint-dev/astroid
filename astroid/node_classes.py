@@ -19,7 +19,6 @@
 """
 
 import six
-from logilab.common.decorators import cachedproperty
 
 from astroid.exceptions import (
     NoDefault, UnaryOperationError,
@@ -29,6 +28,7 @@ from astroid.bases import (NodeNG, Statement, Instance, InferenceContext,
                            _infer_stmts, YES, BUILTINS)
 from astroid.mixins import (BlockRangeMixIn, AssignTypeMixin,
                             ParentAssignTypeMixin, FromImportMixIn)
+from astroid.decorators import cachedproperty
 
 
 def unpack_infer(stmt, context=None):

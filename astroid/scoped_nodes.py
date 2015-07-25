@@ -29,13 +29,13 @@ import sys
 import warnings
 
 import six
-from logilab.common import decorators as decorators_mod
 
 from astroid import bases
 from astroid import exceptions
 from astroid import manager
 from astroid import mixins
 from astroid import node_classes
+from astroid import decorators as decorators_mod
 
 
 BUILTINS = six.moves.builtins.__name__

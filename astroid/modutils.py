@@ -42,8 +42,6 @@ try:
 except ImportError:
     pkg_resources = None
 
-from logilab.common import _handle_blacklist
-
 PY_ZIPMODULE = object()
 
 if sys.platform.startswith('win'):
@@ -108,6 +106,18 @@ def _path_from_filename(filename, is_jython=IS_JYTHON):
     if has_pyclass:
         return head + ".py"
     return filename
+
+
+def _handle_blacklist(blacklist, dirnames, filenames):
+    """remove files/directories in the black list
+
+    dirnames/filenames are usually from os.walk
+    """
+    for norecurs in blacklist:
+        if norecurs in dirnames:
+            dirnames.remove(norecurs)
+        elif norecurs in filenames:
+            filenames.remove(norecurs)
 
 
 _NORM_PATH_CACHE = {}
@@ -336,8 +346,8 @@ def file_info_from_modpath(modpath, path=None, context_file=None):
 def get_module_part(dotted_name, context_file=None):
     """given a dotted name return the module part of the name :
 
-    >>> get_module_part('logilab.common.modutils.get_module_part')
-    'logilab.common.modutils'
+    >>> get_module_part('astroid.as_string.dump')
+    'astroid.as_string'
 
     :type dotted_name: str
     :param dotted_name: full name of the identifier we are interested in
@@ -401,9 +411,8 @@ def get_module_files(src_directory, blacklist, list_all=False):
       path of the directory corresponding to the package
 
     :type blacklist: list or tuple
-    :param blacklist:
-      optional list of files or directory to ignore, default to the value of
-      `logilab.common.STD_BLACKLIST`
+    :param blacklist: iterable
+      list of files or directories to ignore.
 
     :type list_all: bool
     :param list_all:

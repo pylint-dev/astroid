@@ -22,10 +22,9 @@ inference utils.
 import sys
 from contextlib import contextmanager
 
-from logilab.common.decorators import cachedproperty
-
 from astroid.exceptions import (InferenceError, AstroidError, NotFoundError,
                                 UnresolvableName, UseInferenceDefault)
+from astroid.decorators import cachedproperty
 
 
 if sys.version_info >= (3, 0):
