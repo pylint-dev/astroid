@@ -43,8 +43,6 @@ try:
 except ImportError:
     pkg_resources = None
 
-from logilab.common import _handle_blacklist
-
 PY_ZIPMODULE = object()
 
 if sys.platform.startswith('win'):
@@ -109,6 +107,18 @@ def _path_from_filename(filename, is_jython=IS_JYTHON):
     if has_pyclass:
         return head + ".py"
     return filename
+
+
+def _handle_blacklist(blacklist, dirnames, filenames):
+    """remove files/directories in the black list
+
+    dirnames/filenames are usually from os.walk
+    """
+    for norecurs in blacklist:
+        if norecurs in dirnames:
+            dirnames.remove(norecurs)
+        elif norecurs in filenames:
+            filenames.remove(norecurs)
 
 
 _NORM_PATH_CACHE = {}
