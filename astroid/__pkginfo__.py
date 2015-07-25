@@ -23,7 +23,7 @@ modname = 'astroid'
 numversion = (1, 3, 6)
 version = '.'.join([str(num) for num in numversion])
 
-install_requires = ['six', 'scandir']
+install_requires = ['six']
 
 license = 'LGPL'
 

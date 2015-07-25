@@ -35,7 +35,6 @@ import sys
 from distutils.sysconfig import get_python_lib
 from distutils.errors import DistutilsPlatformError
 import zipimport
-import scandir
 
 try:
     import pkg_resources
@@ -424,7 +423,7 @@ def get_module_files(src_directory, blacklist, list_all=False):
       its subpackages
     """
     files = []
-    for directory, dirnames, filenames in scandir.walk(src_directory):
+    for directory, dirnames, filenames in os.walk(src_directory):
         _handle_blacklist(blacklist, dirnames, filenames)
         # check for __init__.py
         if not list_all and not '__init__.py' in filenames:
