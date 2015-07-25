@@ -252,8 +252,7 @@ class GetModuleFilesTest(unittest.TestCase):
             {os.path.join(package, x) for x in ['__init__.py', 'module.py', 'module2.py', 'noendingnewline.py', 'nonregr.py']})
         
     def test_get_all_files(self):
-        """with the flag list_all set to True return files, that live
-        in non-module directories
+        """test that list_all returns all Python files from given location
         """
         non_package = resources.find('data/notamodule')
         modules = modutils.get_module_files(non_package, [], list_all=True)

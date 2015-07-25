@@ -408,9 +408,8 @@ def get_module_files(src_directory, blacklist, list_all=False):
       `logilab.common.STD_BLACKLIST`
 
     :type list_all: bool
-    :para list_all:
-        boolean value of if we want to get all python files,
-        ignoring the missing __init__.py
+    :param list_all:
+        get files from all paths, including ones without __init__.py
 
     :rtype: list
     :return:
