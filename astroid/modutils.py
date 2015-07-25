@@ -37,6 +37,7 @@ import sys
 from distutils.sysconfig import get_python_lib
 from distutils.errors import DistutilsPlatformError
 import zipimport
+import scandir
 
 try:
     import pkg_resources
@@ -393,7 +394,7 @@ def get_module_part(dotted_name, context_file=None):
     return dotted_name
 
 
-def get_module_files(src_directory, blacklist):
+def get_module_files(src_directory, blacklist, get_all=False):
     """given a package directory return a list of all available python
     module's files in the package and its subpackages
 
@@ -406,16 +407,21 @@ def get_module_files(src_directory, blacklist):
       optional list of files or directory to ignore, default to the value of
       `logilab.common.STD_BLACKLIST`
 
+    :type get_all: bool
+    :para get_all:
+        boolean value of if we want to get all python files,
+        ignoring the missing __init__.py
+
     :rtype: list
     :return:
       the list of all available python module's files in the package and
       its subpackages
     """
     files = []
-    for directory, dirnames, filenames in os.walk(src_directory):
+    for directory, dirnames, filenames in scandir.walk(src_directory):
         _handle_blacklist(blacklist, dirnames, filenames)
         # check for __init__.py
-        if not '__init__.py' in filenames:
+        if not get_all and not '__init__.py' in filenames:
             dirnames[:] = ()
             continue
         for filename in filenames:
