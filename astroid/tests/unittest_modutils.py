@@ -242,15 +242,13 @@ class IsRelativeTest(unittest.TestCase):
 class GetModuleFilesTest(unittest.TestCase):
 
     def test_get_module_files_1(self):
-        """given a directory return a list of all available python module's files, even
-        in subdirectories
-        """
         package = resources.find('data/find_test')
         modules = set(modutils.get_module_files(package, []))
-        self.assertEqual(
-            modules,
-            {os.path.join(package, x) for x in ['__init__.py', 'module.py', 'module2.py', 'noendingnewline.py', 'nonregr.py']})
-        
+        expected = ['__init__.py', 'module.py', 'module2.py',
+                    'noendingnewline.py', 'nonregr.py']
+        self.assertEqual(modules,
+                         {os.path.join(package, x) for x in expected})
+
     def test_get_all_files(self):
         """test that list_all returns all Python files from given location
         """
