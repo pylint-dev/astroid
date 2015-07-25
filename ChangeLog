@@ -3,6 +3,9 @@ Change log for the astroid package (used to be astng)
 
 --
 
+    * The logilab-common dependency is not needed anymore as the needed code
+      was integrated into astroid.
+
     * Add 'assert_equals' method in nose.tools's brain plugin.
 
     * Generated enum member stubs now support IntEnum and multiple
