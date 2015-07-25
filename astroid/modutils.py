@@ -28,8 +28,6 @@
 """
 from __future__ import with_statement
 
-__docformat__ = "restructuredtext en"
-
 import imp
 import os
 import platform

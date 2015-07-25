@@ -19,8 +19,6 @@
 inference utils.
 """
 
-__docformat__ = "restructuredtext en"
-
 import sys
 from contextlib import contextmanager
 
