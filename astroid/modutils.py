@@ -394,7 +394,7 @@ def get_module_part(dotted_name, context_file=None):
     return dotted_name
 
 
-def get_module_files(src_directory, blacklist, get_all=False):
+def get_module_files(src_directory, blacklist, list_all=False):
     """given a package directory return a list of all available python
     module's files in the package and its subpackages
 
@@ -407,8 +407,8 @@ def get_module_files(src_directory, blacklist, get_all=False):
       optional list of files or directory to ignore, default to the value of
       `logilab.common.STD_BLACKLIST`
 
-    :type get_all: bool
-    :para get_all:
+    :type list_all: bool
+    :para list_all:
         boolean value of if we want to get all python files,
         ignoring the missing __init__.py
 
@@ -421,7 +421,7 @@ def get_module_files(src_directory, blacklist, get_all=False):
     for directory, dirnames, filenames in scandir.walk(src_directory):
         _handle_blacklist(blacklist, dirnames, filenames)
         # check for __init__.py
-        if not get_all and not '__init__.py' in filenames:
+        if not list_all and not '__init__.py' in filenames:
             dirnames[:] = ()
             continue
         for filename in filenames:

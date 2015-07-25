@@ -252,14 +252,14 @@ class GetModuleFilesTest(unittest.TestCase):
             {os.path.join(package, x) for x in ['__init__.py', 'module.py', 'module2.py', 'noendingnewline.py', 'nonregr.py']})
         
     def test_get_all_files(self):
-        """with the flag get_all set to True return files, that live
+        """with the flag list_all set to True return files, that live
         in non-module directories
         """
         non_package = resources.find('data/notamodule')
-        modules = set(modutils.get_module_files(non_package, [], True))
+        modules = modutils.get_module_files(non_package, [], list_all=True)
         self.assertEqual(
             modules,
-            {os.path.join(non_package, 'file.py')},
+            [os.path.join(non_package, 'file.py')],
         )
 
     def test_load_module_set_attribute(self):
