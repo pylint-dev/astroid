@@ -1352,7 +1352,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         class B(object): pass 
         ''')
         cls = module['B']
-        self.assertEqual(YES, next(cls.igetattr('foo')))        
+        self.assertEqual(YES, next(cls.igetattr('foo')))
 
     def test_metaclass_lookup(self):
         module = builder.parse('''
@@ -1403,7 +1403,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(property_class.value, 42)
 
         static = next(acls.igetattr('static'))
-        self.assertIsInstance(static, scoped_nodes.Function)        
+        self.assertIsInstance(static, scoped_nodes.Function)
 
     @test_utils.require_version(maxver='3.0')
     def test_implicit_metaclass_is_none(self):

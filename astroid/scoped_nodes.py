@@ -943,7 +943,7 @@ def get_wrapping_class(node):
     We consider that a class wraps a node if the class
     is a parent for the said node.
     """
-    
+
     klass = node.frame()
     while klass is not None and not isinstance(klass, Class):
         if klass.parent is None:
