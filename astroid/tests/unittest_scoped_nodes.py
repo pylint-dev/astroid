@@ -1324,6 +1324,87 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         type_cls = scoped_nodes.builtin_lookup("type")[1][0]
         self.assertEqual(cls.implicit_metaclass(), type_cls)
 
+    def test_implicit_metaclass_lookup(self):
+        cls = test_utils.extract_node('''
+        class A(object):
+            pass
+        ''')
+        instance = cls.instanciate_class()
+        func = cls.getattr('mro')
+        self.assertEqual(len(func), 1)
+        self.assertRaises(NotFoundError, instance.getattr, 'mro')
+
+    def test_metaclass_lookup_using_same_class(self):
+        # Check that we don't have recursive attribute access for metaclass
+        cls = test_utils.extract_node('''
+        class A(object): pass            
+        ''')
+        self.assertEqual(len(cls.getattr('mro')), 1)
+
+    def test_metaclass_lookup_inferrence_errors(self):
+        module = builder.parse('''
+        import six
+
+        class Metaclass(type):
+            foo = lala
+
+        @six.add_metaclass(Metaclass)
+        class B(object): pass 
+        ''')
+        cls = module['B']
+        self.assertEqual(YES, next(cls.igetattr('foo')))        
+
+    def test_metaclass_lookup(self):
+        module = builder.parse('''
+        import six
+         
+        class Metaclass(type):
+            foo = 42
+            @classmethod
+            def class_method(cls):
+                pass
+            def normal_method(cls):
+                pass
+            @property
+            def meta_property(cls):
+                return 42
+            @staticmethod
+            def static():
+                pass
+
+        @six.add_metaclass(Metaclass)
+        class A(object):
+            pass
+        ''')
+        acls = module['A']
+        normal_attr = next(acls.igetattr('foo'))
+        self.assertIsInstance(normal_attr, nodes.Const)
+        self.assertEqual(normal_attr.value, 42)
+
+        class_method = next(acls.igetattr('class_method'))
+        self.assertIsInstance(class_method, BoundMethod)
+        self.assertEqual(class_method.bound, module['Metaclass'])
+
+        normal_method = next(acls.igetattr('normal_method'))
+        self.assertIsInstance(normal_method, BoundMethod)
+        self.assertEqual(normal_method.bound, module['A'])
+
+        # Attribute access for properties:
+        #   from the metaclass is a property object
+        #   from the class that uses the metaclass, the value
+        #   of the property
+        property_meta = next(module['Metaclass'].igetattr('meta_property'))
+        self.assertIsInstance(property_meta, UnboundMethod)
+        wrapping = scoped_nodes.get_wrapping_class(property_meta)
+        self.assertEqual(wrapping, module['Metaclass'])
+
+        property_class = next(acls.igetattr('meta_property'))
+        self.assertIsInstance(property_class, nodes.Const)
+        self.assertEqual(property_class.value, 42)
+
+        static = next(acls.igetattr('static'))
+        self.assertIsInstance(static, scoped_nodes.Function)        
+
     @test_utils.require_version(maxver='3.0')
     def test_implicit_metaclass_is_none(self):
         cls = test_utils.extract_node("""

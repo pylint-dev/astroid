@@ -199,13 +199,15 @@ class Instance(Proxy):
                 # unless they are explicitly defined.
                 if name in ('__name__', '__bases__', '__mro__', '__subclasses__'):
                     return self._proxied.local_attr(name)
-                return self._proxied.getattr(name, context)
+                return self._proxied.getattr(name, context,
+                                             class_context=False)
             raise NotFoundError(name)
         # since we've no context information, return matching class members as
         # well
         if lookupclass:
             try:
-                return values + self._proxied.getattr(name, context)
+                return values + self._proxied.getattr(name, context,
+                                                      class_context=False)
             except NotFoundError:
                 pass
         return values
@@ -278,7 +280,7 @@ class Instance(Proxy):
 
     def callable(self):
         try:
-            self._proxied.getattr('__call__')
+            self._proxied.getattr('__call__', class_context=False)
             return True
         except NotFoundError:
             return False

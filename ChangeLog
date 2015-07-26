@@ -240,6 +240,11 @@ Change log for the astroid package (used to be astng)
 
     * Add get_wrapping_class API to scoped_nodes, which can be used to
       retrieve the class that wraps a node.
+
+    * Class.getattr looks by default in the implicit and the explicit metaclasses,
+      which is `type` on Python 3.
+
+      Closes issue #114.
      
 
 

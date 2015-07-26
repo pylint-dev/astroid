@@ -1223,12 +1223,18 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
         """return Instance of Class node, else return self"""
         return bases.Instance(self)
 
-    def getattr(self, name, context=None):
-        """this method doesn't look in the instance_attrs dictionary since it's
-        done by an Instance proxy at inference time.
+    def getattr(self, name, context=None, class_context=True):
+        """Get an attribute from this class, using Python's attribute semantic
 
+        This method doesn't look in the instance_attrs dictionary
+        since it's done by an Instance proxy at inference time.
         It may return a YES object if the attribute has not been actually
-        found but a __getattr__ or __getattribute__ method is defined
+        found but a __getattr__ or __getattribute__ method is defined.
+        If *class_context* is given, then it's considered that the attribute
+        is accessed from a class context, e.g. Class.attribute, otherwise
+        it might have been accessed from an instance as well.
+        If *class_context* is used in that case, then a lookup in the
+        implicit metaclass and the explicit metaclass will be done.
         """
         values = self.locals.get(name, [])
         if name in self.special_attributes:
@@ -1247,9 +1253,54 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
         values = list(values)
         for classnode in self.ancestors(recurs=True, context=context):
             values += classnode.locals.get(name, [])
+
+        if class_context:
+            values += self._metaclass_lookup_attribute(name, context)
         if not values:
             raise exceptions.NotFoundError(name)
         return values
+
+    def _metaclass_lookup_attribute(self, name, context):
+        """Search the given name in the implicit and the explicit metaclass."""
+        attrs = set()
+        implicit_meta = self.implicit_metaclass()
+        metaclass = self.metaclass()
+        for cls in {implicit_meta, metaclass}:
+            if cls and cls != self:
+                cls_attributes = self._get_attribute_from_metaclass(
+                    cls, name, context)
+                attrs.update(set(cls_attributes))
+        return attrs
+
+    def _get_attribute_from_metaclass(self, cls, name, context):
+        try:
+            attrs = cls.getattr(name, context=context,
+                                class_context=True)
+        except exceptions.NotFoundError:
+            return
+
+        for attr in bases._infer_stmts(attrs, context, frame=cls):
+            if not isinstance(attr, Function):
+                yield attr
+                continue
+
+            if bases._is_property(attr):
+                # TODO(cpopa): don't use a private API.
+                for infered in attr.infer_call_result(self, context):
+                    yield infered
+                continue
+            if attr.type == 'classmethod':
+                # If the method is a classmethod, then it will
+                # be bound to the metaclass, not to the class
+                # from where the attribute is retrieved.
+                # get_wrapping_class could return None, so just
+                # default to the current class.
+                frame = get_wrapping_class(attr) or self
+                yield bases.BoundMethod(attr, frame)
+            elif attr.type == 'staticmethod':
+                yield attr
+            else:
+                yield bases.BoundMethod(attr, self)
 
     def igetattr(self, name, context=None):
         """inferred getattr, need special treatment in class to handle
