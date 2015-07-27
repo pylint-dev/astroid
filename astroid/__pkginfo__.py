@@ -20,7 +20,7 @@ distname = 'astroid'
 
 modname = 'astroid'
 
-numversion = (1, 3, 6)
+numversion = (1, 3, 7)
 version = '.'.join([str(num) for num in numversion])
 
 install_requires = ['logilab-common >= 0.60.0', 'six']
