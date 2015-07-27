@@ -16,7 +16,6 @@
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
 """Tests for basic functionality in astroid.brain."""
 import sys
-
 import unittest
 
 from astroid import MANAGER
@@ -24,6 +23,8 @@ from astroid import bases
 from astroid import nodes
 from astroid import test_utils
 import astroid
+
+import six
 
 
 try:
