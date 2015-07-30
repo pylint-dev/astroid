@@ -190,6 +190,7 @@ def cleanup_resources(force=False):
 def subprocess_transform():
     if PY3K:
         communicate = (bytes('string', 'ascii'), bytes('string', 'ascii'))
+        communicate_signature = 'def communicate(self, input=None, timeout=None)'
         init = """
         def __init__(self, args, bufsize=0, executable=None,
                      stdin=None, stdout=None, stderr=None,
@@ -201,6 +202,7 @@ def subprocess_transform():
         """
     else:
         communicate = ('string', 'string')
+        communicate_signature = 'def communicate(self, input=None)'
         init = """
         def __init__(self, args, bufsize=0, executable=None,
                      stdin=None, stdout=None, stderr=None,
@@ -228,7 +230,7 @@ def subprocess_transform():
 
         %(init)s
 
-        def communicate(self, input=None):
+        %(communicate_signature)s:
             return %(communicate)r
         %(wait_signature)s:
             return self.returncode
@@ -243,6 +245,7 @@ def subprocess_transform():
         %(ctx_manager)s
        ''' % {'init': init,
               'communicate': communicate,
+              'communicate_signature': communicate_signature,
               'wait_signature': wait_signature,
               'ctx_manager': ctx_manager})
     return AstroidBuilder(MANAGER).string_build(code)
