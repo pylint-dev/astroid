@@ -259,7 +259,7 @@ def test():
 
         class A(with_metaclass(object, lala.lala)): #@
             pass
-        """)        
+        """)
         ancestors = list(node.ancestors())
         if six.PY3:
             self.assertEqual(len(ancestors), 1)
