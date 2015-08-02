@@ -90,7 +90,7 @@ def object_type(node, context=None):
         types = set(_object_type(node, context))
     except exceptions.InferenceError:
         return bases.YES
-    if len(types) > 1:
+    if len(types) > 1 or not types:
         return bases.YES
     return list(types)[0]
 
