@@ -1,6 +1,10 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+2015-08-02 -- 1.3.8
+
+    * Backport of  40e3176, which fixes issue #84.
+
 2015-07-27 -- 1.3.7
 
     * Improve the inference of six.moves, especially when using `from ... import ...`
