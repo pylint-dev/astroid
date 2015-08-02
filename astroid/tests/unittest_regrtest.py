@@ -28,6 +28,8 @@ from astroid.raw_building import build_module
 from astroid.manager import AstroidManager
 from astroid.test_utils import require_version, extract_node
 from astroid.tests import resources
+from astroid import transforms
+
 
 class NonRegressionTests(resources.AstroidCacheSetupMixin,
                          unittest.TestCase):
@@ -54,7 +56,7 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin,
         manager._failed_import_hooks = []
         manager.astroid_cache = {}
         manager._mod_file_cache = {}
-        manager.transforms = {}
+        manager._transform = transforms.TransformVisitor()
         manager.clear_cache() # trigger proper bootstraping
         return manager
 

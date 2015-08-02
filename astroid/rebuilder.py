@@ -139,7 +139,6 @@ class TreeRebuilder(object):
         self._from_nodes = []
         self._delayed_assattr = []
         self._visit_meths = {}
-        self._transform = manager.transform
         self._peepholer = astpeephole.ASTPeepholeOptimizer()
 
     def visit_module(self, node, modname, modpath, package):
@@ -150,7 +149,7 @@ class TreeRebuilder(object):
         _init_set_doc(node, newnode)
         newnode.body = [self.visit(child, newnode) for child in node.body]
         newnode.file = newnode.path = modpath
-        return self._transform(newnode)
+        return newnode
 
     def visit(self, node, parent):
         cls = node.__class__
@@ -161,7 +160,7 @@ class TreeRebuilder(object):
             visit_name = 'visit_' + REDIRECT.get(cls_name, cls_name).lower()
             visit_method = getattr(self, visit_name)
             self._visit_meths[cls] = visit_method
-        return self._transform(visit_method(node, parent))
+        return visit_method(node, parent)
 
     def _save_assignment(self, node, name=None):
         """save assignement situation since node.parent is not available yet"""

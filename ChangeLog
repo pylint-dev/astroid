@@ -245,6 +245,31 @@ Change log for the astroid package (used to be astng)
       which is `type` on Python 3.
 
       Closes issue #114.
+
+    * There's a new separate step for transforms.
+
+      Until now, the transforms were applied at the same time the tree was
+      being built. This was problematic if the transform functions were
+      using inference, since the inference was executed on a partially
+      constructed tree, which led to failures when post-building
+      information was needed (such as setting the _from_names
+      for the From imports).
+      Now there's a separate step for transforms, which are applied
+      using transform.TransformVisitor.
+      There's a couple of other related changes:
+
+          * astroid.parse and AstroidBuilder gained a new parameter
+            `apply_transforms`, which is a boolean flag, which will
+            control if the transforms are applied. We do this because
+            there are uses when the vanilla tree is wanted, without
+            any implicit modification.
+
+          * the transforms are also applied for builtin modules,
+            as a side effect of the fact that transform visiting
+            was moved in AstroidBuilder._post_build from
+            AstroidBuilder._data_build.
+
+      Closes issue #116.
      
 
 

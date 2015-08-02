@@ -137,7 +137,8 @@ class NamedTupleTest(unittest.TestCase):
 
 class ModuleExtenderTest(unittest.TestCase):
     def testExtensionModules(self):
-        for extender, _ in MANAGER.transforms[nodes.Module]:
+        transformer = MANAGER._transform
+        for extender, _ in transformer.transforms[nodes.Module]:
             n = nodes.Module('__main__', None)
             extender(n)
 

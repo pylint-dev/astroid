@@ -29,6 +29,7 @@ import zipimport
 
 from astroid.exceptions import AstroidBuildingException
 from astroid import modutils
+from astroid import transforms
 
 
 def safe_repr(obj):
@@ -54,11 +55,19 @@ class AstroidManager(object):
             # NOTE: cache entries are added by the [re]builder
             self.astroid_cache = {}
             self._mod_file_cache = {}
-            self.transforms = collections.defaultdict(list)
             self._failed_import_hooks = []
             self.always_load_extensions = False
             self.optimize_ast = False
             self.extension_package_whitelist = set()
+            self._transform = transforms.TransformVisitor()
+
+            # Export these APIs for convenience
+            self.register_transform = self._transform.register_transform
+            self.unregister_transform = self._transform.unregister_transform
+
+    def visit_transforms(self, node):
+        """Visit the transforms and apply them to the given *node*."""
+        return self._transform.visit(node)
 
     def ast_from_file(self, filepath, modname=None, fallback=True, source=False):
         """given a module name, return the astroid object"""
@@ -231,20 +240,6 @@ class AstroidManager(object):
             for infered in modastroid.igetattr(name, context):
                 yield infered.instanciate_class()
 
-    def register_transform(self, node_class, transform, predicate=None):
-        """Register `transform(node)` function to be applied on the given
-        Astroid's `node_class` if `predicate` is None or returns true
-        when called with the node as argument.
-
-        The transform function may return a value which is then used to
-        substitute the original node in the tree.
-        """
-        self.transforms[node_class].append((transform, predicate))
-
-    def unregister_transform(self, node_class, transform, predicate=None):
-        """Unregister the given transform."""
-        self.transforms[node_class].remove((transform, predicate))
-
     def register_failed_import_hook(self, hook):
         """Registers a hook to resolve imports that cannot be found otherwise.
 
@@ -254,30 +249,6 @@ class AstroidManager(object):
         otherwise, it must raise `AstroidBuildingException`.
         """
         self._failed_import_hooks.append(hook)
-
-    def transform(self, node):
-        """Call matching transforms for the given node if any and return the
-        transformed node.
-        """
-        cls = node.__class__
-        if cls not in self.transforms:
-            # no transform registered for this class of node
-            return node
-
-        transforms = self.transforms[cls]
-        orig_node = node  # copy the reference
-        for transform_func, predicate in transforms:
-            if predicate is None or predicate(node):
-                ret = transform_func(node)
-                # if the transformation function returns something, it's
-                # expected to be a replacement for the node
-                if ret is not None:
-                    if node is not orig_node:
-                        # node has already be modified by some previous
-                        # transformation, warn about it
-                        warnings.warn('node %s substituted multiple times' % node)
-                    node = ret
-        return node
 
     def cache_module(self, module):
         """Cache a module if no module with the same name is known yet."""
