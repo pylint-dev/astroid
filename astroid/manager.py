@@ -21,10 +21,8 @@ from various source and using a cache of built modules)
 """
 from __future__ import print_function
 
-import collections
 import imp
 import os
-import warnings
 import zipimport
 
 from astroid.exceptions import AstroidBuildingException

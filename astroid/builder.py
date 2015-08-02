@@ -111,7 +111,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
             node = self.inspect_build(module, modname=modname, path=path)
             if self._apply_transforms:
                 # We have to handle transformation by ourselves since the
-                # rebuilder isn't called for builtin nodes            
+                # rebuilder isn't called for builtin nodes
                 node = self._manager.visit_transforms(node)
         return node
 
