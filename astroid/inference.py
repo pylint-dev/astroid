@@ -312,7 +312,11 @@ def _infer_boolop(self, context=None):
     node.
     """
     values = self.values
-    op = self.op
+    if self.op == 'or':
+        predicate = operator.truth
+    else:
+        predicate = operator.not_
+
     try:
         values = [value.infer(context=context) for value in values]
     except InferenceError:
@@ -330,11 +334,6 @@ def _infer_boolop(self, context=None):
             # Can't infer the final result, just yield YES.
             yield YES
             continue
-
-        if op == 'or':
-            predicate = operator.truth
-        else:
-            predicate = operator.not_
 
         # Since the boolean operations are short circuited operations,
         # this code yields the first value for which the predicate is True
