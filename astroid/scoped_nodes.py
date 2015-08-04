@@ -990,7 +990,7 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
             if base._newstyle_impl(context):
                 self._newstyle = True
                 break
-        klass = self._explicit_metaclass()
+        klass = self.declared_metaclass()
         # could be any callable, we'd need to infer the result of klass(name,
         # bases, dict).  punt if it's not a class node.
         if klass is not None and isinstance(klass, Class):
@@ -1385,11 +1385,10 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
             return builtin_lookup('type')[1][0]
 
     _metaclass = None
-    def _explicit_metaclass(self):
-        """ Return the explicit defined metaclass
-        for the current class.
+    def declared_metaclass(self):
+        """Return the explicit declared metaclass for the current class.
 
-        An explicit defined metaclass is defined
+        An explicit declared metaclass is defined
         either by passing the ``metaclass`` keyword argument
         in the class definition line (Python 3) or (Python 2) by
         having a ``__metaclass__`` class attribute, or if there are
@@ -1437,13 +1436,13 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
         return infered
 
     def metaclass(self):
-        """ Return the metaclass of this class.
+        """Return the metaclass of this class.
 
         If this class does not define explicitly a metaclass,
         then the first defined metaclass in ancestors will be used
         instead.
         """
-        klass = self._explicit_metaclass()
+        klass = self.declared_metaclass()
         if klass is None:
             for parent in self.ancestors():
                 klass = parent.metaclass()

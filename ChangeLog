@@ -270,7 +270,13 @@ Change log for the astroid package (used to be astng)
             AstroidBuilder._data_build.
 
       Closes issue #116.
-     
+    
+    * Class._explicit_metaclass is now a public API, in the form of
+      Class.declared_metaclass.
+
+      Class.mro remains the de facto method for retrieving the metaclass
+      of a class, which will also do an evaluation of what declared_metaclass
+      returns.
 
 
 2015-03-14 -- 1.3.6
