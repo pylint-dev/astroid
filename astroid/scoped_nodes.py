@@ -581,50 +581,6 @@ def _infer_decorator_callchain(node):
             return 'staticmethod'
 
 
-def _function_type(self):
-    """
-    Function type, possible values are:
-    method, function, staticmethod, classmethod.
-    """
-    # Can't infer that this node is decorated
-    # with a subclass of `classmethod` where `type` is first set,
-    # so do it here.
-    if self.decorators:
-        for node in self.decorators.nodes:
-            if isinstance(node, node_classes.CallFunc):
-                # Handle the following case:
-                # @some_decorator(arg1, arg2)
-                # def func(...)
-                #
-                try:
-                    current = next(node.func.infer())
-                except exceptions.InferenceError:
-                    continue
-                _type = _infer_decorator_callchain(current)
-                if _type is not None:
-                    return _type
-
-            try:
-                for infered in node.infer():
-                    # Check to see if this returns a static or a class method.
-                    _type = _infer_decorator_callchain(infered)
-                    if _type is not None:
-                        return _type
-
-                    if not isinstance(infered, Class):
-                        continue
-                    for ancestor in infered.ancestors():
-                        if not isinstance(ancestor, Class):
-                            continue
-                        if ancestor.is_subtype_of('%s.classmethod' % BUILTINS):
-                            return 'classmethod'
-                        elif ancestor.is_subtype_of('%s.staticmethod' % BUILTINS):
-                            return 'staticmethod'
-            except exceptions.InferenceError:
-                pass
-    return self._type
-
-
 class Lambda(LocalsDictNodeNG, mixins.FilterStmtsMixin):
     _astroid_fields = ('args', 'body',)
     name = '<lambda>'
@@ -688,9 +644,7 @@ class Function(bases.Statement, Lambda):
     special_attributes = set(('__name__', '__doc__', '__dict__'))
     is_function = True
     # attributes below are set by the builder module or by raw factories
-    type = decorators_mod.cachedproperty(_function_type)
     decorators = None
-    _type = "function"
 
     def __init__(self, name, doc):
         self.locals = {}
@@ -700,6 +654,59 @@ class Function(bases.Statement, Lambda):
         self.doc = doc
         self.extra_decorators = []
         self.instance_attrs = {}
+
+    @decorators_mod.cachedproperty
+    def type(self):
+        """Get the function type for this node.
+
+        Possible values are: method, function, staticmethod, classmethod.
+        """
+        frame = self.parent.frame()
+        type_name = 'function'
+        if isinstance(frame, Class):
+            if self.name == '__new__':
+                return'classmethod'
+            else:
+                type_name = 'method'
+
+        if self.decorators:
+            for node in self.decorators.nodes:
+                if isinstance(node, node_classes.Name):
+                    if node.name in ('classmethod', 'staticmethod'):
+                        return node.name
+
+                if isinstance(node, node_classes.CallFunc):
+                    # Handle the following case:
+                    # @some_decorator(arg1, arg2)
+                    # def func(...)
+                    #
+                    try:
+                        current = next(node.func.infer())
+                    except exceptions.InferenceError:
+                        continue
+                    _type = _infer_decorator_callchain(current)
+                    if _type is not None:
+                        return _type
+
+                try:
+                    for infered in node.infer():
+                        # Check to see if this returns a static or a class method.
+                        _type = _infer_decorator_callchain(infered)
+                        if _type is not None:
+                            return _type
+
+                        if not isinstance(infered, Class):
+                            continue
+                        for ancestor in infered.ancestors():
+                            if not isinstance(ancestor, Class):
+                                continue
+                            if ancestor.is_subtype_of('%s.classmethod' % BUILTINS):
+                                return 'classmethod'
+                            elif ancestor.is_subtype_of('%s.staticmethod' % BUILTINS):
+                                return 'staticmethod'
+                except exceptions.InferenceError:
+                    pass
+        return type_name
 
     @decorators_mod.cachedproperty
     def fromlineno(self):
