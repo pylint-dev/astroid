@@ -1529,7 +1529,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(len(clsmethod.extra_decorators), 1)
         self.assertEqual(clsmethod.type, 'classmethod')
         self.assertEqual(len(static_method.extra_decorators), 1)
-        self.assertEqual(static_method.type, 'staticmethod')         
+        self.assertEqual(static_method.type, 'staticmethod')
 
 
 if __name__ == '__main__':

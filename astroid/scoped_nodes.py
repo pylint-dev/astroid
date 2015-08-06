@@ -679,8 +679,8 @@ class Function(bases.Statement, Lambda):
         Additional decorators are considered when they are used as
         assignments, as in `method = staticmethod(method)`.
         The property will return all the callables that are used for
-        decoration. 
-        """ 
+        decoration.
+        """
         frame = self.parent.frame()
         if not isinstance(frame, Class):
             return []
@@ -696,7 +696,7 @@ class Function(bases.Statement, Lambda):
 
                     if assign_node.name != self.name:
                         # Interested only in the assignment nodes that
-                        # decorates the current method. 
+                        # decorates the current method.
                         continue
                     try:
                         meth = frame[self.name]
