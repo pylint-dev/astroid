@@ -345,7 +345,7 @@ class TreeRebuilder(object):
         _init_set_doc(node, newnode)
         newnode.bases = [self.visit(child, newnode) for child in node.bases]
         newnode.body = [self.visit(child, newnode) for child in node.body]
-        if 'decorator_list' in node._fields and node.decorator_list:# py >= 2.6
+        if node.decorator_list:
             newnode.decorators = self.visit_decorators(node, newnode)
         newnode.parent.frame().set_local(newnode.name, newnode)
         return newnode
