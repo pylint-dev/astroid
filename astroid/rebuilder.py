@@ -238,23 +238,6 @@ class TreeRebuilder(object):
         newnode.targets = [self.visit(child, newnode) for child in node.targets]
         self.asscontext = None
         newnode.value = self.visit(node.value, newnode)
-        # set some function or metaclass infos  XXX explain ?
-        klass = newnode.parent.frame()
-        if (isinstance(klass, new.Class)
-                and isinstance(newnode.value, new.CallFunc)
-                and isinstance(newnode.value.func, new.Name)):
-            func_name = newnode.value.func.name
-            for ass_node in newnode.targets:
-                try:
-                    meth = klass[ass_node.name]
-                    if isinstance(meth, new.Function):
-                        if func_name in ('classmethod', 'staticmethod'):
-                            meth.type = func_name
-                        elif func_name == 'classproperty': # see lgc.decorators
-                            meth.type = 'classmethod'
-                        meth.extra_decorators.append(newnode.value)
-                except (AttributeError, KeyError):
-                    continue
         return newnode
 
     def visit_assname(self, node, parent, node_name=None):
@@ -791,8 +774,7 @@ class TreeRebuilder3k(TreeRebuilder):
 
     def visit_arg(self, node, parent):
         """visit a arg node by returning a fresh AssName instance"""
-        # the <arg> node is coming from py>=3.0, but we use AssName in py2.x
-        # XXX or we should instead introduce a Arg node in astroid ?
+        # TODO(cpopa): introduce an Arg node instead of using AssName.
         return self.visit_assname(node, parent, node.arg)
 
     def visit_nameconstant(self, node, parent):

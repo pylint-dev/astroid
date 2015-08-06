@@ -1367,6 +1367,59 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         not_method = next(instance.igetattr('not_method'))
         self.assertIsInstance(not_method, scoped_nodes.Lambda)
 
+    def test_class_extra_decorators_frame_is_not_class(self):
+        ast_node = test_utils.extract_node('''
+        def ala():
+            def bala(): #@
+                func = 42
+        ''')
+        self.assertEqual(ast_node.extra_decorators, [])
+
+    def test_class_extra_decorators_only_callfunc_are_considered(self):
+        ast_node = test_utils.extract_node('''
+        class Ala(object):
+             def func(self): #@
+                 pass
+             func = 42
+        ''')
+        self.assertEqual(ast_node.extra_decorators, [])
+
+    def test_class_extra_decorators_only_assignment_names_are_considered(self):
+        ast_node = test_utils.extract_node('''
+        class Ala(object):
+             def func(self): #@
+                 pass
+             def __init__(self):
+                 self.func = staticmethod(func)
+
+        ''')
+        self.assertEqual(ast_node.extra_decorators, [])
+
+    def test_class_extra_decorators_only_same_name_considered(self):
+        ast_node = test_utils.extract_node('''
+        class Ala(object):
+             def func(self): #@
+                pass
+             bala = staticmethod(func)
+        ''')
+        self.assertEqual(ast_node.extra_decorators, [])
+        self.assertEqual(ast_node.type, 'method')
+
+    def test_class_extra_decorators(self):
+        static_method, clsmethod = test_utils.extract_node('''
+        class Ala(object):
+             def static(self): #@
+                 pass
+             def class_method(self): #@
+                 pass
+             class_method = classmethod(class_method)
+             static = staticmethod(static)              
+        ''')
+        self.assertEqual(len(clsmethod.extra_decorators), 1)
+        self.assertEqual(clsmethod.type, 'classmethod')
+        self.assertEqual(len(static_method.extra_decorators), 1)
+        self.assertEqual(static_method.type, 'staticmethod')         
+
 
 if __name__ == '__main__':
     unittest.main()
