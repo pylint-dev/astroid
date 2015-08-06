@@ -326,7 +326,7 @@ class BoundMethod(UnboundMethod):
     def infer_call_result(self, caller, context):
         context = context.clone()
         context.boundnode = self.bound
-        return self._proxied.infer_call_result(caller, context)
+        return super(BoundMethod, self).infer_call_result(caller, context)
 
 
 class Generator(Instance):
