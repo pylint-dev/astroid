@@ -2433,6 +2433,26 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         for node in ast_nodes:
             self.assertEqual(next(node.infer()), YES)
 
+    def test_bin_op_supertype_more_complicated_example(self):
+        ast_node = test_utils.extract_node('''
+        class A(object):
+            def __init__(self):
+                self.foo = 42
+            def __add__(self, other):
+                return other.bar + self.foo / 2
+
+        class B(A):
+            def __init__(self):
+                self.bar = 24
+        def __radd__(self, other):
+            return NotImplemented
+
+        A() + B() #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(int(inferred.value), 45)
+
     def test_aug_op_same_type_not_implemented(self):
         ast_node = test_utils.extract_node('''
         class A(object):
