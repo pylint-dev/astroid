@@ -1291,6 +1291,14 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         infered = list(n.igetattr('arg'))
         self.assertEqual(len(infered), 1, infered)
 
+    def test__new__bound_methods(self):
+        node = test_utils.extract_node('''
+        class cls(object): pass
+        cls().__new__(cls) #@
+        ''')
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred._proxied, node.root()['cls'])
 
     def test_two_parents_from_same_module(self):
         code = '''
