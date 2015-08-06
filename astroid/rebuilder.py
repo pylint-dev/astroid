@@ -238,22 +238,6 @@ class TreeRebuilder(object):
         newnode.targets = [self.visit(child, newnode) for child in node.targets]
         self.asscontext = None
         newnode.value = self.visit(node.value, newnode)
-        klass = newnode.parent.frame()
-        if (isinstance(klass, new.Class)
-                and isinstance(newnode.value, new.CallFunc)
-                and isinstance(newnode.value.func, new.Name)):
-            func_name = newnode.value.func.name
-            for ass_node in newnode.targets:
-                try:
-                    meth = klass[ass_node.name]
-                    if isinstance(meth, new.Function):
-                        if func_name in ('classmethod', 'staticmethod'):
-                            meth.type = func_name
-                        elif func_name == 'classproperty': # see lgc.decorators
-                            meth.type = 'classmethod'
-                        meth.extra_decorators.append(newnode.value)
-                except (AttributeError, KeyError):
-                    continue
         return newnode
 
     def visit_assname(self, node, parent, node_name=None):

@@ -670,8 +670,42 @@ class Function(bases.Statement, Lambda):
         self.body = []
         self.name = name
         self.doc = doc
-        self.extra_decorators = []
         self.instance_attrs = {}
+
+    @decorators_mod.cachedproperty
+    def extra_decorators(self):
+        """Get the extra decorators that this function can have
+
+        Additional decorators are considered when they are used as
+        assignments, as in `method = staticmethod(method)`.
+        The property will return all the callables that are used for
+        decoration. 
+        """ 
+        frame = self.parent.frame()
+        if not isinstance(frame, Class):
+            return []
+
+        decorators = []
+        for assign in frame.nodes_of_class(node_classes.Assign):
+            if (isinstance(assign.value, node_classes.CallFunc)
+                    and isinstance(assign.value.func, node_classes.Name)):
+                for assign_node in assign.targets:
+                    if not isinstance(assign_node, node_classes.AssName):
+                        # Support only `name = callable(name)`
+                        continue
+
+                    if assign_node.name != self.name:
+                        # Interested only in the assignment nodes that
+                        # decorates the current method. 
+                        continue
+                    try:
+                        meth = frame[self.name]
+                    except KeyError:
+                        continue
+                    else:
+                        if isinstance(meth, Function):
+                            decorators.append(assign.value)
+        return decorators
 
     @decorators_mod.cachedproperty
     def type(self):
@@ -679,6 +713,12 @@ class Function(bases.Statement, Lambda):
 
         Possible values are: method, function, staticmethod, classmethod.
         """
+        builtin_descriptors = {'classmethod', 'staticmethod'}
+
+        for decorator in self.extra_decorators:
+            if decorator.func.name in builtin_descriptors:
+                return decorator.func.name
+
         frame = self.parent.frame()
         type_name = 'function'
         if isinstance(frame, Class):
@@ -690,7 +730,7 @@ class Function(bases.Statement, Lambda):
         if self.decorators:
             for node in self.decorators.nodes:
                 if isinstance(node, node_classes.Name):
-                    if node.name in ('classmethod', 'staticmethod'):
+                    if node.name in builtin_descriptors:
                         return node.name
 
                 if isinstance(node, node_classes.CallFunc):
