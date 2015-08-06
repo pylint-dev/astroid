@@ -387,10 +387,7 @@ class TreeRebuilder(object):
         # parent is a astroid.nodes.Function node
         newnode = new.Decorators()
         _lineno_parent(node, newnode, parent)
-        if 'decorators' in node._fields: # py < 2.6, i.e. 2.5
-            decorators = node.decorators
-        else:
-            decorators = node.decorator_list
+        decorators = node.decorator_list
         newnode.nodes = [self.visit(child, newnode) for child in decorators]
         return newnode
 
@@ -501,11 +498,7 @@ class TreeRebuilder(object):
         _init_set_doc(node, newnode)
         newnode.args = self.visit(node.args, newnode)
         newnode.body = [self.visit(child, newnode) for child in node.body]
-        if 'decorators' in node._fields: # py < 2.6
-            attr = 'decorators'
-        else:
-            attr = 'decorator_list'
-        decorators = getattr(node, attr)
+        decorators = node.decorator_list
         if decorators:
             newnode.decorators = self.visit_decorators(node, newnode)
         if PY3K and node.returns:
