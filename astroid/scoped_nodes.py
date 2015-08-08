@@ -246,7 +246,6 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, bases.NodeNG):
 
     def __contains__(self, name):
         return name in self.locals
-    has_key = __contains__
 
 
 class Module(LocalsDictNodeNG):
