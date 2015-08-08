@@ -452,19 +452,6 @@ class Module(LocalsDictNodeNG):
         It doesn't include the '__builtins__' name which is added by the
         current CPython implementation of wildcard imports.
         """
-        # take advantage of a living module if it exists
-        try:
-            living = sys.modules[self.name]
-        except KeyError:
-            pass
-        else:
-            try:
-                return living.__all__
-            except AttributeError:
-                return [name for name in living.__dict__.keys()
-                        if not name.startswith('_')]
-        # else lookup the astroid
-        #
         # We separate the different steps of lookup in try/excepts
         # to avoid catching too many Exceptions
         default = [name for name in self.keys() if not name.startswith('_')]
