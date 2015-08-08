@@ -313,12 +313,14 @@ class TreeRebuilder(object):
         _lineno_parent(node, newnode, parent)
         newnode.func = self.visit(node.func, newnode)
         newnode.args = [self.visit(child, newnode) for child in node.args]
+
         if node.starargs is not None:
             newnode.starargs = self.visit(node.starargs, newnode)
         if node.kwargs is not None:
             newnode.kwargs = self.visit(node.kwargs, newnode)
-        for child in node.keywords:
-            newnode.args.append(self.visit(child, newnode))
+        if node.keywords:
+            newnode.keywords = [self.visit(child, newnode)
+                                for child in node.keywords]
         return newnode
 
     def visit_class(self, node, parent):

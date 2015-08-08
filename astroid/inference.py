@@ -38,25 +38,22 @@ MANAGER = AstroidManager()
 
 
 class CallContext(object):
-    """when inferring a function call, this class is used to remember values
-    given as argument
-    """
-    def __init__(self, args, starargs, dstarargs):
-        self.args = []
-        self.nargs = {}
-        for arg in args:
-            if isinstance(arg, nodes.Keyword):
-                self.nargs[arg.arg] = arg.value
-            else:
-                self.args.append(arg)
+
+    def __init__(self, args, keywords=None, starargs=None, kwargs=None):
+        self.args = args
+        if keywords:
+            self.keywords = {arg.arg: arg.value for arg in keywords}
+        else:
+            self.keywords = {}
+
         self.starargs = starargs
-        self.dstarargs = dstarargs
+        self.kwargs = kwargs
 
     def infer_argument(self, funcnode, name, context):
         """infer a function argument value according to the call context"""
         # 1. search in named keywords
         try:
-            return self.nargs[name].infer(context)
+            return self.keywords[name].infer(context)
         except KeyError:
             # Function.args.args can be None in astroid (means that we don't have
             # information on argnames)
@@ -99,22 +96,22 @@ class CallContext(object):
                         except (IndexError, TypeError):
                             continue
                     if its:
-                        return chain(*its)
-        # 4. XXX search in **kwargs (.dstarargs)
-        if self.dstarargs is not None:
+                        return itertools.chain(*its)
+        # 4. Search in **kwargs 
+        if self.kwargs is not None:
             its = []
-            for infered in self.dstarargs.infer(context):
+            for infered in self.kwargs.infer(context=context):
                 if infered is YES:
                     its.append((YES,))
                     continue
                 try:
-                    its.append(infered.getitem(name, context).infer(context))
+                    its.append(infered.getitem(name, context).infer(context=context))
                 except (InferenceError, AttributeError):
                     its.append((YES,))
                 except (IndexError, TypeError):
                     continue
             if its:
-                return chain(*its)
+                return itertools.chain(*its)
         # 5. */** argument, (Tuple or Dict)
         if name == funcnode.args.vararg:
             return iter((nodes.const_factory(())))
@@ -185,7 +182,10 @@ nodes.AssName.infer_lhs = infer_name # won't work with a path wrapper
 def infer_callfunc(self, context=None):
     """infer a CallFunc node by trying to guess what the function returns"""
     callcontext = context.clone()
-    callcontext.callcontext = CallContext(self.args, self.starargs, self.kwargs)
+    callcontext.callcontext = CallContext(args=self.args,
+                                          keywords=self.keywords,
+                                          starargs=self.starargs,
+                                          kwargs=self.kwargs)
     callcontext.boundnode = None
     for callee in self.func.infer(context):
         if callee is YES:
@@ -289,7 +289,7 @@ def infer_subscript(self, context=None):
 
         # Prevent inferring if the infered subscript
         # is the same as the original subscripted object.
-        if self is assigned:
+        if self is assigned or assigned is YES:
             yield YES
             return
         for infered in assigned.infer(context):
@@ -416,10 +416,9 @@ def instance_getitem(self, index, context=None):
         context = new_context = InferenceContext()
 
     # Create a new callcontext for providing index as an argument.
-    new_context.callcontext = CallContext(
-        args=[index], starargs=None, dstarargs=None)
+    new_context.callcontext = CallContext(args=[index])
     new_context.boundnode = self
-        
+
     method = next(self.igetattr('__getitem__', context=context))
     if not isinstance(method, BoundMethod):
         raise InferenceError

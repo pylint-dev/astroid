@@ -215,19 +215,16 @@ def infer_dict(node, context=None):
 
     If a case can't be infered, we'll fallback to default inference.
     """
-    has_keywords = lambda args: all(isinstance(arg, nodes.Keyword)
-                                    for arg in args)
-    if not node.args and not node.kwargs:
+    if not node.args and not node.kwargs and not node.keywords:
         # dict()
         return nodes.Dict()
-    elif has_keywords(node.args) and node.args:
+    elif node.keywords and not node.args:
         # dict(a=1, b=2, c=4)
-        items = [(nodes.Const(arg.arg), arg.value) for arg in node.args]
-    elif (len(node.args) >= 2 and
-          has_keywords(node.args[1:])):
+        items = [(nodes.Const(arg.arg), arg.value) for arg in node.keywords]
+    elif len(node.args) == 1 and node.keywords:
         # dict(some_iterable, b=2, c=4)
         elts = _get_elts(node.args[0], context)
-        keys = [(nodes.Const(arg.arg), arg.value) for arg in node.args[1:]]
+        keys = [(nodes.Const(arg.arg), arg.value) for arg in node.keywords]
         items = elts + keys
     elif len(node.args) == 1:
         items = _get_elts(node.args[0], context)

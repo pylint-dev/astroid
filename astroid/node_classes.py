@@ -446,15 +446,13 @@ class Break(Statement):
 
 class CallFunc(NodeNG):
     """class representing a CallFunc node"""
-    _astroid_fields = ('func', 'args', 'starargs', 'kwargs')
+    _astroid_fields = ('func', 'args', 'keywords', 'starargs', 'kwargs')
     func = None
     args = None
+    keywords = None
     starargs = None
     kwargs = None
 
-    def __init__(self):
-        self.starargs = None
-        self.kwargs = None
 
 class Compare(NodeNG):
     """class representing a Compare node"""
