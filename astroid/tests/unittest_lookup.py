@@ -23,7 +23,7 @@ import unittest
 
 from astroid import nodes, InferenceError, NotFoundError, UnresolvableName
 from astroid.scoped_nodes import builtin_lookup
-from astroid.bases import YES
+from astroid.util import YES
 from astroid import builder
 from astroid import test_utils
 from astroid.tests import resources

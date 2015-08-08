@@ -25,6 +25,7 @@ from contextlib import contextmanager
 from astroid.exceptions import (InferenceError, AstroidError, NotFoundError,
                                 UnresolvableName, UseInferenceDefault)
 from astroid.decorators import cachedproperty
+from astroid import util
 
 
 if sys.version_info >= (3, 0):
@@ -51,7 +52,7 @@ def _is_property(meth):
     if PROPERTIES.intersection(meth.decoratornames()):
         return True
     stripped = {name.split(".")[-1] for name in meth.decoratornames()
-                if name is not YES}
+                if name is not util.YES}
     return any(name in stripped for name in POSSIBLE_PROPERTIES)
 
 
@@ -74,8 +75,6 @@ class Proxy(object):
     def infer(self, context=None):
         yield self
 
-
-# Inference ##################################################################
 
 class InferenceContext(object):
     __slots__ = ('path', 'lookupname', 'callcontext', 'boundnode', 'infered')
@@ -123,8 +122,7 @@ def copy_context(context):
 
 
 def _infer_stmts(stmts, context, frame=None):
-    """return an iterator on statements inferred by each statement in <stmts>
-    """
+    """Return an iterator on statements inferred by each statement in *stmts*."""
     stmt = None
     infered = False
     if context is not None:
@@ -133,43 +131,24 @@ def _infer_stmts(stmts, context, frame=None):
     else:
         name = None
         context = InferenceContext()
+
     for stmt in stmts:
-        if stmt is YES:
+        if stmt is util.YES:
             yield stmt
             infered = True
             continue
         context.lookupname = stmt._infer_name(frame, name)
         try:
-            for infered in stmt.infer(context):
+            for infered in stmt.infer(context=context):
                 yield infered
                 infered = True
         except UnresolvableName:
             continue
         except InferenceError:
-            yield YES
+            yield util.YES
             infered = True
     if not infered:
         raise InferenceError(str(stmt))
-
-
-# special inference objects (e.g. may be returned as nodes by .infer()) #######
-
-class _Yes(object):
-    """a yes object"""
-    def __repr__(self):
-        return 'YES'
-    def __getattribute__(self, name):
-        if name == 'next':
-            raise AttributeError('next method should not be called')
-        if name.startswith('__') and name.endswith('__'):
-            # to avoid inspection pb
-            return super(_Yes, self).__getattribute__(name)
-        return self
-    def __call__(self, *args, **kwargs):
-        return self
-
-
-YES = _Yes()
 
 
 class Instance(Proxy):
@@ -247,7 +226,7 @@ class Instance(Proxy):
         """infer what a class instance is returning when called"""
         infered = False
         for node in self._proxied.igetattr('__call__', context):
-            if node is YES:
+            if node is util.YES:
                 continue
             for res in node.infer_call_result(caller, context):
                 infered = True
@@ -310,7 +289,7 @@ class UnboundMethod(Proxy):
         if (self._proxied.name == '__new__' and
                 self._proxied.parent.frame().qname() == '%s.object' % BUILTINS):
             infer = caller.args[0].infer() if caller.args else []
-            return ((x is YES and x or Instance(x)) for x in infer)
+            return ((x is util.YES and x or Instance(x)) for x in infer)
         return self._proxied.infer_call_result(caller, context)
 
 
@@ -378,7 +357,7 @@ def yes_if_nothing_infered(func):
             infered = True
             yield node
         if not infered:
-            yield YES
+            yield util.YES
     return wrapper
 
 def raise_if_nothing_infered(func):

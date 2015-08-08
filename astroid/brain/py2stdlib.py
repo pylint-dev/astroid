@@ -13,10 +13,11 @@ from textwrap import dedent
 from astroid import (
     MANAGER, AsStringRegexpPredicate,
     UseInferenceDefault, inference_tip, BoundMethod,
-    YES, InferenceError, register_module_extender)
+    InferenceError, register_module_extender)
 from astroid import exceptions
 from astroid import nodes
 from astroid.builder import AstroidBuilder
+from astroid import util
 
 PY3K = sys.version_info > (3, 0)
 PY33 = sys.version_info >= (3, 3)
@@ -29,7 +30,7 @@ def infer_func_form(node, base_type, context=None, enum=False):
     def infer_first(node):
         try:
             value = next(node.infer(context=context))
-            if value is YES:
+            if value is util.YES:
                 raise UseInferenceDefault()
             else:
                 return value

@@ -22,11 +22,12 @@ import sys
 import unittest
 
 from astroid import builder, nodes, InferenceError, NotFoundError
-from astroid.bases import YES, BUILTINS
+from astroid.bases import BUILTINS
 from astroid import exceptions
 from astroid.manager import AstroidManager
 from astroid import test_utils
 from astroid.tests import resources
+from astroid.util import YES
 
 MANAGER = AstroidManager()
 IS_PY3 = sys.version_info[0] == 3

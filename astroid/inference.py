@@ -27,12 +27,13 @@ from astroid import nodes
 from astroid.manager import AstroidManager
 from astroid.exceptions import (AstroidError, InferenceError, NoDefault,
                                 NotFoundError, UnresolvableName)
-from astroid.bases import (YES, Instance, InferenceContext, BoundMethod,
+from astroid.bases import (Instance, InferenceContext, BoundMethod,
                            _infer_stmts, copy_context, path_wrapper,
                            raise_if_nothing_infered)
 from astroid.protocols import (
     _arguments_infer_argname,
     BIN_OP_METHOD, UNARY_OP_METHOD)
+from astroid import util
 
 MANAGER = AstroidManager()
 
@@ -86,28 +87,28 @@ class CallContext(object):
                 if self.starargs is not None:
                     its = []
                     for infered in self.starargs.infer(context):
-                        if infered is YES:
-                            its.append((YES,))
+                        if infered is util.YES:
+                            its.append((util.YES,))
                             continue
                         try:
                             its.append(infered.getitem(argindex, context).infer(context))
                         except (InferenceError, AttributeError):
-                            its.append((YES,))
+                            its.append((util.YES,))
                         except (IndexError, TypeError):
                             continue
                     if its:
                         return itertools.chain(*its)
-        # 4. Search in **kwargs 
+        # 4. Search in **kwargs
         if self.kwargs is not None:
             its = []
             for infered in self.kwargs.infer(context=context):
-                if infered is YES:
-                    its.append((YES,))
+                if infered is util.YES:
+                    its.append((util.YES,))
                     continue
                 try:
                     its.append(infered.getitem(name, context).infer(context=context))
                 except (InferenceError, AttributeError):
-                    its.append((YES,))
+                    its.append((util.YES,))
                 except (IndexError, TypeError):
                     continue
             if its:
@@ -188,7 +189,7 @@ def infer_callfunc(self, context=None):
                                           kwargs=self.kwargs)
     callcontext.boundnode = None
     for callee in self.func.infer(context):
-        if callee is YES:
+        if callee is util.YES:
             yield callee
             continue
         try:
@@ -239,7 +240,7 @@ nodes.From._infer = path_wrapper(infer_from)
 def infer_getattr(self, context=None):
     """infer a Getattr node by using getattr on the associated object"""
     for owner in self.expr.infer(context):
-        if owner is YES:
+        if owner is util.YES:
             yield owner
             continue
         try:
@@ -269,13 +270,13 @@ nodes.Global._infer = path_wrapper(infer_global)
 def infer_subscript(self, context=None):
     """infer simple subscription such as [1,2,3][0] or (1,2,3)[-1]"""
     value = next(self.value.infer(context))
-    if value is YES:
-        yield YES
+    if value is util.YES:
+        yield util.YES
         return
 
     index = next(self.slice.infer(context))
-    if index is YES:
-        yield YES
+    if index is util.YES:
+        yield util.YES
         return
 
     if isinstance(index, nodes.Const):
@@ -284,13 +285,13 @@ def infer_subscript(self, context=None):
         except AttributeError:
             raise InferenceError()
         except (IndexError, TypeError):
-            yield YES
+            yield util.YES
             return
 
         # Prevent inferring if the infered subscript
         # is the same as the original subscripted object.
-        if self is assigned or assigned is YES:
-            yield YES
+        if self is assigned or assigned is util.YES:
+            yield util.YES
             return
         for infered in assigned.infer(context):
             yield infered
@@ -308,7 +309,7 @@ def infer_unaryop(self, context=None):
         except AttributeError:
             meth = UNARY_OP_METHOD[self.op]
             if meth is None:
-                yield YES
+                yield util.YES
             else:
                 try:
                     # XXX just suppose if the type implement meth, returned type
@@ -318,11 +319,11 @@ def infer_unaryop(self, context=None):
                 except GeneratorExit:
                     raise
                 except:
-                    yield YES
+                    yield util.YES
 nodes.UnaryOp._infer = path_wrapper(infer_unaryop)
 
 def _infer_binop(operator, operand1, operand2, context, failures=None):
-    if operand1 is YES:
+    if operand1 is util.YES:
         yield operand1
         return
     try:
@@ -336,7 +337,7 @@ def _infer_binop(operator, operand1, operand2, context, failures=None):
             yield operand1
         except:
             if failures is None:
-                yield YES
+                yield util.YES
             else:
                 failures.append(operand1)
 
@@ -389,14 +390,14 @@ nodes.AugAssign._infer = path_wrapper(infer_augassign)
 
 def infer_empty_node(self, context=None):
     if not self.has_underlying_object():
-        yield YES
+        yield util.YES
     else:
         try:
             for infered in MANAGER.infer_ast_from_something(self.object,
                                                             context=context):
                 yield infered
         except AstroidError:
-            yield YES
+            yield util.YES
 nodes.EmptyNode._infer = path_wrapper(infer_empty_node)
 
 

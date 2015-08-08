@@ -26,9 +26,10 @@ import six
 from astroid.builder import parse
 from astroid import InferenceError, builder, nodes
 from astroid.inference import infer_end as inference_infer_end
-from astroid.bases import YES, Instance, BoundMethod, UnboundMethod,\
+from astroid.bases import Instance, BoundMethod, UnboundMethod,\
                                 path_wrapper, BUILTINS
 from astroid import test_utils
+from astroid.util import YES
 from astroid.tests import resources
 
 

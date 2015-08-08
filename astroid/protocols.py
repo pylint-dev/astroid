@@ -26,16 +26,17 @@ import sys
 from astroid.exceptions import InferenceError, NoDefault, NotFoundError
 from astroid.node_classes import unpack_infer
 from astroid.bases import InferenceContext, copy_context, \
-     raise_if_nothing_infered, yes_if_nothing_infered, Instance, YES
+     raise_if_nothing_infered, yes_if_nothing_infered, Instance
 from astroid.nodes import const_factory
 from astroid import nodes
+from astroid import util
 
 BIN_OP_METHOD = {'+':  '__add__',
                  '-':  '__sub__',
                  '/':  '__div__',
                  '//': '__floordiv__',
                  '*':  '__mul__',
-                 '**': '__power__',
+                 '**': '__pow__',
                  '%':  '__mod__',
                  '&':  '__and__',
                  '|':  '__or__',
@@ -117,14 +118,14 @@ def const_infer_binary_op(self, operator, other, context):
             except TypeError:
                 # XXX log TypeError
                 continue
-        elif other is YES:
+        elif other is util.YES:
             yield other
         else:
             try:
                 for val in other.infer_binary_op(operator, self, context):
                     yield val
             except AttributeError:
-                yield YES
+                yield util.YES
 nodes.Const.infer_binary_op = yes_if_nothing_infered(const_infer_binary_op)
 
 
@@ -133,22 +134,22 @@ def tl_infer_binary_op(self, operator, other, context):
         if isinstance(other, self.__class__) and operator == '+':
             node = self.__class__()
             elts = [n for elt in self.elts for n in elt.infer(context)
-                    if not n is YES]
+                    if not n is util.YES]
             elts += [n for elt in other.elts for n in elt.infer(context)
-                     if not n is YES]
+                     if not n is util.YES]
             node.elts = elts
             yield node
         elif isinstance(other, nodes.Const) and operator == '*':
             if not isinstance(other.value, int):
-                yield YES
+                yield util.YES
                 continue
             node = self.__class__()
             elts = [n for elt in self.elts for n in elt.infer(context)
-                    if not n is YES] * other.value
+                    if not n is util.YES] * other.value
             node.elts = elts
             yield node
         elif isinstance(other, Instance) and not isinstance(other, nodes.Const):
-            yield YES
+            yield util.YES
     # XXX else log TypeError
 nodes.Tuple.infer_binary_op = yes_if_nothing_infered(tl_infer_binary_op)
 nodes.List.infer_binary_op = yes_if_nothing_infered(tl_infer_binary_op)
@@ -157,7 +158,7 @@ nodes.List.infer_binary_op = yes_if_nothing_infered(tl_infer_binary_op)
 def dict_infer_binary_op(self, operator, other, context):
     for other in other.infer(context):
         if isinstance(other, Instance) and isinstance(other._proxied, nodes.Class):
-            yield YES
+            yield util.YES
         # XXX else log TypeError
 nodes.Dict.infer_binary_op = yes_if_nothing_infered(dict_infer_binary_op)
 
@@ -166,13 +167,13 @@ def instance_infer_binary_op(self, operator, other, context):
         methods = self.getattr(BIN_OP_METHOD[operator])
     except (NotFoundError, KeyError):
         # Unknown operator
-        yield YES
+        yield util.YES
     else:
         for method in methods:
             if not isinstance(method, nodes.Function):
                 continue
             for result in method.infer_call_result(self, context):
-                if result is not YES:
+                if result is not util.YES:
                     yield result
             # We are interested only in the first infered method,
             # don't go looking in the rest of the methods of the ancestors.
@@ -199,7 +200,7 @@ def _resolve_looppart(parts, asspath, context):
     asspath = asspath[:]
     index = asspath.pop(0)
     for part in parts:
-        if part is YES:
+        if part is util.YES:
             continue
         # XXX handle __iter__ and log potentially detected errors
         if not hasattr(part, 'itered'):
@@ -219,7 +220,7 @@ def _resolve_looppart(parts, asspath, context):
                 # we achieved to resolved the assignment path,
                 # don't infer the last part
                 yield assigned
-            elif assigned is YES:
+            elif assigned is util.YES:
                 break
             else:
                 # we are not yet on the last part of the path
@@ -266,7 +267,7 @@ def _arguments_infer_argname(self, name, context):
     # arguments information may be missing, in which case we can't do anything
     # more
     if not (self.args or self.vararg or self.kwarg):
-        yield YES
+        yield util.YES
         return
     # first argument of instance/class method
     if self.args and getattr(self.args[0], 'name', None) == name:
@@ -293,9 +294,9 @@ def _arguments_infer_argname(self, name, context):
         context = copy_context(context)
         for infered in self.default_value(name).infer(context):
             yield infered
-        yield YES
+        yield util.YES
     except NoDefault:
-        yield YES
+        yield util.YES
 
 
 def arguments_assigned_stmts(self, node, context, asspath=None):
@@ -335,7 +336,7 @@ def _resolve_asspart(parts, asspath, context):
                 # we achieved to resolved the assignment path, don't infer the
                 # last part
                 yield assigned
-            elif assigned is YES:
+            elif assigned is util.YES:
                 return
             else:
                 # we are not yet on the last part of the path search on each
@@ -387,11 +388,11 @@ def starred_assigned_stmts(self, node=None, context=None, asspath=None):
         try:
             rhs = next(value.infer(context))
         except InferenceError:
-            yield YES
+            yield util.YES
             return
-        if rhs is YES or not hasattr(rhs, 'elts'):
+        if rhs is util.YES or not hasattr(rhs, 'elts'):
             # Not interested in inferred values without elts.
-            yield YES
+            yield util.YES
             return
 
         elts = collections.deque(rhs.elts[:])

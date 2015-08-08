@@ -33,6 +33,7 @@ from astroid import manager
 from astroid import modutils
 from astroid import raw_building
 from astroid import rebuilder
+from astroid import util
 
 
 def _parse(string):
@@ -216,7 +217,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         try:
             frame = node.frame()
             for infered in node.expr.infer():
-                if infered is bases.YES:
+                if infered is util.YES:
                     continue
                 try:
                     if infered.__class__ is bases.Instance:

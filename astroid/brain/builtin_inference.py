@@ -9,6 +9,7 @@ from astroid import (MANAGER, UseInferenceDefault,
                      inference_tip, YES, InferenceError, UnresolvableName)
 from astroid import nodes
 from astroid.builder import AstroidBuilder
+from astroid import util
 
 
 def _extend_str(class_node, rvalue):
@@ -111,10 +112,10 @@ def _generic_inference(node, context, node_type, transform):
             infered = next(arg.infer(context=context))
         except (InferenceError, StopIteration):
             raise UseInferenceDefault()
-        if infered is YES:
+        if infered is util.YES:
             raise UseInferenceDefault()
         transformed = transform(infered)
-    if not transformed or transformed is YES:
+    if not transformed or transformed is util.YES:
         raise UseInferenceDefault()
     return transformed
 
