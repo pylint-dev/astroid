@@ -18,10 +18,10 @@
 
 import unittest
 
-from astroid import YES
 from astroid.test_utils import extract_node, require_version
 from astroid import InferenceError
 from astroid import nodes
+from astroid import util
 from astroid.node_classes import AssName, Const, Name, Starred
 
 
@@ -67,7 +67,7 @@ class ProtocolTests(unittest.TestCase):
 
         for1_starred = next(assign_stmts.nodes_of_class(Starred))
         assigned = next(for1_starred.assigned_stmts())
-        self.assertEqual(assigned, YES)
+        self.assertEqual(assigned, util.YES)
 
     def _get_starred_stmts(self, code):
         assign_stmt = extract_node("{} #@".format(code))
@@ -108,16 +108,16 @@ class ProtocolTests(unittest.TestCase):
     @require_version(minver='3.0')
     def test_assigned_stmts_starred_yes(self):
         # Not something iterable and known
-        self._helper_starred_expected("a, *b = range(3) #@", YES)
+        self._helper_starred_expected("a, *b = range(3) #@", util.YES)
         # Not something inferrable
-        self._helper_starred_expected("a, *b = balou() #@", YES)
+        self._helper_starred_expected("a, *b = balou() #@", util.YES)
         # In function, unknown.
         self._helper_starred_expected("""
         def test(arg):
-            head, *tail = arg #@""", YES)
+            head, *tail = arg #@""", util.YES)
         # These cases aren't worth supporting.
         self._helper_starred_expected(
-            "a, (*b, c), d = (1, (2, 3, 4), 5) #@", YES)
+            "a, (*b, c), d = (1, (2, 3, 4), 5) #@", util.YES)
 
     @require_version(minver='3.0')
     def test_assign_stmts_starred_fails(self):

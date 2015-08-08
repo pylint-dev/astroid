@@ -6,12 +6,13 @@ from textwrap import dedent
 
 import six
 from astroid import (MANAGER, UseInferenceDefault, NotFoundError,
-                     inference_tip, YES, InferenceError, UnresolvableName)
+                     inference_tip, InferenceError, UnresolvableName)
 from astroid.builder import AstroidBuilder
 from astroid import helpers
 from astroid import nodes
 from astroid import objects
 from astroid import scoped_nodes
+from astroid import util
 
 
 def _extend_str(class_node, rvalue):
@@ -119,10 +120,10 @@ def _generic_inference(node, context, node_type, transform):
             infered = next(arg.infer(context=context))
         except (InferenceError, StopIteration):
             raise UseInferenceDefault()
-        if infered is YES:
+        if infered is util.YES:
             raise UseInferenceDefault()
         transformed = transform(infered)
-    if not transformed or transformed is YES:
+    if not transformed or transformed is util.YES:
         raise UseInferenceDefault()
     return transformed
 
@@ -295,7 +296,7 @@ def infer_super(node, context=None):
         except InferenceError:
             raise UseInferenceDefault
 
-    if mro_pointer is YES or mro_type is YES:
+    if mro_pointer is util.YES or mro_type is util.YES:
         # No way we could understand this.
         raise UseInferenceDefault
 
@@ -319,11 +320,11 @@ def _infer_getattr_args(node, context):
     except InferenceError:
         raise UseInferenceDefault
 
-    if obj is YES or attr is YES:
+    if obj is util.YES or attr is util.YES:
         # If one of the arguments is something we can't infer,
         # then also make the result of the getattr call something
         # which is unknown.
-        return YES, YES
+        return util.YES, util.YES
 
     is_string = (isinstance(attr, nodes.Const) and
                  isinstance(attr.value, six.string_types))
@@ -341,8 +342,8 @@ def infer_getattr(node, context=None):
     lookup will be done.
     """
     obj, attr = _infer_getattr_args(node, context)
-    if obj is YES or attr is YES:
-        return YES
+    if obj is util.YES or attr is util.YES:
+        return util.YES
 
     try:
         return next(obj.igetattr(attr, context=context))
@@ -368,12 +369,12 @@ def infer_hasattr(node, context=None):
     """
     try:
         obj, attr = _infer_getattr_args(node, context)
-        if obj is YES or attr is YES:
-            return YES
+        if obj is util.YES or attr is util.YES:
+            return util.YES
         obj.getattr(attr, context=context)
     except UseInferenceDefault:
         # Can't infer something from this function call.
-        return YES
+        return util.YES
     except NotFoundError:
         # Doesn't have it.
         return nodes.Const(False)
@@ -396,9 +397,9 @@ def infer_callable(node, context=None):
     try:
         inferred = next(argument.infer(context=context))
     except InferenceError:
-        return YES
-    if inferred is YES:
-        return YES
+        return util.YES
+    if inferred is util.YES:
+        return util.YES
     return nodes.Const(inferred.callable())
 
 
@@ -415,13 +416,13 @@ def infer_bool(node, context=None):
     try:
         inferred = next(argument.infer(context=context))
     except InferenceError:
-        return YES
-    if inferred is YES:
-        return YES
+        return util.YES
+    if inferred is util.YES:
+        return util.YES
 
     bool_value = inferred.bool_value()
-    if bool_value is YES:
-        return YES
+    if bool_value is util.YES:
+        return util.YES
     return nodes.Const(bool_value)
 
 

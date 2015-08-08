@@ -36,6 +36,7 @@ from astroid import manager
 from astroid import mixins
 from astroid import node_classes
 from astroid import decorators as decorators_mod
+from astroid import util
 
 
 BUILTINS = six.moves.builtins.__name__
@@ -537,7 +538,7 @@ class DictComp(ComprehensionScope):
         self.generators = []
 
     def bool_value(self):
-        return bases.YES
+        return util.YES
 
 
 class SetComp(ComprehensionScope):
@@ -549,7 +550,7 @@ class SetComp(ComprehensionScope):
         self.generators = []
 
     def bool_value(self):
-        return bases.YES
+        return util.YES
 
 
 class _ListComp(bases.NodeNG):
@@ -559,7 +560,7 @@ class _ListComp(bases.NodeNG):
     generators = None
 
     def bool_value(self):
-        return bases.YES
+        return util.YES
 
 
 if six.PY3:
@@ -885,7 +886,7 @@ class Function(bases.Statement, Lambda):
                 c.hide = True
                 c.parent = self
                 class_bases = [next(b.infer(context)) for b in caller.args[1:]]
-                c.bases = [base for base in class_bases if base != bases.YES]
+                c.bases = [base for base in class_bases if base != util.YES]
                 c._metaclass = metaclass
                 yield c
                 return
@@ -898,7 +899,7 @@ class Function(bases.Statement, Lambda):
                     for infered in returnnode.value.infer(context):
                         yield infered
                 except exceptions.InferenceError:
-                    yield bases.YES
+                    yield util.YES
 
     def bool_value(self):
         return True
@@ -935,7 +936,7 @@ def _is_metaclass(klass, seen=None):
                 if isinstance(baseobj, bases.Instance):
                     # not abstract
                     return False
-                if baseobj is bases.YES:
+                if baseobj is util.YES:
                     continue
                 if baseobj is klass:
                     continue
@@ -1089,7 +1090,7 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
                 isinstance(name_node.value, six.string_types)):
             name = name_node.value
         else:
-            return bases.YES
+            return util.YES
 
         result = Class(name, None)
 
@@ -1101,7 +1102,7 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
             # There is currently no AST node that can represent an 'unknown'
             # node (YES is not an AST node), therefore we simply return YES here
             # although we know at least the name of the class.
-            return bases.YES
+            return util.YES
 
         # Get the members of the class
         try:
@@ -1368,13 +1369,13 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
                     except exceptions.NotFoundError:
                         yield infered
                     else:
-                        yield bases.YES
+                        yield util.YES
                 else:
                     yield function_to_method(infered, self)
         except exceptions.NotFoundError:
             if not name.startswith('__') and self.has_dynamic_getattr(context):
                 # class handle some dynamic attributes, return a YES object
-                yield bases.YES
+                yield util.YES
             else:
                 raise exceptions.InferenceError(name)
 
@@ -1455,7 +1456,7 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
             # Expects this from Py3k TreeRebuilder
             try:
                 return next(node for node in self._metaclass.infer()
-                            if node is not bases.YES)
+                            if node is not util.YES)
             except (exceptions.InferenceError, StopIteration):
                 return None
         if six.PY3:
@@ -1478,7 +1479,7 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
             infered = next(assignment.infer())
         except exceptions.InferenceError:
             return
-        if infered is bases.YES: # don't expose this
+        if infered is util.YES: # don't expose this
             return None
         return infered
 
@@ -1529,7 +1530,7 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
                 values = [item[0] for item in slots.items]
             else:
                 values = slots.itered()
-            if values is bases.YES:
+            if values is util.YES:
                 continue
             if not values:
                 # Stop the iteration, because the class
@@ -1539,7 +1540,7 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
             for elt in values:
                 try:
                     for infered in elt.infer():
-                        if infered is bases.YES:
+                        if infered is util.YES:
                             continue
                         if (not isinstance(infered, node_classes.Const) or
                                 not isinstance(infered.value,

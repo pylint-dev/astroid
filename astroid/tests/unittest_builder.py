@@ -29,6 +29,7 @@ from astroid import exceptions
 from astroid import manager
 from astroid import nodes
 from astroid import test_utils
+from astroid import util
 from astroid.tests import resources
 
 MANAGER = manager.AstroidManager()
@@ -482,7 +483,7 @@ class BuilderTest(unittest.TestCase):
         n = test_utils.get_name_node(astroid, 'n')
         self.assertIsNot(n.scope(), astroid)
         self.assertEqual([i.__class__ for i in n.infer()],
-                         [bases.YES.__class__])
+                         [util.YES.__class__])
 
     def test_no_future_imports(self):
         mod = builder.parse("import sys")

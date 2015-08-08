@@ -25,6 +25,7 @@ from astroid import bases
 from astroid import builder
 from astroid import nodes
 from astroid import test_utils
+from astroid import util
 import astroid
 
 
@@ -105,7 +106,7 @@ class NamedTupleTest(unittest.TestCase):
         def foo(fields):
            return __(namedtuple("foo", fields))
         """)
-        self.assertIs(bases.YES, next(klass.infer()))
+        self.assertIs(util.YES, next(klass.infer()))
 
     @unittest.skipIf(sys.version_info[0] > 2,
                      'namedtuple inference is broken on Python 3')

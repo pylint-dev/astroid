@@ -29,6 +29,7 @@ from astroid import builder
 from astroid import exceptions
 from astroid import node_classes
 from astroid import nodes
+from astroid import util
 from astroid import test_utils
 from astroid.tests import resources
 
@@ -369,7 +370,7 @@ from ..cave import wine\n\n"""
         # present in the other version.
         self.assertIsInstance(excs[0], nodes.Class)
         self.assertEqual(excs[0].name, 'PickleError')
-        self.assertIs(excs[-1], bases.YES)
+        self.assertIs(excs[-1], util.YES)
 
     def test_absolute_import(self):
         astroid = resources.build_file('data/absimport.py')

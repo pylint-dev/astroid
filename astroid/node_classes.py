@@ -25,10 +25,11 @@ from astroid.exceptions import (
     InferenceError, BinaryOperationError
 )
 from astroid.bases import (NodeNG, Statement, Instance, InferenceContext,
-                           _infer_stmts, YES, BUILTINS)
+                           _infer_stmts, BUILTINS)
 from astroid.mixins import (BlockRangeMixIn, AssignTypeMixin,
                             ParentAssignTypeMixin, FromImportMixIn)
 from astroid.decorators import cachedproperty
+from astroid import util
 
 
 def unpack_infer(stmt, context=None):
@@ -47,7 +48,7 @@ def unpack_infer(stmt, context=None):
         return
     # else, infer recursivly, except YES object that should be returned as is
     for infered in stmt.infer(context):
-        if infered is YES:
+        if infered is util.YES:
             yield infered
         else:
             for inf_inf in unpack_infer(infered, context):
@@ -623,7 +624,7 @@ class Dict(NodeNG, Instance):
     def getitem(self, lookup_key, context=None):
         for key, value in self.items:
             for inferedkey in key.infer(context):
-                if inferedkey is YES:
+                if inferedkey is util.YES:
                     continue
                 if isinstance(inferedkey, Const) \
                         and inferedkey.value == lookup_key:

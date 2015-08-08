@@ -27,6 +27,7 @@ from astroid import exceptions
 from astroid import nodes
 from astroid import scoped_nodes
 from astroid import test_utils
+from astroid import util
 from astroid.tests import resources
 
 
@@ -172,7 +173,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         """)
         var = astroid.body[1].value
         if sys.version_info < (3, 0):
-            self.assertEqual(var.infered(), [bases.YES])
+            self.assertEqual(var.infered(), [util.YES])
         else:
             self.assertRaises(exceptions.UnresolvableName, var.infered)
 

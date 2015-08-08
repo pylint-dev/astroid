@@ -27,6 +27,7 @@ from astroid import exceptions
 from astroid import manager
 from astroid import raw_building
 from astroid import scoped_nodes
+from astroid import util
 
 
 BUILTINS = six.moves.builtins.__name__
@@ -89,9 +90,9 @@ def object_type(node, context=None):
     try:
         types = set(_object_type(node, context))
     except exceptions.InferenceError:
-        return bases.YES
+        return util.YES
     if len(types) > 1 or not types:
-        return bases.YES
+        return util.YES
     return list(types)[0]
 
 
@@ -135,7 +136,7 @@ def has_known_bases(klass, context=None):
 
 def _type_check(type1, type2):
     if not all(map(has_known_bases, (type1, type2))):
-        return bases.YES
+        return util.YES
 
     if not all([type1.newstyle, type2.newstyle]):
         return False
@@ -143,7 +144,7 @@ def _type_check(type1, type2):
         return type1 in type2.mro()[:-1]
     except exceptions.MroError:
         # The MRO is invalid.
-        return bases.YES
+        return util.YES
 
 
 def is_subtype(type1, type2):

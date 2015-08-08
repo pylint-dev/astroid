@@ -25,6 +25,7 @@ import operator
 from astroid import helpers
 from astroid import nodes
 from astroid import protocols
+from astroid import util
 from astroid.manager import AstroidManager
 from astroid.exceptions import (
     AstroidError, InferenceError, NoDefault,
@@ -32,7 +33,7 @@ from astroid.exceptions import (
     UnaryOperationError,
     BinaryOperationError,
 )
-from astroid.bases import (YES, Instance, InferenceContext, BoundMethod,
+from astroid.bases import (Instance, InferenceContext, BoundMethod,
                            _infer_stmts, copy_context, path_wrapper,
                            raise_if_nothing_infered, yes_if_nothing_infered)
 
@@ -88,13 +89,13 @@ class CallContext(object):
                 if self.starargs is not None:
                     its = []
                     for infered in self.starargs.infer(context):
-                        if infered is YES:
-                            its.append((YES,))
+                        if infered is util.YES:
+                            its.append((util.YES,))
                             continue
                         try:
                             its.append(infered.getitem(argindex, context).infer(context))
                         except (InferenceError, AttributeError):
-                            its.append((YES,))
+                            its.append((util.YES,))
                         except (IndexError, TypeError):
                             continue
                     if its:
@@ -103,13 +104,13 @@ class CallContext(object):
         if self.kwargs is not None:
             its = []
             for infered in self.kwargs.infer(context=context):
-                if infered is YES:
-                    its.append((YES,))
+                if infered is util.YES:
+                    its.append((util.YES,))
                     continue
                 try:
                     its.append(infered.getitem(name, context).infer(context=context))
                 except (InferenceError, AttributeError):
-                    its.append((YES,))
+                    its.append((util.YES,))
                 except (IndexError, TypeError):
                     continue
             if its:
@@ -190,7 +191,7 @@ def infer_callfunc(self, context=None):
                                           kwargs=self.kwargs)
     callcontext.boundnode = None
     for callee in self.func.infer(context):
-        if callee is YES:
+        if callee is util.YES:
             yield callee
             continue
         try:
@@ -241,7 +242,7 @@ nodes.From._infer = path_wrapper(infer_from)
 def infer_getattr(self, context=None):
     """infer a Getattr node by using getattr on the associated object"""
     for owner in self.expr.infer(context):
-        if owner is YES:
+        if owner is util.YES:
             yield owner
             continue
         try:
@@ -271,13 +272,13 @@ nodes.Global._infer = path_wrapper(infer_global)
 def infer_subscript(self, context=None):
     """infer simple subscription such as [1,2,3][0] or (1,2,3)[-1]"""
     value = next(self.value.infer(context))
-    if value is YES:
-        yield YES
+    if value is util.YES:
+        yield util.YES
         return
 
     index = next(self.slice.infer(context))
-    if index is YES:
-        yield YES
+    if index is util.YES:
+        yield util.YES
         return
 
     if isinstance(index, nodes.Const):
@@ -286,13 +287,13 @@ def infer_subscript(self, context=None):
         except AttributeError:
             raise InferenceError()
         except (IndexError, TypeError):
-            yield YES
+            yield util.YES
             return
 
         # Prevent inferring if the infered subscript
         # is the same as the original subscripted object.
-        if self is assigned or assigned is YES:
-            yield YES
+        if self is assigned or assigned is util.YES:
+            yield util.YES
             return
         for infered in assigned.infer(context):
             yield infered
@@ -320,19 +321,19 @@ def _infer_boolop(self, context=None):
     try:
         values = [value.infer(context=context) for value in values]
     except InferenceError:
-        yield YES
+        yield util.YES
         return
 
     for pair in itertools.product(*values):
-        if any(item is YES for item in pair):
+        if any(item is util.YES for item in pair):
             # Can't infer the final result, just yield YES.
-            yield YES
+            yield util.YES
             continue
 
         bool_values = [item.bool_value() for item in pair]
-        if any(item is YES for item in bool_values):
+        if any(item is util.YES for item in bool_values):
             # Can't infer the final result, just yield YES.
-            yield YES
+            yield util.YES
             continue
 
         # Since the boolean operations are short circuited operations,
@@ -344,7 +345,7 @@ def _infer_boolop(self, context=None):
         #   0 and 1 -> 0
         #   1 or 0 -> 1
         #   0 or 1 -> 1
-        value = YES
+        value = util.YES
         for value, bool_value in zip(pair, bool_values):
             if predicate(bool_value):
                 yield value
@@ -363,7 +364,7 @@ def _filter_operation_errors(self, infer_callable, context, error):
             # For the sake of .infer(), we don't care about operation
             # errors, which is the job of pylint. So return something
             # which shows that we can't infer the result.
-            yield YES
+            yield util.YES
         else:
             yield result
 
@@ -383,10 +384,10 @@ def _infer_unaryop(self, context=None):
                 # value and negate its result, unless it is
                 # YES, which will be returned as is.
                 bool_value = operand.bool_value()
-                if bool_value is not YES:
+                if bool_value is not util.YES:
                     yield nodes.const_factory(not bool_value)
                 else:
-                    yield YES
+                    yield util.YES
             else:
                 if not isinstance(operand, Instance):
                     # The operation was used on something which
@@ -408,7 +409,7 @@ def _infer_unaryop(self, context=None):
                     # The unary operation special method was not found.
                     yield UnaryOperationError(operand, self.op, exc)
                 except InferenceError:
-                    yield YES
+                    yield util.YES
 
 
 @path_wrapper
@@ -561,11 +562,11 @@ def _infer_binary_operation(left, right, op, context, flow_factory):
         except NotFoundError:
             continue
         except InferenceError:
-            yield YES
+            yield util.YES
             return
         else:
-            if any(result is YES for result in results):
-                yield YES
+            if any(result is util.YES for result in results):
+                yield util.YES
                 return
 
             # TODO(cpopa): since the inferrence engine might return
@@ -577,7 +578,7 @@ def _infer_binary_operation(left, right, op, context, flow_factory):
                                   if _is_not_implemented(result))
             if not_implemented and not_implemented != len(results):
                 # Can't decide yet what this is, not yet though.
-                yield YES
+                yield util.YES
                 return
 
             for result in results:
@@ -597,9 +598,9 @@ def _infer_binop(self, context):
     op = self.op
 
     for lhs in left.infer(context=context):
-        if lhs is YES:
+        if lhs is util.YES:
             # Don't know how to process this.
-            yield YES
+            yield util.YES
             return
 
         # TODO(cpopa): if we have A() * A(), trying to infer
@@ -609,9 +610,9 @@ def _infer_binop(self, context):
         rhs_context = context.clone()
         rhs_context.path = set()
         for rhs in right.infer(context=rhs_context):
-            if rhs is YES:
+            if rhs is util.YES:
                 # Don't know how to process this.
-                yield YES
+                yield util.YES
                 return
 
             results = _infer_binary_operation(lhs, rhs, op,
@@ -636,9 +637,9 @@ def _infer_augassign(self, context=None):
     op = self.op
 
     for lhs in self.target.infer_lhs(context=context):
-        if lhs is YES:
+        if lhs is util.YES:
             # Don't know how to process this.
-            yield YES
+            yield util.YES
             return
 
         # TODO(cpopa): if we have A() * A(), trying to infer
@@ -648,9 +649,9 @@ def _infer_augassign(self, context=None):
         rhs_context = context.clone()
         rhs_context.path = set()
         for rhs in self.value.infer(context=rhs_context):
-            if rhs is YES:
+            if rhs is util.YES:
                 # Don't know how to process this.
-                yield YES
+                yield util.YES
                 return
 
             results = _infer_binary_operation(lhs, rhs, op,
@@ -696,14 +697,14 @@ nodes.AssAttr._infer = path_wrapper(infer_ass)
 
 def infer_empty_node(self, context=None):
     if not self.has_underlying_object():
-        yield YES
+        yield util.YES
     else:
         try:
             for infered in MANAGER.infer_ast_from_something(self.object,
                                                             context=context):
                 yield infered
         except AstroidError:
-            yield YES
+            yield util.YES
 nodes.EmptyNode._infer = path_wrapper(infer_empty_node)
 
 

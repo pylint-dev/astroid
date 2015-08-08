@@ -24,7 +24,10 @@ from functools import partial
 import unittest
 import warnings
 
-from astroid import YES, builder, nodes, scoped_nodes
+from astroid import builder
+from astroid import nodes
+from astroid import scoped_nodes
+from astroid import util
 from astroid.exceptions import (
     InferenceError, NotFoundError,
     NoDefault, ResolveError, MroError,
@@ -1088,7 +1091,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         instance = astroid['tgts']
         # used to raise "'_Yes' object is not iterable", see
         # https://bitbucket.org/logilab/astroid/issue/17
-        self.assertEqual(list(instance.infer()), [YES])
+        self.assertEqual(list(instance.infer()), [util.YES])
 
     def test_slots(self):
         astroid = builder.parse("""
@@ -1352,7 +1355,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         class B(object): pass 
         ''')
         cls = module['B']
-        self.assertEqual(YES, next(cls.igetattr('foo')))
+        self.assertEqual(util.YES, next(cls.igetattr('foo')))
 
     def test_metaclass_lookup(self):
         module = builder.parse('''
