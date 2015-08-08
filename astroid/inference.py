@@ -99,7 +99,7 @@ class CallContext(object):
                             continue
                     if its:
                         return itertools.chain(*its)
-        # 4. Search in **kwargs 
+        # 4. Search in **kwargs
         if self.kwargs is not None:
             its = []
             for infered in self.kwargs.infer(context=context):
