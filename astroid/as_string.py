@@ -137,8 +137,14 @@ class AsStringVisitor(object):
         """return an astroid.CallFunc node as string"""
         expr_str = node.func.accept(self)
         args = [arg.accept(self) for arg in node.args]
+        if node.keywords:
+            keywords = [kwarg.accept(self) for kwarg in node.keywords]
+        else:
+            keywords = []
+
         if node.starargs:
             args.append('*' + node.starargs.accept(self))
+        args.extend(keywords)
         if node.kwargs:
             args.append('**' + node.kwargs.accept(self))
         return '%s(%s)' % (expr_str, ', '.join(args))
