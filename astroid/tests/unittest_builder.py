@@ -23,7 +23,6 @@ import unittest
 
 import six
 
-from astroid import bases
 from astroid import builder
 from astroid import exceptions
 from astroid import manager

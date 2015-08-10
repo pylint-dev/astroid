@@ -21,7 +21,6 @@ import unittest
 import six
 from six.moves import builtins
 
-from astroid import bases
 from astroid import builder
 from astroid import helpers
 from astroid import manager

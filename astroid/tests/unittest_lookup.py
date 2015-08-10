@@ -21,7 +21,6 @@ import functools
 import sys
 import unittest
 
-from astroid import bases
 from astroid import builder
 from astroid import exceptions
 from astroid import nodes

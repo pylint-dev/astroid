@@ -25,7 +25,6 @@ Lambda, GenExpr, DictComp and SetComp to some extent).
 import functools
 import io
 import itertools
-import sys
 import warnings
 
 import six
