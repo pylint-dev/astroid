@@ -30,6 +30,7 @@ import warnings
 import six
 
 from astroid import bases
+from astroid import context as contextmod
 from astroid import exceptions
 from astroid import manager
 from astroid import mixins
@@ -365,7 +366,7 @@ class Module(LocalsDictNodeNG):
         """inferred getattr"""
         # set lookup name since this is necessary to infer on import nodes for
         # instance
-        context = bases.copy_context(context)
+        context = contextmod.copy_context(context)
         context.lookupname = name
         try:
             return bases._infer_stmts(self.getattr(name, context),
@@ -1016,7 +1017,7 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
 
     def _newstyle_impl(self, context=None):
         if context is None:
-            context = bases.InferenceContext()
+            context = contextmod.InferenceContext()
         if self._newstyle is not None:
             return self._newstyle
         for base in self.ancestors(recurs=False, context=context):
@@ -1154,7 +1155,7 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
         # FIXME: inference make infinite loops possible here
         yielded = set([self])
         if context is None:
-            context = bases.InferenceContext()
+            context = contextmod.InferenceContext()
         if six.PY3:
             if not self.bases and self.qname() != 'builtins.object':
                 yield builtin_lookup("object")[1][0]
@@ -1341,7 +1342,7 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
         """
         # set lookup name since this is necessary to infer on import nodes for
         # instance
-        context = bases.copy_context(context)
+        context = contextmod.copy_context(context)
         context.lookupname = name
         try:
             for infered in bases._infer_stmts(self.getattr(name, context),
@@ -1578,7 +1579,7 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
         # only in SomeClass.
 
         if context is None:
-            context = bases.InferenceContext()
+            context = contextmod.InferenceContext()
         if six.PY3:
             if not self.bases and self.qname() != 'builtins.object':
                 yield builtin_lookup("object")[1][0]

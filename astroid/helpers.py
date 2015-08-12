@@ -23,6 +23,7 @@ Various helper utilities.
 import six
 
 from astroid import bases
+from astroid import context as contextmod
 from astroid import exceptions
 from astroid import manager
 from astroid import raw_building
@@ -61,7 +62,7 @@ def _function_type(function, builtins):
 def _object_type(node, context=None):
     astroid_manager = manager.AstroidManager()
     builtins = astroid_manager.astroid_cache[BUILTINS]
-    context = context or bases.InferenceContext()
+    context = context or contextmod.InferenceContext()
 
     for inferred in node.infer(context=context):
         if isinstance(inferred, scoped_nodes.Class):

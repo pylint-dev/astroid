@@ -24,8 +24,9 @@ from astroid.exceptions import (
     NoDefault, UnaryOperationError,
     InferenceError, BinaryOperationError
 )
-from astroid.bases import (NodeNG, Statement, Instance, InferenceContext,
+from astroid.bases import (NodeNG, Statement, Instance,
                            _infer_stmts, BUILTINS)
+from astroid import context as contextmod
 from astroid.mixins import (BlockRangeMixIn, AssignTypeMixin,
                             ParentAssignTypeMixin, FromImportMixIn)
 from astroid.decorators import cachedproperty
@@ -132,7 +133,7 @@ class LookupMixIn(object):
         the lookup method
         """
         frame, stmts = self.lookup(name)
-        context = InferenceContext()
+        context = contextmod.InferenceContext()
         return _infer_stmts(stmts, context, frame)
 
     def _filter_stmts(self, stmts, frame, offset):
