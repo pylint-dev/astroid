@@ -28,101 +28,16 @@ from astroid.manager import AstroidManager
 from astroid.exceptions import (AstroidError, InferenceError, NoDefault,
                                 NotFoundError, UnresolvableName)
 from astroid.bases import (Instance, InferenceContext, BoundMethod,
-                           _infer_stmts, copy_context, path_wrapper,
+                           _infer_stmts, path_wrapper,
                            raise_if_nothing_infered)
 from astroid.protocols import (
     _arguments_infer_argname,
     BIN_OP_METHOD, UNARY_OP_METHOD)
+from astroid import context as contextmod
 from astroid import util
 
 MANAGER = AstroidManager()
 
-
-class CallContext(object):
-
-    def __init__(self, args, keywords=None, starargs=None, kwargs=None):
-        self.args = args
-        if keywords:
-            self.keywords = {arg.arg: arg.value for arg in keywords}
-        else:
-            self.keywords = {}
-
-        self.starargs = starargs
-        self.kwargs = kwargs
-
-    def infer_argument(self, funcnode, name, context):
-        """infer a function argument value according to the call context"""
-        # 1. search in named keywords
-        try:
-            return self.keywords[name].infer(context)
-        except KeyError:
-            # Function.args.args can be None in astroid (means that we don't have
-            # information on argnames)
-            argindex = funcnode.args.find_argname(name)[0]
-            if argindex is not None:
-                # 2. first argument of instance/class method
-                if argindex == 0 and funcnode.type in ('method', 'classmethod'):
-                    if context.boundnode is not None:
-                        boundnode = context.boundnode
-                    else:
-                        # XXX can do better ?
-                        boundnode = funcnode.parent.frame()
-                    if funcnode.type == 'method':
-                        if not isinstance(boundnode, Instance):
-                            boundnode = Instance(boundnode)
-                        return iter((boundnode,))
-                    if funcnode.type == 'classmethod':
-                        return iter((boundnode,))
-                # if we have a method, extract one position
-                # from the index, so we'll take in account
-                # the extra parameter represented by `self` or `cls`
-                if funcnode.type in ('method', 'classmethod'):
-                    argindex -= 1
-                # 2. search arg index
-                try:
-                    return self.args[argindex].infer(context)
-                except IndexError:
-                    pass
-                # 3. search in *args (.starargs)
-                if self.starargs is not None:
-                    its = []
-                    for infered in self.starargs.infer(context):
-                        if infered is util.YES:
-                            its.append((util.YES,))
-                            continue
-                        try:
-                            its.append(infered.getitem(argindex, context).infer(context))
-                        except (InferenceError, AttributeError):
-                            its.append((util.YES,))
-                        except (IndexError, TypeError):
-                            continue
-                    if its:
-                        return itertools.chain(*its)
-        # 4. Search in **kwargs
-        if self.kwargs is not None:
-            its = []
-            for infered in self.kwargs.infer(context=context):
-                if infered is util.YES:
-                    its.append((util.YES,))
-                    continue
-                try:
-                    its.append(infered.getitem(name, context).infer(context=context))
-                except (InferenceError, AttributeError):
-                    its.append((util.YES,))
-                except (IndexError, TypeError):
-                    continue
-            if its:
-                return itertools.chain(*its)
-        # 5. */** argument, (Tuple or Dict)
-        if name == funcnode.args.vararg:
-            return iter((nodes.const_factory(())))
-        if name == funcnode.args.kwarg:
-            return iter((nodes.const_factory({})))
-        # 6. return default value if any
-        try:
-            return funcnode.args.default_value(name).infer(context)
-        except NoDefault:
-            raise InferenceError(name)
 
 
 # .infer method ###############################################################
@@ -183,10 +98,10 @@ nodes.AssName.infer_lhs = infer_name # won't work with a path wrapper
 def infer_callfunc(self, context=None):
     """infer a CallFunc node by trying to guess what the function returns"""
     callcontext = context.clone()
-    callcontext.callcontext = CallContext(args=self.args,
-                                          keywords=self.keywords,
-                                          starargs=self.starargs,
-                                          kwargs=self.kwargs)
+    callcontext.callcontext = contextmod.CallContext(args=self.args,
+                                                     keywords=self.keywords,
+                                                     starargs=self.starargs,
+                                                     kwargs=self.kwargs)
     callcontext.boundnode = None
     for callee in self.func.infer(context):
         if callee is util.YES:
@@ -214,7 +129,7 @@ def infer_import(self, context=None, asname=True):
 nodes.Import._infer = path_wrapper(infer_import)
 
 def infer_name_module(self, name):
-    context = InferenceContext()
+    context = contextmod.InferenceContext()
     context.lookupname = name
     return self.infer(context, asname=False)
 nodes.Import.infer_name_module = infer_name_module
@@ -229,7 +144,7 @@ def infer_from(self, context=None, asname=True):
         name = self.real_name(name)
     module = self.do_import_module()
     try:
-        context = copy_context(context)
+        context = contextmod.copy_context(context)
         context.lookupname = name
         return _infer_stmts(module.getattr(name, ignore_locals=module is self.root()), context)
     except NotFoundError:
@@ -414,10 +329,10 @@ def instance_getitem(self, index, context=None):
     if context:
         new_context = context.clone()
     else:
-        context = new_context = InferenceContext()
+        context = new_context = contextmod.InferenceContext()
 
     # Create a new callcontext for providing index as an argument.
-    new_context.callcontext = CallContext(args=[index])
+    new_context.callcontext = contextmod.CallContext(args=[index])
     new_context.boundnode = self
 
     method = next(self.igetattr('__getitem__', context=context))

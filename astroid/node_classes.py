@@ -25,6 +25,7 @@ import six
 from astroid.exceptions import NoDefault
 from astroid.bases import (NodeNG, Statement, Instance, InferenceContext,
                            _infer_stmts, BUILTINS)
+from astroid import context as contextmod
 from astroid.mixins import (BlockRangeMixIn, AssignTypeMixin,
                             ParentAssignTypeMixin, FromImportMixIn)
 from astroid.decorators import cachedproperty
@@ -131,7 +132,7 @@ class LookupMixIn(object):
         the lookup method
         """
         frame, stmts = self.lookup(name)
-        context = InferenceContext()
+        context = contextmod.InferenceContext()
         return _infer_stmts(stmts, context, frame)
 
     def _filter_stmts(self, stmts, frame, offset):
@@ -267,10 +268,6 @@ class Name(LookupMixIn, NodeNG):
     """class representing a Name node"""
 
 
-
-
-#####################   node classes   ########################################
-
 class Arguments(NodeNG, AssignTypeMixin):
     """class representing an Arguments node"""
     if PY3K:
@@ -392,7 +389,7 @@ def _format_args(args, annotations=None, defaults=None):
             values.append('(%s)' % _format_args(arg.elts))
         else:
             argname = arg.name
-            if annotation is not None:                
+            if annotation is not None:
                 argname += ':' + annotation.as_string()
             values.append(argname)
 

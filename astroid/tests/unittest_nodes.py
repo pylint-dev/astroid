@@ -28,6 +28,9 @@ from astroid.exceptions import NotFoundError
 from astroid import exceptions
 from astroid import bases
 from astroid import builder
+from astroid import context as contextmod
+from astroid import exceptions
+from astroid import node_classes
 from astroid import nodes
 from astroid import util
 from astroid import test_utils
@@ -353,7 +356,7 @@ from ..cave import wine\n\n"""
 
     def test_absolute_import(self):
         astroid = resources.build_file('data/absimport.py')
-        ctx = InferenceContext()
+        ctx = contextmod.InferenceContext()
         # will fail if absolute import failed
         ctx.lookupname = 'message'
         next(astroid['message'].infer(ctx))

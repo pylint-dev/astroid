@@ -25,8 +25,9 @@ import sys
 
 from astroid.exceptions import InferenceError, NoDefault, NotFoundError
 from astroid.node_classes import unpack_infer
-from astroid.bases import InferenceContext, copy_context, \
+from astroid.bases import InferenceContext, \
      raise_if_nothing_infered, yes_if_nothing_infered, Instance
+from astroid import context as contextmod     
 from astroid.nodes import const_factory
 from astroid import nodes
 from astroid import util
@@ -291,7 +292,7 @@ def _arguments_infer_argname(self, name, context):
     # if there is a default value, yield it. And then yield YES to reflect
     # we can't guess given argument value
     try:
-        context = copy_context(context)
+        context = contextmod.copy_context(context)
         for infered in self.default_value(name).infer(context):
             yield infered
         yield util.YES
@@ -303,9 +304,18 @@ def arguments_assigned_stmts(self, node, context, asspath=None):
     if context.callcontext:
         # reset call context/name
         callcontext = context.callcontext
-        context = copy_context(context)
+        context = contextmod.copy_context(context)
         context.callcontext = None
-        return callcontext.infer_argument(self.parent, node.name, context)
+        # TODO(cpopa): make this an API
+        if context.boundnode is None:
+            boundnode = self.parent.parent.frame()
+        else:
+            boundnode = context.boundnode
+        if self.parent.type == 'method':
+            if not isinstance(boundnode, Instance):
+                boundnode = Instance(boundnode)
+        return callcontext.infer_argument(
+            self.parent, node.name, context, boundnode)
     return _arguments_infer_argname(self, node.name, context)
 nodes.Arguments.assigned_stmts = arguments_assigned_stmts
 
@@ -384,7 +394,7 @@ def starred_assigned_stmts(self, node=None, context=None, asspath=None):
             raise InferenceError()
 
         if context is None:
-            context = InferenceContext()
+            context = contextmod.InferenceContext()
         try:
             rhs = next(value.infer(context))
         except InferenceError:

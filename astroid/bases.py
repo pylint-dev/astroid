@@ -20,8 +20,8 @@ inference utils.
 """
 
 import sys
-from contextlib import contextmanager
 
+from astroid.context import InferenceContext
 from astroid.exceptions import (InferenceError, AstroidError, NotFoundError,
                                 UnresolvableName, UseInferenceDefault)
 from astroid.decorators import cachedproperty
@@ -74,51 +74,6 @@ class Proxy(object):
 
     def infer(self, context=None):
         yield self
-
-
-class InferenceContext(object):
-    __slots__ = ('path', 'lookupname', 'callcontext', 'boundnode', 'infered')
-
-    def __init__(self, path=None, infered=None):
-        self.path = path or set()
-        self.lookupname = None
-        self.callcontext = None
-        self.boundnode = None
-        self.infered = infered or {}
-
-    def push(self, node):
-        name = self.lookupname
-        if (node, name) in self.path:
-            raise StopIteration()
-        self.path.add((node, name))
-
-    def clone(self):
-        # XXX copy lookupname/callcontext ?
-        clone = InferenceContext(self.path, infered=self.infered)
-        clone.callcontext = self.callcontext
-        clone.boundnode = self.boundnode
-        return clone
-
-    def cache_generator(self, key, generator):
-        results = []
-        for result in generator:
-            results.append(result)
-            yield result
-
-        self.infered[key] = tuple(results)
-        return
-
-    @contextmanager
-    def restore_path(self):
-        path = set(self.path)
-        yield
-        self.path = path
-
-def copy_context(context):
-    if context is not None:
-        return context.clone()
-    else:
-        return InferenceContext()
 
 
 def _infer_stmts(stmts, context, frame=None):
