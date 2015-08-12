@@ -28,7 +28,7 @@ from astroid import protocols
 from astroid import util
 from astroid.manager import AstroidManager
 from astroid.exceptions import (
-    AstroidError, InferenceError, NoDefault,
+    AstroidError, InferenceError,
     NotFoundError, UnresolvableName,
     UnaryOperationError,
     BinaryOperationError,
