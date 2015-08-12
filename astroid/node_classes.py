@@ -20,17 +20,15 @@
 
 import six
 
-from astroid.exceptions import (
-    NoDefault, UnaryOperationError,
-    InferenceError, BinaryOperationError
-)
-from astroid.bases import (NodeNG, Statement, Instance,
-                           _infer_stmts, BUILTINS)
+from astroid import bases
 from astroid import context as contextmod
-from astroid.mixins import (BlockRangeMixIn, AssignTypeMixin,
-                            ParentAssignTypeMixin, FromImportMixIn)
-from astroid.decorators import cachedproperty
+from astroid import decorators
+from astroid import exceptions
+from astroid import mixins
 from astroid import util
+
+
+BUILTINS = six.moves.builtins.__name__
 
 
 def unpack_infer(stmt, context=None):
@@ -134,7 +132,7 @@ class LookupMixIn(object):
         """
         frame, stmts = self.lookup(name)
         context = contextmod.InferenceContext()
-        return _infer_stmts(stmts, context, frame)
+        return bases._infer_stmts(stmts, context, frame)
 
     def _filter_stmts(self, stmts, frame, offset):
         """filter statements to remove ignorable statements.
@@ -257,19 +255,19 @@ class LookupMixIn(object):
 
 # Name classes
 
-class AssName(LookupMixIn, ParentAssignTypeMixin, NodeNG):
+class AssName(LookupMixIn, mixins.ParentAssignTypeMixin, bases.NodeNG):
     """class representing an AssName node"""
 
 
-class DelName(LookupMixIn, ParentAssignTypeMixin, NodeNG):
+class DelName(LookupMixIn, mixins.ParentAssignTypeMixin, bases.NodeNG):
     """class representing a DelName node"""
 
 
-class Name(LookupMixIn, NodeNG):
+class Name(LookupMixIn, bases.NodeNG):
     """class representing a Name node"""
 
 
-class Arguments(NodeNG, AssignTypeMixin):
+class Arguments(mixins.AssignTypeMixin, bases.NodeNG):
     """class representing an Arguments node"""
     if six.PY3:
         # Python 3.4+ uses a different approach regarding annotations,
@@ -305,7 +303,7 @@ class Arguments(NodeNG, AssignTypeMixin):
             return name
         return None
 
-    @cachedproperty
+    @decorators.cachedproperty
     def fromlineno(self):
         lineno = super(Arguments, self).fromlineno
         return max(lineno, self.parent.fromlineno or 0)
@@ -341,7 +339,7 @@ class Arguments(NodeNG, AssignTypeMixin):
         i = _find_arg(argname, self.kwonlyargs)[0]
         if i is not None and self.kw_defaults[i] is not None:
             return self.kw_defaults[i]
-        raise NoDefault()
+        raise exceptions.NoDefault()
 
     def is_argument(self, name):
         """return True if the name is defined in arguments"""
@@ -400,24 +398,27 @@ def _format_args(args, annotations=None, defaults=None):
     return ', '.join(values)
 
 
-class AssAttr(NodeNG, ParentAssignTypeMixin):
+class AssAttr(mixins.ParentAssignTypeMixin, bases.NodeNG):
     """class representing an AssAttr node"""
     _astroid_fields = ('expr',)
     expr = None
 
-class Assert(Statement):
+
+class Assert(bases.Statement):
     """class representing an Assert node"""
     _astroid_fields = ('test', 'fail',)
     test = None
     fail = None
 
-class Assign(Statement, AssignTypeMixin):
+
+class Assign(mixins.AssignTypeMixin, bases.Statement):
     """class representing an Assign node"""
     _astroid_fields = ('targets', 'value',)
     targets = None
     value = None
 
-class AugAssign(Statement, AssignTypeMixin):
+
+class AugAssign(mixins.AssignTypeMixin, bases.Statement):
     """class representing an AugAssign node"""
     _astroid_fields = ('target', 'value',)
     target = None
@@ -436,17 +437,18 @@ class AugAssign(Statement, AssignTypeMixin):
         try:
             results = self._infer_augassign(context=context)
             return [result for result in results
-                    if isinstance(result, BinaryOperationError)]
-        except InferenceError:
+                    if isinstance(result, exceptions.BinaryOperationError)]
+        except exceptions.InferenceError:
             return []
 
 
-class Backquote(NodeNG):
+class Backquote(bases.NodeNG):
     """class representing a Backquote node"""
     _astroid_fields = ('value',)
     value = None
 
-class BinOp(NodeNG):
+
+class BinOp(bases.NodeNG):
     """class representing a BinOp node"""
     _astroid_fields = ('left', 'right',)
     left = None
@@ -465,21 +467,22 @@ class BinOp(NodeNG):
         try:
             results = self._infer_binop(context=context)
             return [result for result in results
-                    if isinstance(result, BinaryOperationError)]
-        except InferenceError:
+                    if isinstance(result, exceptions.BinaryOperationError)]
+        except exceptions.InferenceError:
             return []
 
 
-class BoolOp(NodeNG):
+class BoolOp(bases.NodeNG):
     """class representing a BoolOp node"""
     _astroid_fields = ('values',)
     values = None
 
-class Break(Statement):
+
+class Break(bases.Statement):
     """class representing a Break node"""
 
 
-class CallFunc(NodeNG):
+class CallFunc(bases.NodeNG):
     """class representing a CallFunc node"""
     _astroid_fields = ('func', 'args', 'keywords', 'starargs', 'kwargs')
     func = None
@@ -489,7 +492,7 @@ class CallFunc(NodeNG):
     kwargs = None
 
 
-class Compare(NodeNG):
+class Compare(bases.NodeNG):
     """class representing a Compare node"""
     _astroid_fields = ('left', 'ops',)
     left = None
@@ -507,7 +510,8 @@ class Compare(NodeNG):
         return self.ops[-1][1]
         #return self.left
 
-class Comprehension(NodeNG):
+
+class Comprehension(bases.NodeNG):
     """class representing a Comprehension node"""
     _astroid_fields = ('target', 'iter', 'ifs')
     target = None
@@ -533,7 +537,7 @@ class Comprehension(NodeNG):
         return stmts, False
 
 
-class Const(NodeNG, Instance):
+class Const(bases.NodeNG, bases.Instance):
     """represent a constant node like num, str, bool, None, bytes"""
 
     def __init__(self, value=None):
@@ -564,11 +568,11 @@ class Const(NodeNG, Instance):
         return bool(self.value)
 
 
-class Continue(Statement):
+class Continue(bases.Statement):
     """class representing a Continue node"""
 
 
-class Decorators(NodeNG):
+class Decorators(bases.NodeNG):
     """class representing a Decorators node"""
     _astroid_fields = ('nodes',)
     nodes = None
@@ -580,19 +584,20 @@ class Decorators(NodeNG):
         # skip the function node to go directly to the upper level scope
         return self.parent.parent.scope()
 
-class DelAttr(NodeNG, ParentAssignTypeMixin):
+
+class DelAttr(mixins.ParentAssignTypeMixin, bases.NodeNG):
     """class representing a DelAttr node"""
     _astroid_fields = ('expr',)
     expr = None
 
 
-class Delete(Statement, AssignTypeMixin):
+class Delete(mixins.AssignTypeMixin, bases.Statement):
     """class representing a Delete node"""
     _astroid_fields = ('targets',)
     targets = None
 
 
-class Dict(NodeNG, Instance):
+class Dict(bases.NodeNG, bases.Instance):
     """class representing a Dict node"""
     _astroid_fields = ('items',)
 
@@ -638,31 +643,31 @@ class Dict(NodeNG, Instance):
         return bool(self.items)
 
 
-class Discard(Statement):
+class Discard(bases.Statement):
     """class representing a Discard node"""
     _astroid_fields = ('value',)
     value = None
 
 
-class Ellipsis(NodeNG): # pylint: disable=redefined-builtin
+class Ellipsis(bases.NodeNG): # pylint: disable=redefined-builtin
     """class representing an Ellipsis node"""
 
     def bool_value(self):
         return True
 
 
-class EmptyNode(NodeNG):
+class EmptyNode(bases.NodeNG):
     """class representing an EmptyNode node"""
 
 
-class ExceptHandler(Statement, AssignTypeMixin):
+class ExceptHandler(mixins.AssignTypeMixin, bases.Statement):
     """class representing an ExceptHandler node"""
     _astroid_fields = ('type', 'name', 'body',)
     type = None
     name = None
     body = None
 
-    @cachedproperty
+    @decorators.cachedproperty
     def blockstart_tolineno(self):
         if self.name:
             return self.name.tolineno
@@ -679,7 +684,7 @@ class ExceptHandler(Statement, AssignTypeMixin):
                 return True
 
 
-class Exec(Statement):
+class Exec(bases.Statement):
     """class representing an Exec node"""
     _astroid_fields = ('expr', 'globals', 'locals',)
     expr = None
@@ -687,12 +692,13 @@ class Exec(Statement):
     locals = None
 
 
-class ExtSlice(NodeNG):
+class ExtSlice(bases.NodeNG):
     """class representing an ExtSlice node"""
     _astroid_fields = ('dims',)
     dims = None
 
-class For(BlockRangeMixIn, AssignTypeMixin, Statement):
+
+class For(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, bases.Statement):
     """class representing a For node"""
     _astroid_fields = ('target', 'iter', 'body', 'orelse',)
     target = None
@@ -701,12 +707,12 @@ class For(BlockRangeMixIn, AssignTypeMixin, Statement):
     orelse = None
 
     optional_assign = True
-    @cachedproperty
+    @decorators.cachedproperty
     def blockstart_tolineno(self):
         return self.iter.tolineno
 
 
-class From(FromImportMixIn, Statement):
+class From(mixins.FromImportMixIn, bases.Statement):
     """class representing a From node"""
 
     def __init__(self, fromname, names, level=0):
@@ -714,13 +720,14 @@ class From(FromImportMixIn, Statement):
         self.names = names
         self.level = level
 
-class Getattr(NodeNG):
+
+class Getattr(bases.NodeNG):
     """class representing a Getattr node"""
     _astroid_fields = ('expr',)
     expr = None
 
 
-class Global(Statement):
+class Global(bases.Statement):
     """class representing a Global node"""
 
     def __init__(self, names):
@@ -730,14 +737,14 @@ class Global(Statement):
         return name
 
 
-class If(BlockRangeMixIn, Statement):
+class If(mixins.BlockRangeMixIn, bases.Statement):
     """class representing an If node"""
     _astroid_fields = ('test', 'body', 'orelse')
     test = None
     body = None
     orelse = None
 
-    @cachedproperty
+    @decorators.cachedproperty
     def blockstart_tolineno(self):
         return self.test.tolineno
 
@@ -751,7 +758,7 @@ class If(BlockRangeMixIn, Statement):
                                        self.body[0].fromlineno - 1)
 
 
-class IfExp(NodeNG):
+class IfExp(bases.NodeNG):
     """class representing an IfExp node"""
     _astroid_fields = ('test', 'body', 'orelse')
     test = None
@@ -759,23 +766,23 @@ class IfExp(NodeNG):
     orelse = None
 
 
-class Import(FromImportMixIn, Statement):
+class Import(mixins.FromImportMixIn, bases.Statement):
     """class representing an Import node"""
 
 
-class Index(NodeNG):
+class Index(bases.NodeNG):
     """class representing an Index node"""
     _astroid_fields = ('value',)
     value = None
 
 
-class Keyword(NodeNG):
+class Keyword(bases.NodeNG):
     """class representing a Keyword node"""
     _astroid_fields = ('value',)
     value = None
 
 
-class List(NodeNG, Instance, ParentAssignTypeMixin):
+class List(mixins.ParentAssignTypeMixin, bases.NodeNG, bases.Instance):
     """class representing a List node"""
     _astroid_fields = ('elts',)
 
@@ -798,7 +805,7 @@ class List(NodeNG, Instance, ParentAssignTypeMixin):
         return bool(self.elts)
 
 
-class Nonlocal(Statement):
+class Nonlocal(bases.Statement):
     """class representing a Nonlocal node"""
 
     def __init__(self, names):
@@ -808,18 +815,18 @@ class Nonlocal(Statement):
         return name
 
 
-class Pass(Statement):
+class Pass(bases.Statement):
     """class representing a Pass node"""
 
 
-class Print(Statement):
+class Print(bases.Statement):
     """class representing a Print node"""
     _astroid_fields = ('dest', 'values',)
     dest = None
     values = None
 
 
-class Raise(Statement):
+class Raise(bases.Statement):
     """class representing a Raise node"""
     exc = None
     if six.PY2:
@@ -839,13 +846,13 @@ class Raise(Statement):
                 return True
 
 
-class Return(Statement):
+class Return(bases.Statement):
     """class representing a Return node"""
     _astroid_fields = ('value',)
     value = None
 
 
-class Set(NodeNG, Instance, ParentAssignTypeMixin):
+class Set(mixins.ParentAssignTypeMixin, bases.NodeNG, bases.Instance):
     """class representing a Set node"""
     _astroid_fields = ('elts',)
 
@@ -865,27 +872,28 @@ class Set(NodeNG, Instance, ParentAssignTypeMixin):
         return bool(self.elts)
 
 
-class Slice(NodeNG):
+class Slice(bases.NodeNG):
     """class representing a Slice node"""
     _astroid_fields = ('lower', 'upper', 'step')
     lower = None
     upper = None
     step = None
 
-class Starred(NodeNG, ParentAssignTypeMixin):
+
+class Starred(mixins.ParentAssignTypeMixin, bases.NodeNG):
     """class representing a Starred node"""
     _astroid_fields = ('value',)
     value = None
 
 
-class Subscript(NodeNG):
+class Subscript(bases.NodeNG):
     """class representing a Subscript node"""
     _astroid_fields = ('value', 'slice')
     value = None
     slice = None
 
 
-class TryExcept(BlockRangeMixIn, Statement):
+class TryExcept(mixins.BlockRangeMixIn, bases.Statement):
     """class representing a TryExcept node"""
     _astroid_fields = ('body', 'handlers', 'orelse',)
     body = None
@@ -908,7 +916,7 @@ class TryExcept(BlockRangeMixIn, Statement):
         return self._elsed_block_range(lineno, self.orelse, last)
 
 
-class TryFinally(BlockRangeMixIn, Statement):
+class TryFinally(mixins.BlockRangeMixIn, bases.Statement):
     """class representing a TryFinally node"""
     _astroid_fields = ('body', 'finalbody',)
     body = None
@@ -924,7 +932,7 @@ class TryFinally(BlockRangeMixIn, Statement):
         return self._elsed_block_range(lineno, self.finalbody)
 
 
-class Tuple(NodeNG, Instance, ParentAssignTypeMixin):
+class Tuple(mixins.ParentAssignTypeMixin, bases.NodeNG, bases.Instance):
     """class representing a Tuple node"""
     _astroid_fields = ('elts',)
 
@@ -947,7 +955,7 @@ class Tuple(NodeNG, Instance, ParentAssignTypeMixin):
         return bool(self.elts)
 
 
-class UnaryOp(NodeNG):
+class UnaryOp(bases.NodeNG):
     """class representing an UnaryOp node"""
     _astroid_fields = ('operand',)
     operand = None
@@ -965,19 +973,19 @@ class UnaryOp(NodeNG):
         try:
             results = self._infer_unaryop(context=context)
             return [result for result in results
-                    if isinstance(result, UnaryOperationError)]
-        except InferenceError:
+                    if isinstance(result, exceptions.UnaryOperationError)]
+        except exceptions.InferenceError:
             return []
 
 
-class While(BlockRangeMixIn, Statement):
+class While(mixins.BlockRangeMixIn, bases.Statement):
     """class representing a While node"""
     _astroid_fields = ('test', 'body', 'orelse',)
     test = None
     body = None
     orelse = None
 
-    @cachedproperty
+    @decorators.cachedproperty
     def blockstart_tolineno(self):
         return self.test.tolineno
 
@@ -986,13 +994,13 @@ class While(BlockRangeMixIn, Statement):
         return self. _elsed_block_range(lineno, self.orelse)
 
 
-class With(BlockRangeMixIn, AssignTypeMixin, Statement):
+class With(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, bases.Statement):
     """class representing a With node"""
     _astroid_fields = ('items', 'body')
     items = None
     body = None
 
-    @cachedproperty
+    @decorators.cachedproperty
     def blockstart_tolineno(self):
         return self.items[-1][0].tolineno
 
@@ -1004,10 +1012,12 @@ class With(BlockRangeMixIn, AssignTypeMixin, Statement):
         for elt in self.body:
             yield elt
 
-class Yield(NodeNG):
+
+class Yield(bases.NodeNG):
     """class representing a Yield node"""
     _astroid_fields = ('value',)
     value = None
+
 
 class YieldFrom(Yield):
     """ Class representing a YieldFrom node. """
@@ -1033,6 +1043,7 @@ def _update_const_classes():
         CONST_CLS[kls] = Const
 _update_const_classes()
 
+
 def const_factory(value):
     """return an astroid node for a python value"""
     # XXX we should probably be stricter here and only consider stuff in
@@ -1040,7 +1051,7 @@ def const_factory(value):
     # we should rather recall the builder on this value than returning an empty
     # node (another option being that const_factory shouldn't be called with something
     # not in CONST_CLS)
-    assert not isinstance(value, NodeNG)
+    assert not isinstance(value, bases.NodeNG)
     try:
         return CONST_CLS[value.__class__](value)
     except (KeyError, AttributeError):

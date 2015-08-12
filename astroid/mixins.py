@@ -18,15 +18,14 @@
 """This module contains some mixins for the different nodes.
 """
 
-from astroid.exceptions import (AstroidBuildingException, InferenceError,
-                                NotFoundError)
-from astroid.decorators import cachedproperty
+from astroid import decorators
+from astroid import exceptions
 
 
 class BlockRangeMixIn(object):
     """override block range """
 
-    @cachedproperty
+    @decorators.cachedproperty
     def blockstart_tolineno(self):
         return self.lineno
 
@@ -105,12 +104,12 @@ class FromImportMixIn(FilterStmtsMixin):
         try:
             return mymodule.import_module(modname, level=level,
                                           relative_only=level and level >= 1)
-        except AstroidBuildingException as ex:
+        except exceptions.AstroidBuildingException as ex:
             if isinstance(ex.args[0], SyntaxError):
-                raise InferenceError(str(ex))
-            raise InferenceError(modname)
+                raise exceptions.InferenceError(str(ex))
+            raise exceptions.InferenceError(modname)
         except SyntaxError as ex:
-            raise InferenceError(str(ex))
+            raise exceptions.InferenceError(str(ex))
 
     def real_name(self, asname):
         """get name from 'as' name"""
@@ -122,5 +121,4 @@ class FromImportMixIn(FilterStmtsMixin):
                 _asname = name
             if asname == _asname:
                 return name
-        raise NotFoundError(asname)
-
+        raise exceptions.NotFoundError(asname)

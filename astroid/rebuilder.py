@@ -19,61 +19,49 @@
 order to get a single Astroid representation
 """
 
+import _ast
 import sys
-from _ast import (
-    Expr as Discard, Str,
-    # binary operators
-    Add, BinOp, Div, FloorDiv, Mod, Mult, Pow, Sub, BitAnd, BitOr, BitXor,
-    LShift, RShift,
-    # logical operators
-    And, Or,
-    # unary operators
-    UAdd, USub, Not, Invert,
-    # comparison operators
-    Eq, Gt, GtE, In, Is, IsNot, Lt, LtE, NotEq, NotIn,
-    )
 
-from astroid import nodes as new
 from astroid import astpeephole
+from astroid import nodes as new
 
 
-_BIN_OP_CLASSES = {Add: '+',
-                   BitAnd: '&',
-                   BitOr: '|',
-                   BitXor: '^',
-                   Div: '/',
-                   FloorDiv: '//',
-                   Mod: '%',
-                   Mult: '*',
-                   Pow: '**',
-                   Sub: '-',
-                   LShift: '<<',
-                   RShift: '>>',
+_BIN_OP_CLASSES = {_ast.Add: '+',
+                   _ast.BitAnd: '&',
+                   _ast.BitOr: '|',
+                   _ast.BitXor: '^',
+                   _ast.Div: '/',
+                   _ast.FloorDiv: '//',
+                   _ast.Mod: '%',
+                   _ast.Mult: '*',
+                   _ast.Pow: '**',
+                   _ast.Sub: '-',
+                   _ast.LShift: '<<',
+                   _ast.RShift: '>>',
                   }
 if sys.version_info >= (3, 5):
-    from _ast import MatMult
-    _BIN_OP_CLASSES[MatMult] = '@'
+    _BIN_OP_CLASSES[_ast.MatMult] = '@'
 
-_BOOL_OP_CLASSES = {And: 'and',
-                    Or: 'or',
+_BOOL_OP_CLASSES = {_ast.And: 'and',
+                    _ast.Or: 'or',
                    }
 
-_UNARY_OP_CLASSES = {UAdd: '+',
-                     USub: '-',
-                     Not: 'not',
-                     Invert: '~',
+_UNARY_OP_CLASSES = {_ast.UAdd: '+',
+                     _ast.USub: '-',
+                     _ast.Not: 'not',
+                     _ast.Invert: '~',
                     }
 
-_CMP_OP_CLASSES = {Eq: '==',
-                   Gt: '>',
-                   GtE: '>=',
-                   In: 'in',
-                   Is: 'is',
-                   IsNot: 'is not',
-                   Lt: '<',
-                   LtE: '<=',
-                   NotEq: '!=',
-                   NotIn: 'not in',
+_CMP_OP_CLASSES = {_ast.Eq: '==',
+                   _ast.Gt: '>',
+                   _ast.GtE: '>=',
+                   _ast.In: 'in',
+                   _ast.Is: 'is',
+                   _ast.IsNot: 'is not',
+                   _ast.Lt: '<',
+                   _ast.LtE: '<=',
+                   _ast.NotEq: '!=',
+                   _ast.NotIn: 'not in',
                   }
 
 CONST_NAME_TRANSFORMS = {'None':  None,
@@ -102,7 +90,8 @@ PY34 = sys.version_info >= (3, 4)
 def _init_set_doc(node, newnode):
     newnode.doc = None
     try:
-        if isinstance(node.body[0], Discard) and isinstance(node.body[0].value, Str):
+        if (isinstance(node.body[0], _ast.Expr)
+                and isinstance(node.body[0].value, _ast.Str)):
             newnode.doc = node.body[0].value.s
             node.body = node.body[1:]
 
@@ -168,7 +157,6 @@ class TreeRebuilder(object):
             node.root().set_local(node.name, node)
         else:
             node.parent.set_local(node.name, node)
-
 
     def visit_arguments(self, node, parent):
         """visit a Arguments node by returning a fresh instance of it"""
@@ -268,7 +256,7 @@ class TreeRebuilder(object):
 
     def visit_binop(self, node, parent):
         """visit a BinOp node by returning a fresh instance of it"""
-        if isinstance(node.left, BinOp) and self._manager.optimize_ast:
+        if isinstance(node.left, _ast.BinOp) and self._manager.optimize_ast:
             # Optimize BinOp operations in order to remove
             # redundant recursion. For instance, if the
             # following code is parsed in order to obtain
@@ -889,5 +877,3 @@ class TreeRebuilder3k(TreeRebuilder):
 
 if sys.version_info >= (3, 0):
     TreeRebuilder = TreeRebuilder3k
-
-

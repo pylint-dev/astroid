@@ -19,24 +19,23 @@
 (build_* functions) or from living object (object_build_* functions)
 """
 
-import sys
+import inspect
 import logging
 import os
-from os.path import abspath
-from inspect import (getargspec, isdatadescriptor, isfunction, ismethod,
-                     ismethoddescriptor, isclass, isbuiltin, ismodule,
-                     isroutine)
+import sys
+import types
+
 import six
 
-from astroid.node_classes import CONST_CLS
-from astroid.nodes import (Module, Class, Const, const_factory, From,
-                           Function, EmptyNode, Name, Arguments)
-from astroid.bases import BUILTINS, Generator
-from astroid.manager import AstroidManager
+from astroid import bases
+from astroid import manager
+from astroid import node_classes
+from astroid import nodes
 
 
-MANAGER = AstroidManager()
-_CONSTANTS = tuple(CONST_CLS) # the keys of CONST_CLS eg python builtin types
+MANAGER = manager.AstroidManager()
+# the keys of CONST_CLS eg python builtin types
+_CONSTANTS = tuple(node_classes.CONST_CLS)
 _JYTHON = os.name == 'java'
 _BUILTINS = vars(six.moves.builtins)
 _LOG = logging.getLogger(__name__)
@@ -46,7 +45,7 @@ def _io_discrepancy(member):
     # _io module names itself `io`: http://bugs.python.org/issue18602
     member_self = getattr(member, '__self__', None)
     return (member_self and
-            ismodule(member_self) and
+            inspect.ismodule(member_self) and
             member_self.__name__ == '_io' and
             member.__module__ == 'io')
 
@@ -61,61 +60,63 @@ def attach_dummy_node(node, name, object=_marker):
     """create a dummy node and register it in the locals of the given
     node with the specified name
     """
-    enode = EmptyNode()
+    enode = nodes.EmptyNode()
     enode.object = object
     _attach_local_node(node, enode, name)
 
 def _has_underlying_object(self):
     return hasattr(self, 'object') and self.object is not _marker
 
-EmptyNode.has_underlying_object = _has_underlying_object
+nodes.EmptyNode.has_underlying_object = _has_underlying_object
 
 def attach_const_node(node, name, value):
     """create a Const node and register it in the locals of the given
     node with the specified name
     """
-    if not name in node.special_attributes:
-        _attach_local_node(node, const_factory(value), name)
+    if name not in node.special_attributes:
+        _attach_local_node(node, nodes.const_factory(value), name)
 
 def attach_import_node(node, modname, membername):
     """create a From node and register it in the locals of the given
     node with the specified name
     """
-    from_node = From(modname, [(membername, None)])
+    from_node = nodes.From(modname, [(membername, None)])
     _attach_local_node(node, from_node, membername)
 
 
 def build_module(name, doc=None):
     """create and initialize a astroid Module node"""
-    node = Module(name, doc, pure_python=False)
+    node = nodes.Module(name, doc, pure_python=False)
     node.package = False
     node.parent = None
     return node
 
+
 def build_class(name, basenames=(), doc=None):
     """create and initialize a astroid Class node"""
-    node = Class(name, doc)
+    node = nodes.Class(name, doc)
     for base in basenames:
-        basenode = Name()
+        basenode = nodes.Name()
         basenode.name = base
         node.bases.append(basenode)
         basenode.parent = node
     return node
 
+
 def build_function(name, args=None, defaults=None, flag=0, doc=None):
     """create and initialize a astroid Function node"""
     args, defaults = args or [], defaults or []
     # first argument is now a list of decorators
-    func = Function(name, doc)
-    func.args = argsnode = Arguments()
+    func = nodes.Function(name, doc)
+    func.args = argsnode = nodes.Arguments()
     argsnode.args = []
     for arg in args:
-        argsnode.args.append(Name())
+        argsnode.args.append(nodes.Name())
         argsnode.args[-1].name = arg
         argsnode.args[-1].parent = argsnode
     argsnode.defaults = []
     for default in defaults:
-        argsnode.defaults.append(const_factory(default))
+        argsnode.defaults.append(nodes.const_factory(default))
         argsnode.defaults[-1].parent = argsnode
     argsnode.kwarg = None
     argsnode.vararg = None
@@ -127,7 +128,8 @@ def build_function(name, args=None, defaults=None, flag=0, doc=None):
 
 def build_from_import(fromname, names):
     """create and initialize an astroid From import statement"""
-    return From(fromname, [(name, None) for name in names])
+    return nodes.From(fromname, [(name, None) for name in names])
+
 
 def register_arguments(func, args=None):
     """add given arguments to local
@@ -142,10 +144,11 @@ def register_arguments(func, args=None):
         if func.args.kwarg:
             func.set_local(func.args.kwarg, func.args)
     for arg in args:
-        if isinstance(arg, Name):
+        if isinstance(arg, nodes.Name):
             func.set_local(arg.name, arg)
         else:
             register_arguments(func, arg.elts)
+
 
 def object_build_class(node, member, localname):
     """create astroid for a living class object"""
@@ -153,20 +156,24 @@ def object_build_class(node, member, localname):
     return _base_class_object_build(node, member, basenames,
                                     localname=localname)
 
+
 def object_build_function(node, member, localname):
     """create astroid for a living function object"""
-    args, varargs, varkw, defaults = getargspec(member)
+    args, varargs, varkw, defaults = inspect.getargspec(member)
     if varargs is not None:
         args.append(varargs)
     if varkw is not None:
         args.append(varkw)
     func = build_function(getattr(member, '__name__', None) or localname, args,
-                          defaults, six.get_function_code(member).co_flags, member.__doc__)
+                          defaults, six.get_function_code(member).co_flags,
+                          member.__doc__)
     node.add_local_node(func, localname)
+
 
 def object_build_datadescriptor(node, member, name):
     """create astroid for a living data descriptor object"""
     return _base_class_object_build(node, member, [], name)
+
 
 def object_build_methoddescriptor(node, member, localname):
     """create astroid for a living method descriptor object"""
@@ -177,6 +184,7 @@ def object_build_methoddescriptor(node, member, localname):
     # and empty argument list
     func.args.args = None
     node.add_local_node(func, localname)
+
 
 def _base_class_object_build(node, member, basenames, name=None, localname=None):
     """create astroid for a living class object, with a given set of base names
@@ -199,7 +207,7 @@ def _base_class_object_build(node, member, basenames, name=None, localname=None)
         pass
     else:
         for name, obj in instdict.items():
-            valnode = EmptyNode()
+            valnode = nodes.EmptyNode()
             valnode.object = obj
             valnode.parent = klass
             valnode.lineno = 1
@@ -251,7 +259,7 @@ class InspectBuilder(object):
         except AttributeError:
             # in jython, java modules have no __doc__ (see #109562)
             node = build_module(modname)
-        node.file = node.path = path and abspath(path) or path
+        node.file = node.path = path and os.path.abspath(path) or path
         node.name = modname
         MANAGER.cache_module(node)
         node.package = hasattr(module, '__path__')
@@ -273,21 +281,21 @@ class InspectBuilder(object):
                 # damned ExtensionClass.Base, I know you're there !
                 attach_dummy_node(node, name)
                 continue
-            if ismethod(member):
+            if inspect.ismethod(member):
                 member = six.get_method_function(member)
-            if isfunction(member):
+            if inspect.isfunction(member):
                 _build_from_function(node, name, member, self._module)
-            elif isbuiltin(member):
+            elif inspect.isbuiltin(member):
                 if (not _io_discrepancy(member) and
                         self.imported_member(node, member, name)):
                     continue
                 object_build_methoddescriptor(node, member, name)
-            elif isclass(member):
+            elif inspect.isclass(member):
                 if self.imported_member(node, member, name):
                     continue
                 if member in self._done:
                     class_node = self._done[member]
-                    if not class_node in node.locals.get(name, ()):
+                    if class_node not in node.locals.get(name, ()):
                         node.add_local_node(class_node, name)
                 else:
                     class_node = object_build_class(node, member, name)
@@ -295,15 +303,15 @@ class InspectBuilder(object):
                     self.object_build(class_node, member)
                 if name == '__class__' and class_node.parent is None:
                     class_node.parent = self._done[self._module]
-            elif ismethoddescriptor(member):
+            elif inspect.ismethoddescriptor(member):
                 assert isinstance(member, object)
                 object_build_methoddescriptor(node, member, name)
-            elif isdatadescriptor(member):
+            elif inspect.isdatadescriptor(member):
                 assert isinstance(member, object)
                 object_build_datadescriptor(node, member, name)
             elif isinstance(member, _CONSTANTS):
                 attach_const_node(node, name, member)
-            elif isroutine(member):
+            elif inspect.isroutine(member):
                 # This should be called for Jython, where some builtin
                 # methods aren't catched by isbuiltin branch.
                 _build_from_function(node, name, member, self._module)
@@ -328,7 +336,7 @@ class InspectBuilder(object):
                 # Python 2.5.1 (r251:54863, Sep  1 2010, 22:03:14)
                 # >>> print object.__new__.__module__
                 # None
-                modname = BUILTINS
+                modname = six.moves.builtins.__name__
             else:
                 attach_dummy_node(node, name, member)
                 return True
@@ -363,7 +371,7 @@ def _astroid_bootstrapping(astroid_builtin=None):
         from six.moves import builtins
         astroid_builtin = Astroid_BUILDER.inspect_build(builtins)
 
-    for cls, node_cls in CONST_CLS.items():
+    for cls, node_cls in node_classes.CONST_CLS.items():
         if cls is type(None):
             proxy = build_class('NoneType')
             proxy.parent = astroid_builtin
@@ -384,10 +392,10 @@ _astroid_bootstrapping()
 # infinite recursion (see https://bugs.launchpad.net/pylint/+bug/456870)
 def _set_proxied(const):
     return _CONST_PROXY[const.value.__class__]
-Const._proxied = property(_set_proxied)
+nodes.Const._proxied = property(_set_proxied)
 
-from types import GeneratorType
-_GeneratorType = Class(GeneratorType.__name__, GeneratorType.__doc__)
-_GeneratorType.parent = MANAGER.astroid_cache[BUILTINS]
-Generator._proxied = _GeneratorType
-Astroid_BUILDER.object_build(Generator._proxied, GeneratorType)
+_GeneratorType = nodes.Class(types.GeneratorType.__name__,
+                             types.GeneratorType.__doc__)
+_GeneratorType.parent = MANAGER.astroid_cache[six.moves.builtins.__name__]
+bases.Generator._proxied = _GeneratorType
+Astroid_BUILDER.object_build(bases.Generator._proxied, types.GeneratorType)
