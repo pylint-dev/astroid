@@ -94,7 +94,7 @@ def build_module(name, doc=None):
 
 def build_class(name, basenames=(), doc=None):
     """create and initialize a astroid ClassDef node"""
-    node = ClassDef(name, doc)
+    node = nodes.ClassDef(name, doc)
     for base in basenames:
         basenode = nodes.Name()
         basenode.name = base

@@ -315,14 +315,14 @@ class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(abspath.pytype(), '%s.function' % BUILTINS)
 
     def test_real_name(self):
-        from_ = self.module['pb']
-        self.assertEqual(from_.real_name('pb'), 'ProgressBar')
+        from_ = self.module['NameNode']
+        self.assertEqual(from_.real_name('NameNode'), 'Name')
         imp_ = self.module['os']
         self.assertEqual(imp_.real_name('os'), 'os')
         self.assertRaises(exceptions.NotFoundError, imp_.real_name, 'os.path')
-        imp_ = self.module['pb']
-        self.assertEqual(imp_.real_name('pb'), 'ProgressBar')
-        self.assertRaises(exceptions.NotFoundError, imp_.real_name, 'ProgressBar')
+        imp_ = self.module['NameNode']
+        self.assertEqual(imp_.real_name('NameNode'), 'Name')
+        self.assertRaises(exceptions.NotFoundError, imp_.real_name, 'Name')
         imp_ = self.module2['YO']
         self.assertEqual(imp_.real_name('YO'), 'YO')
         self.assertRaises(exceptions.NotFoundError, imp_.real_name, 'data')
@@ -330,8 +330,8 @@ class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
     def test_as_string(self):
         ast = self.module['modutils']
         self.assertEqual(ast.as_string(), "from astroid import modutils")
-        ast = self.module['pb']
-        self.assertEqual(ast.as_string(), "from logilab.common.shellutils import ProgressBar as pb")
+        ast = self.module['NameNode']
+        self.assertEqual(ast.as_string(), "from astroid.node_classes import Name as NameNode")
         ast = self.module['os']
         self.assertEqual(ast.as_string(), "import os.path")
         code = """from . import here

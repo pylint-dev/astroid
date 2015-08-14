@@ -455,13 +455,7 @@ def with_assigned_stmts(self, node, context=None, asspath=None):
             yield obj
 
 
-<<<<<<< variant A
-nodes.With.assigned_stmts = raise_if_nothing_inferred(with_assigned_stmts)
->>>>>>> variant B
 nodes.With.assigned_stmts = with_assigned_stmts
-####### Ancestor
-nodes.With.assigned_stmts = raise_if_nothing_infered(with_assigned_stmts)
-======= end
 
 
 @bases.yes_if_nothing_inferred

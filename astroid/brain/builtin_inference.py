@@ -119,7 +119,7 @@ def _generic_inference(node, context, node_type, transform):
             inferred = next(arg.infer(context=context))
         except (InferenceError, StopIteration):
             raise UseInferenceDefault()
-        if infered is util.YES:
+        if inferred is util.YES:
             raise UseInferenceDefault()
         transformed = transform(inferred)
     if not transformed or transformed is util.YES:

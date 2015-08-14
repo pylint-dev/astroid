@@ -99,7 +99,7 @@ def _infer_stmts(stmts, context, frame=None):
             for inferred in stmt.infer(context=context):
                 yield inferred
                 inferred = True
-        except excpetions.UnresolvableName:
+        except exceptions.UnresolvableName:
             continue
         except exceptions.InferenceError:
             yield util.YES

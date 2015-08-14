@@ -457,7 +457,7 @@ class Assert(bases.Statement):
         self.test = test
 
 
-class Assign(mixins.Statement, bases.AssignTypeMixin):
+class Assign(bases.Statement, mixins.AssignTypeMixin):
     """class representing an Assign node"""
     _astroid_fields = ('targets', 'value',)
     targets = None
@@ -837,18 +837,11 @@ class ExtSlice(bases.NodeNG):
     _astroid_fields = ('dims',)
     dims = None
 
-<<<<<<< variant A
     def postinit(self, dims=None):
         self.dims = dims
 
 
-class For(BlockRangeMixIn, AssignTypeMixin, Statement):
->>>>>>> variant B
-
 class For(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, bases.Statement):
-####### Ancestor
-class For(BlockRangeMixIn, AssignTypeMixin, Statement):
-======= end
     """class representing a For node"""
     _astroid_fields = ('target', 'iter', 'body', 'orelse',)
     target = None

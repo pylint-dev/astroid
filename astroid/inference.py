@@ -90,7 +90,7 @@ nodes.Name._infer = bases.path_wrapper(infer_name)
 nodes.AssignName.infer_lhs = infer_name # won't work with a path wrapper
 
 
-@bases.raise_if_nothing_infered
+@bases.raise_if_nothing_inferred
 @bases.path_wrapper
 def infer_callfunc(self, context=None):
     """infer a CallFunc node by trying to guess what the function returns"""
@@ -153,7 +153,7 @@ def infer_from(self, context=None, asname=True):
 nodes.ImportFrom._infer = infer_from
 
 
-@bases.raise_if_nothing_infered
+@bases.raise_if_nothing_inferred
 def infer_getattr(self, context=None):
     """infer a Getattr node by using getattr on the associated object"""
     for owner in self.expr.infer(context):
@@ -217,7 +217,7 @@ def infer_subscript(self, context=None):
     else:
         raise exceptions.InferenceError()
 nodes.Subscript._infer = bases.path_wrapper(infer_subscript)
-nodes.Subscript.infer_lhs = bases.raise_if_nothing_infered(infer_subscript)
+nodes.Subscript.infer_lhs = bases.raise_if_nothing_inferred(infer_subscript)
 
 
 @bases.raise_if_nothing_inferred
@@ -622,7 +622,7 @@ def infer_empty_node(self, context=None):
     else:
         try:
             for inferred in MANAGER.infer_ast_from_something(self.object,
-                                                            context=context):
+                                                             context=context):
                 yield inferred
         except exceptions.AstroidError:
             yield util.YES

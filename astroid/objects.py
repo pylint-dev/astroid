@@ -53,14 +53,8 @@ class FrozenSet(bases.NodeNG, bases.Instance, mixins.ParentAssignTypeMixin):
         if elts is None:
             node.elts = []
         else:
-            node.elts = [const_factory(e) for e in elts]
+            node.elts = [node_classes.const_factory(e) for e in elts]
         return node
-
-    def __init__(self, elts=None):
-        if elts is None:
-            self.elts = []
-        else:
-            self.elts = [node_classes.const_factory(e) for e in elts]
 
     def pytype(self):
         return '%s.frozenset' % BUILTINS
@@ -117,8 +111,8 @@ class Super(bases.NodeNG):
 
             if isinstance(self.type, scoped_nodes.ClassDef):
             # `super(type, type)`, most likely in a class method.
-            self._class_based = True
-            mro_type = self.type
+                self._class_based = True
+                mro_type = self.type
         else:
             mro_type = getattr(self.type, '_proxied', None)
             if not isinstance(mro_type, (bases.Instance, scoped_nodes.ClassDef)):

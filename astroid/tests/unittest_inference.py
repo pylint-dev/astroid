@@ -988,28 +988,12 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
     def test_binary_op_list_mul_none(self):
         'test correct handling on list multiplied by None'
         ast = builder.string_build('a = [1] * None\nb = [1] * "r"')
-<<<<<<< variant A
         inferred = ast['a'].inferred()
         self.assertEqual(len(inferred), 1)
-        self.assertEqual(inferred[0], YES)
+        self.assertEqual(inferred[0], util.YES)
         inferred = ast['b'].inferred()
         self.assertEqual(len(inferred), 1)
-        self.assertEqual(inferred[0], YES)
->>>>>>> variant B
-        infered = ast['a'].infered()
-        self.assertEqual(len(infered), 1)
-        self.assertEqual(infered[0], util.YES)
-        infered = ast['b'].infered()
-        self.assertEqual(len(infered), 1)
-        self.assertEqual(infered[0], util.YES)
-####### Ancestor
-        infered = ast['a'].infered()
-        self.assertEqual(len(infered), 1)
-        self.assertEqual(infered[0], YES)
-        infered = ast['b'].infered()
-        self.assertEqual(len(infered), 1)
-        self.assertEqual(infered[0], YES)
-======= end
+        self.assertEqual(inferred[0], util.YES)
 
     def test_binary_op_tuple_add(self):
         ast = builder.string_build('a = (1,) + (2,)', __name__, __file__)

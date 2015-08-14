@@ -1063,7 +1063,7 @@ def get_wrapping_class(node):
 
 
 
-class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
+class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
 
     # some of the attributes below are set by the builder module or
     # by a raw factories
@@ -1554,13 +1554,7 @@ class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
             inferred = next(assignment.infer())
         except exceptions.InferenceError:
             return
-<<<<<<< variant A
-        if inferred is bases.YES: # don't expose this
->>>>>>> variant B
-        if infered is util.YES: # don't expose this
-####### Ancestor
-        if infered is bases.YES: # don't expose this
-======= end
+        if inferred is util.YES: # don't expose this
             return None
         return inferred
 

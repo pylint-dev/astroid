@@ -108,7 +108,7 @@ class TreeRebuilder(object):
         newnode = nodes.Module(name=modname, doc=doc, file=modpath, path=modpath,
                                package=package, parent=None)
         newnode.postinit([self.visit(child, newnode) for child in node.body])
-        return self._transform(newnode)
+        return newnode
 
     def visit(self, node, parent, assign_ctx=None):
         cls = node.__class__
