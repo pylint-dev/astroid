@@ -28,13 +28,15 @@ import sys
 import warnings
 
 import six
-from logilab.common import decorators as decorators_mod
 
 from astroid import bases
+from astroid import context as contextmod
 from astroid import exceptions
 from astroid import manager
 from astroid import mixins
 from astroid import node_classes
+from astroid import decorators as decorators_mod
+from astroid import util
 
 
 BUILTINS = six.moves.builtins.__name__
@@ -244,7 +246,6 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, bases.NodeNG):
 
     def __contains__(self, name):
         return name in self.locals
-    has_key = __contains__
 
 
 class Module(LocalsDictNodeNG):
@@ -376,7 +377,7 @@ class Module(LocalsDictNodeNG):
         """inferred getattr"""
         # set lookup name since this is necessary to infer on import nodes for
         # instance
-        context = bases.copy_context(context)
+        context = contextmod.copy_context(context)
         context.lookupname = name
         try:
             return bases._infer_stmts(self.getattr(name, context),
@@ -462,19 +463,6 @@ class Module(LocalsDictNodeNG):
         It doesn't include the '__builtins__' name which is added by the
         current CPython implementation of wildcard imports.
         """
-        # take advantage of a living module if it exists
-        try:
-            living = sys.modules[self.name]
-        except KeyError:
-            pass
-        else:
-            try:
-                return living.__all__
-            except AttributeError:
-                return [name for name in living.__dict__.keys()
-                        if not name.startswith('_')]
-        # else lookup the astroid
-        #
         # We separate the different steps of lookup in try/excepts
         # to avoid catching too many Exceptions
         default = [name for name in self.keys() if not name.startswith('_')]
@@ -566,7 +554,7 @@ class DictComp(ComprehensionScope):
             self.generators = generators
 
     def bool_value(self):
-        return bases.YES
+        return util.YES
 
 
 class SetComp(ComprehensionScope):
@@ -587,7 +575,7 @@ class SetComp(ComprehensionScope):
             self.generators = generators
 
     def bool_value(self):
-        return bases.YES
+        return util.YES
 
 
 class _ListComp(bases.NodeNG):
@@ -601,7 +589,7 @@ class _ListComp(bases.NodeNG):
         self.generators = generators
 
     def bool_value(self):
-        return bases.YES
+        return util.YES
 
 
 if six.PY3:
@@ -639,50 +627,6 @@ def _infer_decorator_callchain(node):
             return 'classmethod'
         if result.is_subtype_of('%s.staticmethod' % BUILTINS):
             return 'staticmethod'
-
-
-def _function_type(self):
-    """
-    FunctionDef type, possible values are:
-    method, function, staticmethod, classmethod.
-    """
-    # Can't infer that this node is decorated
-    # with a subclass of `classmethod` where `type` is first set,
-    # so do it here.
-    if self.decorators:
-        for node in self.decorators.nodes:
-            if isinstance(node, node_classes.Call):
-                # Handle the following case:
-                # @some_decorator(arg1, arg2)
-                # def func(...)
-                #
-                try:
-                    current = next(node.func.infer())
-                except exceptions.InferenceError:
-                    continue
-                _type = _infer_decorator_callchain(current)
-                if _type is not None:
-                    return _type
-
-            try:
-                for inferred in node.infer():
-                    # Check to see if this returns a static or a class method.
-                    _type = _infer_decorator_callchain(inferred)
-                    if _type is not None:
-                        return _type
-
-                    if not isinstance(inferred, ClassDef):
-                        continue
-                    for ancestor in inferred.ancestors():
-                        if not isinstance(ancestor, ClassDef):
-                            continue
-                        if ancestor.is_subtype_of('%s.classmethod' % BUILTINS):
-                            return 'classmethod'
-                        elif ancestor.is_subtype_of('%s.staticmethod' % BUILTINS):
-                            return 'staticmethod'
-            except exceptions.InferenceError:
-                pass
-    return self._type
 
 
 class Lambda(LocalsDictNodeNG, mixins.FilterStmtsMixin):
@@ -759,16 +703,13 @@ class FunctionDef(bases.Statement, Lambda):
     special_attributes = set(('__name__', '__doc__', '__dict__'))
     is_function = True
     # attributes below are set by the builder module or by raw factories
-    type = decorators_mod.cachedproperty(_function_type)
-
-    _type = "function"
+    decorators = None
     _other_fields = ('locals', 'name', 'doc', '_type', 'decorators')
 
     def __init__(self, name=None, doc=None, lineno=None,
                  col_offset=None, parent=None):
         self.name = name
         self.doc = doc
-        self.extra_decorators = []
         self.instance_attrs = {}
         super(FunctionDef, self).__init__(lineno, col_offset, parent)
         if parent:
@@ -792,6 +733,100 @@ class FunctionDef(bases.Statement, Lambda):
                     elif decorator_expr.name == 'classproperty':
                         self._type = 'classmethod'
         self.returns = returns
+
+    @decorators_mod.cachedproperty
+    def extra_decorators(self):
+        """Get the extra decorators that this function can have
+
+        Additional decorators are considered when they are used as
+        assignments, as in `method = staticmethod(method)`.
+        The property will return all the callables that are used for
+        decoration.
+        """
+        frame = self.parent.frame()
+        if not isinstance(frame, Class):
+            return []
+
+        decorators = []
+        for assign in frame.nodes_of_class(node_classes.Assign):
+            if (isinstance(assign.value, node_classes.CallFunc)
+                    and isinstance(assign.value.func, node_classes.Name)):
+                for assign_node in assign.targets:
+                    if not isinstance(assign_node, node_classes.AssName):
+                        # Support only `name = callable(name)`
+                        continue
+
+                    if assign_node.name != self.name:
+                        # Interested only in the assignment nodes that
+                        # decorates the current method.
+                        continue
+                    try:
+                        meth = frame[self.name]
+                    except KeyError:
+                        continue
+                    else:
+                        if isinstance(meth, Function):
+                            decorators.append(assign.value)
+        return decorators
+
+    @decorators_mod.cachedproperty
+    def type(self):
+        """Get the function type for this node.
+
+        Possible values are: method, function, staticmethod, classmethod.
+        """
+        builtin_descriptors = {'classmethod', 'staticmethod'}
+
+        for decorator in self.extra_decorators:
+            if decorator.func.name in builtin_descriptors:
+                return decorator.func.name
+
+        frame = self.parent.frame()
+        type_name = 'function'
+        if isinstance(frame, Class):
+            if self.name == '__new__':
+                return'classmethod'
+            else:
+                type_name = 'method'
+
+        if self.decorators:
+            for node in self.decorators.nodes:
+                if isinstance(node, node_classes.Name):
+                    if node.name in builtin_descriptors:
+                        return node.name
+
+                if isinstance(node, node_classes.CallFunc):
+                    # Handle the following case:
+                    # @some_decorator(arg1, arg2)
+                    # def func(...)
+                    #
+                    try:
+                        current = next(node.func.infer())
+                    except exceptions.InferenceError:
+                        continue
+                    _type = _infer_decorator_callchain(current)
+                    if _type is not None:
+                        return _type
+
+                try:
+                    for infered in node.infer():
+                        # Check to see if this returns a static or a class method.
+                        _type = _infer_decorator_callchain(infered)
+                        if _type is not None:
+                            return _type
+
+                        if not isinstance(infered, Class):
+                            continue
+                        for ancestor in infered.ancestors():
+                            if not isinstance(ancestor, Class):
+                                continue
+                            if ancestor.is_subtype_of('%s.classmethod' % BUILTINS):
+                                return 'classmethod'
+                            elif ancestor.is_subtype_of('%s.staticmethod' % BUILTINS):
+                                return 'staticmethod'
+                except exceptions.InferenceError:
+                    pass
+        return type_name
 
     @decorators_mod.cachedproperty
     def fromlineno(self):
@@ -912,7 +947,7 @@ class FunctionDef(bases.Statement, Lambda):
                 c.hide = True
                 c.parent = self
                 class_bases = [next(b.infer(context)) for b in caller.args[1:]]
-                c.bases = [base for base in class_bases if base != bases.YES]
+                c.bases = [base for base in class_bases if base != util.YES]
                 c._metaclass = metaclass
                 yield c
                 return
@@ -925,7 +960,7 @@ class FunctionDef(bases.Statement, Lambda):
                     for inferred in returnnode.value.infer(context):
                         yield inferred
                 except exceptions.InferenceError:
-                    yield bases.YES
+                    yield util.YES
 
     def bool_value(self):
         return True
@@ -962,7 +997,7 @@ def _is_metaclass(klass, seen=None):
                 if isinstance(baseobj, bases.Instance):
                     # not abstract
                     return False
-                if baseobj is bases.YES:
+                if baseobj is util.YES:
                     continue
                 if baseobj is klass:
                     continue
@@ -1011,7 +1046,24 @@ def _class_type(klass, ancestors=None):
     return klass._type
 
 
-class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
+def get_wrapping_class(node):
+    """Obtain the class that *wraps* this node
+
+    We consider that a class wraps a node if the class
+    is a parent for the said node.
+    """
+
+    klass = node.frame()
+    while klass is not None and not isinstance(klass, Class):
+        if klass.parent is None:
+            klass = None
+        else:
+            klass = klass.parent.frame()
+    return klass
+
+
+
+class Class(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
 
     # some of the attributes below are set by the builder module or
     # by a raw factories
@@ -1054,14 +1106,14 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
 
     def _newstyle_impl(self, context=None):
         if context is None:
-            context = bases.InferenceContext()
+            context = contextmod.InferenceContext()
         if self._newstyle is not None:
             return self._newstyle
         for base in self.ancestors(recurs=False, context=context):
             if base._newstyle_impl(context):
                 self._newstyle = True
                 break
-        klass = self._explicit_metaclass()
+        klass = self.declared_metaclass()
         # could be any callable, we'd need to infer the result of klass(name,
         # bases, dict).  punt if it's not a class node.
         if klass is not None and isinstance(klass, ClassDef):
@@ -1113,7 +1165,7 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
                 isinstance(name_node.value, six.string_types)):
             name = name_node.value
         else:
-            return bases.YES
+            return util.YES
 
         result = ClassDef(name, None)
 
@@ -1125,7 +1177,7 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
             # There is currently no AST node that can represent an 'unknown'
             # node (YES is not an AST node), therefore we simply return YES here
             # although we know at least the name of the class.
-            return bases.YES
+            return util.YES
 
         # Get the members of the class
         try:
@@ -1192,7 +1244,7 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
         # FIXME: inference make infinite loops possible here
         yielded = set([self])
         if context is None:
-            context = bases.InferenceContext()
+            context = contextmod.InferenceContext()
         if six.PY3:
             if not self.bases and self.qname() != 'builtins.object':
                 yield builtin_lookup("object")[1][0]
@@ -1294,12 +1346,18 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
         """return Instance of ClassDef node, else return self"""
         return bases.Instance(self)
 
-    def getattr(self, name, context=None):
-        """this method doesn't look in the instance_attrs dictionary since it's
-        done by an Instance proxy at inference time.
+    def getattr(self, name, context=None, class_context=True):
+        """Get an attribute from this class, using Python's attribute semantic
 
+        This method doesn't look in the instance_attrs dictionary
+        since it's done by an Instance proxy at inference time.
         It may return a YES object if the attribute has not been actually
-        found but a __getattr__ or __getattribute__ method is defined
+        found but a __getattr__ or __getattribute__ method is defined.
+        If *class_context* is given, then it's considered that the attribute
+        is accessed from a class context, e.g. Class.attribute, otherwise
+        it might have been accessed from an instance as well.
+        If *class_context* is used in that case, then a lookup in the
+        implicit metaclass and the explicit metaclass will be done.
         """
         values = self.locals.get(name, [])
         if name in self.special_attributes:
@@ -1318,9 +1376,54 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
         values = list(values)
         for classnode in self.ancestors(recurs=True, context=context):
             values += classnode.locals.get(name, [])
+
+        if class_context:
+            values += self._metaclass_lookup_attribute(name, context)
         if not values:
             raise exceptions.NotFoundError(name)
         return values
+
+    def _metaclass_lookup_attribute(self, name, context):
+        """Search the given name in the implicit and the explicit metaclass."""
+        attrs = set()
+        implicit_meta = self.implicit_metaclass()
+        metaclass = self.metaclass()
+        for cls in {implicit_meta, metaclass}:
+            if cls and cls != self:
+                cls_attributes = self._get_attribute_from_metaclass(
+                    cls, name, context)
+                attrs.update(set(cls_attributes))
+        return attrs
+
+    def _get_attribute_from_metaclass(self, cls, name, context):
+        try:
+            attrs = cls.getattr(name, context=context,
+                                class_context=True)
+        except exceptions.NotFoundError:
+            return
+
+        for attr in bases._infer_stmts(attrs, context, frame=cls):
+            if not isinstance(attr, Function):
+                yield attr
+                continue
+
+            if bases._is_property(attr):
+                # TODO(cpopa): don't use a private API.
+                for infered in attr.infer_call_result(self, context):
+                    yield infered
+                continue
+            if attr.type == 'classmethod':
+                # If the method is a classmethod, then it will
+                # be bound to the metaclass, not to the class
+                # from where the attribute is retrieved.
+                # get_wrapping_class could return None, so just
+                # default to the current class.
+                frame = get_wrapping_class(attr) or self
+                yield bases.BoundMethod(attr, frame)
+            elif attr.type == 'staticmethod':
+                yield attr
+            else:
+                yield bases.BoundMethod(attr, self)
 
     def igetattr(self, name, context=None):
         """inferred getattr, need special treatment in class to handle
@@ -1328,7 +1431,7 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
         """
         # set lookup name since this is necessary to infer on import nodes for
         # instance
-        context = bases.copy_context(context)
+        context = contextmod.copy_context(context)
         context.lookupname = name
         try:
             for inferred in bases._infer_stmts(self.getattr(name, context),
@@ -1341,13 +1444,13 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
                     except exceptions.NotFoundError:
                         yield inferred
                     else:
-                        yield bases.YES
+                        yield util.YES
                 else:
                     yield function_to_method(inferred, self)
         except exceptions.NotFoundError:
             if not name.startswith('__') and self.has_dynamic_getattr(context):
                 # class handle some dynamic attributes, return a YES object
-                yield bases.YES
+                yield util.YES
             else:
                 raise exceptions.InferenceError(name)
 
@@ -1405,11 +1508,10 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
             return builtin_lookup('type')[1][0]
 
     _metaclass = None
-    def _explicit_metaclass(self):
-        """ Return the explicit defined metaclass
-        for the current class.
+    def declared_metaclass(self):
+        """Return the explicit declared metaclass for the current class.
 
-        An explicit defined metaclass is defined
+        An explicit declared metaclass is defined
         either by passing the ``metaclass`` keyword argument
         in the class definition line (Python 3) or (Python 2) by
         having a ``__metaclass__`` class attribute, or if there are
@@ -1429,7 +1531,7 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
             # Expects this from Py3k TreeRebuilder
             try:
                 return next(node for node in self._metaclass.infer()
-                            if node is not bases.YES)
+                            if node is not util.YES)
             except (exceptions.InferenceError, StopIteration):
                 return None
         if six.PY3:
@@ -1452,18 +1554,24 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
             inferred = next(assignment.infer())
         except exceptions.InferenceError:
             return
+<<<<<<< variant A
         if inferred is bases.YES: # don't expose this
+>>>>>>> variant B
+        if infered is util.YES: # don't expose this
+####### Ancestor
+        if infered is bases.YES: # don't expose this
+======= end
             return None
         return inferred
 
     def metaclass(self):
-        """ Return the metaclass of this class.
+        """Return the metaclass of this class.
 
         If this class does not define explicitly a metaclass,
         then the first defined metaclass in ancestors will be used
         instead.
         """
-        klass = self._explicit_metaclass()
+        klass = self.declared_metaclass()
         if klass is None:
             for parent in self.ancestors():
                 klass = parent.metaclass()
@@ -1503,7 +1611,7 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
                 values = [item[0] for item in slots.items]
             else:
                 values = slots.itered()
-            if values is bases.YES:
+            if values is util.YES:
                 continue
             if not values:
                 # Stop the iteration, because the class
@@ -1513,7 +1621,7 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
             for elt in values:
                 try:
                     for inferred in elt.infer():
-                        if inferred is bases.YES:
+                        if inferred is util.YES:
                             continue
                         if (not isinstance(inferred, node_classes.Const) or
                                 not isinstance(inferred.value,
@@ -1566,7 +1674,7 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
         # only in SomeClass.
 
         if context is None:
-            context = bases.InferenceContext()
+            context = contextmod.InferenceContext()
         if six.PY3:
             if not self.bases and self.qname() != 'builtins.object':
                 yield builtin_lookup("object")[1][0]

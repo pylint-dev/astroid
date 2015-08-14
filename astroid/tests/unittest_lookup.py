@@ -21,12 +21,12 @@ import functools
 import sys
 import unittest
 
-from astroid import bases
 from astroid import builder
 from astroid import exceptions
 from astroid import nodes
 from astroid import scoped_nodes
 from astroid import test_utils
+from astroid import util
 from astroid.tests import resources
 
 
@@ -172,7 +172,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         """)
         var = astroid.body[1].value
         if sys.version_info < (3, 0):
-            self.assertEqual(var.inferred(), [bases.YES])
+            self.assertEqual(var.inferred(), [util.YES])
         else:
             self.assertRaises(exceptions.UnresolvableName, var.inferred)
 
@@ -221,8 +221,8 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
             iterer = count()
             num = iterer.next()
         """)
-        next = tree.body[2].value.func
-        gener = next.expr.inferred()[0]
+        next_node = tree.body[2].value.func
+        gener = next_node.expr.inferred()[0]
         if sys.version_info < (3, 0):
             self.assertIsInstance(gener.getattr('next')[0], nodes.FunctionDef)
         else:

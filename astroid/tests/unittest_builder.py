@@ -23,12 +23,12 @@ import unittest
 
 import six
 
-from astroid import bases
 from astroid import builder
 from astroid import exceptions
 from astroid import manager
 from astroid import nodes
 from astroid import test_utils
+from astroid import util
 from astroid.tests import resources
 
 MANAGER = manager.AstroidManager()
@@ -482,7 +482,7 @@ class BuilderTest(unittest.TestCase):
         n = test_utils.get_name_node(astroid, 'n')
         self.assertIsNot(n.scope(), astroid)
         self.assertEqual([i.__class__ for i in n.infer()],
-                         [bases.YES.__class__])
+                         [util.YES.__class__])
 
     def test_no_future_imports(self):
         mod = builder.parse("import sys")
@@ -567,19 +567,6 @@ class BuilderTest(unittest.TestCase):
         self.assertIsInstance(chain, nodes.Const)
         self.assertEqual(chain.value, 'None')
 
-    def test_lgc_classproperty(self):
-        '''test expected values of constants after rebuilding'''
-        code = '''
-            from logilab.common.decorators import classproperty
-
-            class A(object):
-                @classproperty
-                def hop(cls): #@
-                    return None
-            '''
-        method = test_utils.extract_node(code)
-        self.assertEqual('classmethod', method.type)
-
     def test_not_implemented(self):
         node = test_utils.extract_node('''
         NotImplemented #@
@@ -615,9 +602,9 @@ class FileBuildTest(unittest.TestCase):
         _locals = module.locals
         self.assertIs(_locals, module.globals)
         keys = sorted(_locals.keys())
-        should = ['MY_DICT', 'YO', 'YOUPI',
+        should = ['MY_DICT', 'NameNode', 'YO', 'YOUPI',
                   '__revision__', 'global_access', 'modutils', 'four_args',
-                  'os', 'redirect', 'pb']
+                  'os', 'redirect']
         should.sort()
         self.assertEqual(keys, sorted(should))
 

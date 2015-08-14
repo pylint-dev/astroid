@@ -19,16 +19,16 @@
 possible by providing a class responsible to get astroid representation
 from various source and using a cache of built modules)
 """
-__docformat__ = "restructuredtext en"
+from __future__ import print_function
 
-import collections
 import imp
 import os
 import warnings
 import zipimport
 
-from astroid.exceptions import AstroidBuildingException
+from astroid import exceptions
 from astroid import modutils
+from astroid import transforms
 
 
 def safe_repr(obj):
@@ -54,11 +54,19 @@ class AstroidManager(object):
             # NOTE: cache entries are added by the [re]builder
             self.astroid_cache = {}
             self._mod_file_cache = {}
-            self.transforms = collections.defaultdict(list)
             self._failed_import_hooks = []
             self.always_load_extensions = False
             self.optimize_ast = False
             self.extension_package_whitelist = set()
+            self._transform = transforms.TransformVisitor()
+
+            # Export these APIs for convenience
+            self.register_transform = self._transform.register_transform
+            self.unregister_transform = self._transform.unregister_transform
+
+    def visit_transforms(self, node):
+        """Visit the transforms and apply them to the given *node*."""
+        return self._transform.visit(node)
 
     def ast_from_file(self, filepath, modname=None, fallback=True, source=False):
         """given a module name, return the astroid object"""
@@ -79,8 +87,8 @@ class AstroidManager(object):
             return AstroidBuilder(self).file_build(filepath, modname)
         elif fallback and modname:
             return self.ast_from_module_name(modname)
-        raise AstroidBuildingException('unable to get astroid for file %s' %
-                                       filepath)
+        raise exceptions.AstroidBuildingException(
+            'unable to get astroid for file %s' % filepath)
 
     def _build_stub_module(self, modname):
         from astroid.builder import AstroidBuilder
@@ -118,18 +126,20 @@ class AstroidManager(object):
                     module = modutils.load_module_from_name(modname)
                 except Exception as ex:
                     msg = 'Unable to load module %s (%s)' % (modname, ex)
-                    raise AstroidBuildingException(msg)
+                    raise exceptions.AstroidBuildingException(msg)
                 return self.ast_from_module(module, modname)
             elif mp_type == imp.PY_COMPILED:
-                raise AstroidBuildingException("Unable to load compiled module %s" % (modname,))
+                msg = "Unable to load compiled module %s" % (modname,)
+                raise exceptions.AstroidBuildingException(msg)
             if filepath is None:
-                raise AstroidBuildingException("Unable to load module %s" % (modname,))
+                msg = "Unable to load module %s" % (modname,)
+                raise exceptions.AstroidBuildingException(msg)
             return self.ast_from_file(filepath, modname, fallback=False)
-        except AstroidBuildingException as e:
+        except exceptions.AstroidBuildingException as e:
             for hook in self._failed_import_hooks:
                 try:
                     return hook(modname)
-                except AstroidBuildingException:
+                except exceptions.AstroidBuildingException:
                     pass
             raise e
         finally:
@@ -166,9 +176,9 @@ class AstroidManager(object):
                     modname.split('.'), context_file=contextfile)
             except ImportError as ex:
                 msg = 'Unable to load module %s (%s)' % (modname, ex)
-                value = AstroidBuildingException(msg)
+                value = exceptions.AstroidBuildingException(msg)
             self._mod_file_cache[(modname, contextfile)] = value
-        if isinstance(value, AstroidBuildingException):
+        if isinstance(value, exceptions.AstroidBuildingException):
             raise value
         return value
 
@@ -193,8 +203,8 @@ class AstroidManager(object):
             try:
                 modname = klass.__module__
             except AttributeError:
-                raise AstroidBuildingException(
-                    'Unable to get module for class %s' % safe_repr(klass))
+                msg = 'Unable to get module for class %s' % safe_repr(klass)
+                raise exceptions.AstroidBuildingException(msg)
         modastroid = self.ast_from_module_name(modname)
         return modastroid.getattr(klass.__name__)[0] # XXX
 
@@ -207,43 +217,29 @@ class AstroidManager(object):
         try:
             modname = klass.__module__
         except AttributeError:
-            raise AstroidBuildingException(
-                'Unable to get module for %s' % safe_repr(klass))
+            msg = 'Unable to get module for %s' % safe_repr(klass)
+            raise exceptions.AstroidBuildingException(msg)
         except Exception as ex:
-            raise AstroidBuildingException(
-                'Unexpected error while retrieving module for %s: %s'
-                % (safe_repr(klass), ex))
+            msg = ('Unexpected error while retrieving module for %s: %s'
+                   % (safe_repr(klass), ex))
+            raise exceptions.AstroidBuildingException(msg)
         try:
             name = klass.__name__
         except AttributeError:
-            raise AstroidBuildingException(
-                'Unable to get name for %s' % safe_repr(klass))
+            msg = 'Unable to get name for %s' % safe_repr(klass)
+            raise exceptions.AstroidBuildingException(msg)
         except Exception as ex:
-            raise AstroidBuildingException(
-                'Unexpected error while retrieving name for %s: %s'
-                % (safe_repr(klass), ex))
+            exc = ('Unexpected error while retrieving name for %s: %s'
+                   % (safe_repr(klass), ex))
+            raise exceptions.AstroidBuildingException(exc)
         # take care, on living object __module__ is regularly wrong :(
         modastroid = self.ast_from_module_name(modname)
         if klass is obj:
-            for  inferred in modastroid.igetattr(name, context):
+            for inferred in modastroid.igetattr(name, context):
                 yield inferred
         else:
             for inferred in modastroid.igetattr(name, context):
                 yield inferred.instanciate_class()
-
-    def register_transform(self, node_class, transform, predicate=None):
-        """Register `transform(node)` function to be applied on the given
-        Astroid's `node_class` if `predicate` is None or returns true
-        when called with the node as argument.
-
-        The transform function may return a value which is then used to
-        substitute the original node in the tree.
-        """
-        self.transforms[node_class].append((transform, predicate))
-
-    def unregister_transform(self, node_class, transform, predicate=None):
-        """Unregister the given transform."""
-        self.transforms[node_class].remove((transform, predicate))
 
     def register_failed_import_hook(self, hook):
         """Registers a hook to resolve imports that cannot be found otherwise.
@@ -254,30 +250,6 @@ class AstroidManager(object):
         otherwise, it must raise `AstroidBuildingException`.
         """
         self._failed_import_hooks.append(hook)
-
-    def transform(self, node):
-        """Call matching transforms for the given node if any and return the
-        transformed node.
-        """
-        cls = node.__class__
-        if cls not in self.transforms:
-            # no transform registered for this class of node
-            return node
-
-        transforms = self.transforms[cls]
-        orig_node = node  # copy the reference
-        for transform_func, predicate in transforms:
-            if predicate is None or predicate(node):
-                ret = transform_func(node)
-                # if the transformation function returns something, it's
-                # expected to be a replacement for the node
-                if ret is not None:
-                    if node is not orig_node:
-                        # node has already be modified by some previous
-                        # transformation, warn about it
-                        warnings.warn('node %s substituted multiple times' % node)
-                    node = ret
-        return node
 
     def cache_module(self, module):
         """Cache a module if no module with the same name is known yet."""

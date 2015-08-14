@@ -28,8 +28,6 @@
 """
 from __future__ import with_statement
 
-__docformat__ = "restructuredtext en"
-
 import imp
 import os
 import platform
@@ -42,8 +40,6 @@ try:
     import pkg_resources
 except ImportError:
     pkg_resources = None
-
-from logilab.common import _handle_blacklist
 
 PY_ZIPMODULE = object()
 
@@ -109,6 +105,18 @@ def _path_from_filename(filename, is_jython=IS_JYTHON):
     if has_pyclass:
         return head + ".py"
     return filename
+
+
+def _handle_blacklist(blacklist, dirnames, filenames):
+    """remove files/directories in the black list
+
+    dirnames/filenames are usually from os.walk
+    """
+    for norecurs in blacklist:
+        if norecurs in dirnames:
+            dirnames.remove(norecurs)
+        elif norecurs in filenames:
+            filenames.remove(norecurs)
 
 
 _NORM_PATH_CACHE = {}
@@ -337,8 +345,8 @@ def file_info_from_modpath(modpath, path=None, context_file=None):
 def get_module_part(dotted_name, context_file=None):
     """given a dotted name return the module part of the name :
 
-    >>> get_module_part('logilab.common.modutils.get_module_part')
-    'logilab.common.modutils'
+    >>> get_module_part('astroid.as_string.dump')
+    'astroid.as_string'
 
     :type dotted_name: str
     :param dotted_name: full name of the identifier we are interested in
@@ -393,7 +401,7 @@ def get_module_part(dotted_name, context_file=None):
     return dotted_name
 
 
-def get_module_files(src_directory, blacklist):
+def get_module_files(src_directory, blacklist, list_all=False):
     """given a package directory return a list of all available python
     module's files in the package and its subpackages
 
@@ -402,9 +410,12 @@ def get_module_files(src_directory, blacklist):
       path of the directory corresponding to the package
 
     :type blacklist: list or tuple
-    :param blacklist:
-      optional list of files or directory to ignore, default to the value of
-      `logilab.common.STD_BLACKLIST`
+    :param blacklist: iterable
+      list of files or directories to ignore.
+
+    :type list_all: bool
+    :param list_all:
+        get files from all paths, including ones without __init__.py
 
     :rtype: list
     :return:
@@ -415,7 +426,7 @@ def get_module_files(src_directory, blacklist):
     for directory, dirnames, filenames in os.walk(src_directory):
         _handle_blacklist(blacklist, dirnames, filenames)
         # check for __init__.py
-        if not '__init__.py' in filenames:
+        if not list_all and not '__init__.py' in filenames:
             dirnames[:] = ()
             continue
         for filename in filenames:

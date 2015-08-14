@@ -33,6 +33,7 @@ from astroid import manager
 from astroid import modutils
 from astroid import raw_building
 from astroid import rebuilder
+from astroid import util
 
 
 def _parse(string):
@@ -83,11 +84,19 @@ MANAGER = manager.AstroidManager()
 
 
 class AstroidBuilder(raw_building.InspectBuilder):
-    """Class for building an astroid tree from source code or from a live module."""
+    """Class for building an astroid tree from source code or from a live module.
 
-    def __init__(self, manager=None):
+    The param *manager* specifies the manager class which should be used.
+    If no manager is given, then the default one will be used. The
+    param *apply_transforms* determines if the transforms should be
+    applied after the tree was built from source or from a live object,
+    by default being True.
+    """
+
+    def __init__(self, manager=None, apply_transforms=True):
         super(AstroidBuilder, self).__init__()
         self._manager = manager or MANAGER
+        self._apply_transforms = apply_transforms
 
     def module_build(self, module, modname=None):
         """Build an astroid from a living module instance."""
@@ -101,12 +110,10 @@ class AstroidBuilder(raw_building.InspectBuilder):
             # this is a built-in module
             # get a partial representation by introspection
             node = self.inspect_build(module, modname=modname, path=path)
-            # we have to handle transformation by ourselves since the rebuilder
-            # isn't called for builtin nodes
-            #
-            # XXX it's then only called for Module nodes, not for underlying
-            # nodes
-            node = self._manager.transform(node)
+            if self._apply_transforms:
+                # We have to handle transformation by ourselves since the
+                # rebuilder isn't called for builtin nodes
+                node = self._manager.visit_transforms(node)
         return node
 
     def file_build(self, path, modname=None):
@@ -153,6 +160,10 @@ class AstroidBuilder(raw_building.InspectBuilder):
         # handle delayed assattr nodes
         for delayed in module._delayed_assattr:
             self.delayed_assattr(delayed)
+
+        # Visit the transforms
+        if self._apply_transforms:
+            module = self._manager.visit_transforms(module)
         return module
 
     def _data_build(self, data, modname, path):
@@ -206,7 +217,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         try:
             frame = node.frame()
             for inferred in node.expr.infer():
-                if inferred is bases.YES:
+                if inferred is util.YES:
                     continue
                 try:
                     if inferred.__class__ is bases.Instance:
@@ -236,13 +247,17 @@ class AstroidBuilder(raw_building.InspectBuilder):
             pass
 
 
-def parse(code, module_name='', path=None):
+def parse(code, module_name='', path=None, apply_transforms=True):
     """Parses a source string in order to obtain an astroid AST from it
 
     :param str code: The code for the module.
     :param str module_name: The name for the module, if any
     :param str path: The path for the module
+    :param bool apply_transforms:
+        Apply the transforms for the give code. Use it if you
+        don't want the default transforms to be applied.
     """
     code = textwrap.dedent(code)
-    return AstroidBuilder(MANAGER).string_build(
-        code, modname=module_name, path=path)
+    builder = AstroidBuilder(manager=MANAGER,
+                             apply_transforms=apply_transforms)
+    return builder.string_build(code, modname=module_name, path=path)

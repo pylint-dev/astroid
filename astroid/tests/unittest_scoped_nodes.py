@@ -24,7 +24,10 @@ from functools import partial
 import unittest
 import warnings
 
-from astroid import YES, builder, nodes, scoped_nodes
+from astroid import builder
+from astroid import nodes
+from astroid import scoped_nodes
+from astroid import util
 from astroid.exceptions import (
     InferenceError, NotFoundError,
     NoDefault, ResolveError, MroError,
@@ -86,9 +89,9 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         red = next(self.module.igetattr('redirect'))
         self.assertIsInstance(red, nodes.FunctionDef)
         self.assertEqual(red.name, 'four_args')
-        pb = next(self.module.igetattr('pb'))
-        self.assertIsInstance(pb, nodes.ClassDef)
-        self.assertEqual(pb.name, 'ProgressBar')
+        namenode = next(self.module.igetattr('NameNode'))
+        self.assertIsInstance(namenode, nodes.Class)
+        self.assertEqual(namenode.name, 'Name')
         # resolve packageredirection
         mod = resources.build_file('data/appl/myConnection.py',
                                    'data.appl.myConnection')
@@ -1088,7 +1091,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         instance = astroid['tgts']
         # used to raise "'_Yes' object is not iterable", see
         # https://bitbucket.org/logilab/astroid/issue/17
-        self.assertEqual(list(instance.infer()), [YES])
+        self.assertEqual(list(instance.infer()), [util.YES])
 
     def test_slots(self):
         astroid = builder.parse("""
@@ -1324,6 +1327,87 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         type_cls = scoped_nodes.builtin_lookup("type")[1][0]
         self.assertEqual(cls.implicit_metaclass(), type_cls)
 
+    def test_implicit_metaclass_lookup(self):
+        cls = test_utils.extract_node('''
+        class A(object):
+            pass
+        ''')
+        instance = cls.instanciate_class()
+        func = cls.getattr('mro')
+        self.assertEqual(len(func), 1)
+        self.assertRaises(NotFoundError, instance.getattr, 'mro')
+
+    def test_metaclass_lookup_using_same_class(self):
+        # Check that we don't have recursive attribute access for metaclass
+        cls = test_utils.extract_node('''
+        class A(object): pass            
+        ''')
+        self.assertEqual(len(cls.getattr('mro')), 1)
+
+    def test_metaclass_lookup_inferrence_errors(self):
+        module = builder.parse('''
+        import six
+
+        class Metaclass(type):
+            foo = lala
+
+        @six.add_metaclass(Metaclass)
+        class B(object): pass 
+        ''')
+        cls = module['B']
+        self.assertEqual(util.YES, next(cls.igetattr('foo')))
+
+    def test_metaclass_lookup(self):
+        module = builder.parse('''
+        import six
+         
+        class Metaclass(type):
+            foo = 42
+            @classmethod
+            def class_method(cls):
+                pass
+            def normal_method(cls):
+                pass
+            @property
+            def meta_property(cls):
+                return 42
+            @staticmethod
+            def static():
+                pass
+
+        @six.add_metaclass(Metaclass)
+        class A(object):
+            pass
+        ''')
+        acls = module['A']
+        normal_attr = next(acls.igetattr('foo'))
+        self.assertIsInstance(normal_attr, nodes.Const)
+        self.assertEqual(normal_attr.value, 42)
+
+        class_method = next(acls.igetattr('class_method'))
+        self.assertIsInstance(class_method, BoundMethod)
+        self.assertEqual(class_method.bound, module['Metaclass'])
+
+        normal_method = next(acls.igetattr('normal_method'))
+        self.assertIsInstance(normal_method, BoundMethod)
+        self.assertEqual(normal_method.bound, module['A'])
+
+        # Attribute access for properties:
+        #   from the metaclass is a property object
+        #   from the class that uses the metaclass, the value
+        #   of the property
+        property_meta = next(module['Metaclass'].igetattr('meta_property'))
+        self.assertIsInstance(property_meta, UnboundMethod)
+        wrapping = scoped_nodes.get_wrapping_class(property_meta)
+        self.assertEqual(wrapping, module['Metaclass'])
+
+        property_class = next(acls.igetattr('meta_property'))
+        self.assertIsInstance(property_class, nodes.Const)
+        self.assertEqual(property_class.value, 42)
+
+        static = next(acls.igetattr('static'))
+        self.assertIsInstance(static, scoped_nodes.Function)
+
     @test_utils.require_version(maxver='3.0')
     def test_implicit_metaclass_is_none(self):
         cls = test_utils.extract_node("""
@@ -1396,6 +1480,59 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(lam, BoundMethod)
         not_method = next(instance.igetattr('not_method'))
         self.assertIsInstance(not_method, scoped_nodes.Lambda)
+
+    def test_class_extra_decorators_frame_is_not_class(self):
+        ast_node = test_utils.extract_node('''
+        def ala():
+            def bala(): #@
+                func = 42
+        ''')
+        self.assertEqual(ast_node.extra_decorators, [])
+
+    def test_class_extra_decorators_only_callfunc_are_considered(self):
+        ast_node = test_utils.extract_node('''
+        class Ala(object):
+             def func(self): #@
+                 pass
+             func = 42
+        ''')
+        self.assertEqual(ast_node.extra_decorators, [])
+
+    def test_class_extra_decorators_only_assignment_names_are_considered(self):
+        ast_node = test_utils.extract_node('''
+        class Ala(object):
+             def func(self): #@
+                 pass
+             def __init__(self):
+                 self.func = staticmethod(func)
+
+        ''')
+        self.assertEqual(ast_node.extra_decorators, [])
+
+    def test_class_extra_decorators_only_same_name_considered(self):
+        ast_node = test_utils.extract_node('''
+        class Ala(object):
+             def func(self): #@
+                pass
+             bala = staticmethod(func)
+        ''')
+        self.assertEqual(ast_node.extra_decorators, [])
+        self.assertEqual(ast_node.type, 'method')
+
+    def test_class_extra_decorators(self):
+        static_method, clsmethod = test_utils.extract_node('''
+        class Ala(object):
+             def static(self): #@
+                 pass
+             def class_method(self): #@
+                 pass
+             class_method = classmethod(class_method)
+             static = staticmethod(static)              
+        ''')
+        self.assertEqual(len(clsmethod.extra_decorators), 1)
+        self.assertEqual(clsmethod.type, 'classmethod')
+        self.assertEqual(len(static_method.extra_decorators), 1)
+        self.assertEqual(static_method.type, 'staticmethod')
 
 
 if __name__ == '__main__':

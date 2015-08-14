@@ -26,9 +26,11 @@ import six
 
 from astroid import bases
 from astroid import builder
+from astroid import context as contextmod
 from astroid import exceptions
 from astroid import node_classes
 from astroid import nodes
+from astroid import util
 from astroid import test_utils
 from astroid.tests import resources
 
@@ -80,7 +82,6 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
     def test_module2_as_string(self):
         """check as_string on a whole module prepared to be returned identically
         """
-        self.maxDiff = None
         module2 = resources.build_file('data/module2.py', 'data.module2')
         with open(resources.find('data/module2.py'), 'r') as fobj:
             self.assertMultiLineEqual(module2.as_string(), fobj.read())
@@ -302,14 +303,11 @@ class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(myos.pytype(), '%s.module' % BUILTINS)
 
     def test_from_self_resolve(self):
-        pb = next(self.module.igetattr('pb'))
-        self.assertTrue(isinstance(pb, nodes.ClassDef), pb)
-        self.assertEqual(pb.root().name, 'logilab.common.shellutils')
-        self.assertEqual(pb.qname(), 'logilab.common.shellutils.ProgressBar')
-        if pb.newstyle:
-            self.assertEqual(pb.pytype(), '%s.type' % BUILTINS)
-        else:
-            self.assertEqual(pb.pytype(), '%s.classobj' % BUILTINS)
+        namenode = next(self.module.igetattr('NameNode'))
+        self.assertTrue(isinstance(namenode, nodes.ClassDef), namenode)
+        self.assertEqual(namenode.root().name, 'astroid.node_classes')
+        self.assertEqual(namenode.qname(), 'astroid.node_classes.Name')
+        self.assertEqual(namenode.pytype(), '%s.type' % BUILTINS)
         abspath = next(self.module2.igetattr('abspath'))
         self.assertTrue(isinstance(abspath, nodes.FunctionDef), abspath)
         self.assertEqual(abspath.root().name, 'os.path')
@@ -373,11 +371,11 @@ from ..cave import wine\n\n"""
         # present in the other version.
         self.assertIsInstance(excs[0], nodes.ClassDef)
         self.assertEqual(excs[0].name, 'PickleError')
-        self.assertIs(excs[-1], bases.YES)
+        self.assertIs(excs[-1], util.YES)
 
     def test_absolute_import(self):
         astroid = resources.build_file('data/absimport.py')
-        ctx = bases.InferenceContext()
+        ctx = contextmod.InferenceContext()
         # will fail if absolute import failed
         ctx.lookupname = 'message'
         next(astroid['message'].infer(ctx))

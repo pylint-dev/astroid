@@ -23,10 +23,12 @@ Various helper utilities.
 import six
 
 from astroid import bases
+from astroid import context as contextmod
 from astroid import exceptions
 from astroid import manager
 from astroid import raw_building
 from astroid import scoped_nodes
+from astroid import util
 
 
 BUILTINS = six.moves.builtins.__name__
@@ -60,7 +62,7 @@ def _function_type(function, builtins):
 def _object_type(node, context=None):
     astroid_manager = manager.AstroidManager()
     builtins = astroid_manager.astroid_cache[BUILTINS]
-    context = context or bases.InferenceContext()
+    context = context or contextmod.InferenceContext()
 
     for inferred in node.infer(context=context):
         if isinstance(inferred, scoped_nodes.ClassDef):
@@ -89,9 +91,9 @@ def object_type(node, context=None):
     try:
         types = set(_object_type(node, context))
     except exceptions.InferenceError:
-        return bases.YES
-    if len(types) > 1:
-        return bases.YES
+        return util.YES
+    if len(types) > 1 or not types:
+        return util.YES
     return list(types)[0]
 
 
@@ -124,7 +126,7 @@ def has_known_bases(klass, context=None):
     for base in klass.bases:
         result = safe_infer(base, context=context)
         # TODO: check for A->B->A->B pattern in class structure too?
-        if (not isinstance(result, scoped_nodes.ClassDef) or
+        if (not isinstance(result, scoped_nodes.Class) or
                 result is klass or
                 not has_known_bases(result, context=context)):
             klass._all_bases_known = False
@@ -135,7 +137,7 @@ def has_known_bases(klass, context=None):
 
 def _type_check(type1, type2):
     if not all(map(has_known_bases, (type1, type2))):
-        return bases.YES
+        return util.YES
 
     if not all([type1.newstyle, type2.newstyle]):
         return False
@@ -143,7 +145,7 @@ def _type_check(type1, type2):
         return type1 in type2.mro()[:-1]
     except exceptions.MroError:
         # The MRO is invalid.
-        return bases.YES
+        return util.YES
 
 
 def is_subtype(type1, type2):

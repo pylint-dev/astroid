@@ -1,15 +1,18 @@
 """Astroid hooks for various builtins."""
+
 from functools import partial
 import sys
 from textwrap import dedent
 
 import six
 from astroid import (MANAGER, UseInferenceDefault, NotFoundError,
-                     inference_tip, YES, InferenceError, UnresolvableName)
+                     inference_tip, InferenceError, UnresolvableName)
 from astroid.builder import AstroidBuilder
 from astroid import helpers
 from astroid import nodes
 from astroid import objects
+from astroid import scoped_nodes
+from astroid import util
 
 def _extend_str(class_node, rvalue):
     """function to extend builtin str/unicode class"""
@@ -116,10 +119,10 @@ def _generic_inference(node, context, node_type, transform):
             inferred = next(arg.infer(context=context))
         except (InferenceError, StopIteration):
             raise UseInferenceDefault()
-        if inferred is YES:
+        if infered is util.YES:
             raise UseInferenceDefault()
         transformed = transform(inferred)
-    if not transformed or transformed is YES:
+    if not transformed or transformed is util.YES:
         raise UseInferenceDefault()
     return transformed
 
@@ -226,19 +229,16 @@ def infer_dict(node, context=None):
 
     If a case can't be inferred, we'll fallback to default inference.
     """
-    has_keywords = lambda args: all(isinstance(arg, nodes.Keyword)
-                                    for arg in args)
-    if not node.args and not node.kwargs:
+    if not node.args and not node.kwargs and not node.keywords:
         # dict()
         return nodes.Dict()
-    elif has_keywords(node.args) and node.args:
+    elif node.keywords and not node.args:
         # dict(a=1, b=2, c=4)
-        items = [(nodes.Const(arg.arg), arg.value) for arg in node.args]
-    elif (len(node.args) >= 2 and
-          has_keywords(node.args[1:])):
+        items = [(nodes.Const(arg.arg), arg.value) for arg in node.keywords]
+    elif len(node.args) == 1 and node.keywords:
         # dict(some_iterable, b=2, c=4)
         elts = _get_elts(node.args[0], context)
-        keys = [(nodes.Const(arg.arg), arg.value) for arg in node.args[1:]]
+        keys = [(nodes.Const(arg.arg), arg.value) for arg in node.keywords]
         items = elts + keys
     elif len(node.args) == 1:
         items = _get_elts(node.args[0], context)
@@ -248,16 +248,6 @@ def infer_dict(node, context=None):
     empty = nodes.Dict()
     empty.items = items
     return empty
-
-
-def _node_class(node):
-    klass = node.frame()
-    while klass is not None and not isinstance(klass, nodes.ClassDef):
-        if klass.parent is None:
-            klass = None
-        else:
-            klass = klass.parent.frame()
-    return klass
 
 
 def infer_super(node, context=None):
@@ -285,7 +275,7 @@ def infer_super(node, context=None):
         # Not interested in staticmethods.
         raise UseInferenceDefault
 
-    cls = _node_class(scope)
+    cls = scoped_nodes.get_wrapping_class(scope)
     if not len(node.args):
         mro_pointer = cls
         # In we are in a classmethod, the interpreter will fill
@@ -305,7 +295,7 @@ def infer_super(node, context=None):
         except InferenceError:
             raise UseInferenceDefault
 
-    if mro_pointer is YES or mro_type is YES:
+    if mro_pointer is util.YES or mro_type is util.YES:
         # No way we could understand this.
         raise UseInferenceDefault
 
@@ -329,11 +319,11 @@ def _infer_getattr_args(node, context):
     except InferenceError:
         raise UseInferenceDefault
 
-    if obj is YES or attr is YES:
+    if obj is util.YES or attr is util.YES:
         # If one of the arguments is something we can't infer,
         # then also make the result of the getattr call something
         # which is unknown.
-        return YES, YES
+        return util.YES, util.YES
 
     is_string = (isinstance(attr, nodes.Const) and
                  isinstance(attr.value, six.string_types))
@@ -351,8 +341,8 @@ def infer_getattr(node, context=None):
     lookup will be done.
     """
     obj, attr = _infer_getattr_args(node, context)
-    if obj is YES or attr is YES:
-        return YES
+    if obj is util.YES or attr is util.YES:
+        return util.YES
 
     try:
         return next(obj.igetattr(attr, context=context))
@@ -378,12 +368,12 @@ def infer_hasattr(node, context=None):
     """
     try:
         obj, attr = _infer_getattr_args(node, context)
-        if obj is YES or attr is YES:
-            return YES
+        if obj is util.YES or attr is util.YES:
+            return util.YES
         obj.getattr(attr, context=context)
     except UseInferenceDefault:
         # Can't infer something from this function call.
-        return YES
+        return util.YES
     except NotFoundError:
         # Doesn't have it.
         return nodes.Const(False)
@@ -406,9 +396,9 @@ def infer_callable(node, context=None):
     try:
         inferred = next(argument.infer(context=context))
     except InferenceError:
-        return YES
-    if inferred is YES:
-        return YES
+        return util.YES
+    if inferred is util.YES:
+        return util.YES
     return nodes.Const(inferred.callable())
 
 
@@ -425,13 +415,13 @@ def infer_bool(node, context=None):
     try:
         inferred = next(argument.infer(context=context))
     except InferenceError:
-        return YES
-    if inferred is YES:
-        return YES
+        return util.YES
+    if inferred is util.YES:
+        return util.YES
 
     bool_value = inferred.bool_value()
-    if bool_value is YES:
-        return YES
+    if bool_value is util.YES:
+        return util.YES
     return nodes.Const(bool_value)
 
 

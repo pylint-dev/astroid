@@ -26,24 +26,21 @@ leads to an inferred FrozenSet:
 
 """
 
-from logilab.common.decorators import cachedproperty
 import six
 
+from astroid import bases
+from astroid import decorators
+from astroid import exceptions
 from astroid import MANAGER
-from astroid.bases import (
-    BUILTINS, NodeNG, Instance, _infer_stmts,
-    BoundMethod,
-)
-from astroid.exceptions import (
-    SuperError, SuperArgumentTypeError,
-    NotFoundError, MroError
-)
-from astroid.node_classes import const_factory
-from astroid.scoped_nodes import ClassDef, FunctionDef
-from astroid.mixins import ParentAssignTypeMixin
+from astroid import mixins
+from astroid import node_classes
+from astroid import scoped_nodes
 
 
-class FrozenSet(NodeNG, Instance, ParentAssignTypeMixin):
+BUILTINS = six.moves.builtins.__name__
+
+
+class FrozenSet(bases.NodeNG, bases.Instance, mixins.ParentAssignTypeMixin):
     """class representing a FrozenSet composite node"""
     _astroid_fields = ('elts',)
 
@@ -63,7 +60,7 @@ class FrozenSet(NodeNG, Instance, ParentAssignTypeMixin):
         if elts is None:
             self.elts = []
         else:
-            self.elts = [const_factory(e) for e in elts]
+            self.elts = [node_classes.const_factory(e) for e in elts]
 
     def pytype(self):
         return '%s.frozenset' % BUILTINS
@@ -74,7 +71,7 @@ class FrozenSet(NodeNG, Instance, ParentAssignTypeMixin):
     def _infer(self, context=None):
         yield self
 
-    @cachedproperty
+    @decorators.cachedproperty
     def _proxied(self):
         builtins = MANAGER.astroid_cache[BUILTINS]
         return builtins.getattr('frozenset')[0]
@@ -83,7 +80,7 @@ class FrozenSet(NodeNG, Instance, ParentAssignTypeMixin):
         return bool(self.elts)
 
 
-class Super(NodeNG):
+class Super(bases.NodeNG):
     """Proxy class over a super call.
 
     This class offers almost the same behaviour as Python's super,
@@ -114,31 +111,34 @@ class Super(NodeNG):
 
     def super_mro(self):
         """Get the MRO which will be used to lookup attributes in this super."""
-        if not isinstance(self.mro_pointer, ClassDef):
-            raise SuperArgumentTypeError("The first super argument must be type.")
+        if not isinstance(self.mro_pointer, scoped_nodes.ClassDef):
+            raise exceptions.SuperArgumentTypeError(
+                "The first super argument must be type.")
 
-        if isinstance(self.type, ClassDef):
+            if isinstance(self.type, scoped_nodes.ClassDef):
             # `super(type, type)`, most likely in a class method.
             self._class_based = True
             mro_type = self.type
         else:
             mro_type = getattr(self.type, '_proxied', None)
-            if not isinstance(mro_type, (Instance, ClassDef)):
-                raise SuperArgumentTypeError("super(type, obj): obj must be an "
-                                             "instance or subtype of type")
+            if not isinstance(mro_type, (bases.Instance, scoped_nodes.ClassDef)):
+                raise exceptions.SuperArgumentTypeError(
+                    "super(type, obj): obj must be an "
+                    "instance or subtype of type")
 
         if not mro_type.newstyle:
-            raise SuperError("Unable to call super on old-style classes.")
+            raise exceptions.SuperError("Unable to call super on old-style classes.")
 
         mro = mro_type.mro()
         if self.mro_pointer not in mro:
-            raise SuperArgumentTypeError("super(type, obj): obj must be an "
-                                         "instance or subtype of type")
+            raise exceptions.SuperArgumentTypeError(
+                "super(type, obj): obj must be an "
+                "instance or subtype of type")
 
         index = mro.index(self.mro_pointer)
         return mro[index + 1:]
 
-    @cachedproperty
+    @decorators.cachedproperty
     def _proxied(self):
         builtins = MANAGER.astroid_cache[BUILTINS]
         return builtins.getattr('super')[0]
@@ -164,10 +164,10 @@ class Super(NodeNG):
 
         try:
             mro = self.super_mro()
-        except (MroError, SuperError) as exc:
+        except (exceptions.MroError, exceptions.SuperError) as exc:
             # Don't let invalid MROs or invalid super calls
             # to leak out as is from this function.
-            six.raise_from(NotFoundError, exc)
+            six.raise_from(exceptions.NotFoundError, exc)
 
         found = False
         for cls in mro:
@@ -175,24 +175,24 @@ class Super(NodeNG):
                 continue
 
             found = True
-            for inferred in _infer_stmts([cls[name]], context, frame=self):
-                if not isinstance(inferred, FunctionDef):
+            for inferred in bases._infer_stmts([cls[name]], context, frame=self):
+                if not isinstance(inferred, scoped_nodes.FunctionDef):
                     yield inferred
                     continue
 
                 # We can obtain different descriptors from a super depending
                 # on what we are accessing and where the super call is.
                 if inferred.type == 'classmethod':
-                    yield BoundMethod(inferred, cls)
+                    yield bases.BoundMethod(inferred, cls)
                 elif self._scope.type == 'classmethod' and inferred.type == 'method':
                     yield inferred
                 elif self._class_based or inferred.type == 'staticmethod':
                     yield inferred
                 else:
-                    yield BoundMethod(inferred, cls)
+                    yield bases.BoundMethod(inferred, cls)
 
         if not found:
-            raise NotFoundError(name)
+            raise exceptions.NotFoundError(name)
 
     def getattr(self, name, context=None):
         return list(self.igetattr(name, context=context))

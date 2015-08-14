@@ -2,6 +2,9 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * The logilab-common dependency is not needed anymore as the needed code
+      was integrated into astroid.
+
     * Generated enum member stubs now support IntEnum and multiple
       base classes.
 
@@ -234,7 +237,46 @@ Change log for the astroid package (used to be astng)
       in a non-package will finally result in an import-error on Pylint's side.
       Until now relative_only was ignored, leading to the import of `something`,
       if it was globally available.
-     
+
+    * Add get_wrapping_class API to scoped_nodes, which can be used to
+      retrieve the class that wraps a node.
+
+    * Class.getattr looks by default in the implicit and the explicit metaclasses,
+      which is `type` on Python 3.
+
+      Closes issue #114.
+
+    * There's a new separate step for transforms.
+
+      Until now, the transforms were applied at the same time the tree was
+      being built. This was problematic if the transform functions were
+      using inference, since the inference was executed on a partially
+      constructed tree, which led to failures when post-building
+      information was needed (such as setting the _from_names
+      for the From imports).
+      Now there's a separate step for transforms, which are applied
+      using transform.TransformVisitor.
+      There's a couple of other related changes:
+
+          * astroid.parse and AstroidBuilder gained a new parameter
+            `apply_transforms`, which is a boolean flag, which will
+            control if the transforms are applied. We do this because
+            there are uses when the vanilla tree is wanted, without
+            any implicit modification.
+
+          * the transforms are also applied for builtin modules,
+            as a side effect of the fact that transform visiting
+            was moved in AstroidBuilder._post_build from
+            AstroidBuilder._data_build.
+
+      Closes issue #116.
+    
+    * Class._explicit_metaclass is now a public API, in the form of
+      Class.declared_metaclass.
+
+      Class.mro remains the de facto method for retrieving the metaclass
+      of a class, which will also do an evaluation of what declared_metaclass
+      returns.
 
 
 2015-03-14 -- 1.3.6

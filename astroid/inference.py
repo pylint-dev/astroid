@@ -22,111 +22,17 @@ import functools
 import itertools
 import operator
 
+from astroid import bases
+from astroid import context as contextmod
+from astroid import exceptions
 from astroid import helpers
+from astroid import manager
 from astroid import nodes
 from astroid import protocols
-from astroid.manager import AstroidManager
-from astroid.exceptions import (
-    AstroidError, InferenceError, NoDefault,
-    NotFoundError, UnresolvableName,
-    UnaryOperationError,
-    BinaryOperationError,
-)
-from astroid.bases import (YES, Instance, InferenceContext, BoundMethod,
-                           _infer_stmts, copy_context, path_wrapper,
-                           raise_if_nothing_inferred, yes_if_nothing_inferred)
-
-MANAGER = AstroidManager()
+from astroid import util
 
 
-class CallContext(object):
-    """when inferring a function call, this class is used to remember values
-    given as argument
-    """
-    def __init__(self, args, starargs, dstarargs):
-        self.args = []
-        self.nargs = {}
-        for arg in args:
-            if isinstance(arg, nodes.Keyword):
-                self.nargs[arg.arg] = arg.value
-            else:
-                self.args.append(arg)
-        self.starargs = starargs
-        self.dstarargs = dstarargs
-
-    def infer_argument(self, funcnode, name, context):
-        """infer a function argument value according to the call context"""
-        # 1. search in named keywords
-        try:
-            return self.nargs[name].infer(context)
-        except KeyError:
-            # Function.args.args can be None in astroid (means that we don't have
-            # information on argnames)
-            argindex = funcnode.args.find_argname(name)[0]
-            if argindex is not None:
-                # 2. first argument of instance/class method
-                if argindex == 0 and funcnode.type in ('method', 'classmethod'):
-                    if context.boundnode is not None:
-                        boundnode = context.boundnode
-                    else:
-                        # XXX can do better ?
-                        boundnode = funcnode.parent.frame()
-                    if funcnode.type == 'method':
-                        if not isinstance(boundnode, Instance):
-                            boundnode = Instance(boundnode)
-                        return iter((boundnode,))
-                    if funcnode.type == 'classmethod':
-                        return iter((boundnode,))
-                # if we have a method, extract one position
-                # from the index, so we'll take in account
-                # the extra parameter represented by `self` or `cls`
-                if funcnode.type in ('method', 'classmethod'):
-                    argindex -= 1
-                # 2. search arg index
-                try:
-                    return self.args[argindex].infer(context)
-                except IndexError:
-                    pass
-                # 3. search in *args (.starargs)
-                if self.starargs is not None:
-                    its = []
-                    for inferred in self.starargs.infer(context):
-                        if inferred is YES:
-                            its.append((YES,))
-                            continue
-                        try:
-                            its.append(inferred.getitem(argindex, context).infer(context))
-                        except (InferenceError, AttributeError):
-                            its.append((YES,))
-                        except (IndexError, TypeError):
-                            continue
-                    if its:
-                        return itertools.chain(*its)
-        # 4. XXX search in **kwargs (.dstarargs)
-        if self.dstarargs is not None:
-            its = []
-            for inferred in self.dstarargs.infer(context):
-                if inferred is YES:
-                    its.append((YES,))
-                    continue
-                try:
-                    its.append(inferred.getitem(name, context).infer(context))
-                except (InferenceError, AttributeError):
-                    its.append((YES,))
-                except (IndexError, TypeError):
-                    continue
-            if its:
-                return itertools.chain(*its)
-        # 5. */** argument, (Tuple or Dict)
-        if name == funcnode.args.vararg:
-            return iter((nodes.const_factory(())))
-        if name == funcnode.args.kwarg:
-            return iter((nodes.const_factory({})))
-        # 6. return default value if any
-        try:
-            return funcnode.args.default_value(name).infer(context)
-        except NoDefault:
-            raise InferenceError(name)
+MANAGER = manager.AstroidManager()
 
 
 # .infer method ###############################################################
@@ -176,72 +82,82 @@ def infer_name(self, context=None):
             _, stmts = parent_function.lookup(self.name)
 
         if not stmts:
-            raise UnresolvableName(self.name)
+            raise exceptions.UnresolvableName(self.name)
     context = context.clone()
     context.lookupname = self.name
-    return _infer_stmts(stmts, context, frame)
-nodes.Name._infer = path_wrapper(infer_name)
+    return bases._infer_stmts(stmts, context, frame)
+nodes.Name._infer = bases.path_wrapper(infer_name)
 nodes.AssignName.infer_lhs = infer_name # won't work with a path wrapper
 
 
+@bases.raise_if_nothing_infered
+@bases.path_wrapper
 def infer_callfunc(self, context=None):
     """infer a CallFunc node by trying to guess what the function returns"""
     callcontext = context.clone()
-    callcontext.callcontext = CallContext(self.args, self.starargs, self.kwargs)
+    callcontext.callcontext = contextmod.CallContext(args=self.args,
+                                                     keywords=self.keywords,
+                                                     starargs=self.starargs,
+                                                     kwargs=self.kwargs)
     callcontext.boundnode = None
     for callee in self.func.infer(context):
-        if callee is YES:
+        if callee is util.YES:
             yield callee
             continue
         try:
             if hasattr(callee, 'infer_call_result'):
                 for inferred in callee.infer_call_result(self, callcontext):
                     yield inferred
-        except InferenceError:
+        except exceptions.InferenceError:
             ## XXX log error ?
             continue
-nodes.Call._infer = path_wrapper(raise_if_nothing_inferred(infer_callfunc))
+nodes.Call._infer = infer_callfunc
 
 
+@bases.path_wrapper
 def infer_import(self, context=None, asname=True):
     """infer an Import node: return the imported module/object"""
     name = context.lookupname
     if name is None:
-        raise InferenceError()
+        raise exceptions.InferenceError()
     if asname:
         yield self.do_import_module(self.real_name(name))
     else:
         yield self.do_import_module(name)
-nodes.Import._infer = path_wrapper(infer_import)
+nodes.Import._infer = infer_import
+
 
 def infer_name_module(self, name):
-    context = InferenceContext()
+    context = contextmod.InferenceContext()
     context.lookupname = name
     return self.infer(context, asname=False)
 nodes.Import.infer_name_module = infer_name_module
 
 
+@bases.path_wrapper
 def infer_from(self, context=None, asname=True):
     """infer a From nodes: return the imported module/object"""
     name = context.lookupname
     if name is None:
-        raise InferenceError()
+        raise exceptions.InferenceError()
     if asname:
         name = self.real_name(name)
     module = self.do_import_module()
     try:
-        context = copy_context(context)
+        context = contextmod.copy_context(context)
         context.lookupname = name
-        return _infer_stmts(module.getattr(name, ignore_locals=module is self.root()), context)
-    except NotFoundError:
-        raise InferenceError(name)
-nodes.ImportFrom._infer = path_wrapper(infer_from)
+        stmts = module.getattr(name, ignore_locals=module is self.root())
+        return bases._infer_stmts(stmts, context)
+    except exceptions.NotFoundError:
+        raise exceptions.InferenceError(name)
+nodes.ImportFrom._infer = infer_from
 
 
+@bases.raise_if_nothing_infered
 def infer_getattr(self, context=None):
     """infer a Getattr node by using getattr on the associated object"""
     for owner in self.expr.infer(context):
-        if owner is YES:
+        if owner is util.YES:
             yield owner
             continue
         try:
@@ -249,61 +165,63 @@ def infer_getattr(self, context=None):
             for obj in owner.igetattr(self.attrname, context):
                 yield obj
             context.boundnode = None
-        except (NotFoundError, InferenceError):
+        except (exceptions.NotFoundError, exceptions.InferenceError):
             context.boundnode = None
         except AttributeError:
             # XXX method / function
             context.boundnode = None
-nodes.Attribute._infer = path_wrapper(raise_if_nothing_inferred(infer_getattr))
-nodes.AssignAttr.infer_lhs = raise_if_nothing_inferred(infer_getattr) # # won't work with a path wrapper
+nodes.Attribute._infer = bases.path_wrapper(infer_getattr)
+nodes.AssignAttr.infer_lhs = infer_getattr # # won't work with a path wrapper
 
 
+@bases.path_wrapper
 def infer_global(self, context=None):
     if context.lookupname is None:
-        raise InferenceError()
+        raise exceptions.InferenceError()
     try:
-        return _infer_stmts(self.root().getattr(context.lookupname), context)
-    except NotFoundError:
-        raise InferenceError()
-nodes.Global._infer = path_wrapper(infer_global)
+        return bases._infer_stmts(self.root().getattr(context.lookupname),
+                                  context)
+    except exceptions.NotFoundError:
+        raise exceptions.InferenceError()
+nodes.Global._infer = infer_global
 
 
 def infer_subscript(self, context=None):
     """infer simple subscription such as [1,2,3][0] or (1,2,3)[-1]"""
     value = next(self.value.infer(context))
-    if value is YES:
-        yield YES
+    if value is util.YES:
+        yield util.YES
         return
 
     index = next(self.slice.infer(context))
-    if index is YES:
-        yield YES
+    if index is util.YES:
+        yield util.YES
         return
 
     if isinstance(index, nodes.Const):
         try:
             assigned = value.getitem(index.value, context)
         except AttributeError:
-            raise InferenceError()
+            raise exceptions.InferenceError()
         except (IndexError, TypeError):
-            yield YES
+            yield util.YES
             return
 
         # Prevent inferring if the inferred subscript
         # is the same as the original subscripted object.
-        if self is assigned or assigned is YES:
-            yield YES
+        if self is assigned or assigned is util.YES:
+            yield util.YES
             return
         for inferred in assigned.infer(context):
             yield inferred
     else:
-        raise InferenceError()
-nodes.Subscript._infer = path_wrapper(infer_subscript)
-nodes.Subscript.infer_lhs = raise_if_nothing_inferred(infer_subscript)
+        raise exceptions.InferenceError()
+nodes.Subscript._infer = bases.path_wrapper(infer_subscript)
+nodes.Subscript.infer_lhs = bases.raise_if_nothing_infered(infer_subscript)
 
 
-@raise_if_nothing_inferred
-@path_wrapper
+@bases.raise_if_nothing_inferred
+@bases.path_wrapper
 def _infer_boolop(self, context=None):
     """Infer a boolean operation (and / or / not).
 
@@ -312,29 +230,28 @@ def _infer_boolop(self, context=None):
     node.
     """
     values = self.values
-    op = self.op
+    if self.op == 'or':
+        predicate = operator.truth
+    else:
+        predicate = operator.not_
+
     try:
         values = [value.infer(context=context) for value in values]
-    except InferenceError:
-        yield YES
+    except exceptions.InferenceError:
+        yield util.YES
         return
 
     for pair in itertools.product(*values):
-        if any(item is YES for item in pair):
+        if any(item is util.YES for item in pair):
             # Can't infer the final result, just yield YES.
-            yield YES
+            yield util.YES
             continue
 
         bool_values = [item.bool_value() for item in pair]
-        if any(item is YES for item in bool_values):
+        if any(item is util.YES for item in bool_values):
             # Can't infer the final result, just yield YES.
-            yield YES
+            yield util.YES
             continue
-
-        if op == 'or':
-            predicate = operator.truth
-        else:
-            predicate = operator.not_
 
         # Since the boolean operations are short circuited operations,
         # this code yields the first value for which the predicate is True
@@ -345,7 +262,7 @@ def _infer_boolop(self, context=None):
         #   0 and 1 -> 0
         #   1 or 0 -> 1
         #   0 or 1 -> 1
-        value = YES
+        value = util.YES
         for value, bool_value in zip(pair, bool_values):
             if predicate(bool_value):
                 yield value
@@ -364,7 +281,7 @@ def _filter_operation_errors(self, infer_callable, context, error):
             # For the sake of .infer(), we don't care about operation
             # errors, which is the job of pylint. So return something
             # which shows that we can't infer the result.
-            yield YES
+            yield util.YES
         else:
             yield result
 
@@ -376,7 +293,7 @@ def _infer_unaryop(self, context=None):
             yield operand.infer_unary_op(self.op)
         except TypeError as exc:
             # The operand doesn't support this operation.
-            yield UnaryOperationError(operand, self.op, exc)
+            yield exceptions.UnaryOperationError(operand, self.op, exc)
         except AttributeError as exc:
             meth = protocols.UNARY_OP_METHOD[self.op]
             if meth is None:
@@ -384,15 +301,15 @@ def _infer_unaryop(self, context=None):
                 # value and negate its result, unless it is
                 # YES, which will be returned as is.
                 bool_value = operand.bool_value()
-                if bool_value is not YES:
+                if bool_value is not util.YES:
                     yield nodes.const_factory(not bool_value)
                 else:
-                    yield YES
+                    yield util.YES
             else:
-                if not isinstance(operand, Instance):
+                if not isinstance(operand, bases.Instance):
                     # The operation was used on something which
                     # doesn't support it.
-                    yield UnaryOperationError(operand, self.op, exc)
+                    yield exceptions.UnaryOperationError(operand, self.op, exc)
                     continue
 
                 try:
@@ -405,21 +322,21 @@ def _infer_unaryop(self, context=None):
                         yield operand
                     else:
                         yield result
-                except NotFoundError as exc:
+                except exceptions.NotFoundError as exc:
                     # The unary operation special method was not found.
-                    yield UnaryOperationError(operand, self.op, exc)
-                except InferenceError:
-                    yield YES
+                    yield exceptions.UnaryOperationError(operand, self.op, exc)
+                except exceptions.InferenceError:
+                    yield util.YES
 
 
-@path_wrapper
+@bases.path_wrapper
 def infer_unaryop(self, context=None):
     """Infer what an UnaryOp should return when evaluated."""
-    return _filter_operation_errors(self, _infer_unaryop,
-                                    context, UnaryOperationError)
+    return _filter_operation_errors(self, _infer_unaryop, context,
+                                    exceptions.UnaryOperationError)
 
 nodes.UnaryOp._infer_unaryop = _infer_unaryop
-nodes.UnaryOp._infer = raise_if_nothing_inferred(infer_unaryop)
+nodes.UnaryOp._infer = bases.raise_if_nothing_inferred(infer_unaryop)
 
 
 def _is_not_implemented(const):
@@ -433,6 +350,7 @@ def  _invoke_binop_inference(instance, op, other, context, method_name):
     inferred = next(method.infer(context=context))
     return instance.infer_binary_op(op, other, context, inferred)
 
+
 def _aug_op(instance, op, other, context, reverse=False):
     """Get an inference callable for an augmented binary operation."""
     method_name = protocols.AUGMENTED_OP_METHOD[op]
@@ -441,6 +359,7 @@ def _aug_op(instance, op, other, context, reverse=False):
                              op=op, other=other,
                              context=context,
                              method_name=method_name)
+
 
 def _bin_op(instance, op, other, context, reverse=False):
     """Get an inference callable for a normal binary operation.
@@ -469,10 +388,10 @@ def _get_binop_contexts(context, left, right):
     # left.__op__(right).
     for arg in (right, left):
         new_context = context.clone()
-        new_context.callcontext = CallContext(
-            [arg], starargs=None, dstarargs=None)
+        new_context.callcontext = contextmod.CallContext(args=[arg])
         new_context.boundnode = None
         yield new_context
+
 
 def _same_type(type1, type2):
     """Check if type1 is the same as type2."""
@@ -560,26 +479,26 @@ def _infer_binary_operation(left, right, op, context, flow_factory):
             results = list(method())
         except AttributeError:
             continue
-        except NotFoundError:
+        except exceptions.NotFoundError:
             continue
-        except InferenceError:
-            yield YES
+        except exceptions.InferenceError:
+            yield util.YES
             return
         else:
-            if any(result is YES for result in results):
-                yield YES
+            if any(result is util.YES for result in results):
+                yield util.YES
                 return
 
             # TODO(cpopa): since the inferrence engine might return
             # more values than are actually possible, we decide
-            # to return YES if we have union types.
+            # to return util.YES if we have union types.
             if all(map(_is_not_implemented, results)):
                 continue
             not_implemented = sum(1 for result in results
                                   if _is_not_implemented(result))
             if not_implemented and not_implemented != len(results):
                 # Can't decide yet what this is, not yet though.
-                yield YES
+                yield util.YES
                 return
 
             for result in results:
@@ -587,21 +506,21 @@ def _infer_binary_operation(left, right, op, context, flow_factory):
             return
     # TODO(cpopa): yield a BinaryOperationError here,
     # since the operation is not supported
-    yield BinaryOperationError(left_type, op, right_type)
+    yield exceptions.BinaryOperationError(left_type, op, right_type)
 
 
 def _infer_binop(self, context):
     """Binary operation inferrence logic."""
     if context is None:
-        context = InferenceContext()
+        context = contextmod.InferenceContext()
     left = self.left
     right = self.right
     op = self.op
 
     for lhs in left.infer(context=context):
-        if lhs is YES:
+        if lhs is util.YES:
             # Don't know how to process this.
-            yield YES
+            yield util.YES
             return
 
         # TODO(cpopa): if we have A() * A(), trying to infer
@@ -611,9 +530,9 @@ def _infer_binop(self, context):
         rhs_context = context.clone()
         rhs_context.path = set()
         for rhs in right.infer(context=rhs_context):
-            if rhs is YES:
+            if rhs is util.YES:
                 # Don't know how to process this.
-                yield YES
+                yield util.YES
                 return
 
             results = _infer_binary_operation(lhs, rhs, op,
@@ -622,25 +541,25 @@ def _infer_binop(self, context):
                 yield result
 
 
-@path_wrapper
+@bases.path_wrapper
 def infer_binop(self, context=None):
-    return _filter_operation_errors(self, _infer_binop,
-                                    context, BinaryOperationError)
+    return _filter_operation_errors(self, _infer_binop, context,
+                                    exceptions.BinaryOperationError)
 
 nodes.BinOp._infer_binop = _infer_binop
-nodes.BinOp._infer = yes_if_nothing_inferred(infer_binop)
+nodes.BinOp._infer = bases.yes_if_nothing_inferred(infer_binop)
 
 
 def _infer_augassign(self, context=None):
     """Inferrence logic for augmented binary operations."""
     if context is None:
-        context = InferenceContext()
+        context = contextmod.InferenceContext()
     op = self.op
 
     for lhs in self.target.infer_lhs(context=context):
-        if lhs is YES:
+        if lhs is util.YES:
             # Don't know how to process this.
-            yield YES
+            yield util.YES
             return
 
         # TODO(cpopa): if we have A() * A(), trying to infer
@@ -650,9 +569,9 @@ def _infer_augassign(self, context=None):
         rhs_context = context.clone()
         rhs_context.path = set()
         for rhs in self.value.infer(context=rhs_context):
-            if rhs is YES:
+            if rhs is util.YES:
                 # Don't know how to process this.
-                yield YES
+                yield util.YES
                 return
 
             results = _infer_binary_operation(lhs, rhs, op,
@@ -661,10 +580,10 @@ def _infer_augassign(self, context=None):
                 yield result
 
 
-@path_wrapper
+@bases.path_wrapper
 def infer_augassign(self, context=None):
-    return _filter_operation_errors(self, _infer_augassign,
-                                    context, BinaryOperationError)
+    return _filter_operation_errors(self, _infer_augassign, context,
+                                    exceptions.BinaryOperationError)
 
 nodes.AugAssign._infer_augassign = _infer_augassign
 nodes.AugAssign._infer = infer_augassign
@@ -675,11 +594,12 @@ nodes.AugAssign._infer = infer_augassign
 def infer_arguments(self, context=None):
     name = context.lookupname
     if name is None:
-        raise InferenceError()
+        raise exceptions.InferenceError()
     return protocols._arguments_infer_argname(self, name, context)
 nodes.Arguments._infer = infer_arguments
 
 
+@bases.path_wrapper
 def infer_ass(self, context=None):
     """infer a AssName/AssAttr: need to inspect the RHS part of the
     assign node
@@ -688,25 +608,25 @@ def infer_ass(self, context=None):
     if isinstance(stmt, nodes.AugAssign):
         return stmt.infer(context)
     stmts = list(self.assigned_stmts(context=context))
-    return _infer_stmts(stmts, context)
-nodes.AssignName._infer = path_wrapper(infer_ass)
-nodes.AssignAttr._infer = path_wrapper(infer_ass)
+    return bases._infer_stmts(stmts, context)
+nodes.AssignName._infer = infer_ass
+nodes.AssignAttr._infer = infer_ass
 
 
 # no infer method on DelName and DelAttr (expected InferenceError)
 
-
+@bases.path_wrapper
 def infer_empty_node(self, context=None):
     if not self.has_underlying_object():
-        yield YES
+        yield util.YES
     else:
         try:
             for inferred in MANAGER.infer_ast_from_something(self.object,
-                                                             context=context):
+                                                            context=context):
                 yield inferred
-        except AstroidError:
-            yield YES
-nodes.EmptyNode._infer = path_wrapper(infer_empty_node)
+        except exceptions.AstroidError:
+            yield util.YES
+nodes.EmptyNode._infer = infer_empty_node
 
 
 def infer_index(self, context=None):
@@ -722,20 +642,19 @@ def instance_getitem(self, index, context=None):
     if context:
         new_context = context.clone()
     else:
-        context = new_context = InferenceContext()
+        context = new_context = contextmod.InferenceContext()
 
     # Create a new callcontext for providing index as an argument.
-    new_context.callcontext = CallContext(
-        args=[index], starargs=None, dstarargs=None)
+    new_context.callcontext = contextmod.CallContext(args=[index])
     new_context.boundnode = self
 
     method = next(self.igetattr('__getitem__', context=context))
-    if not isinstance(method, BoundMethod):
-        raise InferenceError
+    if not isinstance(method, bases.BoundMethod):
+        raise exceptions.InferenceError
 
     try:
         return next(method.infer_call_result(self, new_context))
     except StopIteration:
-        raise InferenceError
+        raise exceptions.InferenceError
 
-Instance.getitem = instance_getitem
+bases.Instance.getitem = instance_getitem
