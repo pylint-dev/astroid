@@ -19,6 +19,8 @@
 inference utils.
 """
 
+from __future__ import print_function
+
 import sys
 import warnings
 
@@ -346,6 +348,7 @@ def path_wrapper(func):
             context = contextmod.InferenceContext()
         context.push(node)
         yielded = set()
+        print(node, context, _func, kwargs, file=sys.stderr)
         for res in _func(node, context, **kwargs):
             # unproxy only true instance, not const, tuple, dict...
             if res.__class__ is Instance:

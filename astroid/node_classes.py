@@ -457,7 +457,7 @@ class Assert(bases.Statement):
         self.test = test
 
 
-class Assign(bases.Statement, mixins.AssignTypeMixin):
+class Assign(mixins.AssignTypeMixin, bases.Statement):
     """class representing an Assign node"""
     _astroid_fields = ('targets', 'value',)
     targets = None

@@ -16,6 +16,9 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
+import sys
+
 import unittest
 
 from astroid import bases
@@ -277,6 +280,7 @@ class SuperTests(unittest.TestCase):
                 super(Super_Type_Object, self).class_method #@
         ''')
         # Super(type, type) is the same for both functions and classmethods.
+        print('TEST HERE', file=sys.stderr)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, nodes.FunctionDef)
         self.assertEqual(first.name, 'method')

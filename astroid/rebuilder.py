@@ -150,9 +150,9 @@ class TreeRebuilder(object):
                 if node.vararg.annotation:
                     varargannotation = self.visit(node.vararg.annotation,
                                                   newnode, assign_ctx)
-                elif PY3 and node.vararg.annotation:
-                    varargannotation = self.visit(node.varargannotation,
-                                                  newnode, assign_ctx)
+            elif PY3 and node.vararg.annotation:
+                varargannotation = self.visit(node.varargannotation,
+                                              newnode, assign_ctx)
         if kwarg:
             if PY34:
                 kwarg = kwarg.arg
@@ -206,22 +206,22 @@ class TreeRebuilder(object):
         newnode.postinit([self.visit(child, newnode, "Assign")
                           for child in node.targets],
                          self.visit(node.value, newnode, None))
-        klass = newnode.parent.frame()
-        if (isinstance(klass, nodes.ClassDef)
-                and isinstance(newnode.value, nodes.Call)
-                and isinstance(newnode.value.func, nodes.Name)):
-            func_name = newnode.value.func.name
-            for assign_node in newnode.targets:
-                try:
-                    meth = klass[assign_node.name]
-                    if isinstance(meth, nodes.FunctionDef):
-                        if func_name in ('classmethod', 'staticmethod'):
-                            meth.type = func_name
-                        elif func_name == 'classproperty': # see lgc.decorators
-                            meth.type = 'classmethod'
-                        meth.extra_decorators.append(newnode.value)
-                except (AttributeError, KeyError):
-                    continue
+        # klass = newnode.parent.frame()
+        # if (isinstance(klass, nodes.ClassDef)
+        #         and isinstance(newnode.value, nodes.Call)
+        #         and isinstance(newnode.value.func, nodes.Name)):
+        #     func_name = newnode.value.func.name
+        #     for assign_node in newnode.targets:
+        #         try:
+        #             meth = klass[assign_node.name]
+        #             if isinstance(meth, nodes.FunctionDef):
+        #                 if func_name in ('classmethod', 'staticmethod'):
+        #                     meth.type = func_name
+        #                 elif func_name == 'classproperty': # see lgc.decorators
+        #                     meth.type = 'classmethod'
+        #                 meth.extra_decorators.append(newnode.value)
+        #         except (AttributeError, KeyError):
+        #             continue
         return newnode
 
     def visit_assignname(self, node, parent, node_name=None):
@@ -260,7 +260,7 @@ class TreeRebuilder(object):
             # problem for the correctness of the program).
             #
             # ("a" + "b" + # one thousand more + "c")
-            newnode = self._peepholer.optimize_binop(node)
+            newnode = self._peepholer.optimize_binop(node, parent)
             if newnode:
                 return newnode
 
@@ -312,10 +312,8 @@ class TreeRebuilder(object):
                 if keyword.arg == 'metaclass':
                     metaclass = self.visit(keyword, newnode, assign_ctx).value
                 break
-        # py >= 2.6
-        if 'decorator_list' in node._fields and node.decorator_list:
-            decorators = self.visit_decorators(node, newnode,
-                                               node.decorator_list, assign_ctx)
+        if node.decorator_list:
+            decorators = self.visit_decorators(node, newnode, assign_ctx)
         else:
             decorators = None
         newnode.postinit([self.visit(child, newnode, assign_ctx)
@@ -354,13 +352,13 @@ class TreeRebuilder(object):
                           for child in node.ifs])
         return newnode
 
-    def visit_decorators(self, node, parent, decorators, assign_ctx=None):
+    def visit_decorators(self, node, parent, assign_ctx=None):
         """visit a Decorators node by returning a fresh instance of it"""
         # /!\ node is actually a _ast.Function node while
         # parent is a astroid.nodes.FunctionDef node
         newnode = nodes.Decorators(node.lineno, node.col_offset, parent)
         newnode.postinit([self.visit(child, newnode, assign_ctx)
-                          for child in decorators])
+                          for child in node.decorator_list])
         return newnode
 
     def visit_delete(self, node, parent, assign_ctx=None):
@@ -471,14 +469,8 @@ class TreeRebuilder(object):
         node, doc = _get_doc(node)
         newnode = nodes.FunctionDef(node.name, doc, node.lineno,
                                     node.col_offset, parent)
-        # py < 2.6
-        if 'decorators' in node._fields and node.decorators:
-            decorators = self.visit_decorators(node, newnode,
-                                               node.decorators, assign_ctx)
-        elif ('decorator_list' in node._fields and
-              node.decorator_list):
-            decorators = self.visit_decorators(node, newnode,
-                                               node.decorator_list, assign_ctx)
+        if node.decorator_list:
+            decorators = self.visit_decorators(node, newnode, assign_ctx)
         else:
             decorators = None
         if PY3 and node.returns:

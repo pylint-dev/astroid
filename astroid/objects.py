@@ -109,10 +109,10 @@ class Super(bases.NodeNG):
             raise exceptions.SuperArgumentTypeError(
                 "The first super argument must be type.")
 
-            if isinstance(self.type, scoped_nodes.ClassDef):
+        if isinstance(self.type, scoped_nodes.ClassDef):
             # `super(type, type)`, most likely in a class method.
-                self._class_based = True
-                mro_type = self.type
+            self._class_based = True
+            mro_type = self.type
         else:
             mro_type = getattr(self.type, '_proxied', None)
             if not isinstance(mro_type, (bases.Instance, scoped_nodes.ClassDef)):
