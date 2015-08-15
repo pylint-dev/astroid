@@ -712,26 +712,11 @@ class FunctionDef(bases.Statement, Lambda):
         self.doc = doc
         self.instance_attrs = {}
         super(FunctionDef, self).__init__(lineno, col_offset, parent)
-        if parent:
-            frame = parent.frame()
-            if isinstance(frame, ClassDef):
-                if name == '__new__':
-                    self._type = 'classmethod'
-                else:
-                    self._type = 'method'
-            frame.set_local(name, self)
 
     def postinit(self, args, body, decorators=None, returns=None):
         self.args = args
         self.body = body
         self.decorators = decorators
-        if decorators is not None:
-            for decorator_expr in decorators.nodes:
-                if isinstance(decorator_expr, node_classes.Name):
-                    if decorator_expr.name in ('classmethod', 'staticmethod'):
-                        self._type = decorator_expr.name
-                    elif decorator_expr.name == 'classproperty':
-                        self._type = 'classmethod'
         self.returns = returns
 
     @decorators_mod.cachedproperty
@@ -1099,8 +1084,8 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
         self.bases = bases
         self.body = body
         self.decorators = decorators
-        # if newstyle is not None:
-        #     self._newstyle = newstyle
+        if newstyle is not None:
+            self._newstyle = newstyle
         if metaclass is not None:
             self._metaclass = metaclass
 
@@ -1438,7 +1423,7 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
                                                context, frame=self):
                 # yield YES object instead of descriptors when necessary
                 if (not isinstance(inferred, node_classes.Const)
-                    and isinstance(inferred, bases.Instance)):
+                and isinstance(inferred, bases.Instance)):
                     try:
                         inferred._proxied.getattr('__get__', context)
                     except exceptions.NotFoundError:

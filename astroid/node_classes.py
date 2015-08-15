@@ -307,10 +307,6 @@ class Arguments(mixins.AssignTypeMixin, bases.NodeNG):
     else:
         _astroid_fields = ('args', 'defaults', 'kwonlyargs', 'kw_defaults')
         _other_fields = ('vararg', 'kwarg')
-    # args = None
-    # defaults = None
-    # kwonlyargs = None
-    # kw_defaults = None
 
     def __init__(self, vararg=None, kwarg=None, parent=None):
         self.vararg = vararg
@@ -573,6 +569,7 @@ class Call(bases.NodeNG):
     def postinit(self, func=None, args=None, starargs=None, kwargs=None):
         self.func = func
         self.args = args
+        self.keywords = keywords
         self.starargs = starargs
         self.kwargs = kwargs
 

@@ -90,6 +90,18 @@ def _get_doc(node):
         pass # ast built from scratch
     return node, None
 
+def _visit_or_none(node, attr, visitor, parent, assign_ctx):
+    """If the given node has an attribute, visits the attribute, and
+    otherwise returns None.
+
+    """
+
+    value = getattr(node, attr, None)
+    if value is None:
+        return None
+    else:
+        return visitor.visit(value, parent, assign_ctx)
+
 
 class TreeRebuilder(object):
     """Rebuilds the _ast tree to become an Astroid tree"""
@@ -206,22 +218,6 @@ class TreeRebuilder(object):
         newnode.postinit([self.visit(child, newnode, "Assign")
                           for child in node.targets],
                          self.visit(node.value, newnode, None))
-        # klass = newnode.parent.frame()
-        # if (isinstance(klass, nodes.ClassDef)
-        #         and isinstance(newnode.value, nodes.Call)
-        #         and isinstance(newnode.value.func, nodes.Name)):
-        #     func_name = newnode.value.func.name
-        #     for assign_node in newnode.targets:
-        #         try:
-        #             meth = klass[assign_node.name]
-        #             if isinstance(meth, nodes.FunctionDef):
-        #                 if func_name in ('classmethod', 'staticmethod'):
-        #                     meth.type = func_name
-        #                 elif func_name == 'classproperty': # see lgc.decorators
-        #                     meth.type = 'classmethod'
-        #                 meth.extra_decorators.append(newnode.value)
-        #         except (AttributeError, KeyError):
-        #             continue
         return newnode
 
     def visit_assignname(self, node, parent, node_name=None):
@@ -297,7 +293,9 @@ class TreeRebuilder(object):
             kwargs = None
         newnode.postinit(self.visit(node.func, newnode, assign_ctx),
                          [self.visit(child, newnode, assign_ctx)
-                          for child in node.args + node.keywords],
+                          for child in node.args],
+                         [self.visit(child, newnode, assign_ctx)
+                          for child in node.keywords],
                          starargs, kwargs)
         return newnode
 
@@ -406,16 +404,9 @@ class TreeRebuilder(object):
     def visit_excepthandler(self, node, parent, assign_ctx=None):
         """visit an ExceptHandler node by returning a fresh instance of it"""
         newnode = nodes.ExceptHandler(node.lineno, node.col_offset, parent)
-        if node.type is None:
-            node_type = None
-        else:
-            node_type = self.visit(node.type, newnode, assign_ctx)
-        if node.name is None:
-            name = None
-        else:
-            # /!\ node.name can be a tuple
-            name = self.visit(node.name, newnode, "Assign")
-        newnode.postinit(node_type, name,
+        # /!\ node.name can be a tuple
+        newnode.postinit(_visit_or_none(node, 'type', self, newnode, assign_ctx),
+                         _visit_or_none(node, 'name', self, newnode, "Assign"),
                          [self.visit(child, newnode, None)
                           for child in node.body])
         return newnode
@@ -423,16 +414,11 @@ class TreeRebuilder(object):
     def visit_exec(self, node, parent, assign_ctx=None):
         """visit an Exec node by returning a fresh instance of it"""
         newnode = nodes.Exec(node.lineno, node.col_offset, parent)
-        if node.globals is None:
-            node_globals = None
-        else:
-            node_globals = self.visit(node.globals, newnode, assign_ctx)
-        if node.locals is None:
-            node_locals = None
-        else:
-            node_locals = self.visit(node.locals, newnode, assign_ctx)
         newnode.postinit(self.visit(node.body, newnode, assign_ctx),
-                         node_globals, node_locals)
+                         _visit_or_none(node, 'globals', self, newnode,
+                                        assign_ctx),
+                         _visit_or_none(node, 'locals', self, newnode,
+                                        assign_ctx))
         return newnode
 
     def visit_extslice(self, node, parent, assign_ctx=None):
@@ -623,8 +609,7 @@ class TreeRebuilder(object):
     def visit_print(self, node, parent, assign_ctx=None):
         """visit a Print node by returning a fresh instance of it"""
         newnode = nodes.Print(node.nl, node.lineno, node.col_offset, parent)
-        newnode.postinit(None if node.dest is None else
-                         self.visit(node.dest, newnode, assign_ctx),
+        newnode.postinit(_visit_or_none(node, 'dest', self, newnode, assign_ctx),
                          [self.visit(child, newnode, assign_ctx)
                           for child in node.values])
         return newnode
@@ -632,12 +617,10 @@ class TreeRebuilder(object):
     def visit_raise(self, node, parent, assign_ctx=None):
         """visit a Raise node by returning a fresh instance of it"""
         newnode = nodes.Raise(node.lineno, node.col_offset, parent)
-        newnode.postinit(None if node.type is None else
-                         self.visit(node.type, newnode, assign_ctx),
-                         None if node.inst is None else
-                         self.visit(node.inst, newnode, assign_ctx),
-                         None if node.tback is None else
-                         self.visit(node.tback, newnode, assign_ctx))
+        newnode.postinit(_visit_or_none(node, 'type', self, newnode, assign_ctx),
+                         _visit_or_none(node, 'inst', self, newnode, assign_ctx),
+                         _visit_or_none(node, 'tback', self, newnode,
+                                        assign_ctx))
         return newnode
 
     def visit_return(self, node, parent, assign_ctx=None):
@@ -665,12 +648,11 @@ class TreeRebuilder(object):
     def visit_slice(self, node, parent, assign_ctx=None):
         """visit a Slice node by returning a fresh instance of it"""
         newnode = nodes.Slice(parent=parent)
-        newnode.postinit(None if node.lower is None else
-                         self.visit(node.lower, newnode, assign_ctx),
-                         None if node.upper is None else
-                         self.visit(node.upper, newnode, assign_ctx),
-                         None if node.step is None else
-                         self.visit(node.step, newnode, assign_ctx))
+        newnode.postinit(_visit_or_none(node, 'lower', self, newnode,
+                                        assign_ctx),
+                         _visit_or_none(node, 'upper', self, newnode,
+                                        assign_ctx),
+                         _visit_or_none(node, 'step', self, newnode, assign_ctx))
         return newnode
 
     def visit_subscript(self, node, parent, assign_ctx=None):
@@ -760,15 +742,8 @@ class TreeRebuilder3(TreeRebuilder):
     def visit_excepthandler(self, node, parent, assign_ctx=None):
         """visit an ExceptHandler node by returning a fresh instance of it"""
         newnode = nodes.ExceptHandler(node.lineno, node.col_offset, parent)
-        if node.type is None:
-            node_type = None
-        else:
-            node_type = self.visit(node.type, newnode, assign_ctx)
-        if node.name is None:
-            name = None
-        else:
-            name = self.visit_assignname(node, newnode, node.name)
-        newnode.postinit(node_type, name,
+        newnode.postinit(_visit_or_none(node, 'type', self, newnode, assign_ctx),
+                         _visit_or_none(node, 'name', self, newnode, assign_ctx),
                          [self.visit(child, newnode, assign_ctx)
                           for child in node.body])
         return newnode
@@ -783,10 +758,9 @@ class TreeRebuilder3(TreeRebuilder):
         """visit a Raise node by returning a fresh instance of it"""
         newnode = nodes.Raise(node.lineno, node.col_offset, parent)
         # no traceback; anyway it is not used in Pylint
-        newnode.postinit(None if node.exc is None else
-                         self.visit(node.exc, newnode, assign_ctx),
-                         None if node.cause is None else
-                         self.visit(node.cause, newnode, assign_ctx))
+        newnode.postinit(_visit_or_none(node, 'exc', self, newnode, assign_ctx),
+                         _visit_or_none(node, 'cause', self, newnode,
+                                        assign_ctx))
         return newnode
 
     def visit_starred(self, node, parent, assign_ctx=None):
