@@ -90,7 +90,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(red, nodes.FunctionDef)
         self.assertEqual(red.name, 'four_args')
         namenode = next(self.module.igetattr('NameNode'))
-        self.assertIsInstance(namenode, nodes.Class)
+        self.assertIsInstance(namenode, nodes.ClassDef)
         self.assertEqual(namenode.name, 'Name')
         # resolve packageredirection
         mod = resources.build_file('data/appl/myConnection.py',

@@ -22,7 +22,7 @@ which are used only as inference results, so they can't be found in the
 original AST tree. For instance, inferring the following frozenset use,
 leads to an inferred FrozenSet:
 
-    CallFunc(func=Name('frozenset'), args=Tuple(...))
+    Call(func=Name('frozenset'), args=Tuple(...))
 
 """
 

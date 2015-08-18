@@ -566,7 +566,8 @@ class Call(bases.NodeNG):
     starargs = None
     kwargs = None
 
-    def postinit(self, func=None, args=None, starargs=None, kwargs=None):
+    def postinit(self, func=None, args=None, keywords=None,
+                 starargs=None, kwargs=None):
         self.func = func
         self.args = args
         self.keywords = keywords

@@ -18,6 +18,8 @@
 """this module contains a set of functions to handle inference on astroid trees
 """
 
+from __future__ import print_function
+
 import functools
 import itertools
 import operator
@@ -92,8 +94,8 @@ nodes.AssignName.infer_lhs = infer_name # won't work with a path wrapper
 
 @bases.raise_if_nothing_inferred
 @bases.path_wrapper
-def infer_callfunc(self, context=None):
-    """infer a CallFunc node by trying to guess what the function returns"""
+def infer_call(self, context=None):
+    """infer a Call node by trying to guess what the function returns"""
     callcontext = context.clone()
     callcontext.callcontext = contextmod.CallContext(args=self.args,
                                                      keywords=self.keywords,
@@ -111,7 +113,7 @@ def infer_callfunc(self, context=None):
         except exceptions.InferenceError:
             ## XXX log error ?
             continue
-nodes.Call._infer = infer_callfunc
+nodes.Call._infer = infer_call
 
 
 @bases.path_wrapper
@@ -135,8 +137,8 @@ nodes.Import.infer_name_module = infer_name_module
 
 
 @bases.path_wrapper
-def infer_from(self, context=None, asname=True):
-    """infer a From nodes: return the imported module/object"""
+def infer_import_from(self, context=None, asname=True):
+    """infer a ImportFrom node: return the imported module/object"""
     name = context.lookupname
     if name is None:
         raise exceptions.InferenceError()
@@ -150,12 +152,12 @@ def infer_from(self, context=None, asname=True):
         return bases._infer_stmts(stmts, context)
     except exceptions.NotFoundError:
         raise exceptions.InferenceError(name)
-nodes.ImportFrom._infer = infer_from
+nodes.ImportFrom._infer = infer_import_from
 
 
 @bases.raise_if_nothing_inferred
-def infer_getattr(self, context=None):
-    """infer a Getattr node by using getattr on the associated object"""
+def infer_attribute(self, context=None):
+    """infer an Attribute node by using getattr on the associated object"""
     for owner in self.expr.infer(context):
         if owner is util.YES:
             yield owner
@@ -170,8 +172,8 @@ def infer_getattr(self, context=None):
         except AttributeError:
             # XXX method / function
             context.boundnode = None
-nodes.Attribute._infer = bases.path_wrapper(infer_getattr)
-nodes.AssignAttr.infer_lhs = infer_getattr # # won't work with a path wrapper
+nodes.Attribute._infer = bases.path_wrapper(infer_attribute)
+nodes.AssignAttr.infer_lhs = infer_attribute # # won't work with a path wrapper
 
 
 @bases.path_wrapper
@@ -600,7 +602,7 @@ nodes.Arguments._infer = infer_arguments
 
 
 @bases.path_wrapper
-def infer_ass(self, context=None):
+def infer_assign(self, context=None):
     """infer a AssName/AssAttr: need to inspect the RHS part of the
     assign node
     """
@@ -609,8 +611,8 @@ def infer_ass(self, context=None):
         return stmt.infer(context)
     stmts = list(self.assigned_stmts(context=context))
     return bases._infer_stmts(stmts, context)
-nodes.AssignName._infer = infer_ass
-nodes.AssignAttr._infer = infer_ass
+nodes.AssignName._infer = infer_assign
+nodes.AssignAttr._infer = infer_assign
 
 
 # no infer method on DelName and DelAttr (expected InferenceError)

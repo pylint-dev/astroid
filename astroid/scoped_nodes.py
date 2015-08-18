@@ -21,6 +21,10 @@ This module contains the classes for "scoped" node, i.e. which are opening a
 new local scope in the language definition : Module, ClassDef, FunctionDef (and
 Lambda, GeneratorExp, DictComp and SetComp to some extent).
 """
+
+from __future__ import print_function
+import inspect
+
 import functools
 import io
 import itertools
@@ -193,6 +197,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, bases.NodeNG):
         if the name is already defined, ignore it
         """
         #assert not stmt in self.locals.get(name, ()), (self, stmt)
+        # print('Set local:', self, name, stmt, inspect.getframeinfo(inspect.currentframe().f_back), sep='\n')
         self.locals.setdefault(name, []).append(stmt)
 
     __setitem__ = set_local
@@ -712,6 +717,9 @@ class FunctionDef(bases.Statement, Lambda):
         self.doc = doc
         self.instance_attrs = {}
         super(FunctionDef, self).__init__(lineno, col_offset, parent)
+        if parent:
+            frame = parent.frame()
+            frame.set_local(name, self)
 
     def postinit(self, args, body, decorators=None, returns=None):
         self.args = args
@@ -721,23 +729,22 @@ class FunctionDef(bases.Statement, Lambda):
 
     @decorators_mod.cachedproperty
     def extra_decorators(self):
-        """Get the extra decorators that this function can have
-
+        """Get the extra decorators that this function can haves
         Additional decorators are considered when they are used as
         assignments, as in `method = staticmethod(method)`.
         The property will return all the callables that are used for
         decoration.
         """
         frame = self.parent.frame()
-        if not isinstance(frame, Class):
+        if not isinstance(frame, ClassDef):
             return []
 
         decorators = []
         for assign in frame.nodes_of_class(node_classes.Assign):
-            if (isinstance(assign.value, node_classes.CallFunc)
+            if (isinstance(assign.value, node_classes.Call)
                     and isinstance(assign.value.func, node_classes.Name)):
                 for assign_node in assign.targets:
-                    if not isinstance(assign_node, node_classes.AssName):
+                    if not isinstance(assign_node, node_classes.AssignName):
                         # Support only `name = callable(name)`
                         continue
 
@@ -750,7 +757,7 @@ class FunctionDef(bases.Statement, Lambda):
                     except KeyError:
                         continue
                     else:
-                        if isinstance(meth, Function):
+                        if isinstance(meth, FunctionDef):
                             decorators.append(assign.value)
         return decorators
 
@@ -768,9 +775,9 @@ class FunctionDef(bases.Statement, Lambda):
 
         frame = self.parent.frame()
         type_name = 'function'
-        if isinstance(frame, Class):
+        if isinstance(frame, ClassDef):
             if self.name == '__new__':
-                return'classmethod'
+                return 'classmethod'
             else:
                 type_name = 'method'
 
@@ -780,7 +787,7 @@ class FunctionDef(bases.Statement, Lambda):
                     if node.name in builtin_descriptors:
                         return node.name
 
-                if isinstance(node, node_classes.CallFunc):
+                if isinstance(node, node_classes.Call):
                     # Handle the following case:
                     # @some_decorator(arg1, arg2)
                     # def func(...)
@@ -794,16 +801,16 @@ class FunctionDef(bases.Statement, Lambda):
                         return _type
 
                 try:
-                    for infered in node.infer():
+                    for inferred in node.infer():
                         # Check to see if this returns a static or a class method.
-                        _type = _infer_decorator_callchain(infered)
+                        _type = _infer_decorator_callchain(inferred)
                         if _type is not None:
                             return _type
 
-                        if not isinstance(infered, Class):
+                        if not isinstance(inferred, ClassDef):
                             continue
-                        for ancestor in infered.ancestors():
-                            if not isinstance(ancestor, Class):
+                        for ancestor in inferred.ancestors():
+                            if not isinstance(ancestor, ClassDef):
                                 continue
                             if ancestor.is_subtype_of('%s.classmethod' % BUILTINS):
                                 return 'classmethod'
@@ -1039,7 +1046,7 @@ def get_wrapping_class(node):
     """
 
     klass = node.frame()
-    while klass is not None and not isinstance(klass, Class):
+    while klass is not None and not isinstance(klass, ClassDef):
         if klass.parent is None:
             klass = None
         else:
@@ -1394,8 +1401,8 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
 
             if bases._is_property(attr):
                 # TODO(cpopa): don't use a private API.
-                for infered in attr.infer_call_result(self, context):
-                    yield infered
+                for inferred in attr.infer_call_result(self, context):
+                    yield inferred
                 continue
             if attr.type == 'classmethod':
                 # If the method is a classmethod, then it will

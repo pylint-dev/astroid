@@ -160,7 +160,7 @@ multiply(1, 2, 3)
         self.assertEqual(next(default.infer()).value, True)
 
     @require_version('2.7')
-    def test_with_infer_assnames(self):
+    def test_with_infer_assignnames(self):
         builder = AstroidBuilder()
         data = """
 with open('a.txt') as stream, open('b.txt'):

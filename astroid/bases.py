@@ -20,6 +20,7 @@ inference utils.
 """
 
 from __future__ import print_function
+import inspect
 
 import sys
 import warnings
@@ -348,7 +349,6 @@ def path_wrapper(func):
             context = contextmod.InferenceContext()
         context.push(node)
         yielded = set()
-        print(node, context, _func, kwargs, file=sys.stderr)
         for res in _func(node, context, **kwargs):
             # unproxy only true instance, not const, tuple, dict...
             if res.__class__ is Instance:
@@ -377,6 +377,7 @@ def raise_if_nothing_inferred(func):
             inferred = True
             yield node
         if not inferred:
+            # print('Not inferred:', func, args, kwargs, inspect.getframeinfo(inspect.currentframe().f_back), sep='\n')
             raise exceptions.InferenceError()
     return wrapper
 

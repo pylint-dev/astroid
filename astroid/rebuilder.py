@@ -90,17 +90,17 @@ def _get_doc(node):
         pass # ast built from scratch
     return node, None
 
-def _visit_or_none(node, attr, visitor, parent, assign_ctx):
+def _visit_or_none(node, attr, visitor, parent, assign_ctx, visit='visit'):
     """If the given node has an attribute, visits the attribute, and
     otherwise returns None.
 
     """
 
     value = getattr(node, attr, None)
-    if value is None:
-        return None
+    if value:
+        return getattr(visitor, visit)(value, parent, assign_ctx)
     else:
-        return visitor.visit(value, parent, assign_ctx)
+        return None
 
 
 class TreeRebuilder(object):
@@ -283,20 +283,19 @@ class TreeRebuilder(object):
     def visit_call(self, node, parent, assign_ctx=None):
         """visit a CallFunc node by returning a fresh instance of it"""
         newnode = nodes.Call(node.lineno, node.col_offset, parent)
-        if node.starargs:
-            starargs = self.visit(node.starargs, newnode, assign_ctx)
+        if node.keywords:
+            keywords = [self.visit(child, newnode, assign_ctx)
+                        for child in node.keywords]
         else:
-            starargs = None
-        if node.kwargs:
-            kwargs = self.visit(node.kwargs, newnode, assign_ctx)
-        else:
-            kwargs = None
+            keywords = None
         newnode.postinit(self.visit(node.func, newnode, assign_ctx),
                          [self.visit(child, newnode, assign_ctx)
                           for child in node.args],
-                         [self.visit(child, newnode, assign_ctx)
-                          for child in node.keywords],
-                         starargs, kwargs)
+                         keywords,
+                         _visit_or_none(node, 'starargs', self, newnode,
+                                        assign_ctx),
+                         _visit_or_none(node, 'kwargs', self, newnode,
+                                        assign_ctx))
         return newnode
 
     def visit_classdef(self, node, parent, assign_ctx=None, newstyle=None):
@@ -406,7 +405,7 @@ class TreeRebuilder(object):
         newnode = nodes.ExceptHandler(node.lineno, node.col_offset, parent)
         # /!\ node.name can be a tuple
         newnode.postinit(_visit_or_none(node, 'type', self, newnode, assign_ctx),
-                         _visit_or_none(node, 'name', self, newnode, "Assign"),
+                         _visit_or_none(node, 'name', self, newnode, 'Assign'),
                          [self.visit(child, newnode, None)
                           for child in node.body])
         return newnode
@@ -743,7 +742,7 @@ class TreeRebuilder3(TreeRebuilder):
         """visit an ExceptHandler node by returning a fresh instance of it"""
         newnode = nodes.ExceptHandler(node.lineno, node.col_offset, parent)
         newnode.postinit(_visit_or_none(node, 'type', self, newnode, assign_ctx),
-                         _visit_or_none(node, 'name', self, newnode, assign_ctx),
+                         _visit_or_none(node, 'name', self, newnode, 'Assign', visit='visit_assignname'),
                          [self.visit(child, newnode, assign_ctx)
                           for child in node.body])
         return newnode
@@ -793,10 +792,7 @@ class TreeRebuilder3(TreeRebuilder):
         newnode = nodes.With(node.lineno, node.col_offset, parent)
         def visit_child(child):
             expr = self.visit(child.context_expr, newnode, assign_ctx)
-            if child.optional_vars:
-                var = self.visit(child.optional_vars, newnode, 'Assign')
-            else:
-                var = None
+            var = _visit_or_none(child, 'optional_vars', self, newnode, 'Assign')
             return expr, var
         newnode.postinit([visit_child(child) for child in node.items],
                          [self.visit(child, newnode, None)

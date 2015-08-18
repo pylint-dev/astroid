@@ -687,6 +687,7 @@ class FileBuildTest(unittest.TestCase):
         # class method
         method = klass2['class_method']
         self.assertEqual([n.name for n in method.args.args], ['cls'])
+        # import pdb; pdb.set_trace()
         self.assertEqual(method.type, 'classmethod')
         # static method
         method = klass2['static_method']
