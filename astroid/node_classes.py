@@ -109,6 +109,17 @@ def are_exclusive(stmt1, stmt2, exceptions=None):
     return False
 
 
+def _container_getitem(instance, elts, index):
+    """Get a slice or an item, using the given *index*, for the given sequence."""
+    if isinstance(index, slice):
+        new_cls = instance.__class__()
+        new_cls.elts = elts[index]
+        new_cls.parent = instance.parent
+        return new_cls
+    else:
+        return elts[index]
+
+
 @six.add_metaclass(abc.ABCMeta)
 class _BaseContainer(mixins.ParentAssignTypeMixin,
                      bases.NodeNG,
@@ -816,7 +827,7 @@ class List(_BaseContainer):
         return '%s.list' % BUILTINS
 
     def getitem(self, index, context=None):
-        return self.elts[index]
+        return _container_getitem(self, self.elts, index)
 
 
 class Nonlocal(bases.Statement):
@@ -940,7 +951,7 @@ class Tuple(_BaseContainer):
         return '%s.tuple' % BUILTINS
 
     def getitem(self, index, context=None):
-        return self.elts[index]
+        return _container_getitem(self, self.elts, index)
 
 
 class UnaryOp(bases.NodeNG):

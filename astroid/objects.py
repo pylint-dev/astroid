@@ -32,7 +32,6 @@ from astroid import bases
 from astroid import decorators
 from astroid import exceptions
 from astroid import MANAGER
-from astroid import mixins
 from astroid import node_classes
 from astroid import scoped_nodes
 
