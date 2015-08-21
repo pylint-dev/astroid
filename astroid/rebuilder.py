@@ -19,6 +19,8 @@
 order to get a single Astroid representation
 """
 
+import inspect
+
 import _ast
 import sys
 
@@ -90,15 +92,15 @@ def _get_doc(node):
         pass # ast built from scratch
     return node, None
 
-def _visit_or_none(node, attr, visitor, parent, assign_ctx, visit='visit'):
+def _visit_or_none(node, attr, visitor, parent, assign_ctx, visit='visit',
+                   **kws):
     """If the given node has an attribute, visits the attribute, and
     otherwise returns None.
 
     """
-
     value = getattr(node, attr, None)
     if value:
-        return getattr(visitor, visit)(value, parent, assign_ctx)
+        return getattr(visitor, visit)(value, parent, assign_ctx, **kws)
     else:
         return None
 
@@ -220,8 +222,10 @@ class TreeRebuilder(object):
                          self.visit(node.value, newnode, None))
         return newnode
 
-    def visit_assignname(self, node, parent, node_name=None):
+    def visit_assignname(self, node, parent, assign_ctx=None, node_name=None):
         '''visit a node and return a AssignName node'''
+        # assign_ctx is not used here, it takes that argument only to
+        # maintain consistency with the other visit functions.
         newnode = nodes.AssignName(node_name, getattr(node, 'lineno', None),
                                    getattr(node, 'col_offset', None), parent)
         self._save_assignment(newnode)
@@ -299,7 +303,7 @@ class TreeRebuilder(object):
         return newnode
 
     def visit_classdef(self, node, parent, assign_ctx=None, newstyle=None):
-        """visit a Class node to become astroid"""
+        """visit a ClassDef node to become astroid"""
         node, doc = _get_doc(node)
         newnode = nodes.ClassDef(node.name, doc, node.lineno,
                                  node.col_offset, parent)
@@ -351,7 +355,7 @@ class TreeRebuilder(object):
 
     def visit_decorators(self, node, parent, assign_ctx=None):
         """visit a Decorators node by returning a fresh instance of it"""
-        # /!\ node is actually a _ast.Function node while
+        # /!\ node is actually a _ast.FunctionDef node while
         # parent is a astroid.nodes.FunctionDef node
         newnode = nodes.Decorators(node.lineno, node.col_offset, parent)
         newnode.postinit([self.visit(child, newnode, assign_ctx)
@@ -439,7 +443,7 @@ class TreeRebuilder(object):
         return newnode
 
     def visit_importfrom(self, node, parent, assign_ctx=None):
-        """visit a From node by returning a fresh instance of it"""
+        """visit an ImportFrom node by returning a fresh instance of it"""
         names = [(alias.name, alias.asname) for alias in node.names]
         newnode = nodes.ImportFrom(node.module or '', names, node.level or None,
                                    getattr(node, 'lineno', None),
@@ -449,7 +453,7 @@ class TreeRebuilder(object):
         return newnode
 
     def visit_functiondef(self, node, parent, assign_ctx=None):
-        """visit an Function node to become astroid"""
+        """visit an FunctionDef node to become astroid"""
         self._global_names.append({})
         node, doc = _get_doc(node)
         newnode = nodes.FunctionDef(node.name, doc, node.lineno,
@@ -470,7 +474,7 @@ class TreeRebuilder(object):
         return newnode
 
     def visit_generatorexp(self, node, parent, assign_ctx=None):
-        """visit a GenExpr node by returning a fresh instance of it"""
+        """visit a GeneratorExp node by returning a fresh instance of it"""
         newnode = nodes.GeneratorExp(node.lineno, node.col_offset, parent)
         newnode.postinit(self.visit(node.elt, newnode, assign_ctx),
                          [self.visit(child, newnode, assign_ctx)
@@ -730,8 +734,8 @@ class TreeRebuilder3(TreeRebuilder):
 
     def visit_arg(self, node, parent, assign_ctx=None):
         """visit a arg node by returning a fresh AssName instance"""
-        # TODO(cpopa): introduce an Arg node instead of using AssName.
-        return self.visit_assignname(node, parent, node.arg)
+        # TODO(cpopa): introduce an Arg node instead of using AssignName.
+        return self.visit_assignname(node, parent, assign_ctx, node.arg)
 
     def visit_nameconstant(self, node, parent, assign_ctx=None):
         # in Python 3.4 we have NameConstant for True / False / None
@@ -741,8 +745,12 @@ class TreeRebuilder3(TreeRebuilder):
     def visit_excepthandler(self, node, parent, assign_ctx=None):
         """visit an ExceptHandler node by returning a fresh instance of it"""
         newnode = nodes.ExceptHandler(node.lineno, node.col_offset, parent)
+        if node.name:
+            name = self.visit_assignname(node, newnode, assign_ctx, node.name)
+        else:
+            name = None
         newnode.postinit(_visit_or_none(node, 'type', self, newnode, assign_ctx),
-                         _visit_or_none(node, 'name', self, newnode, 'Assign', visit='visit_assignname'),
+                         name,
                          [self.visit(child, newnode, assign_ctx)
                           for child in node.body])
         return newnode
@@ -773,10 +781,12 @@ class TreeRebuilder3(TreeRebuilder):
         # TryFinally/TryExcept nodes
         if node.finalbody:
             newnode = nodes.TryFinally(node.lineno, node.col_offset, parent)
-            newnode.postinit([self.visit_tryexcept(node, newnode, assign_ctx)]
-                             if node.handlers else
-                             [self.visit(child, newnode, assign_ctx)
-                              for child in node.body],
+            if node.handlers:
+                body = [self.visit_tryexcept(node, newnode, assign_ctx)]
+            else:
+                body = [self.visit(child, newnode, assign_ctx)
+                        for child in node.body]
+            newnode.postinit(body, 
                              [self.visit(n, newnode, assign_ctx)
                               for n in node.finalbody])
             return newnode
@@ -792,7 +802,8 @@ class TreeRebuilder3(TreeRebuilder):
         newnode = nodes.With(node.lineno, node.col_offset, parent)
         def visit_child(child):
             expr = self.visit(child.context_expr, newnode, assign_ctx)
-            var = _visit_or_none(child, 'optional_vars', self, newnode, 'Assign')
+            var = _visit_or_none(child, 'optional_vars', self, newnode,
+                                 'Assign')
             return expr, var
         newnode.postinit([visit_child(child) for child in node.items],
                          [self.visit(child, newnode, None)
@@ -808,7 +819,7 @@ class TreeRebuilder3(TreeRebuilder):
     def visit_classdef(self, node, parent, assign_ctx=None):
         return super(TreeRebuilder3, self).visit_classdef(node, parent,
                                                           assign_ctx,
-                                                          True)
+                                                          newstyle=True)
 
 if sys.version_info >= (3, 0):
     TreeRebuilder = TreeRebuilder3

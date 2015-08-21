@@ -116,7 +116,7 @@ class AsStringVisitor(object):
         return '%s %s %s' % (node.target.accept(self), node.op, node.value.accept(self))
 
     def visit_repr(self, node):
-        """return an astroid.Backquote node as string"""
+        """return an astroid.Repr node as string"""
         return '`%s`' % node.value.accept(self)
 
     def visit_binop(self, node):
@@ -133,7 +133,7 @@ class AsStringVisitor(object):
         return 'break'
 
     def visit_call(self, node):
-        """return an astroid.CallFunc node as string"""
+        """return an astroid.Call node as string"""
         expr_str = node.func.accept(self)
         args = [arg.accept(self) for arg in node.args]
         if node.keywords:
@@ -149,7 +149,7 @@ class AsStringVisitor(object):
         return '%s(%s)' % (expr_str, ', '.join(args))
 
     def visit_classdef(self, node):
-        """return an astroid.Class node as string"""
+        """return an astroid.ClassDef node as string"""
         decorate = node.decorators and node.decorators.accept(self)  or ''
         bases = ', '.join([n.accept(self) for n in node.bases])
         if sys.version_info[0] == 2:
@@ -267,7 +267,7 @@ class AsStringVisitor(object):
         return fors
 
     def visit_importfrom(self, node):
-        """return an astroid.From node as string"""
+        """return an astroid.ImportFrom node as string"""
         return 'from %s import %s' % ('.' * (node.level or 0) + node.modname,
                                       _import_string(node.names))
 
@@ -290,7 +290,7 @@ class AsStringVisitor(object):
                                  body=self._stmt_list(node.body))
 
     def visit_generatorexp(self, node):
-        """return an astroid.GenExpr node as string"""
+        """return an astroid.GeneratorExp node as string"""
         return '(%s %s)' % (node.elt.accept(self),
                             ' '.join([n.accept(self) for n in node.generators]))
 

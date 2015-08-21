@@ -41,7 +41,9 @@ MANAGER = manager.AstroidManager()
 
 
 def infer_end(self, context=None):
-    """inference's end for node such as Module, Class, Function, Const...
+    """inference's end for node such as Module, ClassDef, FunctionDef,
+    Const...
+
     """
     yield self
 nodes.Module._infer = infer_end
@@ -603,7 +605,7 @@ nodes.Arguments._infer = infer_arguments
 
 @bases.path_wrapper
 def infer_assign(self, context=None):
-    """infer a AssName/AssAttr: need to inspect the RHS part of the
+    """infer a AssignName/AssignAttr: need to inspect the RHS part of the
     assign node
     """
     stmt = self.statement()

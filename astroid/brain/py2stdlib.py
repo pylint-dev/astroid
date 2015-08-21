@@ -36,7 +36,7 @@ def infer_func_form(node, base_type, context=None, enum=False):
         except StopIteration:
             raise InferenceError()
 
-    # node is a CallFunc node, class name as first argument and generated class
+    # node is a Call node, class name as first argument and generated class
     # attributes as second argument
     if len(node.args) != 2:
         # something weird here, go back to class implementation
@@ -263,7 +263,7 @@ def looks_like_namedtuple(node):
     return False
 
 def infer_named_tuple(node, context=None):
-    """Specific inference function for namedtuple CallFunc node"""
+    """Specific inference function for namedtuple Call node"""
     class_node, name, attributes = infer_func_form(node, nodes.Tuple._proxied,
                                                    context=context)
     fake = AstroidBuilder(MANAGER).string_build('''
@@ -285,7 +285,7 @@ class %(name)s(tuple):
     return iter([class_node])
 
 def infer_enum(node, context=None):
-    """ Specific inference function for enum CallFunc node. """
+    """ Specific inference function for enum Call node. """
     enum_meta = nodes.ClassDef("EnumMeta", 'docstring')
     class_node = infer_func_form(node, enum_meta,
                                  context=context, enum=True)[0]

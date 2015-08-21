@@ -192,4 +192,4 @@ def _register_require_version(node):
     return node
 
 MANAGER.register_failed_import_hook(_import_gi_module)
-MANAGER.register_transform(nodes.CallFunc, _register_require_version, _looks_like_require_version)
+MANAGER.register_transform(nodes.Call, _register_require_version, _looks_like_require_version)

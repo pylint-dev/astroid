@@ -390,8 +390,8 @@ class NodeNG(object):
     It represents a node of the new abstract syntax tree.
     """
     is_statement = False
-    optional_assign = False # True  for For (and for Comprehension if py <3.0)
-    is_function = False # True for Function nodes
+    optional_assign = False # True for For (and for Comprehension if py <3.0)
+    is_function = False # True for FunctionDef nodes
     # attributes below are set by the builder module or by raw factories
     lineno = None
     col_offset = None
@@ -490,13 +490,16 @@ class NodeNG(object):
         return self.parent.statement()
 
     def frame(self):
-        """return the first parent frame node (i.e. Module, Function or Class)
+        """return the first parent frame node (i.e. Module, FunctionDef or
+        ClassDef)
+
         """
         return self.parent.frame()
 
     def scope(self):
-        """return the first node defining a new scope (i.e. Module, Function,
-        Class, Lambda but also GenExpr)
+        """return the first node defining a new scope (i.e. Module,
+        FunctionDef, ClassDef, Lambda but also GenExpr)
+
         """
         return self.parent.scope()
 
@@ -647,7 +650,7 @@ class NodeNG(object):
         return self.inferred()
 
     def instanciate_class(self):
-        """instanciate a node if it is a Class node, else return self"""
+        """instanciate a node if it is a ClassDef node, else return self"""
         return self
 
     def has_base(self, node):

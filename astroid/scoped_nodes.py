@@ -1342,14 +1342,16 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
         """Get an attribute from this class, using Python's attribute semantic
 
         This method doesn't look in the instance_attrs dictionary
-        since it's done by an Instance proxy at inference time.
-        It may return a YES object if the attribute has not been actually
+        since it's done by an Instance proxy at inference time.  It
+        may return a YES object if the attribute has not been actually
         found but a __getattr__ or __getattribute__ method is defined.
-        If *class_context* is given, then it's considered that the attribute
-        is accessed from a class context, e.g. Class.attribute, otherwise
-        it might have been accessed from an instance as well.
-        If *class_context* is used in that case, then a lookup in the
-        implicit metaclass and the explicit metaclass will be done.
+        If *class_context* is given, then it's considered that the
+        attribute is accessed from a class context,
+        e.g. ClassDef.attribute, otherwise it might have been accessed
+        from an instance as well.  If *class_context* is used in that
+        case, then a lookup in the implicit metaclass and the explicit
+        metaclass will be done.
+
         """
         values = self.locals.get(name, [])
         if name in self.special_attributes:
@@ -1395,7 +1397,7 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
             return
 
         for attr in bases._infer_stmts(attrs, context, frame=cls):
-            if not isinstance(attr, Function):
+            if not isinstance(attr, FunctionDef):
                 yield attr
                 continue
 

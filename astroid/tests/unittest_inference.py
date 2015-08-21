@@ -2138,7 +2138,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             ('frozenset()', False),
             ('frozenset((1, 2))', True),
         ]
-        # import pdb; pdb.set_trace()
         for code, expected in pairs:
             node = test_utils.extract_node(code)
             inferred = next(node.infer())
@@ -2569,8 +2568,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         f = A()
         f += B() #@
         ''')
-        print('TEST HERE', ast_node)
-        import pdb; pdb.set_trace()
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, 'A')

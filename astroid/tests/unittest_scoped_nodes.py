@@ -343,7 +343,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
 ##     def test_raises(self):
 ##         method = self.module2['AbstractClass']['to_override']
 ##         self.assertEqual([str(term) for term in method.raises()],
-##                           ["CallFunc(Name('NotImplementedError'), [], None, None)"] )
+##                           ["Call(Name('NotImplementedError'), [], None, None)"] )
 
 ##     def test_returns(self):
 ##         method = self.module2['AbstractClass']['return_something']

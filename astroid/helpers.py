@@ -126,7 +126,7 @@ def has_known_bases(klass, context=None):
     for base in klass.bases:
         result = safe_infer(base, context=context)
         # TODO: check for A->B->A->B pattern in class structure too?
-        if (not isinstance(result, scoped_nodes.Class) or
+        if (not isinstance(result, scoped_nodes.ClassDef) or
                 result is klass or
                 not has_known_bases(result, context=context)):
             klass._all_bases_known = False

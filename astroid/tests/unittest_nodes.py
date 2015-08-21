@@ -17,6 +17,8 @@
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 """tests for specific behaviour of astroid nodes
 """
+from astroid.as_string import dump
+
 import os
 import sys
 import textwrap
@@ -30,8 +32,10 @@ from astroid import context as contextmod
 from astroid import exceptions
 from astroid import node_classes
 from astroid import nodes
+from astroid import parse
 from astroid import util
 from astroid import test_utils
+from astroid import transforms
 from astroid.tests import resources
 
 
@@ -473,6 +477,7 @@ class ArgumentsNodeTC(unittest.TestCase):
             pass
         ''')
         new = cls.getattr('__new__')[-1]
+        # print(dump(new))
         self.assertEqual(new.args.fromlineno, 0)
 
 
@@ -547,6 +552,109 @@ class BoundMethodNodeTest(unittest.TestCase):
 
         inferred = next(ast['not_prop'].infer())
         self.assertIsInstance(inferred, bases.BoundMethod)
+
+
+class AliasesTest(unittest.TestCase):
+
+    def setUp(self):
+        self.transformer = transforms.TransformVisitor()
+
+    def parse_transform(self, code):
+        module = parse(code, apply_transforms=False)
+        return self.transformer.visit(module)
+
+    def test_aliases(self):
+        def test_from(node):
+            node.names = node.names + [('absolute_import', None)]
+            return node
+
+        def test_class(node):
+            node.name = 'Bar'
+            return node
+
+        def test_function(node):
+            node.name = 'another_test'
+            return node
+
+        def test_callfunc(node):
+            if node.func.name == 'Foo':
+                node.func.name = 'Bar'
+                return node
+
+        def test_assname(node):
+            if node.name == 'foo':
+                return nodes.AssignName('bar', node.lineno, node.col_offset,
+                                        node.parent)
+        def test_assattr(node):
+            if node.attrname == 'a':
+                node.attrname = 'b'
+                return node
+
+        def test_getattr(node):
+            if node.attrname == 'a':
+                node.attrname = 'b'
+                return node
+
+        def test_genexpr(node):
+            if node.elt.value == 1:
+                node.elt = nodes.Const(2, node.lineno, node.col_offset,
+                                       node.parent)
+                return node
+
+        self.transformer.register_transform(nodes.From, test_from)
+        self.transformer.register_transform(nodes.Class, test_class)
+        self.transformer.register_transform(nodes.Function, test_function)
+        self.transformer.register_transform(nodes.CallFunc, test_callfunc)
+        self.transformer.register_transform(nodes.AssName, test_assname)
+        self.transformer.register_transform(nodes.AssAttr, test_assattr)
+        self.transformer.register_transform(nodes.Getattr, test_getattr)
+        self.transformer.register_transform(nodes.GenExpr, test_genexpr)
+
+        string = '''
+        from __future__ import print_function
+
+        class Foo: pass
+
+        def test(a): return a
+
+        foo = Foo()
+        foo.a = test(42)
+        foo.a
+        (1 for _ in range(0, 42))
+        '''
+
+        module = self.parse_transform(string)
+
+        self.assertEqual(len(module.body[0].names), 2)
+        self.assertIsInstance(module.body[0], nodes.From)
+        self.assertEqual(module.body[1].name, 'Bar')
+        self.assertIsInstance(module.body[1], nodes.Class)
+        self.assertEqual(module.body[2].name, 'another_test')
+        self.assertIsInstance(module.body[2], nodes.Function)
+        self.assertEqual(module.body[3].targets[0].name, 'bar')
+        self.assertIsInstance(module.body[3].targets[0], nodes.AssName)
+        self.assertEqual(module.body[3].value.func.name, 'Bar')
+        self.assertIsInstance(module.body[3].value, nodes.CallFunc)
+        self.assertEqual(module.body[4].targets[0].attrname, 'b')
+        self.assertIsInstance(module.body[4].targets[0], nodes.AssAttr)
+        self.assertIsInstance(module.body[5], nodes.Discard)
+        self.assertEqual(module.body[5].value.attrname, 'b')
+        self.assertIsInstance(module.body[5].value, nodes.Getattr)
+        self.assertEqual(module.body[6].value.elt.value, 2)
+        self.assertIsInstance(module.body[6].value, nodes.GenExpr)
+        
+    @unittest.skipIf(six.PY3, "Python 3 doesn't have Repr nodes.")
+    def test_repr(self):
+        def test_backquote(node):
+            node.value.name = 'bar'
+            return node
+
+        self.transformer.register_transform(nodes.Backquote, test_backquote)
+
+        module = self.parse_transform('`foo`')
+
+        self.assertEqual(module.body[0].value.value.name, 'bar')
+        self.assertIsInstance(module.body[0].value, nodes.Backquote)
 
 
 if __name__ == '__main__':
