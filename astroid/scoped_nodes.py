@@ -1388,19 +1388,24 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
             return None
         return inferred
 
-    def metaclass(self):
+    def metaclass(self, seen=None):
         """Return the metaclass of this class.
 
         If this class does not define explicitly a metaclass,
         then the first defined metaclass in ancestors will be used
         instead.
         """
+        if seen is None:
+            seen = set()
+        seen.add(self)
+
         klass = self._explicit_metaclass()
         if klass is None:
             for parent in self.ancestors():
-                klass = parent.metaclass()
-                if klass is not None:
-                    break
+                if parent not in seen:
+                    klass = parent.metaclass(seen=seen)
+                    if klass is not None:
+                        break
         return klass
 
     def has_metaclass_hack(self):
