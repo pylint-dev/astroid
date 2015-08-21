@@ -342,7 +342,7 @@ def infer_getattr(node, context=None):
     lookup will be done.
     """
     obj, attr = _infer_getattr_args(node, context)
-    if obj is util.YES or attr is util.YES:
+    if obj is util.YES or attr is util.YES or not hasattr(obj, 'igetattr'):
         return util.YES
 
     try:
@@ -369,7 +369,7 @@ def infer_hasattr(node, context=None):
     """
     try:
         obj, attr = _infer_getattr_args(node, context)
-        if obj is util.YES or attr is util.YES:
+        if obj is util.YES or attr is util.YES or not hasattr(obj, 'getattr'):
             return util.YES
         obj.getattr(attr, context=context)
     except UseInferenceDefault:

@@ -2907,6 +2907,13 @@ class GetattrTest(unittest.TestCase):
         self.assertIsInstance(fifth, BoundMethod)
         self.assertEqual(fifth.bound.name, 'X')
 
+    def test_lambda(self):
+        node = test_utils.extract_node('''
+        getattr(lambda x: x, 'f') #@
+        ''')
+        inferred = next(node.infer())
+        self.assertEqual(inferred, util.YES)
+
 
 class HasattrTest(unittest.TestCase):
 
@@ -2958,6 +2965,13 @@ class HasattrTest(unittest.TestCase):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.Const)
             self.assertTrue(inferred.value)
+
+    def test_lambda(self):
+        node = test_utils.extract_node('''
+        hasattr(lambda x: x, 'f') #@
+        ''')
+        inferred = next(node.infer())
+        self.assertEqual(inferred, util.YES)
 
 
 class BoolOpTest(unittest.TestCase):
