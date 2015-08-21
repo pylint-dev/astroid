@@ -699,13 +699,17 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         NoGetitem()[4] #@
         InvalidGetitem()[5] #@
         InvalidGetitem2()[10] #@
-        [1, 2, 3][None] #@
-        'lala'['bala'] #@        
         ''')
         for node in ast_nodes[:3]:
             self.assertRaises(InferenceError, next, node.infer())
         for node in ast_nodes[3:]:
             self.assertEqual(next(node.infer()), util.YES)
+        ast_nodes = test_utils.extract_node('''
+        [1, 2, 3][None] #@
+        'lala'['bala'] #@
+        ''')
+        for node in ast_nodes:
+            self.assertRaises(InferenceError, next, node.infer())
 
     def test_bytes_subscript(self):
         node = test_utils.extract_node('''b'a'[0]''')
@@ -2691,6 +2695,113 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 42)
+
+    def _slicing_test_helper(self, pairs, cls, get_elts):
+        for code, expected in pairs:
+            ast_node = test_utils.extract_node(code)
+            inferred = next(ast_node.infer())
+            self.assertIsInstance(inferred, cls)
+            self.assertEqual(get_elts(inferred), expected,
+                             ast_node.as_string())
+
+    def test_slicing_list(self):
+        pairs = (
+            ("[1, 2, 3][:] #@", [1, 2, 3]),
+            ("[1, 2, 3][0:] #@", [1, 2, 3]),
+            ("[1, 2, 3][None:] #@", [1, 2, 3]),
+            ("[1, 2, 3][None:None] #@", [1, 2, 3]),
+            ("[1, 2, 3][0:-1] #@", [1, 2]),
+            ("[1, 2, 3][0:2] #@", [1, 2]),
+            ("[1, 2, 3][0:2:None] #@", [1, 2]),
+            ("[1, 2, 3][::] #@", [1, 2, 3]),
+            ("[1, 2, 3][::2] #@", [1, 3]),
+            ("[1, 2, 3][::-1] #@", [3, 2, 1]),
+            ("[1, 2, 3][0:2:2] #@", [1]),
+            ("[1, 2, 3, 4, 5, 6][0:4-1:2+0] #@", [1, 3]),
+        )
+        self._slicing_test_helper(
+            pairs, nodes.List,
+            lambda inferred: [elt.value for elt in inferred.elts])
+
+    def test_slicing_tuple(self):
+        pairs = (
+            ("(1, 2, 3)[:] #@", [1, 2, 3]),
+            ("(1, 2, 3)[0:] #@", [1, 2, 3]),
+            ("(1, 2, 3)[None:] #@", [1, 2, 3]),
+            ("(1, 2, 3)[None:None] #@", [1, 2, 3]),
+            ("(1, 2, 3)[0:-1] #@", [1, 2]),
+            ("(1, 2, 3)[0:2] #@", [1, 2]),
+            ("(1, 2, 3)[0:2:None] #@", [1, 2]),
+            ("(1, 2, 3)[::] #@", [1, 2, 3]),
+            ("(1, 2, 3)[::2] #@", [1, 3]),
+            ("(1, 2, 3)[::-1] #@", [3, 2, 1]),
+            ("(1, 2, 3)[0:2:2] #@", [1]),
+            ("(1, 2, 3, 4, 5, 6)[0:4-1:2+0] #@", [1, 3]),
+        )
+        self._slicing_test_helper(
+            pairs, nodes.Tuple,
+            lambda inferred: [elt.value for elt in inferred.elts])
+
+    def test_slicing_str(self):
+        pairs = (
+            ("'123'[:] #@", "123"),
+            ("'123'[0:] #@", "123"),
+            ("'123'[None:] #@", "123"),
+            ("'123'[None:None] #@", "123"),
+            ("'123'[0:-1] #@", "12"),
+            ("'123'[0:2] #@", "12"),
+            ("'123'[0:2:None] #@", "12"),
+            ("'123'[::] #@", "123"),
+            ("'123'[::2] #@", "13"),
+            ("'123'[::-1] #@", "321"),
+            ("'123'[0:2:2] #@", "1"),
+            ("'123456'[0:4-1:2+0] #@", "13"),
+        )
+        self._slicing_test_helper(
+            pairs, nodes.Const, lambda inferred: inferred.value)
+
+    def test_invalid_slicing_primaries(self):
+        examples = [
+            "(lambda x: x)[1:2]",
+            "1[2]",
+            "enumerate[2]",
+            "(1, 2, 3)[a:]",
+            "(1, 2, 3)[object:object]",
+            "(1, 2, 3)[1:object]",
+        ]
+        for code in examples:
+            node = test_utils.extract_node(code)
+            self.assertRaises(InferenceError, next, node.infer())
+
+    def test_instance_slicing(self):
+        ast_nodes = test_utils.extract_node('''
+        class A(object):
+            def __getitem__(self, index):
+                return [1, 2, 3, 4, 5][index]
+        A()[1:] #@
+        A()[:2] #@
+        A()[1:4] #@
+        ''')
+        expected_values = [
+            [2, 3, 4, 5],
+            [1, 2],
+            [2, 3, 4],
+        ]
+        for expected, node in zip(expected_values, ast_nodes):
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, nodes.List)
+            self.assertEqual([elt.value for elt in inferred.elts], expected)
+
+    def test_instance_slicing_fails(self):
+        ast_nodes = test_utils.extract_node('''
+        class A(object):
+            def __getitem__(self, index):
+                return 1[index]
+        A()[4:5] #@
+        A()[2:] #@
+        ''')
+        for node in ast_nodes:
+            self.assertEqual(next(node.infer()), util.YES)
 
 
 class GetattrTest(unittest.TestCase):

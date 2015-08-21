@@ -32,7 +32,6 @@ from astroid import bases
 from astroid import decorators
 from astroid import exceptions
 from astroid import MANAGER
-from astroid import mixins
 from astroid import node_classes
 from astroid import scoped_nodes
 
@@ -40,27 +39,11 @@ from astroid import scoped_nodes
 BUILTINS = six.moves.builtins.__name__
 
 
-class FrozenSet(bases.NodeNG, bases.Instance, mixins.ParentAssignTypeMixin):
+class FrozenSet(node_classes._BaseContainer):
     """class representing a FrozenSet composite node"""
-    _astroid_fields = ('elts',)
-
-    def postinit(self, elts=None):
-        self.elts = elts
-
-    @classmethod
-    def from_constants(cls, elts=None):
-        node = cls()
-        if elts is None:
-            node.elts = []
-        else:
-            node.elts = [node_classes.const_factory(e) for e in elts]
-        return node
 
     def pytype(self):
         return '%s.frozenset' % BUILTINS
-
-    def itered(self):
-        return self.elts
 
     def _infer(self, context=None):
         yield self
@@ -69,9 +52,6 @@ class FrozenSet(bases.NodeNG, bases.Instance, mixins.ParentAssignTypeMixin):
     def _proxied(self):
         builtins = MANAGER.astroid_cache[BUILTINS]
         return builtins.getattr('frozenset')[0]
-
-    def bool_value(self):
-        return bool(self.elts)
 
 
 class Super(bases.NodeNG):

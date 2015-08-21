@@ -24,6 +24,8 @@ import functools
 import itertools
 import operator
 
+import six
+
 from astroid import bases
 from astroid import context as contextmod
 from astroid import exceptions
@@ -119,6 +121,13 @@ nodes.Call._infer = infer_call
 
 
 @bases.path_wrapper
+def infer_slice(self, context=None):
+    yield self
+
+nodes.Slice._infer = infer_slice
+
+
+@bases.path_wrapper
 def infer_import(self, context=None, asname=True):
     """infer an Import node: return the imported module/object"""
     name = context.lookupname
@@ -190,8 +199,43 @@ def infer_global(self, context=None):
 nodes.Global._infer = infer_global
 
 
+_SLICE_SENTINEL = object()
+
+def _slice_value(index, context=None):
+    """Get the value of the given slice index."""
+    if isinstance(index, nodes.Const):
+        if isinstance(index.value, (int, type(None))):
+            return index.value
+    elif index is None:
+        return None
+    else:
+        # Try to infer what the index actually is.
+        # Since we can't return all the possible values,
+        # we'll stop at the first possible value.
+        try:
+            inferred = next(index.infer(context=context))
+        except exceptions.InferenceError:
+            pass
+        else:
+            if isinstance(inferred, nodes.Const):
+                if isinstance(inferred.value, (int, type(None))):
+                    return inferred.value
+
+    # Use a sentinel, because None can be a valid
+    # value that this function can return,
+    # as it is the case for unspecified bounds.
+    return _SLICE_SENTINEL
+
+
 def infer_subscript(self, context=None):
-    """infer simple subscription such as [1,2,3][0] or (1,2,3)[-1]"""
+    """Inference for subscripts
+
+    We're understanding if the index is a Const
+    or a slice, passing the result of inference
+    to the value's `getitem` method, which should
+    handle each supported index type accordingly.
+    """
+
     value = next(self.value.infer(context))
     if value is util.YES:
         yield util.YES
@@ -202,24 +246,35 @@ def infer_subscript(self, context=None):
         yield util.YES
         return
 
+    index_value = _SLICE_SENTINEL
     if isinstance(index, nodes.Const):
-        try:
-            assigned = value.getitem(index.value, context)
-        except AttributeError:
-            raise exceptions.InferenceError()
-        except (IndexError, TypeError):
-            yield util.YES
-            return
-
-        # Prevent inferring if the inferred subscript
-        # is the same as the original subscripted object.
-        if self is assigned or assigned is util.YES:
-            yield util.YES
-            return
-        for inferred in assigned.infer(context):
-            yield inferred
+        index_value = index.value
+    elif isinstance(index, nodes.Slice):
+        # Infer slices from the original object.
+        lower = _slice_value(index.lower, context)
+        upper = _slice_value(index.upper, context)
+        step = _slice_value(index.step, context)
+        if all(elem is not _SLICE_SENTINEL for elem in (lower, upper, step)):
+            index_value = slice(lower, upper, step)
     else:
         raise exceptions.InferenceError()
+
+    if index_value is _SLICE_SENTINEL:
+        raise exceptions.InferenceError
+
+    try:
+        assigned = value.getitem(index_value, context)
+    except (IndexError, TypeError, AttributeError) as exc:
+        six.raise_from(exceptions.InferenceError, exc)
+
+    # Prevent inferring if the inferred subscript
+    # is the same as the original subscripted object.
+    if self is assigned or assigned is util.YES:
+        yield util.YES
+        return
+    for inferred in assigned.infer(context):
+        yield inferred
+
 nodes.Subscript._infer = bases.path_wrapper(infer_subscript)
 nodes.Subscript.infer_lhs = bases.raise_if_nothing_inferred(infer_subscript)
 
@@ -642,7 +697,6 @@ nodes.Index._infer = infer_index
 def instance_getitem(self, index, context=None):
     # Rewrap index to Const for this case
     index = nodes.Const(index)
-
     if context:
         new_context = context.clone()
     else:

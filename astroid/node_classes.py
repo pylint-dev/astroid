@@ -18,6 +18,8 @@
 """Module for some node classes. More nodes in scoped_nodes.py
 """
 
+import abc
+
 import lazy_object_proxy
 import six
 
@@ -106,6 +108,52 @@ def are_exclusive(stmt1, stmt2, exceptions=None):
         previous = node
         node = node.parent
     return False
+
+
+def _container_getitem(instance, elts, index):
+    """Get a slice or an item, using the given *index*, for the given sequence."""
+    if isinstance(index, slice):
+        new_cls = instance.__class__()
+        new_cls.elts = elts[index]
+        new_cls.parent = instance.parent
+        return new_cls
+    else:
+        return elts[index]
+
+
+@six.add_metaclass(abc.ABCMeta)
+class _BaseContainer(mixins.ParentAssignTypeMixin,
+                     bases.NodeNG,
+                     bases.Instance):
+    """Base class for Set, FrozenSet, Tuple and List."""
+
+    _astroid_fields = ('elts',)
+
+    def __init__(self, lineno=None, col_offset=None, parent=None):
+        self.elts = []
+        super(_BaseContainer, self).__init__(lineno, col_offset, parent)
+
+    def postinit(self, elts):
+        self.elts = elts
+
+    @classmethod
+    def from_constants(cls, elts=None):
+        node = cls()
+        if elts is None:
+            node.elts = []
+        else:
+            node.elts = [const_factory(e) for e in elts]
+        return node
+
+    def itered(self):
+        return self.elts
+
+    def bool_value(self):
+        return bool(self.elts)
+
+    @abc.abstractmethod
+    def pytype(self):
+        pass
 
 
 class LookupMixIn(object):
@@ -301,7 +349,6 @@ class Arguments(mixins.AssignTypeMixin, bases.NodeNG):
         _astroid_fields = ('args', 'defaults', 'kwonlyargs',
                            'kw_defaults', 'annotations', 'varargannotation',
                            'kwargannotation')
-        # annotations = None
         varargannotation = None
         kwargannotation = None
     else:
@@ -968,37 +1015,14 @@ class Keyword(bases.NodeNG):
         self.value = value
 
 
-class List(mixins.ParentAssignTypeMixin, bases.NodeNG, bases.Instance):
+class List(_BaseContainer):
     """class representing a List node"""
-    _astroid_fields = ('elts',)
-
-    def __init__(self, lineno=None, col_offset=None, parent=None):
-        self.elts = []
-        super(List, self).__init__(lineno, col_offset, parent)
-
-    def postinit(self, elts):
-        self.elts = elts
-
-    @classmethod
-    def from_constants(cls, elts=None):
-        node = cls()
-        if elts is None:
-            node.elts = []
-        else:
-            node.elts = [const_factory(e) for e in elts]
-        return node
 
     def pytype(self):
         return '%s.list' % BUILTINS
 
     def getitem(self, index, context=None):
-        return self.elts[index]
-
-    def itered(self):
-        return self.elts
-
-    def bool_value(self):
-        return bool(self.elts)
+        return _container_getitem(self, self.elts, index)
 
 
 class Nonlocal(bases.Statement):
@@ -1070,34 +1094,11 @@ class Return(bases.Statement):
         self.value = value
 
 
-class Set(mixins.ParentAssignTypeMixin, bases.NodeNG, bases.Instance):
+class Set(_BaseContainer):
     """class representing a Set node"""
-    _astroid_fields = ('elts',)
-
-    def __init__(self, lineno=None, col_offset=None, parent=None):
-        self.elts = []
-        super(Set, self).__init__(lineno, col_offset, parent)
-
-    def postinit(self, elts):
-        self.elts = elts
-
-    @classmethod
-    def from_constants(cls, elts=None):
-        node = cls()
-        if elts is None:
-            node.elts = []
-        else:
-            node.elts = [const_factory(e) for e in elts]
-        return node
 
     def pytype(self):
         return '%s.set' % BUILTINS
-
-    def itered(self):
-        return self.elts
-
-    def bool_value(self):
-        return bool(self.elts)
 
 
 class Slice(bases.NodeNG):
@@ -1181,37 +1182,14 @@ class TryFinally(mixins.BlockRangeMixIn, bases.Statement):
         return self._elsed_block_range(lineno, self.finalbody)
 
 
-class Tuple(mixins.ParentAssignTypeMixin, bases.NodeNG, bases.Instance):
+class Tuple(_BaseContainer):
     """class representing a Tuple node"""
-    _astroid_fields = ('elts',)
-
-    def __init__(self, lineno=None, col_offset=None, parent=None):
-        self.elts = []
-        super(Tuple, self).__init__(lineno, col_offset, parent)
-
-    def postinit(self, elts):
-        self.elts = elts
-
-    @classmethod
-    def from_constants(cls, elts=None):
-        node = cls()
-        if elts is None:
-            node.elts = []
-        else:
-            node.elts = [const_factory(e) for e in elts]
-        return node
 
     def pytype(self):
         return '%s.tuple' % BUILTINS
 
     def getitem(self, index, context=None):
-        return self.elts[index]
-
-    def itered(self):
-        return self.elts
-
-    def bool_value(self):
-        return bool(self.elts)
+        return _container_getitem(self, self.elts, index)
 
 
 class UnaryOp(bases.NodeNG):
