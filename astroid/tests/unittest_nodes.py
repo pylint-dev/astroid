@@ -17,8 +17,6 @@
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 """tests for specific behaviour of astroid nodes
 """
-from astroid.as_string import dump
-
 import os
 import sys
 import textwrap
@@ -477,7 +475,6 @@ class ArgumentsNodeTC(unittest.TestCase):
             pass
         ''')
         new = cls.getattr('__new__')[-1]
-        # print(dump(new))
         self.assertEqual(new.args.fromlineno, 0)
 
 

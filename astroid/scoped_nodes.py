@@ -197,7 +197,6 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, bases.NodeNG):
         if the name is already defined, ignore it
         """
         #assert not stmt in self.locals.get(name, ()), (self, stmt)
-        # print('Set local:', self, name, stmt, inspect.getframeinfo(inspect.currentframe().f_back), sep='\n')
         self.locals.setdefault(name, []).append(stmt)
 
     __setitem__ = set_local

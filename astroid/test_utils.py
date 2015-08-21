@@ -46,7 +46,6 @@ def _extract_expressions(node):
                 setattr(node.parent, name, real_expr)
         yield real_expr
     else:
-        # print(as_string.dump(node))
         for child in node.get_children():
             for result in _extract_expressions(child):
                 yield result
@@ -79,12 +78,7 @@ def _find_statement_by_line(node, line):
     if node_line == line:
         return node
 
-    # print(as_string.dump(node))
     for child in node.get_children():
-        # print(type(child))
-        # if isinstance(child, tuple):
-        #     # print(as_string.dump(node))
-        #     print(node.names)
         result = _find_statement_by_line(child, line)
         if result:
             return result

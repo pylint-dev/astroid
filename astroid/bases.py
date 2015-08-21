@@ -20,7 +20,6 @@ inference utils.
 """
 
 from __future__ import print_function
-import inspect
 
 import sys
 import warnings
@@ -377,7 +376,6 @@ def raise_if_nothing_inferred(func):
             inferred = True
             yield node
         if not inferred:
-            # print('Not inferred:', func, args, kwargs, inspect.getframeinfo(inspect.currentframe().f_back), sep='\n')
             raise exceptions.InferenceError()
     return wrapper
 
