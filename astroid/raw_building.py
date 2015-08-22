@@ -77,10 +77,10 @@ def attach_const_node(node, name, value):
         _attach_local_node(node, nodes.const_factory(value), name)
 
 def attach_import_node(node, modname, membername):
-    """create a From node and register it in the locals of the given
+    """create a ImportFrom node and register it in the locals of the given
     node with the specified name
     """
-    from_node = nodes.From(modname, [(membername, None)])
+    from_node = nodes.ImportFrom(modname, [(membername, None)])
     _attach_local_node(node, from_node, membername)
 
 
@@ -93,8 +93,8 @@ def build_module(name, doc=None):
 
 
 def build_class(name, basenames=(), doc=None):
-    """create and initialize a astroid Class node"""
-    node = nodes.Class(name, doc)
+    """create and initialize a astroid ClassDef node"""
+    node = nodes.ClassDef(name, doc)
     for base in basenames:
         basenode = nodes.Name()
         basenode.name = base
@@ -104,10 +104,10 @@ def build_class(name, basenames=(), doc=None):
 
 
 def build_function(name, args=None, defaults=None, flag=0, doc=None):
-    """create and initialize a astroid Function node"""
+    """create and initialize a astroid FunctionDef node"""
     args, defaults = args or [], defaults or []
     # first argument is now a list of decorators
-    func = nodes.Function(name, doc)
+    func = nodes.FunctionDef(name, doc)
     func.args = argsnode = nodes.Arguments()
     argsnode.args = []
     for arg in args:
@@ -127,9 +127,8 @@ def build_function(name, args=None, defaults=None, flag=0, doc=None):
 
 
 def build_from_import(fromname, names):
-    """create and initialize an astroid From import statement"""
-    return nodes.From(fromname, [(name, None) for name in names])
-
+    """create and initialize an astroid ImportFrom import statement"""
+    return nodes.ImportFrom(fromname, [(name, None) for name in names])
 
 def register_arguments(func, args=None):
     """add given arguments to local
@@ -237,7 +236,7 @@ class InspectBuilder(object):
     """class for building nodes from living object
 
     this is actually a really minimal representation, including only Module,
-    Function and Class nodes and some others as guessed.
+    FunctionDef and ClassDef nodes and some others as guessed.
     """
 
     # astroid from living objects ###############################################
@@ -394,8 +393,7 @@ def _set_proxied(const):
     return _CONST_PROXY[const.value.__class__]
 nodes.Const._proxied = property(_set_proxied)
 
-_GeneratorType = nodes.Class(types.GeneratorType.__name__,
-                             types.GeneratorType.__doc__)
+_GeneratorType = nodes.ClassDef(types.GeneratorType.__name__, types.GeneratorType.__doc__)
 _GeneratorType.parent = MANAGER.astroid_cache[six.moves.builtins.__name__]
 bases.Generator._proxied = _GeneratorType
 Astroid_BUILDER.object_build(bases.Generator._proxied, types.GeneratorType)

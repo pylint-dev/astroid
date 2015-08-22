@@ -18,6 +18,8 @@
 """This module contains some mixins for the different nodes.
 """
 
+import warnings
+
 from astroid import decorators
 from astroid import exceptions
 
@@ -53,14 +55,28 @@ class FilterStmtsMixin(object):
             return [node], True
         return _stmts, False
 
-    def ass_type(self):
+    def assign_type(self):
         return self
+
+    def ass_type(self):
+        warnings.warn('%s.ass_type() is deprecated and slated for removal '
+                      'in astroid 2.0, use %s.assign_type() instead.'
+                      % (type(self).__name__, type(self).__name__),
+                      PendingDeprecationWarning)
+        return self.assign_type()
 
 
 class AssignTypeMixin(object):
 
-    def ass_type(self):
+    def assign_type(self):
         return self
+
+    def ass_type(self):
+        warnings.warn('%s.ass_type() is deprecated and slated for removal '
+                      'in astroid 2.0, use %s.assign_type() instead.'
+                      % (type(self).__name__, type(self).__name__),
+                      PendingDeprecationWarning)
+        return self.assign_type()
 
     def _get_filtered_stmts(self, lookup_node, node, _stmts, mystmt):
         """method used in filter_stmts"""
@@ -75,11 +91,18 @@ class AssignTypeMixin(object):
 
 class ParentAssignTypeMixin(AssignTypeMixin):
 
+    def assign_type(self):
+        return self.parent.assign_type()
+
     def ass_type(self):
-        return self.parent.ass_type()
+        warnings.warn('%s.ass_type() is deprecated and slated for removal '
+                      'in astroid 2.0, use %s.assign_type() instead.'
+                      % (type(self).__name__, type(self).__name__),
+                      PendingDeprecationWarning)
+        return self.assign_type()
 
 
-class FromImportMixIn(FilterStmtsMixin):
+class ImportFromMixin(FilterStmtsMixin):
     """MixIn for From and Import Nodes"""
 
     def _infer_name(self, frame, name):

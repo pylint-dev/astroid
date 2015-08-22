@@ -26,14 +26,14 @@ from astroid import util
 
 
 class InferenceContext(object):
-    __slots__ = ('path', 'lookupname', 'callcontext', 'boundnode', 'infered')
+    __slots__ = ('path', 'lookupname', 'callcontext', 'boundnode', 'inferred')
 
-    def __init__(self, path=None, infered=None):
+    def __init__(self, path=None, inferred=None):
         self.path = path or set()
         self.lookupname = None
         self.callcontext = None
         self.boundnode = None
-        self.infered = infered or {}
+        self.inferred = inferred or {}
 
     def push(self, node):
         name = self.lookupname
@@ -43,7 +43,7 @@ class InferenceContext(object):
 
     def clone(self):
         # XXX copy lookupname/callcontext ?
-        clone = InferenceContext(self.path, infered=self.infered)
+        clone = InferenceContext(self.path, inferred=self.inferred)
         clone.callcontext = self.callcontext
         clone.boundnode = self.boundnode
         return clone
@@ -54,7 +54,7 @@ class InferenceContext(object):
             results.append(result)
             yield result
 
-        self.infered[key] = tuple(results)
+        self.inferred[key] = tuple(results)
         return
 
     @contextlib.contextmanager
@@ -79,12 +79,12 @@ class CallContext(object):
     @staticmethod
     def _infer_argument_container(container, key, context):
         its = []
-        for infered in container.infer(context=context):
-            if infered is util.YES:
+        for inferred in container.infer(context=context):
+            if inferred is util.YES:
                 its.append((util.YES,))
                 continue
             try:
-                its.append(infered.getitem(key, context).infer(context=context))
+                its.append(inferred.getitem(key, context).infer(context=context))
             except (exceptions.InferenceError, AttributeError):
                 its.append((util.YES,))
             except (IndexError, TypeError):

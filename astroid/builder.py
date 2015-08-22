@@ -152,7 +152,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         module.file_encoding = encoding
         self._manager.cache_module(module)
         # post tree building steps after we stored the module in the cache:
-        for from_node in module._from_nodes:
+        for from_node in module._import_from_nodes:
             if from_node.modname == '__future__':
                 for symbol, _ in from_node.names:
                     module.future_imports.add(symbol)
@@ -183,7 +183,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
             package = path and path.find('__init__.py') > -1 or False
         builder = rebuilder.TreeRebuilder(self._manager)
         module = builder.visit_module(node, modname, node_file, package)
-        module._from_nodes = builder._from_nodes
+        module._import_from_nodes = builder._import_from_nodes
         module._delayed_assattr = builder._delayed_assattr
         return module
 
@@ -216,21 +216,21 @@ class AstroidBuilder(raw_building.InspectBuilder):
         """
         try:
             frame = node.frame()
-            for infered in node.expr.infer():
-                if infered is util.YES:
+            for inferred in node.expr.infer():
+                if inferred is util.YES:
                     continue
                 try:
-                    if infered.__class__ is bases.Instance:
-                        infered = infered._proxied
-                        iattrs = infered.instance_attrs
-                    elif isinstance(infered, bases.Instance):
+                    if inferred.__class__ is bases.Instance:
+                        inferred = inferred._proxied
+                        iattrs = inferred.instance_attrs
+                    elif isinstance(inferred, bases.Instance):
                         # Const, Tuple, ... we may be wrong, may be not, but
                         # anyway we don't want to pollute builtin's namespace
                         continue
-                    elif infered.is_function:
-                        iattrs = infered.instance_attrs
+                    elif inferred.is_function:
+                        iattrs = inferred.instance_attrs
                     else:
-                        iattrs = infered.locals
+                        iattrs = inferred.locals
                 except AttributeError:
                     # XXX log error
                     continue

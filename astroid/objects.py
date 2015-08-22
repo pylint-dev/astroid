@@ -22,7 +22,7 @@ which are used only as inference results, so they can't be found in the
 original AST tree. For instance, inferring the following frozenset use,
 leads to an inferred FrozenSet:
 
-    CallFunc(func=Name('frozenset'), args=Tuple(...))
+    Call(func=Name('frozenset'), args=Tuple(...))
 
 """
 
@@ -85,17 +85,17 @@ class Super(bases.NodeNG):
 
     def super_mro(self):
         """Get the MRO which will be used to lookup attributes in this super."""
-        if not isinstance(self.mro_pointer, scoped_nodes.Class):
+        if not isinstance(self.mro_pointer, scoped_nodes.ClassDef):
             raise exceptions.SuperArgumentTypeError(
                 "The first super argument must be type.")
 
-        if isinstance(self.type, scoped_nodes.Class):
+        if isinstance(self.type, scoped_nodes.ClassDef):
             # `super(type, type)`, most likely in a class method.
             self._class_based = True
             mro_type = self.type
         else:
             mro_type = getattr(self.type, '_proxied', None)
-            if not isinstance(mro_type, (bases.Instance, scoped_nodes.Class)):
+            if not isinstance(mro_type, (bases.Instance, scoped_nodes.ClassDef)):
                 raise exceptions.SuperArgumentTypeError(
                     "super(type, obj): obj must be an "
                     "instance or subtype of type")
@@ -149,21 +149,21 @@ class Super(bases.NodeNG):
                 continue
 
             found = True
-            for infered in bases._infer_stmts([cls[name]], context, frame=self):
-                if not isinstance(infered, scoped_nodes.Function):
-                    yield infered
+            for inferred in bases._infer_stmts([cls[name]], context, frame=self):
+                if not isinstance(inferred, scoped_nodes.FunctionDef):
+                    yield inferred
                     continue
 
                 # We can obtain different descriptors from a super depending
                 # on what we are accessing and where the super call is.
-                if infered.type == 'classmethod':
-                    yield bases.BoundMethod(infered, cls)
-                elif self._scope.type == 'classmethod' and infered.type == 'method':
-                    yield infered
-                elif self._class_based or infered.type == 'staticmethod':
-                    yield infered
+                if inferred.type == 'classmethod':
+                    yield bases.BoundMethod(inferred, cls)
+                elif self._scope.type == 'classmethod' and inferred.type == 'method':
+                    yield inferred
+                elif self._class_based or inferred.type == 'staticmethod':
+                    yield inferred
                 else:
-                    yield bases.BoundMethod(infered, cls)
+                    yield bases.BoundMethod(inferred, cls)
 
         if not found:
             raise exceptions.NotFoundError(name)

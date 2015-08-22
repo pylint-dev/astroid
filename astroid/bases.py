@@ -19,7 +19,10 @@
 inference utils.
 """
 
+from __future__ import print_function
+
 import sys
+import warnings
 
 from astroid import context as contextmod
 from astroid import decorators as decoratorsmod
@@ -80,7 +83,7 @@ class Proxy(object):
 def _infer_stmts(stmts, context, frame=None):
     """Return an iterator on statements inferred by each statement in *stmts*."""
     stmt = None
-    infered = False
+    inferred = False
     if context is not None:
         name = context.lookupname
         context = context.clone()
@@ -91,19 +94,19 @@ def _infer_stmts(stmts, context, frame=None):
     for stmt in stmts:
         if stmt is util.YES:
             yield stmt
-            infered = True
+            inferred = True
             continue
         context.lookupname = stmt._infer_name(frame, name)
         try:
-            for infered in stmt.infer(context=context):
-                yield infered
-                infered = True
+            for inferred in stmt.infer(context=context):
+                yield inferred
+                inferred = True
         except exceptions.UnresolvableName:
             continue
         except exceptions.InferenceError:
             yield util.YES
-            infered = True
-    if not infered:
+            inferred = True
+    if not inferred:
         raise exceptions.InferenceError(str(stmt))
 
 
@@ -176,8 +179,8 @@ class Instance(Proxy):
         for attr in attrs:
             if isinstance(attr, UnboundMethod):
                 if _is_property(attr):
-                    for infered in attr.infer_call_result(self, context):
-                        yield infered
+                    for inferred in attr.infer_call_result(self, context):
+                        yield inferred
                 else:
                     yield BoundMethod(attr, self)
             elif hasattr(attr, 'name') and attr.name == '<lambda>':
@@ -196,14 +199,14 @@ class Instance(Proxy):
 
     def infer_call_result(self, caller, context=None):
         """infer what a class instance is returning when called"""
-        infered = False
+        inferred = False
         for node in self._proxied.igetattr('__call__', context):
             if node is util.YES:
                 continue
             for res in node.infer_call_result(caller, context):
-                infered = True
+                inferred = True
                 yield res
-        if not infered:
+        if not inferred:
             raise exceptions.InferenceError()
 
     def __repr__(self):
@@ -356,23 +359,23 @@ def path_wrapper(func):
                 yielded.add(ares)
     return wrapped
 
-def yes_if_nothing_infered(func):
+def yes_if_nothing_inferred(func):
     def wrapper(*args, **kwargs):
-        infered = False
+        inferred = False
         for node in func(*args, **kwargs):
-            infered = True
+            inferred = True
             yield node
-        if not infered:
+        if not inferred:
             yield util.YES
     return wrapper
 
-def raise_if_nothing_infered(func):
+def raise_if_nothing_inferred(func):
     def wrapper(*args, **kwargs):
-        infered = False
+        inferred = False
         for node in func(*args, **kwargs):
-            infered = True
+            inferred = True
             yield node
-        if not infered:
+        if not inferred:
             raise exceptions.InferenceError()
     return wrapper
 
@@ -385,8 +388,8 @@ class NodeNG(object):
     It represents a node of the new abstract syntax tree.
     """
     is_statement = False
-    optional_assign = False # True  for For (and for Comprehension if py <3.0)
-    is_function = False # True for Function nodes
+    optional_assign = False # True for For (and for Comprehension if py <3.0)
+    is_function = False # True for FunctionDef nodes
     # attributes below are set by the builder module or by raw factories
     lineno = None
     col_offset = None
@@ -397,8 +400,13 @@ class NodeNG(object):
     # instance specific inference function infer(node, context)
     _explicit_inference = None
 
+    def __init__(self, lineno=None, col_offset=None, parent=None):
+        self.lineno = lineno
+        self.col_offset = col_offset
+        self.parent = parent
+
     def infer(self, context=None, **kwargs):
-        """main interface to the interface system, return a generator on infered
+        """main interface to the interface system, return a generator on inferred
         values.
 
         If the instance has some explicit inference function set, it will be
@@ -417,8 +425,8 @@ class NodeNG(object):
 
         key = (self, context.lookupname,
                context.callcontext, context.boundnode)
-        if key in context.infered:
-            return iter(context.infered[key])
+        if key in context.inferred:
+            return iter(context.inferred[key])
 
         return context.cache_generator(key, self._infer(context, **kwargs))
 
@@ -458,7 +466,7 @@ class NodeNG(object):
             attr = getattr(self, field)
             if not attr: # None or empty listy / tuple
                 continue
-            if attr.__class__ in (list, tuple):
+            if isinstance(attr, (list, tuple)):
                 return attr[-1]
             else:
                 return attr
@@ -480,13 +488,16 @@ class NodeNG(object):
         return self.parent.statement()
 
     def frame(self):
-        """return the first parent frame node (i.e. Module, Function or Class)
+        """return the first parent frame node (i.e. Module, FunctionDef or
+        ClassDef)
+
         """
         return self.parent.frame()
 
     def scope(self):
-        """return the first node defining a new scope (i.e. Module, Function,
-        Class, Lambda but also GenExpr)
+        """return the first node defining a new scope (i.e. Module,
+        FunctionDef, ClassDef, Lambda but also GenExpr)
+
         """
         return self.parent.scope()
 
@@ -618,7 +629,7 @@ class NodeNG(object):
                 yield matching
 
     def _infer_name(self, frame, name):
-        # overridden for From, Import, Global, TryExcept and Arguments
+        # overridden for ImportFrom, Import, Global, TryExcept and Arguments
         return None
 
     def _infer(self, context=None):
@@ -626,12 +637,19 @@ class NodeNG(object):
         # this method is overridden by most concrete classes
         raise exceptions.InferenceError(self.__class__.__name__)
 
-    def infered(self):
-        '''return list of infered values for a more simple inference usage'''
+    def inferred(self):
+        '''return list of inferred values for a more simple inference usage'''
         return list(self.infer())
 
+    def infered(self):
+        warnings.warn('%s.infered() is deprecated and slated for removal '
+                      'in astroid 2.0, use %s.inferred() instead.'
+                      % (type(self).__name__, type(self).__name__),
+                      PendingDeprecationWarning)
+        return self.inferred()
+
     def instanciate_class(self):
-        """instanciate a node if it is a Class node, else return self"""
+        """instanciate a node if it is a ClassDef node, else return self"""
         return self
 
     def has_base(self, node):

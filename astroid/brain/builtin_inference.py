@@ -14,7 +14,6 @@ from astroid import objects
 from astroid import scoped_nodes
 from astroid import util
 
-
 def _extend_str(class_node, rvalue):
     """function to extend builtin str/unicode class"""
     # TODO(cpopa): this approach will make astroid to believe
@@ -100,7 +99,7 @@ def register_builtin_transform(transform, builtin_name):
             result.col_offset = node.col_offset
         return iter([result])
 
-    MANAGER.register_transform(nodes.CallFunc,
+    MANAGER.register_transform(nodes.Call,
                                inference_tip(_transform_wrapper),
                                lambda n: (isinstance(n.func, nodes.Name) and
                                           n.func.name == builtin_name))
@@ -117,12 +116,12 @@ def _generic_inference(node, context, node_type, transform):
     transformed = transform(arg)
     if not transformed:
         try:
-            infered = next(arg.infer(context=context))
+            inferred = next(arg.infer(context=context))
         except (InferenceError, StopIteration):
             raise UseInferenceDefault()
-        if infered is util.YES:
+        if inferred is util.YES:
             raise UseInferenceDefault()
-        transformed = transform(infered)
+        transformed = transform(inferred)
     if not transformed or transformed is util.YES:
         raise UseInferenceDefault()
     return transformed
@@ -148,7 +147,7 @@ def _generic_transform(arg, klass, iterables, build_elts):
         elts = arg.value
     else:
         return
-    return klass(elts=build_elts(elts))
+    return klass.from_constants(elts=build_elts(elts))
 
 
 def _infer_builtin(node, context,
@@ -192,14 +191,14 @@ def _get_elts(arg, context):
     is_iterable = lambda n: isinstance(n,
                                        (nodes.List, nodes.Tuple, nodes.Set))
     try:
-        infered = next(arg.infer(context))
+        inferred = next(arg.infer(context))
     except (InferenceError, UnresolvableName):
         raise UseInferenceDefault()
-    if isinstance(infered, nodes.Dict):
-        items = infered.items
-    elif is_iterable(infered):
+    if isinstance(inferred, nodes.Dict):
+        items = inferred.items
+    elif is_iterable(inferred):
         items = []
-        for elt in infered.elts:
+        for elt in inferred.elts:
             # If an item is not a pair of two items,
             # then fallback to the default inference.
             # Also, take in consideration only hashable items,
@@ -228,7 +227,7 @@ def infer_dict(node, context=None):
         * dict(mapping, **kwargs)
         * dict(**kwargs)
 
-    If a case can't be infered, we'll fallback to default inference.
+    If a case can't be inferred, we'll fallback to default inference.
     """
     if not node.args and not node.kwargs and not node.keywords:
         # dict()
@@ -261,7 +260,7 @@ def infer_super(node, context=None):
         * if the super call is not inside a function (classmethod or method),
           then the default inference will be used.
 
-        * if the super arguments can't be infered, the default inference
+        * if the super arguments can't be inferred, the default inference
           will be used.
     """
     if len(node.args) == 1:
@@ -269,7 +268,7 @@ def infer_super(node, context=None):
         raise UseInferenceDefault
 
     scope = node.scope()
-    if not isinstance(scope, nodes.Function):
+    if not isinstance(scope, nodes.FunctionDef):
         # Ignore non-method uses of super.
         raise UseInferenceDefault
     if scope.type not in ('classmethod', 'method'):

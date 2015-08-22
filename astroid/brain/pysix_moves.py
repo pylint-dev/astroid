@@ -268,7 +268,7 @@ def transform_six_add_metaclass(node):
         return
 
     for decorator in node.decorators.nodes:
-        if not isinstance(decorator, nodes.CallFunc):
+        if not isinstance(decorator, nodes.Call):
             continue
 
         try:
@@ -285,4 +285,4 @@ register_module_extender(MANAGER, 'six', six_moves_transform)
 register_module_extender(MANAGER, 'requests.packages.urllib3.packages.six',
                          six_moves_transform)
 MANAGER.register_failed_import_hook(_six_fail_hook)
-MANAGER.register_transform(nodes.Class, transform_six_add_metaclass)
+MANAGER.register_transform(nodes.ClassDef, transform_six_add_metaclass)

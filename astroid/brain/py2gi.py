@@ -168,7 +168,7 @@ def _looks_like_require_version(node):
         return False
 
     func = node.func
-    if isinstance(func, nodes.Getattr):
+    if isinstance(func, nodes.Attribute):
         if func.attrname != 'require_version':
             return False
         if isinstance(func.expr, nodes.Name) and func.expr.name == 'gi':
@@ -192,4 +192,4 @@ def _register_require_version(node):
     return node
 
 MANAGER.register_failed_import_hook(_import_gi_module)
-MANAGER.register_transform(nodes.CallFunc, _register_require_version, _looks_like_require_version)
+MANAGER.register_transform(nodes.Call, _register_require_version, _looks_like_require_version)

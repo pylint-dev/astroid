@@ -18,9 +18,9 @@
 from textwrap import dedent
 import unittest
 
-from astroid.node_classes import Assign, Discard, YieldFrom, Name, Const
+from astroid.node_classes import Assign, Expr, YieldFrom, Name, Const
 from astroid.builder import AstroidBuilder
-from astroid.scoped_nodes import Class, Function
+from astroid.scoped_nodes import ClassDef, FunctionDef
 from astroid.test_utils import require_version, extract_node
 
 
@@ -36,7 +36,7 @@ class Python3TC(unittest.TestCase):
         # Get the star node
         node = next(next(next(astroid.get_children()).get_children()).get_children())
 
-        self.assertTrue(isinstance(node.ass_type(), Assign))
+        self.assertTrue(isinstance(node.assign_type(), Assign))
 
     @require_version('3.3')
     def test_yield_from(self):
@@ -46,10 +46,10 @@ class Python3TC(unittest.TestCase):
         """)
         astroid = self.builder.string_build(body)
         func = astroid.body[0]
-        self.assertIsInstance(func, Function)
+        self.assertIsInstance(func, FunctionDef)
         yieldfrom_stmt = func.body[0]
 
-        self.assertIsInstance(yieldfrom_stmt, Discard)
+        self.assertIsInstance(yieldfrom_stmt, Expr)
         self.assertIsInstance(yieldfrom_stmt.value, YieldFrom)
         self.assertEqual(yieldfrom_stmt.as_string(),
                          'yield from iter([1, 2])')
@@ -62,7 +62,7 @@ class Python3TC(unittest.TestCase):
         """)
         astroid = self.builder.string_build(body)
         func = astroid.body[0]
-        self.assertIsInstance(func, Function)
+        self.assertIsInstance(func, FunctionDef)
         self.assertTrue(func.is_generator())
 
     @require_version('3.3')
@@ -84,7 +84,7 @@ class Python3TC(unittest.TestCase):
         klass = astroid.body[0]
 
         metaclass = klass.metaclass()
-        self.assertIsInstance(metaclass, Class)
+        self.assertIsInstance(metaclass, ClassDef)
         self.assertEqual(metaclass.name, 'type')
 
     @require_version('3.0')
@@ -101,7 +101,7 @@ class Python3TC(unittest.TestCase):
         klass = astroid.body[1]
 
         metaclass = klass.metaclass()
-        self.assertIsInstance(metaclass, Class)
+        self.assertIsInstance(metaclass, ClassDef)
         self.assertEqual(metaclass.name, 'ABCMeta')
 
     @require_version('3.0')
@@ -147,7 +147,7 @@ class Python3TC(unittest.TestCase):
         klass = astroid['SubTest']
         self.assertTrue(klass.newstyle)
         metaclass = klass.metaclass()
-        self.assertIsInstance(metaclass, Class)
+        self.assertIsInstance(metaclass, ClassDef)
         self.assertEqual(metaclass.name, 'ABCMeta')
 
     @require_version('3.0')
@@ -175,7 +175,7 @@ class Python3TC(unittest.TestCase):
             for name in names:
                 impl = astroid[name]
                 meta = impl.metaclass()
-                self.assertIsInstance(meta, Class)
+                self.assertIsInstance(meta, ClassDef)
                 self.assertEqual(meta.name, metaclass)
 
     @require_version('3.0')

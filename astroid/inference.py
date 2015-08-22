@@ -18,6 +18,8 @@
 """this module contains a set of functions to handle inference on astroid trees
 """
 
+from __future__ import print_function
+
 import functools
 import itertools
 import operator
@@ -41,12 +43,14 @@ MANAGER = manager.AstroidManager()
 
 
 def infer_end(self, context=None):
-    """inference's end for node such as Module, Class, Function, Const...
+    """inference's end for node such as Module, ClassDef, FunctionDef,
+    Const...
+
     """
     yield self
 nodes.Module._infer = infer_end
-nodes.Class._infer = infer_end
-nodes.Function._infer = infer_end
+nodes.ClassDef._infer = infer_end
+nodes.FunctionDef._infer = infer_end
 nodes.Lambda._infer = infer_end
 nodes.Const._infer = infer_end
 nodes.List._infer = infer_end
@@ -67,7 +71,7 @@ def _higher_function_scope(node):
         which encloses the given node.
     """
     current = node
-    while current.parent and not isinstance(current.parent, nodes.Function):
+    while current.parent and not isinstance(current.parent, nodes.FunctionDef):
         current = current.parent
     if current and current.parent:
         return current.parent
@@ -89,13 +93,13 @@ def infer_name(self, context=None):
     context.lookupname = self.name
     return bases._infer_stmts(stmts, context, frame)
 nodes.Name._infer = bases.path_wrapper(infer_name)
-nodes.AssName.infer_lhs = infer_name # won't work with a path wrapper
+nodes.AssignName.infer_lhs = infer_name # won't work with a path wrapper
 
 
-@bases.raise_if_nothing_infered
+@bases.raise_if_nothing_inferred
 @bases.path_wrapper
-def infer_callfunc(self, context=None):
-    """infer a CallFunc node by trying to guess what the function returns"""
+def infer_call(self, context=None):
+    """infer a Call node by trying to guess what the function returns"""
     callcontext = context.clone()
     callcontext.callcontext = contextmod.CallContext(args=self.args,
                                                      keywords=self.keywords,
@@ -108,12 +112,12 @@ def infer_callfunc(self, context=None):
             continue
         try:
             if hasattr(callee, 'infer_call_result'):
-                for infered in callee.infer_call_result(self, callcontext):
-                    yield infered
+                for inferred in callee.infer_call_result(self, callcontext):
+                    yield inferred
         except exceptions.InferenceError:
             ## XXX log error ?
             continue
-nodes.CallFunc._infer = infer_callfunc
+nodes.Call._infer = infer_call
 
 
 @bases.path_wrapper
@@ -144,8 +148,8 @@ nodes.Import.infer_name_module = infer_name_module
 
 
 @bases.path_wrapper
-def infer_from(self, context=None, asname=True):
-    """infer a From nodes: return the imported module/object"""
+def infer_import_from(self, context=None, asname=True):
+    """infer a ImportFrom node: return the imported module/object"""
     name = context.lookupname
     if name is None:
         raise exceptions.InferenceError()
@@ -159,12 +163,12 @@ def infer_from(self, context=None, asname=True):
         return bases._infer_stmts(stmts, context)
     except exceptions.NotFoundError:
         raise exceptions.InferenceError(name)
-nodes.From._infer = infer_from
+nodes.ImportFrom._infer = infer_import_from
 
 
-@bases.raise_if_nothing_infered
-def infer_getattr(self, context=None):
-    """infer a Getattr node by using getattr on the associated object"""
+@bases.raise_if_nothing_inferred
+def infer_attribute(self, context=None):
+    """infer an Attribute node by using getattr on the associated object"""
     for owner in self.expr.infer(context):
         if owner is util.YES:
             yield owner
@@ -179,8 +183,8 @@ def infer_getattr(self, context=None):
         except AttributeError:
             # XXX method / function
             context.boundnode = None
-nodes.Getattr._infer = bases.path_wrapper(infer_getattr)
-nodes.AssAttr.infer_lhs = infer_getattr # # won't work with a path wrapper
+nodes.Attribute._infer = bases.path_wrapper(infer_attribute)
+nodes.AssignAttr.infer_lhs = infer_attribute # # won't work with a path wrapper
 
 
 @bases.path_wrapper
@@ -263,19 +267,19 @@ def infer_subscript(self, context=None):
     except (IndexError, TypeError, AttributeError) as exc:
         six.raise_from(exceptions.InferenceError, exc)
 
-    # Prevent inferring if the infered subscript
+    # Prevent inferring if the inferred subscript
     # is the same as the original subscripted object.
     if self is assigned or assigned is util.YES:
         yield util.YES
         return
-    for infered in assigned.infer(context):
-        yield infered
+    for inferred in assigned.infer(context):
+        yield inferred
 
 nodes.Subscript._infer = bases.path_wrapper(infer_subscript)
-nodes.Subscript.infer_lhs = bases.raise_if_nothing_infered(infer_subscript)
+nodes.Subscript.infer_lhs = bases.raise_if_nothing_inferred(infer_subscript)
 
 
-@bases.raise_if_nothing_infered
+@bases.raise_if_nothing_inferred
 @bases.path_wrapper
 def _infer_boolop(self, context=None):
     """Infer a boolean operation (and / or / not).
@@ -391,7 +395,7 @@ def infer_unaryop(self, context=None):
                                     exceptions.UnaryOperationError)
 
 nodes.UnaryOp._infer_unaryop = _infer_unaryop
-nodes.UnaryOp._infer = bases.raise_if_nothing_infered(infer_unaryop)
+nodes.UnaryOp._infer = bases.raise_if_nothing_inferred(infer_unaryop)
 
 
 def _is_not_implemented(const):
@@ -602,7 +606,7 @@ def infer_binop(self, context=None):
                                     exceptions.BinaryOperationError)
 
 nodes.BinOp._infer_binop = _infer_binop
-nodes.BinOp._infer = bases.yes_if_nothing_infered(infer_binop)
+nodes.BinOp._infer = bases.yes_if_nothing_inferred(infer_binop)
 
 
 def _infer_augassign(self, context=None):
@@ -655,8 +659,8 @@ nodes.Arguments._infer = infer_arguments
 
 
 @bases.path_wrapper
-def infer_ass(self, context=None):
-    """infer a AssName/AssAttr: need to inspect the RHS part of the
+def infer_assign(self, context=None):
+    """infer a AssignName/AssignAttr: need to inspect the RHS part of the
     assign node
     """
     stmt = self.statement()
@@ -664,8 +668,8 @@ def infer_ass(self, context=None):
         return stmt.infer(context)
     stmts = list(self.assigned_stmts(context=context))
     return bases._infer_stmts(stmts, context)
-nodes.AssName._infer = infer_ass
-nodes.AssAttr._infer = infer_ass
+nodes.AssignName._infer = infer_assign
+nodes.AssignAttr._infer = infer_assign
 
 
 # no infer method on DelName and DelAttr (expected InferenceError)
@@ -676,9 +680,9 @@ def infer_empty_node(self, context=None):
         yield util.YES
     else:
         try:
-            for infered in MANAGER.infer_ast_from_something(self.object,
-                                                            context=context):
-                yield infered
+            for inferred in MANAGER.infer_ast_from_something(self.object,
+                                                             context=context):
+                yield inferred
         except exceptions.AstroidError:
             yield util.YES
 nodes.EmptyNode._infer = infer_empty_node

@@ -234,11 +234,11 @@ class AstroidManager(object):
         # take care, on living object __module__ is regularly wrong :(
         modastroid = self.ast_from_module_name(modname)
         if klass is obj:
-            for infered in modastroid.igetattr(name, context):
-                yield infered
+            for inferred in modastroid.igetattr(name, context):
+                yield inferred
         else:
-            for infered in modastroid.igetattr(name, context):
-                yield infered.instanciate_class()
+            for inferred in modastroid.igetattr(name, context):
+                yield inferred.instanciate_class()
 
     def register_failed_import_hook(self, hook):
         """Registers a hook to resolve imports that cannot be found otherwise.
