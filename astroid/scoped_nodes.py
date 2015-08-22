@@ -659,7 +659,7 @@ class Lambda(LocalsDictNodeNG, mixins.FilterStmtsMixin):
     def display_type(self):
         if 'method' in self.type:
             return 'Method'
-        return 'FunctionDef'
+        return 'Function'
 
     def callable(self):
         return True
@@ -1138,7 +1138,7 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
         return '%s.classobj' % BUILTINS
 
     def display_type(self):
-        return 'ClassDef'
+        return 'Class'
 
     def callable(self):
         return True
