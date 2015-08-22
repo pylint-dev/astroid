@@ -21,6 +21,7 @@ import os
 import sys
 import textwrap
 import unittest
+import warnings
 
 import six
 
@@ -442,9 +443,9 @@ class NameNodeTest(unittest.TestCase):
                 builder.parse(code)
         else:
             ast = builder.parse(code)
-            ass_true = ast['True']
-            self.assertIsInstance(ass_true, nodes.AssignName)
-            self.assertEqual(ass_true.name, "True")
+            assign_true = ast['True']
+            self.assertIsInstance(assign_true, nodes.AssignName)
+            self.assertEqual(assign_true.name, "True")
             del_true = ast.body[2].targets[0]
             self.assertIsInstance(del_true, nodes.DelName)
             self.assertEqual(del_true.name, "True")
@@ -653,6 +654,31 @@ class AliasesTest(unittest.TestCase):
         self.assertEqual(module.body[0].value.value.name, 'bar')
         self.assertIsInstance(module.body[0].value, nodes.Backquote)
 
+
+class DeprecationWarningsTest(unittest.TestCase):
+    def test_asstype_warnings(self):
+        string = '''
+        class C: pass
+        c = C()
+        with warnings.catch_warnings(record=True) as w:
+            pass
+        '''
+        module = parse(string)
+        filter_stmts_mixin = module.body[0]
+        assign_type_mixin = module.body[1].targets[0]
+        parent_assign_type_mixin = module.body[2]
+
+        warnings.simplefilter('always')
+        
+        with warnings.catch_warnings(record=True) as w:
+            filter_stmts_mixin.ass_type()
+            self.assertIsInstance(w[0].message, PendingDeprecationWarning)
+        with warnings.catch_warnings(record=True) as w:
+            assign_type_mixin.ass_type()
+            self.assertIsInstance(w[0].message, PendingDeprecationWarning)
+        with warnings.catch_warnings(record=True) as w:
+            parent_assign_type_mixin.ass_type()
+            self.assertIsInstance(w[0].message, PendingDeprecationWarning)
 
 if __name__ == '__main__':
     unittest.main()

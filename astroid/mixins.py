@@ -59,8 +59,8 @@ class FilterStmtsMixin(object):
         return self
 
     def ass_type(self):
-        warnings.warn('%s.ass_type() is deprecated, '
-                      'use %s.assign_type() instead.'
+        warnings.warn('%s.ass_type() is deprecated and slated for removal '
+                      'in astroid 2.0, use %s.assign_type() instead.'
                       % (type(self).__name__, type(self).__name__),
                       PendingDeprecationWarning)
         return self.assign_type()
@@ -72,8 +72,8 @@ class AssignTypeMixin(object):
         return self
 
     def ass_type(self):
-        warnings.warn('%s.ass_type() is deprecated, '
-                      'use %s.assign_type() instead.'
+        warnings.warn('%s.ass_type() is deprecated and slated for removal '
+                      'in astroid 2.0, use %s.assign_type() instead.'
                       % (type(self).__name__, type(self).__name__),
                       PendingDeprecationWarning)
         return self.assign_type()
@@ -95,8 +95,8 @@ class ParentAssignTypeMixin(AssignTypeMixin):
         return self.parent.assign_type()
 
     def ass_type(self):
-        warnings.warn('%s.ass_type() is deprecated, '
-                      'use %s.assign_type() instead.'
+        warnings.warn('%s.ass_type() is deprecated and slated for removal '
+                      'in astroid 2.0, use %s.assign_type() instead.'
                       % (type(self).__name__, type(self).__name__),
                       PendingDeprecationWarning)
         return self.assign_type()

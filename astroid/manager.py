@@ -23,7 +23,6 @@ from __future__ import print_function
 
 import imp
 import os
-import warnings
 import zipimport
 
 from astroid import exceptions
