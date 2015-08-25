@@ -91,6 +91,27 @@ Change log for the astroid package (used to be astng)
       builtins module. Previously trying to infer the Name(NotImplemented)
       returned an YES object.
 
+    * Add proper grammatical names for `infered` and `ass_type` methods,
+      namely `inferred` and `assign_type`.
+
+      The old methods will raise PendingDeprecationWarning, being slated
+      for removal in astroid 2.0.
+
+    * Add new AST names in order to be similar to the ones
+      from the builtin ast module.
+
+      With this change, Getattr becomes Attributes, Backquote becomes
+      Repr, Class is ClassDef, Function is FunctionDef,  Discard is Expr,
+      CallFunc is Call, From is ImportFrom, AssName is AssignName
+      and AssAttr is AssignAttr. The old names are maintained for backwards
+      compatibility and they are interchangeable, in the sense that using
+      Discard will use Expr under the hood and the implemented visit_discard
+      in checkers will be called with Expr nodes instead. The AST does not
+      contain the old nodes, only the interoperability between them hides this
+      fact. Recommandations to move to the new nodes are emitted accordingly,
+      the old names will be removed in astroid 2.0.
+
+
     * Star unpacking in assignments returns properly a list,
       not the individual components. Closes issue #138.
     * Lambdas found at class level, which have a `self` argument, are considered
