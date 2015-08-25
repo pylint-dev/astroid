@@ -575,7 +575,7 @@ def _infer_decorator_callchain(node):
             return 'staticmethod'
 
 
-class Lambda(LocalsDictNodeNG, mixins.FilterStmtsMixin):
+class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
     _astroid_fields = ('args', 'body',)
     name = '<lambda>'
 
@@ -957,7 +957,7 @@ def _class_type(klass, ancestors=None):
     return klass._type
 
 
-class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
+class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
 
     # some of the attributes below are set by the builder module or
     # by a raw factories
