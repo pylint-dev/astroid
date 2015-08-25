@@ -668,7 +668,7 @@ class Comprehension(bases.NodeNG):
         warnings.warn('%s.ass_type() is deprecated and slated for removal'
                       'in astroid 2.0, use %s.assign_type() instead.'
                       % (type(self).__name__, type(self).__name__),
-                      PendingDeprecationWarning)
+                      PendingDeprecationWarning, stacklevel=2)
         return self.assign_type()
 
     def _get_filtered_stmts(self, lookup_node, node, stmts, mystmt):
