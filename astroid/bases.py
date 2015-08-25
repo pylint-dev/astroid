@@ -586,7 +586,7 @@ class NodeNG(object):
         warnings.warn('%s.infered() is deprecated and slated for removal '
                       'in astroid 2.0, use %s.inferred() instead.'
                       % (type(self).__name__, type(self).__name__),
-                      PendingDeprecationWarning)
+                      PendingDeprecationWarning, stacklevel=2)
         return self.inferred()
 
     def instanciate_class(self):

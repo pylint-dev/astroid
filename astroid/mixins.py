@@ -62,7 +62,7 @@ class FilterStmtsMixin(object):
         warnings.warn('%s.ass_type() is deprecated and slated for removal '
                       'in astroid 2.0, use %s.assign_type() instead.'
                       % (type(self).__name__, type(self).__name__),
-                      PendingDeprecationWarning)
+                      PendingDeprecationWarning, stacklevel=2)
         return self.assign_type()
 
 
@@ -75,7 +75,7 @@ class AssignTypeMixin(object):
         warnings.warn('%s.ass_type() is deprecated and slated for removal '
                       'in astroid 2.0, use %s.assign_type() instead.'
                       % (type(self).__name__, type(self).__name__),
-                      PendingDeprecationWarning)
+                      PendingDeprecationWarning, stacklevel=2)
         return self.assign_type()
 
     def _get_filtered_stmts(self, lookup_node, node, _stmts, mystmt):
@@ -98,7 +98,7 @@ class ParentAssignTypeMixin(AssignTypeMixin):
         warnings.warn('%s.ass_type() is deprecated and slated for removal '
                       'in astroid 2.0, use %s.assign_type() instead.'
                       % (type(self).__name__, type(self).__name__),
-                      PendingDeprecationWarning)
+                      PendingDeprecationWarning, stacklevel=2)
         return self.assign_type()
 
 
