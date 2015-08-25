@@ -1406,7 +1406,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(property_class.value, 42)
 
         static = next(acls.igetattr('static'))
-        self.assertIsInstance(static, scoped_nodes.Function)
+        self.assertIsInstance(static, scoped_nodes.FunctionDef)
 
     @test_utils.require_version(maxver='3.0')
     def test_implicit_metaclass_is_none(self):

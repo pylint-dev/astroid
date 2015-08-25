@@ -624,22 +624,22 @@ class AliasesTest(unittest.TestCase):
         module = self.parse_transform(string)
 
         self.assertEqual(len(module.body[0].names), 2)
-        self.assertIsInstance(module.body[0], nodes.From)
+        self.assertIsInstance(module.body[0], nodes.ImportFrom)
         self.assertEqual(module.body[1].name, 'Bar')
-        self.assertIsInstance(module.body[1], nodes.Class)
+        self.assertIsInstance(module.body[1], nodes.ClassDef)
         self.assertEqual(module.body[2].name, 'another_test')
-        self.assertIsInstance(module.body[2], nodes.Function)
+        self.assertIsInstance(module.body[2], nodes.FunctionDef)
         self.assertEqual(module.body[3].targets[0].name, 'bar')
-        self.assertIsInstance(module.body[3].targets[0], nodes.AssName)
+        self.assertIsInstance(module.body[3].targets[0], nodes.AssignName)
         self.assertEqual(module.body[3].value.func.name, 'Bar')
-        self.assertIsInstance(module.body[3].value, nodes.CallFunc)
+        self.assertIsInstance(module.body[3].value, nodes.Call)
         self.assertEqual(module.body[4].targets[0].attrname, 'b')
-        self.assertIsInstance(module.body[4].targets[0], nodes.AssAttr)
-        self.assertIsInstance(module.body[5], nodes.Discard)
+        self.assertIsInstance(module.body[4].targets[0], nodes.AssignAttr)
+        self.assertIsInstance(module.body[5], nodes.Expr)
         self.assertEqual(module.body[5].value.attrname, 'b')
-        self.assertIsInstance(module.body[5].value, nodes.Getattr)
+        self.assertIsInstance(module.body[5].value, nodes.Attribute)
         self.assertEqual(module.body[6].value.elt.value, 2)
-        self.assertIsInstance(module.body[6].value, nodes.GenExpr)
+        self.assertIsInstance(module.body[6].value, nodes.GeneratorExp)
         
     @unittest.skipIf(six.PY3, "Python 3 doesn't have Repr nodes.")
     def test_repr(self):
@@ -652,7 +652,7 @@ class AliasesTest(unittest.TestCase):
         module = self.parse_transform('`foo`')
 
         self.assertEqual(module.body[0].value.value.name, 'bar')
-        self.assertIsInstance(module.body[0].value, nodes.Backquote)
+        self.assertIsInstance(module.body[0].value, nodes.Repr)
 
 
 class DeprecationWarningsTest(unittest.TestCase):
@@ -679,6 +679,19 @@ class DeprecationWarningsTest(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             parent_assign_type_mixin.ass_type()
             self.assertIsInstance(w[0].message, PendingDeprecationWarning)
+
+    def test_isinstance_warnings(self):
+        msg_format = ("%r is deprecated and slated for removal in astroid "
+                      "2.0, use %r instead")
+        for cls in (nodes.Discard, nodes.Backquote, nodes.AssName,
+                    nodes.AssAttr, nodes.Getattr, nodes.CallFunc, nodes.From):
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter('always')
+                isinstance(42, cls)
+            self.assertIsInstance(w[0].message, PendingDeprecationWarning)
+            actual_msg = msg_format % (cls.__class__.__name__, cls.__wrapped__.__name__)
+            self.assertEqual(str(w[0].message), actual_msg)
+
 
 if __name__ == '__main__':
     unittest.main()
