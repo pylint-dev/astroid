@@ -226,7 +226,7 @@ def _resolve_looppart(parts, asspath, context):
                 # search on each possibly inferred value
                 try:
                     for inferred in _resolve_looppart(assigned.infer(context),
-                                                     asspath, context):
+                                                      asspath, context):
                         yield inferred
                 except exceptions.InferenceError:
                     break
@@ -241,7 +241,7 @@ def for_assigned_stmts(self, node, context=None, asspath=None):
                     yield item
     else:
         for inferred in _resolve_looppart(self.iter.infer(context),
-                                         asspath, context):
+                                          asspath, context):
             yield inferred
 
 nodes.For.assigned_stmts = for_assigned_stmts
@@ -357,7 +357,7 @@ def _resolve_asspart(parts, asspath, context):
                 # possibly inferred value
                 try:
                     for inferred in _resolve_asspart(assigned.infer(context),
-                                                    asspath, context):
+                                                     asspath, context):
                         yield inferred
                 except exceptions.InferenceError:
                     return
@@ -532,4 +532,3 @@ def class_as_index(node, context):
                     return result
     except exceptions.InferenceError:
         pass
-   

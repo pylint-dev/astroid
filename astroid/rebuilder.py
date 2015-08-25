@@ -19,8 +19,6 @@
 order to get a single Astroid representation
 """
 
-import inspect
-
 import _ast
 import sys
 
@@ -786,7 +784,7 @@ class TreeRebuilder3(TreeRebuilder):
             else:
                 body = [self.visit(child, newnode, assign_ctx)
                         for child in node.body]
-            newnode.postinit(body, 
+            newnode.postinit(body,
                              [self.visit(n, newnode, assign_ctx)
                               for n in node.finalbody])
             return newnode
@@ -816,10 +814,10 @@ class TreeRebuilder3(TreeRebuilder):
             newnode.postinit(self.visit(node.value, newnode, assign_ctx))
         return newnode
 
-    def visit_classdef(self, node, parent, assign_ctx=None):
+    def visit_classdef(self, node, parent, assign_ctx=None, newstyle=True):
         return super(TreeRebuilder3, self).visit_classdef(node, parent,
                                                           assign_ctx,
-                                                          newstyle=True)
+                                                          newstyle=newstyle)
 
 if sys.version_info >= (3, 0):
     TreeRebuilder = TreeRebuilder3

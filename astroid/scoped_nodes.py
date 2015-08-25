@@ -23,12 +23,10 @@ Lambda, GeneratorExp, DictComp and SetComp to some extent).
 """
 
 from __future__ import print_function
-import inspect
 
 import functools
 import io
 import itertools
-import sys
 import warnings
 
 import six
@@ -720,6 +718,7 @@ class FunctionDef(bases.Statement, Lambda):
             frame = parent.frame()
             frame.set_local(name, self)
 
+    # pylint: disable=arguments-differ; different than Lambdas
     def postinit(self, args, body, decorators=None, returns=None):
         self.args = args
         self.body = body
@@ -1431,7 +1430,7 @@ class ClassDef(bases.Statement, LocalsDictNodeNG, mixins.FilterStmtsMixin):
                                                context, frame=self):
                 # yield YES object instead of descriptors when necessary
                 if (not isinstance(inferred, node_classes.Const)
-                and isinstance(inferred, bases.Instance)):
+                        and isinstance(inferred, bases.Instance)):
                     try:
                         inferred._proxied.getattr('__get__', context)
                     except exceptions.NotFoundError:

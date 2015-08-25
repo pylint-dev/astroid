@@ -139,6 +139,7 @@ class _BaseContainer(mixins.ParentAssignTypeMixin,
 
     @classmethod
     def from_constants(cls, elts=None):
+        # pylint: disable=abstract-class-instantiated; False positive on Pylint #627.
         node = cls()
         if elts is None:
             node.elts = []

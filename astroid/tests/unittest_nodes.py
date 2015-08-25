@@ -640,7 +640,7 @@ class AliasesTest(unittest.TestCase):
         self.assertIsInstance(module.body[5].value, nodes.Attribute)
         self.assertEqual(module.body[6].value.elt.value, 2)
         self.assertIsInstance(module.body[6].value, nodes.GeneratorExp)
-        
+
     @unittest.skipIf(six.PY3, "Python 3 doesn't have Repr nodes.")
     def test_repr(self):
         def test_backquote(node):
@@ -669,7 +669,7 @@ class DeprecationWarningsTest(unittest.TestCase):
         parent_assign_type_mixin = module.body[2]
 
         warnings.simplefilter('always')
-        
+
         with warnings.catch_warnings(record=True) as w:
             filter_stmts_mixin.ass_type()
             self.assertIsInstance(w[0].message, PendingDeprecationWarning)
