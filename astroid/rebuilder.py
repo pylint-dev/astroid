@@ -160,22 +160,22 @@ class TreeRebuilder(object):
         # are instances of `_ast.arg`, not strings
         if vararg:
             if PY34:
-                vararg = vararg.arg
                 if node.vararg.annotation:
                     varargannotation = self.visit(node.vararg.annotation,
                                                   newnode, assign_ctx)
-            elif PY3 and node.vararg.annotation:
+                vararg = vararg.arg
+            elif PY3 and node.varargannotation:
                 varargannotation = self.visit(node.varargannotation,
                                               newnode, assign_ctx)
         if kwarg:
             if PY34:
-                kwarg = kwarg.arg
                 if node.kwarg.annotation:
                     kwargannotation = self.visit(node.kwarg.annotation,
                                                  newnode, assign_ctx)
+                kwarg = kwarg.arg
             elif PY3:
                 if node.kwargannotation:
-                    kwargannotation = self.visit(node.kwarg.annotation,
+                    kwargannotation = self.visit(node.kwargannotation,
                                                  newnode, assign_ctx)
         if PY3:
             kwonlyargs = [self.visit(child, newnode, "Assign") for child
