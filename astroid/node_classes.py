@@ -992,7 +992,13 @@ def const_factory(value):
 def instancecheck(cls, other):
     wrapped = cls.__wrapped__
     other_cls = other.__class__
-    return wrapped is other_cls or issubclass(other_cls, wrapped)
+    is_instance_of = wrapped is other_cls or issubclass(other_cls, wrapped)
+    warnings.warn("%r is deprecated and slated for removal in astroid "
+                  "2.0, use %r instead" % (cls.__class__.__name__,
+                                           wrapped.__name__),
+                  PendingDeprecationWarning, stacklevel=2)
+    return is_instance_of
+
 
 def proxy_alias(alias_name, node_type):
     proxy = type(alias_name, (lazy_object_proxy.Proxy,),
