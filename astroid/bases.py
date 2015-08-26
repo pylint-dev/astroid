@@ -22,6 +22,8 @@ inference utils.
 import sys
 import warnings
 
+import wrapt
+
 from astroid import context as contextmod
 from astroid import decorators as decoratorsmod
 from astroid import exceptions
@@ -304,25 +306,23 @@ def path_wrapper(func):
                 yielded.add(ares)
     return wrapped
 
-def yes_if_nothing_inferred(func):
-    def wrapper(*args, **kwargs):
-        inferred = False
-        for node in func(*args, **kwargs):
-            inferred = True
-            yield node
-        if not inferred:
-            yield util.YES
-    return wrapper
+@wrapt.decorator
+def yes_if_nothing_inferred(func, instance, args, kwargs):
+    inferred = False
+    for node in func(*args, **kwargs):
+        inferred = True
+        yield node
+    if not inferred:
+        yield util.YES
 
-def raise_if_nothing_inferred(func):
-    def wrapper(*args, **kwargs):
-        inferred = False
-        for node in func(*args, **kwargs):
-            inferred = True
-            yield node
-        if not inferred:
-            raise exceptions.InferenceError()
-    return wrapper
+@wrapt.decorator
+def raise_if_nothing_inferred(func, instance, args, kwargs):
+    inferred = False
+    for node in func(*args, **kwargs):
+        inferred = True
+        yield node
+    if not inferred:
+        raise exceptions.InferenceError()
 
 
 # Node  ######################################################################
