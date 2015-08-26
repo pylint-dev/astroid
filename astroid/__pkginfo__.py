@@ -23,7 +23,7 @@ modname = 'astroid'
 numversion = (1, 3, 8)
 version = '.'.join([str(num) for num in numversion])
 
-install_requires = ['six', 'lazy_object_proxy']
+install_requires = ['six', 'lazy_object_proxy', 'wrapt']
 
 license = 'LGPL'
 
