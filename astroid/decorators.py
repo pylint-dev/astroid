@@ -27,14 +27,13 @@ import wrapt
 @wrapt.decorator
 def cached(func, instance, args, kwargs):
     """Simple decorator to cache result of method calls without args."""
-    wrapped_self, = args
-    cache = getattr(wrapped_self, '__cache', None)
+    cache = getattr(instance, '__cache', None)
     if cache is None:
-        wrapped_self.__cache = cache = {}
+        instance.__cache = cache = {}
     try:
         return cache[func]
     except KeyError:
-        cache[func] = result = func(wrapped_self)
+        cache[func] = result = func(*args, **kwargs)
         return result
 
 
