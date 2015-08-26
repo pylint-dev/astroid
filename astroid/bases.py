@@ -345,7 +345,7 @@ class Generator(Instance):
 
 def path_wrapper(func):
     """return the given infer function wrapped to handle the path"""
-    @functools.wraps
+    @functools.wraps(func)
     def wrapped(node, context=None, _func=func, **kwargs):
         """wrapper function handling context"""
         if context is None:
