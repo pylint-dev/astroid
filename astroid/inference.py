@@ -18,6 +18,8 @@
 """this module contains a set of functions to handle inference on astroid trees
 """
 
+# pylint: disable=no-value-for-parameter; Pylint FP #629, please remove afterwards.
+
 from __future__ import print_function
 
 import functools
