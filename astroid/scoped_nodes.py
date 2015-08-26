@@ -1550,7 +1550,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
             return None
         return inferred
 
-    def _find_metaclass(self, seen):
+    def _find_metaclass(self, seen=None):
         if seen is None:
             seen = set()
         seen.add(self)
@@ -1571,7 +1571,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
         then the first defined metaclass in ancestors will be used
         instead.
         """
-        return self._find_metaclass(None)
+        return self._find_metaclass()
 
     def has_metaclass_hack(self):
         return self._metaclass_hack
