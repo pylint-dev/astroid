@@ -21,24 +21,21 @@
 
 """ A few useful function/method decorators."""
 
-import functools
+import wrapt
 
 
-def cached(func):
+@wrapt.decorator
+def cached(func, instance, args, kwargs):
     """Simple decorator to cache result of method calls without args."""
-
-    @functools.wraps(func)
-    def wrapped(wrapped_self):
-        cache = getattr(wrapped_self, '__cache', None)
-        if cache is None:
-            wrapped_self.__cache = cache = {}
-        try:
-            return cache[func]
-        except KeyError:
-            cache[func] = result = func(wrapped_self)
-            return result
-
-    return wrapped
+    wrapped_self, = args
+    cache = getattr(wrapped_self, '__cache', None)
+    if cache is None:
+        wrapped_self.__cache = cache = {}
+    try:
+        return cache[func]
+    except KeyError:
+        cache[func] = result = func(wrapped_self)
+        return result
 
 
 class cachedproperty(object):

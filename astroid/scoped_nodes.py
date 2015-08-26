@@ -24,12 +24,12 @@ Lambda, GeneratorExp, DictComp and SetComp to some extent).
 
 from __future__ import print_function
 
-import functools
 import io
 import itertools
 import warnings
 
 import six
+import wrapt
 
 from astroid import bases
 from astroid import context as contextmod
@@ -89,14 +89,12 @@ def _verify_duplicates_mro(sequences):
 
 
 def remove_nodes(cls):
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            nodes = [n for n in func(*args, **kwargs) if not isinstance(n, cls)]
-            if not nodes:
-                raise exceptions.NotFoundError()
-            return nodes
-        return wrapper
+    @wrapt.decorator
+    def decorator(func, instance, args, kwargs):
+        nodes = [n for n in func(*args, **kwargs) if not isinstance(n, cls)]
+        if not nodes:
+            raise exceptions.NotFoundError()
+        return nodes
     return decorator
 
 
