@@ -1039,6 +1039,24 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIn('object', ancestors)
         self.assertIn('JJJ', ancestors)
 
+    def test_no_infinite_metaclass_loop_with_redefine(self):
+        nodes = test_utils.extract_node("""
+            import datetime
+
+            class A(datetime.date): #@
+                @classmethod
+                def now(cls):
+                    return cls()
+
+            class B(datetime.date): #@
+                pass
+
+            datetime.date = A
+            datetime.date = B
+        """)
+        for klass in nodes:
+            self.assertEqual(None, klass.metaclass())
+
     def test_metaclass_generator_hack(self):
         klass = test_utils.extract_node("""
             import six
