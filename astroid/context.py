@@ -17,7 +17,6 @@
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 
 """Various context related utilities, including inference and call contexts."""
-
 import contextlib
 import itertools
 
@@ -38,8 +37,10 @@ class InferenceContext(object):
     def push(self, node):
         name = self.lookupname
         if (node, name) in self.path:
-            raise StopIteration()
+            return True
+
         self.path.add((node, name))
+        return False
 
     def clone(self):
         # XXX copy lookupname/callcontext ?

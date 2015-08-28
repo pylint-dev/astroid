@@ -160,20 +160,21 @@ class Instance(Proxy):
             context = contextmod.InferenceContext()
         try:
             # avoid recursively inferring the same attr on the same class
-            context.push((self._proxied, name))
+            if context.push((self._proxied, name)):
+                return
+
             # XXX frame should be self._proxied, or not ?
             get_attr = self.getattr(name, context, lookupclass=False)
-            return _infer_stmts(
-                self._wrap_attr(get_attr, context),
-                context,
-                frame=self,
-            )
+            for stmt in _infer_stmts(self._wrap_attr(get_attr, context),
+                                     context, frame=self):
+                yield stmt
         except exceptions.NotFoundError:
             try:
                 # fallback to class'igetattr since it has some logic to handle
                 # descriptors
-                return self._wrap_attr(self._proxied.igetattr(name, context),
-                                       context)
+                for stmt in self._wrap_attr(self._proxied.igetattr(name, context),
+                                            context):
+                    yield stmt
             except exceptions.NotFoundError:
                 raise exceptions.InferenceError(name)
 
@@ -350,7 +351,9 @@ def path_wrapper(func):
         """wrapper function handling context"""
         if context is None:
             context = contextmod.InferenceContext()
-        context.push(node)
+        if context.push(node):
+            return
+
         yielded = set()
         for res in _func(node, context, **kwargs):
             # unproxy only true instance, not const, tuple, dict...
