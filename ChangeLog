@@ -303,6 +303,13 @@ Change log for the astroid package (used to be astng)
       fact. Recommandations to move to the new nodes are emitted accordingly,
       the old names will be removed in astroid 2.0.
 
+    * Add support for understanding class creation using `type.__new__(mcs, name, bases, attrs)``
+
+      Until now, inferring this kind of calls resulted in Instances, not in classes,
+      since astroid didn't understand that the presence of the metaclass in the call
+      leads to a class creationg, not to an instance creation.
+     
+
 
 2015-03-14 -- 1.3.6
 

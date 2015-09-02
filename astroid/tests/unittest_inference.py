@@ -2818,6 +2818,123 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         for node in ast_nodes:
             self.assertEqual(next(node.infer()), util.YES)
 
+    def test_type__new__with_metaclass(self):
+        ast_node = test_utils.extract_node('''
+        class Metaclass(type):
+            pass
+        class Entity(object):
+             pass
+        type.__new__(Metaclass, 'NewClass', (Entity,), {'a': 1}) #@
+        ''')
+        inferred = next(ast_node.infer())
+
+        self.assertIsInstance(inferred, nodes.ClassDef)
+        self.assertEqual(inferred.name, 'NewClass')
+        metaclass = inferred.metaclass()
+        self.assertEqual(metaclass, inferred.root()['Metaclass'])
+        ancestors = list(inferred.ancestors())
+        self.assertEqual(len(ancestors), 2)
+        self.assertEqual(ancestors[0], inferred.root()['Entity'])
+        attributes = inferred.getattr('a')
+        self.assertEqual(len(attributes), 1)
+        self.assertIsInstance(attributes[0], nodes.Const)
+        self.assertEqual(attributes[0].value, 1)
+
+    def test_type__new__not_enough_arguments(self):
+        ast_nodes = test_utils.extract_node('''
+        type.__new__(1) #@
+        type.__new__(1, 2) #@
+        type.__new__(1, 2, 3) #@
+        type.__new__(1, 2, 3, 4, 5) #@ 
+        ''')
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, Instance)
+
+    def test_type__new__invalid_mcs_argument(self):
+        ast_nodes = test_utils.extract_node('''
+        class Class(object): pass
+        type.__new__(1, 2, 3, 4) #@
+        type.__new__(Class, 2, 3, 4) #@
+        ''')
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, Instance)
+
+    def test_type__new__invalid_name(self):
+        ast_nodes = test_utils.extract_node('''
+        class Class(type): pass
+        type.__new__(Class, object, 1, 2) #@
+        type.__new__(Class, 1, 1, 2) #@
+        type.__new__(Class, [], 1, 2) #@
+        ''')
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, Instance)
+
+    def test_type__new__invalid_bases(self):
+        ast_nodes = test_utils.extract_node('''
+        type.__new__(type, 'a', 1, 2) #@
+        type.__new__(type, 'a', [], 2) #@
+        type.__new__(type, 'a', {}, 2) #@
+        type.__new__(type, 'a', (1, ), 2) #@
+        type.__new__(type, 'a', (object, 1), 2) #@
+        ''')
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, Instance)
+
+    def test_type__new__invalid_attrs(self):
+        ast_nodes = test_utils.extract_node('''
+        type.__new__(type, 'a', (), ()) #@
+        type.__new__(type, 'a', (), object) #@
+        type.__new__(type, 'a', (), 1) #@
+        type.__new__(type, 'a', (), {object: 1}) #@
+        type.__new__(type, 'a', (), {1:2, "a":5}) #@
+        ''')
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, Instance)
+
+    def test_type__new__metaclass_lookup(self):
+        ast_node = test_utils.extract_node('''
+        class Metaclass(type):
+            def test(cls): pass
+            @classmethod
+            def test1(cls): pass
+            attr = 42
+        type.__new__(Metaclass, 'A', (), {}) #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.ClassDef)
+        test = inferred.getattr('test')
+        self.assertEqual(len(test), 1)
+        self.assertIsInstance(test[0], BoundMethod)
+        self.assertIsInstance(test[0].bound, nodes.ClassDef)
+        self.assertEqual(test[0].bound, inferred)
+        test1 = inferred.getattr('test1')
+        self.assertEqual(len(test1), 1)
+        self.assertIsInstance(test1[0], BoundMethod)
+        self.assertIsInstance(test1[0].bound, nodes.ClassDef)
+        self.assertEqual(test1[0].bound, inferred.metaclass())
+        attr = inferred.getattr('attr')
+        self.assertEqual(len(attr), 1)
+        self.assertIsInstance(attr[0], nodes.Const)
+        self.assertEqual(attr[0].value, 42)
+
+    def test_type__new__metaclass_and_ancestors_lookup(self):
+        ast_node = test_utils.extract_node('''
+        class Book(object):
+             title = 'Ubik'
+        class MetaBook(type):
+             title = 'Grimus'
+        type.__new__(MetaBook, 'book', (Book, ), {'title':'Catch 22'}) #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.ClassDef)
+        titles = [title.value for title in inferred.igetattr('title')]
+        self.assertEqual(titles, ['Catch 22', 'Ubik', 'Grimus'])
+
 
 class GetattrTest(unittest.TestCase):
 

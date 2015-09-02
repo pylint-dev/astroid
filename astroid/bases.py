@@ -21,6 +21,7 @@ inference utils.
 
 from __future__ import print_function
 
+import collections
 import functools
 import sys
 import warnings
@@ -309,9 +310,88 @@ class BoundMethod(UnboundMethod):
     def is_bound(self):
         return True
 
+    def _infer_type_new_call(self, caller, context):
+        """Try to infer what type.__new__(mcs, name, bases, attrs) returns.
+
+        In order for such call to be valid, the metaclass needs to be
+        a subtype of ``type``, the name needs to be a string, the bases
+        needs to be a tuple of classes and the attributes a dictionary
+        of strings to values.
+        """
+        from astroid import node_classes
+        # Verify the metaclass
+        mcs = next(caller.args[0].infer(context=context))
+        if mcs.__class__.__name__ != 'ClassDef':
+            # Not a valid first argument.
+            return
+        if not mcs.is_subtype_of("%s.type" % BUILTINS):
+            # Not a valid metaclass.
+            return
+
+        # Verify the name
+        name = next(caller.args[1].infer(context=context))
+        if name.__class__.__name__ != 'Const':
+            # Not a valid name, needs to be a const.
+            return
+        if not isinstance(name.value, str):
+            # Needs to be a string.
+            return
+
+        # Verify the bases
+        bases = next(caller.args[2].infer(context=context))
+        if bases.__class__.__name__ != 'Tuple':
+            # Needs to be a tuple.
+            return
+        inferred_bases = [next(elt.infer(context=context))
+                          for elt in bases.elts]
+        if any(base.__class__.__name__ != 'ClassDef'
+               for base in inferred_bases):
+            # All the bases needs to be Classes
+            return
+
+        # Verify the attributes.
+        attrs = next(caller.args[3].infer(context=context))
+        if attrs.__class__.__name__ != 'Dict':
+            # Needs to be a dictionary.
+            return
+        cls_locals = collections.defaultdict(list)
+        for key, value in attrs.items:
+            key = next(key.infer(context=context))
+            value = next(value.infer(context=context))
+            if key.__class__.__name__ != 'Const':
+                # Something invalid as an attribute.
+                return
+            if not isinstance(key.value, str):
+                # Not a proper attribute.
+                return
+            cls_locals[key.value].append(value)
+
+        # Build the class from now.
+        cls = mcs.__class__(name=name.value, lineno=caller.lineno,
+                            col_offset=caller.col_offset,
+                            parent=caller)
+        empty = node_classes.Pass()
+        cls.postinit(bases=bases.elts, body=[empty], decorators=[],
+                     newstyle=True, metaclass=mcs)
+        cls.locals = cls_locals
+        return cls
+
     def infer_call_result(self, caller, context):
         context = context.clone()
         context.boundnode = self.bound
+
+        if (self.bound.__class__.__name__ == 'ClassDef'
+                and self.bound.name == 'type'
+                and self.name == '__new__'
+                and len(caller.args) == 4
+                # TODO(cpopa): this check shouldn't be needed.
+                and self._proxied.parent.frame().qname() == '%s.object' % BUILTINS):
+
+            # Check if we have an ``type.__new__(mcs, name, bases, attrs)`` call.
+            new_cls = self._infer_type_new_call(caller, context)
+            if new_cls:
+                return iter((new_cls, ))
+
         return super(BoundMethod, self).infer_call_result(caller, context)
 
     def bool_value(self):
