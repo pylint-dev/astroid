@@ -362,6 +362,18 @@ class EnumBrainTest(unittest.TestCase):
         meth = one.getattr('mymethod')[0]
         self.assertIsInstance(meth, astroid.FunctionDef)
 
+    def test_looks_like_enum_false_positive(self):
+        # Test that a class named Enumeration is not considered a builtin enum.
+        module = builder.parse('''
+        class Enumeration(object):
+            def __init__(self, name, enum_list):
+                pass
+            test = 42
+        ''')
+        enum = module['Enumeration']
+        test = next(enum.igetattr('test'))
+        self.assertEqual(test.value, 42)
+
     def test_enum_multiple_base_classes(self):
         module = builder.parse("""
         import enum

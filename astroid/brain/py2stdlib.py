@@ -6,12 +6,12 @@ Currently help understanding of :
 * hashlib.md5 and hashlib.sha1
 """
 
+import functools
 import sys
 from textwrap import dedent
 
 from astroid import (
-    MANAGER, AsStringRegexpPredicate,
-    UseInferenceDefault, inference_tip, BoundMethod,
+    MANAGER, UseInferenceDefault, inference_tip, BoundMethod,
     InferenceError, register_module_extender)
 from astroid import exceptions
 from astroid import nodes
@@ -254,13 +254,17 @@ def subprocess_transform():
 
 # namedtuple support ###########################################################
 
-def looks_like_namedtuple(node):
+def _looks_like(node, name):
     func = node.func
     if isinstance(func, nodes.Attribute):
-        return func.attrname == 'namedtuple'
+        return func.attrname == name
     if isinstance(func, nodes.Name):
-        return func.name == 'namedtuple'
+        return func.name == name
     return False
+
+_looks_like_namedtuple = functools.partial(_looks_like, name='namedtuple')
+_looks_like_enum = functools.partial(_looks_like, name='Enum')
+
 
 def infer_named_tuple(node, context=None):
     """Specific inference function for namedtuple Call node"""
@@ -284,12 +288,14 @@ class %(name)s(tuple):
     # we use UseInferenceDefault, we can't be a generator so return an iterator
     return iter([class_node])
 
+
 def infer_enum(node, context=None):
     """ Specific inference function for enum Call node. """
     enum_meta = nodes.ClassDef("EnumMeta", 'docstring')
     class_node = infer_func_form(node, enum_meta,
                                  context=context, enum=True)[0]
     return iter([class_node.instanciate_class()])
+
 
 def infer_enum_class(node):
     """ Specific inference for enums. """
@@ -416,9 +422,9 @@ def multiprocessing_managers_transform():
 
 
 MANAGER.register_transform(nodes.Call, inference_tip(infer_named_tuple),
-                           looks_like_namedtuple)
+                           _looks_like_namedtuple)
 MANAGER.register_transform(nodes.Call, inference_tip(infer_enum),
-                           AsStringRegexpPredicate('Enum', 'func'))
+                           _looks_like_enum)
 MANAGER.register_transform(nodes.ClassDef, infer_enum_class)
 register_module_extender(MANAGER, 'hashlib', hashlib_transform)
 register_module_extender(MANAGER, 'collections', collections_transform)
