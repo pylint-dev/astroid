@@ -45,6 +45,7 @@ from astroid.node_classes import (
     List, Name, Nonlocal, Pass, Print, Raise, Return, Set, Slice, Starred, Subscript,
     TryExcept, TryFinally, Tuple, UnaryOp, While, With, Yield, YieldFrom,
     const_factory,
+    AsyncFor, Await, AsyncWith,
     # Backwards-compatibility aliases
     Backquote, Discard, AssName, AssAttr, Getattr, CallFunc, From
 )
@@ -59,13 +60,15 @@ from astroid.scoped_nodes import (
 
 
 ALL_NODE_CLASSES = (
+    AsyncFunctionDef, AsyncFor, AsyncWith, Await,
+
     Arguments, AssignAttr, Assert, Assign, AssignName, AugAssign,
     Repr, BinOp, BoolOp, Break,
     Call, ClassDef, Compare, Comprehension, Const, Continue,
     Decorators, DelAttr, DelName, Delete,
     Dict, DictComp, Expr,
     Ellipsis, EmptyNode, ExceptHandler, Exec, ExtSlice,
-    For, ImportFrom, FunctionDef, AsyncFunctionDef,
+    For, ImportFrom, FunctionDef,    
     Attribute, GeneratorExp, Global,
     If, IfExp, Import, Index,
     Keyword,

@@ -446,9 +446,9 @@ class TreeRebuilder(object):
                           for dim in node.dims])
         return newnode
 
-    def visit_for(self, node, parent, assign_ctx=None):
+    def _visit_for(self, cls, node, parent, assign_ctx=None):
         """visit a For node by returning a fresh instance of it"""
-        newnode = nodes.For(node.lineno, node.col_offset, parent)
+        newnode = cls(node.lineno, node.col_offset, parent)
         newnode.postinit(self.visit(node.target, newnode, "Assign"),
                          self.visit(node.iter, newnode, None),
                          [self.visit(child, newnode, None)
@@ -456,6 +456,10 @@ class TreeRebuilder(object):
                          [self.visit(child, newnode, None)
                           for child in node.orelse])
         return newnode
+
+    def visit_for(self, node, parent, assign_ctx=None):
+        return self._visit_for(nodes.For, node, parent,
+                               assign_ctx=assign_ctx)
 
     def visit_importfrom(self, node, parent, assign_ctx=None):
         """visit an ImportFrom node by returning a fresh instance of it"""
@@ -812,13 +816,13 @@ class TreeRebuilder3(TreeRebuilder):
         elif node.handlers:
             return self.visit_tryexcept(node, parent, assign_ctx)
 
-    def visit_with(self, node, parent, assign_ctx=None):
+    def _visit_with(self, cls, node, parent, assign_ctx=None):
         if 'items' not in node._fields:
             # python < 3.3
             return super(TreeRebuilder3, self).visit_with(node, parent,
                                                           assign_ctx)
 
-        newnode = nodes.With(node.lineno, node.col_offset, parent)
+        newnode = cls(node.lineno, node.col_offset, parent)
         def visit_child(child):
             expr = self.visit(child.context_expr, newnode, assign_ctx)
             var = _visit_or_none(child, 'optional_vars', self, newnode,
@@ -828,6 +832,9 @@ class TreeRebuilder3(TreeRebuilder):
                          [self.visit(child, newnode, None)
                           for child in node.body])
         return newnode
+
+    def visit_with(self, node, parent, assign_ctx=None):
+        return self._visit_with(nodes.With, node, parent, assign_ctx=assign_ctx)
 
     def visit_yieldfrom(self, node, parent, assign_ctx=None):
         newnode = nodes.YieldFrom(node.lineno, node.col_offset, parent)
@@ -840,9 +847,24 @@ class TreeRebuilder3(TreeRebuilder):
                                                           assign_ctx,
                                                           newstyle=newstyle)
 
+    # Async structs added in Python 3.5
     def visit_asyncfunctiondef(self, node, parent, assign_ctx=None):
         return self._visit_functiondef(nodes.AsyncFunctionDef, node, parent,
                                        assign_ctx=assign_ctx)
+
+    def visit_asyncfor(self, node, parent, assign_ctx=None):
+        return self._visit_for(nodes.AsyncFor, node, parent,
+                               assign_ctx=assign_ctx)
+
+    def visit_await(self, node, parent, assign_ctx=None):
+        newnode = nodes.Await(node.lineno, node.col_offset, parent)
+        newnode.postinit(value=self.visit(node.value, newnode, None))
+        return newnode
+
+    def visit_asyncwith(self, node, parent, assign_ctx=None):
+        return self._visit_with(nodes.AsyncWith, node, parent,
+                                assign_ctx=assign_ctx)
+
 
 if sys.version_info >= (3, 0):
     TreeRebuilder = TreeRebuilder3
