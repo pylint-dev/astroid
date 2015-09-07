@@ -451,7 +451,7 @@ class AugAssign(bases.Statement, mixins.AssignTypeMixin):
     target = None
     value = None
 
-class Backquote(bases.NodeNG):
+class Repr(bases.NodeNG):
     """class representing a Backquote node"""
     _astroid_fields = ('value',)
     value = None
@@ -473,12 +473,10 @@ class Break(bases.Statement):
 
 class Call(bases.NodeNG):
     """class representing a Call node"""
-    _astroid_fields = ('func', 'args', 'keywords', 'starargs', 'kwargs')
+    _astroid_fields = ('func', 'args', 'keywords')
     func = None
     args = None
     keywords = None
-    starargs = None
-    kwargs = None
 
 
 class Compare(bases.NodeNG):
@@ -1006,7 +1004,7 @@ def proxy_alias(alias_name, node_type):
                   '__instancecheck__': instancecheck})
     return proxy(lambda: node_type)
 
-Repr = proxy_alias('Backquote', Backquote)
+Backquote = proxy_alias('Backquote', Repr)
 Discard = proxy_alias('Discard', Expr)
 AssName = proxy_alias('AssName', AssignName)
 AssAttr = proxy_alias('AssAttr', AssignAttr)

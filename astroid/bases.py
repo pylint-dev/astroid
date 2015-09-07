@@ -18,7 +18,7 @@
 """This module contains base classes and functions for the nodes and some
 inference utils.
 """
-
+import functools
 import sys
 import warnings
 

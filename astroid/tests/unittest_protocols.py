@@ -125,8 +125,6 @@ class ProtocolTests(unittest.TestCase):
         self._helper_starred_inference_error("a, *b, *c = (1, 2, 3) #@")
         # Too many lhs values
         self._helper_starred_inference_error("a, *b, c = (1, 2) #@")
-        # Not in Assign or For
-        self._helper_starred_inference_error("[*b for b in (1, 2, 3)] #@")
         # This could be solved properly, but it complicates needlessly the
         # code for assigned_stmts, without oferring real benefit.
         self._helper_starred_inference_error(
