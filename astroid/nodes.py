@@ -51,6 +51,7 @@ from astroid.node_classes import (
 from astroid.scoped_nodes import (
     Module, GeneratorExp, Lambda, DictComp,
     ListComp, SetComp, FunctionDef, ClassDef,
+    AsyncFunctionDef,
     # Backwards-compatibility aliases
     Class, Function, GenExpr,
 )
@@ -64,7 +65,7 @@ ALL_NODE_CLASSES = (
     Decorators, DelAttr, DelName, Delete,
     Dict, DictComp, Expr,
     Ellipsis, EmptyNode, ExceptHandler, Exec, ExtSlice,
-    For, ImportFrom, FunctionDef,
+    For, ImportFrom, FunctionDef, AsyncFunctionDef,
     Attribute, GeneratorExp, Global,
     If, IfExp, Import, Index,
     Keyword,

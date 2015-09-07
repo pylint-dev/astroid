@@ -608,20 +608,15 @@ class Break(bases.Statement):
 
 class Call(bases.NodeNG):
     """class representing a Call node"""
-    _astroid_fields = ('func', 'args', 'keywords', 'starargs', 'kwargs')
+    _astroid_fields = ('func', 'args', 'keywords')
     func = None
     args = None
     keywords = None
-    starargs = None
-    kwargs = None
 
-    def postinit(self, func=None, args=None, keywords=None,
-                 starargs=None, kwargs=None):
+    def postinit(self, func=None, args=None, keywords=None):
         self.func = func
         self.args = args
         self.keywords = keywords
-        self.starargs = starargs
-        self.kwargs = kwargs
 
 
 class Compare(bases.NodeNG):

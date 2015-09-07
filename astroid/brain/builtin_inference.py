@@ -229,7 +229,7 @@ def infer_dict(node, context=None):
 
     If a case can't be inferred, we'll fallback to default inference.
     """
-    if not node.args and not node.kwargs and not node.keywords:
+    if not node.args and not node.keywords:
         # dict()
         return nodes.Dict()
     elif node.keywords and not node.args:

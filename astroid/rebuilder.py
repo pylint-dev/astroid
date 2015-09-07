@@ -285,19 +285,36 @@ class TreeRebuilder(object):
     def visit_call(self, node, parent, assign_ctx=None):
         """visit a CallFunc node by returning a fresh instance of it"""
         newnode = nodes.Call(node.lineno, node.col_offset, parent)
+        starargs = _visit_or_none(node, 'starargs', self, newnode,
+                                  assign_ctx)
+        kwargs = _visit_or_none(node, 'kwargs', self, newnode,
+                                assign_ctx)
+        args = [self.visit(child, newnode, assign_ctx)
+                for child in node.args]
+
         if node.keywords:
             keywords = [self.visit(child, newnode, assign_ctx)
                         for child in node.keywords]
         else:
             keywords = None
+        if starargs:
+            new_starargs = nodes.Starred(col_offset=starargs.col_offset,
+                                         lineno=starargs.lineno,
+                                         parent=starargs.parent)
+            new_starargs.postinit(value=starargs)
+            args.append(new_starargs)
+        if kwargs:
+            new_kwargs = nodes.Keyword(arg=None, col_offset=kwargs.col_offset,
+                                       lineno=kwargs.lineno,
+                                       parent=kwargs.parent)
+            new_kwargs.postinit(value=kwargs)
+            if keywords:
+                keywords.append(new_kwargs)
+            else:
+                keywords = [new_kwargs]
+        
         newnode.postinit(self.visit(node.func, newnode, assign_ctx),
-                         [self.visit(child, newnode, assign_ctx)
-                          for child in node.args],
-                         keywords,
-                         _visit_or_none(node, 'starargs', self, newnode,
-                                        assign_ctx),
-                         _visit_or_none(node, 'kwargs', self, newnode,
-                                        assign_ctx))
+                         args, keywords)
         return newnode
 
     def visit_classdef(self, node, parent, assign_ctx=None, newstyle=None):
@@ -450,12 +467,12 @@ class TreeRebuilder(object):
         self._import_from_nodes.append(newnode)
         return newnode
 
-    def visit_functiondef(self, node, parent, assign_ctx=None):
+    def _visit_functiondef(self, cls, node, parent, assign_ctx=None):
         """visit an FunctionDef node to become astroid"""
         self._global_names.append({})
         node, doc = _get_doc(node)
-        newnode = nodes.FunctionDef(node.name, doc, node.lineno,
-                                    node.col_offset, parent)
+        newnode = cls(node.name, doc, node.lineno,
+                      node.col_offset, parent)
         if node.decorator_list:
             decorators = self.visit_decorators(node, newnode, assign_ctx)
         else:
@@ -470,6 +487,10 @@ class TreeRebuilder(object):
                          decorators, returns)
         self._global_names.pop()
         return newnode
+
+    def visit_functiondef(self, node, parent, assign_ctx=None):
+        return self._visit_functiondef(nodes.FunctionDef, node, parent,
+                                       assign_ctx=assign_ctx)
 
     def visit_generatorexp(self, node, parent, assign_ctx=None):
         """visit a GeneratorExp node by returning a fresh instance of it"""
@@ -818,6 +839,10 @@ class TreeRebuilder3(TreeRebuilder):
         return super(TreeRebuilder3, self).visit_classdef(node, parent,
                                                           assign_ctx,
                                                           newstyle=newstyle)
+
+    def visit_asyncfunctiondef(self, node, parent, assign_ctx=None):
+        return self._visit_functiondef(nodes.AsyncFunctionDef, node, parent,
+                                       assign_ctx=assign_ctx)
 
 if sys.version_info >= (3, 0):
     TreeRebuilder = TreeRebuilder3

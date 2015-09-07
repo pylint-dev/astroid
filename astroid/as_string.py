@@ -141,11 +141,7 @@ class AsStringVisitor(object):
         else:
             keywords = []
 
-        if node.starargs:
-            args.append('*' + node.starargs.accept(self))
         args.extend(keywords)
-        if node.kwargs:
-            args.append('**' + node.kwargs.accept(self))
         return '%s(%s)' % (expr_str, ', '.join(args))
 
     def visit_classdef(self, node):
@@ -321,6 +317,8 @@ class AsStringVisitor(object):
 
     def visit_keyword(self, node):
         """return an astroid.Keyword node as string"""
+        if node.arg is None:
+            return '**%s' % node.value.accept(self)
         return '%s=%s' % (node.arg, node.value.accept(self))
 
     def visit_lambda(self, node):
@@ -457,6 +455,10 @@ class AsStringVisitor(object):
         else:
             return "(%s)" % (expr,)
 
+    def visit_starred(self, node):
+        """return Starred node as string"""
+        return "*" + node.value.accept(self)
+
     # These aren't for real AST nodes, but for inference objects.
 
     def visit_frozenset(self, node):
@@ -492,10 +494,6 @@ class AsStringVisitor3k(AsStringVisitor):
                                              node.cause.accept(self))
             return 'raise %s' % node.exc.accept(self)
         return 'raise'
-
-    def visit_starred(self, node):
-        """return Starred node as string"""
-        return "*" + node.value.accept(self)
 
     def visit_yieldfrom(self, node):
         """ Return an astroid.YieldFrom node as string. """
