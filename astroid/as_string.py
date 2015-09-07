@@ -495,6 +495,19 @@ class AsStringVisitor3k(AsStringVisitor):
         else:
             return "(%s)" % (expr,)
 
+    def visit_asyncfunctiondef(self, node):
+        function = super(AsStringVisitor3k, self).visit_functiondef(node)
+        return 'async ' + function.strip()
+
+    def visit_await(self, node):
+        return 'await %s' % node.value.accept(self)
+    
+    def visit_asyncwith(self, node):
+        return 'async %s' % self.visit_with(node)
+
+    def visit_asyncfor(self, node):
+        return 'async %s' % self.visit_for(node)
+
 
 def _import_string(names):
     """return a list of (name, asname) formatted as a string"""

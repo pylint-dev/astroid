@@ -697,6 +697,20 @@ class For(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, bases.Statement):
         return self.iter.tolineno
 
 
+class AsyncFor(For):
+    """Asynchronous For built with `async` keyword."""
+
+
+class Await(bases.NodeNG):
+    """Await node for the `await` keyword."""
+
+    _astroid_fields = ('value', )
+    value = None
+
+    def postinit(self, value=None):
+        self.value = value
+
+
 class ImportFrom(mixins.ImportFromMixin, bases.Statement):
     """class representing a From node"""
 
@@ -938,6 +952,10 @@ class With(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, bases.Statement):
                 yield var
         for elt in self.body:
             yield elt
+
+
+class AsyncWith(With):
+    """Asynchronous `with` built with the `async` keyword."""
 
 
 class Yield(bases.NodeNG):
