@@ -25,6 +25,7 @@ import sys
 
 import six
 
+from astroid import arguments
 from astroid import bases
 from astroid import context as contextmod
 from astroid import exceptions
@@ -280,6 +281,13 @@ def _arguments_infer_argname(self, name, context):
             yield self.parent.parent.frame()
             return
 
+    if context and context.callcontext:
+        inferator = arguments.ArgumentInference(context.callcontext)
+        for value in inferator.infer_argument(self.parent, name, context):
+            yield value
+        return
+
+    # TODO: just provide the type here, no need to have an empty Dict.
     if name == self.vararg:
         vararg = nodes.const_factory(())
         vararg.parent = self
@@ -307,16 +315,8 @@ def arguments_assigned_stmts(self, node, context, asspath=None):
         callcontext = context.callcontext
         context = contextmod.copy_context(context)
         context.callcontext = None
-        # TODO(cpopa): make this an API
-        if context.boundnode is None:
-            boundnode = self.parent.parent.frame()
-        else:
-            boundnode = context.boundnode
-        if self.parent.type == 'method':
-            if not isinstance(boundnode, bases.Instance):
-                boundnode = bases.Instance(boundnode)
-        return callcontext.infer_argument(
-            self.parent, node.name, context, boundnode)
+        return arguments.ArgumentInference(callcontext).infer_argument(
+            self.parent, node.name, context)
     return _arguments_infer_argname(self, node.name, context)
 
 nodes.Arguments.assigned_stmts = arguments_assigned_stmts
