@@ -284,7 +284,8 @@ class Module(LocalsDictNodeNG):
     scope_attrs = set(('__name__', '__doc__', '__file__', '__path__'))
 
     _other_fields = ('name', 'doc', 'file', 'path', 'package',
-                     'pure_python', 'locals', 'globals', 'future_imports')
+                     'pure_python', 'future_imports')
+    _other_other_fields = ('locals', 'globals')
 
     def __init__(self, name, doc, file=None, path=None, package=None,
                  parent=None, pure_python=True):
@@ -536,7 +537,7 @@ class GeneratorExp(ComprehensionScope):
 
 class DictComp(ComprehensionScope):
     _astroid_fields = ('key', 'value', 'generators')
-    _other_fields = ('locals',)
+    _other_other_fields = ('locals',)
     key = None
     value = None
     generators = None
@@ -559,7 +560,7 @@ class DictComp(ComprehensionScope):
 
 class SetComp(ComprehensionScope):
     _astroid_fields = ('elt', 'generators')
-    _other_fields = ('locals',)
+    _other_other_fields = ('locals',)
     elt = None
     generators = None
 
@@ -595,7 +596,7 @@ class _ListComp(bases.NodeNG):
 if six.PY3:
     class ListComp(_ListComp, ComprehensionScope):
         """class representing a ListComp node"""
-        _other_fields = ('locals',)
+        _other_other_fields = ('locals',)
 
         def __init__(self, lineno=None, col_offset=None, parent=None):
             self.locals = {}
@@ -631,7 +632,7 @@ def _infer_decorator_callchain(node):
 
 class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
     _astroid_fields = ('args', 'body',)
-    _other_fields = ('locals',)
+    _other_other_fields = ('locals',)
     name = '<lambda>'
 
     # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
@@ -704,7 +705,8 @@ class FunctionDef(bases.Statement, Lambda):
     is_function = True
     # attributes below are set by the builder module or by raw factories
     decorators = None
-    _other_fields = ('locals', 'name', 'doc', '_type', 'decorators')
+    _other_fields = ('name', 'doc')
+    _other_other_fields = ('locals', '_type')
 
     def __init__(self, name=None, doc=None, lineno=None,
                  col_offset=None, parent=None):
@@ -1069,7 +1071,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
     type = property(_class_type,
                     doc="class'type, possible values are 'class' | "
                     "'metaclass' | 'exception'")
-    _other_fields = ('locals', 'globals', 'name', 'doc')
+    _other_fields = ('name', 'doc')
+    _other_other_fields = ('locals', '_style')
 
     def __init__(self, name=None, doc=None, lineno=None,
                  col_offset=None, parent=None):

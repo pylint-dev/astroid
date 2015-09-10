@@ -28,6 +28,7 @@ import warnings
 
 import wrapt
 
+from astroid import as_string
 from astroid import context as contextmod
 from astroid import decorators as decoratorsmod
 from astroid import exceptions
@@ -482,6 +483,10 @@ class NodeNG(object):
     parent = None
     # attributes containing child node(s) redefined in most concrete classes:
     _astroid_fields = ()
+    # attributes containing non-nodes:
+    _other_fields = ()
+    # attributes containing AST-dependent fields:
+    _other_other_fields = ()
     # instance specific inference function infer(node, context)
     _explicit_inference = None
 
@@ -747,12 +752,10 @@ class NodeNG(object):
         return False
 
     def as_string(self):
-        from astroid.as_string import to_code
-        return to_code(self)
+        return as_string.to_code(self)
 
-    def repr_tree(self, ids=False):
-        from astroid.as_string import dump
-        return dump(self)
+    def repr_tree(self, **kws):
+        return as_string.dump(self, **kws)
 
     def bool_value(self):
         """Determine the bool value of this node

@@ -923,7 +923,7 @@ class ImportFrom(mixins.ImportFromMixin, bases.Statement):
 class Attribute(bases.NodeNG):
     """class representing a Attribute node"""
     _astroid_fields = ('expr',)
-    _other_fields = ('attrname')
+    _other_fields = ('attrname',)
     expr = None
 
     def __init__(self, attrname=None, lineno=None, col_offset=None, parent=None):
