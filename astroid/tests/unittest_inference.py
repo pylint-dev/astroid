@@ -3504,6 +3504,38 @@ class ArgumentsTest(unittest.TestCase):
             self.assertEqual(inferred, util.YES)
         
 
+class SliceTest(unittest.TestCase):
+
+    def test_slice(self):
+        ast_nodes = [
+            ('[1, 2, 3][slice(None)]', [1, 2, 3]),
+            ('[1, 2, 3][slice(None, None)]', [1, 2, 3]),
+            ('[1, 2, 3][slice(None, None, None)]', [1, 2, 3]),
+            ('[1, 2, 3][slice(1, None)]', [2, 3]),
+            ('[1, 2, 3][slice(None, 1, None)]', [1]),
+            ('[1, 2, 3][slice(0, 1)]', [1]),
+            ('[1, 2, 3][slice(0, 3, 2)]', [1, 3]),
+        ]
+        for node, expected_value in ast_nodes:
+            ast_node = test_utils.extract_node("__({})".format(node))
+            inferred = next(ast_node.infer())
+            self.assertIsInstance(inferred, nodes.List)
+            self.assertEqual([elt.value for elt in inferred.elts], expected_value)
+
+    def test_slice_inference_error(self):
+        ast_nodes = test_utils.extract_node('''
+        from unknown import unknown
+        [1, 2, 3][slice(None, unknown, unknown)] #@
+        [1, 2, 3][slice(None, missing, missing)] #@
+        [1, 2, 3][slice(object, list, tuple)] #@
+        [1, 2, 3][slice(b'a')] #@
+        [1, 2, 3][slice(1, 'aa')] #@
+        [1, 2, 3][slice(1, 2.0, 3.0)] #@
+        [1, 2, 3][slice()] #@
+        [1, 2, 3][slice(1, 2, 3, 4)] #@
+        ''')
+
+        
 
 if __name__ == '__main__':
     unittest.main()
