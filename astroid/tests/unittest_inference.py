@@ -2057,7 +2057,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         f = 1
         f+=A() #@
         x = 1
-        x+=[] #@ 
+        x+=[] #@
         ''')
         msg = "unsupported operand type(s) for {op}: {lhs!r} and {rhs!r}"
         expected = [
@@ -2478,7 +2478,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         class A(object):
             def __iadd__(self, other): return NotImplemented
             def __add__(self, other): return NotImplemented
-        A() + A() #@        
+        A() + A() #@
         ''')
         self.assertEqual(next(ast_node.infer()), util.YES)
 
@@ -2644,7 +2644,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             def __add__(self, other): return other
         class B(A):
             def __radd__(self, other): return NotImplemented
-            
+
         a = A()
         a += B() #@
         ''')
@@ -2845,7 +2845,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         type.__new__(1) #@
         type.__new__(1, 2) #@
         type.__new__(1, 2, 3) #@
-        type.__new__(1, 2, 3, 4, 5) #@ 
+        type.__new__(1, 2, 3, 4, 5) #@
         ''')
         for node in ast_nodes:
             inferred = next(node.infer())
@@ -3336,18 +3336,18 @@ class ArgumentsTest(unittest.TestCase):
         func(1) #@
         func(1, 2) #@
         func(1, 2, 3) #@
-        func(1, 2, *(42, )) #@        
+        func(1, 2, *(42, )) #@
         ''')
         for node, expected_value in zip(ast_nodes, expected_values):
             inferred = next(node.infer())
-            self.assertIsInstance(inferred, nodes.Tuple)           
+            self.assertIsInstance(inferred, nodes.Tuple)
             self.assertEqual(self._get_tuple_value(inferred), expected_value)
 
     @test_utils.require_version('3.5')
     def test_multiple_starred_args(self):
         expected_values = [
-           (1, 2, 3),
-           (1, 4, 2, 3, 5, 6, 7),
+            (1, 2, 3),
+            (1, 4, 2, 3, 5, 6, 7),
         ]
         ast_nodes = test_utils.extract_node('''
         def func(a, b, *args):
@@ -3357,7 +3357,7 @@ class ArgumentsTest(unittest.TestCase):
         ''')
         for node, expected_value in zip(ast_nodes, expected_values):
             inferred = next(node.infer())
-            self.assertIsInstance(inferred, nodes.Tuple)           
+            self.assertIsInstance(inferred, nodes.Tuple)
             self.assertEqual(self._get_tuple_value(inferred), expected_value)
 
     def test_defaults(self):
@@ -3368,7 +3368,7 @@ class ArgumentsTest(unittest.TestCase):
         func(1, 2) #@
         func(1, 2, 3) #@
         func(1, 2, c=41) #@
-        func(1, 2, 42, 41) #@        
+        func(1, 2, 42, 41) #@
         ''')
         for node, expected_value in zip(ast_nodes, expected_values):
             inferred = next(node.infer())
@@ -3401,7 +3401,7 @@ class ArgumentsTest(unittest.TestCase):
         expected = [
             [('a', 1), ('b', 2), ('c', 3)],
             [('a', 1)],
-            [('a', 'b')], 
+            [('a', 'b')],
         ]
         ast_nodes = test_utils.extract_node('''
         def test(**kwargs):
@@ -3450,9 +3450,9 @@ class ArgumentsTest(unittest.TestCase):
         test(l=24) #@
         ''')
         for ast_node, value in zip(ast_nodes, expected_values):
-             inferred = next(ast_node.infer())
-             self.assertIsInstance(inferred, nodes.Const)
-             self.assertEqual(inferred.value, value)        
+            inferred = next(ast_node.infer())
+            self.assertIsInstance(inferred, nodes.Const)
+            self.assertEqual(inferred.value, value)
 
     @test_utils.require_version('3.5')
     def test_multiple_kwargs(self):
@@ -3499,10 +3499,10 @@ class ArgumentsTest(unittest.TestCase):
         def test(*args): return args
         test(*unknown) #@
         ''')
-        for node in ast_nodes: 
+        for node in ast_nodes:
             inferred = next(node.infer())
             self.assertEqual(inferred, util.YES)
-        
+
 
 class SliceTest(unittest.TestCase):
 
@@ -3534,7 +3534,8 @@ class SliceTest(unittest.TestCase):
         [1, 2, 3][slice()] #@
         [1, 2, 3][slice(1, 2, 3, 4)] #@
         ''')
-
+        for node in ast_nodes:
+            self.assertRaises(InferenceError, next, node.infer())
         
 
 if __name__ == '__main__':
