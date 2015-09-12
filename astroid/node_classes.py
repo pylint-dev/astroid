@@ -618,6 +618,16 @@ class Call(bases.NodeNG):
         self.args = args
         self.keywords = keywords
 
+    @property
+    def starargs(self):
+        args = self.args or []
+        return [arg for arg in args if isinstance(arg, Starred)]
+
+    @property
+    def kwargs(self):
+        keywords = self.keywords or []
+        return [keyword for keyword in keywords if keyword.arg is None]
+
 
 class Compare(bases.NodeNG):
     """class representing a Compare node"""
