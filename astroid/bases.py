@@ -23,8 +23,14 @@ from __future__ import print_function
 
 import collections
 import functools
+import pprint
 import sys
 import warnings
+
+try:
+    from functools import singledispatch as _singledispatch
+except ImportError:
+    from singledispatch import singledispatch as _singledispatch
 
 import wrapt
 
@@ -293,7 +299,7 @@ class UnboundMethod(Proxy):
         # If we're unbound method __new__ of builtin object, the result is an
         # instance of the class given as first argument.
         if (self._proxied.name == '__new__' and
-                self._proxied.parent.frame().qname() == '%s.object' % BUILTINS):
+            self._proxied.parent.frame().qname() == '%s.object' % BUILTINS):
             infer = caller.args[0].infer() if caller.args else []
             return ((x is util.YES and x or Instance(x)) for x in infer)
         return self._proxied.infer_call_result(caller, context)
@@ -382,11 +388,11 @@ class BoundMethod(UnboundMethod):
         context.boundnode = self.bound
 
         if (self.bound.__class__.__name__ == 'ClassDef'
-                and self.bound.name == 'type'
-                and self.name == '__new__'
-                and len(caller.args) == 4
-                # TODO(cpopa): this check shouldn't be needed.
-                and self._proxied.parent.frame().qname() == '%s.object' % BUILTINS):
+            and self.bound.name == 'type'
+            and self.name == '__new__'
+            and len(caller.args) == 4
+            # TODO(cpopa): this check shouldn't be needed.
+            and self._proxied.parent.frame().qname() == '%s.object' % BUILTINS):
 
             # Check if we have an ``type.__new__(mcs, name, bases, attrs)`` call.
             new_cls = self._infer_type_new_call(caller, context)
@@ -427,6 +433,7 @@ class Generator(Instance):
 
 def path_wrapper(func):
     """return the given infer function wrapped to handle the path"""
+    # TODO: switch this to wrapt after the monkey-patching is fixed (ceridwen)
     @functools.wraps(func)
     def wrapped(node, context=None, _func=func, **kwargs):
         """wrapper function handling context"""
@@ -525,15 +532,33 @@ class NodeNG(object):
         return getattr(self, 'name', getattr(self, 'attrname', ''))
 
     def __str__(self):
-        return '%s(%s)' % (self.__class__.__name__, self._repr_name())
+        rname = self._repr_name()
+        cname = type(self).__name__
+        if rname:
+            string = '%(cname)s.%(rname)s(%(fields)s)'
+            alignment = len(cname) + len(rname) + 2
+        else:
+            string = '%(cname)s(%(fields)s)'
+            alignment = len(cname) + 1
+        result = []
+        for a in self._other_fields + self._astroid_fields:
+            lines = pprint.pformat(getattr(self, a), indent=2,
+                                   width=80-len(a)-alignment).splitlines(True)
+            inner = [lines[0]]
+            for l in lines[1:]:
+                inner.append(' '*alignment + l)
+            result.append('%s=%s' % (a, ''.join(inner)))
+        return string % {'cname': cname, 'rname': rname,
+                         'fields': (',\n' + ' '*alignment).join(result)}
 
     def __repr__(self):
-        return '<%s(%s) l.%s [%s] at 0x%x>' % (self.__class__.__name__,
-                                               self._repr_name(),
-                                               self.fromlineno,
-                                               self.root().name,
-                                               id(self))
-
+        rname = self._repr_name()
+        if rname:
+            string = '<%(cname)s.%(rname)s l.%(lineno)s at 0x%(id)x>'
+        else:
+            string = '<%(cname)s l.%(lineno)s at 0x%(id)x>'
+        return string % {'cname': type(self).__name__, 'rname': rname,
+                         'lineno': self.fromlineno, 'id': id(self)}
 
     def accept(self, visitor):
         func = getattr(visitor, "visit_" + self.__class__.__name__.lower())
@@ -754,8 +779,126 @@ class NodeNG(object):
     def as_string(self):
         return as_string.to_code(self)
 
-    def repr_tree(self, **kws):
-        return as_string.dump(self, **kws)
+    def repr_tree(self, ids=False, include_linenos=False,
+                  ast_state=False, indent='   ', max_depth=0, max_width=80):
+        """Returns a string representation of the AST from this node. 
+
+        :param ids: If true, includes the ids with the node type names.
+
+        :param include_linenos: If true, includes the line numbers and
+            column offsets.
+
+        :param ast_state: If true, includes information derived from
+        the whole AST like local and global variables.
+
+        :param indent: A string to use to indent the output string.
+
+        :param max_depth: If set to a positive integer, won't return
+        nodes deeper than max_depth in the string.
+
+        :param max_width: Only positive integer values are valid, the
+        default is 80.  Attempts to format the output string to stay
+        within max_width characters, but can exceed it under some
+        circumstances.
+
+        """
+        @_singledispatch
+        def _repr_tree(node, result, done, cur_indent='', depth=1):
+            '''Outputs a representation of a non-tuple/list, non-node that's
+            contained within an AST, including strings.
+
+            '''
+            lines = pprint.pformat(node,
+                                   width=max(max_width - len(cur_indent),
+                                             1)).splitlines(True)
+            result.append(lines[0])
+            result.extend([cur_indent + l for l in lines[1:]])
+            return False if len(lines) == 1 else True
+
+        @_repr_tree.register(tuple)
+        @_repr_tree.register(list)
+        def _repr_seq(node, result, done, cur_indent='', depth=1):
+            '''Outputs a representation of a sequence that's contained within an
+            AST.
+
+            '''
+            cur_indent += indent
+            result.append('[')
+            if len(node) == 0:
+                broken = False
+            elif len(node) == 1:
+                broken = _repr_tree(node[0], result, done, cur_indent, depth)
+            elif len(node) == 2:
+                broken = _repr_tree(node[0], result, done, cur_indent, depth)
+                if not broken:
+                    result.append(', ')
+                else:
+                    result.append(',\n')
+                    result.append(cur_indent)
+                broken = (_repr_tree(node[1], result, done, cur_indent, depth)
+                          or broken)
+            else:
+                result.append('\n')
+                result.append(cur_indent)
+                for child in node[:-1]:
+                    _repr_tree(child, result, done, cur_indent, depth)
+                    result.append(',\n')
+                    result.append(cur_indent)
+                _repr_tree(node[-1], result, done, cur_indent, depth)
+                broken = True
+            result.append(']')
+            return broken
+
+        @_repr_tree.register(NodeNG)
+        def _repr_node(node, result, done, cur_indent='', depth=1):
+            '''Outputs a strings representation of an astroid node.'''
+            if node in done:
+                result.append(indent + '<Recursion on %s with id=%s' %
+                              (type(node).__name__, id(node)))
+                return False
+            else:
+                done.add(node)
+            if max_depth and depth > max_depth:
+                result.append('...')
+                return False
+            depth += 1
+            cur_indent += indent
+            if ids:
+                result.append('%s<0x%x>(\n' % (type(node).__name__, id(node)))
+            else:
+                result.append('%s(' % type(node).__name__)
+            fields = []
+            if include_linenos:
+                fields.extend(('lineno', 'col_offset'))
+            fields.extend(node._other_fields)
+            fields.extend(node._astroid_fields)
+            if ast_state:
+                fields.extend(node._other_other_fields)
+            if len(fields) == 0:
+                broken = False
+            elif len(fields) == 1:
+                result.append('%s=' % fields[0])
+                broken = _repr_tree(getattr(node, fields[0]), result, done,
+                                    cur_indent, depth)
+            else:
+                result.append('\n')
+                result.append(cur_indent)
+                for field in fields[:-1]:
+                    result.append('%s=' % field)
+                    _repr_tree(getattr(node, field), result, done, cur_indent,
+                               depth)
+                    result.append(',\n')
+                    result.append(cur_indent)
+                result.append('%s=' % fields[-1])
+                _repr_tree(getattr(node, fields[-1]), result, done, cur_indent,
+                           depth)
+                broken = True
+            result.append(')')
+            return broken
+
+        result = []
+        _repr_tree(self, result, set())
+        return ''.join(result)
 
     def bool_value(self):
         """Determine the bool value of this node

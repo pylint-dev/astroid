@@ -516,7 +516,7 @@ class ComprehensionScope(LocalsDictNodeNG):
 
 class GeneratorExp(ComprehensionScope):
     _astroid_fields = ('elt', 'generators')
-    _other_fields = ('locals',)
+    _other_other_fields = ('locals',)
     elt = None
     generators = None
 
@@ -698,15 +698,13 @@ class FunctionDef(bases.Statement, Lambda):
         returns = None
     else:
         _astroid_fields = ('decorators', 'args', 'body')
-    # args = None
-    # body = None
     decorators = None
     special_attributes = set(('__name__', '__doc__', '__dict__'))
     is_function = True
     # attributes below are set by the builder module or by raw factories
-    decorators = None
     _other_fields = ('name', 'doc')
     _other_other_fields = ('locals', '_type')
+    _type = None
 
     def __init__(self, name=None, doc=None, lineno=None,
                  col_offset=None, parent=None):
@@ -1064,7 +1062,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
     decorators = None
     special_attributes = set(('__name__', '__doc__', '__dict__', '__module__',
                               '__bases__', '__mro__', '__subclasses__'))
-
     _type = None
     _metaclass_hack = False
     hide = False
@@ -1072,7 +1069,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
                     doc="class'type, possible values are 'class' | "
                     "'metaclass' | 'exception'")
     _other_fields = ('name', 'doc')
-    _other_other_fields = ('locals', '_style')
+    _other_other_fields = ('locals', '_newstyle')
+    _newstyle = None
 
     def __init__(self, name=None, doc=None, lineno=None,
                  col_offset=None, parent=None):

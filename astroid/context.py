@@ -19,6 +19,7 @@
 """Various context related utilities, including inference and call contexts."""
 import contextlib
 import itertools
+import pprint
 
 from astroid import exceptions
 from astroid import util
@@ -63,6 +64,16 @@ class InferenceContext(object):
         path = set(self.path)
         yield
         self.path = path
+
+    def __str__(self):
+        return '%s(%s)' % (type(self).__name__, ',\n    '.join(
+            ('%s=%s' % (a, pprint.pformat(getattr(self, a), width=80-len(a)))
+             for a in self.__slots__)))
+    
+    def __repr__(self):
+        return '%s(%s)' % (type(self).__name__, ', '.join(
+            ('%s=%s' % (a, repr(getattr(self, a)))
+             for a in self.__slots__)))
 
 
 class CallContext(object):

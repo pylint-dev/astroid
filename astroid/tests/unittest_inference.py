@@ -641,9 +641,10 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ast = parse(code, __name__)
         self.assertEqual(len(list(ast['process_line'].infer_call_result(None))), 3)
         self.assertEqual(len(list(ast['tupletest'].infer())), 3)
-        values = ['FunctionDef(first_word)', 'FunctionDef(last_word)', 'Const(NoneType)']
-        self.assertEqual([str(inferred)
-                          for inferred in ast['fct'].infer()], values)
+        values = ['<FunctionDef.first_word', '<FunctionDef.last_word',
+                  '<Const.NoneType']
+        self.assertTrue(all(repr(inferred).startswith(value) for inferred, value
+                            in zip(ast['fct'].infer(), values)))
 
     def test_float_complex_ambiguity(self):
         code = '''

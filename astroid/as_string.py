@@ -22,105 +22,9 @@
 * :func:`dump` function return an internal representation of nodes found
   in the tree, useful for debugging or understanding the tree structure
 """
-import pprint
 import sys
 
-try:
-    from functools import singledispatch as _singledispatch
-except ImportError:
-    from singledispatch import singledispatch as _singledispatch
-
 import six
-
-def dump(node, ids=False, annotate_fields=True,
-         include_attributes=False, indent='  ', max_depth=None, max_width=80):
-    """print a nice astroid tree representation.
-
-    :param ids: if true, we also print the ids (useful for debugging)
-    """
-    @_singledispatch
-    def repr_tree(node, result, done, cur_indent=''):
-        lines = pprint.pformat(node, width=max_width - len(cur_indent)).splitlines(True)
-        result.append(lines[0])
-        result.extend([cur_indent + l for l in lines[1:]])
-
-    @repr_tree.register(list)
-    def repr_seq(node, result, done, cur_indent=''):
-        cur_indent += indent
-        result.append('[')
-        if len(node) == 0:
-            pass
-        elif len(node) == 1:
-            repr_tree(node[0], result, done, cur_indent)
-        elif len(node) == 2:
-            repr_tree(node[0], result, done, cur_indent)
-            result.append(', ')
-            repr_tree(node[1], result, done, cur_indent)
-        else:
-            # result.append('\n' + cur_indent)
-            repr_tree(node[0], result, done, cur_indent)
-            result.append(',\n')
-            for child in node[1:-1]:
-                result.append(cur_indent)
-                repr_tree(child, result, done, cur_indent)
-                result.append(',\n')
-            result.append(cur_indent)
-            repr_tree(node[-1], result, done, cur_indent)
-        result.append(']')
-    repr_tree.register(tuple, repr_seq)
-
-    from astroid import bases
-    @repr_tree.register(bases.NodeNG)
-    def repr_node(node, result, done, cur_indent=''):
-        """built a tree representation of a node as a list of lines"""
-        if node in done:
-            result.append(indent + '<Recursion on %s with id=%s' %
-                          (type(node).__name__, id(node)))
-            return
-        else:
-            done.add(node)
-        cur_indent += indent
-        if ids:
-            result.append('%s<0x%x>(\n' % (type(node).__name__, id(node)))
-        else:
-            result.append('%s(' % type(node).__name__)
-        astroid_fields = node._astroid_fields
-        other_fields = node._other_fields
-        if len(astroid_fields) == 0 and len(other_fields) == 0:
-            pass
-        elif len(astroid_fields) == 1 and len(other_fields) == 0:
-            if annotate_fields:
-                result.append('%s=' % astroid_fields[0])
-            repr_tree(getattr(node, astroid_fields[0]), result, done, cur_indent)
-        elif len(astroid_fields) == 0 and len(other_fields) == 1:
-            if annotate_fields:
-                result.append('%s=' % other_fields[0])
-            repr_tree(getattr(node, other_fields[0]), result, done, cur_indent)
-        elif len(other_fields) == 0:
-            for field in astroid_fields[:-1]:
-                if annotate_fields:
-                    result.append('%s=' % field)
-                repr_tree(getattr(node, field), result, done, cur_indent)
-                result.append(',\n' + cur_indent)
-            if annotate_fields:
-                result.append('%s=' % astroid_fields[-1])
-            repr_tree(getattr(node, astroid_fields[-1]), result, done, cur_indent)
-        else:
-            fields = other_fields + astroid_fields
-            for field in fields[:-1]:
-                if annotate_fields:
-                    result.append('%s=' % field)
-                repr_tree(getattr(node, field), result, done, cur_indent)
-                result.append(',\n' + cur_indent)
-            if annotate_fields:
-                result.append('%s=' % fields[-1])
-            repr_tree(getattr(node, fields[-1]), result, done, cur_indent)
-        result.append(')')
-
-    result = []
-    repr_tree(node, result, set())
-    return ''.join(result)
-
 
 class AsStringVisitor(object):
     """Visitor to render an Astroid node as a valid python code string"""
@@ -574,5 +478,5 @@ def _import_string(names):
 if sys.version_info >= (3, 0):
     AsStringVisitor = AsStringVisitor3
 
-# this visitor is stateless, thus it can be reused
+# This sets the default indent to 4 spaces.
 to_code = AsStringVisitor('    ')

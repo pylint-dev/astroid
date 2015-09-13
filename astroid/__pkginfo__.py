@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 """astroid packaging information"""
+import sys
+
 distname = 'astroid'
 
 modname = 'astroid'
@@ -23,7 +25,10 @@ modname = 'astroid'
 numversion = (1, 4, 0)
 version = '.'.join([str(num) for num in numversion])
 
-install_requires = ['six', 'lazy_object_proxy', 'wrapt']
+if sys.version_info >= (3, 4):
+    install_requires = ['lazy_object_proxy', 'six', 'wrapt']
+else:
+    install_requires = ['lazy_object_proxy', 'singledispatch', 'six', 'wrapt']
 
 license = 'LGPL'
 
