@@ -308,6 +308,8 @@ Change log for the astroid package (used to be astng)
       Until now, inferring this kind of calls resulted in Instances, not in classes,
       since astroid didn't understand that the presence of the metaclass in the call
       leads to a class creationg, not to an instance creation.
+
+    * Understand the `slice` builtin. Closes issue #184.
      
 
 

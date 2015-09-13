@@ -113,7 +113,7 @@ if sys.version_info[0] == 2:
         splitquery = _urllib.splitquery
         splittag = _urllib.splittag
         splituser = _urllib.splituser
-        uses_fragment = _urlparse.uses_fragment       
+        uses_fragment = _urlparse.uses_fragment
         uses_netloc = _urlparse.uses_netloc
         uses_params = _urlparse.uses_params
         uses_query = _urlparse.uses_query

@@ -18,11 +18,7 @@
 
 """Various context related utilities, including inference and call contexts."""
 import contextlib
-import itertools
 import pprint
-
-from astroid import exceptions
-from astroid import util
 
 
 class InferenceContext(object):
@@ -77,73 +73,17 @@ class InferenceContext(object):
 
 
 class CallContext(object):
+    """Holds information for a call site."""
 
-    def __init__(self, args, keywords=None, starargs=None, kwargs=None):
+    __slots__ = ('args', 'keywords')
+
+    def __init__(self, args, keywords=None):
         self.args = args
         if keywords:
-            self.keywords = {arg.arg: arg.value for arg in keywords}
+            keywords = [(arg.arg, arg.value) for arg in keywords]
         else:
-            self.keywords = {}
-
-        self.starargs = starargs
-        self.kwargs = kwargs
-
-    @staticmethod
-    def _infer_argument_container(container, key, context):
-        its = []
-        for inferred in container.infer(context=context):
-            if inferred is util.YES:
-                its.append((util.YES,))
-                continue
-            try:
-                its.append(inferred.getitem(key, context).infer(context=context))
-            except (exceptions.InferenceError, AttributeError):
-                its.append((util.YES,))
-            except (IndexError, TypeError):
-                continue
-        if its:
-            return itertools.chain(*its)
-
-    def infer_argument(self, funcnode, name, context, boundnode):
-        """infer a function argument value according to the call context"""
-        # 1. search in named keywords
-        try:
-            return self.keywords[name].infer(context)
-        except KeyError:
-            pass
-
-        argindex = funcnode.args.find_argname(name)[0]
-        if argindex is not None:
-            # 2. first argument of instance/class method
-            if argindex == 0 and funcnode.type in ('method', 'classmethod'):
-                return iter((boundnode,))
-            # if we have a method, extract one position
-            # from the index, so we'll take in account
-            # the extra parameter represented by `self` or `cls`
-            if funcnode.type in ('method', 'classmethod'):
-                argindex -= 1
-            # 2. search arg index
-            try:
-                return self.args[argindex].infer(context)
-            except IndexError:
-                pass
-            # 3. search in *args (.starargs)
-            if self.starargs is not None:
-                its = self._infer_argument_container(
-                    self.starargs, argindex, context)
-                if its:
-                    return its
-        # 4. Search in **kwargs
-        if self.kwargs is not None:
-            its = self._infer_argument_container(
-                self.kwargs, name, context)
-            if its:
-                return its
-        # 5. return default value if any
-        try:
-            return funcnode.args.default_value(name).infer(context)
-        except exceptions.NoDefault:
-            raise exceptions.InferenceError(name)
+            keywords = []
+        self.keywords = keywords
 
 
 def copy_context(context):

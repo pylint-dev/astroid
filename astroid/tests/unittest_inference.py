@@ -2058,7 +2058,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         f = 1
         f+=A() #@
         x = 1
-        x+=[] #@ 
+        x+=[] #@
         ''')
         msg = "unsupported operand type(s) for {op}: {lhs!r} and {rhs!r}"
         expected = [
@@ -2479,7 +2479,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         class A(object):
             def __iadd__(self, other): return NotImplemented
             def __add__(self, other): return NotImplemented
-        A() + A() #@        
+        A() + A() #@
         ''')
         self.assertEqual(next(ast_node.infer()), util.YES)
 
@@ -2645,7 +2645,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             def __add__(self, other): return other
         class B(A):
             def __radd__(self, other): return NotImplemented
-            
+
         a = A()
         a += B() #@
         ''')
@@ -2846,7 +2846,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         type.__new__(1) #@
         type.__new__(1, 2) #@
         type.__new__(1, 2, 3) #@
-        type.__new__(1, 2, 3, 4, 5) #@ 
+        type.__new__(1, 2, 3, 4, 5) #@
         ''')
         for node in ast_nodes:
             inferred = next(node.infer())
@@ -3294,6 +3294,250 @@ class TestType(unittest.TestCase):
             self.assertIsInstance(inferred, nodes.ClassDef)
             self.assertEqual(inferred.name, expected)
 
+
+class ArgumentsTest(unittest.TestCase):
+
+    @staticmethod
+    def _get_dict_value(inferred):
+        items = inferred.items
+        return sorted((key.value, value.value) for key, value in items)
+
+    @staticmethod
+    def _get_tuple_value(inferred):
+        elts = inferred.elts
+        return tuple(elt.value for elt in elts)
+
+    def test_args(self):
+        expected_values = [(), (1, ), (2, 3), (4, 5),
+                           (3, ), (), (3, 4, 5),
+                           (), (), (4, ), (4, 5),
+                           (), (3, ), (), (), (3, ), (42, )]
+        ast_nodes = test_utils.extract_node('''
+        def func(*args):
+            return args
+        func() #@
+        func(1) #@
+        func(2, 3) #@
+        func(*(4, 5)) #@
+        def func(a, b, *args):
+            return args
+        func(1, 2, 3) #@
+        func(1, 2) #@
+        func(1, 2, 3, 4, 5) #@
+        def func(a, b, c=42, *args):
+            return args
+        func(1, 2) #@
+        func(1, 2, 3) #@
+        func(1, 2, 3, 4) #@
+        func(1, 2, 3, 4, 5) #@
+        func = lambda a, b, *args: args
+        func(1, 2) #@
+        func(1, 2, 3) #@
+        func = lambda a, b=42, *args: args
+        func(1) #@
+        func(1, 2) #@
+        func(1, 2, 3) #@
+        func(1, 2, *(42, )) #@
+        ''')
+        for node, expected_value in zip(ast_nodes, expected_values):
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, nodes.Tuple)
+            self.assertEqual(self._get_tuple_value(inferred), expected_value)
+
+    @test_utils.require_version('3.5')
+    def test_multiple_starred_args(self):
+        expected_values = [
+            (1, 2, 3),
+            (1, 4, 2, 3, 5, 6, 7),
+        ]
+        ast_nodes = test_utils.extract_node('''
+        def func(a, b, *args):
+            return args
+        func(1, 2, *(1, ), *(2, 3)) #@
+        func(1, 2, *(1, ), 4, *(2, 3), 5, *(6, 7)) #@
+        ''')
+        for node, expected_value in zip(ast_nodes, expected_values):
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, nodes.Tuple)
+            self.assertEqual(self._get_tuple_value(inferred), expected_value)
+
+    def test_defaults(self):
+        expected_values = [42, 3, 41, 42]
+        ast_nodes = test_utils.extract_node('''
+        def func(a, b, c=42, *args):
+            return c
+        func(1, 2) #@
+        func(1, 2, 3) #@
+        func(1, 2, c=41) #@
+        func(1, 2, 42, 41) #@
+        ''')
+        for node, expected_value in zip(ast_nodes, expected_values):
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, nodes.Const)
+            self.assertEqual(inferred.value, expected_value)
+
+    @test_utils.require_version('3.0')
+    def test_kwonly_args(self):
+        expected_values = [24, 24, 42, 23, 24, 24, 54]
+        ast_nodes = test_utils.extract_node('''
+        def test(*, f, b): return f
+        test(f=24, b=33) #@
+        def test(a, *, f): return f
+        test(1, f=24) #@
+        def test(a, *, f=42): return f
+        test(1) #@
+        test(1, f=23) #@
+        def test(a, b, c=42, *args, f=24):
+            return f
+        test(1, 2, 3) #@
+        test(1, 2, 3, 4) #@
+        test(1, 2, 3, 4, 5, f=54) #@
+        ''')
+        for node, expected_value in zip(ast_nodes, expected_values):
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, nodes.Const)
+            self.assertEqual(inferred.value, expected_value)
+
+    def test_kwargs(self):
+        expected = [
+            [('a', 1), ('b', 2), ('c', 3)],
+            [('a', 1)],
+            [('a', 'b')],
+        ]
+        ast_nodes = test_utils.extract_node('''
+        def test(**kwargs):
+             return kwargs
+        test(a=1, b=2, c=3) #@
+        test(a=1) #@
+        test(**{'a': 'b'}) #@
+        ''')
+        for node, expected_value in zip(ast_nodes, expected):
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, nodes.Dict)
+            value = self._get_dict_value(inferred)
+            self.assertEqual(value, expected_value)
+
+    def test_kwargs_and_other_named_parameters(self):
+        ast_nodes = test_utils.extract_node('''
+        def test(a=42, b=24, **kwargs):
+            return kwargs
+        test(42, 24, c=3, d=4) #@
+        test(49, b=24, d=4) #@
+        test(a=42, b=33, c=3, d=42) #@
+        test(a=42, **{'c':42}) #@
+        ''')
+        expected_values = [
+            [('c', 3), ('d', 4)],
+            [('d', 4)],
+            [('c', 3), ('d', 42)],
+            [('c', 42)],
+        ]
+        for node, expected_value in zip(ast_nodes, expected_values):
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, nodes.Dict)
+            value = self._get_dict_value(inferred)
+            self.assertEqual(value, expected_value)
+
+    def test_kwargs_access_by_name(self):
+        expected_values = [42, 42, 42, 24]
+        ast_nodes = test_utils.extract_node('''
+        def test(**kwargs):
+            return kwargs['f']
+        test(f=42) #@
+        test(**{'f': 42}) #@
+        test(**dict(f=42)) #@
+        def test(f=42, **kwargs):
+            return kwargs['l']
+        test(l=24) #@
+        ''')
+        for ast_node, value in zip(ast_nodes, expected_values):
+            inferred = next(ast_node.infer())
+            self.assertIsInstance(inferred, nodes.Const)
+            self.assertEqual(inferred.value, value)
+
+    @test_utils.require_version('3.5')
+    def test_multiple_kwargs(self):
+        expected_value = [
+            ('a', 1),
+            ('b', 2),
+            ('c', 3),
+            ('d', 4),
+            ('f', 42),
+        ]
+        ast_node = test_utils.extract_node('''
+        def test(**kwargs):
+             return kwargs
+        test(a=1, b=2, **{'c': 3}, **{'d': 4}, f=42) #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.Dict)
+        value = self._get_dict_value(inferred)
+        self.assertEqual(value, expected_value)
+
+    def test_fail_to_infer_args(self):
+        ast_nodes = test_utils.extract_node('''
+        def test(a, **kwargs): return a
+        test(*missing) #@
+        test(*object) #@
+        test(*1) #@
+
+
+        def test(**kwargs): return kwargs
+        test(**miss) #@
+        test(**(1, 2)) #@
+        test(**1) #@
+        test(**{misss:1}) #@
+        test(**{object:1}) #@
+        test(**{1:1}) #@
+        test(**{'a':1, 'a':1}) #@
+
+        def test(a): return a
+        test() #@
+        test(1, 2, 3) #@
+
+        from unknown import unknown
+        test(*unknown) #@
+        def test(*args): return args
+        test(*unknown) #@
+        ''')
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            self.assertEqual(inferred, util.YES)
+
+
+class SliceTest(unittest.TestCase):
+
+    def test_slice(self):
+        ast_nodes = [
+            ('[1, 2, 3][slice(None)]', [1, 2, 3]),
+            ('[1, 2, 3][slice(None, None)]', [1, 2, 3]),
+            ('[1, 2, 3][slice(None, None, None)]', [1, 2, 3]),
+            ('[1, 2, 3][slice(1, None)]', [2, 3]),
+            ('[1, 2, 3][slice(None, 1, None)]', [1]),
+            ('[1, 2, 3][slice(0, 1)]', [1]),
+            ('[1, 2, 3][slice(0, 3, 2)]', [1, 3]),
+        ]
+        for node, expected_value in ast_nodes:
+            ast_node = test_utils.extract_node("__({})".format(node))
+            inferred = next(ast_node.infer())
+            self.assertIsInstance(inferred, nodes.List)
+            self.assertEqual([elt.value for elt in inferred.elts], expected_value)
+
+    def test_slice_inference_error(self):
+        ast_nodes = test_utils.extract_node('''
+        from unknown import unknown
+        [1, 2, 3][slice(None, unknown, unknown)] #@
+        [1, 2, 3][slice(None, missing, missing)] #@
+        [1, 2, 3][slice(object, list, tuple)] #@
+        [1, 2, 3][slice(b'a')] #@
+        [1, 2, 3][slice(1, 'aa')] #@
+        [1, 2, 3][slice(1, 2.0, 3.0)] #@
+        [1, 2, 3][slice()] #@
+        [1, 2, 3][slice(1, 2, 3, 4)] #@
+        ''')
+        for node in ast_nodes:
+            self.assertRaises(InferenceError, next, node.infer())
+        
 
 if __name__ == '__main__':
     unittest.main()

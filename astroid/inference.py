@@ -104,9 +104,7 @@ def infer_call(self, context=None):
     """infer a Call node by trying to guess what the function returns"""
     callcontext = context.clone()
     callcontext.callcontext = contextmod.CallContext(args=self.args,
-                                                     keywords=self.keywords,
-                                                     starargs=self.starargs,
-                                                     kwargs=self.kwargs)
+                                                     keywords=self.keywords)
     callcontext.boundnode = None
     for callee in self.func.infer(context):
         if callee is util.YES:
@@ -668,6 +666,7 @@ def infer_assign(self, context=None):
     stmt = self.statement()
     if isinstance(stmt, nodes.AugAssign):
         return stmt.infer(context)
+
     stmts = list(self.assigned_stmts(context=context))
     return bases._infer_stmts(stmts, context)
 nodes.AssignName._infer = infer_assign

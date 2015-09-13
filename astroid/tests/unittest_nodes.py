@@ -693,5 +693,51 @@ class DeprecationWarningsTest(unittest.TestCase):
             self.assertEqual(str(w[0].message), actual_msg)
 
 
+@test_utils.require_version('3.5')
+class Python35AsyncTest(unittest.TestCase):
+    
+    def test_async_await_keywords(self):
+        async_def, async_for, async_with, await_node = test_utils.extract_node('''
+        async def func(): #@
+            async for i in range(10): #@
+                f = __(await i)
+            async with test(): #@
+                pass
+        ''')
+        self.assertIsInstance(async_def, nodes.AsyncFunctionDef)
+        self.assertIsInstance(async_for, nodes.AsyncFor)
+        self.assertIsInstance(async_with, nodes.AsyncWith)
+        self.assertIsInstance(await_node, nodes.Await)
+        self.assertIsInstance(await_node.value, nodes.Name)
+
+    def _test_await_async_as_string(self, code):
+        ast_node = parse(code)
+        self.assertEqual(ast_node.as_string().strip(), code.strip())
+
+    def test_await_as_string(self):
+        code = textwrap.dedent('''
+        async def function():
+            await 42
+        ''')
+        self._test_await_async_as_string(code)
+
+    def test_asyncwith_as_string(self):
+        code = textwrap.dedent('''
+        async def function():
+            async with (42):
+                pass
+        ''')
+        self._test_await_async_as_string(code)
+
+    def test_asyncfor_as_string(self):
+        code = textwrap.dedent('''
+        async def function():
+            async for i in range(10):
+                await 42
+        ''')
+        self._test_await_async_as_string(code)
+    
+
+
 if __name__ == '__main__':
     unittest.main()

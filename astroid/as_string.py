@@ -98,11 +98,7 @@ class AsStringVisitor(object):
         else:
             keywords = []
 
-        if node.starargs:
-            args.append('*' + node.starargs.accept(self))
         args.extend(keywords)
-        if node.kwargs:
-            args.append('**' + node.kwargs.accept(self))
         return '%s(%s)' % (expr_str, ', '.join(args))
 
     def visit_classdef(self, node):
@@ -278,6 +274,8 @@ class AsStringVisitor(object):
 
     def visit_keyword(self, node):
         """return an astroid.Keyword node as string"""
+        if node.arg is None:
+            return '**%s' % node.value.accept(self)
         return '%s=%s' % (node.arg, node.value.accept(self))
 
     def visit_lambda(self, node):
@@ -414,6 +412,10 @@ class AsStringVisitor(object):
         else:
             return "(%s)" % (expr,)
 
+    def visit_starred(self, node):
+        """return Starred node as string"""
+        return "*" + node.value.accept(self)
+
     # These aren't for real AST nodes, but for inference objects.
 
     def visit_frozenset(self, node):
@@ -450,10 +452,6 @@ class AsStringVisitor3(AsStringVisitor):
             return 'raise %s' % node.exc.accept(self)
         return 'raise'
 
-    def visit_starred(self, node):
-        """return Starred node as string"""
-        return "*" + node.value.accept(self)
-
     def visit_yieldfrom(self, node):
         """ Return an astroid.YieldFrom node as string. """
         yi_val = node.value and (" " + node.value.accept(self)) or ""
@@ -462,6 +460,19 @@ class AsStringVisitor3(AsStringVisitor):
             return expr
         else:
             return "(%s)" % (expr,)
+
+    def visit_asyncfunctiondef(self, node):
+        function = super(AsStringVisitor3k, self).visit_functiondef(node)
+        return 'async ' + function.strip()
+
+    def visit_await(self, node):
+        return 'await %s' % node.value.accept(self)
+    
+    def visit_asyncwith(self, node):
+        return 'async %s' % self.visit_with(node)
+
+    def visit_asyncfor(self, node):
+        return 'async %s' % self.visit_for(node)
 
 
 def _import_string(names):

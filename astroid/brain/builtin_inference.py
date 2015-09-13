@@ -229,7 +229,7 @@ def infer_dict(node, context=None):
 
     If a case can't be inferred, we'll fallback to default inference.
     """
-    if not node.args and not node.kwargs and not node.keywords:
+    if not node.args and not node.keywords:
         # dict()
         return nodes.Dict()
     elif node.keywords and not node.args:
@@ -433,6 +433,32 @@ def infer_type(node, context=None):
     return helpers.object_type(node.args[0], context)
 
 
+def infer_slice(node, context=None):
+    """Understand `slice` calls."""
+    args = node.args
+    if not 0 < len(args) <= 3:
+        raise UseInferenceDefault
+
+    args = list(map(helpers.safe_infer, args))
+    for arg in args:
+        if not arg or arg is util.YES:
+            raise UseInferenceDefault
+        if not isinstance(arg, nodes.Const):
+            raise UseInferenceDefault
+        if not isinstance(arg.value, (type(None), int)):
+            raise UseInferenceDefault
+
+    if len(args) < 3:
+        # Make sure we have 3 arguments.
+        args.extend([None] * (3 - len(args)))
+
+    slice_node = nodes.Slice(lineno=node.lineno,
+                             col_offset=node.col_offset,
+                             parent=node.parent)
+    slice_node.postinit(*args)
+    return slice_node
+
+
 # Builtins inference
 register_builtin_transform(infer_bool, 'bool')
 register_builtin_transform(infer_super, 'super')
@@ -445,3 +471,4 @@ register_builtin_transform(infer_list, 'list')
 register_builtin_transform(infer_dict, 'dict')
 register_builtin_transform(infer_frozenset, 'frozenset')
 register_builtin_transform(infer_type, 'type')
+register_builtin_transform(infer_slice, 'slice')

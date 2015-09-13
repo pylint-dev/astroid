@@ -954,6 +954,10 @@ class FunctionDef(bases.Statement, Lambda):
         return True
 
 
+class AsyncFunctionDef(FunctionDef):
+    """Asynchronous function created with the `async` keyword."""
+
+
 def _rec_get_names(args, names=None):
     """return a list of all argument names"""
     if names is None:

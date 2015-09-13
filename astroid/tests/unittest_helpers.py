@@ -232,7 +232,7 @@ class TestHelpers(unittest.TestCase):
     def test_is_subtype_supertype_unrelated_classes(self):
         cls_a, cls_b = test_utils.extract_node('''
         class A(object): pass #@
-        class B(object): pass #@        
+        class B(object): pass #@
         ''')
         self.assertFalse(helpers.is_subtype(cls_a, cls_b))
         self.assertFalse(helpers.is_subtype(cls_b, cls_a))
@@ -242,7 +242,7 @@ class TestHelpers(unittest.TestCase):
     def test_is_subtype_supertype_classes_no_type_ancestor(self):
         cls_a = test_utils.extract_node('''
         class A(object): #@
-            pass        
+            pass
         ''')
         builtin_type = self._extract('type')
         self.assertFalse(helpers.is_supertype(builtin_type, cls_a))
@@ -251,7 +251,7 @@ class TestHelpers(unittest.TestCase):
     def test_is_subtype_supertype_classes_metaclasses(self):
         cls_a = test_utils.extract_node('''
         class A(type): #@
-            pass        
+            pass
         ''')
         builtin_type = self._extract('type')
         self.assertTrue(helpers.is_supertype(builtin_type, cls_a))
