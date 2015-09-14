@@ -393,11 +393,6 @@ class BoundMethod(UnboundMethod):
                 and len(caller.args) == 4
                 # TODO(cpopa): this check shouldn't be needed.
                 and self._proxied.parent.frame().qname() == '%s.object' % BUILTINS):
-            and self.bound.name == 'type'
-            and self.name == '__new__'
-            and len(caller.args) == 4
-            # TODO(cpopa): this check shouldn't be needed.
-            and self._proxied.parent.frame().qname() == '%s.object' % BUILTINS):
 
             # Check if we have an ``type.__new__(mcs, name, bases, attrs)`` call.
             new_cls = self._infer_type_new_call(caller, context)
