@@ -62,14 +62,16 @@ class InferenceContext(object):
         self.path = path
 
     def __str__(self):
-        return '%s(%s)' % (type(self).__name__, ',\n    '.join(
-            ('%s=%s' % (a, pprint.pformat(getattr(self, a), width=80-len(a)))
-             for a in self.__slots__)))
+        state = ('%s=%s' % (field, pprint.pformat(getattr(self, field),
+                                                  width=80 - len(field)))
+                 for field in self.__slots__)
+        return '%s(%s)' % (type(self).__name__, ',\n    '.join(state))
     
     def __repr__(self):
-        return '%s(%s)' % (type(self).__name__, ', '.join(
-            ('%s=%s' % (a, repr(getattr(self, a)))
-             for a in self.__slots__)))
+        state = ('%s=%s' % (field, repr(getattr(self, field)))
+                 for field in self.__slots__)
+        return '%s(%s)' % (type(self).__name__, ', '.join(state))
+
 
 
 class CallContext(object):

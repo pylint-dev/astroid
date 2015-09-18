@@ -541,15 +541,20 @@ class NodeNG(object):
             string = '%(cname)s(%(fields)s)'
             alignment = len(cname) + 1
         result = []
-        for a in self._other_fields + self._astroid_fields:
-            lines = pprint.pformat(getattr(self, a), indent=2,
-                                   width=80-len(a)-alignment).splitlines(True)
+        for field in self._other_fields + self._astroid_fields:
+            value = getattr(self, field)
+            width = 80 - len(field) - alignment
+            lines = pprint.pformat(value, indent=2,
+                                   width=width).splitlines(True)
+
             inner = [lines[0]]
-            for l in lines[1:]:
-                inner.append(' '*alignment + l)
-            result.append('%s=%s' % (a, ''.join(inner)))
-        return string % {'cname': cname, 'rname': rname,
-                         'fields': (',\n' + ' '*alignment).join(result)}
+            for line in lines[1:]:
+                inner.append(' ' * alignment + line)
+            result.append('%s=%s' % (field, ''.join(inner)))
+
+        return string % {'cname': cname,
+                         'rname': rname,
+                         'fields': (',\n' + ' ' * alignment).join(result)}
 
     def __repr__(self):
         rname = self._repr_name()
@@ -557,8 +562,10 @@ class NodeNG(object):
             string = '<%(cname)s.%(rname)s l.%(lineno)s at 0x%(id)x>'
         else:
             string = '<%(cname)s l.%(lineno)s at 0x%(id)x>'
-        return string % {'cname': type(self).__name__, 'rname': rname,
-                         'lineno': self.fromlineno, 'id': id(self)}
+        return string % {'cname': type(self).__name__,
+                         'rname': rname,
+                         'lineno': self.fromlineno,
+                         'id': id(self)}
 
     def accept(self, visitor):
         func = getattr(visitor, "visit_" + self.__class__.__name__.lower())
@@ -800,28 +807,23 @@ class NodeNG(object):
         default is 80.  Attempts to format the output string to stay
         within max_width characters, but can exceed it under some
         circumstances.
-
         """
         @_singledispatch
         def _repr_tree(node, result, done, cur_indent='', depth=1):
-            '''Outputs a representation of a non-tuple/list, non-node that's
+            """Outputs a representation of a non-tuple/list, non-node that's
             contained within an AST, including strings.
-
-            '''
+            """
             lines = pprint.pformat(node,
                                    width=max(max_width - len(cur_indent),
                                              1)).splitlines(True)
             result.append(lines[0])
-            result.extend([cur_indent + l for l in lines[1:]])
-            return False if len(lines) == 1 else True
+            result.extend([cur_indent + line for line in lines[1:]])
+            return len(lines) != 1
 
         @_repr_tree.register(tuple)
         @_repr_tree.register(list)
         def _repr_seq(node, result, done, cur_indent='', depth=1):
-            '''Outputs a representation of a sequence that's contained within an
-            AST.
-
-            '''
+            """Outputs a representation of a sequence that's contained within an AST."""
             cur_indent += indent
             result.append('[')
             if len(node) == 0:
@@ -851,7 +853,7 @@ class NodeNG(object):
 
         @_repr_tree.register(NodeNG)
         def _repr_node(node, result, done, cur_indent='', depth=1):
-            '''Outputs a strings representation of an astroid node.'''
+            """Outputs a strings representation of an astroid node."""
             if node in done:
                 result.append(indent + '<Recursion on %s with id=%s' %
                               (type(node).__name__, id(node)))
