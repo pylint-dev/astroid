@@ -462,7 +462,7 @@ class AsStringVisitor3(AsStringVisitor):
             return "(%s)" % (expr,)
 
     def visit_asyncfunctiondef(self, node):
-        function = super(AsStringVisitor3k, self).visit_functiondef(node)
+        function = super(AsStringVisitor3, self).visit_functiondef(node)
         return 'async ' + function.strip()
 
     def visit_await(self, node):
