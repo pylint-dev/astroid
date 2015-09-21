@@ -451,9 +451,7 @@ def with_assigned_stmts(self, node, context=None, asspath=None):
                 try:
                     obj = obj.elts[index]
                 except IndexError:
-                    six.reraise(exceptions.InferenceError,
-                                exceptions.InferenceError(),
-                                sys.exc_info()[2])
+                    util.reraise(exceptions.InferenceError())
             yield obj
 
 

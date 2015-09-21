@@ -31,6 +31,7 @@ import six
 from astroid import exceptions
 from astroid import modutils
 from astroid import transforms
+from astroid import util
 
 
 def safe_repr(obj):
@@ -128,9 +129,7 @@ class AstroidManager(object):
                     module = modutils.load_module_from_name(modname)
                 except Exception as ex:
                     msg = 'Unable to load module %s (%s)' % (modname, ex)
-                    six.reraise(exceptions.AstroidBuildingException,
-                                exceptions.AstroidBuildingException(msg),
-                                sys.exc_info()[2])
+                    util.reraise(exceptions.AstroidBuildingException(msg))
                 return self.ast_from_module(module, modname)
             elif mp_type == imp.PY_COMPILED:
                 msg = "Unable to load compiled module %s" % (modname,)
@@ -212,9 +211,7 @@ class AstroidManager(object):
                 modname = klass.__module__
             except AttributeError:
                 msg = 'Unable to get module for class %s' % safe_repr(klass)
-                six.reraise(exceptions.AstroidBuildingException,
-                            exceptions.AstroidBuildingException(msg),
-                            sys.exc_info()[2])
+                util.reraise(exceptions.AstroidBuildingException(msg))
         modastroid = self.ast_from_module_name(modname)
         return modastroid.getattr(klass.__name__)[0] # XXX
 
@@ -228,28 +225,20 @@ class AstroidManager(object):
             modname = klass.__module__
         except AttributeError:
             msg = 'Unable to get module for %s' % safe_repr(klass)
-            six.reraise(exceptions.AstroidBuildingException,
-                        exceptions.AstroidBuildingException(msg),
-                        sys.exc_info()[2])
+            util.reraise(exceptions.AstroidBuildingException(msg))
         except Exception as ex:
             msg = ('Unexpected error while retrieving module for %s: %s'
                    % (safe_repr(klass), ex))
-            six.reraise(exceptions.AstroidBuildingException,
-                        exceptions.AstroidBuildingException(msg),
-                        sys.exc_info()[2])
+            util.reraise(exceptions.AstroidBuildingException(msg))
         try:
             name = klass.__name__
         except AttributeError:
             msg = 'Unable to get name for %s' % safe_repr(klass)
-            six.reraise(exceptions.AstroidBuildingException,
-                        exceptions.AstroidBuildingException(msg),
-                        sys.exc_info()[2])
+            util.reraise(exceptions.AstroidBuildingException(msg))
         except Exception as ex:
             exc = ('Unexpected error while retrieving name for %s: %s'
                    % (safe_repr(klass), ex))
-            six.reraise(exceptions.AstroidBuildingException,
-                        exceptions.AstroidBuildingException(exc),
-                        sys.exc_info()[2])
+            util.reraise(exceptions.AstroidBuildingException(exc))
         # take care, on living object __module__ is regularly wrong :(
         modastroid = self.ast_from_module_name(modname)
         if klass is obj:

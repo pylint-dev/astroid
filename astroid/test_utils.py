@@ -2,10 +2,11 @@
 import functools
 import sys
 
-import six
-
 from astroid import nodes
 from astroid import builder
+from astroid import util
+
+
 # The name of the transient function that is used to
 # wrap expressions to be extracted when calling
 # extract_node.
@@ -180,9 +181,7 @@ def require_version(minver=None, maxver=None):
         try:
             return tuple(int(v) for v in string.split('.'))
         except ValueError:
-            six.reraise(ValueError,
-                        ValueError('%s is not a correct version : should be X.Y[.Z].' % version),
-                        sys.exc_info()[2])
+            util.reraise(ValueError('%s is not a correct version : should be X.Y[.Z].' % version))
 
     def check_require_version(f):
         current = sys.version_info[:3]

@@ -18,13 +18,11 @@
 """This module contains some mixins for the different nodes.
 """
 
-import sys
 import warnings
-
-import six
 
 from astroid import decorators
 from astroid import exceptions
+from astroid import util
 
 
 class BlockRangeMixIn(object):
@@ -132,16 +130,10 @@ class ImportFromMixin(FilterStmtsMixin):
                                           relative_only=level and level >= 1)
         except exceptions.AstroidBuildingException as ex:
             if isinstance(ex.args[0], SyntaxError):
-                six.reraise(exceptions.InferenceError,
-                            exceptions.InferenceError(str(ex)),
-                            sys.exc_info()[2])
-            six.reraise(exceptions.InferenceError,
-                        exceptions.InferenceError(modname),
-                        sys.exc_info()[2])
+                util.reraise(exceptions.InferenceError(str(ex)))
+            util.reraise(exceptions.InferenceError(modname))
         except SyntaxError as ex:
-            six.reraise(exceptions.InferenceError,
-                        exceptions.InferenceError(str(ex)),
-                        sys.exc_info()[2])
+            util.reraise(exceptions.InferenceError(str(ex)))
 
     def real_name(self, asname):
         """get name from 'as' name"""

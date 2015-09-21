@@ -27,8 +27,6 @@ import os
 import sys
 import textwrap
 
-import six
-
 from astroid import bases
 from astroid import exceptions
 from astroid import manager
@@ -55,9 +53,7 @@ if sys.version_info >= (3, 0):
         except UnicodeError:  # wrong encoding
             # detect_encoding returns utf-8 if no encoding specified
             msg = 'Wrong (%s) or no encoding specified' % encoding
-            six.reraise(exceptions.AstroidBuildingException,
-                        exceptions.AstroidBuildingException(msg),
-                        sys.exc_info()[2])
+            util.reraise(exceptions.AstroidBuildingException(msg))
         return stream, encoding, data
 
 else:
@@ -129,14 +125,10 @@ class AstroidBuilder(raw_building.InspectBuilder):
             stream, encoding, data = open_source_file(path)
         except IOError as exc:
             msg = 'Unable to load file %r (%s)' % (path, exc)
-            six.reraise(exceptions.AstroidBuildingException,
-                        exceptions.AstroidBuildingException(msg),
-                        sys.exc_info()[2])
+            util.reraise(exceptions.AstroidBuildingException(msg))
         except (SyntaxError, LookupError) as exc:
             # Python 3 encoding specification error or unknown encoding
-            six.reraise(exceptions.AstroidBuildingException,
-                        exceptions.AstroidBuildingException(*exc.args),
-                        sys.exc_info()[2])
+            util.reraise(exceptions.AstroidBuildingException(*exc.args))
         with stream:
             # get module name if necessary
             if modname is None:
@@ -178,9 +170,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         try:
             node = _parse(data + '\n')
         except (TypeError, ValueError, SyntaxError) as exc:
-            six.reraise(exceptions.AstroidBuildingException,
-                        exceptions.AstroidBuildingException(*exc.args),
-                        sys.exc_info()[2])
+            util.reraise(exceptions.AstroidBuildingException(*exc.args))
         if path is not None:
             node_file = os.path.abspath(path)
         else:
