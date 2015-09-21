@@ -18,7 +18,10 @@
 """This module contains some mixins for the different nodes.
 """
 
+import sys
 import warnings
+
+import six
 
 from astroid import decorators
 from astroid import exceptions
@@ -129,10 +132,16 @@ class ImportFromMixin(FilterStmtsMixin):
                                           relative_only=level and level >= 1)
         except exceptions.AstroidBuildingException as ex:
             if isinstance(ex.args[0], SyntaxError):
-                raise exceptions.InferenceError(str(ex))
-            raise exceptions.InferenceError(modname)
+                six.reraise(exceptions.InferenceError,
+                            exceptions.InferenceError(str(ex)),
+                            sys.exc_info()[2])
+            six.reraise(exceptions.InferenceError,
+                        exceptions.InferenceError(modname),
+                        sys.exc_info()[2])
         except SyntaxError as ex:
-            raise exceptions.InferenceError(str(ex))
+            six.reraise(exceptions.InferenceError,
+                        exceptions.InferenceError(str(ex)),
+                        sys.exc_info()[2])
 
     def real_name(self, asname):
         """get name from 'as' name"""

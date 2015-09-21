@@ -26,6 +26,7 @@ from __future__ import print_function
 
 import io
 import itertools
+import sys
 import warnings
 
 import six
@@ -368,10 +369,10 @@ class Module(LocalsDictNodeNG):
         if self.package:
             try:
                 return [self.import_module(name, relative_only=True)]
-            except exceptions.AstroidBuildingException:
-                raise exceptions.NotFoundError(name)
-            except SyntaxError:
-                raise exceptions.NotFoundError(name)
+            except (exceptions.AstroidBuildingException, SyntaxError):
+                six.reraise(exceptions.NotFoundError,
+                            exceptions.NotFoundError(name),
+                            sys.exc_info()[2])
         raise exceptions.NotFoundError(name)
 
     def igetattr(self, name, context=None):
@@ -384,7 +385,9 @@ class Module(LocalsDictNodeNG):
             return bases._infer_stmts(self.getattr(name, context),
                                       context, frame=self)
         except exceptions.NotFoundError:
-            raise exceptions.InferenceError(name)
+            six.reraise(exceptions.InferenceError,
+                        exceptions.InferenceError(name),
+                        sys.exc_info()[2])
 
     def fully_defined(self):
         """return True if this module has been built from a .py file
@@ -854,7 +857,9 @@ class FunctionDef(bases.Statement, Lambda):
             return bases._infer_stmts(self.getattr(name, context),
                                       context, frame=self)
         except exceptions.NotFoundError:
-            raise exceptions.InferenceError(name)
+            six.reraise(exceptions.InferenceError,
+                        exceptions.InferenceError(name),
+                        sys.exc_info()[2])
 
     def is_method(self):
         """return true if the function node should be considered as a method"""
@@ -1447,7 +1452,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
                 # class handle some dynamic attributes, return a YES object
                 yield util.YES
             else:
-                raise exceptions.InferenceError(name)
+                six.reraise(exceptions.InferenceError,
+                            exceptions.InferenceError(name),
+                            sys.exc_info()[2])
 
     def has_dynamic_getattr(self, context=None):
         """

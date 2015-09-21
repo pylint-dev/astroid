@@ -26,6 +26,8 @@ leads to an inferred FrozenSet:
 
 """
 
+import sys
+
 import six
 
 from astroid import bases
@@ -141,7 +143,9 @@ class Super(bases.NodeNG):
         except (exceptions.MroError, exceptions.SuperError) as exc:
             # Don't let invalid MROs or invalid super calls
             # to leak out as is from this function.
-            six.raise_from(exceptions.NotFoundError, exc)
+            six.reraise(exceptions.NotFoundError,
+                        exceptions.NotFoundError(*exc.args),
+                        sys.exc_info()[2])
 
         found = False
         for cls in mro:

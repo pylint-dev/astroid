@@ -23,7 +23,10 @@ from __future__ import print_function
 
 import imp
 import os
+import sys
 import zipimport
+
+import six
 
 from astroid import exceptions
 from astroid import modutils
@@ -125,7 +128,9 @@ class AstroidManager(object):
                     module = modutils.load_module_from_name(modname)
                 except Exception as ex:
                     msg = 'Unable to load module %s (%s)' % (modname, ex)
-                    raise exceptions.AstroidBuildingException(msg)
+                    six.reraise(exceptions.AstroidBuildingException,
+                                exceptions.AstroidBuildingException(msg),
+                                sys.exc_info()[2])
                 return self.ast_from_module(module, modname)
             elif mp_type == imp.PY_COMPILED:
                 msg = "Unable to load compiled module %s" % (modname,)
@@ -169,16 +174,20 @@ class AstroidManager(object):
     def file_from_module_name(self, modname, contextfile):
         try:
             value = self._mod_file_cache[(modname, contextfile)]
+            traceback = sys.exc_info()[2]
         except KeyError:
             try:
                 value = modutils.file_info_from_modpath(
                     modname.split('.'), context_file=contextfile)
+                traceback = sys.exc_info()[2]
             except ImportError as ex:
                 msg = 'Unable to load module %s (%s)' % (modname, ex)
                 value = exceptions.AstroidBuildingException(msg)
+                traceback = sys.exc_info()[2]
             self._mod_file_cache[(modname, contextfile)] = value
         if isinstance(value, exceptions.AstroidBuildingException):
-            raise value
+            six.reraise(exceptions.AstroidBuildingException,
+                        value, traceback)
         return value
 
     def ast_from_module(self, module, modname=None):
@@ -203,7 +212,9 @@ class AstroidManager(object):
                 modname = klass.__module__
             except AttributeError:
                 msg = 'Unable to get module for class %s' % safe_repr(klass)
-                raise exceptions.AstroidBuildingException(msg)
+                six.reraise(exceptions.AstroidBuildingException,
+                            exceptions.AstroidBuildingException(msg),
+                            sys.exc_info()[2])
         modastroid = self.ast_from_module_name(modname)
         return modastroid.getattr(klass.__name__)[0] # XXX
 
@@ -217,20 +228,28 @@ class AstroidManager(object):
             modname = klass.__module__
         except AttributeError:
             msg = 'Unable to get module for %s' % safe_repr(klass)
-            raise exceptions.AstroidBuildingException(msg)
+            six.reraise(exceptions.AstroidBuildingException,
+                        exceptions.AstroidBuildingException(msg),
+                        sys.exc_info()[2])
         except Exception as ex:
             msg = ('Unexpected error while retrieving module for %s: %s'
                    % (safe_repr(klass), ex))
-            raise exceptions.AstroidBuildingException(msg)
+            six.reraise(exceptions.AstroidBuildingException,
+                        exceptions.AstroidBuildingException(msg),
+                        sys.exc_info()[2])
         try:
             name = klass.__name__
         except AttributeError:
             msg = 'Unable to get name for %s' % safe_repr(klass)
-            raise exceptions.AstroidBuildingException(msg)
+            six.reraise(exceptions.AstroidBuildingException,
+                        exceptions.AstroidBuildingException(msg),
+                        sys.exc_info()[2])
         except Exception as ex:
             exc = ('Unexpected error while retrieving name for %s: %s'
                    % (safe_repr(klass), ex))
-            raise exceptions.AstroidBuildingException(exc)
+            six.reraise(exceptions.AstroidBuildingException,
+                        exceptions.AstroidBuildingException(exc),
+                        sys.exc_info()[2])
         # take care, on living object __module__ is regularly wrong :(
         modastroid = self.ast_from_module_name(modname)
         if klass is obj:

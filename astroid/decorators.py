@@ -21,6 +21,9 @@
 
 """ A few useful function/method decorators."""
 
+import sys
+
+import six
 import wrapt
 
 
@@ -57,8 +60,9 @@ class cachedproperty(object):
         try:
             wrapped.__name__
         except AttributeError:
-            raise TypeError('%s must have a __name__ attribute' %
-                            wrapped)
+            six.reraise(TypeError,
+                        TypeError('%s must have a __name__ attribute' % wrapped),
+                        sys.exc_info()[2])
         self.wrapped = wrapped
 
     @property

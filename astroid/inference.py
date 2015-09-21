@@ -25,6 +25,7 @@ from __future__ import print_function
 import functools
 import itertools
 import operator
+import sys
 
 import six
 
@@ -162,7 +163,9 @@ def infer_import_from(self, context=None, asname=True):
         stmts = module.getattr(name, ignore_locals=module is self.root())
         return bases._infer_stmts(stmts, context)
     except exceptions.NotFoundError:
-        raise exceptions.InferenceError(name)
+        six.reraise(exceptions.InferenceError,
+                    exceptions.InferenceError(name),
+                    sys.exc_info()[2])
 nodes.ImportFrom._infer = infer_import_from
 
 
@@ -195,7 +198,9 @@ def infer_global(self, context=None):
         return bases._infer_stmts(self.root().getattr(context.lookupname),
                                   context)
     except exceptions.NotFoundError:
-        raise exceptions.InferenceError()
+        six.reraise(exceptions.InferenceError,
+                    exceptions.InferenceError(),
+                    sys.exc_info()[2])
 nodes.Global._infer = infer_global
 
 
@@ -265,7 +270,9 @@ def infer_subscript(self, context=None):
     try:
         assigned = value.getitem(index_value, context)
     except (IndexError, TypeError, AttributeError) as exc:
-        six.raise_from(exceptions.InferenceError, exc)
+        six.reraise(exceptions.InferenceError,
+                    exceptions.InferenceError(*exc.args),
+                    sys.exc_info()[2])
 
     # Prevent inferring if the inferred subscript
     # is the same as the original subscripted object.
@@ -714,6 +721,8 @@ def instance_getitem(self, index, context=None):
     try:
         return next(method.infer_call_result(self, new_context))
     except StopIteration:
-        raise exceptions.InferenceError
+        six.reraise(exceptions.InferenceError,
+                    exceptions.InferenceError(),
+                    sys.exc_info()[2])
 
 bases.Instance.getitem = instance_getitem

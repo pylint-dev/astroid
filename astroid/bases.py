@@ -24,6 +24,7 @@ from __future__ import print_function
 import collections
 import functools
 import pprint
+import six
 import sys
 import warnings
 
@@ -151,7 +152,9 @@ class Instance(Proxy):
                     return self._proxied.local_attr(name)
                 return self._proxied.getattr(name, context,
                                              class_context=False)
-            raise exceptions.NotFoundError(name)
+            six.reraise(exceptions.NotFoundError,
+                        exceptions.NotFoundError(name),
+                        sys.exc_info()[2])
         # since we've no context information, return matching class members as
         # well
         if lookupclass:
@@ -184,7 +187,9 @@ class Instance(Proxy):
                                             context):
                     yield stmt
             except exceptions.NotFoundError:
-                raise exceptions.InferenceError(name)
+                six.reraise(exceptions.InferenceError,
+                            exceptions.InferenceError(name),
+                            sys.exc_info()[2])
 
     def _wrap_attr(self, attrs, context=None):
         """wrap bound methods of attrs in a InstanceMethod proxies"""
