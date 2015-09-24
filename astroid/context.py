@@ -66,7 +66,7 @@ class InferenceContext(object):
                                                   width=80 - len(field)))
                  for field in self.__slots__)
         return '%s(%s)' % (type(self).__name__, ',\n    '.join(state))
-    
+
     def __repr__(self):
         state = ('%s=%s' % (field, repr(getattr(self, field)))
                  for field in self.__slots__)

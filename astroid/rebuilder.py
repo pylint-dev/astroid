@@ -312,7 +312,7 @@ class TreeRebuilder(object):
                 keywords.append(new_kwargs)
             else:
                 keywords = [new_kwargs]
-        
+
         newnode.postinit(self.visit(node.func, newnode, assign_ctx),
                          args, keywords)
         return newnode

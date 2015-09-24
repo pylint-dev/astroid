@@ -467,7 +467,7 @@ class AsStringVisitor3(AsStringVisitor):
 
     def visit_await(self, node):
         return 'await %s' % node.value.accept(self)
-    
+
     def visit_asyncwith(self, node):
         return 'async %s' % self.visit_with(node)
 

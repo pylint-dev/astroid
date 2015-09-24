@@ -788,7 +788,7 @@ class NodeNG(object):
 
     def repr_tree(self, ids=False, include_linenos=False,
                   ast_state=False, indent='   ', max_depth=0, max_width=80):
-        """Returns a string representation of the AST from this node. 
+        """Returns a string representation of the AST from this node.
 
         :param ids: If true, includes the ids with the node type names.
 
@@ -820,6 +820,7 @@ class NodeNG(object):
             result.extend([cur_indent + line for line in lines[1:]])
             return len(lines) != 1
 
+        # pylint: disable=unused-variable; doesn't understand singledispatch
         @_repr_tree.register(tuple)
         @_repr_tree.register(list)
         def _repr_seq(node, result, done, cur_indent='', depth=1):
@@ -851,6 +852,7 @@ class NodeNG(object):
             result.append(']')
             return broken
 
+        # pylint: disable=unused-variable; doesn't understand singledispatch
         @_repr_tree.register(NodeNG)
         def _repr_node(node, result, done, cur_indent='', depth=1):
             """Outputs a strings representation of an astroid node."""

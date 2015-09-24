@@ -695,7 +695,7 @@ class DeprecationWarningsTest(unittest.TestCase):
 
 @test_utils.require_version('3.5')
 class Python35AsyncTest(unittest.TestCase):
-    
+
     def test_async_await_keywords(self):
         async_def, async_for, async_with, await_node = test_utils.extract_node('''
         async def func(): #@
@@ -736,7 +736,6 @@ class Python35AsyncTest(unittest.TestCase):
                 await 42
         ''')
         self._test_await_async_as_string(code)
-    
 
 
 if __name__ == '__main__':

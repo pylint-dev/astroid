@@ -2941,27 +2941,27 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
     def test_function_metaclasses(self):
         # These are not supported right now, although
         # they will be in the future.
-       ast_node = test_utils.extract_node('''
-       import six
+        ast_node = test_utils.extract_node('''
+        import six
 
-       class BookMeta(type):
-           author = 'Rushdie'
+        class BookMeta(type):
+            author = 'Rushdie'
 
-       def metaclass_function(*args):
-           return BookMeta
+        def metaclass_function(*args):
+            return BookMeta
 
-       @six.add_metaclass(metaclass_function)
-       class Book(object):
-           pass
-       Book #@
-       ''')
-       inferred = next(ast_node.infer())
-       metaclass = inferred.metaclass()
-       self.assertIsInstance(metaclass, nodes.ClassDef)
-       self.assertEqual(metaclass.name, 'BookMeta')
-       author = next(inferred.igetattr('author'))
-       self.assertIsInstance(author, nodes.Const)
-       self.assertEqual(author.value, 'Rushdie')
+        @six.add_metaclass(metaclass_function)
+        class Book(object):
+            pass
+        Book #@
+        ''')
+        inferred = next(ast_node.infer())
+        metaclass = inferred.metaclass()
+        self.assertIsInstance(metaclass, nodes.ClassDef)
+        self.assertEqual(metaclass.name, 'BookMeta')
+        author = next(inferred.igetattr('author'))
+        self.assertIsInstance(author, nodes.Const)
+        self.assertEqual(author.value, 'Rushdie')
 
     def test_subscript_inference_error(self):
        # Used to raise StopIteration
@@ -3577,7 +3577,7 @@ class SliceTest(unittest.TestCase):
         ''')
         for node in ast_nodes:
             self.assertRaises(InferenceError, next, node.infer())
-        
+
 
 if __name__ == '__main__':
     unittest.main()
