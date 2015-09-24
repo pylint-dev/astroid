@@ -19,6 +19,8 @@
 # The code in this file was originally part of logilab-common, licensed under
 # the same license.
 
+from astroid import exceptions
+
 class _Yes(object):
     """Special inference object, which is returned when inference fails."""
     def __repr__(self):
@@ -36,3 +38,22 @@ class _Yes(object):
 
 
 YES = _Yes()
+
+def safe_infer(node, context=None):
+    """Return the inferred value for the given node.
+
+    Return None if inference failed or if there is some ambiguity (more than
+    one node has been inferred).
+    """
+    try:
+        inferit = node.infer(context=context)
+        value = next(inferit)
+    except exceptions.InferenceError:
+        return
+    try:
+        next(inferit)
+        return # None if there is ambiguity on the inferred node
+    except exceptions.InferenceError:
+        return # there is some kind of ambiguity
+    except StopIteration:
+        return value

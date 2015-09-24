@@ -183,6 +183,7 @@ def infer_global(self, context=None):
 nodes.Global._infer = infer_global
 
 
+@bases.raise_if_nothing_inferred
 def infer_subscript(self, context=None):
     """Inference for subscripts
 
@@ -221,8 +222,9 @@ def infer_subscript(self, context=None):
     else:
         raise exceptions.InferenceError()
 nodes.Subscript._infer = bases.path_wrapper(infer_subscript)
-nodes.Subscript.infer_lhs = bases.raise_if_nothing_inferred(infer_subscript)
+nodes.Subscript.infer_lhs = infer_subscript
 
+@bases.raise_if_nothing_inferred
 def infer_unaryop(self, context=None):
     for operand in self.operand.infer(context):
         try:
@@ -264,6 +266,7 @@ def _infer_binop(operator, operand1, operand2, context, failures=None):
             else:
                 failures.append(operand1)
 
+@bases.yes_if_nothing_inferred
 def infer_binop(self, context=None):
     failures = []
     for lhs in self.left.infer(context):

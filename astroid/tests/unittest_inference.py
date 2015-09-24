@@ -1864,6 +1864,21 @@ class ArgumentsTest(unittest.TestCase):
              self.assertIsInstance(inferred, nodes.Const)
              self.assertEqual(inferred.value, value)        
 
+
+
+    def test_subscript_inference_error(self):
+       # Used to raise StopIteration
+       ast_node = test_utils.extract_node('''
+       class AttributeDict(dict):
+           def __getitem__(self, name):
+               return self
+       flow = AttributeDict()
+       flow['app'] = AttributeDict()
+       flow['app']['config'] = AttributeDict()
+       flow['app']['config']['doffing'] = AttributeDict() #@
+       ''')       
+       self.assertIsNone(util.safe_infer(ast_node.targets[0]))
+
     @test_utils.require_version('3.5')
     def test_multiple_kwargs(self):
         expected_value = [
