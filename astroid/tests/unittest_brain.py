@@ -53,6 +53,13 @@ try:
 except ImportError:
     HAS_DATEUTIL = False
 
+try:
+    import numpy # pylint: disable=unused-import
+    HAS_NUMPY = True
+except ImportError:
+    HAS_NUMPY = False
+
+
 class HashlibTest(unittest.TestCase):
     def test_hashlib(self):
         """Tests that brain extensions for hashlib work."""
@@ -417,6 +424,18 @@ class DateutilBrainTest(unittest.TestCase):
         """)
         d_type = next(module['d'].infer())
         self.assertEqual(d_type.qname(), "datetime.datetime")
+
+
+@unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
+class NumpyBrainTest(unittest.TestCase):
+
+    def test_numpy(self):
+        node = test_utils.extract_node('''
+        import numpy
+        numpy.ones #@
+        ''')
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, nodes.Function)
 
 
 if __name__ == '__main__':
