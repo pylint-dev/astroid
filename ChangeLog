@@ -310,6 +310,8 @@ Change log for the astroid package (used to be astng)
       leads to a class creationg, not to an instance creation.
 
     * Understand the `slice` builtin. Closes issue #184.
+
+    * Add brain tips for numpy.core, which should fix Pylint's #453.
      
 
 
