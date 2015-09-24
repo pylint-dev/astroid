@@ -2964,17 +2964,17 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(author.value, 'Rushdie')
 
     def test_subscript_inference_error(self):
-       # Used to raise StopIteration
-       ast_node = test_utils.extract_node('''
-       class AttributeDict(dict):
-           def __getitem__(self, name):
-               return self
-       flow = AttributeDict()
-       flow['app'] = AttributeDict()
-       flow['app']['config'] = AttributeDict()
-       flow['app']['config']['doffing'] = AttributeDict() #@
-       ''')
-       self.assertIsNone(helpers.safe_infer(ast_node.targets[0]))
+        # Used to raise StopIteration
+        ast_node = test_utils.extract_node('''
+        class AttributeDict(dict):
+            def __getitem__(self, name):
+                return self
+        flow = AttributeDict()
+        flow['app'] = AttributeDict()
+        flow['app']['config'] = AttributeDict()
+        flow['app']['config']['doffing'] = AttributeDict() #@
+        ''')
+        self.assertIsNone(helpers.safe_infer(ast_node.targets[0]))
 
 
 class GetattrTest(unittest.TestCase):
