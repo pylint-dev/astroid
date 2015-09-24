@@ -227,6 +227,7 @@ def _slice_value(index, context=None):
     return _SLICE_SENTINEL
 
 
+@bases.raise_if_nothing_inferred
 def infer_subscript(self, context=None):
     """Inference for subscripts
 
@@ -276,7 +277,7 @@ def infer_subscript(self, context=None):
         yield inferred
 
 nodes.Subscript._infer = bases.path_wrapper(infer_subscript)
-nodes.Subscript.infer_lhs = bases.raise_if_nothing_inferred(infer_subscript)
+nodes.Subscript.infer_lhs = infer_subscript
 
 
 @bases.raise_if_nothing_inferred
@@ -388,6 +389,7 @@ def _infer_unaryop(self, context=None):
                     yield util.YES
 
 
+@bases.raise_if_nothing_inferred
 @bases.path_wrapper
 def infer_unaryop(self, context=None):
     """Infer what an UnaryOp should return when evaluated."""
@@ -395,7 +397,7 @@ def infer_unaryop(self, context=None):
                                     exceptions.UnaryOperationError)
 
 nodes.UnaryOp._infer_unaryop = _infer_unaryop
-nodes.UnaryOp._infer = bases.raise_if_nothing_inferred(infer_unaryop)
+nodes.UnaryOp._infer = infer_unaryop
 
 
 def _is_not_implemented(const):
@@ -600,13 +602,14 @@ def _infer_binop(self, context):
                 yield result
 
 
+@bases.yes_if_nothing_inferred
 @bases.path_wrapper
 def infer_binop(self, context=None):
     return _filter_operation_errors(self, _infer_binop, context,
                                     exceptions.BinaryOperationError)
 
 nodes.BinOp._infer_binop = _infer_binop
-nodes.BinOp._infer = bases.yes_if_nothing_inferred(infer_binop)
+nodes.BinOp._infer = infer_binop
 
 
 def _infer_augassign(self, context=None):

@@ -30,6 +30,7 @@ from astroid.builder import parse
 from astroid.inference import infer_end as inference_infer_end
 from astroid.bases import Instance, BoundMethod, UnboundMethod,\
                                 path_wrapper, BUILTINS
+from astroid import helpers
 from astroid import objects
 from astroid import test_utils
 from astroid import util
@@ -2961,7 +2962,19 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
        author = next(inferred.igetattr('author'))
        self.assertIsInstance(author, nodes.Const)
        self.assertEqual(author.value, 'Rushdie')
-        
+
+    def test_subscript_inference_error(self):
+       # Used to raise StopIteration
+       ast_node = test_utils.extract_node('''
+       class AttributeDict(dict):
+           def __getitem__(self, name):
+               return self
+       flow = AttributeDict()
+       flow['app'] = AttributeDict()
+       flow['app']['config'] = AttributeDict()
+       flow['app']['config']['doffing'] = AttributeDict() #@
+       ''')
+       self.assertIsNone(helpers.safe_infer(ast_node.targets[0]))
 
 
 class GetattrTest(unittest.TestCase):
