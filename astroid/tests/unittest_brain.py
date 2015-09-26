@@ -435,7 +435,7 @@ class NumpyBrainTest(unittest.TestCase):
         numpy.ones #@
         ''')
         inferred = next(node.infer())
-        self.assertIsInstance(inferred, nodes.Function)
+        self.assertIsInstance(inferred, nodes.FunctionDef)
 
 
 if __name__ == '__main__':
