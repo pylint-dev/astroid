@@ -169,8 +169,13 @@ class AstroidBuilder(raw_building.InspectBuilder):
         """Build tree node from data and add some informations"""
         try:
             node = _parse(data + '\n')
-        except (TypeError, ValueError, SyntaxError) as exc:
+        except (TypeError, ValueError) as exc:
             util.reraise(exceptions.AstroidBuildingException(*exc.args))
+        except SyntaxError as exc:
+            # Pass the entire exception object to AstroidBuildingException,
+            # since pylint uses this as an introspection method,
+            # in order to find what error happened.
+            util.reraise(exceptions.AstroidBuildingException(exc))
         if path is not None:
             node_file = os.path.abspath(path)
         else:
