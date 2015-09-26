@@ -39,7 +39,7 @@ an AST node and where to use an inference object:
       on its own. This is the case for slices for instance, e.g "[2:3:4]".
       In this case, trying to write "2:3:4" on its own will fail.
       The respective builtin (slice) returns a custom object when inferring
-      and not an AST node per se.      
+      and not an AST node per se.
 
 """
 
@@ -78,7 +78,7 @@ class Slice(node_classes.Slice):
     @decorators.cachedproperty
     def _proxied(self):
         builtins = MANAGER.astroid_cache[BUILTINS]
-        return builtins.getattr('slice')[0]        
+        return builtins.getattr('slice')[0]
 
     def pytype(self):
         return '%s.slice' % BUILTINS
