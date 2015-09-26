@@ -24,7 +24,7 @@ import astroid
 # TODO(cpopa): drop when understanding augmented assignments
 
 def numpy_core_transform():
-    module = astroid.parse('''
+    return astroid.parse('''
     from numpy.core import numeric
     from numpy.core import fromnumeric
     from numpy.core import defchararray
@@ -41,6 +41,22 @@ def numpy_core_transform():
                getlimits.__all__ +
                shape_base.__all__)
     ''')
-    return module
+
+
+def numpy_transform():
+    return astroid.parse('''
+    from numpy import core
+    from numpy import matrixlib as _mat
+    from numpy import lib
+    __all__ = ['add_newdocs',
+               'ModuleDeprecationWarning',
+               'VisibleDeprecationWarning', 'linalg', 'fft', 'random',
+               'ctypeslib', 'ma',
+               '__version__', 'pkgload', 'PackageLoader',
+               'show_config'] + core.__all__ + _mat.__all__ + lib.__all__
+
+    ''')
+    
 
 astroid.register_module_extender(astroid.MANAGER, 'numpy.core', numpy_core_transform)
+astroid.register_module_extender(astroid.MANAGER, 'numpy', numpy_transform)
