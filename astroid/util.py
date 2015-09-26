@@ -30,7 +30,8 @@ def reraise(exception):
     six.reraise(type(exception), exception, sys.exc_info()[2])
 
 
-class _Yes(object):
+@object.__new__
+class YES(object):
     """Special inference object, which is returned when inference fails."""
     def __repr__(self):
         return 'YES'
@@ -39,11 +40,8 @@ class _Yes(object):
         if name == 'next':
             raise AttributeError('next method should not be called')
         if name.startswith('__') and name.endswith('__'):
-            return super(_Yes, self).__getattribute__(name)
+            return object.__getattribute__(self, name)
         return self
 
     def __call__(self, *args, **kwargs):
         return self
-
-
-YES = _Yes()
