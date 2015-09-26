@@ -397,12 +397,12 @@ class Arguments(mixins.AssignTypeMixin, bases.NodeNG):
             )
         if self.vararg:
             result.append('*%s' % self.vararg)
-        if self.kwarg:
-            result.append('**%s' % self.kwarg)
         if self.kwonlyargs:
             if not self.vararg:
                 result.append('*')
             result.append(_format_args(self.kwonlyargs, self.kw_defaults))
+        if self.kwarg:
+            result.append('**%s' % self.kwarg)
         return ', '.join(result)
 
     def default_value(self, argname):
