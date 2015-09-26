@@ -26,8 +26,6 @@ import functools
 import itertools
 import operator
 
-import six
-
 from astroid import bases
 from astroid import context as contextmod
 from astroid import exceptions

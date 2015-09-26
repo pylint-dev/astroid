@@ -127,7 +127,7 @@ class AstroidManager(object):
                     return self._build_stub_module(modname)
                 try:
                     module = modutils.load_module_from_name(modname)
-                except Exception as ex:
+                except Exception as ex: # pylint: disable=broad-except
                     msg = 'Unable to load module %s (%s)' % (modname, ex)
                     util.reraise(exceptions.AstroidBuildingException(msg))
                 return self.ast_from_module(module, modname)
@@ -226,7 +226,7 @@ class AstroidManager(object):
         except AttributeError:
             msg = 'Unable to get module for %s' % safe_repr(klass)
             util.reraise(exceptions.AstroidBuildingException(msg))
-        except Exception as ex:
+        except Exception as ex: # pylint: disable=broad-except
             msg = ('Unexpected error while retrieving module for %s: %s'
                    % (safe_repr(klass), ex))
             util.reraise(exceptions.AstroidBuildingException(msg))
@@ -235,7 +235,7 @@ class AstroidManager(object):
         except AttributeError:
             msg = 'Unable to get name for %s' % safe_repr(klass)
             util.reraise(exceptions.AstroidBuildingException(msg))
-        except Exception as ex:
+        except Exception as ex: # pylint: disable=broad-except
             exc = ('Unexpected error while retrieving name for %s: %s'
                    % (safe_repr(klass), ex))
             util.reraise(exceptions.AstroidBuildingException(exc))
