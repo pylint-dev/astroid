@@ -1344,7 +1344,7 @@ def const_factory(value):
 
 
 # Backward-compatibility aliases
-def instancecheck(cls, other):
+def _instancecheck(cls, other):
     wrapped = cls.__wrapped__
     other_cls = other.__class__
     is_instance_of = wrapped is other_cls or issubclass(other_cls, wrapped)
@@ -1358,7 +1358,7 @@ def instancecheck(cls, other):
 def proxy_alias(alias_name, node_type):
     proxy = type(alias_name, (lazy_object_proxy.Proxy,),
                  {'__class__': object.__dict__['__class__'],
-                  '__instancecheck__': instancecheck})
+                  '__instancecheck__': _instancecheck})
     return proxy(lambda: node_type)
 
 Backquote = proxy_alias('Backquote', Repr)
