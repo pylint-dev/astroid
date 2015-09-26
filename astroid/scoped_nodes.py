@@ -368,10 +368,8 @@ class Module(LocalsDictNodeNG):
         if self.package:
             try:
                 return [self.import_module(name, relative_only=True)]
-            except exceptions.AstroidBuildingException:
-                raise exceptions.NotFoundError(name)
-            except SyntaxError:
-                raise exceptions.NotFoundError(name)
+            except (exceptions.AstroidBuildingException, SyntaxError):
+                util.reraise(exceptions.NotFoundError(name))
         raise exceptions.NotFoundError(name)
 
     def igetattr(self, name, context=None):
@@ -384,7 +382,7 @@ class Module(LocalsDictNodeNG):
             return bases._infer_stmts(self.getattr(name, context),
                                       context, frame=self)
         except exceptions.NotFoundError:
-            raise exceptions.InferenceError(name)
+            util.reraise(exceptions.InferenceError(name))
 
     def fully_defined(self):
         """return True if this module has been built from a .py file
@@ -854,7 +852,7 @@ class FunctionDef(bases.Statement, Lambda):
             return bases._infer_stmts(self.getattr(name, context),
                                       context, frame=self)
         except exceptions.NotFoundError:
-            raise exceptions.InferenceError(name)
+            util.reraise(exceptions.InferenceError(name))
 
     def is_method(self):
         """return true if the function node should be considered as a method"""
@@ -1447,7 +1445,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
                 # class handle some dynamic attributes, return a YES object
                 yield util.YES
             else:
-                raise exceptions.InferenceError(name)
+                util.reraise(exceptions.InferenceError(name))
 
     def has_dynamic_getattr(self, context=None):
         """

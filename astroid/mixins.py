@@ -22,6 +22,7 @@ import warnings
 
 from astroid import decorators
 from astroid import exceptions
+from astroid import util
 
 
 class BlockRangeMixIn(object):
@@ -129,10 +130,10 @@ class ImportFromMixin(FilterStmtsMixin):
                                           relative_only=level and level >= 1)
         except exceptions.AstroidBuildingException as ex:
             if isinstance(ex.args[0], SyntaxError):
-                raise exceptions.InferenceError(str(ex))
-            raise exceptions.InferenceError(modname)
+                util.reraise(exceptions.InferenceError(str(ex)))
+            util.reraise(exceptions.InferenceError(modname))
         except SyntaxError as ex:
-            raise exceptions.InferenceError(str(ex))
+            util.reraise(exceptions.InferenceError(str(ex)))
 
     def real_name(self, asname):
         """get name from 'as' name"""

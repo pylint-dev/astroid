@@ -34,6 +34,7 @@ from astroid import exceptions
 from astroid import MANAGER
 from astroid import node_classes
 from astroid import scoped_nodes
+from astroid import util
 
 
 BUILTINS = six.moves.builtins.__name__
@@ -141,7 +142,7 @@ class Super(bases.NodeNG):
         except (exceptions.MroError, exceptions.SuperError) as exc:
             # Don't let invalid MROs or invalid super calls
             # to leak out as is from this function.
-            six.raise_from(exceptions.NotFoundError, exc)
+            util.reraise(exceptions.NotFoundError(*exc.args))
 
         found = False
         for cls in mro:

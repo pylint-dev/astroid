@@ -19,6 +19,17 @@
 # The code in this file was originally part of logilab-common, licensed under
 # the same license.
 
+import sys
+
+import six
+
+
+def reraise(exception):
+    '''Reraises an exception with the traceback from the current exception
+    block.'''
+    six.reraise(type(exception), exception, sys.exc_info()[2])
+
+
 class _Yes(object):
     """Special inference object, which is returned when inference fails."""
     def __repr__(self):

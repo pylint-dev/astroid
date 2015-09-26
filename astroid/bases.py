@@ -151,7 +151,7 @@ class Instance(Proxy):
                     return self._proxied.local_attr(name)
                 return self._proxied.getattr(name, context,
                                              class_context=False)
-            raise exceptions.NotFoundError(name)
+            util.reraise(exceptions.NotFoundError(name))
         # since we've no context information, return matching class members as
         # well
         if lookupclass:
@@ -184,7 +184,7 @@ class Instance(Proxy):
                                             context):
                     yield stmt
             except exceptions.NotFoundError:
-                raise exceptions.InferenceError(name)
+                util.reraise(exceptions.InferenceError(name))
 
     def _wrap_attr(self, attrs, context=None):
         """wrap bound methods of attrs in a InstanceMethod proxies"""

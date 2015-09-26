@@ -23,6 +23,8 @@
 
 import wrapt
 
+from astroid import util
+
 
 @wrapt.decorator
 def cached(func, instance, args, kwargs):
@@ -57,8 +59,8 @@ class cachedproperty(object):
         try:
             wrapped.__name__
         except AttributeError:
-            raise TypeError('%s must have a __name__ attribute' %
-                            wrapped)
+            util.reraise(TypeError('%s must have a __name__ attribute'
+                                   % wrapped))
         self.wrapped = wrapped
 
     @property

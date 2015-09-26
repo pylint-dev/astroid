@@ -53,7 +53,7 @@ if sys.version_info >= (3, 0):
         except UnicodeError:  # wrong encoding
             # detect_encoding returns utf-8 if no encoding specified
             msg = 'Wrong (%s) or no encoding specified' % encoding
-            raise exceptions.AstroidBuildingException(msg)
+            util.reraise(exceptions.AstroidBuildingException(msg))
         return stream, encoding, data
 
 else:
@@ -125,11 +125,10 @@ class AstroidBuilder(raw_building.InspectBuilder):
             stream, encoding, data = open_source_file(path)
         except IOError as exc:
             msg = 'Unable to load file %r (%s)' % (path, exc)
-            raise exceptions.AstroidBuildingException(msg)
-        except SyntaxError as exc:  # py3k encoding specification error
-            raise exceptions.AstroidBuildingException(exc)
-        except LookupError as exc:  # unknown encoding
-            raise exceptions.AstroidBuildingException(exc)
+            util.reraise(exceptions.AstroidBuildingException(msg))
+        except (SyntaxError, LookupError) as exc:
+            # Python 3 encoding specification error or unknown encoding
+            util.reraise(exceptions.AstroidBuildingException(*exc.args))
         with stream:
             # get module name if necessary
             if modname is None:
@@ -171,7 +170,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         try:
             node = _parse(data + '\n')
         except (TypeError, ValueError, SyntaxError) as exc:
-            raise exceptions.AstroidBuildingException(exc)
+            util.reraise(exceptions.AstroidBuildingException(*exc.args))
         if path is not None:
             node_file = os.path.abspath(path)
         else:
