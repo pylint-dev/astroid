@@ -24,6 +24,23 @@ leads to an inferred FrozenSet:
 
     Call(func=Name('frozenset'), args=Tuple(...))
 
+
+This distinction might help for understanding better where to use
+an AST node and where to use an inference object:
+
+    * if the AST node can be used on its own, e.g. List, Tuple, etc,
+      then the AST can be used.
+      They have a syntactic display and can be written on its own,
+      e.g. "[]" is a valid list. That's why the inference of their
+      respective builtins (list, tuple, set etc) returns an AST node
+      when inferring.
+
+    * if the AST node is part of syntax and can't be used
+      on its own. This is the case for slices for instance, e.g "[2:3:4]".
+      In this case, trying to write "2:3:4" on its own will fail.
+      The respective builtin (slice) returns a custom object when inferring
+      and not an AST node per se.      
+
 """
 
 import six
@@ -53,6 +70,32 @@ class FrozenSet(node_classes._BaseContainer):
     def _proxied(self):
         builtins = MANAGER.astroid_cache[BUILTINS]
         return builtins.getattr('frozenset')[0]
+
+
+class Slice(node_classes.Slice):
+    """Custom object for representing slices internally."""
+
+    @decorators.cachedproperty
+    def _proxied(self):
+        builtins = MANAGER.astroid_cache[BUILTINS]
+        return builtins.getattr('slice')[0]        
+
+    def pytype(self):
+        return '%s.slice' % BUILTINS
+
+    def igetattr(self, attrname, context=None):
+        if attrname == 'start':
+            yield self.lower
+        elif attrname == 'stop':
+            yield self.upper
+        elif attrname == 'step':
+            yield self.step
+        else:
+            for value in self.getattr(attrname, context=context):
+                yield value
+
+    def getattr(self, attrname, context=None):
+        return self._proxied.getattr(attrname, context)
 
 
 class Super(bases.NodeNG):

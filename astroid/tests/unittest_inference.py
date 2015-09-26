@@ -3578,6 +3578,34 @@ class SliceTest(unittest.TestCase):
         for node in ast_nodes:
             self.assertRaises(InferenceError, next, node.infer())
 
+    def test_slice_attributes(self):
+        ast_nodes = [
+            ('slice(2, 3, 4)', (2, 3, 4)),
+            ('slice(None, None, 4)', (None, None, 4)),
+            ('slice(None, 1, None)', (None, 1, None)),
+        ]
+        for code, values in ast_nodes:
+            lower, upper, step = values
+            node = test_utils.extract_node(code)              
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, objects.Slice)
+            lower_value = next(inferred.igetattr('start'))
+            self.assertIsInstance(lower_value, nodes.Const)
+            self.assertEqual(lower_value.value, lower)
+            higher_value = next(inferred.igetattr('stop'))
+            self.assertIsInstance(higher_value, nodes.Const)
+            self.assertEqual(higher_value.value, upper)
+            step_value = next(inferred.igetattr('step'))
+            self.assertIsInstance(step_value, nodes.Const)
+            self.assertEqual(step_value.value, step)
+            self.assertEqual(inferred.pytype(), '%s.slice' % BUILTINS)
+
+    def test_slice_type(self):
+        ast_node = test_utils.extract_node('type(slice(None, None, None))')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.ClassDef)
+        self.assertEqual(inferred.name, 'slice')
+
 
 if __name__ == '__main__':
     unittest.main()
