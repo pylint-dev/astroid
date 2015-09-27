@@ -53,6 +53,15 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(build('(1, )').as_string(), '(1, )')
         self.assertEqual(build('1, 2, 3').as_string(), '(1, 2, 3)')
 
+    @test_utils.require_version(minver='3.0')
+    def test_func_signature_issue_185(self):
+        code = textwrap.dedent('''
+        def test(a, b, c=42, *, x=42, **kwargs):
+            print(a, b, c, args)
+        ''')
+        node = parse(code)
+        self.assertEqual(node.as_string().strip(), code.strip())
+
     def test_frozenset_as_string(self):
         nodes = test_utils.extract_node('''
         frozenset((1, 2, 3)) #@
