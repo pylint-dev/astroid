@@ -1552,6 +1552,29 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(len(static_method.extra_decorators), 1)
         self.assertEqual(static_method.type, 'staticmethod')
 
+    def test_extra_decorators_only_class_level_assignments(self):
+        node = test_utils.extract_node('''
+        def _bind(arg):
+            return arg.bind
+
+        class A(object):
+            @property
+            def bind(self):
+                return 42
+            def irelevant(self):
+                # This is important, because it used to trigger
+                # a maximum recursion error.
+                bind = _bind(self)
+                return bind 
+        A() #@
+        ''')
+        inferred = next(node.infer())
+        bind = next(inferred.igetattr('bind'))
+        self.assertIsInstance(bind, nodes.Const)
+        self.assertEqual(bind.value, 42)
+        parent = bind.scope()
+        self.assertEqual(len(parent.extra_decorators), 0)
+
 
 if __name__ == '__main__':
     unittest.main()

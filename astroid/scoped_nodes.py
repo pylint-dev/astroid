@@ -751,7 +751,10 @@ class FunctionDef(bases.Statement, Lambda):
                     except KeyError:
                         continue
                     else:
-                        if isinstance(meth, FunctionDef):
+                        # Must be a function and in the same frame as the
+                        # original method.
+                        if (isinstance(meth, FunctionDef)
+                                and assign_node.frame() == frame):
                             decorators.append(assign.value)
         return decorators
 
