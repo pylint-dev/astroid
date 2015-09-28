@@ -67,12 +67,6 @@ class InferenceContext(object):
                  for field in self.__slots__)
         return '%s(%s)' % (type(self).__name__, ',\n    '.join(state))
 
-    def __repr__(self):
-        state = ('%s=%s' % (field, repr(getattr(self, field)))
-                 for field in self.__slots__)
-        return '%s(%s)' % (type(self).__name__, ', '.join(state))
-
-
 
 class CallContext(object):
     """Holds information for a call site."""
