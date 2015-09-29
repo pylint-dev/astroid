@@ -623,11 +623,11 @@ class NodeNG(object):
         """
         return self.parent.scope()
 
-    def root(self):
-        """return the root node of the tree, (i.e. a Module)"""
-        if self.parent:
-            return self.parent.root()
-        return self
+    # def root(self):
+    #     """return the root node of the tree, (i.e. a Module)"""
+    #     if self.parent:
+    #         return self.parent.root()
+    #     return self
 
     def child_sequence(self, child):
         """search for the right sequence where the child lies in"""
@@ -657,13 +657,13 @@ class NodeNG(object):
     # FIXME : should we merge child_sequence and locate_child ? locate_child
     # is only used in are_exclusive, child_sequence one time in pylint.
 
-    def next_sibling(self):
-        """return the next sibling statement"""
-        return self.parent.next_sibling()
+    # def next_sibling(self):
+    #     """return the next sibling statement"""
+    #     return self.parent.next_sibling()
 
-    def previous_sibling(self):
-        """return the previous sibling statement"""
-        return self.parent.previous_sibling()
+    # def previous_sibling(self):
+    #     """return the previous sibling statement"""
+    #     return self.parent.previous_sibling()
 
     def nearest(self, nodes):
         """return the node which is the nearest before this one in the
@@ -926,18 +926,18 @@ class Statement(NodeNG):
     """Statement node adding a few attributes"""
     is_statement = True
 
-    def next_sibling(self):
-        """return the next sibling statement"""
-        stmts = self.parent.child_sequence(self)
-        index = stmts.index(self)
-        try:
-            return stmts[index +1]
-        except IndexError:
-            pass
+    # def next_sibling(self):
+    #     """return the next sibling statement"""
+    #     stmts = self.parent.child_sequence(self)
+    #     index = stmts.index(self)
+    #     try:
+    #         return stmts[index +1]
+    #     except IndexError:
+    #         pass
 
-    def previous_sibling(self):
-        """return the previous sibling statement"""
-        stmts = self.parent.child_sequence(self)
-        index = stmts.index(self)
-        if index >= 1:
-            return stmts[index -1]
+    # def previous_sibling(self):
+    #     """return the previous sibling statement"""
+    #     stmts = self.parent.child_sequence(self)
+    #     index = stmts.index(self)
+    #     if index >= 1:
+    #         return stmts[index -1]
