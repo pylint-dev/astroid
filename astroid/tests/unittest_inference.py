@@ -2976,6 +2976,25 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ''')
         self.assertIsNone(helpers.safe_infer(ast_node.targets[0]))
 
+    def test_classmethod_inferred_by_context(self):
+        ast_node = test_utils.extract_node('''
+        class Super(object):
+           def instance(cls):
+              return cls()
+           instance = classmethod(instance)
+
+        class Sub(Super):
+            def method(self):
+                return self
+
+        # should see the Sub.instance() is returning a Sub
+        # instance, not a Super instance
+        Sub.instance().method() #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.name, 'Sub')
+
 
 class GetattrTest(unittest.TestCase):
 
