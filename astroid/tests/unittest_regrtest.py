@@ -24,6 +24,7 @@ import six
 from astroid import MANAGER, Instance, nodes
 from astroid.bases import BUILTINS
 from astroid.builder import AstroidBuilder
+from astroid import exceptions
 from astroid.raw_building import build_module
 from astroid.manager import AstroidManager
 from astroid.test_utils import require_version, extract_node
@@ -271,6 +272,15 @@ def test():
                              "{}.object".format(BUILTINS))
         else:
             self.assertEqual(len(ancestors), 0)
+
+    def test_ancestors_missing_from_function(self):
+        # Test for https://www.logilab.org/ticket/122793
+        node = extract_node('''
+        def gen(): yield
+        GEN = gen()
+        next(GEN)
+        ''')
+        self.assertRaises(exceptions.InferenceError, next, node.infer())
 
 
 class Whatever(object):
