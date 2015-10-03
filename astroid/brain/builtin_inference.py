@@ -452,9 +452,9 @@ def infer_slice(node, context=None):
         # Make sure we have 3 arguments.
         args.extend([None] * (3 - len(args)))
 
-    slice_node = objects.Slice(lineno=node.lineno,
-                               col_offset=node.col_offset,
-                               parent=node.parent)
+    slice_node = nodes.Slice(lineno=node.lineno,
+                             col_offset=node.col_offset,
+                             parent=node.parent)
     slice_node.postinit(*args)
     return slice_node
 

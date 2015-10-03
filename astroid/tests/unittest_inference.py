@@ -3662,7 +3662,7 @@ class SliceTest(unittest.TestCase):
             lower, upper, step = values
             node = test_utils.extract_node(code)
             inferred = next(node.infer())
-            self.assertIsInstance(inferred, objects.Slice)
+            self.assertIsInstance(inferred, nodes.Slice)
             lower_value = next(inferred.igetattr('start'))
             self.assertIsInstance(lower_value, nodes.Const)
             self.assertEqual(lower_value.value, lower)

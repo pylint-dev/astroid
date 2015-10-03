@@ -28,11 +28,13 @@ from astroid import bases
 from astroid import context as contextmod
 from astroid import decorators
 from astroid import exceptions
+from astroid import manager
 from astroid import mixins
 from astroid import util
 
 
 BUILTINS = six.moves.builtins.__name__
+MANAGER = manager.AstroidManager()
 
 
 def unpack_infer(stmt, context=None):
@@ -1132,7 +1134,37 @@ class Slice(bases.NodeNG):
     def postinit(self, lower=None, upper=None, step=None):
         self.lower = lower
         self.upper = upper
-        self.step = step
+        self.step = step        
+
+    def _wrap_attribute(self, attr):
+        """Wrap the empty attributes of the Slice in a Const node."""
+        if not attr:
+            const = const_factory(attr)
+            const.parent = self
+            return const
+        return attr
+
+    @decorators.cachedproperty
+    def _proxied(self):
+        builtins = MANAGER.astroid_cache[BUILTINS]
+        return builtins.getattr('slice')[0]
+
+    def pytype(self):
+        return '%s.slice' % BUILTINS
+
+    def igetattr(self, attrname, context=None):
+        if attrname == 'start':
+            yield self._wrap_attribute(self.lower)
+        elif attrname == 'stop':
+            yield self._wrap_attribute(self.upper)
+        elif attrname == 'step':
+            yield self._wrap_attribute(self.step)
+        else:
+            for value in self.getattr(attrname, context=context):
+                yield value
+
+    def getattr(self, attrname, context=None):
+        return self._proxied.getattr(attrname, context)
 
 
 class Starred(mixins.ParentAssignTypeMixin, bases.NodeNG):
