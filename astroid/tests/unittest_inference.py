@@ -2817,6 +2817,18 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertIsInstance(inferred, nodes.List)
             self.assertEqual([elt.value for elt in inferred.elts], expected)
 
+    def test_instance_slicing_slices(self):
+        ast_node = test_utils.extract_node('''
+        class A(object):
+            def __getitem__(self, index):
+                return index
+        A()[1:] #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.Slice)
+        self.assertEqual(inferred.lower.value, 1)
+        self.assertIsNone(inferred.upper)
+
     def test_instance_slicing_fails(self):
         ast_nodes = test_utils.extract_node('''
         class A(object):

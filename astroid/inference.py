@@ -57,6 +57,8 @@ nodes.List._infer = infer_end
 nodes.Tuple._infer = infer_end
 nodes.Dict._infer = infer_end
 nodes.Set._infer = infer_end
+nodes.Slice._infer = infer_end
+
 
 def _higher_function_scope(node):
     """ Search for the first function which encloses the given
@@ -116,13 +118,6 @@ def infer_call(self, context=None):
             ## XXX log error ?
             continue
 nodes.Call._infer = infer_call
-
-
-@bases.path_wrapper
-def infer_slice(self, context=None):
-    yield self
-
-nodes.Slice._infer = infer_slice
 
 
 @bases.path_wrapper
@@ -245,18 +240,21 @@ def infer_subscript(self, context=None):
         yield util.YES
         return
 
-    index_value = _SLICE_SENTINEL
-    if isinstance(index, nodes.Const):
-        index_value = index.value
-    elif isinstance(index, nodes.Slice):
-        # Infer slices from the original object.
-        lower = _slice_value(index.lower, context)
-        upper = _slice_value(index.upper, context)
-        step = _slice_value(index.step, context)
-        if all(elem is not _SLICE_SENTINEL for elem in (lower, upper, step)):
-            index_value = slice(lower, upper, step)
+    if value.__class__ == bases.Instance:
+        index_value = index
     else:
-        raise exceptions.InferenceError()
+        index_value = _SLICE_SENTINEL
+        if isinstance(index, nodes.Const):
+            index_value = index.value
+        elif isinstance(index, nodes.Slice):
+            # Infer slices from the original object.
+            lower = _slice_value(index.lower, context)
+            upper = _slice_value(index.upper, context)
+            step = _slice_value(index.step, context)
+            if all(elem is not _SLICE_SENTINEL for elem in (lower, upper, step)):
+                index_value = slice(lower, upper, step)
+        else:
+            raise exceptions.InferenceError()
 
     if index_value is _SLICE_SENTINEL:
         raise exceptions.InferenceError
@@ -700,7 +698,6 @@ nodes.Index._infer = infer_index
 # will be solved.
 def instance_getitem(self, index, context=None):
     # Rewrap index to Const for this case
-    index = nodes.Const(index)
     if context:
         new_context = context.clone()
     else:
