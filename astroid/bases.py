@@ -385,7 +385,9 @@ class BoundMethod(UnboundMethod):
         cls.locals = cls_locals
         return cls
 
-    def infer_call_result(self, caller, context):
+    def infer_call_result(self, caller, context=None):
+        if context is None:
+            context = contextmod.InferenceContext()
         context = context.clone()
         context.boundnode = self.bound
 
