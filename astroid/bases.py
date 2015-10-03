@@ -126,6 +126,8 @@ def _infer_method_result_truth(instance, method_name, context):
     # its return's truth value.
     meth = next(instance.igetattr(method_name, context=context), None)
     if meth and hasattr(meth, 'infer_call_result'):
+        if not meth.callable():
+            return util.YES
         for value in meth.infer_call_result(instance, context=context):
             if value is util.YES:
                 return value

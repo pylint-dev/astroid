@@ -3324,15 +3324,34 @@ class TestBool(unittest.TestCase):
         class TrueClass:
            def {method}(self):
                return True
+        class C(object):
+           def __call__(self):
+               return False
+        class B(object):
+           {method} = C()
         bool(FalseClass) #@
         bool(TrueClass) #@
         bool(FalseClass()) #@
         bool(TrueClass()) #@
+        bool(B()) #@
         '''.format(method=BOOL_SPECIAL_METHOD))
-        expected = [True, True, False, True]
+        expected = [True, True, False, True, False]
         for node, expected_value in zip(ast_nodes, expected):
             inferred = next(node.infer())
             self.assertEqual(inferred.value, expected_value)
+
+    def test_bool_instance_not_callable(self):
+        ast_nodes = test_utils.extract_node('''
+        class BoolInvalid(object):
+           {method} = 42
+        class LenInvalid(object):
+           __len__ = "a"
+        bool(BoolInvalid()) #@
+        bool(LenInvalid()) #@
+        '''.format(method=BOOL_SPECIAL_METHOD))
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            self.assertEqual(inferred, util.YES)
 
 
 class TestType(unittest.TestCase):
