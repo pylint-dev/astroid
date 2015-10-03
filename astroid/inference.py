@@ -373,6 +373,8 @@ def _infer_unaryop(self, context=None):
                 try:
                     meth = operand.getattr(meth, context=context)[0]
                     inferred = next(meth.infer(context=context))
+                    if inferred is util.YES or not inferred.callable():
+                        continue
                     call_results = inferred.infer_call_result(self, context=context)
                     result = next(call_results, None)
                     if result is None:

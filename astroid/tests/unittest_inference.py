@@ -2016,6 +2016,14 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             inferred = next(bad_node.infer())
             self.assertEqual(inferred, util.YES)
 
+    def test_unary_op_instance_method_not_callable(self):
+        ast_node = test_utils.extract_node('''
+        class A:
+            __pos__ = (i for i in range(10))
+        +A() #@
+        ''')
+        self.assertRaises(InferenceError, next, ast_node.infer())
+
     def test_binary_op_type_errors(self):
         ast_nodes = test_utils.extract_node('''
         import collections
