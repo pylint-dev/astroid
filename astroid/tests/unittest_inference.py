@@ -2995,6 +2995,22 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, 'Sub')
 
+    def test_infer_call_result_invalid_dunder_call_on_instance(self):
+        ast_nodes = test_utils.extract_node('''
+        class A:
+            __call__ = 42
+        class B:
+            __call__ = A()
+        class C:
+            __call = None
+        A() #@
+        B() #@
+        C() #@
+        ''')
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            self.assertRaises(InferenceError, next, inferred.infer_call_result(node))
+
 
 class GetattrTest(unittest.TestCase):
 

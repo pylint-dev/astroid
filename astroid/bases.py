@@ -215,7 +215,7 @@ class Instance(Proxy):
         """infer what a class instance is returning when called"""
         inferred = False
         for node in self._proxied.igetattr('__call__', context):
-            if node is util.YES:
+            if node is util.YES or not node.callable():
                 continue
             for res in node.infer_call_result(caller, context):
                 inferred = True
