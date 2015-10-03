@@ -215,6 +215,31 @@ class TestTransforms(unittest.TestCase):
         # The transform wasn't applied.
         self.assertIsInstance(module.body[0], nodes.FunctionDef)
 
+    def test_transform_crashes_on_is_subtype_of(self):
+        # Test that we don't crash when having is_subtype_of
+        # in a transform, as per issue #188. This happened
+        # before, when the transforms weren't in their own step.
+        def transform_class(cls):
+            if cls.is_subtype_of('django.db.models.base.Model'):
+                return cls
+            return cls
+
+        self.transformer.register_transform(nodes.ClassDef,
+                                            transform_class)
+
+        self.parse_transform('''
+            # Change environ to automatically call putenv() if it exists
+            import os
+            putenv = os.putenv
+            try:
+                # This will fail if there's no putenv
+                putenv
+            except NameError:
+                pass
+            else:
+                import UserDict
+        ''')
+
 
 if __name__ == '__main__':
     unittest.main()
