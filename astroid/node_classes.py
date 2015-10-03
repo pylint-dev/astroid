@@ -1134,7 +1134,7 @@ class Slice(bases.NodeNG):
     def postinit(self, lower=None, upper=None, step=None):
         self.lower = lower
         self.upper = upper
-        self.step = step        
+        self.step = step
 
     def _wrap_attribute(self, attr):
         """Wrap the empty attributes of the Slice in a Const node."""
