@@ -258,7 +258,10 @@ class BoundMethod(UnboundMethod):
     def is_bound(self):
         return True
 
-    def infer_call_result(self, caller, context):
+    def infer_call_result(self, caller, context=None):
+
+        if context is None:
+            context = contextmod.InferenceContext()
         context = context.clone()
         context.boundnode = self.bound
         return super(BoundMethod, self).infer_call_result(caller, context)
