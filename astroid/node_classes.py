@@ -30,6 +30,7 @@ from astroid import decorators
 from astroid import exceptions
 from astroid import mixins
 from astroid import util
+from astroid import zipper
 
 
 BUILTINS = six.moves.builtins.__name__
@@ -129,22 +130,23 @@ class _BaseContainer(mixins.ParentAssignTypeMixin,
     """Base class for Set, FrozenSet, Tuple and List."""
 
     _astroid_fields = ('elts',)
+    elts = zipper.NodeSequence()
 
-    def __init__(self, lineno=None, col_offset=None, parent=None):
-        self.elts = []
-        super(_BaseContainer, self).__init__(lineno, col_offset, parent)
+    # def __init__(self, lineno=None, col_offset=None, parent=None):
+    #     self.elts = []
+    #     super(_BaseContainer, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, elts):
-        self.elts = elts
+    # def postinit(self, elts):
+    #     self.elts = elts
 
     @classmethod
     def from_constants(cls, elts=None):
         # pylint: disable=abstract-class-instantiated; False positive on Pylint #627.
         node = cls()
         if elts is None:
-            node.elts = []
+            node.elts = zipper.NodeSequence()
         else:
-            node.elts = [const_factory(e) for e in elts]
+            node.elts = zipper.NodeSequence(const_factory(e) for e in elts)
         return node
 
     def itered(self):
@@ -311,27 +313,27 @@ class AssignName(LookupMixIn, mixins.ParentAssignTypeMixin, bases.NodeNG):
     """class representing an AssignName node"""
     _other_fields = ('name',)
 
-    def __init__(self, name=None, lineno=None, col_offset=None, parent=None):
-        self.name = name
-        super(AssignName, self).__init__(lineno, col_offset, parent)
+    # def __init__(self, name=None, lineno=None, col_offset=None, parent=None):
+    #     self.name = name
+    #     super(AssignName, self).__init__(lineno, col_offset, parent)
 
 
 class DelName(LookupMixIn, mixins.ParentAssignTypeMixin, bases.NodeNG):
     """class representing a DelName node"""
     _other_fields = ('name',)
 
-    def __init__(self, name=None, lineno=None, col_offset=None, parent=None):
-        self.name = name
-        super(DelName, self).__init__(lineno, col_offset, parent)
+    # def __init__(self, name=None, lineno=None, col_offset=None, parent=None):
+    #     self.name = name
+    #     super(DelName, self).__init__(lineno, col_offset, parent)
 
 
 class Name(LookupMixIn, bases.NodeNG):
     """class representing a Name node"""
     _other_fields = ('name',)
 
-    def __init__(self, name=None, lineno=None, col_offset=None, parent=None):
-        self.name = name
-        super(Name, self).__init__(lineno, col_offset, parent)
+    # def __init__(self, name=None, lineno=None, col_offset=None, parent=None):
+    #     self.name = name
+    #     super(Name, self).__init__(lineno, col_offset, parent)
 
 
 class Arguments(mixins.AssignTypeMixin, bases.NodeNG):
@@ -353,29 +355,36 @@ class Arguments(mixins.AssignTypeMixin, bases.NodeNG):
                            'kwargannotation')
         varargannotation = None
         kwargannotation = None
+        kwonlyargs = zipper.NodeSequence()
+        kw_defaults = zipper.NodeSequence()
+        annotations = zipper.NodeSequence()
     else:
         _astroid_fields = ('args', 'defaults', 'kwonlyargs', 'kw_defaults')
         _other_fields = ('vararg', 'kwarg')
+    args = zipper.NodeSequence()
+    defaults = zipper.NodeSequence()
+    vararg = None
+    kwarg = None
 
-    def __init__(self, vararg=None, kwarg=None, parent=None):
-        self.vararg = vararg
-        self.kwarg = kwarg
-        self.parent = parent
-        self.args = []
-        self.defaults = []
-        self.kwonlyargs = []
-        self.kw_defaults = []
-        self.annotations = []
+    # def __init__(self, vararg=None, kwarg=None, parent=None):
+    #     self.vararg = vararg
+    #     self.kwarg = kwarg
+    #     self.parent = parent
+    #     self.args = []
+    #     self.defaults = []
+    #     self.kwonlyargs = []
+    #     self.kw_defaults = []
+    #     self.annotations = []
 
-    def postinit(self, args, defaults, kwonlyargs, kw_defaults,
-                 annotations, varargannotation=None, kwargannotation=None):
-        self.args = args
-        self.defaults = defaults
-        self.kwonlyargs = kwonlyargs
-        self.kw_defaults = kw_defaults
-        self.annotations = annotations
-        self.varargannotation = varargannotation
-        self.kwargannotation = kwargannotation
+    # def postinit(self, args, defaults, kwonlyargs, kw_defaults,
+    #              annotations, varargannotation=None, kwargannotation=None):
+    #     self.args = args
+    #     self.defaults = defaults
+    #     self.kwonlyargs = kwonlyargs
+    #     self.kw_defaults = kw_defaults
+    #     self.annotations = annotations
+    #     self.varargannotation = varargannotation
+    #     self.kwargannotation = kwargannotation
 
     def _infer_name(self, frame, name):
         if self.parent is frame:
@@ -481,14 +490,15 @@ class AssignAttr(mixins.ParentAssignTypeMixin, bases.NodeNG):
     """class representing an AssignAttr node"""
     _astroid_fields = ('expr',)
     _other_fields = ('attrname',)
+    attrname = None
     expr = None
 
-    def __init__(self, attrname=None, lineno=None, col_offset=None, parent=None):
-        self.attrname = attrname
-        super(AssignAttr, self).__init__(lineno, col_offset, parent)
+    # def __init__(self, attrname=None, lineno=None, col_offset=None, parent=None):
+    #     self.attrname = attrname
+    #     super(AssignAttr, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, expr=None):
-        self.expr = expr
+    # def postinit(self, expr=None):
+    #     self.expr = expr
 
 
 class Assert(bases.Statement):
@@ -497,9 +507,9 @@ class Assert(bases.Statement):
     test = None
     fail = None
 
-    def postinit(self, test=None, fail=None):
-        self.fail = fail
-        self.test = test
+    # def postinit(self, test=None, fail=None):
+    #     self.fail = fail
+    #     self.test = test
 
 
 class Assign(mixins.AssignTypeMixin, bases.Statement):
@@ -508,9 +518,9 @@ class Assign(mixins.AssignTypeMixin, bases.Statement):
     targets = None
     value = None
 
-    def postinit(self, targets=None, value=None):
-        self.targets = targets
-        self.value = value
+    # def postinit(self, targets=None, value=None):
+    #     self.targets = targets
+    #     self.value = value
 
 
 class AugAssign(mixins.AssignTypeMixin, bases.Statement):
@@ -520,13 +530,13 @@ class AugAssign(mixins.AssignTypeMixin, bases.Statement):
     target = None
     value = None
 
-    def __init__(self, op=None, lineno=None, col_offset=None, parent=None):
-        self.op = op
-        super(AugAssign, self).__init__(lineno, col_offset, parent)
+    # def __init__(self, op=None, lineno=None, col_offset=None, parent=None):
+    #     self.op = op
+    #     super(AugAssign, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, target=None, value=None):
-        self.target = target
-        self.value = value
+    # def postinit(self, target=None, value=None):
+    #     self.target = target
+    #     self.value = value
 
     # This is set by inference.py
     def _infer_augassign(self, context=None):
@@ -551,8 +561,8 @@ class Repr(bases.NodeNG):
     _astroid_fields = ('value',)
     value = None
 
-    def postinit(self, value=None):
-        self.value = value
+    # def postinit(self, value=None):
+    #     self.value = value
 
 
 class BinOp(bases.NodeNG):
@@ -561,14 +571,15 @@ class BinOp(bases.NodeNG):
     _other_fields = ('op',)
     left = None
     right = None
+    op = None
 
-    def __init__(self, op=None, lineno=None, col_offset=None, parent=None):
-        self.op = op
-        super(BinOp, self).__init__(lineno, col_offset, parent)
+    # def __init__(self, op=None, lineno=None, col_offset=None, parent=None):
+    #     self.op = op
+    #     super(BinOp, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, left=None, right=None):
-        self.left = left
-        self.right = right
+    # def postinit(self, left=None, right=None):
+    #     self.left = left
+    #     self.right = right
 
     # This is set by inference.py
     def _infer_binop(self, context=None):
@@ -593,13 +604,14 @@ class BoolOp(bases.NodeNG):
     _astroid_fields = ('values',)
     _other_fields = ('op',)
     values = None
+    op = None
 
-    def __init__(self, op=None, lineno=None, col_offset=None, parent=None):
-        self.op = op
-        super(BoolOp, self).__init__(lineno, col_offset, parent)
+    # def __init__(self, op=None, lineno=None, col_offset=None, parent=None):
+    #     self.op = op
+    #     super(BoolOp, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, values=None):
-        self.values = values
+    # def postinit(self, values=None):
+    #     self.values = values
 
 
 class Break(bases.Statement):
@@ -613,10 +625,10 @@ class Call(bases.NodeNG):
     args = None
     keywords = None
 
-    def postinit(self, func=None, args=None, keywords=None):
-        self.func = func
-        self.args = args
-        self.keywords = keywords
+    # def postinit(self, func=None, args=None, keywords=None):
+    #     self.func = func
+    #     self.args = args
+    #     self.keywords = keywords
 
     @property
     def starargs(self):
@@ -635,9 +647,9 @@ class Compare(bases.NodeNG):
     left = None
     ops = None
 
-    def postinit(self, left=None, ops=None):
-        self.left = left
-        self.ops = ops
+    # def postinit(self, left=None, ops=None):
+    #     self.left = left
+    #     self.ops = ops
 
     def get_children(self):
         """override get_children for tuple fields"""
@@ -659,13 +671,13 @@ class Comprehension(bases.NodeNG):
     iter = None
     ifs = None
 
-    def __init__(self, parent=None):
-        self.parent = parent
+    # def __init__(self, parent=None):
+    #     self.parent = parent
 
-    def postinit(self, target=None, iter=None, ifs=None):
-        self.target = target
-        self.iter = iter
-        self.ifs = ifs
+    # def postinit(self, target=None, iter=None, ifs=None):
+    #     self.target = target
+    #     self.iter = iter
+    #     self.ifs = ifs
 
     optional_assign = True
     def assign_type(self):
@@ -696,10 +708,11 @@ class Comprehension(bases.NodeNG):
 class Const(bases.NodeNG, bases.Instance):
     """represent a constant node like num, str, bool, None, bytes"""
     _other_fields = ('value',)
+    value = None
 
-    def __init__(self, value, lineno=None, col_offset=None, parent=None):
-        self.value = value
-        super(Const, self).__init__(lineno, col_offset, parent)
+    # def __init__(self, value, lineno=None, col_offset=None, parent=None):
+    #     self.value = value
+    #     super(Const, self).__init__(lineno, col_offset, parent)
 
     def getitem(self, index, context=None):
         if isinstance(self.value, six.string_types):
@@ -735,8 +748,8 @@ class Decorators(bases.NodeNG):
     _astroid_fields = ('nodes',)
     nodes = None
 
-    def postinit(self, nodes):
-        self.nodes = nodes
+    # def postinit(self, nodes):
+    #     self.nodes = nodes
 
     def scope(self):
         # skip the function node to go directly to the upper level scope
@@ -748,13 +761,14 @@ class DelAttr(mixins.ParentAssignTypeMixin, bases.NodeNG):
     _astroid_fields = ('expr',)
     _other_fields = ('attrname',)
     expr = None
+    attrname = None
 
-    def __init__(self, attrname=None, lineno=None, col_offset=None, parent=None):
-        self.attrname = attrname
-        super(DelAttr, self).__init__(lineno, col_offset, parent)
+    # def __init__(self, attrname=None, lineno=None, col_offset=None, parent=None):
+    #     self.attrname = attrname
+    #     super(DelAttr, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, expr=None):
-        self.expr = expr
+    # def postinit(self, expr=None):
+    #     self.expr = expr
 
 
 class Delete(mixins.AssignTypeMixin, bases.Statement):
@@ -762,20 +776,20 @@ class Delete(mixins.AssignTypeMixin, bases.Statement):
     _astroid_fields = ('targets',)
     targets = None
 
-    def postinit(self, targets=None):
-        self.targets = targets
+    # def postinit(self, targets=None):
+    #     self.targets = targets
 
 
 class Dict(bases.NodeNG, bases.Instance):
     """class representing a Dict node"""
     _astroid_fields = ('items',)
 
-    def __init__(self, lineno=None, col_offset=None, parent=None):
-        self.items = []
-        super(Dict, self).__init__(lineno, col_offset, parent)
+    # def __init__(self, lineno=None, col_offset=None, parent=None):
+    #     self.items = []
+    #     super(Dict, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, items):
-        self.items = items
+    # def postinit(self, items):
+    #     self.items = items
 
     @classmethod
     def from_constants(cls, items=None):
@@ -783,8 +797,8 @@ class Dict(bases.NodeNG, bases.Instance):
         if items is None:
             node.items = []
         else:
-            node.items = [(const_factory(k), const_factory(v))
-                          for k, v in items.items()]
+            node.items = zipper.NodeSequence((const_factory(k), const_factory(v))
+                                             for k, v in items.items())
         return node
 
     def pytype(self):
@@ -827,8 +841,8 @@ class Expr(bases.Statement):
     _astroid_fields = ('value',)
     value = None
 
-    def postinit(self, value=None):
-        self.value = value
+    # def postinit(self, value=None):
+    #     self.value = value
 
 
 class Ellipsis(bases.NodeNG): # pylint: disable=redefined-builtin
@@ -849,10 +863,10 @@ class ExceptHandler(mixins.AssignTypeMixin, bases.Statement):
     name = None
     body = None
 
-    def postinit(self, type=None, name=None, body=None):
-        self.type = type
-        self.name = name
-        self.body = body
+    # def postinit(self, type=None, name=None, body=None):
+    #     self.type = type
+    #     self.name = name
+    #     self.body = body
 
     @decorators.cachedproperty
     def blockstart_tolineno(self):
@@ -878,10 +892,10 @@ class Exec(bases.Statement):
     globals = None
     locals = None
 
-    def postinit(self, expr=None, globals=None, locals=None):
-        self.expr = expr
-        self.globals = globals
-        self.locals = locals
+    # def postinit(self, expr=None, globals=None, locals=None):
+    #     self.expr = expr
+    #     self.globals = globals
+    #     self.locals = locals
 
 
 class ExtSlice(bases.NodeNG):
@@ -889,8 +903,8 @@ class ExtSlice(bases.NodeNG):
     _astroid_fields = ('dims',)
     dims = None
 
-    def postinit(self, dims=None):
-        self.dims = dims
+    # def postinit(self, dims=None):
+    #     self.dims = dims
 
 
 class For(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, bases.Statement):
@@ -901,11 +915,11 @@ class For(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, bases.Statement):
     body = None
     orelse = None
 
-    def postinit(self, target=None, iter=None, body=None, orelse=None):
-        self.target = target
-        self.iter = iter
-        self.body = body
-        self.orelse = orelse
+    # def postinit(self, target=None, iter=None, body=None, orelse=None):
+    #     self.target = target
+    #     self.iter = iter
+    #     self.body = body
+    #     self.orelse = orelse
 
     optional_assign = True
     @decorators.cachedproperty
@@ -923,20 +937,23 @@ class Await(bases.NodeNG):
     _astroid_fields = ('value', )
     value = None
 
-    def postinit(self, value=None):
-        self.value = value
+    # def postinit(self, value=None):
+    #     self.value = value
 
 
 class ImportFrom(mixins.ImportFromMixin, bases.Statement):
     """class representing a ImportFrom node"""
     _other_fields = ('modname', 'names', 'level')
+    fromname = None
+    names = None
+    level = 0
 
-    def __init__(self, fromname, names, level=0, lineno=None,
-                 col_offset=None, parent=None):
-        self.modname = fromname
-        self.names = names
-        self.level = level
-        super(ImportFrom, self).__init__(lineno, col_offset, parent)
+    # def __init__(self, fromname, names, level=0, lineno=None,
+    #              col_offset=None, parent=None):
+    #     self.modname = fromname
+    #     self.names = names
+    #     self.level = level
+    #     super(ImportFrom, self).__init__(lineno, col_offset, parent)
 
 
 class Attribute(bases.NodeNG):
@@ -944,22 +961,24 @@ class Attribute(bases.NodeNG):
     _astroid_fields = ('expr',)
     _other_fields = ('attrname',)
     expr = None
+    attrname = None
 
-    def __init__(self, attrname=None, lineno=None, col_offset=None, parent=None):
-        self.attrname = attrname
-        super(Attribute, self).__init__(lineno, col_offset, parent)
+    # def __init__(self, attrname=None, lineno=None, col_offset=None, parent=None):
+    #     self.attrname = attrname
+    #     super(Attribute, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, expr=None):
-        self.expr = expr
+    # def postinit(self, expr=None):
+    #     self.expr = expr
 
 
 class Global(bases.Statement):
     """class representing a Global node"""
     _other_fields = ('names',)
+    names = None
 
-    def __init__(self, names, lineno=None, col_offset=None, parent=None):
-        self.names = names
-        super(Global, self).__init__(lineno, col_offset, parent)
+    # def __init__(self, names, lineno=None, col_offset=None, parent=None):
+    #     self.names = names
+    #     super(Global, self).__init__(lineno, col_offset, parent)
 
     def _infer_name(self, frame, name):
         return name
@@ -972,10 +991,10 @@ class If(mixins.BlockRangeMixIn, bases.Statement):
     body = None
     orelse = None
 
-    def postinit(self, test=None, body=None, orelse=None):
-        self.test = test
-        self.body = body
-        self.orelse = orelse
+    # def postinit(self, test=None, body=None, orelse=None):
+    #     self.test = test
+    #     self.body = body
+    #     self.orelse = orelse
 
     @decorators.cachedproperty
     def blockstart_tolineno(self):
@@ -998,10 +1017,10 @@ class IfExp(bases.NodeNG):
     body = None
     orelse = None
 
-    def postinit(self, test=None, body=None, orelse=None):
-        self.test = test
-        self.body = body
-        self.orelse = orelse
+    # def postinit(self, test=None, body=None, orelse=None):
+    #     self.test = test
+    #     self.body = body
+    #     self.orelse = orelse
 
 
 class Import(mixins.ImportFromMixin, bases.Statement):
@@ -1018,8 +1037,8 @@ class Index(bases.NodeNG):
     _astroid_fields = ('value',)
     value = None
 
-    def postinit(self, value=None):
-        self.value = value
+    # def postinit(self, value=None):
+    #     self.value = value
 
 
 class Keyword(bases.NodeNG):
@@ -1027,13 +1046,14 @@ class Keyword(bases.NodeNG):
     _astroid_fields = ('value',)
     _other_fields = ('arg',)
     value = None
+    arg = None
 
-    def __init__(self, arg=None, lineno=None, col_offset=None, parent=None):
-        self.arg = arg
-        super(Keyword, self).__init__(lineno, col_offset, parent)
+    # def __init__(self, arg=None, lineno=None, col_offset=None, parent=None):
+    #     self.arg = arg
+    #     super(Keyword, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, value=None):
-        self.value = value
+    # def postinit(self, value=None):
+    #     self.value = value
 
 
 class List(_BaseContainer):
@@ -1049,10 +1069,11 @@ class List(_BaseContainer):
 class Nonlocal(bases.Statement):
     """class representing a Nonlocal node"""
     _other_fields = ('names',)
+    names = zipper.NodeSequence()
 
-    def __init__(self, names, lineno=None, col_offset=None, parent=None):
-        self.names = names
-        super(Nonlocal, self).__init__(lineno, col_offset, parent)
+    # def __init__(self, names, lineno=None, col_offset=None, parent=None):
+    #     self.names = names
+    #     super(Nonlocal, self).__init__(lineno, col_offset, parent)
 
     def _infer_name(self, frame, name):
         return name
@@ -1067,14 +1088,15 @@ class Print(bases.Statement):
     _astroid_fields = ('dest', 'values',)
     dest = None
     values = None
+    nl = None
 
-    def __init__(self, nl=None, lineno=None, col_offset=None, parent=None):
-        self.nl = nl
-        super(Print, self).__init__(lineno, col_offset, parent)
+    # def __init__(self, nl=None, lineno=None, col_offset=None, parent=None):
+    #     self.nl = nl
+    #     super(Print, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, dest=None, values=None):
-        self.dest = dest
-        self.values = values
+    # def postinit(self, dest=None, values=None):
+    #     self.dest = dest
+    #     self.values = values
 
 
 class Raise(bases.Statement):
@@ -1085,18 +1107,18 @@ class Raise(bases.Statement):
         inst = None
         tback = None
 
-        def postinit(self, exc=None, inst=None, tback=None):
-            self.exc = exc
-            self.inst = inst
-            self.tback = tback
+        # def postinit(self, exc=None, inst=None, tback=None):
+        #     self.exc = exc
+        #     self.inst = inst
+        #     self.tback = tback
     else:
         _astroid_fields = ('exc', 'cause')
         exc = None
         cause = None
 
-        def postinit(self, exc=None, cause=None):
-            self.exc = exc
-            self.cause = cause
+        # def postinit(self, exc=None, cause=None):
+        #     self.exc = exc
+        #     self.cause = cause
 
     def raises_not_implemented(self):
         if not self.exc:
@@ -1129,10 +1151,10 @@ class Slice(bases.NodeNG):
     upper = None
     step = None
 
-    def postinit(self, lower=None, upper=None, step=None):
-        self.lower = lower
-        self.upper = upper
-        self.step = step
+    # def postinit(self, lower=None, upper=None, step=None):
+    #     self.lower = lower
+    #     self.upper = upper
+    #     self.step = step
 
 
 class Starred(mixins.ParentAssignTypeMixin, bases.NodeNG):
@@ -1140,8 +1162,8 @@ class Starred(mixins.ParentAssignTypeMixin, bases.NodeNG):
     _astroid_fields = ('value',)
     value = None
 
-    def postinit(self, value=None):
-        self.value = value
+    # def postinit(self, value=None):
+    #     self.value = value
 
 
 class Subscript(bases.NodeNG):
@@ -1150,9 +1172,9 @@ class Subscript(bases.NodeNG):
     value = None
     slice = None
 
-    def postinit(self, value=None, slice=None):
-        self.value = value
-        self.slice = slice
+    # def postinit(self, value=None, slice=None):
+    #     self.value = value
+    #     self.slice = slice
 
 
 class TryExcept(mixins.BlockRangeMixIn, bases.Statement):
@@ -1162,10 +1184,10 @@ class TryExcept(mixins.BlockRangeMixIn, bases.Statement):
     handlers = None
     orelse = None
 
-    def postinit(self, body=None, handlers=None, orelse=None):
-        self.body = body
-        self.handlers = handlers
-        self.orelse = orelse
+    # def postinit(self, body=None, handlers=None, orelse=None):
+    #     self.body = body
+    #     self.handlers = handlers
+    #     self.orelse = orelse
 
     def _infer_name(self, frame, name):
         return name
@@ -1189,9 +1211,9 @@ class TryFinally(mixins.BlockRangeMixIn, bases.Statement):
     body = None
     finalbody = None
 
-    def postinit(self, body=None, finalbody=None):
-        self.body = body
-        self.finalbody = finalbody
+    # def postinit(self, body=None, finalbody=None):
+    #     self.body = body
+    #     self.finalbody = finalbody
 
     def block_range(self, lineno):
         """handle block line numbers range for try/finally statements"""
@@ -1218,13 +1240,14 @@ class UnaryOp(bases.NodeNG):
     _astroid_fields = ('operand',)
     _other_fields = ('op',)
     operand = None
+    op = None
 
-    def __init__(self, op=None, lineno=None, col_offset=None, parent=None):
-        self.op = op
-        super(UnaryOp, self).__init__(lineno, col_offset, parent)
+    # def __init__(self, op=None, lineno=None, col_offset=None, parent=None):
+    #     self.op = op
+    #     super(UnaryOp, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, operand=None):
-        self.operand = operand
+    # def postinit(self, operand=None):
+    #     self.operand = operand
 
     # This is set by inference.py
     def _infer_unaryop(self, context=None):
@@ -1251,10 +1274,10 @@ class While(mixins.BlockRangeMixIn, bases.Statement):
     body = None
     orelse = None
 
-    def postinit(self, test=None, body=None, orelse=None):
-        self.test = test
-        self.body = body
-        self.orelse = orelse
+    # def postinit(self, test=None, body=None, orelse=None):
+    #     self.test = test
+    #     self.body = body
+    #     self.orelse = orelse
 
     @decorators.cachedproperty
     def blockstart_tolineno(self):
@@ -1271,9 +1294,9 @@ class With(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, bases.Statement):
     items = None
     body = None
 
-    def postinit(self, items=None, body=None):
-        self.items = items
-        self.body = body
+    # def postinit(self, items=None, body=None):
+    #     self.items = items
+    #     self.body = body
 
     @decorators.cachedproperty
     def blockstart_tolineno(self):
@@ -1297,8 +1320,8 @@ class Yield(bases.NodeNG):
     _astroid_fields = ('value',)
     value = None
 
-    def postinit(self, value=None):
-        self.value = value
+    # def postinit(self, value=None):
+    #     self.value = value
 
 
 class YieldFrom(Yield):

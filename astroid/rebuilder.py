@@ -15,11 +15,11 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
-"""this module contains utilities for rebuilding a _ast tree in
+"""this module contains utilities for rebuilding a ast tree in
 order to get a single Astroid representation
 """
 
-import _ast
+import ast
 import sys
 
 from astroid import astpeephole
@@ -27,42 +27,42 @@ from astroid import nodes
 
 
 
-_BIN_OP_CLASSES = {_ast.Add: '+',
-                   _ast.BitAnd: '&',
-                   _ast.BitOr: '|',
-                   _ast.BitXor: '^',
-                   _ast.Div: '/',
-                   _ast.FloorDiv: '//',
-                   _ast.Mod: '%',
-                   _ast.Mult: '*',
-                   _ast.Pow: '**',
-                   _ast.Sub: '-',
-                   _ast.LShift: '<<',
-                   _ast.RShift: '>>',
+_BIN_OP_CLASSES = {ast.Add: '+',
+                   ast.BitAnd: '&',
+                   ast.BitOr: '|',
+                   ast.BitXor: '^',
+                   ast.Div: '/',
+                   ast.FloorDiv: '//',
+                   ast.Mod: '%',
+                   ast.Mult: '*',
+                   ast.Pow: '**',
+                   ast.Sub: '-',
+                   ast.LShift: '<<',
+                   ast.RShift: '>>',
                   }
 if sys.version_info >= (3, 5):
-    _BIN_OP_CLASSES[_ast.MatMult] = '@'
+    _BIN_OP_CLASSES[ast.MatMult] = '@'
 
-_BOOL_OP_CLASSES = {_ast.And: 'and',
-                    _ast.Or: 'or',
+_BOOL_OP_CLASSES = {ast.And: 'and',
+                    ast.Or: 'or',
                    }
 
-_UNARY_OP_CLASSES = {_ast.UAdd: '+',
-                     _ast.USub: '-',
-                     _ast.Not: 'not',
-                     _ast.Invert: '~',
+_UNARY_OP_CLASSES = {ast.UAdd: '+',
+                     ast.USub: '-',
+                     ast.Not: 'not',
+                     ast.Invert: '~',
                     }
 
-_CMP_OP_CLASSES = {_ast.Eq: '==',
-                   _ast.Gt: '>',
-                   _ast.GtE: '>=',
-                   _ast.In: 'in',
-                   _ast.Is: 'is',
-                   _ast.IsNot: 'is not',
-                   _ast.Lt: '<',
-                   _ast.LtE: '<=',
-                   _ast.NotEq: '!=',
-                   _ast.NotIn: 'not in',
+_CMP_OP_CLASSES = {ast.Eq: '==',
+                   ast.Gt: '>',
+                   ast.GtE: '>=',
+                   ast.In: 'in',
+                   ast.Is: 'is',
+                   ast.IsNot: 'is not',
+                   ast.Lt: '<',
+                   ast.LtE: '<=',
+                   ast.NotEq: '!=',
+                   ast.NotIn: 'not in',
                   }
 
 CONST_NAME_TRANSFORMS = {'None':  None,
@@ -82,7 +82,7 @@ PY34 = sys.version_info >= (3, 4)
 
 def _get_doc(node):
     try:
-        if isinstance(node.body[0], _ast.Expr) and isinstance(node.body[0].value, _ast.Str):
+        if isinstance(node.body[0], ast.Expr) and isinstance(node.body[0].value, ast.Str):
             doc = node.body[0].value.s
             node.body = node.body[1:]
             return node, doc
@@ -104,7 +104,7 @@ def _visit_or_none(node, attr, visitor, parent, assign_ctx, visit='visit',
 
 
 class TreeRebuilder(object):
-    """Rebuilds the _ast tree to become an Astroid tree"""
+    """Rebuilds the ast tree to become an Astroid tree"""
 
     def __init__(self, manager):
         self._manager = manager
@@ -155,7 +155,7 @@ class TreeRebuilder(object):
         varargannotation = None
         kwargannotation = None
         # change added in 82732 (7c5c678e4164), vararg and kwarg
-        # are instances of `_ast.arg`, not strings
+        # are instances of `ast.arg`, not strings
         if vararg:
             if PY34:
                 if node.vararg.annotation:
@@ -245,7 +245,7 @@ class TreeRebuilder(object):
 
     def visit_binop(self, node, parent, assign_ctx=None):
         """visit a BinOp node by returning a fresh instance of it"""
-        if isinstance(node.left, _ast.BinOp) and self._manager.optimize_ast:
+        if isinstance(node.left, ast.BinOp) and self._manager.optimizeast:
             # Optimize BinOp operations in order to remove
             # redundant recursion. For instance, if the
             # following code is parsed in order to obtain
@@ -370,7 +370,7 @@ class TreeRebuilder(object):
 
     def visit_decorators(self, node, parent, assign_ctx=None):
         """visit a Decorators node by returning a fresh instance of it"""
-        # /!\ node is actually a _ast.FunctionDef node while
+        # /!\ node is actually a ast.FunctionDef node while
         # parent is a astroid.nodes.FunctionDef node
         newnode = nodes.Decorators(node.lineno, node.col_offset, parent)
         newnode.postinit([self.visit(child, newnode, assign_ctx)

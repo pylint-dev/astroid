@@ -34,6 +34,7 @@ from astroid import modutils
 from astroid import raw_building
 from astroid import rebuilder
 from astroid import util
+from astroid import zipper
 
 
 def _parse(string):

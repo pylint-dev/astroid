@@ -23,6 +23,7 @@ from __future__ import print_function
 
 import collections
 import functools
+import itertools
 import pprint
 import sys
 import warnings
@@ -497,10 +498,19 @@ class NodeNG(object):
     # instance specific inference function infer(node, context)
     _explicit_inference = None
 
-    def __init__(self, lineno=None, col_offset=None, parent=None):
-        self.lineno = lineno
-        self.col_offset = col_offset
-        self.parent = parent
+    # def __init__(self, lineno=None, col_offset=None, parent=None):
+    #     self.lineno = lineno
+    #     self.col_offset = col_offset
+    #     self.parent = parent
+
+    def __init__(self, **kws):
+        self.lineno = kws.get('lineno', None)
+        self.col_offset = kws.get('col_offset', None)
+        for field in itertools.chain(self._astroid_fields, self._other_fields):
+            try:
+                setattr(self, field, kws[field])
+            except KeyError:
+                pass
 
     def infer(self, context=None, **kwargs):
         """main interface to the interface system, return a generator on inferred
@@ -571,6 +581,10 @@ class NodeNG(object):
         func = getattr(visitor, "visit_" + self.__class__.__name__.lower())
         return func(self)
 
+    # TODO: this is for the alternate zipper, where only nodes can be the focus
+    # def children(self):
+    #     return tuple(getattr(self, field) for field in self._astroid_fields)
+
     def get_children(self):
         for field in self._astroid_fields:
             attr = getattr(self, field)
@@ -582,17 +596,17 @@ class NodeNG(object):
             else:
                 yield attr
 
-    def last_child(self):
-        """an optimized version of list(get_children())[-1]"""
-        for field in self._astroid_fields[::-1]:
-            attr = getattr(self, field)
-            if not attr: # None or empty listy / tuple
-                continue
-            if isinstance(attr, (list, tuple)):
-                return attr[-1]
-            else:
-                return attr
-        return None
+    # def last_child(self):
+    #     """an optimized version of list(get_children())[-1]"""
+    #     for field in self._astroid_fields[::-1]:
+    #         attr = getattr(self, field)
+    #         if not attr: # None or empty listy / tuple
+    #             continue
+    #         if isinstance(attr, (list, tuple)):
+    #             return attr[-1]
+    #         else:
+    #             return attr
+    #     return None
 
     def parent_of(self, node):
         """return true if i'm a parent of the given node"""
@@ -629,33 +643,33 @@ class NodeNG(object):
     #         return self.parent.root()
     #     return self
 
-    def child_sequence(self, child):
-        """search for the right sequence where the child lies in"""
-        for field in self._astroid_fields:
-            node_or_sequence = getattr(self, field)
-            if node_or_sequence is child:
-                return [node_or_sequence]
-            # /!\ compiler.ast Nodes have an __iter__ walking over child nodes
-            if (isinstance(node_or_sequence, (tuple, list))
-                    and child in node_or_sequence):
-                return node_or_sequence
+    # def child_sequence(self, child):
+    #     """search for the right sequence where the child lies in"""
+    #     for field in self._astroid_fields:
+    #         node_or_sequence = getattr(self, field)
+    #         if node_or_sequence is child:
+    #             return [node_or_sequence]
+    #         # /!\ compiler.ast Nodes have an __iter__ walking over child nodes
+    #         if (isinstance(node_or_sequence, (tuple, list))
+    #                 and child in node_or_sequence):
+    #             return node_or_sequence
 
-        msg = 'Could not find %s in %s\'s children'
-        raise exceptions.AstroidError(msg % (repr(child), repr(self)))
+    #     msg = 'Could not find %s in %s\'s children'
+    #     raise exceptions.AstroidError(msg % (repr(child), repr(self)))
 
-    def locate_child(self, child):
-        """return a 2-uple (child attribute name, sequence or node)"""
-        for field in self._astroid_fields:
-            node_or_sequence = getattr(self, field)
-            # /!\ compiler.ast Nodes have an __iter__ walking over child nodes
-            if child is node_or_sequence:
-                return field, child
-            if isinstance(node_or_sequence, (tuple, list)) and child in node_or_sequence:
-                return field, node_or_sequence
-        msg = 'Could not find %s in %s\'s children'
-        raise exceptions.AstroidError(msg % (repr(child), repr(self)))
-    # FIXME : should we merge child_sequence and locate_child ? locate_child
-    # is only used in are_exclusive, child_sequence one time in pylint.
+    # def locate_child(self, child):
+    #     """return a 2-uple (child attribute name, sequence or node)"""
+    #     for field in self._astroid_fields:
+    #         node_or_sequence = getattr(self, field)
+    #         # /!\ compiler.ast Nodes have an __iter__ walking over child nodes
+    #         if child is node_or_sequence:
+    #             return field, child
+    #         if isinstance(node_or_sequence, (tuple, list)) and child in node_or_sequence:
+    #             return field, node_or_sequence
+    #     msg = 'Could not find %s in %s\'s children'
+    #     raise exceptions.AstroidError(msg % (repr(child), repr(self)))
+    # # FIXME : should we merge child_sequence and locate_child ? locate_child
+    # # is only used in are_exclusive, child_sequence one time in pylint.
 
     # def next_sibling(self):
     #     """return the next sibling statement"""
@@ -665,23 +679,23 @@ class NodeNG(object):
     #     """return the previous sibling statement"""
     #     return self.parent.previous_sibling()
 
-    def nearest(self, nodes):
-        """return the node which is the nearest before this one in the
-        given list of nodes
-        """
-        myroot = self.root()
-        mylineno = self.fromlineno
-        nearest = None, 0
-        for node in nodes:
-            assert node.root() is myroot, \
-                   'nodes %s and %s are not from the same module' % (self, node)
-            lineno = node.fromlineno
-            if node.fromlineno > mylineno:
-                break
-            if lineno > nearest[1]:
-                nearest = node, lineno
-        # FIXME: raise an exception if nearest is None ?
-        return nearest[0]
+    # def nearest(self, nodes):
+    #     """return the node which is the nearest before this one in the
+    #     given list of nodes
+    #     """
+    #     myroot = self.root()
+    #     mylineno = self.fromlineno
+    #     nearest = None, 0
+    #     for node in nodes:
+    #         assert node.root() is myroot, \
+    #                'nodes %s and %s are not from the same AST' % (self, node)
+    #         lineno = node.fromlineno
+    #         if node.fromlineno > mylineno:
+    #             break
+    #         if lineno > nearest[1]:
+    #             nearest = node, lineno
+    #     # FIXME: raise an exception if nearest is None ?
+    #     return nearest[0]
 
     # these are lazy because they're relatively expensive to compute for every
     # single node, and they rarely get looked at
@@ -716,12 +730,12 @@ class NodeNG(object):
         correctly set...
         """
         line = self.lineno
-        _node = self
+        _node = self.down()
         try:
             while line is None:
-                _node = next(_node.get_children())
+                _node = _node.right()
                 line = _node.lineno
-        except StopIteration:
+        except AttributeError:
             _node = self.parent
             while _node and line is None:
                 line = _node.lineno
@@ -737,18 +751,18 @@ class NodeNG(object):
         """delegate to a scoped parent handling a locals dictionary"""
         self.parent.set_local(name, stmt)
 
-    def nodes_of_class(self, klass, skip_klass=None):
-        """return an iterator on nodes which are instance of the given class(es)
+    # def nodes_of_class(self, klass, skip_klass=None):
+    #     """return an iterator on nodes which are instance of the given class(es)
 
-        klass may be a class object or a tuple of class objects
-        """
-        if isinstance(self, klass):
-            yield self
-        for child_node in self.get_children():
-            if skip_klass is not None and isinstance(child_node, skip_klass):
-                continue
-            for matching in child_node.nodes_of_class(klass, skip_klass):
-                yield matching
+    #     klass may be a class object or a tuple of class objects
+    #     """
+    #     if isinstance(self, klass):
+    #         yield self
+    #     for child_node in self.get_children():
+    #         if skip_klass is not None and isinstance(child_node, skip_klass):
+    #             continue
+    #         for matching in child_node.nodes_of_class(klass, skip_klass):
+    #             yield matching
 
     def _infer_name(self, frame, name):
         # overridden for ImportFrom, Import, Global, TryExcept and Arguments

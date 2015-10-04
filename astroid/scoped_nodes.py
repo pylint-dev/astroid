@@ -39,6 +39,7 @@ from astroid import mixins
 from astroid import node_classes
 from astroid import decorators as decorators_mod
 from astroid import util
+from astroid import zipper
 
 
 BUILTINS = six.moves.builtins.__name__
@@ -252,7 +253,6 @@ class Module(LocalsDictNodeNG):
     _astroid_fields = ('body',)
 
     fromlineno = 0
-    lineno = 0
 
     # attributes below are set by the builder module or by raw factories
 
@@ -286,22 +286,27 @@ class Module(LocalsDictNodeNG):
     _other_fields = ('name', 'doc', 'file', 'path', 'package',
                      'pure_python', 'future_imports')
     _other_other_fields = ('locals', 'globals')
+    doc = None
 
-    def __init__(self, name, doc, file=None, path=None, package=None,
-                 parent=None, pure_python=True):
-        self.name = name
-        self.doc = doc
-        self.file = file
-        self.path = path
-        self.package = package
-        self.parent = parent
-        self.pure_python = pure_python
+    def __init__(self, **kws):
+        super(Module, self).__init__(self, **kws)
         self.locals = self.globals = {}
-        self.body = []
-        self.future_imports = set()
 
-    def postinit(self, body=None):
-        self.body = body
+    # def __init__(self, name, doc, file=None, path=None, package=None,
+    #              parent=None, pure_python=True):
+    #     self.name = name
+    #     self.doc = doc
+    #     self.file = file
+    #     self.path = path
+    #     self.package = package
+    #     self.parent = parent
+    #     self.pure_python = pure_python
+    #     self.locals = self.globals = {}
+    #     self.body = []
+    #     self.future_imports = set()
+
+    # def postinit(self, body=None):
+    #     self.body = body
 
     def _get_stream(self):
         if self.file_bytes is not None:
@@ -396,13 +401,13 @@ class Module(LocalsDictNodeNG):
         """
         return self
 
-    def previous_sibling(self):
-        """module has no sibling"""
-        return
+    # def previous_sibling(self):
+    #     """module has no sibling"""
+    #     return
 
-    def next_sibling(self):
-        """module has no sibling"""
-        return
+    # def next_sibling(self):
+    #     """module has no sibling"""
+    #     return
 
     if six.PY2:
         @decorators_mod.cachedproperty
@@ -516,18 +521,22 @@ class GeneratorExp(ComprehensionScope):
     _astroid_fields = ('elt', 'generators')
     _other_other_fields = ('locals',)
     elt = None
-    generators = None
+    generators = zipper.NodeSequence()
 
-    def __init__(self, lineno=None, col_offset=None, parent=None):
+    def __init__(self, **kws):
+        super(GeneratorExp, self).__init__(**kws)
         self.locals = {}
-        super(GeneratorExp, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, elt=None, generators=None):
-        self.elt = elt
-        if generators is None:
-            self.generators = []
-        else:
-            self.generators = generators
+    # def __init__(self, lineno=None, col_offset=None, parent=None):
+    #     self.locals = {}
+    #     super(GeneratorExp, self).__init__(lineno, col_offset, parent)
+
+    # def postinit(self, elt=None, generators=None):
+    #     self.elt = elt
+    #     if generators is None:
+    #         self.generators = []
+    #     else:
+    #         self.generators = generators
 
     def bool_value(self):
         return True
@@ -538,19 +547,23 @@ class DictComp(ComprehensionScope):
     _other_other_fields = ('locals',)
     key = None
     value = None
-    generators = None
+    generators = zipper.NodeSequence()
 
-    def __init__(self, lineno=None, col_offset=None, parent=None):
+    def __init__(self, **kws):
+        super(DictComp, self).__init__(**kws)
         self.locals = {}
-        super(DictComp, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, key=None, value=None, generators=None):
-        self.key = key
-        self.value = value
-        if generators is None:
-            self.generators = []
-        else:
-            self.generators = generators
+    # def __init__(self, lineno=None, col_offset=None, parent=None):
+    #     self.locals = {}
+    #     super(DictComp, self).__init__(lineno, col_offset, parent)
+
+    # def postinit(self, key=None, value=None, generators=None):
+    #     self.key = key
+    #     self.value = value
+    #     if generators is None:
+    #         self.generators = []
+    #     else:
+    #         self.generators = generators
 
     def bool_value(self):
         return util.YES
@@ -560,18 +573,22 @@ class SetComp(ComprehensionScope):
     _astroid_fields = ('elt', 'generators')
     _other_other_fields = ('locals',)
     elt = None
-    generators = None
+    generators = zipper.NodeSequence()
 
-    def __init__(self, lineno=None, col_offset=None, parent=None):
+    def __init__(self, **kws):
+        super(SetComp, self).__init__(**kws)
         self.locals = {}
-        super(SetComp, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, elt=None, generators=None):
-        self.elt = elt
-        if generators is None:
-            self.generators = []
-        else:
-            self.generators = generators
+    # def __init__(self, lineno=None, col_offset=None, parent=None):
+    #     self.locals = {}
+    #     super(SetComp, self).__init__(lineno, col_offset, parent)
+
+    # def postinit(self, elt=None, generators=None):
+    #     self.elt = elt
+    #     if generators is None:
+    #         self.generators = []
+    #     else:
+    #         self.generators = generators
 
     def bool_value(self):
         return util.YES
@@ -581,11 +598,11 @@ class _ListComp(bases.NodeNG):
     """class representing a ListComp node"""
     _astroid_fields = ('elt', 'generators')
     elt = None
-    generators = None
+    generators = zipper.NodeSequence()
 
-    def postinit(self, elt=None, generators=None):
-        self.elt = elt
-        self.generators = generators
+    # def postinit(self, elt=None, generators=None):
+    #     self.elt = elt
+    #     self.generators = generators
 
     def bool_value(self):
         return util.YES
@@ -596,9 +613,13 @@ if six.PY3:
         """class representing a ListComp node"""
         _other_other_fields = ('locals',)
 
-        def __init__(self, lineno=None, col_offset=None, parent=None):
+        def __init__(self, **kws):
+            super(ListComp, self).__init__(**kws)
             self.locals = {}
-            super(ListComp, self).__init__(lineno, col_offset, parent)
+
+        # def __init__(self, lineno=None, col_offset=None, parent=None):
+        #     self.locals = {}
+        #     super(ListComp, self).__init__(lineno, col_offset, parent)
 else:
     class ListComp(_ListComp):
         """class representing a ListComp node"""
@@ -636,15 +657,19 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
     # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
     type = 'function'
 
-    def __init__(self, lineno=None, col_offset=None, parent=None):
+    def __init__(self, **kws):
+        super(Lambda, self).__init__(**kws)
         self.locals = {}
-        self.args = []
-        self.body = []
-        super(Lambda, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, args, body):
-        self.args = args
-        self.body = body
+    # def __init__(self, lineno=None, col_offset=None, parent=None):
+    #     self.locals = {}
+    #     self.args = []
+    #     self.body = []
+    #     super(Lambda, self).__init__(lineno, col_offset, parent)
+
+    # def postinit(self, args, body):
+    #     self.args = args
+    #     self.body = body
 
     def pytype(self):
         if 'method' in self.type:
@@ -701,25 +726,31 @@ class FunctionDef(bases.Statement, Lambda):
     is_function = True
     # attributes below are set by the builder module or by raw factories
     _other_fields = ('name', 'doc')
-    _other_other_fields = ('locals', '_type')
+    _other_other_fields = ('locals', '_type', 'instance_attrs')
     _type = None
 
-    def __init__(self, name=None, doc=None, lineno=None,
-                 col_offset=None, parent=None):
-        self.name = name
-        self.doc = doc
+    def __init__(self, **kws):
+        super(Function, self).__init__(**kws)
+        self.locals = {}
         self.instance_attrs = {}
-        super(FunctionDef, self).__init__(lineno, col_offset, parent)
-        if parent:
-            frame = parent.frame()
-            frame.set_local(name, self)
+    
+    # def __init__(self, name=None, doc=None, lineno=None,
+    #              col_offset=None, parent=None):
+    #     self.name = name
+    #     self.doc = doc
+    #     self.instance_attrs = {}
+    #     super(FunctionDef, self).__init__(lineno, col_offset, parent)
+    #     # TODO: !!!
+    #     if parent:
+    #         frame = parent.frame()
+    #         frame.set_local(name, self)
 
-    # pylint: disable=arguments-differ; different than Lambdas
-    def postinit(self, args, body, decorators=None, returns=None):
-        self.args = args
-        self.body = body
-        self.decorators = decorators
-        self.returns = returns
+    # # pylint: disable=arguments-differ; different than Lambdas
+    # def postinit(self, args, body, decorators=None, returns=None):
+    #     self.args = args
+    #     self.body = body
+    #     self.decorators = decorators
+    #     self.returns = returns
 
     @decorators_mod.cachedproperty
     def extra_decorators(self):
@@ -1071,29 +1102,43 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
                     doc="class'type, possible values are 'class' | "
                     "'metaclass' | 'exception'")
     _other_fields = ('name', 'doc')
-    _other_other_fields = ('locals', '_newstyle')
+    _other_other_fields = ('locals', '_newstyle', 'instance_attrs')
+    bases = zipper.NodeSequence()
+    body = zipper.NodeSequence()
+    name = None
+    doc = None
     _newstyle = None
 
-    def __init__(self, name=None, doc=None, lineno=None,
-                 col_offset=None, parent=None):
-        self.instance_attrs = {}
+    def __init__(self, **kws, newstyle=None, metaclass=None):
+        super(ClassDef, self).__init__(**kws)
         self.locals = {}
-        self.bases = []
-        self.body = []
-        self.name = name
-        self.doc = doc
-        super(ClassDef, self).__init__(lineno, col_offset, parent)
-        if parent is not None:
-            parent.frame().set_local(name, self)
-
-    def postinit(self, bases, body, decorators, newstyle=None, metaclass=None):
-        self.bases = bases
-        self.body = body
-        self.decorators = decorators
+        self.instance_attrs = {}
         if newstyle is not None:
             self._newstyle = newstyle
         if metaclass is not None:
             self._metaclass = metaclass
+
+    # def __init__(self, name=None, doc=None, lineno=None,
+    #              col_offset=None, parent=None):
+    #     self.instance_attrs = {}
+    #     self.locals = {}
+    #     self.bases = []
+    #     self.body = []
+    #     self.name = name
+    #     self.doc = doc
+    #     super(ClassDef, self).__init__(lineno, col_offset, parent)
+    # TODO: !!!
+    #     if parent is not None:
+    #         parent.frame().set_local(name, self)
+
+    # def postinit(self, bases, body, decorators, newstyle=None, metaclass=None):
+    #     self.bases = bases
+    #     self.body = body
+    #     self.decorators = decorators
+    #     if newstyle is not None:
+    #         self._newstyle = newstyle
+    #     if metaclass is not None:
+    #         self._metaclass = metaclass
 
     def _newstyle_impl(self, context=None):
         if context is None:
