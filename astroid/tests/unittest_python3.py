@@ -241,6 +241,15 @@ class Python3TC(unittest.TestCase):
         node = extract_node(code)
         self.assertEqual(node.as_string(), code)
 
+    @require_version('3.5')
+    def test_unpacking_in_dict_getitem(self):
+        node = extract_node('{1:2, **{2:3, 3:4}, **{5: 6}}')
+        for key, expected in ((1, 2), (2, 3), (3, 4), (5, 6)):
+            value = node.getitem(key)
+            self.assertIsInstance(value, nodes.Const)
+            self.assertEqual(value.value, expected)
+        
+
 
 if __name__ == '__main__':
     unittest.main()
