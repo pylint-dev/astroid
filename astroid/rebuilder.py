@@ -411,13 +411,25 @@ class TreeRebuilder(object):
                            for child in node.targets]
         return newnode
 
+    def _visit_dict_items(self, node, parent, newnode, assign_ctx):
+        for key, value in zip(node.keys, node.values):
+            rebuilt_value = self.visit(value, newnode, assign_ctx)
+            if not key:
+                # Python 3.5 and extended unpacking
+                rebuilt_key = new.DictUnpack()
+                rebuilt_key.lineno = rebuilt_value.lineno
+                rebuilt_key.col_offset = rebuilt_value.col_offset
+                rebuilt_key.parent = rebuilt_value.parent
+                rebuilt_key.value = rebuilt_value
+            else:
+                rebuilt_key = self.visit(key, newnode, assign_ctx)
+            yield rebuilt_key, rebuilt_value
+
     def visit_dict(self, node, parent, assign_ctx=None):
         """visit a Dict node by returning a fresh instance of it"""
         newnode = new.Dict()
         _lineno_parent(node, newnode, parent)
-        newnode.items = [(self.visit(key, newnode, assign_ctx),
-                          self.visit(value, newnode, assign_ctx))
-                         for key, value in zip(node.keys, node.values)]
+        newnode.items = list(self._visit_dict_items(node, parent, newnode, assign_ctx))
         return newnode
 
     def visit_dictcomp(self, node, parent, assign_ctx=None):
