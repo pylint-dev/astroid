@@ -47,7 +47,9 @@ from astroid.node_classes import (
     const_factory,
     AsyncFor, Await, AsyncWith,
     # Backwards-compatibility aliases
-    Backquote, Discard, AssName, AssAttr, Getattr, CallFunc, From
+    Backquote, Discard, AssName, AssAttr, Getattr, CallFunc, From,
+    # Node not present in the builtin ast module.
+    DictUnpack,
 )
 from astroid.scoped_nodes import (
     Module, GeneratorExp, Lambda, DictComp,
@@ -66,7 +68,7 @@ ALL_NODE_CLASSES = (
     Repr, BinOp, BoolOp, Break,
     Call, ClassDef, Compare, Comprehension, Const, Continue,
     Decorators, DelAttr, DelName, Delete,
-    Dict, DictComp, Expr,
+    Dict, DictComp, DictUnpack, Expr,
     Ellipsis, EmptyNode, ExceptHandler, Exec, ExtSlice,
     For, ImportFrom, FunctionDef,
     Attribute, GeneratorExp, Global,
@@ -81,5 +83,5 @@ ALL_NODE_CLASSES = (
     TryExcept, TryFinally, Tuple,
     UnaryOp,
     While, With,
-    Yield, YieldFrom
+    Yield, YieldFrom,
     )

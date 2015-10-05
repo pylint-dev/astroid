@@ -312,6 +312,15 @@ Change log for the astroid package (used to be astng)
     * Understand the `slice` builtin. Closes issue #184.
 
     * Add brain tips for numpy.core, which should fix Pylint's #453.
+
+    * Add a new node, DictUnpack, which is used to represent the unpacking
+      of a dictionary into another dictionary, using PEP 448 specific syntax
+      ({1:2, **{2:3})
+
+      This is a different approach than what the builtin ast module does,
+      since it just uses None to represent this kind of operation,
+      which seems conceptually wrong, due to the fact the AST contains
+      non-AST nodes. Closes issue #206.
      
 
 

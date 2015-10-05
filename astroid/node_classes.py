@@ -1337,6 +1337,18 @@ class YieldFrom(Yield):
     """ Class representing a YieldFrom node. """
 
 
+class DictUnpack(bases.NodeNG):
+    """Represents the unpacking of dicts into dicts using PEP 448.
+
+    Its value is the dictionary which is unpacked.
+    """
+
+    _astroid_fields = ('value', )
+    value = None
+
+    def postinit(self, value=None):
+        self.value = value
+
 # constants ##############################################################
 
 CONST_CLS = {
