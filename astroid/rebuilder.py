@@ -420,7 +420,6 @@ class TreeRebuilder(object):
                 rebuilt_key.lineno = rebuilt_value.lineno
                 rebuilt_key.col_offset = rebuilt_value.col_offset
                 rebuilt_key.parent = rebuilt_value.parent
-                rebuilt_key.value = rebuilt_value
             else:
                 rebuilt_key = self.visit(key, newnode, assign_ctx)
             yield rebuilt_key, rebuilt_value
