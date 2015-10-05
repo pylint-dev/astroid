@@ -163,13 +163,13 @@ class AsStringVisitor(object):
 
     def _visit_dict(self, node):
         for key, value in node.items:
-             key = key.accept(self)
-             value = value.accept(self)
-             if key == '**':
-                 # It can only be a DictUnpack node.
-                 yield key + value
-             else:
-                 yield '%s: %s' % (key, value)
+            key = key.accept(self)
+            value = value.accept(self)
+            if key == '**':
+                # It can only be a DictUnpack node.
+                yield key + value
+            else:
+                yield '%s: %s' % (key, value)
 
     def visit_dictunpack(self, node):
         return '**'
