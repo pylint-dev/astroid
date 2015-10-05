@@ -248,7 +248,6 @@ class Python3TC(unittest.TestCase):
             value = node.getitem(key)
             self.assertIsInstance(value, nodes.Const)
             self.assertEqual(value.value, expected)
-        
 
 
 if __name__ == '__main__':
