@@ -630,6 +630,12 @@ class Dict(bases.NodeNG, bases.Instance):
 
     def getitem(self, lookup_key, context=None):
         for key, value in self.items:
+            # TODO(cpopa): no support for overriding yet, {1:2, **{1: 3}}.
+            if isinstance(key, DictUnpack):
+                try:
+                    return value.getitem(lookup_key, context)
+                except IndexError:
+                    continue
             for inferredkey in key.infer(context):
                 if inferredkey is util.YES:
                     continue
