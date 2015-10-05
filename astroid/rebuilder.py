@@ -392,7 +392,6 @@ class TreeRebuilder(object):
                 rebuilt_key = nodes.DictUnpack(rebuilt_value.lineno,
                                                rebuilt_value.col_offset,
                                                parent)
-                rebuilt_key.postinit(rebuilt_value)
             else:
                 rebuilt_key = self.visit(key, newnode, assign_ctx)
             yield rebuilt_key, rebuilt_value
