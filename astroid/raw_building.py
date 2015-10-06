@@ -294,7 +294,8 @@ class InspectBuilder(object):
                     continue
                 if member in self._done:
                     class_node = self._done[member]
-                    if class_node not in node.locals.get(name, ()):
+                    if class_node not in set(node.get_children()):
+                    # if class_node not in node.locals.get(name, ()):
                         node.add_local_node(class_node, name)
                 else:
                     class_node = object_build_class(node, member, name)

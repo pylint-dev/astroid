@@ -24,9 +24,15 @@ Lambda, GeneratorExp, DictComp and SetComp to some extent).
 
 from __future__ import print_function
 
+import collections
 import io
 import itertools
 import warnings
+
+try:
+    from functools import singledispatch as _singledispatch
+except ImportError:
+    from singledispatch import singledispatch as _singledispatch
 
 import six
 import wrapt
@@ -149,6 +155,10 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, bases.NodeNG):
     # dictionary of locals with name as key and node defining the local as
     # value
 
+    @property
+    def locals(self):
+        return get_locals(self, collections.defaultdict(list))
+
     def qname(self):
         """return the 'qualified' name of the node, eg module.name,
         module.class.name ...
@@ -207,7 +217,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, bases.NodeNG):
         if name != '__class__':
             # add __class__ node as a child will cause infinite recursion later!
             self._append_node(child_node)
-        self.set_local(name or child_node.name, child_node)
+        # self.set_local(name or child_node.name, child_node)
 
     def __getitem__(self, item):
         """method from the `dict` interface returning the first node
@@ -223,26 +233,26 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, bases.NodeNG):
         """method from the `dict` interface returning an iterator on
         `self.keys()`
         """
-        return iter(self.keys())
+        return iter(get_locals(self, collections.defaultdict(list)).keys())
 
     def keys(self):
         """method from the `dict` interface returning a tuple containing
         locally defined names
         """
-        return list(self.locals.keys())
+        return get_locals(self, collections.defaultdict(list)).keys()
 
     def values(self):
         """method from the `dict` interface returning a tuple containing
         locally defined nodes which are instance of `FunctionDef` or `ClassDef`
         """
-        return [self[key] for key in self.keys()]
+        return get_locals(self, collections.defaultdict(list)).values()
 
     def items(self):
         """method from the `dict` interface returning a list of tuple
         containing each locally defined name with its associated node,
         which is an instance of `FunctionDef` or `ClassDef`
         """
-        return list(zip(self.keys(), self.values()))
+        return get_locals(self, collections.defaultdict(list)).items()
 
     def __contains__(self, name):
         return name in self.locals
@@ -272,10 +282,10 @@ class Module(LocalsDictNodeNG):
     package = None
     # dictionary of globals with name as key and node defining the global
     # as value
-    globals = None
+    # globals = None
 
     # Future imports
-    future_imports = None
+    # future_imports = None
 
     # names of python special attributes (handled by getattr impl.)
     special_attributes = set(('__name__', '__doc__', '__file__', '__path__',
@@ -285,7 +295,7 @@ class Module(LocalsDictNodeNG):
 
     _other_fields = ('name', 'doc', 'file', 'path', 'package',
                      'pure_python', 'future_imports')
-    _other_other_fields = ('locals', 'globals')
+    # _other_other_fields = ('locals', 'globals')
 
     def __init__(self, name, doc, file=None, path=None, package=None,
                  parent=None, pure_python=True):
@@ -296,12 +306,20 @@ class Module(LocalsDictNodeNG):
         self.package = package
         self.parent = parent
         self.pure_python = pure_python
-        self.locals = self.globals = {}
+        # self.locals = self.globals = {}
         self.body = []
-        self.future_imports = set()
+        # self.future_imports = set()
 
     def postinit(self, body=None):
         self.body = body
+
+    @property
+    def globals(self):
+        return get_locals(self, collections.defaultdict(list))
+
+    @property
+    def future_imports(self):
+        return get_locals(self, collections.defaultdict(list))['__future__']
 
     def _get_stream(self):
         if self.file_bytes is not None:
@@ -514,12 +532,12 @@ class ComprehensionScope(LocalsDictNodeNG):
 
 class GeneratorExp(ComprehensionScope):
     _astroid_fields = ('elt', 'generators')
-    _other_other_fields = ('locals',)
+    # _other_other_fields = ('locals',)
     elt = None
     generators = None
 
     def __init__(self, lineno=None, col_offset=None, parent=None):
-        self.locals = {}
+        # self.locals = {}
         super(GeneratorExp, self).__init__(lineno, col_offset, parent)
 
     def postinit(self, elt=None, generators=None):
@@ -535,13 +553,13 @@ class GeneratorExp(ComprehensionScope):
 
 class DictComp(ComprehensionScope):
     _astroid_fields = ('key', 'value', 'generators')
-    _other_other_fields = ('locals',)
+    # _other_other_fields = ('locals',)
     key = None
     value = None
     generators = None
 
     def __init__(self, lineno=None, col_offset=None, parent=None):
-        self.locals = {}
+        # self.locals = {}
         super(DictComp, self).__init__(lineno, col_offset, parent)
 
     def postinit(self, key=None, value=None, generators=None):
@@ -558,12 +576,12 @@ class DictComp(ComprehensionScope):
 
 class SetComp(ComprehensionScope):
     _astroid_fields = ('elt', 'generators')
-    _other_other_fields = ('locals',)
+    # _other_other_fields = ('locals',)
     elt = None
     generators = None
 
     def __init__(self, lineno=None, col_offset=None, parent=None):
-        self.locals = {}
+        # self.locals = {}
         super(SetComp, self).__init__(lineno, col_offset, parent)
 
     def postinit(self, elt=None, generators=None):
@@ -594,10 +612,10 @@ class _ListComp(bases.NodeNG):
 if six.PY3:
     class ListComp(_ListComp, ComprehensionScope):
         """class representing a ListComp node"""
-        _other_other_fields = ('locals',)
+        # _other_other_fields = ('locals',)
 
         def __init__(self, lineno=None, col_offset=None, parent=None):
-            self.locals = {}
+            # self.locals = {}
             super(ListComp, self).__init__(lineno, col_offset, parent)
 else:
     class ListComp(_ListComp):
@@ -637,7 +655,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
     type = 'function'
 
     def __init__(self, lineno=None, col_offset=None, parent=None):
-        self.locals = {}
+        # self.locals = {}
         self.args = []
         self.body = []
         super(Lambda, self).__init__(lineno, col_offset, parent)
@@ -701,7 +719,8 @@ class FunctionDef(bases.Statement, Lambda):
     is_function = True
     # attributes below are set by the builder module or by raw factories
     _other_fields = ('name', 'doc')
-    _other_other_fields = ('locals', '_type')
+    # _other_other_fields = ('locals', '_type')
+    _other_other_fields = ('_type')
     _type = None
 
     def __init__(self, name=None, doc=None, lineno=None,
@@ -710,9 +729,9 @@ class FunctionDef(bases.Statement, Lambda):
         self.doc = doc
         self.instance_attrs = {}
         super(FunctionDef, self).__init__(lineno, col_offset, parent)
-        if parent:
-            frame = parent.frame()
-            frame.set_local(name, self)
+        # if parent:
+        #     frame = parent.frame()
+        #     frame.set_local(name, self)
 
     # pylint: disable=arguments-differ; different than Lambdas
     def postinit(self, args, body, decorators=None, returns=None):
@@ -1074,20 +1093,21 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
                     doc="class'type, possible values are 'class' | "
                     "'metaclass' | 'exception'")
     _other_fields = ('name', 'doc')
-    _other_other_fields = ('locals', '_newstyle')
+    # _other_other_fields = ('locals', '_newstyle')
+    _other_other_fields = ('_newstyle')
     _newstyle = None
 
     def __init__(self, name=None, doc=None, lineno=None,
                  col_offset=None, parent=None):
         self.instance_attrs = {}
-        self.locals = {}
+        # self.locals = {}
         self.bases = []
         self.body = []
         self.name = name
         self.doc = doc
         super(ClassDef, self).__init__(lineno, col_offset, parent)
-        if parent is not None:
-            parent.frame().set_local(name, self)
+        # if parent is not None:
+        #     parent.frame().set_local(name, self)
 
     def postinit(self, bases, body, decorators, newstyle=None, metaclass=None):
         self.bases = bases
@@ -1725,6 +1745,87 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
 
     def bool_value(self):
         return True
+
+
+@_singledispatch
+def get_locals(node, locals_):
+    pass
+
+# pylint: disable=unused-variable; doesn't understand singledispatch
+@get_locals.register(bases.NodeNG)
+def locals_generic(node, locals_):
+    for n in node.get_children():
+        get_locals(n, locals_)
+    return locals_
+
+# pylint: disable=unused-variable; doesn't understand singledispatch
+@get_locals.register(node_classes.AssignName)
+@get_locals.register(node_classes.DelName)
+def locals_name(node, locals_):
+    locals_[node.name].append(node)
+
+# pylint: disable=unused-variable; doesn't understand singledispatch
+@get_locals.register(node_classes.Arguments)
+def locals_arguments(node, locals_):
+    locals_[node.vararg].append(node)
+    locals_[node.kwarg].append(node)
+
+# pylint: disable=unused-variable; doesn't understand singledispatch
+@get_locals.register(node_classes.Import)
+def locals_import(node, locals_):
+    for name, asname in node.names:
+        name = asname or name
+        locals_[name.split('.')[0]].append(node)
+
+# pylint: disable=unused-variable; doesn't understand singledispatch
+@get_locals.register(node_classes.ImportFrom)
+def locals_import_from(node, locals_):
+    _key_func = lambda node: node.fromlineno
+    def sort_locals(my_list):
+        my_list.sort(key=_key_func)
+
+    for name, asname in node.names:
+        if name == '*':
+            try:
+                imported = node.do_import_module()
+            except exceptions.InferenceError:
+                continue
+            for name in imported.wildcard_import_names():
+                locals_[name].append(node)
+                sort_locals(locals_[name])
+        else:
+            locals_[asname or name].append(node)
+            sort_locals(locals_[asname or name])
+
+# pylint: disable=unused-variable; doesn't understand singledispatch
+@get_locals.register(FunctionDef)
+@get_locals.register(ClassDef)
+def locals_class_function(node, locals_):
+    locals_[node.name].append(node)
+    return locals_
+
+# pylint: disable=unused-variable; doesn't understand singledispatch
+@get_locals.register(AssignAttr)
+def locals(node, locals_):
+    try:
+        inferred = tuple()
+        for inferred in node.expr.infer():
+            if (inferred is util.YES or isinstance(inferred, bases.Instance)
+                or inferred.is_function):
+                continue
+            else:
+                if hasattr(inferred, 'locals'):
+                    values = inferred.locals[node.attrname]
+                    if node in values:
+                        continue
+                    else:
+                        if (frame.name == '__init__' and values and
+                            not values[0].frame().name == '__init__'):
+                            values.insert(0, node)
+                        else:
+                            values.append(node)
+    except exceptions.InferenceError:
+        pass
 
 
 # Backwards-compatibility aliases

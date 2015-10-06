@@ -189,10 +189,10 @@ class TreeRebuilder(object):
         newnode.postinit(args, defaults, kwonlyargs, kw_defaults,
                          annotations, varargannotation, kwargannotation)
         # save argument names in locals:
-        if vararg:
-            newnode.parent.set_local(vararg, newnode)
-        if kwarg:
-            newnode.parent.set_local(kwarg, newnode)
+        # if vararg:
+        #     newnode.parent.set_local(vararg, newnode)
+        # if kwarg:
+        #     newnode.parent.set_local(kwarg, newnode)
         return newnode
 
     def visit_assignattr(self, node, parent, assign_ctx=None):
@@ -226,7 +226,7 @@ class TreeRebuilder(object):
         # maintain consistency with the other visit functions.
         newnode = nodes.AssignName(node_name, getattr(node, 'lineno', None),
                                    getattr(node, 'col_offset', None), parent)
-        self._save_assignment(newnode)
+        # self._save_assignment(newnode)
         return newnode
 
     def visit_augassign(self, node, parent, assign_ctx=None):
@@ -555,9 +555,9 @@ class TreeRebuilder(object):
         newnode = nodes.Import(names, getattr(node, 'lineno', None),
                                getattr(node, 'col_offset', None), parent)
         # save import names in parent's locals:
-        for (name, asname) in newnode.names:
-            name = asname or name
-            parent.set_local(name.split('.')[0], newnode)
+        # for (name, asname) in newnode.names:
+        #     name = asname or name
+        #     parent.set_local(name.split('.')[0], newnode)
         return newnode
 
     def visit_index(self, node, parent, assign_ctx=None):
@@ -613,8 +613,8 @@ class TreeRebuilder(object):
         else:
             newnode = nodes.Name(node.id, node.lineno, node.col_offset, parent)
         # XXX REMOVE me :
-        if assign_ctx in ('Del', 'Assign'): # 'Aug' ??
-            self._save_assignment(newnode)
+        # if assign_ctx in ('Del', 'Assign'): # 'Aug' ??
+        #     self._save_assignment(newnode)
         return newnode
 
     def visit_str(self, node, parent, assign_ctx=None):
