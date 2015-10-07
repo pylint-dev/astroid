@@ -282,9 +282,8 @@ def _arguments_infer_argname(self, name, context):
             return
 
     if context and context.callcontext:
-        inferator = arguments.ArgumentInference(context.callcontext.args,
-                                                context.callcontext.keywords)
-        for value in inferator.infer_argument(self.parent, name, context):
+        call_site = arguments.CallSite(context.callcontext)
+        for value in call_site.infer_argument(self.parent, name, context):
             yield value
         return
 
@@ -316,10 +315,8 @@ def arguments_assigned_stmts(self, node, context, asspath=None):
         callcontext = context.callcontext
         context = contextmod.copy_context(context)
         context.callcontext = None
-        inferator = arguments.ArgumentInference(
-            callcontext.args,
-            callcontext.keywords)
-        return inferator.infer_argument(self.parent, node.name, context)
+        args = arguments.CallSite(callcontext)
+        return args.infer_argument(self.parent, node.name, context)
     return _arguments_infer_argname(self, node.name, context)
 
 nodes.Arguments.assigned_stmts = arguments_assigned_stmts
