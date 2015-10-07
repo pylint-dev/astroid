@@ -31,7 +31,6 @@ from astroid.inference import infer_end as inference_infer_end
 from astroid.bases import Instance, BoundMethod, UnboundMethod,\
                                 path_wrapper, BUILTINS
 from astroid import arguments
-from astroid import context
 from astroid import helpers
 from astroid import objects
 from astroid import test_utils
@@ -3721,18 +3720,18 @@ class CallSiteTest(unittest.TestCase):
     def test_call_site_starred_args(self):
         pairs = [
             (
-               "f(*(1, 2), *(2, 3), *(3, 4), **{'a':1}, **{'b': 2})",
-               [1, 2, 2, 3, 3, 4],
-               {'a': 1, 'b': 2}
+                "f(*(1, 2), *(2, 3), *(3, 4), **{'a':1}, **{'b': 2})",
+                [1, 2, 2, 3, 3, 4],
+                {'a': 1, 'b': 2}
             ),
             (
-               "f(1, 2, *(3, 4), 5, *(6, 7), f=24, **{'c':3})",
-               [1, 2, 3, 4, 5, 6, 7],
-               {'f':24, 'c': 3},
+                "f(1, 2, *(3, 4), 5, *(6, 7), f=24, **{'c':3})",
+                [1, 2, 3, 4, 5, 6, 7],
+                {'f':24, 'c': 3},
             ),
             # Too many fs passed into.
             (
-               "f(f=24, **{'f':24})", [], {},
+                "f(f=24, **{'f':24})", [], {},
             ),
         ]
         self._test_call_site(pairs)
@@ -3740,13 +3739,13 @@ class CallSiteTest(unittest.TestCase):
     def test_call_site(self):
         pairs = [
             (
-               "f(1, 2)", [1, 2], {}
+                "f(1, 2)", [1, 2], {}
             ),
             (
-               "f(1, 2, *(1, 2))", [1, 2, 1, 2], {}
+                "f(1, 2, *(1, 2))", [1, 2, 1, 2], {}
             ),
             (
-               "f(a=1, b=2, c=3)", [], {'a':1, 'b':2, 'c':3}
+                "f(a=1, b=2, c=3)", [], {'a':1, 'b':2, 'c':3}
             )
         ]
         self._test_call_site(pairs)
@@ -3765,7 +3764,7 @@ class CallSiteTest(unittest.TestCase):
         values = [
             "f()", "f(*(1, ))", "f(1, 2, *(2, 3))",
         ]
-        self._test_call_site_valid_arguments(values, invalid=False)          
+        self._test_call_site_valid_arguments(values, invalid=False)
 
 
 if __name__ == '__main__':
