@@ -38,8 +38,7 @@ class CallSite(object):
     def __init__(self, callcontext):
         args = callcontext.args
         keywords = callcontext.keywords
-
-        self._duplicated_kwargs = {}
+        self.duplicated_keywords = set()
         self._unpacked_args = self._unpack_args(args)
         self._unpacked_kwargs = self._unpack_keywords(keywords)
 
@@ -111,7 +110,7 @@ class CallSite(object):
                     if dict_key.value in values:
                         # The name is already in the dictionary
                         values[dict_key.value] = util.YES
-                        self._duplicated_kwargs[dict_key.value] = True
+                        self.duplicated_keywords.add(dict_key.value)
                         continue
                     values[dict_key.value] = dict_value
             else:
@@ -143,7 +142,7 @@ class CallSite(object):
 
     def infer_argument(self, funcnode, name, context):
         """infer a function argument value according to the call context"""
-        if name in self._duplicated_kwargs:
+        if name in self.duplicated_keywords:
             raise exceptions.InferenceError(name)
 
         # Look into the keywords first, maybe it's already there.

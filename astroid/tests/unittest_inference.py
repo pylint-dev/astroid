@@ -3766,6 +3766,11 @@ class CallSiteTest(unittest.TestCase):
         ]
         self._test_call_site_valid_arguments(values, invalid=False)
 
+    def test_duplicated_keyword_arguments(self):
+        ast_node = test_utils.extract_node('f(f=24, **{"f": 25})')
+        site = self._call_site_from_call(ast_node)
+        self.assertIn('f', site.duplicated_keywords)
+
 
 if __name__ == '__main__':
     unittest.main()
