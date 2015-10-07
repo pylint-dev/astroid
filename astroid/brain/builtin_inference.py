@@ -7,6 +7,7 @@ from textwrap import dedent
 import six
 from astroid import (MANAGER, UseInferenceDefault, NotFoundError,
                      inference_tip, InferenceError, UnresolvableName)
+from astroid import arguments
 from astroid.builder import AstroidBuilder
 from astroid import helpers
 from astroid import nodes
@@ -229,25 +230,34 @@ def infer_dict(node, context=None):
 
     If a case can't be inferred, we'll fallback to default inference.
     """
-    if not node.args and not node.keywords:
+    call = arguments.CallSite.from_call(node)
+    if call.has_invalid_arguments() or call.has_invalid_keywords():
+        raise UseInferenceDefault
+
+    args = call.positional_arguments
+    kwargs = list(call.keyword_arguments.items())
+
+    if not args and not kwargs:
         # dict()
         return nodes.Dict()
-    elif node.keywords and not node.args:
+    elif kwargs and not args:
         # dict(a=1, b=2, c=4)
-        items = [(nodes.Const(arg.arg), arg.value) for arg in node.keywords]
-    elif len(node.args) == 1 and node.keywords:
+        items = [(nodes.Const(key), value) for key, value in kwargs]
+    elif len(args) == 1 and kwargs:
         # dict(some_iterable, b=2, c=4)
-        elts = _get_elts(node.args[0], context)
-        keys = [(nodes.Const(arg.arg), arg.value) for arg in node.keywords]
+        elts = _get_elts(args[0], context)
+        keys = [(nodes.Const(key), value) for key, value in kwargs]
         items = elts + keys
-    elif len(node.args) == 1:
-        items = _get_elts(node.args[0], context)
+    elif len(args) == 1:
+        items = _get_elts(args[0], context)
     else:
         raise UseInferenceDefault()
 
-    empty = nodes.Dict()
-    empty.items = items
-    return empty
+    value = nodes.Dict(col_offset=node.col_offset,
+                       lineno=node.lineno,
+                       parent=node.parent)
+    value.postinit(items)
+    return value
 
 
 def infer_super(node, context=None):
