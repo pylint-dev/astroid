@@ -26,18 +26,18 @@ import six
 
 
 class ArgumentInference(object):
-    """Class for understanding arguments passed to functions
+    """Class for understanding arguments passed into a call site
 
-    It needs a call context, an object which has the arguments
-    and the keyword arguments that were passed into a given call site.
-    After that, in order to infer what an argument represents, call
+    It needs the arguments and the keyword arguments that were
+    passed into a given call site.
+    In order to infer what an argument represents, call
     :meth:`infer_argument` with the corresponding function node
     and the argument name.
     """
 
-    def __init__(self, callcontext):
-        self._args = self._unpack_args(callcontext.args)
-        self._keywords = self._unpack_keywords(callcontext.keywords)
+    def __init__(self, args, keywords):
+        self._args = self._unpack_args(args)
+        self._keywords = self._unpack_keywords(keywords)
         args = [arg for arg in self._args if arg is not util.YES]
         keywords = {key: value for key, value in self._keywords.items()
                     if value is not util.YES}
