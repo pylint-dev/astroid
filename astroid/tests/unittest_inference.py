@@ -30,6 +30,8 @@ from astroid.builder import parse
 from astroid.inference import infer_end as inference_infer_end
 from astroid.bases import Instance, BoundMethod, UnboundMethod,\
                                 path_wrapper, BUILTINS
+from astroid import arguments
+from astroid import context
 from astroid import helpers
 from astroid import objects
 from astroid import test_utils
@@ -3588,6 +3590,19 @@ class ArgumentsTest(unittest.TestCase):
         value = self._get_dict_value(inferred)
         self.assertEqual(value, expected_value)
 
+    def test_kwargs_are_overriden(self):
+        ast_nodes = test_utils.extract_node('''
+        def test(f):
+             return f
+        test(f=23, **{'f': 34}) #@
+        def test(f=None):
+             return f
+        test(f=23, **{'f':23}) #@
+        ''')
+        for ast_node in ast_nodes:
+            inferred = next(ast_node.infer())
+            self.assertEqual(inferred, util.YES)
+
     def test_fail_to_infer_args(self):
         ast_nodes = test_utils.extract_node('''
         def test(a, **kwargs): return a
@@ -3679,6 +3694,78 @@ class SliceTest(unittest.TestCase):
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, 'slice')
+
+
+class CallSiteTest(unittest.TestCase):
+
+    @staticmethod
+    def _call_site_from_call(call):
+        return arguments.CallSite.from_call(call)
+
+    def _test_call_site_pair(self, code, expected_args, expected_keywords):
+        ast_node = test_utils.extract_node(code)
+        call_site = self._call_site_from_call(ast_node)
+        self.assertEqual(len(call_site.positional_arguments), len(expected_args))
+        self.assertEqual([arg.value for arg in call_site.positional_arguments],
+                         expected_args)
+        self.assertEqual(len(call_site.keyword_arguments), len(expected_keywords))
+        for keyword, value in expected_keywords.items():
+            self.assertIn(keyword, call_site.keyword_arguments)
+            self.assertEqual(call_site.keyword_arguments[keyword].value, value)
+
+    def _test_call_site(self, pairs):
+        for pair in pairs:
+            self._test_call_site_pair(*pair)
+
+    @test_utils.require_version('3.5')
+    def test_call_site_starred_args(self):
+        pairs = [
+            (
+               "f(*(1, 2), *(2, 3), *(3, 4), **{'a':1}, **{'b': 2})",
+               [1, 2, 2, 3, 3, 4],
+               {'a': 1, 'b': 2}
+            ),
+            (
+               "f(1, 2, *(3, 4), 5, *(6, 7), f=24, **{'c':3})",
+               [1, 2, 3, 4, 5, 6, 7],
+               {'f':24, 'c': 3},
+            ),
+            # Too many fs passed into.
+            (
+               "f(f=24, **{'f':24})", [], {},
+            ),
+        ]
+        self._test_call_site(pairs)
+
+    def test_call_site(self):
+        pairs = [
+            (
+               "f(1, 2)", [1, 2], {}
+            ),
+            (
+               "f(1, 2, *(1, 2))", [1, 2, 1, 2], {}
+            ),
+            (
+               "f(a=1, b=2, c=3)", [], {'a':1, 'b':2, 'c':3}
+            )
+        ]
+        self._test_call_site(pairs)
+
+    def _test_call_site_valid_arguments(self, values, invalid):
+        for value in values:
+            ast_node = test_utils.extract_node(value)
+            call_site = self._call_site_from_call(ast_node)
+            self.assertEqual(call_site.has_invalid_arguments(), invalid)
+
+    def test_call_site_valid_arguments(self):
+        values = [
+            "f(*lala)", "f(*1)", "f(*object)",
+        ]
+        self._test_call_site_valid_arguments(values, invalid=True)
+        values = [
+            "f()", "f(*(1, ))", "f(1, 2, *(2, 3))",
+        ]
+        self._test_call_site_valid_arguments(values, invalid=False)          
 
 
 if __name__ == '__main__':

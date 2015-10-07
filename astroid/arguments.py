@@ -25,29 +25,61 @@ from astroid import util
 import six
 
 
-class ArgumentInference(object):
+class CallSite(object):
     """Class for understanding arguments passed into a call site
 
-    It needs the arguments and the keyword arguments that were
-    passed into a given call site.
+    It needs a call context, which contains the arguments and the
+    keyword arguments that were passed into a given call site.
     In order to infer what an argument represents, call
     :meth:`infer_argument` with the corresponding function node
     and the argument name.
     """
 
-    def __init__(self, args, keywords):
-        self._args = self._unpack_args(args)
-        self._keywords = self._unpack_keywords(keywords)
-        args = [arg for arg in self._args if arg is not util.YES]
-        keywords = {key: value for key, value in self._keywords.items()
-                    if value is not util.YES}
-        self._args_failure = len(args) != len(self._args)
-        self._kwargs_failure = len(keywords) != len(self._keywords)
-        self._args = args
-        self._keywords = keywords
+    def __init__(self, callcontext):
+        args = callcontext.args
+        keywords = callcontext.keywords
 
-    @staticmethod
-    def _unpack_keywords(keywords):
+        self._duplicated_kwargs = {}
+        self._unpacked_args = self._unpack_args(args)
+        self._unpacked_kwargs = self._unpack_keywords(keywords)
+
+        self.positional_arguments = [
+            arg for arg in self._unpacked_args
+            if arg is not util.YES
+        ]
+        self.keyword_arguments = {
+            key: value for key, value in self._unpacked_kwargs.items()
+            if value is not util.YES
+        }
+
+    @classmethod
+    def from_call(cls, call_node):
+        """Get a CallSite object from the given Call node."""
+        callcontext = contextmod.CallContext(call_node.args,
+                                             call_node.keywords)
+        return cls(callcontext)
+
+    def has_invalid_arguments(self):
+        """Check if in the current CallSite were passed *invalid* arguments
+
+        This can mean multiple things. For instance, if an unpacking
+        of an invalid object was passed, then this method will return True.
+        Other cases can be when the arguments can't be inferred by astroid,
+        for example, by passing objects which aren't known statically.
+        """
+        return len(self.positional_arguments) != len(self._unpacked_args)
+
+    def has_invalid_keywords(self):
+        """Check if in the current CallSite were passed *invalid* keyword arguments
+
+        For instance, unpacking a dictionary with integer keys is invalid
+        (**{1:2}), because the keys must be strings, which will make this
+        method to return True. Other cases where this might return True if
+        objects which can't be inferred were passed.
+        """
+        return len(self.keyword_arguments) != len(self._unpacked_kwargs)
+
+    def _unpack_keywords(self, keywords):
         values = {}
         context = contextmod.InferenceContext()
         for name, value in keywords:
@@ -78,7 +110,8 @@ class ArgumentInference(object):
                         continue
                     if dict_key.value in values:
                         # The name is already in the dictionary
-                        values[name] = util.YES
+                        values[dict_key.value] = util.YES
+                        self._duplicated_kwargs[dict_key.value] = True
                         continue
                     values[dict_key.value] = dict_value
             else:
@@ -110,23 +143,28 @@ class ArgumentInference(object):
 
     def infer_argument(self, funcnode, name, context):
         """infer a function argument value according to the call context"""
+        if name in self._duplicated_kwargs:
+            raise exceptions.InferenceError(name)
+
         # Look into the keywords first, maybe it's already there.
         try:
-            return self._keywords[name].infer(context)
+            return self.keyword_arguments[name].infer(context)
         except KeyError:
             pass
 
         # Too many arguments given and no variable arguments.
-        if len(self._args) > len(funcnode.args.args):
+        if len(self.positional_arguments) > len(funcnode.args.args):
             if not funcnode.args.vararg:
                 raise exceptions.InferenceError(name)
 
-        positional = self._args[:len(funcnode.args.args)]
-        vararg = self._args[len(funcnode.args.args):]
+        positional = self.positional_arguments[:len(funcnode.args.args)]
+        vararg = self.positional_arguments[len(funcnode.args.args):]
         argindex = funcnode.args.find_argname(name)[0]
         kwonlyargs = set(arg.name for arg in funcnode.args.kwonlyargs)
-        kwargs = {key: value for key, value in self._keywords.items()
-                  if key not in kwonlyargs}
+        kwargs = {
+            key: value for key, value in self.keyword_arguments.items()
+            if key not in kwonlyargs
+        }
         # If there are too few positionals compared to
         # what the function expects to receive, check to see
         # if the missing positional arguments were passed
@@ -159,14 +197,14 @@ class ArgumentInference(object):
                 argindex -= 1
             # 2. search arg index
             try:
-                return self._args[argindex].infer(context)
+                return self.positional_arguments[argindex].infer(context)
             except IndexError:
                 pass
 
         if funcnode.args.kwarg == name:
             # It wants all the keywords that were passed into
             # the call site.
-            if self._kwargs_failure:
+            if self.has_invalid_keywords():
                 raise exceptions.InferenceError
             kwarg = nodes.Dict(lineno=funcnode.args.lineno,
                                col_offset=funcnode.args.col_offset,
@@ -177,7 +215,7 @@ class ArgumentInference(object):
         elif funcnode.args.vararg == name:
             # It wants all the args that were passed into
             # the call site.
-            if self._args_failure:
+            if self.has_invalid_arguments():
                 raise exceptions.InferenceError
             args = nodes.Tuple(lineno=funcnode.args.lineno,
                                col_offset=funcnode.args.col_offset,
