@@ -1627,6 +1627,32 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertIsInstance(inferred, Instance)
             self.assertEqual(inferred.qname(), "{}.dict".format(BUILTINS))
 
+    def test_dict_inference_kwargs(self):
+        ast_node = test_utils.extract_node('''dict(a=1, b=2, **{'c': 3})''')
+        self.assertInferDict(ast_node, {'a': 1, 'b': 2, 'c': 3})
+
+    @test_utils.require_version('3.5')
+    def test_dict_inference_for_multiple_starred(self):
+        pairs = [
+            ('dict(a=1, **{"b": 2}, **{"c":3})', {'a':1, 'b':2, 'c':3}),
+            ('dict(a=1, **{"b": 2}, d=4, **{"c":3})', {'a':1, 'b':2, 'c':3, 'd':4}),
+            ('dict({"a":1}, b=2, **{"c":3})', {'a':1, 'b':2, 'c':3}),
+        ]
+        for code, expected_value in pairs:
+            node = test_utils.extract_node(code)
+            self.assertInferDict(node, expected_value)
+
+    def test_dict_invalid_args(self):
+        invalid_values = [
+            'dict(*1)',
+            'dict(**lala)',
+            'dict(**[])',
+        ]
+        for invalid in invalid_values:
+            ast_node = test_utils.extract_node(invalid)
+            inferred = next(ast_node.infer())
+            self.assertIsInstance(inferred, Instance)
+            self.assertEqual(inferred.qname(), "{}.dict".format(BUILTINS))
 
     def test_str_methods(self):
         code = """
