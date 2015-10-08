@@ -27,6 +27,7 @@ from __future__ import print_function
 import collections
 import io
 import itertools
+import types
 import warnings
 
 try:
@@ -157,7 +158,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, bases.NodeNG):
 
     @property
     def locals(self):
-        return get_locals(self, collections.defaultdict(list))
+        return types.MappingProxyType(get_locals(self))
 
     def qname(self):
         """return the 'qualified' name of the node, eg module.name,
@@ -195,15 +196,18 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, bases.NodeNG):
             return pscope.scope_lookup(node, name)
         return builtin_lookup(name) # Module
 
-    def set_local(self, name, stmt):
-        """define <name> in locals (<stmt> is the node defining the name)
-        if the node is a Module node (i.e. has globals), add the name to
-        globals
+    def set_local(self):
+        raise Exception('Attempted locals mutation.')
 
-        if the name is already defined, ignore it
-        """
-        #assert not stmt in self.locals.get(name, ()), (self, stmt)
-        self.locals.setdefault(name, []).append(stmt)
+    # def set_local(self, name, stmt):
+    #     """define <name> in locals (<stmt> is the node defining the name)
+    #     if the node is a Module node (i.e. has globals), add the name to
+    #     globals
+
+    #     if the name is already defined, ignore it
+    #     """
+    #     #assert not stmt in self.locals.get(name, ()), (self, stmt)
+    #     self.locals.setdefault(name, []).append(stmt)
 
     __setitem__ = set_local
 
@@ -233,26 +237,26 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, bases.NodeNG):
         """method from the `dict` interface returning an iterator on
         `self.keys()`
         """
-        return iter(get_locals(self, collections.defaultdict(list)).keys())
+        return iter(self.locals(self))
 
     def keys(self):
         """method from the `dict` interface returning a tuple containing
         locally defined names
         """
-        return get_locals(self, collections.defaultdict(list)).keys()
+        return self.locals.keys()
 
     def values(self):
         """method from the `dict` interface returning a tuple containing
         locally defined nodes which are instance of `FunctionDef` or `ClassDef`
         """
-        return get_locals(self, collections.defaultdict(list)).values()
+        return self.locals.values()
 
     def items(self):
         """method from the `dict` interface returning a list of tuple
         containing each locally defined name with its associated node,
         which is an instance of `FunctionDef` or `ClassDef`
         """
-        return get_locals(self, collections.defaultdict(list)).items()
+        return self.locals.items()
 
     def __contains__(self, name):
         return name in self.locals
@@ -315,11 +319,11 @@ class Module(LocalsDictNodeNG):
 
     @property
     def globals(self):
-        return get_locals(self, collections.defaultdict(list))
+        return types.MappingProxyType(get_locals(self))
 
     @property
     def future_imports(self):
-        return get_locals(self, collections.defaultdict(list))['__future__']
+        return frozenset(get_locals(self)['__future__'])
 
     def _get_stream(self):
         if self.file_bytes is not None:
@@ -664,6 +668,10 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         self.args = args
         self.body = body
 
+    @property
+    def instance_attrs(self):
+        return types.MappingProxyType(util.get_external_assignments(self.root(), self, collections.defaultdict(list)))
+
     def pytype(self):
         if 'method' in self.type:
             return '%s.instancemethod' % BUILTINS
@@ -727,7 +735,7 @@ class FunctionDef(bases.Statement, Lambda):
                  col_offset=None, parent=None):
         self.name = name
         self.doc = doc
-        self.instance_attrs = {}
+        # self.instance_attrs = {}
         super(FunctionDef, self).__init__(lineno, col_offset, parent)
         # if parent:
         #     frame = parent.frame()
@@ -1099,7 +1107,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
 
     def __init__(self, name=None, doc=None, lineno=None,
                  col_offset=None, parent=None):
-        self.instance_attrs = {}
+        # self.instance_attrs = {}
         # self.locals = {}
         self.bases = []
         self.body = []
@@ -1117,6 +1125,10 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
             self._newstyle = newstyle
         if metaclass is not None:
             self._metaclass = metaclass
+
+    @property
+    def locals(self):
+        return types.MappingProxyType(util.get_external_assignments(self.root(), self, get_locals(self)))
 
     def _newstyle_impl(self, context=None):
         if context is None:
@@ -1747,38 +1759,50 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
         return True
 
 
+def get_locals(node):
+    locals_ = collections.defaultdict(list)
+    for n in node.get_children():
+        _get_locals(n, locals_)
+    return locals_
+
 @_singledispatch
-def get_locals(node, locals_):
+def _get_locals(node, locals_):
     pass
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
-@get_locals.register(bases.NodeNG)
+@_get_locals.register(bases.NodeNG)
 def locals_generic(node, locals_):
     for n in node.get_children():
-        get_locals(n, locals_)
-    return locals_
+        _get_locals(n, locals_)
+
+# # pylint: disable=unused-variable; doesn't understand singledispatch
+@_get_locals.register(LocalsDictNodeNG)
+def locals_new_scope(node, locals_):
+    pass
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
-@get_locals.register(node_classes.AssignName)
-@get_locals.register(node_classes.DelName)
+@_get_locals.register(node_classes.AssignName)
+@_get_locals.register(node_classes.DelName)
+@_get_locals.register(FunctionDef)
+@_get_locals.register(ClassDef)
 def locals_name(node, locals_):
     locals_[node.name].append(node)
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
-@get_locals.register(node_classes.Arguments)
+@_get_locals.register(node_classes.Arguments)
 def locals_arguments(node, locals_):
     locals_[node.vararg].append(node)
     locals_[node.kwarg].append(node)
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
-@get_locals.register(node_classes.Import)
+@_get_locals.register(node_classes.Import)
 def locals_import(node, locals_):
     for name, asname in node.names:
         name = asname or name
         locals_[name.split('.')[0]].append(node)
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
-@get_locals.register(node_classes.ImportFrom)
+@_get_locals.register(node_classes.ImportFrom)
 def locals_import_from(node, locals_):
     _key_func = lambda node: node.fromlineno
     def sort_locals(my_list):
@@ -1796,36 +1820,6 @@ def locals_import_from(node, locals_):
         else:
             locals_[asname or name].append(node)
             sort_locals(locals_[asname or name])
-
-# pylint: disable=unused-variable; doesn't understand singledispatch
-@get_locals.register(FunctionDef)
-@get_locals.register(ClassDef)
-def locals_class_function(node, locals_):
-    locals_[node.name].append(node)
-    return locals_
-
-# pylint: disable=unused-variable; doesn't understand singledispatch
-@get_locals.register(AssignAttr)
-def locals(node, locals_):
-    try:
-        inferred = tuple()
-        for inferred in node.expr.infer():
-            if (inferred is util.YES or isinstance(inferred, bases.Instance)
-                or inferred.is_function):
-                continue
-            else:
-                if hasattr(inferred, 'locals'):
-                    values = inferred.locals[node.attrname]
-                    if node in values:
-                        continue
-                    else:
-                        if (frame.name == '__init__' and values and
-                            not values[0].frame().name == '__init__'):
-                            values.insert(0, node)
-                        else:
-                            values.append(node)
-    except exceptions.InferenceError:
-        pass
 
 
 # Backwards-compatibility aliases

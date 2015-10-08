@@ -151,14 +151,14 @@ class AstroidBuilder(raw_building.InspectBuilder):
         module.file_encoding = encoding
         self._manager.cache_module(module)
         # post tree building steps after we stored the module in the cache:
-        for from_node in module._import_from_nodes:
-            if from_node.modname == '__future__':
-                for symbol, _ in from_node.names:
-                    module.future_imports.add(symbol)
-            self.add_from_names_to_locals(from_node)
-        # handle delayed assattr nodes
-        for delayed in module._delayed_assattr:
-            self.delayed_assattr(delayed)
+        # for from_node in module._import_from_nodes:
+        #     if from_node.modname == '__future__':
+        #         for symbol, _ in from_node.names:
+        #             module.future_imports.add(symbol)
+        #     self.add_from_names_to_locals(from_node)
+        # # handle delayed assattr nodes
+        # for delayed in module._delayed_assattr:
+        #     self.delayed_assattr(delayed)
 
         # Visit the transforms
         if self._apply_transforms:

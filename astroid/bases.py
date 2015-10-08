@@ -25,6 +25,7 @@ import collections
 import functools
 import pprint
 import sys
+import types
 import warnings
 
 try:
@@ -38,6 +39,7 @@ from astroid import as_string
 from astroid import context as contextmod
 from astroid import decorators as decoratorsmod
 from astroid import exceptions
+from astroid import scoped_nodes
 from astroid import util
 
 
@@ -273,6 +275,10 @@ class Instance(Proxy):
     # pylint: disable=unused-argument
     def getitem(self, index, context=None):
         pass
+
+    @property
+    def instance_attrs(self):
+        return types.MappingProxyType(util.get_external_assignments(self.root(), self, collections.defaultdict(list)))
 
 
 
