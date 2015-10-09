@@ -294,7 +294,7 @@ def infer_enum(node, context=None):
     enum_meta = nodes.ClassDef("EnumMeta", 'docstring')
     class_node = infer_func_form(node, enum_meta,
                                  context=context, enum=True)[0]
-    return iter([class_node.instanciate_class()])
+    return iter([class_node])
 
 
 def infer_enum_class(node):

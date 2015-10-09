@@ -414,6 +414,18 @@ class EnumBrainTest(unittest.TestCase):
         self.assertTrue(clazz.is_subtype_of(int_type),
                         'IntEnum based enums should be a subtype of int')
 
+    def test_enum_func_form_is_class_not_instance(self):
+        cls, instance = test_utils.extract_node('''
+        from enum import Enum
+        f = Enum('Audience', ['a', 'b', 'c'])
+        f #@
+        f() #@
+        ''')
+        inferred_cls = next(cls.infer())
+        self.assertIsInstance(inferred_cls, nodes.ClassDef)
+        inferred_instance = next(instance.infer())
+        self.assertIsInstance(inferred_instance, bases.Instance)        
+
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
 class DateutilBrainTest(unittest.TestCase):
