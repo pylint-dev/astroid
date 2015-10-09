@@ -19,12 +19,17 @@
 # The code in this file was originally part of logilab-common, licensed under
 # the same license.
 
+import importlib
 import sys
 
+import lazy_object_proxy
 import six
 
 from astroid import exceptions
 
+
+def lazy_import(module_name):
+    return lazy_object_proxy.Proxy(lambda: importlib.import_module(module_name))
 
 def reraise(exception):
     '''Reraises an exception with the traceback from the current exception
@@ -47,27 +52,3 @@ class YES(object):
 
     def __call__(self, *args, **kwargs):
         return self
-
-
-def get_external_assignments(root, subject, attributes):
-    stack = [root]
-    while stack:
-        node = stack.pop()
-        stack.extend(node.get_children())
-        if isinstance(node, node_classes.AssignAttr):
-            frame = node.frame()
-            try:
-                for inferred in (n for n in node.expr.infer() if n is subject):
-                    values = attributes[node.attrname]
-                    if node in values:
-                        continue
-                    else:
-                        if (values and frame.is_function and
-                            frame.name == '__init__' and not
-                            values[0].frame().name == '__init__'):
-                            values.insert(0, node)
-                        else:
-                            values.append(node)
-            except exceptions.InferenceError:
-                pass
-    return attributes

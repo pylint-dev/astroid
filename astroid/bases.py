@@ -18,7 +18,6 @@
 """This module contains base classes and functions for the nodes and some
 inference utils.
 """
-
 from __future__ import print_function
 
 import collections
@@ -39,8 +38,9 @@ from astroid import as_string
 from astroid import context as contextmod
 from astroid import decorators as decoratorsmod
 from astroid import exceptions
-from astroid import scoped_nodes
 from astroid import util
+
+scoped_nodes = util.lazy_import('scoped_nodes')
 
 
 if sys.version_info >= (3, 0):
@@ -278,7 +278,7 @@ class Instance(Proxy):
 
     @property
     def instance_attrs(self):
-        return types.MappingProxyType(util.get_external_assignments(self.root(), self, collections.defaultdict(list)))
+        return types.MappingProxyType(scoped_nodes.get_external_assignments(self.root(), self, collections.defaultdict(list)))
 
 
 

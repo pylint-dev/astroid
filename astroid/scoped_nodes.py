@@ -670,7 +670,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
 
     @property
     def instance_attrs(self):
-        return types.MappingProxyType(util.get_external_assignments(self.root(), self, collections.defaultdict(list)))
+        return types.MappingProxyType(get_external_assignments(self.root(), self, collections.defaultdict(list)))
 
     def pytype(self):
         if 'method' in self.type:
@@ -1128,7 +1128,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
 
     @property
     def locals(self):
-        return types.MappingProxyType(util.get_external_assignments(self.root(), self, get_locals(self)))
+        return types.MappingProxyType(get_external_assignments(self.root(), self, get_locals(self)))
 
     def _newstyle_impl(self, context=None):
         if context is None:
@@ -1820,6 +1820,30 @@ def locals_import_from(node, locals_):
         else:
             locals_[asname or name].append(node)
             sort_locals(locals_[asname or name])
+
+
+def get_external_assignments(root, subject, attributes):
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        stack.extend(node.get_children())
+        if isinstance(node, node_classes.AssignAttr):
+            frame = node.frame()
+            try:
+                for inferred in (n for n in node.expr.infer() if n is subject):
+                    values = attributes[node.attrname]
+                    if node in values:
+                        continue
+                    else:
+                        if (values and frame.is_function and
+                            frame.name == '__init__' and not
+                            values[0].frame().name == '__init__'):
+                            values.insert(0, node)
+                        else:
+                            values.append(node)
+            except exceptions.InferenceError:
+                pass
+    return attributes
 
 
 # Backwards-compatibility aliases
