@@ -237,7 +237,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, bases.NodeNG):
         """method from the `dict` interface returning an iterator on
         `self.keys()`
         """
-        return iter(self.locals(self))
+        return iter(self.locals)
 
     def keys(self):
         """method from the `dict` interface returning a tuple containing

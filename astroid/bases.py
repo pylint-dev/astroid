@@ -40,6 +40,7 @@ from astroid import decorators as decoratorsmod
 from astroid import exceptions
 from astroid import util
 
+node_classes = util.lazy_import('node_classes')
 scoped_nodes = util.lazy_import('scoped_nodes')
 
 
@@ -333,10 +334,9 @@ class BoundMethod(UnboundMethod):
         needs to be a tuple of classes and the attributes a dictionary
         of strings to values.
         """
-        from astroid import node_classes
         # Verify the metaclass
         mcs = next(caller.args[0].infer(context=context))
-        if mcs.__class__.__name__ != 'ClassDef':
+        if not isinstance(mcs, scoped_nodes.ClassDef):
             # Not a valid first argument.
             return
         if not mcs.is_subtype_of("%s.type" % BUILTINS):
@@ -345,7 +345,7 @@ class BoundMethod(UnboundMethod):
 
         # Verify the name
         name = next(caller.args[1].infer(context=context))
-        if name.__class__.__name__ != 'Const':
+        if not isinstance(name, node_classes.Const):
             # Not a valid name, needs to be a const.
             return
         if not isinstance(name.value, str):
@@ -354,26 +354,26 @@ class BoundMethod(UnboundMethod):
 
         # Verify the bases
         bases = next(caller.args[2].infer(context=context))
-        if bases.__class__.__name__ != 'Tuple':
+        if not isinstance(bases, node_classes.Tuple):
             # Needs to be a tuple.
             return
         inferred_bases = [next(elt.infer(context=context))
                           for elt in bases.elts]
-        if any(base.__class__.__name__ != 'ClassDef'
+        if not all(isinstance(base, scoped_nodes.ClassDef)
                for base in inferred_bases):
             # All the bases needs to be Classes
             return
 
         # Verify the attributes.
         attrs = next(caller.args[3].infer(context=context))
-        if attrs.__class__.__name__ != 'Dict':
+        if not isinstance(attrs, node_classes.Dict):
             # Needs to be a dictionary.
             return
         cls_locals = collections.defaultdict(list)
         for key, value in attrs.items:
             key = next(key.infer(context=context))
             value = next(value.infer(context=context))
-            if key.__class__.__name__ != 'Const':
+            if not isinstance(key, node_classes.Const):
                 # Something invalid as an attribute.
                 return
             if not isinstance(key.value, str):
@@ -397,7 +397,7 @@ class BoundMethod(UnboundMethod):
         context = context.clone()
         context.boundnode = self.bound
 
-        if (self.bound.__class__.__name__ == 'ClassDef'
+        if (isinstance(self.bound, scoped_nodes.ClassDef)
                 and self.bound.name == 'type'
                 and self.name == '__new__'
                 and len(caller.args) == 4
