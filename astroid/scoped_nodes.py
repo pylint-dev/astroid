@@ -196,7 +196,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, bases.NodeNG):
             return pscope.scope_lookup(node, name)
         return builtin_lookup(name) # Module
 
-    def set_local(self):
+    def set_local(self, name, stmt):
         raise Exception('Attempted locals mutation.')
 
     # def set_local(self, name, stmt):
@@ -670,7 +670,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
 
     @property
     def instance_attrs(self):
-        return types.MappingProxyType(get_external_assignments(self.root(), self, collections.defaultdict(list)))
+        return types.MappingProxyType(get_external_assignments(self, collections.defaultdict(list)))
 
     def pytype(self):
         if 'method' in self.type:
@@ -737,9 +737,6 @@ class FunctionDef(bases.Statement, Lambda):
         self.doc = doc
         # self.instance_attrs = {}
         super(FunctionDef, self).__init__(lineno, col_offset, parent)
-        # if parent:
-        #     frame = parent.frame()
-        #     frame.set_local(name, self)
 
     # pylint: disable=arguments-differ; different than Lambdas
     def postinit(self, args, body, decorators=None, returns=None):
@@ -1114,8 +1111,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
         self.name = name
         self.doc = doc
         super(ClassDef, self).__init__(lineno, col_offset, parent)
-        # if parent is not None:
-        #     parent.frame().set_local(name, self)
 
     def postinit(self, bases, body, decorators, newstyle=None, metaclass=None):
         self.bases = bases
@@ -1128,7 +1123,11 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
 
     @property
     def locals(self):
-        return types.MappingProxyType(get_external_assignments(self.root(), self, get_locals(self)))
+        return types.MappingProxyType(get_external_assignments(self, get_locals(self)))
+
+    @property
+    def instance_attrs(self):
+        return types.MappingProxyType(get_external_assignments(self, collections.defaultdict(list)))
 
     def _newstyle_impl(self, context=None):
         if context is None:
@@ -1760,6 +1759,24 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
 
 
 def get_locals(node):
+    '''Return the local variables for an appropriate node.
+
+    For function nodes, this will be the local variables defined in
+    their scope, what would be returned by a locals() call in the
+    function body.  For Modules, this will be all the global names
+    defined in the module, what would be returned by a locals() or
+    globals() call at the module level.  For classes, this will be
+    class attributes defined in the class body, also what a locals()
+    call in the body would return.
+
+    This function starts by recursing over its argument's children to
+    avoid incorrectly adding a class's or function's name to its local
+    variables.
+
+    '''
+    if not isinstance(node, LocalsDictNodeNG):
+        raise TypeError("This node doesn't have local variables: %s" %
+                        type(node))
     locals_ = collections.defaultdict(list)
     for n in node.get_children():
         _get_locals(n, locals_)
@@ -1767,18 +1784,19 @@ def get_locals(node):
 
 @_singledispatch
 def _get_locals(node, locals_):
-    pass
+    raise TypeError('Non-astroid object in an astroid AST: %s' % type(node))
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(bases.NodeNG)
 def locals_generic(node, locals_):
+    '''Generic nodes don't create name bindings or scopes.'''
     for n in node.get_children():
         _get_locals(n, locals_)
 
 # # pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(LocalsDictNodeNG)
 def locals_new_scope(node, locals_):
-    pass
+    '''These nodes start a new scope, so terminate recursion here.'''
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(node_classes.AssignName)
@@ -1786,6 +1804,9 @@ def locals_new_scope(node, locals_):
 @_get_locals.register(FunctionDef)
 @_get_locals.register(ClassDef)
 def locals_name(node, locals_):
+    '''These nodes add a name to the local variables.  AssignName and
+    DelName have no children while FunctionDef and ClassDef start a
+    new scope so shouldn't be recursed into.'''
     locals_[node.name].append(node)
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
@@ -1804,9 +1825,8 @@ def locals_import(node, locals_):
 # pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(node_classes.ImportFrom)
 def locals_import_from(node, locals_):
-    _key_func = lambda node: node.fromlineno
     def sort_locals(my_list):
-        my_list.sort(key=_key_func)
+        my_list.sort(key=lambda node: node.fromlineno)
 
     for name, asname in node.names:
         if name == '*':
@@ -1822,20 +1842,50 @@ def locals_import_from(node, locals_):
             sort_locals(locals_[asname or name])
 
 
-def get_external_assignments(root, subject, attributes):
-    stack = [root]
+def get_external_assignments(subject, attributes):
+
+    '''This function takes a node and returns an object representing
+    attribute assignments to that node.
+
+    It searches the whole AST for AssignAttr nodes that assign to the
+    object represented by that node, then returns a
+    collections.defaultdict(list) containing all the names and nodes
+    that have been assigned to the original node.
+
+    :param subject: The node that get_external_assignments() is
+        searching for assignments to.  This should be a node whose
+        attributes can be assigned to.
+
+    :param attributes: A collections.defaultdict(list) to add names
+        to.  If a ClassDef or Module node is being assigned to, this will
+        be created by get_locals() and represents the attributes defined
+        directly on the Module or ClassDef by the AST.  Otherwise, it will
+        represent the instance attributes assigned to a particular object.
+
+    '''
+    # As far as I know, there are no other builtin types that allow
+    # attribute assignment.
+    if not isinstance(subject, (Module, ClassDef, Lambda)):
+        raise TypeError("This node doesn't represent a type allowing"
+                        "attribute assignments: %s" % type(subject))
+    stack = [subject.root()]
     while stack:
         node = stack.pop()
         stack.extend(node.get_children())
         if isinstance(node, node_classes.AssignAttr):
             frame = node.frame()
             try:
-                for inferred in (n for n in node.expr.infer() if n is subject):
+                # Here, node.expr.infer() will return either the node
+                # being assigned to itself, for Module, ClassDef,
+                # FunctionDef, or Lambda nodes, or an Instance object
+                # corresponding to a ClassDef node.
+                for inferred in (i for i in node.expr.infer() if i is subject
+                                 or getattr(i, '_proxied', None) is subject):
                     values = attributes[node.attrname]
                     if node in values:
                         continue
                     else:
-                        if (values and frame.is_function and
+                        if (values and isinstance(frame, FunctionDef) and
                             frame.name == '__init__' and not
                             values[0].frame().name == '__init__'):
                             values.insert(0, node)

@@ -29,7 +29,8 @@ from astroid import exceptions
 
 
 def lazy_import(module_name):
-    return lazy_object_proxy.Proxy(lambda: importlib.import_module(module_name))
+    return lazy_object_proxy.Proxy(
+        lambda: importlib.import_module('.' + module_name, 'astroid'))
 
 def reraise(exception):
     '''Reraises an exception with the traceback from the current exception

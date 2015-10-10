@@ -279,7 +279,7 @@ class Instance(Proxy):
 
     @property
     def instance_attrs(self):
-        return types.MappingProxyType(scoped_nodes.get_external_assignments(self.root(), self, collections.defaultdict(list)))
+        return types.MappingProxyType(scoped_nodes.get_external_assignments(self, collections.defaultdict(list)))
 
 
 

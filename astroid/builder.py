@@ -150,15 +150,6 @@ class AstroidBuilder(raw_building.InspectBuilder):
         """Handles encoding and delayed nodes after a module has been built"""
         module.file_encoding = encoding
         self._manager.cache_module(module)
-        # post tree building steps after we stored the module in the cache:
-        # for from_node in module._import_from_nodes:
-        #     if from_node.modname == '__future__':
-        #         for symbol, _ in from_node.names:
-        #             module.future_imports.add(symbol)
-        #     self.add_from_names_to_locals(from_node)
-        # # handle delayed assattr nodes
-        # for delayed in module._delayed_assattr:
-        #     self.delayed_assattr(delayed)
 
         # Visit the transforms
         if self._apply_transforms:
@@ -187,68 +178,9 @@ class AstroidBuilder(raw_building.InspectBuilder):
             package = path and path.find('__init__.py') > -1 or False
         builder = rebuilder.TreeRebuilder(self._manager)
         module = builder.visit_module(node, modname, node_file, package)
-        module._import_from_nodes = builder._import_from_nodes
-        module._delayed_assattr = builder._delayed_assattr
+        # module._import_from_nodes = builder._import_from_nodes
+        # module._delayed_assattr = builder._delayed_assattr
         return module
-
-    def add_from_names_to_locals(self, node):
-        """Store imported names to the locals
-
-        Resort the locals if coming from a delayed node
-        """
-        _key_func = lambda node: node.fromlineno
-        def sort_locals(my_list):
-            my_list.sort(key=_key_func)
-
-        for (name, asname) in node.names:
-            if name == '*':
-                try:
-                    imported = node.do_import_module()
-                except exceptions.InferenceError:
-                    continue
-                for name in imported.wildcard_import_names():
-                    node.parent.set_local(name, node)
-                    sort_locals(node.parent.scope().locals[name])
-            else:
-                node.parent.set_local(asname or name, node)
-                sort_locals(node.parent.scope().locals[asname or name])
-
-    def delayed_assattr(self, node):
-        """Visit a AssAttr node
-
-        This adds name to locals and handle members definition.
-        """
-        try:
-            frame = node.frame()
-            for inferred in node.expr.infer():
-                if inferred is util.YES:
-                    continue
-                try:
-                    if inferred.__class__ is bases.Instance:
-                        inferred = inferred._proxied
-                        iattrs = inferred.instance_attrs
-                    elif isinstance(inferred, bases.Instance):
-                        # Const, Tuple, ... we may be wrong, may be not, but
-                        # anyway we don't want to pollute builtin's namespace
-                        continue
-                    elif inferred.is_function:
-                        iattrs = inferred.instance_attrs
-                    else:
-                        iattrs = inferred.locals
-                except AttributeError:
-                    # XXX log error
-                    continue
-                values = iattrs.setdefault(node.attrname, [])
-                if node in values:
-                    continue
-                # get assign in __init__ first XXX useful ?
-                if (frame.name == '__init__' and values and
-                        not values[0].frame().name == '__init__'):
-                    values.insert(0, node)
-                else:
-                    values.append(node)
-        except exceptions.InferenceError:
-            pass
 
 
 def parse(code, module_name='', path=None, apply_transforms=True):

@@ -333,6 +333,7 @@ def infer_enum_class(node):
                         return %(name)r
                 ''' % {'name': target.name, 'types': ', '.join(node.basenames)})
                 fake = AstroidBuilder(MANAGER).string_build(classdef)[target.name]
+                print(fake.repr_tree())
                 fake.parent = target.parent
                 for method in node.mymethods():
                     fake.locals[method.name] = [method]
