@@ -29,8 +29,9 @@ from astroid import InferenceError, builder, nodes
 from astroid.builder import parse
 from astroid.inference import infer_end as inference_infer_end
 from astroid.bases import Instance, BoundMethod, UnboundMethod,\
-                                path_wrapper, BUILTINS
+                                BUILTINS
 from astroid import arguments
+from astroid import decorators as decoratorsmod
 from astroid import helpers
 from astroid import objects
 from astroid import test_utils
@@ -56,8 +57,8 @@ class InferenceUtilsTest(unittest.TestCase):
     def test_path_wrapper(self):
         def infer_default(self, *args):
             raise InferenceError
-        infer_default = path_wrapper(infer_default)
-        infer_end = path_wrapper(inference_infer_end)
+        infer_default = decoratorsmod.path_wrapper(infer_default)
+        infer_end = decoratorsmod.path_wrapper(inference_infer_end)
         with self.assertRaises(InferenceError):
             next(infer_default(1))
         self.assertEqual(next(infer_end(1)), 1)

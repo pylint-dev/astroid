@@ -29,6 +29,7 @@ import operator
 from astroid import bases
 from astroid import context as contextmod
 from astroid import exceptions
+from astroid import decorators
 from astroid import helpers
 from astroid import manager
 from astroid import nodes
@@ -94,12 +95,12 @@ def infer_name(self, context=None):
     context = context.clone()
     context.lookupname = self.name
     return bases._infer_stmts(stmts, context, frame)
-nodes.Name._infer = bases.path_wrapper(infer_name)
+nodes.Name._infer = decorators.path_wrapper(infer_name)
 nodes.AssignName.infer_lhs = infer_name # won't work with a path wrapper
 
 
-@bases.raise_if_nothing_inferred
-@bases.path_wrapper
+@decorators.raise_if_nothing_inferred
+@decorators.path_wrapper
 def infer_call(self, context=None):
     """infer a Call node by trying to guess what the function returns"""
     callcontext = context.clone()
@@ -120,7 +121,7 @@ def infer_call(self, context=None):
 nodes.Call._infer = infer_call
 
 
-@bases.path_wrapper
+@decorators.path_wrapper
 def infer_import(self, context=None, asname=True):
     """infer an Import node: return the imported module/object"""
     name = context.lookupname
@@ -140,7 +141,7 @@ def infer_name_module(self, name):
 nodes.Import.infer_name_module = infer_name_module
 
 
-@bases.path_wrapper
+@decorators.path_wrapper
 def infer_import_from(self, context=None, asname=True):
     """infer a ImportFrom node: return the imported module/object"""
     name = context.lookupname
@@ -159,7 +160,7 @@ def infer_import_from(self, context=None, asname=True):
 nodes.ImportFrom._infer = infer_import_from
 
 
-@bases.raise_if_nothing_inferred
+@decorators.raise_if_nothing_inferred
 def infer_attribute(self, context=None):
     """infer an Attribute node by using getattr on the associated object"""
     for owner in self.expr.infer(context):
@@ -176,11 +177,11 @@ def infer_attribute(self, context=None):
         except AttributeError:
             # XXX method / function
             context.boundnode = None
-nodes.Attribute._infer = bases.path_wrapper(infer_attribute)
+nodes.Attribute._infer = decorators.path_wrapper(infer_attribute)
 nodes.AssignAttr.infer_lhs = infer_attribute # # won't work with a path wrapper
 
 
-@bases.path_wrapper
+@decorators.path_wrapper
 def infer_global(self, context=None):
     if context.lookupname is None:
         raise exceptions.InferenceError()
@@ -220,7 +221,7 @@ def _slice_value(index, context=None):
     return _SLICE_SENTINEL
 
 
-@bases.raise_if_nothing_inferred
+@decorators.raise_if_nothing_inferred
 def infer_subscript(self, context=None):
     """Inference for subscripts
 
@@ -272,12 +273,12 @@ def infer_subscript(self, context=None):
     for inferred in assigned.infer(context):
         yield inferred
 
-nodes.Subscript._infer = bases.path_wrapper(infer_subscript)
+nodes.Subscript._infer = decorators.path_wrapper(infer_subscript)
 nodes.Subscript.infer_lhs = infer_subscript
 
 
-@bases.raise_if_nothing_inferred
-@bases.path_wrapper
+@decorators.raise_if_nothing_inferred
+@decorators.path_wrapper
 def _infer_boolop(self, context=None):
     """Infer a boolean operation (and / or / not).
 
@@ -387,8 +388,8 @@ def _infer_unaryop(self, context=None):
                     yield util.YES
 
 
-@bases.raise_if_nothing_inferred
-@bases.path_wrapper
+@decorators.raise_if_nothing_inferred
+@decorators.path_wrapper
 def infer_unaryop(self, context=None):
     """Infer what an UnaryOp should return when evaluated."""
     return _filter_operation_errors(self, _infer_unaryop, context,
@@ -600,8 +601,8 @@ def _infer_binop(self, context):
                 yield result
 
 
-@bases.yes_if_nothing_inferred
-@bases.path_wrapper
+@decorators.yes_if_nothing_inferred
+@decorators.path_wrapper
 def infer_binop(self, context=None):
     return _filter_operation_errors(self, _infer_binop, context,
                                     exceptions.BinaryOperationError)
@@ -640,7 +641,7 @@ def _infer_augassign(self, context=None):
                 yield result
 
 
-@bases.path_wrapper
+@decorators.path_wrapper
 def infer_augassign(self, context=None):
     return _filter_operation_errors(self, _infer_augassign, context,
                                     exceptions.BinaryOperationError)
@@ -659,7 +660,7 @@ def infer_arguments(self, context=None):
 nodes.Arguments._infer = infer_arguments
 
 
-@bases.path_wrapper
+@decorators.path_wrapper
 def infer_assign(self, context=None):
     """infer a AssignName/AssignAttr: need to inspect the RHS part of the
     assign node
@@ -676,7 +677,7 @@ nodes.AssignAttr._infer = infer_assign
 
 # no infer method on DelName and DelAttr (expected InferenceError)
 
-@bases.path_wrapper
+@decorators.path_wrapper
 def infer_empty_node(self, context=None):
     if not self.has_underlying_object():
         yield util.YES

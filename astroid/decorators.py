@@ -21,8 +21,12 @@
 
 """ A few useful function/method decorators."""
 
+import functools
+
 import wrapt
 
+from astroid import context as contextmod
+from astroid import exceptions
 from astroid import util
 
 
@@ -75,3 +79,47 @@ class cachedproperty(object):
         val = self.wrapped(inst)
         setattr(inst, self.wrapped.__name__, val)
         return val
+
+
+def path_wrapper(func):
+    """return the given infer function wrapped to handle the path"""
+    # TODO: switch this to wrapt after the monkey-patching is fixed (ceridwen)
+    @functools.wraps(func)
+    def wrapped(node, context=None, _func=func, **kwargs):
+        """wrapper function handling context"""
+        if context is None:
+            context = contextmod.InferenceContext()
+        if context.push(node):
+            return
+
+        yielded = set()
+        for res in _func(node, context, **kwargs):
+            # unproxy only true instance, not const, tuple, dict...
+            if res.__class__.__name__ == 'Instance':
+                ares = res._proxied
+            else:
+                ares = res
+            if ares not in yielded:
+                yield res
+                yielded.add(ares)
+    return wrapped
+
+
+@wrapt.decorator
+def yes_if_nothing_inferred(func, instance, args, kwargs):
+    inferred = False
+    for node in func(*args, **kwargs):
+        inferred = True
+        yield node
+    if not inferred:
+        yield util.YES
+
+
+@wrapt.decorator
+def raise_if_nothing_inferred(func, instance, args, kwargs):
+    inferred = False
+    for node in func(*args, **kwargs):
+        inferred = True
+        yield node
+    if not inferred:
+        raise exceptions.InferenceError()
