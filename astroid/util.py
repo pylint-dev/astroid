@@ -20,7 +20,9 @@
 # the same license.
 
 import sys
+import warnings
 
+import lazy_object_proxy
 import six
 
 
@@ -45,3 +47,22 @@ class YES(object):
 
     def __call__(self, *args, **kwargs):
         return self
+
+
+def _instancecheck(cls, other):
+    wrapped = cls.__wrapped__
+    other_cls = other.__class__
+    is_instance_of = wrapped is other_cls or issubclass(other_cls, wrapped)
+    warnings.warn("%r is deprecated and slated for removal in astroid "
+                  "2.0, use %r instead" % (cls.__class__.__name__,
+                                           wrapped.__name__),
+                  PendingDeprecationWarning, stacklevel=2)
+    return is_instance_of
+
+
+def proxy_alias(alias_name, node_type):
+    """Get a Proxy from the given name to the given node type."""
+    proxy = type(alias_name, (lazy_object_proxy.Proxy,),
+                 {'__class__': object.__dict__['__class__'],
+                  '__instancecheck__': _instancecheck})
+    return proxy(lambda: node_type)

@@ -26,7 +26,6 @@ try:
 except ImportError:
     from singledispatch import singledispatch as _singledispatch
 
-import lazy_object_proxy
 import six
 
 from astroid import as_string
@@ -1861,27 +1860,11 @@ def const_factory(value):
 
 
 # Backward-compatibility aliases
-def _instancecheck(cls, other):
-    wrapped = cls.__wrapped__
-    other_cls = other.__class__
-    is_instance_of = wrapped is other_cls or issubclass(other_cls, wrapped)
-    warnings.warn("%r is deprecated and slated for removal in astroid "
-                  "2.0, use %r instead" % (cls.__class__.__name__,
-                                           wrapped.__name__),
-                  PendingDeprecationWarning, stacklevel=2)
-    return is_instance_of
 
-
-def proxy_alias(alias_name, node_type):
-    proxy = type(alias_name, (lazy_object_proxy.Proxy,),
-                 {'__class__': object.__dict__['__class__'],
-                  '__instancecheck__': _instancecheck})
-    return proxy(lambda: node_type)
-
-Backquote = proxy_alias('Backquote', Repr)
-Discard = proxy_alias('Discard', Expr)
-AssName = proxy_alias('AssName', AssignName)
-AssAttr = proxy_alias('AssAttr', AssignAttr)
-Getattr = proxy_alias('Getattr', Attribute)
-CallFunc = proxy_alias('CallFunc', Call)
-From = proxy_alias('From', ImportFrom)
+Backquote = util.proxy_alias('Backquote', Repr)
+Discard = util.proxy_alias('Discard', Expr)
+AssName = util.proxy_alias('AssName', AssignName)
+AssAttr = util.proxy_alias('AssAttr', AssignAttr)
+Getattr = util.proxy_alias('Getattr', Attribute)
+CallFunc = util.proxy_alias('CallFunc', Call)
+From = util.proxy_alias('From', ImportFrom)

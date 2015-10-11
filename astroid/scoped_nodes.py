@@ -1728,6 +1728,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
 
 # Backwards-compatibility aliases
-Class = node_classes.proxy_alias('Class', ClassDef)
-Function = node_classes.proxy_alias('Function', FunctionDef)
-GenExpr = node_classes.proxy_alias('GenExpr', GeneratorExp)
+Class = util.proxy_alias('Class', ClassDef)
+Function = util.proxy_alias('Function', FunctionDef)
+GenExpr = util.proxy_alias('GenExpr', GeneratorExp)
