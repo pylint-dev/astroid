@@ -20,8 +20,6 @@
 
 # pylint: disable=no-value-for-parameter; Pylint FP #629, please remove afterwards.
 
-from __future__ import print_function
-
 import functools
 import itertools
 import operator

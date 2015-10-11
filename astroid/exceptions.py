@@ -19,8 +19,6 @@
 
 """
 
-__doctype__ = "restructuredtext en"
-
 class AstroidError(Exception):
     """base exception class for all astroid related exceptions"""
 

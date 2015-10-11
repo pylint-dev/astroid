@@ -16,8 +16,6 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
-
 import unittest
 
 from astroid import bases

@@ -15,8 +15,8 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
-
 """Various context related utilities, including inference and call contexts."""
+
 import contextlib
 import pprint
 

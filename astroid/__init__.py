@@ -39,7 +39,6 @@ Main modules are:
 
 * builder contains the class responsible to build astroid trees
 """
-__doctype__ = "restructuredtext en"
 
 import sys
 import re

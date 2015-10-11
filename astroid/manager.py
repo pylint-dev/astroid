@@ -19,7 +19,6 @@
 possible by providing a class responsible to get astroid representation
 from various source and using a cache of built modules)
 """
-from __future__ import print_function
 
 import imp
 import os
