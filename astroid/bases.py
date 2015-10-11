@@ -23,7 +23,6 @@ from __future__ import print_function
 
 import collections
 import sys
-import warnings
 
 from astroid import context as contextmod
 from astroid import exceptions
