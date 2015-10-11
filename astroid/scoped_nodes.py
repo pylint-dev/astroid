@@ -138,7 +138,8 @@ def builtin_lookup(name):
 
 
 # TODO move this Mixin to mixins.py; problem: 'FunctionDef' in _scope_lookup
-class LocalsDictNodeNG(node_classes.LookupMixIn, bases.NodeNG):
+class LocalsDictNodeNG(node_classes.LookupMixIn,
+                       node_classes.NodeNG):
     """ this class provides locals handling common to Module, FunctionDef
     and ClassDef nodes, including a dict like interface for direct access
     to locals information
@@ -577,7 +578,7 @@ class SetComp(ComprehensionScope):
         return util.YES
 
 
-class _ListComp(bases.NodeNG):
+class _ListComp(node_classes.NodeNG):
     """class representing a ListComp node"""
     _astroid_fields = ('elt', 'generators')
     elt = None
@@ -690,7 +691,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         return True
 
 
-class FunctionDef(bases.Statement, Lambda):
+class FunctionDef(node_classes.Statement, Lambda):
     if six.PY3:
         _astroid_fields = ('decorators', 'args', 'body', 'returns')
         returns = None
@@ -1056,7 +1057,8 @@ def get_wrapping_class(node):
 
 
 
-class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
+class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
+               node_classes.Statement):
 
     # some of the attributes below are set by the builder module or
     # by a raw factories

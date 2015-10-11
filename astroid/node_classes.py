@@ -19,11 +19,17 @@
 """
 
 import abc
+import pprint
 import warnings
+try:
+    from functools import singledispatch as _singledispatch
+except ImportError:
+    from singledispatch import singledispatch as _singledispatch
 
 import lazy_object_proxy
 import six
 
+from astroid import as_string
 from astroid import bases
 from astroid import context as contextmod
 from astroid import decorators
@@ -124,10 +130,479 @@ def _container_getitem(instance, elts, index):
         return elts[index]
 
 
+
+class NodeNG(object):
+    """Base Class for all Astroid node classes.
+
+    It represents a node of the new abstract syntax tree.
+    """
+    is_statement = False
+    optional_assign = False # True for For (and for Comprehension if py <3.0)
+    is_function = False # True for FunctionDef nodes
+    # attributes below are set by the builder module or by raw factories
+    lineno = None
+    col_offset = None
+    # parent node in the tree
+    parent = None
+    # attributes containing child node(s) redefined in most concrete classes:
+    _astroid_fields = ()
+    # attributes containing non-nodes:
+    _other_fields = ()
+    # attributes containing AST-dependent fields:
+    _other_other_fields = ()
+    # instance specific inference function infer(node, context)
+    _explicit_inference = None
+
+    def __init__(self, lineno=None, col_offset=None, parent=None):
+        self.lineno = lineno
+        self.col_offset = col_offset
+        self.parent = parent
+
+    def infer(self, context=None, **kwargs):
+        """main interface to the interface system, return a generator on inferred
+        values.
+
+        If the instance has some explicit inference function set, it will be
+        called instead of the default interface.
+        """
+        if self._explicit_inference is not None:
+            # explicit_inference is not bound, give it self explicitly
+            try:
+                # pylint: disable=not-callable
+                return self._explicit_inference(self, context, **kwargs)
+            except exceptions.UseInferenceDefault:
+                pass
+
+        if not context:
+            return self._infer(context, **kwargs)
+
+        key = (self, context.lookupname,
+               context.callcontext, context.boundnode)
+        if key in context.inferred:
+            return iter(context.inferred[key])
+
+        return context.cache_generator(key, self._infer(context, **kwargs))
+
+    def _repr_name(self):
+        """return self.name or self.attrname or '' for nice representation"""
+        return getattr(self, 'name', getattr(self, 'attrname', ''))
+
+    def __str__(self):
+        rname = self._repr_name()
+        cname = type(self).__name__
+        if rname:
+            string = '%(cname)s.%(rname)s(%(fields)s)'
+            alignment = len(cname) + len(rname) + 2
+        else:
+            string = '%(cname)s(%(fields)s)'
+            alignment = len(cname) + 1
+        result = []
+        for field in self._other_fields + self._astroid_fields:
+            value = getattr(self, field)
+            width = 80 - len(field) - alignment
+            lines = pprint.pformat(value, indent=2,
+                                   width=width).splitlines(True)
+
+            inner = [lines[0]]
+            for line in lines[1:]:
+                inner.append(' ' * alignment + line)
+            result.append('%s=%s' % (field, ''.join(inner)))
+
+        return string % {'cname': cname,
+                         'rname': rname,
+                         'fields': (',\n' + ' ' * alignment).join(result)}
+
+    def __repr__(self):
+        rname = self._repr_name()
+        if rname:
+            string = '<%(cname)s.%(rname)s l.%(lineno)s at 0x%(id)x>'
+        else:
+            string = '<%(cname)s l.%(lineno)s at 0x%(id)x>'
+        return string % {'cname': type(self).__name__,
+                         'rname': rname,
+                         'lineno': self.fromlineno,
+                         'id': id(self)}
+
+    def accept(self, visitor):
+        func = getattr(visitor, "visit_" + self.__class__.__name__.lower())
+        return func(self)
+
+    def get_children(self):
+        for field in self._astroid_fields:
+            attr = getattr(self, field)
+            if attr is None:
+                continue
+            if isinstance(attr, (list, tuple)):
+                for elt in attr:
+                    yield elt
+            else:
+                yield attr
+
+    def last_child(self):
+        """an optimized version of list(get_children())[-1]"""
+        for field in self._astroid_fields[::-1]:
+            attr = getattr(self, field)
+            if not attr: # None or empty listy / tuple
+                continue
+            if isinstance(attr, (list, tuple)):
+                return attr[-1]
+            else:
+                return attr
+        return None
+
+    def parent_of(self, node):
+        """return true if i'm a parent of the given node"""
+        parent = node.parent
+        while parent is not None:
+            if self is parent:
+                return True
+            parent = parent.parent
+        return False
+
+    def statement(self):
+        """return the first parent node marked as statement node"""
+        if self.is_statement:
+            return self
+        return self.parent.statement()
+
+    def frame(self):
+        """return the first parent frame node (i.e. Module, FunctionDef or
+        ClassDef)
+
+        """
+        return self.parent.frame()
+
+    def scope(self):
+        """return the first node defining a new scope (i.e. Module,
+        FunctionDef, ClassDef, Lambda but also GenExpr)
+
+        """
+        return self.parent.scope()
+
+    def root(self):
+        """return the root node of the tree, (i.e. a Module)"""
+        if self.parent:
+            return self.parent.root()
+        return self
+
+    def child_sequence(self, child):
+        """search for the right sequence where the child lies in"""
+        for field in self._astroid_fields:
+            node_or_sequence = getattr(self, field)
+            if node_or_sequence is child:
+                return [node_or_sequence]
+            # /!\ compiler.ast Nodes have an __iter__ walking over child nodes
+            if (isinstance(node_or_sequence, (tuple, list))
+                    and child in node_or_sequence):
+                return node_or_sequence
+
+        msg = 'Could not find %s in %s\'s children'
+        raise exceptions.AstroidError(msg % (repr(child), repr(self)))
+
+    def locate_child(self, child):
+        """return a 2-uple (child attribute name, sequence or node)"""
+        for field in self._astroid_fields:
+            node_or_sequence = getattr(self, field)
+            # /!\ compiler.ast Nodes have an __iter__ walking over child nodes
+            if child is node_or_sequence:
+                return field, child
+            if isinstance(node_or_sequence, (tuple, list)) and child in node_or_sequence:
+                return field, node_or_sequence
+        msg = 'Could not find %s in %s\'s children'
+        raise exceptions.AstroidError(msg % (repr(child), repr(self)))
+    # FIXME : should we merge child_sequence and locate_child ? locate_child
+    # is only used in are_exclusive, child_sequence one time in pylint.
+
+    def next_sibling(self):
+        """return the next sibling statement"""
+        return self.parent.next_sibling()
+
+    def previous_sibling(self):
+        """return the previous sibling statement"""
+        return self.parent.previous_sibling()
+
+    def nearest(self, nodes):
+        """return the node which is the nearest before this one in the
+        given list of nodes
+        """
+        myroot = self.root()
+        mylineno = self.fromlineno
+        nearest = None, 0
+        for node in nodes:
+            assert node.root() is myroot, \
+                   'nodes %s and %s are not from the same module' % (self, node)
+            lineno = node.fromlineno
+            if node.fromlineno > mylineno:
+                break
+            if lineno > nearest[1]:
+                nearest = node, lineno
+        # FIXME: raise an exception if nearest is None ?
+        return nearest[0]
+
+    # these are lazy because they're relatively expensive to compute for every
+    # single node, and they rarely get looked at
+
+    @decorators.cachedproperty
+    def fromlineno(self):
+        if self.lineno is None:
+            return self._fixed_source_line()
+        else:
+            return self.lineno
+
+    @decorators.cachedproperty
+    def tolineno(self):
+        if not self._astroid_fields:
+            # can't have children
+            lastchild = None
+        else:
+            lastchild = self.last_child()
+        if lastchild is None:
+            return self.fromlineno
+        else:
+            return lastchild.tolineno
+
+        # TODO / FIXME:
+        assert self.fromlineno is not None, self
+        assert self.tolineno is not None, self
+
+    def _fixed_source_line(self):
+        """return the line number where the given node appears
+
+        we need this method since not all nodes have the lineno attribute
+        correctly set...
+        """
+        line = self.lineno
+        _node = self
+        try:
+            while line is None:
+                _node = next(_node.get_children())
+                line = _node.lineno
+        except StopIteration:
+            _node = self.parent
+            while _node and line is None:
+                line = _node.lineno
+                _node = _node.parent
+        return line
+
+    def block_range(self, lineno):
+        """handle block line numbers range for non block opening statements
+        """
+        return lineno, self.tolineno
+
+    def set_local(self, name, stmt):
+        """delegate to a scoped parent handling a locals dictionary"""
+        self.parent.set_local(name, stmt)
+
+    def nodes_of_class(self, klass, skip_klass=None):
+        """return an iterator on nodes which are instance of the given class(es)
+
+        klass may be a class object or a tuple of class objects
+        """
+        if isinstance(self, klass):
+            yield self
+        for child_node in self.get_children():
+            if skip_klass is not None and isinstance(child_node, skip_klass):
+                continue
+            for matching in child_node.nodes_of_class(klass, skip_klass):
+                yield matching
+
+    def _infer_name(self, frame, name):
+        # overridden for ImportFrom, Import, Global, TryExcept and Arguments
+        return None
+
+    def _infer(self, context=None):
+        """we don't know how to resolve a statement by default"""
+        # this method is overridden by most concrete classes
+        raise exceptions.InferenceError(self.__class__.__name__)
+
+    def inferred(self):
+        '''return list of inferred values for a more simple inference usage'''
+        return list(self.infer())
+
+    def infered(self):
+        warnings.warn('%s.infered() is deprecated and slated for removal '
+                      'in astroid 2.0, use %s.inferred() instead.'
+                      % (type(self).__name__, type(self).__name__),
+                      PendingDeprecationWarning, stacklevel=2)
+        return self.inferred()
+
+    def instanciate_class(self):
+        """instanciate a node if it is a ClassDef node, else return self"""
+        return self
+
+    def has_base(self, node):
+        return False
+
+    def callable(self):
+        return False
+
+    def eq(self, value):
+        return False
+
+    def as_string(self):
+        return as_string.to_code(self)
+
+    def repr_tree(self, ids=False, include_linenos=False,
+                  ast_state=False, indent='   ', max_depth=0, max_width=80):
+        """Returns a string representation of the AST from this node.
+
+        :param ids: If true, includes the ids with the node type names.
+
+        :param include_linenos: If true, includes the line numbers and
+            column offsets.
+
+        :param ast_state: If true, includes information derived from
+        the whole AST like local and global variables.
+
+        :param indent: A string to use to indent the output string.
+
+        :param max_depth: If set to a positive integer, won't return
+        nodes deeper than max_depth in the string.
+
+        :param max_width: Only positive integer values are valid, the
+        default is 80.  Attempts to format the output string to stay
+        within max_width characters, but can exceed it under some
+        circumstances.
+        """
+        @_singledispatch
+        def _repr_tree(node, result, done, cur_indent='', depth=1):
+            """Outputs a representation of a non-tuple/list, non-node that's
+            contained within an AST, including strings.
+            """
+            lines = pprint.pformat(node,
+                                   width=max(max_width - len(cur_indent),
+                                             1)).splitlines(True)
+            result.append(lines[0])
+            result.extend([cur_indent + line for line in lines[1:]])
+            return len(lines) != 1
+
+        # pylint: disable=unused-variable; doesn't understand singledispatch
+        @_repr_tree.register(tuple)
+        @_repr_tree.register(list)
+        def _repr_seq(node, result, done, cur_indent='', depth=1):
+            """Outputs a representation of a sequence that's contained within an AST."""
+            cur_indent += indent
+            result.append('[')
+            if len(node) == 0:
+                broken = False
+            elif len(node) == 1:
+                broken = _repr_tree(node[0], result, done, cur_indent, depth)
+            elif len(node) == 2:
+                broken = _repr_tree(node[0], result, done, cur_indent, depth)
+                if not broken:
+                    result.append(', ')
+                else:
+                    result.append(',\n')
+                    result.append(cur_indent)
+                broken = (_repr_tree(node[1], result, done, cur_indent, depth)
+                          or broken)
+            else:
+                result.append('\n')
+                result.append(cur_indent)
+                for child in node[:-1]:
+                    _repr_tree(child, result, done, cur_indent, depth)
+                    result.append(',\n')
+                    result.append(cur_indent)
+                _repr_tree(node[-1], result, done, cur_indent, depth)
+                broken = True
+            result.append(']')
+            return broken
+
+        # pylint: disable=unused-variable; doesn't understand singledispatch
+        @_repr_tree.register(NodeNG)
+        def _repr_node(node, result, done, cur_indent='', depth=1):
+            """Outputs a strings representation of an astroid node."""
+            if node in done:
+                result.append(indent + '<Recursion on %s with id=%s' %
+                              (type(node).__name__, id(node)))
+                return False
+            else:
+                done.add(node)
+            if max_depth and depth > max_depth:
+                result.append('...')
+                return False
+            depth += 1
+            cur_indent += indent
+            if ids:
+                result.append('%s<0x%x>(\n' % (type(node).__name__, id(node)))
+            else:
+                result.append('%s(' % type(node).__name__)
+            fields = []
+            if include_linenos:
+                fields.extend(('lineno', 'col_offset'))
+            fields.extend(node._other_fields)
+            fields.extend(node._astroid_fields)
+            if ast_state:
+                fields.extend(node._other_other_fields)
+            if len(fields) == 0:
+                broken = False
+            elif len(fields) == 1:
+                result.append('%s=' % fields[0])
+                broken = _repr_tree(getattr(node, fields[0]), result, done,
+                                    cur_indent, depth)
+            else:
+                result.append('\n')
+                result.append(cur_indent)
+                for field in fields[:-1]:
+                    result.append('%s=' % field)
+                    _repr_tree(getattr(node, field), result, done, cur_indent,
+                               depth)
+                    result.append(',\n')
+                    result.append(cur_indent)
+                result.append('%s=' % fields[-1])
+                _repr_tree(getattr(node, fields[-1]), result, done, cur_indent,
+                           depth)
+                broken = True
+            result.append(')')
+            return broken
+
+        result = []
+        _repr_tree(self, result, set())
+        return ''.join(result)
+
+    def bool_value(self):
+        """Determine the bool value of this node
+
+        The boolean value of a node can have three
+        possible values:
+
+            * False. For instance, empty data structures,
+              False, empty strings, instances which return
+              explicitly False from the __nonzero__ / __bool__
+              method.
+            * True. Most of constructs are True by default:
+              classes, functions, modules etc
+            * YES: the inference engine is uncertain of the
+              node's value.
+        """
+        return util.YES
+
+
+class Statement(NodeNG):
+    """Statement node adding a few attributes"""
+    is_statement = True
+
+    def next_sibling(self):
+        """return the next sibling statement"""
+        stmts = self.parent.child_sequence(self)
+        index = stmts.index(self)
+        try:
+            return stmts[index +1]
+        except IndexError:
+            pass
+
+    def previous_sibling(self):
+        """return the previous sibling statement"""
+        stmts = self.parent.child_sequence(self)
+        index = stmts.index(self)
+        if index >= 1:
+            return stmts[index -1]
+
+
+
 @six.add_metaclass(abc.ABCMeta)
 class _BaseContainer(mixins.ParentAssignTypeMixin,
-                     bases.NodeNG,
-                     bases.Instance):
+                     NodeNG, bases.Instance):
     """Base class for Set, FrozenSet, Tuple and List."""
 
     _astroid_fields = ('elts',)
@@ -309,7 +784,7 @@ class LookupMixIn(object):
 
 # Name classes
 
-class AssignName(LookupMixIn, mixins.ParentAssignTypeMixin, bases.NodeNG):
+class AssignName(LookupMixIn, mixins.ParentAssignTypeMixin, NodeNG):
     """class representing an AssignName node"""
     _other_fields = ('name',)
 
@@ -318,7 +793,7 @@ class AssignName(LookupMixIn, mixins.ParentAssignTypeMixin, bases.NodeNG):
         super(AssignName, self).__init__(lineno, col_offset, parent)
 
 
-class DelName(LookupMixIn, mixins.ParentAssignTypeMixin, bases.NodeNG):
+class DelName(LookupMixIn, mixins.ParentAssignTypeMixin, NodeNG):
     """class representing a DelName node"""
     _other_fields = ('name',)
 
@@ -327,7 +802,7 @@ class DelName(LookupMixIn, mixins.ParentAssignTypeMixin, bases.NodeNG):
         super(DelName, self).__init__(lineno, col_offset, parent)
 
 
-class Name(LookupMixIn, bases.NodeNG):
+class Name(LookupMixIn, NodeNG):
     """class representing a Name node"""
     _other_fields = ('name',)
 
@@ -336,7 +811,7 @@ class Name(LookupMixIn, bases.NodeNG):
         super(Name, self).__init__(lineno, col_offset, parent)
 
 
-class Arguments(mixins.AssignTypeMixin, bases.NodeNG):
+class Arguments(mixins.AssignTypeMixin, NodeNG):
     """class representing an Arguments node"""
     if six.PY3:
         # Python 3.4+ uses a different approach regarding annotations,
@@ -479,7 +954,7 @@ def _format_args(args, defaults=None, annotations=None):
     return ', '.join(values)
 
 
-class AssignAttr(mixins.ParentAssignTypeMixin, bases.NodeNG):
+class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
     """class representing an AssignAttr node"""
     _astroid_fields = ('expr',)
     _other_fields = ('attrname',)
@@ -493,7 +968,7 @@ class AssignAttr(mixins.ParentAssignTypeMixin, bases.NodeNG):
         self.expr = expr
 
 
-class Assert(bases.Statement):
+class Assert(Statement):
     """class representing an Assert node"""
     _astroid_fields = ('test', 'fail',)
     test = None
@@ -504,7 +979,7 @@ class Assert(bases.Statement):
         self.test = test
 
 
-class Assign(mixins.AssignTypeMixin, bases.Statement):
+class Assign(mixins.AssignTypeMixin, Statement):
     """class representing an Assign node"""
     _astroid_fields = ('targets', 'value',)
     targets = None
@@ -515,7 +990,7 @@ class Assign(mixins.AssignTypeMixin, bases.Statement):
         self.value = value
 
 
-class AugAssign(mixins.AssignTypeMixin, bases.Statement):
+class AugAssign(mixins.AssignTypeMixin, Statement):
     """class representing an AugAssign node"""
     _astroid_fields = ('target', 'value')
     _other_fields = ('op',)
@@ -548,7 +1023,7 @@ class AugAssign(mixins.AssignTypeMixin, bases.Statement):
             return []
 
 
-class Repr(bases.NodeNG):
+class Repr(NodeNG):
     """class representing a Repr node"""
     _astroid_fields = ('value',)
     value = None
@@ -557,7 +1032,7 @@ class Repr(bases.NodeNG):
         self.value = value
 
 
-class BinOp(bases.NodeNG):
+class BinOp(NodeNG):
     """class representing a BinOp node"""
     _astroid_fields = ('left', 'right')
     _other_fields = ('op',)
@@ -590,7 +1065,7 @@ class BinOp(bases.NodeNG):
             return []
 
 
-class BoolOp(bases.NodeNG):
+class BoolOp(NodeNG):
     """class representing a BoolOp node"""
     _astroid_fields = ('values',)
     _other_fields = ('op',)
@@ -604,11 +1079,11 @@ class BoolOp(bases.NodeNG):
         self.values = values
 
 
-class Break(bases.Statement):
+class Break(Statement):
     """class representing a Break node"""
 
 
-class Call(bases.NodeNG):
+class Call(NodeNG):
     """class representing a Call node"""
     _astroid_fields = ('func', 'args', 'keywords')
     func = None
@@ -631,7 +1106,7 @@ class Call(bases.NodeNG):
         return [keyword for keyword in keywords if keyword.arg is None]
 
 
-class Compare(bases.NodeNG):
+class Compare(NodeNG):
     """class representing a Compare node"""
     _astroid_fields = ('left', 'ops',)
     left = None
@@ -654,7 +1129,7 @@ class Compare(bases.NodeNG):
         #return self.left
 
 
-class Comprehension(bases.NodeNG):
+class Comprehension(NodeNG):
     """class representing a Comprehension node"""
     _astroid_fields = ('target', 'iter', 'ifs')
     target = None
@@ -695,7 +1170,7 @@ class Comprehension(bases.NodeNG):
         return stmts, False
 
 
-class Const(bases.NodeNG, bases.Instance):
+class Const(NodeNG, bases.Instance):
     """represent a constant node like num, str, bool, None, bytes"""
     _other_fields = ('value',)
 
@@ -728,11 +1203,11 @@ class Const(bases.NodeNG, bases.Instance):
         return bool(self.value)
 
 
-class Continue(bases.Statement):
+class Continue(Statement):
     """class representing a Continue node"""
 
 
-class Decorators(bases.NodeNG):
+class Decorators(NodeNG):
     """class representing a Decorators node"""
     _astroid_fields = ('nodes',)
     nodes = None
@@ -745,7 +1220,7 @@ class Decorators(bases.NodeNG):
         return self.parent.parent.scope()
 
 
-class DelAttr(mixins.ParentAssignTypeMixin, bases.NodeNG):
+class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
     """class representing a DelAttr node"""
     _astroid_fields = ('expr',)
     _other_fields = ('attrname',)
@@ -759,7 +1234,7 @@ class DelAttr(mixins.ParentAssignTypeMixin, bases.NodeNG):
         self.expr = expr
 
 
-class Delete(mixins.AssignTypeMixin, bases.Statement):
+class Delete(mixins.AssignTypeMixin, Statement):
     """class representing a Delete node"""
     _astroid_fields = ('targets',)
     targets = None
@@ -768,7 +1243,7 @@ class Delete(mixins.AssignTypeMixin, bases.Statement):
         self.targets = targets
 
 
-class Dict(bases.NodeNG, bases.Instance):
+class Dict(NodeNG, bases.Instance):
     """class representing a Dict node"""
     _astroid_fields = ('items',)
 
@@ -830,7 +1305,7 @@ class Dict(bases.NodeNG, bases.Instance):
         return bool(self.items)
 
 
-class Expr(bases.Statement):
+class Expr(Statement):
     """class representing a Expr node"""
     _astroid_fields = ('value',)
     value = None
@@ -839,18 +1314,18 @@ class Expr(bases.Statement):
         self.value = value
 
 
-class Ellipsis(bases.NodeNG): # pylint: disable=redefined-builtin
+class Ellipsis(NodeNG): # pylint: disable=redefined-builtin
     """class representing an Ellipsis node"""
 
     def bool_value(self):
         return True
 
 
-class EmptyNode(bases.NodeNG):
+class EmptyNode(NodeNG):
     """class representing an EmptyNode node"""
 
 
-class ExceptHandler(mixins.AssignTypeMixin, bases.Statement):
+class ExceptHandler(mixins.AssignTypeMixin, Statement):
     """class representing an ExceptHandler node"""
     _astroid_fields = ('type', 'name', 'body',)
     type = None
@@ -879,7 +1354,7 @@ class ExceptHandler(mixins.AssignTypeMixin, bases.Statement):
                 return True
 
 
-class Exec(bases.Statement):
+class Exec(Statement):
     """class representing an Exec node"""
     _astroid_fields = ('expr', 'globals', 'locals',)
     expr = None
@@ -892,7 +1367,7 @@ class Exec(bases.Statement):
         self.locals = locals
 
 
-class ExtSlice(bases.NodeNG):
+class ExtSlice(NodeNG):
     """class representing an ExtSlice node"""
     _astroid_fields = ('dims',)
     dims = None
@@ -901,7 +1376,7 @@ class ExtSlice(bases.NodeNG):
         self.dims = dims
 
 
-class For(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, bases.Statement):
+class For(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, Statement):
     """class representing a For node"""
     _astroid_fields = ('target', 'iter', 'body', 'orelse',)
     target = None
@@ -925,7 +1400,7 @@ class AsyncFor(For):
     """Asynchronous For built with `async` keyword."""
 
 
-class Await(bases.NodeNG):
+class Await(NodeNG):
     """Await node for the `await` keyword."""
 
     _astroid_fields = ('value', )
@@ -935,7 +1410,7 @@ class Await(bases.NodeNG):
         self.value = value
 
 
-class ImportFrom(mixins.ImportFromMixin, bases.Statement):
+class ImportFrom(mixins.ImportFromMixin, Statement):
     """class representing a ImportFrom node"""
     _other_fields = ('modname', 'names', 'level')
 
@@ -947,7 +1422,7 @@ class ImportFrom(mixins.ImportFromMixin, bases.Statement):
         super(ImportFrom, self).__init__(lineno, col_offset, parent)
 
 
-class Attribute(bases.NodeNG):
+class Attribute(NodeNG):
     """class representing a Attribute node"""
     _astroid_fields = ('expr',)
     _other_fields = ('attrname',)
@@ -961,7 +1436,7 @@ class Attribute(bases.NodeNG):
         self.expr = expr
 
 
-class Global(bases.Statement):
+class Global(Statement):
     """class representing a Global node"""
     _other_fields = ('names',)
 
@@ -973,7 +1448,7 @@ class Global(bases.Statement):
         return name
 
 
-class If(mixins.BlockRangeMixIn, bases.Statement):
+class If(mixins.BlockRangeMixIn, Statement):
     """class representing an If node"""
     _astroid_fields = ('test', 'body', 'orelse')
     test = None
@@ -999,7 +1474,7 @@ class If(mixins.BlockRangeMixIn, bases.Statement):
                                        self.body[0].fromlineno - 1)
 
 
-class IfExp(bases.NodeNG):
+class IfExp(NodeNG):
     """class representing an IfExp node"""
     _astroid_fields = ('test', 'body', 'orelse')
     test = None
@@ -1012,7 +1487,7 @@ class IfExp(bases.NodeNG):
         self.orelse = orelse
 
 
-class Import(mixins.ImportFromMixin, bases.Statement):
+class Import(mixins.ImportFromMixin, Statement):
     """class representing an Import node"""
     _other_fields = ('names',)
 
@@ -1021,7 +1496,7 @@ class Import(mixins.ImportFromMixin, bases.Statement):
         super(Import, self).__init__(lineno, col_offset, parent)
 
 
-class Index(bases.NodeNG):
+class Index(NodeNG):
     """class representing an Index node"""
     _astroid_fields = ('value',)
     value = None
@@ -1030,7 +1505,7 @@ class Index(bases.NodeNG):
         self.value = value
 
 
-class Keyword(bases.NodeNG):
+class Keyword(NodeNG):
     """class representing a Keyword node"""
     _astroid_fields = ('value',)
     _other_fields = ('arg',)
@@ -1054,7 +1529,7 @@ class List(_BaseContainer):
         return _container_getitem(self, self.elts, index)
 
 
-class Nonlocal(bases.Statement):
+class Nonlocal(Statement):
     """class representing a Nonlocal node"""
     _other_fields = ('names',)
 
@@ -1066,11 +1541,11 @@ class Nonlocal(bases.Statement):
         return name
 
 
-class Pass(bases.Statement):
+class Pass(Statement):
     """class representing a Pass node"""
 
 
-class Print(bases.Statement):
+class Print(Statement):
     """class representing a Print node"""
     _astroid_fields = ('dest', 'values',)
     dest = None
@@ -1085,7 +1560,7 @@ class Print(bases.Statement):
         self.values = values
 
 
-class Raise(bases.Statement):
+class Raise(Statement):
     """class representing a Raise node"""
     exc = None
     if six.PY2:
@@ -1114,7 +1589,7 @@ class Raise(bases.Statement):
                 return True
 
 
-class Return(bases.Statement):
+class Return(Statement):
     """class representing a Return node"""
     _astroid_fields = ('value',)
     value = None
@@ -1130,7 +1605,7 @@ class Set(_BaseContainer):
         return '%s.set' % BUILTINS
 
 
-class Slice(bases.NodeNG):
+class Slice(NodeNG):
     """class representing a Slice node"""
     _astroid_fields = ('lower', 'upper', 'step')
     lower = None
@@ -1173,7 +1648,7 @@ class Slice(bases.NodeNG):
         return self._proxied.getattr(attrname, context)
 
 
-class Starred(mixins.ParentAssignTypeMixin, bases.NodeNG):
+class Starred(mixins.ParentAssignTypeMixin, NodeNG):
     """class representing a Starred node"""
     _astroid_fields = ('value',)
     value = None
@@ -1182,7 +1657,7 @@ class Starred(mixins.ParentAssignTypeMixin, bases.NodeNG):
         self.value = value
 
 
-class Subscript(bases.NodeNG):
+class Subscript(NodeNG):
     """class representing a Subscript node"""
     _astroid_fields = ('value', 'slice')
     value = None
@@ -1193,7 +1668,7 @@ class Subscript(bases.NodeNG):
         self.slice = slice
 
 
-class TryExcept(mixins.BlockRangeMixIn, bases.Statement):
+class TryExcept(mixins.BlockRangeMixIn, Statement):
     """class representing a TryExcept node"""
     _astroid_fields = ('body', 'handlers', 'orelse',)
     body = None
@@ -1221,7 +1696,7 @@ class TryExcept(mixins.BlockRangeMixIn, bases.Statement):
         return self._elsed_block_range(lineno, self.orelse, last)
 
 
-class TryFinally(mixins.BlockRangeMixIn, bases.Statement):
+class TryFinally(mixins.BlockRangeMixIn, Statement):
     """class representing a TryFinally node"""
     _astroid_fields = ('body', 'finalbody',)
     body = None
@@ -1251,7 +1726,7 @@ class Tuple(_BaseContainer):
         return _container_getitem(self, self.elts, index)
 
 
-class UnaryOp(bases.NodeNG):
+class UnaryOp(NodeNG):
     """class representing an UnaryOp node"""
     _astroid_fields = ('operand',)
     _other_fields = ('op',)
@@ -1282,7 +1757,7 @@ class UnaryOp(bases.NodeNG):
             return []
 
 
-class While(mixins.BlockRangeMixIn, bases.Statement):
+class While(mixins.BlockRangeMixIn, Statement):
     """class representing a While node"""
     _astroid_fields = ('test', 'body', 'orelse',)
     test = None
@@ -1303,7 +1778,7 @@ class While(mixins.BlockRangeMixIn, bases.Statement):
         return self. _elsed_block_range(lineno, self.orelse)
 
 
-class With(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, bases.Statement):
+class With(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, Statement):
     """class representing a With node"""
     _astroid_fields = ('items', 'body')
     items = None
@@ -1330,7 +1805,7 @@ class AsyncWith(With):
     """Asynchronous `with` built with the `async` keyword."""
 
 
-class Yield(bases.NodeNG):
+class Yield(NodeNG):
     """class representing a Yield node"""
     _astroid_fields = ('value',)
     value = None
@@ -1343,7 +1818,7 @@ class YieldFrom(Yield):
     """ Class representing a YieldFrom node. """
 
 
-class DictUnpack(bases.NodeNG):
+class DictUnpack(NodeNG):
     """Represents the unpacking of dicts into dicts using PEP 448."""
 
 
@@ -1376,7 +1851,7 @@ def const_factory(value):
     # we should rather recall the builder on this value than returning an empty
     # node (another option being that const_factory shouldn't be called with something
     # not in CONST_CLS)
-    assert not isinstance(value, bases.NodeNG)
+    assert not isinstance(value, NodeNG)
     try:
         return CONST_CLS[value.__class__](value)
     except (KeyError, AttributeError):

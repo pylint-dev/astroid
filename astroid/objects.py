@@ -54,7 +54,7 @@ class FrozenSet(node_classes._BaseContainer):
         return builtins.getattr('frozenset')[0]
 
 
-class Super(bases.NodeNG):
+class Super(node_classes.NodeNG):
     """Proxy class over a super call.
 
     This class offers almost the same behaviour as Python's super,
