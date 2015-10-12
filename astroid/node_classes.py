@@ -831,7 +831,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         kwargannotation = None
     else:
         _astroid_fields = ('args', 'defaults', 'kwonlyargs', 'kw_defaults')
-        _other_fields = ('vararg', 'kwarg')
+    _other_fields = ('vararg', 'kwarg')
 
     def __init__(self, vararg=None, kwarg=None, parent=None):
         self.vararg = vararg
