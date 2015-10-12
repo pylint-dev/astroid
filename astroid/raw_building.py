@@ -19,6 +19,7 @@
 (build_* functions) or from living object (object_build_* functions)
 """
 
+import collections
 import inspect
 import logging
 import os
@@ -31,6 +32,7 @@ from astroid import bases
 from astroid import manager
 from astroid import node_classes
 from astroid import nodes
+from astroid import scoped_nodes
 
 
 MANAGER = manager.AstroidManager()
@@ -96,9 +98,9 @@ def attach_import_node(node, modname, membername):
     _attach_local_node(node, from_node, membername)
 
 
-def build_module(name, doc=None):
+def build_module(name, doc=None, modclass=nodes.Module):
     """create and initialize a astroid Module node"""
-    node = nodes.Module(name, doc, pure_python=False)
+    node = modclass(name, doc, pure_python=False)
     node.package = False
     node.parent = None
     return node
@@ -195,7 +197,7 @@ def object_build_methoddescriptor(node, member, localname):
     # and empty argument list
     func.args.args = None
     node.add_local_node(func, localname)
-    _add_dunder_class(func, member)
+    # _add_dunder_class(func, member)
 
 
 def _base_class_object_build(node, member, basenames, name=None, localname=None):
@@ -258,7 +260,8 @@ class InspectBuilder(object):
         self._done = {}
         self._module = None
 
-    def inspect_build(self, module, modname=None, path=None):
+    def inspect_build(self, module, modname=None, modclass=nodes.Module,
+                      path=None):
         """build astroid from a living module (i.e. using inspect)
         this is used when there is no python source code available (either
         because it's a built-in module or because the .py is not available)
@@ -267,10 +270,10 @@ class InspectBuilder(object):
         if modname is None:
             modname = module.__name__
         try:
-            node = build_module(modname, module.__doc__)
+            node = build_module(modname, module.__doc__, modclass=modclass)
         except AttributeError:
             # in jython, java modules have no __doc__ (see #109562)
-            node = build_module(modname)
+            node = build_module(modname, modclass=modclass)
         node.file = node.path = path and os.path.abspath(path) or path
         node.name = modname
         MANAGER.cache_module(node)
@@ -375,6 +378,9 @@ class InspectBuilder(object):
 ### astroid bootstrapping ######################################################
 Astroid_BUILDER = InspectBuilder()
 
+class Builtins(nodes.Module):
+    pass
+
 _CONST_PROXY = {}
 def _astroid_bootstrapping(astroid_builtin=None):
     """astroid boot strapping the builtins module"""
@@ -382,7 +388,7 @@ def _astroid_bootstrapping(astroid_builtin=None):
     # inspect_build builtins, and then we can proxy Const
     if astroid_builtin is None:
         from six.moves import builtins
-        astroid_builtin = Astroid_BUILDER.inspect_build(builtins)
+        astroid_builtin = Astroid_BUILDER.inspect_build(builtins, modclass=Builtins)
 
     for cls, node_cls in node_classes.CONST_CLS.items():
         if cls is type(None):
@@ -399,6 +405,22 @@ def _astroid_bootstrapping(astroid_builtin=None):
             _CONST_PROXY[cls] = proxy
 
 _astroid_bootstrapping()
+
+
+@scoped_nodes.get_locals.register(Builtins)
+def scoped_node(node):
+    locals_ = collections.defaultdict(list)
+    for name in ('Ellipsis', 'False', 'None', 'NotImplemented',
+                 'True', '__debug__', '__package__', '__spec__', 'copyright',
+                 'credits', 'exit', 'help', 'license', 'quit'):
+        for child in (n for n in node.body if
+                     isinstance(n, (nodes.Const, nodes.EmptyNode))):
+            if child.name == name:
+                locals_[name].append(child)
+    for n in node.get_children():
+        scoped_nodes._get_locals(n, locals_)
+    return locals_
+
 
 # TODO : find a nicer way to handle this situation;
 # However __proxied introduced an

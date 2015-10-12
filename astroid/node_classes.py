@@ -342,14 +342,14 @@ class NodeNG(object):
     # these are lazy because they're relatively expensive to compute for every
     # single node, and they rarely get looked at
 
-    @decoratorsmod.cachedproperty
+    @decorators.cachedproperty
     def fromlineno(self):
         if self.lineno is None:
             return self._fixed_source_line()
         else:
             return self.lineno
 
-    @decoratorsmod.cachedproperty
+    @decorators.cachedproperty
     def tolineno(self):
         if not self._astroid_fields:
             # can't have children

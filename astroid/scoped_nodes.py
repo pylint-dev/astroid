@@ -1761,6 +1761,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         return True
 
 
+@_singledispatch
 def get_locals(node):
     '''Return the local variables for an appropriate node.
 
@@ -1777,20 +1778,26 @@ def get_locals(node):
     variables.
 
     '''
-    if not isinstance(node, LocalsDictNodeNG):
-        raise TypeError("This node doesn't have local variables: %s" %
-                        type(node))
+    raise TypeError("This isn't an astroid node: %s" % type(node))
+
+@get_locals.register(node_classes.NodeNG)
+def not_scoped_node(node):
+    raise TypeError("This node doesn't have local variables: %s" % type(node))
+
+@get_locals.register(LocalsDictNodeNG)
+def scoped_node(node):
     locals_ = collections.defaultdict(list)
     for n in node.get_children():
         _get_locals(n, locals_)
     return locals_
+
 
 @_singledispatch
 def _get_locals(node, locals_):
     raise TypeError('Non-astroid object in an astroid AST: %s' % type(node))
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
-@_get_locals.register(bases.NodeNG)
+@_get_locals.register(node_classes.NodeNG)
 def locals_generic(node, locals_):
     '''Generic nodes don't create name bindings or scopes.'''
     for n in node.get_children():

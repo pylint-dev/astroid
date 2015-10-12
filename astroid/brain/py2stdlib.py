@@ -283,6 +283,8 @@ def infer_named_tuple(node, context=None):
     try:
         type_name = infer_first(node.args[0], context).value
         fields = infer_first(node.args[1], context)
+        # TODO: this doesn't handle the case where duplicate field
+        # names are replaced using namedtuple's rename keyword.
         try:
             field_names = tuple(fields.value.replace(',', ' ').split())
         except AttributeError:
