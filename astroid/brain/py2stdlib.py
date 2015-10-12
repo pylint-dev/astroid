@@ -6,6 +6,7 @@ Currently help understanding of :
 * hashlib.md5 and hashlib.sha1
 """
 
+from collections import _class_template, _repr_template, _field_template
 import functools
 import sys
 from textwrap import dedent
@@ -22,19 +23,21 @@ PY3K = sys.version_info > (3, 0)
 PY33 = sys.version_info >= (3, 3)
 PY34 = sys.version_info >= (3, 4)
 
-# general function
+def infer_first(node, context):
+    try:
+        value = next(node.infer(context=context))
+        if value is util.YES:
+            raise UseInferenceDefault()
+        else:
+            return value
+    except StopIteration:
+        raise InferenceError()
 
 def infer_func_form(node, base_type, context=None, enum=False):
-    """Specific inference function for namedtuple or Python 3 enum. """
-    def infer_first(node):
-        try:
-            value = next(node.infer(context=context))
-            if value is util.YES:
-                raise UseInferenceDefault()
-            else:
-                return value
-        except StopIteration:
-            raise InferenceError()
+    """Specific inference function for namedtuple or Python 3 enum.
+
+    :param node: A Call node.
+    """
 
     # node is a Call node, class name as first argument and generated class
     # attributes as second argument
@@ -44,19 +47,19 @@ def infer_func_form(node, base_type, context=None, enum=False):
     # namedtuple or enums list of attributes can be a list of strings or a
     # whitespace-separate string
     try:
-        name = infer_first(node.args[0]).value
-        names = infer_first(node.args[1])
+        name = infer_first(node.args[0], context).value
+        names = infer_first(node.args[1], context)
         try:
             attributes = names.value.replace(',', ' ').split()
         except AttributeError:
             if not enum:
-                attributes = [infer_first(const).value for const in names.elts]
+                attributes = [infer_first(const, context).value for const in names.elts]
             else:
                 # Enums supports either iterator of (name, value) pairs
                 # or mappings.
                 # TODO: support only list, tuples and mappings.
                 if hasattr(names, 'items') and isinstance(names.items, list):
-                    attributes = [infer_first(const[0]).value
+                    attributes = [infer_first(const[0], context).value
                                   for const in names.items
                                   if isinstance(const[0], nodes.Const)]
                 elif hasattr(names, 'elts'):
@@ -65,11 +68,11 @@ def infer_func_form(node, base_type, context=None, enum=False):
                     # be mixed.
                     if all(isinstance(const, nodes.Tuple)
                            for const in names.elts):
-                        attributes = [infer_first(const.elts[0]).value
+                        attributes = [infer_first(const.elts[0], context).value
                                       for const in names.elts
                                       if isinstance(const, nodes.Tuple)]
                     else:
-                        attributes = [infer_first(const).value
+                        attributes = [infer_first(const, context).value
                                       for const in names.elts]
                 else:
                     raise AttributeError
@@ -83,6 +86,7 @@ def infer_func_form(node, base_type, context=None, enum=False):
     # set base class=tuple
     class_node.bases.append(base_type)
     # XXX add __init__(*attributes) method
+    # print(class_node.repr_tree())
     for attr in attributes:
         fake_node = nodes.EmptyNode()
         fake_node.parent = class_node
@@ -268,25 +272,38 @@ _looks_like_enum = functools.partial(_looks_like, name='Enum')
 
 def infer_named_tuple(node, context=None):
     """Specific inference function for namedtuple Call node"""
-    class_node, name, attributes = infer_func_form(node, nodes.Tuple._proxied,
-                                                   context=context)
-    fake = AstroidBuilder(MANAGER).string_build('''
-class %(name)s(tuple):
-    _fields = %(fields)r
-    def _asdict(self):
-        return self.__dict__
-    @classmethod
-    def _make(cls, iterable, new=tuple.__new__, len=len):
-        return new(cls, iterable)
-    def _replace(self, **kwds):
-        return self
-    ''' % {'name': name, 'fields': attributes})
-    class_node.locals['_asdict'] = fake.body[0].locals['_asdict']
-    class_node.locals['_make'] = fake.body[0].locals['_make']
-    class_node.locals['_replace'] = fake.body[0].locals['_replace']
-    class_node.locals['_fields'] = fake.body[0].locals['_fields']
-    # we use UseInferenceDefault, we can't be a generator so return an iterator
-    return iter([class_node])
+
+    # node is a Call node, class name as first argument and generated class
+    # attributes as second argument
+    if len(node.args) != 2:
+        # something weird here, go back to class implementation
+        raise UseInferenceDefault()
+    # namedtuple or enums list of attributes can be a list of strings or a
+    # whitespace-separate string
+    try:
+        type_name = infer_first(node.args[0], context).value
+        fields = infer_first(node.args[1], context)
+        try:
+            field_names = tuple(fields.value.replace(',', ' ').split())
+        except AttributeError:
+            field_names = tuple(infer_first(const, context).value for const in fields.elts)
+    except (AttributeError, exceptions.InferenceError):
+        raise UseInferenceDefault()
+
+    class_definition = _class_template.format(
+        typename = type_name,
+        field_names = field_names,
+        num_fields = len(field_names),
+        arg_list = repr(field_names).replace("'", "")[1:-1],
+        repr_fmt = ', '.join(_repr_template.format(name=name)
+                             for name in field_names),
+        field_defs = '\n'.join(_field_template.format(index=index, name=name)
+                               for index, name in enumerate(field_names))
+    )
+
+    # TODO: maybe memoize this call for efficiency, if it's needed.
+    namedtuple_node = AstroidBuilder(MANAGER).string_build(class_definition).body[3]
+    return iter([namedtuple_node])
 
 
 def infer_enum(node, context=None):
@@ -333,7 +350,7 @@ def infer_enum_class(node):
                         return %(name)r
                 ''' % {'name': target.name, 'types': ', '.join(node.basenames)})
                 fake = AstroidBuilder(MANAGER).string_build(classdef)[target.name]
-                print(fake.repr_tree())
+                # print(fake.repr_tree())
                 fake.parent = target.parent
                 for method in node.mymethods():
                     fake.locals[method.name] = [method]

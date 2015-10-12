@@ -141,6 +141,7 @@ def builtin_lookup(name):
         stmts = builtin_astroid.locals[name]
     except KeyError:
         stmts = ()
+    # print(stmts)
     return builtin_astroid, stmts
 
 
@@ -1812,6 +1813,7 @@ def locals_name(node, locals_):
 # pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(node_classes.Arguments)
 def locals_arguments(node, locals_):
+    '''Other names assigned by functions have AssignName nodes.'''
     locals_[node.vararg].append(node)
     locals_[node.kwarg].append(node)
 
@@ -1843,7 +1845,6 @@ def locals_import_from(node, locals_):
 
 
 def get_external_assignments(subject, attributes):
-
     '''This function takes a node and returns an object representing
     attribute assignments to that node.
 
@@ -1857,17 +1858,19 @@ def get_external_assignments(subject, attributes):
         attributes can be assigned to.
 
     :param attributes: A collections.defaultdict(list) to add names
-        to.  If a ClassDef or Module node is being assigned to, this will
-        be created by get_locals() and represents the attributes defined
-        directly on the Module or ClassDef by the AST.  Otherwise, it will
-        represent the instance attributes assigned to a particular object.
+        to.  If a ClassDef or Module node is being assigned to, this
+        will be created by get_locals() and represents the attributes
+        defined directly on the Module or ClassDef by the AST.
+        Otherwise, it will represent the instance attributes assigned
+        to a particular object and initially be empty.
 
     '''
     # As far as I know, there are no other builtin types that allow
-    # attribute assignment.
+    # attribute assignment.  However, Instances can also be proxies of
+    # nodes representing builtin types, and they're handled by simply
+    # returning an empty mapping.
     if not isinstance(subject, (Module, ClassDef, Lambda)):
-        raise TypeError("This node doesn't represent a type allowing"
-                        "attribute assignments: %s" % type(subject))
+        return attributes
     stack = [subject.root()]
     while stack:
         node = stack.pop()
@@ -1885,6 +1888,9 @@ def get_external_assignments(subject, attributes):
                     if node in values:
                         continue
                     else:
+                        # I have no idea why there's a special case
+                        # for __init__ that changes the order of the
+                        # attributes or what that order means.
                         if (values and isinstance(frame, FunctionDef) and
                             frame.name == '__init__' and not
                             values[0].frame().name == '__init__'):

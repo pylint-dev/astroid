@@ -113,10 +113,11 @@ def inference_tip(infer_function):
 
 
 def register_module_extender(manager, module_name, get_extension_mod):
-    def transform(node):
+    def transform(module):
         extension_module = get_extension_mod()
-        for name, obj in extension_module.locals.items():
-            node.locals[name] = obj
+        # for name, obj in extension_module.locals.items():
+        #     node.locals[name] = obj
+        module.body.extend(extension_module.body)
 
     manager.register_transform(Module, transform, lambda n: n.name == module_name)
 

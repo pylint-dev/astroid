@@ -17,6 +17,8 @@
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 """tests for the astroid inference capabilities
 """
+from __future__ import print_function
+
 import os
 import sys
 from functools import partial
@@ -3111,6 +3113,8 @@ class GetattrTest(unittest.TestCase):
                 getattr(self, 'test') #@
         ''')
 
+        # for n in ast_nodes:
+        #     print(n.repr_tree(), file=sys.stderr)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, BoundMethod)
         self.assertEqual(first.bound.name, 'A')
