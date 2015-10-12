@@ -21,22 +21,10 @@ inference utils.
 from __future__ import print_function
 
 import collections
-import functools
-import pprint
 import sys
 import types
-import warnings
 
-try:
-    from functools import singledispatch as _singledispatch
-except ImportError:
-    from singledispatch import singledispatch as _singledispatch
-
-import wrapt
-
-from astroid import as_string
 from astroid import context as contextmod
-from astroid import decorators as decoratorsmod
 from astroid import exceptions
 from astroid import util
 

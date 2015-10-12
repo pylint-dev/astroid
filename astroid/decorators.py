@@ -21,8 +21,12 @@
 
 """ A few useful function/method decorators."""
 
+import functools
+
 import wrapt
 
+from astroid import context as contextmod
+from astroid import exceptions
 from astroid import util
 
 
@@ -91,7 +95,7 @@ def path_wrapper(func):
         yielded = set()
         for res in _func(node, context, **kwargs):
             # unproxy only true instance, not const, tuple, dict...
-            if res.__class__ is Instance:
+            if res.__class__.__name__ == 'Instance':
                 ares = res._proxied
             else:
                 ares = res
@@ -99,6 +103,7 @@ def path_wrapper(func):
                 yield res
                 yielded.add(ares)
     return wrapped
+
 
 @wrapt.decorator
 def yes_if_nothing_inferred(func, instance, args, kwargs):
@@ -108,6 +113,7 @@ def yes_if_nothing_inferred(func, instance, args, kwargs):
         yield node
     if not inferred:
         yield util.YES
+
 
 @wrapt.decorator
 def raise_if_nothing_inferred(func, instance, args, kwargs):

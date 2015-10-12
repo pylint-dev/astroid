@@ -21,6 +21,7 @@
 
 import importlib
 import sys
+import warnings
 
 import lazy_object_proxy
 import six
@@ -67,6 +68,7 @@ def _instancecheck(cls, other):
 
 
 def proxy_alias(alias_name, node_type):
+    """Get a Proxy from the given name to the given node type."""
     proxy = type(alias_name, (lazy_object_proxy.Proxy,),
                  {'__class__': object.__dict__['__class__'],
                   '__instancecheck__': _instancecheck})

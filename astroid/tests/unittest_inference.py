@@ -31,7 +31,9 @@ from astroid import InferenceError, builder, nodes
 from astroid.builder import parse
 from astroid.inference import infer_end as inference_infer_end
 from astroid.bases import Instance, BoundMethod, UnboundMethod,\
-                                path_wrapper, BUILTINS
+                                BUILTINS
+from astroid import arguments
+from astroid import decorators as decoratorsmod
 from astroid import helpers
 from astroid import objects
 from astroid import test_utils
@@ -57,8 +59,8 @@ class InferenceUtilsTest(unittest.TestCase):
     def test_path_wrapper(self):
         def infer_default(self, *args):
             raise InferenceError
-        infer_default = path_wrapper(infer_default)
-        infer_end = path_wrapper(inference_infer_end)
+        infer_default = decoratorsmod.path_wrapper(infer_default)
+        infer_end = decoratorsmod.path_wrapper(inference_infer_end)
         with self.assertRaises(InferenceError):
             next(infer_default(1))
         self.assertEqual(next(infer_end(1)), 1)
@@ -1721,6 +1723,32 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertIsInstance(inferred, Instance)
             self.assertEqual(inferred.qname(), "{}.dict".format(BUILTINS))
 
+    def test_dict_inference_kwargs(self):
+        ast_node = test_utils.extract_node('''dict(a=1, b=2, **{'c': 3})''')
+        self.assertInferDict(ast_node, {'a': 1, 'b': 2, 'c': 3})
+
+    @test_utils.require_version('3.5')
+    def test_dict_inference_for_multiple_starred(self):
+        pairs = [
+            ('dict(a=1, **{"b": 2}, **{"c":3})', {'a':1, 'b':2, 'c':3}),
+            ('dict(a=1, **{"b": 2}, d=4, **{"c":3})', {'a':1, 'b':2, 'c':3, 'd':4}),
+            ('dict({"a":1}, b=2, **{"c":3})', {'a':1, 'b':2, 'c':3}),
+        ]
+        for code, expected_value in pairs:
+            node = test_utils.extract_node(code)
+            self.assertInferDict(node, expected_value)
+
+    def test_dict_invalid_args(self):
+        invalid_values = [
+            'dict(*1)',
+            'dict(**lala)',
+            'dict(**[])',
+        ]
+        for invalid in invalid_values:
+            ast_node = test_utils.extract_node(invalid)
+            inferred = next(ast_node.infer())
+            self.assertIsInstance(inferred, Instance)
+            self.assertEqual(inferred.qname(), "{}.dict".format(BUILTINS))
 
     def test_str_methods(self):
         code = """
@@ -3592,6 +3620,19 @@ class ArgumentsTest(unittest.TestCase):
         value = self._get_dict_value(inferred)
         self.assertEqual(value, expected_value)
 
+    def test_kwargs_are_overriden(self):
+        ast_nodes = test_utils.extract_node('''
+        def test(f):
+             return f
+        test(f=23, **{'f': 34}) #@
+        def test(f=None):
+             return f
+        test(f=23, **{'f':23}) #@
+        ''')
+        for ast_node in ast_nodes:
+            inferred = next(ast_node.infer())
+            self.assertEqual(inferred, util.YES)
+
     def test_fail_to_infer_args(self):
         ast_nodes = test_utils.extract_node('''
         def test(a, **kwargs): return a
@@ -3683,6 +3724,83 @@ class SliceTest(unittest.TestCase):
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, 'slice')
+
+
+class CallSiteTest(unittest.TestCase):
+
+    @staticmethod
+    def _call_site_from_call(call):
+        return arguments.CallSite.from_call(call)
+
+    def _test_call_site_pair(self, code, expected_args, expected_keywords):
+        ast_node = test_utils.extract_node(code)
+        call_site = self._call_site_from_call(ast_node)
+        self.assertEqual(len(call_site.positional_arguments), len(expected_args))
+        self.assertEqual([arg.value for arg in call_site.positional_arguments],
+                         expected_args)
+        self.assertEqual(len(call_site.keyword_arguments), len(expected_keywords))
+        for keyword, value in expected_keywords.items():
+            self.assertIn(keyword, call_site.keyword_arguments)
+            self.assertEqual(call_site.keyword_arguments[keyword].value, value)
+
+    def _test_call_site(self, pairs):
+        for pair in pairs:
+            self._test_call_site_pair(*pair)
+
+    @test_utils.require_version('3.5')
+    def test_call_site_starred_args(self):
+        pairs = [
+            (
+                "f(*(1, 2), *(2, 3), *(3, 4), **{'a':1}, **{'b': 2})",
+                [1, 2, 2, 3, 3, 4],
+                {'a': 1, 'b': 2}
+            ),
+            (
+                "f(1, 2, *(3, 4), 5, *(6, 7), f=24, **{'c':3})",
+                [1, 2, 3, 4, 5, 6, 7],
+                {'f':24, 'c': 3},
+            ),
+            # Too many fs passed into.
+            (
+                "f(f=24, **{'f':24})", [], {},
+            ),
+        ]
+        self._test_call_site(pairs)
+
+    def test_call_site(self):
+        pairs = [
+            (
+                "f(1, 2)", [1, 2], {}
+            ),
+            (
+                "f(1, 2, *(1, 2))", [1, 2, 1, 2], {}
+            ),
+            (
+                "f(a=1, b=2, c=3)", [], {'a':1, 'b':2, 'c':3}
+            )
+        ]
+        self._test_call_site(pairs)
+
+    def _test_call_site_valid_arguments(self, values, invalid):
+        for value in values:
+            ast_node = test_utils.extract_node(value)
+            call_site = self._call_site_from_call(ast_node)
+            self.assertEqual(call_site.has_invalid_arguments(), invalid)
+
+    def test_call_site_valid_arguments(self):
+        values = [
+            "f(*lala)", "f(*1)", "f(*object)",
+        ]
+        self._test_call_site_valid_arguments(values, invalid=True)
+        values = [
+            "f()", "f(*(1, ))", "f(1, 2, *(2, 3))",
+        ]
+        self._test_call_site_valid_arguments(values, invalid=False)
+
+    def test_duplicated_keyword_arguments(self):
+        ast_node = test_utils.extract_node('f(f=24, **{"f": 25})')
+        site = self._call_site_from_call(ast_node)
+        self.assertIn('f', site.duplicated_keywords)
 
 
 if __name__ == '__main__':

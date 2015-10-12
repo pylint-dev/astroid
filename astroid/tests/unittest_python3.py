@@ -18,6 +18,7 @@
 from textwrap import dedent
 import unittest
 
+from astroid import nodes
 from astroid.node_classes import Assign, Expr, YieldFrom, Name, Const
 from astroid.builder import AstroidBuilder
 from astroid.scoped_nodes import ClassDef, FunctionDef
@@ -224,6 +225,29 @@ class Python3TC(unittest.TestCase):
         for code in (code1, code2):
             func = extract_node(code)
             self.assertEqual(func.as_string(), code)
+
+    @require_version('3.5')
+    def test_unpacking_in_dicts(self):
+        code = "{'x': 1, **{'y': 2}}"
+        node = extract_node(code)
+        self.assertEqual(node.as_string(), code)
+        keys = [key for (key, _) in node.items]
+        self.assertIsInstance(keys[0], nodes.Const)
+        self.assertIsInstance(keys[1], nodes.DictUnpack)
+
+    @require_version('3.5')
+    def test_nested_unpacking_in_dicts(self):
+        code = "{'x': 1, **{'y': 2, **{'z': 3}}}"
+        node = extract_node(code)
+        self.assertEqual(node.as_string(), code)
+
+    @require_version('3.5')
+    def test_unpacking_in_dict_getitem(self):
+        node = extract_node('{1:2, **{2:3, 3:4}, **{5: 6}}')
+        for key, expected in ((1, 2), (2, 3), (3, 4), (5, 6)):
+            value = node.getitem(key)
+            self.assertIsInstance(value, nodes.Const)
+            self.assertEqual(value.value, expected)
 
 
 if __name__ == '__main__':

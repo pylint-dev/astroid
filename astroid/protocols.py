@@ -29,6 +29,7 @@ from astroid import arguments
 from astroid import bases
 from astroid import context as contextmod
 from astroid import exceptions
+from astroid import decorators
 from astroid import node_classes
 from astroid import nodes
 from astroid import util
@@ -113,7 +114,7 @@ for _KEY, _IMPL in list(BIN_OP_IMPL.items()):
     BIN_OP_IMPL[_KEY + '='] = _IMPL
 
 
-@bases.yes_if_nothing_inferred
+@decorators.yes_if_nothing_inferred
 def const_infer_binary_op(self, operator, other, context, _):
     not_implemented = nodes.Const(NotImplemented)
     if isinstance(other, nodes.Const):
@@ -145,7 +146,7 @@ def _multiply_seq_by_int(self, other, context):
     return node
 
 
-@bases.yes_if_nothing_inferred
+@decorators.yes_if_nothing_inferred
 def tl_infer_binary_op(self, operator, other, context, method):
     not_implemented = nodes.Const(NotImplemented)
     if isinstance(other, self.__class__) and operator == '+':
@@ -175,7 +176,7 @@ nodes.Tuple.infer_binary_op = tl_infer_binary_op
 nodes.List.infer_binary_op = tl_infer_binary_op
 
 
-@bases.yes_if_nothing_inferred
+@decorators.yes_if_nothing_inferred
 def instance_infer_binary_op(self, operator, other, context, method):
     return method.infer_call_result(self, context)
 
@@ -233,7 +234,7 @@ def _resolve_looppart(parts, asspath, context):
                     break
 
 
-@bases.raise_if_nothing_inferred
+@decorators.raise_if_nothing_inferred
 def for_assigned_stmts(self, node, context=None, asspath=None):
     if asspath is None:
         for lst in self.iter.infer(context):
@@ -282,8 +283,8 @@ def _arguments_infer_argname(self, name, context):
             return
 
     if context and context.callcontext:
-        inferator = arguments.ArgumentInference(context.callcontext)
-        for value in inferator.infer_argument(self.parent, name, context):
+        call_site = arguments.CallSite(context.callcontext)
+        for value in call_site.infer_argument(self.parent, name, context):
             yield value
         return
 
@@ -315,14 +316,14 @@ def arguments_assigned_stmts(self, node, context, asspath=None):
         callcontext = context.callcontext
         context = contextmod.copy_context(context)
         context.callcontext = None
-        return arguments.ArgumentInference(callcontext).infer_argument(
-            self.parent, node.name, context)
+        args = arguments.CallSite(callcontext)
+        return args.infer_argument(self.parent, node.name, context)
     return _arguments_infer_argname(self, node.name, context)
 
 nodes.Arguments.assigned_stmts = arguments_assigned_stmts
 
 
-@bases.raise_if_nothing_inferred
+@decorators.raise_if_nothing_inferred
 def assign_assigned_stmts(self, node, context=None, asspath=None):
     if not asspath:
         yield self.value
@@ -363,7 +364,7 @@ def _resolve_asspart(parts, asspath, context):
                     return
 
 
-@bases.raise_if_nothing_inferred
+@decorators.raise_if_nothing_inferred
 def excepthandler_assigned_stmts(self, node, context=None, asspath=None):
     for assigned in node_classes.unpack_infer(self.type):
         if isinstance(assigned, nodes.ClassDef):
@@ -417,7 +418,7 @@ def _infer_context_manager(self, mgr, context):
             yield result
 
 
-@bases.raise_if_nothing_inferred
+@decorators.raise_if_nothing_inferred
 def with_assigned_stmts(self, node, context=None, asspath=None):
     """Infer names and other nodes from a *with* statement.
 
@@ -458,7 +459,7 @@ def with_assigned_stmts(self, node, context=None, asspath=None):
 nodes.With.assigned_stmts = with_assigned_stmts
 
 
-@bases.yes_if_nothing_inferred
+@decorators.yes_if_nothing_inferred
 def starred_assigned_stmts(self, node=None, context=None, asspath=None):
     stmt = self.statement()
     if not isinstance(stmt, (nodes.Assign, nodes.For)):

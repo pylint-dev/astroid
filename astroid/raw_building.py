@@ -53,6 +53,18 @@ def _attach_local_node(parent, node, name):
     node.name = name # needed by add_local_node
     parent.add_local_node(node)
 
+
+def _add_dunder_class(func, member):
+    """Add a __class__ member to the given func node, if we can determine it."""
+    python_cls = member.__class__
+    cls_name = getattr(python_cls, '__name__', None)
+    if not cls_name:
+        return
+    bases = [ancestor.__name__ for ancestor in python_cls.__bases__]
+    ast_klass = build_class(cls_name, bases, python_cls.__doc__)
+    func.instance_attrs['__class__'] = [ast_klass]
+
+
 _marker = object()
 
 
@@ -183,6 +195,7 @@ def object_build_methoddescriptor(node, member, localname):
     # and empty argument list
     func.args.args = None
     node.add_local_node(func, localname)
+    _add_dunder_class(func, member)
 
 
 def _base_class_object_build(node, member, basenames, name=None, localname=None):
