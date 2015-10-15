@@ -30,6 +30,7 @@ from astroid import bases
 from astroid import exceptions
 from astroid import manager
 from astroid import modutils
+from astroid import nodes
 from astroid import raw_building
 from astroid import rebuilder
 from astroid import util
@@ -149,6 +150,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         """Handles encoding and delayed nodes after a module has been built"""
         module.file_encoding = encoding
         self._manager.cache_module(module)
+        delayed_assignments(module)
 
         # Visit the transforms
         if self._apply_transforms:
@@ -180,6 +182,63 @@ class AstroidBuilder(raw_building.InspectBuilder):
         # module._import_from_nodes = builder._import_from_nodes
         # module._delayed_assattr = builder._delayed_assattr
         return module
+
+
+def delayed_assignments(root):
+    '''This function modifies nodes according to AssignAttr nodes.
+
+    It traverses the entire AST, and when it encounters an AssignAttr
+    node it modifies the instance_attrs or external_attrs of the node
+    respresenting that object.  Because it uses inference functions
+    that in turn depend on instance_attrs and external_attrs, calling
+    it a tree that already have instance_attrs and external_attrs set
+    may crash or fail to modify those variables correctly.
+
+    :param root: The root of the AST that delayed_assignments() is
+        searching for assignments.
+
+    '''
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        stack.extend(node.get_children())
+        if isinstance(node, nodes.AssignAttr):
+            # print('Method:', node.infer)
+            # print('Inferred:', [i for i in node.expr.infer()])
+            frame = node.frame()
+            try:
+                # Here, node.expr.infer() will return either the node
+                # being assigned to itself, for Module, ClassDef,
+                # FunctionDef, or Lambda nodes, or an Instance object
+                # corresponding to a ClassDef node.
+                for inferred in node.expr.infer():
+                    if type(inferred) is bases.Instance:
+                        values = inferred._proxied.instance_attrs[node.attrname]
+                    elif isinstance(inferred, nodes.Lambda):
+                        values = inferred.instance_attrs[node.attrname]
+                    elif isinstance(inferred, (nodes.Module, nodes.ClassDef)):
+                        values = inferred.external_attrs[node.attrname]
+                    else:
+                        continue
+                    if node in values:
+                        continue
+                    else:
+                        # print('Inferred:', repr(inferred))
+                        # if values:
+                        #     print('Locals or instance_attrs:', values)
+                        # print('Frame:', repr(frame))
+                        # print('Assignment:', node)
+
+                        # I have no idea why there's a special case
+                        # for __init__ that changes the order of the
+                        # attributes or what that order means.
+                        if (values and frame.name == '__init__' and not
+                            values[0].frame().name == '__init__'):
+                            values.insert(0, node)
+                        else:
+                            values.append(node)
+            except exceptions.InferenceError:
+                pass
 
 
 def parse(code, module_name='', path=None, apply_transforms=True):

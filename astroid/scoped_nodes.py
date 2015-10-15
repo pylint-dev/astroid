@@ -27,6 +27,7 @@ from __future__ import print_function
 import collections
 import io
 import itertools
+import pprint
 import types
 import warnings
 
@@ -141,7 +142,7 @@ def builtin_lookup(name):
         stmts = builtin_astroid.locals[name]
     except KeyError:
         stmts = ()
-    # print(stmts)
+    # print(repr(builtin_astroid), name, stmts)
     return builtin_astroid, stmts
 
 
@@ -183,6 +184,10 @@ class LocalsDictNodeNG(node_classes.LookupMixIn,
 
     def _scope_lookup(self, node, name, offset=0):
         """XXX method for interfacing the scope lookup"""
+        # print(repr(self))
+        # pprint.pprint(dict(self.locals))
+        # print(node)
+        # print(name)
         try:
             stmts = node._filter_stmts(self.locals[name], self, offset)
         except KeyError:
@@ -315,6 +320,7 @@ class Module(LocalsDictNodeNG):
         # self.locals = self.globals = {}
         self.body = []
         # self.future_imports = set()
+        self.external_attrs = collections.defaultdict(list)
 
     def postinit(self, body=None):
         self.body = body
@@ -661,18 +667,18 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
     type = 'function'
 
     def __init__(self, lineno=None, col_offset=None, parent=None):
-        # self.locals = {}
         self.args = []
         self.body = []
+        self.instance_attrs = collections.defaultdict(list)
         super(Lambda, self).__init__(lineno, col_offset, parent)
 
     def postinit(self, args, body):
         self.args = args
         self.body = body
 
-    @property
-    def instance_attrs(self):
-        return types.MappingProxyType(get_external_assignments(self, collections.defaultdict(list)))
+    # @property
+    # def instance_attrs(self):
+    #     return types.MappingProxyType(get_external_assignments(self, collections.defaultdict(list)))
 
     def pytype(self):
         if 'method' in self.type:
@@ -1107,12 +1113,13 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
     def __init__(self, name=None, doc=None, lineno=None,
                  col_offset=None, parent=None):
-        # self.instance_attrs = {}
         # self.locals = {}
         self.bases = []
         self.body = []
         self.name = name
         self.doc = doc
+        self.instance_attrs = collections.defaultdict(list)
+        self.external_attrs = collections.defaultdict(list)
         super(ClassDef, self).__init__(lineno, col_offset, parent)
 
     def postinit(self, bases, body, decorators, newstyle=None, metaclass=None):
@@ -1126,11 +1133,11 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
     @property
     def locals(self):
-        return types.MappingProxyType(get_external_assignments(self, get_locals(self)))
+        return get_locals(self)
 
-    @property
-    def instance_attrs(self):
-        return types.MappingProxyType(get_external_assignments(self, collections.defaultdict(list)))
+    # @property
+    # def instance_attrs(self):
+    #     return types.MappingProxyType(get_external_assignments(self, collections.defaultdict(list)))
 
     def _newstyle_impl(self, context=None):
         if context is None:
@@ -1823,8 +1830,10 @@ def locals_name(node, locals_):
 @_get_locals.register(node_classes.Arguments)
 def locals_arguments(node, locals_):
     '''Other names assigned by functions have AssignName nodes.'''
-    locals_[node.vararg].append(node)
-    locals_[node.kwarg].append(node)
+    if node.vararg:
+        locals_[node.vararg].append(node)
+    if node.kwarg:
+        locals_[node.kwarg].append(node)        
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(node_classes.Import)
@@ -1851,64 +1860,6 @@ def locals_import_from(node, locals_):
         else:
             locals_[asname or name].append(node)
             sort_locals(locals_[asname or name])
-
-
-def get_external_assignments(subject, attributes):
-    '''This function takes a node and returns an object representing
-    attribute assignments to that node.
-
-    It searches the whole AST for AssignAttr nodes that assign to the
-    object represented by that node, then returns a
-    collections.defaultdict(list) containing all the names and nodes
-    that have been assigned to the original node.
-
-    :param subject: The node that get_external_assignments() is
-        searching for assignments to.  This should be a node whose
-        attributes can be assigned to.
-
-    :param attributes: A collections.defaultdict(list) to add names
-        to.  If a ClassDef or Module node is being assigned to, this
-        will be created by get_locals() and represents the attributes
-        defined directly on the Module or ClassDef by the AST.
-        Otherwise, it will represent the instance attributes assigned
-        to a particular object and initially be empty.
-
-    '''
-    # As far as I know, there are no other builtin types that allow
-    # attribute assignment.  However, Instances can also be proxies of
-    # nodes representing builtin types, and they're handled by simply
-    # returning an empty mapping.
-    if not isinstance(subject, (Module, ClassDef, Lambda)):
-        return attributes
-    stack = [subject.root()]
-    while stack:
-        node = stack.pop()
-        stack.extend(node.get_children())
-        if isinstance(node, node_classes.AssignAttr):
-            frame = node.frame()
-            try:
-                # Here, node.expr.infer() will return either the node
-                # being assigned to itself, for Module, ClassDef,
-                # FunctionDef, or Lambda nodes, or an Instance object
-                # corresponding to a ClassDef node.
-                for inferred in (i for i in node.expr.infer() if i is subject
-                                 or getattr(i, '_proxied', None) is subject):
-                    values = attributes[node.attrname]
-                    if node in values:
-                        continue
-                    else:
-                        # I have no idea why there's a special case
-                        # for __init__ that changes the order of the
-                        # attributes or what that order means.
-                        if (values and isinstance(frame, FunctionDef) and
-                            frame.name == '__init__' and not
-                            values[0].frame().name == '__init__'):
-                            values.insert(0, node)
-                        else:
-                            values.append(node)
-            except exceptions.InferenceError:
-                pass
-    return attributes
 
 
 # Backwards-compatibility aliases
