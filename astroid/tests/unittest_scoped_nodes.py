@@ -685,8 +685,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         expected_methods = {'__init__', 'class_method', 'method', 'static_method'}
         klass2 = self.module['YOUPI']
         methods = {m.name for m in klass2.methods()}
-        self.assertTrue(
-            methods.issuperset(expected_methods))
+        self.assertTrue(methods.issuperset(expected_methods))
         methods = {m.name for m in klass2.mymethods()}
         self.assertSetEqual(expected_methods, methods)
         klass2 = self.module2['Specialization']
