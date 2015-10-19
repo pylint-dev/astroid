@@ -1,5 +1,6 @@
 """test module for astroid
 """
+from __future__ import print_function
 
 __revision__ = '$Id: module.py,v 1.2 2005-11-02 11:56:54 syt Exp $'
 from astroid.node_classes import Name as NameNode
