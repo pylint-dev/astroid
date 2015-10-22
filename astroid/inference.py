@@ -372,6 +372,9 @@ def _infer_unaryop(self, context=None):
                     inferred = next(meth.infer(context=context))
                     if inferred is util.YES or not inferred.callable():
                         continue
+
+                    context = contextmod.copy_context(context)
+                    context.callcontext = contextmod.CallContext(args=[operand])
                     call_results = inferred.infer_call_result(self, context=context)
                     result = next(call_results, None)
                     if result is None:

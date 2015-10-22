@@ -2004,17 +2004,25 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             def __neg__(self):
                 return +self - 41
             def __invert__(self):
-                return []
+                return 42
         class BadInstance(object):
             def __pos__(self):
                 return lala
             def __neg__(self):
                 return missing
+        class LambdaInstance(object):
+            __pos__ = lambda self: self.lala
+            __neg__ = lambda self: self.lala + 1
+            @property
+            def lala(self): return 24            
         instance = GoodInstance()
+        lambda_instance = LambdaInstance()
         +instance #@
         -instance #@
         ~instance #@
         --instance #@
+        +lambda_instance #@
+        -lambda_instance #@
 
         bad_instance = BadInstance()
         +bad_instance #@
@@ -2027,20 +2035,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         -func #@
         +BadInstance #@
         ''')
-        pos = next(ast_nodes[0].infer())
-        self.assertIsInstance(pos, nodes.Const)
-        self.assertEqual(pos.value, 42)
-        neg = next(ast_nodes[1].infer())
-        self.assertIsInstance(neg, nodes.Const)
-        self.assertEqual(neg.value, 1)
-        invert = next(ast_nodes[2].infer())
-        self.assertIsInstance(invert, nodes.List)
-        self.assertEqual(invert.elts, [])
-        neg_neg = next(ast_nodes[3].infer())
-        self.assertIsInstance(neg_neg, nodes.Const)
-        self.assertEqual(neg_neg.value, -1)
+        expected = [42, 1, 42, -1, 24, 25]
+        for node, value in zip(ast_nodes[:6], expected):
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, nodes.Const)
+            self.assertEqual(inferred.value, value)
 
-        for bad_node in ast_nodes[4:]:
+        for bad_node in ast_nodes[6:]:
             inferred = next(bad_node.infer())
             self.assertEqual(inferred, util.YES)
 
