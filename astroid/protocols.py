@@ -164,7 +164,7 @@ def tl_infer_binary_op(self, operator, other, context, method):
         yield _multiply_seq_by_int(self, other, context)
     elif isinstance(other, bases.Instance) and operator == '*':
         # Verify if the instance supports __index__.
-        as_index = class_as_index(other, context)
+        as_index = _class_as_index(other, context)
         if not as_index:
             yield util.YES
         else:
@@ -518,7 +518,7 @@ def starred_assigned_stmts(self, node=None, context=None, asspath=None):
 nodes.Starred.assigned_stmts = starred_assigned_stmts
 
 
-def class_as_index(node, context):
+def _class_as_index(node, context):
     """Get the value as an index for the given node
 
     It is expected that the node is an Instance. If it provides
