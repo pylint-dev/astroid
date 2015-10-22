@@ -3059,6 +3059,35 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             inferred = next(node.infer())
             self.assertRaises(InferenceError, next, inferred.infer_call_result(node))
 
+    def test_context_call_for_context_managers(self):
+        ast_nodes = test_utils.extract_node('''
+        class A:
+            def __enter__(self):
+                return self
+        class B:
+            __enter__ = lambda self: self
+        class C:
+            @property
+            def a(self): return A()
+            def __enter__(self):
+                return self.a
+        with A() as a:
+            a #@
+        with B() as b:
+            b #@
+        with C() as c:
+            c #@
+        ''')
+        first_a = next(ast_nodes[0].infer())
+        self.assertIsInstance(first_a, Instance)
+        self.assertEqual(first_a.name, 'A')
+        second_b = next(ast_nodes[1].infer())
+        self.assertIsInstance(second_b, Instance)
+        self.assertEqual(second_b.name, 'B')
+        third_c = next(ast_nodes[2].infer())
+        self.assertIsInstance(third_c, Instance)
+        self.assertEqual(third_c.name, 'A')
+
 
 class GetattrTest(unittest.TestCase):
 

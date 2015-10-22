@@ -414,6 +414,8 @@ def _infer_context_manager(self, mgr, context):
             return
         if not isinstance(enter, bases.BoundMethod):
             return
+        if not context.callcontext:
+            context.callcontext = contextmod.CallContext(args=[inferred])
         for result in enter.infer_call_result(self, context):
             yield result
 
