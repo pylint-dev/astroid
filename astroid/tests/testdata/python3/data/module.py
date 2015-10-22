@@ -1,6 +1,5 @@
 """test module for astroid
 """
-from __future__ import print_function
 
 __revision__ = '$Id: module.py,v 1.2 2005-11-02 11:56:54 syt Exp $'
 from astroid.node_classes import Name as NameNode
@@ -20,7 +19,7 @@ def global_access(key, val):
         else:
             break
     else:
-        print('!!!')
+        return
 
 
 class YO:
@@ -53,10 +52,10 @@ class YOUPI(YO):
             local = None
             autre = [a for (a, b) in MY_DICT if b]
             if b in autre:
-                print('yo', end=' ')
+                return
             else:
                 if a in autre:
-                    print('hehe')
+                    return 'hehe'
             global_access(local, val=autre)
         finally:
             return local
@@ -74,7 +73,6 @@ class YOUPI(YO):
 
 def four_args(a, b, c, d):
     """four arguments (was nested_args)"""
-    print(a, b, c, d)
     while 1:
         if a:
             break
