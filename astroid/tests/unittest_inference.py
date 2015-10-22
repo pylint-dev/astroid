@@ -2723,6 +2723,29 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             inferred = next(rest.infer())
             self.assertEqual(inferred, util.YES)
 
+    def test_subscript_supports__index__(self):
+        ast_nodes = test_utils.extract_node('''
+        class Index(object):
+            def __index__(self): return 2
+        class LambdaIndex(object):
+            __index__ = lambda self: self.foo
+            @property
+            def foo(self): return 1
+        class NonIndex(object):
+            __index__ = lambda self: None
+        a = [1, 2, 3, 4]
+        a[Index()] #@
+        a[LambdaIndex()] #@
+        a[NonIndex()] #@         
+        ''')
+        first = next(ast_nodes[0].infer())
+        self.assertIsInstance(first, nodes.Const)
+        self.assertEqual(first.value, 3)
+        second = next(ast_nodes[1].infer())
+        self.assertIsInstance(second, nodes.Const)
+        self.assertEqual(second.value, 2)
+        self.assertRaises(InferenceError, next, ast_nodes[2].infer())        
+
     def test_special_method_masquerading_as_another(self):
         ast_node = test_utils.extract_node('''
         class Info(object):

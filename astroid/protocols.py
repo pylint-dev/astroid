@@ -31,6 +31,7 @@ from astroid import context as contextmod
 from astroid import exceptions
 from astroid import decorators
 from astroid import node_classes
+from astroid import helpers
 from astroid import nodes
 from astroid import util
 
@@ -164,7 +165,7 @@ def tl_infer_binary_op(self, operator, other, context, method):
         yield _multiply_seq_by_int(self, other, context)
     elif isinstance(other, bases.Instance) and operator == '*':
         # Verify if the instance supports __index__.
-        as_index = _class_as_index(other, context)
+        as_index = helpers.class_instance_as_index(other)
         if not as_index:
             yield util.YES
         else:
@@ -516,22 +517,3 @@ def starred_assigned_stmts(self, node=None, context=None, asspath=None):
                 break
 
 nodes.Starred.assigned_stmts = starred_assigned_stmts
-
-
-def _class_as_index(node, context):
-    """Get the value as an index for the given node
-
-    It is expected that the node is an Instance. If it provides
-    an *__index__* method, we'll try to return its int value.
-    """
-    try:
-        for inferred in node.igetattr('__index__', context=context):
-            if not isinstance(inferred, bases.BoundMethod):
-                continue
-
-            for result in inferred.infer_call_result(node, context=context):
-                if (isinstance(result, nodes.Const)
-                        and isinstance(result.value, int)):
-                    return result
-    except exceptions.InferenceError:
-        pass

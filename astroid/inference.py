@@ -252,6 +252,10 @@ def infer_subscript(self, context=None):
             step = _slice_value(index.step, context)
             if all(elem is not _SLICE_SENTINEL for elem in (lower, upper, step)):
                 index_value = slice(lower, upper, step)
+        elif isinstance(index, bases.Instance):
+            index = helpers.class_instance_as_index(index)
+            if index:
+                index_value = index.value
         else:
             raise exceptions.InferenceError()
 
