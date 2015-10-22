@@ -3422,13 +3422,23 @@ class TestBool(unittest.TestCase):
                return False
         class B(object):
            {method} = C()
+        class LambdaBoolFalse(object):
+            {method} = lambda self: self.foo
+            @property
+            def foo(self): return 0
+        class FalseBoolLen(object):
+            __len__ = lambda self: self.foo
+            @property
+            def foo(self): return 0
         bool(FalseClass) #@
         bool(TrueClass) #@
         bool(FalseClass()) #@
         bool(TrueClass()) #@
         bool(B()) #@
+        bool(LambdaBoolFalse()) #@
+        bool(FalseBoolLen()) #@
         '''.format(method=BOOL_SPECIAL_METHOD))
-        expected = [True, True, False, True, False]
+        expected = [True, True, False, True, False, False, False]
         for node, expected_value in zip(ast_nodes, expected):
             inferred = next(node.infer())
             self.assertEqual(inferred.value, expected_value)
