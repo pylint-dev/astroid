@@ -2744,7 +2744,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         second = next(ast_nodes[1].infer())
         self.assertIsInstance(second, nodes.Const)
         self.assertEqual(second.value, 2)
-        self.assertRaises(InferenceError, next, ast_nodes[2].infer())        
+        self.assertRaises(InferenceError, next, ast_nodes[2].infer())
 
     def test_special_method_masquerading_as_another(self):
         ast_node = test_utils.extract_node('''
