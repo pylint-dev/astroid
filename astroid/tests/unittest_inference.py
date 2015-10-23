@@ -957,6 +957,18 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(inferred), 1)
         self.assertEqual(inferred[0], util.YES)
 
+    def test_binary_op_list_mul_int(self):
+        'test correct handling on list multiplied by int when there are more than one'
+        code = '''
+        from ctypes import c_int
+        seq = [c_int()] * 4
+        '''
+        ast = parse(code, __name__)
+        inferred = ast['seq'].inferred()
+        self.assertEqual(len(inferred), 1)
+        listval = inferred[0]
+        self.assertIsInstance(listval, nodes.List)
+        self.assertEqual(len(listval.itered()), 4)
     def test_binary_op_tuple_add(self):
         ast = builder.string_build('a = (1,) + (2,)', __name__, __file__)
         inferred = list(ast['a'].infer())

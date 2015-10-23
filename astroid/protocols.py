@@ -129,6 +129,18 @@ def const_infer_binary_op(self, operator, other, context):
 nodes.Const.infer_binary_op = bases.yes_if_nothing_inferred(const_infer_binary_op)
 
 
+
+def _multiply_seq_by_int(self, other, context):
+    node = self.__class__()
+    elts = []
+    for elt in self.elts:
+        infered = next(elt.infer(context))
+        if not infered is util.YES:
+            elts.append(infered)
+    node.elts = elts * other.value
+    return node
+
+
 def tl_infer_binary_op(self, operator, other, context):
     for other in other.infer(context):
         if isinstance(other, self.__class__) and operator == '+':
@@ -143,11 +155,7 @@ def tl_infer_binary_op(self, operator, other, context):
             if not isinstance(other.value, int):
                 yield util.YES
                 continue
-            node = self.__class__()
-            elts = [n for elt in self.elts for n in elt.infer(context)
-                    if not n is util.YES] * other.value
-            node.elts = elts
-            yield node
+            yield _multiply_seq_by_int(self, other, context)
         elif isinstance(other, bases.Instance) and not isinstance(other, nodes.Const):
             yield util.YES
     # XXX else log TypeError
