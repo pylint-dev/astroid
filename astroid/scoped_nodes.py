@@ -172,7 +172,9 @@ class LocalsDictNodeNG(node_classes.LookupMixIn,
         return '%s.%s' % (self.parent.frame().qname(), self.name)
 
     def frame(self):
-        """return the first parent frame node (i.e. Module, FunctionDef or ClassDef)
+        """return the first parent frame node (i.e. Module, FunctionDef or
+        ClassDef)
+
         """
         return self
 
@@ -228,7 +230,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn,
         if name != '__class__':
             # add __class__ node as a child will cause infinite recursion later!
             self._append_node(child_node)
-        # self.set_local(name or child_node.name, child_node)
+        self.set_local(name or child_node.name, child_node)
 
     def __getitem__(self, item):
         """method from the `dict` interface returning the first node
@@ -256,14 +258,14 @@ class LocalsDictNodeNG(node_classes.LookupMixIn,
         """method from the `dict` interface returning a tuple containing
         locally defined nodes which are instance of `FunctionDef` or `ClassDef`
         """
-        return self.locals.values()
+        return tuple(v[0] for v in self.locals.values())
 
     def items(self):
         """method from the `dict` interface returning a list of tuple
         containing each locally defined name with its associated node,
         which is an instance of `FunctionDef` or `ClassDef`
         """
-        return self.locals.items()
+        return tuple((k, v[0]) for k, v in self.locals.items())
 
     def __contains__(self, name):
         return name in self.locals
@@ -279,9 +281,9 @@ class Module(LocalsDictNodeNG):
 
     # the file from which as been extracted the astroid representation. It may
     # be None if the representation has been built from a built-in module
-    file = None
+    source_file = None
     # Alternatively, if built from a string/bytes, this can be set
-    file_bytes = None
+    source_code = None
     # encoding of python source file, so we can get unicode out of it (python2
     # only)
     file_encoding = None
@@ -291,12 +293,6 @@ class Module(LocalsDictNodeNG):
     pure_python = None
     # boolean for package module
     package = None
-    # dictionary of globals with name as key and node defining the global
-    # as value
-    # globals = None
-
-    # Future imports
-    # future_imports = None
 
     # names of python special attributes (handled by getattr impl.)
     special_attributes = set(('__name__', '__doc__', '__file__', '__path__',
@@ -304,26 +300,69 @@ class Module(LocalsDictNodeNG):
     # names of module attributes available through the global scope
     scope_attrs = set(('__name__', '__doc__', '__file__', '__path__'))
 
-    _other_fields = ('name', 'doc', 'file', 'path', 'package',
-                     'pure_python', 'future_imports')
+    if six.PY2:
+        _other_fields = ('name', 'doc', 'file_encoding', 'path', 'package',
+                         'pure_python', 'source_code', 'source_file')
+    else:
+        _other_fields = ('name', 'doc', 'path', 'package', 'pure_python',
+                         'source_code', 'source_file')
     # _other_other_fields = ('locals', 'globals')
 
-    def __init__(self, name, doc, file=None, path=None, package=None,
-                 parent=None, pure_python=True):
+    def __init__(self, name, doc, package=None, parent=None,
+                 pure_python=True, source_code=None, source_file=None):
         self.name = name
         self.doc = doc
-        self.file = file
-        self.path = path
         self.package = package
         self.parent = parent
         self.pure_python = pure_python
-        # self.locals = self.globals = {}
+        self.source_code = source_code
+        self.source_file = source_file
         self.body = []
         # self.future_imports = set()
         self.external_attrs = collections.defaultdict(list)
 
     def postinit(self, body=None):
         self.body = body
+
+    # Legacy API aliases
+    @property
+    def file(self):
+        rename_warning(('file', 'source_file'))
+        return self.source_file
+    @file.setter
+    def file(self, source_file):
+        rename_warning(('file', 'source_file'))
+        self.source_file = source_file
+    @file.deleter
+    def file(self):
+        rename_warning(('file', 'source_file'))
+        del self.source_file
+
+    @property
+    def path(self):
+        rename_warning(('path', 'source_file'))
+        return self.source_file
+    @path.setter
+    def path(self, source_file):
+        rename_warning(('path', 'source_file'))
+        self.source_file = source_file
+    @path.deleter
+    def path(self):
+        rename_warning(('path', 'source_file'))
+        del self.source_file
+
+    @property
+    def files_bytes(self):
+        rename_warning(('files_bytes', 'source_code'))
+        return self.source_code
+    @files_bytes.setter
+    def files_bytes(self, source_code):
+        rename_warning(('files_bytes', 'source_code'))
+        self.source_code = source_code
+    @files_bytes.deleter
+    def files_bytes(self):
+        rename_warning(('files_bytes', 'source_code'))
+        del self.source_code
 
     @property
     def globals(self):
@@ -343,11 +382,7 @@ class Module(LocalsDictNodeNG):
 
     @property
     def file_stream(self):
-        warnings.warn("file_stream property is deprecated and "
-                      "it is slated for removal in astroid 1.6."
-                      "Use the new method 'stream' instead.",
-                      PendingDeprecationWarning,
-                      stacklevel=2)
+        util.attr_to_method_warning((file_stream, type(self).__name__))
         return self._get_stream()
 
     def stream(self):
@@ -356,10 +391,10 @@ class Module(LocalsDictNodeNG):
 
     def close(self):
         """Close the underlying file streams."""
-        warnings.warn("close method is deprecated and it is "
+        warnings.warn("The close method is deprecated and is "
                       "slated for removal in astroid 1.6, along "
-                      "with 'file_stream' property. "
-                      "Its behaviour is replaced by managing each "
+                      "with 'file_stream'. "
+                      "Its behavior is replaced by managing each "
                       "file stream returned by the 'stream' method.",
                       PendingDeprecationWarning,
                       stacklevel=2)
@@ -495,9 +530,9 @@ class Module(LocalsDictNodeNG):
         # We separate the different steps of lookup in try/excepts
         # to avoid catching too many Exceptions
         default = [name for name in self.keys() if not name.startswith('_')]
-        try:
+        if '__all__' in self:
             all = self['__all__']
-        except KeyError:
+        else:
             return default
         try:
             explicit = next(all.assigned_stmts())
@@ -725,6 +760,13 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
 
 
 class FunctionDef(node_classes.Statement, Lambda):
+    '''Setting FunctionDef.args to None, rather than an Arguments node,
+    means that the corresponding function's arguments are unknown,
+    probably because it represents a function implemented in C or that
+    is otherwise not introspectable.
+
+    '''
+
     if six.PY3:
         _astroid_fields = ('decorators', 'args', 'body', 'returns')
         returns = None
@@ -755,7 +797,8 @@ class FunctionDef(node_classes.Statement, Lambda):
 
     @decorators_mod.cachedproperty
     def extra_decorators(self):
-        """Get the extra decorators that this function can haves
+
+    """Get the extra decorators that this function can haves
         Additional decorators are considered when they are used as
         assignments, as in `method = staticmethod(method)`.
         The property will return all the callables that are used for
@@ -953,12 +996,13 @@ class FunctionDef(node_classes.Statement, Lambda):
             result.parent = self
             yield result
             return
-        # This is really a gigantic hack to work around metaclass generators
-        # that return transient class-generating functions. Pylint's AST structure
-        # cannot handle a base class object that is only used for calling __new__,
-        # but does not contribute to the inheritance structure itself. We inject
-        # a fake class into the hierarchy here for several well-known metaclass
-        # generators, and filter it out later.
+        # This is really a gigantic hack to work around metaclass
+        # generators that return transient class-generating
+        # functions. Pylint's AST structure cannot handle a base class
+        # object that is only used for calling __new__, but does not
+        # contribute to the inheritance structure itself. We inject a
+        # fake class into the hierarchy here for several well-known
+        # metaclass generators, and filter it out later.
         if (self.name == 'with_metaclass' and
                 len(self.args.args) == 1 and
                 self.args.vararg is not None):
@@ -1095,7 +1139,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
     # by a raw factories
 
     # a dictionary of class instances attributes
-    _astroid_fields = ('decorators', 'bases', 'body') # name
+    _astroid_fields = ('decorators', 'bases', 'body')
 
     decorators = None
     special_attributes = set(('__name__', '__doc__', '__dict__', '__module__',
@@ -1107,13 +1151,11 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                     doc="class'type, possible values are 'class' | "
                     "'metaclass' | 'exception'")
     _other_fields = ('name', 'doc')
-    # _other_other_fields = ('locals', '_newstyle')
-    _other_other_fields = ('_newstyle')
+    _other_other_fields = ('_newstyle', 'instance_attrs', 'external_attrs')
     _newstyle = None
 
     def __init__(self, name=None, doc=None, lineno=None,
                  col_offset=None, parent=None):
-        # self.locals = {}
         self.bases = []
         self.body = []
         self.name = name
@@ -1277,7 +1319,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         """
         # FIXME: should be possible to choose the resolution order
         # FIXME: inference make infinite loops possible here
-        yielded = set([self])
+        yielded = {self}
         if context is None:
             context = contextmod.InferenceContext()
         if six.PY3:
@@ -1826,6 +1868,13 @@ def locals_name(node, locals_):
     new scope so shouldn't be recursed into.'''
     locals_[node.name].append(node)
 
+@_get_locals.register(node_classes.EmptyNode)
+def locals_empty(node, locals_):
+    '''EmptyNodes add an object to the local variables under a specified
+    name.'''
+    if node.name:
+        locals_[node.name].append(node.object)
+
 # pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(node_classes.Arguments)
 def locals_arguments(node, locals_):
@@ -1833,7 +1882,7 @@ def locals_arguments(node, locals_):
     if node.vararg:
         locals_[node.vararg].append(node)
     if node.kwarg:
-        locals_[node.kwarg].append(node)        
+        locals_[node.kwarg].append(node)
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(node_classes.Import)

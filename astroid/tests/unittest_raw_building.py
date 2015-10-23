@@ -6,11 +6,12 @@ from six.moves import builtins # pylint: disable=import-error
 
 from astroid.builder import AstroidBuilder
 from astroid.raw_building import (
-    attach_dummy_node, build_module,
-    build_class, build_function, build_from_import
+    attach_dummy_node, build_module, build_class, build_function,
+    build_from_import, object_build_function, Parameter
 )
-from astroid import test_utils
 from astroid import nodes
+from astroid import util
+from astroid import test_utils
 from astroid.bases import BUILTINS
 
 
@@ -39,16 +40,27 @@ class RawBuildingTC(unittest.TestCase):
         self.assertEqual(node.doc, None)
 
     def test_build_function_args(self):
-        args = ['myArgs1', 'myArgs2']
+        args = [Parameter('myArgs1', None, None, None),
+                Parameter('myArgs2', None, None, None)]
         node = build_function('MyFunction', args)
         self.assertEqual('myArgs1', node.args.args[0].name)
         self.assertEqual('myArgs2', node.args.args[1].name)
         self.assertEqual(2, len(node.args.args))
 
     def test_build_function_defaults(self):
-        defaults = ['defaults1', 'defaults2']
-        node = build_function('MyFunction', None, defaults)
+        args = [Parameter('myArgs1', 'defaults1', None, None),
+                Parameter('myArgs2', 'defaults2', None, None)]
+        node = build_function('MyFunction', args)
         self.assertEqual(2, len(node.args.defaults))
+
+    @unittest.skipIf(sys.version_info[0] > 2,
+                     'Tuples are not allowed in function args in Python 3')
+    @unittest.expectedFailure
+    def test_build_function_with_tuple_args(self):
+        # TODO
+        def f(a, (b, (c, d))):
+            pass
+        object_build_function(f)
 
     def test_build_from_import(self):
         names = ['exceptions, inference, inspector']
@@ -69,7 +81,7 @@ class RawBuildingTC(unittest.TestCase):
         buffered_reader = module.getattr('BufferedReader')[0]
         self.assertEqual(buffered_reader.root().name, 'io')
 
-    @unittest.skipUnless(os.name == 'java', 'Requires Jython')
+    @unittest.skipUnless(util.JYTHON, 'Requires Jython')
     def test_open_is_inferred_correctly(self):
         # Lot of Jython builtins don't have a __module__ attribute.
         for name, _ in inspect.getmembers(builtins, predicate=inspect.isbuiltin):

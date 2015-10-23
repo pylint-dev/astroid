@@ -456,7 +456,7 @@ class BuilderTest(unittest.TestCase):
         with self.assertRaises(exceptions.InferenceError):
             next(astroid['global_no_effect'].ilookup('CSTE2'))
 
-    @unittest.skipIf(os.name == 'java',
+    @unittest.skipIf(util.JYTHON,
                      'This test is skipped on Jython, because the '
                      'socket object is patched later on with the '
                      'methods we are looking for. Since we do not '
@@ -600,7 +600,7 @@ class FileBuildTest(unittest.TestCase):
         """test the 'locals' dictionary of a astroid module"""
         module = self.module
         _locals = module.locals
-        self.assertIs(_locals, module.globals)
+        self.assertEqual(_locals, module.globals)
         keys = sorted(_locals.keys())
         should = ['MY_DICT', 'NameNode', 'YO', 'YOUPI',
                   '__revision__', 'global_access', 'modutils', 'four_args',

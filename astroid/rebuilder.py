@@ -87,8 +87,8 @@ def _get_doc(node):
             node.body = node.body[1:]
             return node, doc
     except IndexError:
-        pass # ast built from scratch
-    return node, None
+        return node, None # ast built from scratch
+
 
 def _visit_or_none(node, attr, visitor, parent, assign_ctx, visit='visit',
                    **kws):
@@ -115,8 +115,8 @@ class TreeRebuilder(object):
     def visit_module(self, node, modname, modpath, package):
         """visit a Module node by returning a fresh instance of it"""
         node, doc = _get_doc(node)
-        newnode = nodes.Module(name=modname, doc=doc, file=modpath, path=modpath,
-                               package=package, parent=None)
+        newnode = nodes.Module(name=modname, doc=doc, package=package,
+                               pure_python=True, source_file=modpath)
         newnode.postinit([self.visit(child, newnode) for child in node.body])
         return newnode
 
@@ -173,12 +173,17 @@ class TreeRebuilder(object):
                            None for child in node.kw_defaults]
             annotations = [self.visit(arg.annotation, newnode, None) if
                            arg.annotation else None for arg in node.args]
+            kwonly_annotations = [self.visit(arg.annotation, newnode, None)
+                                  if arg.annotation else None
+                                  for arg in node.kwonlyargs]
         else:
             kwonlyargs = []
             kw_defaults = []
             annotations = []
+            kwonly_annotations = []
         newnode.postinit(args, defaults, kwonlyargs, kw_defaults,
-                         annotations, varargannotation, kwargannotation)
+                         annotations, kwonly_annotations,
+                         varargannotation, kwargannotation)
         return newnode
 
     def visit_assignattr(self, node, parent, assign_ctx=None):
@@ -406,13 +411,6 @@ class TreeRebuilder(object):
         """visit an Ellipsis node by returning a fresh instance of it"""
         return nodes.Ellipsis(getattr(node, 'lineno', None),
                               getattr(node, 'col_offset', None), parent)
-
-
-    def visit_emptynode(self, node, parent, assign_ctx=None):
-        """visit an EmptyNode node by returning a fresh instance of it"""
-        return nodes.EmptyNode(getattr(node, 'lineno', None),
-                               getattr(node, 'col_offset', None), parent)
-
 
     def visit_excepthandler(self, node, parent, assign_ctx=None):
         """visit an ExceptHandler node by returning a fresh instance of it"""

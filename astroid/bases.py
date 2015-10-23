@@ -357,7 +357,8 @@ class BoundMethod(UnboundMethod):
         if not isinstance(attrs, node_classes.Dict):
             # Needs to be a dictionary.
             return
-        cls_locals = collections.defaultdict(list)
+        # cls_locals = collections.defaultdict(list)
+        body = []
         for key, value in attrs.items:
             key = next(key.infer(context=context))
             value = next(value.infer(context=context))
@@ -367,7 +368,12 @@ class BoundMethod(UnboundMethod):
             if not isinstance(key.value, str):
                 # Not a proper attribute.
                 return
-            cls_locals[key.value].append(value)
+            assign = node_classes.Assign()
+            assign.postinit(targets=node_classes.AssignName(key.value),
+                            value=value)
+            body.append[assign]
+            # cls_locals[key.value].append(value)
+        # print(attrs.repr_tree())
 
         # Build the class from now.
         cls = mcs.__class__(name=name.value, lineno=caller.lineno,
@@ -376,7 +382,7 @@ class BoundMethod(UnboundMethod):
         empty = node_classes.Pass()
         cls.postinit(bases=bases.elts, body=[empty], decorators=[],
                      newstyle=True, metaclass=mcs)
-        cls.locals = cls_locals
+        # cls.locals = cls_locals
         return cls
 
     def infer_call_result(self, caller, context=None):

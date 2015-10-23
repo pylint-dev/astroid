@@ -74,7 +74,7 @@ class AstroidManagerTest(resources.SysPathSetup,
     def test_do_not_expose_main(self):
         obj = self.manager.ast_from_module_name('__main__')
         self.assertEqual(obj.name, '__main__')
-        self.assertEqual(obj.items(), {}.items())
+        self.assertEqual(obj.items(), ())
 
     def test_ast_from_module_name(self):
         astroid = self.manager.ast_from_module_name('unittest')

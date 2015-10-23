@@ -21,10 +21,22 @@
 
 import collections
 import inspect
-import logging
+import itertools
+import operator
 import os
 import sys
 import types
+import warnings
+
+try:
+    from functools import singledispatch as _singledispatch
+except ImportError:
+    from singledispatch import singledispatch as _singledispatch
+
+try:
+    from inspect import signature as _signature, Parameter as _Parameter
+except ImportError:
+    from funcsigs import signature as _signature, Parameter as _Parameter
 
 import six
 
@@ -33,14 +45,27 @@ from astroid import manager
 from astroid import node_classes
 from astroid import nodes
 from astroid import scoped_nodes
+from astroid import util
+
+# The repr of objects of this type describe it as "slot wrapper", but
+# the repr of the type itself calls it "wrapper_descriptor".  It is
+# used for unbound methods implemented in C on CPython.  On Jython
+# it's called "method_descriptor".  On PyPy the methods of both
+# builtin types and Python-defined types have the same type.
+WrapperDescriptorType = type(object.__getattribute__)
+
+# Both the reprs, for objects of this type and the type itself, refer
+# to this type as "method-wrapper".  It's used for bound methods
+# implemented in C on CPython.  On Jython, this is the same type as
+# for builtin functions/methods.  On PyPy both bound and unbound
+# methods have the same type.
+MethodWrapperType = type(object().__getattribute__)
 
 
 MANAGER = manager.AstroidManager()
 # the keys of CONST_CLS eg python builtin types
 _CONSTANTS = tuple(node_classes.CONST_CLS)
-_JYTHON = os.name == 'java'
 _BUILTINS = vars(six.moves.builtins)
-_LOG = logging.getLogger(__name__)
 
 
 def _io_discrepancy(member):
@@ -67,22 +92,6 @@ def _add_dunder_class(func, member):
     func.instance_attrs['__class__'] = [ast_klass]
 
 
-_marker = object()
-
-
-def attach_dummy_node(node, name, object=_marker):
-    """create a dummy node and register it in the locals of the given
-    node with the specified name
-    """
-    enode = nodes.EmptyNode()
-    enode.object = object
-    _attach_local_node(node, enode, name)
-
-def _has_underlying_object(self):
-    return hasattr(self, 'object') and self.object is not _marker
-
-nodes.EmptyNode.has_underlying_object = _has_underlying_object
-
 def attach_const_node(node, name, value):
     """create a Const node and register it in the locals of the given
     node with the specified name
@@ -100,67 +109,41 @@ def attach_import_node(node, modname, membername):
 
 def build_module(name, doc=None, modclass=nodes.Module):
     """create and initialize a astroid Module node"""
-    node = modclass(name, doc, pure_python=False)
-    node.package = False
-    node.parent = None
-    return node
+    util.rename_warning(('build_module', 'nodes.Module'))
+    return nodes.Module(name=name, doc=doc, package=False, pure_python=False)
 
 
 def build_class(name, basenames=(), doc=None):
     """create and initialize a astroid ClassDef node"""
     node = nodes.ClassDef(name, doc)
-    for base in basenames:
-        basenode = nodes.Name()
-        basenode.name = base
-        node.bases.append(basenode)
-        basenode.parent = node
+    node.postinit(bases=[nodes.Name(b, node) for b in basenames],
+                  body=(), decorators=())
     return node
 
 
-def build_function(name, args=None, defaults=None, flag=0, doc=None):
-    """create and initialize a astroid FunctionDef node"""
-    args, defaults = args or [], defaults or []
-    # first argument is now a list of decorators
-    func = nodes.FunctionDef(name, doc)
-    func.args = argsnode = nodes.Arguments()
-    argsnode.args = []
-    for arg in args:
-        argsnode.args.append(nodes.Name())
-        argsnode.args[-1].name = arg
-        argsnode.args[-1].parent = argsnode
-    argsnode.defaults = []
-    for default in defaults:
-        argsnode.defaults.append(nodes.const_factory(default))
-        argsnode.defaults[-1].parent = argsnode
-    argsnode.kwarg = None
-    argsnode.vararg = None
-    argsnode.parent = func
-    if args:
-        register_arguments(func)
+Parameter = collections.namedtuple('Parameter', 'name default annotation kind')
+DEFAULT_PARAMETER = Parameter(None, None, None, None)
+
+def build_function(name, args=(), defaults=(), annotations=(),
+                   kwonlyargs=(), kwonly_defaults=(),
+                   kwonly_annotations=(), vararg=None,
+                   varargannotation=None, kwarg=None, kwargannotation=None,
+                   returns=None, doc=None, parent=None):
+    """create and initialize an astroid FunctionDef node"""
+    func = nodes.FunctionDef(name=name, doc=doc, parent=parent)
+    args_node = nodes.Arguments(vararg=vararg, kwarg=kwarg, parent=func)
+    args = [nodes.Name(name=a.name, parent=args_node) for n in args]
+    kwonlyargs = [nodes.Name(name=a.name, parent=args_node) for a in kw_only]
+    args_node.postinit(args, defaults, kwonlyargs, kw_defaults,
+                      annotations, kwonly_annotations,
+                      varargannotation, kwargannotation)
+    func.postinit(args=args_node, body=[], returns=returns)
     return func
 
 
 def build_from_import(fromname, names):
     """create and initialize an astroid ImportFrom import statement"""
     return nodes.ImportFrom(fromname, [(name, None) for name in names])
-
-def register_arguments(func, args=None):
-    """add given arguments to local
-
-    args is a list that may contains nested lists
-    (i.e. def func(a, (b, c, d)): ...)
-    """
-    if args is None:
-        args = func.args.args
-        if func.args.vararg:
-            func.set_local(func.args.vararg, func.args)
-        if func.args.kwarg:
-            func.set_local(func.args.kwarg, func.args)
-    for arg in args:
-        if isinstance(arg, nodes.Name):
-            func.set_local(arg.name, arg)
-        else:
-            register_arguments(func, arg.elts)
 
 
 def object_build_class(node, member, localname):
@@ -170,17 +153,24 @@ def object_build_class(node, member, localname):
                                     localname=localname)
 
 
-def object_build_function(node, member, localname):
+def object_build_function(parent, func, localname):
     """create astroid for a living function object"""
-    args, varargs, varkw, defaults = inspect.getargspec(member)
-    if varargs is not None:
-        args.append(varargs)
-    if varkw is not None:
-        args.append(varkw)
-    func = build_function(getattr(member, '__name__', None) or localname, args,
-                          defaults, six.get_function_code(member).co_flags,
-                          member.__doc__)
-    node.add_local_node(func, localname)
+    signature = _signature(func)
+    parameters = {k: tuple(g) for k, g in
+                  itertools.groupby(signature.parameters.values(),
+                                    operator.attrgetter('kind'))}
+    # This ignores POSITIONAL_ONLY args, because they only appear in
+    # functions implemented in C and can't be mimicked by any Python
+    # function.
+    node = build_function(getattr(func, '__name__', None) or localname,
+                          parameters.get(_Parameter.POSITIONAL_OR_KEYWORD, ()),
+                          parameters.get(_Parameter.KEYWORD_ONLY, ()),
+                          parameters.get(_Parameter.VAR_POSITIONAL, None),
+                          parameters.get(_Parameter.VAR_KEYWORD, None),
+                          signature.return_annotation,
+                          func.__doc__,
+                          parent)
+    return node
 
 
 def object_build_datadescriptor(node, member, name):
@@ -208,28 +198,10 @@ def _base_class_object_build(node, member, basenames, name=None, localname=None)
                         basenames, member.__doc__)
     klass._newstyle = isinstance(member, type)
     node.add_local_node(klass, localname)
-    try:
-        # limit the instantiation trick since it's too dangerous
-        # (such as infinite test execution...)
-        # this at least resolves common case such as Exception.args,
-        # OSError.errno
-        if issubclass(member, Exception):
-            instdict = member().__dict__
-        else:
-            raise TypeError
-    except: # pylint: disable=bare-except
-        pass
-    else:
-        for name, obj in instdict.items():
-            valnode = nodes.EmptyNode()
-            valnode.object = obj
-            valnode.parent = klass
-            valnode.lineno = 1
-            klass.instance_attrs[name] = [valnode]
     return klass
 
 
-def _build_from_function(node, name, member, module):
+def _build_from_function(parent, name, member, module):
     # verify this is not an imported function
     try:
         code = six.get_function_code(member)
@@ -240,11 +212,137 @@ def _build_from_function(node, name, member, module):
     filename = getattr(code, 'co_filename', None)
     if filename is None:
         assert isinstance(member, object)
-        object_build_methoddescriptor(node, member, name)
+        return object_build_methoddescriptor(parent, member, name)
     elif filename != getattr(module, '__file__', None):
-        attach_dummy_node(node, name, member)
+        return nodes.EmptyNode(name=name, object_=member, parent=parent)
     else:
-        object_build_function(node, member, name)
+        return object_build_function(parent, member, name)
+
+
+@_singledispatch
+def ast_from_object(object_, built_objects=(), name=None, parent=None):
+    return nodes.EmptyNode(name=name, object_=object_, parent=parent)
+
+# pylint: disable=unused-variable; doesn't understand singledispatch
+@ast_from_object.register(types.ModuleType)
+def ast_from_module(module, built_objects=(), name=None, parent=None, node_class=nodes.Module):
+    if name is None:
+        name = module.__name__
+    try:
+        source_file = inspect.getsourcefile(module)
+    except TypeError:
+        # inspect.getsourcefile raises TypeError for built-in modules.
+        source_file = None
+    # inspect.getdoc returns None for modules without docstrings like
+    # Jython Java modules (see #109562).
+    module_node = node_class(name=name, doc=inspect.getdoc(module),
+                           source_file=source_file,
+                           package=hasattr(module, '__path__'),
+                           # Assume that if inspect couldn't find a Python source
+                           # file, it's probably not implemented in pure Python.
+                           pure_python=bool(source_file))
+    MANAGER.cache_module(module_node)
+    built_objects = {}
+    module_node.postinit(body=[ast_from_object(m, built_objects, module_node)
+                               for m in inspect.getmembers(module)])
+    return module_node
+
+# pylint: disable=unused-variable; doesn't understand singledispatch
+@ast_from_object.register(type)
+@ast_from_object.register(types.GetSetDescriptorType)
+@ast_from_object.register(types.MemberDescriptorType)
+def ast_from_class(cls, built_objects=(), name=None, parent=None):
+    pass
+# Old-style classes
+if six.PY2:
+    ast_from_object.register(types.ClassType, ast_from_class)
+
+# pylint: disable=unused-variable; doesn't understand singledispatch
+
+# These two types are the same on CPython but not necessarily the same
+# on other implementations.
+@ast_from_object.register(types.BuiltinFunctionType)
+@ast_from_object.register(types.BuiltinMethodType)
+# Methods implemented in C on CPython.
+@ast_from_object.register(WrapperDescriptorType)
+@ast_from_object.register(MethodWrapperType)
+# types defines a LambdaType but on all existing Python
+# implementations it's equivalent to FunctionType.
+@ast_from_object.register(types.FunctionType)
+@ast_from_object.register(types.MethodType)
+def ast_from_function(func, built_objects=(), name=None, parent=None):
+    signature = _signature(func)
+    parameters = {k: tuple(g) for k, g in
+                  itertools.groupby(signature.parameters.values(),
+                                    operator.attrgetter('kind'))}
+    # This ignores POSITIONAL_ONLY args, because they only appear in
+    # functions implemented in C and can't be mimicked by any Python
+    # function.
+    def extract_args(parameters):
+        '''Takes an iterator over Parameter objects and returns three
+        sequences, arg names, default values, and annotations.
+
+        '''
+        names = []
+        defaults = []
+        annotations = []
+        for parameter in parameters:
+            args.append(parameter.name)
+            if parameter.default is not _Parameter.empty:
+                defaults.append(ast_from_object(parameter.default))
+            if parameter.annotation is not _Parameter.empty:
+                annotations.append(ast_from_object(parameter.annotation))
+            else:
+                annotations.append(None)
+        return names, defaults, annotations
+
+    def extract_vararg(parameter):
+        '''Takes a single-element iterator possibly containing a Parameter and
+        returns a name and an annotation.
+
+        '''
+        try:
+            vararg = next(parameter)
+            name = vararg.name
+            if vararg.annotation is not _Parameter.empty:
+                return name, ast_from_object(vararg.annotation)
+            else:
+                return name, None
+        except StopIteration:
+            return None, None
+
+    names, defaults, annotations = extract_args(parameters.get(_Parameter.POSITIONAL_OR_KEYWORD, ()))
+    kwonlyargs, kw_defaults, kwonly_annotations = extract_args(parameters.get(_Parameter.KEYWORD_ONLY, ()))
+    kwarg, varargannotation = extract_vararg(parameters.get(_Parameter.VAR_POSITIONAL, ()))
+    kwarg, kwargannotation = parameters.get(_Parameter.VAR_KEYWORD, None),
+    return build_function(name or getattr(func, '__name__', None),
+                          args, defaults, kwonlyargs, kw_defaults,
+                          annotations, kwonly_annotations,
+                          varargannotation, kwargannotation)
+                          ast_from_object(signature.return_annotation),
+                          func.__doc__,
+                          parent)
+
+# pylint: disable=unused-variable; doesn't understand singledispatch
+@ast_from_object.register(list)
+@ast_from_object.register(dict)
+@ast_from_object.register(set)
+@ast_from_object.register(tuple)
+def ast_from_containers(cls, built_objects=(), name=None, parent=None):
+    '''Handles builtin types that have their own AST nodes, like list but
+    not like frozenset or range.'''
+
+@ast_from_object.register(str)
+@ast_from_object.register(bytes)
+@ast_from_object.register(int)
+@ast_from_object.register(float)
+@ast_from_object.register(complex)
+def ast_from_scalar(cls, built_objects=(), name=None, parent=None):
+    pass
+if six.PY2:
+    ast_from_object.register(unicode, ast_from_scalar)
+    ast_from_object.register(long, ast_from_scalar)
+
 
 
 class InspectBuilder(object):
@@ -260,7 +358,7 @@ class InspectBuilder(object):
         self._done = {}
         self._module = None
 
-    def inspect_build(self, module, modname=None, modclass=nodes.Module,
+    def inspect_build(self, module, modname=None, node_class=nodes.Module,
                       path=None):
         """build astroid from a living module (i.e. using inspect)
         this is used when there is no python source code available (either
@@ -269,18 +367,25 @@ class InspectBuilder(object):
         self._module = module
         if modname is None:
             modname = module.__name__
+        # In Jython, Java modules have no __doc__ (see #109562)
+        doc = module.__doc__ if hasattr(module, '__doc__') else None
         try:
-            node = build_module(modname, module.__doc__, modclass=modclass)
-        except AttributeError:
-            # in jython, java modules have no __doc__ (see #109562)
-            node = build_module(modname, modclass=modclass)
-        node.file = node.path = path and os.path.abspath(path) or path
-        node.name = modname
-        MANAGER.cache_module(node)
-        node.package = hasattr(module, '__path__')
+            source_file = inspect.getsourcefile(module)
+        except TypeError:
+            # inspect.getsourcefile raises TypeError for builtins.
+            source_file = None
+        module_node = node_class(name=modname, doc=doc, source_file=source_file,
+                               package=hasattr(module
+
+    , '__path__'),
+                               # Assume that if inspect can't find a
+                               # Python source file, it's probably not
+                               # implemented in pure Python.
+                               pure_python=bool(source_file))
+        MANAGER.cache_module(module_node)
         self._done = {}
-        self.object_build(node, module)
-        return node
+        module_node.postinit(body=self.object_build(module_node, module))
+        return module_node
 
     def object_build(self, node, obj):
         """recursive method which create a partial ast from real objects
@@ -289,22 +394,17 @@ class InspectBuilder(object):
         if obj in self._done:
             return self._done[obj]
         self._done[obj] = node
-        for name in dir(obj):
-            try:
-                member = getattr(obj, name)
-            except AttributeError:
-                # damned ExtensionClass.Base, I know you're there !
-                attach_dummy_node(node, name)
-                continue
+        members = []
+        for name, member in inspect.getmembers(obj):
             if inspect.ismethod(member):
                 member = six.get_method_function(member)
             if inspect.isfunction(member):
-                _build_from_function(node, name, member, self._module)
+                members.append(_build_from_function(node, name, member, self._module))
             elif inspect.isbuiltin(member):
                 if (not _io_discrepancy(member) and
                         self.imported_member(node, member, name)):
                     continue
-                object_build_methoddescriptor(node, member, name)
+                members.append(object_build_methoddescriptor(node, member, name))
             elif inspect.isclass(member):
                 if self.imported_member(node, member, name):
                     continue
@@ -312,28 +412,30 @@ class InspectBuilder(object):
                     class_node = self._done[member]
                     if class_node not in set(node.get_children()):
                     # if class_node not in node.locals.get(name, ()):
-                        node.add_local_node(class_node, name)
+                        members.append(node.add_local_node(class_node, name))
                 else:
                     class_node = object_build_class(node, member, name)
                     # recursion
-                    self.object_build(class_node, member)
+                    members.append(self.object_build(class_node, member))
                 if name == '__class__' and class_node.parent is None:
                     class_node.parent = self._done[self._module]
             elif inspect.ismethoddescriptor(member):
                 assert isinstance(member, object)
-                object_build_methoddescriptor(node, member, name)
+                members.append(object_build_methoddescriptor(node, member, name))
             elif inspect.isdatadescriptor(member):
                 assert isinstance(member, object)
-                object_build_datadescriptor(node, member, name)
+                members.append(object_build_datadescriptor(node, member, name))
             elif isinstance(member, _CONSTANTS):
-                attach_const_node(node, name, member)
+                members.append(attach_const_node(node, name, member))
             elif inspect.isroutine(member):
                 # This should be called for Jython, where some builtin
                 # methods aren't catched by isbuiltin branch.
-                _build_from_function(node, name, member, self._module)
+                members.append(_build_from_function(node, name, member, self._module))
             else:
                 # create an empty node so that the name is actually defined
-                attach_dummy_node(node, name, member)
+                members.append(nodes.EmptyNode(parent=node, name=name,
+                                               object_=member))
+        return members
 
     def imported_member(self, node, member, name):
         """verify this is not an imported class or handle it"""
@@ -343,18 +445,18 @@ class InspectBuilder(object):
         try:
             modname = getattr(member, '__module__', None)
         except: # pylint: disable=bare-except
-            _LOG.exception('unexpected error while building '
-                           'astroid from living object')
+            warnings.warn('Unexpected error while building an AST from an '
+                          'imported class.', RuntimeWarning, stacklevel=2)
             modname = None
         if modname is None:
             if (name in ('__new__', '__subclasshook__')
-                    or (name in _BUILTINS and _JYTHON)):
+                    or (name in _BUILTINS and util.JYTHON)):
                 # Python 2.5.1 (r251:54863, Sep  1 2010, 22:03:14)
                 # >>> print object.__new__.__module__
                 # None
                 modname = six.moves.builtins.__name__
             else:
-                attach_dummy_node(node, name, member)
+                nodes.EmptyNode(parent=node, name=name, object_=member)
                 return True
 
         real_name = {
@@ -378,8 +480,8 @@ class InspectBuilder(object):
 ### astroid bootstrapping ######################################################
 Astroid_BUILDER = InspectBuilder()
 
-class Builtins(nodes.Module):
-    pass
+# class Builtins(nodes.Module):
+#     pass
 
 _CONST_PROXY = {}
 def _astroid_bootstrapping(astroid_builtin=None):
@@ -388,7 +490,7 @@ def _astroid_bootstrapping(astroid_builtin=None):
     # inspect_build builtins, and then we can proxy Const
     if astroid_builtin is None:
         from six.moves import builtins
-        astroid_builtin = Astroid_BUILDER.inspect_build(builtins, modclass=Builtins)
+        astroid_builtin = Astroid_BUILDER.inspect_build(builtins) #, node_class=Builtins
 
     for cls, node_cls in node_classes.CONST_CLS.items():
         if cls is type(None):
@@ -407,19 +509,19 @@ def _astroid_bootstrapping(astroid_builtin=None):
 _astroid_bootstrapping()
 
 
-@scoped_nodes.get_locals.register(Builtins)
-def scoped_node(node):
-    locals_ = collections.defaultdict(list)
-    for name in ('Ellipsis', 'False', 'None', 'NotImplemented',
-                 'True', '__debug__', '__package__', '__spec__', 'copyright',
-                 'credits', 'exit', 'help', 'license', 'quit'):
-        for child in (n for n in node.body if
-                     isinstance(n, (nodes.Const, nodes.EmptyNode))):
-            if child.name == name:
-                locals_[name].append(child)
-    for n in node.get_children():
-        scoped_nodes._get_locals(n, locals_)
-    return locals_
+# @scoped_nodes.get_locals.register(Builtins)
+# def scoped_node(node):
+#     locals_ = collections.defaultdict(list)
+#     for name in ('Ellipsis', 'False', 'None', 'NotImplemented',
+#                  'True', '__debug__', '__package__', '__spec__', 'copyright',
+#                  'credits', 'exit', 'help', 'license', 'quit'):
+#         for child in (n for n in node.body if
+#                      isinstance(n, (nodes.Const, nodes.EmptyNode))):
+#             if child.name == name:
+#                 locals_[name].append(child)
+#     for n in node.get_children():
+#         scoped_nodes._get_locals(n, locals_)
+#     return locals_
 
 
 # TODO : find a nicer way to handle this situation;

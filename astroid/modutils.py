@@ -40,6 +40,8 @@ try:
 except ImportError:
     pkg_resources = None
 
+from astroid import util
+
 PY_ZIPMODULE = object()
 
 if sys.platform.startswith('win'):
@@ -79,7 +81,6 @@ except DistutilsPlatformError:
     STD_LIB_DIRS = set()
 
 EXT_LIB_DIR = get_python_lib()
-IS_JYTHON = platform.python_implementation() == 'Jython'
 BUILTIN_MODULES = dict.fromkeys(sys.builtin_module_names, True)
 
 
@@ -92,7 +93,7 @@ def _normalize_path(path):
     return os.path.normcase(os.path.abspath(path))
 
 
-def _path_from_filename(filename, is_jython=IS_JYTHON):
+def _path_from_filename(filename, is_jython=util.JYTHON):
     if not is_jython:
         if sys.version_info > (3, 0):
             return filename

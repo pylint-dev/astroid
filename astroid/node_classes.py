@@ -420,10 +420,7 @@ class NodeNG(object):
         return list(self.infer())
 
     def infered(self):
-        warnings.warn('%s.infered() is deprecated and slated for removal '
-                      'in astroid 2.0, use %s.inferred() instead.'
-                      % (type(self).__name__, type(self).__name__),
-                      PendingDeprecationWarning, stacklevel=2)
+        util.rename_warning((type(self).__name__, type(self).__name__))
         return self.inferred()
 
     def instanciate_class(self):
@@ -446,23 +443,19 @@ class NodeNG(object):
                   ast_state=False, indent='   ', max_depth=0, max_width=80):
         """Returns a string representation of the AST from this node.
 
-        :param ids: If true, includes the ids with the node type names.
-
-        :param include_linenos: If true, includes the line numbers and
-            column offsets.
-
-        :param ast_state: If true, includes information derived from
-        the whole AST like local and global variables.
-
-        :param indent: A string to use to indent the output string.
-
-        :param max_depth: If set to a positive integer, won't return
-        nodes deeper than max_depth in the string.
-
-        :param max_width: Only positive integer values are valid, the
-        default is 80.  Attempts to format the output string to stay
-        within max_width characters, but can exceed it under some
-        circumstances.
+        Args:
+            ids (bool): If true, includes the ids with the node type names.
+            include_linenos (bool): If true, includes the line numbers and
+                column offsets.
+            ast_state (bool): If true, includes information derived from
+                the whole AST like local and global variables.
+            indent (str): A string to use to indent the output string.
+            max_depth (int): If set to a positive integer, won't return
+                nodes deeper than max_depth in the string.
+            max_width (int): Only positive integer values are valid, the
+                default is 80.  Attempts to format the output string to stay
+                within max_width characters, but can exceed it under some
+                circumstances.
         """
         @_singledispatch
         def _repr_tree(node, result, done, cur_indent='', depth=1):
@@ -826,8 +819,8 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         #    annotation, its value will be None.
 
         _astroid_fields = ('args', 'defaults', 'kwonlyargs',
-                           'kw_defaults', 'annotations', 'varargannotation',
-                           'kwargannotation')
+                           'kw_defaults', 'annotations', 'kwonly_annotations',
+                           'varargannotation', 'kwargannotation')
         varargannotation = None
         kwargannotation = None
     else:
@@ -843,9 +836,11 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         self.kwonlyargs = []
         self.kw_defaults = []
         self.annotations = []
+        self.kwonly_annotations = []
 
     def postinit(self, args, defaults, kwonlyargs, kw_defaults,
-                 annotations, varargannotation=None, kwargannotation=None):
+                 annotations, kwonly_annotations, varargannotation=None,
+                 kwargannotation=None):
         self.args = args
         self.defaults = defaults
         self.kwonlyargs = kwonlyargs
@@ -853,6 +848,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         self.annotations = annotations
         self.varargannotation = varargannotation
         self.kwargannotation = kwargannotation
+        self.kwonly_annotations = kwonly_annotations
 
     def _infer_name(self, frame, name):
         if self.parent is frame:
@@ -1149,10 +1145,7 @@ class Comprehension(NodeNG):
         return self
 
     def ass_type(self):
-        warnings.warn('%s.ass_type() is deprecated and slated for removal'
-                      'in astroid 2.0, use %s.assign_type() instead.'
-                      % (type(self).__name__, type(self).__name__),
-                      PendingDeprecationWarning, stacklevel=2)
+        util.rename_warning((type(self).__name__, type(self).__name__))
         return self.assign_type()
 
     def _get_filtered_stmts(self, lookup_node, node, stmts, mystmt):
@@ -1322,7 +1315,21 @@ class Ellipsis(NodeNG): # pylint: disable=redefined-builtin
 
 
 class EmptyNode(NodeNG):
-    """class representing an EmptyNode node"""
+    '''EmptyNodes are used in manufactured ASTs that simulate features of
+    real ASTs for inference, usually to handle behavior implemented in
+    the interpreter or in C extensions.
+
+    '''
+    _other_fields = ('name', 'object')
+
+    def __init__(self, object_, name=None, lineno=None, col_offset=None, parent=None):
+        if self.object is not None:
+            self.object = object_
+        super(EmptyNode, self).__init__(lineno, col_offset, parent)
+
+    @property
+    def has_underlying_object(self):
+        return hasattr(self, 'object')
 
 
 class ExceptHandler(mixins.AssignTypeMixin, Statement):
@@ -1356,7 +1363,7 @@ class ExceptHandler(mixins.AssignTypeMixin, Statement):
 
 class Exec(Statement):
     """class representing an Exec node"""
-    _astroid_fields = ('expr', 'globals', 'locals',)
+    _astroid_fields = ('expr', 'globals', 'locals')
     expr = None
     globals = None
     locals = None
@@ -1844,7 +1851,7 @@ def _update_const_classes():
 _update_const_classes()
 
 
-def const_factory(value):
+def const_factory(value, parent=None):
     """return an astroid node for a python value"""
     # XXX we should probably be stricter here and only consider stuff in
     # CONST_CLS or do better treatment: in case where value is not in CONST_CLS,
@@ -1853,11 +1860,9 @@ def const_factory(value):
     # not in CONST_CLS)
     assert not isinstance(value, NodeNG)
     try:
-        return CONST_CLS[value.__class__](value)
+        return CONST_CLS[value.__class__](value, parent)
     except (KeyError, AttributeError):
-        node = EmptyNode()
-        node.object = value
-        return node
+        return EmptyNode(object_=value, parent=parent)
 
 
 # Backward-compatibility aliases

@@ -20,6 +20,7 @@
 # the same license.
 
 import importlib
+import platform
 import sys
 import warnings
 
@@ -27,6 +28,8 @@ import lazy_object_proxy
 import six
 
 from astroid import exceptions
+
+JYTHON = True if platform.python_implementation() == 'Jython' else False
 
 
 def lazy_import(module_name):
@@ -38,6 +41,18 @@ def reraise(exception):
     block.'''
     six.reraise(type(exception), exception, sys.exc_info()[2])
 
+def generate_warning(message, warning):
+    return lambda strings: warnings.warn(message % strings, warning,
+                                         stacklevel=3)
+
+rename_warning = generate_warning("%r is deprecated and slated for removal in "
+                                  "astroid 2.0, use %r instead",
+                                  PendingDeprecationWarning)
+
+attr_to_method_warning = generate_warning("%s is deprecated and slated for "
+                                          " removal in astroid 1.6, use the "
+                                          "method '%s' instead.",
+                                          PendingDeprecationWarning)
 
 @object.__new__
 class YES(object):
@@ -60,10 +75,7 @@ def _instancecheck(cls, other):
     wrapped = cls.__wrapped__
     other_cls = other.__class__
     is_instance_of = wrapped is other_cls or issubclass(other_cls, wrapped)
-    warnings.warn("%r is deprecated and slated for removal in astroid "
-                  "2.0, use %r instead" % (cls.__class__.__name__,
-                                           wrapped.__name__),
-                  PendingDeprecationWarning, stacklevel=2)
+    rename_warning((cls.__class__.__name__, wrapped.__name__))
     return is_instance_of
 
 

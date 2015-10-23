@@ -194,8 +194,9 @@ def delayed_assignments(root):
     it a tree that already have instance_attrs and external_attrs set
     may crash or fail to modify those variables correctly.
 
-    :param root: The root of the AST that delayed_assignments() is
-        searching for assignments.
+    Args:
+        root (node_classes.NodeNG): The root of the AST that 
+            delayed_assignments() is searching for assignments.
 
     '''
     stack = [root]

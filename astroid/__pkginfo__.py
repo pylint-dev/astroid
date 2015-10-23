@@ -27,8 +27,11 @@ version = '.'.join([str(num) for num in numversion])
 
 if sys.version_info >= (3, 4):
     install_requires = ['lazy_object_proxy', 'six', 'wrapt']
-else:
+elif sys.version_info == (3, 3):
     install_requires = ['lazy_object_proxy', 'singledispatch', 'six', 'wrapt']
+else:
+    install_requires = ['funcigs', 'lazy_object_proxy', 'singledispatch', 'six',
+                        'wrapt']
 
 license = 'LGPL'
 
