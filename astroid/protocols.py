@@ -141,9 +141,12 @@ nodes.Const.infer_binary_op = const_infer_binary_op
 
 def _multiply_seq_by_int(self, other, context):
     node = self.__class__()
-    elts = [n for elt in self.elts for n in elt.infer(context)
-            if not n is util.YES] * other.value
-    node.elts = elts
+    elts = []
+    for elt in self.elts:
+        infered = next(elt.infer(context))
+        if not infered is util.YES:
+            elts.append(infered)
+    node.elts = elts * other.value
     return node
 
 
