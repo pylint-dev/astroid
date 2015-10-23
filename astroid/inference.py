@@ -582,18 +582,18 @@ def _infer_binop(self, context):
     right = self.right
     op = self.op
 
-    for lhs in left.infer(context=context):
+    # we use two separate contexts for evaluating lhs and rhs because
+    # 1. evaluating lhs may leave some undesired entries in context.path
+    #    which may not let us infer right value of rhs
+    lhs_context = context.clone()
+    rhs_context = context.clone()
+
+    for lhs in left.infer(context=lhs_context):
         if lhs is util.YES:
             # Don't know how to process this.
             yield util.YES
             return
 
-        # TODO(cpopa): if we have A() * A(), trying to infer
-        # the rhs with the same context will result in an
-        # inferrence error, so we create another context for it.
-        # This is a bug which should be fixed in InferenceContext at some point.
-        rhs_context = context.clone()
-        rhs_context.path = set()
         for rhs in right.infer(context=rhs_context):
             if rhs is util.YES:
                 # Don't know how to process this.

@@ -1018,6 +1018,18 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(inferred), 1)
         self.assertEqual(inferred[0], util.YES)
 
+    def test_binary_op_on_self(self):
+        'test correct handling of applying binary operator to self'
+        code = '''
+        import sys
+        sys.path = ['foo'] + sys.path
+        sys.path.insert(0, 'bar')
+        path = sys.path
+        '''
+        ast = parse(code, __name__)
+        inferred = ast['path'].inferred()
+        self.assertIsInstance(inferred[0], nodes.List)
+
     def test_binary_op_tuple_add(self):
         ast = builder.string_build('a = (1,) + (2,)', __name__, __file__)
         inferred = list(ast['a'].infer())
