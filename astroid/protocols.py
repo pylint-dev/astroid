@@ -143,9 +143,10 @@ def _multiply_seq_by_int(self, other, context):
     node = self.__class__()
     elts = []
     for elt in self.elts:
-        infered = next(elt.infer(context))
-        if not infered is util.YES:
-            elts.append(infered)
+        infered = helpers.safe_infer(elt, context)
+        if infered is None:
+            infered = util.YES
+        elts.append(infered)
     node.elts = elts * other.value
     return node
 
