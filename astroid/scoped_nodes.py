@@ -797,8 +797,7 @@ class FunctionDef(node_classes.Statement, Lambda):
 
     @decorators_mod.cachedproperty
     def extra_decorators(self):
-
-    """Get the extra decorators that this function can haves
+        """Get the extra decorators that this function can haves
         Additional decorators are considered when they are used as
         assignments, as in `method = staticmethod(method)`.
         The property will return all the callables that are used for
@@ -1829,10 +1828,12 @@ def get_locals(node):
     '''
     raise TypeError("This isn't an astroid node: %s" % type(node))
 
+# pylint: disable=unused-variable; doesn't understand singledispatch
 @get_locals.register(node_classes.NodeNG)
 def not_scoped_node(node):
     raise TypeError("This node doesn't have local variables: %s" % type(node))
 
+# pylint: disable=unused-variable; doesn't understand singledispatch
 @get_locals.register(LocalsDictNodeNG)
 def scoped_node(node):
     locals_ = collections.defaultdict(list)

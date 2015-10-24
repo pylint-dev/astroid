@@ -219,66 +219,118 @@ def _build_from_function(parent, name, member, module):
         return object_build_function(parent, member, name)
 
 
+def ast_from_object(object_, name=None):
+    built_objects = {}
+    module = inspect.getmodule(object_)
+    return _ast_from_object(object_, built_objects, module, name)
+
+# To talk about tomorrow:
+
+# Cycles in the ASTs
+
+# Cases where e.g. a module names itself something different that the
+# name its parent gives it.
+
+# ABCs
+
+# classify_class_attrs
+
+
 @_singledispatch
-def ast_from_object(object_, built_objects=(), name=None, parent=None):
-    return nodes.EmptyNode(name=name, object_=object_, parent=parent)
+def _ast_from_object(object_, built_objects, module, name=None, parent=None):
+    if object_ in built_objects:
+        return built_objects[object_]
+    else:
+        node = nodes.EmptyNode(name=name, object_=object_, parent=parent)
+        built_objects[object_] = node
+    return node
+
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
-@ast_from_object.register(types.ModuleType)
-def ast_from_module(module, built_objects=(), name=None, parent=None, node_class=nodes.Module):
-    if name is None:
-        name = module.__name__
+@_ast_from_object.register(types.ModuleType)
+def ast_from_module(module, built_objects, parent_module, name=None, parent=None):
+    if module is not parent_module:
+        # This module has been imported into another.
+        return nodes.Import([[getattr(module, '__name__', None), name]],
+                            parent=parent)
+    if module in built_objects:
+        return built_objects[module]
     try:
         source_file = inspect.getsourcefile(module)
     except TypeError:
         # inspect.getsourcefile raises TypeError for built-in modules.
         source_file = None
     # inspect.getdoc returns None for modules without docstrings like
-    # Jython Java modules (see #109562).
-    module_node = node_class(name=name, doc=inspect.getdoc(module),
-                           source_file=source_file,
-                           package=hasattr(module, '__path__'),
-                           # Assume that if inspect couldn't find a Python source
-                           # file, it's probably not implemented in pure Python.
-                           pure_python=bool(source_file))
+    # Jython Java modules.
+    module_node = node_class(name=name or module.__name__,
+                             doc=inspect.getdoc(module),
+                             source_file=source_file,
+                             package=hasattr(module, '__path__'),
+                             # Assume that if inspect couldn't find a
+                             # Python source file, it's probably not
+                             # implemented in pure Python.
+                             pure_python=bool(source_file))
     MANAGER.cache_module(module_node)
-    built_objects = {}
-    module_node.postinit(body=[ast_from_object(m, built_objects, module_node)
-                               for m in inspect.getmembers(module)])
+    module_node.postinit(body=[_ast_from_object(m, built_objects, module,
+                                                n, module_node)
+                               for n, m in inspect.getmembers(module)])
+    built_objects[module] = module_node
     return module_node
 
+
 # pylint: disable=unused-variable; doesn't understand singledispatch
-@ast_from_object.register(type)
-@ast_from_object.register(types.GetSetDescriptorType)
-@ast_from_object.register(types.MemberDescriptorType)
-def ast_from_class(cls, built_objects=(), name=None, parent=None):
-    pass
+@_ast_from_object.register(type)
+@_ast_from_object.register(types.GetSetDescriptorType)
+@_ast_from_object.register(types.MemberDescriptorType)
+def ast_from_class(cls, built_objects, module,  name=None, parent=None):
+    inspected_module = inspect.getmodule(cls)
+    if inspected_module is not module:
+        return ImportFrom(fromname=getattr(inspected_module, '__name__', None),
+                          names=[[getattr(cls, '__name__', None), name]],
+                          parent=parent)
+    if cls in built_objects:
+        return built_objects[cls]
+    node = nodes.ClassDef(name=name, doc=inspect.getdoc(cls))
+    node.postinit(bases=[nodes.Name(b, node) for b in basenames],
+                  body=(), decorators=())
+    # TODO
+    built_objects[cls] = class_node
+    return class_node
 # Old-style classes
 if six.PY2:
-    ast_from_object.register(types.ClassType, ast_from_class)
+    _ast_from_object.register(types.ClassType, ast_from_class)
+
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
 
 # These two types are the same on CPython but not necessarily the same
 # on other implementations.
-@ast_from_object.register(types.BuiltinFunctionType)
-@ast_from_object.register(types.BuiltinMethodType)
+@_ast_from_object.register(types.BuiltinFunctionType)
+@_ast_from_object.register(types.BuiltinMethodType)
 # Methods implemented in C on CPython.
-@ast_from_object.register(WrapperDescriptorType)
-@ast_from_object.register(MethodWrapperType)
+@_ast_from_object.register(WrapperDescriptorType)
+@_ast_from_object.register(MethodWrapperType)
 # types defines a LambdaType but on all existing Python
 # implementations it's equivalent to FunctionType.
-@ast_from_object.register(types.FunctionType)
-@ast_from_object.register(types.MethodType)
-def ast_from_function(func, built_objects=(), name=None, parent=None):
+@_ast_from_object.register(types.FunctionType)
+@_ast_from_object.register(types.MethodType)
+def ast_from_function(func, built_objects, module, name=None, parent=None):
+    inspected_module = inspect.getmodule(func)
+    if inspected_module is not module:
+        return ImportFrom(fromname=getattr(inspected_module, '__name__', None),
+                          names=[[getattr(func, '__name__', None), name]],
+                          parent=parent)
+    if func in built_objects:
+        return built_objects[func]
     signature = _signature(func)
     parameters = {k: tuple(g) for k, g in
                   itertools.groupby(signature.parameters.values(),
                                     operator.attrgetter('kind'))}
-    # This ignores POSITIONAL_ONLY args, because they only appear in
-    # functions implemented in C and can't be mimicked by any Python
-    # function.
-    def extract_args(parameters):
+    func_node = nodes.FunctionDef(name=name or getattr(func, '__name__', None),
+                                  doc=inspect.getdoc(func),
+                                  parent=parent)
+
+    def extract_args(parameters, parent):
         '''Takes an iterator over Parameter objects and returns three
         sequences, arg names, default values, and annotations.
 
@@ -287,11 +339,11 @@ def ast_from_function(func, built_objects=(), name=None, parent=None):
         defaults = []
         annotations = []
         for parameter in parameters:
-            args.append(parameter.name)
+            names.append(parameter.name)
             if parameter.default is not _Parameter.empty:
-                defaults.append(ast_from_object(parameter.default))
+                defaults.append(_ast_from_object(parameter.default, parent=parent))
             if parameter.annotation is not _Parameter.empty:
-                annotations.append(ast_from_object(parameter.annotation))
+                annotations.append(_ast_from_object(parameter.annotation, parent=parent))
             else:
                 annotations.append(None)
         return names, defaults, annotations
@@ -302,46 +354,147 @@ def ast_from_function(func, built_objects=(), name=None, parent=None):
 
         '''
         try:
-            vararg = next(parameter)
-            name = vararg.name
-            if vararg.annotation is not _Parameter.empty:
-                return name, ast_from_object(vararg.annotation)
-            else:
-                return name, None
-        except StopIteration:
-            return None, None
+            return parameter[0].name
+        except IndexError:
+            return None
 
-    names, defaults, annotations = extract_args(parameters.get(_Parameter.POSITIONAL_OR_KEYWORD, ()))
-    kwonlyargs, kw_defaults, kwonly_annotations = extract_args(parameters.get(_Parameter.KEYWORD_ONLY, ()))
-    kwarg, varargannotation = extract_vararg(parameters.get(_Parameter.VAR_POSITIONAL, ()))
-    kwarg, kwargannotation = parameters.get(_Parameter.VAR_KEYWORD, None),
-    return build_function(name or getattr(func, '__name__', None),
-                          args, defaults, kwonlyargs, kw_defaults,
-                          annotations, kwonly_annotations,
-                          varargannotation, kwargannotation)
-                          ast_from_object(signature.return_annotation),
-                          func.__doc__,
-                          parent)
+    vararg = parameters.get(_Parameter.VAR_POSITIONAL, ())
+    kwarg = parameters.get(_Parameter.VAR_KEYWORD, ())
+    vararg_name = extract_vararg(vararg)
+    kwarg_name = extract_vararg(kwarg)
+    args_node = nodes.Arguments(vararg=vararg_name, kwarg=kwarg_name, parent=func_node)
+
+    # This ignores POSITIONAL_ONLY args, because they only appear in
+    # functions implemented in C and can't be mimicked by any Python
+    # function.
+    names, defaults, annotations = extract_args(parameters.get(_Parameter.POSITIONAL_OR_KEYWORD, ()), args_node)
+    kwonlynames, kw_defaults, kwonly_annotations = extract_args(parameters.get(_Parameter.KEYWORD_ONLY, ()), args_node)
+    args = [nodes.Name(name=n, parent=args_node) for n in names]
+    kwonlyargs = [nodes.Name(name=n, parent=args_node) for n in kwonlynames]
+    if vararg_name and vararg[0].annotation is not _Parameter.empty:
+        varargannotation = vararg.annotation
+    else:
+        varargannotation = None
+    if kwarg_name and kwarg[0].annotation is not _Parameter.empty:
+        kwargannotation = kwarg.annotation
+    else:
+        kwargannotation = None
+    args_node.postinit(args, defaults, kwonlyargs, kw_defaults,
+                       annotations, kwonly_annotations,
+                       varargannotation, kwargannotation)
+    func_node.postinit(args=args_node, body=[],
+                       returns=_ast_from_object(signature.return_annotation,
+                                               parent=func_node))
+    built_objects[func] = func_node
+    return func_node
+
+
+BUILTIN_CONTAINERS = {list: nodes.List, set: nodes.Set, frozenset:
+                      nodes.Set, tuple: nodes.Tuple}
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
-@ast_from_object.register(list)
-@ast_from_object.register(dict)
-@ast_from_object.register(set)
-@ast_from_object.register(tuple)
-def ast_from_containers(cls, built_objects=(), name=None, parent=None):
-    '''Handles builtin types that have their own AST nodes, like list but
-    not like frozenset or range.'''
+@_ast_from_object.register(list)
+@_ast_from_object.register(set)
+@_ast_from_object.register(frozenset)
+@_ast_from_object.register(tuple)
+def ast_from_builtin_container(container, built_objects, module, name=None,
+                               parent=None):
+    '''Handles builtin containers that have their own AST nodes, like list
+    but not range.
 
-@ast_from_object.register(str)
-@ast_from_object.register(bytes)
-@ast_from_object.register(int)
-@ast_from_object.register(float)
-@ast_from_object.register(complex)
-def ast_from_scalar(cls, built_objects=(), name=None, parent=None):
-    pass
+    '''
+    if (container in built_objects and
+        built_objects[container].targets[0].name == name)
+        return built_objects[container]
+    if name:
+        parent = nodes.Assign(parent=parent)
+        name_node = nodes.AssignName(name, parent=parent)
+    container_node = BUILTIN_CONTAINERS[type(container)](parent=parent)
+    container_node.postinit(
+        elts=[_ast_from_object(i, built_objects, module, parent=node)
+              for i in container])
+    if name:
+        parent.postinit(targets=[name_node], value=container_node)
+        node = parent
+    else:
+        node = container_node
+    built_objects[container] = node
+    return node
+
+
+# pylint: disable=unused-variable; doesn't understand singledispatch
+@_ast_from_object.register(dict)
+def ast_from_dict(dictionary, built_objects, module, name=None,
+                               parent=None):
+    if (dictionary in built_objects and
+        built_objects[dictionary].targets[0].name == name)
+        return built_objects[dictionary]
+    if name:
+        parent = nodes.Assign(parent=parent)
+        name_node = nodes.AssignName(name, parent=parent)
+    dict_node = nodes.Dict(parent=parent)
+    dict_node.postinit(items=[
+        _ast_from_object(k, built_objects, module, parent=node),
+        _ast_from_object(v, built_objects, module, parent=node),
+        for k, v in dictionary.items()])
+    if name:
+        parent.postinit(targets=[name_node], value=dict_node)
+        node = parent
+    else:
+        node = dict_node
+    built_objects[dictionary] = node
+    return node
+
 if six.PY2:
-    ast_from_object.register(unicode, ast_from_scalar)
-    ast_from_object.register(long, ast_from_scalar)
+    _ast_from_object.register(types.DictProxyType, ast_from_dict)
+else:
+    _ast_from_object.register(types.MappingProxyType, ast_from_dict)
+
+
+@_ast_from_object.register(str)
+@_ast_from_object.register(bytes)
+@_ast_from_object.register(int)
+@_ast_from_object.register(float)
+@_ast_from_object.register(complex)
+@_ast_from_object.register(type(None))
+@_ast_from_object.register(type(NotImplemented))
+def ast_from_scalar(scalar, built_objects, module, name=None, parent=None):
+    if (scalar in built_objects and
+        built_objects[scalar].targets[0].name == name)
+        return built_objects[scalar]
+    if name:
+        parent = nodes.Assign(parent=parent)
+        name_node = nodes.AssignName(name, parent=parent)
+    scalar_node = Const(value=scalar, parent=parent)
+    if name:
+        parent.postinit(targets=[name_node], value=scalar_node)
+        node = parent
+    else:
+        node = scalar_node
+    built_objects[scalar] = node
+    return node
+
+if six.PY2:
+    _ast_from_object.register(unicode, ast_from_scalar)
+    _ast_from_object.register(long, ast_from_scalar)
+
+
+@_ast_from_object.register(type(Ellipsis))
+def ast_from_ellipsis(ellipsis, built_objects, module, name=None, parent=None):
+    if (ellipsis in built_objects and
+        built_objects[ellipsis].targets[0].name == name)
+        return built_objects[ellipsis]
+    if name:
+        parent = nodes.Assign(parent=parent)
+        name_node = nodes.AssignName(name, parent=parent)
+    ellipsis_node = nodes.Ellipsis(parent=parent)
+    if name:
+        parent.postinit(targets=[name_node], value=ellipsis_node)
+        node = parent
+    else:
+        node = ellipsis_node
+    built_objects[ellipsis] = node
+    return node
 
 
 
@@ -506,7 +659,7 @@ def _astroid_bootstrapping(astroid_builtin=None):
         else:
             _CONST_PROXY[cls] = proxy
 
-_astroid_bootstrapping()
+# _astroid_bootstrapping()
 
 
 # @scoped_nodes.get_locals.register(Builtins)
@@ -527,11 +680,11 @@ _astroid_bootstrapping()
 # TODO : find a nicer way to handle this situation;
 # However __proxied introduced an
 # infinite recursion (see https://bugs.launchpad.net/pylint/+bug/456870)
-def _set_proxied(const):
-    return _CONST_PROXY[const.value.__class__]
-nodes.Const._proxied = property(_set_proxied)
+# def _set_proxied(const):
+#     return _CONST_PROXY[const.value.__class__]
+# nodes.Const._proxied = property(_set_proxied)
 
-_GeneratorType = nodes.ClassDef(types.GeneratorType.__name__, types.GeneratorType.__doc__)
-_GeneratorType.parent = MANAGER.astroid_cache[six.moves.builtins.__name__]
-bases.Generator._proxied = _GeneratorType
-Astroid_BUILDER.object_build(bases.Generator._proxied, types.GeneratorType)
+# _GeneratorType = nodes.ClassDef(types.GeneratorType.__name__, types.GeneratorType.__doc__)
+# _GeneratorType.parent = MANAGER.astroid_cache[six.moves.builtins.__name__]
+# bases.Generator._proxied = _GeneratorType
+# Astroid_BUILDER.object_build(bases.Generator._proxied, types.GeneratorType)
