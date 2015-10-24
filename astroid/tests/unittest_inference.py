@@ -969,6 +969,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         listval = inferred[0]
         self.assertIsInstance(listval, nodes.List)
         self.assertEqual(len(listval.itered()), 4)
+
     def test_binary_op_tuple_add(self):
         ast = builder.string_build('a = (1,) + (2,)', __name__, __file__)
         inferred = list(ast['a'].infer())
