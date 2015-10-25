@@ -27,6 +27,7 @@ from astroid import builder
 from astroid import exceptions
 from astroid import manager
 from astroid import nodes
+from astroid import raw_building
 from astroid import test_utils
 from astroid import util
 from astroid.tests import resources
@@ -320,19 +321,20 @@ class BuilderTest(unittest.TestCase):
         except ImportError:
             self.skipTest('test skipped: mxDateTime is not available')
         else:
-            dt_ast = self.builder.inspect_build(DateTime)
+            dt_ast = raw_building.ast_from_object(DateTime) # self.builder.inspect_build(DateTime)
             dt_ast.getattr('DateTime')
             # this one is failing since DateTimeType.__module__ = 'builtins' !
             #dt_ast.getattr('DateTimeType')
 
     def test_inspect_build3(self):
-        self.builder.inspect_build(unittest)
+        # self.builder.inspect_build(unittest)
+        raw_building.ast_from_object(unittest)
 
     @test_utils.require_version(maxver='3.0')
     def test_inspect_build_instance(self):
         """test astroid tree build from a living object"""
         import exceptions
-        builtin_ast = self.builder.inspect_build(exceptions)
+        builtin_ast = raw_building.ast_from_object(exceptions) # self.builder.inspect_build(exceptions)
         fclass = builtin_ast['OSError']
         # things like OSError.strerror are now (2.5) data descriptors on the
         # class instead of entries in the __dict__ of an instance
@@ -396,7 +398,7 @@ class BuilderTest(unittest.TestCase):
         self.assertIsInstance(func.body[1].body[0].value, nodes.Yield)
 
     def test_object(self):
-        obj_ast = self.builder.inspect_build(object)
+        obj_ast = raw_building.ast_from_object(object) # self.builder.inspect_build(object)
         self.assertIn('__setattr__', obj_ast)
 
     def test_newstyle_detection(self):

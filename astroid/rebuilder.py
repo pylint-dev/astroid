@@ -26,7 +26,6 @@ from astroid import astpeephole
 from astroid import nodes
 
 
-
 _BIN_OP_CLASSES = {ast.Add: '+',
                    ast.BitAnd: '&',
                    ast.BitOr: '|',
@@ -86,8 +85,10 @@ def _get_doc(node):
             doc = node.body[0].value.s
             node.body = node.body[1:]
             return node, doc
+        else:
+            return node, None
     except IndexError:
-        return node, None # ast built from scratch
+        return node, None
 
 
 def _visit_or_none(node, attr, visitor, parent, assign_ctx, visit='visit',

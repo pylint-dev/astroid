@@ -44,7 +44,6 @@ from astroid.node_classes import (
     ImportFrom, Attribute, Global, If, IfExp, Import, Index, Keyword,
     List, Name, Nonlocal, Pass, Print, Raise, Return, Set, Slice, Starred, Subscript,
     TryExcept, TryFinally, Tuple, UnaryOp, While, With, Yield, YieldFrom,
-    const_factory,
     AsyncFor, Await, AsyncWith,
     # Backwards-compatibility aliases
     Backquote, Discard, AssName, AssAttr, Getattr, CallFunc, From,

@@ -327,41 +327,41 @@ class Module(LocalsDictNodeNG):
     # Legacy API aliases
     @property
     def file(self):
-        rename_warning(('file', 'source_file'))
+        util.rename_warning(('file', 'source_file'))
         return self.source_file
     @file.setter
     def file(self, source_file):
-        rename_warning(('file', 'source_file'))
+        util.rename_warning(('file', 'source_file'))
         self.source_file = source_file
     @file.deleter
     def file(self):
-        rename_warning(('file', 'source_file'))
+        util.rename_warning(('file', 'source_file'))
         del self.source_file
 
     @property
     def path(self):
-        rename_warning(('path', 'source_file'))
+        util.rename_warning(('path', 'source_file'))
         return self.source_file
     @path.setter
     def path(self, source_file):
-        rename_warning(('path', 'source_file'))
+        util.rename_warning(('path', 'source_file'))
         self.source_file = source_file
     @path.deleter
     def path(self):
-        rename_warning(('path', 'source_file'))
+        util.rename_warning(('path', 'source_file'))
         del self.source_file
 
     @property
     def files_bytes(self):
-        rename_warning(('files_bytes', 'source_code'))
+        util.rename_warning(('files_bytes', 'source_code'))
         return self.source_code
     @files_bytes.setter
     def files_bytes(self, source_code):
-        rename_warning(('files_bytes', 'source_code'))
+        util.rename_warning(('files_bytes', 'source_code'))
         self.source_code = source_code
     @files_bytes.deleter
     def files_bytes(self):
-        rename_warning(('files_bytes', 'source_code'))
+        util.rename_warning(('files_bytes', 'source_code'))
         del self.source_code
 
     @property
@@ -1137,7 +1137,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
     # some of the attributes below are set by the builder module or
     # by a raw factories
 
-    # a dictionary of class instances attributes
     _astroid_fields = ('decorators', 'bases', 'body')
 
     decorators = None

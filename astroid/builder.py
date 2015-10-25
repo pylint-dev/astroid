@@ -83,7 +83,7 @@ else:
 MANAGER = manager.AstroidManager()
 
 
-class AstroidBuilder(raw_building.InspectBuilder):
+class AstroidBuilder(object): # (raw_building.InspectBuilder):
     """Class for building an astroid tree from source code or from a live module.
 
     The param *manager* specifies the manager class which should be used.
@@ -94,7 +94,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
     """
 
     def __init__(self, manager=None, apply_transforms=True):
-        super(AstroidBuilder, self).__init__()
+        # super(AstroidBuilder, self).__init__()
         self._manager = manager or MANAGER
         self._apply_transforms = apply_transforms
 
@@ -109,7 +109,10 @@ class AstroidBuilder(raw_building.InspectBuilder):
         if node is None:
             # this is a built-in module
             # get a partial representation by introspection
-            node = self.inspect_build(module, modname=modname, path=path)
+            # node = self.inspect_build(module, modname=modname, path=path)
+            node = raw_building.ast_from_object(module, name=modname)
+            # FIXME
+            node.source_file = path
             if self._apply_transforms:
                 # We have to handle transformation by ourselves since the
                 # rebuilder isn't called for builtin nodes

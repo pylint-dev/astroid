@@ -37,6 +37,7 @@ from astroid import manager
 from astroid import mixins
 from astroid import util
 
+raw_building = util.lazy_import('raw_building')
 
 BUILTINS = six.moves.builtins.__name__
 MANAGER = manager.AstroidManager()
@@ -614,7 +615,8 @@ class _BaseContainer(mixins.ParentAssignTypeMixin,
         if elts is None:
             node.elts = []
         else:
-            node.elts = [const_factory(e) for e in elts]
+            node.elts = [raw_building.ast_from_scalar(e, {}, None, parent=node)
+                         for e in elts]
         return node
 
     def itered(self):
@@ -626,6 +628,11 @@ class _BaseContainer(mixins.ParentAssignTypeMixin,
     @abc.abstractmethod
     def pytype(self):
         pass
+
+    @decorators.cachedproperty
+    def _proxied(self):
+        builtins = MANAGER.astroid_cache[BUILTINS]
+        return builtins.getattr(type(self).__name__.lower())[0]
 
 
 class LookupMixIn(object):
@@ -1195,6 +1202,11 @@ class Const(NodeNG, bases.Instance):
     def bool_value(self):
         return bool(self.value)
 
+    @decorators.cachedproperty
+    def _proxied(self):
+        builtins = MANAGER.astroid_cache[BUILTINS]
+        return builtins.getattr(type(self.value).__name__)[0]
+
 
 class Continue(Statement):
     """class representing a Continue node"""
@@ -1253,7 +1265,10 @@ class Dict(NodeNG, bases.Instance):
         if items is None:
             node.items = []
         else:
-            node.items = [(const_factory(k), const_factory(v))
+            node.items = [(raw_building.ast_from_scalar(k, {}, None,
+                                                        parent=node),
+                           raw_building.ast_from_scalar(v, {}, None,
+                                                        parent=node))
                           for k, v in items.items()]
         return node
 
@@ -1297,6 +1312,11 @@ class Dict(NodeNG, bases.Instance):
     def bool_value(self):
         return bool(self.items)
 
+    @decorators.cachedproperty
+    def _proxied(self):
+        builtins = MANAGER.astroid_cache[BUILTINS]
+        return builtins.getattr('dict')[0]
+
 
 class Expr(Statement):
     """class representing a Expr node"""
@@ -1323,8 +1343,9 @@ class EmptyNode(NodeNG):
     _other_fields = ('name', 'object')
 
     def __init__(self, object_, name=None, lineno=None, col_offset=None, parent=None):
-        if self.object is not None:
+        if object_ is not None:
             self.object = object_
+        self.name = name
         super(EmptyNode, self).__init__(lineno, col_offset, parent)
 
     @property
@@ -1827,42 +1848,6 @@ class YieldFrom(Yield):
 
 class DictUnpack(NodeNG):
     """Represents the unpacking of dicts into dicts using PEP 448."""
-
-
-# constants ##############################################################
-
-CONST_CLS = {
-    list: List,
-    tuple: Tuple,
-    dict: Dict,
-    set: Set,
-    type(None): Const,
-    type(NotImplemented): Const,
-    }
-
-def _update_const_classes():
-    """update constant classes, so the keys of CONST_CLS can be reused"""
-    klasses = (bool, int, float, complex, str)
-    if six.PY2:
-        klasses += (unicode, long)
-    klasses += (bytes,)
-    for kls in klasses:
-        CONST_CLS[kls] = Const
-_update_const_classes()
-
-
-def const_factory(value, parent=None):
-    """return an astroid node for a python value"""
-    # XXX we should probably be stricter here and only consider stuff in
-    # CONST_CLS or do better treatment: in case where value is not in CONST_CLS,
-    # we should rather recall the builder on this value than returning an empty
-    # node (another option being that const_factory shouldn't be called with something
-    # not in CONST_CLS)
-    assert not isinstance(value, NodeNG)
-    try:
-        return CONST_CLS[value.__class__](value, parent)
-    except (KeyError, AttributeError):
-        return EmptyNode(object_=value, parent=parent)
 
 
 # Backward-compatibility aliases
