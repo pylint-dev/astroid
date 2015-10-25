@@ -252,8 +252,7 @@ def _ast_from_object(object_, built_objects, module, name=None, parent=None):
 def ast_from_module(module, built_objects, parent_module, name=None, parent=None):
     if module is not parent_module:
         # This module has been imported into another.
-        return nodes.Import([[getattr(module, '__name__', None), name]],
-                            parent=parent)
+        return nodes.Import([[module.__name__, name]], parent=parent)
     if id(module) in built_objects:
         return built_objects[id(module)]
     try:
@@ -261,9 +260,10 @@ def ast_from_module(module, built_objects, parent_module, name=None, parent=None
     except TypeError:
         # inspect.getsourcefile raises TypeError for built-in modules.
         source_file = None
-    # inspect.getdoc returns None for modules without docstrings like
-    # Jython Java modules.
     module_node = nodes.Module(name=name or module.__name__,
+                               # inspect.getdoc returns None for
+                               # modules without docstrings like
+                               # Jython Java modules.
                                doc=inspect.getdoc(module),
                                source_file=source_file,
                                package=hasattr(module, '__path__'),
@@ -422,7 +422,7 @@ def ast_from_builtin_container(container, built_objects, module, name=None,
 
     '''
     if (id(container) in built_objects and
-        built_objects[container].targets[0].name == name):
+        built_objects[id(container)].targets[0].name == name):
         return built_objects[id(container)]
     if name:
         parent = nodes.Assign(parent=parent)
