@@ -1348,7 +1348,6 @@ class EmptyNode(NodeNG):
         self.name = name
         super(EmptyNode, self).__init__(lineno, col_offset, parent)
 
-    @property
     def has_underlying_object(self):
         return hasattr(self, 'object')
 

@@ -254,8 +254,8 @@ def ast_from_module(module, built_objects, parent_module, name=None, parent=None
         # This module has been imported into another.
         return nodes.Import([[getattr(module, '__name__', None), name]],
                             parent=parent)
-    if module in built_objects:
-        return built_objects[module]
+    if id(module) in built_objects:
+        return built_objects[id(module)]
     try:
         source_file = inspect.getsourcefile(module)
     except TypeError:
@@ -271,7 +271,7 @@ def ast_from_module(module, built_objects, parent_module, name=None, parent=None
                                # Python source file, it's probably not
                                # implemented in pure Python.
                                pure_python=bool(source_file))
-    built_objects[module] = module_node
+    built_objects[id(module)] = module_node
     MANAGER.cache_module(module_node)
     module_node.postinit(body=[_ast_from_object(m, built_objects, module,
                                                 n, module_node)
@@ -284,17 +284,16 @@ def ast_from_module(module, built_objects, parent_module, name=None, parent=None
 @_ast_from_object.register(types.GetSetDescriptorType)
 @_ast_from_object.register(types.MemberDescriptorType)
 def ast_from_class(cls, built_objects, module, name=None, parent=None):
-    # print(cls)
     inspected_module = inspect.getmodule(cls)
     if inspected_module is not None and inspected_module is not module:
         return nodes.ImportFrom(fromname=
                                 getattr(inspected_module, '__name__', None),
                                 names=[[cls.__name__, name]],
                                 parent=parent)
-    if cls in built_objects:
-        return built_objects[cls]
+    if id(cls) in built_objects:
+        return built_objects[id(cls)]
     class_node = nodes.ClassDef(name=cls.__name__ or name, doc=inspect.getdoc(cls))
-    built_objects[cls] = class_node
+    built_objects[id(cls)] = class_node
     try:
         bases = [nodes.Name(name=b.__name__, parent=class_node)
                  for b in inspect.getmro(cls)[1:]]
@@ -332,8 +331,8 @@ def ast_from_function(func, built_objects, module, name=None, parent=None):
         return nodes.ImportFrom(fromname=getattr(inspected_module, '__name__', None),
                                 names=[[func.__name__, name]],
                                 parent=parent)
-    if func in built_objects:
-        return built_objects[func]
+    if id(func) in built_objects:
+        return built_objects[id(func)]
     func_node = nodes.FunctionDef(name=name or func.__name__,
                               doc=inspect.getdoc(func),
                               parent=parent)
@@ -404,7 +403,7 @@ def ast_from_function(func, built_objects, module, name=None, parent=None):
                        annotations, kwonly_annotations,
                        varargannotation, kwargannotation)
     func_node.postinit(args=args_node, body=[])
-    built_objects[func] = func_node
+    built_objects[id(func)] = func_node
     return func_node
 
 
@@ -422,9 +421,9 @@ def ast_from_builtin_container(container, built_objects, module, name=None,
     but not range.
 
     '''
-    if (container in built_objects and
+    if (id(container) in built_objects and
         built_objects[container].targets[0].name == name):
-        return built_objects[container]
+        return built_objects[id(container)]
     if name:
         parent = nodes.Assign(parent=parent)
         name_node = nodes.AssignName(name, parent=parent)
@@ -433,7 +432,7 @@ def ast_from_builtin_container(container, built_objects, module, name=None,
         node = parent
     else:
         node = container_node
-    built_objects[container] = node
+    built_objects[id(container)] = node
     container_node.postinit(
         elts=[_ast_from_object(i, built_objects, module, parent=node)
               for i in container])
@@ -446,9 +445,9 @@ def ast_from_builtin_container(container, built_objects, module, name=None,
 @_ast_from_object.register(dict)
 def ast_from_dict(dictionary, built_objects, module, name=None,
                                parent=None):
-    if (dictionary in built_objects and
+    if (id(dictionary) in built_objects and
         built_objects[dictionary].targets[0].name == name):
-        return built_objects[dictionary]
+        return built_objects[id(dictionary)]
     if name:
         parent = nodes.Assign(parent=parent)
         name_node = nodes.AssignName(name, parent=parent)
@@ -457,7 +456,7 @@ def ast_from_dict(dictionary, built_objects, module, name=None,
         node = parent
     else:
         node = dict_node
-    built_objects[dictionary] = node
+    built_objects[id(dictionary)] = node
     dict_node.postinit(items=[
         (_ast_from_object(k, built_objects, module, parent=node),
          _ast_from_object(v, built_objects, module, parent=node))

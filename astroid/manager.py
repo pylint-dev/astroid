@@ -269,5 +269,6 @@ class AstroidManager(object):
         # unittest_lookup.LookupTC.test_builtin_lookup fail depending on the
         # test order
         import astroid.raw_building
-        astroid.raw_building._astroid_bootstrapping(
-            astroid_builtin=astroid_builtin)
+        # astroid.raw_building._astroid_bootstrapping(
+        #     astroid_builtin=astroid_builtin)
+        astroid.raw_building.ast_from_object(six.moves.builtins)
