@@ -446,7 +446,7 @@ def ast_from_builtin_container(container, built_objects, module, name=None,
 def ast_from_dict(dictionary, built_objects, module, name=None,
                                parent=None):
     if (id(dictionary) in built_objects and
-        built_objects[dictionary].targets[0].name == name):
+        built_objects[id(dictionary)].targets[0].name == name):
         return built_objects[id(dictionary)]
     if name:
         parent = nodes.Assign(parent=parent)
