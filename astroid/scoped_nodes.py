@@ -121,9 +121,9 @@ def std_special_attributes(self, name, add_locals=True):
     else:
         locals = {}
     if name == '__name__':
-        return [node_classes.const_factory(self.name)] + locals.get(name, [])
+        return [node_classes.Const(self.name)] + locals.get(name, [])
     if name == '__doc__':
-        return [node_classes.const_factory(self.doc)] + locals.get(name, [])
+        return [node_classes.Const(self.doc)] + locals.get(name, [])
     if name == '__dict__':
         return [node_classes.Dict()] + locals.get(name, [])
     raise exceptions.NotFoundError(name)
@@ -424,7 +424,7 @@ class Module(LocalsDictNodeNG):
     def getattr(self, name, context=None, ignore_locals=False):
         if name in self.special_attributes:
             if name == '__file__':
-                return [node_classes.const_factory(self.file)] + self.locals.get(name, [])
+                return [node_classes.Const(self.source_file)] + self.locals.get(name, [])
             if name == '__path__' and self.package:
                 return [node_classes.List()] + self.locals.get(name, [])
             return std_special_attributes(self, name)
@@ -918,7 +918,7 @@ class FunctionDef(node_classes.Statement, Lambda):
         done by an Instance proxy at inference time.
         """
         if name == '__module__':
-            return [node_classes.const_factory(self.root().qname())]
+            return [node_classes.Const(self.root().qname())]
         if name in self.instance_attrs:
             return self.instance_attrs[name]
         return std_special_attributes(self, name, False)
@@ -1439,7 +1439,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         values = self.locals.get(name, [])
         if name in self.special_attributes:
             if name == '__module__':
-                return [node_classes.const_factory(self.root().qname())] + values
+                return [node_classes.Const(self.root().qname())] + values
             # FIXME: do we really need the actual list of ancestors?
             # returning [Tuple()] + values don't break any test
             # this is ticket http://www.logilab.org/ticket/52785

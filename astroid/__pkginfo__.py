@@ -30,7 +30,7 @@ if sys.version_info >= (3, 4):
 elif sys.version_info == (3, 3):
     install_requires = ['lazy_object_proxy', 'singledispatch', 'six', 'wrapt']
 else:
-    install_requires = ['funcigs', 'lazy_object_proxy', 'singledispatch', 'six',
+    install_requires = ['funcsigs', 'lazy_object_proxy', 'singledispatch', 'six',
                         'wrapt']
 
 license = 'LGPL'

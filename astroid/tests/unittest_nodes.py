@@ -32,6 +32,7 @@ from astroid import exceptions
 from astroid import node_classes
 from astroid import nodes
 from astroid import parse
+from astroid import raw_building
 from astroid import util
 from astroid import test_utils
 from astroid import transforms
@@ -393,7 +394,7 @@ from ..cave import wine\n\n"""
         next(astroid['message'].infer(ctx))
         ctx.lookupname = 'email'
         m = next(astroid['email'].infer(ctx))
-        self.assertFalse(m.file.startswith(os.path.join('data', 'email.py')))
+        self.assertFalse(m.source_file.startswith(os.path.join('data', 'email.py')))
 
     def test_more_absolute_import(self):
         astroid = resources.build_file('data/module1abs/__init__.py', 'data.module1abs')
@@ -409,7 +410,7 @@ class CmpNodeTest(unittest.TestCase):
 class ConstNodeTest(unittest.TestCase):
 
     def _test(self, value):
-        node = nodes.const_factory(value)
+        node = raw_building.ast_from_object(value)
         self.assertIsInstance(node._proxied, nodes.ClassDef)
         self.assertEqual(node._proxied.name, value.__class__.__name__)
         self.assertIs(node.value, value)

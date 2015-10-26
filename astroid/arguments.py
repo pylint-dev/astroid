@@ -208,7 +208,7 @@ class CallSite(object):
             kwarg = nodes.Dict(lineno=funcnode.args.lineno,
                                col_offset=funcnode.args.col_offset,
                                parent=funcnode.args)
-            kwarg.postinit([(nodes.const_factory(key), value)
+            kwarg.postinit([(nodes.Const(key, parent=kwarg), value)
                             for key, value in kwargs.items()])
             return iter((kwarg, ))
         elif funcnode.args.vararg == name:

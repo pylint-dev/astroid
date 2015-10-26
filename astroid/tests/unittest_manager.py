@@ -101,8 +101,8 @@ class AstroidManagerTest(resources.SysPathSetup,
             module = self.manager.ast_from_module_name('mypypa')
             self.assertEqual(module.name, 'mypypa')
             end = os.path.join(archive, 'mypypa')
-            self.assertTrue(module.file.endswith(end),
-                            "%s doesn't endswith %s" % (module.file, end))
+            self.assertTrue(module.source_file.endswith(end),
+                            "%s doesn't endswith %s" % (module.source_file, end))
         finally:
             # remove the module, else after importing egg, we don't get the zip
             if 'mypypa' in self.manager.astroid_cache:

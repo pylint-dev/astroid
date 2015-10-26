@@ -32,6 +32,7 @@ from astroid import exceptions
 from astroid import decorators
 from astroid import node_classes
 from astroid import nodes
+from astroid import raw_building
 from astroid import util
 
 
@@ -83,7 +84,8 @@ _UNARY_OPERATORS = {
 def _infer_unary_op(obj, op):
     func = _UNARY_OPERATORS[op]
     value = func(obj)
-    return nodes.const_factory(value)
+    return raw_building.ast_from_object(value)
+
 
 nodes.Tuple.infer_unary_op = lambda self, op: _infer_unary_op(tuple(self.elts), op)
 nodes.List.infer_unary_op = lambda self, op: _infer_unary_op(self.elts, op)
@@ -121,7 +123,7 @@ def const_infer_binary_op(self, operator, other, context, _):
         try:
             impl = BIN_OP_IMPL[operator]
             try:
-                yield nodes.const_factory(impl(self.value, other.value))
+                yield raw_building.ast_from_object(impl(self.value, other.value))
             except TypeError:
                 # ArithmeticError is not enough: float >> float is a TypeError
                 yield not_implemented
@@ -290,14 +292,10 @@ def _arguments_infer_argname(self, name, context):
 
     # TODO: just provide the type here, no need to have an empty Dict.
     if name == self.vararg:
-        vararg = nodes.const_factory(())
-        vararg.parent = self
-        yield vararg
+        yield nodes.Tuple(parent=self)
         return
     if name == self.kwarg:
-        kwarg = nodes.const_factory({})
-        kwarg.parent = self
-        yield kwarg
+        yield nodes.Dict(parent=self)
         return
     # if there is a default value, yield it. And then yield YES to reflect
     # we can't guess given argument value

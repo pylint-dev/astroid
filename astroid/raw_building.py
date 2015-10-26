@@ -32,6 +32,13 @@ import warnings
 # inspect that is for some reason not exported.
 from inspect import classify_class_attrs as _classify_class_attrs
 
+# ChainMap was made available in Python 3, but a precursor lives in
+# ConfigParser in 2.7.
+try:
+    from collections import ChainMap as _ChainMap
+except ImportError:
+    from ConfigParser import _Chainmap as _ChainMap
+
 try:
     from functools import singledispatch as _singledispatch
 except ImportError:
@@ -199,7 +206,7 @@ def ast_from_class(cls, built_objects, module, name=None, parent=None):
     if id(cls) in built_objects:
         # return built_objects[id(cls)]
         return nodes.Name(name=name or cls.__name__, parent=parent)
-    class_node = nodes.ClassDef(name=name or cls.__name__, doc=inspect.getdoc(cls))
+    class_node = nodes.ClassDef(name=name or cls.__name__, doc=inspect.getdoc(cls), parent=parent)
     built_objects[id(cls)] = class_node
     try:
         bases = [nodes.Name(name=b.__name__, parent=class_node)

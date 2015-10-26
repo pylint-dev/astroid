@@ -82,7 +82,7 @@ class AstroidManager(object):
                 modname = '.'.join(modutils.modpath_from_file(filepath))
             except ImportError:
                 modname = filepath
-        if modname in self.astroid_cache and self.astroid_cache[modname].file == filepath:
+        if modname in self.astroid_cache and self.astroid_cache[modname].source_file == filepath:
             return self.astroid_cache[modname]
         if source:
             from astroid.builder import AstroidBuilder

@@ -357,7 +357,7 @@ def _infer_unaryop(self, context=None):
                 # YES, which will be returned as is.
                 bool_value = operand.bool_value()
                 if bool_value is not util.YES:
-                    yield nodes.const_factory(not bool_value)
+                    yield nodes.Const(not bool_value)
                 else:
                     yield util.YES
             else:

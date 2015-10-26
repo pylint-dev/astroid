@@ -964,7 +964,7 @@ class Unknown(NodeNG):
     introspection failed.
 
     '''
-    def infer(self):
+    def infer(self, context=None, **kwargs):
         '''Inference on an Unknown node immediately terminates.'''
         raise StopIteration
 
@@ -1659,9 +1659,7 @@ class Slice(NodeNG):
     def _wrap_attribute(self, attr):
         """Wrap the empty attributes of the Slice in a Const node."""
         if not attr:
-            const = const_factory(attr)
-            const.parent = self
-            return const
+            return Const(attr, parent=self)
         return attr
 
     @decorators.cachedproperty

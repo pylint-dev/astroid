@@ -535,10 +535,10 @@ class BuilderTest(unittest.TestCase):
                 a.custom_attr = 0
             '''
         builder.parse(code)
-        nonetype = nodes.const_factory(None)
+        nonetype = nodes.Const(None)
         self.assertNotIn('custom_attr', nonetype.locals)
         self.assertNotIn('custom_attr', nonetype.instance_attrs)
-        nonetype = nodes.const_factory({})
+        nonetype = nodes.Dict()
         self.assertNotIn('custom_attr', nonetype.locals)
         self.assertNotIn('custom_attr', nonetype.instance_attrs)
 
@@ -591,7 +591,7 @@ class FileBuildTest(unittest.TestCase):
         self.assertIsNone(module.parent)
         self.assertEqual(module.frame(), module)
         self.assertEqual(module.root(), module)
-        self.assertEqual(module.file, os.path.abspath(resources.find('data/module.py')))
+        self.assertEqual(module.source_file, os.path.abspath(resources.find('data/module.py')))
         self.assertEqual(module.pure_python, 1)
         self.assertEqual(module.package, 0)
         self.assertFalse(module.is_statement)

@@ -72,7 +72,7 @@ class TestTransforms(unittest.TestCase):
             _, right = node.ops[0]
             # Assume they are Consts and they were transformed before
             # us.
-            return nodes.const_factory(node.left.value < right.value)
+            return nodes.Const(node.left.value < right.value)
 
         def transform_name(node):
             # Should be Consts
@@ -97,7 +97,7 @@ class TestTransforms(unittest.TestCase):
             name = nodes.AssignName()
             name.name = 'value'
             assign.targets = [name]
-            assign.value = nodes.const_factory(42)
+            assign.value = nodes.Const(42)
             node.body.append(assign)
 
         self.transformer.register_transform(nodes.FunctionDef,
@@ -205,7 +205,7 @@ class TestTransforms(unittest.TestCase):
 
     def test_builder_apply_transforms(self):
         def transform_function(node):
-            return nodes.const_factory(42)
+            return nodes.Const(42)
 
         manager = builder.MANAGER
         with add_transform(manager, nodes.FunctionDef, transform_function):
