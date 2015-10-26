@@ -247,8 +247,10 @@ def ast_from_function(func, built_objects, module, name=None, parent=None):
     try:
         signature = _signature(func)
     except (ValueError, TypeError):
-        # FIXME: temporary hack
-        signature = _Signature()
+        # signature() raises these errors for non-introspectable
+        # callables.
+        func_node.postinit(args=nodes.Unknown(parent=func_node), body=[])
+        return func_node
     parameters = {k: tuple(g) for k, g in
                   itertools.groupby(signature.parameters.values(),
                                     operator.attrgetter('kind'))}
