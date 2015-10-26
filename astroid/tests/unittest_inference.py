@@ -1020,6 +1020,31 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(inferred), 1)
         self.assertEqual(inferred[0], util.YES)
 
+    def test_binary_op_list_mul_int(self):
+        'test correct handling on list multiplied by int when there are more than one'
+        code = '''
+        from ctypes import c_int
+        seq = [c_int()] * 4
+        '''
+        ast = parse(code, __name__)
+        inferred = ast['seq'].inferred()
+        self.assertEqual(len(inferred), 1)
+        listval = inferred[0]
+        self.assertIsInstance(listval, nodes.List)
+        self.assertEqual(len(listval.itered()), 4)
+
+    def test_binary_op_on_self(self):
+        'test correct handling of applying binary operator to self'
+        code = '''
+        import sys
+        sys.path = ['foo'] + sys.path
+        sys.path.insert(0, 'bar')
+        path = sys.path
+        '''
+        ast = parse(code, __name__)
+        inferred = ast['path'].inferred()
+        self.assertIsInstance(inferred[0], nodes.List)
+
     def test_binary_op_tuple_add(self):
         ast = builder.string_build('a = (1,) + (2,)', __name__, __file__)
         inferred = list(ast['a'].infer())
@@ -2006,17 +2031,25 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             def __neg__(self):
                 return +self - 41
             def __invert__(self):
-                return []
+                return 42
         class BadInstance(object):
             def __pos__(self):
                 return lala
             def __neg__(self):
                 return missing
+        class LambdaInstance(object):
+            __pos__ = lambda self: self.lala
+            __neg__ = lambda self: self.lala + 1
+            @property
+            def lala(self): return 24            
         instance = GoodInstance()
+        lambda_instance = LambdaInstance()
         +instance #@
         -instance #@
         ~instance #@
         --instance #@
+        +lambda_instance #@
+        -lambda_instance #@
 
         bad_instance = BadInstance()
         +bad_instance #@
@@ -2029,20 +2062,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         -func #@
         +BadInstance #@
         ''')
-        pos = next(ast_nodes[0].infer())
-        self.assertIsInstance(pos, nodes.Const)
-        self.assertEqual(pos.value, 42)
-        neg = next(ast_nodes[1].infer())
-        self.assertIsInstance(neg, nodes.Const)
-        self.assertEqual(neg.value, 1)
-        invert = next(ast_nodes[2].infer())
-        self.assertIsInstance(invert, nodes.List)
-        self.assertEqual(invert.elts, [])
-        neg_neg = next(ast_nodes[3].infer())
-        self.assertIsInstance(neg_neg, nodes.Const)
-        self.assertEqual(neg_neg.value, -1)
+        expected = [42, 1, 42, -1, 24, 25]
+        for node, value in zip(ast_nodes[:6], expected):
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, nodes.Const)
+            self.assertEqual(inferred.value, value)
 
-        for bad_node in ast_nodes[4:]:
+        for bad_node in ast_nodes[6:]:
             inferred = next(bad_node.infer())
             self.assertEqual(inferred, util.YES)
 
@@ -2724,6 +2750,29 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             inferred = next(rest.infer())
             self.assertEqual(inferred, util.YES)
 
+    def test_subscript_supports__index__(self):
+        ast_nodes = test_utils.extract_node('''
+        class Index(object):
+            def __index__(self): return 2
+        class LambdaIndex(object):
+            __index__ = lambda self: self.foo
+            @property
+            def foo(self): return 1
+        class NonIndex(object):
+            __index__ = lambda self: None
+        a = [1, 2, 3, 4]
+        a[Index()] #@
+        a[LambdaIndex()] #@
+        a[NonIndex()] #@         
+        ''')
+        first = next(ast_nodes[0].infer())
+        self.assertIsInstance(first, nodes.Const)
+        self.assertEqual(first.value, 3)
+        second = next(ast_nodes[1].infer())
+        self.assertIsInstance(second, nodes.Const)
+        self.assertEqual(second.value, 2)
+        self.assertRaises(InferenceError, next, ast_nodes[2].infer())
+
     def test_special_method_masquerading_as_another(self):
         ast_node = test_utils.extract_node('''
         class Info(object):
@@ -3061,6 +3110,35 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             inferred = next(node.infer())
             self.assertRaises(InferenceError, next, inferred.infer_call_result(node))
 
+    def test_context_call_for_context_managers(self):
+        ast_nodes = test_utils.extract_node('''
+        class A:
+            def __enter__(self):
+                return self
+        class B:
+            __enter__ = lambda self: self
+        class C:
+            @property
+            def a(self): return A()
+            def __enter__(self):
+                return self.a
+        with A() as a:
+            a #@
+        with B() as b:
+            b #@
+        with C() as c:
+            c #@
+        ''')
+        first_a = next(ast_nodes[0].infer())
+        self.assertIsInstance(first_a, Instance)
+        self.assertEqual(first_a.name, 'A')
+        second_b = next(ast_nodes[1].infer())
+        self.assertIsInstance(second_b, Instance)
+        self.assertEqual(second_b.name, 'B')
+        third_c = next(ast_nodes[2].infer())
+        self.assertIsInstance(third_c, Instance)
+        self.assertEqual(third_c.name, 'A')
+
 
 class GetattrTest(unittest.TestCase):
 
@@ -3397,13 +3475,23 @@ class TestBool(unittest.TestCase):
                return False
         class B(object):
            {method} = C()
+        class LambdaBoolFalse(object):
+            {method} = lambda self: self.foo
+            @property
+            def foo(self): return 0
+        class FalseBoolLen(object):
+            __len__ = lambda self: self.foo
+            @property
+            def foo(self): return 0
         bool(FalseClass) #@
         bool(TrueClass) #@
         bool(FalseClass()) #@
         bool(TrueClass()) #@
         bool(B()) #@
+        bool(LambdaBoolFalse()) #@
+        bool(FalseBoolLen()) #@
         '''.format(method=BOOL_SPECIAL_METHOD))
-        expected = [True, True, False, True, False]
+        expected = [True, True, False, True, False, False, False]
         for node, expected_value in zip(ast_nodes, expected):
             inferred = next(node.infer())
             self.assertEqual(inferred.value, expected_value)

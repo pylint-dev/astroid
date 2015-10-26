@@ -2,6 +2,9 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+
+    * Class.getattr('__mro__') returns the actual MRO. Closes issue #128.
+
     * The logilab-common dependency is not needed anymore as the needed code
       was integrated into astroid.
 
@@ -209,6 +212,9 @@ Change log for the astroid package (used to be astng)
 
     * Add support for multiplication of tuples and lists with instances
       which provides an __index__ returning-int method.
+
+    * Add support for indexing containers with instances which provides
+      an __index__ returning-int method.
 
     * Star unpacking in assignments returns properly a list,
       not the individual components. Closes issue #138.

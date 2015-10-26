@@ -249,6 +249,8 @@ class Instance(Proxy):
              all its instances are considered true.
         """
         context = contextmod.InferenceContext()
+        context.callcontext = contextmod.CallContext(args=[self])
+
         try:
             result = _infer_method_result_truth(self, BOOL_SPECIAL_METHOD, context)
         except (exceptions.InferenceError, exceptions.NotFoundError):

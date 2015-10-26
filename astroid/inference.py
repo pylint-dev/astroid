@@ -252,6 +252,10 @@ def infer_subscript(self, context=None):
             step = _slice_value(index.step, context)
             if all(elem is not _SLICE_SENTINEL for elem in (lower, upper, step)):
                 index_value = slice(lower, upper, step)
+        elif isinstance(index, bases.Instance):
+            index = helpers.class_instance_as_index(index)
+            if index:
+                index_value = index.value
         else:
             raise exceptions.InferenceError()
 
@@ -372,6 +376,9 @@ def _infer_unaryop(self, context=None):
                     inferred = next(meth.infer(context=context))
                     if inferred is util.YES or not inferred.callable():
                         continue
+
+                    context = contextmod.copy_context(context)
+                    context.callcontext = contextmod.CallContext(args=[operand])
                     call_results = inferred.infer_call_result(self, context=context)
                     result = next(call_results, None)
                     if result is None:
@@ -575,18 +582,18 @@ def _infer_binop(self, context):
     right = self.right
     op = self.op
 
-    for lhs in left.infer(context=context):
+    # we use two separate contexts for evaluating lhs and rhs because
+    # 1. evaluating lhs may leave some undesired entries in context.path
+    #    which may not let us infer right value of rhs
+    lhs_context = context.clone()
+    rhs_context = context.clone()
+
+    for lhs in left.infer(context=lhs_context):
         if lhs is util.YES:
             # Don't know how to process this.
             yield util.YES
             return
 
-        # TODO(cpopa): if we have A() * A(), trying to infer
-        # the rhs with the same context will result in an
-        # inferrence error, so we create another context for it.
-        # This is a bug which should be fixed in InferenceContext at some point.
-        rhs_context = context.clone()
-        rhs_context.path = set()
         for rhs in right.infer(context=rhs_context):
             if rhs is util.YES:
                 # Don't know how to process this.

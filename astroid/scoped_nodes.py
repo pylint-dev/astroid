@@ -142,7 +142,6 @@ def builtin_lookup(name):
         stmts = builtin_astroid.locals[name]
     except KeyError:
         stmts = ()
-    # print(repr(builtin_astroid), name, stmts)
     return builtin_astroid, stmts
 
 
@@ -186,10 +185,6 @@ class LocalsDictNodeNG(node_classes.LookupMixIn,
 
     def _scope_lookup(self, node, name, offset=0):
         """XXX method for interfacing the scope lookup"""
-        # print(repr(self))
-        # pprint.pprint(dict(self.locals))
-        # print(node)
-        # print(name)
         try:
             stmts = node._filter_stmts(self.locals[name], self, offset)
         except KeyError:
@@ -760,7 +755,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
 
 
 class FunctionDef(node_classes.Statement, Lambda):
-    '''Setting FunctionDef.args to None, rather than an Arguments node,
+    '''Setting FunctionDef.args to Unknown, rather than an Arguments node,
     means that the corresponding function's arguments are unknown,
     probably because it represents a function implemented in C or that
     is otherwise not introspectable.
@@ -1440,14 +1435,16 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         if name in self.special_attributes:
             if name == '__module__':
                 return [node_classes.Const(self.root().qname())] + values
-            # FIXME: do we really need the actual list of ancestors?
-            # returning [Tuple()] + values don't break any test
-            # this is ticket http://www.logilab.org/ticket/52785
-            # XXX need proper meta class handling + MRO implementation
-            if name == '__bases__' or (name == '__mro__' and self.newstyle):
+            if name == '__bases__':
                 node = node_classes.Tuple()
-                node.items = self.ancestors(recurs=True, context=context)
+                elts = list(self._inferred_bases(context))
+                node.postinit(elts=elts)
                 return [node] + values
+            if name == '__mro__' and self.newstyle:
+                mro = self.mro()
+                node = node_classes.Tuple()
+                node.postinit(elts=mro)
+                return [node]
             return std_special_attributes(self, name)
         # don't modify the list in self.locals!
         values = list(values)
