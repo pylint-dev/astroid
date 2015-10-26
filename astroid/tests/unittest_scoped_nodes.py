@@ -584,6 +584,29 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             self.assertEqual(len(cls.getattr('__dict__')), 1)
             self.assertEqual(len(cls.getattr('__mro__')), 1)
 
+    def test__mro__attribute(self):
+        node = test_utils.extract_node('''
+        class A(object): pass
+        class B(object): pass
+        class C(A, B): pass        
+        ''')
+        mro = node.getattr('__mro__')[0]
+        self.assertIsInstance(mro, nodes.Tuple)
+        self.assertEqual(mro.elts, node.mro())
+
+    def test__bases__attribute(self):
+        node = test_utils.extract_node('''
+        class A(object): pass
+        class B(object): pass
+        class C(A, B): pass
+        class D(C): pass
+        ''')
+        bases = node.getattr('__bases__')[0]
+        self.assertIsInstance(bases, nodes.Tuple)
+        self.assertEqual(len(bases.elts), 1)
+        self.assertIsInstance(bases.elts[0], nodes.ClassDef)
+        self.assertEqual(bases.elts[0].name, 'C')        
+
     def test_cls_special_attributes_2(self):
         astroid = builder.parse('''
             class A: pass

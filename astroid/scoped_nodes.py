@@ -1359,14 +1359,16 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         if name in self.special_attributes:
             if name == '__module__':
                 return [node_classes.const_factory(self.root().qname())] + values
-            # FIXME: do we really need the actual list of ancestors?
-            # returning [Tuple()] + values don't break any test
-            # this is ticket http://www.logilab.org/ticket/52785
-            # XXX need proper meta class handling + MRO implementation
-            if name == '__bases__' or (name == '__mro__' and self.newstyle):
+            if name == '__bases__':
                 node = node_classes.Tuple()
-                node.items = self.ancestors(recurs=True, context=context)
+                elts = list(self._inferred_bases(context))
+                node.postinit(elts=elts)
                 return [node] + values
+            if name == '__mro__' and self.newstyle:
+                mro = self.mro()
+                node = node_classes.Tuple()
+                node.postinit(elts=mro)
+                return [node]
             return std_special_attributes(self, name)
         # don't modify the list in self.locals!
         values = list(values)
