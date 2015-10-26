@@ -202,10 +202,6 @@ class AsStringVisitor(object):
         """return an astroid.Ellipsis node as string"""
         return '...'
 
-    def visit_empty(self, node):
-        """return an Empty node as string"""
-        return ''
-
     def visit_exec(self, node):
         """return an astroid.Exec node as string"""
         if node.locals:
@@ -398,6 +394,10 @@ class AsStringVisitor(object):
         else:
             operator = node.op
         return '%s%s' % (operator, node.operand.accept(self))
+
+    def visit_unknown(self, node):
+        """dummy method for visiting an Unknown node"""
+        return ''
 
     def visit_while(self, node):
         """return an astroid.While node as string"""

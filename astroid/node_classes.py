@@ -964,6 +964,9 @@ class Unknown(NodeNG):
     introspection failed.
 
     '''
+    def infer(self):
+        '''Inference on an Unknown node immediately terminates.'''
+        raise StopIteration
 
 
 class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
