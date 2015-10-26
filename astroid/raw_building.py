@@ -45,11 +45,9 @@ except ImportError:
     from singledispatch import singledispatch as _singledispatch
 
 try:
-    from inspect import (signature as _signature, Parameter as
-                         _Parameter, Signature as _Signature)
+    from inspect import signature as _signature, Parameter as _Parameter
 except ImportError:
-    from funcsigs import (signature as _signature, Parameter as
-                          _Parameter, Signature as _Signature)
+    from funcsigs import signature as _signature, Parameter as _Parameter
 
 import six
 
@@ -140,7 +138,7 @@ def object_build_function(parent, func, localname):
 
 
 def ast_from_object(object_, name=None):
-    built_objects = {}
+    built_objects = _ChainMap()
     module = inspect.getmodule(object_)
     return _ast_from_object(object_, built_objects, module, name)
 
@@ -185,6 +183,7 @@ def ast_from_module(module, built_objects, parent_module, name=None, parent=None
                                # implemented in pure Python.
                                pure_python=bool(source_file))
     built_objects[id(module)] = module_node
+    built_objects = _ChainMap({}, *built_objects.maps)
     MANAGER.cache_module(module_node)
     module_node.postinit(body=[_ast_from_object(m, built_objects, module,
                                                 n, module_node)
@@ -208,6 +207,7 @@ def ast_from_class(cls, built_objects, module, name=None, parent=None):
         return nodes.Name(name=name or cls.__name__, parent=parent)
     class_node = nodes.ClassDef(name=name or cls.__name__, doc=inspect.getdoc(cls), parent=parent)
     built_objects[id(cls)] = class_node
+    built_objects = _ChainMap({}, *built_objects.maps)
     try:
         bases = [nodes.Name(name=b.__name__, parent=class_node)
                  for b in inspect.getmro(cls)[1:]]
@@ -251,6 +251,8 @@ def ast_from_function(func, built_objects, module, name=None, parent=None):
     func_node = nodes.FunctionDef(name=name or func.__name__,
                                   doc=inspect.getdoc(func),
                                   parent=parent)
+    built_objects[id(func)] = func_node
+    built_objects = _ChainMap({}, *built_objects.maps)
     try:
         signature = _signature(func)
     except (ValueError, TypeError):
@@ -320,7 +322,6 @@ def ast_from_function(func, built_objects, module, name=None, parent=None):
                        annotations, kwonly_annotations,
                        varargannotation, kwargannotation)
     func_node.postinit(args=args_node, body=[])
-    built_objects[id(func)] = func_node
     return func_node
 
 
