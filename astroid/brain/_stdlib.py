@@ -1,10 +1,4 @@
-
-"""Astroid hooks for the Python 2 standard library.
-
-Currently help understanding of :
-
-* hashlib.md5 and hashlib.sha1
-"""
+"""Astroid hooks for the Python standard library."""
 
 import functools
 import sys

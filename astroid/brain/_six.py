@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Astroid hooks for six.moves."""
+"""Astroid hooks for six module."""
 
 import sys
 from textwrap import dedent
