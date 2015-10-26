@@ -73,7 +73,6 @@ WrapperDescriptorType = type(object.__getattribute__)
 MethodWrapperType = type(object().__getattribute__)
 
 MANAGER = manager.AstroidManager()
-_BUILTINS = vars(six.moves.builtins)
 
 
 def _io_discrepancy(member):
@@ -160,7 +159,8 @@ def ast_from_module(module, built_objects, parent_module, name=None, parent=None
         # This module has been imported into another.
         return nodes.Import([[module.__name__, name]], parent=parent)
     if id(module) in built_objects:
-        return built_objects[id(module)]
+        # return built_objects[id(module)]
+        return nodes.Name(name=name or module.__name__, parent=parent_module)
     try:
         source_file = inspect.getsourcefile(module)
     except TypeError:
@@ -197,8 +197,9 @@ def ast_from_class(cls, built_objects, module, name=None, parent=None):
                                 names=[[cls.__name__, name]],
                                 parent=parent)
     if id(cls) in built_objects:
-        return built_objects[id(cls)]
-    class_node = nodes.ClassDef(name=cls.__name__ or name, doc=inspect.getdoc(cls))
+        # return built_objects[id(cls)]
+        return nodes.Name(name=name or cls.__name__, parent=parent)
+    class_node = nodes.ClassDef(name=name or cls.__name__, doc=inspect.getdoc(cls))
     built_objects[id(cls)] = class_node
     try:
         bases = [nodes.Name(name=b.__name__, parent=class_node)
@@ -238,10 +239,11 @@ def ast_from_function(func, built_objects, module, name=None, parent=None):
                                 names=[[func.__name__, name]],
                                 parent=parent)
     if id(func) in built_objects:
-        return built_objects[id(func)]
+        # return built_objects[id(func)]
+        return nodes.Name(name=name or func.__name__, parent=parent)
     func_node = nodes.FunctionDef(name=name or func.__name__,
-                              doc=inspect.getdoc(func),
-                              parent=parent)
+                                  doc=inspect.getdoc(func),
+                                  parent=parent)
     try:
         signature = _signature(func)
     except (ValueError, TypeError):
@@ -329,11 +331,17 @@ def ast_from_builtin_container(container, built_objects, module, name=None,
     '''
     if (id(container) in built_objects and
         built_objects[id(container)].targets[0].name == name):
-        return built_objects[id(container)]
+        # return built_objects[id(container)]
+        return nodes.Name(name=name, parent=parent)
     if name:
         parent = nodes.Assign(parent=parent)
         name_node = nodes.AssignName(name, parent=parent)
-    container_node = BUILTIN_CONTAINERS[type(container)](parent=parent)
+    try:
+        container_node = BUILTIN_CONTAINERS[type(container)](parent=parent)
+    except KeyError:
+        for container_type in BUILTIN_CONTAINERS:
+            if isinstance(container, container_type):
+                container_node = BUILTIN_CONTAINERS[container_type](parent=parent)
     if name:
         node = parent
     else:
@@ -353,7 +361,8 @@ def ast_from_dict(dictionary, built_objects, module, name=None,
                                parent=None):
     if (id(dictionary) in built_objects and
         built_objects[id(dictionary)].targets[0].name == name):
-        return built_objects[id(dictionary)]
+        # return built_objects[id(dictionary)]
+        return nodes.Name(name=name, parent=parent)
     if name:
         parent = nodes.Assign(parent=parent)
         name_node = nodes.AssignName(name, parent=parent)
