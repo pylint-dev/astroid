@@ -296,10 +296,10 @@ class Module(LocalsDictNodeNG):
     scope_attrs = set(('__name__', '__doc__', '__file__', '__path__'))
 
     if six.PY2:
-        _other_fields = ('name', 'doc', 'file_encoding', 'path', 'package',
+        _other_fields = ('name', 'doc', 'file_encoding', 'package',
                          'pure_python', 'source_code', 'source_file')
     else:
-        _other_fields = ('name', 'doc', 'path', 'package', 'pure_python',
+        _other_fields = ('name', 'doc', 'package', 'pure_python',
                          'source_code', 'source_file')
     # _other_other_fields = ('locals', 'globals')
 

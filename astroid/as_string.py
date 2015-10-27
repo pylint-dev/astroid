@@ -135,6 +135,7 @@ class AsStringVisitor(object):
     def visit_const(self, node):
         """return an astroid.Const node as string"""
         return repr(node.value)
+    visit_singleton = visit_const
 
     def visit_continue(self, node):
         """return an astroid.Continue node as string"""

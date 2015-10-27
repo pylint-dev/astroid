@@ -24,7 +24,7 @@ from six.moves import builtins
 from astroid import builder
 from astroid import helpers
 from astroid import manager
-from astroid import raw_building
+from astroid import nodes
 from astroid import test_utils
 from astroid import util
 
@@ -41,9 +41,7 @@ class TestHelpers(unittest.TestCase):
         return self.builtins.getattr(obj_name)[0]
 
     def _build_custom_builtin(self, obj_name):
-        proxy = raw_building.build_class(obj_name)
-        proxy.parent = self.builtins
-        return proxy
+        return nodes.ClassDef(name=obj_name, parent=self.builtins)
 
     def assert_classes_equal(self, cls, other):
         self.assertEqual(cls.name, other.name)

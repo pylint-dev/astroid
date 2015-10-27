@@ -1362,7 +1362,7 @@ class EmptyNode(NodeNG):
     '''
     _other_fields = ('name', 'object')
 
-    def __init__(self, object_, name=None, lineno=None, col_offset=None, parent=None):
+    def __init__(self, object_=None, name=None, lineno=None, col_offset=None, parent=None):
         if object_ is not None:
             self.object = object_
         self.name = name

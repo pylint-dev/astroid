@@ -303,8 +303,8 @@ def ast_from_function(func, built_objects, module, name=None, parent=None):
     # function.
     names, defaults, annotations = extract_args(parameters.get(_Parameter.POSITIONAL_OR_KEYWORD, ()), args_node)
     kwonlynames, kw_defaults, kwonly_annotations = extract_args(parameters.get(_Parameter.KEYWORD_ONLY, ()), args_node)
-    args = [nodes.Name(name=n, parent=args_node) for n in names]
-    kwonlyargs = [nodes.Name(name=n, parent=args_node) for n in kwonlynames]
+    args = [nodes.AssignName(name=n, parent=args_node) for n in names]
+    kwonlyargs = [nodes.AssignName(name=n, parent=args_node) for n in kwonlynames]
     if vararg_name and vararg[0].annotation is not _Parameter.empty:
         varargannotation = vararg.annotation
     else:
