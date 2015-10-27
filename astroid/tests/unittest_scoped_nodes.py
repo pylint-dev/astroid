@@ -605,7 +605,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(bases, nodes.Tuple)
         self.assertEqual(len(bases.elts), 1)
         self.assertIsInstance(bases.elts[0], nodes.ClassDef)
-        self.assertEqual(bases.elts[0].name, 'C')        
+        self.assertEqual(bases.elts[0].name, 'C')
 
     def test_cls_special_attributes_2(self):
         astroid = builder.parse('''
