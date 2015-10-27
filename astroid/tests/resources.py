@@ -22,7 +22,7 @@ import pkg_resources
 
 from astroid import builder
 from astroid import MANAGER
-from astroid.bases import  BUILTINS
+from astroid.bases import BUILTINS
 
 
 DATA_DIR = 'testdata/python{}/'.format(sys.version_info[0])

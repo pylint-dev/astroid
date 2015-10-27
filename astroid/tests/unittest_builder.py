@@ -296,9 +296,9 @@ class BuilderTest(unittest.TestCase):
         # check property has __init__
         pclass = builtin_ast['property']
         self.assertIn('__init__', pclass)
-        self.assertIsInstance(builtin_ast['None'], nodes.Const)
-        self.assertIsInstance(builtin_ast['True'], nodes.Const)
-        self.assertIsInstance(builtin_ast['False'], nodes.Const)
+        self.assertIsInstance(builtin_ast['None'], nodes.AssignName)
+        self.assertIsInstance(builtin_ast['True'], nodes.AssignName)
+        self.assertIsInstance(builtin_ast['False'], nodes.AssignName)
         if six.PY3:
             self.assertIsInstance(builtin_ast['Exception'], nodes.ClassDef)
             self.assertIsInstance(builtin_ast['NotImplementedError'], nodes.ClassDef)
@@ -514,8 +514,8 @@ class BuilderTest(unittest.TestCase):
         lclass = list(astroid.igetattr('A'))
         self.assertEqual(len(lclass), 1)
         lclass = lclass[0]
-        self.assertIn('assign_type', lclass.locals)
-        self.assertIn('type', lclass.locals)
+        self.assertIn('assign_type', lclass.external_attrs)
+        self.assertIn('type', lclass.external_attrs)
 
     def test_augassign_attr(self):
         builder.parse("""
@@ -535,7 +535,7 @@ class BuilderTest(unittest.TestCase):
                 a.custom_attr = 0
             '''
         builder.parse(code)
-        nonetype = nodes.Const(None)
+        nonetype = nodes.Singleton(None)
         self.assertNotIn('custom_attr', nonetype.locals)
         self.assertNotIn('custom_attr', nonetype.instance_attrs)
         nonetype = nodes.Dict()

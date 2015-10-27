@@ -401,23 +401,36 @@ else:
 @_ast_from_object.register(int)
 @_ast_from_object.register(float)
 @_ast_from_object.register(complex)
-@_ast_from_object.register(type(None))
-@_ast_from_object.register(type(NotImplemented))
-def ast_from_scalar(scalar, built_objects, module, name=None, parent=None):
+def ast_from_builtin_number_text_binary(builtin_number_text_binary, built_objects, module, name=None, parent=None):
     if name:
         parent = nodes.Assign(parent=parent)
         name_node = nodes.AssignName(name, parent=parent)
-    scalar_node = nodes.Const(value=scalar, parent=parent)
+    builtin_number_text_binary_node = nodes.Const(value=builtin_number_text_binary, parent=parent)
     if name:
-        parent.postinit(targets=[name_node], value=scalar_node)
+        parent.postinit(targets=[name_node], value=builtin_number_text_binary_node)
         node = parent
     else:
-        node = scalar_node
+        node = builtin_number_text_binary_node
     return node
 
 if six.PY2:
-    _ast_from_object.register(unicode, ast_from_scalar)
-    _ast_from_object.register(long, ast_from_scalar)
+    _ast_from_object.register(unicode, ast_from_builtin_number_text_binary)
+    _ast_from_object.register(long, ast_from_builtin_number_text_binary)
+
+
+@_ast_from_object.register(type(None))
+@_ast_from_object.register(type(NotImplemented))
+def ast_from_builtin_singleton(builtin_singleton, built_objects, module, name=None, parent=None):
+    if name:
+        parent = nodes.Assign(parent=parent)
+        name_node = nodes.AssignName(name, parent=parent)
+    builtin_singleton_node = nodes.Singleton(value=builtin_singleton, parent=parent)
+    if name:
+        parent.postinit(targets=[name_node], value=builtin_singleton_node)
+        node = parent
+    else:
+        node = builtin_singleton_node
+    return node
 
 
 @_ast_from_object.register(type(Ellipsis))

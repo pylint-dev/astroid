@@ -36,9 +36,8 @@ BUILTINS = six.moves.builtins.__name__
 
 
 def _build_proxy_class(cls_name, builtins):
-    proxy = raw_building.build_class(cls_name)
-    proxy.parent = builtins
-    return proxy
+    # TODO: fix with the node constructors
+    return nodes.ClassDef(name=cls_name, parent=builtins)
 
 
 def _function_type(function, builtins):

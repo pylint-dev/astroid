@@ -368,16 +368,16 @@ class Module(LocalsDictNodeNG):
         return frozenset(get_locals(self)['__future__'])
 
     def _get_stream(self):
-        if self.file_bytes is not None:
-            return io.BytesIO(self.file_bytes)
-        if self.file is not None:
-            stream = open(self.file, 'rb')
+        if self.source_code is not None:
+            return io.BytesIO(self.source_code)
+        if self.source_file is not None:
+            stream = open(self.source_file, 'rb')
             return stream
         return None
 
     @property
     def file_stream(self):
-        util.attr_to_method_warning((file_stream, type(self).__name__))
+        util.attr_to_method_warning(('file_stream', type(self).__name__))
         return self._get_stream()
 
     def stream(self):
@@ -1013,7 +1013,7 @@ class FunctionDef(node_classes.Statement, Lambda):
         returns = self.nodes_of_class(node_classes.Return, skip_klass=FunctionDef)
         for returnnode in returns:
             if returnnode.value is None:
-                yield node_classes.Const(None)
+                yield node_classes.Singleton(None)
             else:
                 try:
                     for inferred in returnnode.value.infer(context):

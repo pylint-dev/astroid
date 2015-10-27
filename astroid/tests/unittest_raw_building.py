@@ -17,57 +17,6 @@ from astroid.bases import BUILTINS
 
 
 class RawBuildingTC(unittest.TestCase):
-
-    # def test_attach_dummy_node(self):
-    #     node = build_module('MyModule')
-    #     attach_dummy_node(node, 'DummyNode')
-    #     self.assertEqual(1, len(list(node.get_children())))
-
-    # def test_build_module(self):
-    #     node = build_module('MyModule')
-    #     self.assertEqual(node.name, 'MyModule')
-    #     self.assertEqual(node.pure_python, False)
-    #     self.assertEqual(node.package, False)
-    #     self.assertEqual(node.parent, None)
-
-    # def test_build_class(self):
-    #     node = build_class('MyClass')
-    #     self.assertEqual(node.name, 'MyClass')
-    #     self.assertEqual(node.doc, None)
-
-    # def test_build_function(self):
-    #     node = build_function('MyFunction')
-    #     self.assertEqual(node.name, 'MyFunction')
-    #     self.assertEqual(node.doc, None)
-
-    # def test_build_function_args(self):
-    #     args = [Parameter('myArgs1', None, None, None),
-    #             Parameter('myArgs2', None, None, None)]
-    #     node = build_function('MyFunction', args)
-    #     self.assertEqual('myArgs1', node.args.args[0].name)
-    #     self.assertEqual('myArgs2', node.args.args[1].name)
-    #     self.assertEqual(2, len(node.args.args))
-
-    # def test_build_function_defaults(self):
-    #     args = [Parameter('myArgs1', 'defaults1', None, None),
-    #             Parameter('myArgs2', 'defaults2', None, None)]
-    #     node = build_function('MyFunction', args)
-    #     self.assertEqual(2, len(node.args.defaults))
-
-    @unittest.skipIf(sys.version_info[0] > 2,
-                     'Tuples are not allowed in function args in Python 3')
-    @unittest.expectedFailure
-    def test_build_function_with_tuple_args(self):
-        # TODO
-        def f(a, (b, (c, d))):
-            pass
-        raw_building.ast_from_object(f)
-
-    # def test_build_from_import(self):
-    #     names = ['exceptions, inference, inspector']
-    #     node = build_from_import('astroid', names)
-    #     self.assertEqual(len(names), len(node.names))
-
     @test_utils.require_version(minver='3.0')
     def test_io_is__io(self):
         # _io module calls itself io. This leads

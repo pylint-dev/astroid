@@ -48,7 +48,7 @@ from astroid.node_classes import (
     # Backwards-compatibility aliases
     Backquote, Discard, AssName, AssAttr, Getattr, CallFunc, From,
     # Node not present in the builtin ast module.
-    DictUnpack, EmptyNode, Unknown
+    DictUnpack, EmptyNode, Singleton, Unknown
 )
 from astroid.scoped_nodes import (
     Module, GeneratorExp, Lambda, DictComp,
@@ -78,7 +78,7 @@ ALL_NODE_CLASSES = (
     Module,
     Pass, Print,
     Raise, Return,
-    Set, SetComp, Slice, Starred, Subscript,
+    Set, SetComp, Singleton, Slice, Starred, Subscript,
     TryExcept, TryFinally, Tuple,
     UnaryOp, Unknown,
     While, With,

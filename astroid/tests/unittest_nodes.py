@@ -411,7 +411,7 @@ class ConstNodeTest(unittest.TestCase):
 
     def _test(self, value):
         node = raw_building.ast_from_object(value)
-        self.assertIsInstance(node._proxied, nodes.ClassDef)
+        self.assertIsInstance(node._proxied, (nodes.ClassDef, nodes.AssignName))
         self.assertEqual(node._proxied.name, value.__class__.__name__)
         self.assertIs(node.value, value)
         self.assertTrue(node._proxied.parent)

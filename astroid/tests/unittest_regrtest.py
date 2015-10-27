@@ -25,8 +25,8 @@ from astroid import MANAGER, Instance, nodes
 from astroid.bases import BUILTINS
 from astroid.builder import AstroidBuilder
 from astroid import exceptions
-from astroid.raw_building import build_module
 from astroid.manager import AstroidManager
+from astroid import raw_building
 from astroid.test_utils import require_version, extract_node
 from astroid.tests import resources
 from astroid import transforms
@@ -90,7 +90,8 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin,
         builder = AstroidBuilder()
         builder._done = {}
         builder._module = sys.modules[__name__]
-        builder.object_build(build_module('module_name', ''), Whatever)
+        module = nodes.Module(name='module_name', doc='')
+        module.postinit(body=[raw_building.ast_from_object(Whatever)])
 
 
     def test_new_style_class_detection(self):

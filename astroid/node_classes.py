@@ -615,8 +615,7 @@ class _BaseContainer(mixins.ParentAssignTypeMixin,
         if elts is None:
             node.elts = []
         else:
-            node.elts = [raw_building.ast_from_scalar(e, {}, None, parent=node)
-                         for e in elts]
+            node.elts = [raw_building.ast_from_builtin_number_text_binary(e, {}, None, parent=node) for e in elts]
         return node
 
     def itered(self):
@@ -1218,6 +1217,15 @@ class Const(NodeNG, bases.Instance):
     def _proxied(self):
         builtins = MANAGER.astroid_cache[BUILTINS]
         return builtins.getattr(type(self.value).__name__)[0]
+
+
+class Singleton(Const):
+    """Represents a singleton object, at the moment None and NotImplemented."""
+
+    @decorators.cachedproperty
+    def _proxied(self):
+        builtins = MANAGER.astroid_cache[BUILTINS]
+        return builtins.getattr(str(self.value))[0]
 
 
 class Continue(Statement):
