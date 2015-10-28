@@ -122,9 +122,9 @@ class NamedTupleTest(unittest.TestCase):
         # urlparse return an object of class ParseResult, which has a
         # namedtuple call and a mixin as base classes
         result = test_utils.extract_node("""
-        import urlparse
+        import six
 
-        result = __(urlparse.urlparse('gopher://'))
+        result = __(six.moves.urllib.parse.urlparse('gopher://'))
         """)
         instance = next(result.infer())
         self.assertEqual(len(instance.getattr('scheme')), 1)

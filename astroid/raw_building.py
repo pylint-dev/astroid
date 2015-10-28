@@ -80,61 +80,61 @@ MethodWrapperType = type(object().__getattribute__)
 MANAGER = manager.AstroidManager()
 
 
-def _io_discrepancy(member):
-    # _io module names itself `io`: http://bugs.python.org/issue18602
-    member_self = getattr(member, '__self__', None)
-    return (member_self and
-            inspect.ismodule(member_self) and
-            member_self.__name__ == '_io' and
-            member.__module__ == 'io')
+# def _io_discrepancy(member):
+#     # _io module names itself `io`: http://bugs.python.org/issue18602
+#     member_self = getattr(member, '__self__', None)
+#     return (member_self and
+#             inspect.ismodule(member_self) and
+#             member_self.__name__ == '_io' and
+#             member.__module__ == 'io')
 
-def _add_dunder_class(func, member):
-    """Add a __class__ member to the given func node, if we can determine it."""
-    python_cls = member.__class__
-    cls_name = getattr(python_cls, '__name__', None)
-    if not cls_name:
-        return
-    bases = [ancestor.__name__ for ancestor in python_cls.__bases__]
-    ast_klass = build_class(cls_name, bases, python_cls.__doc__)
-    func.instance_attrs['__class__'] = [ast_klass]
+# def _add_dunder_class(func, member):
+#     """Add a __class__ member to the given func node, if we can determine it."""
+#     python_cls = member.__class__
+#     cls_name = getattr(python_cls, '__name__', None)
+#     if not cls_name:
+#         return
+#     bases = [ancestor.__name__ for ancestor in python_cls.__bases__]
+#     ast_klass = build_class(cls_name, bases, python_cls.__doc__)
+#     func.instance_attrs['__class__'] = [ast_klass]
 
-Parameter = collections.namedtuple('Parameter', 'name default annotation kind')
-DEFAULT_PARAMETER = Parameter(None, None, None, None)
+# Parameter = collections.namedtuple('Parameter', 'name default annotation kind')
+# DEFAULT_PARAMETER = Parameter(None, None, None, None)
 
-def build_function(name, args=(), defaults=(), annotations=(),
-                   kwonlyargs=(), kwonly_defaults=(),
-                   kwonly_annotations=(), vararg=None,
-                   varargannotation=None, kwarg=None, kwargannotation=None,
-                   returns=None, doc=None, parent=None):
-    """create and initialize an astroid FunctionDef node"""
-    func = nodes.FunctionDef(name=name, doc=doc, parent=parent)
-    args_node = nodes.Arguments(vararg=vararg, kwarg=kwarg, parent=func)
-    args = [nodes.Name(name=a.name, parent=args_node) for n in args]
-    kwonlyargs = [nodes.Name(name=a.name, parent=args_node) for a in kw_only]
-    args_node.postinit(args, defaults, kwonlyargs, kw_defaults,
-                      annotations, kwonly_annotations,
-                      varargannotation, kwargannotation)
-    func.postinit(args=args_node, body=[], returns=returns)
-    return func
+# def build_function(name, args=(), defaults=(), annotations=(),
+#                    kwonlyargs=(), kwonly_defaults=(),
+#                    kwonly_annotations=(), vararg=None,
+#                    varargannotation=None, kwarg=None, kwargannotation=None,
+#                    returns=None, doc=None, parent=None):
+#     """create and initialize an astroid FunctionDef node"""
+#     func = nodes.FunctionDef(name=name, doc=doc, parent=parent)
+#     args_node = nodes.Arguments(vararg=vararg, kwarg=kwarg, parent=func)
+#     args = [nodes.Name(name=a.name, parent=args_node) for n in args]
+#     kwonlyargs = [nodes.Name(name=a.name, parent=args_node) for a in kw_only]
+#     args_node.postinit(args, defaults, kwonlyargs, kw_defaults,
+#                       annotations, kwonly_annotations,
+#                       varargannotation, kwargannotation)
+#     func.postinit(args=args_node, body=[], returns=returns)
+#     return func
 
-def object_build_function(parent, func, localname):
-    """create astroid for a living function object"""
-    signature = _signature(func)
-    parameters = {k: tuple(g) for k, g in
-                  itertools.groupby(signature.parameters.values(),
-                                    operator.attrgetter('kind'))}
-    # This ignores POSITIONAL_ONLY args, because they only appear in
-    # functions implemented in C and can't be mimicked by any Python
-    # function.
-    node = build_function(getattr(func, '__name__', None) or localname,
-                          parameters.get(_Parameter.POSITIONAL_OR_KEYWORD, ()),
-                          parameters.get(_Parameter.KEYWORD_ONLY, ()),
-                          parameters.get(_Parameter.VAR_POSITIONAL, None),
-                          parameters.get(_Parameter.VAR_KEYWORD, None),
-                          signature.return_annotation,
-                          func.__doc__,
-                          parent)
-    return node
+# def object_build_function(parent, func, localname):
+#     """create astroid for a living function object"""
+#     signature = _signature(func)
+#     parameters = {k: tuple(g) for k, g in
+#                   itertools.groupby(signature.parameters.values(),
+#                                     operator.attrgetter('kind'))}
+#     # This ignores POSITIONAL_ONLY args, because they only appear in
+#     # functions implemented in C and can't be mimicked by any Python
+#     # function.
+#     node = build_function(getattr(func, '__name__', None) or localname,
+#                           parameters.get(_Parameter.POSITIONAL_OR_KEYWORD, ()),
+#                           parameters.get(_Parameter.KEYWORD_ONLY, ()),
+#                           parameters.get(_Parameter.VAR_POSITIONAL, None),
+#                           parameters.get(_Parameter.VAR_KEYWORD, None),
+#                           signature.return_annotation,
+#                           func.__doc__,
+#                           parent)
+#     return node
 
 
 def ast_from_object(object_, name=None):

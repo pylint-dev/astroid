@@ -1035,9 +1035,9 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             class ClassWithMeta(with_metaclass(type)): #@
                 pass
         """)
-        print(klass.repr_tree())
-        print(klass.locals)
-        print(tuple(klass.ancestors()))
+        # print(klass.repr_tree())
+        # print(klass.locals)
+        # print(tuple(klass.ancestors()))
         self.assertEqual(
             ['NewBase', 'object'],
             [base.name for base in klass.ancestors()])

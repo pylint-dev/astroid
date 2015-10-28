@@ -220,12 +220,12 @@ class LocalsDictNodeNG(node_classes.LookupMixIn,
         self.body.append(child)
         child.parent = self
 
-    def add_local_node(self, child_node, name=None):
-        """append a child which should alter locals to the given node"""
-        if name != '__class__':
-            # add __class__ node as a child will cause infinite recursion later!
-            self._append_node(child_node)
-        self.set_local(name or child_node.name, child_node)
+    # def add_local_node(self, child_node, name=None):
+    #     """append a child which should alter locals to the given node"""
+    #     if name != '__class__':
+    #         # add __class__ node as a child will cause infinite recursion later!
+    #         self._append_node(child_node)
+    #     self.set_local(name or child_node.name, child_node)
 
     def __getitem__(self, item):
         """method from the `dict` interface returning the first node
@@ -365,7 +365,17 @@ class Module(LocalsDictNodeNG):
 
     @property
     def future_imports(self):
-        return frozenset(get_locals(self)['__future__'])
+        index = 0
+        future_imports = []
+        while (index < len(self.body) and
+                ((isinstance(self.body[index], node_classes.ImportFrom)
+                and self.body[index].modname == '__future__') or
+               (index == 0 and isinstance(self.body[0],
+                                          node_classes.Expr)))):
+            future_imports.extend(n[0] for n in getattr(self.body[index],
+                                                        'names', ()))
+            index += 1
+        return frozenset(future_imports)
 
     def _get_stream(self):
         if self.source_code is not None:
@@ -1818,8 +1828,8 @@ def get_locals(node):
     call in the body would return.
 
     This function starts by recursing over its argument's children to
-    avoid incorrectly adding a class's or function's name to its local
-    variables.
+    avoid incorrectly adding a class's, function's, or module's name
+    to its own local variables.
 
     '''
     raise TypeError("This isn't an astroid node: %s" % type(node))
@@ -1891,6 +1901,9 @@ def locals_import(node, locals_):
 # pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(node_classes.ImportFrom)
 def locals_import_from(node, locals_):
+    # Don't add future imports to locals.
+    if node.modname == '__future__':
+        return
     def sort_locals(my_list):
         my_list.sort(key=lambda node: node.fromlineno)
 

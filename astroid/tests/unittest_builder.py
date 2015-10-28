@@ -492,14 +492,14 @@ class BuilderTest(unittest.TestCase):
 
     def test_future_imports(self):
         mod = builder.parse("from __future__ import print_function")
-        self.assertEqual(set(['print_function']), mod.future_imports)
+        self.assertEqual(frozenset(['print_function']), mod.future_imports)
 
     def test_two_future_imports(self):
         mod = builder.parse("""
             from __future__ import print_function
             from __future__ import absolute_import
             """)
-        self.assertEqual(set(['print_function', 'absolute_import']), mod.future_imports)
+        self.assertEqual(frozenset(['print_function', 'absolute_import']), mod.future_imports)
 
     def test_inferred_build(self):
         code = '''

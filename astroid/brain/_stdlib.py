@@ -279,7 +279,7 @@ def infer_enum(enum_call, context=None):
     
     template = textwrap.dedent('''
     """Mock module to hold enum classes"""
-    class EnumMeta:
+    class EnumMeta(object):
         """Mock Enum metaclass"""
 
     class {name}(EnumMeta):
@@ -292,7 +292,7 @@ def infer_enum(enum_call, context=None):
                         for a in attributes]
     code += '\n'.join(assignment_lines)
     module = AstroidBuilder(MANAGER).string_build(code)
-    return iter([module.body[0]])
+    return iter([module.body[1]])
 
 
 def infer_enum_class(node):
