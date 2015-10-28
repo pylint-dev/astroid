@@ -593,11 +593,10 @@ class TreeRebuilder(object):
             newnode = nodes.AssignName(node.id, node.lineno, node.col_offset,
                                        parent)
         elif node.id in BUILTIN_NAMES:
-            newnode =
-            BUILTIN_NAMES[node.id][0](BUILTIN_NAMES[node.id][1],
-                                      getattr(node, 'lineno', None),
-                                      getattr(node, 'col_offset', None),
-                                      parent)
+            newnode = BUILTIN_NAMES[node.id][0](BUILTIN_NAMES[node.id][1],
+                                                getattr(node, 'lineno', None),
+                                                getattr(node, 'col_offset', None),
+                                                parent)
             return newnode
         else:
             newnode = nodes.Name(node.id, node.lineno, node.col_offset, parent)
