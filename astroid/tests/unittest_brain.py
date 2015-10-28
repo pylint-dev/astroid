@@ -59,6 +59,12 @@ try:
 except ImportError:
     HAS_NUMPY = False
 
+try:
+    import pytest # pylint: disable=unused-import
+    HAS_PYTEST = True
+except ImportError:
+    HAS_PYTEST = False
+
 
 class HashlibTest(unittest.TestCase):
     def test_hashlib(self):
@@ -449,6 +455,22 @@ class NumpyBrainTest(unittest.TestCase):
         ''')
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.FunctionDef)
+
+
+@unittest.skipUnless(HAS_PYTEST, "This test requires the pytest library.")
+class PytestBrainTest(unittest.TestCase):
+
+    def test_pytest(self):
+        ast_node = test_utils.extract_node('''
+        import pytest
+        pytest #@
+        ''')
+        module = next(ast_node.infer())
+        self.assertIn('deprecated_call', module)
+        self.assertIn('exit', module)
+        self.assertIn('fail', module)
+        self.assertIn('fixture', module)
+        self.assertIn('mark', module)
 
 
 if __name__ == '__main__':
