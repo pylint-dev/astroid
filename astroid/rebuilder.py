@@ -64,10 +64,10 @@ _CMP_OP_CLASSES = {ast.Eq: '==',
                    ast.NotIn: 'not in',
                   }
 
-CONST_NAME_TRANSFORMS = {'None':  None,
-                         'True':  True,
-                         'False': False,
-                        }
+BUILTIN_NAMES = {'None': (nodes.Singleton, None),
+                 'NotImplemented': (nodes.Singleton, NotImplemented),
+                 'True': (nodes.Const, True),
+                 'False': (nodes.Const, False)}
 
 REDIRECT = {'arguments': 'Arguments',
             'comprehension': 'Comprehension',
@@ -592,10 +592,12 @@ class TreeRebuilder(object):
             assert assign_ctx == "Assign"
             newnode = nodes.AssignName(node.id, node.lineno, node.col_offset,
                                        parent)
-        elif node.id in CONST_NAME_TRANSFORMS:
-            newnode = nodes.Const(CONST_NAME_TRANSFORMS[node.id],
-                                  getattr(node, 'lineno', None),
-                                  getattr(node, 'col_offset', None), parent)
+        elif node.id in BUILTIN_NAMES:
+            newnode =
+            BUILTIN_NAMES[node.id][0](BUILTIN_NAMES[node.id][1],
+                                      getattr(node, 'lineno', None),
+                                      getattr(node, 'col_offset', None),
+                                      parent)
             return newnode
         else:
             newnode = nodes.Name(node.id, node.lineno, node.col_offset, parent)
@@ -746,8 +748,12 @@ class TreeRebuilder3(TreeRebuilder):
 
     def visit_nameconstant(self, node, parent, assign_ctx=None):
         # in Python 3.4 we have NameConstant for True / False / None
-        return nodes.Const(node.value, getattr(node, 'lineno', None),
-                           getattr(node, 'col_offset', None), parent)
+        if isinstance(node.value, bool):
+            return nodes.Const(node.value, getattr(node, 'lineno', None),
+                               getattr(node, 'col_offset', None), parent)
+        else:
+            return nodes.Singleton(node.value, getattr(node, 'lineno', None),
+                                   getattr(node, 'col_offset', None), parent)
 
     def visit_excepthandler(self, node, parent, assign_ctx=None):
         """visit an ExceptHandler node by returning a fresh instance of it"""

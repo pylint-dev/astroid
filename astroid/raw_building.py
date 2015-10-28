@@ -399,6 +399,7 @@ else:
 @_ast_from_object.register(str)
 @_ast_from_object.register(bytes)
 @_ast_from_object.register(int)
+@_ast_from_object.register(bool)
 @_ast_from_object.register(float)
 @_ast_from_object.register(complex)
 def ast_from_builtin_number_text_binary(builtin_number_text_binary, built_objects, module, name=None, parent=None):

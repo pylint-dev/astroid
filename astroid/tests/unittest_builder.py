@@ -309,7 +309,7 @@ class BuilderTest(unittest.TestCase):
     def test_inspect_build1(self):
         time_ast = MANAGER.ast_from_module_name('time')
         self.assertTrue(time_ast)
-        self.assertEqual(time_ast['time'].args.defaults, [])
+        self.assertIsInstance(time_ast['time'].args, nodes.Unknown)
 
     if os.name == 'java':
         test_inspect_build1 = unittest.expectedFailure(test_inspect_build1)
