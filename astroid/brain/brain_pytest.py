@@ -1,5 +1,5 @@
 """Astroid hooks for pytest."""
-
+from __future__ import absolute_import
 from astroid import MANAGER, register_module_extender
 from astroid.builder import AstroidBuilder
 
