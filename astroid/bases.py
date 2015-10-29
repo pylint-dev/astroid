@@ -255,12 +255,24 @@ class Instance(Proxy):
                 return True
         return result
 
-    # TODO(cpopa): this is set in inference.py
-    # The circular dependency hell goes deeper and deeper.
-    # pylint: disable=unused-argument
     def getitem(self, index, context=None):
-        pass
+        if context:
+            new_context = context.clone()
+        else:
+            context = new_context = contextmod.InferenceContext()
 
+        # Create a new callcontext for providing index as an argument.
+        new_context.callcontext = contextmod.CallContext(args=[index])
+        new_context.boundnode = self
+
+        method = next(self.igetattr('__getitem__', context=context))
+        if not isinstance(method, BoundMethod):
+            raise exceptions.InferenceError
+
+        try:
+            return next(method.infer_call_result(self, new_context))
+        except StopIteration:
+            util.reraise(exceptions.InferenceError())
 
 
 class UnboundMethod(Proxy):

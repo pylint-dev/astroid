@@ -699,27 +699,3 @@ nodes.EmptyNode._infer = infer_empty_node
 def infer_index(self, context=None):
     return self.value.infer(context)
 nodes.Index._infer = infer_index
-
-# TODO: move directly into bases.Instance when the dependency hell
-# will be solved.
-def instance_getitem(self, index, context=None):
-    # Rewrap index to Const for this case
-    if context:
-        new_context = context.clone()
-    else:
-        context = new_context = contextmod.InferenceContext()
-
-    # Create a new callcontext for providing index as an argument.
-    new_context.callcontext = contextmod.CallContext(args=[index])
-    new_context.boundnode = self
-
-    method = next(self.igetattr('__getitem__', context=context))
-    if not isinstance(method, bases.BoundMethod):
-        raise exceptions.InferenceError
-
-    try:
-        return next(method.infer_call_result(self, new_context))
-    except StopIteration:
-        util.reraise(exceptions.InferenceError())
-
-bases.Instance.getitem = instance_getitem
