@@ -138,10 +138,10 @@ def builtin_lookup(name):
     builtin_astroid = MANAGER.ast_from_module(six.moves.builtins)
     if name == '__dict__':
         return builtin_astroid, ()
-    try:
-        stmts = builtin_astroid.locals[name]
-    except KeyError:
-        stmts = ()
+    stmts = builtin_astroid.locals.get(name, ())
+    # Use inference to find what AssignName nodes point to in builtins.
+    stmts = [next(s.infer()) if isinstance(s, node_classes.AssignName) else s
+             for s in stmts]
     return builtin_astroid, stmts
 
 
@@ -433,7 +433,7 @@ class Module(LocalsDictNodeNG):
             if name == '__path__' and self.package:
                 return [node_classes.List()] + self.locals.get(name, [])
             return std_special_attributes(self, name)
-        if not ignore_locals and name in self.locals:
+        if not ignore_locals and name in self.locals: # or name in self.external_attrs)
             return self.locals[name]
         if self.package:
             try:

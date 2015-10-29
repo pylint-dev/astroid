@@ -145,7 +145,7 @@ class Super(node_classes.NodeNG):
 
         found = False
         for cls in mro:
-            if name not in cls.locals:
+            if name not in cls.locals: # and name not in cls.external_attrs:
                 continue
 
             found = True

@@ -529,18 +529,17 @@ class BuilderTest(unittest.TestCase):
 
     def test_inferred_dont_pollute(self):
         code = '''
-            def func(a=None):
-                a.custom_attr = 0
-            def func2(a={}):
-                a.custom_attr = 0
-            '''
-        builder.parse(code)
-        nonetype = nodes.Singleton(None)
-        self.assertNotIn('custom_attr', nonetype.locals)
-        self.assertNotIn('custom_attr', nonetype.instance_attrs)
-        nonetype = nodes.Dict()
-        self.assertNotIn('custom_attr', nonetype.locals)
-        self.assertNotIn('custom_attr', nonetype.instance_attrs)
+        def func(a=None):
+            a.custom_attr = 0
+            a #@
+        def func2(a={}):
+            a.custom_attr = 0
+            a #@
+        '''
+        name_nodes = test_utils.extract_node(code)
+        for node in name_nodes:
+            self.assertFalse(hasattr(node, 'locals'))
+            self.assertFalse(hasattr(node, 'instance_attrs'))
 
     def test_asstuple(self):
         code = 'a, b = range(2)'
