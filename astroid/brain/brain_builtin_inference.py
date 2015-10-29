@@ -1,5 +1,6 @@
 """Astroid hooks for various builtins."""
 
+import collections
 from functools import partial
 import sys
 from textwrap import dedent
@@ -8,6 +9,7 @@ import six
 from astroid import (MANAGER, UseInferenceDefault, NotFoundError,
                      inference_tip, InferenceError, UnresolvableName)
 from astroid import arguments
+from astroid import bases
 from astroid.builder import AstroidBuilder
 from astroid import helpers
 from astroid import nodes
@@ -70,8 +72,7 @@ def _extend_str(class_node, rvalue):
         method.parent = class_node
 
 def extend_builtins(class_transforms):
-    from astroid.bases import BUILTINS
-    builtin_ast = MANAGER.astroid_cache[BUILTINS]
+    builtin_ast = MANAGER.astroid_cache[bases.BUILTINS]
     for class_name, transform in class_transforms.items():
         transform(builtin_ast[class_name])
 
@@ -471,6 +472,81 @@ def infer_slice(node, context=None):
     return slice_node
 
 
+def infer_type_dunder_new(caller, context=None):
+    """Try to infer what type.__new__(mcs, name, bases, attrs) returns.
+
+    In order for such call to be valid, the metaclass needs to be
+    a subtype of ``type``, the name needs to be a string, the bases
+    needs to be a tuple of classes and the attributes a dictionary
+    of strings to values.
+    """
+    if len(caller.args) != 4:
+        raise UseInferenceDefault
+       
+    # Verify the metaclass
+    mcs = next(caller.args[0].infer(context=context))
+    if not isinstance(mcs, nodes.ClassDef):
+        # Not a valid first argument.
+        raise UseInferenceDefault
+    if not mcs.is_subtype_of("%s.type" % bases.BUILTINS):
+        # Not a valid metaclass.
+        raise UseInferenceDefault
+
+    # Verify the name
+    name = next(caller.args[1].infer(context=context))
+    if not isinstance(name, nodes.Const):
+        # Not a valid name, needs to be a const.
+        raise UseInferenceDefault
+    if not isinstance(name.value, str):
+        # Needs to be a string.
+        raise UseInferenceDefault
+
+    # Verify the bases
+    cls_bases = next(caller.args[2].infer(context=context))
+    if not isinstance(cls_bases, nodes.Tuple):
+        # Needs to be a tuple.
+        raise UseInferenceDefault
+    inferred_bases = [next(elt.infer(context=context))
+                      for elt in cls_bases.elts]
+    if any(not isinstance(base, nodes.ClassDef) for base in inferred_bases):
+        # All the bases needs to be Classes
+        raise UseInferenceDefault
+
+    # Verify the attributes.
+    attrs = next(caller.args[3].infer(context=context))
+    if not isinstance(attrs, nodes.Dict):
+        # Needs to be a dictionary.
+        raise UseInferenceDefault
+    cls_locals = collections.defaultdict(list)
+    for key, value in attrs.items:
+        key = next(key.infer(context=context))
+        value = next(value.infer(context=context))
+        if not isinstance(key, nodes.Const):
+            # Something invalid as an attribute.
+            raise UseInferenceDefault                
+        if not isinstance(key.value, str):
+            # Not a proper attribute.
+            raise UseInferenceDefault                
+        cls_locals[key.value].append(value)
+
+    # Build the class from now.
+    cls = nodes.Class(name=name.value, lineno=caller.lineno,
+                      col_offset=caller.col_offset,
+                      parent=caller)
+    empty = nodes.Pass()
+    cls.postinit(bases=cls_bases.elts, body=[empty], decorators=[],
+                 newstyle=True, metaclass=mcs)
+    cls.locals = cls_locals
+    return iter([cls])
+
+
+def _looks_like_type_dunder_new(node):
+    return (isinstance(node.func, nodes.Attribute)
+                and isinstance(node.func.expr, nodes.Name)
+                and node.func.expr.name == 'type'
+                and node.func.attrname == '__new__')
+
+
 # Builtins inference
 register_builtin_transform(infer_bool, 'bool')
 register_builtin_transform(infer_super, 'super')
@@ -484,3 +560,7 @@ register_builtin_transform(infer_dict, 'dict')
 register_builtin_transform(infer_frozenset, 'frozenset')
 register_builtin_transform(infer_type, 'type')
 register_builtin_transform(infer_slice, 'slice')
+
+# infer type.__new__ calls
+MANAGER.register_transform(nodes.Call, inference_tip(infer_type_dunder_new),
+                           _looks_like_type_dunder_new)
