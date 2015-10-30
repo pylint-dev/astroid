@@ -84,9 +84,11 @@ def _object_type(node, context=None):
 def object_type(node, context=None):
     """Obtain the type of the given node
 
+    This is used to implement the ``type`` builtin, which means that it's
+    used for inferring type calls, as well as used in a couple of other places
+    in the inference. 
     The node will be inferred first, so this function can support all
-    sorts of objects, as long as they support inference. It will try to
-    retrieve the Python type, as returned by the builtin `type`.
+    sorts of objects, as long as they support inference.
     """
 
     try:
