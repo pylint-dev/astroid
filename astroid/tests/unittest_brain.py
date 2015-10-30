@@ -343,6 +343,11 @@ class MultiprocessingBrainTest(unittest.TestCase):
         array = next(module['array'].infer())
         self.assertEqual(array.qname(), "array.array")
 
+        manager = next(module['manager'].infer())
+        # Verify that we have these attributes
+        self.assertTrue(manager.getattr('start'))
+        self.assertTrue(manager.getattr('shutdown'))
+
 
 @unittest.skipUnless(HAS_ENUM,
                      'The enum module was only added in Python 3.4. Support for '

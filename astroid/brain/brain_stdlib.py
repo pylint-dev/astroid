@@ -418,6 +418,11 @@ def multiprocessing_managers_transform():
         Namespace = Namespace
         __enter__ = lambda self: self
         __exit__ = lambda *args: args
+        
+        def start(self, initializer=None, initargs=None):
+            pass
+        def shutdown(self):
+            pass
     '''))
 
 
