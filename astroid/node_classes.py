@@ -1346,6 +1346,7 @@ class Ellipsis(NodeNG): # pylint: disable=redefined-builtin
         return True
 
 
+@object_bases.register_implementation(object_bases.EmptyNode)
 class EmptyNode(NodeNG):
     """class representing an EmptyNode node"""
 

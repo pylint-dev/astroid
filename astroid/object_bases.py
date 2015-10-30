@@ -352,3 +352,7 @@ class BoundMethod(UnboundMethod):
 
 class Generator(RuntimeObject):
     """Class representing a Generator."""
+
+
+class EmptyNode(NodeNG):
+    pass

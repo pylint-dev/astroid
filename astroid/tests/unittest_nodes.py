@@ -25,6 +25,7 @@ import warnings
 
 import six
 
+from astroid import object_bases
 from astroid import bases
 from astroid import builder
 from astroid import context as contextmod
@@ -746,6 +747,20 @@ class Python35AsyncTest(unittest.TestCase):
         ''')
         self._test_await_async_as_string(code)
 
+
+class BaseTypesTest(unittest.TestCase):
+
+    def test_concrete_issubclass(self):
+        for node in nodes.ALL_NODE_CLASSES:
+            name = node.__name__
+            base_type = getattr(object_bases, name)
+            self.assertTrue(issubclass(node, base_type), (node, base_type))
+
+        self.assertTrue(issubclass(bases.Instance, object_bases.Instance))
+        self.assertTrue(issubclass(bases.Generator, object_bases.Generator))
+        self.assertTrue(issubclass(bases.BoundMethod, object_bases.BoundMethod))
+        self.assertTrue(issubclass(bases.UnboundMethod, object_bases.UnboundMethod))
+        
 
 if __name__ == '__main__':
     unittest.main()
