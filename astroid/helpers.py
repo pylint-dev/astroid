@@ -22,13 +22,11 @@ Various helper utilities.
 
 import six
 
-from astroid import bases
+from astroid import object_bases
 from astroid import context as contextmod
 from astroid import exceptions
 from astroid import manager
-from astroid import nodes
 from astroid import raw_building
-from astroid import scoped_nodes
 from astroid import util
 
 
@@ -42,17 +40,17 @@ def _build_proxy_class(cls_name, builtins):
 
 
 def _function_type(function, builtins):
-    if isinstance(function, scoped_nodes.Lambda):
+    if isinstance(function, object_bases.Lambda):
         if function.root().name == BUILTINS:
             cls_name = 'builtin_function_or_method'
         else:
             cls_name = 'function'
-    elif isinstance(function, bases.BoundMethod):
+    elif isinstance(function, object_bases.BoundMethod):
         if six.PY2:
             cls_name = 'instancemethod'
         else:
             cls_name = 'method'
-    elif isinstance(function, bases.UnboundMethod):
+    elif isinstance(function, object_bases.UnboundMethod):
         if six.PY2:
             cls_name = 'instancemethod'
         else:
@@ -66,11 +64,11 @@ def _object_type(node, context=None):
     context = context or contextmod.InferenceContext()
 
     for inferred in node.infer(context=context):
-        if isinstance(inferred, scoped_nodes.ClassDef):
+        if isinstance(inferred, object_bases.ClassDef):
             yield inferred.metaclass() or inferred.implicit_metaclass()
-        elif isinstance(inferred, (scoped_nodes.Lambda, bases.UnboundMethod)):
+        elif isinstance(inferred, (object_bases.Lambda, object_bases.UnboundMethod)):
             yield _function_type(inferred, builtins)
-        elif isinstance(inferred, scoped_nodes.Module):
+        elif isinstance(inferred, object_bases.Module):
             yield _build_proxy_class('module', builtins)
         else:
             yield inferred._proxied
@@ -124,7 +122,7 @@ def has_known_bases(klass, context=None):
     for base in klass.bases:
         result = safe_infer(base, context=context)
         # TODO: check for A->B->A->B pattern in class structure too?
-        if (not isinstance(result, scoped_nodes.ClassDef) or
+        if (not isinstance(result, object_bases.ClassDef) or
                 result is klass or
                 not has_known_bases(result, context=context)):
             klass._all_bases_known = False
@@ -168,11 +166,11 @@ def class_instance_as_index(node):
 
     try:
         for inferred in node.igetattr('__index__', context=context):
-            if not isinstance(inferred, bases.BoundMethod):
+            if not isinstance(inferred, object_bases.BoundMethod):
                 continue
 
             for result in inferred.infer_call_result(node, context=context):
-                if (isinstance(result, nodes.Const)
+                if (isinstance(result, object_bases.Const)
                         and isinstance(result.value, int)):
                     return result
     except exceptions.InferenceError:

@@ -23,6 +23,7 @@ import sys
 
 from astroid import context as contextmod
 from astroid import exceptions
+from astroid import object_bases
 from astroid import util
 
 
@@ -122,6 +123,7 @@ def _infer_method_result_truth(instance, method_name, context):
     return util.YES
 
 
+@object_bases.register_implementation(object_bases.Instance)
 class Instance(Proxy):
     """A special node representing a class instance."""
 
@@ -188,7 +190,7 @@ class Instance(Proxy):
                 # Unfortunately, we can't do an isinstance check here,
                 # because of the circular dependency between astroid.bases
                 # and astroid.scoped_nodes.
-                if attr.statement().scope() == self._proxied:
+                if isinstance(attr.statement().scope(), object_bases.ClassDef):
                     if attr.args.args and attr.args.args[0].name == 'self':
                         yield BoundMethod(attr, self)
                         continue
@@ -275,6 +277,7 @@ class Instance(Proxy):
             util.reraise(exceptions.InferenceError())
 
 
+@object_bases.register_implementation(object_bases.UnboundMethod)
 class UnboundMethod(Proxy):
     """a special node representing a method not bound to an instance"""
     def __repr__(self):
@@ -309,6 +312,7 @@ class UnboundMethod(Proxy):
         return True
 
 
+@object_bases.register_implementation(object_bases.BoundMethod)
 class BoundMethod(UnboundMethod):
     """a special node representing a method bound to an instance"""
     def __init__(self, proxy, bound):
@@ -329,6 +333,7 @@ class BoundMethod(UnboundMethod):
         return True
 
 
+@object_bases.register_implementation(object_bases.Generator)
 class Generator(Instance):
     """a special node representing a generator.
 
@@ -351,4 +356,3 @@ class Generator(Instance):
 
     def __str__(self):
         return 'Generator(%s)' % (self._proxied.name)
-

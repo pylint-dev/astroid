@@ -29,6 +29,7 @@ import warnings
 import six
 import wrapt
 
+from astroid import object_bases
 from astroid import bases
 from astroid import context as contextmod
 from astroid import exceptions
@@ -247,6 +248,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn,
         return name in self.locals
 
 
+@object_bases.register_implementation(object_bases.Module)
 class Module(LocalsDictNodeNG):
     _astroid_fields = ('body',)
 
@@ -511,6 +513,7 @@ class ComprehensionScope(LocalsDictNodeNG):
     scope_lookup = LocalsDictNodeNG._scope_lookup
 
 
+@object_bases.register_implementation(object_bases.GeneratorExp)
 class GeneratorExp(ComprehensionScope):
     _astroid_fields = ('elt', 'generators')
     _other_other_fields = ('locals',)
@@ -532,6 +535,7 @@ class GeneratorExp(ComprehensionScope):
         return True
 
 
+@object_bases.register_implementation(object_bases.DictComp)
 class DictComp(ComprehensionScope):
     _astroid_fields = ('key', 'value', 'generators')
     _other_other_fields = ('locals',)
@@ -555,6 +559,7 @@ class DictComp(ComprehensionScope):
         return util.YES
 
 
+@object_bases.register_implementation(object_bases.SetComp)
 class SetComp(ComprehensionScope):
     _astroid_fields = ('elt', 'generators')
     _other_other_fields = ('locals',)
@@ -576,6 +581,7 @@ class SetComp(ComprehensionScope):
         return util.YES
 
 
+@object_bases.register_implementation(object_bases.ListComp)
 class _ListComp(node_classes.NodeNG):
     """class representing a ListComp node"""
     _astroid_fields = ('elt', 'generators')
@@ -627,6 +633,7 @@ def _infer_decorator_callchain(node):
             return 'staticmethod'
 
 
+@object_bases.register_implementation(object_bases.Lambda)
 class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
     _astroid_fields = ('args', 'body',)
     _other_other_fields = ('locals',)
@@ -689,6 +696,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         return True
 
 
+@object_bases.register_implementation(object_bases.FunctionDef)
 class FunctionDef(node_classes.Statement, Lambda):
     if six.PY3:
         _astroid_fields = ('decorators', 'args', 'body', 'returns')
@@ -954,6 +962,7 @@ class FunctionDef(node_classes.Statement, Lambda):
         return True
 
 
+@object_bases.register_implementation(object_bases.AsyncFunctionDef)
 class AsyncFunctionDef(FunctionDef):
     """Asynchronous function created with the `async` keyword."""
 
@@ -1055,6 +1064,7 @@ def get_wrapping_class(node):
 
 
 
+@object_bases.register_implementation(object_bases.ClassDef)
 class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                node_classes.Statement):
 

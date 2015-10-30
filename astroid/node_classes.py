@@ -29,6 +29,7 @@ except ImportError:
 import six
 
 from astroid import as_string
+from astroid import object_bases
 from astroid import bases
 from astroid import context as contextmod
 from astroid import decorators
@@ -130,6 +131,7 @@ def _container_getitem(instance, elts, index):
 
 
 
+@object_bases.register_implementation(object_bases.NodeNG)
 class NodeNG(object):
     """Base Class for all Astroid node classes.
 
@@ -577,6 +579,7 @@ class NodeNG(object):
         return util.YES
 
 
+@object_bases.register_implementation(object_bases.Statement)
 class Statement(NodeNG):
     """Statement node adding a few attributes"""
     is_statement = True
@@ -596,7 +599,6 @@ class Statement(NodeNG):
         index = stmts.index(self)
         if index >= 1:
             return stmts[index -1]
-
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -783,6 +785,7 @@ class LookupMixIn(object):
 
 # Name classes
 
+@object_bases.register_implementation(object_bases.AssignName)
 class AssignName(LookupMixIn, mixins.ParentAssignTypeMixin, NodeNG):
     """class representing an AssignName node"""
     _other_fields = ('name',)
@@ -792,6 +795,7 @@ class AssignName(LookupMixIn, mixins.ParentAssignTypeMixin, NodeNG):
         super(AssignName, self).__init__(lineno, col_offset, parent)
 
 
+@object_bases.register_implementation(object_bases.DelName)
 class DelName(LookupMixIn, mixins.ParentAssignTypeMixin, NodeNG):
     """class representing a DelName node"""
     _other_fields = ('name',)
@@ -801,6 +805,7 @@ class DelName(LookupMixIn, mixins.ParentAssignTypeMixin, NodeNG):
         super(DelName, self).__init__(lineno, col_offset, parent)
 
 
+@object_bases.register_implementation(object_bases.Name)
 class Name(LookupMixIn, NodeNG):
     """class representing a Name node"""
     _other_fields = ('name',)
@@ -810,6 +815,7 @@ class Name(LookupMixIn, NodeNG):
         super(Name, self).__init__(lineno, col_offset, parent)
 
 
+@object_bases.register_implementation(object_bases.Arguments)
 class Arguments(mixins.AssignTypeMixin, NodeNG):
     """class representing an Arguments node"""
     if six.PY3:
@@ -953,6 +959,7 @@ def _format_args(args, defaults=None, annotations=None):
     return ', '.join(values)
 
 
+@object_bases.register_implementation(object_bases.AssignAttr)
 class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
     """class representing an AssignAttr node"""
     _astroid_fields = ('expr',)
@@ -967,6 +974,7 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
         self.expr = expr
 
 
+@object_bases.register_implementation(object_bases.Assert)
 class Assert(Statement):
     """class representing an Assert node"""
     _astroid_fields = ('test', 'fail',)
@@ -978,6 +986,7 @@ class Assert(Statement):
         self.test = test
 
 
+@object_bases.register_implementation(object_bases.Assign)
 class Assign(mixins.AssignTypeMixin, Statement):
     """class representing an Assign node"""
     _astroid_fields = ('targets', 'value',)
@@ -989,6 +998,7 @@ class Assign(mixins.AssignTypeMixin, Statement):
         self.value = value
 
 
+@object_bases.register_implementation(object_bases.AugAssign)
 class AugAssign(mixins.AssignTypeMixin, Statement):
     """class representing an AugAssign node"""
     _astroid_fields = ('target', 'value')
@@ -1022,6 +1032,7 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
             return []
 
 
+@object_bases.register_implementation(object_bases.Repr)
 class Repr(NodeNG):
     """class representing a Repr node"""
     _astroid_fields = ('value',)
@@ -1031,6 +1042,7 @@ class Repr(NodeNG):
         self.value = value
 
 
+@object_bases.register_implementation(object_bases.BinOp)
 class BinOp(NodeNG):
     """class representing a BinOp node"""
     _astroid_fields = ('left', 'right')
@@ -1064,6 +1076,7 @@ class BinOp(NodeNG):
             return []
 
 
+@object_bases.register_implementation(object_bases.BoolOp)
 class BoolOp(NodeNG):
     """class representing a BoolOp node"""
     _astroid_fields = ('values',)
@@ -1078,10 +1091,12 @@ class BoolOp(NodeNG):
         self.values = values
 
 
+@object_bases.register_implementation(object_bases.Break)
 class Break(Statement):
     """class representing a Break node"""
 
 
+@object_bases.register_implementation(object_bases.Call)
 class Call(NodeNG):
     """class representing a Call node"""
     _astroid_fields = ('func', 'args', 'keywords')
@@ -1105,6 +1120,7 @@ class Call(NodeNG):
         return [keyword for keyword in keywords if keyword.arg is None]
 
 
+@object_bases.register_implementation(object_bases.Compare)
 class Compare(NodeNG):
     """class representing a Compare node"""
     _astroid_fields = ('left', 'ops',)
@@ -1128,6 +1144,7 @@ class Compare(NodeNG):
         #return self.left
 
 
+@object_bases.register_implementation(object_bases.Comprehension)
 class Comprehension(NodeNG):
     """class representing a Comprehension node"""
     _astroid_fields = ('target', 'iter', 'ifs')
@@ -1169,6 +1186,8 @@ class Comprehension(NodeNG):
         return stmts, False
 
 
+@object_bases.register_implementation(object_bases.Const)
+@object_bases.register_implementation(object_bases.Instance)
 class Const(NodeNG, bases.Instance):
     """represent a constant node like num, str, bool, None, bytes"""
     _other_fields = ('value',)
@@ -1202,10 +1221,12 @@ class Const(NodeNG, bases.Instance):
         return bool(self.value)
 
 
+@object_bases.register_implementation(object_bases.Continue)
 class Continue(Statement):
     """class representing a Continue node"""
 
 
+@object_bases.register_implementation(object_bases.Decorators)
 class Decorators(NodeNG):
     """class representing a Decorators node"""
     _astroid_fields = ('nodes',)
@@ -1219,6 +1240,7 @@ class Decorators(NodeNG):
         return self.parent.parent.scope()
 
 
+@object_bases.register_implementation(object_bases.DelAttr)
 class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
     """class representing a DelAttr node"""
     _astroid_fields = ('expr',)
@@ -1233,6 +1255,7 @@ class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
         self.expr = expr
 
 
+@object_bases.register_implementation(object_bases.Delete)
 class Delete(mixins.AssignTypeMixin, Statement):
     """class representing a Delete node"""
     _astroid_fields = ('targets',)
@@ -1242,6 +1265,7 @@ class Delete(mixins.AssignTypeMixin, Statement):
         self.targets = targets
 
 
+@object_bases.register_implementation(object_bases.Dict)
 class Dict(NodeNG, bases.Instance):
     """class representing a Dict node"""
     _astroid_fields = ('items',)
@@ -1304,6 +1328,7 @@ class Dict(NodeNG, bases.Instance):
         return bool(self.items)
 
 
+@object_bases.register_implementation(object_bases.Expr)
 class Expr(Statement):
     """class representing a Expr node"""
     _astroid_fields = ('value',)
@@ -1313,6 +1338,7 @@ class Expr(Statement):
         self.value = value
 
 
+@object_bases.register_implementation(object_bases.Ellipsis)
 class Ellipsis(NodeNG): # pylint: disable=redefined-builtin
     """class representing an Ellipsis node"""
 
@@ -1324,6 +1350,7 @@ class EmptyNode(NodeNG):
     """class representing an EmptyNode node"""
 
 
+@object_bases.register_implementation(object_bases.ExceptHandler)
 class ExceptHandler(mixins.AssignTypeMixin, Statement):
     """class representing an ExceptHandler node"""
     _astroid_fields = ('type', 'name', 'body',)
@@ -1353,6 +1380,7 @@ class ExceptHandler(mixins.AssignTypeMixin, Statement):
                 return True
 
 
+@object_bases.register_implementation(object_bases.Exec)
 class Exec(Statement):
     """class representing an Exec node"""
     _astroid_fields = ('expr', 'globals', 'locals',)
@@ -1366,6 +1394,7 @@ class Exec(Statement):
         self.locals = locals
 
 
+@object_bases.register_implementation(object_bases.ExtSlice)
 class ExtSlice(NodeNG):
     """class representing an ExtSlice node"""
     _astroid_fields = ('dims',)
@@ -1375,6 +1404,7 @@ class ExtSlice(NodeNG):
         self.dims = dims
 
 
+@object_bases.register_implementation(object_bases.For)
 class For(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, Statement):
     """class representing a For node"""
     _astroid_fields = ('target', 'iter', 'body', 'orelse',)
@@ -1395,10 +1425,12 @@ class For(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, Statement):
         return self.iter.tolineno
 
 
+@object_bases.register_implementation(object_bases.AsyncFor)
 class AsyncFor(For):
     """Asynchronous For built with `async` keyword."""
 
 
+@object_bases.register_implementation(object_bases.Await)
 class Await(NodeNG):
     """Await node for the `await` keyword."""
 
@@ -1409,6 +1441,7 @@ class Await(NodeNG):
         self.value = value
 
 
+@object_bases.register_implementation(object_bases.ImportFrom)
 class ImportFrom(mixins.ImportFromMixin, Statement):
     """class representing a ImportFrom node"""
     _other_fields = ('modname', 'names', 'level')
@@ -1421,6 +1454,7 @@ class ImportFrom(mixins.ImportFromMixin, Statement):
         super(ImportFrom, self).__init__(lineno, col_offset, parent)
 
 
+@object_bases.register_implementation(object_bases.Attribute)
 class Attribute(NodeNG):
     """class representing a Attribute node"""
     _astroid_fields = ('expr',)
@@ -1435,6 +1469,7 @@ class Attribute(NodeNG):
         self.expr = expr
 
 
+@object_bases.register_implementation(object_bases.Global)
 class Global(Statement):
     """class representing a Global node"""
     _other_fields = ('names',)
@@ -1447,6 +1482,7 @@ class Global(Statement):
         return name
 
 
+@object_bases.register_implementation(object_bases.If)
 class If(mixins.BlockRangeMixIn, Statement):
     """class representing an If node"""
     _astroid_fields = ('test', 'body', 'orelse')
@@ -1473,6 +1509,7 @@ class If(mixins.BlockRangeMixIn, Statement):
                                        self.body[0].fromlineno - 1)
 
 
+@object_bases.register_implementation(object_bases.IfExp)
 class IfExp(NodeNG):
     """class representing an IfExp node"""
     _astroid_fields = ('test', 'body', 'orelse')
@@ -1486,6 +1523,7 @@ class IfExp(NodeNG):
         self.orelse = orelse
 
 
+@object_bases.register_implementation(object_bases.Import)
 class Import(mixins.ImportFromMixin, Statement):
     """class representing an Import node"""
     _other_fields = ('names',)
@@ -1495,6 +1533,7 @@ class Import(mixins.ImportFromMixin, Statement):
         super(Import, self).__init__(lineno, col_offset, parent)
 
 
+@object_bases.register_implementation(object_bases.Index)
 class Index(NodeNG):
     """class representing an Index node"""
     _astroid_fields = ('value',)
@@ -1504,6 +1543,7 @@ class Index(NodeNG):
         self.value = value
 
 
+@object_bases.register_implementation(object_bases.Keyword)
 class Keyword(NodeNG):
     """class representing a Keyword node"""
     _astroid_fields = ('value',)
@@ -1518,6 +1558,7 @@ class Keyword(NodeNG):
         self.value = value
 
 
+@object_bases.register_implementation(object_bases.List)
 class List(_BaseContainer):
     """class representing a List node"""
 
@@ -1528,6 +1569,7 @@ class List(_BaseContainer):
         return _container_getitem(self, self.elts, index)
 
 
+@object_bases.register_implementation(object_bases.Nonlocal)
 class Nonlocal(Statement):
     """class representing a Nonlocal node"""
     _other_fields = ('names',)
@@ -1540,10 +1582,12 @@ class Nonlocal(Statement):
         return name
 
 
+@object_bases.register_implementation(object_bases.Pass)
 class Pass(Statement):
     """class representing a Pass node"""
 
 
+@object_bases.register_implementation(object_bases.Print)
 class Print(Statement):
     """class representing a Print node"""
     _astroid_fields = ('dest', 'values',)
@@ -1559,6 +1603,7 @@ class Print(Statement):
         self.values = values
 
 
+@object_bases.register_implementation(object_bases.Raise)
 class Raise(Statement):
     """class representing a Raise node"""
     exc = None
@@ -1588,6 +1633,7 @@ class Raise(Statement):
                 return True
 
 
+@object_bases.register_implementation(object_bases.Return)
 class Return(Statement):
     """class representing a Return node"""
     _astroid_fields = ('value',)
@@ -1597,6 +1643,7 @@ class Return(Statement):
         self.value = value
 
 
+@object_bases.register_implementation(object_bases.Set)
 class Set(_BaseContainer):
     """class representing a Set node"""
 
@@ -1604,6 +1651,7 @@ class Set(_BaseContainer):
         return '%s.set' % BUILTINS
 
 
+@object_bases.register_implementation(object_bases.Slice)
 class Slice(NodeNG):
     """class representing a Slice node"""
     _astroid_fields = ('lower', 'upper', 'step')
@@ -1647,6 +1695,7 @@ class Slice(NodeNG):
         return self._proxied.getattr(attrname, context)
 
 
+@object_bases.register_implementation(object_bases.Starred)
 class Starred(mixins.ParentAssignTypeMixin, NodeNG):
     """class representing a Starred node"""
     _astroid_fields = ('value',)
@@ -1656,6 +1705,7 @@ class Starred(mixins.ParentAssignTypeMixin, NodeNG):
         self.value = value
 
 
+@object_bases.register_implementation(object_bases.Subscript)
 class Subscript(NodeNG):
     """class representing a Subscript node"""
     _astroid_fields = ('value', 'slice')
@@ -1667,6 +1717,7 @@ class Subscript(NodeNG):
         self.slice = slice
 
 
+@object_bases.register_implementation(object_bases.TryExcept)
 class TryExcept(mixins.BlockRangeMixIn, Statement):
     """class representing a TryExcept node"""
     _astroid_fields = ('body', 'handlers', 'orelse',)
@@ -1695,6 +1746,7 @@ class TryExcept(mixins.BlockRangeMixIn, Statement):
         return self._elsed_block_range(lineno, self.orelse, last)
 
 
+@object_bases.register_implementation(object_bases.TryFinally)
 class TryFinally(mixins.BlockRangeMixIn, Statement):
     """class representing a TryFinally node"""
     _astroid_fields = ('body', 'finalbody',)
@@ -1715,6 +1767,7 @@ class TryFinally(mixins.BlockRangeMixIn, Statement):
         return self._elsed_block_range(lineno, self.finalbody)
 
 
+@object_bases.register_implementation(object_bases.Tuple)
 class Tuple(_BaseContainer):
     """class representing a Tuple node"""
 
@@ -1725,6 +1778,7 @@ class Tuple(_BaseContainer):
         return _container_getitem(self, self.elts, index)
 
 
+@object_bases.register_implementation(object_bases.UnaryOp)
 class UnaryOp(NodeNG):
     """class representing an UnaryOp node"""
     _astroid_fields = ('operand',)
@@ -1756,6 +1810,7 @@ class UnaryOp(NodeNG):
             return []
 
 
+@object_bases.register_implementation(object_bases.While)
 class While(mixins.BlockRangeMixIn, Statement):
     """class representing a While node"""
     _astroid_fields = ('test', 'body', 'orelse',)
@@ -1777,6 +1832,7 @@ class While(mixins.BlockRangeMixIn, Statement):
         return self. _elsed_block_range(lineno, self.orelse)
 
 
+@object_bases.register_implementation(object_bases.With)
 class With(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, Statement):
     """class representing a With node"""
     _astroid_fields = ('items', 'body')
@@ -1800,10 +1856,12 @@ class With(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, Statement):
             yield elt
 
 
+@object_bases.register_implementation(object_bases.AsyncWith)
 class AsyncWith(With):
     """Asynchronous `with` built with the `async` keyword."""
 
 
+@object_bases.register_implementation(object_bases.Yield)
 class Yield(NodeNG):
     """class representing a Yield node"""
     _astroid_fields = ('value',)
@@ -1813,10 +1871,12 @@ class Yield(NodeNG):
         self.value = value
 
 
+@object_bases.register_implementation(object_bases.YieldFrom)
 class YieldFrom(Yield):
     """ Class representing a YieldFrom node. """
 
 
+@object_bases.register_implementation(object_bases.DictUnpack)
 class DictUnpack(NodeNG):
     """Represents the unpacking of dicts into dicts using PEP 448."""
 
