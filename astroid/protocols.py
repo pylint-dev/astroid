@@ -119,7 +119,7 @@ for _KEY, _IMPL in list(BIN_OP_IMPL.items()):
 
 @decorators.yes_if_nothing_inferred
 def const_infer_binary_op(self, operator, other, context, _):
-    not_implemented = nodes.Singleton(NotImplemented)
+    not_implemented = nodes.NameConstant(NotImplemented)
     if isinstance(other, nodes.Const):
         try:
             impl = BIN_OP_IMPL[operator]
@@ -155,7 +155,7 @@ def _multiply_seq_by_int(self, other, context):
 
 @decorators.yes_if_nothing_inferred
 def tl_infer_binary_op(self, operator, other, context, method):
-    not_implemented = nodes.Singleton(NotImplemented)
+    not_implemented = nodes.NameConstant(NotImplemented)
     if isinstance(other, self.__class__) and operator == '+':
         node = self.__class__()
         elts = [n for elt in self.elts for n in elt.infer(context)
@@ -403,7 +403,7 @@ def _infer_context_manager(self, mgr, context):
         if yield_point:
             if not yield_point.value:
                 # TODO(cpopa): an empty yield. Should be wrapped to Const.
-                const = nodes.Singleton(None)
+                const = nodes.NameConstant(None)
                 const.parent = yield_point
                 const.lineno = yield_point.lineno
                 yield const

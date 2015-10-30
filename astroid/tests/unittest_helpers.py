@@ -45,8 +45,7 @@ class TestHelpers(unittest.TestCase):
 
     def assert_classes_equal(self, cls, other):
         self.assertEqual(cls.name, other.name)
-        # self.assertEqual(cls.root(), other.root())
-        self.assertEqual(cls.parent, other.parent)
+        self.assertEqual(cls.root(), other.root())
         self.assertEqual(cls.qname(), other.qname())
 
     def test_object_type(self):
@@ -60,8 +59,7 @@ class TestHelpers(unittest.TestCase):
             ('object()', self._extract('object')),
             ('lambda: None', self._build_custom_builtin('function')),
             ('len', self._build_custom_builtin('builtin_function_or_method')),
-            # TODO
-            # ('None', self._build_custom_builtin('None')),
+            ('None', self._build_custom_builtin('None')),
             ('import sys\nsys#@', self._build_custom_builtin('module')),
         ]
         for code, expected in pairs:

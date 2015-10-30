@@ -1182,7 +1182,7 @@ class Comprehension(NodeNG):
 
 
 class Const(NodeNG, bases.Instance):
-    """represent a constant node like num, str, bool, None, bytes"""
+    """represent a constant node like num, str, bytes"""
     _other_fields = ('value',)
 
     def __init__(self, value, lineno=None, col_offset=None, parent=None):
@@ -1219,13 +1219,30 @@ class Const(NodeNG, bases.Instance):
         return builtins.getattr(type(self.value).__name__)[0]
 
 
-class Singleton(Const):
-    """Represents a singleton object, at the moment None and NotImplemented."""
+class NameConstant(Const):
+    """Represents a builtin singleton, at the moment True, False, None,
+    and NotImplemented.
 
-    @decorators.cachedproperty
-    def _proxied(self):
-        builtins = MANAGER.astroid_cache[BUILTINS]
-        return builtins.getattr(str(self.value))[0]
+    """
+
+    # @decorators.cachedproperty
+    # def _proxied(self):
+    #     return self
+    #     # builtins = MANAGER.astroid_cache[BUILTINS]
+    #     # return builtins.getattr(str(self.value))[0]
+
+
+class ReservedName(NodeNG):
+    '''Used in the builtins AST to assign names to singletons.'''
+    _astroid_fields = ('value',)
+    _other_fields = ('name',)
+
+    def __init__(self, name, lineno=None, col_offset=None, parent=None):
+        self.name = name
+        super(ReservedName, self).__init__(lineno, col_offset, parent)
+
+    def postinit(self, value):
+        self.value = value
 
 
 class Continue(Statement):

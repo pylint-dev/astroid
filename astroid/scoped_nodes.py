@@ -140,8 +140,8 @@ def builtin_lookup(name):
         return builtin_astroid, ()
     stmts = builtin_astroid.locals.get(name, ())
     # Use inference to find what AssignName nodes point to in builtins.
-    stmts = [next(s.infer()) if isinstance(s, node_classes.AssignName) else s
-             for s in stmts]
+    # stmts = [next(s.infer()) if isinstance(s, node_classes.AssignName) else s
+    #          for s in stmts]
     return builtin_astroid, stmts
 
 
@@ -1023,7 +1023,7 @@ class FunctionDef(node_classes.Statement, Lambda):
         returns = self.nodes_of_class(node_classes.Return, skip_klass=FunctionDef)
         for returnnode in returns:
             if returnnode.value is None:
-                yield node_classes.Singleton(None)
+                yield node_classes.NameConstant(None)
             else:
                 try:
                     for inferred in returnnode.value.infer(context):
@@ -1881,6 +1881,12 @@ def locals_empty(node, locals_):
     name.'''
     if node.name:
         locals_[node.name].append(node.object)
+
+@_get_locals.register(node_classes.ReservedName)
+def locals_reserved_name(node, locals_):
+    '''EmptyNodes add an object to the local variables under a specified
+    name.'''
+    locals_[node.name].append(node.value)
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(node_classes.Arguments)

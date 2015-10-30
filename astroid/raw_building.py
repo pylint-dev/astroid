@@ -399,7 +399,6 @@ else:
 @_ast_from_object.register(str)
 @_ast_from_object.register(bytes)
 @_ast_from_object.register(int)
-@_ast_from_object.register(bool)
 @_ast_from_object.register(float)
 @_ast_from_object.register(complex)
 def ast_from_builtin_number_text_binary(builtin_number_text_binary, built_objects, module, name=None, parent=None):
@@ -421,27 +420,43 @@ if six.PY2:
 
 @_ast_from_object.register(type(None))
 @_ast_from_object.register(type(NotImplemented))
+@_ast_from_object.register(bool)
 def ast_from_builtin_singleton(builtin_singleton, built_objects, module, name=None, parent=None):
-    if name:
+    # A builtin singleton is assigned to a name.
+    if name and name != str(builtin_singleton):
         parent = nodes.Assign(parent=parent)
-        name_node = nodes.AssignName(name, parent=parent)
-    builtin_singleton_node = nodes.Singleton(value=builtin_singleton, parent=parent)
-    if name:
+        name_node = nodes.AssignName(name=name, parent=parent)
+    # This case handles the initial assignment of singletons to names
+    # in the builtins module.  It can be triggered in other cases with
+    # an object that contains a builtin singleton by its own name, but
+    # there's never any reason to write that kind of code, and even if
+    # it happens it shouldn't cause any harm.
+    elif name and name == str(builtin_singleton):
+        parent = nodes.ReservedName(name=name, parent=parent)
+    builtin_singleton_node = nodes.NameConstant(value=builtin_singleton, parent=parent)
+    if name and name != str(builtin_singleton):
         parent.postinit(targets=[name_node], value=builtin_singleton_node)
+        node = parent
+    elif name and name == str(builtin_singleton):
+        parent.postinit(value=builtin_singleton_node)
         node = parent
     else:
         node = builtin_singleton_node
     return node
 
-
 @_ast_from_object.register(type(Ellipsis))
 def ast_from_ellipsis(ellipsis, built_objects, module, name=None, parent=None):
-    if name:
+    if name and name != str(ellipsis):
         parent = nodes.Assign(parent=parent)
-        name_node = nodes.AssignName(name, parent=parent)
+        name_node = nodes.AssignName(name=name, parent=parent)
+    elif name and name == str(ellipsis):
+        parent = nodes.ReservedName(name=name, parent=parent)
     ellipsis_node = nodes.Ellipsis(parent=parent)
-    if name:
+    if name and name != str(ellipsis):
         parent.postinit(targets=[name_node], value=ellipsis_node)
+        node = parent
+    elif name and name == str(ellipsis):
+        parent.postinit(value=ellipsis_node)
         node = parent
     else:
         node = ellipsis_node
