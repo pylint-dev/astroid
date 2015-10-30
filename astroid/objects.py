@@ -27,6 +27,7 @@ leads to an inferred FrozenSet:
 
 import six
 
+from astroid import object_bases
 from astroid import bases
 from astroid import decorators
 from astroid import exceptions
@@ -85,17 +86,17 @@ class Super(node_classes.NodeNG):
 
     def super_mro(self):
         """Get the MRO which will be used to lookup attributes in this super."""
-        if not isinstance(self.mro_pointer, scoped_nodes.ClassDef):
+        if not isinstance(self.mro_pointer, object_bases.ClassDef):
             raise exceptions.SuperArgumentTypeError(
                 "The first super argument must be type.")
 
-        if isinstance(self.type, scoped_nodes.ClassDef):
+        if isinstance(self.type, object_bases.ClassDef):
             # `super(type, type)`, most likely in a class method.
             self._class_based = True
             mro_type = self.type
         else:
             mro_type = getattr(self.type, '_proxied', None)
-            if not isinstance(mro_type, (bases.Instance, scoped_nodes.ClassDef)):
+            if not isinstance(mro_type, (bases.Instance, object_bases.ClassDef)):
                 raise exceptions.SuperArgumentTypeError(
                     "super(type, obj): obj must be an "
                     "instance or subtype of type")
@@ -150,7 +151,7 @@ class Super(node_classes.NodeNG):
 
             found = True
             for inferred in bases._infer_stmts([cls[name]], context, frame=self):
-                if not isinstance(inferred, scoped_nodes.FunctionDef):
+                if not isinstance(inferred, object_bases.FunctionDef):
                     yield inferred
                     continue
 
