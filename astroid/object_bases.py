@@ -16,13 +16,25 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 
+"""Abstract classes for nodes and other runtime objects.
+
+The idea is that these objects are used for isinstance checks and
+any other use cases where the need for a concrete type does not exist,
+while other cases, such as instantiating a node, should use the concrete
+types instead.
+"""
+
 import abc
-import warnings
 
 import six
 
 
 def register_implementation(base):
+    """Register an implementation for the given *base*
+
+    The given base class is expected to have a `register` method,
+    similar to what `abc.ABCMeta` provides when used.
+    """
     def wrapped(impl):
         base.register(impl)
         return impl
@@ -36,7 +48,7 @@ class NodeNG(object):
     It represents a node of the new abstract syntax tree.
     """
     is_statement = False
-    
+
     def __init__(self, lineno=None, col_offset=None, parent=None):
         self.lineno = lineno
         self.col_offset = col_offset
@@ -53,111 +65,111 @@ class Statement(NodeNG):
 
 
 class AssignName(NodeNG):
-    """class representing an AssignName node"""
+    """Class representing an AssignName node"""
 
 
 class DelName(NodeNG):
-    """class representing a DelName node"""
+    """Class representing a DelName node"""
 
 
 class Name(NodeNG):
-    """class representing a Name node"""
+    """Class representing a Name node"""
 
 
 class Arguments(NodeNG):
-    """class representing an Arguments node"""
+    """Class representing an Arguments node"""
 
 
 class AssignAttr(NodeNG):
-    """class representing an AssignAttr node"""
+    """Class representing an AssignAttr node"""
 
 
 class Assert(Statement):
-    """class representing an Assert node"""
+    """Class representing an Assert node"""
 
 
 class Assign(Statement):
-    """class representing an Assign node"""
+    """Class representing an Assign node"""
 
 
 class AugAssign(Statement):
-    """class representing an AugAssign node"""
+    """Class representing an AugAssign node"""
 
 
 class Repr(NodeNG):
-    """class representing a Repr node"""
+    """Class representing a Repr node"""
 
 
 class BinOp(NodeNG):
-    """class representing a BinOp node"""
+    """Class representing a BinOp node"""
 
 
 class BoolOp(NodeNG):
-    """class representing a BoolOp node"""
+    """Class representing a BoolOp node"""
 
 
 class Break(Statement):
-    """class representing a Break node"""
+    """Class representing a Break node"""
 
 
 class Call(NodeNG):
-    """class representing a Call node"""
+    """Class representing a Call node"""
 
 
 class Compare(NodeNG):
-    """class representing a Compare node"""
+    """Class representing a Compare node"""
 
 
 class Comprehension(NodeNG):
-    """class representing a Comprehension node"""
+    """Class representing a Comprehension node"""
 
 
 class Const(NodeNG):
-    """represent a constant node like num, str, bool, None, bytes"""
+    """Represent a constant node like num, str, bool, None, bytes"""
 
 
 class Continue(Statement):
-    """class representing a Continue node"""
+    """Class representing a Continue node"""
 
 
 class Decorators(NodeNG):
-    """class representing a Decorators node"""
+    """Class representing a Decorators node"""
 
 
 class DelAttr(NodeNG):
-    """class representing a DelAttr node"""
+    """Class representing a DelAttr node"""
 
 
 class Delete(Statement):
-    """class representing a Delete node"""
+    """Class representing a Delete node"""
 
 
 class Dict(NodeNG):
-    """class representing a Dict node"""
+    """Class representing a Dict node"""
 
 
 class Expr(Statement):
-    """class representing a Expr node"""
+    """Class representing a Expr node"""
 
 
 class Ellipsis(NodeNG): # pylint: disable=redefined-builtin
-    """class representing an Ellipsis node"""
+    """Class representing an Ellipsis node"""
 
 
 class ExceptHandler(Statement):
-    """class representing an ExceptHandler node"""
+    """Class representing an ExceptHandler node"""
 
 
 class Exec(Statement):
-    """class representing an Exec node"""
+    """Class representing an Exec node"""
 
 
 class ExtSlice(NodeNG):
-    """class representing an ExtSlice node"""
+    """Class representing an ExtSlice node"""
 
 
 class For(Statement):
-    """class representing a For node"""
+    """Class representing a For node"""
 
 
 class AsyncFor(For):
@@ -169,96 +181,99 @@ class Await(NodeNG):
 
 
 class ImportFrom(Statement):
-    """class representing a ImportFrom node"""
+    """Class representing a ImportFrom node"""
 
 
 class Attribute(NodeNG):
-    """class representing a Attribute node"""
+    """Class representing a Attribute node"""
 
 
 class Global(Statement):
-    """class representing a Global node"""
+    """Class representing a Global node"""
 
 
 class If(Statement):
-    """class representing an If node"""
+    """Class representing an If node"""
 
 
 class IfExp(NodeNG):
-    """class representing an IfExp node"""
+    """Class representing an IfExp node"""
 
 
 class Import(Statement):
-    """class representing an Import node"""
+    """Class representing an Import node"""
 
 
 class Index(NodeNG):
-    """class representing an Index node"""
+    """Class representing an Index node"""
 
 
 class Keyword(NodeNG):
-    """class representing a Keyword node"""
+    """Class representing a Keyword node"""
 
 
 class List(NodeNG):
-    """class representing a List node"""
+    """Class representing a List node"""
 
 
 class Nonlocal(Statement):
-    """class representing a Nonlocal node"""
+    """Class representing a Nonlocal node"""
+
 
 class Pass(Statement):
-    """class representing a Pass node"""
+    """Class representing a Pass node"""
 
 
 class Print(Statement):
-    """class representing a Print node"""
+    """Class representing a Print node"""
 
 
 class Raise(Statement):
-    """class representing a Raise node"""
+    """Class representing a Raise node"""
 
 
 class Return(Statement):
-    """class representing a Return node"""
+    """Class representing a Return node"""
 
 
 class Set(NodeNG):
-    """class representing a Set node"""
+    """Class representing a Set node"""
 
 
 class Slice(NodeNG):
-    """class representing a Slice node"""
+    """Class representing a Slice node"""
 
 
 class Starred(NodeNG):
-    """class representing a Starred node"""
+    """Class representing a Starred node"""
 
 
 class Subscript(NodeNG):
-    """class representing a Subscript node"""
+    """Class representing a Subscript node"""
 
 
 class TryExcept(Statement):
-    """class representing a TryExcept node"""
+    """Class representing a TryExcept node"""
 
 
 class TryFinally(Statement):
-    """class representing a TryFinally node"""
+    """Class representing a TryFinally node"""
 
 
 class Tuple(NodeNG):
-    """class representing a Tuple node"""
+    """Class representing a Tuple node"""
+
 
 class UnaryOp(NodeNG):
-    """class representing an UnaryOp node"""
+    """Class representing an UnaryOp node"""
 
 
 class While(Statement):
-    """class representing a While node"""
+    """Class representing a While node"""
+
 
 class With(Statement):
-    """class representing a With node"""
+    """Class representing a With node"""
 
 
 class AsyncWith(With):
@@ -266,7 +281,7 @@ class AsyncWith(With):
 
 
 class Yield(NodeNG):
-    """class representing a Yield node"""
+    """Class representing a Yield node"""
 
 
 class YieldFrom(Yield):
@@ -278,57 +293,62 @@ class DictUnpack(NodeNG):
 
 
 class Module(NodeNG):
-    pass
+    """Class representing a Module node."""
 
 
 class GeneratorExp(NodeNG):
-    pass
+    """Class representing a GeneratorExp node."""
 
 
 class DictComp(NodeNG):
-    pass
+    """Class representing a generator comprehension node."""
 
 
 class SetComp(NodeNG):
-    pass
+    """Class representing a set comprehension node."""
 
 
 class ListComp(NodeNG):
-    pass
+    """Class representing a list comprehension node."""
 
 
 class Lambda(NodeNG):
-    pass
+    """Class representing a lambda comprehension node."""
 
 
 class AsyncFunctionDef(NodeNG):
-    pass
+    """Class representing an asynchronous function node."""
 
 
 class ClassDef(Statement, NodeNG):
-    pass
+    """Class representing a class definition node."""
 
 
 class FunctionDef(Statement, Lambda):
-    pass
+    """Class representing a function node."""
 
 
 @six.add_metaclass(abc.ABCMeta)
 class RuntimeObject(object):
-    pass
+    """Class representing an object that is created at runtime
+
+    These objects aren't AST per se, being created by the action
+    of the interpreter when the code executes, which is a total
+    different step than the AST creation.
+    """
 
 
 class Instance(RuntimeObject):
-    pass
+    """Class representing an instance."""
 
 
 class UnboundMethod(RuntimeObject):
-    pass
+    """Class representing an unbound method."""
 
 
 class BoundMethod(UnboundMethod):
-    pass
+    """Class representing a bound method."""
 
 
 class Generator(RuntimeObject):
-    pass
+    """Class representing a Generator."""
