@@ -96,7 +96,7 @@ class Super(node_classes.NodeNG):
             mro_type = self.type
         else:
             mro_type = getattr(self.type, '_proxied', None)
-            if not isinstance(mro_type, (bases.Instance, object_bases.ClassDef)):
+            if not isinstance(mro_type, (object_bases.Instance, object_bases.ClassDef)):
                 raise exceptions.SuperArgumentTypeError(
                     "super(type, obj): obj must be an "
                     "instance or subtype of type")
