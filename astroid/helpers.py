@@ -65,7 +65,7 @@ def _object_type(node, context=None):
 
     for inferred in node.infer(context=context):
         if isinstance(inferred, object_bases.ClassDef):
-            yield inferred.metaclass() or inferred.implicit_metaclass()
+            yield inferred.metaclass() or builtins.getattr('type')[0]
         elif isinstance(inferred, (object_bases.Lambda, object_bases.UnboundMethod)):
             yield _function_type(inferred, builtins)
         elif isinstance(inferred, object_bases.Module):

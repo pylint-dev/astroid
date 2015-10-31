@@ -257,6 +257,12 @@ class TestHelpers(unittest.TestCase):
         self.assertTrue(helpers.is_supertype(builtin_type, cls_a))
         self.assertTrue(helpers.is_subtype(cls_a, builtin_type))
 
+    @test_utils.require_version(maxver='3.0')
+    def test_old_style_class(self):
+        cls = test_utils.extract_node('''class A: pass''')
+        builtin_type = self._extract('type')
+        self.assertEqual(helpers.object_type(cls), builtin_type)
+
 
 if __name__ == '__main__':
     unittest.main()
