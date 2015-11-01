@@ -20,10 +20,6 @@ import abc
 import pprint
 import warnings
 
-try:
-    from functools import singledispatch as _singledispatch
-except ImportError:
-    from singledispatch import singledispatch as _singledispatch
 import six
 
 from astroid import as_string
@@ -368,7 +364,7 @@ class NodeNG(object):
         within max_width characters, but can exceed it under some
         circumstances.
         """
-        @_singledispatch
+        @util.singledispatch
         def _repr_tree(node, result, done, cur_indent='', depth=1):
             """Outputs a representation of a non-tuple/list, non-node that's
             contained within an AST, including strings.

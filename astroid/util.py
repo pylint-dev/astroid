@@ -25,6 +25,11 @@ import warnings
 import lazy_object_proxy
 import six
 
+try:
+    from functools import singledispatch as singledispatch
+except ImportError:
+    from singledispatch import singledispatch as singledispatch
+
 
 def reraise(exception):
     '''Reraises an exception with the traceback from the current exception

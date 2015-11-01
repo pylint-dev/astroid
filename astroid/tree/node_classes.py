@@ -21,10 +21,6 @@
 import abc
 import pprint
 import warnings
-try:
-    from functools import singledispatch as _singledispatch
-except ImportError:
-    from singledispatch import singledispatch as _singledispatch
 
 import six
 

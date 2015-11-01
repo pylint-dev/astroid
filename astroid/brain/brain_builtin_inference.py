@@ -5,10 +5,6 @@ from functools import partial
 import sys
 from textwrap import dedent
 
-try:
-    from functools import singledispatch as _singledispatch
-except ImportError:
-    from singledispatch import singledispatch as _singledispatch
 import six
 
 from astroid import (MANAGER, UseInferenceDefault, NotFoundError,
@@ -138,7 +134,7 @@ def _generic_inference(node, context, node_type, transform):
     return transformed
 
 
-@_singledispatch
+@util.singledispatch
 def _from_constants(kls, elts):
     """Get an instance of the given *kls* with the given elements set."""
     elts = [nodes.const_factory(elt) for elt in elts]
