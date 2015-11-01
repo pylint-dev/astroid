@@ -25,6 +25,7 @@ import six
 from astroid import as_string
 from astroid import decorators
 from astroid import exceptions
+from astroid.interpreter import scope
 from astroid import mixins
 from astroid.tree import treeabc
 from astroid import util
@@ -173,11 +174,12 @@ class NodeNG(object):
         return self.parent.frame()
 
     def scope(self):
-        """return the first node defining a new scope (i.e. Module,
-        FunctionDef, ClassDef, Lambda but also GenExpr)
+        """Get the first node defining a new scope
 
+        Scopes are introduced in Python by Module, FunctionDef, ClassDef,
+        Lambda, GenExpr and on Python 3, by comprehensions.
         """
-        return self.parent.scope()
+        return scope.node_scope(self)
 
     def root(self):
         """return the root node of the tree, (i.e. a Module)"""

@@ -750,10 +750,6 @@ class Decorators(base.NodeNG):
     def postinit(self, nodes):
         self.nodes = nodes
 
-    def scope(self):
-        # skip the function node to go directly to the upper level scope
-        return self.parent.parent.scope()
-
 
 @util.register_implementation(treeabc.DelAttr)
 class DelAttr(mixins.ParentAssignTypeMixin, base.NodeNG):

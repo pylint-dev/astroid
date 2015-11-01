@@ -761,6 +761,43 @@ class BaseTypesTest(unittest.TestCase):
         self.assertTrue(issubclass(objects.Generator, runtimeabc.Generator))
         self.assertTrue(issubclass(objects.BoundMethod, runtimeabc.BoundMethod))
         self.assertTrue(issubclass(objects.UnboundMethod, runtimeabc.UnboundMethod))
+
+
+class ScopeTest(unittest.TestCase):
+
+    def test_decorators(self):
+        ast_node = test_utils.extract_node('''
+        @test
+        def foo(): pass
+        ''')
+        decorators = ast_node.decorators
+        self.assertIsInstance(decorators.scope(), nodes.Module)
+        self.assertEqual(decorators.scope(), decorators.root())
+
+    def test_scoped_nodes(self):
+        module = parse('''
+        def function():
+            pass
+        genexp = (i for i in range(10))
+        dictcomp = {i:i for i in range(10)}
+        setcomp = {i for i in range(10)}
+        listcomp = [i for i in range(10)]
+        lambd = lambda x: x
+        class classdef: pass
+        ''')
+        self.assertIsInstance(module.scope(), nodes.Module)
+        self.assertIsInstance(module['genexp'].parent.value.scope(), nodes.GeneratorExp)
+        self.assertIsInstance(module['dictcomp'].parent.value.scope(), nodes.DictComp)
+        self.assertIsInstance(module['setcomp'].parent.value.scope(), nodes.SetComp)
+        self.assertIsInstance(module['lambd'].parent.value.scope(), nodes.Lambda)
+        self.assertIsInstance(next(module['function'].infer()).scope(), nodes.FunctionDef)
+        self.assertIsInstance(next(module['classdef'].infer()).scope(), nodes.ClassDef)
+
+        if six.PY3:
+            self.assertIsInstance(module['listcomp'].parent.value.scope(), nodes.ListComp)
+        else:
+            self.assertIsInstance(module['listcomp'].parent.value.scope(), nodes.Module)
+        
         
 
 if __name__ == '__main__':

@@ -164,12 +164,6 @@ class LocalsDictNodeNG(node_classes.LookupMixIn,
         """
         return self
 
-    def scope(self):
-        """return the first node defining a new scope (i.e. Module,
-        FunctionDef, ClassDef, Lambda but also GeneratorExp, DictComp and SetComp)
-        """
-        return self
-
     def _scope_lookup(self, node, name, offset=0):
         """XXX method for interfacing the scope lookup"""
         try:
