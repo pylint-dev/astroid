@@ -37,8 +37,8 @@ from astroid import context as contextmod
 from astroid import exceptions
 from astroid import manager
 from astroid import mixins
-from astroid import node_classes
 from astroid import decorators as decorators_mod
+from astroid.tree import node_classes
 from astroid import util
 
 

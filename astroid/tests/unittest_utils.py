@@ -18,7 +18,7 @@
 import unittest
 
 from astroid import builder, nodes
-from astroid.node_classes import are_exclusive
+from astroid.tree.node_classes import are_exclusive
 
 builder = builder.AstroidBuilder()
 

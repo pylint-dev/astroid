@@ -36,7 +36,7 @@ on ImportFrom and Import :
 """
 # pylint: disable=unused-import,redefined-builtin
 
-from astroid.node_classes import (
+from astroid.tree.node_classes import (
     Arguments, AssignAttr, Assert, Assign,
     AssignName, AugAssign, Repr, BinOp, BoolOp, Break, Call, Compare,
     Comprehension, Const, Continue, Decorators, DelAttr, DelName, Delete,
@@ -51,7 +51,7 @@ from astroid.node_classes import (
     # Node not present in the builtin ast module.
     DictUnpack,
 )
-from astroid.scoped_nodes import (
+from astroid.tree.scoped_nodes import (
     Module, GeneratorExp, Lambda, DictComp,
     ListComp, SetComp, FunctionDef, ClassDef,
     AsyncFunctionDef,

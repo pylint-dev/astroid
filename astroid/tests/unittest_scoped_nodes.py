@@ -28,7 +28,7 @@ import six
 
 from astroid import builder
 from astroid import nodes
-from astroid import scoped_nodes
+from astroid.tree import scoped_nodes
 from astroid import util
 from astroid.exceptions import (
     InferenceError, NotFoundError,

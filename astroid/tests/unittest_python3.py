@@ -19,9 +19,9 @@ from textwrap import dedent
 import unittest
 
 from astroid import nodes
-from astroid.node_classes import Assign, Expr, YieldFrom, Name, Const
+from astroid.tree.node_classes import Assign, Expr, YieldFrom, Name, Const
 from astroid.builder import AstroidBuilder
-from astroid.scoped_nodes import ClassDef, FunctionDef
+from astroid.tree.scoped_nodes import ClassDef, FunctionDef
 from astroid.test_utils import require_version, extract_node
 
 

@@ -28,9 +28,9 @@ import types
 import six
 
 from astroid import manager
-from astroid import node_classes
 from astroid import nodes
 from astroid.runtime import objects
+from astroid.tree import node_classes
 
 
 MANAGER = manager.AstroidManager()

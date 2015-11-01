@@ -78,8 +78,8 @@ class GetModulePartTest(unittest.TestCase):
 
     def test_knownValues_get_module_part_3(self):
         """relative import from given file"""
-        self.assertEqual(modutils.get_module_part('node_classes.AssName',
-                                                  modutils.__file__), 'node_classes')
+        self.assertEqual(modutils.get_module_part('tree.node_classes.AssName',
+                                                  modutils.__file__), 'tree.node_classes')
 
     def test_knownValues_get_compiled_module_part(self):
         self.assertEqual(modutils.get_module_part('math.log10'), 'math')

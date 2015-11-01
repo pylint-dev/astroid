@@ -28,7 +28,7 @@ import six
 from astroid import builder
 from astroid import context as contextmod
 from astroid import exceptions
-from astroid import node_classes
+from astroid.tree import node_classes
 from astroid import nodes
 from astroid import parse
 from astroid.runtime import runtimeabc
@@ -319,8 +319,8 @@ class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
     def test_from_self_resolve(self):
         namenode = next(self.module.igetattr('NameNode'))
         self.assertTrue(isinstance(namenode, nodes.ClassDef), namenode)
-        self.assertEqual(namenode.root().name, 'astroid.node_classes')
-        self.assertEqual(namenode.qname(), 'astroid.node_classes.Name')
+        self.assertEqual(namenode.root().name, 'astroid.tree.node_classes')
+        self.assertEqual(namenode.qname(), 'astroid.tree.node_classes.Name')
         self.assertEqual(namenode.pytype(), '%s.type' % BUILTINS)
         abspath = next(self.module2.igetattr('abspath'))
         self.assertTrue(isinstance(abspath, nodes.FunctionDef), abspath)
@@ -345,7 +345,7 @@ class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
         ast = self.module['modutils']
         self.assertEqual(ast.as_string(), "from astroid import modutils")
         ast = self.module['NameNode']
-        self.assertEqual(ast.as_string(), "from astroid.node_classes import Name as NameNode")
+        self.assertEqual(ast.as_string(), "from astroid.tree.node_classes import Name as NameNode")
         ast = self.module['os']
         self.assertEqual(ast.as_string(), "import os.path")
         code = """from . import here
