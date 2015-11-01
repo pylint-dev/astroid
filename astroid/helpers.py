@@ -22,7 +22,8 @@ Various helper utilities.
 
 import six
 
-from astroid import object_bases
+from astroid.tree import treeabc
+from astroid.runtime import runtimeabc
 from astroid import context as contextmod
 from astroid import exceptions
 from astroid import manager
@@ -40,17 +41,17 @@ def _build_proxy_class(cls_name, builtins):
 
 
 def _function_type(function, builtins):
-    if isinstance(function, object_bases.Lambda):
+    if isinstance(function, treeabc.Lambda):
         if function.root().name == BUILTINS:
             cls_name = 'builtin_function_or_method'
         else:
             cls_name = 'function'
-    elif isinstance(function, object_bases.BoundMethod):
+    elif isinstance(function, runtimeabc.BoundMethod):
         if six.PY2:
             cls_name = 'instancemethod'
         else:
             cls_name = 'method'
-    elif isinstance(function, object_bases.UnboundMethod):
+    elif isinstance(function, runtimeabc.UnboundMethod):
         if six.PY2:
             cls_name = 'instancemethod'
         else:
@@ -64,11 +65,11 @@ def _object_type(node, context=None):
     context = context or contextmod.InferenceContext()
 
     for inferred in node.infer(context=context):
-        if isinstance(inferred, object_bases.ClassDef):
+        if isinstance(inferred, treeabc.ClassDef):
             yield inferred.metaclass() or builtins.getattr('type')[0]
-        elif isinstance(inferred, (object_bases.Lambda, object_bases.UnboundMethod)):
+        elif isinstance(inferred, (treeabc.Lambda, runtimeabc.UnboundMethod)):
             yield _function_type(inferred, builtins)
-        elif isinstance(inferred, object_bases.Module):
+        elif isinstance(inferred, treeabc.Module):
             yield _build_proxy_class('module', builtins)
         else:
             yield inferred._proxied
@@ -122,7 +123,7 @@ def has_known_bases(klass, context=None):
     for base in klass.bases:
         result = safe_infer(base, context=context)
         # TODO: check for A->B->A->B pattern in class structure too?
-        if (not isinstance(result, object_bases.ClassDef) or
+        if (not isinstance(result, treeabc.ClassDef) or
                 result is klass or
                 not has_known_bases(result, context=context)):
             klass._all_bases_known = False
@@ -166,11 +167,11 @@ def class_instance_as_index(node):
 
     try:
         for inferred in node.igetattr('__index__', context=context):
-            if not isinstance(inferred, object_bases.BoundMethod):
+            if not isinstance(inferred, runtimeabc.BoundMethod):
                 continue
 
             for result in inferred.infer_call_result(node, context=context):
-                if (isinstance(result, object_bases.Const)
+                if (isinstance(result, treeabc.Const)
                         and isinstance(result.value, int)):
                     return result
     except exceptions.InferenceError:

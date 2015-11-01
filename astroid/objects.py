@@ -27,7 +27,9 @@ leads to an inferred FrozenSet:
 
 import six
 
-from astroid import object_bases
+from astroid.tree import base
+from astroid.tree import treeabc
+from astroid.runtime import runtimeabc
 from astroid import bases
 from astroid import decorators
 from astroid import exceptions
@@ -54,7 +56,7 @@ class FrozenSet(node_classes._BaseContainer):
         return builtins.getattr('frozenset')[0]
 
 
-class Super(node_classes.NodeNG):
+class Super(base.NodeNG):
     """Proxy class over a super call.
 
     This class offers almost the same behaviour as Python's super,
@@ -85,17 +87,17 @@ class Super(node_classes.NodeNG):
 
     def super_mro(self):
         """Get the MRO which will be used to lookup attributes in this super."""
-        if not isinstance(self.mro_pointer, object_bases.ClassDef):
+        if not isinstance(self.mro_pointer, treeabc.ClassDef):
             raise exceptions.SuperArgumentTypeError(
                 "The first super argument must be type.")
 
-        if isinstance(self.type, object_bases.ClassDef):
+        if isinstance(self.type, treeabc.ClassDef):
             # `super(type, type)`, most likely in a class method.
             self._class_based = True
             mro_type = self.type
         else:
             mro_type = getattr(self.type, '_proxied', None)
-            if not isinstance(mro_type, (object_bases.Instance, object_bases.ClassDef)):
+            if not isinstance(mro_type, (runtimeabc.Instance, treeabc.ClassDef)):
                 raise exceptions.SuperArgumentTypeError(
                     "super(type, obj): obj must be an "
                     "instance or subtype of type")
@@ -150,7 +152,7 @@ class Super(node_classes.NodeNG):
 
             found = True
             for inferred in bases._infer_stmts([cls[name]], context, frame=self):
-                if not isinstance(inferred, object_bases.FunctionDef):
+                if not isinstance(inferred, treeabc.FunctionDef):
                     yield inferred
                     continue
 

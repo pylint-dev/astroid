@@ -66,3 +66,15 @@ def proxy_alias(alias_name, node_type):
                  {'__class__': object.__dict__['__class__'],
                   '__instancecheck__': _instancecheck})
     return proxy(lambda: node_type)
+
+
+def register_implementation(base):
+    """Register an implementation for the given *base*
+
+    The given base class is expected to have a `register` method,
+    similar to what `abc.ABCMeta` provides when used.
+    """
+    def wrapped(impl):
+        base.register(impl)
+        return impl
+    return wrapped

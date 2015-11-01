@@ -23,8 +23,9 @@ import sys
 
 from astroid import context as contextmod
 from astroid import exceptions
-from astroid import object_bases
+from astroid.runtime import runtimeabc
 from astroid import util
+from astroid.tree import treeabc
 
 
 if sys.version_info >= (3, 0):
@@ -123,7 +124,7 @@ def _infer_method_result_truth(instance, method_name, context):
     return util.YES
 
 
-@object_bases.register_implementation(object_bases.Instance)
+@util.register_implementation(runtimeabc.Instance)
 class Instance(Proxy):
     """A special node representing a class instance."""
 
@@ -190,7 +191,7 @@ class Instance(Proxy):
                 # Unfortunately, we can't do an isinstance check here,
                 # because of the circular dependency between astroid.bases
                 # and astroid.scoped_nodes.
-                if isinstance(attr.statement().scope(), object_bases.ClassDef):
+                if isinstance(attr.statement().scope(), treeabc.ClassDef):
                     if attr.args.args and attr.args.args[0].name == 'self':
                         yield BoundMethod(attr, self)
                         continue
@@ -277,7 +278,7 @@ class Instance(Proxy):
             util.reraise(exceptions.InferenceError())
 
 
-@object_bases.register_implementation(object_bases.UnboundMethod)
+@util.register_implementation(runtimeabc.UnboundMethod)
 class UnboundMethod(Proxy):
     """a special node representing a method not bound to an instance"""
     def __repr__(self):
@@ -312,7 +313,7 @@ class UnboundMethod(Proxy):
         return True
 
 
-@object_bases.register_implementation(object_bases.BoundMethod)
+@util.register_implementation(runtimeabc.BoundMethod)
 class BoundMethod(UnboundMethod):
     """a special node representing a method bound to an instance"""
     def __init__(self, proxy, bound):
@@ -333,7 +334,7 @@ class BoundMethod(UnboundMethod):
         return True
 
 
-@object_bases.register_implementation(object_bases.Generator)
+@util.register_implementation(runtimeabc.Generator)
 class Generator(Instance):
     """a special node representing a generator.
 

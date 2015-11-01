@@ -29,17 +29,6 @@ import abc
 import six
 
 
-def register_implementation(base):
-    """Register an implementation for the given *base*
-
-    The given base class is expected to have a `register` method,
-    similar to what `abc.ABCMeta` provides when used.
-    """
-    def wrapped(impl):
-        base.register(impl)
-        return impl
-    return wrapped
-
 
 @six.add_metaclass(abc.ABCMeta)
 class NodeNG(object):
@@ -58,6 +47,8 @@ class NodeNG(object):
     def infer(self, context=None, **kwargs):
         """Main interface to the interface system, return a generator on inferred values."""
 
+
+# pylint: disable=abstract-method
 
 class Statement(NodeNG):
     """Represents a Statement node."""
@@ -326,32 +317,6 @@ class ClassDef(Statement, NodeNG):
 
 class FunctionDef(Statement, Lambda):
     """Class representing a function node."""
-
-
-@six.add_metaclass(abc.ABCMeta)
-class RuntimeObject(object):
-    """Class representing an object that is created at runtime
-
-    These objects aren't AST per se, being created by the action
-    of the interpreter when the code executes, which is a total
-    different step than the AST creation.
-    """
-
-
-class Instance(RuntimeObject):
-    """Class representing an instance."""
-
-
-class UnboundMethod(RuntimeObject):
-    """Class representing an unbound method."""
-
-
-class BoundMethod(UnboundMethod):
-    """Class representing a bound method."""
-
-
-class Generator(RuntimeObject):
-    """Class representing a Generator."""
 
 
 class EmptyNode(NodeNG):

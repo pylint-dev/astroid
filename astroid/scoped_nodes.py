@@ -29,7 +29,8 @@ import warnings
 import six
 import wrapt
 
-from astroid import object_bases
+from astroid.tree import base as treebase
+from astroid.tree import treeabc
 from astroid import bases
 from astroid import context as contextmod
 from astroid import exceptions
@@ -138,7 +139,7 @@ def builtin_lookup(name):
 
 # TODO move this Mixin to mixins.py; problem: 'FunctionDef' in _scope_lookup
 class LocalsDictNodeNG(node_classes.LookupMixIn,
-                       node_classes.NodeNG):
+                       treebase.NodeNG):
     """ this class provides locals handling common to Module, FunctionDef
     and ClassDef nodes, including a dict like interface for direct access
     to locals information
@@ -248,7 +249,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn,
         return name in self.locals
 
 
-@object_bases.register_implementation(object_bases.Module)
+@util.register_implementation(treeabc.Module)
 class Module(LocalsDictNodeNG):
     _astroid_fields = ('body',)
 
@@ -513,7 +514,7 @@ class ComprehensionScope(LocalsDictNodeNG):
     scope_lookup = LocalsDictNodeNG._scope_lookup
 
 
-@object_bases.register_implementation(object_bases.GeneratorExp)
+@util.register_implementation(treeabc.GeneratorExp)
 class GeneratorExp(ComprehensionScope):
     _astroid_fields = ('elt', 'generators')
     _other_other_fields = ('locals',)
@@ -535,7 +536,7 @@ class GeneratorExp(ComprehensionScope):
         return True
 
 
-@object_bases.register_implementation(object_bases.DictComp)
+@util.register_implementation(treeabc.DictComp)
 class DictComp(ComprehensionScope):
     _astroid_fields = ('key', 'value', 'generators')
     _other_other_fields = ('locals',)
@@ -559,7 +560,7 @@ class DictComp(ComprehensionScope):
         return util.YES
 
 
-@object_bases.register_implementation(object_bases.SetComp)
+@util.register_implementation(treeabc.SetComp)
 class SetComp(ComprehensionScope):
     _astroid_fields = ('elt', 'generators')
     _other_other_fields = ('locals',)
@@ -581,8 +582,8 @@ class SetComp(ComprehensionScope):
         return util.YES
 
 
-@object_bases.register_implementation(object_bases.ListComp)
-class _ListComp(node_classes.NodeNG):
+@util.register_implementation(treeabc.ListComp)
+class _ListComp(treebase.NodeNG):
     """class representing a ListComp node"""
     _astroid_fields = ('elt', 'generators')
     elt = None
@@ -633,7 +634,7 @@ def _infer_decorator_callchain(node):
             return 'staticmethod'
 
 
-@object_bases.register_implementation(object_bases.Lambda)
+@util.register_implementation(treeabc.Lambda)
 class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
     _astroid_fields = ('args', 'body',)
     _other_other_fields = ('locals',)
@@ -696,7 +697,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         return True
 
 
-@object_bases.register_implementation(object_bases.FunctionDef)
+@util.register_implementation(treeabc.FunctionDef)
 class FunctionDef(node_classes.Statement, Lambda):
     if six.PY3:
         _astroid_fields = ('decorators', 'args', 'body', 'returns')
@@ -962,7 +963,7 @@ class FunctionDef(node_classes.Statement, Lambda):
         return True
 
 
-@object_bases.register_implementation(object_bases.AsyncFunctionDef)
+@util.register_implementation(treeabc.AsyncFunctionDef)
 class AsyncFunctionDef(FunctionDef):
     """Asynchronous function created with the `async` keyword."""
 
@@ -1064,7 +1065,7 @@ def get_wrapping_class(node):
 
 
 
-@object_bases.register_implementation(object_bases.ClassDef)
+@util.register_implementation(treeabc.ClassDef)
 class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                node_classes.Statement):
 

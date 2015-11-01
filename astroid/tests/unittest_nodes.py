@@ -25,7 +25,6 @@ import warnings
 
 import six
 
-from astroid import object_bases
 from astroid import bases
 from astroid import builder
 from astroid import context as contextmod
@@ -33,10 +32,12 @@ from astroid import exceptions
 from astroid import node_classes
 from astroid import nodes
 from astroid import parse
+from astroid.runtime import runtimeabc
 from astroid import util
 from astroid import test_utils
 from astroid import transforms
 from astroid.tests import resources
+from astroid.tree import treeabc
 
 
 abuilder = builder.AstroidBuilder()
@@ -753,13 +754,13 @@ class BaseTypesTest(unittest.TestCase):
     def test_concrete_issubclass(self):
         for node in nodes.ALL_NODE_CLASSES:
             name = node.__name__
-            base_type = getattr(object_bases, name)
+            base_type = getattr(treeabc, name)
             self.assertTrue(issubclass(node, base_type), (node, base_type))
 
-        self.assertTrue(issubclass(bases.Instance, object_bases.Instance))
-        self.assertTrue(issubclass(bases.Generator, object_bases.Generator))
-        self.assertTrue(issubclass(bases.BoundMethod, object_bases.BoundMethod))
-        self.assertTrue(issubclass(bases.UnboundMethod, object_bases.UnboundMethod))
+        self.assertTrue(issubclass(bases.Instance, runtimeabc.Instance))
+        self.assertTrue(issubclass(bases.Generator, runtimeabc.Generator))
+        self.assertTrue(issubclass(bases.BoundMethod, runtimeabc.BoundMethod))
+        self.assertTrue(issubclass(bases.UnboundMethod, runtimeabc.UnboundMethod))
         
 
 if __name__ == '__main__':
