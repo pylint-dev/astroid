@@ -30,8 +30,8 @@ from astroid import exceptions
 from astroid import manager
 from astroid import modutils
 from astroid import raw_building
-from astroid import rebuilder
 from astroid.runtime import objects
+from astroid.tree import rebuilder
 from astroid import util
 
 
