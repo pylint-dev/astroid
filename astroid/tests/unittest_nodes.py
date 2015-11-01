@@ -31,8 +31,8 @@ from astroid import exceptions
 from astroid.tree import node_classes
 from astroid import nodes
 from astroid import parse
-from astroid.runtime import runtimeabc
-from astroid.runtime import objects
+from astroid.interpreter import runtimeabc
+from astroid.interpreter import objects
 from astroid import util
 from astroid import test_utils
 from astroid import transforms

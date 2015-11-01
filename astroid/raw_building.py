@@ -27,9 +27,9 @@ import types
 
 import six
 
+from astroid.interpreter import objects
 from astroid import manager
 from astroid import nodes
-from astroid.runtime import objects
 from astroid.tree import node_classes
 
 

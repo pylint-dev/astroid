@@ -31,8 +31,8 @@ from astroid import helpers
 from astroid import manager
 from astroid import nodes
 from astroid import protocols
-from astroid.runtime import objects
 from astroid.interpreter.util import infer_stmts
+from astroid.interpreter import objects
 from astroid import util
 
 

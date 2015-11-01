@@ -28,7 +28,7 @@ import six
 from astroid import InferenceError, builder, nodes
 from astroid.builder import parse
 from astroid.inference import infer_end as inference_infer_end
-from astroid.runtime.objects import (
+from astroid.interpreter.objects import (
     Instance, BoundMethod, UnboundMethod, FrozenSet
 )
 

@@ -23,7 +23,7 @@ import six
 from astroid import MANAGER
 from astroid import builder
 from astroid import nodes
-from astroid.runtime import objects
+from astroid.interpreter import objects
 from astroid import test_utils
 from astroid import util
 import astroid

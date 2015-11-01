@@ -22,7 +22,7 @@ import six
 
 from astroid import exceptions
 from astroid import nodes
-from astroid.runtime import objects
+from astroid.interpreter import objects
 from astroid import test_utils
 
 

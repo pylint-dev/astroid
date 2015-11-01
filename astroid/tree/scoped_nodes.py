@@ -29,16 +29,16 @@ import warnings
 import six
 import wrapt
 
-from astroid.interpreter.util import infer_stmts
-from astroid.tree import base as treebase
-from astroid.tree import treeabc
-from astroid.runtime import objects
 from astroid import context as contextmod
 from astroid import exceptions
+from astroid import decorators as decorators_mod
+from astroid.interpreter import objects
+from astroid.interpreter.util import infer_stmts
 from astroid import manager
 from astroid import mixins
-from astroid import decorators as decorators_mod
+from astroid.tree import base as treebase
 from astroid.tree import node_classes
+from astroid.tree import treeabc
 from astroid import util
 
 

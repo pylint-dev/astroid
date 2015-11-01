@@ -18,9 +18,9 @@
 
 from astroid import context as contextmod
 from astroid import exceptions
+from astroid.interpreter import objects
+from astroid.interpreter import runtimeabc
 from astroid import nodes
-from astroid.runtime import objects
-from astroid.runtime import runtimeabc
 from astroid import util
 
 import six

@@ -7,8 +7,8 @@ from textwrap import dedent
 from astroid import (
     MANAGER, UseInferenceDefault, inference_tip,
     InferenceError, register_module_extender)
-from astroid.runtime.objects import BoundMethod
 from astroid import exceptions
+from astroid.interpreter.objects import BoundMethod
 from astroid import nodes
 from astroid.builder import AstroidBuilder
 from astroid import util

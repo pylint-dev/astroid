@@ -35,7 +35,7 @@ from astroid.exceptions import (
     NoDefault, ResolveError, MroError,
     InconsistentMroError, DuplicateBasesError,
 )
-from astroid.runtime.objects import (
+from astroid.interpreter.objects import (
     Instance, BoundMethod, UnboundMethod, Generator
 )
 from astroid import __pkginfo__

@@ -12,8 +12,8 @@ from astroid import (MANAGER, UseInferenceDefault, NotFoundError,
 from astroid import arguments
 from astroid.builder import AstroidBuilder
 from astroid import helpers
+from astroid.interpreter import objects
 from astroid import nodes
-from astroid.runtime import objects
 from astroid.tree import scoped_nodes
 from astroid import util
 

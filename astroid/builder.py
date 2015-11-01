@@ -27,10 +27,10 @@ import sys
 import textwrap
 
 from astroid import exceptions
+from astroid.interpreter import objects
 from astroid import manager
 from astroid import modutils
 from astroid import raw_building
-from astroid.runtime import objects
 from astroid.tree import rebuilder
 from astroid import util
 

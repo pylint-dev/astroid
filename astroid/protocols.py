@@ -29,10 +29,10 @@ from astroid import arguments
 from astroid import context as contextmod
 from astroid import exceptions
 from astroid import decorators
-from astroid.tree import node_classes
+from astroid.interpreter import objects
 from astroid import helpers
 from astroid import nodes
-from astroid.runtime import objects
+from astroid.tree import node_classes
 from astroid import util
 
 

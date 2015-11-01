@@ -24,17 +24,17 @@ import warnings
 
 import six
 
-from astroid.interpreter.util import infer_stmts
 from astroid.tree import base
-from astroid.tree import treeabc
-from astroid.runtime import runtimeabc
-from astroid.runtime import objects
 from astroid import as_string
 from astroid import context as contextmod
 from astroid import decorators
 from astroid import exceptions
+from astroid.interpreter.util import infer_stmts
+from astroid.interpreter import runtimeabc
+from astroid.interpreter import objects
 from astroid import manager
 from astroid import mixins
+from astroid.tree import treeabc
 from astroid import util
 
 

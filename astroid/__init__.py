@@ -48,7 +48,7 @@ from operator import attrgetter
 
 # pylint: disable=redefined-builtin, wildcard-import
 
-from astroid.runtime.objects import Instance, BoundMethod, UnboundMethod
+from astroid.interpreter.objects import Instance, BoundMethod, UnboundMethod
 # make a manager instance (borg) accessible from astroid package
 from astroid.manager import AstroidManager
 MANAGER = AstroidManager()

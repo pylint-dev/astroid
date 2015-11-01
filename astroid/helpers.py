@@ -22,12 +22,12 @@ Various helper utilities.
 
 import six
 
-from astroid.tree import treeabc
-from astroid.runtime import runtimeabc
 from astroid import context as contextmod
 from astroid import exceptions
+from astroid.interpreter import runtimeabc
 from astroid import manager
 from astroid import raw_building
+from astroid.tree import treeabc
 from astroid import util
 
 
