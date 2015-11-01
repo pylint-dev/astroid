@@ -5,7 +5,12 @@ from functools import partial
 import sys
 from textwrap import dedent
 
+try:
+    from functools import singledispatch as _singledispatch
+except ImportError:
+    from singledispatch import singledispatch as _singledispatch
 import six
+
 from astroid import (MANAGER, UseInferenceDefault, NotFoundError,
                      inference_tip, InferenceError, UnresolvableName)
 from astroid import arguments
@@ -131,6 +136,23 @@ def _generic_inference(node, context, node_type, transform):
     return transformed
 
 
+@_singledispatch
+def _from_constants(kls, elts):
+    """Get an instance of the given *kls* with the given elements set."""
+    elts = [nodes.const_factory(elt) for elt in elts]
+    instance = kls()
+    instance.postinit(elts=elts)
+    return instance
+
+@_from_constants.register(nodes.Dict)
+def _dict_from_constants(kls, elts):
+    items = [(nodes.const_factory(k), nodes.const_factory(v))
+             for k, v in elts.items()]
+    instance = kls()
+    instance.postinit(items=items)
+    return instance
+
+
 def _generic_transform(arg, klass, iterables, build_elts):
     if isinstance(arg, klass):
         return arg
@@ -151,7 +173,7 @@ def _generic_transform(arg, klass, iterables, build_elts):
         elts = arg.value
     else:
         return
-    return klass.from_constants(elts=build_elts(elts))
+    return _from_constants(klass, build_elts(elts))
 
 
 def _infer_builtin(node, context,

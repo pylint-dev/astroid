@@ -154,41 +154,6 @@ class Statement(base.NodeNG):
             return stmts[index -1]
 
 
-@six.add_metaclass(abc.ABCMeta)
-class _BaseContainer(mixins.ParentAssignTypeMixin,
-                     base.NodeNG, bases.Instance):
-    """Base class for Set, FrozenSet, Tuple and List."""
-
-    _astroid_fields = ('elts',)
-
-    def __init__(self, lineno=None, col_offset=None, parent=None):
-        self.elts = []
-        super(_BaseContainer, self).__init__(lineno, col_offset, parent)
-
-    def postinit(self, elts):
-        self.elts = elts
-
-    @classmethod
-    def from_constants(cls, elts=None):
-        # pylint: disable=abstract-class-instantiated; False positive on Pylint #627.
-        node = cls()
-        if elts is None:
-            node.elts = []
-        else:
-            node.elts = [const_factory(e) for e in elts]
-        return node
-
-    def itered(self):
-        return self.elts
-
-    def bool_value(self):
-        return bool(self.elts)
-
-    @abc.abstractmethod
-    def pytype(self):
-        pass
-
-
 class LookupMixIn(object):
     """Mixin looking up a name in the right scope
     """
@@ -830,16 +795,6 @@ class Dict(base.NodeNG, bases.Instance):
     def postinit(self, items):
         self.items = items
 
-    @classmethod
-    def from_constants(cls, items=None):
-        node = cls()
-        if items is None:
-            node.items = []
-        else:
-            node.items = [(const_factory(k), const_factory(v))
-                          for k, v in items.items()]
-        return node
-
     def pytype(self):
         return '%s.dict' % BUILTINS
 
@@ -1113,7 +1068,7 @@ class Keyword(base.NodeNG):
 
 
 @util.register_implementation(treeabc.List)
-class List(_BaseContainer):
+class List(base.BaseContainer, bases.Instance):
     """class representing a List node"""
 
     def pytype(self):
@@ -1198,7 +1153,7 @@ class Return(Statement):
 
 
 @util.register_implementation(treeabc.Set)
-class Set(_BaseContainer):
+class Set(base.BaseContainer, bases.Instance):
     """class representing a Set node"""
 
     def pytype(self):
@@ -1322,7 +1277,7 @@ class TryFinally(mixins.BlockRangeMixIn, Statement):
 
 
 @util.register_implementation(treeabc.Tuple)
-class Tuple(_BaseContainer):
+class Tuple(base.BaseContainer, bases.Instance):
     """class representing a Tuple node"""
 
     def pytype(self):

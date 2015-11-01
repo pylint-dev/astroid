@@ -34,14 +34,13 @@ from astroid import bases
 from astroid import decorators
 from astroid import exceptions
 from astroid import MANAGER
-from astroid import node_classes
 from astroid import util
 
 
 BUILTINS = six.moves.builtins.__name__
 
 
-class FrozenSet(node_classes._BaseContainer):
+class FrozenSet(base.BaseContainer, bases.Instance):
     """class representing a FrozenSet composite node"""
 
     def pytype(self):

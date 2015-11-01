@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 
+import abc
 import pprint
 import warnings
 
@@ -23,11 +24,12 @@ try:
     from functools import singledispatch as _singledispatch
 except ImportError:
     from singledispatch import singledispatch as _singledispatch
-
+import six
 
 from astroid import as_string
 from astroid import decorators
 from astroid import exceptions
+from astroid import mixins
 from astroid.tree import treeabc
 from astroid import util
 
@@ -478,3 +480,27 @@ class NodeNG(object):
               node's value.
         """
         return util.YES
+
+
+@six.add_metaclass(abc.ABCMeta)
+class BaseContainer(mixins.ParentAssignTypeMixin, NodeNG):
+    """Base class for Set, FrozenSet, Tuple and List."""
+
+    _astroid_fields = ('elts',)
+
+    def __init__(self, lineno=None, col_offset=None, parent=None):
+        self.elts = []
+        super(BaseContainer, self).__init__(lineno, col_offset, parent)
+
+    def postinit(self, elts):
+        self.elts = elts
+
+    def itered(self):
+        return self.elts
+
+    def bool_value(self):
+        return bool(self.elts)
+
+    @abc.abstractmethod
+    def pytype(self):
+        pass
