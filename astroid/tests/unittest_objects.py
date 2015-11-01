@@ -18,11 +18,16 @@
 
 import unittest
 
-from astroid import bases
+import six
+
 from astroid import exceptions
 from astroid import nodes
-from astroid import objects
+from astroid.runtime import objects
 from astroid import test_utils
+
+
+BUILTINS = six.moves.builtins.__name__
+
 
 class ObjectsTest(unittest.TestCase):
 
@@ -33,7 +38,7 @@ class ObjectsTest(unittest.TestCase):
         inferred = next(node.infer())
         self.assertIsInstance(inferred, objects.FrozenSet)
 
-        self.assertEqual(inferred.pytype(), "%s.frozenset" % bases.BUILTINS)
+        self.assertEqual(inferred.pytype(), "%s.frozenset" % BUILTINS)
 
         itered = inferred.itered()
         self.assertEqual(len(itered), 2)
@@ -41,7 +46,7 @@ class ObjectsTest(unittest.TestCase):
         self.assertEqual([const.value for const in itered], [1, 2])
 
         proxied = inferred._proxied
-        self.assertEqual(inferred.qname(), "%s.frozenset" % bases.BUILTINS)
+        self.assertEqual(inferred.qname(), "%s.frozenset" % BUILTINS)
         self.assertIsInstance(proxied, nodes.ClassDef)
 
 
@@ -62,16 +67,16 @@ class SuperTests(unittest.TestCase):
         super() #@
         ''')
         in_static = next(ast_nodes[0].value.infer())
-        self.assertIsInstance(in_static, bases.Instance)
-        self.assertEqual(in_static.qname(), "%s.super" % bases.BUILTINS)
+        self.assertIsInstance(in_static, objects.Instance)
+        self.assertEqual(in_static.qname(), "%s.super" % BUILTINS)
 
         module_level = next(ast_nodes[1].infer())
-        self.assertIsInstance(module_level, bases.Instance)
-        self.assertEqual(in_static.qname(), "%s.super" % bases.BUILTINS)
+        self.assertIsInstance(module_level, objects.Instance)
+        self.assertEqual(in_static.qname(), "%s.super" % BUILTINS)
 
         no_arguments = next(ast_nodes[2].infer())
-        self.assertIsInstance(no_arguments, bases.Instance)
-        self.assertEqual(no_arguments.qname(), "%s.super" % bases.BUILTINS)
+        self.assertIsInstance(no_arguments, objects.Instance)
+        self.assertEqual(no_arguments.qname(), "%s.super" % BUILTINS)
 
     def test_inferring_unbound_super_doesnt_work(self):
         node = test_utils.extract_node('''
@@ -80,8 +85,8 @@ class SuperTests(unittest.TestCase):
                 super(Test) #@
         ''')
         unbounded = next(node.infer())
-        self.assertIsInstance(unbounded, bases.Instance)
-        self.assertEqual(unbounded.qname(), "%s.super" % bases.BUILTINS)
+        self.assertIsInstance(unbounded, objects.Instance)
+        self.assertEqual(unbounded.qname(), "%s.super" % BUILTINS)
 
     def test_use_default_inference_on_not_inferring_args(self):
         ast_nodes = test_utils.extract_node('''
@@ -91,12 +96,12 @@ class SuperTests(unittest.TestCase):
                 super(Test, lala) #@
         ''')
         first = next(ast_nodes[0].infer())
-        self.assertIsInstance(first, bases.Instance)
-        self.assertEqual(first.qname(), "%s.super" % bases.BUILTINS)
+        self.assertIsInstance(first, objects.Instance)
+        self.assertEqual(first.qname(), "%s.super" % BUILTINS)
 
         second = next(ast_nodes[1].infer())
-        self.assertIsInstance(second, bases.Instance)
-        self.assertEqual(second.qname(), "%s.super" % bases.BUILTINS)
+        self.assertIsInstance(second, objects.Instance)
+        self.assertEqual(second.qname(), "%s.super" % BUILTINS)
 
     @test_utils.require_version(maxver='3.0')
     def test_super_on_old_style_class(self):
@@ -130,7 +135,7 @@ class SuperTests(unittest.TestCase):
         ''')
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, objects.Super)
-        self.assertIsInstance(first.type, bases.Instance)
+        self.assertIsInstance(first.type, objects.Instance)
         self.assertEqual(first.type.name, 'Second')
         self.assertIsInstance(first.mro_pointer, nodes.ClassDef)
         self.assertEqual(first.mro_pointer.name, 'Second')
@@ -167,7 +172,7 @@ class SuperTests(unittest.TestCase):
         # super(Third, self)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, objects.Super)
-        self.assertIsInstance(first.type, bases.Instance)
+        self.assertIsInstance(first.type, objects.Instance)
         self.assertEqual(first.type.name, 'Third')
         self.assertIsInstance(first.mro_pointer, nodes.ClassDef)
         self.assertEqual(first.mro_pointer.name, 'Third')
@@ -175,7 +180,7 @@ class SuperTests(unittest.TestCase):
         # super(Second, self)
         second = next(ast_nodes[1].infer())
         self.assertIsInstance(second, objects.Super)
-        self.assertIsInstance(second.type, bases.Instance)
+        self.assertIsInstance(second.type, objects.Instance)
         self.assertEqual(second.type.name, 'Third')
         self.assertIsInstance(first.mro_pointer, nodes.ClassDef)
         self.assertEqual(second.mro_pointer.name, 'Second')
@@ -251,7 +256,7 @@ class SuperTests(unittest.TestCase):
         ''')
         inferred = next(node.infer())
         proxied = inferred._proxied
-        self.assertEqual(proxied.qname(), "%s.super" % bases.BUILTINS)
+        self.assertEqual(proxied.qname(), "%s.super" % BUILTINS)
         self.assertIsInstance(proxied, nodes.ClassDef)
 
     def test_super_bound_model(self):
@@ -282,7 +287,7 @@ class SuperTests(unittest.TestCase):
         self.assertEqual(first.name, 'method')
 
         second = next(ast_nodes[1].infer())
-        self.assertIsInstance(second, bases.BoundMethod)
+        self.assertIsInstance(second, objects.BoundMethod)
         self.assertEqual(second.bound.name, 'First')
         self.assertEqual(second.type, 'classmethod')
 
@@ -291,19 +296,19 @@ class SuperTests(unittest.TestCase):
         self.assertEqual(third.name, 'method')
 
         fourth = next(ast_nodes[3].infer())
-        self.assertIsInstance(fourth, bases.BoundMethod)
+        self.assertIsInstance(fourth, objects.BoundMethod)
         self.assertEqual(fourth.bound.name, 'First')
         self.assertEqual(fourth.type, 'classmethod')
 
         # Super(type, obj) can lead to different attribute bindings
         # depending on the type of the place where super was called.
         fifth = next(ast_nodes[4].infer())
-        self.assertIsInstance(fifth, bases.BoundMethod)
+        self.assertIsInstance(fifth, objects.BoundMethod)
         self.assertEqual(fifth.bound.name, 'First')
         self.assertEqual(fifth.type, 'method')
 
         sixth = next(ast_nodes[5].infer())
-        self.assertIsInstance(sixth, bases.BoundMethod)
+        self.assertIsInstance(sixth, objects.BoundMethod)
         self.assertEqual(sixth.bound.name, 'First')
         self.assertEqual(sixth.type, 'classmethod')
 
@@ -328,11 +333,11 @@ class SuperTests(unittest.TestCase):
 
         ''')
         first = next(ast_nodes[0].infer())
-        self.assertIsInstance(first, bases.BoundMethod)
+        self.assertIsInstance(first, objects.BoundMethod)
         self.assertEqual(first.bound.name, 'Second')
 
         second = next(ast_nodes[1].infer())
-        self.assertIsInstance(second, bases.BoundMethod)
+        self.assertIsInstance(second, objects.BoundMethod)
         self.assertEqual(second.bound.name, 'First')
 
         with self.assertRaises(exceptions.InferenceError):
@@ -386,13 +391,13 @@ class SuperTests(unittest.TestCase):
                 super(E, self).static #@
         ''')
         first = next(ast_nodes[0].infer())
-        self.assertIsInstance(first, bases.BoundMethod)
+        self.assertIsInstance(first, objects.BoundMethod)
         self.assertEqual(first.bound.name, 'C')
         second = next(ast_nodes[1].infer())
-        self.assertIsInstance(second, bases.BoundMethod)
+        self.assertIsInstance(second, objects.BoundMethod)
         self.assertEqual(second.bound.name, 'B')
         third = next(ast_nodes[2].infer())
-        self.assertIsInstance(third, bases.BoundMethod)
+        self.assertIsInstance(third, objects.BoundMethod)
         self.assertEqual(third.bound.name, 'B')
         fourth = next(ast_nodes[3].infer())
         self.assertEqual(fourth.bound.name, 'A')
@@ -417,7 +422,7 @@ class SuperTests(unittest.TestCase):
         self.assertIsInstance(selfclass, nodes.ClassDef)
         self.assertEqual(selfclass.name, 'A')
         self_ = first.getattr('__self__')[0]
-        self.assertIsInstance(self_, bases.Instance)
+        self.assertIsInstance(self_, objects.Instance)
         self.assertEqual(self_.name, 'A')
         cls = first.getattr('__class__')[0]
         self.assertEqual(cls, first._proxied)
@@ -477,9 +482,9 @@ class SuperTests(unittest.TestCase):
                 super(A, Missing) #@
         ''')
         first = next(ast_nodes[0].infer())
-        self.assertIsInstance(first, bases.Instance)
+        self.assertIsInstance(first, objects.Instance)
         second = next(ast_nodes[1].infer())
-        self.assertIsInstance(second, bases.Instance)
+        self.assertIsInstance(second, objects.Instance)
 
     def test_super_invalid_types(self):
         node = test_utils.extract_node('''

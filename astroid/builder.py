@@ -26,12 +26,12 @@ import os
 import sys
 import textwrap
 
-from astroid import bases
 from astroid import exceptions
 from astroid import manager
 from astroid import modutils
 from astroid import raw_building
 from astroid import rebuilder
+from astroid.runtime import objects
 from astroid import util
 
 
@@ -223,10 +223,10 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 if inferred is util.YES:
                     continue
                 try:
-                    if inferred.__class__ is bases.Instance:
+                    if inferred.__class__ is objects.Instance:
                         inferred = inferred._proxied
                         iattrs = inferred.instance_attrs
-                    elif isinstance(inferred, bases.Instance):
+                    elif isinstance(inferred, objects.Instance):
                         # Const, Tuple, ... we may be wrong, may be not, but
                         # anyway we don't want to pollute builtin's namespace
                         continue

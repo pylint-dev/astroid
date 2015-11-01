@@ -28,11 +28,12 @@ except ImportError:
 
 import six
 
+from astroid.interpreter.util import infer_stmts
 from astroid.tree import base
 from astroid.tree import treeabc
 from astroid.runtime import runtimeabc
+from astroid.runtime import objects
 from astroid import as_string
-from astroid import bases
 from astroid import context as contextmod
 from astroid import decorators
 from astroid import exceptions
@@ -179,7 +180,7 @@ class LookupMixIn(object):
         """
         frame, stmts = self.lookup(name)
         context = contextmod.InferenceContext()
-        return bases._infer_stmts(stmts, context, frame)
+        return infer_stmts(stmts, context, frame)
 
     def _filter_stmts(self, stmts, frame, offset):
         """filter statements to remove ignorable statements.
@@ -706,7 +707,7 @@ class Comprehension(base.NodeNG):
 
 @util.register_implementation(treeabc.Const)
 @util.register_implementation(runtimeabc.Instance)
-class Const(base.NodeNG, bases.Instance):
+class Const(base.NodeNG, objects.Instance):
     """represent a constant node like num, str, bool, None, bytes"""
     _other_fields = ('value',)
 
@@ -784,7 +785,7 @@ class Delete(mixins.AssignTypeMixin, Statement):
 
 
 @util.register_implementation(treeabc.Dict)
-class Dict(base.NodeNG, bases.Instance):
+class Dict(base.NodeNG, objects.Instance):
     """class representing a Dict node"""
     _astroid_fields = ('items',)
 
@@ -1068,7 +1069,7 @@ class Keyword(base.NodeNG):
 
 
 @util.register_implementation(treeabc.List)
-class List(base.BaseContainer, bases.Instance):
+class List(base.BaseContainer, objects.Instance):
     """class representing a List node"""
 
     def pytype(self):
@@ -1153,7 +1154,7 @@ class Return(Statement):
 
 
 @util.register_implementation(treeabc.Set)
-class Set(base.BaseContainer, bases.Instance):
+class Set(base.BaseContainer, objects.Instance):
     """class representing a Set node"""
 
     def pytype(self):
@@ -1277,7 +1278,7 @@ class TryFinally(mixins.BlockRangeMixIn, Statement):
 
 
 @util.register_implementation(treeabc.Tuple)
-class Tuple(base.BaseContainer, bases.Instance):
+class Tuple(base.BaseContainer, objects.Instance):
     """class representing a Tuple node"""
 
     def pytype(self):

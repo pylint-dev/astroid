@@ -27,10 +27,10 @@ import types
 
 import six
 
-from astroid import bases
 from astroid import manager
 from astroid import node_classes
 from astroid import nodes
+from astroid.runtime import objects
 
 
 MANAGER = manager.AstroidManager()
@@ -408,5 +408,5 @@ nodes.Const._proxied = property(_set_proxied)
 
 _GeneratorType = nodes.ClassDef(types.GeneratorType.__name__, types.GeneratorType.__doc__)
 _GeneratorType.parent = MANAGER.astroid_cache[six.moves.builtins.__name__]
-bases.Generator._proxied = _GeneratorType
-Astroid_BUILDER.object_build(bases.Generator._proxied, types.GeneratorType)
+objects.Generator._proxied = _GeneratorType
+Astroid_BUILDER.object_build(objects.Generator._proxied, types.GeneratorType)

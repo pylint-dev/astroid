@@ -14,13 +14,15 @@ import six
 from astroid import (MANAGER, UseInferenceDefault, NotFoundError,
                      inference_tip, InferenceError, UnresolvableName)
 from astroid import arguments
-from astroid import bases
 from astroid.builder import AstroidBuilder
 from astroid import helpers
 from astroid import nodes
-from astroid import objects
+from astroid.runtime import objects
 from astroid import scoped_nodes
 from astroid import util
+
+
+BUILTINS = six.moves.builtins.__name__
 
 def _extend_str(class_node, rvalue):
     """function to extend builtin str/unicode class"""
@@ -77,7 +79,7 @@ def _extend_str(class_node, rvalue):
         method.parent = class_node
 
 def extend_builtins(class_transforms):
-    builtin_ast = MANAGER.astroid_cache[bases.BUILTINS]
+    builtin_ast = MANAGER.astroid_cache[BUILTINS]
     for class_name, transform in class_transforms.items():
         transform(builtin_ast[class_name])
 
@@ -510,7 +512,7 @@ def infer_type_dunder_new(caller, context=None):
     if not isinstance(mcs, nodes.ClassDef):
         # Not a valid first argument.
         raise UseInferenceDefault
-    if not mcs.is_subtype_of("%s.type" % bases.BUILTINS):
+    if not mcs.is_subtype_of("%s.type" % BUILTINS):
         # Not a valid metaclass.
         raise UseInferenceDefault
 

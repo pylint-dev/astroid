@@ -24,7 +24,6 @@ import functools
 import itertools
 import operator
 
-from astroid import bases
 from astroid import context as contextmod
 from astroid import exceptions
 from astroid import decorators
@@ -32,6 +31,8 @@ from astroid import helpers
 from astroid import manager
 from astroid import nodes
 from astroid import protocols
+from astroid.runtime import objects
+from astroid.interpreter.util import infer_stmts
 from astroid import util
 
 
@@ -92,7 +93,7 @@ def infer_name(self, context=None):
             raise exceptions.UnresolvableName(self.name)
     context = context.clone()
     context.lookupname = self.name
-    return bases._infer_stmts(stmts, context, frame)
+    return infer_stmts(stmts, context, frame)
 nodes.Name._infer = decorators.path_wrapper(infer_name)
 nodes.AssignName.infer_lhs = infer_name # won't work with a path wrapper
 
@@ -152,7 +153,7 @@ def infer_import_from(self, context=None, asname=True):
         context = contextmod.copy_context(context)
         context.lookupname = name
         stmts = module.getattr(name, ignore_locals=module is self.root())
-        return bases._infer_stmts(stmts, context)
+        return infer_stmts(stmts, context)
     except exceptions.NotFoundError:
         util.reraise(exceptions.InferenceError(name))
 nodes.ImportFrom._infer = infer_import_from
@@ -184,8 +185,8 @@ def infer_global(self, context=None):
     if context.lookupname is None:
         raise exceptions.InferenceError()
     try:
-        return bases._infer_stmts(self.root().getattr(context.lookupname),
-                                  context)
+        return infer_stmts(self.root().getattr(context.lookupname),
+                           context)
     except exceptions.NotFoundError:
         util.reraise(exceptions.InferenceError())
 nodes.Global._infer = infer_global
@@ -239,7 +240,7 @@ def infer_subscript(self, context=None):
         yield util.YES
         return
 
-    if value.__class__ == bases.Instance:
+    if value.__class__ == objects.Instance:
         index_value = index
     else:
         index_value = _SLICE_SENTINEL
@@ -252,7 +253,7 @@ def infer_subscript(self, context=None):
             step = _slice_value(index.step, context)
             if all(elem is not _SLICE_SENTINEL for elem in (lower, upper, step)):
                 index_value = slice(lower, upper, step)
-        elif isinstance(index, bases.Instance):
+        elif isinstance(index, objects.Instance):
             index = helpers.class_instance_as_index(index)
             if index:
                 index_value = index.value
@@ -365,7 +366,7 @@ def _infer_unaryop(self, context=None):
                 else:
                     yield util.YES
             else:
-                if not isinstance(operand, bases.Instance):
+                if not isinstance(operand, objects.Instance):
                     # The operation was used on something which
                     # doesn't support it.
                     yield exceptions.UnaryOperationError(operand, self.op, exc)
@@ -675,7 +676,7 @@ def infer_assign(self, context=None):
         return stmt.infer(context)
 
     stmts = list(self.assigned_stmts(context=context))
-    return bases._infer_stmts(stmts, context)
+    return infer_stmts(stmts, context)
 nodes.AssignName._infer = infer_assign
 nodes.AssignAttr._infer = infer_assign
 

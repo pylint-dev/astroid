@@ -1,4 +1,4 @@
-# copyright 2003-2013 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
+# copyright 2003-2015 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
 # This file is part of astroid.
@@ -15,24 +15,37 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
-"""This module contains base classes and functions for the nodes and some
-inference utils.
-"""
 
+"""
+Inference objects are a way to represent objects which are available
+only at runtime, so they can't be found in the original AST tree.
+For instance, inferring the following frozenset use, leads to an inferred
+FrozenSet:
+
+    Call(func=Name('frozenset'), args=Tuple(...))
+"""
 import sys
 
+import six
+
 from astroid import context as contextmod
+from astroid import decorators
 from astroid import exceptions
+from astroid.interpreter.util import infer_stmts
+from astroid import manager
 from astroid.runtime import runtimeabc
-from astroid import util
+from astroid.tree import base
 from astroid.tree import treeabc
+from astroid import util
+
+
+BUILTINS = six.moves.builtins.__name__
+MANAGER = manager.AstroidManager()
 
 
 if sys.version_info >= (3, 0):
-    BUILTINS = 'builtins'
     BOOL_SPECIAL_METHOD = '__bool__'
 else:
-    BUILTINS = '__builtin__'
     BOOL_SPECIAL_METHOD = '__nonzero__'
 PROPERTIES = {BUILTINS + '.property', 'abc.abstractproperty'}
 # List of possible property names. We use this list in order
@@ -50,7 +63,7 @@ POSSIBLE_PROPERTIES = {"cached_property", "cachedproperty",
                        "LazyProperty"}
 
 
-def _is_property(meth):
+def is_property(meth):
     if PROPERTIES.intersection(meth.decoratornames()):
         return True
     stripped = {name.split(".")[-1] for name in meth.decoratornames()
@@ -76,36 +89,6 @@ class Proxy(object):
 
     def infer(self, context=None):
         yield self
-
-
-def _infer_stmts(stmts, context, frame=None):
-    """Return an iterator on statements inferred by each statement in *stmts*."""
-    stmt = None
-    inferred = False
-    if context is not None:
-        name = context.lookupname
-        context = context.clone()
-    else:
-        name = None
-        context = contextmod.InferenceContext()
-
-    for stmt in stmts:
-        if stmt is util.YES:
-            yield stmt
-            inferred = True
-            continue
-        context.lookupname = stmt._infer_name(frame, name)
-        try:
-            for inferred in stmt.infer(context=context):
-                yield inferred
-                inferred = True
-        except exceptions.UnresolvableName:
-            continue
-        except exceptions.InferenceError:
-            yield util.YES
-            inferred = True
-    if not inferred:
-        raise exceptions.InferenceError(str(stmt))
 
 
 def _infer_method_result_truth(instance, method_name, context):
@@ -163,8 +146,8 @@ class Instance(Proxy):
 
             # XXX frame should be self._proxied, or not ?
             get_attr = self.getattr(name, context, lookupclass=False)
-            for stmt in _infer_stmts(self._wrap_attr(get_attr, context),
-                                     context, frame=self):
+            for stmt in infer_stmts(self._wrap_attr(get_attr, context),
+                                    context, frame=self):
                 yield stmt
         except exceptions.NotFoundError:
             try:
@@ -180,7 +163,7 @@ class Instance(Proxy):
         """wrap bound methods of attrs in a InstanceMethod proxies"""
         for attr in attrs:
             if isinstance(attr, UnboundMethod):
-                if _is_property(attr):
+                if is_property(attr):
                     for inferred in attr.infer_call_result(self, context):
                         yield inferred
                 else:
@@ -357,3 +340,136 @@ class Generator(Instance):
 
     def __str__(self):
         return 'Generator(%s)' % (self._proxied.name)
+
+
+class FrozenSet(base.BaseContainer, Instance):
+    """Class representing a FrozenSet composite node."""
+
+    def pytype(self):
+        return '%s.frozenset' % BUILTINS
+
+    def _infer(self, context=None):
+        yield self
+
+    @decorators.cachedproperty
+    def _proxied(self):
+        builtins = MANAGER.astroid_cache[BUILTINS]
+        return builtins.getattr('frozenset')[0]
+
+
+class Super(base.NodeNG):
+    """Proxy class over a super call.
+
+    This class offers almost the same behaviour as Python's super,
+    which is MRO lookups for retrieving attributes from the parents.
+
+    The *mro_pointer* is the place in the MRO from where we should
+    start looking, not counting it. *mro_type* is the object which
+    provides the MRO, it can be both a type or an instance.
+    *self_class* is the class where the super call is, while
+    *scope* is the function where the super call is.
+    """
+
+    def __init__(self, mro_pointer, mro_type, self_class, scope):
+        self.type = mro_type
+        self.mro_pointer = mro_pointer
+        self._class_based = False
+        self._self_class = self_class
+        self._scope = scope
+        self._model = {
+            '__thisclass__': self.mro_pointer,
+            '__self_class__': self._self_class,
+            '__self__': self.type,
+            '__class__': self._proxied,
+        }
+
+    def _infer(self, context=None):
+        yield self
+
+    def super_mro(self):
+        """Get the MRO which will be used to lookup attributes in this super."""
+        if not isinstance(self.mro_pointer, treeabc.ClassDef):
+            raise exceptions.SuperArgumentTypeError(
+                "The first super argument must be type.")
+
+        if isinstance(self.type, treeabc.ClassDef):
+            # `super(type, type)`, most likely in a class method.
+            self._class_based = True
+            mro_type = self.type
+        else:
+            mro_type = getattr(self.type, '_proxied', None)
+            if not isinstance(mro_type, (runtimeabc.Instance, treeabc.ClassDef)):
+                raise exceptions.SuperArgumentTypeError(
+                    "super(type, obj): obj must be an "
+                    "instance or subtype of type")
+
+        if not mro_type.newstyle:
+            raise exceptions.SuperError("Unable to call super on old-style classes.")
+
+        mro = mro_type.mro()
+        if self.mro_pointer not in mro:
+            raise exceptions.SuperArgumentTypeError(
+                "super(type, obj): obj must be an "
+                "instance or subtype of type")
+
+        index = mro.index(self.mro_pointer)
+        return mro[index + 1:]
+
+    @decorators.cachedproperty
+    def _proxied(self):
+        builtins = MANAGER.astroid_cache[BUILTINS]
+        return builtins.getattr('super')[0]
+
+    def pytype(self):
+        return '%s.super' % BUILTINS
+
+    def display_type(self):
+        return 'Super of'
+
+    @property
+    def name(self):
+        """Get the name of the MRO pointer."""
+        return self.mro_pointer.name
+
+    def igetattr(self, name, context=None):
+        """Retrieve the inferred values of the given attribute name."""
+
+        local_name = self._model.get(name)
+        if local_name:
+            yield local_name
+            return
+
+        try:
+            mro = self.super_mro()
+        except (exceptions.MroError, exceptions.SuperError) as exc:
+            # Don't let invalid MROs or invalid super calls
+            # to leak out as is from this function.
+            util.reraise(exceptions.NotFoundError(*exc.args))
+
+        found = False
+        for cls in mro:
+            if name not in cls.locals:
+                continue
+
+            found = True
+            for inferred in infer_stmts([cls[name]], context, frame=self):
+                if not isinstance(inferred, treeabc.FunctionDef):
+                    yield inferred
+                    continue
+
+                # We can obtain different descriptors from a super depending
+                # on what we are accessing and where the super call is.
+                if inferred.type == 'classmethod':
+                    yield BoundMethod(inferred, cls)
+                elif self._scope.type == 'classmethod' and inferred.type == 'method':
+                    yield inferred
+                elif self._class_based or inferred.type == 'staticmethod':
+                    yield inferred
+                else:
+                    yield BoundMethod(inferred, cls)
+
+        if not found:
+            raise exceptions.NotFoundError(name)
+
+    def getattr(self, name, context=None):
+        return list(self.igetattr(name, context=context))

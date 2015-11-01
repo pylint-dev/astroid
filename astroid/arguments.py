@@ -16,10 +16,11 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 
-from astroid import bases
 from astroid import context as contextmod
 from astroid import exceptions
 from astroid import nodes
+from astroid.runtime import objects
+from astroid.runtime import runtimeabc
 from astroid import util
 
 import six
@@ -184,8 +185,8 @@ class CallSite(object):
                     # XXX can do better ?
                     boundnode = funcnode.parent.frame()
                 if funcnode.type == 'method':
-                    if not isinstance(boundnode, bases.Instance):
-                        boundnode = bases.Instance(boundnode)
+                    if not isinstance(boundnode, runtimeabc.Instance):
+                        boundnode = objects.Instance(boundnode)
                     return iter((boundnode,))
                 if funcnode.type == 'classmethod':
                     return iter((boundnode,))

@@ -25,7 +25,6 @@ import warnings
 
 import six
 
-from astroid import bases
 from astroid import builder
 from astroid import context as contextmod
 from astroid import exceptions
@@ -33,6 +32,7 @@ from astroid import node_classes
 from astroid import nodes
 from astroid import parse
 from astroid.runtime import runtimeabc
+from astroid.runtime import objects
 from astroid import util
 from astroid import test_utils
 from astroid import transforms
@@ -560,7 +560,7 @@ class BoundMethodNodeTest(unittest.TestCase):
             self.assertEqual(inferred.value, 42, prop)
 
         inferred = next(ast['not_prop'].infer())
-        self.assertIsInstance(inferred, bases.BoundMethod)
+        self.assertIsInstance(inferred, objects.BoundMethod)
 
 
 class AliasesTest(unittest.TestCase):
@@ -757,10 +757,10 @@ class BaseTypesTest(unittest.TestCase):
             base_type = getattr(treeabc, name)
             self.assertTrue(issubclass(node, base_type), (node, base_type))
 
-        self.assertTrue(issubclass(bases.Instance, runtimeabc.Instance))
-        self.assertTrue(issubclass(bases.Generator, runtimeabc.Generator))
-        self.assertTrue(issubclass(bases.BoundMethod, runtimeabc.BoundMethod))
-        self.assertTrue(issubclass(bases.UnboundMethod, runtimeabc.UnboundMethod))
+        self.assertTrue(issubclass(objects.Instance, runtimeabc.Instance))
+        self.assertTrue(issubclass(objects.Generator, runtimeabc.Generator))
+        self.assertTrue(issubclass(objects.BoundMethod, runtimeabc.BoundMethod))
+        self.assertTrue(issubclass(objects.UnboundMethod, runtimeabc.UnboundMethod))
         
 
 if __name__ == '__main__':

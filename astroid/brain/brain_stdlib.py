@@ -5,8 +5,9 @@ import sys
 from textwrap import dedent
 
 from astroid import (
-    MANAGER, UseInferenceDefault, inference_tip, BoundMethod,
+    MANAGER, UseInferenceDefault, inference_tip,
     InferenceError, register_module_extender)
+from astroid.runtime.objects import BoundMethod
 from astroid import exceptions
 from astroid import nodes
 from astroid.builder import AstroidBuilder

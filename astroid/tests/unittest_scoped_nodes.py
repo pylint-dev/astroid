@@ -24,6 +24,8 @@ from functools import partial
 import unittest
 import warnings
 
+import six
+
 from astroid import builder
 from astroid import nodes
 from astroid import scoped_nodes
@@ -33,13 +35,15 @@ from astroid.exceptions import (
     NoDefault, ResolveError, MroError,
     InconsistentMroError, DuplicateBasesError,
 )
-from astroid.bases import (
-    BUILTINS, Instance,
-    BoundMethod, UnboundMethod, Generator
+from astroid.runtime.objects import (
+    Instance, BoundMethod, UnboundMethod, Generator
 )
 from astroid import __pkginfo__
 from astroid import test_utils
 from astroid.tests import resources
+
+
+BUILTINS = six.moves.builtins.__name__
 
 
 def _test_dict_interface(self, node, test_attr):

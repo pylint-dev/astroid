@@ -48,6 +48,12 @@ from operator import attrgetter
 
 # pylint: disable=redefined-builtin, wildcard-import
 
+from astroid.runtime.objects import Instance, BoundMethod, UnboundMethod
+# make a manager instance (borg) accessible from astroid package
+from astroid.manager import AstroidManager
+MANAGER = AstroidManager()
+del AstroidManager
+
 # make all exception classes accessible from astroid package
 from astroid.exceptions import *
 
@@ -57,18 +63,12 @@ from astroid.nodes import *
 # trigger extra monkey-patching
 from astroid import inference
 
-# more stuff available
 from astroid import raw_building
-from astroid.bases import Instance, BoundMethod, UnboundMethod
 from astroid.node_classes import are_exclusive, unpack_infer
 from astroid.scoped_nodes import builtin_lookup
 from astroid.builder import parse
 from astroid.util import YES
 
-# make a manager instance (borg) accessible from astroid package
-from astroid.manager import AstroidManager
-MANAGER = AstroidManager()
-del AstroidManager
 
 # transform utilities (filters and decorator)
 

@@ -29,9 +29,10 @@ import warnings
 import six
 import wrapt
 
+from astroid.interpreter.util import infer_stmts
 from astroid.tree import base as treebase
 from astroid.tree import treeabc
-from astroid import bases
+from astroid.runtime import objects
 from astroid import context as contextmod
 from astroid import exceptions
 from astroid import manager
@@ -101,9 +102,9 @@ def remove_nodes(cls):
 def function_to_method(n, klass):
     if isinstance(n, FunctionDef):
         if n.type == 'classmethod':
-            return bases.BoundMethod(n, klass)
+            return objects.BoundMethod(n, klass)
         if n.type != 'staticmethod':
-            return bases.UnboundMethod(n)
+            return objects.UnboundMethod(n)
     return n
 
 
@@ -381,8 +382,8 @@ class Module(LocalsDictNodeNG):
         context = contextmod.copy_context(context)
         context.lookupname = name
         try:
-            return bases._infer_stmts(self.getattr(name, context),
-                                      context, frame=self)
+            return infer_stmts(self.getattr(name, context),
+                               context, frame=self)
         except exceptions.NotFoundError:
             util.reraise(exceptions.InferenceError(name))
 
@@ -625,7 +626,7 @@ def _infer_decorator_callchain(node):
         result = next(node.infer_call_result(node.parent))
     except (StopIteration, exceptions.InferenceError):
         return
-    if isinstance(result, bases.Instance):
+    if isinstance(result, objects.Instance):
         result = result._proxied
     if isinstance(result, ClassDef):
         if result.is_subtype_of('%s.classmethod' % BUILTINS):
@@ -860,8 +861,8 @@ class FunctionDef(node_classes.Statement, Lambda):
     def igetattr(self, name, context=None):
         """Inferred getattr, which returns an iterator of inferred statements."""
         try:
-            return bases._infer_stmts(self.getattr(name, context),
-                                      context, frame=self)
+            return infer_stmts(self.getattr(name, context),
+                               context, frame=self)
         except exceptions.NotFoundError:
             util.reraise(exceptions.InferenceError(name))
 
@@ -925,7 +926,7 @@ class FunctionDef(node_classes.Statement, Lambda):
     def infer_call_result(self, caller, context=None):
         """infer what a function is returning when called"""
         if self.is_generator():
-            result = bases.Generator()
+            result = objects.Generator()
             result.parent = self
             yield result
             return
@@ -996,7 +997,7 @@ def _is_metaclass(klass, seen=None):
                     continue
                 else:
                     seen.add(baseobj_name)
-                if isinstance(baseobj, bases.Instance):
+                if isinstance(baseobj, objects.Instance):
                     # not abstract
                     return False
                 if baseobj is util.YES:
@@ -1206,7 +1207,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             result = self._infer_type_call(caller, context)
             yield result
         else:
-            yield bases.Instance(self)
+            yield objects.Instance(self)
 
     def scope_lookup(self, node, name, offset=0):
         if any(node == base or base.parent_of(node)
@@ -1260,7 +1261,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                 try:
                     for baseobj in stmt.infer(context):
                         if not isinstance(baseobj, ClassDef):
-                            if isinstance(baseobj, bases.Instance):
+                            if isinstance(baseobj, objects.Instance):
                                 baseobj = baseobj._proxied
                             else:
                                 continue
@@ -1349,7 +1350,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
     def instanciate_class(self):
         """return Instance of ClassDef node, else return self"""
-        return bases.Instance(self)
+        return objects.Instance(self)
 
     def getattr(self, name, context=None, class_context=True):
         """Get an attribute from this class, using Python's attribute semantic
@@ -1411,13 +1412,12 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         except exceptions.NotFoundError:
             return
 
-        for attr in bases._infer_stmts(attrs, context, frame=cls):
+        for attr in infer_stmts(attrs, context, frame=cls):
             if not isinstance(attr, FunctionDef):
                 yield attr
                 continue
 
-            if bases._is_property(attr):
-                # TODO(cpopa): don't use a private API.
+            if objects.is_property(attr):
                 for inferred in attr.infer_call_result(self, context):
                     yield inferred
                 continue
@@ -1428,11 +1428,11 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                 # get_wrapping_class could return None, so just
                 # default to the current class.
                 frame = get_wrapping_class(attr) or self
-                yield bases.BoundMethod(attr, frame)
+                yield objects.BoundMethod(attr, frame)
             elif attr.type == 'staticmethod':
                 yield attr
             else:
-                yield bases.BoundMethod(attr, self)
+                yield objects.BoundMethod(attr, self)
 
     def igetattr(self, name, context=None):
         """inferred getattr, need special treatment in class to handle
@@ -1443,11 +1443,11 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         context = contextmod.copy_context(context)
         context.lookupname = name
         try:
-            for inferred in bases._infer_stmts(self.getattr(name, context),
-                                               context, frame=self):
+            for inferred in infer_stmts(self.getattr(name, context),
+                                        context, frame=self):
                 # yield YES object instead of descriptors when necessary
                 if (not isinstance(inferred, node_classes.Const)
-                        and isinstance(inferred, bases.Instance)):
+                        and isinstance(inferred, objects.Instance)):
                     try:
                         inferred._proxied.getattr('__get__', context)
                     except exceptions.NotFoundError:
@@ -1696,7 +1696,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                 baseobj = next(stmt.infer(context=context))
             except exceptions.InferenceError:
                 continue
-            if isinstance(baseobj, bases.Instance):
+            if isinstance(baseobj, objects.Instance):
                 baseobj = baseobj._proxied
             if not isinstance(baseobj, ClassDef):
                 continue

@@ -11,7 +11,9 @@ from astroid.raw_building import (
 )
 from astroid import test_utils
 from astroid import nodes
-from astroid.bases import BUILTINS
+
+
+BUILTINS = builtins.__name__
 
 
 class RawBuildingTC(unittest.TestCase):

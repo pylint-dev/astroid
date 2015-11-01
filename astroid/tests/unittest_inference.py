@@ -28,12 +28,13 @@ import six
 from astroid import InferenceError, builder, nodes
 from astroid.builder import parse
 from astroid.inference import infer_end as inference_infer_end
-from astroid.bases import Instance, BoundMethod, UnboundMethod,\
-                                BUILTINS
+from astroid.runtime.objects import (
+    Instance, BoundMethod, UnboundMethod, FrozenSet
+)
+
 from astroid import arguments
 from astroid import decorators as decoratorsmod
 from astroid import helpers
-from astroid import objects
 from astroid import test_utils
 from astroid import util
 from astroid.tests import resources
@@ -44,13 +45,13 @@ def get_node_of_class(start_from, klass):
 
 builder = builder.AstroidBuilder()
 
+BUILTINS = six.moves.builtins.__name__
 if sys.version_info < (3, 0):
     EXC_MODULE = 'exceptions'
     BOOL_SPECIAL_METHOD = '__nonzero__'
 else:
     EXC_MODULE = BUILTINS
     BOOL_SPECIAL_METHOD = '__bool__'
-
 
 class InferenceUtilsTest(unittest.TestCase):
 
@@ -96,7 +97,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
     assertInferTuple = partialmethod(_assertInferElts, nodes.Tuple)
     assertInferList = partialmethod(_assertInferElts, nodes.List)
     assertInferSet = partialmethod(_assertInferElts, nodes.Set)
-    assertInferFrozenSet = partialmethod(_assertInferElts, objects.FrozenSet)
+    assertInferFrozenSet = partialmethod(_assertInferElts, FrozenSet)
 
     CODE = '''
         class C(object):

@@ -21,14 +21,15 @@ import unittest
 import six
 
 from astroid import MANAGER
-from astroid import bases
 from astroid import builder
 from astroid import nodes
+from astroid.runtime import objects
 from astroid import test_utils
 from astroid import util
 import astroid
 
 
+BUILTINS = six.moves.builtins.__name__
 try:
     import nose # pylint: disable=unused-import
     HAS_NOSE = True
@@ -338,7 +339,7 @@ class MultiprocessingBrainTest(unittest.TestCase):
         for attr in ('list', 'dict'):
             obj = next(module[attr].infer())
             self.assertEqual(obj.qname(),
-                             "{}.{}".format(bases.BUILTINS, attr))
+                             "{}.{}".format(BUILTINS, attr))
 
         array = next(module['array'].infer())
         self.assertEqual(array.qname(), "array.array")
@@ -372,7 +373,7 @@ class EnumBrainTest(unittest.TestCase):
         one = enum['one']
         self.assertEqual(one.pytype(), '.MyEnum.one')
 
-        property_type = '{}.property'.format(bases.BUILTINS)
+        property_type = '{}.property'.format(BUILTINS)
         for propname in ('name', 'value'):
             prop = next(iter(one.getattr(propname)))
             self.assertIn(property_type, prop.decoratornames())
@@ -421,7 +422,7 @@ class EnumBrainTest(unittest.TestCase):
         one = enum['one']
 
         clazz = one.getattr('__class__')[0]
-        int_type = '{}.{}'.format(bases.BUILTINS, 'int')
+        int_type = '{}.{}'.format(BUILTINS, 'int')
         self.assertTrue(clazz.is_subtype_of(int_type),
                         'IntEnum based enums should be a subtype of int')
 
@@ -435,7 +436,7 @@ class EnumBrainTest(unittest.TestCase):
         inferred_cls = next(cls.infer())
         self.assertIsInstance(inferred_cls, nodes.ClassDef)
         inferred_instance = next(instance.infer())
-        self.assertIsInstance(inferred_instance, bases.Instance)
+        self.assertIsInstance(inferred_instance, objects.Instance)
 
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")

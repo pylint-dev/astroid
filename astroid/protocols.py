@@ -26,13 +26,13 @@ import sys
 import six
 
 from astroid import arguments
-from astroid import bases
 from astroid import context as contextmod
 from astroid import exceptions
 from astroid import decorators
 from astroid import node_classes
 from astroid import helpers
 from astroid import nodes
+from astroid.runtime import objects
 from astroid import util
 
 
@@ -167,7 +167,7 @@ def tl_infer_binary_op(self, operator, other, context, method):
             yield not_implemented
             return
         yield _multiply_seq_by_int(self, other, context)
-    elif isinstance(other, bases.Instance) and operator == '*':
+    elif isinstance(other, objects.Instance) and operator == '*':
         # Verify if the instance supports __index__.
         as_index = helpers.class_instance_as_index(other)
         if not as_index:
@@ -185,7 +185,7 @@ nodes.List.infer_binary_op = tl_infer_binary_op
 def instance_infer_binary_op(self, operator, other, context, method):
     return method.infer_call_result(self, context)
 
-bases.Instance.infer_binary_op = instance_infer_binary_op
+objects.Instance.infer_binary_op = instance_infer_binary_op
 
 
 # assignment ##################################################################
@@ -281,7 +281,7 @@ def _arguments_infer_argname(self, name, context):
     if self.args and getattr(self.args[0], 'name', None) == name:
         functype = self.parent.type
         if functype == 'method':
-            yield bases.Instance(self.parent.parent.frame())
+            yield objects.Instance(self.parent.parent.frame())
             return
         if functype == 'classmethod':
             yield self.parent.parent.frame()
@@ -373,7 +373,7 @@ def _resolve_asspart(parts, asspath, context):
 def excepthandler_assigned_stmts(self, node, context=None, asspath=None):
     for assigned in node_classes.unpack_infer(self.type):
         if isinstance(assigned, nodes.ClassDef):
-            assigned = bases.Instance(assigned)
+            assigned = objects.Instance(assigned)
         yield assigned
 
 nodes.ExceptHandler.assigned_stmts = excepthandler_assigned_stmts
@@ -384,7 +384,7 @@ def _infer_context_manager(self, mgr, context):
         inferred = next(mgr.infer(context=context))
     except exceptions.InferenceError:
         return
-    if isinstance(inferred, bases.Generator):
+    if isinstance(inferred, objects.Generator):
         # Check if it is decorated with contextlib.contextmanager.
         func = inferred.parent
         if not func.decorators:
@@ -412,12 +412,12 @@ def _infer_context_manager(self, mgr, context):
             else:
                 for inferred in yield_point.value.infer(context=context):
                     yield inferred
-    elif isinstance(inferred, bases.Instance):
+    elif isinstance(inferred, objects.Instance):
         try:
             enter = next(inferred.igetattr('__enter__', context=context))
         except (exceptions.InferenceError, exceptions.NotFoundError):
             return
-        if not isinstance(enter, bases.BoundMethod):
+        if not isinstance(enter, objects.BoundMethod):
             return
         if not context.callcontext:
             context.callcontext = contextmod.CallContext(args=[inferred])
@@ -444,7 +444,6 @@ def with_assigned_stmts(self, node, context=None, asspath=None):
         # ContextManager().infer() will return ContextManager
         # f.infer() will return 42.
     """
-
     mgr = next(mgr for (mgr, vars) in self.items if vars == node)
     if asspath is None:
         for result in _infer_context_manager(self, mgr, context):
