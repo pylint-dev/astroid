@@ -33,6 +33,7 @@ from astroid import nodes
 from astroid import parse
 from astroid.interpreter import runtimeabc
 from astroid.interpreter import objects
+from astroid.interpreter import util as inferenceutil
 from astroid import util
 from astroid import test_utils
 from astroid import transforms
@@ -378,7 +379,7 @@ from ..cave import wine\n\n"""
         astroid = builder.parse(code)
         handler_type = astroid.body[1].handlers[0].type
 
-        excs = list(node_classes.unpack_infer(handler_type))
+        excs = list(inferenceutil.unpack_infer(handler_type))
         # The number of returned object can differ on Python 2
         # and Python 3. In one version, an additional item will
         # be returned, from the _pickle module, which is not

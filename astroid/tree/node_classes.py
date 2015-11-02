@@ -18,104 +18,26 @@
 """Module for some node classes. More nodes in scoped_nodes.py
 """
 
-import abc
-import pprint
 import warnings
 
 import six
 
-from astroid.tree import base
-from astroid import as_string
 from astroid import context as contextmod
 from astroid import decorators
 from astroid import exceptions
 from astroid.interpreter.util import infer_stmts
 from astroid.interpreter import runtimeabc
 from astroid.interpreter import objects
+from astroid.interpreter import util as inferenceutil
 from astroid import manager
 from astroid import mixins
+from astroid.tree import base
 from astroid.tree import treeabc
 from astroid import util
 
 
 BUILTINS = six.moves.builtins.__name__
 MANAGER = manager.AstroidManager()
-
-
-def unpack_infer(stmt, context=None):
-    """recursively generate nodes inferred by the given statement.
-    If the inferred value is a list or a tuple, recurse on the elements
-    """
-    if isinstance(stmt, (List, Tuple)):
-        for elt in stmt.elts:
-            for inferred_elt in unpack_infer(elt, context):
-                yield inferred_elt
-        return
-    # if inferred is a final node, return it and stop
-    inferred = next(stmt.infer(context))
-    if inferred is stmt:
-        yield inferred
-        return
-    # else, infer recursivly, except YES object that should be returned as is
-    for inferred in stmt.infer(context):
-        if inferred is util.YES:
-            yield inferred
-        else:
-            for inf_inf in unpack_infer(inferred, context):
-                yield inf_inf
-
-
-def are_exclusive(stmt1, stmt2, exceptions=None):
-    """return true if the two given statements are mutually exclusive
-
-    `exceptions` may be a list of exception names. If specified, discard If
-    branches and check one of the statement is in an exception handler catching
-    one of the given exceptions.
-
-    algorithm :
-     1) index stmt1's parents
-     2) climb among stmt2's parents until we find a common parent
-     3) if the common parent is a If or TryExcept statement, look if nodes are
-        in exclusive branches
-    """
-    # index stmt1's parents
-    stmt1_parents = {}
-    children = {}
-    node = stmt1.parent
-    previous = stmt1
-    while node:
-        stmt1_parents[node] = 1
-        children[node] = previous
-        previous = node
-        node = node.parent
-    # climb among stmt2's parents until we find a common parent
-    node = stmt2.parent
-    previous = stmt2
-    while node:
-        if node in stmt1_parents:
-            # if the common parent is a If or TryExcept statement, look if
-            # nodes are in exclusive branches
-            if isinstance(node, If) and exceptions is None:
-                if (node.locate_child(previous)[1]
-                        is not node.locate_child(children[node])[1]):
-                    return True
-            elif isinstance(node, TryExcept):
-                c2attr, c2node = node.locate_child(previous)
-                c1attr, c1node = node.locate_child(children[node])
-                if c1node is not c2node:
-                    if ((c2attr == 'body'
-                         and c1attr == 'handlers'
-                         and children[node].catch(exceptions)) or
-                            (c2attr == 'handlers' and c1attr == 'body' and previous.catch(exceptions)) or
-                            (c2attr == 'handlers' and c1attr == 'orelse') or
-                            (c2attr == 'orelse' and c1attr == 'handlers')):
-                        return True
-                elif c2attr == 'handlers' and c1attr == 'handlers':
-                    return previous is not children[node]
-            return False
-        previous = node
-        node = node.parent
-    return False
 
 
 def _container_getitem(instance, elts, index):
@@ -281,7 +203,7 @@ class LookupMixIn(object):
                 # necessarily be done if the loop has no iteration, so we don't
                 # want to clear previous assigments if any (hence the test on
                 # optional_assign)
-                if not (optional_assign or are_exclusive(_stmts[pindex], node)):
+                if not (optional_assign or inferenceutil.are_exclusive(_stmts[pindex], node)):
                     del _stmt_parents[pindex]
                     del _stmts[pindex]
             if isinstance(node, AssignName):
@@ -292,7 +214,7 @@ class LookupMixIn(object):
                 _stmts = []
                 _stmt_parents = []
                 continue
-            if not are_exclusive(self, node):
+            if not inferenceutil.are_exclusive(self, node):
                 _stmts.append(node)
                 _stmt_parents.append(stmt.parent)
         return _stmts

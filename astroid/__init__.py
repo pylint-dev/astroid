@@ -64,7 +64,7 @@ from astroid.nodes import *
 from astroid import inference
 
 from astroid import raw_building
-from astroid.tree.node_classes import are_exclusive, unpack_infer
+from astroid.interpreter.util import are_exclusive, unpack_infer
 from astroid.tree.scoped_nodes import builtin_lookup
 from astroid.builder import parse
 from astroid.util import YES

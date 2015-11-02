@@ -30,9 +30,9 @@ from astroid import context as contextmod
 from astroid import exceptions
 from astroid import decorators
 from astroid.interpreter import objects
+from astroid.interpreter import util as inferenceutil
 from astroid import helpers
 from astroid import nodes
-from astroid.tree import node_classes
 from astroid import util
 
 
@@ -371,7 +371,7 @@ def _resolve_asspart(parts, asspath, context):
 
 @decorators.raise_if_nothing_inferred
 def excepthandler_assigned_stmts(self, node, context=None, asspath=None):
-    for assigned in node_classes.unpack_infer(self.type):
+    for assigned in inferenceutil.unpack_infer(self.type):
         if isinstance(assigned, nodes.ClassDef):
             assigned = objects.Instance(assigned)
         yield assigned
