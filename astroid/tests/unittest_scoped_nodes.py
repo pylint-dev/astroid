@@ -24,12 +24,13 @@ from functools import partial
 import unittest
 import warnings
 
+import astroid
 from astroid import builder
 from astroid import nodes
 from astroid import scoped_nodes
 from astroid import util
 from astroid.exceptions import (
-    InferenceError, NotFoundError,
+    InferenceError, AttributeInferenceError,
     NoDefault, ResolveError, MroError,
     InconsistentMroError, DuplicateBasesError,
 )
@@ -75,7 +76,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
                          os.path.abspath(resources.find('data/module.py')))
         self.assertEqual(len(self.module.getattr('__dict__')), 1)
         self.assertIsInstance(self.module.getattr('__dict__')[0], nodes.Dict)
-        self.assertRaises(NotFoundError, self.module.getattr, '__path__')
+        self.assertRaises(AttributeInferenceError, self.module.getattr, '__path__')
         self.assertEqual(len(self.pack.getattr('__path__')), 1)
         self.assertIsInstance(self.pack.getattr('__path__')[0], nodes.List)
 
@@ -101,7 +102,6 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(cnx.name, 'Connection')
         self.assertEqual(cnx.root().name, 'data.SSL1.Connection1')
         self.assertEqual(len(self.nonregr.getattr('enumerate')), 2)
-        # raise ResolveError
         self.assertRaises(InferenceError, self.nonregr.igetattr, 'YOAA')
 
     def test_wildcard_import_names(self):
@@ -574,7 +574,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(cls.getattr('__module__')[0].value, 'data.module')
         self.assertEqual(len(cls.getattr('__dict__')), 1)
         if not cls.newstyle:
-            self.assertRaises(NotFoundError, cls.getattr, '__mro__')
+            self.assertRaises(AttributeInferenceError, cls.getattr, '__mro__')
         for cls in (nodes.List._proxied, nodes.Const(1)._proxied):
             self.assertEqual(len(cls.getattr('__bases__')), 1)
             self.assertEqual(len(cls.getattr('__name__')), 1)
@@ -620,9 +620,9 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
     def test_instance_special_attributes(self):
         for inst in (Instance(self.module['YO']), nodes.List(), nodes.Const(1)):
-            self.assertRaises(NotFoundError, inst.getattr, '__mro__')
-            self.assertRaises(NotFoundError, inst.getattr, '__bases__')
-            self.assertRaises(NotFoundError, inst.getattr, '__name__')
+            self.assertRaises(AttributeInferenceError, inst.getattr, '__mro__')
+            self.assertRaises(AttributeInferenceError, inst.getattr, '__bases__')
+            self.assertRaises(AttributeInferenceError, inst.getattr, '__name__')
             self.assertEqual(len(inst.getattr('__dict__')), 1)
             self.assertEqual(len(inst.getattr('__doc__')), 1)
 
@@ -717,7 +717,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         method_locals = klass2.local_attr('method')
         self.assertEqual(len(method_locals), 1)
         self.assertEqual(method_locals[0].name, 'method')
-        self.assertRaises(NotFoundError, klass2.local_attr, 'nonexistant')
+        self.assertRaises(AttributeInferenceError, klass2.local_attr, 'nonexistant')
         methods = {m.name for m in klass2.methods()}
         self.assertTrue(methods.issuperset(expected_methods))
 
@@ -1299,18 +1299,16 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqualMro(astroid['E1'], ['E1', 'C1', 'B1', 'A1', 'object'])
         with self.assertRaises(InconsistentMroError) as cm:
             astroid['F1'].mro()
-        self.assertEqual(str(cm.exception),
-                         "Cannot create a consistent method resolution order "
-                         "for bases (B1, C1, A1, object), "
-                         "(C1, B1, A1, object)")
-
+        A1 = astroid.getattr('A1')[0]
+        B1 = astroid.getattr('B1')[0]
+        C1 = astroid.getattr('C1')[0]
+        object_ = builder.MANAGER.astroid_cache[BUILTINS].getattr('object')[0]
+        self.assertEqual(cm.exception.mros, [[B1, C1, A1, object_],
+                                             [C1, B1, A1, object_]])
         with self.assertRaises(InconsistentMroError) as cm:
             astroid['G1'].mro()
-        self.assertEqual(str(cm.exception),
-                         "Cannot create a consistent method resolution order "
-                         "for bases (C1, B1, A1, object), "
-                         "(B1, C1, A1, object)")
-
+        self.assertEqual(cm.exception.mros, [[C1, B1, A1, object_],
+                                             [B1, C1, A1, object_]])
         self.assertEqualMro(
             astroid['PedalWheelBoat'],
             ["PedalWheelBoat", "EngineLess",
@@ -1331,9 +1329,10 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
         with self.assertRaises(DuplicateBasesError) as cm:
             astroid['Duplicates'].mro()
-        self.assertEqual(str(cm.exception), "Duplicates found in the mro.")
-        self.assertTrue(issubclass(cm.exception.__class__, MroError))
-        self.assertTrue(issubclass(cm.exception.__class__, ResolveError))
+        Duplicates = astroid.getattr('Duplicates')[0]
+        self.assertEqual(cm.exception.cls, Duplicates)
+        self.assertIsInstance(cm.exception, MroError)
+        self.assertIsInstance(cm.exception, ResolveError)
 
     def test_generator_from_infer_call_result_parent(self):
         func = test_utils.extract_node("""
@@ -1359,7 +1358,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(first["a"].value, 1)
         self.assertIsInstance(first["b"], nodes.Const)
         self.assertEqual(first["b"].value, 2)
-        with self.assertRaises(NotFoundError):
+        with self.assertRaises(AttributeInferenceError):
             first.getattr("missing")
 
     def test_implicit_metaclass(self):
@@ -1378,7 +1377,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         instance = cls.instanciate_class()
         func = cls.getattr('mro')
         self.assertEqual(len(func), 1)
-        self.assertRaises(NotFoundError, instance.getattr, 'mro')
+        self.assertRaises(AttributeInferenceError, instance.getattr, 'mro')
 
     def test_metaclass_lookup_using_same_class(self):
         # Check that we don't have recursive attribute access for metaclass

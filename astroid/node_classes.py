@@ -414,7 +414,8 @@ class NodeNG(object):
     def _infer(self, context=None):
         """we don't know how to resolve a statement by default"""
         # this method is overridden by most concrete classes
-        raise exceptions.InferenceError(self.__class__.__name__)
+        raise exceptions.InferenceError('No inference function for {node!r}.',
+                                        node=self, context=context)
 
     def inferred(self):
         '''return list of inferred values for a more simple inference usage'''
@@ -897,7 +898,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         i = _find_arg(argname, self.kwonlyargs)[0]
         if i is not None and self.kw_defaults[i] is not None:
             return self.kw_defaults[i]
-        raise exceptions.NoDefault()
+        raise exceptions.NoDefault(func=self.parent, name=argname)
 
     def is_argument(self, name):
         """return True if the name is defined in arguments"""
@@ -1026,13 +1027,13 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
     def type_errors(self, context=None):
         """Return a list of TypeErrors which can occur during inference.
 
-        Each TypeError is represented by a :class:`BinaryOperationError`,
+        Each TypeError is represented by a :class:`BadBinaryOperationMessage`,
         which holds the original exception.
         """
         try:
             results = self._infer_augassign(context=context)
             return [result for result in results
-                    if isinstance(result, exceptions.BinaryOperationError)]
+                    if isinstance(result, util.BadBinaryOperationMessage)]
         except exceptions.InferenceError:
             return []
 
@@ -1068,13 +1069,13 @@ class BinOp(NodeNG):
     def type_errors(self, context=None):
         """Return a list of TypeErrors which can occur during inference.
 
-        Each TypeError is represented by a :class:`BinaryOperationError`,
+        Each TypeError is represented by a :class:`BadBinaryOperationMessage`,
         which holds the original exception.
         """
         try:
             results = self._infer_binop(context=context)
             return [result for result in results
-                    if isinstance(result, exceptions.BinaryOperationError)]
+                    if isinstance(result, util.BadBinaryOperationMessage)]
         except exceptions.InferenceError:
             return []
 
@@ -1808,13 +1809,13 @@ class UnaryOp(NodeNG):
     def type_errors(self, context=None):
         """Return a list of TypeErrors which can occur during inference.
 
-        Each TypeError is represented by a :class:`UnaryOperationError`,
+        Each TypeError is represented by a :class:`BadUnaryOperationMessage`,
         which holds the original exception.
         """
         try:
             results = self._infer_unaryop(context=context)
             return [result for result in results
-                    if isinstance(result, exceptions.UnaryOperationError)]
+                    if isinstance(result, util.BadUnaryOperationMessage)]
         except exceptions.InferenceError:
             return []
 

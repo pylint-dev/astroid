@@ -120,11 +120,19 @@ class ImportFromMixin(FilterStmtsMixin):
             return mymodule.import_module(modname, level=level,
                                           relative_only=level and level >= 1)
         except exceptions.AstroidBuildingException as ex:
-            if isinstance(ex.args[0], SyntaxError):
-                util.reraise(exceptions.InferenceError(str(ex)))
-            util.reraise(exceptions.InferenceError(modname))
+            if isinstance(getattr(ex, 'error', None), SyntaxError):
+                util.reraise(exceptions.InferenceError(
+                    'Could not import {modname} because of SyntaxError:\n'
+                    '{syntax_error}', modname=modname, syntax_error=ex.error,
+                    import_node=self))
+            util.reraise(exceptions.InferenceError('Could not import {modname}.',
+                                                   modname=modname,
+                                                   import_node=self))
         except SyntaxError as ex:
-            util.reraise(exceptions.InferenceError(str(ex)))
+            util.reraise(exceptions.InferenceError(
+                'Could not import {modname} because of SyntaxError:\n'
+                '{syntax_error}', modname=modname, syntax_error=ex,
+                import_node=self))
 
     def real_name(self, asname):
         """get name from 'as' name"""
@@ -136,4 +144,6 @@ class ImportFromMixin(FilterStmtsMixin):
                 _asname = name
             if asname == _asname:
                 return name
-        raise exceptions.NotFoundError(asname)
+        raise exceptions.AttributeInferenceError(
+            'Could not find original name for {attribute} in {target!r}',
+            target=self, attribute=asname)

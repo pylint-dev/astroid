@@ -5,8 +5,8 @@ import sys
 from textwrap import dedent
 
 import six
-from astroid import (MANAGER, UseInferenceDefault, NotFoundError,
-                     inference_tip, InferenceError, UnresolvableName)
+from astroid import (MANAGER, UseInferenceDefault, AttributeInferenceError,
+                     inference_tip, InferenceError, NameInferenceError)
 from astroid import arguments
 from astroid.builder import AstroidBuilder
 from astroid import helpers
@@ -193,7 +193,7 @@ def _get_elts(arg, context):
                                        (nodes.List, nodes.Tuple, nodes.Set))
     try:
         inferred = next(arg.infer(context))
-    except (InferenceError, UnresolvableName):
+    except (InferenceError, NameInferenceError):
         raise UseInferenceDefault()
     if isinstance(inferred, nodes.Dict):
         items = inferred.items
@@ -356,7 +356,7 @@ def infer_getattr(node, context=None):
 
     try:
         return next(obj.igetattr(attr, context=context))
-    except (StopIteration, InferenceError, NotFoundError):
+    except (StopIteration, InferenceError, AttributeInferenceError):
         if len(node.args) == 3:
             # Try to infer the default and return it instead.
             try:
@@ -384,7 +384,7 @@ def infer_hasattr(node, context=None):
     except UseInferenceDefault:
         # Can't infer something from this function call.
         return util.YES
-    except NotFoundError:
+    except AttributeInferenceError:
         # Doesn't have it.
         return nodes.Const(False)
     return nodes.Const(True)

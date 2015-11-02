@@ -332,13 +332,13 @@ class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(from_.real_name('NameNode'), 'Name')
         imp_ = self.module['os']
         self.assertEqual(imp_.real_name('os'), 'os')
-        self.assertRaises(exceptions.NotFoundError, imp_.real_name, 'os.path')
+        self.assertRaises(exceptions.AttributeInferenceError, imp_.real_name, 'os.path')
         imp_ = self.module['NameNode']
         self.assertEqual(imp_.real_name('NameNode'), 'Name')
-        self.assertRaises(exceptions.NotFoundError, imp_.real_name, 'Name')
+        self.assertRaises(exceptions.AttributeInferenceError, imp_.real_name, 'Name')
         imp_ = self.module2['YO']
         self.assertEqual(imp_.real_name('YO'), 'YO')
-        self.assertRaises(exceptions.NotFoundError, imp_.real_name, 'data')
+        self.assertRaises(exceptions.AttributeInferenceError, imp_.real_name, 'data')
 
     def test_as_string(self):
         ast = self.module['modutils']
@@ -503,7 +503,7 @@ class UnboundMethodNodeTest(unittest.TestCase):
         meth = A.test
         ''')
         node = next(ast['meth'].infer())
-        with self.assertRaises(exceptions.NotFoundError):
+        with self.assertRaises(exceptions.AttributeInferenceError):
             node.getattr('__missssing__')
         name = node.getattr('__name__')[0]
         self.assertIsInstance(name, nodes.Const)

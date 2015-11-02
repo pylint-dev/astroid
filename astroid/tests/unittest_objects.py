@@ -233,15 +233,15 @@ class SuperTests(unittest.TestCase):
         self.assertIsInstance(first, objects.Super)
         with self.assertRaises(exceptions.SuperError) as cm:
             first.super_mro()
-        self.assertEqual(str(cm.exception), "The first super argument must be type.")
-        for node in ast_nodes[1:]:
+        self.assertIsInstance(cm.exception.super_.mro_pointer, nodes.Const)
+        self.assertEqual(cm.exception.super_.mro_pointer.value, 1)
+        for node, invalid_type in zip(ast_nodes[1:],
+                                      (nodes.Const, bases.Instance)):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, objects.Super, node)
-            with self.assertRaises(exceptions.SuperArgumentTypeError) as cm:
+            with self.assertRaises(exceptions.SuperError) as cm:
                 inferred.super_mro()
-            self.assertEqual(str(cm.exception),
-                             "super(type, obj): obj must be an instance "
-                             "or subtype of type", node)
+            self.assertIsInstance(cm.exception.super_.type, invalid_type)
 
     def test_proxied(self):
         node = test_utils.extract_node('''
@@ -338,9 +338,9 @@ class SuperTests(unittest.TestCase):
         with self.assertRaises(exceptions.InferenceError):
             next(ast_nodes[2].infer())
         fourth = next(ast_nodes[3].infer())
-        with self.assertRaises(exceptions.NotFoundError):
+        with self.assertRaises(exceptions.AttributeInferenceError):
             fourth.getattr('test3')
-        with self.assertRaises(exceptions.NotFoundError):
+        with self.assertRaises(exceptions.AttributeInferenceError):
             next(fourth.igetattr('test3'))
 
         first_unbound = next(ast_nodes[4].infer())
@@ -362,7 +362,7 @@ class SuperTests(unittest.TestCase):
                super(Super, self) #@
         ''')
         inferred = next(node.infer())
-        with self.assertRaises(exceptions.NotFoundError):
+        with self.assertRaises(exceptions.AttributeInferenceError):
             next(inferred.getattr('test'))
 
     def test_super_complex_mro(self):
@@ -491,7 +491,7 @@ class SuperTests(unittest.TestCase):
         inferred = next(node.infer())
         with self.assertRaises(exceptions.SuperError):
             inferred.super_mro()
-        with self.assertRaises(exceptions.SuperArgumentTypeError):
+        with self.assertRaises(exceptions.SuperError):
             inferred.super_mro()
 
 

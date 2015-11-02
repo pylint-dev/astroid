@@ -135,7 +135,7 @@ class NamedTupleTest(unittest.TestCase):
         instance = next(result.infer())
         self.assertEqual(len(instance.getattr('scheme')), 1)
         self.assertEqual(len(instance.getattr('port')), 1)
-        with self.assertRaises(astroid.NotFoundError):
+        with self.assertRaises(astroid.AttributeInferenceError):
             instance.getattr('foo')
         self.assertEqual(len(instance.getattr('geturl')), 1)
         self.assertEqual(instance.name, 'ParseResult')
@@ -343,6 +343,11 @@ class MultiprocessingBrainTest(unittest.TestCase):
 
         array = next(module['array'].infer())
         self.assertEqual(array.qname(), "array.array")
+
+        manager = next(module['manager'].infer())
+        # Verify that we have these attributes
+        self.assertTrue(manager.getattr('start'))
+        self.assertTrue(manager.getattr('shutdown'))
 
 
 @unittest.skipUnless(HAS_ENUM,

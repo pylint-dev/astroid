@@ -53,7 +53,7 @@ BUILTINS = six.moves.builtins.__name__
 ITER_METHODS = ('__iter__', '__getitem__')
 
 
-def _c3_merge(sequences):
+def _c3_merge(sequences, cls, context):
     """Merges MROs in *sequences* to a single MRO using the C3 algorithm.
 
     Adapted from http://www.python.org/download/releases/2.3/mro/.
@@ -75,12 +75,10 @@ def _c3_merge(sequences):
         if not candidate:
             # Show all the remaining bases, which were considered as
             # candidates for the next mro sequence.
-            bases = ["({})".format(", ".join(base.name
-                                             for base in subsequence))
-                     for subsequence in sequences]
             raise exceptions.InconsistentMroError(
-                "Cannot create a consistent method resolution "
-                "order for bases %s" % ", ".join(bases))
+                message="Cannot create a consistent method resolution order "
+                "for MROs {mros} of class {cls!r}.",
+                mros=sequences, cls=cls, context=context)
 
         result.append(candidate)
         # remove the chosen candidate
@@ -89,11 +87,13 @@ def _c3_merge(sequences):
                 del seq[0]
 
 
-def _verify_duplicates_mro(sequences):
+def _verify_duplicates_mro(sequences, cls, context):
     for sequence in sequences:
         names = [node.qname() for node in sequence]
         if len(names) != len(set(names)):
-            raise exceptions.DuplicateBasesError('Duplicates found in the mro.')
+            raise exceptions.DuplicateBasesError(
+                message='Duplicates found in MROs {mros} for {cls!r}.',
+                mros=sequences, cls=cls, context=context)
 
 
 def remove_nodes(cls):
@@ -101,7 +101,10 @@ def remove_nodes(cls):
     def decorator(func, instance, args, kwargs):
         nodes = [n for n in func(*args, **kwargs) if not isinstance(n, cls)]
         if not nodes:
-            raise exceptions.NotFoundError()
+            # TODO: no way to access the name or context when raising
+            # this error.
+            raise exceptions.AttributeInferenceError(
+                'No nodes left after filtering.', target=instance)
         return nodes
     return decorator
 
@@ -126,7 +129,8 @@ def std_special_attributes(self, name, add_locals=True):
         return [node_classes.Const(self.doc)] + locals.get(name, [])
     if name == '__dict__':
         return [node_classes.Dict()] + locals.get(name, [])
-    raise exceptions.NotFoundError(name)
+    # TODO: missing context
+    raise exceptions.AttributeInferenceError(target=self, attribute=name)
 
 
 MANAGER = manager.AstroidManager()
@@ -415,7 +419,7 @@ class Module(LocalsDictNodeNG):
         if name in self.scope_attrs and name not in self.locals:
             try:
                 return self, self.getattr(name)
-            except exceptions.NotFoundError:
+            except exceptions.AttributeInferenceError:
                 return self, ()
         return self._scope_lookup(node, name, offset)
 
@@ -439,8 +443,11 @@ class Module(LocalsDictNodeNG):
             try:
                 return [self.import_module(name, relative_only=True)]
             except (exceptions.AstroidBuildingException, SyntaxError):
-                util.reraise(exceptions.NotFoundError(name))
-        raise exceptions.NotFoundError(name)
+                util.reraise(exceptions.AttributeInferenceError(target=self,
+                                                                attribute=name,
+                                                                context=context))
+        raise exceptions.AttributeInferenceError(target=self, attribute=name,
+                                                 context=context)
 
     def igetattr(self, name, context=None):
         """inferred getattr"""
@@ -451,8 +458,9 @@ class Module(LocalsDictNodeNG):
         try:
             return bases._infer_stmts(self.getattr(name, context),
                                       context, frame=self)
-        except exceptions.NotFoundError:
-            util.reraise(exceptions.InferenceError(name))
+        except exceptions.AttributeInferenceError as error:
+            util.reraise(exceptions.InferenceError(
+                error.message, target=self, attribute=name, context=context))
 
     def fully_defined(self):
         """return True if this module has been built from a .py file
@@ -933,8 +941,9 @@ class FunctionDef(node_classes.Statement, Lambda):
         try:
             return bases._infer_stmts(self.getattr(name, context),
                                       context, frame=self)
-        except exceptions.NotFoundError:
-            util.reraise(exceptions.InferenceError(name))
+        except exceptions.AttributeInferenceError as error:
+            util.reraise(exceptions.InferenceError(
+                error.message, target=self, attribute=name, context=context))
 
     def is_method(self):
         """return true if the function node should be considered as a method"""
@@ -1392,7 +1401,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         """return the list of assign node associated to name in this class
         locals or in its parents
 
-        :raises `NotFoundError`:
+        :raises `AttributeInferenceError`:
           if no attribute with this name has been find in this class or
           its parent classes
         """
@@ -1401,14 +1410,15 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         except KeyError:
             for class_node in self.local_attr_ancestors(name, context):
                 return class_node.locals[name]
-        raise exceptions.NotFoundError(name)
+        raise exceptions.AttributeInferenceError(target=self, attribute=name,
+                                                 context=context)
 
     @remove_nodes(node_classes.DelAttr)
     def instance_attr(self, name, context=None):
         """return the astroid nodes associated to name in this class instance
         attributes dictionary and in its parents
 
-        :raises `NotFoundError`:
+        :raises `AttributeInferenceError`:
           if no attribute with this name has been find in this class or
           its parent classes
         """
@@ -1419,7 +1429,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         for class_node in self.instance_attr_ancestors(name, context):
             values += class_node.instance_attrs[name]
         if not values:
-            raise exceptions.NotFoundError(name)
+            raise exceptions.AttributeInferenceError(target=self, attribute=name,
+                                                     context=context)
         return values
 
     def instanciate_class(self):
@@ -1464,7 +1475,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         if class_context:
             values += self._metaclass_lookup_attribute(name, context)
         if not values:
-            raise exceptions.NotFoundError(name)
+            raise exceptions.AttributeInferenceError(target=self, attribute=name,
+                                                     context=context)
         return values
 
     def _metaclass_lookup_attribute(self, name, context):
@@ -1483,7 +1495,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         try:
             attrs = cls.getattr(name, context=context,
                                 class_context=True)
-        except exceptions.NotFoundError:
+        except exceptions.AttributeInferenceError:
             return
 
         for attr in bases._infer_stmts(attrs, context, frame=cls):
@@ -1525,18 +1537,19 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                         and isinstance(inferred, bases.Instance)):
                     try:
                         inferred._proxied.getattr('__get__', context)
-                    except exceptions.NotFoundError:
+                    except exceptions.AttributeInferenceError:
                         yield inferred
                     else:
                         yield util.YES
                 else:
                     yield function_to_method(inferred, self)
-        except exceptions.NotFoundError:
+        except exceptions.AttributeInferenceError as error:
             if not name.startswith('__') and self.has_dynamic_getattr(context):
                 # class handle some dynamic attributes, return a YES object
                 yield util.YES
             else:
-                util.reraise(exceptions.InferenceError(name))
+                util.reraise(exceptions.InferenceError(
+                    error.message, target=self, attribute=name, context=context))
 
     def has_dynamic_getattr(self, context=None):
         """
@@ -1553,12 +1566,12 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
         try:
             return _valid_getattr(self.getattr('__getattr__', context)[0])
-        except exceptions.NotFoundError:
+        except exceptions.AttributeInferenceError:
             #if self.newstyle: XXX cause an infinite recursion error
             try:
                 getattribute = self.getattr('__getattribute__', context)[0]
                 return _valid_getattr(getattribute)
-            except exceptions.NotFoundError:
+            except exceptions.AttributeInferenceError:
                 pass
         return False
 
@@ -1678,7 +1691,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                 try:
                     slots.getattr(meth)
                     break
-                except exceptions.NotFoundError:
+                except exceptions.AttributeInferenceError:
                     continue
             else:
                 continue
@@ -1808,8 +1821,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                 bases_mro.append(ancestors)
 
         unmerged_mro = ([[self]] + bases_mro + [bases])
-        _verify_duplicates_mro(unmerged_mro)
-        return _c3_merge(unmerged_mro)
+        _verify_duplicates_mro(unmerged_mro, self, context)
+        return _c3_merge(unmerged_mro, self, context)
 
     def bool_value(self):
         return True

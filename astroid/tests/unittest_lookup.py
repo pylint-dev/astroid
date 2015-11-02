@@ -174,7 +174,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         if sys.version_info < (3, 0):
             self.assertEqual(var.inferred(), [util.YES])
         else:
-            self.assertRaises(exceptions.UnresolvableName, var.inferred)
+            self.assertRaises(exceptions.NameInferenceError, var.inferred)
 
     def test_dict_comps(self):
         astroid = builder.parse("""
@@ -210,7 +210,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
             var
         """)
         var = astroid.body[1].value
-        self.assertRaises(exceptions.UnresolvableName, var.inferred)
+        self.assertRaises(exceptions.NameInferenceError, var.inferred)
 
     def test_generator_attributes(self):
         tree = builder.parse("""
@@ -250,7 +250,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertTrue(p2.getattr('__name__'))
         self.assertTrue(astroid['NoName'].getattr('__name__'))
         p3 = next(astroid['p3'].infer())
-        self.assertRaises(exceptions.NotFoundError, p3.getattr, '__name__')
+        self.assertRaises(exceptions.AttributeInferenceError, p3.getattr, '__name__')
 
     def test_function_module_special(self):
         astroid = builder.parse('''

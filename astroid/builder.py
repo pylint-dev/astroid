@@ -52,8 +52,9 @@ if sys.version_info >= (3, 0):
             data = stream.read()
         except UnicodeError:  # wrong encoding
             # detect_encoding returns utf-8 if no encoding specified
-            msg = 'Wrong (%s) or no encoding specified' % encoding
-            util.reraise(exceptions.AstroidBuildingException(msg))
+            util.reraise(exceptions.AstroidBuildingException(
+                'Wrong ({encoding}) or no encoding specified for {filename}.',
+                encoding=encoding, filename=filename))
         return stream, encoding, data
 
 else:
@@ -127,11 +128,13 @@ class AstroidBuilder(object): # (raw_building.InspectBuilder):
         try:
             stream, encoding, data = open_source_file(path)
         except IOError as exc:
-            msg = 'Unable to load file %r (%s)' % (path, exc)
-            util.reraise(exceptions.AstroidBuildingException(msg))
+            util.reraise(exceptions.AstroidBuildingException(
+                'Unable to load file {path}:\n{error}',
+                modname=modname, path=path, error=exc))
         except (SyntaxError, LookupError) as exc:
-            # Python 3 encoding specification error or unknown encoding
-            util.reraise(exceptions.AstroidBuildingException(*exc.args))
+            util.reraise(exceptions.AstroidBuildingException(
+                'Python 3 encoding specification error or unknown encoding:\n'
+                '{error}', modname=modname, path=path, error=exc))
         with stream:
             # get module name if necessary
             if modname is None:
@@ -165,12 +168,16 @@ class AstroidBuilder(object): # (raw_building.InspectBuilder):
         try:
             node = _parse(data + '\n')
         except (TypeError, ValueError) as exc:
-            util.reraise(exceptions.AstroidBuildingException(*exc.args))
+            util.reraise(exceptions.AstroidBuildingException(
+                'Parsing Python code failed:\n{error}',
+                source=data, modname=modname, path=path, error=exc))
         except SyntaxError as exc:
             # Pass the entire exception object to AstroidBuildingException,
             # since pylint uses this as an introspection method,
             # in order to find what error happened.
-            util.reraise(exceptions.AstroidBuildingException(exc))
+            util.reraise(exceptions.AstroidBuildingException(
+                'Syntax error in Python source: {error}',
+                source=data, modname=modname, path=path, error=exc))
         if path is not None:
             node_file = os.path.abspath(path)
         else:

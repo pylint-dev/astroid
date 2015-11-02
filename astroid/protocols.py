@@ -240,7 +240,6 @@ def _resolve_looppart(parts, asspath, context):
                 except exceptions.InferenceError:
                     break
 
-
 @decorators.raise_if_nothing_inferred
 def for_assigned_stmts(self, node, context=None, asspath=None):
     if asspath is None:
@@ -252,6 +251,9 @@ def for_assigned_stmts(self, node, context=None, asspath=None):
         for inferred in _resolve_looppart(self.iter.infer(context),
                                           asspath, context):
             yield inferred
+    raise exceptions.DefaultStop(node=self, unknown=node,
+                                 assign_path=asspath, context=context)
+
 
 nodes.For.assigned_stmts = for_assigned_stmts
 nodes.Comprehension.assigned_stmts = for_assigned_stmts
@@ -333,6 +335,8 @@ def assign_assigned_stmts(self, node, context=None, asspath=None):
         return
     for inferred in _resolve_asspart(self.value.infer(context), asspath, context):
         yield inferred
+    raise exceptions.DefaultStop(node=self, unknown=node,
+                                 assign_path=asspath, context=context)
 
 nodes.Assign.assigned_stmts = assign_assigned_stmts
 nodes.AugAssign.assigned_stmts = assign_assigned_stmts
@@ -373,6 +377,9 @@ def excepthandler_assigned_stmts(self, node, context=None, asspath=None):
         if isinstance(assigned, nodes.ClassDef):
             assigned = bases.Instance(assigned)
         yield assigned
+    raise exceptions.DefaultStop(node=self, unknown=node,
+                                 assign_path=asspath, context=context)        
+        
 
 nodes.ExceptHandler.assigned_stmts = excepthandler_assigned_stmts
 
@@ -413,7 +420,7 @@ def _infer_context_manager(self, mgr, context):
     elif isinstance(inferred, bases.Instance):
         try:
             enter = next(inferred.igetattr('__enter__', context=context))
-        except (exceptions.InferenceError, exceptions.NotFoundError):
+        except (exceptions.InferenceError, exceptions.AttributeInferenceError):
             return
         if not isinstance(enter, bases.BoundMethod):
             return
@@ -441,8 +448,13 @@ def with_assigned_stmts(self, node, context=None, asspath=None):
             pass
         # ContextManager().infer() will return ContextManager
         # f.infer() will return 42.
-    """
 
+    Arguments:
+        self: nodes.With
+        node: The target of the assignment, `as (a, b)` in `with foo as (a, b)`.
+        context: TODO
+        asspath: TODO
+    """
     mgr = next(mgr for (mgr, vars) in self.items if vars == node)
     if asspath is None:
         for result in _infer_context_manager(self, mgr, context):
@@ -453,30 +465,49 @@ def with_assigned_stmts(self, node, context=None, asspath=None):
             obj = result
             for index in asspath:
                 if not hasattr(obj, 'elts'):
-                    raise exceptions.InferenceError
+                    raise exceptions.InferenceError(
+                        'Wrong type ({targets!r}) for {node!r} assignment',
+                        node=self, targets=node, assign_path=asspath,
+                        context=context)
                 try:
                     obj = obj.elts[index]
                 except IndexError:
-                    util.reraise(exceptions.InferenceError())
+                    util.reraise(exceptions.InferenceError(
+                        'Tried to infer a nonexistent target with index {index} '
+                        'in {node!r}.', node=self, targets=node,
+                        assign_path=asspath, context=context))
             yield obj
-
+    raise exceptions.DefaultStop(node=self, unknown=node,
+                                 assign_path=asspath, context=context)        
 
 nodes.With.assigned_stmts = with_assigned_stmts
 
 
 @decorators.yes_if_nothing_inferred
 def starred_assigned_stmts(self, node=None, context=None, asspath=None):
+    """
+    Arguments:
+        self: nodes.Starred
+        node: TODO
+        context: TODO
+        asspath: TODO
+    """
     stmt = self.statement()
     if not isinstance(stmt, (nodes.Assign, nodes.For)):
-        raise exceptions.InferenceError()
+        raise exceptions.InferenceError('Statement {stmt!r} enclosing {node!r} '
+                                        'must be an Assign or For node.',
+                                        node=self, stmt=stmt, unknown=node,
+                                        context=context)
 
     if isinstance(stmt, nodes.Assign):
         value = stmt.value
         lhs = stmt.targets[0]
 
         if sum(1 for node in lhs.nodes_of_class(nodes.Starred)) > 1:
-            # Too many starred arguments in the expression.
-            raise exceptions.InferenceError()
+            raise exceptions.InferenceError('Too many starred arguments in the '
+                                            ' assignment targets {lhs!r}.',
+                                            node=self, targets=lhs,
+                                            unknown=node, context=context)
 
         if context is None:
             context = contextmod.InferenceContext()
@@ -492,8 +523,11 @@ def starred_assigned_stmts(self, node=None, context=None, asspath=None):
 
         elts = collections.deque(rhs.elts[:])
         if len(lhs.elts) > len(rhs.elts):
-            # a, *b, c = (1, 2)
-            raise exceptions.InferenceError()
+            raise exceptions.InferenceError('More targets, {targets!r}, than '
+                                            'values to unpack, {values!r}.',
+                                            node=self, targets=lhs,
+                                            values=rhs, unknown=node,
+                                            context=context)
 
         # Unpack iteratively the values from the rhs of the assignment,
         # until the find the starred node. What will remain will
