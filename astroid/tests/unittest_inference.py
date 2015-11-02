@@ -31,6 +31,7 @@ from astroid.inference import infer_end as inference_infer_end
 from astroid.interpreter.objects import (
     Instance, BoundMethod, UnboundMethod, FrozenSet
 )
+from astroid.interpreter.util import safe_infer
 
 from astroid import arguments
 from astroid import decorators as decoratorsmod
@@ -3078,7 +3079,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         flow['app']['config'] = AttributeDict()
         flow['app']['config']['doffing'] = AttributeDict() #@
         ''')
-        self.assertIsNone(helpers.safe_infer(ast_node.targets[0]))
+        self.assertIsNone(safe_infer(ast_node.targets[0]))
 
     def test_classmethod_inferred_by_context(self):
         ast_node = test_utils.extract_node('''

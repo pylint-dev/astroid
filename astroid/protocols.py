@@ -31,7 +31,6 @@ from astroid import exceptions
 from astroid import decorators
 from astroid.interpreter import objects
 from astroid.interpreter import util as inferenceutil
-from astroid import helpers
 from astroid import nodes
 from astroid import util
 
@@ -143,7 +142,7 @@ def _multiply_seq_by_int(self, other, context):
     node = self.__class__()
     elts = []
     for elt in self.elts:
-        infered = helpers.safe_infer(elt, context)
+        infered = inferenceutil.safe_infer(elt, context)
         if infered is None:
             infered = util.YES
         elts.append(infered)

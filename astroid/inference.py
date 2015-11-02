@@ -482,9 +482,9 @@ def _get_binop_flow(left, left_type, op, right, right_type,
     """
     if _same_type(left_type, right_type):
         methods = [_bin_op(left, op, right, context)]
-    elif helpers.is_subtype(left_type, right_type):
+    elif inferenceutil.is_subtype(left_type, right_type):
         methods = [_bin_op(left, op, right, context)]
-    elif helpers.is_supertype(left_type, right_type):
+    elif inferenceutil.is_supertype(left_type, right_type):
         methods = [_bin_op(right, op, left, reverse_context, reverse=True),
                    _bin_op(left, op, right, context)]
     else:
@@ -514,10 +514,10 @@ def _get_aug_flow(left, left_type, aug_op, right, right_type,
     if _same_type(left_type, right_type):
         methods = [_aug_op(left, aug_op, right, context),
                    _bin_op(left, op, right, context)]
-    elif helpers.is_subtype(left_type, right_type):
+    elif inferenceutil.is_subtype(left_type, right_type):
         methods = [_aug_op(left, aug_op, right, context),
                    _bin_op(left, op, right, context)]
-    elif helpers.is_supertype(left_type, right_type):
+    elif inferenceutil.is_supertype(left_type, right_type):
         methods = [_aug_op(left, aug_op, right, context),
                    _bin_op(right, op, left, reverse_context, reverse=True),
                    _bin_op(left, op, right, context)]

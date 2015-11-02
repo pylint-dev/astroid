@@ -23,6 +23,7 @@ from six.moves import builtins
 
 from astroid import builder
 from astroid import helpers
+from astroid.interpreter import util as interpreterutil
 from astroid import manager
 from astroid import raw_building
 from astroid import test_utils
@@ -183,15 +184,15 @@ class TestHelpers(unittest.TestCase):
         int_subclass = ast_nodes[3]
         int_subclass = helpers.object_type(next(int_subclass.infer()))
         base_int = self._extract('int')
-        self.assertTrue(helpers.is_subtype(int_subclass, base_int))
-        self.assertTrue(helpers.is_supertype(base_int, int_subclass))
+        self.assertTrue(interpreterutil.is_subtype(int_subclass, base_int))
+        self.assertTrue(interpreterutil.is_supertype(base_int, int_subclass))
 
-        self.assertTrue(helpers.is_supertype(cls_a, cls_b))
-        self.assertTrue(helpers.is_supertype(cls_a, cls_c))
-        self.assertTrue(helpers.is_subtype(cls_b, cls_a))
-        self.assertTrue(helpers.is_subtype(cls_c, cls_a))
-        self.assertFalse(helpers.is_subtype(cls_a, cls_b))
-        self.assertFalse(helpers.is_subtype(cls_a, cls_b))
+        self.assertTrue(interpreterutil.is_supertype(cls_a, cls_b))
+        self.assertTrue(interpreterutil.is_supertype(cls_a, cls_c))
+        self.assertTrue(interpreterutil.is_subtype(cls_b, cls_a))
+        self.assertTrue(interpreterutil.is_subtype(cls_c, cls_a))
+        self.assertFalse(interpreterutil.is_subtype(cls_a, cls_b))
+        self.assertFalse(interpreterutil.is_subtype(cls_a, cls_b))
 
     @test_utils.require_version(maxver='3.0')
     def test_is_subtype_supertype_old_style_classes(self):
@@ -201,10 +202,10 @@ class TestHelpers(unittest.TestCase):
         class B(A): #@
             pass
         ''')
-        self.assertFalse(helpers.is_subtype(cls_a, cls_b))
-        self.assertFalse(helpers.is_subtype(cls_b, cls_a))
-        self.assertFalse(helpers.is_supertype(cls_a, cls_b))
-        self.assertFalse(helpers.is_supertype(cls_b, cls_a))
+        self.assertFalse(interpreterutil.is_subtype(cls_a, cls_b))
+        self.assertFalse(interpreterutil.is_subtype(cls_b, cls_a))
+        self.assertFalse(interpreterutil.is_supertype(cls_a, cls_b))
+        self.assertFalse(interpreterutil.is_supertype(cls_b, cls_a))
 
     def test_is_subtype_supertype_mro_error(self):
         cls_e, cls_f = test_utils.extract_node('''
@@ -215,10 +216,10 @@ class TestHelpers(unittest.TestCase):
         class E(C, B): pass #@
         class F(D, E): pass #@
         ''')
-        self.assertFalse(helpers.is_subtype(cls_e, cls_f))
-        self.assertEqual(helpers.is_subtype(cls_f, cls_e), util.YES)
-        self.assertEqual(helpers.is_supertype(cls_e, cls_f), util.YES)
-        self.assertFalse(helpers.is_supertype(cls_f, cls_e))
+        self.assertFalse(interpreterutil.is_subtype(cls_e, cls_f))
+        self.assertEqual(interpreterutil.is_subtype(cls_f, cls_e), util.YES)
+        self.assertEqual(interpreterutil.is_supertype(cls_e, cls_f), util.YES)
+        self.assertFalse(interpreterutil.is_supertype(cls_f, cls_e))
 
     def test_is_subtype_supertype_unknown_bases(self):
         cls_a, cls_b = test_utils.extract_node('''
@@ -226,18 +227,18 @@ class TestHelpers(unittest.TestCase):
         class A(Unknown): pass #@
         class B(A): pass #@
         ''')
-        self.assertTrue(helpers.is_subtype(cls_b, cls_a))
-        self.assertTrue(helpers.is_supertype(cls_a, cls_b))
+        self.assertTrue(interpreterutil.is_subtype(cls_b, cls_a))
+        self.assertTrue(interpreterutil.is_supertype(cls_a, cls_b))
 
     def test_is_subtype_supertype_unrelated_classes(self):
         cls_a, cls_b = test_utils.extract_node('''
         class A(object): pass #@
         class B(object): pass #@
         ''')
-        self.assertFalse(helpers.is_subtype(cls_a, cls_b))
-        self.assertFalse(helpers.is_subtype(cls_b, cls_a))
-        self.assertFalse(helpers.is_supertype(cls_a, cls_b))
-        self.assertFalse(helpers.is_supertype(cls_b, cls_a))
+        self.assertFalse(interpreterutil.is_subtype(cls_a, cls_b))
+        self.assertFalse(interpreterutil.is_subtype(cls_b, cls_a))
+        self.assertFalse(interpreterutil.is_supertype(cls_a, cls_b))
+        self.assertFalse(interpreterutil.is_supertype(cls_b, cls_a))
 
     def test_is_subtype_supertype_classes_no_type_ancestor(self):
         cls_a = test_utils.extract_node('''
@@ -245,8 +246,8 @@ class TestHelpers(unittest.TestCase):
             pass
         ''')
         builtin_type = self._extract('type')
-        self.assertFalse(helpers.is_supertype(builtin_type, cls_a))
-        self.assertFalse(helpers.is_subtype(cls_a, builtin_type))
+        self.assertFalse(interpreterutil.is_supertype(builtin_type, cls_a))
+        self.assertFalse(interpreterutil.is_subtype(cls_a, builtin_type))
 
     def test_is_subtype_supertype_classes_metaclasses(self):
         cls_a = test_utils.extract_node('''
@@ -254,8 +255,8 @@ class TestHelpers(unittest.TestCase):
             pass
         ''')
         builtin_type = self._extract('type')
-        self.assertTrue(helpers.is_supertype(builtin_type, cls_a))
-        self.assertTrue(helpers.is_subtype(cls_a, builtin_type))
+        self.assertTrue(interpreterutil.is_supertype(builtin_type, cls_a))
+        self.assertTrue(interpreterutil.is_subtype(cls_a, builtin_type))
 
     @test_utils.require_version(maxver='3.0')
     def test_old_style_class(self):

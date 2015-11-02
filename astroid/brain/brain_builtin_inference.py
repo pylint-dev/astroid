@@ -13,6 +13,7 @@ from astroid import arguments
 from astroid.builder import AstroidBuilder
 from astroid import helpers
 from astroid.interpreter import objects
+from astroid.interpreter import util as interpreterutil
 from astroid import nodes
 from astroid.tree import scoped_nodes
 from astroid import util
@@ -472,7 +473,7 @@ def infer_slice(node, context=None):
     if not 0 < len(args) <= 3:
         raise UseInferenceDefault
 
-    args = list(map(helpers.safe_infer, args))
+    args = list(map(interpreterutil.safe_infer, args))
     for arg in args:
         if not arg or arg is util.YES:
             raise UseInferenceDefault
