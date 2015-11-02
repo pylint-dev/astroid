@@ -254,7 +254,11 @@ def infer_dict(node, context=None):
 
     If a case can't be inferred, we'll fallback to default inference.
     """
-    call = arguments.CallSite.from_call(node)
+    if node.keywords:
+        keywords = [(arg.arg, arg.value) for arg in node.keywords]
+    else:
+        keywords = []
+    call = arguments.CallSite(node.args, keywords)
     if call.has_invalid_arguments() or call.has_invalid_keywords():
         raise UseInferenceDefault
 

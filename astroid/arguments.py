@@ -36,9 +36,7 @@ class CallSite(object):
     and the argument name.
     """
 
-    def __init__(self, callcontext):
-        args = callcontext.args
-        keywords = callcontext.keywords
+    def __init__(self, args, keywords):
         self.duplicated_keywords = set()
         self._unpacked_args = self._unpack_args(args)
         self._unpacked_kwargs = self._unpack_keywords(keywords)
@@ -51,13 +49,6 @@ class CallSite(object):
             key: value for key, value in self._unpacked_kwargs.items()
             if value is not util.YES
         }
-
-    @classmethod
-    def from_call(cls, call_node):
-        """Get a CallSite object from the given Call node."""
-        callcontext = contextmod.CallContext(call_node.args,
-                                             call_node.keywords)
-        return cls(callcontext)
 
     def has_invalid_arguments(self):
         """Check if in the current CallSite were passed *invalid* arguments

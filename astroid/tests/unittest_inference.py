@@ -3822,7 +3822,11 @@ class CallSiteTest(unittest.TestCase):
 
     @staticmethod
     def _call_site_from_call(call):
-        return arguments.CallSite.from_call(call)
+        if call.keywords:
+            keywords = [(arg.arg, arg.value) for arg in call.keywords]
+        else:
+            keywords = []
+        return arguments.CallSite(call.args, keywords)
 
     def _test_call_site_pair(self, code, expected_args, expected_keywords):
         ast_node = test_utils.extract_node(code)

@@ -287,7 +287,8 @@ def _arguments_infer_argname(self, name, context):
             return
 
     if context and context.callcontext:
-        call_site = arguments.CallSite(context.callcontext)
+        call_site = arguments.CallSite(context.callcontext.args,
+                                       context.callcontext.keywords)
         for value in call_site.infer_argument(self.parent, name, context):
             yield value
         return
@@ -320,7 +321,7 @@ def arguments_assigned_stmts(self, node, context, asspath=None):
         callcontext = context.callcontext
         context = contextmod.copy_context(context)
         context.callcontext = None
-        args = arguments.CallSite(callcontext)
+        args = arguments.CallSite(callcontext.args, callcontext.keywords)
         return args.infer_argument(self.parent, node.name, context)
     return _arguments_infer_argname(self, node.name, context)
 
