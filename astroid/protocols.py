@@ -169,7 +169,7 @@ def tl_infer_binary_op(self, operator, other, context, method):
         yield _multiply_seq_by_int(self, other, context)
     elif isinstance(other, objects.Instance) and operator == '*':
         # Verify if the instance supports __index__.
-        as_index = helpers.class_instance_as_index(other)
+        as_index = inferenceutil.class_instance_as_index(other)
         if not as_index:
             yield util.YES
         else:

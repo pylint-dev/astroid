@@ -31,7 +31,7 @@ from astroid import helpers
 from astroid import manager
 from astroid import nodes
 from astroid import protocols
-from astroid.interpreter.util import infer_stmts
+from astroid.interpreter import util as inferenceutil
 from astroid.interpreter import objects
 from astroid import util
 
@@ -93,7 +93,7 @@ def infer_name(self, context=None):
             raise exceptions.UnresolvableName(self.name)
     context = context.clone()
     context.lookupname = self.name
-    return infer_stmts(stmts, context, frame)
+    return inferenceutil.infer_stmts(stmts, context, frame)
 nodes.Name._infer = decorators.path_wrapper(infer_name)
 nodes.AssignName.infer_lhs = infer_name # won't work with a path wrapper
 
@@ -153,7 +153,7 @@ def infer_import_from(self, context=None, asname=True):
         context = contextmod.copy_context(context)
         context.lookupname = name
         stmts = module.getattr(name, ignore_locals=module is self.root())
-        return infer_stmts(stmts, context)
+        return inferenceutil.infer_stmts(stmts, context)
     except exceptions.NotFoundError:
         util.reraise(exceptions.InferenceError(name))
 nodes.ImportFrom._infer = infer_import_from
@@ -185,8 +185,8 @@ def infer_global(self, context=None):
     if context.lookupname is None:
         raise exceptions.InferenceError()
     try:
-        return infer_stmts(self.root().getattr(context.lookupname),
-                           context)
+        return inferenceutil.infer_stmts(self.root().getattr(context.lookupname),
+                                         context)
     except exceptions.NotFoundError:
         util.reraise(exceptions.InferenceError())
 nodes.Global._infer = infer_global
@@ -254,7 +254,7 @@ def infer_subscript(self, context=None):
             if all(elem is not _SLICE_SENTINEL for elem in (lower, upper, step)):
                 index_value = slice(lower, upper, step)
         elif isinstance(index, objects.Instance):
-            index = helpers.class_instance_as_index(index)
+            index = inferenceutil.class_instance_as_index(index)
             if index:
                 index_value = index.value
         else:
@@ -676,7 +676,7 @@ def infer_assign(self, context=None):
         return stmt.infer(context)
 
     stmts = list(self.assigned_stmts(context=context))
-    return infer_stmts(stmts, context)
+    return inferenceutil.infer_stmts(stmts, context)
 nodes.AssignName._infer = infer_assign
 nodes.AssignAttr._infer = infer_assign
 

@@ -153,26 +153,3 @@ def is_subtype(type1, type2):
 def is_supertype(type1, type2):
     """Check if *type2* is a supertype of *type1*."""
     return _type_check(type1, type2)
-
-
-def class_instance_as_index(node):
-    """Get the value as an index for the given instance.
-
-    If an instance provides an __index__ method, then it can
-    be used in some scenarios where an integer is expected,
-    for instance when multiplying or subscripting a list.
-    """
-    context = contextmod.InferenceContext()
-    context.callcontext = contextmod.CallContext(args=[node])
-
-    try:
-        for inferred in node.igetattr('__index__', context=context):
-            if not isinstance(inferred, runtimeabc.BoundMethod):
-                continue
-
-            for result in inferred.infer_call_result(node, context=context):
-                if (isinstance(result, treeabc.Const)
-                        and isinstance(result.value, int)):
-                    return result
-    except exceptions.InferenceError:
-        pass
