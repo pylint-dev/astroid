@@ -98,13 +98,15 @@ def _infer_stmts(stmts, context, frame=None):
             for inferred in stmt.infer(context=context):
                 yield inferred
                 inferred = True
-        except exceptions.UnresolvableName:
+        except exceptions.NameInferenceError:
             continue
         except exceptions.InferenceError:
             yield util.YES
             inferred = True
     if not inferred:
-        raise exceptions.InferenceError(str(stmt))
+        raise exceptions.InferenceError(
+            'Inference failed for all members of {stmts!r}.',
+            stmts=stmts, frame=frame, context=context)
 
 
 def _infer_method_result_truth(instance, method_name, context):
@@ -129,7 +131,7 @@ class Instance(Proxy):
     def getattr(self, name, context=None, lookupclass=True):
         try:
             values = self._proxied.instance_attr(name, context)
-        except exceptions.NotFoundError:
+        except exceptions.AttributeInferenceError as exception:
             if name == '__class__':
                 return [self._proxied]
             if lookupclass:
@@ -139,14 +141,16 @@ class Instance(Proxy):
                     return self._proxied.local_attr(name)
                 return self._proxied.getattr(name, context,
                                              class_context=False)
-            util.reraise(exceptions.NotFoundError(name))
+            util.reraise(exceptions.AttributeInferenceError(target=self,
+                                                            attribute=name,
+                                                            context=context))
         # since we've no context information, return matching class members as
         # well
         if lookupclass:
             try:
                 return values + self._proxied.getattr(name, context,
                                                       class_context=False)
-            except exceptions.NotFoundError:
+            except exceptions.AttributeInferenceError:
                 pass
         return values
 
@@ -164,15 +168,15 @@ class Instance(Proxy):
             for stmt in _infer_stmts(self._wrap_attr(get_attr, context),
                                      context, frame=self):
                 yield stmt
-        except exceptions.NotFoundError:
+        except exceptions.AttributeInferenceError:
             try:
-                # fallback to class'igetattr since it has some logic to handle
+                # fallback to class.igetattr since it has some logic to handle
                 # descriptors
                 for stmt in self._wrap_attr(self._proxied.igetattr(name, context),
                                             context):
                     yield stmt
-            except exceptions.NotFoundError:
-                util.reraise(exceptions.InferenceError(name))
+            except exceptions.AttributeInferenceError as error:
+                util.reraise(exceptions.InferenceError(**vars(error)))
 
     def _wrap_attr(self, attrs, context=None):
         """wrap bound methods of attrs in a InstanceMethod proxies"""
@@ -207,7 +211,8 @@ class Instance(Proxy):
                 inferred = True
                 yield res
         if not inferred:
-            raise exceptions.InferenceError()
+            raise exceptions.InferenceError(node=self, caller=caller,
+                                            context=context)
 
     def __repr__(self):
         return '<Instance of %s.%s at 0x%s>' % (self._proxied.root().name,
@@ -221,7 +226,7 @@ class Instance(Proxy):
         try:
             self._proxied.getattr('__call__', class_context=False)
             return True
-        except exceptions.NotFoundError:
+        except exceptions.AttributeInferenceError:
             return False
 
     def pytype(self):
@@ -248,11 +253,11 @@ class Instance(Proxy):
 
         try:
             result = _infer_method_result_truth(self, BOOL_SPECIAL_METHOD, context)
-        except (exceptions.InferenceError, exceptions.NotFoundError):
+        except (exceptions.InferenceError, exceptions.AttributeInferenceError):
             # Fallback to __len__.
             try:
                 result = _infer_method_result_truth(self, '__len__', context)
-            except (exceptions.NotFoundError, exceptions.InferenceError):
+            except (exceptions.AttributeInferenceError, exceptions.InferenceError):
                 return True
         return result
 

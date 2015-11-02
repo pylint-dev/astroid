@@ -86,8 +86,9 @@ class Super(node_classes.NodeNG):
     def super_mro(self):
         """Get the MRO which will be used to lookup attributes in this super."""
         if not isinstance(self.mro_pointer, scoped_nodes.ClassDef):
-            raise exceptions.SuperArgumentTypeError(
-                "The first super argument must be type.")
+            raise exceptions.SuperError(
+                "The first argument to super must be a subtype of "
+                "type, not {mro_pointer}.", super_=self)
 
         if isinstance(self.type, scoped_nodes.ClassDef):
             # `super(type, type)`, most likely in a class method.
@@ -96,18 +97,20 @@ class Super(node_classes.NodeNG):
         else:
             mro_type = getattr(self.type, '_proxied', None)
             if not isinstance(mro_type, (bases.Instance, scoped_nodes.ClassDef)):
-                raise exceptions.SuperArgumentTypeError(
-                    "super(type, obj): obj must be an "
-                    "instance or subtype of type")
+                raise exceptions.SuperError(
+                    "The second argument to super must be an "
+                    "instance or subtype of type, not {type}.",
+                    super_=self)
 
         if not mro_type.newstyle:
-            raise exceptions.SuperError("Unable to call super on old-style classes.")
+            raise exceptions.SuperError("Unable to call super on old-style classes.", super_=self)
 
         mro = mro_type.mro()
         if self.mro_pointer not in mro:
-            raise exceptions.SuperArgumentTypeError(
-                "super(type, obj): obj must be an "
-                "instance or subtype of type")
+            raise exceptions.SuperError(
+                "The second argument to super must be an "
+                "instance or subtype of type, not {type}.",
+                super_=self)
 
         index = mro.index(self.mro_pointer)
         return mro[index + 1:]
@@ -138,11 +141,19 @@ class Super(node_classes.NodeNG):
 
         try:
             mro = self.super_mro()
-        except (exceptions.MroError, exceptions.SuperError) as exc:
-            # Don't let invalid MROs or invalid super calls
-            # to leak out as is from this function.
-            util.reraise(exceptions.NotFoundError(*exc.args))
-
+        # Don't let invalid MROs or invalid super calls
+        # leak out as is from this function.
+        except exceptions.SuperError as exc:
+            util.reraise(exceptions.AttributeInferenceError(
+                ('Lookup for {name} on {target!r} because super call {super!r} '
+                 'is invalid.'),
+                target=self, attribute=name, context=context, super_=exc.super_))
+        except exceptions.MroError as exc:
+            util.reraise(exceptions.AttributeInferenceError(
+                ('Lookup for {name} on {target!r} failed because {cls!r} has an '
+                 'invalid MRO.'),
+                target=self, attribute=name, context=context, mros=exc.mros,
+                cls=exc.cls))
         found = False
         for cls in mro:
             if name not in cls.locals:
@@ -166,7 +177,9 @@ class Super(node_classes.NodeNG):
                     yield bases.BoundMethod(inferred, cls)
 
         if not found:
-            raise exceptions.NotFoundError(name)
+            raise exceptions.AttributeInferenceError(target=self,
+                                                     attribute=name,
+                                                     context=context)
 
     def getattr(self, name, context=None):
         return list(self.igetattr(name, context=context))

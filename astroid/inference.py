@@ -89,7 +89,9 @@ def infer_name(self, context=None):
             _, stmts = parent_function.lookup(self.name)
 
         if not stmts:
-            raise exceptions.UnresolvableName(self.name)
+            raise exceptions.NameInferenceError(name=self.name,
+                                                scope=self.scope(),
+                                                context=context)
     context = context.clone()
     context.lookupname = self.name
     return bases._infer_stmts(stmts, context, frame)
@@ -116,6 +118,7 @@ def infer_call(self, context=None):
         except exceptions.InferenceError:
             ## XXX log error ?
             continue
+    raise exceptions.DefaultStop(node=self, context=context)
 nodes.Call._infer = infer_call
 
 
@@ -124,7 +127,7 @@ def infer_import(self, context=None, asname=True):
     """infer an Import node: return the imported module/object"""
     name = context.lookupname
     if name is None:
-        raise exceptions.InferenceError()
+        raise exceptions.InferenceError(node=self, context=context)
     if asname:
         yield self.do_import_module(self.real_name(name))
     else:
@@ -144,7 +147,7 @@ def infer_import_from(self, context=None, asname=True):
     """infer a ImportFrom node: return the imported module/object"""
     name = context.lookupname
     if name is None:
-        raise exceptions.InferenceError()
+        raise exceptions.InferenceError(node=self, context=context)
     if asname:
         name = self.real_name(name)
     module = self.do_import_module()
@@ -153,8 +156,9 @@ def infer_import_from(self, context=None, asname=True):
         context.lookupname = name
         stmts = module.getattr(name, ignore_locals=module is self.root())
         return bases._infer_stmts(stmts, context)
-    except exceptions.NotFoundError:
-        util.reraise(exceptions.InferenceError(name))
+    except exceptions.AttributeInferenceError as error:
+        util.reraise(exceptions.InferenceError(
+            error.message, target=self, attribute=name, context=context))
 nodes.ImportFrom._infer = infer_import_from
 
 
@@ -170,11 +174,12 @@ def infer_attribute(self, context=None):
             for obj in owner.igetattr(self.attrname, context):
                 yield obj
             context.boundnode = None
-        except (exceptions.NotFoundError, exceptions.InferenceError):
+        except (exceptions.AttributeInferenceError, exceptions.InferenceError):
             context.boundnode = None
         except AttributeError:
             # XXX method / function
             context.boundnode = None
+    raise exceptions.DefaultStop(node=self, context=context)
 nodes.Attribute._infer = decorators.path_wrapper(infer_attribute)
 nodes.AssignAttr.infer_lhs = infer_attribute # # won't work with a path wrapper
 
@@ -182,12 +187,13 @@ nodes.AssignAttr.infer_lhs = infer_attribute # # won't work with a path wrapper
 @decorators.path_wrapper
 def infer_global(self, context=None):
     if context.lookupname is None:
-        raise exceptions.InferenceError()
+        raise exceptions.InferenceError(node=self, context=context)
     try:
         return bases._infer_stmts(self.root().getattr(context.lookupname),
                                   context)
-    except exceptions.NotFoundError:
-        util.reraise(exceptions.InferenceError())
+    except exceptions.AttributeInferenceError as error:
+        util.reraise(exceptions.InferenceError(
+            error.message, target=self, attribute=name, context=context))
 nodes.Global._infer = infer_global
 
 
@@ -257,15 +263,16 @@ def infer_subscript(self, context=None):
             if index:
                 index_value = index.value
         else:
-            raise exceptions.InferenceError()
+            raise exceptions.InferenceError(node=self, context=context)
 
     if index_value is _SLICE_SENTINEL:
-        raise exceptions.InferenceError
+        raise exceptions.InferenceError(node=self, context=context)
 
     try:
         assigned = value.getitem(index_value, context)
     except (IndexError, TypeError, AttributeError) as exc:
-        util.reraise(exceptions.InferenceError(*exc.args))
+        util.reraise(exceptions.InferenceError(node=self, error=exc,
+                                               context=context))
 
     # Prevent inferring if the inferred subscript
     # is the same as the original subscripted object.
@@ -274,6 +281,8 @@ def infer_subscript(self, context=None):
         return
     for inferred in assigned.infer(context):
         yield inferred
+
+    raise exceptions.DefaultStop(node=self, context=context)
 
 nodes.Subscript._infer = decorators.path_wrapper(infer_subscript)
 nodes.Subscript.infer_lhs = infer_subscript
@@ -329,6 +338,8 @@ def _infer_boolop(self, context=None):
         else:
             yield value
 
+    raise exceptions.DefaultStop(node=self, context=context)
+
 nodes.BoolOp._infer = _infer_boolop
 
 
@@ -352,7 +363,7 @@ def _infer_unaryop(self, context=None):
             yield operand.infer_unary_op(self.op)
         except TypeError as exc:
             # The operand doesn't support this operation.
-            yield exceptions.UnaryOperationError(operand, self.op, exc)
+            yield util.BadUnaryOperationMessage(operand, self.op, exc)
         except AttributeError as exc:
             meth = protocols.UNARY_OP_METHOD[self.op]
             if meth is None:
@@ -368,7 +379,7 @@ def _infer_unaryop(self, context=None):
                 if not isinstance(operand, bases.Instance):
                     # The operation was used on something which
                     # doesn't support it.
-                    yield exceptions.UnaryOperationError(operand, self.op, exc)
+                    yield util.BadUnaryOperationMessage(operand, self.op, exc)
                     continue
 
                 try:
@@ -386,9 +397,9 @@ def _infer_unaryop(self, context=None):
                         yield operand
                     else:
                         yield result
-                except exceptions.NotFoundError as exc:
+                except exceptions.AttributeInferenceError as exc:
                     # The unary operation special method was not found.
-                    yield exceptions.UnaryOperationError(operand, self.op, exc)
+                    yield util.BadUnaryOperationMessage(operand, self.op, exc)
                 except exceptions.InferenceError:
                     yield util.YES
 
@@ -397,8 +408,10 @@ def _infer_unaryop(self, context=None):
 @decorators.path_wrapper
 def infer_unaryop(self, context=None):
     """Infer what an UnaryOp should return when evaluated."""
-    return _filter_operation_errors(self, _infer_unaryop, context,
-                                    exceptions.UnaryOperationError)
+    for inferred in _filter_operation_errors(self, _infer_unaryop, context,
+                                             util.BadUnaryOperationMessage):
+        yield inferred
+    raise exceptions.DefaultStop(node=self, context=context)
 
 nodes.UnaryOp._infer_unaryop = _infer_unaryop
 nodes.UnaryOp._infer = infer_unaryop
@@ -544,7 +557,7 @@ def _infer_binary_operation(left, right, op, context, flow_factory):
             results = list(method())
         except AttributeError:
             continue
-        except exceptions.NotFoundError:
+        except exceptions.AttributeInferenceError:
             continue
         except exceptions.InferenceError:
             yield util.YES
@@ -569,9 +582,9 @@ def _infer_binary_operation(left, right, op, context, flow_factory):
             for result in results:
                 yield result
             return
-    # TODO(cpopa): yield a BinaryOperationError here,
+    # TODO(cpopa): yield a BadBinaryOperationMessage here,
     # since the operation is not supported
-    yield exceptions.BinaryOperationError(left_type, op, right_type)
+    yield util.BadBinaryOperationMessage(left_type, op, right_type)
 
 
 def _infer_binop(self, context):
@@ -610,7 +623,7 @@ def _infer_binop(self, context):
 @decorators.path_wrapper
 def infer_binop(self, context=None):
     return _filter_operation_errors(self, _infer_binop, context,
-                                    exceptions.BinaryOperationError)
+                                    util.BadBinaryOperationMessage)
 
 nodes.BinOp._infer_binop = _infer_binop
 nodes.BinOp._infer = infer_binop
@@ -649,7 +662,7 @@ def _infer_augassign(self, context=None):
 @decorators.path_wrapper
 def infer_augassign(self, context=None):
     return _filter_operation_errors(self, _infer_augassign, context,
-                                    exceptions.BinaryOperationError)
+                                    util.BadBinaryOperationMessage)
 
 nodes.AugAssign._infer_augassign = _infer_augassign
 nodes.AugAssign._infer = infer_augassign
@@ -660,7 +673,7 @@ nodes.AugAssign._infer = infer_augassign
 def infer_arguments(self, context=None):
     name = context.lookupname
     if name is None:
-        raise exceptions.InferenceError()
+        raise exceptions.InferenceError(node=self, context=context)
     return protocols._arguments_infer_argname(self, name, context)
 nodes.Arguments._infer = infer_arguments
 
@@ -715,11 +728,11 @@ def instance_getitem(self, index, context=None):
 
     method = next(self.igetattr('__getitem__', context=context))
     if not isinstance(method, bases.BoundMethod):
-        raise exceptions.InferenceError
+        raise exceptions.InferenceError(node=self, context=context)
 
     try:
         return next(method.infer_call_result(self, new_context))
     except StopIteration:
-        util.reraise(exceptions.InferenceError())
+        util.reraise(exceptions.InferenceError(node=self, context=context))
 
 bases.Instance.getitem = instance_getitem

@@ -117,9 +117,17 @@ def yes_if_nothing_inferred(func, instance, args, kwargs):
 
 @wrapt.decorator
 def raise_if_nothing_inferred(func, instance, args, kwargs):
+    '''All generators wrapped with raise_if_nothing_inferred *must* raise
+    exceptions.DefaultStop if they can terminate without output, to
+    propagate error information.
+    '''
     inferred = False
-    for node in func(*args, **kwargs):
-        inferred = True
-        yield node
+    fields = {}
+    try:
+        for node in func(*args, **kwargs):
+            inferred = True
+            yield node
+    except exceptions.DefaultStop as e:
+        fields = vars(e)
     if not inferred:
-        raise exceptions.InferenceError()
+        raise exceptions.InferenceError(**fields)

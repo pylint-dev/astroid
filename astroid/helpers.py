@@ -86,7 +86,7 @@ def object_type(node, context=None):
 
     This is used to implement the ``type`` builtin, which means that it's
     used for inferring type calls, as well as used in a couple of other places
-    in the inference. 
+    in the inference.
     The node will be inferred first, so this function can support all
     sorts of objects, as long as they support inference.
     """
