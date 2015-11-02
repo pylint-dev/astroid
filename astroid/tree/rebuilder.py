@@ -22,8 +22,8 @@ order to get a single Astroid representation
 import _ast
 import sys
 
-from astroid import astpeephole
 from astroid import nodes
+from astroid.tree import astpeephole
 
 
 

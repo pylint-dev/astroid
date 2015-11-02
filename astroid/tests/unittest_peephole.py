@@ -23,11 +23,11 @@ import textwrap
 import unittest
 
 import astroid
-from astroid import astpeephole
 from astroid import builder
 from astroid import manager
 from astroid import test_utils
 from astroid.tests import resources
+from astroid.tree import astpeephole
 
 
 MANAGER = manager.AstroidManager()
