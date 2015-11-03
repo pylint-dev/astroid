@@ -475,12 +475,16 @@ def ast_from_ellipsis(ellipsis, built_objects, module, name=None, parent=None):
 #         scoped_nodes._get_locals(n, locals_)
 #     return locals_
 
-BUILTIN_TYPES = frozenset((type(None), type(NotImplemented),
-                           types.GeneratorType, types.FunctionType,
-                           types.MethodType))
+BUILTIN_TYPES = {type(None): 'NoneType',
+                 type(NotImplemented): 'NotImplementedType',
+                 types.GeneratorType: 'GeneratorType',
+                 types.FunctionType: 'FunctionType',
+                 types.MethodType: 'MethodType',
+                 types.BuiltinFunctionType: 'BuiltinFunctionType',
+                 types.ModuleType: 'ModuleType'}
 
-# Initialize the built_objects map for the mock AST for builtins to
-# ensure that the types are included as Name nodes, not explicit ASTs.
+# Initialize the built_objects map for the builtins mock AST to ensure
+# that the types are included as Name nodes, not explicit ASTs.
 built_objects = _ChainMap({t: True for t in BUILTIN_TYPES})
 astroid_builtin = _ast_from_object(six.moves.builtins,
                                    _ChainMap({t: True for t in BUILTIN_TYPES}),

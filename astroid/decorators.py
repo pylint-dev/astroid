@@ -122,7 +122,7 @@ def raise_if_nothing_inferred(func, instance, args, kwargs):
     propagate error information.
     '''
     inferred = False
-    # fields = {}
+    fields = {}
     try:
         for node in func(*args, **kwargs):
             inferred = True

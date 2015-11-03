@@ -378,7 +378,7 @@ class BoundMethod(UnboundMethod):
             assign = node_classes.Assign()
             assign.postinit(targets=node_classes.AssignName(key.value),
                             value=value)
-            body.append[assign]
+            body.append(assign)
             # cls_locals[key.value].append(value)
         # print(attrs.repr_tree())
 

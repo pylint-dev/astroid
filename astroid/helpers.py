@@ -32,36 +32,7 @@ from astroid import scoped_nodes
 from astroid import util
 
 
-BUILTINS = six.moves.builtins.__name__
-
-
-def _build_proxy_class(cls_name, builtins):
-    # TODO: fix with the node constructors
-    return nodes.ClassDef(name=cls_name, parent=builtins)
-
-
-def _function_type(function, builtins):
-    if isinstance(function, scoped_nodes.Lambda):
-        if function.root().name == BUILTINS:
-            cls_name = 'builtin_function_or_method'
-        else:
-            cls_name = 'function'
-    elif isinstance(function, bases.BoundMethod):
-        if six.PY2:
-            cls_name = 'instancemethod'
-        else:
-            cls_name = 'method'
-    elif isinstance(function, bases.UnboundMethod):
-        if six.PY2:
-            cls_name = 'instancemethod'
-        else:
-            cls_name = 'function'
-    return _build_proxy_class(cls_name, builtins)
-
-
 def _object_type(node, context=None):
-    astroid_manager = manager.AstroidManager()
-    builtins = astroid_manager.astroid_cache[BUILTINS]
     context = context or contextmod.InferenceContext()
 
     for inferred in node.infer(context=context):
@@ -71,11 +42,26 @@ def _object_type(node, context=None):
                 if metaclass:
                     yield metaclass
                     continue
-            yield builtins.getattr('type')[0]
+            yield raw_building.astroid_builtins.getattr('type')[0]
         elif isinstance(inferred, (scoped_nodes.Lambda, bases.UnboundMethod)):
-            yield _function_type(inferred, builtins)
+            if isinstance(inferred, scoped_nodes.Lambda):
+                if inferred.root() is raw_building.astroid_builtins:
+                    yield raw_building.astroid_builtins['BuiltinFunctionType']
+                else:
+                    yield raw_building.astroid_builtins['FunctionType']
+            elif isinstance(inferred, bases.BoundMethod):
+                yield raw_building.astroid_builtins['MethodType']
+            elif isinstance(inferred, bases.UnboundMethod):
+                if six.PY2:
+                    yield raw_building.astroid_builtins['MethodType']
+                else:
+                    yield raw_building.astroid_builtins['FunctionType']
+            else:
+                raise InferenceError('Function {func!r} inferred from {node!r} '
+                                     'has no identifiable type.',
+                                     node=node, func=inferred, contex=context)
         elif isinstance(inferred, scoped_nodes.Module):
-            yield _build_proxy_class('module', builtins)
+            yield raw_building.astroid_builtins['ModuleType']
         else:
             yield inferred._proxied
 
@@ -83,11 +69,9 @@ def _object_type(node, context=None):
 def object_type(node, context=None):
     """Obtain the type of the given node
 
-    This is used to implement the ``type`` builtin, which means that it's
-    used for inferring type calls, as well as used in a couple of other places
-    in the inference.
     The node will be inferred first, so this function can support all
-    sorts of objects, as long as they support inference.
+    sorts of objects, as long as they support inference. It will try to
+    retrieve the Python type, as returned by the builtin `type`.
     """
 
     try:
