@@ -122,12 +122,13 @@ def raise_if_nothing_inferred(func, instance, args, kwargs):
     propagate error information.
     '''
     inferred = False
-    fields = {}
+    # fields = {}
     try:
         for node in func(*args, **kwargs):
             inferred = True
             yield node
     except exceptions.DefaultStop as e:
         fields = vars(e)
+        del fields['message']
     if not inferred:
         raise exceptions.InferenceError(**fields)

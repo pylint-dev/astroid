@@ -1893,7 +1893,7 @@ def locals_empty(node, locals_):
     '''EmptyNodes add an object to the local variables under a specified
     name.'''
     if node.name:
-        locals_[node.name].append(node.object)
+        locals_[node.name].append(node)
 
 @_get_locals.register(node_classes.ReservedName)
 def locals_reserved_name(node, locals_):
@@ -1904,11 +1904,14 @@ def locals_reserved_name(node, locals_):
 # pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(node_classes.Arguments)
 def locals_arguments(node, locals_):
-    '''Other names assigned by functions have AssignName nodes.'''
+    '''Other names assigned by functions have AssignName nodes that are
+    children of an Arguments node.'''
     if node.vararg:
         locals_[node.vararg].append(node)
     if node.kwarg:
         locals_[node.kwarg].append(node)
+    for n in node.get_children():
+        _get_locals(n, locals_)
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(node_classes.Import)

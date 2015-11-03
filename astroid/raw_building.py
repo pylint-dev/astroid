@@ -145,15 +145,15 @@ def ast_from_object(object_, name=None):
 
 @_singledispatch
 def _ast_from_object(object_, built_objects, module, name=None, parent=None):
-    if name:
-        parent = nodes.Assign(parent=parent)
-        name_node = nodes.AssignName(name, parent=parent)
+    # if name:
+    #     parent = nodes.Assign(parent=parent)
+    #     name_node = nodes.AssignName(name, parent=parent)
     empty_node = nodes.EmptyNode(name=name, object_=object_, parent=parent)
-    if name:
-        parent.postinit(targets=[name_node], value=empty_node)
-        node = parent
-    else:
-        node = empty_node
+    # if name:
+    #     parent.postinit(targets=[name_node], value=empty_node)
+    #     node = parent
+    # else:
+    node = empty_node
     return node
 
 

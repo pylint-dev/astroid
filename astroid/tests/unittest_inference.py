@@ -83,7 +83,11 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
     # additional assertInfer* method for builtin types
 
     def assertInferConst(self, node, expected):
-        inferred = next(node.infer())
+        import pprint
+        try:
+            inferred = next(node.infer())
+        except Exception as e:
+            pprint.pprint(vars(e))
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, expected)
 
@@ -1776,9 +1780,10 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertEqual(inferred.qname(), "{}.dict".format(BUILTINS))
 
     def test_str_methods(self):
+        # Compatibility issues
+        
+        # ' '.decode() #@
         code = """
-        ' '.decode() #@
-
         ' '.encode() #@
         ' '.join('abcd') #@
         ' '.replace('a', 'b') #@
@@ -1800,6 +1805,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ' '.count() #@
         """
         ast = test_utils.extract_node(code, __name__)
+        # import pdb; pdb.set_trace()
         self.assertInferConst(ast[0], u'')
         for i in range(1, 16):
             self.assertInferConst(ast[i], '')

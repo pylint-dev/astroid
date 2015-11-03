@@ -27,8 +27,6 @@ import warnings
 import lazy_object_proxy
 import six
 
-from astroid import exceptions
-
 JYTHON = True if platform.python_implementation() == 'Jython' else False
 
 

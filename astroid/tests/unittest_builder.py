@@ -296,9 +296,11 @@ class BuilderTest(unittest.TestCase):
         # check property has __init__
         pclass = builtin_ast['property']
         self.assertIn('__init__', pclass)
-        self.assertIsInstance(builtin_ast['None'], nodes.AssignName)
-        self.assertIsInstance(builtin_ast['True'], nodes.AssignName)
-        self.assertIsInstance(builtin_ast['False'], nodes.AssignName)
+        self.assertIsInstance(builtin_ast['None'], nodes.NameConstant)
+        self.assertIsInstance(builtin_ast['True'], nodes.NameConstant)
+        self.assertIsInstance(builtin_ast['False'], nodes.NameConstant)
+        self.assertIsInstance(builtin_ast['NotImplemented'], nodes.NameConstant)
+        self.assertIsInstance(builtin_ast['Ellipsis'], nodes.Ellipsis)
         if six.PY3:
             self.assertIsInstance(builtin_ast['Exception'], nodes.ClassDef)
             self.assertIsInstance(builtin_ast['NotImplementedError'], nodes.ClassDef)
