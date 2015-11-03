@@ -94,7 +94,7 @@ def remove_nodes(cls):
             # TODO: no way to access the context when raising this error.
             raise exceptions.AttributeInferenceError(
                 'No nodes left after removing all {remove_type!r} from '
-                'inferring for {node!r}.',
+                'nodes inferred for {node!r}.',
                 node=instance, remove_type=cls)
         return nodes
     return decorator
