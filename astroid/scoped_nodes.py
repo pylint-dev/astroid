@@ -91,10 +91,11 @@ def remove_nodes(cls):
     def decorator(func, instance, args, kwargs):
         nodes = [n for n in func(*args, **kwargs) if not isinstance(n, cls)]
         if not nodes:
-            # TODO: no way to access the name or context when raising
-            # this error.
+            # TODO: no way to access the context when raising this error.
             raise exceptions.AttributeInferenceError(
-                'No nodes left after filtering.', target=instance)
+                'No nodes left after removing all {remove_type!r} from '
+                'inferring for {node!r}.',
+                node=instance, remove_type=cls)
         return nodes
     return decorator
 

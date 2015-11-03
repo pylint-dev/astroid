@@ -129,5 +129,6 @@ def raise_if_nothing_inferred(func, instance, args, kwargs):
             yield node
     except exceptions.DefaultStop as e:
         fields = vars(e)
+        del fields['message']
     if not inferred:
         raise exceptions.InferenceError(**fields)
