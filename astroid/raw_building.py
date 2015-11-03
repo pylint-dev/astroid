@@ -138,9 +138,8 @@ MANAGER = manager.AstroidManager()
 
 
 def ast_from_object(object_, name=None):
-    built_objects = _ChainMap()
-    module = inspect.getmodule(object_)
-    return _ast_from_object(object_, built_objects, module, name)
+    return _ast_from_object(object_, _ChainMap(),
+                            inspect.getmodule(object_), name)
 
 
 @_singledispatch
@@ -164,7 +163,6 @@ def ast_from_module(module, built_objects, parent_module, name=None, parent=None
         # This module has been imported into another.
         return nodes.Import([[module.__name__, name]], parent=parent)
     if id(module) in built_objects:
-        # return built_objects[id(module)]
         return nodes.Name(name=name or module.__name__, parent=parent_module)
     try:
         source_file = inspect.getsourcefile(module)
@@ -477,9 +475,23 @@ def ast_from_ellipsis(ellipsis, built_objects, module, name=None, parent=None):
 #         scoped_nodes._get_locals(n, locals_)
 #     return locals_
 
-astroid_builtin = ast_from_object(six.moves.builtins)
+BUILTIN_TYPES = frozenset((type(None), type(NotImplemented),
+                           types.GeneratorType, types.FunctionType,
+                           types.MethodType))
 
-# _GeneratorType = nodes.ClassDef(types.GeneratorType.__name__, types.GeneratorType.__doc__)
-# _GeneratorType.parent = MANAGER.astroid_cache[six.moves.builtins.__name__]
-# bases.Generator._proxied = _GeneratorType
-# Astroid_BUILDER.object_build(bases.Generator._proxied, types.GeneratorType)
+# Initialize the built_objects map for the mock AST for builtins to
+# ensure that the types are included as Name nodes, not explicit ASTs.
+built_objects = _ChainMap({t: True for t in BUILTIN_TYPES})
+astroid_builtin = _ast_from_object(six.moves.builtins,
+                                   _ChainMap({t: True for t in BUILTIN_TYPES}),
+                                   six.moves.builtins)
+astroid_builtins = astroid_builtin
+
+for builtin_type in BUILTIN_TYPES:
+    # Now delete each builtin type from built_objects to ensure a real
+    # AST for it is created by _ast_from_object.
+    del built_objects[builtin_type]
+    class_node = _ast_from_object(builtin_type, built_objects,
+                                  six.moves.builtins)
+    astroid_builtins.body.append(class_node)
+    class_node.parent = astroid_builtins

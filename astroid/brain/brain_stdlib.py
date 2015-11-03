@@ -224,8 +224,6 @@ def infer_namedtuple(namedtuple_call, context=None):
     """Specific inference function for namedtuple Call node"""
 
     type_name, fields = infer_namedtuple_enum_fields(namedtuple_call, context)
-    # TODO: this doesn't handle the case where duplicate field
-    # names are replaced using namedtuple's rename keyword.
     try:
         field_names = tuple(fields.value.replace(',', ' ').split())
     except AttributeError:
