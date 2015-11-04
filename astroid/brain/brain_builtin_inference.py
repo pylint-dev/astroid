@@ -60,8 +60,6 @@ def _extend_str(class_node, rvalue):
             return {rvalue}
         def ljust(self, width, fillchar=None):
             return {rvalue}
-        def split(self, *args):
-            return []
     ''')
     code = code.format(rvalue=rvalue)
     fake = AstroidBuilder(MANAGER).string_build(code)['whatever']
