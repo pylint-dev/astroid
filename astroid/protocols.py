@@ -31,6 +31,7 @@ from astroid import decorators
 from astroid.interpreter import objects
 from astroid.interpreter import util as inferenceutil
 from astroid import nodes
+from astroid.tree import treeabc
 from astroid import util
 
 
@@ -116,7 +117,7 @@ for _KEY, _IMPL in list(BIN_OP_IMPL.items()):
 @decorators.yes_if_nothing_inferred
 def const_infer_binary_op(self, operator, other, context, _):
     not_implemented = nodes.Const(NotImplemented)
-    if isinstance(other, nodes.Const):
+    if isinstance(other, treeabc.Const):
         try:
             impl = BIN_OP_IMPL[operator]
             try:
@@ -160,7 +161,7 @@ def tl_infer_binary_op(self, operator, other, context, method):
                  if not n is util.YES]
         node.elts = elts
         yield node
-    elif isinstance(other, nodes.Const) and operator == '*':
+    elif isinstance(other, treeabc.Const) and operator == '*':
         if not isinstance(other.value, int):
             yield not_implemented
             return
@@ -241,7 +242,7 @@ def _resolve_looppart(parts, asspath, context):
 def for_assigned_stmts(self, node, context=None, asspath=None):
     if asspath is None:
         for lst in self.iter.infer(context):
-            if isinstance(lst, (nodes.Tuple, nodes.List)):
+            if isinstance(lst, (treeabc.Tuple, treeabc.List)):
                 for item in lst.elts:
                     yield item
     else:
@@ -279,7 +280,7 @@ def _arguments_infer_argname(self, name, context):
     if self.args and getattr(self.args[0], 'name', None) == name:
         functype = self.parent.type
         cls = self.parent.parent.scope()
-        is_metaclass = isinstance(cls, nodes.ClassDef) and cls.type == 'metaclass'
+        is_metaclass = isinstance(cls, treeabc.ClassDef) and cls.type == 'metaclass'
         # If this is a metaclass, then the first argument will always
         # be the class, not an instance.
         if is_metaclass or functype == 'classmethod':
@@ -376,7 +377,7 @@ def _resolve_asspart(parts, asspath, context):
 @decorators.raise_if_nothing_inferred
 def excepthandler_assigned_stmts(self, node, context=None, asspath=None):
     for assigned in inferenceutil.unpack_infer(self.type):
-        if isinstance(assigned, nodes.ClassDef):
+        if isinstance(assigned, treeabc.ClassDef):
             assigned = objects.Instance(assigned)
         yield assigned
 
@@ -395,7 +396,7 @@ def _infer_context_manager(self, mgr, context):
             return
         for decorator_node in func.decorators.nodes:
             decorator = next(decorator_node.infer(context))
-            if isinstance(decorator, nodes.FunctionDef):
+            if isinstance(decorator, treeabc.FunctionDef):
                 if decorator.qname() == _CONTEXTLIB_MGR:
                     break
         else:
@@ -405,7 +406,7 @@ def _infer_context_manager(self, mgr, context):
         # Get the first yield point. If it has multiple yields,
         # then a RuntimeError will be raised.
         # TODO(cpopa): Handle flows.
-        yield_point = next(func.nodes_of_class(nodes.Yield), None)
+        yield_point = next(func.nodes_of_class(treeabc.Yield), None)
         if yield_point:
             if not yield_point.value:
                 # TODO(cpopa): an empty yield. Should be wrapped to Const.
@@ -472,14 +473,14 @@ nodes.With.assigned_stmts = with_assigned_stmts
 @decorators.yes_if_nothing_inferred
 def starred_assigned_stmts(self, node=None, context=None, asspath=None):
     stmt = self.statement()
-    if not isinstance(stmt, (nodes.Assign, nodes.For)):
+    if not isinstance(stmt, (treeabc.Assign, treeabc.For)):
         raise exceptions.InferenceError()
 
-    if isinstance(stmt, nodes.Assign):
+    if isinstance(stmt, treeabc.Assign):
         value = stmt.value
         lhs = stmt.targets[0]
 
-        if sum(1 for node in lhs.nodes_of_class(nodes.Starred)) > 1:
+        if sum(1 for node in lhs.nodes_of_class(treeabc.Starred)) > 1:
             # Too many starred arguments in the expression.
             raise exceptions.InferenceError()
 
@@ -508,12 +509,12 @@ def starred_assigned_stmts(self, node=None, context=None, asspath=None):
         # to remvoe anything after the starred node.
 
         for index, node in enumerate(lhs.elts):
-            if not isinstance(node, nodes.Starred):
+            if not isinstance(node, treeabc.Starred):
                 elts.popleft()
                 continue
             lhs_elts = collections.deque(reversed(lhs.elts[index:]))
             for node in lhs_elts:
-                if not isinstance(node, nodes.Starred):
+                if not isinstance(node, treeabc.Starred):
                     elts.pop()
                     continue
                 # We're done
