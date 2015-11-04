@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 
+import types
 import unittest
 
 import six
@@ -40,14 +41,6 @@ class TestHelpers(unittest.TestCase):
     def _extract(self, obj_name):
         return self.builtins.getattr(obj_name)[0]
 
-    def _build_custom_builtin(self, obj_name):
-        return nodes.ClassDef(name=obj_name, parent=self.builtins)
-
-    def assert_classes_equal(self, cls, other):
-        self.assertEqual(cls.name, other.name)
-        self.assertEqual(cls.root(), other.root())
-        self.assertEqual(cls.qname(), other.qname())
-
     def test_object_type(self):
         pairs = [
             ('1', self._extract('int')),
@@ -57,15 +50,15 @@ class TestHelpers(unittest.TestCase):
             ('type', self._extract('type')),
             ('object', self._extract('type')),
             ('object()', self._extract('object')),
-            ('lambda: None', self._build_custom_builtin('function')),
-            ('len', self._build_custom_builtin('builtin_function_or_method')),
-            ('None', self._build_custom_builtin('None')),
-            ('import sys\nsys#@', self._build_custom_builtin('module')),
+            ('lambda: None', self._extract(types.FunctionType.__name__)),
+            ('len', self._extract(types.BuiltinFunctionType.__name__)),
+            ('None', self._extract(type(None).__name__)),
+            ('import sys\nsys#@', self._extract(types.ModuleType.__name__)),
         ]
         for code, expected in pairs:
             node = test_utils.extract_node(code)
             objtype = helpers.object_type(node)
-            self.assert_classes_equal(objtype, expected)
+            self.assertIs(objtype, expected)
 
     def test_object_type_classes_and_functions(self):
         ast_nodes = test_utils.extract_node('''
@@ -91,28 +84,28 @@ class TestHelpers(unittest.TestCase):
         ''')
         from_self = helpers.object_type(ast_nodes[0])
         cls = next(ast_nodes[1].infer())
-        self.assert_classes_equal(from_self, cls)
+        self.assertIs(from_self, cls)
 
         cls_type = helpers.object_type(ast_nodes[1])
-        self.assert_classes_equal(cls_type, self._extract('type'))
+        self.assertIs(cls_type, self._extract('type'))
 
         instance_type = helpers.object_type(ast_nodes[2])
         cls = next(ast_nodes[2].infer())._proxied
-        self.assert_classes_equal(instance_type, cls)
+        self.assertIs(instance_type, cls)
 
         expected_method_types = [
-            (ast_nodes[3], 'instancemethod' if six.PY2 else 'function'),
-            (ast_nodes[4], 'instancemethod' if six.PY2 else 'method'),
-            (ast_nodes[5], 'instancemethod' if six.PY2 else 'method'),
-            (ast_nodes[6], 'instancemethod' if six.PY2 else 'method'),
-            (ast_nodes[7], 'function'),
-            (ast_nodes[8], 'function'),
-            (ast_nodes[9], 'generator'),
+            (ast_nodes[3], types.MethodType.__name__ if six.PY2 else types.FunctionType.__name__),
+            (ast_nodes[4], types.MethodType.__name__),
+            (ast_nodes[5], types.MethodType.__name__),
+            (ast_nodes[6], types.MethodType.__name__),
+            (ast_nodes[7], types.FunctionType.__name__),
+            (ast_nodes[8], types.FunctionType.__name__),
+            (ast_nodes[9], types.GeneratorType.__name__),
         ]
         for node, expected in expected_method_types:
             node_type = helpers.object_type(node)
-            expected_type = self._build_custom_builtin(expected)
-            self.assert_classes_equal(node_type, expected_type)
+            expected_type = self._extract(expected)
+            self.assertIs(node_type, expected_type)
 
     @test_utils.require_version(minver='3.0')
     def test_object_type_metaclasses(self):
@@ -123,11 +116,11 @@ class TestHelpers(unittest.TestCase):
         meta_instance = Meta()
         ''')
         meta_type = helpers.object_type(module['Meta'])
-        self.assert_classes_equal(meta_type, module['Meta'].metaclass())
+        self.assertIs(meta_type, module['Meta'].metaclass())
 
         meta_instance = next(module['meta_instance'].infer())
         instance_type = helpers.object_type(meta_instance)
-        self.assert_classes_equal(instance_type, module['Meta'])
+        self.assertIs(instance_type, module['Meta'])
 
     @test_utils.require_version(minver='3.0')
     def test_object_type_most_derived(self):

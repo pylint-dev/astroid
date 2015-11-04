@@ -505,3 +505,5 @@ for builtin_type in BUILTIN_TYPES:
                                   six.moves.builtins)
     astroid_builtins.body.append(class_node)
     class_node.parent = astroid_builtins
+
+bases.Generator._proxied = astroid_builtins.getattr(types.GeneratorType.__name__)[0]
