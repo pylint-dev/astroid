@@ -140,6 +140,7 @@ class deque(object):
     def rotate(self, n): pass
     def __iter__(self): return self
     def __reversed__(self): return self.iterable[::-1]
+    def __getitem__(self, index): pass
 ''')
 
 
