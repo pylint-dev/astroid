@@ -183,12 +183,12 @@ class CallSite(object):
                 else:
                     # XXX can do better ?
                     boundnode = funcnode.parent.frame()
-                
+
                 if isinstance(boundnode, nodes.ClassDef):
                     # Verify that we're accessing a method
                     # of the metaclass through a class, as in
                     # `cls.metaclass_method`. In this case, the
-                    # first argument is always the class. 
+                    # first argument is always the class.
                     method_scope = funcnode.parent.scope()
                     if method_scope is boundnode.metaclass():
                         return iter((boundnode, ))
