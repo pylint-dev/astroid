@@ -26,11 +26,11 @@ import sys
 import six
 
 from astroid import context as contextmod
-from astroid import exceptions
 from astroid import decorators
+from astroid import exceptions
 from astroid.interpreter import objects
+from astroid.interpreter import runtimeabc
 from astroid.interpreter import util as inferenceutil
-from astroid import nodes
 from astroid.tree import treeabc
 from astroid import util
 
@@ -80,16 +80,41 @@ _UNARY_OPERATORS = {
 }
 
 
-def _infer_unary_op(obj, op):
+def _infer_unary_op(obj, op, nodes):
     func = _UNARY_OPERATORS[op]
     value = func(obj)
     return nodes.const_factory(value)
 
-nodes.Tuple.infer_unary_op = lambda self, op: _infer_unary_op(tuple(self.elts), op)
-nodes.List.infer_unary_op = lambda self, op: _infer_unary_op(self.elts, op)
-nodes.Set.infer_unary_op = lambda self, op: _infer_unary_op(set(self.elts), op)
-nodes.Const.infer_unary_op = lambda self, op: _infer_unary_op(self.value, op)
-nodes.Dict.infer_unary_op = lambda self, op: _infer_unary_op(dict(self.items), op)
+
+@util.singledispatch
+def infer_unary_op(self, op, nodes):
+    raise exceptions.UnaryOperationNotSupportedError
+
+
+@infer_unary_op.register(treeabc.Tuple)
+def _infer_unary_op_tuple(self, op, nodes):
+    return _infer_unary_op(tuple(self.elts), op, nodes)
+
+
+@infer_unary_op.register(treeabc.List)
+def _infer_unary_op_list(self, op, nodes):
+    return _infer_unary_op(self.elts, op, nodes)
+
+
+@infer_unary_op.register(treeabc.Set)
+def _infer_unary_op_set(self, op, nodes):
+    return _infer_unary_op(set(self.elts), op, nodes)
+
+
+@infer_unary_op.register(treeabc.Const)
+def _infer_unary_op_const(self, op, nodes):
+    return _infer_unary_op(self.value, op, nodes)
+
+
+@infer_unary_op.register(treeabc.Dict)
+def _infer_unary_op_dict(self, op, nodes):
+    return _infer_unary_op(dict(self.items), op, nodes)
+
 
 # Binary operations
 
@@ -114,9 +139,15 @@ for _KEY, _IMPL in list(BIN_OP_IMPL.items()):
     BIN_OP_IMPL[_KEY + '='] = _IMPL
 
 
+@util.singledispatch
+def infer_binary_op(self, operator, other, context, method, nodes):
+    raise exceptions.BinaryOperationNotSupportedError
+
+
+@infer_binary_op.register(treeabc.Const)
 @decorators.yes_if_nothing_inferred
-def const_infer_binary_op(self, operator, other, context, _):
-    not_implemented = nodes.Const(NotImplemented)
+def const_infer_binary_op(self, operator, other, context, _, nodes):
+    not_implemented = nodes.const_factory(NotImplemented)
     if isinstance(other, treeabc.Const):
         try:
             impl = BIN_OP_IMPL[operator]
@@ -135,8 +166,6 @@ def const_infer_binary_op(self, operator, other, context, _):
     else:
         yield not_implemented
 
-nodes.Const.infer_binary_op = const_infer_binary_op
-
 
 def _multiply_seq_by_int(self, other, context):
     node = self.__class__()
@@ -150,9 +179,11 @@ def _multiply_seq_by_int(self, other, context):
     return node
 
 
+@infer_binary_op.register(treeabc.Tuple)
+@infer_binary_op.register(treeabc.List)
 @decorators.yes_if_nothing_inferred
-def tl_infer_binary_op(self, operator, other, context, method):
-    not_implemented = nodes.Const(NotImplemented)
+def tl_infer_binary_op(self, operator, other, context, method, nodes):
+    not_implemented = nodes.const_factory(NotImplemented)
     if isinstance(other, self.__class__) and operator == '+':
         node = self.__class__()
         elts = [n for elt in self.elts for n in elt.infer(context)
@@ -166,7 +197,7 @@ def tl_infer_binary_op(self, operator, other, context, method):
             yield not_implemented
             return
         yield _multiply_seq_by_int(self, other, context)
-    elif isinstance(other, objects.Instance) and operator == '*':
+    elif isinstance(other, runtimeabc.Instance) and operator == '*':
         # Verify if the instance supports __index__.
         as_index = inferenceutil.class_instance_as_index(other)
         if not as_index:
@@ -176,29 +207,17 @@ def tl_infer_binary_op(self, operator, other, context, method):
     else:
         yield not_implemented
 
-nodes.Tuple.infer_binary_op = tl_infer_binary_op
-nodes.List.infer_binary_op = tl_infer_binary_op
 
-
+@infer_binary_op.register(runtimeabc.Instance)
 @decorators.yes_if_nothing_inferred
-def instance_infer_binary_op(self, operator, other, context, method):
+def instance_infer_binary_op(self, operator, other, context, method, nodes):
     return method.infer_call_result(self, context)
 
-objects.Instance.infer_binary_op = instance_infer_binary_op
 
+@util.singledispatch
+def assigned_stmts(self, nodes, node=None, context=None, asspath=None):
+    raise exceptions.NotSupportedError
 
-# assignment ##################################################################
-
-"""the assigned_stmts method is responsible to return the assigned statement
-(e.g. not inferred) according to the assignment type.
-
-The `asspath` argument is used to record the lhs path of the original node.
-For instance if we want assigned statements for 'c' in 'a, (b,c)', asspath
-will be [1, 1] once arrived to the Assign node.
-
-The `context` argument is the current inference context which should be given
-to any intermediary inference necessary.
-"""
 
 def _resolve_looppart(parts, asspath, context):
     """recursive function to resolve multiple assignments on loops"""
@@ -238,8 +257,10 @@ def _resolve_looppart(parts, asspath, context):
                     break
 
 
+@assigned_stmts.register(treeabc.For)
+@assigned_stmts.register(treeabc.Comprehension)
 @decorators.raise_if_nothing_inferred
-def for_assigned_stmts(self, node, context=None, asspath=None):
+def for_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
     if asspath is None:
         for lst in self.iter.infer(context):
             if isinstance(lst, (treeabc.Tuple, treeabc.List)):
@@ -250,27 +271,23 @@ def for_assigned_stmts(self, node, context=None, asspath=None):
                                           asspath, context):
             yield inferred
 
-nodes.For.assigned_stmts = for_assigned_stmts
-nodes.Comprehension.assigned_stmts = for_assigned_stmts
 
-
-def mulass_assigned_stmts(self, node, context=None, asspath=None):
+@assigned_stmts.register(treeabc.Tuple)
+@assigned_stmts.register(treeabc.List)
+def mulass_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
     if asspath is None:
         asspath = []
     asspath.insert(0, self.elts.index(node))
     return self.parent.assigned_stmts(self, context, asspath)
 
-nodes.Tuple.assigned_stmts = mulass_assigned_stmts
-nodes.List.assigned_stmts = mulass_assigned_stmts
 
-
-def assend_assigned_stmts(self, context=None):
+@assigned_stmts.register(treeabc.AssignName)
+@assigned_stmts.register(treeabc.AssignAttr)
+def assend_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
     return self.parent.assigned_stmts(self, context=context)
-nodes.AssignName.assigned_stmts = assend_assigned_stmts
-nodes.AssignAttr.assigned_stmts = assend_assigned_stmts
 
 
-def _arguments_infer_argname(self, name, context):
+def _arguments_infer_argname(self, name, context, nodes):
     # arguments information may be missing, in which case we can't do anything
     # more
     if not (self.args or self.vararg or self.kwarg):
@@ -319,7 +336,8 @@ def _arguments_infer_argname(self, name, context):
         yield util.YES
 
 
-def arguments_assigned_stmts(self, node, context, asspath=None):
+@assigned_stmts.register(treeabc.Arguments)
+def arguments_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
     if context.callcontext:
         # reset call context/name
         callcontext = context.callcontext
@@ -328,21 +346,18 @@ def arguments_assigned_stmts(self, node, context, asspath=None):
         call_site = self.parent.called_with(callcontext.args,
                                             callcontext.keywords)
         return call_site.infer_argument(node.name, context)
-    return _arguments_infer_argname(self, node.name, context)
-
-nodes.Arguments.assigned_stmts = arguments_assigned_stmts
+    return _arguments_infer_argname(self, node.name, context, nodes)
 
 
+@assigned_stmts.register(treeabc.Assign)
+@assigned_stmts.register(treeabc.AugAssign)
 @decorators.raise_if_nothing_inferred
-def assign_assigned_stmts(self, node, context=None, asspath=None):
+def assign_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
     if not asspath:
         yield self.value
         return
     for inferred in _resolve_asspart(self.value.infer(context), asspath, context):
         yield inferred
-
-nodes.Assign.assigned_stmts = assign_assigned_stmts
-nodes.AugAssign.assigned_stmts = assign_assigned_stmts
 
 
 def _resolve_asspart(parts, asspath, context):
@@ -374,22 +389,21 @@ def _resolve_asspart(parts, asspath, context):
                     return
 
 
+@assigned_stmts.register(treeabc.ExceptHandler)
 @decorators.raise_if_nothing_inferred
-def excepthandler_assigned_stmts(self, node, context=None, asspath=None):
+def excepthandler_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
     for assigned in inferenceutil.unpack_infer(self.type):
         if isinstance(assigned, treeabc.ClassDef):
             assigned = objects.Instance(assigned)
         yield assigned
 
-nodes.ExceptHandler.assigned_stmts = excepthandler_assigned_stmts
 
-
-def _infer_context_manager(self, mgr, context):
+def _infer_context_manager(self, mgr, context, nodes):
     try:
         inferred = next(mgr.infer(context=context))
     except exceptions.InferenceError:
         return
-    if isinstance(inferred, objects.Generator):
+    if isinstance(inferred, runtimeabc.Generator):
         # Check if it is decorated with contextlib.contextmanager.
         func = inferred.parent
         if not func.decorators:
@@ -410,19 +424,19 @@ def _infer_context_manager(self, mgr, context):
         if yield_point:
             if not yield_point.value:
                 # TODO(cpopa): an empty yield. Should be wrapped to Const.
-                const = nodes.Const(None)
+                const = nodes.const_factory(None)
                 const.parent = yield_point
                 const.lineno = yield_point.lineno
                 yield const
             else:
                 for inferred in yield_point.value.infer(context=context):
                     yield inferred
-    elif isinstance(inferred, objects.Instance):
+    elif isinstance(inferred, runtimeabc.Instance):
         try:
             enter = next(inferred.igetattr('__enter__', context=context))
         except (exceptions.InferenceError, exceptions.NotFoundError):
             return
-        if not isinstance(enter, objects.BoundMethod):
+        if not isinstance(enter, runtimeabc.BoundMethod):
             return
         if not context.callcontext:
             context.callcontext = contextmod.CallContext(args=[inferred])
@@ -430,8 +444,9 @@ def _infer_context_manager(self, mgr, context):
             yield result
 
 
+@assigned_stmts.register(treeabc.With)
 @decorators.raise_if_nothing_inferred
-def with_assigned_stmts(self, node, context=None, asspath=None):
+def with_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
     """Infer names and other nodes from a *with* statement.
 
     This enables only inference for name binding in a *with* statement.
@@ -451,10 +466,10 @@ def with_assigned_stmts(self, node, context=None, asspath=None):
     """
     mgr = next(mgr for (mgr, vars) in self.items if vars == node)
     if asspath is None:
-        for result in _infer_context_manager(self, mgr, context):
+        for result in _infer_context_manager(self, mgr, context, nodes):
             yield result
     else:
-        for result in _infer_context_manager(self, mgr, context):
+        for result in _infer_context_manager(self, mgr, context, nodes):
             # Walk the asspath and get the item at the final index.
             obj = result
             for index in asspath:
@@ -467,11 +482,9 @@ def with_assigned_stmts(self, node, context=None, asspath=None):
             yield obj
 
 
-nodes.With.assigned_stmts = with_assigned_stmts
-
-
+@assigned_stmts.register(treeabc.Starred)
 @decorators.yes_if_nothing_inferred
-def starred_assigned_stmts(self, node=None, context=None, asspath=None):
+def starred_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
     stmt = self.statement()
     if not isinstance(stmt, (treeabc.Assign, treeabc.For)):
         raise exceptions.InferenceError()
@@ -506,7 +519,7 @@ def starred_assigned_stmts(self, node=None, context=None, asspath=None):
         # be the list of values which the Starred node will represent
         # This is done in two steps, from left to right to remove
         # anything before the starred node and from right to left
-        # to remvoe anything after the starred node.
+        # to remove anything after the starred node.
 
         for index, node in enumerate(lhs.elts):
             if not isinstance(node, treeabc.Starred):
@@ -523,5 +536,3 @@ def starred_assigned_stmts(self, node=None, context=None, asspath=None):
                 packed.parent = self
                 yield packed
                 break
-
-nodes.Starred.assigned_stmts = starred_assigned_stmts

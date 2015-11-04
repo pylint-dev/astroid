@@ -350,11 +350,11 @@ def _infer_unaryop(self, context=None):
     """Infer what an UnaryOp should return when evaluated."""
     for operand in self.operand.infer(context):
         try:
-            yield operand.infer_unary_op(self.op)
+            yield protocols.infer_unary_op(operand, self.op, nodes)
         except TypeError as exc:
             # The operand doesn't support this operation.
             yield exceptions.UnaryOperationError(operand, self.op, exc)
-        except AttributeError as exc:
+        except exceptions.UnaryOperationNotSupportedError as exc:
             meth = protocols.UNARY_OP_METHOD[self.op]
             if meth is None:
                 # `not node`. Determine node's boolean
@@ -414,7 +414,7 @@ def  _invoke_binop_inference(instance, op, other, context, method_name):
     """Invoke binary operation inference on the given instance."""
     method = instance.getattr(method_name)[0]
     inferred = next(method.infer(context=context))
-    return instance.infer_binary_op(op, other, context, inferred)
+    return protocols.infer_binary_op(instance, op, other, context, inferred, nodes)
 
 
 def _aug_op(instance, op, other, context, reverse=False):
@@ -543,9 +543,9 @@ def _infer_binary_operation(left, right, op, context, flow_factory):
     for method in methods:
         try:
             results = list(method())
-        except AttributeError:
-            continue
-        except exceptions.NotFoundError:
+        except exceptions.BinaryOperationNotSupportedError:
+            continue               
+        except (AttributeError, exceptions.NotFoundError):
             continue
         except exceptions.InferenceError:
             yield util.YES
@@ -662,7 +662,7 @@ def infer_arguments(self, context=None):
     name = context.lookupname
     if name is None:
         raise exceptions.InferenceError()
-    return protocols._arguments_infer_argname(self, name, context)
+    return protocols._arguments_infer_argname(self, name, context, nodes)
 nodes.Arguments._infer = infer_arguments
 
 

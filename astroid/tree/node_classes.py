@@ -19,6 +19,7 @@
 """
 
 import warnings
+import sys
 
 import six
 
@@ -31,6 +32,7 @@ from astroid.interpreter import objects
 from astroid.interpreter import util as inferenceutil
 from astroid import manager
 from astroid import mixins
+from astroid import protocols
 from astroid.tree import base
 from astroid.tree import treeabc
 from astroid import util
@@ -71,6 +73,27 @@ class Statement(base.NodeNG):
         index = stmts.index(self)
         if index >= 1:
             return stmts[index -1]
+
+
+class AssignedStmtsMixin(object):
+    """Provide an `assigned_stmts` method to classes which inherits it."""
+
+    def assigned_stmts(self, node=None, context=None, asspath=None):
+        """Responsible to return the assigned statement
+        (e.g. not inferred) according to the assignment type.
+
+        The `asspath` parameter is used to record the lhs path of the original node.
+        For instance if we want assigned statements for 'c' in 'a, (b,c)', asspath
+        will be [1, 1] once arrived to the Assign node.
+
+        The `context` parameter is the current inference context which should be given
+        to any intermediary inference necessary.
+        """
+        # Inject the current module into assigned_stmts, in order to avoid
+        # circular dependencies between these modules.
+        return protocols.assigned_stmts(self, sys.modules[__name__],
+                                        node=node, context=context,
+                                        asspath=asspath)
 
 
 class LookupMixIn(object):
@@ -223,7 +246,8 @@ class LookupMixIn(object):
 # Name classes
 
 @util.register_implementation(treeabc.AssignName)
-class AssignName(LookupMixIn, mixins.ParentAssignTypeMixin, base.NodeNG):
+class AssignName(LookupMixIn, mixins.ParentAssignTypeMixin,
+                 AssignedStmtsMixin, base.NodeNG):
     """class representing an AssignName node"""
     _other_fields = ('name',)
 
@@ -253,7 +277,7 @@ class Name(LookupMixIn, base.NodeNG):
 
 
 @util.register_implementation(treeabc.Arguments)
-class Arguments(mixins.AssignTypeMixin, base.NodeNG):
+class Arguments(mixins.AssignTypeMixin, AssignedStmtsMixin, base.NodeNG):
     """class representing an Arguments node"""
     if six.PY3:
         # Python 3.4+ uses a different approach regarding annotations,
@@ -397,7 +421,8 @@ def _format_args(args, defaults=None, annotations=None):
 
 
 @util.register_implementation(treeabc.AssignAttr)
-class AssignAttr(mixins.ParentAssignTypeMixin, base.NodeNG):
+class AssignAttr(mixins.ParentAssignTypeMixin,
+                 AssignedStmtsMixin, base.NodeNG):
     """class representing an AssignAttr node"""
     _astroid_fields = ('expr',)
     _other_fields = ('attrname',)
@@ -424,7 +449,7 @@ class Assert(Statement):
 
 
 @util.register_implementation(treeabc.Assign)
-class Assign(mixins.AssignTypeMixin, Statement):
+class Assign(mixins.AssignTypeMixin, AssignedStmtsMixin, Statement):
     """class representing an Assign node"""
     _astroid_fields = ('targets', 'value',)
     targets = None
@@ -436,7 +461,7 @@ class Assign(mixins.AssignTypeMixin, Statement):
 
 
 @util.register_implementation(treeabc.AugAssign)
-class AugAssign(mixins.AssignTypeMixin, Statement):
+class AugAssign(mixins.AssignTypeMixin, AssignedStmtsMixin, Statement):
     """class representing an AugAssign node"""
     _astroid_fields = ('target', 'value')
     _other_fields = ('op',)
@@ -582,7 +607,7 @@ class Compare(base.NodeNG):
 
 
 @util.register_implementation(treeabc.Comprehension)
-class Comprehension(base.NodeNG):
+class Comprehension(AssignedStmtsMixin, base.NodeNG):
     """class representing a Comprehension node"""
     _astroid_fields = ('target', 'iter', 'ifs')
     target = None
@@ -775,7 +800,7 @@ class EmptyNode(base.NodeNG):
 
 
 @util.register_implementation(treeabc.ExceptHandler)
-class ExceptHandler(mixins.AssignTypeMixin, Statement):
+class ExceptHandler(mixins.AssignTypeMixin, AssignedStmtsMixin, Statement):
     """class representing an ExceptHandler node"""
     _astroid_fields = ('type', 'name', 'body',)
     type = None
@@ -829,7 +854,8 @@ class ExtSlice(base.NodeNG):
 
 
 @util.register_implementation(treeabc.For)
-class For(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, Statement):
+class For(mixins.BlockRangeMixIn, mixins.AssignTypeMixin,
+          AssignedStmtsMixin, Statement):
     """class representing a For node"""
     _astroid_fields = ('target', 'iter', 'body', 'orelse',)
     target = None
@@ -983,7 +1009,7 @@ class Keyword(base.NodeNG):
 
 
 @util.register_implementation(treeabc.List)
-class List(base.BaseContainer, objects.Instance):
+class List(base.BaseContainer, AssignedStmtsMixin, objects.Instance):
     """class representing a List node"""
 
     def pytype(self):
@@ -1120,7 +1146,7 @@ class Slice(base.NodeNG):
 
 
 @util.register_implementation(treeabc.Starred)
-class Starred(mixins.ParentAssignTypeMixin, base.NodeNG):
+class Starred(mixins.ParentAssignTypeMixin, AssignedStmtsMixin, base.NodeNG):
     """class representing a Starred node"""
     _astroid_fields = ('value',)
     value = None
@@ -1192,7 +1218,7 @@ class TryFinally(mixins.BlockRangeMixIn, Statement):
 
 
 @util.register_implementation(treeabc.Tuple)
-class Tuple(base.BaseContainer, objects.Instance):
+class Tuple(base.BaseContainer, AssignedStmtsMixin, objects.Instance):
     """class representing a Tuple node"""
 
     def pytype(self):
@@ -1257,7 +1283,8 @@ class While(mixins.BlockRangeMixIn, Statement):
 
 
 @util.register_implementation(treeabc.With)
-class With(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, Statement):
+class With(mixins.BlockRangeMixIn, mixins.AssignTypeMixin,
+           AssignedStmtsMixin, Statement):
     """class representing a With node"""
     _astroid_fields = ('items', 'body')
     items = None

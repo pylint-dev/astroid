@@ -68,6 +68,24 @@ class NoDefault(AstroidError):
     """
 
 
+class NotSupportedError(AstroidError):
+    """Exception raised whenever a capability is accessed on a node
+    which doesn't provide it.
+    """
+
+
+class UnaryOperationNotSupportedError(NotSupportedError):
+    """Internal exception raised by the inference when an object does not
+    suport unary operands.
+    """
+
+
+class BinaryOperationNotSupportedError(NotSupportedError):
+    """Internal exception raised by the inference when an object does
+    not support binary operations.
+    """
+
+
 class OperationError(object):
     """Object which describes a TypeError occurred somewhere in the inference chain
 
