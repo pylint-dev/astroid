@@ -33,6 +33,7 @@ from astroid import context as contextmod
 from astroid import exceptions
 from astroid import decorators as decorators_mod
 from astroid.interpreter import objects
+from astroid.interpreter import runtimeabc
 from astroid.interpreter.util import infer_stmts
 from astroid import manager
 from astroid import mixins
@@ -628,6 +629,212 @@ def _infer_decorator_callchain(node):
         if result.is_subtype_of('%s.staticmethod' % BUILTINS):
             return 'staticmethod'
 
+class CallSite(object):
+    """Class for understanding arguments passed into a call site
+
+    It needs a call context, which contains the arguments and the
+    keyword arguments that were passed into a given call site.
+    In order to infer what an argument represents, call
+    :meth:`infer_argument` with the corresponding function node
+    and the argument name.
+    """
+
+    def __init__(self, funcnode, args, keywords):
+        self._funcnode = funcnode
+        self.duplicated_keywords = set()
+        self._unpacked_args = self._unpack_args(args)
+        self._unpacked_kwargs = self._unpack_keywords(keywords)
+
+        self.positional_arguments = [
+            arg for arg in self._unpacked_args
+            if arg is not util.YES
+        ]
+        self.keyword_arguments = {
+            key: value for key, value in self._unpacked_kwargs.items()
+            if value is not util.YES
+        }
+
+    def has_invalid_arguments(self):
+        """Check if in the current CallSite were passed *invalid* arguments
+
+        This can mean multiple things. For instance, if an unpacking
+        of an invalid object was passed, then this method will return True.
+        Other cases can be when the arguments can't be inferred by astroid,
+        for example, by passing objects which aren't known statically.
+        """
+        return len(self.positional_arguments) != len(self._unpacked_args)
+
+    def has_invalid_keywords(self):
+        """Check if in the current CallSite were passed *invalid* keyword arguments
+
+        For instance, unpacking a dictionary with integer keys is invalid
+        (**{1:2}), because the keys must be strings, which will make this
+        method to return True. Other cases where this might return True if
+        objects which can't be inferred were passed.
+        """
+        return len(self.keyword_arguments) != len(self._unpacked_kwargs)
+
+    def _unpack_keywords(self, keywords):
+        values = {}
+        context = contextmod.InferenceContext()
+        for name, value in keywords:
+            if name is None:
+                # Then it's an unpacking operation (**)
+                try:
+                    inferred = next(value.infer(context=context))
+                except exceptions.InferenceError:
+                    values[name] = util.YES
+                    continue
+
+                if not isinstance(inferred, treeabc.Dict):
+                    # Not something we can work with.
+                    values[name] = util.YES
+                    continue
+
+                for dict_key, dict_value in inferred.items:
+                    try:
+                        dict_key = next(dict_key.infer(context=context))
+                    except exceptions.InferenceError:
+                        values[name] = util.YES
+                        continue
+                    if not isinstance(dict_key, treeabc.Const):
+                        values[name] = util.YES
+                        continue
+                    if not isinstance(dict_key.value, six.string_types):
+                        values[name] = util.YES
+                        continue
+                    if dict_key.value in values:
+                        # The name is already in the dictionary
+                        values[dict_key.value] = util.YES
+                        self.duplicated_keywords.add(dict_key.value)
+                        continue
+                    values[dict_key.value] = dict_value
+            else:
+                values[name] = value
+        return values
+
+    @staticmethod
+    def _unpack_args(args):
+        values = []
+        context = contextmod.InferenceContext()
+        for arg in args:
+            if isinstance(arg, treeabc.Starred):
+                try:
+                    inferred = next(arg.value.infer(context=context))
+                except exceptions.InferenceError:
+                    values.append(util.YES)
+                    continue
+
+                if inferred is util.YES:
+                    values.append(util.YES)
+                    continue
+                if not hasattr(inferred, 'elts'):
+                    values.append(util.YES)
+                    continue
+                values.extend(inferred.elts)
+            else:
+                values.append(arg)
+        return values
+
+    def infer_argument(self, name, context):
+        """infer a function argument value according to the call context"""
+        if name in self.duplicated_keywords:
+            raise exceptions.InferenceError(name)
+
+        # Look into the keywords first, maybe it's already there.
+        try:
+            return self.keyword_arguments[name].infer(context)
+        except KeyError:
+            pass
+
+        # Too many arguments given and no variable arguments.
+        if len(self.positional_arguments) > len(self._funcnode.args.args):
+            if not self._funcnode.args.vararg:
+                raise exceptions.InferenceError(name)
+
+        positional = self.positional_arguments[:len(self._funcnode.args.args)]
+        vararg = self.positional_arguments[len(self._funcnode.args.args):]
+        argindex = self._funcnode.args.find_argname(name)[0]
+        kwonlyargs = set(arg.name for arg in self._funcnode.args.kwonlyargs)
+        kwargs = {
+            key: value for key, value in self.keyword_arguments.items()
+            if key not in kwonlyargs
+        }
+        # If there are too few positionals compared to
+        # what the function expects to receive, check to see
+        # if the missing positional arguments were passed
+        # as keyword arguments and if so, place them into the
+        # positional args list.
+        if len(positional) < len(self._funcnode.args.args):
+            for func_arg in self._funcnode.args.args:
+                if func_arg.name in kwargs:
+                    arg = kwargs.pop(func_arg.name)
+                    positional.append(arg)
+
+        if argindex is not None:
+            # 2. first argument of instance/class method
+            if argindex == 0 and self._funcnode.type in ('method', 'classmethod'):
+                if context.boundnode is not None:
+                    boundnode = context.boundnode
+                else:
+                    # XXX can do better ?
+                    boundnode = self._funcnode.parent.frame()
+
+                if isinstance(boundnode, ClassDef):
+                    # Verify that we're accessing a method
+                    # of the metaclass through a class, as in
+                    # `cls.metaclass_method`. In this case, the
+                    # first argument is always the class. 
+                    method_scope = self._funcnode.parent.scope()
+                    if method_scope is boundnode.metaclass():
+                        return iter((boundnode, ))
+
+                if self._funcnode.type == 'method':
+                    if not isinstance(boundnode, runtimeabc.Instance):
+                        boundnode = objects.Instance(boundnode)
+                    return iter((boundnode,))
+                if self._funcnode.type == 'classmethod':
+                    return iter((boundnode,))
+            # if we have a method, extract one position
+            # from the index, so we'll take in account
+            # the extra parameter represented by `self` or `cls`
+            if self._funcnode.type in ('method', 'classmethod'):
+                argindex -= 1
+            # 2. search arg index
+            try:
+                return self.positional_arguments[argindex].infer(context)
+            except IndexError:
+                pass
+
+        if self._funcnode.args.kwarg == name:
+            # It wants all the keywords that were passed into
+            # the call site.
+            if self.has_invalid_keywords():
+                raise exceptions.InferenceError
+            kwarg = node_classes.Dict(lineno=self._funcnode.args.lineno,
+                                      col_offset=self._funcnode.args.col_offset,
+                                      parent=self._funcnode.args)
+            kwarg.postinit([(node_classes.const_factory(key), value)
+                            for key, value in kwargs.items()])
+            return iter((kwarg, ))
+        elif self._funcnode.args.vararg == name:
+            # It wants all the args that were passed into
+            # the call site.
+            if self.has_invalid_arguments():
+                raise exceptions.InferenceError
+            args = node_classes.Tuple(lineno=self._funcnode.args.lineno,
+                                      col_offset=self._funcnode.args.col_offset,
+                                      parent=self._funcnode.args)
+            args.postinit(vararg)
+            return iter((args, ))
+
+        # Check if it's a default parameter.
+        try:
+            return self._funcnode.args.default_value(name).infer(context)
+        except exceptions.NoDefault:
+            pass
+        raise exceptions.InferenceError(name)
+
 
 @util.register_implementation(treeabc.Lambda)
 class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
@@ -690,6 +897,18 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
 
     def bool_value(self):
         return True
+
+    def called_with(self, args, keywords):
+        """Get a CallSite object with the given arguments
+
+        Given these arguments, this will return an object
+        which considers them as being passed into the current function,
+        which can then be used to infer their values.
+        `args` needs to be a list of arguments, while `keywords`
+        needs to be a list of tuples, where each tuple is formed
+        by a keyword name and a keyword value.
+        """
+        return CallSite(self, args, keywords)
 
 
 @util.register_implementation(treeabc.FunctionDef)

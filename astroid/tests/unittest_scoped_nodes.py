@@ -27,6 +27,7 @@ import warnings
 import six
 
 from astroid import builder
+from astroid import context
 from astroid import nodes
 from astroid.tree import scoped_nodes
 from astroid import util
@@ -557,6 +558,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         inferred = next(func.igetattr('value'))
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 42)
+
 
 
 class ClassNodeTest(ModuleLoader, unittest.TestCase):
@@ -1601,6 +1603,169 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(bind.value, 42)
         parent = bind.scope()
         self.assertEqual(len(parent.extra_decorators), 0)
+
+
+class CallSiteTest(unittest.TestCase):
+
+    @staticmethod
+    def _call_site_from_call(call, func):
+        if call.keywords:
+            keywords = [(arg.arg, arg.value) for arg in call.keywords]
+        else:
+            keywords = []
+        return scoped_nodes.CallSite(func, call.args, keywords)
+
+    def _call_site_from_code(self, code):
+        call = test_utils.extract_node(code)
+        return self._inferred_call_site_from_call(call)
+
+    def _inferred_call_site_from_call(self, call):
+        inferred = next(call.func.infer())
+        return self._call_site_from_call(call, inferred)
+
+    def _test_call_site_pair(self, code, expected_args, expected_keywords):
+        ast_node = test_utils.extract_node(code)
+        call_site = self._call_site_from_call(ast_node, ast_node.func)
+        self.assertEqual(len(call_site.positional_arguments), len(expected_args))
+        self.assertEqual([arg.value for arg in call_site.positional_arguments],
+                         expected_args)
+        self.assertEqual(len(call_site.keyword_arguments), len(expected_keywords))
+        for keyword, value in expected_keywords.items():
+            self.assertIn(keyword, call_site.keyword_arguments)
+            self.assertEqual(call_site.keyword_arguments[keyword].value, value)
+
+    def _test_call_site(self, pairs):
+        for pair in pairs:
+            self._test_call_site_pair(*pair)
+
+    @test_utils.require_version('3.5')
+    def test_call_site_starred_args(self):
+        pairs = [
+            (
+                "f(*(1, 2), *(2, 3), *(3, 4), **{'a':1}, **{'b': 2})",
+                [1, 2, 2, 3, 3, 4],
+                {'a': 1, 'b': 2}
+            ),
+            (
+                "f(1, 2, *(3, 4), 5, *(6, 7), f=24, **{'c':3})",
+                [1, 2, 3, 4, 5, 6, 7],
+                {'f':24, 'c': 3},
+            ),
+            # Too many fs passed into.
+            (
+                "f(f=24, **{'f':24})", [], {},
+            ),
+        ]
+        self._test_call_site(pairs)
+
+    def test_call_site(self):
+        pairs = [
+            (
+                "f(1, 2)", [1, 2], {}
+            ),
+            (
+                "f(1, 2, *(1, 2))", [1, 2, 1, 2], {}
+            ),
+            (
+                "f(a=1, b=2, c=3)", [], {'a':1, 'b':2, 'c':3}
+            )
+        ]
+        self._test_call_site(pairs)
+
+    def _test_call_site_valid_arguments(self, values, invalid):
+        for value in values:
+            ast_node = test_utils.extract_node(value)
+            call_site = self._call_site_from_call(ast_node, ast_node.func)
+            self.assertEqual(call_site.has_invalid_arguments(), invalid)
+
+    def test_call_site_valid_arguments(self):
+        values = [
+            "f(*lala)", "f(*1)", "f(*object)",
+        ]
+        self._test_call_site_valid_arguments(values, invalid=True)
+        values = [
+            "f()", "f(*(1, ))", "f(1, 2, *(2, 3))",
+        ]
+        self._test_call_site_valid_arguments(values, invalid=False)
+
+    def test_duplicated_keyword_arguments(self):
+        ast_node = test_utils.extract_node('f(f=24, **{"f": 25})')
+        site = self._call_site_from_call(ast_node, ast_node.func)
+        self.assertIn('f', site.duplicated_keywords)
+
+    def test_duplicate_keywords(self):
+        call_site = self._call_site_from_code('''
+        def test(a): pass
+        test(a=1, **{'a': 2}) #@
+        ''')
+        with self.assertRaises(InferenceError):
+            call_site.infer_argument('a', context.InferenceContext())
+
+    def test_keyword_argument(self):
+        call_site = self._call_site_from_code('''
+        def test(a): pass
+        test(a=1) #@
+        ''')
+        inferred = next(call_site.infer_argument('a', context.InferenceContext()))
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 1)
+
+    def test_too_many_positional_arguments(self):
+        call_site = self._call_site_from_code('''
+        def test(a): pass
+        test(1, 2) #@
+        ''')
+        with self.assertRaises(InferenceError):
+            call_site.infer_argument('a', context.InferenceContext())
+
+    def test_first_argument_is_instance(self):
+        call_site = self._call_site_from_code('''
+        class A:
+           def test(self): return self
+        A().test() #@
+        ''')
+        inferred = next(call_site.infer_argument('self', context.InferenceContext()))
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.name, 'A')
+
+    def test_first_argument_is_class(self):
+        module = builder.parse('''
+        class A(type):
+           def something(cls): return cls
+        import six
+        @six.add_metaclass(A)
+        class B(object): pass
+        B.something() #@
+        ''')
+        bound = module['B']
+        call_context = context.InferenceContext()
+        call_context.boundnode = bound
+        call = module.body[-1].value
+        call_site = self._inferred_call_site_from_call(call)
+        inferred = next(call_site.infer_argument('cls', call_context))
+
+        self.assertIsInstance(inferred, nodes.ClassDef)
+        self.assertEqual(inferred.name, 'B')
+
+    def test_first_argument_is_class_for_classmethods(self):
+        call_site = self._call_site_from_code('''
+        class A:
+           @classmethod
+           def test(cls): cls
+        A.test() #@
+        ''')
+        inferred = next(call_site.infer_argument('cls', context.InferenceContext()))
+        self.assertIsInstance(inferred, nodes.ClassDef)
+        self.assertEqual(inferred.name, 'A')
+
+    def test_positional_arguments(self):
+        call_site = self._call_site_from_code('''
+        def test(a): pass
+        test(2) #@
+        ''')
+        inferred = next(call_site.infer_argument('a', context.InferenceContext()))
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 2)
 
 
 if __name__ == '__main__':

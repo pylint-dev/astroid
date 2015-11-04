@@ -9,7 +9,6 @@ import six
 
 from astroid import (MANAGER, UseInferenceDefault, NotFoundError,
                      inference_tip, InferenceError, UnresolvableName)
-from astroid import arguments
 from astroid.builder import AstroidBuilder
 from astroid import helpers
 from astroid.interpreter import objects
@@ -258,7 +257,7 @@ def infer_dict(node, context=None):
         keywords = [(arg.arg, arg.value) for arg in node.keywords]
     else:
         keywords = []
-    call = arguments.CallSite(node.args, keywords)
+    call = scoped_nodes.CallSite(node.func, node.args, keywords)
     if call.has_invalid_arguments() or call.has_invalid_keywords():
         raise UseInferenceDefault
 
