@@ -540,8 +540,8 @@ class BuilderTest(unittest.TestCase):
         '''
         name_nodes = test_utils.extract_node(code)
         for node in name_nodes:
-            self.assertFalse(hasattr(next(node.infer()), 'locals'))
-            self.assertFalse(hasattr(next(node.infer()), 'instance_attrs'))
+            self.assertNotIn('custom_attr', next(node.infer()).locals)
+            self.assertNotIn('custom_attr', next(node.infer()).instance_attrs)
 
     def test_asstuple(self):
         code = 'a, b = range(2)'

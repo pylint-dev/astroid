@@ -19,6 +19,7 @@
 """
 Various helper utilities.
 """
+import types
 
 import six
 
@@ -46,22 +47,22 @@ def _object_type(node, context=None):
         elif isinstance(inferred, (scoped_nodes.Lambda, bases.UnboundMethod)):
             if isinstance(inferred, scoped_nodes.Lambda):
                 if inferred.root() is raw_building.astroid_builtins:
-                    yield raw_building.astroid_builtins['BuiltinFunctionType']
+                    yield raw_building.astroid_builtins[types.BuiltinFunctionType.__name__]
                 else:
-                    yield raw_building.astroid_builtins['FunctionType']
+                    yield raw_building.astroid_builtins[types.FunctionType.__name__]
             elif isinstance(inferred, bases.BoundMethod):
-                yield raw_building.astroid_builtins['MethodType']
+                yield raw_building.astroid_builtins[types.MethodType.__name__]
             elif isinstance(inferred, bases.UnboundMethod):
                 if six.PY2:
-                    yield raw_building.astroid_builtins['MethodType']
+                    yield raw_building.astroid_builtins[types.MethodType.__name__]
                 else:
-                    yield raw_building.astroid_builtins['FunctionType']
+                    yield raw_building.astroid_builtins[types.FunctionType.__name__]
             else:
                 raise InferenceError('Function {func!r} inferred from {node!r} '
                                      'has no identifiable type.',
                                      node=node, func=inferred, contex=context)
         elif isinstance(inferred, scoped_nodes.Module):
-            yield raw_building.astroid_builtins['ModuleType']
+            yield raw_building.astroid_builtins[types.ModuleType.__name__]
         else:
             yield inferred._proxied
 
