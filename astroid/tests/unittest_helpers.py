@@ -38,22 +38,22 @@ class TestHelpers(unittest.TestCase):
         self.builtins = astroid_manager.astroid_cache[builtins_name]
         self.manager = manager.AstroidManager()
 
-    def _extract(self, obj_name):
+    def _look_up_in_builtins(self, obj_name):
         return self.builtins.getattr(obj_name)[0]
 
     def test_object_type(self):
         pairs = [
-            ('1', self._extract('int')),
-            ('[]', self._extract('list')),
-            ('{1, 2, 3}', self._extract('set')),
-            ('{1:2, 4:3}', self._extract('dict')),
-            ('type', self._extract('type')),
-            ('object', self._extract('type')),
-            ('object()', self._extract('object')),
-            ('lambda: None', self._extract(types.FunctionType.__name__)),
-            ('len', self._extract(types.BuiltinFunctionType.__name__)),
-            ('None', self._extract(type(None).__name__)),
-            ('import sys\nsys#@', self._extract(types.ModuleType.__name__)),
+            ('1', self._look_up_in_builtins('int')),
+            ('[]', self._look_up_in_builtins('list')),
+            ('{1, 2, 3}', self._look_up_in_builtins('set')),
+            ('{1:2, 4:3}', self._look_up_in_builtins('dict')),
+            ('type', self._look_up_in_builtins('type')),
+            ('object', self._look_up_in_builtins('type')),
+            ('object()', self._look_up_in_builtins('object')),
+            ('lambda: None', self._look_up_in_builtins(types.FunctionType.__name__)),
+            ('len', self._look_up_in_builtins(types.BuiltinFunctionType.__name__)),
+            ('None', self._look_up_in_builtins(type(None).__name__)),
+            ('import sys\nsys#@', self._look_up_in_builtins(types.ModuleType.__name__)),
         ]
         for code, expected in pairs:
             node = test_utils.extract_node(code)
@@ -87,7 +87,7 @@ class TestHelpers(unittest.TestCase):
         self.assertIs(from_self, cls)
 
         cls_type = helpers.object_type(ast_nodes[1])
-        self.assertIs(cls_type, self._extract('type'))
+        self.assertIs(cls_type, self._look_up_in_builtins('type'))
 
         instance_type = helpers.object_type(ast_nodes[2])
         cls = next(ast_nodes[2].infer())._proxied
@@ -104,7 +104,7 @@ class TestHelpers(unittest.TestCase):
         ]
         for node, expected in expected_method_types:
             node_type = helpers.object_type(node)
-            expected_type = self._extract(expected)
+            expected_type = self._look_up_in_builtins(expected)
             self.assertIs(node_type, expected_type)
 
     @test_utils.require_version(minver='3.0')
@@ -173,7 +173,7 @@ class TestHelpers(unittest.TestCase):
         cls_c = ast_nodes[2]
         int_subclass = ast_nodes[3]
         int_subclass = helpers.object_type(next(int_subclass.infer()))
-        base_int = self._extract('int')
+        base_int = self._look_up_in_builtins('int')
         self.assertTrue(helpers.is_subtype(int_subclass, base_int))
         self.assertTrue(helpers.is_supertype(base_int, int_subclass))
 
@@ -235,7 +235,7 @@ class TestHelpers(unittest.TestCase):
         class A(object): #@
             pass
         ''')
-        builtin_type = self._extract('type')
+        builtin_type = self._look_up_in_builtins('type')
         self.assertFalse(helpers.is_supertype(builtin_type, cls_a))
         self.assertFalse(helpers.is_subtype(cls_a, builtin_type))
 
@@ -244,7 +244,7 @@ class TestHelpers(unittest.TestCase):
         class A(type): #@
             pass
         ''')
-        builtin_type = self._extract('type')
+        builtin_type = self._look_up_in_builtins('type')
         self.assertTrue(helpers.is_supertype(builtin_type, cls_a))
         self.assertTrue(helpers.is_subtype(cls_a, builtin_type))
 
