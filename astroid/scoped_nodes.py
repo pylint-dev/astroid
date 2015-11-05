@@ -438,8 +438,11 @@ class Module(LocalsDictNodeNG):
             if name == '__path__' and self.package:
                 return [node_classes.List()] + self.locals.get(name, [])
             return std_special_attributes(self, name)
-        if not ignore_locals and name in self.locals: # or name in self.external_attrs)
+        if not ignore_locals and name in self.locals:
             return self.locals[name]
+        # TODO: should ignore_locals also affect external_attrs?
+        if name in self.external_attrs:
+            return self.external_attrs[name]
         if self.package:
             try:
                 return [self.import_module(name, relative_only=True)]
@@ -1257,12 +1260,12 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         else:
             return util.YES
 
-        result = ClassDef(name, None)
+        result = ClassDef(name, None, parent=caller.parent)
 
         # Get the bases of the class.
         class_bases = next(caller.args[1].infer(context))
         if isinstance(class_bases, (node_classes.Tuple, node_classes.List)):
-            result.bases = class_bases.itered()
+            bases = class_bases.itered()
         else:
             # There is currently no AST node that can represent an 'unknown'
             # node (YES is not an AST node), therefore we simply return YES here
@@ -1275,13 +1278,18 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         except exceptions.InferenceError:
             members = None
 
+        body = []
         if members and isinstance(members, node_classes.Dict):
             for attr, value in members.items:
                 if (isinstance(attr, node_classes.Const) and
                         isinstance(attr.value, six.string_types)):
-                    result.locals[attr.value] = [value]
+                    assign = node_classes.Assign(parent=result)
+                    assign.postinit(targets=node_classes.AssignName(attr.value,
+                                                                    parent=assign),
+                                    value=value)
+                    body.append(assign)
 
-        result.parent = caller.parent
+        result.postinit(bases=bases, body=body, decorators=[], newstyle=True)
         return result
 
     def infer_call_result(self, caller, context=None):
@@ -1453,7 +1461,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         metaclass will be done.
 
         """
-        values = self.locals.get(name, [])
+        values = self.locals.get(name, []) + self.external_attrs.get(name, [])
         if name in self.special_attributes:
             if name == '__module__':
                 return [node_classes.Const(self.root().qname())] + values
@@ -1471,7 +1479,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         # don't modify the list in self.locals!
         values = list(values)
         for classnode in self.ancestors(recurs=True, context=context):
-            values += classnode.locals.get(name, [])
+            values += classnode.locals.get(name, []) + classnode.external_attrs.get(name, [])
 
         if class_context:
             values += self._metaclass_lookup_attribute(name, context)

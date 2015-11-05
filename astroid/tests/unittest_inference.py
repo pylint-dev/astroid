@@ -2939,8 +2939,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(ancestors[0], inferred.root()['Entity'])
         attributes = inferred.getattr('a')
         self.assertEqual(len(attributes), 1)
-        self.assertIsInstance(attributes[0], nodes.Const)
-        self.assertEqual(attributes[0].value, 1)
+        a_inferred = next(attributes[0].infer())
+        self.assertIsInstance(a_inferred, nodes.Const)
+        self.assertEqual(a_inferred.value, 1)
 
     def test_type__new__not_enough_arguments(self):
         ast_nodes = test_utils.extract_node('''
