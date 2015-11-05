@@ -342,14 +342,12 @@ class Generator(Instance):
         return 'Generator(%s)' % (self._proxied.name)
 
 
+@util.register_implementation(runtimeabc.FrozenSet)
 class FrozenSet(base.BaseContainer, Instance):
     """Class representing a FrozenSet composite node."""
 
     def pytype(self):
         return '%s.frozenset' % BUILTINS
-
-    def _infer(self, context=None):
-        yield self
 
     @decorators.cachedproperty
     def _proxied(self):
@@ -357,6 +355,7 @@ class FrozenSet(base.BaseContainer, Instance):
         return builtins.getattr('frozenset')[0]
 
 
+@util.register_implementation(runtimeabc.Super)
 class Super(base.NodeNG):
     """Proxy class over a super call.
 
@@ -382,9 +381,6 @@ class Super(base.NodeNG):
             '__self__': self.type,
             '__class__': self._proxied,
         }
-
-    def _infer(self, context=None):
-        yield self
 
     def super_mro(self):
         """Get the MRO which will be used to lookup attributes in this super."""

@@ -25,6 +25,7 @@ import six
 from astroid import as_string
 from astroid import decorators
 from astroid import exceptions
+from astroid import inference
 from astroid.interpreter import scope
 from astroid import mixins
 from astroid.tree import treeabc
@@ -75,14 +76,14 @@ class NodeNG(object):
                 pass
 
         if not context:
-            return self._infer(context, **kwargs)
+            return inference.infer(self, context, **kwargs)
 
         key = (self, context.lookupname,
                context.callcontext, context.boundnode)
         if key in context.inferred:
             return iter(context.inferred[key])
 
-        return context.cache_generator(key, self._infer(context, **kwargs))
+        return context.cache_generator(key, inference.infer(self, context, **kwargs))
 
     def _repr_name(self):
         """return self.name or self.attrname or '' for nice representation"""

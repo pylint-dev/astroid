@@ -25,39 +25,39 @@ import itertools
 import operator
 
 from astroid import context as contextmod
-from astroid import exceptions
 from astroid import decorators
+from astroid import exceptions
 from astroid import helpers
-from astroid import manager
-from astroid import nodes
-from astroid import protocols
+from astroid.interpreter import runtimeabc
 from astroid.interpreter import util as inferenceutil
-from astroid.interpreter import objects
+from astroid import manager
+from astroid import protocols
+from astroid.tree import treeabc
 from astroid import util
 
 
 MANAGER = manager.AstroidManager()
 
 
-# .infer method ###############################################################
+@util.singledispatch
+def infer(self, context=None):
+    raise exceptions.InferenceError
 
 
+@infer.register(treeabc.Module)
+@infer.register(treeabc.ClassDef)
+@infer.register(treeabc.FunctionDef)
+@infer.register(treeabc.Lambda)
+@infer.register(treeabc.Const)
+@infer.register(treeabc.List)
+@infer.register(treeabc.Tuple)
+@infer.register(treeabc.Dict)
+@infer.register(treeabc.Set)
+@infer.register(treeabc.Slice)
+@infer.register(runtimeabc.Super)
+@infer.register(runtimeabc.FrozenSet)
 def infer_end(self, context=None):
-    """inference's end for node such as Module, ClassDef, FunctionDef,
-    Const...
-
-    """
     yield self
-nodes.Module._infer = infer_end
-nodes.ClassDef._infer = infer_end
-nodes.FunctionDef._infer = infer_end
-nodes.Lambda._infer = infer_end
-nodes.Const._infer = infer_end
-nodes.List._infer = infer_end
-nodes.Tuple._infer = infer_end
-nodes.Dict._infer = infer_end
-nodes.Set._infer = infer_end
-nodes.Slice._infer = infer_end
 
 
 def _higher_function_scope(node):
@@ -73,10 +73,11 @@ def _higher_function_scope(node):
         which encloses the given node.
     """
     current = node
-    while current.parent and not isinstance(current.parent, nodes.FunctionDef):
+    while current.parent and not isinstance(current.parent, treeabc.FunctionDef):
         current = current.parent
     if current and current.parent:
         return current.parent
+
 
 def infer_name(self, context=None):
     """infer a Name: use name lookup rules"""
@@ -94,10 +95,11 @@ def infer_name(self, context=None):
     context = context.clone()
     context.lookupname = self.name
     return inferenceutil.infer_stmts(stmts, context, frame)
-nodes.Name._infer = decorators.path_wrapper(infer_name)
-nodes.AssignName.infer_lhs = infer_name # won't work with a path wrapper
+
+infer.register(treeabc.Name, decorators.path_wrapper(infer_name))
 
 
+@infer.register(treeabc.Call)
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
 def infer_call(self, context=None):
@@ -117,9 +119,9 @@ def infer_call(self, context=None):
         except exceptions.InferenceError:
             ## XXX log error ?
             continue
-nodes.Call._infer = infer_call
 
 
+@infer.register(treeabc.Import)
 @decorators.path_wrapper
 def infer_import(self, context=None, asname=True):
     """infer an Import node: return the imported module/object"""
@@ -130,16 +132,9 @@ def infer_import(self, context=None, asname=True):
         yield self.do_import_module(self.real_name(name))
     else:
         yield self.do_import_module(name)
-nodes.Import._infer = infer_import
 
 
-def infer_name_module(self, name):
-    context = contextmod.InferenceContext()
-    context.lookupname = name
-    return self.infer(context, asname=False)
-nodes.Import.infer_name_module = infer_name_module
-
-
+@infer.register(treeabc.ImportFrom)
 @decorators.path_wrapper
 def infer_import_from(self, context=None, asname=True):
     """infer a ImportFrom node: return the imported module/object"""
@@ -156,7 +151,6 @@ def infer_import_from(self, context=None, asname=True):
         return inferenceutil.infer_stmts(stmts, context)
     except exceptions.NotFoundError:
         util.reraise(exceptions.InferenceError(name))
-nodes.ImportFrom._infer = infer_import_from
 
 
 @decorators.raise_if_nothing_inferred
@@ -176,10 +170,11 @@ def infer_attribute(self, context=None):
         except AttributeError:
             # XXX method / function
             context.boundnode = None
-nodes.Attribute._infer = decorators.path_wrapper(infer_attribute)
-nodes.AssignAttr.infer_lhs = infer_attribute # # won't work with a path wrapper
+
+infer.register(treeabc.Attribute, decorators.path_wrapper(infer_attribute))
 
 
+@infer.register(treeabc.Global)
 @decorators.path_wrapper
 def infer_global(self, context=None):
     if context.lookupname is None:
@@ -189,14 +184,13 @@ def infer_global(self, context=None):
                                          context)
     except exceptions.NotFoundError:
         util.reraise(exceptions.InferenceError())
-nodes.Global._infer = infer_global
 
 
 _SLICE_SENTINEL = object()
 
 def _slice_value(index, context=None):
     """Get the value of the given slice index."""
-    if isinstance(index, nodes.Const):
+    if isinstance(index, treeabc.Const):
         if isinstance(index.value, (int, type(None))):
             return index.value
     elif index is None:
@@ -210,7 +204,7 @@ def _slice_value(index, context=None):
         except exceptions.InferenceError:
             pass
         else:
-            if isinstance(inferred, nodes.Const):
+            if isinstance(inferred, treeabc.Const):
                 if isinstance(inferred.value, (int, type(None))):
                     return inferred.value
 
@@ -240,20 +234,20 @@ def infer_subscript(self, context=None):
         yield util.YES
         return
 
-    if value.__class__ == objects.Instance:
+    if value.__class__.__name__ == 'Instance':
         index_value = index
     else:
         index_value = _SLICE_SENTINEL
-        if isinstance(index, nodes.Const):
+        if isinstance(index, treeabc.Const):
             index_value = index.value
-        elif isinstance(index, nodes.Slice):
+        elif isinstance(index, treeabc.Slice):
             # Infer slices from the original object.
             lower = _slice_value(index.lower, context)
             upper = _slice_value(index.upper, context)
             step = _slice_value(index.step, context)
             if all(elem is not _SLICE_SENTINEL for elem in (lower, upper, step)):
                 index_value = slice(lower, upper, step)
-        elif isinstance(index, objects.Instance):
+        elif isinstance(index, runtimeabc.Instance):
             index = inferenceutil.class_instance_as_index(index)
             if index:
                 index_value = index.value
@@ -276,10 +270,10 @@ def infer_subscript(self, context=None):
     for inferred in assigned.infer(context):
         yield inferred
 
-nodes.Subscript._infer = decorators.path_wrapper(infer_subscript)
-nodes.Subscript.infer_lhs = infer_subscript
+infer.register(treeabc.Subscript, decorators.path_wrapper(infer_subscript))
 
 
+@infer.register(treeabc.BoolOp)
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
 def _infer_boolop(self, context=None):
@@ -330,8 +324,6 @@ def _infer_boolop(self, context=None):
         else:
             yield value
 
-nodes.BoolOp._infer = _infer_boolop
-
 
 # UnaryOp, BinOp and AugAssign inferences
 
@@ -346,7 +338,7 @@ def _filter_operation_errors(self, infer_callable, context, error):
             yield result
 
 
-def _infer_unaryop(self, context=None):
+def infer_unaryop(self, context=None, nodes=None):
     """Infer what an UnaryOp should return when evaluated."""
     for operand in self.operand.infer(context):
         try:
@@ -366,7 +358,7 @@ def _infer_unaryop(self, context=None):
                 else:
                     yield util.YES
             else:
-                if not isinstance(operand, objects.Instance):
+                if not isinstance(operand, runtimeabc.Instance):
                     # The operation was used on something which
                     # doesn't support it.
                     yield exceptions.UnaryOperationError(operand, self.op, exc)
@@ -396,38 +388,37 @@ def _infer_unaryop(self, context=None):
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_unaryop(self, context=None):
+def filtered_infer_unaryop(self, context=None, nodes=None):
     """Infer what an UnaryOp should return when evaluated."""
-    return _filter_operation_errors(self, _infer_unaryop, context,
+    with_nodes_func = functools.partial(infer_unaryop, nodes=nodes)
+    return _filter_operation_errors(self, with_nodes_func, context,
                                     exceptions.UnaryOperationError)
-
-nodes.UnaryOp._infer_unaryop = _infer_unaryop
-nodes.UnaryOp._infer = infer_unaryop
 
 
 def _is_not_implemented(const):
     """Check if the given const node is NotImplemented."""
-    return isinstance(const, nodes.Const) and const.value is NotImplemented
+    return isinstance(const, treeabc.Const) and const.value is NotImplemented
 
 
-def  _invoke_binop_inference(instance, op, other, context, method_name):
+def _invoke_binop_inference(instance, op, other, context, method_name, nodes):
     """Invoke binary operation inference on the given instance."""
     method = instance.getattr(method_name)[0]
     inferred = next(method.infer(context=context))
     return protocols.infer_binary_op(instance, op, other, context, inferred, nodes)
 
 
-def _aug_op(instance, op, other, context, reverse=False):
+def _aug_op(instance, op, other, context, nodes, reverse=False):
     """Get an inference callable for an augmented binary operation."""
     method_name = protocols.AUGMENTED_OP_METHOD[op]
     return functools.partial(_invoke_binop_inference,
                              instance=instance,
                              op=op, other=other,
                              context=context,
-                             method_name=method_name)
+                             method_name=method_name,
+                             nodes=nodes)
 
 
-def _bin_op(instance, op, other, context, reverse=False):
+def _bin_op(instance, op, other, context, nodes, reverse=False):
     """Get an inference callable for a normal binary operation.
 
     If *reverse* is True, then the reflected method will be used instead.
@@ -440,7 +431,8 @@ def _bin_op(instance, op, other, context, reverse=False):
                              instance=instance,
                              op=op, other=other,
                              context=context,
-                             method_name=method_name)
+                             method_name=method_name,
+                             nodes=nodes)
 
 
 def _get_binop_contexts(context, left, right):
@@ -465,7 +457,7 @@ def _same_type(type1, type2):
 
 
 def _get_binop_flow(left, left_type, op, right, right_type,
-                    context, reverse_context):
+                    context, reverse_context, nodes):
     """Get the flow for binary operations.
 
     The rules are a bit messy:
@@ -481,20 +473,20 @@ def _get_binop_flow(left, left_type, op, right, right_type,
           is first tried and then left.__op__(right)
     """
     if _same_type(left_type, right_type):
-        methods = [_bin_op(left, op, right, context)]
+        methods = [_bin_op(left, op, right, context, nodes)]
     elif inferenceutil.is_subtype(left_type, right_type):
-        methods = [_bin_op(left, op, right, context)]
+        methods = [_bin_op(left, op, right, context, nodes)]
     elif inferenceutil.is_supertype(left_type, right_type):
-        methods = [_bin_op(right, op, left, reverse_context, reverse=True),
-                   _bin_op(left, op, right, context)]
+        methods = [_bin_op(right, op, left, reverse_context, nodes, reverse=True),
+                   _bin_op(left, op, right, context, nodes)]
     else:
-        methods = [_bin_op(left, op, right, context),
-                   _bin_op(right, op, left, reverse_context, reverse=True)]
+        methods = [_bin_op(left, op, right, context, nodes),
+                   _bin_op(right, op, left, reverse_context, nodes, reverse=True)]
     return methods
 
 
 def _get_aug_flow(left, left_type, aug_op, right, right_type,
-                  context, reverse_context):
+                  context, reverse_context, nodes):
     """Get the flow for augmented binary operations.
 
     The rules are a bit messy:
@@ -512,23 +504,23 @@ def _get_aug_flow(left, left_type, aug_op, right, right_type,
     """
     op = aug_op.strip("=")
     if _same_type(left_type, right_type):
-        methods = [_aug_op(left, aug_op, right, context),
-                   _bin_op(left, op, right, context)]
+        methods = [_aug_op(left, aug_op, right, context, nodes),
+                   _bin_op(left, op, right, context, nodes)]
     elif inferenceutil.is_subtype(left_type, right_type):
-        methods = [_aug_op(left, aug_op, right, context),
-                   _bin_op(left, op, right, context)]
+        methods = [_aug_op(left, aug_op, right, context, nodes),
+                   _bin_op(left, op, right, context, nodes)]
     elif inferenceutil.is_supertype(left_type, right_type):
-        methods = [_aug_op(left, aug_op, right, context),
-                   _bin_op(right, op, left, reverse_context, reverse=True),
-                   _bin_op(left, op, right, context)]
+        methods = [_aug_op(left, aug_op, right, context, nodes),
+                   _bin_op(right, op, left, reverse_context, nodes, reverse=True),
+                   _bin_op(left, op, right, context, nodes)]
     else:
-        methods = [_aug_op(left, aug_op, right, context),
-                   _bin_op(left, op, right, context),
-                   _bin_op(right, op, left, reverse_context, reverse=True)]
+        methods = [_aug_op(left, aug_op, right, context, nodes),
+                   _bin_op(left, op, right, context, nodes),
+                   _bin_op(right, op, left, reverse_context, nodes, reverse=True)]
     return methods
 
 
-def _infer_binary_operation(left, right, op, context, flow_factory):
+def _infer_binary_operation(left, right, op, context, flow_factory, nodes):
     """Infer a binary operation between a left operand and a right operand
 
     This is used by both normal binary operations and augmented binary
@@ -539,12 +531,12 @@ def _infer_binary_operation(left, right, op, context, flow_factory):
     left_type = helpers.object_type(left)
     right_type = helpers.object_type(right)
     methods = flow_factory(left, left_type, op, right, right_type,
-                           context, reverse_context)
+                           context, reverse_context, nodes)
     for method in methods:
         try:
             results = list(method())
         except exceptions.BinaryOperationNotSupportedError:
-            continue               
+            continue
         except (AttributeError, exceptions.NotFoundError):
             continue
         except exceptions.InferenceError:
@@ -575,7 +567,7 @@ def _infer_binary_operation(left, right, op, context, flow_factory):
     yield exceptions.BinaryOperationError(left_type, op, right_type)
 
 
-def _infer_binop(self, context):
+def infer_binop(self, context, nodes):
     """Binary operation inferrence logic."""
     if context is None:
         context = contextmod.InferenceContext()
@@ -601,23 +593,21 @@ def _infer_binop(self, context):
                 yield util.YES
                 return
 
-            results = _infer_binary_operation(lhs, rhs, op,
-                                              context, _get_binop_flow)
+            results = _infer_binary_operation(lhs, rhs, op, context,
+                                              _get_binop_flow, nodes)
             for result in results:
                 yield result
 
 
 @decorators.yes_if_nothing_inferred
 @decorators.path_wrapper
-def infer_binop(self, context=None):
-    return _filter_operation_errors(self, _infer_binop, context,
+def filtered_infer_binop(self, context=None, nodes=None):
+    with_nodes_func = functools.partial(infer_binop, nodes=nodes)
+    return _filter_operation_errors(self, with_nodes_func, context,
                                     exceptions.BinaryOperationError)
 
-nodes.BinOp._infer_binop = _infer_binop
-nodes.BinOp._infer = infer_binop
 
-
-def _infer_augassign(self, context=None):
+def infer_augassign(self, context=None, nodes=None):
     """Inferrence logic for augmented binary operations."""
     if context is None:
         context = contextmod.InferenceContext()
@@ -642,47 +632,46 @@ def _infer_augassign(self, context=None):
                 return
 
             results = _infer_binary_operation(lhs, rhs, op,
-                                              context, _get_aug_flow)
+                                              context, _get_aug_flow, nodes)
             for result in results:
                 yield result
 
 
 @decorators.path_wrapper
-def infer_augassign(self, context=None):
-    return _filter_operation_errors(self, _infer_augassign, context,
+def filtered_infer_augassign(self, context=None, nodes=None):
+    with_nodes_func = functools.partial(infer_augassign, nodes=nodes)
+    return _filter_operation_errors(self, with_nodes_func, context,
                                     exceptions.BinaryOperationError)
 
-nodes.AugAssign._infer_augassign = _infer_augassign
-nodes.AugAssign._infer = infer_augassign
 
 # End of binary operation inference.
 
 
-def infer_arguments(self, context=None):
+def infer_arguments(self, context=None, nodes=None):
     name = context.lookupname
     if name is None:
         raise exceptions.InferenceError()
     return protocols._arguments_infer_argname(self, name, context, nodes)
-nodes.Arguments._infer = infer_arguments
 
 
+@infer.register(treeabc.AssignName)
+@infer.register(treeabc.AssignAttr)
 @decorators.path_wrapper
 def infer_assign(self, context=None):
     """infer a AssignName/AssignAttr: need to inspect the RHS part of the
     assign node
     """
     stmt = self.statement()
-    if isinstance(stmt, nodes.AugAssign):
+    if isinstance(stmt, treeabc.AugAssign):
         return stmt.infer(context)
 
     stmts = list(self.assigned_stmts(context=context))
     return inferenceutil.infer_stmts(stmts, context)
-nodes.AssignName._infer = infer_assign
-nodes.AssignAttr._infer = infer_assign
 
 
 # no infer method on DelName and DelAttr (expected InferenceError)
 
+@infer.register(treeabc.EmptyNode)
 @decorators.path_wrapper
 def infer_empty_node(self, context=None):
     if not self.has_underlying_object():
@@ -694,9 +683,8 @@ def infer_empty_node(self, context=None):
                 yield inferred
         except exceptions.AstroidError:
             yield util.YES
-nodes.EmptyNode._infer = infer_empty_node
 
 
+@infer.register(treeabc.Index)
 def infer_index(self, context=None):
     return self.value.infer(context)
-nodes.Index._infer = infer_index

@@ -46,3 +46,11 @@ class BoundMethod(UnboundMethod):
 
 class Generator(RuntimeObject):
     """Class representing a Generator."""
+
+
+class Super(RuntimeObject):
+    """Class representing a super proxy."""
+
+
+class FrozenSet(RuntimeObject):
+    """Class representing a frozenset."""

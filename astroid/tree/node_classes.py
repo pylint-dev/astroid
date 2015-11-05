@@ -18,6 +18,7 @@
 """Module for some node classes. More nodes in scoped_nodes.py
 """
 
+import functools
 import warnings
 import sys
 
@@ -26,6 +27,7 @@ import six
 from astroid import context as contextmod
 from astroid import decorators
 from astroid import exceptions
+from astroid import inference
 from astroid.interpreter.util import infer_stmts
 from astroid.interpreter import runtimeabc
 from astroid.interpreter import objects
@@ -255,6 +257,8 @@ class AssignName(LookupMixIn, mixins.ParentAssignTypeMixin,
         self.name = name
         super(AssignName, self).__init__(lineno, col_offset, parent)
 
+    infer_lhs = inference.infer_name
+
 
 @util.register_implementation(treeabc.DelName)
 class DelName(LookupMixIn, mixins.ParentAssignTypeMixin, base.NodeNG):
@@ -435,6 +439,8 @@ class AssignAttr(mixins.ParentAssignTypeMixin,
     def postinit(self, expr=None):
         self.expr = expr
 
+    infer_lhs = inference.infer_attribute
+
 
 @util.register_implementation(treeabc.Assert)
 class Assert(Statement):
@@ -476,9 +482,9 @@ class AugAssign(mixins.AssignTypeMixin, AssignedStmtsMixin, Statement):
         self.target = target
         self.value = value
 
-    # This is set by inference.py
-    def _infer_augassign(self, context=None):
-        raise NotImplementedError
+    def _infer_augassign(self, context):
+        return inference.infer_augassign(self, nodes=sys.modules[__name__],
+                                         context=context)
 
     def type_errors(self, context=None):
         """Return a list of TypeErrors which can occur during inference.
@@ -520,9 +526,9 @@ class BinOp(base.NodeNG):
         self.left = left
         self.right = right
 
-    # This is set by inference.py
-    def _infer_binop(self, context=None):
-        raise NotImplementedError
+    def _infer_binop(self, context):
+        return inference.infer_binop(self, nodes=sys.modules[__name__],
+                                     context=context)
 
     def type_errors(self, context=None):
         """Return a list of TypeErrors which can occur during inference.
@@ -982,6 +988,11 @@ class Import(mixins.ImportFromMixin, Statement):
         self.names = names
         super(Import, self).__init__(lineno, col_offset, parent)
 
+    def infer_name_module(self, name):
+        context = contextmod.InferenceContext()
+        context.lookupname = name
+        return self.infer(context, asname=False)
+
 
 @util.register_implementation(treeabc.Index)
 class Index(base.NodeNG):
@@ -1166,6 +1177,8 @@ class Subscript(base.NodeNG):
         self.value = value
         self.slice = slice
 
+    infer_lhs = inference.infer_subscript
+
 
 @util.register_implementation(treeabc.TryExcept)
 class TryExcept(mixins.BlockRangeMixIn, Statement):
@@ -1242,9 +1255,9 @@ class UnaryOp(base.NodeNG):
     def postinit(self, operand=None):
         self.operand = operand
 
-    # This is set by inference.py
     def _infer_unaryop(self, context=None):
-        raise NotImplementedError
+        return inference.infer_unaryop(self, nodes=sys.modules[__name__],
+                                       context=context)
 
     def type_errors(self, context=None):
         """Return a list of TypeErrors which can occur during inference.
@@ -1379,3 +1392,24 @@ AssAttr = util.proxy_alias('AssAttr', AssignAttr)
 Getattr = util.proxy_alias('Getattr', Attribute)
 CallFunc = util.proxy_alias('CallFunc', Call)
 From = util.proxy_alias('From', ImportFrom)
+
+
+# Register additional inference dispatched functions. We do
+# this here, since we need to pass this module as an argument
+# to these functions, in order to avoid circular dependencies
+# between inference and node_classes.
+
+_module = sys.modules[__name__]
+inference.infer.register(treeabc.UnaryOp,
+                         functools.partial(inference.filtered_infer_unaryop,
+                                           nodes=_module))
+inference.infer.register(treeabc.Arguments,
+                         functools.partial(inference.infer_arguments,
+                                           nodes=_module))
+inference.infer.register(treeabc.BinOp,
+                         functools.partial(inference.filtered_infer_binop,
+                                           nodes=_module))
+inference.infer.register(treeabc.AugAssign,
+                         functools.partial(inference.filtered_infer_augassign,
+                                           nodes=_module))
+del _module

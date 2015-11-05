@@ -28,7 +28,6 @@ import six
 from astroid import context as contextmod
 from astroid import decorators
 from astroid import exceptions
-from astroid.interpreter import objects
 from astroid.interpreter import runtimeabc
 from astroid.interpreter import util as inferenceutil
 from astroid.tree import treeabc
@@ -304,7 +303,7 @@ def _arguments_infer_argname(self, name, context, nodes):
             yield cls
             return
         if functype == 'method':
-            yield objects.Instance(self.parent.parent.frame())
+            yield self.parent.parent.frame().instanciate_class()
             return
 
     if context and context.callcontext:
@@ -394,7 +393,7 @@ def _resolve_asspart(parts, asspath, context):
 def excepthandler_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
     for assigned in inferenceutil.unpack_infer(self.type):
         if isinstance(assigned, treeabc.ClassDef):
-            assigned = objects.Instance(assigned)
+            assigned = assigned.instanciate_class()
         yield assigned
 
 

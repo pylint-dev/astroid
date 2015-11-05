@@ -26,7 +26,6 @@ from astroid import context as contextmod
 from astroid import exceptions
 from astroid.interpreter import runtimeabc
 from astroid import manager
-from astroid import raw_building
 from astroid.tree import treeabc
 from astroid import util
 
@@ -35,6 +34,8 @@ BUILTINS = six.moves.builtins.__name__
 
 
 def _build_proxy_class(cls_name, builtins):
+    # TODO(cpopa): remove this when merging with modular-locals.
+    from astroid import raw_building
     proxy = raw_building.build_class(cls_name)
     proxy.parent = builtins
     return proxy
