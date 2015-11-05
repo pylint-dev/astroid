@@ -33,6 +33,7 @@ from astroid import nodes
 from astroid import protocols
 from astroid.interpreter import util as inferenceutil
 from astroid.interpreter import objects
+from astroid.tree import treeabc
 from astroid import util
 
 
@@ -73,7 +74,7 @@ def _higher_function_scope(node):
         which encloses the given node.
     """
     current = node
-    while current.parent and not isinstance(current.parent, nodes.FunctionDef):
+    while current.parent and not isinstance(current.parent, treeabc.FunctionDef):
         current = current.parent
     if current and current.parent:
         return current.parent
@@ -196,7 +197,7 @@ _SLICE_SENTINEL = object()
 
 def _slice_value(index, context=None):
     """Get the value of the given slice index."""
-    if isinstance(index, nodes.Const):
+    if isinstance(index, treeabc.Const):
         if isinstance(index.value, (int, type(None))):
             return index.value
     elif index is None:
@@ -210,7 +211,7 @@ def _slice_value(index, context=None):
         except exceptions.InferenceError:
             pass
         else:
-            if isinstance(inferred, nodes.Const):
+            if isinstance(inferred, treeabc.Const):
                 if isinstance(inferred.value, (int, type(None))):
                     return inferred.value
 
@@ -244,9 +245,9 @@ def infer_subscript(self, context=None):
         index_value = index
     else:
         index_value = _SLICE_SENTINEL
-        if isinstance(index, nodes.Const):
+        if isinstance(index, treeabc.Const):
             index_value = index.value
-        elif isinstance(index, nodes.Slice):
+        elif isinstance(index, treeabc.Slice):
             # Infer slices from the original object.
             lower = _slice_value(index.lower, context)
             upper = _slice_value(index.upper, context)
@@ -407,7 +408,7 @@ nodes.UnaryOp._infer = infer_unaryop
 
 def _is_not_implemented(const):
     """Check if the given const node is NotImplemented."""
-    return isinstance(const, nodes.Const) and const.value is NotImplemented
+    return isinstance(const, treeabc.Const) and const.value is NotImplemented
 
 
 def  _invoke_binop_inference(instance, op, other, context, method_name):
@@ -672,7 +673,7 @@ def infer_assign(self, context=None):
     assign node
     """
     stmt = self.statement()
-    if isinstance(stmt, nodes.AugAssign):
+    if isinstance(stmt, treeabc.AugAssign):
         return stmt.infer(context)
 
     stmts = list(self.assigned_stmts(context=context))
