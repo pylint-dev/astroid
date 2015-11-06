@@ -40,6 +40,9 @@ except ImportError:
     from ConfigParser import _Chainmap
     # TODO: complete this
     class _ChainMap(_Chainmap):
+        def __init__(self, *maps):
+            super(_ChainMap, self).__init__(*maps)
+            self.maps = self._maps
         def __setitem__(self, key, value):
            self._maps[0][key] = value
         def __delitem__(self, key):
@@ -187,7 +190,7 @@ def ast_from_module(module, built_objects, parent_module, name=None, parent=None
                                # implemented in pure Python.
                                pure_python=bool(source_file))
     built_objects[id(module)] = module_node
-    built_objects = _ChainMap({}, *built_objects._maps)
+    built_objects = _ChainMap({}, *built_objects.maps)
     MANAGER.cache_module(module_node)
     module_node.postinit(body=[_ast_from_object(m, built_objects, module,
                                                 n, module_node)
@@ -211,7 +214,7 @@ def ast_from_class(cls, built_objects, module, name=None, parent=None):
         return nodes.Name(name=name or cls.__name__, parent=parent)
     class_node = nodes.ClassDef(name=name or cls.__name__, doc=inspect.getdoc(cls), parent=parent)
     built_objects[id(cls)] = class_node
-    built_objects = _ChainMap({}, *built_objects._maps)
+    built_objects = _ChainMap({}, *built_objects.maps)
     try:
         bases = [nodes.Name(name=b.__name__, parent=class_node)
                  for b in inspect.getmro(cls)[1:]]
@@ -256,7 +259,7 @@ def ast_from_function(func, built_objects, module, name=None, parent=None):
                                   doc=inspect.getdoc(func),
                                   parent=parent)
     built_objects[id(func)] = func_node
-    built_objects = _ChainMap({}, *built_objects._maps)
+    built_objects = _ChainMap({}, *built_objects.maps)
     try:
         signature = _signature(func)
     except (ValueError, TypeError):
