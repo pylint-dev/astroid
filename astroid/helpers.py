@@ -94,9 +94,9 @@ def object_type(node, context=None):
     try:
         types = set(_object_type(node, context))
     except exceptions.InferenceError:
-        return util.YES
+        return util.Uninferable
     if len(types) > 1 or not types:
-        return util.YES
+        return util.Uninferable
     return list(types)[0]
 
 
@@ -140,7 +140,7 @@ def has_known_bases(klass, context=None):
 
 def _type_check(type1, type2):
     if not all(map(has_known_bases, (type1, type2))):
-        return util.YES
+        return util.Uninferable
 
     if not all([type1.newstyle, type2.newstyle]):
         return False
@@ -148,7 +148,7 @@ def _type_check(type1, type2):
         return type1 in type2.mro()[:-1]
     except exceptions.MroError:
         # The MRO is invalid.
-        return util.YES
+        return util.Uninferable
 
 
 def is_subtype(type1, type2):

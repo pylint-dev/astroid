@@ -23,7 +23,7 @@ def infer_func_form(node, base_type, context=None, enum=False):
     def infer_first(node):
         try:
             value = next(node.infer(context=context))
-            if value is util.YES:
+            if value is util.Uninferable:
                 raise UseInferenceDefault()
             else:
                 return value
@@ -330,7 +330,7 @@ def infer_enum_class(node):
                 fake.parent = target.parent
                 for method in node.mymethods():
                     fake.locals[method.name] = [method]
-                new_targets.append(fake.instanciate_class())
+                new_targets.append(fake.instantiate_class())
             node.locals[local] = new_targets
         break
     return node

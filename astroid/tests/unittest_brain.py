@@ -119,7 +119,7 @@ class NamedTupleTest(unittest.TestCase):
         def foo(fields):
            return __(namedtuple("foo", fields))
         """)
-        self.assertIs(util.YES, next(klass.infer()))
+        self.assertIs(util.Uninferable, next(klass.infer()))
 
     @unittest.skipIf(sys.version_info[0] > 2,
                      'namedtuple inference is broken on Python 3')

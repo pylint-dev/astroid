@@ -227,7 +227,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         try:
             frame = node.frame()
             for inferred in node.expr.infer():
-                if inferred is util.YES:
+                if inferred is util.Uninferable:
                     continue
                 try:
                     if inferred.__class__ is bases.Instance:
