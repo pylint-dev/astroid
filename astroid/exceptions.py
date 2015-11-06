@@ -69,18 +69,6 @@ class NoDefault(AstroidError):
         super(NoDefault, self).__init__(message, **kws)
 
 
-class DefaultStop(AstroidError):
-    '''This is a special error that's only meant to be raised in
-    generators wrapped with raise_if_nothing_inferred and
-    yes_if_nothing_inferred.  It does nothing other than carry a set
-    of attributes to be used in raising in InferenceError.
-
-    '''
-    
-    # def __init__(self, message='{func!r} has no default for {name!r}.', **kws):
-    #     super(NoDefault, self).__init__(message, **kws)
-
-
 class ResolveError(AstroidError):
     """Base class of astroid resolution/inference error.
 

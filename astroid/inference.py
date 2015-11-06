@@ -118,7 +118,9 @@ def infer_call(self, context=None):
         except exceptions.InferenceError:
             ## XXX log error ?
             continue
-    raise exceptions.DefaultStop(node=self, context=context)
+    # Explicit StopIteration to return error information, see comment
+    # in raise_if_nothing_inferred.
+    raise StopIteration(dict(node=self, context=context))
 nodes.Call._infer = infer_call
 
 
@@ -179,7 +181,9 @@ def infer_attribute(self, context=None):
         except AttributeError:
             # XXX method / function
             context.boundnode = None
-    raise exceptions.DefaultStop(node=self, context=context)
+    # Explicit StopIteration to return error information, see comment
+    # in raise_if_nothing_inferred.
+    raise StopIteration(dict(node=self, context=context))
 nodes.Attribute._infer = decorators.path_wrapper(infer_attribute)
 nodes.AssignAttr.infer_lhs = infer_attribute # # won't work with a path wrapper
 
@@ -282,7 +286,9 @@ def infer_subscript(self, context=None):
     for inferred in assigned.infer(context):
         yield inferred
 
-    raise exceptions.DefaultStop(node=self, context=context)
+    # Explicit StopIteration to return error information, see comment
+    # in raise_if_nothing_inferred.
+    raise StopIteration(dict(node=self, context=context))
 
 nodes.Subscript._infer = decorators.path_wrapper(infer_subscript)
 nodes.Subscript.infer_lhs = infer_subscript
@@ -338,7 +344,9 @@ def _infer_boolop(self, context=None):
         else:
             yield value
 
-    raise exceptions.DefaultStop(node=self, context=context)
+    # Explicit StopIteration to return error information, see comment
+    # in raise_if_nothing_inferred.
+    raise StopIteration(dict(node=self, context=context))
 
 nodes.BoolOp._infer = _infer_boolop
 
@@ -411,7 +419,9 @@ def infer_unaryop(self, context=None):
     for inferred in _filter_operation_errors(self, _infer_unaryop, context,
                                              util.BadUnaryOperationMessage):
         yield inferred
-    raise exceptions.DefaultStop(node=self, context=context)
+    # Explicit StopIteration to return error information, see comment
+    # in raise_if_nothing_inferred.
+    raise StopIteration(dict(node=self, context=context))
 
 nodes.UnaryOp._infer_unaryop = _infer_unaryop
 nodes.UnaryOp._infer = infer_unaryop
@@ -728,11 +738,15 @@ def instance_getitem(self, index, context=None):
 
     method = next(self.igetattr('__getitem__', context=context))
     if not isinstance(method, bases.BoundMethod):
-        raise exceptions.InferenceError(node=self, context=context)
+        raise exceptions.InferenceError(
+            'Could not find __getitem__ for {node!r}.',
+            node=self, context=context)
 
     try:
         return next(method.infer_call_result(self, new_context))
     except StopIteration:
-        util.reraise(exceptions.InferenceError(node=self, context=context))
+        util.reraise(exceptions.InferenceError(
+            message='Inference for {node!r}[{index!s}] failed.',
+            node=self, index=index.value, context=context))
 
 bases.Instance.getitem = instance_getitem
