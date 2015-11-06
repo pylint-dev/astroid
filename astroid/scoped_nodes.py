@@ -777,43 +777,45 @@ class FunctionDef(node_classes.Statement, Lambda):
             else:
                 type_name = 'method'
 
-        if self.decorators:
-            for node in self.decorators.nodes:
-                if isinstance(node, node_classes.Name):
-                    if node.name in builtin_descriptors:
-                        return node.name
+        if not self.decorators:
+            return type_name
 
-                if isinstance(node, node_classes.Call):
-                    # Handle the following case:
-                    # @some_decorator(arg1, arg2)
-                    # def func(...)
-                    #
-                    try:
-                        current = next(node.func.infer())
-                    except exceptions.InferenceError:
-                        continue
-                    _type = _infer_decorator_callchain(current)
+        for node in self.decorators.nodes:
+            if isinstance(node, node_classes.Name):
+                if node.name in builtin_descriptors:
+                    return node.name
+
+            if isinstance(node, node_classes.Call):
+                # Handle the following case:
+                # @some_decorator(arg1, arg2)
+                # def func(...)
+                #
+                try:
+                    current = next(node.func.infer())
+                except exceptions.InferenceError:
+                    continue
+                _type = _infer_decorator_callchain(current)
+                if _type is not None:
+                    return _type
+
+            try:
+                for inferred in node.infer():
+                    # Check to see if this returns a static or a class method.
+                    _type = _infer_decorator_callchain(inferred)
                     if _type is not None:
                         return _type
 
-                try:
-                    for inferred in node.infer():
-                        # Check to see if this returns a static or a class method.
-                        _type = _infer_decorator_callchain(inferred)
-                        if _type is not None:
-                            return _type
-
-                        if not isinstance(inferred, ClassDef):
+                    if not isinstance(inferred, ClassDef):
+                        continue
+                    for ancestor in inferred.ancestors():
+                        if not isinstance(ancestor, ClassDef):
                             continue
-                        for ancestor in inferred.ancestors():
-                            if not isinstance(ancestor, ClassDef):
-                                continue
-                            if ancestor.is_subtype_of('%s.classmethod' % BUILTINS):
-                                return 'classmethod'
-                            elif ancestor.is_subtype_of('%s.staticmethod' % BUILTINS):
-                                return 'staticmethod'
-                except exceptions.InferenceError:
-                    pass
+                        if ancestor.is_subtype_of('%s.classmethod' % BUILTINS):
+                            return 'classmethod'
+                        elif ancestor.is_subtype_of('%s.staticmethod' % BUILTINS):
+                            return 'staticmethod'
+            except exceptions.InferenceError:
+                pass
         return type_name
 
     @decorators_mod.cachedproperty
