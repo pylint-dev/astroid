@@ -196,6 +196,16 @@ class CallSite(object):
                 else:
                     # XXX can do better ?
                     boundnode = funcnode.parent.frame()
+
+                if isinstance(boundnode, nodes.ClassDef):
+                    # Verify that we're accessing a method
+                    # of the metaclass through a class, as in
+                    # `cls.metaclass_method`. In this case, the
+                    # first argument is always the class.
+                    method_scope = funcnode.parent.scope()
+                    if method_scope is boundnode.metaclass():
+                        return iter((boundnode, ))
+
                 if funcnode.type == 'method':
                     if not isinstance(boundnode, bases.Instance):
                         boundnode = bases.Instance(boundnode)
@@ -222,7 +232,7 @@ class CallSite(object):
                     "to {func!r}: {unpacked_kwargs!r} doesn't correspond to "
                     "{keyword_arguments!r}.",
                     keyword_arguments=self.keyword_arguments,
-                    unpacked_kwargs = self._unpacked_kwargs,
+                    unpacked_kwargs=self._unpacked_kwargs,
                     call_site=self, func=funcnode, arg=name, context=context)
             kwarg = nodes.Dict(lineno=funcnode.args.lineno,
                                col_offset=funcnode.args.col_offset,

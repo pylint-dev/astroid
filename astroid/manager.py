@@ -239,7 +239,7 @@ class AstroidManager(object):
             name = klass.__name__
         except AttributeError:
             util.reraise(exceptions.AstroidBuildingException(
-                'Unable to get name for {class_repr}:\n', 
+                'Unable to get name for {class_repr}:\n',
                 cls=klass, class_repr=safe_repr(klass)))
         except Exception as ex: # pylint: disable=broad-except
             util.reraise(exceptions.AstroidBuildingException(

@@ -136,7 +136,7 @@ class Instance(Proxy):
     def getattr(self, name, context=None, lookupclass=True):
         try:
             values = self._proxied.instance_attr(name, context)
-        except exceptions.AttributeInferenceError as exception:
+        except exceptions.AttributeInferenceError:
             if name == '__class__':
                 return [self._proxied]
             if lookupclass:

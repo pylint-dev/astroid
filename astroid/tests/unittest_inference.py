@@ -17,8 +17,6 @@
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 """tests for the astroid inference capabilities
 """
-from __future__ import print_function
-
 import os
 import sys
 from functools import partial
@@ -1800,7 +1798,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ' '.count() #@
         """
         ast = test_utils.extract_node(code, __name__)
-        # import pdb; pdb.set_trace()
         self.assertInferConst(ast[0], u'')
         for i in range(1, 16):
             self.assertInferConst(ast[i], '')
@@ -3141,6 +3138,48 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(third_c, Instance)
         self.assertEqual(third_c.name, 'A')
 
+    def test_metaclass_subclasses_arguments_are_classes_not_instances(self):
+        ast_node = test_utils.extract_node('''
+        class A(type):
+            def test(cls):
+                return cls        
+        import six
+        @six.add_metaclass(A)
+        class B(object):
+            pass
+
+        B.test() #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.ClassDef)
+        self.assertEqual(inferred.name, 'B')
+
+    def test_infer_cls_in_class_methods(self):
+        ast_nodes = test_utils.extract_node('''
+        class A(type):
+            def __call__(cls):
+                cls #@
+        class B(object):
+            def __call__(cls):
+                cls #@        
+        ''')
+        first = next(ast_nodes[0].infer())
+        self.assertIsInstance(first, nodes.ClassDef)
+        second = next(ast_nodes[1].infer())
+        self.assertIsInstance(second, Instance)
+
+    @unittest.expectedFailure
+    def test_metaclass_arguments_are_classes_not_instances(self):
+        ast_node = test_utils.extract_node('''
+        class A(type):
+            def test(cls): return cls
+        A.test() #@
+        ''')
+        # This is not supported yet
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, ClassDef)
+        self.assertEqual(inferred.name, 'A')
+
 
 class GetattrTest(unittest.TestCase):
 
@@ -3221,8 +3260,6 @@ class GetattrTest(unittest.TestCase):
                 getattr(self, 'test') #@
         ''')
 
-        # for n in ast_nodes:
-        #     print(n.repr_tree(), file=sys.stderr)
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, BoundMethod)
         self.assertEqual(first.bound.name, 'A')

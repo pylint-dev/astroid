@@ -57,14 +57,14 @@ class AstroidBuildingException(AstroidError):
 class NoDefault(AstroidError):
     """raised by function's `default_value` method when an argument has
     no default value
-    
+
     Standard attributes:
         func: Function node.
         name: Name of argument without a default.
     """
     func = None
     name = None
-    
+
     def __init__(self, message='{func!r} has no default for {name!r}.', **kws):
         super(NoDefault, self).__init__(message, **kws)
 
@@ -125,7 +125,7 @@ class InferenceError(ResolveError):
         context: InferenceContext object.
     """
     node = None
-    context= None
+    context = None
 
     def __init__(self, message='Inference failed for {node!r}.', **kws):
         super(InferenceError, self).__init__(message, **kws)

@@ -24,7 +24,6 @@ from functools import partial
 import unittest
 import warnings
 
-import astroid
 from astroid import builder
 from astroid import nodes
 from astroid import scoped_nodes

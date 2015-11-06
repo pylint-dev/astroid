@@ -285,11 +285,15 @@ def _arguments_infer_argname(self, name, context):
     # first argument of instance/class method
     if self.args and getattr(self.args[0], 'name', None) == name:
         functype = self.parent.type
+        cls = self.parent.parent.scope()
+        is_metaclass = isinstance(cls, nodes.ClassDef) and cls.type == 'metaclass'
+        # If this is a metaclass, then the first argument will always
+        # be the class, not an instance.
+        if is_metaclass or functype == 'classmethod':
+            yield cls
+            return
         if functype == 'method':
             yield bases.Instance(self.parent.parent.frame())
-            return
-        if functype == 'classmethod':
-            yield self.parent.parent.frame()
             return
 
     if context and context.callcontext:

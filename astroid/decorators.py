@@ -110,9 +110,7 @@ def path_wrapper(func):
             # comment in raise_if_nothing_inferred.
             if len(error.args) > 0:
                 raise StopIteration(error.args[0])
-                # util.reraise(StopIteration(error.args[0]))
             else:
-                # util.reraise(StopIteration())
                 raise StopIteration
 
     return wrapped
@@ -157,7 +155,6 @@ def raise_if_nothing_inferred(func, instance, args, kwargs):
         if not inferred:
             if len(error.args) > 0:
                 raise exceptions.InferenceError(**error.args[0])
-                # util.reraise(exceptions.InferenceError(**error.args[0]))
             else:
-                raise exceptions.InferenceError
-                # util.reraise(exceptions.InferenceError())
+                raise exceptions.InferenceError(
+                    'StopIteration raised without any error information.')

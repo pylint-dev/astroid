@@ -84,7 +84,7 @@ else:
 MANAGER = manager.AstroidManager()
 
 
-class AstroidBuilder(object): # (raw_building.InspectBuilder):
+class AstroidBuilder(object):
     """Class for building an astroid tree from source code or from a live module.
 
     The param *manager* specifies the manager class which should be used.
@@ -95,7 +95,6 @@ class AstroidBuilder(object): # (raw_building.InspectBuilder):
     """
 
     def __init__(self, manager=None, apply_transforms=True):
-        # super(AstroidBuilder, self).__init__()
         self._manager = manager or MANAGER
         self._apply_transforms = apply_transforms
 
@@ -110,7 +109,6 @@ class AstroidBuilder(object): # (raw_building.InspectBuilder):
         if node is None:
             # this is a built-in module
             # get a partial representation by introspection
-            # node = self.inspect_build(module, modname=modname, path=path)
             node = raw_building.ast_from_object(module, name=modname)
             # FIXME
             node.source_file = path
@@ -189,8 +187,6 @@ class AstroidBuilder(object): # (raw_building.InspectBuilder):
             package = path and path.find('__init__.py') > -1 or False
         builder = rebuilder.TreeRebuilder(self._manager)
         module = builder.visit_module(node, modname, node_file, package)
-        # module._import_from_nodes = builder._import_from_nodes
-        # module._delayed_assattr = builder._delayed_assattr
         return module
 
 
@@ -234,12 +230,6 @@ def delayed_assignments(root):
                     if node in values:
                         continue
                     else:
-                        # print('Inferred:', repr(inferred))
-                        # if values:
-                        #     print('Locals or instance_attrs:', values)
-                        # print('Frame:', repr(frame))
-                        # print('Assignment:', node)
-
                         # I have no idea why there's a special case
                         # for __init__ that changes the order of the
                         # attributes or what that order means.

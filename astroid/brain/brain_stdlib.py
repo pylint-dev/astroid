@@ -18,7 +18,53 @@ PY3K = sys.version_info > (3, 0)
 PY33 = sys.version_info >= (3, 3)
 PY34 = sys.version_info >= (3, 4)
 
+<<<<<<< variant A
 def infer_first(node, context):
+>>>>>>> variant B
+# general function
+
+def infer_func_form(node, base_type, context=None, enum=False):
+    """Specific inference function for namedtuple or Python 3 enum. """
+    def infer_first(node):
+        try:
+            value = next(node.infer(context=context))
+            if value is util.Uninferable:
+                raise UseInferenceDefault()
+            else:
+                return value
+        except StopIteration:
+            raise InferenceError()
+
+    # node is a Call node, class name as first argument and generated class
+    # attributes as second argument
+    if len(node.args) != 2:
+        # something weird here, go back to class implementation
+        raise UseInferenceDefault()
+    # namedtuple or enums list of attributes can be a list of strings or a
+    # whitespace-separate string
+####### Ancestor
+# general function
+
+def infer_func_form(node, base_type, context=None, enum=False):
+    """Specific inference function for namedtuple or Python 3 enum. """
+    def infer_first(node):
+        try:
+            value = next(node.infer(context=context))
+            if value is util.YES:
+                raise UseInferenceDefault()
+            else:
+                return value
+        except StopIteration:
+            raise InferenceError()
+
+    # node is a Call node, class name as first argument and generated class
+    # attributes as second argument
+    if len(node.args) != 2:
+        # something weird here, go back to class implementation
+        raise UseInferenceDefault()
+    # namedtuple or enums list of attributes can be a list of strings or a
+    # whitespace-separate string
+======= end
     try:
         value = next(node.infer(context=context))
         if value is util.Uninferable:
@@ -84,6 +130,7 @@ class deque(object):
     def rotate(self, n): pass
     def __iter__(self): return self
     def __reversed__(self): return self.iterable[::-1]
+    def __getitem__(self, index): pass
 ''')
 
 
@@ -329,7 +376,6 @@ def infer_enum_class(node):
                         return %(name)r
                 ''' % {'name': target.name, 'types': ', '.join(node.basenames)})
                 fake = AstroidBuilder(MANAGER).string_build(classdef)[target.name]
-                # print(fake.repr_tree())
                 fake.parent = target.parent
                 for method in node.mymethods():
                     fake.locals[method.name] = [method]

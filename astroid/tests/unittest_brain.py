@@ -45,7 +45,11 @@ try:
     import enum # pylint: disable=unused-import
     HAS_ENUM = True
 except ImportError:
-    HAS_ENUM = False
+    try:
+        import enum34 as enum
+        HAS_ENUM = True
+    except ImportError:
+        HAS_ENUM = False
 
 try:
     import dateutil # pylint: disable=unused-import

@@ -33,7 +33,7 @@ BUILTINS = six.moves.builtins.__name__
 def _get_file_from_object(obj):
     if platform.python_implementation() == 'Jython':
         return obj.__file__.split("$py.class")[0] + ".py"
-    if sys.version_info > (3, 0):
+    if sys.version_info > (3, 0) or platform.python_implementation() == 'PyPy':
         return obj.__file__
     else:
         return obj.__file__[:-1]
