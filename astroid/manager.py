@@ -245,7 +245,7 @@ class AstroidManager(object):
                 yield inferred
         else:
             for inferred in modastroid.igetattr(name, context):
-                yield inferred.instanciate_class()
+                yield inferred.instantiate_class()
 
     def register_failed_import_hook(self, hook):
         """Registers a hook to resolve imports that cannot be found otherwise.

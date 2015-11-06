@@ -154,7 +154,7 @@ class TestHelpers(unittest.TestCase):
         from unknown import Unknown
         u = Unknown #@
         ''')
-        self.assertEqual(helpers.object_type(node), util.YES)
+        self.assertEqual(helpers.object_type(node), util.Uninferable)
 
     def test_object_type_too_many_types(self):
         node = test_utils.extract_node('''
@@ -166,7 +166,7 @@ class TestHelpers(unittest.TestCase):
                 return 1
         test(Unknown) #@
         ''')
-        self.assertEqual(helpers.object_type(node), util.YES)
+        self.assertEqual(helpers.object_type(node), util.Uninferable)
 
     def test_is_subtype(self):
         ast_nodes = test_utils.extract_node('''
@@ -216,8 +216,8 @@ class TestHelpers(unittest.TestCase):
         class F(D, E): pass #@
         ''')
         self.assertFalse(helpers.is_subtype(cls_e, cls_f))
-        self.assertEqual(helpers.is_subtype(cls_f, cls_e), util.YES)
-        self.assertEqual(helpers.is_supertype(cls_e, cls_f), util.YES)
+        self.assertEqual(helpers.is_subtype(cls_f, cls_e), util.Uninferable)
+        self.assertEqual(helpers.is_supertype(cls_e, cls_f), util.Uninferable)
         self.assertFalse(helpers.is_supertype(cls_f, cls_e))
 
     def test_is_subtype_supertype_unknown_bases(self):

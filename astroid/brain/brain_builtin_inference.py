@@ -122,10 +122,10 @@ def _generic_inference(node, context, node_type, transform):
             inferred = next(arg.infer(context=context))
         except (InferenceError, StopIteration):
             raise UseInferenceDefault()
-        if inferred is util.YES:
+        if inferred is util.Uninferable:
             raise UseInferenceDefault()
         transformed = transform(inferred)
-    if not transformed or transformed is util.YES:
+    if not transformed or transformed is util.Uninferable:
         raise UseInferenceDefault()
     return transformed
 
@@ -295,7 +295,7 @@ def infer_super(node, context=None):
         if scope.type == 'classmethod':
             mro_type = cls
         else:
-            mro_type = cls.instanciate_class()
+            mro_type = cls.instantiate_class()
     else:
         # TODO(cpopa): support flow control (multiple inference values).
         try:
@@ -307,7 +307,7 @@ def infer_super(node, context=None):
         except InferenceError:
             raise UseInferenceDefault
 
-    if mro_pointer is util.YES or mro_type is util.YES:
+    if mro_pointer is util.Uninferable or mro_type is util.Uninferable:
         # No way we could understand this.
         raise UseInferenceDefault
 
@@ -331,11 +331,11 @@ def _infer_getattr_args(node, context):
     except InferenceError:
         raise UseInferenceDefault
 
-    if obj is util.YES or attr is util.YES:
+    if obj is util.Uninferable or attr is util.Uninferable:
         # If one of the arguments is something we can't infer,
         # then also make the result of the getattr call something
         # which is unknown.
-        return util.YES, util.YES
+        return util.Uninferable, util.Uninferable
 
     is_string = (isinstance(attr, nodes.Const) and
                  isinstance(attr.value, six.string_types))
@@ -348,13 +348,13 @@ def _infer_getattr_args(node, context):
 def infer_getattr(node, context=None):
     """Understand getattr calls
 
-    If one of the arguments is an YES object, then the
-    result will be an YES object. Otherwise, the normal attribute
+    If one of the arguments is an Uninferable object, then the
+    result will be an Uninferable object. Otherwise, the normal attribute
     lookup will be done.
     """
     obj, attr = _infer_getattr_args(node, context)
-    if obj is util.YES or attr is util.YES or not hasattr(obj, 'igetattr'):
-        return util.YES
+    if obj is util.Uninferable or attr is util.Uninferable or not hasattr(obj, 'igetattr'):
+        return util.Uninferable
 
     try:
         return next(obj.igetattr(attr, context=context))
@@ -375,17 +375,17 @@ def infer_hasattr(node, context=None):
     This always guarantees three possible outcomes for calling
     hasattr: Const(False) when we are sure that the object
     doesn't have the intended attribute, Const(True) when
-    we know that the object has the attribute and YES
+    we know that the object has the attribute and Uninferable
     when we are unsure of the outcome of the function call.
     """
     try:
         obj, attr = _infer_getattr_args(node, context)
-        if obj is util.YES or attr is util.YES or not hasattr(obj, 'getattr'):
-            return util.YES
+        if obj is util.Uninferable or attr is util.Uninferable or not hasattr(obj, 'getattr'):
+            return util.Uninferable
         obj.getattr(attr, context=context)
     except UseInferenceDefault:
         # Can't infer something from this function call.
-        return util.YES
+        return util.Uninferable
     except NotFoundError:
         # Doesn't have it.
         return nodes.Const(False)
@@ -408,9 +408,9 @@ def infer_callable(node, context=None):
     try:
         inferred = next(argument.infer(context=context))
     except InferenceError:
-        return util.YES
-    if inferred is util.YES:
-        return util.YES
+        return util.Uninferable
+    if inferred is util.Uninferable:
+        return util.Uninferable
     return nodes.Const(inferred.callable())
 
 
@@ -427,13 +427,13 @@ def infer_bool(node, context=None):
     try:
         inferred = next(argument.infer(context=context))
     except InferenceError:
-        return util.YES
-    if inferred is util.YES:
-        return util.YES
+        return util.Uninferable
+    if inferred is util.Uninferable:
+        return util.Uninferable
 
     bool_value = inferred.bool_value()
-    if bool_value is util.YES:
-        return util.YES
+    if bool_value is util.Uninferable:
+        return util.Uninferable
     return nodes.Const(bool_value)
 
 
@@ -453,7 +453,7 @@ def infer_slice(node, context=None):
 
     args = list(map(helpers.safe_infer, args))
     for arg in args:
-        if not arg or arg is util.YES:
+        if not arg or arg is util.Uninferable:
             raise UseInferenceDefault
         if not isinstance(arg, nodes.Const):
             raise UseInferenceDefault

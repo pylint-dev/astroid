@@ -251,7 +251,7 @@ def test():
 
     def test_ancestors_yes_in_bases(self):
         # Test for issue https://bitbucket.org/logilab/astroid/issue/84
-        # This used to crash astroid with a TypeError, because an YES
+        # This used to crash astroid with a TypeError, because an Uninferable
         # node was present in the bases
         node = extract_node("""
         def with_metaclass(meta, *bases):

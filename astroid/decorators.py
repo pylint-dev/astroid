@@ -112,7 +112,7 @@ def yes_if_nothing_inferred(func, instance, args, kwargs):
         inferred = True
         yield node
     if not inferred:
-        yield util.YES
+        yield util.Uninferable
 
 
 @wrapt.decorator

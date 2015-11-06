@@ -106,7 +106,7 @@ def infer_call(self, context=None):
                                                      keywords=self.keywords)
     callcontext.boundnode = None
     for callee in self.func.infer(context):
-        if callee is util.YES:
+        if callee is util.Uninferable:
             yield callee
             continue
         try:
@@ -162,7 +162,7 @@ nodes.ImportFrom._infer = infer_import_from
 def infer_attribute(self, context=None):
     """infer an Attribute node by using getattr on the associated object"""
     for owner in self.expr.infer(context):
-        if owner is util.YES:
+        if owner is util.Uninferable:
             yield owner
             continue
         try:
@@ -230,13 +230,13 @@ def infer_subscript(self, context=None):
     """
 
     value = next(self.value.infer(context))
-    if value is util.YES:
-        yield util.YES
+    if value is util.Uninferable:
+        yield util.Uninferable
         return
 
     index = next(self.slice.infer(context))
-    if index is util.YES:
-        yield util.YES
+    if index is util.Uninferable:
+        yield util.Uninferable
         return
 
     if value.__class__ == bases.Instance:
@@ -269,8 +269,8 @@ def infer_subscript(self, context=None):
 
     # Prevent inferring if the inferred subscript
     # is the same as the original subscripted object.
-    if self is assigned or assigned is util.YES:
-        yield util.YES
+    if self is assigned or assigned is util.Uninferable:
+        yield util.Uninferable
         return
     for inferred in assigned.infer(context):
         yield inferred
@@ -297,31 +297,31 @@ def _infer_boolop(self, context=None):
     try:
         values = [value.infer(context=context) for value in values]
     except exceptions.InferenceError:
-        yield util.YES
+        yield util.Uninferable
         return
 
     for pair in itertools.product(*values):
-        if any(item is util.YES for item in pair):
-            # Can't infer the final result, just yield YES.
-            yield util.YES
+        if any(item is util.Uninferable for item in pair):
+            # Can't infer the final result, just yield Uninferable.
+            yield util.Uninferable
             continue
 
         bool_values = [item.bool_value() for item in pair]
-        if any(item is util.YES for item in bool_values):
-            # Can't infer the final result, just yield YES.
-            yield util.YES
+        if any(item is util.Uninferable for item in bool_values):
+            # Can't infer the final result, just yield Uninferable.
+            yield util.Uninferable
             continue
 
         # Since the boolean operations are short circuited operations,
         # this code yields the first value for which the predicate is True
         # and if no value respected the predicate, then the last value will
-        # be returned (or YES if there was no last value).
+        # be returned (or Uninferable if there was no last value).
         # This is conforming to the semantics of `and` and `or`:
         #   1 and 0 -> 1
         #   0 and 1 -> 0
         #   1 or 0 -> 1
         #   0 or 1 -> 1
-        value = util.YES
+        value = util.Uninferable
         for value, bool_value in zip(pair, bool_values):
             if predicate(bool_value):
                 yield value
@@ -340,7 +340,7 @@ def _filter_operation_errors(self, infer_callable, context, error):
             # For the sake of .infer(), we don't care about operation
             # errors, which is the job of pylint. So return something
             # which shows that we can't infer the result.
-            yield util.YES
+            yield util.Uninferable
         else:
             yield result
 
@@ -358,12 +358,12 @@ def _infer_unaryop(self, context=None):
             if meth is None:
                 # `not node`. Determine node's boolean
                 # value and negate its result, unless it is
-                # YES, which will be returned as is.
+                # Uninferable, which will be returned as is.
                 bool_value = operand.bool_value()
-                if bool_value is not util.YES:
+                if bool_value is not util.Uninferable:
                     yield nodes.const_factory(not bool_value)
                 else:
-                    yield util.YES
+                    yield util.Uninferable
             else:
                 if not isinstance(operand, bases.Instance):
                     # The operation was used on something which
@@ -374,7 +374,7 @@ def _infer_unaryop(self, context=None):
                 try:
                     meth = operand.getattr(meth, context=context)[0]
                     inferred = next(meth.infer(context=context))
-                    if inferred is util.YES or not inferred.callable():
+                    if inferred is util.Uninferable or not inferred.callable():
                         continue
 
                     context = contextmod.copy_context(context)
@@ -390,7 +390,7 @@ def _infer_unaryop(self, context=None):
                     # The unary operation special method was not found.
                     yield exceptions.UnaryOperationError(operand, self.op, exc)
                 except exceptions.InferenceError:
-                    yield util.YES
+                    yield util.Uninferable
 
 
 @decorators.raise_if_nothing_inferred
@@ -547,23 +547,23 @@ def _infer_binary_operation(left, right, op, context, flow_factory):
         except exceptions.NotFoundError:
             continue
         except exceptions.InferenceError:
-            yield util.YES
+            yield util.Uninferable
             return
         else:
-            if any(result is util.YES for result in results):
-                yield util.YES
+            if any(result is util.Uninferable for result in results):
+                yield util.Uninferable
                 return
 
             # TODO(cpopa): since the inferrence engine might return
             # more values than are actually possible, we decide
-            # to return util.YES if we have union types.
+            # to return util.Uninferable if we have union types.
             if all(map(_is_not_implemented, results)):
                 continue
             not_implemented = sum(1 for result in results
                                   if _is_not_implemented(result))
             if not_implemented and not_implemented != len(results):
                 # Can't decide yet what this is, not yet though.
-                yield util.YES
+                yield util.Uninferable
                 return
 
             for result in results:
@@ -589,15 +589,15 @@ def _infer_binop(self, context):
     rhs_context = context.clone()
 
     for lhs in left.infer(context=lhs_context):
-        if lhs is util.YES:
+        if lhs is util.Uninferable:
             # Don't know how to process this.
-            yield util.YES
+            yield util.Uninferable
             return
 
         for rhs in right.infer(context=rhs_context):
-            if rhs is util.YES:
+            if rhs is util.Uninferable:
                 # Don't know how to process this.
-                yield util.YES
+                yield util.Uninferable
                 return
 
             results = _infer_binary_operation(lhs, rhs, op,
@@ -623,9 +623,9 @@ def _infer_augassign(self, context=None):
     op = self.op
 
     for lhs in self.target.infer_lhs(context=context):
-        if lhs is util.YES:
+        if lhs is util.Uninferable:
             # Don't know how to process this.
-            yield util.YES
+            yield util.Uninferable
             return
 
         # TODO(cpopa): if we have A() * A(), trying to infer
@@ -635,9 +635,9 @@ def _infer_augassign(self, context=None):
         rhs_context = context.clone()
         rhs_context.path = set()
         for rhs in self.value.infer(context=rhs_context):
-            if rhs is util.YES:
+            if rhs is util.Uninferable:
                 # Don't know how to process this.
-                yield util.YES
+                yield util.Uninferable
                 return
 
             results = _infer_binary_operation(lhs, rhs, op,
@@ -685,14 +685,14 @@ nodes.AssignAttr._infer = infer_assign
 @decorators.path_wrapper
 def infer_empty_node(self, context=None):
     if not self.has_underlying_object():
-        yield util.YES
+        yield util.Uninferable
     else:
         try:
             for inferred in MANAGER.infer_ast_from_something(self.object,
                                                              context=context):
                 yield inferred
         except exceptions.AstroidError:
-            yield util.YES
+            yield util.Uninferable
 nodes.EmptyNode._infer = infer_empty_node
 
 
