@@ -129,12 +129,12 @@ def const_infer_binary_op(self, operator, other, context, _):
                 # ArithmeticError is not enough: float >> float is a TypeError
                 yield not_implemented
             except Exception: # pylint: disable=broad-except
-                yield util.YES
+                yield util.Uninferable
         except TypeError:
             yield not_implemented
     elif isinstance(self.value, six.string_types) and operator == '%':
         # TODO(cpopa): implement string interpolation later on.
-        yield util.YES
+        yield util.Uninferable
     else:
         yield not_implemented
 
@@ -147,7 +147,7 @@ def _multiply_seq_by_int(self, other, context):
     for elt in self.elts:
         infered = helpers.safe_infer(elt, context)
         if infered is None:
-            infered = util.YES
+            infered = util.Uninferable
         elts.append(infered)
     node.elts = elts * other.value
     return node
@@ -159,9 +159,9 @@ def tl_infer_binary_op(self, operator, other, context, method):
     if isinstance(other, self.__class__) and operator == '+':
         node = self.__class__()
         elts = [n for elt in self.elts for n in elt.infer(context)
-                if not n is util.YES]
+                if not n is util.Uninferable]
         elts += [n for elt in other.elts for n in elt.infer(context)
-                 if not n is util.YES]
+                 if not n is util.Uninferable]
         node.elts = elts
         yield node
     elif isinstance(other, nodes.Const) and operator == '*':
@@ -173,7 +173,7 @@ def tl_infer_binary_op(self, operator, other, context, method):
         # Verify if the instance supports __index__.
         as_index = helpers.class_instance_as_index(other)
         if not as_index:
-            yield util.YES
+            yield util.Uninferable
         else:
             yield _multiply_seq_by_int(self, as_index, context)
     else:
@@ -208,7 +208,7 @@ def _resolve_looppart(parts, asspath, context):
     asspath = asspath[:]
     index = asspath.pop(0)
     for part in parts:
-        if part is util.YES:
+        if part is util.Uninferable:
             continue
         # XXX handle __iter__ and log potentially detected errors
         if not hasattr(part, 'itered'):
@@ -228,7 +228,7 @@ def _resolve_looppart(parts, asspath, context):
                 # we achieved to resolved the assignment path,
                 # don't infer the last part
                 yield assigned
-            elif assigned is util.YES:
+            elif assigned is util.Uninferable:
                 break
             else:
                 # we are not yet on the last part of the path
@@ -280,7 +280,7 @@ def _arguments_infer_argname(self, name, context):
     # arguments information may be missing, in which case we can't do anything
     # more
     if not (self.args or self.vararg or self.kwarg):
-        yield util.YES
+        yield util.Uninferable
         return
     # first argument of instance/class method
     if self.args and getattr(self.args[0], 'name', None) == name:
@@ -305,15 +305,15 @@ def _arguments_infer_argname(self, name, context):
     if name == self.kwarg:
         yield nodes.Dict(parent=self)
         return
-    # if there is a default value, yield it. And then yield YES to reflect
+    # if there is a default value, yield it. And then yield Uninferable to reflect
     # we can't guess given argument value
     try:
         context = contextmod.copy_context(context)
         for inferred in self.default_value(name).infer(context):
             yield inferred
-        yield util.YES
+        yield util.Uninferable
     except exceptions.NoDefault:
-        yield util.YES
+        yield util.Uninferable
 
 
 def arguments_assigned_stmts(self, node, context, asspath=None):
@@ -361,7 +361,7 @@ def _resolve_asspart(parts, asspath, context):
                 # we achieved to resolved the assignment path, don't infer the
                 # last part
                 yield assigned
-            elif assigned is util.YES:
+            elif assigned is util.Uninferable:
                 return
             else:
                 # we are not yet on the last part of the path search on each
@@ -521,11 +521,11 @@ def starred_assigned_stmts(self, node=None, context=None, asspath=None):
         try:
             rhs = next(value.infer(context))
         except exceptions.InferenceError:
-            yield util.YES
+            yield util.Uninferable
             return
-        if rhs is util.YES or not hasattr(rhs, 'elts'):
+        if rhs is util.Uninferable or not hasattr(rhs, 'elts'):
             # Not interested in inferred values without elts.
-            yield util.YES
+            yield util.Uninferable
             return
 
         elts = collections.deque(rhs.elts[:])

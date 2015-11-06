@@ -111,7 +111,7 @@ class NamedTupleTest(unittest.TestCase):
             if base.name == 'X':
                 break
         self.assertSetEqual({"a", "b", "c"},
-                            set(base.instanciate_class().instance_attrs))
+                            set(base.instantiate_class().instance_attrs))
 
     def test_namedtuple_inference_failure(self):
         klass = test_utils.extract_node("""
@@ -120,7 +120,7 @@ class NamedTupleTest(unittest.TestCase):
         def foo(fields):
            return __(namedtuple("foo", fields))
         """)
-        self.assertIs(util.YES, next(klass.infer()))
+        self.assertIs(util.Uninferable, next(klass.infer()))
 
     def test_namedtuple_advanced_inference(self):
         # urlparse return an object of class ParseResult, which has a

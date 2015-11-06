@@ -360,7 +360,7 @@ from ..cave import wine\n\n"""
         method of this From node will be made by unpack_infer.
         inference.infer_from will try to import this module, which will fail and
         raise a InferenceException (by mixins.do_import_module). The infer_name
-        will catch this exception and yield and YES instead.
+        will catch this exception and yield and Uninferable instead.
         '''
 
         code = '''
@@ -384,7 +384,7 @@ from ..cave import wine\n\n"""
         # present in the other version.
         self.assertIsInstance(excs[0], nodes.ClassDef)
         self.assertEqual(excs[0].name, 'PickleError')
-        self.assertIs(excs[-1], util.YES)
+        self.assertIs(excs[-1], util.Uninferable)
 
     def test_absolute_import(self):
         astroid = resources.build_file('data/absimport.py')

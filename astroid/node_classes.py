@@ -57,9 +57,9 @@ def unpack_infer(stmt, context=None):
     if inferred is stmt:
         yield inferred
         return
-    # else, infer recursivly, except YES object that should be returned as is
+    # else, infer recursivly, except Uninferable object that should be returned as is
     for inferred in stmt.infer(context):
-        if inferred is util.YES:
+        if inferred is util.Uninferable:
             yield inferred
         else:
             for inf_inf in unpack_infer(inferred, context):
@@ -425,8 +425,8 @@ class NodeNG(object):
         util.rename_warning((type(self).__name__, type(self).__name__))
         return self.inferred()
 
-    def instanciate_class(self):
-        """instanciate a node if it is a ClassDef node, else return self"""
+    def instantiate_class(self):
+        """instantiate a node if it is a ClassDef node, else return self"""
         return self
 
     def has_base(self, node):
@@ -568,10 +568,10 @@ class NodeNG(object):
               method.
             * True. Most of constructs are True by default:
               classes, functions, modules etc
-            * YES: the inference engine is uncertain of the
+            * Uninferable: the inference engine is uncertain of the
               node's value.
         """
-        return util.YES
+        return util.Uninferable
 
 
 class Statement(NodeNG):
@@ -1338,7 +1338,7 @@ class Dict(NodeNG, bases.Instance):
                 except IndexError:
                     continue
             for inferredkey in key.infer(context):
-                if inferredkey is util.YES:
+                if inferredkey is util.Uninferable:
                     continue
                 if isinstance(inferredkey, Const) \
                         and inferredkey.value == lookup_key:

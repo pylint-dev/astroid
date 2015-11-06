@@ -53,10 +53,10 @@ attr_to_method_warning = generate_warning("%s is deprecated and slated for "
                                           PendingDeprecationWarning)
 
 @object.__new__
-class YES(object):
+class Uninferable(object):
     """Special inference object, which is returned when inference fails."""
     def __repr__(self):
-        return 'YES'
+        return 'Uninferable'
 
     def __getattribute__(self, name):
         if name == 'next':

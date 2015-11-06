@@ -44,11 +44,11 @@ class CallSite(object):
 
         self.positional_arguments = [
             arg for arg in self._unpacked_args
-            if arg is not util.YES
+            if arg is not util.Uninferable
         ]
         self.keyword_arguments = {
             key: value for key, value in self._unpacked_kwargs.items()
-            if value is not util.YES
+            if value is not util.Uninferable
         }
 
     @classmethod
@@ -87,29 +87,29 @@ class CallSite(object):
                 try:
                     inferred = next(value.infer(context=context))
                 except exceptions.InferenceError:
-                    values[name] = util.YES
+                    values[name] = util.Uninferable
                     continue
 
                 if not isinstance(inferred, nodes.Dict):
                     # Not something we can work with.
-                    values[name] = util.YES
+                    values[name] = util.Uninferable
                     continue
 
                 for dict_key, dict_value in inferred.items:
                     try:
                         dict_key = next(dict_key.infer(context=context))
                     except exceptions.InferenceError:
-                        values[name] = util.YES
+                        values[name] = util.Uninferable
                         continue
                     if not isinstance(dict_key, nodes.Const):
-                        values[name] = util.YES
+                        values[name] = util.Uninferable
                         continue
                     if not isinstance(dict_key.value, six.string_types):
-                        values[name] = util.YES
+                        values[name] = util.Uninferable
                         continue
                     if dict_key.value in values:
                         # The name is already in the dictionary
-                        values[dict_key.value] = util.YES
+                        values[dict_key.value] = util.Uninferable
                         self.duplicated_keywords.add(dict_key.value)
                         continue
                     values[dict_key.value] = dict_value
@@ -126,14 +126,14 @@ class CallSite(object):
                 try:
                     inferred = next(arg.value.infer(context=context))
                 except exceptions.InferenceError:
-                    values.append(util.YES)
+                    values.append(util.Uninferable)
                     continue
 
-                if inferred is util.YES:
-                    values.append(util.YES)
+                if inferred is util.Uninferable:
+                    values.append(util.Uninferable)
                     continue
                 if not hasattr(inferred, 'elts'):
-                    values.append(util.YES)
+                    values.append(util.Uninferable)
                     continue
                 values.extend(inferred.elts)
             else:

@@ -486,7 +486,7 @@ class BuilderTest(unittest.TestCase):
         n = test_utils.get_name_node(astroid, 'n')
         self.assertIsNot(n.scope(), astroid)
         self.assertEqual([i.__class__ for i in n.infer()],
-                         [util.YES.__class__])
+                         [util.Uninferable.__class__])
 
     def test_no_future_imports(self):
         mod = builder.parse("import sys")

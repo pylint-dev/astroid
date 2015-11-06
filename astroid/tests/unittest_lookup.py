@@ -172,7 +172,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         """)
         var = astroid.body[1].value
         if sys.version_info < (3, 0):
-            self.assertEqual(var.inferred(), [util.YES])
+            self.assertEqual(var.inferred(), [util.Uninferable])
         else:
             self.assertRaises(exceptions.NameInferenceError, var.inferred)
 
