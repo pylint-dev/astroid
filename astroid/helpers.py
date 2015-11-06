@@ -89,7 +89,7 @@ def object_type(node, context=None):
     try:
         types = set(_object_type(node, context))
     except exceptions.InferenceError:
-        return util.YES
+        return util.Uninferable
     if len(types) > 1 or not types:
-        return util.YES
+        return util.Uninferable
     return list(types)[0]

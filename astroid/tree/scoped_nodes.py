@@ -553,7 +553,7 @@ class DictComp(ComprehensionScope):
             self.generators = generators
 
     def bool_value(self):
-        return util.YES
+        return util.Uninferable
 
 
 @util.register_implementation(treeabc.SetComp)
@@ -575,7 +575,7 @@ class SetComp(ComprehensionScope):
             self.generators = generators
 
     def bool_value(self):
-        return util.YES
+        return util.Uninferable
 
 
 @util.register_implementation(treeabc.ListComp)
@@ -590,7 +590,7 @@ class _ListComp(treebase.NodeNG):
         self.generators = generators
 
     def bool_value(self):
-        return util.YES
+        return util.Uninferable
 
 
 if six.PY3:
@@ -647,11 +647,11 @@ class CallSite(object):
 
         self.positional_arguments = [
             arg for arg in self._unpacked_args
-            if arg is not util.YES
+            if arg is not util.Uninferable
         ]
         self.keyword_arguments = {
             key: value for key, value in self._unpacked_kwargs.items()
-            if value is not util.YES
+            if value is not util.Uninferable
         }
 
     def has_invalid_arguments(self):
@@ -683,29 +683,29 @@ class CallSite(object):
                 try:
                     inferred = next(value.infer(context=context))
                 except exceptions.InferenceError:
-                    values[name] = util.YES
+                    values[name] = util.Uninferable
                     continue
 
                 if not isinstance(inferred, treeabc.Dict):
                     # Not something we can work with.
-                    values[name] = util.YES
+                    values[name] = util.Uninferable
                     continue
 
                 for dict_key, dict_value in inferred.items:
                     try:
                         dict_key = next(dict_key.infer(context=context))
                     except exceptions.InferenceError:
-                        values[name] = util.YES
+                        values[name] = util.Uninferable
                         continue
                     if not isinstance(dict_key, treeabc.Const):
-                        values[name] = util.YES
+                        values[name] = util.Uninferable
                         continue
                     if not isinstance(dict_key.value, six.string_types):
-                        values[name] = util.YES
+                        values[name] = util.Uninferable
                         continue
                     if dict_key.value in values:
                         # The name is already in the dictionary
-                        values[dict_key.value] = util.YES
+                        values[dict_key.value] = util.Uninferable
                         self.duplicated_keywords.add(dict_key.value)
                         continue
                     values[dict_key.value] = dict_value
@@ -722,14 +722,14 @@ class CallSite(object):
                 try:
                     inferred = next(arg.value.infer(context=context))
                 except exceptions.InferenceError:
-                    values.append(util.YES)
+                    values.append(util.Uninferable)
                     continue
 
-                if inferred is util.YES:
-                    values.append(util.YES)
+                if inferred is util.Uninferable:
+                    values.append(util.Uninferable)
                     continue
                 if not hasattr(inferred, 'elts'):
-                    values.append(util.YES)
+                    values.append(util.Uninferable)
                     continue
                 values.extend(inferred.elts)
             else:
@@ -1158,7 +1158,7 @@ class FunctionDef(node_classes.Statement, Lambda):
                 c.hide = True
                 c.parent = self
                 class_bases = [next(b.infer(context)) for b in caller.args[1:]]
-                c.bases = [base for base in class_bases if base != util.YES]
+                c.bases = [base for base in class_bases if base != util.Uninferable]
                 c._metaclass = metaclass
                 yield c
                 return
@@ -1171,7 +1171,7 @@ class FunctionDef(node_classes.Statement, Lambda):
                     for inferred in returnnode.value.infer(context):
                         yield inferred
                 except exceptions.InferenceError:
-                    yield util.YES
+                    yield util.Uninferable
 
     def bool_value(self):
         return True
@@ -1213,7 +1213,7 @@ def _is_metaclass(klass, seen=None):
                 if isinstance(baseobj, objects.Instance):
                     # not abstract
                     return False
-                if baseobj is util.YES:
+                if baseobj is util.Uninferable:
                     continue
                 if baseobj is klass:
                     continue
@@ -1384,7 +1384,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                 isinstance(name_node.value, six.string_types)):
             name = name_node.value
         else:
-            return util.YES
+            return util.Uninferable
 
         result = ClassDef(name, None)
 
@@ -1394,9 +1394,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             result.bases = class_bases.itered()
         else:
             # There is currently no AST node that can represent an 'unknown'
-            # node (YES is not an AST node), therefore we simply return YES here
+            # node (Uninferable is not an AST node), therefore we simply return Uninferable here
             # although we know at least the name of the class.
-            return util.YES
+            return util.Uninferable
 
         # Get the members of the class
         try:
@@ -1561,7 +1561,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             raise exceptions.NotFoundError(name)
         return values
 
-    def instanciate_class(self):
+    def instantiate_class(self):
         """return Instance of ClassDef node, else return self"""
         return objects.Instance(self)
 
@@ -1570,7 +1570,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
         This method doesn't look in the instance_attrs dictionary
         since it's done by an Instance proxy at inference time.  It
-        may return a YES object if the attribute has not been actually
+        may return a Uninferable object if the attribute has not been actually
         found but a __getattr__ or __getattribute__ method is defined.
         If *class_context* is given, then it's considered that the
         attribute is accessed from a class context,
@@ -1658,7 +1658,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         try:
             for inferred in infer_stmts(self.getattr(name, context),
                                         context, frame=self):
-                # yield YES object instead of descriptors when necessary
+                # yield Uninferable object instead of descriptors when necessary
                 if (not isinstance(inferred, node_classes.Const)
                         and isinstance(inferred, objects.Instance)):
                     try:
@@ -1666,13 +1666,13 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                     except exceptions.NotFoundError:
                         yield inferred
                     else:
-                        yield util.YES
+                        yield util.Uninferable
                 else:
                     yield function_to_method(inferred, self)
         except exceptions.NotFoundError:
             if not name.startswith('__') and self.has_dynamic_getattr(context):
-                # class handle some dynamic attributes, return a YES object
-                yield util.YES
+                # class handle some dynamic attributes, return a Uninferable object
+                yield util.Uninferable
             else:
                 util.reraise(exceptions.InferenceError(name))
 
@@ -1753,7 +1753,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             # Expects this from Py3k TreeRebuilder
             try:
                 return next(node for node in self._metaclass.infer()
-                            if node is not util.YES)
+                            if node is not util.Uninferable)
             except (exceptions.InferenceError, StopIteration):
                 return None
         if six.PY3:
@@ -1776,7 +1776,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             inferred = next(assignment.infer())
         except exceptions.InferenceError:
             return
-        if inferred is util.YES: # don't expose this
+        if inferred is util.Uninferable: # don't expose this
             return None
         return inferred
 
@@ -1835,7 +1835,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                 values = [item[0] for item in slots.items]
             else:
                 values = slots.itered()
-            if values is util.YES:
+            if values is util.Uninferable:
                 continue
             if not values:
                 # Stop the iteration, because the class
@@ -1845,7 +1845,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             for elt in values:
                 try:
                     for inferred in elt.infer():
-                        if inferred is util.YES:
+                        if inferred is util.Uninferable:
                             continue
                         if (not isinstance(inferred, node_classes.Const) or
                                 not isinstance(inferred.value,

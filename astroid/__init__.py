@@ -67,7 +67,7 @@ from astroid import raw_building
 from astroid.interpreter.util import are_exclusive, unpack_infer
 from astroid.tree.scoped_nodes import builtin_lookup
 from astroid.builder import parse
-from astroid.util import YES
+from astroid.util import Uninferable, YES
 
 
 # transform utilities (filters and decorator)

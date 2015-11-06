@@ -38,7 +38,7 @@ def infer_stmts(stmts, context, frame=None):
         context = contextmod.InferenceContext()
 
     for stmt in stmts:
-        if stmt is util.YES:
+        if stmt is util.Uninferable:
             yield stmt
             inferred = True
             continue
@@ -50,7 +50,7 @@ def infer_stmts(stmts, context, frame=None):
         except exceptions.UnresolvableName:
             continue
         except exceptions.InferenceError:
-            yield util.YES
+            yield util.Uninferable
             inferred = True
     if not inferred:
         raise exceptions.InferenceError(str(stmt))
@@ -70,9 +70,9 @@ def unpack_infer(stmt, context=None):
     if inferred is stmt:
         yield inferred
         return
-    # else, infer recursivly, except YES object that should be returned as is
+    # else, infer recursivly, except Uninferable object that should be returned as is
     for inferred in stmt.infer(context):
-        if inferred is util.YES:
+        if inferred is util.Uninferable:
             yield inferred
         else:
             for inf_inf in unpack_infer(inferred, context):
@@ -194,7 +194,7 @@ def has_known_bases(klass, context=None):
 
 def _type_check(type1, type2):
     if not all(map(has_known_bases, (type1, type2))):
-        return util.YES
+        return util.Uninferable
 
     if not all([type1.newstyle, type2.newstyle]):
         return False
@@ -202,7 +202,7 @@ def _type_check(type1, type2):
         return type1 in type2.mro()[:-1]
     except exceptions.MroError:
         # The MRO is invalid.
-        return util.YES
+        return util.Uninferable
 
 
 def is_subtype(type1, type2):

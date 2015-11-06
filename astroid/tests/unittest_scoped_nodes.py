@@ -1138,7 +1138,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         instance = astroid['tgts']
         # used to raise "'_Yes' object is not iterable", see
         # https://bitbucket.org/logilab/astroid/issue/17
-        self.assertEqual(list(instance.infer()), [util.YES])
+        self.assertEqual(list(instance.infer()), [util.Uninferable])
 
     def test_slots(self):
         astroid = builder.parse("""
@@ -1379,7 +1379,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         class A(object):
             pass
         ''')
-        instance = cls.instanciate_class()
+        instance = cls.instantiate_class()
         func = cls.getattr('mro')
         self.assertEqual(len(func), 1)
         self.assertRaises(NotFoundError, instance.getattr, 'mro')
@@ -1402,7 +1402,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         class B(object): pass 
         ''')
         cls = module['B']
-        self.assertEqual(util.YES, next(cls.igetattr('foo')))
+        self.assertEqual(util.Uninferable, next(cls.igetattr('foo')))
 
     def test_metaclass_lookup(self):
         module = builder.parse('''

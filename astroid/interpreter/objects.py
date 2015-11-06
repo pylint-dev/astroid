@@ -67,7 +67,7 @@ def is_property(meth):
     if PROPERTIES.intersection(meth.decoratornames()):
         return True
     stripped = {name.split(".")[-1] for name in meth.decoratornames()
-                if name is not util.YES}
+                if name is not util.Uninferable}
     return any(name in stripped for name in POSSIBLE_PROPERTIES)
 
 
@@ -97,14 +97,14 @@ def _infer_method_result_truth(instance, method_name, context):
     meth = next(instance.igetattr(method_name, context=context), None)
     if meth and hasattr(meth, 'infer_call_result'):
         if not meth.callable():
-            return util.YES
+            return util.Uninferable
         for value in meth.infer_call_result(instance, context=context):
-            if value is util.YES:
+            if value is util.Uninferable:
                 return value
 
             inferred = next(value.infer(context=context))
             return inferred.bool_value()
-    return util.YES
+    return util.Uninferable
 
 
 
@@ -189,7 +189,7 @@ class BaseInstance(Proxy):
         """infer what a class instance is returning when called"""
         inferred = False
         for node in self._proxied.igetattr('__call__', context):
-            if node is util.YES or not node.callable():
+            if node is util.Uninferable or not node.callable():
                 continue
             for res in node.infer_call_result(caller, context):
                 inferred = True
@@ -295,7 +295,7 @@ class UnboundMethod(Proxy):
         if (self._proxied.name == '__new__' and
                 self._proxied.parent.frame().qname() == '%s.object' % BUILTINS):
             infer = caller.args[0].infer() if caller.args else []
-            return ((x is util.YES and x or Instance(x)) for x in infer)
+            return ((x is util.Uninferable and x or Instance(x)) for x in infer)
         return self._proxied.infer_call_result(caller, context)
 
     def bool_value(self):

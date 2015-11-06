@@ -329,9 +329,16 @@ class NodeNG(object):
                       PendingDeprecationWarning, stacklevel=2)
         return self.inferred()
 
-    def instanciate_class(self):
+    def instantiate_class(self):
         """instanciate a node if it is a ClassDef node, else return self"""
         return self
+
+    def instanciate_class(self):
+        warnings.warn('%s.instanciate_class() is deprecated and slated for '
+                      ' removal in astroid 2.0, use %s.instantiate_class() '
+                      ' instead.' % (type(self).__name__, type(self).__name__),
+                      PendingDeprecationWarning, stacklevel=2)
+        return self.instantiate_class()
 
     def has_base(self, node):
         return False
@@ -475,10 +482,10 @@ class NodeNG(object):
               method.
             * True. Most of constructs are True by default:
               classes, functions, modules etc
-            * YES: the inference engine is uncertain of the
+            * Uninferable: the inference engine is uncertain of the
               node's value.
         """
-        return util.YES
+        return util.Uninferable
 
 
 @six.add_metaclass(abc.ABCMeta)

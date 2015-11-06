@@ -622,7 +622,7 @@ class Dict(base.NodeNG, objects.BaseInstance):
                 except IndexError:
                     continue
             for inferredkey in key.infer(context):
-                if inferredkey is util.YES:
+                if inferredkey is util.Uninferable:
                     continue
                 if isinstance(inferredkey, Const) \
                         and inferredkey.value == lookup_key:
