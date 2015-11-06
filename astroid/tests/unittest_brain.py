@@ -45,7 +45,11 @@ try:
     import enum # pylint: disable=unused-import
     HAS_ENUM = True
 except ImportError:
-    HAS_ENUM = False
+    try:
+        import enum34 as enum
+        HAS_ENUM = True
+    except ImportError:
+        HAS_ENUM = False
 
 try:
     import dateutil # pylint: disable=unused-import
@@ -121,15 +125,13 @@ class NamedTupleTest(unittest.TestCase):
         """)
         self.assertIs(util.Uninferable, next(klass.infer()))
 
-    @unittest.skipIf(sys.version_info[0] > 2,
-                     'namedtuple inference is broken on Python 3')
     def test_namedtuple_advanced_inference(self):
         # urlparse return an object of class ParseResult, which has a
         # namedtuple call and a mixin as base classes
         result = test_utils.extract_node("""
-        import urlparse
+        import six
 
-        result = __(urlparse.urlparse('gopher://'))
+        result = __(six.moves.urllib.parse.urlparse('gopher://'))
         """)
         instance = next(result.infer())
         self.assertEqual(len(instance.getattr('scheme')), 1)

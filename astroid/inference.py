@@ -747,6 +747,6 @@ def instance_getitem(self, index, context=None):
     except StopIteration:
         util.reraise(exceptions.InferenceError(
             message='Inference for {node!r}[{index!s}] failed.',
-            node=self, index=index.value, context=context))
+            node=self, index=index, context=context))
 
 bases.Instance.getitem = instance_getitem

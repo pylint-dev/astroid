@@ -101,3 +101,7 @@ def proxy_alias(alias_name, node_type):
                  {'__class__': object.__dict__['__class__'],
                   '__instancecheck__': _instancecheck})
     return proxy(lambda: node_type)
+
+
+# Backwards-compatibility aliases
+YES = Uninferable
