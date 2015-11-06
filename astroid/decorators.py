@@ -93,15 +93,28 @@ def path_wrapper(func):
             return
 
         yielded = set()
-        for res in _func(node, context, **kwargs):
-            # unproxy only true instance, not const, tuple, dict...
-            if res.__class__.__name__ == 'Instance':
-                ares = res._proxied
+        generator = _func(node, context, **kwargs)
+        try:
+            while True:
+                res = next(generator)
+                # unproxy only true instance, not const, tuple, dict...
+                if res.__class__.__name__ == 'Instance':
+                    ares = res._proxied
+                else:
+                    ares = res
+                if ares not in yielded:
+                    yield res
+                    yielded.add(ares)
+        except StopIteration as error:
+            # Explicit StopIteration to return error information, see
+            # comment in raise_if_nothing_inferred.
+            if len(error.args) > 0:
+                raise StopIteration(error.args[0])
+                # util.reraise(StopIteration(error.args[0]))
             else:
-                ares = res
-            if ares not in yielded:
-                yield res
-                yielded.add(ares)
+                # util.reraise(StopIteration())
+                raise StopIteration
+
     return wrapped
 
 
@@ -117,18 +130,34 @@ def yes_if_nothing_inferred(func, instance, args, kwargs):
 
 @wrapt.decorator
 def raise_if_nothing_inferred(func, instance, args, kwargs):
-    '''All generators wrapped with raise_if_nothing_inferred *must* raise
-    exceptions.DefaultStop if they can terminate without output, to
-    propagate error information.
+    '''All generators wrapped with raise_if_nothing_inferred *must*
+    explicitly raise StopIteration with information to create an
+    appropriate structured InferenceError.
+
     '''
+    # TODO: Explicitly raising StopIteration in a generator will cause
+    # a RuntimeError in Python >=3.7, as per
+    # http://legacy.python.org/dev/peps/pep-0479/ .  Before 3.7 is
+    # released, this code will need to use one of four possible
+    # solutions: a decorator that restores the current behavior as
+    # described in
+    # http://legacy.python.org/dev/peps/pep-0479/#sub-proposal-decorator-to-explicitly-request-current-behaviour
+    # , dynamic imports or exec to generate different code for
+    # different versions, drop support for all Python versions <3.3,
+    # or refactoring to change how these decorators work.  In any
+    # event, after dropping support for Python <3.3 this code should
+    # be refactored to use `yield from`.
     inferred = False
-    fields = {}
     try:
-        for node in func(*args, **kwargs):
+        generator = func(*args, **kwargs)
+        while True:
+            yield next(generator)
             inferred = True
-            yield node
-    except exceptions.DefaultStop as e:
-        fields = vars(e)
-        del fields['message']
-    if not inferred:
-        raise exceptions.InferenceError(**fields)
+    except StopIteration as error:
+        if not inferred:
+            if len(error.args) > 0:
+                raise exceptions.InferenceError(**error.args[0])
+                # util.reraise(exceptions.InferenceError(**error.args[0]))
+            else:
+                raise exceptions.InferenceError
+                # util.reraise(exceptions.InferenceError())

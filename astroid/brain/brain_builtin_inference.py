@@ -77,8 +77,10 @@ if sys.version_info > (3, 0):
     extend_builtins({'bytes': partial(_extend_str, rvalue="b''"),
                      'str': partial(_extend_str, rvalue="''")})
 else:
-    extend_builtins({'str': partial(_extend_str, rvalue="''"),
-                     'unicode': partial(_extend_str, rvalue="u''")})
+    # TODO
+    pass
+    # extend_builtins({'str': partial(_extend_str, rvalue="''"),
+    #                  'unicode': partial(_extend_str, rvalue="u''")})
 
 
 def register_builtin_transform(transform, builtin_name):

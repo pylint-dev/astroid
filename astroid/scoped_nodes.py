@@ -22,13 +22,9 @@ new local scope in the language definition : Module, ClassDef, FunctionDef (and
 Lambda, GeneratorExp, DictComp and SetComp to some extent).
 """
 
-from __future__ import print_function
-
 import collections
 import io
 import itertools
-import pprint
-import types
 import warnings
 
 try:
@@ -47,6 +43,13 @@ from astroid import mixins
 from astroid import node_classes
 from astroid import decorators as decorators_mod
 from astroid import util
+
+# TODO: remove this, this is for writing the necessary code only.
+
+try:
+    from types import MappingProxyType
+except ImportError:
+    from dictproxyhack import dictproxy as MappingProxyType
 
 
 BUILTINS = six.moves.builtins.__name__
@@ -94,20 +97,6 @@ def _verify_duplicates_mro(sequences, cls, context):
             raise exceptions.DuplicateBasesError(
                 message='Duplicates found in MROs {mros} for {cls!r}.',
                 mros=sequences, cls=cls, context=context)
-
-
-def remove_nodes(cls):
-    @wrapt.decorator
-    def decorator(func, instance, args, kwargs):
-        nodes = [n for n in func(*args, **kwargs) if not isinstance(n, cls)]
-        if not nodes:
-            # TODO: no way to access the context when raising this error.
-            raise exceptions.AttributeInferenceError(
-                'No nodes left after removing all {remove_type!r} from '
-                'nodes inferred for {node!r}.',
-                node=instance, remove_type=cls)
-        return nodes
-    return decorator
 
 
 def function_to_method(n, klass):
@@ -165,7 +154,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn,
 
     @property
     def locals(self):
-        return types.MappingProxyType(get_locals(self))
+        return MappingProxyType(get_locals(self))
 
     def qname(self):
         """return the 'qualified' name of the node, eg module.name,
@@ -366,7 +355,7 @@ class Module(LocalsDictNodeNG):
 
     @property
     def globals(self):
-        return types.MappingProxyType(get_locals(self))
+        return MappingProxyType(get_locals(self))
 
     @property
     def future_imports(self):
@@ -430,26 +419,30 @@ class Module(LocalsDictNodeNG):
     def display_type(self):
         return 'Module'
 
-    @remove_nodes(node_classes.DelName)
     def getattr(self, name, context=None, ignore_locals=False):
+        result = []
         if name in self.special_attributes:
             if name == '__file__':
-                return [node_classes.Const(self.source_file)] + self.locals.get(name, [])
-            if name == '__path__' and self.package:
-                return [node_classes.List()] + self.locals.get(name, [])
-            return std_special_attributes(self, name)
-        if not ignore_locals and name in self.locals:
-            return self.locals[name]
+                result = ([node_classes.Const(self.source_file)] + self.locals.get(name, []))
+            elif name == '__path__' and self.package:
+                result = [node_classes.List()] + self.locals.get(name, [])
+            else:
+                result = std_special_attributes(self, name)
+        elif not ignore_locals and name in self.locals:
+            result = self.locals[name]
         # TODO: should ignore_locals also affect external_attrs?
-        if name in self.external_attrs:
+        elif name in self.external_attrs:
             return self.external_attrs[name]
-        if self.package:
+        elif self.package:
             try:
-                return [self.import_module(name, relative_only=True)]
+                result = [self.import_module(name, relative_only=True)]
             except (exceptions.AstroidBuildingException, SyntaxError):
                 util.reraise(exceptions.AttributeInferenceError(target=self,
                                                                 attribute=name,
                                                                 context=context))
+        result = [n for n in result if not isinstance(n, node_classes.DelName)]
+        if result:
+            return result
         raise exceptions.AttributeInferenceError(target=self, attribute=name,
                                                  context=context)
 
@@ -730,7 +723,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
 
     # @property
     # def instance_attrs(self):
-    #     return types.MappingProxyType(get_external_assignments(self, collections.defaultdict(list)))
+    #     return MappingProxyType(get_external_assignments(self, collections.defaultdict(list)))
 
     def pytype(self):
         if 'method' in self.type:
@@ -1195,7 +1188,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
     # @property
     # def instance_attrs(self):
-    #     return types.MappingProxyType(get_external_assignments(self, collections.defaultdict(list)))
+    #     return MappingProxyType(get_external_assignments(self, collections.defaultdict(list)))
 
     def _newstyle_impl(self, context=None):
         if context is None:
@@ -1405,7 +1398,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
     def has_base(self, node):
         return node in self.bases
 
-    @remove_nodes(node_classes.DelAttr)
     def local_attr(self, name, context=None):
         """return the list of assign node associated to name in this class
         locals or in its parents
@@ -1414,15 +1406,20 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
           if no attribute with this name has been find in this class or
           its parent classes
         """
-        try:
-            return self.locals[name]
-        except KeyError:
-            for class_node in self.local_attr_ancestors(name, context):
-                return class_node.locals[name]
+        result = []
+        if name in self.locals:
+            result = self.locals[name]
+        else:
+            try:
+                result = next(self.local_attr_ancestors(name, context)).locals[name]
+            except StopIteration:
+                pass
+        result = [n for n in result if not isinstance(n, node_classes.DelAttr)]
+        if result:
+            return result
         raise exceptions.AttributeInferenceError(target=self, attribute=name,
                                                  context=context)
 
-    @remove_nodes(node_classes.DelAttr)
     def instance_attr(self, name, context=None):
         """return the astroid nodes associated to name in this class instance
         attributes dictionary and in its parents
@@ -1437,10 +1434,11 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         # get all values from parents
         for class_node in self.instance_attr_ancestors(name, context):
             values += class_node.instance_attrs[name]
-        if not values:
-            raise exceptions.AttributeInferenceError(target=self, attribute=name,
-                                                     context=context)
-        return values
+        values = [n for n in values if not isinstance(n, node_classes.DelAttr)]
+        if values:
+            return values
+        raise exceptions.AttributeInferenceError(target=self, attribute=name,
+                                                 context=context)
 
     def instanciate_class(self):
         """return Instance of ClassDef node, else return self"""
