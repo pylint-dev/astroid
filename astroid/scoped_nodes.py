@@ -1314,10 +1314,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         if name in self.locals:
             result = self.locals[name]
         else:
-            try:
-                result = next(self.local_attr_ancestors(name, context)).locals[name]
-            except StopIteration:
-                pass
+            class_node = next(self.local_attr_ancestors(name, context), ())
+            if class_node:
+                result = class_node.locals[name]
         result = [n for n in result if not isinstance(n, node_classes.DelAttr)]
         if result:
             return result
