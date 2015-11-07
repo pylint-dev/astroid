@@ -107,9 +107,12 @@ def _infer_method_result_truth(instance, method_name, context):
     return util.YES
 
 
-@util.register_implementation(runtimeabc.Instance)
-class Instance(Proxy):
-    """A special node representing a class instance."""
+
+class BaseInstance(Proxy):
+    """An instance base class, which provides lookup methods for potential instances."""
+
+    def display_type(self):
+        return 'Instance of'
 
     def getattr(self, name, context=None, lookupclass=True):
         try:
@@ -194,6 +197,12 @@ class Instance(Proxy):
         if not inferred:
             raise exceptions.InferenceError()
 
+
+@util.register_implementation(runtimeabc.Instance)
+class Instance(BaseInstance):
+    """A special node representing a class instance."""
+
+
     def __repr__(self):
         return '<Instance of %s.%s at 0x%s>' % (self._proxied.root().name,
                                                 self._proxied.name,
@@ -211,9 +220,6 @@ class Instance(Proxy):
 
     def pytype(self):
         return self._proxied.qname()
-
-    def display_type(self):
-        return 'Instance of'
 
     def bool_value(self):
         """Infer the truth value for an Instance
@@ -318,7 +324,7 @@ class BoundMethod(UnboundMethod):
 
 
 @util.register_implementation(runtimeabc.Generator)
-class Generator(Instance):
+class Generator(BaseInstance):
     """a special node representing a generator.
 
     Proxied class is set once for all in raw_building.

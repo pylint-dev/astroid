@@ -36,6 +36,10 @@ class Instance(RuntimeObject):
     """Class representing an instance."""
 
 
+class BuiltinInstance(RuntimeObject):
+    """Represents an instance of a builtin."""
+
+
 class UnboundMethod(RuntimeObject):
     """Class representing an unbound method."""
 

@@ -27,6 +27,7 @@ import wrapt
 
 from astroid import context as contextmod
 from astroid import exceptions
+from astroid.interpreter import runtimeabc
 from astroid import util
 
 
@@ -95,7 +96,7 @@ def path_wrapper(func):
         yielded = set()
         for res in _func(node, context, **kwargs):
             # unproxy only true instance, not const, tuple, dict...
-            if res.__class__.__name__ == 'Instance':
+            if isinstance(res, runtimeabc.Instance):
                 ares = res._proxied
             else:
                 ares = res

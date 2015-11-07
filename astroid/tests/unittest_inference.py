@@ -31,6 +31,7 @@ from astroid.inference import infer_end as inference_infer_end
 from astroid.interpreter.objects import (
     Instance, BoundMethod, UnboundMethod, FrozenSet
 )
+from astroid.interpreter import runtimeabc
 from astroid.interpreter.util import safe_infer
 
 from astroid import decorators as decoratorsmod
@@ -472,7 +473,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         n = ast['l']
         inferred = next(n.infer())
         self.assertIsInstance(inferred, nodes.List)
-        self.assertIsInstance(inferred, Instance)
+        self.assertIsInstance(inferred, runtimeabc.BuiltinInstance)
         self.assertEqual(inferred.getitem(0).value, 1)
         self.assertIsInstance(inferred._proxied, nodes.ClassDef)
         self.assertEqual(inferred._proxied.name, 'list')
@@ -480,21 +481,21 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         n = ast['t']
         inferred = next(n.infer())
         self.assertIsInstance(inferred, nodes.Tuple)
-        self.assertIsInstance(inferred, Instance)
+        self.assertIsInstance(inferred, runtimeabc.BuiltinInstance)
         self.assertEqual(inferred.getitem(0).value, 2)
         self.assertIsInstance(inferred._proxied, nodes.ClassDef)
         self.assertEqual(inferred._proxied.name, 'tuple')
         n = ast['d']
         inferred = next(n.infer())
         self.assertIsInstance(inferred, nodes.Dict)
-        self.assertIsInstance(inferred, Instance)
+        self.assertIsInstance(inferred, runtimeabc.BuiltinInstance)
         self.assertIsInstance(inferred._proxied, nodes.ClassDef)
         self.assertEqual(inferred._proxied.name, 'dict')
         self.assertIn('get', inferred._proxied.locals)
         n = ast['s']
         inferred = next(n.infer())
         self.assertIsInstance(inferred, nodes.Const)
-        self.assertIsInstance(inferred, Instance)
+        self.assertIsInstance(inferred, runtimeabc.BuiltinInstance)
         self.assertEqual(inferred.name, 'str')
         self.assertIn('lower', inferred._proxied.locals)
         n = ast['s2']
@@ -506,7 +507,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         n = ast['s']
         inferred = next(n.infer())
         self.assertIsInstance(inferred, nodes.Set)
-        self.assertIsInstance(inferred, Instance)
+        self.assertIsInstance(inferred, runtimeabc.BuiltinInstance)
         self.assertEqual(inferred.name, 'set')
         self.assertIn('remove', inferred._proxied.locals)
 
@@ -517,7 +518,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         n = ast['u']
         inferred = next(n.infer())
         self.assertIsInstance(inferred, nodes.Const)
-        self.assertIsInstance(inferred, Instance)
+        self.assertIsInstance(inferred, runtimeabc.BuiltinInstance)
         self.assertEqual(inferred.name, 'unicode')
         self.assertIn('lower', inferred._proxied.locals)
 
@@ -1727,9 +1728,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         dict([(1, 2), ([4, 5], 2)]) #@
         dict([None,  None]) #@
 
-        def using_unknown_kwargs(**kwargs):
-            return dict(**kwargs)
-        using_unknown_kwargs(a=1, b=2) #@
         """
         ast = test_utils.extract_node(code, __name__)
         self.assertInferDict(ast[0], {})
@@ -1744,8 +1742,17 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
         for node in ast[10:]:
             inferred = next(node.infer())
-            self.assertIsInstance(inferred, Instance)
+            self.assertIsInstance(inferred, runtimeabc.Instance)
             self.assertEqual(inferred.qname(), "{}.dict".format(BUILTINS))
+
+    @unittest.expectedFailure
+    def test_dict_inference_call_context_not_propagated(self):
+        ast_node = test_utils.extract_node('''
+        def using_unknown_kwargs(**kwargs):
+            return dict(**kwargs)
+        using_unknown_kwargs(a=1, b=2) #@
+        ''')
+        self.assertInferDict(ast_node, {'a': 1, 'b': 2})
 
     def test_dict_inference_kwargs(self):
         ast_node = test_utils.extract_node('''dict(a=1, b=2, **{'c': 3})''')

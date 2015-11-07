@@ -655,8 +655,8 @@ class Comprehension(AssignedStmtsMixin, base.NodeNG):
 
 
 @util.register_implementation(treeabc.Const)
-@util.register_implementation(runtimeabc.Instance)
-class Const(base.NodeNG, objects.Instance):
+@util.register_implementation(runtimeabc.BuiltinInstance)
+class Const(base.NodeNG, objects.BaseInstance):
     """represent a constant node like num, str, bool, None, bytes"""
     _other_fields = ('value',)
 
@@ -730,7 +730,8 @@ class Delete(mixins.AssignTypeMixin, Statement):
 
 
 @util.register_implementation(treeabc.Dict)
-class Dict(base.NodeNG, objects.Instance):
+@util.register_implementation(runtimeabc.BuiltinInstance)
+class Dict(base.NodeNG, objects.BaseInstance):
     """class representing a Dict node"""
     _astroid_fields = ('items',)
 
@@ -1020,7 +1021,8 @@ class Keyword(base.NodeNG):
 
 
 @util.register_implementation(treeabc.List)
-class List(base.BaseContainer, AssignedStmtsMixin, objects.Instance):
+@util.register_implementation(runtimeabc.BuiltinInstance)
+class List(base.BaseContainer, AssignedStmtsMixin, objects.BaseInstance):
     """class representing a List node"""
 
     def pytype(self):
@@ -1105,7 +1107,8 @@ class Return(Statement):
 
 
 @util.register_implementation(treeabc.Set)
-class Set(base.BaseContainer, objects.Instance):
+@util.register_implementation(runtimeabc.BuiltinInstance)
+class Set(base.BaseContainer, objects.BaseInstance):
     """class representing a Set node"""
 
     def pytype(self):
@@ -1231,7 +1234,8 @@ class TryFinally(mixins.BlockRangeMixIn, Statement):
 
 
 @util.register_implementation(treeabc.Tuple)
-class Tuple(base.BaseContainer, AssignedStmtsMixin, objects.Instance):
+@util.register_implementation(runtimeabc.BuiltinInstance)
+class Tuple(base.BaseContainer, AssignedStmtsMixin, objects.BaseInstance):
     """class representing a Tuple node"""
 
     def pytype(self):

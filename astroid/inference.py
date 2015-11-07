@@ -234,7 +234,7 @@ def infer_subscript(self, context=None):
         yield util.YES
         return
 
-    if value.__class__.__name__ == 'Instance':
+    if isinstance(value, runtimeabc.Instance):
         index_value = index
     else:
         index_value = _SLICE_SENTINEL
