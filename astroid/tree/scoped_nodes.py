@@ -140,7 +140,7 @@ def builtin_lookup(name):
 
 
 # TODO move this Mixin to mixins.py; problem: 'FunctionDef' in _scope_lookup
-class LocalsDictNodeNG(node_classes.LookupMixIn,
+class LocalsDictNodeNG(mixins.LookupMixIn,
                        treebase.NodeNG):
     """ this class provides locals handling common to Module, FunctionDef
     and ClassDef nodes, including a dict like interface for direct access
