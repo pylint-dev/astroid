@@ -1519,9 +1519,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         node = ast['c']
         self.assertEqual(node.inferred(), [util.Uninferable])
 
-    def test_infer_empty_nodes(self):
-        # Should not crash when trying to infer EmptyNodes.
-        node = nodes.EmptyNode()
+    def test_infer_interpreter_objects(self):
+        # Should not crash when trying to infer InterpreterObjects.
+        node = nodes.InterpreterObject()
         self.assertEqual(node.inferred(), [util.Uninferable])
 
     def test_infinite_loop_for_decorators(self):

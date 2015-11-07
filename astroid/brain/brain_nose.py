@@ -55,7 +55,7 @@ def _nose_tools_functions():
 
 def _nose_tools_transform(module_node):
     for method_name, method in _nose_tools_functions():
-        module_node.body.append(astroid.EmptyNode(object_=method,
+        module_node.body.append(astroid.InterpreterObject(object_=method,
                                                   name=method_name,
                                                   parent=module_node))
 
@@ -67,7 +67,7 @@ def _nose_tools_trivial_transform():
 
     for pep8_name, method in _nose_tools_functions():
         all_entries.append(pep8_name)
-        stub.body.append(astroid.EmptyNode(object_=method,
+        stub.body.append(astroid.InterpreterObject(object_=method,
                                            name=pep8_name, parent=stub))
 
     # Update the __all__ variable, since nose.tools

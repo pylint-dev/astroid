@@ -706,7 +706,7 @@ nodes.AssignAttr._infer = infer_assign
 # no infer method on DelName and DelAttr (expected InferenceError)
 
 @decorators.path_wrapper
-def infer_empty_node(self, context=None):
+def infer_interpreter_object(self, context=None):
     if not self.has_underlying_object():
         yield util.Uninferable
     else:
@@ -716,7 +716,7 @@ def infer_empty_node(self, context=None):
                 yield inferred
         except exceptions.AstroidError:
             yield util.Uninferable
-nodes.EmptyNode._infer = infer_empty_node
+nodes.InterpreterObject._infer = infer_interpreter_object
 
 
 def infer_index(self, context=None):

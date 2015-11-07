@@ -156,12 +156,12 @@ def _ast_from_object(object_, built_objects, module, name=None, parent=None):
     # if name:
     #     parent = nodes.Assign(parent=parent)
     #     name_node = nodes.AssignName(name, parent=parent)
-    empty_node = nodes.EmptyNode(name=name, object_=object_, parent=parent)
+    interpreter_object = nodes.InterpreterObject(name=name, object_=object_, parent=parent)
     # if name:
-    #     parent.postinit(targets=[name_node], value=empty_node)
+    #     parent.postinit(targets=[name_node], value=interpreter_object)
     #     node = parent
     # else:
-    node = empty_node
+    node = interpreter_object
     return node
 
 
@@ -477,7 +477,7 @@ def ast_from_ellipsis(ellipsis, built_objects, module, name=None, parent=None):
 #                  'True', '__debug__', '__package__', '__spec__', 'copyright',
 #                  'credits', 'exit', 'help', 'license', 'quit'):
 #         for child in (n for n in node.body if
-#                      isinstance(n, (nodes.Const, nodes.EmptyNode))):
+#                      isinstance(n, (nodes.Const, nodes.InterpreterObject))):
 #             if child.name == name:
 #                 locals_[name].append(child)
 #     for n in node.get_children():

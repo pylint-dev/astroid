@@ -44,7 +44,6 @@ from astroid import decorators as decorators_mod
 from astroid import util
 
 # TODO: remove this, this is for writing the necessary code only.
-
 try:
     from types import MappingProxyType
 except ImportError:
@@ -1902,16 +1901,16 @@ def locals_name(node, locals_):
     new scope so shouldn't be recursed into.'''
     locals_[node.name].append(node)
 
-@_get_locals.register(node_classes.EmptyNode)
+@_get_locals.register(node_classes.InterpreterObject)
 def locals_empty(node, locals_):
-    '''EmptyNodes add an object to the local variables under a specified
+    '''InterpreterObjects add an object to the local variables under a specified
     name.'''
     if node.name:
         locals_[node.name].append(node)
 
 @_get_locals.register(node_classes.ReservedName)
 def locals_reserved_name(node, locals_):
-    '''EmptyNodes add an object to the local variables under a specified
+    '''InterpreterObjects add an object to the local variables under a specified
     name.'''
     locals_[node.name].append(node.value)
 

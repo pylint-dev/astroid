@@ -1372,8 +1372,8 @@ class Ellipsis(NodeNG): # pylint: disable=redefined-builtin
         return True
 
 
-class EmptyNode(NodeNG):
-    '''EmptyNodes are used in manufactured ASTs that simulate features of
+class InterpreterObject(NodeNG):
+    '''InterpreterObjects are used in manufactured ASTs that simulate features of
     real ASTs for inference, usually to handle behavior implemented in
     the interpreter or in C extensions.
 
@@ -1384,7 +1384,7 @@ class EmptyNode(NodeNG):
         if object_ is not None:
             self.object = object_
         self.name = name
-        super(EmptyNode, self).__init__(lineno, col_offset, parent)
+        super(InterpreterObject, self).__init__(lineno, col_offset, parent)
 
     def has_underlying_object(self):
         return hasattr(self, 'object')

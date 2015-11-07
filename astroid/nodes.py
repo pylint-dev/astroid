@@ -50,7 +50,7 @@ from astroid.node_classes import (
     # Node not present in the builtin ast module.
     DictUnpack,
     # Special nodes for building from live objects.
-    EmptyNode, NameConstant, ReservedName, Unknown
+    InterpreterObject, NameConstant, ReservedName, Unknown
 )
 from astroid.scoped_nodes import (
     Module, GeneratorExp, Lambda, DictComp,
@@ -70,7 +70,7 @@ ALL_NODE_CLASSES = (
     Call, ClassDef, Compare, Comprehension, Const, Continue,
     Decorators, DelAttr, DelName, Delete,
     Dict, DictComp, DictUnpack, Expr,
-    Ellipsis, EmptyNode, ExceptHandler, Exec, ExtSlice,
+    Ellipsis, InterpreterObject, ExceptHandler, Exec, ExtSlice,
     For, ImportFrom, FunctionDef,
     Attribute, GeneratorExp, Global,
     If, IfExp, Import, Index,

@@ -371,7 +371,7 @@ def multiprocessing_transform():
                 # We need to rebind this, since otherwise
                 # it will have an extra argument (self).
                 value = BoundMethod(value, node)
-            module.body.append(nodes.EmptyNode(object_=value, name=key,
+            module.body.append(nodes.InterpreterObject(object_=value, name=key,
                                                parent=module))
     return module
 
