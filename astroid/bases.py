@@ -272,11 +272,6 @@ class Instance(Proxy):
     def getitem(self, index, context=None):
         pass
 
-    @property
-    def instance_attrs(self):
-        return types.MappingProxyType(scoped_nodes.get_external_assignments(self, collections.defaultdict(list)))
-
-
 
 class UnboundMethod(Proxy):
     """a special node representing a method not bound to an instance"""

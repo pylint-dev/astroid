@@ -115,9 +115,9 @@ def inference_tip(infer_function):
 def register_module_extender(manager, module_name, get_extension_mod):
     def transform(module):
         extension_module = get_extension_mod()
-        # for name, obj in extension_module.locals.items():
-        #     node.locals[name] = obj
-        module.body.extend(extension_module.body)
+        for statement in extension_module.body:
+            statement.parent = module
+            module.body.append(statement)
 
     manager.register_transform(Module, transform, lambda n: n.name == module_name)
 
@@ -132,6 +132,4 @@ if BRAIN_MODULES_DIR not in sys.path:
 # load modules in this directory
 for module in listdir(BRAIN_MODULES_DIR):
     if module.endswith('.py'):
-        # print(module[:-3])
-        # __import__(module[:-3])
         importlib.import_module(module[:-3])

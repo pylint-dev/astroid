@@ -616,7 +616,7 @@ class _BaseContainer(mixins.ParentAssignTypeMixin,
         if elts is None:
             node.elts = []
         else:
-            node.elts = [raw_building.ast_from_builtin_number_text_binary(e, {}, None, parent=node) for e in elts]
+            node.elts = [raw_building.ast_from_builtin_number_text_binary(e, {}, None, parent=node)[0] for e in elts]
         return node
 
     def itered(self):
@@ -1304,9 +1304,9 @@ class Dict(NodeNG, bases.Instance):
             node.items = []
         else:
             node.items = [(raw_building.ast_from_scalar(k, {}, None,
-                                                        parent=node),
+                                                        parent=node)[0],
                            raw_building.ast_from_scalar(v, {}, None,
-                                                        parent=node))
+                                                        parent=node)[0])
                           for k, v in items.items()]
         return node
 

@@ -67,6 +67,8 @@ from astroid import nodes
 from astroid import scoped_nodes
 from astroid import util
 
+MANAGER = manager.AstroidManager()
+
 # This is a type used for some unbound methods implemented in C on
 # CPython and all unbound special methods on Jython.  Bound methods
 # corresponding to unbound methods of this type have the type
@@ -86,83 +88,33 @@ WrapperDescriptorType = type(object.__getattribute__)
 # CPython.
 MethodWrapperType = type(object().__getattribute__)
 
-MANAGER = manager.AstroidManager()
-
-
-# def _io_discrepancy(member):
-#     # _io module names itself `io`: http://bugs.python.org/issue18602
-#     member_self = getattr(member, '__self__', None)
-#     return (member_self and
-#             inspect.ismodule(member_self) and
-#             member_self.__name__ == '_io' and
-#             member.__module__ == 'io')
-
-# def _add_dunder_class(func, member):
-#     """Add a __class__ member to the given func node, if we can determine it."""
-#     python_cls = member.__class__
-#     cls_name = getattr(python_cls, '__name__', None)
-#     if not cls_name:
-#         return
-#     bases = [ancestor.__name__ for ancestor in python_cls.__bases__]
-#     ast_klass = build_class(cls_name, bases, python_cls.__doc__)
-#     func.instance_attrs['__class__'] = [ast_klass]
-
-# Parameter = collections.namedtuple('Parameter', 'name default annotation kind')
-# DEFAULT_PARAMETER = Parameter(None, None, None, None)
-
-# def build_function(name, args=(), defaults=(), annotations=(),
-#                    kwonlyargs=(), kwonly_defaults=(),
-#                    kwonly_annotations=(), vararg=None,
-#                    varargannotation=None, kwarg=None, kwargannotation=None,
-#                    returns=None, doc=None, parent=None):
-#     """create and initialize an astroid FunctionDef node"""
-#     func = nodes.FunctionDef(name=name, doc=doc, parent=parent)
-#     args_node = nodes.Arguments(vararg=vararg, kwarg=kwarg, parent=func)
-#     args = [nodes.Name(name=a.name, parent=args_node) for n in args]
-#     kwonlyargs = [nodes.Name(name=a.name, parent=args_node) for a in kw_only]
-#     args_node.postinit(args, defaults, kwonlyargs, kw_defaults,
-#                       annotations, kwonly_annotations,
-#                       varargannotation, kwargannotation)
-#     func.postinit(args=args_node, body=[], returns=returns)
-#     return func
-
-# def object_build_function(parent, func, localname):
-#     """create astroid for a living function object"""
-#     signature = _signature(func)
-#     parameters = {k: tuple(g) for k, g in
-#                   itertools.groupby(signature.parameters.values(),
-#                                     operator.attrgetter('kind'))}
-#     # This ignores POSITIONAL_ONLY args, because they only appear in
-#     # functions implemented in C and can't be mimicked by any Python
-#     # function.
-#     node = build_function(getattr(func, '__name__', None) or localname,
-#                           parameters.get(_Parameter.POSITIONAL_OR_KEYWORD, ()),
-#                           parameters.get(_Parameter.KEYWORD_ONLY, ()),
-#                           parameters.get(_Parameter.VAR_POSITIONAL, None),
-#                           parameters.get(_Parameter.VAR_KEYWORD, None),
-#                           signature.return_annotation,
-#                           func.__doc__,
-#                           parent)
-#     return node
-
 
 def ast_from_object(object_, name=None):
     return _ast_from_object(object_, _ChainMap({}),
-                            inspect.getmodule(object_), name)
+                            inspect.getmodule(object_), name)[0]
 
 
 @_singledispatch
-def _ast_from_object(object_, built_objects, module, name=None, parent=None):
-    # if name:
-    #     parent = nodes.Assign(parent=parent)
-    #     name_node = nodes.AssignName(name, parent=parent)
-    interpreter_object = nodes.InterpreterObject(name=name, object_=object_, parent=parent)
-    # if name:
-    #     parent.postinit(targets=[name_node], value=interpreter_object)
-    #     node = parent
-    # else:
-    node = interpreter_object
-    return node
+def _ast_from_object(instance, built_objects, module, name=None, parent=None):
+    # Since this ultimately inherits from object but not any type,
+    # it's presumably an instance of some kind.
+    cls = type(instance)
+    result = []
+    result.extend(_ast_from_object(cls, built_objects, module, parent=parent))
+
+    # TODO: is this guaranteed?  Should verify.
+    class_node = result[0]
+
+    # TODO: remove this hack
+    if isinstance(class_node, nodes.ClassDef):
+        # Take the set difference of instance and class attributes
+        for name in set(dir(instance)) - set(dir(cls)):
+            class_node.instance_attrs[name].append(getattr(instance, name))
+
+        # Create an instance of the class we just created an AST for.
+        result.append(nodes.InterpreterObject(name=name, object_=class_node.instantiate_class(), parent=parent))
+    result.append(nodes.InterpreterObject(name=name, object_=instance, parent=parent))
+    return result
 
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
@@ -170,32 +122,31 @@ def _ast_from_object(object_, built_objects, module, name=None, parent=None):
 def ast_from_module(module, built_objects, parent_module, name=None, parent=None):
     if module is not parent_module:
         # This module has been imported into another.
-        return nodes.Import([[module.__name__, name]], parent=parent)
+        return (nodes.Import([[module.__name__, name]], parent=parent),)
     if id(module) in built_objects:
-        return nodes.Name(name=name or module.__name__, parent=parent_module)
+        return (nodes.Name(name=name or module.__name__, parent=parent_module),)
     try:
         source_file = inspect.getsourcefile(module)
     except TypeError:
         # inspect.getsourcefile raises TypeError for built-in modules.
         source_file = None
-    module_node = nodes.Module(name=name or module.__name__,
-                               # inspect.getdoc returns None for
-                               # modules without docstrings like
-                               # Jython Java modules.
-                               doc=inspect.getdoc(module),
-                               source_file=source_file,
-                               package=hasattr(module, '__path__'),
-                               # Assume that if inspect couldn't find a
-                               # Python source file, it's probably not
-                               # implemented in pure Python.
-                               pure_python=bool(source_file))
+    module_node = nodes.Module(
+        name=name or module.__name__,
+        # inspect.getdoc returns None for modules without docstrings like
+        # Jython Java modules.
+        doc=inspect.getdoc(module),
+        source_file=source_file,
+        package=hasattr(module, '__path__'),
+        # Assume that if inspect couldn't find a Python source file, it's
+        # probably not implemented in pure Python.
+        pure_python=bool(source_file))
     built_objects[id(module)] = module_node
     built_objects = _ChainMap({}, *built_objects.maps)
     MANAGER.cache_module(module_node)
-    module_node.postinit(body=[_ast_from_object(m, built_objects, module,
-                                                n, module_node)
-                               for n, m in inspect.getmembers(module)])
-    return module_node
+    body = [t for n, m in inspect.getmembers(module)
+            for t in _ast_from_object(m, built_objects, module, n, module_node)]
+    module_node.postinit(body=body)
+    return (module_node,)
 
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
@@ -205,28 +156,28 @@ def ast_from_module(module, built_objects, parent_module, name=None, parent=None
 def ast_from_class(cls, built_objects, module, name=None, parent=None):
     inspected_module = inspect.getmodule(cls)
     if inspected_module is not None and inspected_module is not module:
-        return nodes.ImportFrom(fromname=
-                                getattr(inspected_module, '__name__', None),
-                                names=[[cls.__name__, name]],
-                                parent=parent)
+        return (nodes.ImportFrom(fromname=
+                                 getattr(inspected_module, '__name__', None),
+                                 names=[[cls.__name__, name]],
+                                 parent=parent),)
     if id(cls) in built_objects:
-        # return built_objects[id(cls)]
-        return nodes.Name(name=name or cls.__name__, parent=parent)
+        return (nodes.Name(name=name or cls.__name__, parent=parent),)
     class_node = nodes.ClassDef(name=name or cls.__name__, doc=inspect.getdoc(cls), parent=parent)
     built_objects[id(cls)] = class_node
     built_objects = _ChainMap({}, *built_objects.maps)
     try:
         bases = [nodes.Name(name=b.__name__, parent=class_node)
-                 for b in inspect.getmro(cls)[1:]]
-        body = [_ast_from_object(a.object, built_objects, module, a.name, parent=class_node)
-                for a in _classify_class_attrs(cls) if a.defining_class is cls]
+                 for b in cls.__bases__]
+        body = [
+            t for a in _classify_class_attrs(cls) if a.defining_class is cls and a.name is not '__doc__'
+            for t in _ast_from_object(a.object, built_objects, module, a.name, parent=class_node)]
     except AttributeError:
         bases = ()
-        body = [_ast_from_object(m, built_objects, module, n, parent=class_node)
-                for n, m in inspect.getmembers(cls)]
+        body = [t for n, m in inspect.getmembers(cls) if n is not '__doc__'
+                for t in _ast_from_object(m, built_objects, module, n, parent=class_node)]
     class_node.postinit(bases=bases, body=body, decorators=(),
                         newstyle=isinstance(cls, type))
-    return class_node
+    return (class_node,)
 # Old-style classes
 if six.PY2:
     _ast_from_object.register(types.ClassType, ast_from_class)
@@ -249,12 +200,12 @@ if six.PY2:
 def ast_from_function(func, built_objects, module, name=None, parent=None):
     inspected_module = inspect.getmodule(func)
     if inspected_module is not None and inspected_module is not module:
-        return nodes.ImportFrom(fromname=getattr(inspected_module, '__name__', None),
-                                names=[[func.__name__, name]],
-                                parent=parent)
+        return (nodes.ImportFrom(
+            fromname=getattr(inspected_module, '__name__', None),
+            names=[[func.__name__, name]],
+            parent=parent),)
     if id(func) in built_objects:
-        # return built_objects[id(func)]
-        return nodes.Name(name=name or func.__name__, parent=parent)
+        return (nodes.Name(name=name or func.__name__, parent=parent),)
     func_node = nodes.FunctionDef(name=name or func.__name__,
                                   doc=inspect.getdoc(func),
                                   parent=parent)
@@ -266,7 +217,7 @@ def ast_from_function(func, built_objects, module, name=None, parent=None):
         # signature() raises these errors for non-introspectable
         # callables.
         func_node.postinit(args=nodes.Unknown(parent=func_node), body=[])
-        return func_node
+        return (func_node,)
     parameters = {k: tuple(g) for k, g in
                   itertools.groupby(signature.parameters.values(),
                                     operator.attrgetter('kind'))}
@@ -282,9 +233,9 @@ def ast_from_function(func, built_objects, module, name=None, parent=None):
         for parameter in parameters:
             names.append(parameter.name)
             if parameter.default is not _Parameter.empty:
-                defaults.append(_ast_from_object(parameter.default, built_objects, module, parent=parent))
+                defaults.extend(_ast_from_object(parameter.default, built_objects, module, parent=parent))
             if parameter.annotation is not _Parameter.empty:
-                annotations.append(_ast_from_object(parameter.annotation, built_objects, module, parent=parent))
+                annotations.extend(_ast_from_object(parameter.annotation, built_objects, module, parent=parent))
             else:
                 annotations.append(None)
         return names, defaults, annotations
@@ -321,15 +272,15 @@ def ast_from_function(func, built_objects, module, name=None, parent=None):
     else:
         kwargannotation = None
     if signature.return_annotation is not _Parameter.empty:
-        returns=_ast_from_object(signature_return_annotation,
-                                 built_objects,
-                                 module,
-                                 parent=func_node)
+        returns = _ast_from_object(signature_return_annotation,
+                                   built_objects,
+                                   module,
+                                   parent=func_node)[0]
     args_node.postinit(args, defaults, kwonlyargs, kw_defaults,
                        annotations, kwonly_annotations,
                        varargannotation, kwargannotation)
     func_node.postinit(args=args_node, body=[])
-    return func_node
+    return (func_node,)
 
 
 BUILTIN_CONTAINERS = {list: nodes.List, set: nodes.Set, frozenset:
@@ -349,7 +300,7 @@ def ast_from_builtin_container(container, built_objects, module, name=None,
     if (id(container) in built_objects and
         built_objects[id(container)].targets[0].name == name):
         # return built_objects[id(container)]
-        return nodes.Name(name=name, parent=parent)
+        return (nodes.Name(name=name, parent=parent),)
     if name:
         parent = nodes.Assign(parent=parent)
         name_node = nodes.AssignName(name, parent=parent)
@@ -365,11 +316,11 @@ def ast_from_builtin_container(container, built_objects, module, name=None,
         node = container_node
     built_objects[id(container)] = node
     container_node.postinit(
-        elts=[_ast_from_object(i, built_objects, module, parent=node)
-              for i in container])
+        elts=[t for i in container
+              for t in _ast_from_object(i, built_objects, module, parent=node)])
     if name:
         parent.postinit(targets=[name_node], value=container_node)
-    return node
+    return (node,)
 
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
@@ -378,8 +329,7 @@ def ast_from_dict(dictionary, built_objects, module, name=None,
                                parent=None):
     if (id(dictionary) in built_objects and
         built_objects[id(dictionary)].targets[0].name == name):
-        # return built_objects[id(dictionary)]
-        return nodes.Name(name=name, parent=parent)
+        return (nodes.Name(name=name, parent=parent),)
     if name:
         parent = nodes.Assign(parent=parent)
         name_node = nodes.AssignName(name, parent=parent)
@@ -390,12 +340,12 @@ def ast_from_dict(dictionary, built_objects, module, name=None,
         node = dict_node
     built_objects[id(dictionary)] = node
     dict_node.postinit(items=[
-        (_ast_from_object(k, built_objects, module, parent=node),
-         _ast_from_object(v, built_objects, module, parent=node))
-        for k, v in dictionary.items()])
+        (x, y) for k, v in dictionary.items()
+        for x, y in zip(_ast_from_object(k, built_objects, module, parent=node),
+                        _ast_from_object(v, built_objects, module, parent=node))])
     if name:
         parent.postinit(targets=[name_node], value=dict_node)
-    return node
+    return (node,)
 
 if six.PY2:
     _ast_from_object.register(types.DictProxyType, ast_from_dict)
@@ -418,7 +368,7 @@ def ast_from_builtin_number_text_binary(builtin_number_text_binary, built_object
         node = parent
     else:
         node = builtin_number_text_binary_node
-    return node
+    return (node,)
 
 if six.PY2:
     _ast_from_object.register(unicode, ast_from_builtin_number_text_binary)
@@ -435,9 +385,14 @@ def ast_from_builtin_singleton(builtin_singleton, built_objects, module, name=No
         name_node = nodes.AssignName(name=name, parent=parent)
     # This case handles the initial assignment of singletons to names
     # in the builtins module.  It can be triggered in other cases with
-    # an object that contains a builtin singleton by its own name, but
-    # there's never any reason to write that kind of code, and even if
-    # it happens it shouldn't cause any harm.
+    # an object that contains a builtin singleton by its own name, like,
+    # 
+    # class C:
+    #    None
+    #
+    # but there's never any reason to write that kind of code since
+    # it's a no-op, and even if it happens it shouldn't cause any
+    # harm.
     elif name and name == str(builtin_singleton):
         parent = nodes.ReservedName(name=name, parent=parent)
     builtin_singleton_node = nodes.NameConstant(value=builtin_singleton, parent=parent)
@@ -449,7 +404,7 @@ def ast_from_builtin_singleton(builtin_singleton, built_objects, module, name=No
         node = parent
     else:
         node = builtin_singleton_node
-    return node
+    return (node,)
 
 @_ast_from_object.register(type(Ellipsis))
 def ast_from_ellipsis(ellipsis, built_objects, module, name=None, parent=None):
@@ -467,7 +422,7 @@ def ast_from_ellipsis(ellipsis, built_objects, module, name=None, parent=None):
         node = parent
     else:
         node = ellipsis_node
-    return node
+    return (node,)
 
 
 # @scoped_nodes.get_locals.register(Builtins)
@@ -490,20 +445,12 @@ BUILTIN_TYPES = frozenset((type(None), type(NotImplemented),
                            types.BuiltinFunctionType,
                            types.ModuleType))
 
-# BUILTIN_TYPES = {type(None): 'NoneType',
-#                  type(NotImplemented): 'NotImplementedType',
-#                  types.GeneratorType: 'GeneratorType',
-#                  types.FunctionType: 'FunctionType',
-#                  types.MethodType: 'MethodType',
-#                  types.BuiltinFunctionType: 'BuiltinFunctionType',
-#                  types.ModuleType: 'ModuleType'}
-
 # Initialize the built_objects map for the builtins mock AST to ensure
 # that the types are included as Name nodes, not explicit ASTs.
 built_objects = _ChainMap({t: True for t in BUILTIN_TYPES})
 astroid_builtin = _ast_from_object(six.moves.builtins,
                                    _ChainMap({t: True for t in BUILTIN_TYPES}),
-                                   six.moves.builtins)
+                                   six.moves.builtins)[0]
 astroid_builtins = astroid_builtin
 
 for builtin_type in BUILTIN_TYPES:
@@ -511,8 +458,26 @@ for builtin_type in BUILTIN_TYPES:
     # AST for it is created by _ast_from_object.
     del built_objects[builtin_type]
     class_node = _ast_from_object(builtin_type, built_objects,
-                                  six.moves.builtins)
+                                  six.moves.builtins)[0]
     astroid_builtins.body.append(class_node)
     class_node.parent = astroid_builtins
 
 bases.Generator._proxied = astroid_builtins.getattr(types.GeneratorType.__name__)[0]
+
+# def _io_discrepancy(member):
+#     # _io module names itself `io`: http://bugs.python.org/issue18602
+#     member_self = getattr(member, '__self__', None)
+#     return (member_self and
+#             inspect.ismodule(member_self) and
+#             member_self.__name__ == '_io' and
+#             member.__module__ == 'io')
+
+# def _add_dunder_class(func, member):
+#     """Add a __class__ member to the given func node, if we can determine it."""
+#     python_cls = member.__class__
+#     cls_name = getattr(python_cls, '__name__', None)
+#     if not cls_name:
+#         return
+#     bases = [ancestor.__name__ for ancestor in python_cls.__bases__]
+#     ast_klass = build_class(cls_name, bases, python_cls.__doc__)
+#     func.instance_attrs['__class__'] = [ast_klass]
