@@ -1184,7 +1184,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
     @property
     def locals(self):
-        return get_locals(self)
+        # return get_locals(self)
+        return MappingProxyType(get_locals(self))
 
     # @property
     # def instance_attrs(self):
@@ -1870,24 +1871,24 @@ def not_scoped_node(node):
 def scoped_node(node):
     locals_ = collections.defaultdict(list)
     for n in node.get_children():
-        _get_locals(n, locals_)
+        _get_locals(n, locals_, node)
     return locals_
 
 
 @_singledispatch
-def _get_locals(node, locals_):
+def _get_locals(node, locals_, root):
     raise TypeError('Non-astroid object in an astroid AST: %s' % type(node))
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(node_classes.NodeNG)
-def locals_generic(node, locals_):
+def locals_generic(node, locals_, root):
     '''Generic nodes don't create name bindings or scopes.'''
     for n in node.get_children():
-        _get_locals(n, locals_)
+        _get_locals(n, locals_, root)
 
 # # pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(LocalsDictNodeNG)
-def locals_new_scope(node, locals_):
+def locals_new_scope(node, locals_, root):
     '''These nodes start a new scope, so terminate recursion here.'''
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
@@ -1895,28 +1896,28 @@ def locals_new_scope(node, locals_):
 @_get_locals.register(node_classes.DelName)
 @_get_locals.register(FunctionDef)
 @_get_locals.register(ClassDef)
-def locals_name(node, locals_):
+def locals_name(node, locals_, root):
     '''These nodes add a name to the local variables.  AssignName and
     DelName have no children while FunctionDef and ClassDef start a
     new scope so shouldn't be recursed into.'''
     locals_[node.name].append(node)
 
 @_get_locals.register(node_classes.InterpreterObject)
-def locals_empty(node, locals_):
+def locals_interpreter_object(node, locals_, root):
     '''InterpreterObjects add an object to the local variables under a specified
     name.'''
     if node.name:
         locals_[node.name].append(node)
 
 @_get_locals.register(node_classes.ReservedName)
-def locals_reserved_name(node, locals_):
+def locals_reserved_name(node, locals_, root):
     '''InterpreterObjects add an object to the local variables under a specified
     name.'''
     locals_[node.name].append(node.value)
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(node_classes.Arguments)
-def locals_arguments(node, locals_):
+def locals_arguments(node, locals_, root):
     '''Other names assigned by functions have AssignName nodes that are
     children of an Arguments node.'''
     if node.vararg:
@@ -1924,18 +1925,18 @@ def locals_arguments(node, locals_):
     if node.kwarg:
         locals_[node.kwarg].append(node)
     for n in node.get_children():
-        _get_locals(n, locals_)
+        _get_locals(n, locals_, root)
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(node_classes.Import)
-def locals_import(node, locals_):
+def locals_import(node, locals_, root):
     for name, asname in node.names:
         name = asname or name
         locals_[name.split('.')[0]].append(node)
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(node_classes.ImportFrom)
-def locals_import_from(node, locals_):
+def locals_import_from(node, locals_, root):
     # Don't add future imports to locals.
     if node.modname == '__future__':
         return

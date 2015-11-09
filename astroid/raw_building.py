@@ -94,6 +94,8 @@ def ast_from_object(object_, name=None):
                             inspect.getmodule(object_), name)[0]
 
 
+INSTANCE_SPECIAL_ATTRIBUTES = frozenset(('__dict__', '__class__'))
+
 @_singledispatch
 def _ast_from_object(instance, built_objects, module, name=None, parent=None):
     # Since this ultimately inherits from object but not any type,
@@ -107,15 +109,20 @@ def _ast_from_object(instance, built_objects, module, name=None, parent=None):
 
     # TODO: remove this hack
     if isinstance(class_node, nodes.ClassDef):
-        # Take the set difference of instance and class attributes
+        # Take the set difference of instance and class attributes;
+        # maybe consider using __dict__, but the problem is that not
+        # all instances have a __dict__.
         for name in set(dir(instance)) - set(dir(cls)):
-            class_node.instance_attrs[name].append(getattr(instance, name))
+            if name not in INSTANCE_SPECIAL_ATTRIBUTES:
+                class_node.instance_attrs[name].append(getattr(instance, name))
 
         # Create an instance of the class we just created an AST for.
         result.append(nodes.InterpreterObject(name=name, object_=class_node.instantiate_class(), parent=parent))
     result.append(nodes.InterpreterObject(name=name, object_=instance, parent=parent))
     return result
 
+
+MODULE_SPECIAL_ATTRIBUTES = frozenset(('__name__', '__doc__', '__file__', '__path__', '__dict__'))
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
 @_ast_from_object.register(types.ModuleType)
@@ -143,14 +150,19 @@ def ast_from_module(module, built_objects, parent_module, name=None, parent=None
     built_objects[id(module)] = module_node
     built_objects = _ChainMap({}, *built_objects.maps)
     MANAGER.cache_module(module_node)
-    body = [t for n, m in inspect.getmembers(module)
+    body = [t for n, m in inspect.getmembers(module) if n not in MODULE_SPECIAL_ATTRIBUTES
             for t in _ast_from_object(m, built_objects, module, n, module_node)]
     module_node.postinit(body=body)
     return (module_node,)
 
 
+CLASS_SPECIAL_ATTRIBUTES = frozenset(('__name__', '__module__', '__dict__', '__bases__', '__doc__', '__qualname__', '__mro__', '__class__'))
+# __class__ is only necessary because currently GetSetDescriptor and
+# MemberDescriptorType are conflated with classes.
+
 # pylint: disable=unused-variable; doesn't understand singledispatch
 @_ast_from_object.register(type)
+# Properly speaking I think these are instances of a type, not a type.
 @_ast_from_object.register(types.GetSetDescriptorType)
 @_ast_from_object.register(types.MemberDescriptorType)
 def ast_from_class(cls, built_objects, module, name=None, parent=None):
@@ -169,11 +181,11 @@ def ast_from_class(cls, built_objects, module, name=None, parent=None):
         bases = [nodes.Name(name=b.__name__, parent=class_node)
                  for b in cls.__bases__]
         body = [
-            t for a in _classify_class_attrs(cls) if a.defining_class is cls and a.name is not '__doc__'
+            t for a in _classify_class_attrs(cls) if a.defining_class is cls and a.name not in CLASS_SPECIAL_ATTRIBUTES
             for t in _ast_from_object(a.object, built_objects, module, a.name, parent=class_node)]
     except AttributeError:
         bases = ()
-        body = [t for n, m in inspect.getmembers(cls) if n is not '__doc__'
+        body = [t for n, m in inspect.getmembers(cls) if n not in CLASS_SPECIAL_ATTRIBUTES
                 for t in _ast_from_object(m, built_objects, module, n, parent=class_node)]
     class_node.postinit(bases=bases, body=body, decorators=(),
                         newstyle=isinstance(cls, type))
@@ -181,6 +193,11 @@ def ast_from_class(cls, built_objects, module, name=None, parent=None):
 # Old-style classes
 if six.PY2:
     _ast_from_object.register(types.ClassType, ast_from_class)
+
+
+# Not used at the moment
+FUNCTION_SPECIAL_ATTRIBUTES = frozenset(('__doc__', '__name__', '__qualname__', '__module__', '__defaults__', '__code__', '__globals__', '__dict__', '__closure__', '__annotations__', '__kwdefaults__'))
+
 
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
@@ -280,6 +297,9 @@ def ast_from_function(func, built_objects, module, name=None, parent=None):
                        annotations, kwonly_annotations,
                        varargannotation, kwargannotation)
     func_node.postinit(args=args_node, body=[])
+    for name in set(dir(func)) - set(dir(type(func))):
+        if name not in FUNCTION_SPECIAL_ATTRIBUTES:
+            func_node.instance_attrs[name].append(getattr(func, name))
     return (func_node,)
 
 
