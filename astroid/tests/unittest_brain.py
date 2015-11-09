@@ -46,7 +46,7 @@ try:
     HAS_ENUM = True
 except ImportError:
     try:
-        import enum34 as enum
+        import enum34 as enum # pylint: disable=unused-import
         HAS_ENUM = True
     except ImportError:
         HAS_ENUM = False
