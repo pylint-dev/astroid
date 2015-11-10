@@ -3,6 +3,9 @@ Change log for the astroid package (used to be astng)
 
 --
 
+    * .scope() returns the proper scope for Arguments's default values,
+      function annotations and comprehensions. Closes issue #211.
+
     * Class.getattr('__mro__') returns the actual MRO. Closes issue #128.
 
     * The logilab-common dependency is not needed anymore as the needed code

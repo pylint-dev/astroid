@@ -798,7 +798,96 @@ class ScopeTest(unittest.TestCase):
             self.assertIsInstance(module['listcomp'].parent.value.scope(), nodes.ListComp)
         else:
             self.assertIsInstance(module['listcomp'].parent.value.scope(), nodes.Module)
-        
+
+    def test_scope_of_default_argument_value(self):
+        node = test_utils.extract_node('''
+        def test(a=__(b)):
+            pass
+        ''')
+        scope = node.scope()
+        self.assertIsInstance(scope, nodes.Module)
+
+    @test_utils.require_version(minver='3.0')
+    def test_scope_of_default_keyword_argument_value(self):
+        node = test_utils.extract_node('''
+        def test(*, b=__(c)):
+            pass
+        ''')
+        scope = node.scope()
+        self.assertIsInstance(scope, nodes.Module)
+
+    @test_utils.require_version(minver='3.0')
+    def test_scope_of_annotations(self):
+        ast_nodes = test_utils.extract_node('''
+        def test(a: __(b), *args:__(f), c:__(d)=4, **kwargs: _(l))->__(x):
+            pass
+        ''')
+        for node in ast_nodes:
+            scope = node.scope()
+            self.assertIsInstance(scope, nodes.Module)
+
+    def test_scope_of_list_comprehension_target_composite_nodes(self):
+        ast_node = test_utils.extract_node('''
+        [i for data in __([DATA1, DATA2]) for i in data]
+        ''')
+        node = ast_node.elts[0]
+        scope = node.scope()
+        self.assertIsInstance(scope, nodes.Module)
+
+    def test_scope_of_nested_list_comprehensions(self):
+        ast_node = test_utils.extract_node('''
+        [1 for data in DATA for x in __(data)]
+        ''')
+        scope = ast_node.scope()
+        if six.PY2:
+            self.assertIsInstance(scope, nodes.Module)
+        else:
+            self.assertIsInstance(scope, nodes.ListComp)
+
+    def test_scope_of_list_comprehension_targets(self):
+        ast_node = test_utils.extract_node('''
+        [1 for data in DATA]
+        ''')
+        # target is `data` from the list comprehension
+        target = ast_node.generators[0].target
+        scope = target.scope()
+        if six.PY2:
+            self.assertIsInstance(scope, nodes.Module)
+        else:
+            self.assertIsInstance(scope, nodes.ListComp)
+
+    def test_scope_of_list_comprehension_value(self):
+        ast_node = test_utils.extract_node('''
+        [__(i) for i in DATA]
+        ''')
+        scope = ast_node.scope()
+        if six.PY3:
+            self.assertIsInstance(scope, nodes.ListComp)
+        else:
+            self.assertIsInstance(scope, nodes.Module)
+
+    def test_scope_of_dict_comprehension(self):        
+        ast_nodes = test_utils.extract_node('''
+        {i: __(j) for (i, j) in DATA}
+        {i:j for (i, j) in __(DATA)}
+        ''')
+        elt_scope = ast_nodes[0].scope()
+        self.assertIsInstance(elt_scope, nodes.DictComp)
+        iter_scope = ast_nodes[1].scope()
+        self.assertIsInstance(iter_scope, nodes.Module)
+
+        ast_node = test_utils.extract_node('''
+        {i:1 for i in DATA}''')
+        target = ast_node.generators[0].target
+        target_scope = target.scope()
+        self.assertIsInstance(target_scope, nodes.DictComp)
+
+    def test_scope_elt_of_generator_exp(self):
+        ast_node = test_utils.extract_node('''
+        list(__(i) for i in range(10))
+        ''')
+        scope = ast_node.scope()
+        self.assertIsInstance(scope, nodes.GeneratorExp)
         
 
 if __name__ == '__main__':
