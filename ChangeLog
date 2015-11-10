@@ -3,6 +3,10 @@ Change log for the astroid package (used to be astng)
 
 --
 
+    * Fix a bug in the inference of Starred nodes, when the left hand
+      side of an assignment has an extra element comparing with the
+      right hand side. Closes issue #239.
+
     * .scope() returns the proper scope for Arguments's default values,
       function annotations and comprehensions. Closes issue #211.
 

@@ -508,10 +508,14 @@ def starred_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
             yield util.YES
             return
 
+        if len(lhs.elts) > len(rhs.elts) + 1:
+            # Since there is only one Starred node on the
+            # left hand side, the lhs number of elements
+            # can be at most N + 1, where N is the number of elements
+            # of rhs.
+            raise exceptions.InferenceError
+
         elts = collections.deque(rhs.elts[:])
-        if len(lhs.elts) > len(rhs.elts):
-            # a, *b, c = (1, 2)
-            raise exceptions.InferenceError()
 
         # Unpack iteratively the values from the rhs of the assignment,
         # until the find the starred node. What will remain will
@@ -519,7 +523,6 @@ def starred_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
         # This is done in two steps, from left to right to remove
         # anything before the starred node and from right to left
         # to remove anything after the starred node.
-
         for index, node in enumerate(lhs.elts):
             if not isinstance(node, treeabc.Starred):
                 elts.popleft()
@@ -529,9 +532,9 @@ def starred_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
                 if not isinstance(node, treeabc.Starred):
                     elts.pop()
                     continue
-                # We're done
-                packed = nodes.List()
-                packed.elts = elts
-                packed.parent = self
+                # We're done.
+                packed = nodes.List(parent=self)
+                packed.postinit(elts=elts)
                 yield packed
                 break
+            break

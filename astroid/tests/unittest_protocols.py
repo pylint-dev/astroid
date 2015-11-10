@@ -104,6 +104,8 @@ class ProtocolTests(unittest.TestCase):
             "*b, a = (1, 2) #@", [1])
         self._helper_starred_expected_const(
             "[*b] = (1, 2) #@", [1, 2])
+        self._helper_starred_expected_const(
+            "a, *b, c = (1, 2) #@", [])
 
     @require_version(minver='3.0')
     def test_assigned_stmts_starred_yes(self):
@@ -123,12 +125,12 @@ class ProtocolTests(unittest.TestCase):
     def test_assign_stmts_starred_fails(self):
         # Too many starred
         self._helper_starred_inference_error("a, *b, *c = (1, 2, 3) #@")
-        # Too many lhs values
-        self._helper_starred_inference_error("a, *b, c = (1, 2) #@")
         # This could be solved properly, but it complicates needlessly the
         # code for assigned_stmts, without oferring real benefit.
         self._helper_starred_inference_error(
             "(*a, b), (c, *d) = (1, 2, 3), (4, 5, 6) #@")
+        self._helper_starred_inference_error(
+            "a, *b, c, d = 1, 2")
 
     def test_assigned_stmts_assignments(self):
         assign_stmts = extract_node("""
