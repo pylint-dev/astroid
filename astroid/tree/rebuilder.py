@@ -109,7 +109,6 @@ class TreeRebuilder(object):
         self._import_from_nodes = []
         self._delayed_assattr = []
         self._visit_meths = {}
-        self._peepholer = astpeephole.ASTPeepholeOptimizer()
 
     def visit_module(self, node, modname, modpath, package):
         """visit a Module node by returning a fresh instance of it"""
