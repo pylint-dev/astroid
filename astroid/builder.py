@@ -184,7 +184,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
             package = True
         else:
             package = path and path.find('__init__.py') > -1 or False
-        builder = rebuilder.TreeRebuilder(self._manager)
+        builder = rebuilder.TreeRebuilder()
         module = builder.visit_module(node, modname, node_file, package)
         module._import_from_nodes = builder._import_from_nodes
         module._delayed_assattr = builder._delayed_assattr

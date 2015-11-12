@@ -23,8 +23,6 @@ import _ast
 import sys
 
 from astroid import nodes
-from astroid.tree import astpeephole
-
 
 
 _BIN_OP_CLASSES = {_ast.Add: '+',
@@ -106,8 +104,7 @@ def _visit_or_none(node, attr, visitor, parent, assign_ctx, visit='visit',
 class TreeRebuilder(object):
     """Rebuilds the _ast tree to become an Astroid tree"""
 
-    def __init__(self, manager):
-        self._manager = manager
+    def __init__(self):
         self._global_names = []
         self._import_from_nodes = []
         self._delayed_assattr = []
@@ -245,23 +242,6 @@ class TreeRebuilder(object):
 
     def visit_binop(self, node, parent, assign_ctx=None):
         """visit a BinOp node by returning a fresh instance of it"""
-        if isinstance(node.left, _ast.BinOp) and self._manager.optimize_ast:
-            # Optimize BinOp operations in order to remove
-            # redundant recursion. For instance, if the
-            # following code is parsed in order to obtain
-            # its ast, then the rebuilder will fail with an
-            # infinite recursion, the same will happen with the
-            # inference engine as well. There's no need to hold
-            # so many objects for the BinOp if they can be reduced
-            # to something else (also, the optimization
-            # might handle only Const binops, which isn't a big
-            # problem for the correctness of the program).
-            #
-            # ("a" + "b" + # one thousand more + "c")
-            newnode = self._peepholer.optimize_binop(node, parent)
-            if newnode:
-                return newnode
-
         newnode = nodes.BinOp(_BIN_OP_CLASSES[type(node.op)],
                               node.lineno, node.col_offset, parent)
         newnode.postinit(self.visit(node.left, newnode, assign_ctx),

@@ -58,7 +58,6 @@ class AstroidManager(object):
             self._mod_file_cache = {}
             self._failed_import_hooks = []
             self.always_load_extensions = False
-            self.optimize_ast = False
             self.extension_package_whitelist = set()
             self._transform = transforms.TransformVisitor()
 
