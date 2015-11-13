@@ -25,6 +25,7 @@ import six
 from astroid import exceptions
 from astroid import manager
 from astroid.tests import resources
+from astroid import test_utils
 
 
 BUILTINS = six.moves.builtins.__name__
@@ -46,7 +47,8 @@ class AstroidManagerTest(resources.SysPathSetup,
     def setUp(self):
         super(AstroidManagerTest, self).setUp()
         self.manager = manager.AstroidManager()
-        self.manager.clear_cache(self._builtins) # take care of borg
+        self.manager.clear_cache() # take care of borg
+        test_utils.bootstrap(self._builtins)
 
     def test_ast_from_file(self):
         filepath = unittest.__file__

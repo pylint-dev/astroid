@@ -26,7 +26,7 @@ from astroid.builder import AstroidBuilder
 from astroid import exceptions
 from astroid.raw_building import build_module
 from astroid.manager import AstroidManager
-from astroid.test_utils import require_version, extract_node
+from astroid.test_utils import require_version, extract_node, bootstrap
 from astroid.tests import resources
 from astroid import transforms
 
@@ -46,7 +46,8 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin,
         # Since we may have created a brainless manager, leading
         # to a new cache builtin module and proxy classes in the constants,
         # clear out the global manager cache.
-        MANAGER.clear_cache(self._builtins)
+        MANAGER.clear_cache()
+        bootstrap(self._builtins)
         MANAGER.always_load_extensions = False
         sys.path.pop(0)
         sys.path_importer_cache.pop(resources.find('data'), None)
@@ -61,6 +62,7 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin,
         manager._mod_file_cache = {}
         manager._transform = transforms.TransformVisitor()
         manager.clear_cache() # trigger proper bootstraping
+        bootstrap()
         return manager
 
     def test_module_path(self):

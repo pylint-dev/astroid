@@ -2,8 +2,9 @@
 import functools
 import sys
 
-from astroid import nodes
 from astroid import builder
+from astroid import raw_building
+from astroid import nodes
 from astroid import util
 
 
@@ -202,3 +203,12 @@ def require_version(minver=None, maxver=None):
 
 def get_name_node(start_from, name, index=0):
     return [n for n in start_from.nodes_of_class(nodes.Name) if n.name == name][index]
+
+
+def bootstrap(astroid_builtin=None):
+    # force bootstrap again, else we may ends up with cache inconsistency
+    # between the manager and CONST_PROXY, making
+    # unittest_lookup.LookupTC.test_builtin_lookup fail depending on the
+    # test order
+    raw_building._astroid_bootstrapping(
+        astroid_builtin=astroid_builtin)
