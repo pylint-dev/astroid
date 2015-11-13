@@ -117,7 +117,7 @@ class BaseInstance(Proxy):
     def getattr(self, name, context=None, lookupclass=True):
         try:
             values = self._proxied.instance_attr(name, context)
-        except exceptions.NotFoundError:
+        except exceptions.AttributeInferenceError:
             if name == '__class__':
                 return [self._proxied]
             if lookupclass:
@@ -127,14 +127,16 @@ class BaseInstance(Proxy):
                     return self._proxied.local_attr(name)
                 return self._proxied.getattr(name, context,
                                              class_context=False)
-            util.reraise(exceptions.NotFoundError(name))
+            util.reraise(exceptions.AttributeInferenceError(target=self,
+                                                            attribute=name,
+                                                            context=context))
         # since we've no context information, return matching class members as
         # well
         if lookupclass:
             try:
                 return values + self._proxied.getattr(name, context,
                                                       class_context=False)
-            except exceptions.NotFoundError:
+            except exceptions.AttributeInferenceError:
                 pass
         return values
 
@@ -152,15 +154,15 @@ class BaseInstance(Proxy):
             for stmt in infer_stmts(self._wrap_attr(get_attr, context),
                                     context, frame=self):
                 yield stmt
-        except exceptions.NotFoundError:
+        except exceptions.AttributeInferenceError:
             try:
                 # fallback to class'igetattr since it has some logic to handle
                 # descriptors
                 for stmt in self._wrap_attr(self._proxied.igetattr(name, context),
                                             context):
                     yield stmt
-            except exceptions.NotFoundError:
-                util.reraise(exceptions.InferenceError(name))
+            except exceptions.AttributeInferenceError as error:
+                util.reraise(exceptions.InferenceError(**vars(error)))
 
     def _wrap_attr(self, attrs, context=None):
         """wrap bound methods of attrs in a InstanceMethod proxies"""
@@ -195,7 +197,8 @@ class BaseInstance(Proxy):
                 inferred = True
                 yield res
         if not inferred:
-            raise exceptions.InferenceError()
+            raise exceptions.InferenceError(node=self, caller=caller,
+                                            context=context)
 
 
 @util.register_implementation(runtimeabc.Instance)
@@ -215,7 +218,7 @@ class Instance(BaseInstance):
         try:
             self._proxied.getattr('__call__', class_context=False)
             return True
-        except exceptions.NotFoundError:
+        except exceptions.AttributeInferenceError:
             return False
 
     def pytype(self):
@@ -239,11 +242,11 @@ class Instance(BaseInstance):
 
         try:
             result = _infer_method_result_truth(self, BOOL_SPECIAL_METHOD, context)
-        except (exceptions.InferenceError, exceptions.NotFoundError):
+        except (exceptions.InferenceError, exceptions.AttributeInferenceError):
             # Fallback to __len__.
             try:
                 result = _infer_method_result_truth(self, '__len__', context)
-            except (exceptions.NotFoundError, exceptions.InferenceError):
+            except (exceptions.AttributeInferenceError, exceptions.InferenceError):
                 return True
         return result
 
@@ -391,8 +394,9 @@ class Super(base.NodeNG):
     def super_mro(self):
         """Get the MRO which will be used to lookup attributes in this super."""
         if not isinstance(self.mro_pointer, treeabc.ClassDef):
-            raise exceptions.SuperArgumentTypeError(
-                "The first super argument must be type.")
+            raise exceptions.SuperError(
+                "The first argument to super must be a subtype of "
+                "type, not {mro_pointer}.", super_=self)
 
         if isinstance(self.type, treeabc.ClassDef):
             # `super(type, type)`, most likely in a class method.
@@ -401,18 +405,20 @@ class Super(base.NodeNG):
         else:
             mro_type = getattr(self.type, '_proxied', None)
             if not isinstance(mro_type, (runtimeabc.Instance, treeabc.ClassDef)):
-                raise exceptions.SuperArgumentTypeError(
-                    "super(type, obj): obj must be an "
-                    "instance or subtype of type")
+                raise exceptions.SuperError(
+                    "The second argument to super must be an "
+                    "instance or subtype of type, not {type}.",
+                    super_=self)
 
         if not mro_type.newstyle:
-            raise exceptions.SuperError("Unable to call super on old-style classes.")
+            raise exceptions.SuperError("Unable to call super on old-style classes.", super_=self)
 
         mro = mro_type.mro()
         if self.mro_pointer not in mro:
-            raise exceptions.SuperArgumentTypeError(
-                "super(type, obj): obj must be an "
-                "instance or subtype of type")
+            raise exceptions.SuperError(
+                "The second argument to super must be an "
+                "instance or subtype of type, not {type}.",
+                super_=self)
 
         index = mro.index(self.mro_pointer)
         return mro[index + 1:]
@@ -443,10 +449,23 @@ class Super(base.NodeNG):
 
         try:
             mro = self.super_mro()
-        except (exceptions.MroError, exceptions.SuperError) as exc:
-            # Don't let invalid MROs or invalid super calls
-            # to leak out as is from this function.
-            util.reraise(exceptions.NotFoundError(*exc.args))
+        # Don't let invalid MROs or invalid super calls
+        # leak out as is from this function.
+        except exceptions.SuperError as exc:
+            msg = ('Lookup for {name} on {target!r} because super call {super!r} '
+                  'is invalid.'),
+            structured = exceptions.AttributeInferenceError(msg, target=self,
+                                                            attribute=name,
+                                                            context=context,
+                                                            super_=exc.super_)
+            util.reraise(structured)
+        except exceptions.MroError as exc:
+            msg = ('Lookup for {name} on {target!r} failed because {cls!r} has an '
+                   'invalid MRO.')
+            structured = exceptions.AttributeInferenceError(msg, target=self,
+                                                            attribute=name, context=context,
+                                                            mros=exc.mros, cls=exc.cls)
+            util.reraise(structured)
 
         found = False
         for cls in mro:
@@ -471,7 +490,9 @@ class Super(base.NodeNG):
                     yield BoundMethod(inferred, cls)
 
         if not found:
-            raise exceptions.NotFoundError(name)
+            raise exceptions.AttributeInferenceError(target=self,
+                                                     attribute=name,
+                                                     context=context)
 
     def getattr(self, name, context=None):
         return list(self.igetattr(name, context=context))

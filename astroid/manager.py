@@ -89,7 +89,7 @@ class AstroidManager(object):
         elif fallback and modname:
             return self.ast_from_module_name(modname)
         raise exceptions.AstroidBuildingException(
-            'unable to get astroid for file %s' % filepath)
+            'Unable to build an AST for {path}.', path=filepath)
 
     def _build_stub_module(self, modname):
         from astroid.builder import AstroidBuilder
@@ -126,15 +126,18 @@ class AstroidManager(object):
                 try:
                     module = modutils.load_module_from_name(modname)
                 except Exception as ex: # pylint: disable=broad-except
-                    msg = 'Unable to load module %s (%s)' % (modname, ex)
-                    util.reraise(exceptions.AstroidBuildingException(msg))
+                    util.reraise(exceptions.AstroidBuildingException(
+                        'Loading {modname} failed with:\n{error}',
+                        modname=modname, path=filepath, error=ex))
                 return self.ast_from_module(module, modname)
             elif mp_type == imp.PY_COMPILED:
-                msg = "Unable to load compiled module %s" % (modname,)
-                raise exceptions.AstroidBuildingException(msg)
+                raise exceptions.AstroidBuildingException(
+                    "Unable to load compiled module {modname}.",
+                    modname=modname, path=filepath)
             if filepath is None:
-                msg = "Unable to load module %s" % (modname,)
-                raise exceptions.AstroidBuildingException(msg)
+                raise exceptions.AstroidBuildingException(
+                    "Can't find a file for module {modname}.",
+                    modname=modname)
             return self.ast_from_file(filepath, modname, fallback=False)
         except exceptions.AstroidBuildingException as e:
             for hook in self._failed_import_hooks:
@@ -178,8 +181,9 @@ class AstroidManager(object):
                     modname.split('.'), context_file=contextfile)
                 traceback = sys.exc_info()[2]
             except ImportError as ex:
-                msg = 'Unable to load module %s (%s)' % (modname, ex)
-                value = exceptions.AstroidBuildingException(msg)
+                value = exceptions.AstroidBuildingException(
+                    'Failed to import module {modname} with error:\n{error}.',
+                    modname=modname, error=ex)
                 traceback = sys.exc_info()[2]
             self._mod_file_cache[(modname, contextfile)] = value
         if isinstance(value, exceptions.AstroidBuildingException):
@@ -208,8 +212,9 @@ class AstroidManager(object):
             try:
                 modname = klass.__module__
             except AttributeError:
-                msg = 'Unable to get module for class %s' % safe_repr(klass)
-                util.reraise(exceptions.AstroidBuildingException(msg))
+                util.reraise(exceptions.AstroidBuildingException(
+                    'Unable to get module for class {class_name}.',
+                    cls=klass, class_repr=safe_repr(klass), modname=modname))
         modastroid = self.ast_from_module_name(modname)
         return modastroid.getattr(klass.__name__)[0] # XXX
 
@@ -222,21 +227,23 @@ class AstroidManager(object):
         try:
             modname = klass.__module__
         except AttributeError:
-            msg = 'Unable to get module for %s' % safe_repr(klass)
-            util.reraise(exceptions.AstroidBuildingException(msg))
+            util.reraise(exceptions.AstroidBuildingException(
+                'Unable to get module for {class_repr}.',
+                cls=klass, class_repr=safe_repr(klass)))
         except Exception as ex: # pylint: disable=broad-except
-            msg = ('Unexpected error while retrieving module for %s: %s'
-                   % (safe_repr(klass), ex))
-            util.reraise(exceptions.AstroidBuildingException(msg))
+            util.reraise(exceptions.AstroidBuildingException(
+                'Unexpected error while retrieving module for {class_repr}:\n'
+                '{error}', cls=klass, class_repr=safe_repr(klass), error=ex))
         try:
             name = klass.__name__
         except AttributeError:
-            msg = 'Unable to get name for %s' % safe_repr(klass)
-            util.reraise(exceptions.AstroidBuildingException(msg))
+            util.reraise(exceptions.AstroidBuildingException(
+                'Unable to get name for {class_repr}:\n',
+                cls=klass, class_repr=safe_repr(klass)))
         except Exception as ex: # pylint: disable=broad-except
-            exc = ('Unexpected error while retrieving name for %s: %s'
-                   % (safe_repr(klass), ex))
-            util.reraise(exceptions.AstroidBuildingException(exc))
+            util.reraise(exceptions.AstroidBuildingException(
+                'Unexpected error while retrieving name for {class_repr}:\n'
+                '{error}', cls=klass, class_repr=safe_repr(klass), error=ex))
         # take care, on living object __module__ is regularly wrong :(
         modastroid = self.ast_from_module_name(modname)
         if klass is obj:

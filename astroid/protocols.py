@@ -269,6 +269,10 @@ def for_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
         for inferred in _resolve_looppart(self.iter.infer(context),
                                           asspath, context):
             yield inferred
+    # Explicit StopIteration to return error information, see comment
+    # in raise_if_nothing_inferred.
+    raise StopIteration(dict(node=self, unknown=node,
+                             assign_path=asspath, context=context))
 
 
 @assigned_stmts.register(treeabc.Tuple)
@@ -358,6 +362,11 @@ def assign_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
     for inferred in _resolve_asspart(self.value.infer(context), asspath, context):
         yield inferred
 
+    # Explicit StopIteration to return error information, see comment
+    # in raise_if_nothing_inferred.
+    raise StopIteration(dict(node=self, unknown=node,
+                             assign_path=asspath, context=context))
+
 
 def _resolve_asspart(parts, asspath, context):
     """recursive function to resolve multiple assignments"""
@@ -396,6 +405,11 @@ def excepthandler_assigned_stmts(self, nodes, node=None, context=None, asspath=N
             assigned = assigned.instantiate_class()
         yield assigned
 
+    # Explicit StopIteration to return error information, see comment
+    # in raise_if_nothing_inferred.
+    raise StopIteration(dict(node=self, unknown=node,
+                             assign_path=asspath, context=context))
+
 
 def _infer_context_manager(self, mgr, context, nodes):
     try:
@@ -433,7 +447,7 @@ def _infer_context_manager(self, mgr, context, nodes):
     elif isinstance(inferred, runtimeabc.Instance):
         try:
             enter = next(inferred.igetattr('__enter__', context=context))
-        except (exceptions.InferenceError, exceptions.NotFoundError):
+        except (exceptions.InferenceError, exceptions.AttributeInferenceError):
             return
         if not isinstance(enter, runtimeabc.BoundMethod):
             return
@@ -462,6 +476,12 @@ def with_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
             pass
         # ContextManager().infer() will return ContextManager
         # f.infer() will return 42.
+
+    Arguments:
+        self: nodes.With
+        node: The target of the assignment, `as (a, b)` in `with foo as (a, b)`.
+        context: TODO
+        asspath: TODO
     """
     mgr = next(mgr for (mgr, vars) in self.items if vars == node)
     if asspath is None:
@@ -473,12 +493,24 @@ def with_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
             obj = result
             for index in asspath:
                 if not hasattr(obj, 'elts'):
-                    raise exceptions.InferenceError
+                    raise exceptions.InferenceError(
+                        'Wrong type ({targets!r}) for {node!r} assignment',
+                        node=self, targets=node, assign_path=asspath,
+                        context=context)
+
                 try:
                     obj = obj.elts[index]
                 except IndexError:
-                    util.reraise(exceptions.InferenceError())
+                    util.reraise(exceptions.InferenceError(
+                        'Tried to infer a nonexistent target with index {index} '
+                        'in {node!r}.', node=self, targets=node,
+                        assign_path=asspath, context=context))
+
             yield obj
+    # Explicit StopIteration to return error information, see comment
+    # in raise_if_nothing_inferred.
+    raise StopIteration(dict(node=self, unknown=node,
+                             assign_path=asspath, context=context))
 
 
 @assigned_stmts.register(treeabc.Starred)
@@ -486,15 +518,20 @@ def with_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
 def starred_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
     stmt = self.statement()
     if not isinstance(stmt, (treeabc.Assign, treeabc.For)):
-        raise exceptions.InferenceError()
+        raise exceptions.InferenceError('Statement {stmt!r} enclosing {node!r} '
+                                        'must be an Assign or For node.',
+                                        node=self, stmt=stmt, unknown=node,
+                                        context=context)
 
     if isinstance(stmt, treeabc.Assign):
         value = stmt.value
         lhs = stmt.targets[0]
 
         if sum(1 for node in lhs.nodes_of_class(treeabc.Starred)) > 1:
-            # Too many starred arguments in the expression.
-            raise exceptions.InferenceError()
+            raise exceptions.InferenceError('Too many starred arguments in the '
+                                            ' assignment targets {lhs!r}.',
+                                            node=self, targets=lhs,
+                                            unknown=node, context=context)
 
         if context is None:
             context = contextmod.InferenceContext()
@@ -513,16 +550,20 @@ def starred_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
             # left hand side, the lhs number of elements
             # can be at most N + 1, where N is the number of elements
             # of rhs.
-            raise exceptions.InferenceError
+            raise exceptions.InferenceError('More targets, {targets!r}, than '
+                                            'values to unpack, {values!r}.',
+                                            node=self, targets=lhs,
+                                            values=rhs, unknown=node,
+                                            context=context)
 
         elts = collections.deque(rhs.elts[:])
-
         # Unpack iteratively the values from the rhs of the assignment,
         # until the find the starred node. What will remain will
         # be the list of values which the Starred node will represent
         # This is done in two steps, from left to right to remove
         # anything before the starred node and from right to left
         # to remove anything after the starred node.
+
         for index, node in enumerate(lhs.elts):
             if not isinstance(node, treeabc.Starred):
                 elts.popleft()

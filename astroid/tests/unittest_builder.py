@@ -451,7 +451,7 @@ class BuilderTest(unittest.TestCase):
         self.assertIsInstance(astroid.getattr('CSTE')[0], nodes.AssignName)
         self.assertEqual(astroid.getattr('CSTE')[0].fromlineno, 2)
         self.assertEqual(astroid.getattr('CSTE')[1].fromlineno, 6)
-        with self.assertRaises(exceptions.NotFoundError):
+        with self.assertRaises(exceptions.AttributeInferenceError):
             astroid.getattr('CSTE2')
         with self.assertRaises(exceptions.InferenceError):
             next(astroid['global_no_effect'].ilookup('CSTE2'))

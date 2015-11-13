@@ -1804,8 +1804,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ' '.index() #@
         ' '.find() #@
         ' '.count() #@
-
-        ' '.split() #@
         """
         ast = test_utils.extract_node(code, __name__)
         self.assertInferConst(ast[0], u'')
@@ -1813,7 +1811,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertInferConst(ast[i], '')
         for i in range(16, 19):
             self.assertInferConst(ast[i], 0)
-        self.assertInferList(ast[19], [])
 
     def test_unicode_methods(self):
         code = """
@@ -1838,8 +1835,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         u' '.index() #@
         u' '.find() #@
         u' '.count() #@
-
-        u' '.split() #@
         """
         ast = test_utils.extract_node(code, __name__)
         self.assertInferConst(ast[0], '')
@@ -1847,7 +1842,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertInferConst(ast[i], u'')
         for i in range(16, 19):
             self.assertInferConst(ast[i], 0)
-        self.assertInferList(ast[19], [])
 
     def test_scope_lookup_same_attributes(self):
         code = '''

@@ -27,7 +27,6 @@ import itertools
 import warnings
 
 import six
-import wrapt
 
 from astroid import context as contextmod
 from astroid import exceptions
@@ -47,7 +46,7 @@ BUILTINS = six.moves.builtins.__name__
 ITER_METHODS = ('__iter__', '__getitem__')
 
 
-def _c3_merge(sequences):
+def _c3_merge(sequences, cls, context):
     """Merges MROs in *sequences* to a single MRO using the C3 algorithm.
 
     Adapted from http://www.python.org/download/releases/2.3/mro/.
@@ -69,12 +68,10 @@ def _c3_merge(sequences):
         if not candidate:
             # Show all the remaining bases, which were considered as
             # candidates for the next mro sequence.
-            bases = ["({})".format(", ".join(base.name
-                                             for base in subsequence))
-                     for subsequence in sequences]
             raise exceptions.InconsistentMroError(
-                "Cannot create a consistent method resolution "
-                "order for bases %s" % ", ".join(bases))
+                message="Cannot create a consistent method resolution order "
+                "for MROs {mros} of class {cls!r}.",
+                mros=sequences, cls=cls, context=context)
 
         result.append(candidate)
         # remove the chosen candidate
@@ -83,21 +80,13 @@ def _c3_merge(sequences):
                 del seq[0]
 
 
-def _verify_duplicates_mro(sequences):
+def _verify_duplicates_mro(sequences, cls, context):
     for sequence in sequences:
         names = [node.qname() for node in sequence]
         if len(names) != len(set(names)):
-            raise exceptions.DuplicateBasesError('Duplicates found in the mro.')
-
-
-def remove_nodes(cls):
-    @wrapt.decorator
-    def decorator(func, instance, args, kwargs):
-        nodes = [n for n in func(*args, **kwargs) if not isinstance(n, cls)]
-        if not nodes:
-            raise exceptions.NotFoundError()
-        return nodes
-    return decorator
+            raise exceptions.DuplicateBasesError(
+                message='Duplicates found in MROs {mros} for {cls!r}.',
+                mros=sequences, cls=cls, context=context)
 
 
 def function_to_method(n, klass):
@@ -120,7 +109,8 @@ def std_special_attributes(self, name, add_locals=True):
         return [node_classes.const_factory(self.doc)] + locals.get(name, [])
     if name == '__dict__':
         return [node_classes.Dict()] + locals.get(name, [])
-    raise exceptions.NotFoundError(name)
+    # TODO: missing context
+    raise exceptions.AttributeInferenceError(target=self, attribute=name)
 
 
 MANAGER = manager.AstroidManager()
@@ -343,7 +333,7 @@ class Module(LocalsDictNodeNG):
         if name in self.scope_attrs and name not in self.locals:
             try:
                 return self, self.getattr(name)
-            except exceptions.NotFoundError:
+            except exceptions.AttributeInferenceError:
                 return self, ()
         return self._scope_lookup(node, name, offset)
 
@@ -353,22 +343,30 @@ class Module(LocalsDictNodeNG):
     def display_type(self):
         return 'Module'
 
-    @remove_nodes(node_classes.DelName)
     def getattr(self, name, context=None, ignore_locals=False):
+        result = []
         if name in self.special_attributes:
             if name == '__file__':
-                return [node_classes.const_factory(self.file)] + self.locals.get(name, [])
-            if name == '__path__' and self.package:
-                return [node_classes.List()] + self.locals.get(name, [])
-            return std_special_attributes(self, name)
-        if not ignore_locals and name in self.locals:
-            return self.locals[name]
-        if self.package:
+                result = ([node_classes.const_factory(self.file)] +
+                          self.locals.get(name, []))
+            elif name == '__path__' and self.package:
+                result = [node_classes.List()] + self.locals.get(name, [])
+            else:
+                result = std_special_attributes(self, name)
+        elif not ignore_locals and name in self.locals:
+            result = self.locals[name]
+        elif self.package:
             try:
-                return [self.import_module(name, relative_only=True)]
+                result = [self.import_module(name, relative_only=True)]
             except (exceptions.AstroidBuildingException, SyntaxError):
-                util.reraise(exceptions.NotFoundError(name))
-        raise exceptions.NotFoundError(name)
+                util.reraise(exceptions.AttributeInferenceError(target=self,
+                                                                attribute=name,
+                                                                context=context))
+        result = [n for n in result if not isinstance(n, node_classes.DelName)]
+        if result:
+            return result
+        raise exceptions.AttributeInferenceError(target=self, attribute=name,
+                                                 context=context)
 
     def igetattr(self, name, context=None):
         """inferred getattr"""
@@ -377,10 +375,12 @@ class Module(LocalsDictNodeNG):
         context = contextmod.copy_context(context)
         context.lookupname = name
         try:
-            return infer_stmts(self.getattr(name, context),
-                               context, frame=self)
-        except exceptions.NotFoundError:
-            util.reraise(exceptions.InferenceError(name))
+            stmts = self.getattr(name, context)
+            return infer_stmts(stmts, context, frame=self)
+        except exceptions.AttributeInferenceError as error:
+            structured = exceptions.InferenceError(error.message, target=self,
+                                                   attribute=name, context=context)
+            util.reraise(structured)
 
     def fully_defined(self):
         """return True if this module has been built from a .py file
@@ -737,9 +737,18 @@ class CallSite(object):
         return values
 
     def infer_argument(self, name, context):
-        """infer a function argument value according to the call context"""
+        """infer a function argument value according to the call context
+
+        Arguments:
+            funcnode: The function being called.
+            name: The name of the argument whose value is being inferred.
+            context: TODO
+        """
         if name in self.duplicated_keywords:
-            raise exceptions.InferenceError(name)
+            raise exceptions.InferenceError('The arguments passed to {func!r} '
+                                            ' have duplicate keywords.',
+                                            call_site=self, func=self._funcnode,
+                                            arg=name, context=context)
 
         # Look into the keywords first, maybe it's already there.
         try:
@@ -750,7 +759,11 @@ class CallSite(object):
         # Too many arguments given and no variable arguments.
         if len(self.positional_arguments) > len(self._funcnode.args.args):
             if not self._funcnode.args.vararg:
-                raise exceptions.InferenceError(name)
+                raise exceptions.InferenceError('Too many positional arguments '
+                                                'passed to {func!r} that does '
+                                                'not have *args.',
+                                                call_site=self, func=self._funcnode,
+                                                arg=name, context=context)
 
         positional = self.positional_arguments[:len(self._funcnode.args.args)]
         vararg = self.positional_arguments[len(self._funcnode.args.args):]
@@ -810,7 +823,14 @@ class CallSite(object):
             # It wants all the keywords that were passed into
             # the call site.
             if self.has_invalid_keywords():
-                raise exceptions.InferenceError
+                raise exceptions.InferenceError(
+                    "Inference failed to find values for all keyword arguments "
+                    "to {func!r}: {unpacked_kwargs!r} doesn't correspond to "
+                    "{keyword_arguments!r}.",
+                    keyword_arguments=self.keyword_arguments,
+                    unpacked_kwargs=self._unpacked_kwargs,
+                    call_site=self, func=self._funcnode, arg=name, context=context)
+                
             kwarg = node_classes.Dict(lineno=self._funcnode.args.lineno,
                                       col_offset=self._funcnode.args.col_offset,
                                       parent=self._funcnode.args)
@@ -821,7 +841,14 @@ class CallSite(object):
             # It wants all the args that were passed into
             # the call site.
             if self.has_invalid_arguments():
-                raise exceptions.InferenceError
+                raise exceptions.InferenceError(
+                    "Inference failed to find values for all positional "
+                    "arguments to {func!r}: {unpacked_args!r} doesn't "
+                    "correspond to {positional_arguments!r}.",
+                    positional_arguments=self.positional_arguments,
+                    unpacked_args=self._unpacked_args,
+                    call_site=self, func=self._funcnode, arg=name, context=context)
+
             args = node_classes.Tuple(lineno=self._funcnode.args.lineno,
                                       col_offset=self._funcnode.args.col_offset,
                                       parent=self._funcnode.args)
@@ -833,7 +860,9 @@ class CallSite(object):
             return self._funcnode.args.default_value(name).infer(context)
         except exceptions.NoDefault:
             pass
-        raise exceptions.InferenceError(name)
+        raise exceptions.InferenceError('No value found for argument {name} to '
+                                        '{func!r}', call_site=self,
+                                        func=self._funcnode, arg=name, context=context)
 
 
 @util.register_implementation(treeabc.Lambda)
@@ -1000,43 +1029,45 @@ class FunctionDef(node_classes.Statement, Lambda):
             else:
                 type_name = 'method'
 
-        if self.decorators:
-            for node in self.decorators.nodes:
-                if isinstance(node, node_classes.Name):
-                    if node.name in builtin_descriptors:
-                        return node.name
+        if not self.decorators:
+            return type_name
 
-                if isinstance(node, node_classes.Call):
-                    # Handle the following case:
-                    # @some_decorator(arg1, arg2)
-                    # def func(...)
-                    #
-                    try:
-                        current = next(node.func.infer())
-                    except exceptions.InferenceError:
-                        continue
-                    _type = _infer_decorator_callchain(current)
+        for node in self.decorators.nodes:
+            if isinstance(node, node_classes.Name):
+                if node.name in builtin_descriptors:
+                    return node.name
+
+            if isinstance(node, node_classes.Call):
+                # Handle the following case:
+                # @some_decorator(arg1, arg2)
+                # def func(...)
+                #
+                try:
+                    current = next(node.func.infer())
+                except exceptions.InferenceError:
+                    continue
+                _type = _infer_decorator_callchain(current)
+                if _type is not None:
+                    return _type
+
+            try:
+                for inferred in node.infer():
+                    # Check to see if this returns a static or a class method.
+                    _type = _infer_decorator_callchain(inferred)
                     if _type is not None:
                         return _type
 
-                try:
-                    for inferred in node.infer():
-                        # Check to see if this returns a static or a class method.
-                        _type = _infer_decorator_callchain(inferred)
-                        if _type is not None:
-                            return _type
-
-                        if not isinstance(inferred, ClassDef):
+                    if not isinstance(inferred, ClassDef):
+                        continue
+                    for ancestor in inferred.ancestors():
+                        if not isinstance(ancestor, ClassDef):
                             continue
-                        for ancestor in inferred.ancestors():
-                            if not isinstance(ancestor, ClassDef):
-                                continue
-                            if ancestor.is_subtype_of('%s.classmethod' % BUILTINS):
-                                return 'classmethod'
-                            elif ancestor.is_subtype_of('%s.staticmethod' % BUILTINS):
-                                return 'staticmethod'
-                except exceptions.InferenceError:
-                    pass
+                        if ancestor.is_subtype_of('%s.classmethod' % BUILTINS):
+                            return 'classmethod'
+                        elif ancestor.is_subtype_of('%s.staticmethod' % BUILTINS):
+                            return 'staticmethod'
+            except exceptions.InferenceError:
+                pass
         return type_name
 
     @decorators_mod.cachedproperty
@@ -1074,10 +1105,13 @@ class FunctionDef(node_classes.Statement, Lambda):
     def igetattr(self, name, context=None):
         """Inferred getattr, which returns an iterator of inferred statements."""
         try:
-            return infer_stmts(self.getattr(name, context),
-                               context, frame=self)
-        except exceptions.NotFoundError:
-            util.reraise(exceptions.InferenceError(name))
+            stmts = self.getattr(name, context)
+            return infer_stmts(stmts, context, frame=self)
+        except exceptions.AttributeInferenceError as error:
+            structured = exceptions.InferenceError(error.message, target=self,
+                                                   attribute=name,
+                                                   context=context)
+            util.reraise(structured)
 
     def is_method(self):
         """return true if the function node should be considered as a method"""
@@ -1526,28 +1560,32 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
     def has_base(self, node):
         return node in self.bases
 
-    @remove_nodes(node_classes.DelAttr)
     def local_attr(self, name, context=None):
         """return the list of assign node associated to name in this class
         locals or in its parents
 
-        :raises `NotFoundError`:
+        :raises `AttributeInferenceError`:
           if no attribute with this name has been find in this class or
           its parent classes
         """
-        try:
-            return self.locals[name]
-        except KeyError:
-            for class_node in self.local_attr_ancestors(name, context):
-                return class_node.locals[name]
-        raise exceptions.NotFoundError(name)
+        result = []
+        if name in self.locals:
+            result = self.locals[name]
+        else:
+            class_node = next(self.local_attr_ancestors(name, context), ())
+            if class_node:
+                result = class_node.locals[name]
+        result = [n for n in result if not isinstance(n, node_classes.DelAttr)]
+        if result:
+            return result
+        raise exceptions.AttributeInferenceError(target=self, attribute=name,
+                                                 context=context)
 
-    @remove_nodes(node_classes.DelAttr)
     def instance_attr(self, name, context=None):
         """return the astroid nodes associated to name in this class instance
         attributes dictionary and in its parents
 
-        :raises `NotFoundError`:
+        :raises `AttributeInferenceError`:
           if no attribute with this name has been find in this class or
           its parent classes
         """
@@ -1557,9 +1595,11 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         # get all values from parents
         for class_node in self.instance_attr_ancestors(name, context):
             values += class_node.instance_attrs[name]
-        if not values:
-            raise exceptions.NotFoundError(name)
-        return values
+        values = [n for n in values if not isinstance(n, node_classes.DelAttr)]
+        if values:
+            return values
+        raise exceptions.AttributeInferenceError(target=self, attribute=name,
+                                                 context=context)
 
     def instantiate_class(self):
         """return Instance of ClassDef node, else return self"""
@@ -1603,7 +1643,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         if class_context:
             values += self._metaclass_lookup_attribute(name, context)
         if not values:
-            raise exceptions.NotFoundError(name)
+            raise exceptions.AttributeInferenceError(target=self, attribute=name,
+                                                     context=context)
         return values
 
     def _metaclass_lookup_attribute(self, name, context):
@@ -1622,7 +1663,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         try:
             attrs = cls.getattr(name, context=context,
                                 class_context=True)
-        except exceptions.NotFoundError:
+        except exceptions.AttributeInferenceError:
             return
 
         for attr in infer_stmts(attrs, context, frame=cls):
@@ -1634,6 +1675,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                 for inferred in attr.infer_call_result(self, context):
                     yield inferred
                 continue
+
             if attr.type == 'classmethod':
                 # If the method is a classmethod, then it will
                 # be bound to the metaclass, not to the class
@@ -1663,18 +1705,19 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                         and isinstance(inferred, objects.Instance)):
                     try:
                         inferred._proxied.getattr('__get__', context)
-                    except exceptions.NotFoundError:
+                    except exceptions.AttributeInferenceError:
                         yield inferred
                     else:
                         yield util.Uninferable
                 else:
                     yield function_to_method(inferred, self)
-        except exceptions.NotFoundError:
+        except exceptions.AttributeInferenceError as error:
             if not name.startswith('__') and self.has_dynamic_getattr(context):
                 # class handle some dynamic attributes, return a Uninferable object
                 yield util.Uninferable
             else:
-                util.reraise(exceptions.InferenceError(name))
+                util.reraise(exceptions.InferenceError(
+                    error.message, target=self, attribute=name, context=context))
 
     def has_dynamic_getattr(self, context=None):
         """
@@ -1691,12 +1734,12 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
         try:
             return _valid_getattr(self.getattr('__getattr__', context)[0])
-        except exceptions.NotFoundError:
+        except exceptions.AttributeInferenceError:
             #if self.newstyle: XXX cause an infinite recursion error
             try:
                 getattribute = self.getattr('__getattribute__', context)[0]
                 return _valid_getattr(getattribute)
-            except exceptions.NotFoundError:
+            except exceptions.AttributeInferenceError:
                 pass
         return False
 
@@ -1816,7 +1859,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                 try:
                     slots.getattr(meth)
                     break
-                except exceptions.NotFoundError:
+                except exceptions.AttributeInferenceError:
                     continue
             else:
                 continue
@@ -1946,8 +1989,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                 bases_mro.append(ancestors)
 
         unmerged_mro = ([[self]] + bases_mro + [bases])
-        _verify_duplicates_mro(unmerged_mro)
-        return _c3_merge(unmerged_mro)
+        _verify_duplicates_mro(unmerged_mro, self, context)
+        return _c3_merge(unmerged_mro, self, context)
 
     def bool_value(self):
         return True

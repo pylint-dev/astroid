@@ -28,7 +28,6 @@ from astroid import context as contextmod
 from astroid import decorators
 from astroid import exceptions
 from astroid import inference
-from astroid.interpreter.util import infer_stmts
 from astroid.interpreter import runtimeabc
 from astroid.interpreter import objects
 from astroid import manager
@@ -217,7 +216,7 @@ class Arguments(mixins.AssignTypeMixin, AssignedStmtsMixin, base.NodeNG):
         i = _find_arg(argname, self.kwonlyargs)[0]
         if i is not None and self.kw_defaults[i] is not None:
             return self.kw_defaults[i]
-        raise exceptions.NoDefault()
+        raise exceptions.NoDefault(func=self.parent, name=argname)
 
     def is_argument(self, name):
         """return True if the name is defined in arguments"""
@@ -347,7 +346,7 @@ class AugAssign(mixins.AssignTypeMixin, AssignedStmtsMixin, Statement):
         try:
             results = self._infer_augassign(context=context)
             return [result for result in results
-                    if isinstance(result, exceptions.BinaryOperationError)]
+                    if isinstance(result, util.BadBinaryOperationMessage)]
         except exceptions.InferenceError:
             return []
 
@@ -385,13 +384,13 @@ class BinOp(base.NodeNG):
     def type_errors(self, context=None):
         """Return a list of TypeErrors which can occur during inference.
 
-        Each TypeError is represented by a :class:`BinaryOperationError`,
+        Each TypeError is represented by a :class:`BadBinaryOperationMessage`,
         which holds the original exception.
         """
         try:
             results = self._infer_binop(context=context)
             return [result for result in results
-                    if isinstance(result, exceptions.BinaryOperationError)]
+                    if isinstance(result, util.BadBinaryOperationMessage)]
         except exceptions.InferenceError:
             return []
 
@@ -1118,13 +1117,13 @@ class UnaryOp(base.NodeNG):
     def type_errors(self, context=None):
         """Return a list of TypeErrors which can occur during inference.
 
-        Each TypeError is represented by a :class:`UnaryOperationError`,
+        Each TypeError is represented by a :class:`BadUnaryOperationMessage`,
         which holds the original exception.
         """
         try:
             results = self._infer_unaryop(context=context)
             return [result for result in results
-                    if isinstance(result, exceptions.UnaryOperationError)]
+                    if isinstance(result, util.BadUnaryOperationMessage)]
         except exceptions.InferenceError:
             return []
 
