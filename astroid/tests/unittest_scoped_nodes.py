@@ -733,34 +733,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         klass = self.module2['NotMetaclass']
         self.assertEqual(klass.type, 'class')
 
-    def test_interfaces(self):
-        for klass, interfaces in (('Concrete0', ['MyIFace']),
-                                  ('Concrete1', ['MyIFace', 'AnotherIFace']),
-                                  ('Concrete2', ['MyIFace', 'AnotherIFace']),
-                                  ('Concrete23', ['MyIFace', 'AnotherIFace'])):
-            klass = self.module2[klass]
-            self.assertEqual([i.name for i in klass.interfaces()],
-                             interfaces)
-
-    def test_concat_interfaces(self):
-        astroid = builder.parse('''
-            class IMachin: pass
-
-            class Correct2:
-                """docstring"""
-                __implements__ = (IMachin,)
-
-            class BadArgument:
-                """docstring"""
-                __implements__ = (IMachin,)
-
-            class InterfaceCanNowBeFound:
-                """docstring"""
-                __implements__ = BadArgument.__implements__ + Correct2.__implements__
-        ''')
-        self.assertEqual([i.name for i in astroid['InterfaceCanNowBeFound'].interfaces()],
-                         ['IMachin'])
-
     def test_inner_classes(self):
         eee = self.nonregr['Ccc']['Eee']
         self.assertEqual([n.name for n in eee.ancestors()], ['Ddd', 'Aaa', 'object'])

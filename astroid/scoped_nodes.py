@@ -504,9 +504,6 @@ class Module(LocalsDictNodeNG):
                     infered.append(infered_node.value)
         return infered
 
-    def bool_value(self):
-        return True
-
 
 class ComprehensionScope(LocalsDictNodeNG):
     def frame(self):
@@ -523,9 +520,6 @@ class GenExpr(ComprehensionScope):
         self.elt = None
         self.generators = []
 
-    def bool_value(self):
-        return True
-
 
 class DictComp(ComprehensionScope):
     _astroid_fields = ('key', 'value', 'generators')
@@ -536,9 +530,6 @@ class DictComp(ComprehensionScope):
         self.value = None
         self.generators = []
 
-    def bool_value(self):
-        return bases.YES
-
 
 class SetComp(ComprehensionScope):
     _astroid_fields = ('elt', 'generators')
@@ -548,18 +539,12 @@ class SetComp(ComprehensionScope):
         self.elt = None
         self.generators = []
 
-    def bool_value(self):
-        return bases.YES
-
 
 class _ListComp(bases.NodeNG):
     """class representing a ListComp node"""
     _astroid_fields = ('elt', 'generators')
     elt = None
     generators = None
-
-    def bool_value(self):
-        return bases.YES
 
 
 if six.PY3:
@@ -691,9 +676,6 @@ class Lambda(LocalsDictNodeNG, mixins.FilterStmtsMixin):
             # check this is not used in function decorators
             frame = self
         return frame._scope_lookup(node, name, offset)
-
-    def bool_value(self):
-        return True
 
 
 class Function(bases.Statement, Lambda):
@@ -852,9 +834,6 @@ class Function(bases.Statement, Lambda):
                         yield infered
                 except exceptions.InferenceError:
                     yield bases.YES
-
-    def bool_value(self):
-        return True
 
 
 def _rec_get_names(args, names=None):
