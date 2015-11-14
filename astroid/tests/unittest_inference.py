@@ -841,7 +841,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self._test_const_infered(ast['a'], False)
             self._test_const_infered(ast['b'], True)
 
-    @test_utils.require_version(min_version='3.5')
+    @test_utils.require_version(minver='3.5')
     def test_matmul(self):
         node = test_utils.extract_node('''
         class Array:
