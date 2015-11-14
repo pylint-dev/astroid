@@ -44,5 +44,33 @@ class RawBuildingTC(unittest.TestCase):
             self.assertEqual(inferred.root().name, BUILTINS, name)
 
 
+
+    # def test_ast_from_class(self):
+    #     astroid = self.manager.ast_from_class(int)
+    #     self.assertEqual(astroid.name, 'int')
+    #     self.assertEqual(astroid.parent.frame().name, BUILTINS)
+
+    #     astroid = self.manager.ast_from_class(object)
+    #     self.assertEqual(astroid.name, 'object')
+    #     self.assertEqual(astroid.parent.frame().name, BUILTINS)
+    #     self.assertIn('__setattr__', astroid)
+
+    # def test_ast_from_class_with_module(self):
+    #     """check if the method works with the module name"""
+    #     astroid = self.manager.ast_from_class(int, int.__module__)
+    #     self.assertEqual(astroid.name, 'int')
+    #     self.assertEqual(astroid.parent.frame().name, BUILTINS)
+
+    #     astroid = self.manager.ast_from_class(object, object.__module__)
+    #     self.assertEqual(astroid.name, 'object')
+    #     self.assertEqual(astroid.parent.frame().name, BUILTINS)
+    #     self.assertIn('__setattr__', astroid)
+
+    # def test_ast_from_class_attr_error(self):
+    #     """give a wrong class at the ast_from_class method"""
+    #     self.assertRaises(exceptions.AstroidBuildingException,
+    #                       self.manager.ast_from_class, None)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -413,6 +413,9 @@ class Generator(Instance):
 
     Proxied class is set once for all in raw_building.
     """
+    def __init__(self, parent):
+        self.parent = parent
+    
     def callable(self):
         return False
 

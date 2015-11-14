@@ -31,9 +31,10 @@ from astroid import exceptions
 from astroid import manager
 from astroid import modutils
 from astroid import nodes
-from astroid import raw_building
 from astroid import rebuilder
 from astroid import util
+
+raw_building = util.lazy_import('raw_building')
 
 
 def _parse(string):

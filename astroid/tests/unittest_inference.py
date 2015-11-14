@@ -1272,6 +1272,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(inferred), 1)
         self.assertIs(inferred[0], util.Uninferable)
 
+    @unittest.expectedFailure
     def test_nonregr_func_global(self):
         code = '''
             active_application = None

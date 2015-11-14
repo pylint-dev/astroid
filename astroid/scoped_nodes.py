@@ -480,10 +480,10 @@ class Module(LocalsDictNodeNG):
     if six.PY2:
         @decorators_mod.cachedproperty
         def _absolute_import_activated(self):
-            for stmt in self.locals.get('absolute_import', ()):
-                if isinstance(stmt, node_classes.ImportFrom) and stmt.modname == '__future__':
-                    return True
-            return False
+            if 'absolute_import' in self.future_imports:
+                return True
+            else:
+                return False
     else:
         _absolute_import_activated = True
 
@@ -1002,9 +1002,7 @@ class FunctionDef(node_classes.Statement, Lambda):
     def infer_call_result(self, caller, context=None):
         """infer what a function is returning when called"""
         if self.is_generator():
-            result = bases.Generator()
-            result.parent = self
-            yield result
+            yield bases.Generator(self)
             return
         # This is really a gigantic hack to work around metaclass
         # generators that return transient class-generating

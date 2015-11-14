@@ -85,7 +85,8 @@ if sys.version_info > (3, 0):
     extend_builtins({'bytes': functools.partial(_extend_str, rvalue="b''"),
                      'str': functools.partial(_extend_str, rvalue="''")})
 else:
-    extend_builtins({'str': functools.partial(_extend_str, rvalue="''"),
+    # TODO: what about unicode_literals?  This is hopelessly broken.
+    extend_builtins({'bytes': functools.partial(_extend_str, rvalue="''"), # Ugly hack to get it working for now.
                      'unicode': functools.partial(_extend_str, rvalue="u''")})
 
 

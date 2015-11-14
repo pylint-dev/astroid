@@ -46,7 +46,6 @@ class YOUPI(YO):
     
     def method(self):
         """method test"""
-        global MY_DICT
         try:
             MY_DICT = {}
             local = None

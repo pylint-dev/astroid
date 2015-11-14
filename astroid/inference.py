@@ -711,8 +711,7 @@ def infer_interpreter_object(self, context=None):
         yield util.Uninferable
     else:
         try:
-            for inferred in MANAGER.infer_ast_from_something(self.object,
-                                                             context=context):
+            for inferred in self.object.infer():
                 yield inferred
         except exceptions.AstroidError:
             yield util.Uninferable

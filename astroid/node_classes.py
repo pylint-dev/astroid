@@ -1303,9 +1303,9 @@ class Dict(NodeNG, bases.Instance):
         if items is None:
             node.items = []
         else:
-            node.items = [(raw_building.ast_from_scalar(k, {}, None,
+            node.items = [(raw_building.ast_from_builtin_number_text_binary(k, {}, None,
                                                         parent=node)[0],
-                           raw_building.ast_from_scalar(v, {}, None,
+                           raw_building.ast_from_builtin_number_text_binary(v, {}, None,
                                                         parent=node)[0])
                           for k, v in items.items()]
         return node

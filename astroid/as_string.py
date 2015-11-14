@@ -184,7 +184,7 @@ class AsStringVisitor(object):
         """return an astroid.Discard node as string"""
         return node.value.accept(self)
 
-    def visit_emptynode(self, node):
+    def visit_interpreterobject(self, node):
         """dummy method for visiting an Empty node"""
         return ''
 

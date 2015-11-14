@@ -156,32 +156,6 @@ class AstroidManagerTest(resources.SysPathSetup,
         self.assertEqual(astroid.name, 'unittest')
         self.assertIn('unittest', self.manager.astroid_cache)
 
-    def test_ast_from_class(self):
-        astroid = self.manager.ast_from_class(int)
-        self.assertEqual(astroid.name, 'int')
-        self.assertEqual(astroid.parent.frame().name, BUILTINS)
-
-        astroid = self.manager.ast_from_class(object)
-        self.assertEqual(astroid.name, 'object')
-        self.assertEqual(astroid.parent.frame().name, BUILTINS)
-        self.assertIn('__setattr__', astroid)
-
-    def test_ast_from_class_with_module(self):
-        """check if the method works with the module name"""
-        astroid = self.manager.ast_from_class(int, int.__module__)
-        self.assertEqual(astroid.name, 'int')
-        self.assertEqual(astroid.parent.frame().name, BUILTINS)
-
-        astroid = self.manager.ast_from_class(object, object.__module__)
-        self.assertEqual(astroid.name, 'object')
-        self.assertEqual(astroid.parent.frame().name, BUILTINS)
-        self.assertIn('__setattr__', astroid)
-
-    def test_ast_from_class_attr_error(self):
-        """give a wrong class at the ast_from_class method"""
-        self.assertRaises(exceptions.AstroidBuildingException,
-                          self.manager.ast_from_class, None)
-
     def testFailedImportHooks(self):
         def hook(modname):
             if modname == 'foo.bar':

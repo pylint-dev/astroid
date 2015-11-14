@@ -60,6 +60,7 @@ from astroid import inference
 
 # more stuff available
 from astroid import raw_building
+from astroid.raw_building import builtins_ast as builtins
 from astroid.bases import Instance, BoundMethod, UnboundMethod
 from astroid.node_classes import are_exclusive, unpack_infer
 from astroid.scoped_nodes import builtin_lookup

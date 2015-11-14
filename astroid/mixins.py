@@ -18,8 +18,6 @@
 """This module contains some mixins for the different nodes.
 """
 
-import warnings
-
 from astroid import decorators
 from astroid import exceptions
 from astroid import util
