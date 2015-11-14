@@ -19,7 +19,7 @@ import os
 import sys
 import unittest
 
-from astroid.manager import AstroidManager, _silent_no_wrap
+from astroid.manager import AstroidManager
 from astroid.bases import  BUILTINS
 from astroid.exceptions import AstroidBuildingException
 from astroid.tests import resources
@@ -28,13 +28,6 @@ from astroid.tests import resources
 class AstroidManagerTest(resources.SysPathSetup,
                          resources.AstroidCacheSetupMixin,
                          unittest.TestCase):
-
-    @property
-    def project(self):
-        return self.manager.project_from_files(
-            [resources.find('data')],
-            _silent_no_wrap, 'data',
-            black_list=['joined_strings.py'])
 
     def setUp(self):
         super(AstroidManagerTest, self).setUp()
@@ -182,53 +175,6 @@ class AstroidManagerTest(resources.SysPathSetup,
     def test_ast_from_class_attr_error(self):
         """give a wrong class at the ast_from_class method"""
         self.assertRaises(AstroidBuildingException, self.manager.ast_from_class, None)
-
-    def test_from_directory(self):
-        self.assertEqual(self.project.name, 'data')
-        self.assertEqual(self.project.path,
-                         os.path.abspath(resources.find('data/__init__.py')))
-
-    def test_project_node(self):
-        expected = [
-            'data',
-            'data.SSL1',
-            'data.SSL1.Connection1',
-            'data.absimp',
-            'data.absimp.sidepackage',
-            'data.absimp.string',
-            'data.absimport',
-            'data.all',
-            'data.appl',
-            'data.appl.myConnection',
-            'data.clientmodule_test',
-            'data.descriptor_crash',
-            'data.email',
-            'data.find_test',
-            'data.find_test.module',
-            'data.find_test.module2',
-            'data.find_test.noendingnewline',
-            'data.find_test.nonregr',
-            'data.format',
-            'data.lmfp',
-            'data.lmfp.foo',
-            'data.module',
-            'data.module1abs',
-            'data.module1abs.core',
-            'data.module2',
-            'data.noendingnewline',
-            'data.nonregr',
-            'data.notall',
-            'data.package',
-            'data.package.absimport',
-            'data.package.hello',
-            'data.package.import_package_subpackage_module',
-            'data.package.subpackage',
-            'data.package.subpackage.module',
-            'data.recursion',
-            'data.suppliermodule_test',
-            'data.unicode_package',
-            'data.unicode_package.core']
-        self.assertListEqual(sorted(self.project.keys()), expected)
 
     def testFailedImportHooks(self):
         def hook(modname):

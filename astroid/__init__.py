@@ -65,7 +65,7 @@ from astroid.builder import parse
 
 # make a manager instance (borg) as well as Project and Package classes
 # accessible from astroid package
-from astroid.manager import AstroidManager, Project
+from astroid.manager import AstroidManager
 MANAGER = AstroidManager()
 del AstroidManager
 
