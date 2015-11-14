@@ -25,11 +25,15 @@ import sys
 import types
 
 from astroid import context as contextmod
+from astroid import decorators
 from astroid import exceptions
 from astroid import util
 
 node_classes = util.lazy_import('node_classes')
 scoped_nodes = util.lazy_import('scoped_nodes')
+manager = util.lazy_import('manager')
+
+MANAGER = manager.AstroidManager()
 
 
 if sys.version_info >= (3, 0):
@@ -76,6 +80,8 @@ class Proxy(object):
             return getattr(self.__class__, '_proxied')
         if name in self.__dict__:
             return self.__dict__[name]
+        if name == 'special_attributes' and hasattr(self, 'special_attributes'):
+            return self.special_attributes
         return getattr(self._proxied, name)
 
     def infer(self, context=None):
@@ -132,6 +138,7 @@ def _infer_method_result_truth(instance, method_name, context):
 
 class Instance(Proxy):
     """A special node representing a class instance."""
+    special_attributes = frozenset(('__dict__', '__class__'))
 
     def getattr(self, name, context=None, lookupclass=True):
         try:
@@ -309,6 +316,13 @@ class UnboundMethod(Proxy):
 
 class BoundMethod(UnboundMethod):
     """a special node representing a method bound to an instance"""
+    # __func__ and __self__ are method-only special attributes, the
+    # rest are general function special attributes.
+    special_attributes = frozenset(
+        ('__doc__', '__name__', '__qualname__', '__module__', '__defaults__',
+         '__code__', '__globals__', '__dict__', '__closure__',
+         '__annotations__', '__kwdefaults__', '__func__', '__self__'))
+
     def __init__(self, proxy, bound):
         UnboundMethod.__init__(self, proxy)
         self.bound = bound
@@ -433,3 +447,8 @@ class Generator(Instance):
 
     def __str__(self):
         return 'Generator(%s)' % (self._proxied.name)
+
+    @decorators.cachedproperty
+    def _proxied(self):
+        builtins = MANAGER.astroid_cache[BUILTINS]
+        return builtins.getattr('generator')[0]

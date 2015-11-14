@@ -966,7 +966,7 @@ class Unknown(NodeNG):
     '''
     def infer(self, context=None, **kwargs):
         '''Inference on an Unknown node immediately terminates.'''
-        raise StopIteration
+        yield util.Uninferable
 
 
 class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):

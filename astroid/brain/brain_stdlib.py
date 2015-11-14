@@ -225,10 +225,12 @@ def infer_namedtuple(namedtuple_call, context=None):
     """Specific inference function for namedtuple Call node"""
 
     type_name, fields = infer_namedtuple_enum_fields(namedtuple_call, context)
-    try:
+    if isinstance(fields, nodes.Const) and isinstance(fields.value, str):
         field_names = tuple(fields.value.replace(',', ' ').split())
-    except AttributeError:
+    elif isinstance(fields, (nodes.Tuple, nodes.List)):
         field_names = tuple(infer_first(const, context).value for const in fields.elts)
+    else:
+        raise UseInferenceDefault()
 
     class_definition = _class_template.format(
         typename = type_name,
@@ -242,7 +244,7 @@ def infer_namedtuple(namedtuple_call, context=None):
     )
 
     # TODO: maybe memoize this call for efficiency, if it's needed.
-    namedtuple_node = AstroidBuilder(MANAGER).string_build(class_definition).body[3]
+    namedtuple_node = AstroidBuilder(MANAGER).string_build(class_definition).getattr(type_name)[0]
     return iter([namedtuple_node])
 
 

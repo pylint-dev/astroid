@@ -281,11 +281,17 @@ class Module(LocalsDictNodeNG):
     # boolean for package module
     package = None
 
-    # names of python special attributes (handled by getattr impl.)
-    special_attributes = set(('__name__', '__doc__', '__file__', '__path__',
-                              '__dict__'))
-    # names of module attributes available through the global scope
-    scope_attrs = set(('__name__', '__doc__', '__file__', '__path__'))
+    special_attributes = frozenset(
+        ('__name__', '__doc__', '__file__', '__dict__', '__package__',
+         '__cached__', '__spec__', '__loader__', six.moves.builtins.__name__))
+
+    # TODO: does __path__ even exist?
+    # # names of python special attributes (handled by getattr impl.)
+    # special_attributes = set(('__name__', '__doc__', '__file__', '__path__',
+    #                           '__dict__'))
+    # # names of module attributes available through the global scope
+    # scope_attrs = set(('__name__', '__doc__', '__file__', '__path__'))
+    scope_attrs = frozenset(('__name__', '__doc__', '__file__'))
 
     if six.PY2:
         _other_fields = ('name', 'doc', 'file_encoding', 'package',
@@ -305,7 +311,6 @@ class Module(LocalsDictNodeNG):
         self.source_code = source_code
         self.source_file = source_file
         self.body = []
-        # self.future_imports = set()
         self.external_attrs = collections.defaultdict(list)
 
     def postinit(self, body=None):
@@ -480,10 +485,7 @@ class Module(LocalsDictNodeNG):
     if six.PY2:
         @decorators_mod.cachedproperty
         def _absolute_import_activated(self):
-            if 'absolute_import' in self.future_imports:
-                return True
-            else:
-                return False
+            return 'absolute_import' in self.future_imports
     else:
         _absolute_import_activated = True
 
@@ -781,7 +783,11 @@ class FunctionDef(node_classes.Statement, Lambda):
     else:
         _astroid_fields = ('decorators', 'args', 'body')
     decorators = None
-    special_attributes = set(('__name__', '__doc__', '__dict__'))
+
+    special_attributes = frozenset(
+        ('__doc__', '__name__', '__qualname__', '__module__', '__defaults__',
+         '__code__', '__globals__', '__dict__', '__closure__', '__annotations__',
+         '__kwdefaults__'))
     is_function = True
     # attributes below are set by the builder module or by raw factories
     _other_fields = ('name', 'doc')
@@ -793,7 +799,7 @@ class FunctionDef(node_classes.Statement, Lambda):
                  col_offset=None, parent=None):
         self.name = name
         self.doc = doc
-        # self.instance_attrs = {}
+        self.instance_attrs = {}
         super(FunctionDef, self).__init__(lineno, col_offset, parent)
 
     # pylint: disable=arguments-differ; different than Lambdas
@@ -1149,8 +1155,10 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
     _astroid_fields = ('decorators', 'bases', 'body')
 
     decorators = None
-    special_attributes = set(('__name__', '__doc__', '__dict__', '__module__',
-                              '__bases__', '__mro__', '__subclasses__'))
+    special_attributes = frozenset(
+        ('__name__', '__module__', '__dict__', '__bases__', '__doc__',
+         '__qualname__', '__mro__', '__subclasses__'))
+
     _type = None
     _metaclass_hack = False
     hide = False
