@@ -284,7 +284,7 @@ class BuilderTest(unittest.TestCase):
             self.assertIsInstance(fclass['read'], nodes.FunctionDef)
             # check builtin function has args.args == None
             dclass = builtin_ast['dict']
-            self.assertIsNone(dclass['has_key'].args.args)
+            self.assertIsInstance(dclass['has_key'].args, nodes.Unknown)
         # just check type and object are there
         builtin_ast.getattr('type')
         objectastroid = builtin_ast.getattr('object')[0]
@@ -336,14 +336,14 @@ class BuilderTest(unittest.TestCase):
     def test_inspect_build_instance(self):
         """test astroid tree build from a living object"""
         import exceptions
-        builtin_ast = raw_building.ast_from_object(exceptions) # self.builder.inspect_build(exceptions)
-        fclass = builtin_ast['OSError']
-        # things like OSError.strerror are now (2.5) data descriptors on the
-        # class instead of entries in the __dict__ of an instance
-        container = fclass
-        self.assertIn('errno', container)
-        self.assertIn('strerror', container)
-        self.assertIn('filename', container)
+        exceptions_ast = raw_building.ast_from_object(exceptions)
+        environment_error = exceptions_ast['EnvironmentError']
+        # things like EnvironmentError.strerror are now (2.5) data
+        # descriptors on the class instead of entries in the __dict__
+        # of an instance
+        self.assertIn('errno', environment_error)
+        self.assertIn('strerror', environment_error)
+        self.assertIn('filename', environment_error)
 
     def test_inspect_build_type_object(self):
         builtin_ast = MANAGER.ast_from_module_name(BUILTINS)
@@ -600,8 +600,6 @@ class FileBuildTest(unittest.TestCase):
         self.assertEqual(module.statement(), module)
         self.assertEqual(module.statement(), module)
 
-    # TODO: change this test so it doesn't contain a global statement
-    @unittest.expectedFailure
     def test_module_locals(self):
         """test the 'locals' dictionary of a astroid module"""
         module = self.module

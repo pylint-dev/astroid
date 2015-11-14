@@ -130,6 +130,7 @@ def ast_from_object(object_, name=None):
                             inspect.getmodule(object_), name)[0]
 
 
+
 INSTANCE_SPECIAL_ATTRIBUTES = frozenset(('__dict__', '__class__'))
 
 @_singledispatch
@@ -259,7 +260,7 @@ def ast_from_module(module, built_objects, parent_module, name=None, parent=None
     return (module_node,)
 
 
-FUNCTION_SPECIAL_ATTRIBUTES = frozenset(('__doc__', '__name__', '__qualname__', '__module__', '__defaults__', '__code__', '__globals__', '__dict__', '__closure__', '__annotations__', '__kwdefaults__'))
+FUNCTION_SPECIAL_ATTRIBUTES = frozenset(('__doc__', '__name__', '__qualname__', '__module__', '__defaults__', '__code__', '__globals__', '__dict__', '__closure__', '__annotations__', '__kwdefaults__', '__func__', '__self__')) # __func__ and __self__ are method-only special attributes.
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
 
