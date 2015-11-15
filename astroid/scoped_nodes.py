@@ -1157,7 +1157,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
     decorators = None
     special_attributes = frozenset(
         ('__name__', '__module__', '__dict__', '__bases__', '__doc__',
-         '__qualname__', '__mro__', '__subclasses__'))
+         '__qualname__', '__mro__', '__subclasses__', '__class__'))
 
     _type = None
     _metaclass_hack = False
