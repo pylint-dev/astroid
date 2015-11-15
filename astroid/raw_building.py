@@ -133,6 +133,42 @@ def ast_from_object(object_, name=None):
 
 @_singledispatch
 def _ast_from_object(instance, built_objects, module, name=None, parent=None):
+    '''Returns a mock AST for an instance.
+
+    This is the internal recursive generic function for building an
+    AST from a runtime object.  Unlike for most generic functions,
+    this implementation, for object, is not a stub, because this
+    generic function needs to handle all kinds of Python objects.
+    This implementation handles instances, but except where noted this
+    documentation applies to all implementations of the generic
+    function.
+
+    Args:
+        instance (Any): The Python object to return a mock AST for.
+            This implementation should only receive instances, with all other
+            objects directed to other implementations.
+        built_objects (ChainMap): Maps id()s for objects to mock ASTs for
+            objects, recording what objects already have a mock AST constructed.
+            id() is used because not all Python objects are hashable.
+            The internal maps of the ChainMap represent scopes within the object
+            being recursed over, with a new map for each scope, to ensure that
+            ASTs added in inner scopes are duplicated if necessary in other
+            scopes.
+        module (types.Module): The module of the root object, used to determine
+            if any child objects come from different modules.
+        name (str): The name the parent object uses for the a child object, if
+            any.
+        parent (NodeNG): The node corresponding to a parent object, if any.
+
+    Returns:
+        A Sequence of nodes representing the object and its attributes, methods,
+        etc.
+
+    Raises:
+        TypeError: When called on an instance where it's not possible
+            to construct an appropriate AST.
+
+    '''
     # Since all ClassInstances pointing to the same ClassDef are
     # identical, they can all share the same node.
     if id(instance) in built_objects:
@@ -183,6 +219,7 @@ def _ast_from_object(instance, built_objects, module, name=None, parent=None):
 # pylint: disable=unused-variable; doesn't understand singledispatch
 @_ast_from_object.register(type)
 def ast_from_class(cls, built_objects, module, name=None, parent=None):
+    '''Handles classes and other types not handled explicitly elsewhere.'''
     if id(cls) in built_objects:
         return (nodes.Name(name=name or cls.__name__, parent=parent),)
     inspected_module = inspect.getmodule(cls)
@@ -269,6 +306,7 @@ def ast_from_module(module, built_objects, parent_module, name=None, parent=None
 @_ast_from_object.register(types.FunctionType)
 @_ast_from_object.register(types.MethodType)
 def ast_from_function(func, built_objects, module, name=None, parent=None):
+    '''Handles functions, including all kinds of methods.'''
     if id(func) in built_objects:
         return (nodes.Name(name=name or func.__name__, parent=parent),)
     inspected_module = inspect.getmodule(func)
@@ -371,10 +409,7 @@ BUILTIN_CONTAINERS = {list: nodes.List, set: nodes.Set, frozenset:
 @_ast_from_object.register(tuple)
 def ast_from_builtin_container(container, built_objects, module, name=None,
                                parent=None):
-    '''Handles builtin containers that have their own AST nodes, like list
-    but not range.
-
-    '''
+    '''Handles builtin container types except for mappings.'''
     if (id(container) in built_objects and
         built_objects[id(container)].targets[0].name == name):
         return (nodes.Name(name=name, parent=parent),)
@@ -405,6 +440,7 @@ def ast_from_builtin_container(container, built_objects, module, name=None,
 @_ast_from_object.register(dict)
 def ast_from_dict(dictionary, built_objects, module, name=None,
                                parent=None):
+    '''Handles dictionaries, including DictProxyType and MappingProxyType.'''
     if (id(dictionary) in built_objects and
         built_objects[id(dictionary)].targets[0].name == name):
         return (nodes.Name(name=name, parent=parent),)
@@ -438,6 +474,7 @@ else:
 @_ast_from_object.register(float)
 @_ast_from_object.register(complex)
 def ast_from_builtin_number_text_binary(builtin_number_text_binary, built_objects, module, name=None, parent=None):
+    '''Handles the builtin numeric and text/binary sequence types.'''
     if name:
         parent = nodes.Assign(parent=parent)
         name_node = nodes.AssignName(name, parent=parent)
@@ -455,7 +492,21 @@ if six.PY2:
 
 
 def ast_from_builtin_singleton_factory(node_class):
-    def ast_from_builtin_singleton(builtin_singleton, built_objects, module, name=None, parent=None, node_class=node_class):
+    '''A higher-order function for building functions for handling the
+    builtin singleton types.
+
+    Args:
+        node_class (NodeNG): The constructor for the AST node for the builtin
+        singleton.
+
+    Returns:
+        A function that handles the type corresponding to node_class.
+    '''
+    def ast_from_builtin_singleton(builtin_singleton, built_objects,
+                                   module, name=None, parent=None,
+                                   node_class=node_class):
+        '''Handles builtin singletons, currently True, False, None,
+        NotImplemented, and Ellipsis.'''
         # A builtin singleton is assigned to a name.
         if name and name != str(builtin_singleton):
             parent = nodes.Assign(parent=parent)

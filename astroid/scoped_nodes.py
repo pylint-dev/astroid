@@ -132,7 +132,7 @@ def builtin_lookup(name):
         return builtin_astroid, ()
     stmts = builtin_astroid.locals.get(name, ())
     # Use inference to find what AssignName nodes point to in builtins.
-    # stmts = [next(s.infer()) if isinstance(s, node_classes.AssignName) else s
+    # stmts = [next(s.infer()) if isinstance(s, node_classes.ImportFrom) else s
     #          for s in stmts]
     return builtin_astroid, stmts
 
@@ -207,10 +207,10 @@ class LocalsDictNodeNG(node_classes.LookupMixIn,
 
     __setitem__ = set_local
 
-    def _append_node(self, child):
-        """append a child, linking it in the tree"""
-        self.body.append(child)
-        child.parent = self
+    # def _append_node(self, child):
+    #     """append a child, linking it in the tree"""
+    #     self.body.append(child)
+    #     child.parent = self
 
     # def add_local_node(self, child_node, name=None):
     #     """append a child which should alter locals to the given node"""
@@ -364,13 +364,24 @@ class Module(LocalsDictNodeNG):
     def future_imports(self):
         index = 0
         future_imports = []
-        while (index < len(self.body) and
-                ((isinstance(self.body[index], node_classes.ImportFrom)
-                and self.body[index].modname == '__future__') or
-               (index == 0 and isinstance(self.body[0],
-                                          node_classes.Expr)))):
-            future_imports.extend(n[0] for n in getattr(self.body[index],
-                                                        'names', ()))
+
+        # The start of a Python module has an optional docstring
+        # followed by any number of `from __future__ import`
+        # statements.  This doesn't try to test for incorrect ASTs,
+        # but should function on all correct ones.
+        while (index < len(self.body)):
+            if (isinstance(self.body[index], node_classes.ImportFrom)
+                and self.body[index].modname == '__future__'):
+                # This is a `from __future__ import` statement.
+                future_imports.extend(n[0] for n in getattr(self.body[index],
+                                                            'names', ()))
+            elif (index == 0 and isinstance(self.body[0], node_classes.Expr)):
+                # This is a docstring, so do nothing.
+                pass
+            else:
+                # This is some other kind of statement, so the future
+                # imports must be finished.
+                break
             index += 1
         return frozenset(future_imports)
 
@@ -1864,6 +1875,15 @@ def get_locals(node):
     avoid incorrectly adding a class's, function's, or module's name
     to its own local variables.
 
+    Args:
+        node (LocalsDictNodeNG): A node defining a scope to return locals for.
+
+    Returns:
+        A defaultdict(list) mapping names (strings) to lists of nodes.
+
+    Raises:
+        TypeError: When called on a node that doesn't represent a scope or a 
+            non-node object.
     '''
     raise TypeError("This isn't an astroid node: %s" % type(node))
 
@@ -1877,24 +1897,39 @@ def not_scoped_node(node):
 def scoped_node(node):
     locals_ = collections.defaultdict(list)
     for n in node.get_children():
-        _get_locals(n, locals_, node)
+        _get_locals(n, locals_)
     return locals_
 
 
 @_singledispatch
-def _get_locals(node, locals_, root):
+def _get_locals(node, locals_):
+    '''Return the local variables for a node.
+
+    This is the internal recursive generic function for gathering
+    nodes into a local variables mapping.  The locals mapping is
+    passed down and mutated by each function.
+
+    Args:
+        node (NodeNG): The node to inspect for assignments to locals.
+        locals_ (defaultdict(list)): A mapping of (strings) to lists of nodes.
+
+    Raises:
+        TypeError: When called on a non-node object.
+
+    '''
+
     raise TypeError('Non-astroid object in an astroid AST: %s' % type(node))
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(node_classes.NodeNG)
-def locals_generic(node, locals_, root):
+def locals_generic(node, locals_):
     '''Generic nodes don't create name bindings or scopes.'''
     for n in node.get_children():
-        _get_locals(n, locals_, root)
+        _get_locals(n, locals_)
 
 # # pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(LocalsDictNodeNG)
-def locals_new_scope(node, locals_, root):
+def locals_new_scope(node, locals_):
     '''These nodes start a new scope, so terminate recursion here.'''
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
@@ -1902,28 +1937,28 @@ def locals_new_scope(node, locals_, root):
 @_get_locals.register(node_classes.DelName)
 @_get_locals.register(FunctionDef)
 @_get_locals.register(ClassDef)
-def locals_name(node, locals_, root):
+def locals_name(node, locals_):
     '''These nodes add a name to the local variables.  AssignName and
     DelName have no children while FunctionDef and ClassDef start a
     new scope so shouldn't be recursed into.'''
     locals_[node.name].append(node)
 
 @_get_locals.register(node_classes.InterpreterObject)
-def locals_interpreter_object(node, locals_, root):
+def locals_interpreter_object(node, locals_):
     '''InterpreterObjects add an object to the local variables under a specified
     name.'''
     if node.name:
         locals_[node.name].append(node)
 
 @_get_locals.register(node_classes.ReservedName)
-def locals_reserved_name(node, locals_, root):
+def locals_reserved_name(node, locals_):
     '''InterpreterObjects add an object to the local variables under a specified
     name.'''
     locals_[node.name].append(node.value)
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(node_classes.Arguments)
-def locals_arguments(node, locals_, root):
+def locals_arguments(node, locals_):
     '''Other names assigned by functions have AssignName nodes that are
     children of an Arguments node.'''
     if node.vararg:
@@ -1931,21 +1966,22 @@ def locals_arguments(node, locals_, root):
     if node.kwarg:
         locals_[node.kwarg].append(node)
     for n in node.get_children():
-        _get_locals(n, locals_, root)
+        _get_locals(n, locals_)
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(node_classes.Import)
-def locals_import(node, locals_, root):
+def locals_import(node, locals_):
     for name, asname in node.names:
         name = asname or name
         locals_[name.split('.')[0]].append(node)
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(node_classes.ImportFrom)
-def locals_import_from(node, locals_, root):
+def locals_import_from(node, locals_):
     # Don't add future imports to locals.
     if node.modname == '__future__':
         return
+    # Inherited code, I don't know why this function sorts this list.
     def sort_locals(my_list):
         my_list.sort(key=lambda node: node.fromlineno)
 
