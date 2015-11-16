@@ -26,6 +26,8 @@ from astroid.tree import treeabc
 from astroid import util
 
 
+# import pdb; pdb.set_trace()
+
 @util.singledispatch
 def _scope_by_parent(parent, node):
     """Detect the scope of the *node* by parent's rules.

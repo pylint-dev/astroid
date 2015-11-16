@@ -51,11 +51,6 @@ except ImportError:
             return iter(set().union(*self.maps))
 
 try:
-    from functools import singledispatch as _singledispatch
-except ImportError:
-    from singledispatch import singledispatch as _singledispatch
-
-try:
     from inspect import signature as _signature, Parameter as _Parameter
 except ImportError:
     from funcsigs import signature as _signature, Parameter as _Parameter
@@ -130,7 +125,7 @@ def ast_from_object(object_, name=None):
 
 
 
-@_singledispatch
+@util.singledispatch
 def _ast_from_object(instance, built_objects, module, name=None, parent=None):
     '''Returns a mock AST for an instance.
 

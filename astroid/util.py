@@ -26,13 +26,27 @@ import warnings
 
 import lazy_object_proxy
 import six
+import wrapt
 
 JYTHON = True if platform.python_implementation() == 'Jython' else False
 
 try:
-    from functools import singledispatch as singledispatch
+    from functools import singledispatch as _singledispatch
 except ImportError:
-    from singledispatch import singledispatch as singledispatch
+    from singledispatch import singledispatch as _singledispatch
+
+
+def singledispatch(func):
+    old_generic_func = _singledispatch(func)
+    @wrapt.decorator
+    def wrapper(func, instance, args, kws):
+        return old_generic_func.dispatch(type(args[0]))(*args, **kws)
+    new_generic_func = wrapper(func)
+    new_generic_func.register = old_generic_func.register
+    new_generic_func.dispatch = old_generic_func.dispatch
+    new_generic_func.registry = old_generic_func.registry
+    new_generic_func._clear_cache = old_generic_func._clear_cache
+    return new_generic_func
 
 
 def lazy_import(module_name):
