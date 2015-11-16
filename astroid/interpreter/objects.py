@@ -25,6 +25,7 @@ FrozenSet:
     Call(func=Name('frozenset'), args=Tuple(...))
 """
 import sys
+import types
 
 import six
 
@@ -359,6 +360,11 @@ class Generator(BaseInstance):
 
     def __str__(self):
         return 'Generator(%s)' % (self._proxied.name)
+
+    @decorators.cachedproperty
+    def _proxied(self):
+        builtins = MANAGER.astroid_cache[BUILTINS]
+        return builtins.getattr(types.GeneratorType.__name__)[0]
 
 
 @util.register_implementation(runtimeabc.FrozenSet)

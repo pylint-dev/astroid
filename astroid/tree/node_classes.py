@@ -944,6 +944,11 @@ class List(base.BaseContainer, AssignedStmtsMixin, objects.BaseInstance):
     def getitem(self, index, context=None):
         return _container_getitem(self, self.elts, index)
 
+    @decorators.cachedproperty
+    def _proxied(self):
+        builtins = MANAGER.astroid_cache[BUILTINS]
+        return builtins.getattr('list')[0]
+
 
 @util.register_implementation(treeabc.Nonlocal)
 class Nonlocal(Statement):
@@ -1026,6 +1031,11 @@ class Set(base.BaseContainer, objects.BaseInstance):
 
     def pytype(self):
         return '%s.set' % BUILTINS
+
+    @decorators.cachedproperty
+    def _proxied(self):
+        builtins = MANAGER.astroid_cache[BUILTINS]
+        return builtins.getattr('set')[0]
 
 
 @util.register_implementation(treeabc.Slice)
@@ -1154,6 +1164,11 @@ class Tuple(base.BaseContainer, AssignedStmtsMixin, objects.BaseInstance):
 
     def getitem(self, index, context=None):
         return _container_getitem(self, self.elts, index)
+
+    @decorators.cachedproperty
+    def _proxied(self):
+        builtins = MANAGER.astroid_cache[BUILTINS]
+        return builtins.getattr('tuple')[0]
 
 
 @util.register_implementation(treeabc.UnaryOp)
