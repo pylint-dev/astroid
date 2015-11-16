@@ -25,11 +25,12 @@ import six
 from astroid import as_string
 from astroid import decorators
 from astroid import exceptions
-from astroid import inference
 from astroid.interpreter import scope
 from astroid import mixins
 from astroid.tree import treeabc
 from astroid import util
+
+inference = util.lazy_import('inference')
 
 
 @util.register_implementation(treeabc.NodeNG)

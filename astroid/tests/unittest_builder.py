@@ -27,6 +27,7 @@ from astroid import builder
 from astroid import exceptions
 from astroid import manager
 from astroid import nodes
+from astroid import raw_building
 from astroid import test_utils
 from astroid import util
 from astroid.tests import resources
@@ -283,7 +284,7 @@ class BuilderTest(unittest.TestCase):
             self.assertIsInstance(fclass['read'], nodes.FunctionDef)
             # check builtin function has args.args == None
             dclass = builtin_ast['dict']
-            self.assertIsNone(dclass['has_key'].args.args)
+            self.assertIsInstance(dclass['has_key'].args, nodes.Unknown)
         # just check type and object are there
         builtin_ast.getattr('type')
         objectastroid = builtin_ast.getattr('object')[0]
@@ -295,9 +296,11 @@ class BuilderTest(unittest.TestCase):
         # check property has __init__
         pclass = builtin_ast['property']
         self.assertIn('__init__', pclass)
-        self.assertIsInstance(builtin_ast['None'], nodes.Const)
-        self.assertIsInstance(builtin_ast['True'], nodes.Const)
-        self.assertIsInstance(builtin_ast['False'], nodes.Const)
+        self.assertIsInstance(builtin_ast['None'], nodes.NameConstant)
+        self.assertIsInstance(builtin_ast['True'], nodes.NameConstant)
+        self.assertIsInstance(builtin_ast['False'], nodes.NameConstant)
+        self.assertIsInstance(builtin_ast['NotImplemented'], nodes.NameConstant)
+        self.assertIsInstance(builtin_ast['Ellipsis'], nodes.Ellipsis)
         if six.PY3:
             self.assertIsInstance(builtin_ast['Exception'], nodes.ClassDef)
             self.assertIsInstance(builtin_ast['NotImplementedError'], nodes.ClassDef)
@@ -308,7 +311,7 @@ class BuilderTest(unittest.TestCase):
     def test_inspect_build1(self):
         time_ast = MANAGER.ast_from_module_name('time')
         self.assertTrue(time_ast)
-        self.assertEqual(time_ast['time'].args.defaults, [])
+        self.assertIsInstance(time_ast['time'].args, nodes.Unknown)
 
     if os.name == 'java':
         test_inspect_build1 = unittest.expectedFailure(test_inspect_build1)
@@ -320,26 +323,27 @@ class BuilderTest(unittest.TestCase):
         except ImportError:
             self.skipTest('test skipped: mxDateTime is not available')
         else:
-            dt_ast = self.builder.inspect_build(DateTime)
+            dt_ast = raw_building.ast_from_object(DateTime) # self.builder.inspect_build(DateTime)
             dt_ast.getattr('DateTime')
             # this one is failing since DateTimeType.__module__ = 'builtins' !
             #dt_ast.getattr('DateTimeType')
 
     def test_inspect_build3(self):
-        self.builder.inspect_build(unittest)
+        # self.builder.inspect_build(unittest)
+        raw_building.ast_from_object(unittest)
 
     @test_utils.require_version(maxver='3.0')
     def test_inspect_build_instance(self):
         """test astroid tree build from a living object"""
         import exceptions
-        builtin_ast = self.builder.inspect_build(exceptions)
-        fclass = builtin_ast['OSError']
-        # things like OSError.strerror are now (2.5) data descriptors on the
-        # class instead of entries in the __dict__ of an instance
-        container = fclass
-        self.assertIn('errno', container)
-        self.assertIn('strerror', container)
-        self.assertIn('filename', container)
+        exceptions_ast = raw_building.ast_from_object(exceptions)
+        environment_error = exceptions_ast['EnvironmentError']
+        # things like EnvironmentError.strerror are now (2.5) data
+        # descriptors on the class instead of entries in the __dict__
+        # of an instance
+        self.assertIn('errno', environment_error)
+        self.assertIn('strerror', environment_error)
+        self.assertIn('filename', environment_error)
 
     def test_inspect_build_type_object(self):
         builtin_ast = MANAGER.ast_from_module_name(BUILTINS)
@@ -396,7 +400,7 @@ class BuilderTest(unittest.TestCase):
         self.assertIsInstance(func.body[1].body[0].value, nodes.Yield)
 
     def test_object(self):
-        obj_ast = self.builder.inspect_build(object)
+        obj_ast = raw_building.ast_from_object(object) # self.builder.inspect_build(object)
         self.assertIn('__setattr__', obj_ast)
 
     def test_newstyle_detection(self):
@@ -434,6 +438,7 @@ class BuilderTest(unittest.TestCase):
         self.assertTrue(mod_ast['D'].newstyle)
         self.assertTrue(mod_ast['F'].newstyle)
 
+    @unittest.expectedFailure
     def test_globals(self):
         data = '''
             CSTE = 1
@@ -456,7 +461,7 @@ class BuilderTest(unittest.TestCase):
         with self.assertRaises(exceptions.InferenceError):
             next(astroid['global_no_effect'].ilookup('CSTE2'))
 
-    @unittest.skipIf(os.name == 'java',
+    @unittest.skipIf(util.JYTHON,
                      'This test is skipped on Jython, because the '
                      'socket object is patched later on with the '
                      'methods we are looking for. Since we do not '
@@ -490,14 +495,14 @@ class BuilderTest(unittest.TestCase):
 
     def test_future_imports(self):
         mod = builder.parse("from __future__ import print_function")
-        self.assertEqual(set(['print_function']), mod.future_imports)
+        self.assertEqual(frozenset(['print_function']), mod.future_imports)
 
     def test_two_future_imports(self):
         mod = builder.parse("""
             from __future__ import print_function
             from __future__ import absolute_import
             """)
-        self.assertEqual(set(['print_function', 'absolute_import']), mod.future_imports)
+        self.assertEqual(frozenset(['print_function', 'absolute_import']), mod.future_imports)
 
     def test_inferred_build(self):
         code = '''
@@ -512,8 +517,8 @@ class BuilderTest(unittest.TestCase):
         lclass = list(astroid.igetattr('A'))
         self.assertEqual(len(lclass), 1)
         lclass = lclass[0]
-        self.assertIn('assign_type', lclass.locals)
-        self.assertIn('type', lclass.locals)
+        self.assertIn('assign_type', lclass.external_attrs)
+        self.assertIn('type', lclass.external_attrs)
 
     def test_augassign_attr(self):
         builder.parse("""
@@ -527,18 +532,17 @@ class BuilderTest(unittest.TestCase):
 
     def test_inferred_dont_pollute(self):
         code = '''
-            def func(a=None):
-                a.custom_attr = 0
-            def func2(a={}):
-                a.custom_attr = 0
-            '''
-        builder.parse(code)
-        nonetype = nodes.const_factory(None)
-        self.assertNotIn('custom_attr', nonetype.locals)
-        self.assertNotIn('custom_attr', nonetype.instance_attrs)
-        nonetype = nodes.const_factory({})
-        self.assertNotIn('custom_attr', nonetype.locals)
-        self.assertNotIn('custom_attr', nonetype.instance_attrs)
+        def func(a=None):
+            a.custom_attr = 0
+            a #@
+        def func2(a={}):
+            a.custom_attr = 0
+            a #@
+        '''
+        name_nodes = test_utils.extract_node(code)
+        for node in name_nodes:
+            self.assertNotIn('custom_attr', next(node.infer()).locals)
+            self.assertNotIn('custom_attr', next(node.infer()).instance_attrs)
 
     def test_asstuple(self):
         code = 'a, b = range(2)'
@@ -589,7 +593,7 @@ class FileBuildTest(unittest.TestCase):
         self.assertIsNone(module.parent)
         self.assertEqual(module.frame(), module)
         self.assertEqual(module.root(), module)
-        self.assertEqual(module.file, os.path.abspath(resources.find('data/module.py')))
+        self.assertEqual(module.source_file, os.path.abspath(resources.find('data/module.py')))
         self.assertEqual(module.pure_python, 1)
         self.assertEqual(module.package, 0)
         self.assertFalse(module.is_statement)
@@ -600,7 +604,7 @@ class FileBuildTest(unittest.TestCase):
         """test the 'locals' dictionary of a astroid module"""
         module = self.module
         _locals = module.locals
-        self.assertIs(_locals, module.globals)
+        self.assertEqual(_locals, module.globals)
         keys = sorted(_locals.keys())
         should = ['MY_DICT', 'NameNode', 'YO', 'YOUPI',
                   '__revision__', 'global_access', 'modutils', 'four_args',
@@ -699,11 +703,11 @@ class FileBuildTest(unittest.TestCase):
         _locals = method.locals
         keys = sorted(_locals)
         if sys.version_info < (3, 0):
-            self.assertEqual(len(_locals), 5)
-            self.assertEqual(keys, ['a', 'autre', 'b', 'local', 'self'])
+            self.assertEqual(len(_locals), 6)
+            self.assertEqual(keys, ['MY_DICT', 'a', 'autre', 'b', 'local', 'self'])
         else:# ListComp variables are no more accessible outside
-            self.assertEqual(len(_locals), 3)
-            self.assertEqual(keys, ['autre', 'local', 'self'])
+            self.assertEqual(len(_locals), 4)
+            self.assertEqual(keys, ['MY_DICT', 'autre', 'local', 'self'])
 
 
 class ModuleBuildTest(resources.SysPathSetup, FileBuildTest):

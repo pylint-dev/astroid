@@ -267,7 +267,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(intstmts), 1)
         self.assertIsInstance(intstmts[0], nodes.ClassDef)
         self.assertEqual(intstmts[0].name, 'int')
-        self.assertIs(intstmts[0], nodes.const_factory(1)._proxied)
+        self.assertIs(intstmts[0], nodes.Const(1)._proxied)
 
     def test_decorator_arguments_lookup(self):
         code = '''

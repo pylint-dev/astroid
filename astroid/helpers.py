@@ -19,6 +19,7 @@
 """
 Various helper utilities.
 """
+import types
 
 import six
 
@@ -30,48 +31,36 @@ from astroid.tree import treeabc
 from astroid import util
 
 
-BUILTINS = six.moves.builtins.__name__
-
-
-def _build_proxy_class(cls_name, builtins):
-    # TODO(cpopa): remove this when merging with modular-locals.
-    from astroid import raw_building
-    proxy = raw_building.build_class(cls_name)
-    proxy.parent = builtins
-    return proxy
-
-
-def _function_type(function, builtins):
-    if isinstance(function, treeabc.Lambda):
-        if function.root().name == BUILTINS:
-            cls_name = 'builtin_function_or_method'
-        else:
-            cls_name = 'function'
-    elif isinstance(function, runtimeabc.BoundMethod):
-        if six.PY2:
-            cls_name = 'instancemethod'
-        else:
-            cls_name = 'method'
-    elif isinstance(function, runtimeabc.UnboundMethod):
-        if six.PY2:
-            cls_name = 'instancemethod'
-        else:
-            cls_name = 'function'
-    return _build_proxy_class(cls_name, builtins)
-
-
 def _object_type(node, context=None):
-    astroid_manager = manager.AstroidManager()
-    builtins = astroid_manager.astroid_cache[BUILTINS]
     context = context or contextmod.InferenceContext()
 
     for inferred in node.infer(context=context):
         if isinstance(inferred, treeabc.ClassDef):
-            yield inferred.metaclass() or builtins.getattr('type')[0]
+            if inferred.newstyle:
+                metaclass = inferred.metaclass()
+                if metaclass:
+                    yield metaclass
+                    continue
+            yield raw_building.builtins_ast.getattr('type')[0]
         elif isinstance(inferred, (treeabc.Lambda, runtimeabc.UnboundMethod)):
-            yield _function_type(inferred, builtins)
+            if isinstance(inferred, treeabc.Lambda):
+                if inferred.root() is raw_building.builtins_ast:
+                    yield raw_building.builtins_ast[types.BuiltinFunctionType.__name__]
+                else:
+                    yield raw_building.builtins_ast[types.FunctionType.__name__]
+            elif isinstance(inferred, runtimeabc.BoundMethod):
+                yield raw_building.builtins_ast[types.MethodType.__name__]
+            elif isinstance(inferred, runtimeabc.UnboundMethod):
+                if six.PY2:
+                    yield raw_building.builtins_ast[types.MethodType.__name__]
+                else:
+                    yield raw_building.builtins_ast[types.FunctionType.__name__]
+            else:
+                raise InferenceError('Function {func!r} inferred from {node!r} '
+                                     'has no identifiable type.',
+                                     node=node, func=inferred, contex=context)
         elif isinstance(inferred, treeabc.Module):
-            yield _build_proxy_class('module', builtins)
+            yield raw_building.builtins_ast[types.ModuleType.__name__]
         else:
             yield inferred._proxied
 

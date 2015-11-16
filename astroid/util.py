@@ -19,11 +19,15 @@
 # The code in this file was originally part of logilab-common, licensed under
 # the same license.
 
+import importlib
+import platform
 import sys
 import warnings
 
 import lazy_object_proxy
 import six
+
+JYTHON = True if platform.python_implementation() == 'Jython' else False
 
 try:
     from functools import singledispatch as singledispatch
@@ -31,11 +35,27 @@ except ImportError:
     from singledispatch import singledispatch as singledispatch
 
 
+def lazy_import(module_name):
+    return lazy_object_proxy.Proxy(
+        lambda: importlib.import_module('.' + module_name, 'astroid'))
+
 def reraise(exception):
     '''Reraises an exception with the traceback from the current exception
     block.'''
     six.reraise(type(exception), exception, sys.exc_info()[2])
 
+def generate_warning(message, warning):
+    return lambda strings: warnings.warn(message % strings, warning,
+                                         stacklevel=3)
+
+rename_warning = generate_warning("%r is deprecated and slated for removal in "
+                                  "astroid 2.0, use %r instead",
+                                  PendingDeprecationWarning)
+
+attr_to_method_warning = generate_warning("%s is deprecated and slated for "
+                                          " removal in astroid 1.6, use the "
+                                          "method '%s' instead.",
+                                          PendingDeprecationWarning)
 
 @object.__new__
 class Uninferable(object):
@@ -93,10 +113,7 @@ def _instancecheck(cls, other):
     wrapped = cls.__wrapped__
     other_cls = other.__class__
     is_instance_of = wrapped is other_cls or issubclass(other_cls, wrapped)
-    warnings.warn("%r is deprecated and slated for removal in astroid "
-                  "2.0, use %r instead" % (cls.__class__.__name__,
-                                           wrapped.__name__),
-                  PendingDeprecationWarning, stacklevel=2)
+    rename_warning((cls.__class__.__name__, wrapped.__name__))
     return is_instance_of
 
 

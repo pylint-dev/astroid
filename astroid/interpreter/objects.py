@@ -33,14 +33,14 @@ from astroid import decorators
 from astroid import exceptions
 from astroid.interpreter.util import infer_stmts
 from astroid.interpreter import runtimeabc
-from astroid import manager
 from astroid.tree import base
 from astroid.tree import treeabc
 from astroid import util
 
+manager = util.lazy_import('manager')
+MANAGER = manager.AstroidManager()
 
 BUILTINS = six.moves.builtins.__name__
-MANAGER = manager.AstroidManager()
 
 
 if sys.version_info >= (3, 0):
@@ -204,7 +204,7 @@ class BaseInstance(Proxy):
 @util.register_implementation(runtimeabc.Instance)
 class Instance(BaseInstance):
     """A special node representing a class instance."""
-
+    special_attributes = frozenset(('__dict__', '__class__'))
 
     def __repr__(self):
         return '<Instance of %s.%s at 0x%s>' % (self._proxied.root().name,
@@ -308,6 +308,13 @@ class UnboundMethod(Proxy):
 @util.register_implementation(runtimeabc.BoundMethod)
 class BoundMethod(UnboundMethod):
     """a special node representing a method bound to an instance"""
+    # __func__ and __self__ are method-only special attributes, the
+    # rest are general function special attributes.
+    special_attributes = frozenset(
+        ('__doc__', '__name__', '__qualname__', '__module__', '__defaults__',
+         '__code__', '__globals__', '__dict__', '__closure__',
+         '__annotations__', '__kwdefaults__', '__func__', '__self__'))
+
     def __init__(self, proxy, bound):
         UnboundMethod.__init__(self, proxy)
         self.bound = bound
@@ -332,6 +339,9 @@ class Generator(BaseInstance):
 
     Proxied class is set once for all in raw_building.
     """
+    def __init__(self, parent):
+        self.parent = parent
+
     def callable(self):
         return False
 
@@ -469,7 +479,7 @@ class Super(base.NodeNG):
 
         found = False
         for cls in mro:
-            if name not in cls.locals:
+            if name not in cls.locals: # and name not in cls.external_attrs:
                 continue
 
             found = True

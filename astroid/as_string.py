@@ -135,6 +135,7 @@ class AsStringVisitor(object):
     def visit_const(self, node):
         """return an astroid.Const node as string"""
         return repr(node.value)
+    visit_nameconstant = visit_const
 
     def visit_continue(self, node):
         """return an astroid.Continue node as string"""
@@ -180,12 +181,14 @@ class AsStringVisitor(object):
                                 ' '.join([n.accept(self) for n in node.generators]))
 
     def visit_expr(self, node):
-        """return an astroid.Discard node as string"""
+        """return an astroid.Expr node as string"""
         return node.value.accept(self)
 
-    def visit_emptynode(self, node):
-        """dummy method for visiting an Empty node"""
+    def visit_unknown(self, node):
+        """dummy method for visiting nodes for special nodes."""
         return ''
+    visit_reservedname = visit_unknown
+    visit_interpreterobject = visit_unknown
 
     def visit_excepthandler(self, node):
         if node.type:
@@ -201,10 +204,6 @@ class AsStringVisitor(object):
     def visit_ellipsis(self, node):
         """return an astroid.Ellipsis node as string"""
         return '...'
-
-    def visit_empty(self, node):
-        """return an Empty node as string"""
-        return ''
 
     def visit_exec(self, node):
         """return an astroid.Exec node as string"""

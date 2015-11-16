@@ -33,6 +33,8 @@ from astroid.interpreter import util as inferenceutil
 from astroid.tree import treeabc
 from astroid import util
 
+raw_building = util.lazy_import('raw_building')
+
 
 def _reflected_name(name):
     return "__r" + name[2:]
@@ -82,7 +84,8 @@ _UNARY_OPERATORS = {
 def _infer_unary_op(obj, op, nodes):
     func = _UNARY_OPERATORS[op]
     value = func(obj)
-    return nodes.const_factory(value)
+    return raw_building.ast_from_object(value)
+
 
 
 @util.singledispatch
@@ -151,7 +154,7 @@ def const_infer_binary_op(self, operator, other, context, _, nodes):
         try:
             impl = BIN_OP_IMPL[operator]
             try:
-                yield nodes.const_factory(impl(self.value, other.value))
+                yield raw_building.ast_from_object(impl(self.value, other.value))
             except TypeError:
                 # ArithmeticError is not enough: float >> float is a TypeError
                 yield not_implemented
@@ -182,7 +185,7 @@ def _multiply_seq_by_int(self, other, context):
 @infer_binary_op.register(treeabc.List)
 @decorators.yes_if_nothing_inferred
 def tl_infer_binary_op(self, operator, other, context, method, nodes):
-    not_implemented = nodes.const_factory(NotImplemented)
+    not_implemented = nodes.NameConstant(NotImplemented)
     if isinstance(other, self.__class__) and operator == '+':
         node = self.__class__()
         elts = [n for elt in self.elts for n in elt.infer(context)
@@ -319,14 +322,10 @@ def _arguments_infer_argname(self, name, context, nodes):
 
     # TODO: just provide the type here, no need to have an empty Dict.
     if name == self.vararg:
-        vararg = nodes.const_factory(())
-        vararg.parent = self
-        yield vararg
+        yield nodes.Tuple(parent=self)
         return
     if name == self.kwarg:
-        kwarg = nodes.const_factory({})
-        kwarg.parent = self
-        yield kwarg
+        yield nodes.Dict(parent=self)
         return
     # if there is a default value, yield it. And then yield Uninferable to reflect
     # we can't guess given argument value
@@ -437,9 +436,7 @@ def _infer_context_manager(self, mgr, context, nodes):
         if yield_point:
             if not yield_point.value:
                 # TODO(cpopa): an empty yield. Should be wrapped to Const.
-                const = nodes.const_factory(None)
-                const.parent = yield_point
-                const.lineno = yield_point.lineno
+                const = nodes.NameConstant(None, lineno=yield_proint.lineno, parent=yield_point)
                 yield const
             else:
                 for inferred in yield_point.value.infer(context=context):
@@ -516,6 +513,13 @@ def with_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
 @assigned_stmts.register(treeabc.Starred)
 @decorators.yes_if_nothing_inferred
 def starred_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
+    """
+    Arguments:
+        self: nodes.Starred
+        node: TODO
+        context: TODO
+        asspath: TODO
+    """
     stmt = self.statement()
     if not isinstance(stmt, (treeabc.Assign, treeabc.For)):
         raise exceptions.InferenceError('Statement {stmt!r} enclosing {node!r} '

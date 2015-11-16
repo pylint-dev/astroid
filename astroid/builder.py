@@ -21,7 +21,7 @@ The builder is not thread safe and can't be used to parse different sources
 at the same time.
 """
 
-import _ast
+import ast
 import os
 import sys
 import textwrap
@@ -30,13 +30,15 @@ from astroid import exceptions
 from astroid.interpreter import runtimeabc
 from astroid import manager
 from astroid import modutils
-from astroid import raw_building
 from astroid.tree import rebuilder
+from astroid.tree import treeabc
 from astroid import util
+
+raw_building = util.lazy_import('raw_building')
 
 
 def _parse(string):
-    return compile(string, "<string>", 'exec', _ast.PyCF_ONLY_AST)
+    return compile(string, "<string>", 'exec', ast.PyCF_ONLY_AST)
 
 
 if sys.version_info >= (3, 0):
@@ -83,7 +85,7 @@ else:
 MANAGER = manager.AstroidManager()
 
 
-class AstroidBuilder(raw_building.InspectBuilder):
+class AstroidBuilder(object):
     """Class for building an astroid tree from source code or from a live module.
 
     The param *manager* specifies the manager class which should be used.
@@ -94,7 +96,6 @@ class AstroidBuilder(raw_building.InspectBuilder):
     """
 
     def __init__(self, manager=None, apply_transforms=True):
-        super(AstroidBuilder, self).__init__()
         self._manager = manager or MANAGER
         self._apply_transforms = apply_transforms
 
@@ -109,7 +110,9 @@ class AstroidBuilder(raw_building.InspectBuilder):
         if node is None:
             # this is a built-in module
             # get a partial representation by introspection
-            node = self.inspect_build(module, modname=modname, path=path)
+            node = raw_building.ast_from_object(module, name=modname)
+            # FIXME
+            node.source_file = path
             if self._apply_transforms:
                 # We have to handle transformation by ourselves since the
                 # rebuilder isn't called for builtin nodes
@@ -145,22 +148,14 @@ class AstroidBuilder(raw_building.InspectBuilder):
     def string_build(self, data, modname='', path=None):
         """Build astroid from source code string."""
         module = self._data_build(data, modname, path)
-        module.file_bytes = data.encode('utf-8')
+        module.source_code = data.encode('utf-8')
         return self._post_build(module, 'utf-8')
 
     def _post_build(self, module, encoding):
         """Handles encoding and delayed nodes after a module has been built"""
         module.file_encoding = encoding
         self._manager.cache_module(module)
-        # post tree building steps after we stored the module in the cache:
-        for from_node in module._import_from_nodes:
-            if from_node.modname == '__future__':
-                for symbol, _ in from_node.names:
-                    module.future_imports.add(symbol)
-            self.add_from_names_to_locals(from_node)
-        # handle delayed assattr nodes
-        for delayed in module._delayed_assattr:
-            self.delayed_assattr(delayed)
+        delayed_assignments(module)
 
         # Visit the transforms
         if self._apply_transforms:
@@ -193,68 +188,57 @@ class AstroidBuilder(raw_building.InspectBuilder):
             package = path and path.find('__init__.py') > -1 or False
         builder = rebuilder.TreeRebuilder()
         module = builder.visit_module(node, modname, node_file, package)
-        module._import_from_nodes = builder._import_from_nodes
-        module._delayed_assattr = builder._delayed_assattr
         return module
 
-    def add_from_names_to_locals(self, node):
-        """Store imported names to the locals
 
-        Resort the locals if coming from a delayed node
-        """
-        _key_func = lambda node: node.fromlineno
-        def sort_locals(my_list):
-            my_list.sort(key=_key_func)
+def delayed_assignments(root):
+    '''This function modifies nodes according to AssignAttr nodes.
 
-        for (name, asname) in node.names:
-            if name == '*':
-                try:
-                    imported = node.do_import_module()
-                except exceptions.InferenceError:
-                    continue
-                for name in imported.wildcard_import_names():
-                    node.parent.set_local(name, node)
-                    sort_locals(node.parent.scope().locals[name])
-            else:
-                node.parent.set_local(asname or name, node)
-                sort_locals(node.parent.scope().locals[asname or name])
+    It traverses the entire AST, and when it encounters an AssignAttr
+    node it modifies the instance_attrs or external_attrs of the node
+    respresenting that object.  Because it uses inference functions
+    that in turn depend on instance_attrs and external_attrs, calling
+    it a tree that already have instance_attrs and external_attrs set
+    may crash or fail to modify those variables correctly.
 
-    def delayed_assattr(self, node):
-        """Visit a AssAttr node
+    Args:
+        root (node_classes.NodeNG): The root of the AST that 
+            delayed_assignments() is searching for assignments.
 
-        This adds name to locals and handle members definition.
-        """
-        try:
+    '''
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        stack.extend(node.get_children())
+        if isinstance(node, treeabc.AssignAttr):
             frame = node.frame()
-            for inferred in node.expr.infer():
-                if inferred is util.Uninferable:
-                    continue
-                try:
-                    if isinstance(inferred, runtimeabc.Instance):
-                        inferred = inferred._proxied
-                        iattrs = inferred.instance_attrs
-                    elif isinstance(inferred, runtimeabc.BuiltinInstance):
-                        # Const, Tuple, ... we may be wrong, may be not, but
-                        # anyway we don't want to pollute builtin's namespace
-                        continue
-                    elif inferred.is_function:
-                        iattrs = inferred.instance_attrs
+            try:
+                # Here, node.expr.infer() will return either the node
+                # being assigned to itself, for Module, ClassDef,
+                # FunctionDef, or Lambda nodes, or an Instance object
+                # corresponding to a ClassDef node.
+                for inferred in node.expr.infer():
+                    if type(inferred) is runtimeabc.Instance:
+                        values = inferred._proxied.instance_attrs[node.attrname]
+                    elif isinstance(inferred, treeabc.Lambda):
+                        values = inferred.instance_attrs[node.attrname]
+                    elif isinstance(inferred, (treeabc.Module, treeabc.ClassDef)):
+                        values = inferred.external_attrs[node.attrname]
                     else:
-                        iattrs = inferred.locals
-                except AttributeError:
-                    # XXX log error
-                    continue
-                values = iattrs.setdefault(node.attrname, [])
-                if node in values:
-                    continue
-                # get assign in __init__ first XXX useful ?
-                if (frame.name == '__init__' and values and
-                        not values[0].frame().name == '__init__'):
-                    values.insert(0, node)
-                else:
-                    values.append(node)
-        except exceptions.InferenceError:
-            pass
+                        continue
+                    if node in values:
+                        continue
+                    else:
+                        # I have no idea why there's a special case
+                        # for __init__ that changes the order of the
+                        # attributes or what that order means.
+                        if (values and frame.name == '__init__' and not
+                            values[0].frame().name == '__init__'):
+                            values.insert(0, node)
+                        else:
+                            values.append(node)
+            except exceptions.InferenceError:
+                pass
 
 
 def parse(code, module_name='', path=None, apply_transforms=True):

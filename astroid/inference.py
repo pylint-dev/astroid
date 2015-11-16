@@ -30,12 +30,11 @@ from astroid import exceptions
 from astroid import helpers
 from astroid.interpreter import runtimeabc
 from astroid.interpreter import util as inferenceutil
-from astroid import manager
 from astroid import protocols
 from astroid.tree import treeabc
 from astroid import util
 
-
+manager = util.lazy_import('manager')
 MANAGER = manager.AstroidManager()
 
 
@@ -377,7 +376,7 @@ def infer_unaryop(self, context=None, nodes=None):
                 # Uninferable, which will be returned as is.
                 bool_value = operand.bool_value()
                 if bool_value is not util.Uninferable:
-                    yield nodes.const_factory(not bool_value)
+                    yield nodes.Const(not bool_value)
                 else:
                     yield util.Uninferable
             else:
@@ -699,15 +698,14 @@ def infer_assign(self, context=None):
 
 # no infer method on DelName and DelAttr (expected InferenceError)
 
-@infer.register(treeabc.EmptyNode)
+@infer.register(treeabc.InterpreterObject)
 @decorators.path_wrapper
-def infer_empty_node(self, context=None):
+def infer_interpreter_object(self, context=None):
     if not self.has_underlying_object():
         yield util.Uninferable
     else:
         try:
-            for inferred in MANAGER.infer_ast_from_something(self.object,
-                                                             context=context):
+            for inferred in self.object.infer():
                 yield inferred
         except exceptions.AstroidError:
             yield util.Uninferable

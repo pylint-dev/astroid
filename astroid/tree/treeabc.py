@@ -319,5 +319,5 @@ class FunctionDef(Statement, Lambda):
     """Class representing a function node."""
 
 
-class EmptyNode(NodeNG):
+class InterpreterObject(NodeNG):
     pass

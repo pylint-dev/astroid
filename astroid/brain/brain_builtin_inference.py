@@ -1,9 +1,9 @@
 """Astroid hooks for various builtins."""
 
 import collections
-from functools import partial
+import functools
 import sys
-from textwrap import dedent
+import textwrap
 
 import six
 from astroid import (MANAGER, UseInferenceDefault, AttributeInferenceError,
@@ -13,6 +13,7 @@ from astroid import helpers
 from astroid.interpreter import objects
 from astroid.interpreter import util as interpreterutil
 from astroid import nodes
+from astroid import raw_building
 from astroid.tree import scoped_nodes
 from astroid import util
 
@@ -24,7 +25,7 @@ def _extend_str(class_node, rvalue):
     # TODO(cpopa): this approach will make astroid to believe
     # that some arguments can be passed by keyword, but
     # unfortunately, strings and bytes don't accept keyword arguments.
-    code = dedent('''
+    code = textwrap.dedent('''
     class whatever(object):
         def join(self, iterable):
             return {rvalue}
@@ -70,7 +71,15 @@ def _extend_str(class_node, rvalue):
     code = code.format(rvalue=rvalue)
     fake = AstroidBuilder(MANAGER).string_build(code)['whatever']
     for method in fake.mymethods():
-        class_node.locals[method.name] = [method]
+        # TODO: remove this ugly hack by actually handling version
+        # differences correctly.
+        try:
+            # Find the index where the method in question is located in
+            # the mock AST's body.
+            index = class_node.body.index(class_node.locals[method.name][0])
+            class_node.body[index] = method
+        except IndexError:
+            class_node.body.append(method)
         method.parent = class_node
 
 def extend_builtins(class_transforms):
@@ -79,11 +88,12 @@ def extend_builtins(class_transforms):
         transform(builtin_ast[class_name])
 
 if sys.version_info > (3, 0):
-    extend_builtins({'bytes': partial(_extend_str, rvalue="b''"),
-                     'str': partial(_extend_str, rvalue="''")})
+    extend_builtins({'bytes': functools.partial(_extend_str, rvalue="b''"),
+                     'str': functools.partial(_extend_str, rvalue="''")})
 else:
-    extend_builtins({'str': partial(_extend_str, rvalue="''"),
-                     'unicode': partial(_extend_str, rvalue="u''")})
+    # TODO: what about unicode_literals?  This is hopelessly broken.
+    extend_builtins({'bytes': functools.partial(_extend_str, rvalue="''"), # Ugly hack to get it working for now.
+                     'unicode': functools.partial(_extend_str, rvalue="u''")})
 
 
 def register_builtin_transform(transform, builtin_name):
@@ -134,18 +144,21 @@ def _generic_inference(node, context, node_type, transform):
 
 
 @util.singledispatch
-def _from_constants(kls, elts):
-    """Get an instance of the given *kls* with the given elements set."""
-    elts = [nodes.const_factory(elt) for elt in elts]
-    instance = kls()
+def _from_constants(cls, elts):
+    """Get an instance of the given *cls* with the given elements set."""
+    elts = [raw_building.ast_from_builtin_number_text_binary(e, {}, None, parent=node)[0] for e in elts]
+    instance = cls()
     instance.postinit(elts=elts)
     return instance
 
 @_from_constants.register(nodes.Dict)
-def _dict_from_constants(kls, elts):
-    items = [(nodes.const_factory(k), nodes.const_factory(v))
-             for k, v in elts.items()]
-    instance = kls()
+def _dict_from_constants(cls, elts):
+    node.items = [(raw_building.ast_from_builtin_number_text_binary(k, {}, None,
+                                                                    parent=node)[0],
+                   raw_building.ast_from_builtin_number_text_binary(v, {}, None,
+                                                                    parent=node)[0])
+                  for k, v in items.items()]
+    instance = cls()
     instance.postinit(items=items)
     return instance
 
@@ -176,7 +189,7 @@ def _generic_transform(arg, klass, iterables, build_elts):
 def _infer_builtin(node, context,
                    klass=None, iterables=None,
                    build_elts=None):
-    transform_func = partial(
+    transform_func = functools.partial(
         _generic_transform,
         klass=klass,
         iterables=iterables,
@@ -185,25 +198,25 @@ def _infer_builtin(node, context,
     return _generic_inference(node, context, klass, transform_func)
 
 # pylint: disable=invalid-name
-infer_tuple = partial(
+infer_tuple = functools.partial(
     _infer_builtin,
     klass=nodes.Tuple,
     iterables=(nodes.List, nodes.Set, objects.FrozenSet),
     build_elts=tuple)
 
-infer_list = partial(
+infer_list = functools.partial(
     _infer_builtin,
     klass=nodes.List,
     iterables=(nodes.Tuple, nodes.Set, objects.FrozenSet),
     build_elts=list)
 
-infer_set = partial(
+infer_set = functools.partial(
     _infer_builtin,
     klass=nodes.Set,
     iterables=(nodes.List, nodes.Tuple, objects.FrozenSet),
     build_elts=set)
 
-infer_frozenset = partial(
+infer_frozenset = functools.partial(
     _infer_builtin,
     klass=objects.FrozenSet,
     iterables=(nodes.List, nodes.Tuple, nodes.Set, objects.FrozenSet),

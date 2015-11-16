@@ -37,6 +37,7 @@ from astroid.tree import base
 from astroid.tree import treeabc
 from astroid import util
 
+raw_building = util.lazy_import('raw_building')
 
 BUILTINS = six.moves.builtins.__name__
 MANAGER = manager.AstroidManager()
@@ -147,8 +148,8 @@ class Arguments(mixins.AssignTypeMixin, AssignedStmtsMixin, base.NodeNG):
         #    annotation, its value will be None.
 
         _astroid_fields = ('args', 'defaults', 'kwonlyargs',
-                           'kw_defaults', 'annotations', 'varargannotation',
-                           'kwargannotation')
+                           'kw_defaults', 'annotations', 'kwonly_annotations',
+                           'varargannotation', 'kwargannotation')
         varargannotation = None
         kwargannotation = None
     else:
@@ -164,9 +165,11 @@ class Arguments(mixins.AssignTypeMixin, AssignedStmtsMixin, base.NodeNG):
         self.kwonlyargs = []
         self.kw_defaults = []
         self.annotations = []
+        self.kwonly_annotations = []
 
     def postinit(self, args, defaults, kwonlyargs, kw_defaults,
-                 annotations, varargannotation=None, kwargannotation=None):
+                 annotations, kwonly_annotations, varargannotation=None,
+                 kwargannotation=None):
         self.args = args
         self.defaults = defaults
         self.kwonlyargs = kwonlyargs
@@ -174,6 +177,7 @@ class Arguments(mixins.AssignTypeMixin, AssignedStmtsMixin, base.NodeNG):
         self.annotations = annotations
         self.varargannotation = varargannotation
         self.kwargannotation = kwargannotation
+        self.kwonly_annotations = kwonly_annotations
 
     def _infer_name(self, frame, name):
         if self.parent is frame:
@@ -273,6 +277,18 @@ def _format_args(args, defaults=None, annotations=None):
                 if defaults[i-default_offset] is not None:
                     values[-1] += '=' + defaults[i-default_offset].as_string()
     return ', '.join(values)
+
+
+class Unknown(base.NodeNG):
+    '''This node represents a node in a constructed AST where
+    introspection is not possible.  At the moment, it's only used in
+    the args attribute of FunctionDef nodes where function signature
+    introspection failed.
+
+    '''
+    def infer(self, context=None, **kwargs):
+        '''Inference on an Unknown node immediately terminates.'''
+        yield util.Uninferable
 
 
 @util.register_implementation(treeabc.AssignAttr)
@@ -484,10 +500,7 @@ class Comprehension(AssignedStmtsMixin, base.NodeNG):
         return self
 
     def ass_type(self):
-        warnings.warn('%s.ass_type() is deprecated and slated for removal'
-                      'in astroid 2.0, use %s.assign_type() instead.'
-                      % (type(self).__name__, type(self).__name__),
-                      PendingDeprecationWarning, stacklevel=2)
+        util.rename_warning((type(self).__name__, type(self).__name__))
         return self.assign_type()
 
     def _get_filtered_stmts(self, lookup_node, node, stmts, mystmt):
@@ -508,7 +521,7 @@ class Comprehension(AssignedStmtsMixin, base.NodeNG):
 @util.register_implementation(treeabc.Const)
 @util.register_implementation(runtimeabc.BuiltinInstance)
 class Const(base.NodeNG, objects.BaseInstance):
-    """represent a constant node like num, str, bool, None, bytes"""
+    """represent a constant node like num, str, bytes"""
     _other_fields = ('value',)
 
     def __init__(self, value, lineno=None, col_offset=None, parent=None):
@@ -538,6 +551,37 @@ class Const(base.NodeNG, objects.BaseInstance):
 
     def bool_value(self):
         return bool(self.value)
+
+    @decorators.cachedproperty
+    def _proxied(self):
+        builtins = MANAGER.astroid_cache[BUILTINS]
+        return builtins.getattr(type(self.value).__name__)[0]
+
+
+class NameConstant(Const):
+    """Represents a builtin singleton, at the moment True, False, None,
+    and NotImplemented.
+
+    """
+
+    # @decorators.cachedproperty
+    # def _proxied(self):
+    #     return self
+    #     # builtins = MANAGER.astroid_cache[BUILTINS]
+    #     # return builtins.getattr(str(self.value))[0]
+
+
+class ReservedName(base.NodeNG):
+    '''Used in the builtins AST to assign names to singletons.'''
+    _astroid_fields = ('value',)
+    _other_fields = ('name',)
+
+    def __init__(self, name, lineno=None, col_offset=None, parent=None):
+        self.name = name
+        super(ReservedName, self).__init__(lineno, col_offset, parent)
+
+    def postinit(self, value):
+        self.value = value
 
 
 @util.register_implementation(treeabc.Continue)
@@ -633,6 +677,11 @@ class Dict(base.NodeNG, objects.BaseInstance):
     def bool_value(self):
         return bool(self.items)
 
+    @decorators.cachedproperty
+    def _proxied(self):
+        builtins = MANAGER.astroid_cache[BUILTINS]
+        return builtins.getattr('dict')[0]
+
 
 @util.register_implementation(treeabc.Expr)
 class Expr(Statement):
@@ -651,10 +700,23 @@ class Ellipsis(base.NodeNG): # pylint: disable=redefined-builtin
     def bool_value(self):
         return True
 
+@util.register_implementation(treeabc.InterpreterObject)
+class InterpreterObject(base.NodeNG):
+    '''InterpreterObjects are used in manufactured ASTs that simulate features of
+    real ASTs for inference, usually to handle behavior implemented in
+    the interpreter or in C extensions.
 
-@util.register_implementation(treeabc.EmptyNode)
-class EmptyNode(base.NodeNG):
-    """class representing an EmptyNode node"""
+    '''
+    _other_fields = ('name', 'object')
+
+    def __init__(self, object_=None, name=None, lineno=None, col_offset=None, parent=None):
+        if object_ is not None:
+            self.object = object_
+        self.name = name
+        super(InterpreterObject, self).__init__(lineno, col_offset, parent)
+
+    def has_underlying_object(self):
+        return hasattr(self, 'object')
 
 
 @util.register_implementation(treeabc.ExceptHandler)
@@ -690,7 +752,7 @@ class ExceptHandler(mixins.AssignTypeMixin, AssignedStmtsMixin, Statement):
 @util.register_implementation(treeabc.Exec)
 class Exec(Statement):
     """class representing an Exec node"""
-    _astroid_fields = ('expr', 'globals', 'locals',)
+    _astroid_fields = ('expr', 'globals', 'locals')
     expr = None
     globals = None
     locals = None
@@ -982,9 +1044,7 @@ class Slice(base.NodeNG):
     def _wrap_attribute(self, attr):
         """Wrap the empty attributes of the Slice in a Const node."""
         if not attr:
-            const = const_factory(attr)
-            const.parent = self
-            return const
+            return Const(attr, parent=self)
         return attr
 
     @decorators.cachedproperty
@@ -1198,44 +1258,6 @@ class YieldFrom(Yield):
 @util.register_implementation(treeabc.DictUnpack)
 class DictUnpack(base.NodeNG):
     """Represents the unpacking of dicts into dicts using PEP 448."""
-
-
-# constants ##############################################################
-
-CONST_CLS = {
-    list: List,
-    tuple: Tuple,
-    dict: Dict,
-    set: Set,
-    type(None): Const,
-    type(NotImplemented): Const,
-    }
-
-def _update_const_classes():
-    """update constant classes, so the keys of CONST_CLS can be reused"""
-    klasses = (bool, int, float, complex, str)
-    if six.PY2:
-        klasses += (unicode, long)
-    klasses += (bytes,)
-    for kls in klasses:
-        CONST_CLS[kls] = Const
-_update_const_classes()
-
-
-def const_factory(value):
-    """return an astroid node for a python value"""
-    # XXX we should probably be stricter here and only consider stuff in
-    # CONST_CLS or do better treatment: in case where value is not in CONST_CLS,
-    # we should rather recall the builder on this value than returning an empty
-    # node (another option being that const_factory shouldn't be called with something
-    # not in CONST_CLS)
-    assert not isinstance(value, base.NodeNG)
-    try:
-        return CONST_CLS[value.__class__](value)
-    except (KeyError, AttributeError):
-        node = EmptyNode()
-        node.object = value
-        return node
 
 
 # Backward-compatibility aliases

@@ -76,7 +76,7 @@ class AstroidManagerTest(resources.SysPathSetup,
     def test_do_not_expose_main(self):
         obj = self.manager.ast_from_module_name('__main__')
         self.assertEqual(obj.name, '__main__')
-        self.assertEqual(obj.items(), [])
+        self.assertEqual(obj.items(), ())
 
     def test_ast_from_module_name(self):
         astroid = self.manager.ast_from_module_name('unittest')
@@ -103,8 +103,8 @@ class AstroidManagerTest(resources.SysPathSetup,
             module = self.manager.ast_from_module_name('mypypa')
             self.assertEqual(module.name, 'mypypa')
             end = os.path.join(archive, 'mypypa')
-            self.assertTrue(module.file.endswith(end),
-                            "%s doesn't endswith %s" % (module.file, end))
+            self.assertTrue(module.source_file.endswith(end),
+                            "%s doesn't endswith %s" % (module.source_file, end))
         finally:
             # remove the module, else after importing egg, we don't get the zip
             if 'mypypa' in self.manager.astroid_cache:
@@ -157,32 +157,6 @@ class AstroidManagerTest(resources.SysPathSetup,
         astroid = self.manager.ast_from_module(unittest)
         self.assertEqual(astroid.name, 'unittest')
         self.assertIn('unittest', self.manager.astroid_cache)
-
-    def test_ast_from_class(self):
-        astroid = self.manager.ast_from_class(int)
-        self.assertEqual(astroid.name, 'int')
-        self.assertEqual(astroid.parent.frame().name, BUILTINS)
-
-        astroid = self.manager.ast_from_class(object)
-        self.assertEqual(astroid.name, 'object')
-        self.assertEqual(astroid.parent.frame().name, BUILTINS)
-        self.assertIn('__setattr__', astroid)
-
-    def test_ast_from_class_with_module(self):
-        """check if the method works with the module name"""
-        astroid = self.manager.ast_from_class(int, int.__module__)
-        self.assertEqual(astroid.name, 'int')
-        self.assertEqual(astroid.parent.frame().name, BUILTINS)
-
-        astroid = self.manager.ast_from_class(object, object.__module__)
-        self.assertEqual(astroid.name, 'object')
-        self.assertEqual(astroid.parent.frame().name, BUILTINS)
-        self.assertIn('__setattr__', astroid)
-
-    def test_ast_from_class_attr_error(self):
-        """give a wrong class at the ast_from_class method"""
-        self.assertRaises(exceptions.AstroidBuildingException,
-                          self.manager.ast_from_class, None)
 
     def testFailedImportHooks(self):
         def hook(modname):

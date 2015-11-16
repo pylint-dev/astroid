@@ -1,8 +1,10 @@
 """Astroid hooks for the Python standard library."""
 
+# Namedtuple template strings
+from collections import _class_template, _repr_template, _field_template
 import functools
 import sys
-from textwrap import dedent
+import textwrap
 
 from astroid import (
     MANAGER, UseInferenceDefault, inference_tip,
@@ -17,73 +19,15 @@ PY3K = sys.version_info > (3, 0)
 PY33 = sys.version_info >= (3, 3)
 PY34 = sys.version_info >= (3, 4)
 
-# general function
-
-def infer_func_form(node, base_type, context=None, enum=False):
-    """Specific inference function for namedtuple or Python 3 enum. """
-    def infer_first(node):
-        try:
-            value = next(node.infer(context=context))
-            if value is util.Uninferable:
-                raise UseInferenceDefault()
-            else:
-                return value
-        except StopIteration:
-            raise InferenceError()
-
-    # node is a Call node, class name as first argument and generated class
-    # attributes as second argument
-    if len(node.args) != 2:
-        # something weird here, go back to class implementation
-        raise UseInferenceDefault()
-    # namedtuple or enums list of attributes can be a list of strings or a
-    # whitespace-separate string
+def infer_first(node, context):
     try:
-        name = infer_first(node.args[0]).value
-        names = infer_first(node.args[1])
-        try:
-            attributes = names.value.replace(',', ' ').split()
-        except AttributeError:
-            if not enum:
-                attributes = [infer_first(const).value for const in names.elts]
-            else:
-                # Enums supports either iterator of (name, value) pairs
-                # or mappings.
-                # TODO: support only list, tuples and mappings.
-                if hasattr(names, 'items') and isinstance(names.items, list):
-                    attributes = [infer_first(const[0]).value
-                                  for const in names.items
-                                  if isinstance(const[0], nodes.Const)]
-                elif hasattr(names, 'elts'):
-                    # Enums can support either ["a", "b", "c"]
-                    # or [("a", 1), ("b", 2), ...], but they can't
-                    # be mixed.
-                    if all(isinstance(const, nodes.Tuple)
-                           for const in names.elts):
-                        attributes = [infer_first(const.elts[0]).value
-                                      for const in names.elts
-                                      if isinstance(const, nodes.Tuple)]
-                    else:
-                        attributes = [infer_first(const).value
-                                      for const in names.elts]
-                else:
-                    raise AttributeError
-                if not attributes:
-                    raise AttributeError
-    except (AttributeError, exceptions.InferenceError):
-        raise UseInferenceDefault()
-    # we want to return a Class node instance with proper attributes set
-    class_node = nodes.ClassDef(name, 'docstring')
-    class_node.parent = node.parent
-    # set base class=tuple
-    class_node.bases.append(base_type)
-    # XXX add __init__(*attributes) method
-    for attr in attributes:
-        fake_node = nodes.EmptyNode()
-        fake_node.parent = class_node
-        fake_node.attrname = attr
-        class_node.instance_attrs[attr] = [fake_node]
-    return class_node, name, attributes
+        value = next(node.infer(context=context))
+        if value is util.Uninferable:
+            raise UseInferenceDefault()
+        else:
+            return value
+    except StopIteration:
+        util.reraise(InferenceError())
 
 
 # module specific transformation functions #####################################
@@ -219,7 +163,7 @@ def subprocess_transform():
         '''
     else:
         ctx_manager = ''
-    code = dedent('''
+    code = textwrap.dedent('''
 
     class Popen(object):
         returncode = pid = 0
@@ -248,7 +192,7 @@ def subprocess_transform():
     return AstroidBuilder(MANAGER).string_build(code)
 
 
-# namedtuple support ###########################################################
+# namedtuple and Enum support
 
 def _looks_like(node, name):
     func = node.func
@@ -262,35 +206,95 @@ _looks_like_namedtuple = functools.partial(_looks_like, name='namedtuple')
 _looks_like_enum = functools.partial(_looks_like, name='Enum')
 
 
-def infer_named_tuple(node, context=None):
+def infer_namedtuple_enum_fields(call_node, context):
+    # node is a Call node, class name as first argument and generated class
+    # attributes as second argument
+    if len(call_node.args) != 2:
+        # something weird here, go back to class implementation
+        raise UseInferenceDefault()
+    # namedtuple or enums list of attributes can be a list of strings or a
+    # whitespace-separate string
+    try:
+        type_name = infer_first(call_node.args[0], context).value
+        fields = infer_first(call_node.args[1], context)
+        return type_name, fields
+    except (AttributeError, exceptions.InferenceError):
+        raise UseInferenceDefault()
+
+
+def infer_namedtuple(namedtuple_call, context=None):
     """Specific inference function for namedtuple Call node"""
-    class_node, name, attributes = infer_func_form(node, nodes.Tuple._proxied,
-                                                   context=context)
-    fake = AstroidBuilder(MANAGER).string_build('''
-class %(name)s(tuple):
-    _fields = %(fields)r
-    def _asdict(self):
-        return self.__dict__
-    @classmethod
-    def _make(cls, iterable, new=tuple.__new__, len=len):
-        return new(cls, iterable)
-    def _replace(self, **kwds):
-        return self
-    ''' % {'name': name, 'fields': attributes})
-    class_node.locals['_asdict'] = fake.body[0].locals['_asdict']
-    class_node.locals['_make'] = fake.body[0].locals['_make']
-    class_node.locals['_replace'] = fake.body[0].locals['_replace']
-    class_node.locals['_fields'] = fake.body[0].locals['_fields']
-    # we use UseInferenceDefault, we can't be a generator so return an iterator
-    return iter([class_node])
+
+    type_name, fields = infer_namedtuple_enum_fields(namedtuple_call, context)
+    if isinstance(fields, nodes.Const) and isinstance(fields.value, str):
+        field_names = tuple(fields.value.replace(',', ' ').split())
+    elif isinstance(fields, (nodes.Tuple, nodes.List)):
+        field_names = tuple(infer_first(const, context).value for const in fields.elts)
+    else:
+        raise UseInferenceDefault()
+
+    class_definition = _class_template.format(
+        typename = type_name,
+        field_names = field_names,
+        num_fields = len(field_names),
+        arg_list = repr(field_names).replace("'", "")[1:-1],
+        repr_fmt = ', '.join(_repr_template.format(name=name)
+                             for name in field_names),
+        field_defs = '\n'.join(_field_template.format(index=index, name=name)
+                               for index, name in enumerate(field_names))
+    )
+
+    # TODO: maybe memoize this call for efficiency, if it's needed.
+    namedtuple_node = AstroidBuilder(MANAGER).string_build(class_definition).getattr(type_name)[0]
+    return iter([namedtuple_node])
 
 
-def infer_enum(node, context=None):
+def infer_enum(enum_call, context=None):
     """ Specific inference function for enum Call node. """
-    enum_meta = nodes.ClassDef("EnumMeta", 'docstring')
-    class_node = infer_func_form(node, enum_meta,
-                                 context=context, enum=True)[0]
-    return iter([class_node])
+    type_name, fields = infer_namedtuple_enum_fields(enum_call, context)
+    try:
+         attributes = tuple(fields.value.replace(',', ' ').split())
+    except AttributeError as exception:
+        # Enums supports either iterator of (name, value) pairs
+        # or mappings.
+        # TODO: support only list, tuples and mappings.
+        if hasattr(fields, 'items') and isinstance(fields.items, list):
+            attributes = [infer_first(const[0], context).value
+                          for const in fields.items
+                          if isinstance(const[0], nodes.Const)]
+        elif hasattr(fields, 'elts'):
+            # Enums can support either ["a", "b", "c"]
+            # or [("a", 1), ("b", 2), ...], but they can't
+            # be mixed.
+            if all(isinstance(const, nodes.Tuple)
+                   for const in fields.elts):
+                attributes = [infer_first(const.elts[0], context).value
+                              for const in fields.elts
+                              if isinstance(const, nodes.Tuple)]
+            else:
+                attributes = [infer_first(const, context).value
+                              for const in fields.elts]
+        else:
+            util.reraise(exception)
+        if not attributes:
+            util.reraise(exception)
+    
+    template = textwrap.dedent('''
+    """Mock module to hold enum classes"""
+    class EnumMeta(object):
+        """Mock Enum metaclass"""
+
+    class {name}(EnumMeta):
+        """Mock Enum class"""
+        def __init__(self, {attributes}):
+            """Fake __init__ for enums"""
+    ''')
+    code = template.format(name=type_name, attributes=', '.join(attributes))
+    assignment_lines = [(' '*8 + 'self.%(a)s = %(a)s' % {'a': a})
+                        for a in attributes]
+    code += '\n'.join(assignment_lines)
+    module = AstroidBuilder(MANAGER).string_build(code)
+    return iter([module.body[1]])
 
 
 def infer_enum_class(node):
@@ -318,7 +322,7 @@ def infer_enum_class(node):
             new_targets = []
             for target in targets:
                 # Replace all the assignments with our mocked class.
-                classdef = dedent('''
+                classdef = textwrap.dedent('''
                 class %(name)s(%(types)s):
                     @property
                     def value(self):
@@ -338,7 +342,7 @@ def infer_enum_class(node):
     return node
 
 def multiprocessing_transform():
-    module = AstroidBuilder(MANAGER).string_build(dedent('''
+    module = AstroidBuilder(MANAGER).string_build(textwrap.dedent('''
     from multiprocessing.managers import SyncManager
     def Manager():
         return SyncManager()
@@ -349,7 +353,7 @@ def multiprocessing_transform():
     # On Python 3.4, multiprocessing uses a getattr lookup inside contexts,
     # in order to get the attributes they need. Since it's extremely
     # dynamic, we use this approach to fake it.
-    node = AstroidBuilder(MANAGER).string_build(dedent('''
+    node = AstroidBuilder(MANAGER).string_build(textwrap.dedent('''
     from multiprocessing.context import DefaultContext, BaseContext
     default = DefaultContext()
     base = BaseContext()
@@ -367,14 +371,15 @@ def multiprocessing_transform():
 
             value = value[0]
             if isinstance(value, nodes.FunctionDef):
-                # We need to rebound this, since otherwise
+                # We need to rebind this, since otherwise
                 # it will have an extra argument (self).
                 value = BoundMethod(value, node)
-            module[key] = value
+            module.body.append(nodes.InterpreterObject(object_=value, name=key,
+                                               parent=module))
     return module
 
 def multiprocessing_managers_transform():
-    return AstroidBuilder(MANAGER).string_build(dedent('''
+    return AstroidBuilder(MANAGER).string_build(textwrap.dedent('''
     import array
     import threading
     import multiprocessing.pool as pool
@@ -422,7 +427,7 @@ def multiprocessing_managers_transform():
     '''))
 
 
-MANAGER.register_transform(nodes.Call, inference_tip(infer_named_tuple),
+MANAGER.register_transform(nodes.Call, inference_tip(infer_namedtuple),
                            _looks_like_namedtuple)
 MANAGER.register_transform(nodes.Call, inference_tip(infer_enum),
                            _looks_like_enum)

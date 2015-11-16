@@ -40,16 +40,17 @@ from astroid.tree.node_classes import (
     Arguments, AssignAttr, Assert, Assign,
     AssignName, AugAssign, Repr, BinOp, BoolOp, Break, Call, Compare,
     Comprehension, Const, Continue, Decorators, DelAttr, DelName, Delete,
-    Dict, Expr, Ellipsis, EmptyNode, ExceptHandler, Exec, ExtSlice, For,
+    Dict, Expr, Ellipsis, ExceptHandler, Exec, ExtSlice, For,
     ImportFrom, Attribute, Global, If, IfExp, Import, Index, Keyword,
-    List, Name, Nonlocal, Pass, Print, Raise, Return, Set, Slice, Starred, Subscript,
-    TryExcept, TryFinally, Tuple, UnaryOp, While, With, Yield, YieldFrom,
-    const_factory,
-    AsyncFor, Await, AsyncWith,
+    List, Name, NameConstant, Nonlocal, Pass, Print, Raise, Return, Set, Slice,
+    Starred, Subscript, TryExcept, TryFinally, Tuple, UnaryOp, While, With,
+    Yield, YieldFrom, AsyncFor, Await, AsyncWith,
     # Backwards-compatibility aliases
     Backquote, Discard, AssName, AssAttr, Getattr, CallFunc, From,
     # Node not present in the builtin ast module.
     DictUnpack,
+    # Special nodes for building from live objects.
+    InterpreterObject, ReservedName, Unknown
 )
 from astroid.tree.scoped_nodes import (
     Module, GeneratorExp, Lambda, DictComp,
@@ -69,19 +70,19 @@ ALL_NODE_CLASSES = (
     Call, ClassDef, Compare, Comprehension, Const, Continue,
     Decorators, DelAttr, DelName, Delete,
     Dict, DictComp, DictUnpack, Expr,
-    Ellipsis, EmptyNode, ExceptHandler, Exec, ExtSlice,
+    Ellipsis, ExceptHandler, Exec, ExtSlice,
     For, ImportFrom, FunctionDef,
     Attribute, GeneratorExp, Global,
-    If, IfExp, Import, Index,
+    If, IfExp, Import, Index, InterpreterObject,
     Keyword,
     Lambda, List, ListComp,
-    Name, Nonlocal,
+    Name, NameConstant, Nonlocal,
     Module,
     Pass, Print,
-    Raise, Return,
+    Raise, ReservedName, Return,
     Set, SetComp, Slice, Starred, Subscript,
     TryExcept, TryFinally, Tuple,
-    UnaryOp,
+    UnaryOp, Unknown,
     While, With,
     Yield, YieldFrom,
     )

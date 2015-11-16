@@ -47,7 +47,7 @@ try:
     HAS_ENUM = True
 except ImportError:
     try:
-        import enum34 as enum
+        import enum34 as enum # pylint: disable=unused-import
         HAS_ENUM = True
     except ImportError:
         HAS_ENUM = False
@@ -115,7 +115,8 @@ class NamedTupleTest(unittest.TestCase):
         for base in klass.ancestors():
             if base.name == 'X':
                 break
-        self.assertSetEqual({"a", "b", "c"}, set(base.instance_attrs))
+        self.assertSetEqual({"a", "b", "c"},
+                            set(base.instantiate_class().instance_attrs))
 
     def test_namedtuple_inference_failure(self):
         klass = test_utils.extract_node("""

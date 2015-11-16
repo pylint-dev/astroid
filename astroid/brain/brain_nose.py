@@ -53,9 +53,11 @@ def _nose_tools_functions():
             yield 'assert_equals', astroid.BoundMethod(method, case)
 
 
-def _nose_tools_transform(node):
+def _nose_tools_transform(module_node):
     for method_name, method in _nose_tools_functions():
-        node.locals[method_name] = [method]
+        module_node.body.append(astroid.InterpreterObject(object_=method,
+                                                  name=method_name,
+                                                  parent=module_node))
 
 
 def _nose_tools_trivial_transform():
@@ -65,13 +67,13 @@ def _nose_tools_trivial_transform():
 
     for pep8_name, method in _nose_tools_functions():
         all_entries.append(pep8_name)
-        stub[pep8_name] = method
+        stub.body.append(astroid.InterpreterObject(object_=method,
+                                           name=pep8_name, parent=stub))
 
     # Update the __all__ variable, since nose.tools
     # does this manually with .append.
     all_assign = stub['__all__'].parent
-    all_object = astroid.List(all_entries)
-    all_object.parent = all_assign
+    all_object = astroid.List(all_entries, parent=all_assign)
     all_assign.value = all_object
     return stub
 

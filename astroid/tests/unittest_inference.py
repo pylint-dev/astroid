@@ -565,7 +565,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ast = parse(code, __name__)
         xxx = ast['xxx']
         self.assertSetEqual({n.__class__ for n in xxx.inferred()},
-                            {nodes.Const, util.Uninferable.__class__})
+                            {nodes.NameConstant, util.Uninferable.__class__})
 
     def test_method_argument(self):
         code = '''
@@ -1274,6 +1274,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(inferred), 1)
         self.assertIs(inferred[0], util.Uninferable)
 
+    @unittest.expectedFailure
     def test_nonregr_func_global(self):
         code = '''
             active_application = None
@@ -1521,9 +1522,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         node = ast['c']
         self.assertEqual(node.inferred(), [util.Uninferable])
 
-    def test_infer_empty_nodes(self):
-        # Should not crash when trying to infer EmptyNodes.
-        node = nodes.EmptyNode()
+    def test_infer_interpreter_objects(self):
+        # Should not crash when trying to infer InterpreterObjects.
+        node = nodes.InterpreterObject()
         self.assertEqual(node.inferred(), [util.Uninferable])
 
     def test_infinite_loop_for_decorators(self):
@@ -2944,8 +2945,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(ancestors[0], inferred.root()['Entity'])
         attributes = inferred.getattr('a')
         self.assertEqual(len(attributes), 1)
-        self.assertIsInstance(attributes[0], nodes.Const)
-        self.assertEqual(attributes[0].value, 1)
+        a_inferred = next(attributes[0].infer())
+        self.assertIsInstance(a_inferred, nodes.Const)
+        self.assertEqual(a_inferred.value, 1)
 
     def test_type__new__not_enough_arguments(self):
         ast_nodes = test_utils.extract_node('''

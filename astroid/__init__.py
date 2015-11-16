@@ -40,8 +40,9 @@ Main modules are:
 * builder contains the class responsible to build astroid trees
 """
 
-import sys
+import importlib
 import re
+import sys
 from operator import attrgetter
 
 # WARNING: internal imports order matters !
@@ -64,6 +65,7 @@ from astroid.nodes import *
 from astroid import inference
 
 from astroid import raw_building
+from astroid.raw_building import builtins_ast as builtins
 from astroid.interpreter.util import are_exclusive, unpack_infer
 from astroid.tree.scoped_nodes import builtin_lookup
 from astroid.builder import parse
@@ -112,10 +114,11 @@ def inference_tip(infer_function):
 
 
 def register_module_extender(manager, module_name, get_extension_mod):
-    def transform(node):
+    def transform(module):
         extension_module = get_extension_mod()
-        for name, obj in extension_module.locals.items():
-            node.locals[name] = obj
+        for statement in extension_module.body:
+            statement.parent = module
+            module.body.append(statement)
 
     manager.register_transform(Module, transform, lambda n: n.name == module_name)
 
@@ -130,4 +133,4 @@ if BRAIN_MODULES_DIR not in sys.path:
 # load modules in this directory
 for module in listdir(BRAIN_MODULES_DIR):
     if module.endswith('.py'):
-        __import__(module[:-3])
+        importlib.import_module(module[:-3])
