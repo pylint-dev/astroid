@@ -218,7 +218,7 @@ def delayed_assignments(root):
                 # FunctionDef, or Lambda nodes, or an Instance object
                 # corresponding to a ClassDef node.
                 for inferred in node.expr.infer():
-                    if type(inferred) is runtimeabc.Instance:
+                    if isinstance(inferred, runtimeabc.Instance):
                         values = inferred._proxied.instance_attrs[node.attrname]
                     elif isinstance(inferred, treeabc.Lambda):
                         values = inferred.instance_attrs[node.attrname]

@@ -201,7 +201,7 @@ def _ast_from_object(instance, built_objects, module, name=None, parent=None):
     for name in set(dir(instance)) - set(dir(cls)):
         if name not in objects.Instance.special_attributes:
             ast = _ast_from_object(getattr(instance, name), built_objects,
-                                   module, name=name, parent=parent)
+                                   module, name=name, parent=parent)[0]
             class_node.instance_attrs[name].append(ast)
 
     # Create an instance of the class we just created an AST for.
@@ -389,7 +389,7 @@ def ast_from_function(func, built_objects, module, name=None, parent=None):
         # methods are also dispatched through this function.
         if name not in objects.BoundMethod.special_attributes:
             ast = _ast_from_object(getattr(func, name), built_objects,
-                                   module, name=name, parent=parent)
+                                   module, name=name, parent=parent)[0]
             func_node.instance_attrs[name].append(ast)
     return (func_node,)
 
