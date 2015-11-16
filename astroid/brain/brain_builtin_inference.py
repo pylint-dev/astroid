@@ -143,22 +143,28 @@ def _generic_inference(node, context, node_type, transform):
     return transformed
 
 
+def _ast_from_object(obj, parent):
+    ast_obj = raw_building.ast_from_object(obj)
+    ast_obj.parent = parent
+    ast_obj.col_offset = parent.col_offset
+    ast_obj.lineno = parent.lineno
+    return ast_obj
+
+
 @util.singledispatch
 def _from_constants(cls, elts):
     """Get an instance of the given *cls* with the given elements set."""
-    elts = [raw_building.ast_from_builtin_number_text_binary(e, {}, None, parent=node)[0] for e in elts]
     instance = cls()
+    elts = [_ast_from_object(obj, instance) for obj in elts]
     instance.postinit(elts=elts)
     return instance
 
+
 @_from_constants.register(nodes.Dict)
 def _dict_from_constants(cls, elts):
-    node.items = [(raw_building.ast_from_builtin_number_text_binary(k, {}, None,
-                                                                    parent=node)[0],
-                   raw_building.ast_from_builtin_number_text_binary(v, {}, None,
-                                                                    parent=node)[0])
-                  for k, v in items.items()]
     instance = cls()
+    items = [(_ast_from_object(key, instance), _ast_from_object(value, instance))
+             for (key, value) in elts.items()]
     instance.postinit(items=items)
     return instance
 
