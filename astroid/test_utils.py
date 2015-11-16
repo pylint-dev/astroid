@@ -210,5 +210,4 @@ def bootstrap(astroid_builtin=None):
     # between the manager and CONST_PROXY, making
     # unittest_lookup.LookupTC.test_builtin_lookup fail depending on the
     # test order
-    raw_building._astroid_bootstrapping(
-        astroid_builtin=astroid_builtin)
+    raw_building.ast_from_builtins()
