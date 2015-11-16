@@ -9,7 +9,6 @@ import six
 from astroid import (MANAGER, UseInferenceDefault, AttributeInferenceError,
                      inference_tip, InferenceError, NameInferenceError)
 from astroid.builder import AstroidBuilder
-from astroid import helpers
 from astroid.interpreter import objects
 from astroid.interpreter import util as interpreterutil
 from astroid import nodes
@@ -485,7 +484,7 @@ def infer_type(node, context=None):
     if len(node.args) != 1:
         raise UseInferenceDefault
 
-    return helpers.object_type(node.args[0], context)
+    return interpreterutil.object_type(node.args[0], context)
 
 
 def infer_slice(node, context=None):

@@ -27,7 +27,6 @@ import operator
 from astroid import context as contextmod
 from astroid import decorators
 from astroid import exceptions
-from astroid import helpers
 from astroid.interpreter import runtimeabc
 from astroid.interpreter import util as inferenceutil
 from astroid import protocols
@@ -555,8 +554,8 @@ def _infer_binary_operation(left, right, op, context, flow_factory, nodes):
     """
 
     context, reverse_context = _get_binop_contexts(context, left, right)
-    left_type = helpers.object_type(left)
-    right_type = helpers.object_type(right)
+    left_type = inferenceutil.object_type(left)
+    right_type = inferenceutil.object_type(right)
     methods = flow_factory(left, left_type, op, right, right_type,
                            context, reverse_context, nodes)
     for method in methods:

@@ -17,13 +17,20 @@
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 
 """Utilities for inference."""
+import types
+
+import six
 
 from astroid import context as contextmod
 from astroid import exceptions
 from astroid.interpreter import runtimeabc
+from astroid import manager
 from astroid.tree import treeabc
 from astroid import util
 
+
+MANAGER = manager.AstroidManager()
+BUILTINS = six.moves.builtins.__name__
 
 
 def infer_stmts(stmts, context, frame=None):
@@ -213,3 +220,58 @@ def is_subtype(type1, type2):
 def is_supertype(type1, type2):
     """Check if *type2* is a supertype of *type1*."""
     return _type_check(type1, type2)
+
+
+def _object_type(node, context=None):
+    context = context or contextmod.InferenceContext()
+    builtins_ast = MANAGER.astroid_cache[BUILTINS]
+
+    for inferred in node.infer(context=context):
+        if isinstance(inferred, treeabc.ClassDef):
+            if inferred.newstyle:
+                metaclass = inferred.metaclass()
+                if metaclass:
+                    yield metaclass
+                    continue
+            yield builtins_ast.getattr('type')[0]
+        elif isinstance(inferred, (treeabc.Lambda, runtimeabc.UnboundMethod)):
+            if isinstance(inferred, treeabc.Lambda):
+                if inferred.root() is builtins_ast:
+                    yield builtins_ast[types.BuiltinFunctionType.__name__]
+                else:
+                    yield builtins_ast[types.FunctionType.__name__]
+            elif isinstance(inferred, runtimeabc.BoundMethod):
+                yield builtins_ast[types.MethodType.__name__]
+            elif isinstance(inferred, runtimeabc.UnboundMethod):
+                if six.PY2:
+                    yield builtins_ast[types.MethodType.__name__]
+                else:
+                    yield builtins_ast[types.FunctionType.__name__]
+            else:
+                raise exceptions.InferenceError(
+                    'Function {func!r} inferred from {node!r} '
+                    'has no identifiable type.',
+                    node=node, func=inferred, contex=context)
+        elif isinstance(inferred, treeabc.Module):
+            yield builtins_ast[types.ModuleType.__name__]
+        else:
+            yield inferred._proxied
+
+
+def object_type(node, context=None):
+    """Obtain the type of the given node
+
+    This is used to implement the ``type`` builtin, which means that it's
+    used for inferring type calls, as well as used in a couple of other places
+    in the inference.
+    The node will be inferred first, so this function can support all
+    sorts of objects, as long as they support inference.
+    """
+
+    try:
+        types = set(_object_type(node, context))
+    except exceptions.InferenceError:
+        return util.Uninferable
+    if len(types) > 1 or not types:
+        return util.Uninferable
+    return list(types)[0]
