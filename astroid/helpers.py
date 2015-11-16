@@ -31,8 +31,13 @@ from astroid.tree import treeabc
 from astroid import util
 
 
+MANAGER = manager.AstroidManager()
+BUILTINS = six.moves.builtins.__name__
+
+
 def _object_type(node, context=None):
     context = context or contextmod.InferenceContext()
+    builtins_ast = MANAGER.astroid_cache[BUILTINS]
 
     for inferred in node.infer(context=context):
         if isinstance(inferred, treeabc.ClassDef):
@@ -41,26 +46,27 @@ def _object_type(node, context=None):
                 if metaclass:
                     yield metaclass
                     continue
-            yield raw_building.builtins_ast.getattr('type')[0]
+            yield builtins_ast.getattr('type')[0]
         elif isinstance(inferred, (treeabc.Lambda, runtimeabc.UnboundMethod)):
             if isinstance(inferred, treeabc.Lambda):
-                if inferred.root() is raw_building.builtins_ast:
-                    yield raw_building.builtins_ast[types.BuiltinFunctionType.__name__]
+                if inferred.root() is builtins_ast:
+                    yield builtins_ast[types.BuiltinFunctionType.__name__]
                 else:
-                    yield raw_building.builtins_ast[types.FunctionType.__name__]
+                    yield builtins_ast[types.FunctionType.__name__]
             elif isinstance(inferred, runtimeabc.BoundMethod):
-                yield raw_building.builtins_ast[types.MethodType.__name__]
+                yield builtins_ast[types.MethodType.__name__]
             elif isinstance(inferred, runtimeabc.UnboundMethod):
                 if six.PY2:
-                    yield raw_building.builtins_ast[types.MethodType.__name__]
+                    yield builtins_ast[types.MethodType.__name__]
                 else:
-                    yield raw_building.builtins_ast[types.FunctionType.__name__]
+                    yield builtins_ast[types.FunctionType.__name__]
             else:
-                raise InferenceError('Function {func!r} inferred from {node!r} '
-                                     'has no identifiable type.',
-                                     node=node, func=inferred, contex=context)
+                raise exceptions.InferenceError(
+                    'Function {func!r} inferred from {node!r} '
+                    'has no identifiable type.',
+                    node=node, func=inferred, contex=context)
         elif isinstance(inferred, treeabc.Module):
-            yield raw_building.builtins_ast[types.ModuleType.__name__]
+            yield builtins_ast[types.ModuleType.__name__]
         else:
             yield inferred._proxied
 
@@ -70,7 +76,7 @@ def object_type(node, context=None):
 
     This is used to implement the ``type`` builtin, which means that it's
     used for inferring type calls, as well as used in a couple of other places
-    in the inference. 
+    in the inference.
     The node will be inferred first, so this function can support all
     sorts of objects, as long as they support inference.
     """
