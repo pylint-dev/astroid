@@ -23,7 +23,6 @@ import six
 from six.moves import builtins
 
 from astroid import builder
-from astroid import helpers
 from astroid.interpreter import util as interpreterutil
 from astroid import manager
 from astroid import nodes
@@ -58,7 +57,7 @@ class TestHelpers(unittest.TestCase):
         ]
         for code, expected in pairs:
             node = test_utils.extract_node(code)
-            objtype = helpers.object_type(node)
+            objtype = interpreterutil.object_type(node)
             self.assertIs(objtype, expected)
 
     def test_object_type_classes_and_functions(self):
@@ -83,14 +82,14 @@ class TestHelpers(unittest.TestCase):
         A().static_method #@
         generator() #@
         ''')
-        from_self = helpers.object_type(ast_nodes[0])
+        from_self = interpreterutil.object_type(ast_nodes[0])
         cls = next(ast_nodes[1].infer())
         self.assertIs(from_self, cls)
 
-        cls_type = helpers.object_type(ast_nodes[1])
+        cls_type = interpreterutil.object_type(ast_nodes[1])
         self.assertIs(cls_type, self._look_up_in_builtins('type'))
 
-        instance_type = helpers.object_type(ast_nodes[2])
+        instance_type = interpreterutil.object_type(ast_nodes[2])
         cls = next(ast_nodes[2].infer())._proxied
         self.assertIs(instance_type, cls)
 
@@ -104,7 +103,7 @@ class TestHelpers(unittest.TestCase):
             (ast_nodes[9], types.GeneratorType.__name__),
         ]
         for node, expected in expected_method_types:
-            node_type = helpers.object_type(node)
+            node_type = interpreterutil.object_type(node)
             expected_type = self._look_up_in_builtins(expected)
             self.assertIs(node_type, expected_type)
 
@@ -116,11 +115,11 @@ class TestHelpers(unittest.TestCase):
             pass
         meta_instance = Meta()
         ''')
-        meta_type = helpers.object_type(module['Meta'])
+        meta_type = interpreterutil.object_type(module['Meta'])
         self.assertIs(meta_type, module['Meta'].metaclass())
 
         meta_instance = next(module['meta_instance'].infer())
-        instance_type = helpers.object_type(meta_instance)
+        instance_type = interpreterutil.object_type(meta_instance)
         self.assertIs(instance_type, module['Meta'])
 
     @test_utils.require_version(minver='3.0')
@@ -138,7 +137,7 @@ class TestHelpers(unittest.TestCase):
         ''')
         metaclass = node.metaclass()
         self.assertEqual(metaclass.name, 'A')
-        obj_type = helpers.object_type(node)
+        obj_type = interpreterutil.object_type(node)
         self.assertEqual(metaclass, obj_type)
 
     def test_inference_errors(self):
@@ -146,7 +145,7 @@ class TestHelpers(unittest.TestCase):
         from unknown import Unknown
         u = Unknown #@
         ''')
-        self.assertEqual(helpers.object_type(node), util.Uninferable)
+        self.assertEqual(interpreterutil.object_type(node), util.Uninferable)
 
     def test_object_type_too_many_types(self):
         node = test_utils.extract_node('''
@@ -158,7 +157,7 @@ class TestHelpers(unittest.TestCase):
                 return 1
         test(Unknown) #@
         ''')
-        self.assertEqual(helpers.object_type(node), util.Uninferable)
+        self.assertEqual(interpreterutil.object_type(node), util.Uninferable)
 
     def test_is_subtype(self):
         ast_nodes = test_utils.extract_node('''
@@ -173,7 +172,7 @@ class TestHelpers(unittest.TestCase):
         cls_b = ast_nodes[1]
         cls_c = ast_nodes[2]
         int_subclass = ast_nodes[3]
-        int_subclass = helpers.object_type(next(int_subclass.infer()))
+        int_subclass = interpreterutil.object_type(next(int_subclass.infer()))
         base_int = self._look_up_in_builtins('int')
         self.assertTrue(interpreterutil.is_subtype(int_subclass, base_int))
         self.assertTrue(interpreterutil.is_supertype(base_int, int_subclass))
@@ -254,7 +253,7 @@ class TestHelpers(unittest.TestCase):
         # TODO: what is this test supposed to be testing?  It will crash as-is because it calls helpers.
         cls = test_utils.extract_node('''class A: pass''')
         builtin_type = self._look_up_in_builtins('type')
-        self.assertEqual(helpers.object_type(cls), builtin_type)
+        self.assertEqual(interpreterutil.object_type(cls), builtin_type)
 
 
 if __name__ == '__main__':

@@ -35,7 +35,6 @@ from astroid.interpreter import runtimeabc
 from astroid.interpreter.util import safe_infer
 
 from astroid import decorators as decoratorsmod
-from astroid import helpers
 from astroid import test_utils
 from astroid import util
 from astroid.tests import resources
