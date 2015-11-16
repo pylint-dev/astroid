@@ -436,7 +436,7 @@ def _infer_context_manager(self, mgr, context, nodes):
         if yield_point:
             if not yield_point.value:
                 # TODO(cpopa): an empty yield. Should be wrapped to Const.
-                const = nodes.NameConstant(None, lineno=yield_proint.lineno, parent=yield_point)
+                const = nodes.NameConstant(None, lineno=yield_point.lineno, parent=yield_point)
                 yield const
             else:
                 for inferred in yield_point.value.infer(context=context):

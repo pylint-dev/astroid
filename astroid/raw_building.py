@@ -374,15 +374,16 @@ def ast_from_function(func, built_objects, module, name=None, parent=None):
         kwargannotation = kwarg.annotation
     else:
         kwargannotation = None
+    returns = None
     if signature.return_annotation is not _Parameter.empty:
-        returns = _ast_from_object(signature_return_annotation,
+        returns = _ast_from_object(signature.return_annotation,
                                    built_objects,
                                    module,
                                    parent=func_node)[0]
     args_node.postinit(args, defaults, kwonlyargs, kw_defaults,
                        annotations, kwonly_annotations,
                        varargannotation, kwargannotation)
-    func_node.postinit(args=args_node, body=[])
+    func_node.postinit(args=args_node, body=[], returns=returns)
     for name in set(dir(func)) - set(dir(type(func))):
         # This checks against method special attributes because
         # methods are also dispatched through this function.
