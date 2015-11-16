@@ -1612,7 +1612,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             context = contextmod.InferenceContext()
         if six.PY3:
             if not self.bases and self.qname() != 'builtins.object':
-                print(MANAGER.astroid_cache['builtins'])
                 yield builtin_lookup("object")[1][0]
                 return
 
