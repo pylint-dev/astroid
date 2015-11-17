@@ -55,6 +55,7 @@ try:
 except ImportError:
     from funcsigs import signature as _signature, Parameter as _Parameter
 
+import lazy_object_proxy
 import six
 
 from astroid.interpreter import objects
@@ -181,13 +182,17 @@ def _ast_from_object(instance, built_objects, module, name=None, parent=None):
     if isinstance(node, scoped_nodes.ClassDef):
         class_node = node
     elif isinstance(node, node_classes.ImportFrom):
-        # Handle ImportFrom chains.
-        while True:
-            modname = node.modname
-            node = MANAGER.ast_from_module_name(modname).getattr(cls.__name__)[0]
-            if isinstance(node, scoped_nodes.ClassDef):
-                class_node = node
-                break
+        def lazy_instance(node=node, cls=cls, name=name, parent=parent):
+            # Handle ImportFrom chains.
+            while True:
+                modname = node.modname
+                node = MANAGER.ast_from_module_name(modname).getattr(cls.__name__)[0]
+                if isinstance(node, scoped_nodes.ClassDef):
+                    # class_node = node
+                    # break
+                    return node_classes.InterpreterObject(name=name, object_=node.instantiate_class(), parent=parent)
+        result.append(lazy_object_proxy.Proxy(lazy_instance))
+        return result
     elif isinstance(node, node_classes.Name):
         # A Name node means a ClassDef node already exists somewhere,
         # so there's no need to add another one.
