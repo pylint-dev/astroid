@@ -182,6 +182,10 @@ def _ast_from_object(instance, built_objects, module, name=None, parent=None):
     if isinstance(node, scoped_nodes.ClassDef):
         class_node = node
     elif isinstance(node, node_classes.ImportFrom):
+        # TODO: this solution is not complete, because it doesn't add
+        # instance attributes, but adding instance attributes to class
+        # nodes causes problems in general and laziness in the
+        # building system needs to be refatored in general.
         def lazy_instance(node=node, cls=cls, name=name, parent=parent):
             # Handle ImportFrom chains.
             while True:
@@ -192,6 +196,7 @@ def _ast_from_object(instance, built_objects, module, name=None, parent=None):
                     # break
                     return node_classes.InterpreterObject(name=name, object_=node.instantiate_class(), parent=parent)
         result.append(lazy_object_proxy.Proxy(lazy_instance))
+        built_objects[id(instance)] = result[-1]
         return result
     elif isinstance(node, node_classes.Name):
         # A Name node means a ClassDef node already exists somewhere,
@@ -264,7 +269,22 @@ def ast_from_module(module, built_objects, parent_module, name=None, parent=None
         return (node_classes.Name(name=name or module.__name__, parent=parent_module),)
     if module is not parent_module:
         # This module has been imported into another.
-        return (node_classes.Import([[module.__name__, name]], parent=parent),)
+
+        # TODO: this work around an obscure issue in pylib/apikpkg,
+        # https://pylib.readthedocs.org/en/latest/index.html /
+        # https://bitbucket.org/hpk42/apipkg.  In its
+        # __init__.py, pylib has the following line:
+
+        # sys.modules['py.error'] = _apipkg.AliasModule("py.error", "py._error", 'error')
+
+        # AliasModule is a very odd object that has a getattr method
+        # that raises an AttributeError for, among other things,
+        # __name__.  This probably doesn't comply with the contract
+        # for things that should be in sys.modules.
+        try:
+            return (node_classes.Import([[module.__name__, name]], parent=parent),)
+        except AttributeError:
+            return ()
     try:
         source_file = inspect.getsourcefile(module)
     except TypeError:

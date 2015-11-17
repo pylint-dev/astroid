@@ -279,6 +279,7 @@ def _format_args(args, defaults=None, annotations=None):
     return ', '.join(values)
 
 
+@util.register_implementation(treeabc.Unknown)
 class Unknown(base.NodeNG):
     '''This node represents a node in a constructed AST where
     introspection is not possible.  At the moment, it's only used in
@@ -557,7 +558,8 @@ class Const(base.NodeNG, objects.BaseInstance):
         builtins = MANAGER.astroid_cache[BUILTINS]
         return builtins.getattr(type(self.value).__name__)[0]
 
-
+    
+@util.register_implementation(treeabc.NameConstant)
 class NameConstant(Const):
     """Represents a builtin singleton, at the moment True, False, None,
     and NotImplemented.
@@ -571,6 +573,7 @@ class NameConstant(Const):
     #     # return builtins.getattr(str(self.value))[0]
 
 
+@util.register_implementation(treeabc.ReservedName)
 class ReservedName(base.NodeNG):
     '''Used in the builtins AST to assign names to singletons.'''
     _astroid_fields = ('value',)

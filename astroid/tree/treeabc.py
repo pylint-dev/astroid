@@ -119,6 +119,12 @@ class Const(NodeNG):
     """Represent a constant node like num, str, bool, None, bytes"""
 
 
+class NameConstant(Const):
+    """Represents a builtin singleton, at the moment True, False, None,
+    and NotImplemented.
+
+    """
+
 class Continue(Statement):
     """Class representing a Continue node"""
 
@@ -320,4 +326,12 @@ class FunctionDef(Statement, Lambda):
 
 
 class InterpreterObject(NodeNG):
+    pass
+
+
+class ReservedName(NodeNG):
+    pass
+
+
+class Unknown(NodeNG):
     pass

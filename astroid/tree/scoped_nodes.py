@@ -284,15 +284,23 @@ class Module(LocalsDictNodeNG):
     package = None
 
     special_attributes = frozenset(
-        ('__name__', '__doc__', '__file__', '__dict__', '__package__',
-         '__cached__', '__spec__', '__loader__', six.moves.builtins.__name__))
+        # These attributes are listed in the data model documentation.
+        # https://docs.python.org/3/reference/datamodel.html#the-standard-type-hierarchy
+        ('__name__', '__doc__', '__file__', '__dict__',
+         # __path__ is a standard attribute on *packages* not
+         # non-package modules.  The only mention of it in the
+         # official 2.7 documentation I can find is in the
+         # tutorial.  __package__ isn't mentioned anywhere outside a PEP:
+         # https://www.python.org/dev/peps/pep-0366/
+         '__path__', '__package__',
+         # The builtins package is a member of every module's namespace.
+         six.moves.builtins.__name__,
+         # These are related to the Python 3 implementation of the
+         # import system,
+         # https://docs.python.org/3/reference/import.html#import-related-module-attributes
+         '__loader__', '__spec__', '__cached__'))
 
-    # TODO: does __path__ even exist?
-    # # names of python special attributes (handled by getattr impl.)
-    # special_attributes = set(('__name__', '__doc__', '__file__', '__path__',
-    #                           '__dict__'))
-    # # names of module attributes available through the global scope
-    # scope_attrs = set(('__name__', '__doc__', '__file__', '__path__'))
+    # names of module attributes available through the global scope
     scope_attrs = frozenset(('__name__', '__doc__', '__file__'))
 
     if six.PY2:
@@ -2023,7 +2031,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         Otherwise, it will return a list of slot names.
         """
         if not self.newstyle:
-            raise NotImplementedError(
+            raise TypeError(
                 "The concept of slots is undefined for old-style classes.")
 
         slots = self._islots()
@@ -2078,11 +2086,11 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         """Get the method resolution order, using C3 linearization.
 
         It returns the list of ancestors sorted by the mro.
-        This will raise `NotImplementedError` for old-style classes, since
+        This will raise `MroError` for old-style classes, since
         they don't have the concept of MRO.
         """
         if not self.newstyle:
-            raise NotImplementedError(
+            raise TypeError(
                 "Could not obtain mro for old-style classes.")
 
         bases = list(self._inferred_bases(context=context))
@@ -2091,7 +2099,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             try:
                 mro = base.mro(context=context)
                 bases_mro.append(mro)
-            except NotImplementedError:
+            except TypeError:
                 # Some classes have in their ancestors both newstyle and
                 # old style classes. For these we can't retrieve the .mro,
                 # although in Python it's possible, since the class we are
