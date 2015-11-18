@@ -326,7 +326,7 @@ class TreeRebuilder(object):
             new_kwargs.arg = None
             new_kwargs.col_offset = kwargs.col_offset
             new_kwargs.lineno = kwargs.lineno
-            new_kwargs.arent = kwargs.parent
+            new_kwargs.parent = kwargs.parent
             new_kwargs.value = kwargs
             if keywords:
                 keywords.append(new_kwargs)
@@ -840,8 +840,8 @@ class TreeRebuilder3k(TreeRebuilder):
         if node.type is not None:
             newnode.type = self.visit(node.type, newnode, assign_ctx)
         if node.name is not None:
-            newnode.name = self.visit_assignname(node, newnode, assign_ctx, node.name)
-        newnode.body = [self.visit(child, newnode, 'assign_ctx')
+            newnode.name = self.visit_assignname(node, newnode, 'Assign', node.name)
+        newnode.body = [self.visit(child, newnode, None)
                         for child in node.body]
         return newnode
 
