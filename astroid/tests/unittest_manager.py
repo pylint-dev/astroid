@@ -16,13 +16,27 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 import os
+import platform
 import sys
 import unittest
 
-from astroid.manager import AstroidManager
-from astroid.bases import  BUILTINS
-from astroid.exceptions import AstroidBuildingException
+import six
+
+from astroid import exceptions
+from astroid import manager
 from astroid.tests import resources
+
+
+BUILTINS = six.moves.builtins.__name__
+
+
+def _get_file_from_object(obj):
+    if platform.python_implementation() == 'Jython':
+        return obj.__file__.split("$py.class")[0] + ".py"
+    if sys.version_info > (3, 0):
+        return obj.__file__
+    else:
+        return obj.__file__[:-1]
 
 
 class AstroidManagerTest(resources.SysPathSetup,
@@ -31,20 +45,16 @@ class AstroidManagerTest(resources.SysPathSetup,
 
     def setUp(self):
         super(AstroidManagerTest, self).setUp()
-        self.manager = AstroidManager()
+        self.manager = manager.AstroidManager()
         self.manager.clear_cache(self._builtins) # take care of borg
 
     def test_ast_from_file(self):
-        """check if the method return a good astroid object"""
-        import unittest
         filepath = unittest.__file__
         astroid = self.manager.ast_from_file(filepath)
         self.assertEqual(astroid.name, 'unittest')
         self.assertIn('unittest', self.manager.astroid_cache)
 
     def test_ast_from_file_cache(self):
-        """check if the cache works"""
-        import unittest
         filepath = unittest.__file__
         self.manager.ast_from_file(filepath)
         astroid = self.manager.ast_from_file('unhandledName', 'unittest')
@@ -52,16 +62,14 @@ class AstroidManagerTest(resources.SysPathSetup,
         self.assertIn('unittest', self.manager.astroid_cache)
 
     def test_ast_from_file_astro_builder(self):
-        """check if the source is at True, AstroidBuilder build a good astroid"""
-        import unittest
         filepath = unittest.__file__
         astroid = self.manager.ast_from_file(filepath, None, True, True)
         self.assertEqual(astroid.name, 'unittest')
         self.assertIn('unittest', self.manager.astroid_cache)
 
     def test_ast_from_file_name_astro_builder_exception(self):
-        """check if an exception is thrown if we give a wrong filepath"""
-        self.assertRaises(AstroidBuildingException, self.manager.ast_from_file, 'unhandledName')
+        self.assertRaises(exceptions.AstroidBuildingException,
+                          self.manager.ast_from_file, 'unhandledName')
 
     def test_do_not_expose_main(self):
         obj = self.manager.ast_from_module_name('__main__')
@@ -69,21 +77,20 @@ class AstroidManagerTest(resources.SysPathSetup,
         self.assertEqual(obj.items(), [])
 
     def test_ast_from_module_name(self):
-        """check if the ast_from_module_name method return a good astroid"""
         astroid = self.manager.ast_from_module_name('unittest')
         self.assertEqual(astroid.name, 'unittest')
         self.assertIn('unittest', self.manager.astroid_cache)
 
     def test_ast_from_module_name_not_python_source(self):
-        """check if the ast_from_module_name method return a good astroid with a no python source module"""
         astroid = self.manager.ast_from_module_name('time')
         self.assertEqual(astroid.name, 'time')
         self.assertIn('time', self.manager.astroid_cache)
         self.assertEqual(astroid.pure_python, False)
 
     def test_ast_from_module_name_astro_builder_exception(self):
-        """check if the method raise an exception if we give a wrong module"""
-        self.assertRaises(AstroidBuildingException, self.manager.ast_from_module_name, 'unhandledModule')
+        self.assertRaises(exceptions.AstroidBuildingException,
+                          self.manager.ast_from_module_name,
+                          'unhandledModule')
 
     def _test_ast_from_zip(self, archive):
         origpath = sys.path[:]
@@ -127,16 +134,14 @@ class AstroidManagerTest(resources.SysPathSetup,
 
     def test_file_from_module(self):
         """check if the unittest filepath is equals to the result of the method"""
-        if sys.version_info > (3, 0):
-            unittest_file = unittest.__file__
-        else:
-            unittest_file = unittest.__file__[:-1]
-        self.assertEqual(unittest_file,
-                        self.manager.file_from_module_name('unittest', None)[0])
+        self.assertEqual(
+            _get_file_from_object(unittest),
+            self.manager.file_from_module_name('unittest', None)[0])
 
     def test_file_from_module_name_astro_building_exception(self):
         """check if the method launch a exception with a wrong module name"""
-        self.assertRaises(AstroidBuildingException, self.manager.file_from_module_name, 'unhandledModule', None)
+        self.assertRaises(exceptions.AstroidBuildingException,
+                          self.manager.file_from_module_name, 'unhandledModule', None)
 
     def test_ast_from_module(self):
         astroid = self.manager.ast_from_module(unittest)
@@ -174,20 +179,21 @@ class AstroidManagerTest(resources.SysPathSetup,
 
     def test_ast_from_class_attr_error(self):
         """give a wrong class at the ast_from_class method"""
-        self.assertRaises(AstroidBuildingException, self.manager.ast_from_class, None)
+        self.assertRaises(exceptions.AstroidBuildingException,
+                          self.manager.ast_from_class, None)
 
     def testFailedImportHooks(self):
         def hook(modname):
             if modname == 'foo.bar':
                 return unittest
             else:
-                raise AstroidBuildingException()
+                raise exceptions.AstroidBuildingException()
 
-        with self.assertRaises(AstroidBuildingException):
+        with self.assertRaises(exceptions.AstroidBuildingException):
             self.manager.ast_from_module_name('foo.bar')
         self.manager.register_failed_import_hook(hook)
         self.assertEqual(unittest, self.manager.ast_from_module_name('foo.bar'))
-        with self.assertRaises(AstroidBuildingException):
+        with self.assertRaises(exceptions.AstroidBuildingException):
             self.manager.ast_from_module_name('foo.bar.baz')
         del self.manager._failed_import_hooks[0]
 
@@ -197,10 +203,10 @@ class BorgAstroidManagerTC(unittest.TestCase):
     def test_borg(self):
         """test that the AstroidManager is really a borg, i.e. that two different
         instances has same cache"""
-        first_manager = AstroidManager()
+        first_manager = manager.AstroidManager()
         built = first_manager.ast_from_module_name(BUILTINS)
 
-        second_manager = AstroidManager()
+        second_manager = manager.AstroidManager()
         second_built = second_manager.ast_from_module_name(BUILTINS)
         self.assertIs(built, second_built)
 

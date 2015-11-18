@@ -19,24 +19,27 @@
 """
 import os
 import sys
-import unittest
 import textwrap
+import unittest
+import warnings
 
-from astroid.node_classes import unpack_infer
-from astroid.bases import BUILTINS, InferenceContext
-from astroid.exceptions import NotFoundError
-from astroid import exceptions
+import six
+
 from astroid import bases
 from astroid import builder
 from astroid import context as contextmod
 from astroid import exceptions
 from astroid import node_classes
 from astroid import nodes
+from astroid import parse
 from astroid import util
 from astroid import test_utils
+from astroid import transforms
 from astroid.tests import resources
 
+
 abuilder = builder.AstroidBuilder()
+BUILTINS = six.moves.builtins.__name__
 
 
 class AsStringTest(resources.SysPathSetup, unittest.TestCase):
@@ -181,15 +184,15 @@ class IfNodeTest(_NodeTest):
         self.assertEqual(len(self.astroid.body), 4)
         for stmt in self.astroid.body:
             self.assertIsInstance(stmt, nodes.If)
-        self.assertFalse(self.astroid.body[0].orelse) # simple If
-        self.assertIsInstance(self.astroid.body[1].orelse[0], nodes.Pass) # If / else
-        self.assertIsInstance(self.astroid.body[2].orelse[0], nodes.If) # If / elif
+        self.assertFalse(self.astroid.body[0].orelse)  # simple If
+        self.assertIsInstance(self.astroid.body[1].orelse[0], nodes.Pass)  # If / else
+        self.assertIsInstance(self.astroid.body[2].orelse[0], nodes.If)  # If / elif
         self.assertIsInstance(self.astroid.body[3].orelse[0].orelse[0], nodes.If)
 
     def test_block_range(self):
         # XXX ensure expected values
         self.assertEqual(self.astroid.block_range(1), (0, 22))
-        self.assertEqual(self.astroid.block_range(10), (0, 22)) # XXX (10, 22) ?
+        self.assertEqual(self.astroid.block_range(10), (0, 22))  # XXX (10, 22) ?
         self.assertEqual(self.astroid.body[1].block_range(5), (5, 6))
         self.assertEqual(self.astroid.body[1].block_range(6), (6, 6))
         self.assertEqual(self.astroid.body[1].orelse[0].block_range(7), (7, 8))
@@ -256,6 +259,7 @@ class TryExceptFinallyNodeTest(_NodeTest):
         self.assertEqual(self.astroid.body[0].block_range(6), (6, 6))
 
 
+@unittest.skipIf(six.PY3, "Python 2 specific test.")
 class TryExcept2xNodeTest(_NodeTest):
     CODE = """
         try:
@@ -263,9 +267,9 @@ class TryExcept2xNodeTest(_NodeTest):
         except AttributeError, (retval, desc):
             pass
     """
+
+
     def test_tuple_attribute(self):
-        if sys.version_info >= (3, 0):
-            self.skipTest('syntax removed from py3.x')
         handler = self.astroid.body[0].handlers[0]
         self.assertIsInstance(handler.name, nodes.Tuple)
 
@@ -285,12 +289,12 @@ class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_from_self_resolve(self):
         namenode = next(self.module.igetattr('NameNode'))
-        self.assertTrue(isinstance(namenode, nodes.Class), namenode)
+        self.assertTrue(isinstance(namenode, nodes.ClassDef), namenode)
         self.assertEqual(namenode.root().name, 'astroid.node_classes')
         self.assertEqual(namenode.qname(), 'astroid.node_classes.Name')
         self.assertEqual(namenode.pytype(), '%s.type' % BUILTINS)
         abspath = next(self.module2.igetattr('abspath'))
-        self.assertTrue(isinstance(abspath, nodes.Function), abspath)
+        self.assertTrue(isinstance(abspath, nodes.FunctionDef), abspath)
         self.assertEqual(abspath.root().name, 'os.path')
         self.assertEqual(abspath.qname(), 'os.path.abspath')
         self.assertEqual(abspath.pytype(), '%s.function' % BUILTINS)
@@ -345,12 +349,12 @@ from ..cave import wine\n\n"""
         astroid = builder.parse(code)
         handler_type = astroid.body[1].handlers[0].type
 
-        excs = list(unpack_infer(handler_type))
+        excs = list(node_classes.unpack_infer(handler_type))
         # The number of returned object can differ on Python 2
         # and Python 3. In one version, an additional item will
         # be returned, from the _pickle module, which is not
         # present in the other version.
-        self.assertIsInstance(excs[0], nodes.Class)
+        self.assertIsInstance(excs[0], nodes.ClassDef)
         self.assertEqual(excs[0].name, 'PickleError')
         self.assertIs(excs[-1], util.YES)
 
@@ -379,7 +383,7 @@ class ConstNodeTest(unittest.TestCase):
 
     def _test(self, value):
         node = nodes.const_factory(value)
-        self.assertIsInstance(node._proxied, nodes.Class)
+        self.assertIsInstance(node._proxied, nodes.ClassDef)
         self.assertEqual(node._proxied.name, value.__class__.__name__)
         self.assertIs(node.value, value)
         self.assertTrue(node._proxied.parent)
@@ -421,9 +425,9 @@ class NameNodeTest(unittest.TestCase):
                 builder.parse(code)
         else:
             ast = builder.parse(code)
-            ass_true = ast['True']
-            self.assertIsInstance(ass_true, nodes.AssName)
-            self.assertEqual(ass_true.name, "True")
+            assign_true = ast['True']
+            self.assertIsInstance(assign_true, nodes.AssignName)
+            self.assertEqual(assign_true.name, "True")
             del_true = ast.body[2].targets[0]
             self.assertIsInstance(del_true, nodes.DelName)
             self.assertEqual(del_true.name, "True")
@@ -471,7 +475,7 @@ class UnboundMethodNodeTest(unittest.TestCase):
         meth = A.test
         ''')
         node = next(ast['meth'].infer())
-        with self.assertRaises(NotFoundError):
+        with self.assertRaises(exceptions.NotFoundError):
             node.getattr('__missssing__')
         name = node.getattr('__name__')[0]
         self.assertIsInstance(name, nodes.Const)
@@ -522,13 +526,141 @@ class BoundMethodNodeTest(unittest.TestCase):
         ''')
         for prop in ('builtin_property', 'abc_property', 'cached_p', 'reified',
                      'lazy_prop', 'lazyprop'):
-            infered = next(ast[prop].infer())
-            self.assertIsInstance(infered, nodes.Const, prop)
-            self.assertEqual(infered.value, 42, prop)
+            inferred = next(ast[prop].infer())
+            self.assertIsInstance(inferred, nodes.Const, prop)
+            self.assertEqual(inferred.value, 42, prop)
 
-        infered = next(ast['not_prop'].infer())
-        self.assertIsInstance(infered, bases.BoundMethod)
+        inferred = next(ast['not_prop'].infer())
+        self.assertIsInstance(inferred, bases.BoundMethod)
 
+
+class AliasesTest(unittest.TestCase):
+
+    def setUp(self):
+        self.transformer = transforms.TransformVisitor()
+
+    def parse_transform(self, code):
+        module = parse(code, apply_transforms=False)
+        return self.transformer.visit(module)
+
+    def test_aliases(self):
+        def test_from(node):
+            node.names = node.names + [('absolute_import', None)]
+            return node
+
+        def test_class(node):
+            node.name = 'Bar'
+            return node
+
+        def test_function(node):
+            node.name = 'another_test'
+            return node
+
+        def test_callfunc(node):
+            if node.func.name == 'Foo':
+                node.func.name = 'Bar'
+                return node
+
+        def test_assname(node):
+            if node.name == 'foo':
+                n = nodes.AssignName()
+                n.name = 'bar'
+                return n
+        def test_assattr(node):
+            if node.attrname == 'a':
+                node.attrname = 'b'
+                return node
+
+        def test_getattr(node):
+            if node.attrname == 'a':
+                node.attrname = 'b'
+                return node
+
+        def test_genexpr(node):
+            if node.elt.value == 1:
+                node.elt = nodes.Const(2)
+                return node
+
+        self.transformer.register_transform(nodes.From, test_from)
+        self.transformer.register_transform(nodes.Class, test_class)
+        self.transformer.register_transform(nodes.Function, test_function)
+        self.transformer.register_transform(nodes.CallFunc, test_callfunc)
+        self.transformer.register_transform(nodes.AssName, test_assname)
+        self.transformer.register_transform(nodes.AssAttr, test_assattr)
+        self.transformer.register_transform(nodes.Getattr, test_getattr)
+        self.transformer.register_transform(nodes.GenExpr, test_genexpr)
+
+        string = '''
+        from __future__ import print_function
+
+        class Foo: pass
+
+        def test(a): return a
+
+        foo = Foo()
+        foo.a = test(42)
+        foo.a
+        (1 for _ in range(0, 42))
+        '''
+
+        module = self.parse_transform(string)
+
+        self.assertEqual(len(module.body[0].names), 2)
+        self.assertIsInstance(module.body[0], nodes.From)
+        self.assertEqual(module.body[1].name, 'Bar')
+        self.assertIsInstance(module.body[1], nodes.Class)
+        self.assertEqual(module.body[2].name, 'another_test')
+        self.assertIsInstance(module.body[2], nodes.Function)
+        self.assertEqual(module.body[3].targets[0].name, 'bar')
+        self.assertIsInstance(module.body[3].targets[0], nodes.AssName)
+        self.assertEqual(module.body[3].value.func.name, 'Bar')
+        self.assertIsInstance(module.body[3].value, nodes.CallFunc)
+        self.assertEqual(module.body[4].targets[0].attrname, 'b')
+        self.assertIsInstance(module.body[4].targets[0], nodes.AssAttr)
+        self.assertIsInstance(module.body[5], nodes.Discard)
+        self.assertEqual(module.body[5].value.attrname, 'b')
+        self.assertIsInstance(module.body[5].value, nodes.Getattr)
+        self.assertEqual(module.body[6].value.elt.value, 2)
+        self.assertIsInstance(module.body[6].value, nodes.GenExpr)
+        
+    @unittest.skipIf(six.PY3, "Python 3 doesn't have Repr nodes.")
+    def test_repr(self):
+        def test_backquote(node):
+            node.value.name = 'bar'
+            return node
+
+        self.transformer.register_transform(nodes.Backquote, test_backquote)
+
+        module = self.parse_transform('`foo`')
+
+        self.assertEqual(module.body[0].value.value.name, 'bar')
+        self.assertIsInstance(module.body[0].value, nodes.Backquote)
+
+
+class DeprecationWarningsTest(unittest.TestCase):
+    def test_asstype_warnings(self):
+        string = '''
+        class C: pass
+        c = C()
+        with warnings.catch_warnings(record=True) as w:
+            pass
+        '''
+        module = parse(string)
+        filter_stmts_mixin = module.body[0]
+        assign_type_mixin = module.body[1].targets[0]
+        parent_assign_type_mixin = module.body[2]
+
+        warnings.simplefilter('always')
+        
+        with warnings.catch_warnings(record=True) as w:
+            filter_stmts_mixin.ass_type()
+            self.assertIsInstance(w[0].message, PendingDeprecationWarning)
+        with warnings.catch_warnings(record=True) as w:
+            assign_type_mixin.ass_type()
+            self.assertIsInstance(w[0].message, PendingDeprecationWarning)
+        with warnings.catch_warnings(record=True) as w:
+            parent_assign_type_mixin.ass_type()
+            self.assertIsInstance(w[0].message, PendingDeprecationWarning)
 
 if __name__ == '__main__':
     unittest.main()

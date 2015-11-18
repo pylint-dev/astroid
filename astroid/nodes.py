@@ -24,39 +24,48 @@ on all nodes :
  .next_sibling(), returning next sibling statement node
  .statement(), returning the first parent node marked as statement node
  .frame(), returning the first node defining a new local scope (i.e.
-  Module, Function or Class)
+  Module, FunctionDef or ClassDef)
  .set_local(name, node), define an identifier <name> on the first parent frame,
   with the node defining it. This is used by the astroid builder and should not
   be used from out there.
 
-on From and Import :
+on ImportFrom and Import :
  .real_name(name),
 
 
 """
-# pylint: disable=unused-import
+# pylint: disable=unused-import,redefined-builtin
+
+from astroid.node_classes import (
+    Arguments, AssignAttr, Assert, Assign,
+    AssignName, AugAssign, Repr, BinOp, BoolOp, Break, Call, Compare,
+    Comprehension, Const, Continue, Decorators, DelAttr, DelName, Delete,
+    Dict, Expr, Ellipsis, EmptyNode, ExceptHandler, Exec, ExtSlice, For,
+    ImportFrom, Attribute, Global, If, IfExp, Import, Index, Keyword,
+    List, Name, Nonlocal, Pass, Print, Raise, Return, Set, Slice, Starred, Subscript,
+    TryExcept, TryFinally, Tuple, UnaryOp, While, With, Yield, YieldFrom,
+    const_factory,
+    # Backwards-compatibility aliases
+    Backquote, Discard, AssName, AssAttr, Getattr, CallFunc, From
+)
+from astroid.scoped_nodes import (
+    Module, GeneratorExp, Lambda, DictComp,
+    ListComp, SetComp, FunctionDef, ClassDef,
+    # Backwards-compatibility aliases
+    Class, Function, GenExpr,
+)
 
 
-from astroid.node_classes import Arguments, AssAttr, Assert, Assign, \
-    AssName, AugAssign, Backquote, BinOp, BoolOp, Break, CallFunc, Compare, \
-    Comprehension, Const, Continue, Decorators, DelAttr, DelName, Delete, \
-    Dict, Discard, Ellipsis, EmptyNode, ExceptHandler, Exec, ExtSlice, For, \
-    From, Getattr, Global, If, IfExp, Import, Index, Keyword, \
-    List, Name, Nonlocal, Pass, Print, Raise, Return, Set, Slice, Starred, Subscript, \
-    TryExcept, TryFinally, Tuple, UnaryOp, While, With, Yield, YieldFrom, \
-    const_factory
-from astroid.scoped_nodes import Module, GenExpr, Lambda, DictComp, \
-    ListComp, SetComp, Function, Class
 
 ALL_NODE_CLASSES = (
-    Arguments, AssAttr, Assert, Assign, AssName, AugAssign,
-    Backquote, BinOp, BoolOp, Break,
-    CallFunc, Class, Compare, Comprehension, Const, Continue,
+    Arguments, AssignAttr, Assert, Assign, AssignName, AugAssign,
+    Repr, BinOp, BoolOp, Break,
+    Call, ClassDef, Compare, Comprehension, Const, Continue,
     Decorators, DelAttr, DelName, Delete,
-    Dict, DictComp, Discard,
+    Dict, DictComp, Expr,
     Ellipsis, EmptyNode, ExceptHandler, Exec, ExtSlice,
-    For, From, Function,
-    Getattr, GenExpr, Global,
+    For, ImportFrom, FunctionDef,
+    Attribute, GeneratorExp, Global,
     If, IfExp, Import, Index,
     Keyword,
     Lambda, List, ListComp,
@@ -70,4 +79,3 @@ ALL_NODE_CLASSES = (
     While, With,
     Yield, YieldFrom
     )
-

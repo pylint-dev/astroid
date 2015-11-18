@@ -11,7 +11,6 @@ from astroid import nodes
 from astroid.builder import AstroidBuilder
 from astroid import util
 
-
 def _extend_str(class_node, rvalue):
     """function to extend builtin str/unicode class"""
     # TODO(cpopa): this approach will make astroid to believe
@@ -52,7 +51,7 @@ def _extend_str(class_node, rvalue):
         def rstrip(self, chars=None):
             return {rvalue}
         def rjust(self, width, fillchar=None):
-            return {rvalue} 
+            return {rvalue}
         def center(self, width, fillchar=None):
             return {rvalue}
         def ljust(self, width, fillchar=None):
@@ -87,12 +86,17 @@ def register_builtin_transform(transform, builtin_name):
     def _transform_wrapper(node, context=None):
         result = transform(node, context=context)
         if result:
-            result.parent = node
+            if not result.parent:
+                # Let the transformation function determine
+                # the parent for its result. Otherwise,
+                # we set it to be the node we transformed from.
+                result.parent = node
+
             result.lineno = node.lineno
             result.col_offset = node.col_offset
         return iter([result])
 
-    MANAGER.register_transform(nodes.CallFunc,
+    MANAGER.register_transform(nodes.Call,
                                inference_tip(_transform_wrapper),
                                lambda n: (isinstance(n.func, nodes.Name) and
                                           n.func.name == builtin_name))
@@ -109,12 +113,12 @@ def _generic_inference(node, context, node_type, transform):
     transformed = transform(arg)
     if not transformed:
         try:
-            infered = next(arg.infer(context=context))
+            inferred = next(arg.infer(context=context))
         except (InferenceError, StopIteration):
             raise UseInferenceDefault()
-        if infered is util.YES:
+        if inferred is util.YES:
             raise UseInferenceDefault()
-        transformed = transform(infered)
+        transformed = transform(inferred)
     if not transformed or transformed is util.YES:
         raise UseInferenceDefault()
     return transformed
@@ -178,14 +182,14 @@ def _get_elts(arg, context):
     is_iterable = lambda n: isinstance(n,
                                        (nodes.List, nodes.Tuple, nodes.Set))
     try:
-        infered = next(arg.infer(context))
+        inferred = next(arg.infer(context))
     except (InferenceError, UnresolvableName):
         raise UseInferenceDefault()
-    if isinstance(infered, nodes.Dict):
-        items = infered.items
-    elif is_iterable(infered):
+    if isinstance(inferred, nodes.Dict):
+        items = inferred.items
+    elif is_iterable(inferred):
         items = []
-        for elt in infered.elts:
+        for elt in inferred.elts:
             # If an item is not a pair of two items,
             # then fallback to the default inference.
             # Also, take in consideration only hashable items,
@@ -214,7 +218,7 @@ def infer_dict(node, context=None):
         * dict(mapping, **kwargs)
         * dict(**kwargs)
 
-    If a case can't be infered, we'll fallback to default inference.
+    If a case can't be inferred, we'll fallback to default inference.
     """
     if not node.args and not node.kwargs and not node.keywords:
         # dict()

@@ -102,7 +102,7 @@ def inference_tip(infer_function):
 
     .. sourcecode:: python
 
-       MANAGER.register_transform(CallFunc, inference_tip(infer_named_tuple),
+       MANAGER.register_transform(Call, inference_tip(infer_named_tuple),
                                   predicate)
     """
     def transform(node, infer_function=infer_function):

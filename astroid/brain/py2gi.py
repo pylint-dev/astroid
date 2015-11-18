@@ -7,6 +7,7 @@ import inspect
 import itertools
 import sys
 import re
+import warnings
 
 from astroid import MANAGER, AstroidBuildingException, nodes
 from astroid.builder import AstroidBuilder
@@ -46,7 +47,7 @@ def _gi_build_stub(parent):
         elif (inspect.ismethod(obj) or
               inspect.ismethoddescriptor(obj)):
             methods[name] = obj
-        elif type(obj) in [int, str]:
+        elif isinstance(obj, (int, str)):
             constants[name] = obj
         elif (str(obj).startswith("<flags") or
               str(obj).startswith("<enum ") or
@@ -73,7 +74,7 @@ def _gi_build_stub(parent):
         val = constants[name]
 
         strval = str(val)
-        if type(val) is str:
+        if isinstance(val, str):
             strval = '"%s"' % str(val).replace("\\", "\\\\")
         ret += "%s = %s\n" % (name, strval)
 
@@ -82,7 +83,6 @@ def _gi_build_stub(parent):
     if functions:
         ret += "# %s functions\n\n" % parent.__name__
     for name in sorted(functions):
-        func = functions[name]
         ret += "def %s(*args, **kwargs):\n" % name
         ret += "    pass\n"
 
@@ -91,7 +91,6 @@ def _gi_build_stub(parent):
     if methods:
         ret += "# %s methods\n\n" % parent.__name__
     for name in sorted(methods):
-        func = methods[name]
         ret += "def %s(self, *args, **kwargs):\n" % name
         ret += "    pass\n"
 
@@ -135,7 +134,16 @@ def _import_gi_module(modname):
             for m in itertools.chain(modnames, optional_modnames):
                 try:
                     __import__(m)
-                    modcode += _gi_build_stub(sys.modules[m])
+                    with warnings.catch_warnings():
+                        # Just inspecting the code can raise gi deprecation
+                        # warnings, so ignore them.
+                        try:
+                            from gi import PyGIDeprecationWarning
+                            warnings.simplefilter("ignore", PyGIDeprecationWarning)
+                        except Exception:
+                            pass
+
+                        modcode += _gi_build_stub(sys.modules[m])
                 except ImportError:
                     if m not in optional_modnames:
                         raise
@@ -160,7 +168,7 @@ def _looks_like_require_version(node):
         return False
 
     func = node.func
-    if isinstance(func, nodes.Getattr):
+    if isinstance(func, nodes.Attribute):
         if func.attrname != 'require_version':
             return False
         if isinstance(func.expr, nodes.Name) and func.expr.name == 'gi':
@@ -184,4 +192,4 @@ def _register_require_version(node):
     return node
 
 MANAGER.register_failed_import_hook(_import_gi_module)
-MANAGER.register_transform(nodes.CallFunc, _register_require_version, _looks_like_require_version)
+MANAGER.register_transform(nodes.Call, _register_require_version, _looks_like_require_version)

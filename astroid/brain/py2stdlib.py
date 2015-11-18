@@ -7,7 +7,6 @@ Currently help understanding of :
 """
 
 import sys
-from functools import partial
 from textwrap import dedent
 
 from astroid import (
@@ -37,7 +36,7 @@ def infer_func_form(node, base_type, context=None, enum=False):
         except StopIteration:
             raise InferenceError()
 
-    # node is a CallFunc node, class name as first argument and generated class
+    # node is a Call node, class name as first argument and generated class
     # attributes as second argument
     if len(node.args) != 2:
         # something weird here, go back to class implementation
@@ -76,10 +75,10 @@ def infer_func_form(node, base_type, context=None, enum=False):
                     raise AttributeError
                 if not attributes:
                     raise AttributeError
-    except (AttributeError, exceptions.InferenceError) as exc:
+    except (AttributeError, exceptions.InferenceError):
         raise UseInferenceDefault()
     # we want to return a Class node instance with proper attributes set
-    class_node = nodes.Class(name, 'docstring')
+    class_node = nodes.ClassDef(name, 'docstring')
     class_node.parent = node.parent
     # set base class=tuple
     class_node.bases.append(base_type)
@@ -118,7 +117,7 @@ class %(name)s(object):
 '''
     algorithms = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')
     classes = "".join(
-        template % {'name': hashfunc, 'digest': 'b""' if PY3K else '""'} 
+        template % {'name': hashfunc, 'digest': 'b""' if PY3K else '""'}
         for hashfunc in algorithms)
     return AstroidBuilder(MANAGER).string_build(classes)
 
@@ -257,14 +256,14 @@ def subprocess_transform():
 
 def looks_like_namedtuple(node):
     func = node.func
-    if type(func) is nodes.Getattr:
+    if isinstance(func, nodes.Attribute):
         return func.attrname == 'namedtuple'
-    if type(func) is nodes.Name:
+    if isinstance(func, nodes.Name):
         return func.name == 'namedtuple'
     return False
 
 def infer_named_tuple(node, context=None):
-    """Specific inference function for namedtuple CallFunc node"""
+    """Specific inference function for namedtuple Call node"""
     class_node, name, attributes = infer_func_form(node, nodes.Tuple._proxied,
                                                    context=context)
     fake = AstroidBuilder(MANAGER).string_build('''
@@ -286,8 +285,8 @@ class %(name)s(tuple):
     return iter([class_node])
 
 def infer_enum(node, context=None):
-    """ Specific inference function for enum CallFunc node. """
-    enum_meta = nodes.Class("EnumMeta", 'docstring')
+    """ Specific inference function for enum Call node. """
+    enum_meta = nodes.ClassDef("EnumMeta", 'docstring')
     class_node = infer_func_form(node, enum_meta,
                                  context=context, enum=True)[0]
     return iter([class_node.instanciate_class()])
@@ -304,7 +303,7 @@ def infer_enum_class(node):
             # Skip if the class is directly from enum module.
             break
         for local, values in node.locals.items():
-            if any(not isinstance(value, nodes.AssName)
+            if any(not isinstance(value, nodes.AssignName)
                    for value in values):
                 continue
 
@@ -365,7 +364,7 @@ def multiprocessing_transform():
                 continue
 
             value = value[0]
-            if isinstance(value, nodes.Function):
+            if isinstance(value, nodes.FunctionDef):
                 # We need to rebound this, since otherwise
                 # it will have an extra argument (self).
                 value = BoundMethod(value, node)
@@ -416,11 +415,11 @@ def multiprocessing_managers_transform():
     '''))
 
 
-MANAGER.register_transform(nodes.CallFunc, inference_tip(infer_named_tuple),
+MANAGER.register_transform(nodes.Call, inference_tip(infer_named_tuple),
                            looks_like_namedtuple)
-MANAGER.register_transform(nodes.CallFunc, inference_tip(infer_enum),
+MANAGER.register_transform(nodes.Call, inference_tip(infer_enum),
                            AsStringRegexpPredicate('Enum', 'func'))
-MANAGER.register_transform(nodes.Class, infer_enum_class)
+MANAGER.register_transform(nodes.ClassDef, infer_enum_class)
 register_module_extender(MANAGER, 'hashlib', hashlib_transform)
 register_module_extender(MANAGER, 'collections', collections_transform)
 register_module_extender(MANAGER, 'pkg_resources', pkg_resources_transform)

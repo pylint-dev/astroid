@@ -33,7 +33,7 @@ def find(name):
 
 
 def build_file(path, modname=None):
-     return builder.AstroidBuilder().file_build(find(path), modname)
+    return builder.AstroidBuilder().file_build(find(path), modname)
 
 
 class SysPathSetup(object):

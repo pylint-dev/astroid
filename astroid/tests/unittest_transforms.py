@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
+
 import contextlib
 import time
 import unittest
@@ -45,20 +47,20 @@ class TestTransforms(unittest.TestCase):
         return self.transformer.visit(module)
 
     def test_function_inlining_transform(self):
-        def transform_callfunc(node):
+        def transform_call(node):
             # Let's do some function inlining
             inferred = next(node.infer())
             return inferred
 
-        self.transformer.register_transform(nodes.CallFunc,
-                                            transform_callfunc)
+        self.transformer.register_transform(nodes.Call,
+                                            transform_call)
 
         module = self.parse_transform('''
         def test(): return 42
         test() #@
         ''')
 
-        self.assertIsInstance(module.body[1], nodes.Discard)
+        self.assertIsInstance(module.body[1], nodes.Expr)
         self.assertIsInstance(module.body[1].value, nodes.Const)
         self.assertEqual(module.body[1].value.value, 42)
 
@@ -85,20 +87,20 @@ class TestTransforms(unittest.TestCase):
         a < b
         ''')
 
-        self.assertIsInstance(module.body[2], nodes.Discard)
+        self.assertIsInstance(module.body[2], nodes.Expr)
         self.assertIsInstance(module.body[2].value, nodes.Const)
         self.assertFalse(module.body[2].value.value)
 
     def test_transform_patches_locals(self):
         def transform_function(node):
             assign = nodes.Assign()
-            name = nodes.AssName()
+            name = nodes.AssignName()
             name.name = 'value'
             assign.targets = [name]
             assign.value = nodes.const_factory(42)
             node.body.append(assign)
 
-        self.transformer.register_transform(nodes.Function,
+        self.transformer.register_transform(nodes.FunctionDef,
                                             transform_function)
 
         module = self.parse_transform('''
@@ -112,15 +114,15 @@ class TestTransforms(unittest.TestCase):
         self.assertEqual(func.body[1].as_string(), 'value = 42')
 
     def test_predicates(self):
-        def transform_callfunc(node):
+        def transform_call(node):
             inferred = next(node.infer())
             return inferred
 
         def should_inline(node):
             return node.func.name.startswith('inlineme')
 
-        self.transformer.register_transform(nodes.CallFunc,
-                                            transform_callfunc,
+        self.transformer.register_transform(nodes.Call,
+                                            transform_call,
                                             should_inline)
 
         module = self.parse_transform('''
@@ -135,12 +137,12 @@ class TestTransforms(unittest.TestCase):
         inlineme_2()
         ''')
         values = module.body[-3:]
-        self.assertIsInstance(values[0], nodes.Discard)
+        self.assertIsInstance(values[0], nodes.Expr)
         self.assertIsInstance(values[0].value, nodes.Const)
         self.assertEqual(values[0].value.value, 24)
-        self.assertIsInstance(values[1], nodes.Discard)
-        self.assertIsInstance(values[1].value, nodes.CallFunc)
-        self.assertIsInstance(values[2], nodes.Discard)
+        self.assertIsInstance(values[1], nodes.Expr)
+        self.assertIsInstance(values[1].value, nodes.Call)
+        self.assertIsInstance(values[2], nodes.Expr)
         self.assertIsInstance(values[2].value, nodes.Const)
         self.assertEqual(values[2].value.value, 2)
 
@@ -158,7 +160,7 @@ class TestTransforms(unittest.TestCase):
                         return next(node.infer_call_result(node))
 
         manager = builder.MANAGER
-        with add_transform(manager, nodes.Function, transform_function):
+        with add_transform(manager, nodes.FunctionDef, transform_function):
             module = builder.parse('''
             import abc
             from abc import abstractmethod
@@ -184,21 +186,21 @@ class TestTransforms(unittest.TestCase):
     def test_transforms_are_called_for_builtin_modules(self):
         # Test that transforms are called for builtin modules.
         def transform_function(node):
-            name = nodes.AssName()
+            name = nodes.AssignName()
             name.name = 'value'
             node.args.args = [name]
             return node
 
         manager = builder.MANAGER
         predicate = lambda node: node.root().name == 'time'
-        with add_transform(manager, nodes.Function,
+        with add_transform(manager, nodes.FunctionDef,
                            transform_function, predicate):
             builder_instance = builder.AstroidBuilder()
             module = builder_instance.module_build(time)
 
         asctime = module['asctime']
         self.assertEqual(len(asctime.args.args), 1)
-        self.assertIsInstance(asctime.args.args[0], nodes.AssName)
+        self.assertIsInstance(asctime.args.args[0], nodes.AssignName)
         self.assertEqual(asctime.args.args[0].name, 'value')
 
     def test_builder_apply_transforms(self):
@@ -206,12 +208,12 @@ class TestTransforms(unittest.TestCase):
             return nodes.const_factory(42)
 
         manager = builder.MANAGER
-        with add_transform(manager, nodes.Function, transform_function):
+        with add_transform(manager, nodes.FunctionDef, transform_function):
             astroid_builder = builder.AstroidBuilder(apply_transforms=False)
             module = astroid_builder.string_build('''def test(): pass''')
 
         # The transform wasn't applied.
-        self.assertIsInstance(module.body[0], nodes.Function)
+        self.assertIsInstance(module.body[0], nodes.FunctionDef)
 
 
 if __name__ == '__main__':

@@ -18,6 +18,8 @@
 import sys
 import unittest
 
+import six
+
 from astroid import MANAGER
 from astroid import bases
 from astroid import builder
@@ -25,8 +27,6 @@ from astroid import nodes
 from astroid import test_utils
 from astroid import util
 import astroid
-
-import six
 
 
 try:
@@ -108,7 +108,6 @@ class NamedTupleTest(unittest.TestCase):
         """)
         self.assertIs(util.YES, next(klass.infer()))
 
-
     @unittest.skipIf(sys.version_info[0] > 2,
                      'namedtuple inference is broken on Python 3')
     def test_namedtuple_advanced_inference(self):
@@ -172,7 +171,6 @@ class NoseBrainTest(unittest.TestCase):
                          'unittest.case.TestCase.assertEqual')
 
 
-
 class SixBrainTest(unittest.TestCase):
 
     def test_attribute_access(self):
@@ -206,9 +204,9 @@ class SixBrainTest(unittest.TestCase):
             self.assertIsInstance(urlencode, astroid.BoundMethod)
             self.assertEqual(urlencode.qname(), 'urllib.urlencode')
         else:
-            self.assertIsInstance(urljoin, nodes.Function)
+            self.assertIsInstance(urljoin, nodes.FunctionDef)
             self.assertEqual(urljoin.qname(), 'urllib.parse.urljoin')
-            self.assertIsInstance(urlencode, nodes.Function)
+            self.assertIsInstance(urlencode, nodes.FunctionDef)
             self.assertEqual(urlencode.qname(), 'urllib.parse.urlencode')
 
         urllib_error = next(ast_nodes[2].infer())
@@ -220,9 +218,9 @@ class SixBrainTest(unittest.TestCase):
             # being mimicked in brain's tip for six.moves.
             self.assertIsInstance(urllib_error, astroid.Instance)
         urlerror = next(urllib_error.igetattr('URLError'))
-        self.assertIsInstance(urlerror, nodes.Class)
+        self.assertIsInstance(urlerror, nodes.ClassDef)
         content_too_short = next(urllib_error.igetattr('ContentTooShortError'))
-        self.assertIsInstance(content_too_short, nodes.Class)
+        self.assertIsInstance(content_too_short, nodes.ClassDef)
 
         urllib_request = next(ast_nodes[3].infer())
         if six.PY3:
@@ -240,9 +238,9 @@ class SixBrainTest(unittest.TestCase):
             self.assertIsInstance(urlretrieve, astroid.BoundMethod)
             self.assertEqual(urlretrieve.qname(), 'urllib.urlretrieve')
         else:
-            self.assertIsInstance(urlopen, nodes.Function)
+            self.assertIsInstance(urlopen, nodes.FunctionDef)
             self.assertEqual(urlopen.qname(), 'urllib.request.urlopen')
-            self.assertIsInstance(urlretrieve, nodes.Function)
+            self.assertIsInstance(urlretrieve, nodes.FunctionDef)
             self.assertEqual(urlretrieve.qname(), 'urllib.request.urlretrieve')
 
     def test_from_imports(self):
@@ -251,7 +249,7 @@ class SixBrainTest(unittest.TestCase):
         http_client.HTTPSConnection #@
         ''')
         inferred = next(ast_node.infer())
-        self.assertIsInstance(inferred, nodes.Class)
+        self.assertIsInstance(inferred, nodes.ClassDef)
         if six.PY3:
             qname = 'http.client.HTTPSConnection'
         else:
@@ -259,8 +257,11 @@ class SixBrainTest(unittest.TestCase):
         self.assertEqual(inferred.qname(), qname)
 
 
+@unittest.skipUnless(HAS_MULTIPROCESSING,
+                     'multiprocesing is required for this test, but '
+                     'on some platforms it is missing '
+                     '(Jython for instance)')
 class MultiprocessingBrainTest(unittest.TestCase):
-
 
     def test_multiprocessing_module_attributes(self):
         # Test that module attributes are working,
@@ -272,7 +273,7 @@ class MultiprocessingBrainTest(unittest.TestCase):
         module = module.do_import_module('multiprocessing')
         cpu_count = next(module.igetattr('cpu_count'))
         if sys.version_info < (3, 4):
-            self.assertIsInstance(cpu_count, nodes.Function)
+            self.assertIsInstance(cpu_count, nodes.FunctionDef)
         else:
             self.assertIsInstance(cpu_count, astroid.BoundMethod)
 
@@ -331,8 +332,9 @@ class MultiprocessingBrainTest(unittest.TestCase):
 
 
 @unittest.skipUnless(HAS_ENUM,
-                     'The enum module was only added in Python 3.4. Support for older Python '
-                     'versions may be available through the enum34 compatibility module.')
+                     'The enum module was only added in Python 3.4. Support for '
+                     'older Python versions may be available through the enum34 '
+                     'compatibility module.')
 class EnumBrainTest(unittest.TestCase):
 
     def test_simple_enum(self):
@@ -358,7 +360,7 @@ class EnumBrainTest(unittest.TestCase):
             self.assertIn(property_type, prop.decoratornames())
 
         meth = one.getattr('mymethod')[0]
-        self.assertIsInstance(meth, astroid.Function)
+        self.assertIsInstance(meth, astroid.FunctionDef)
 
     def test_enum_multiple_base_classes(self):
         module = builder.parse("""

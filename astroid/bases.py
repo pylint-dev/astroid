@@ -20,11 +20,11 @@ inference utils.
 """
 
 import sys
+import warnings
 
-from astroid.context import InferenceContext
-from astroid.exceptions import (InferenceError, AstroidError, NotFoundError,
-                                UnresolvableName, UseInferenceDefault)
-from astroid.decorators import cachedproperty
+from astroid import context as contextmod
+from astroid import decorators as decoratorsmod
+from astroid import exceptions
 from astroid import util
 
 
@@ -79,31 +79,31 @@ class Proxy(object):
 def _infer_stmts(stmts, context, frame=None):
     """Return an iterator on statements inferred by each statement in *stmts*."""
     stmt = None
-    infered = False
+    inferred = False
     if context is not None:
         name = context.lookupname
         context = context.clone()
     else:
         name = None
-        context = InferenceContext()
+        context = contextmod.InferenceContext()
 
     for stmt in stmts:
         if stmt is util.YES:
             yield stmt
-            infered = True
+            inferred = True
             continue
         context.lookupname = stmt._infer_name(frame, name)
         try:
-            for infered in stmt.infer(context=context):
-                yield infered
-                infered = True
-        except UnresolvableName:
+            for inferred in stmt.infer(context=context):
+                yield inferred
+                inferred = True
+        except exceptions.UnresolvableName:
             continue
-        except InferenceError:
+        except exceptions.InferenceError:
             yield util.YES
-            infered = True
-    if not infered:
-        raise InferenceError(str(stmt))
+            inferred = True
+    if not inferred:
+        raise exceptions.InferenceError(str(stmt))
 
 
 class Instance(Proxy):
@@ -111,7 +111,7 @@ class Instance(Proxy):
     def getattr(self, name, context=None, lookupclass=True):
         try:
             values = self._proxied.instance_attr(name, context)
-        except NotFoundError:
+        except exceptions.NotFoundError:
             if name == '__class__':
                 return [self._proxied]
             if lookupclass:
@@ -120,23 +120,22 @@ class Instance(Proxy):
                 if name in ('__name__', '__bases__', '__mro__', '__subclasses__'):
                     return self._proxied.local_attr(name)
                 return self._proxied.getattr(name, context)
-            raise NotFoundError(name)
+            raise exceptions.NotFoundError(name)
         # since we've no context information, return matching class members as
         # well
         if lookupclass:
             try:
                 return values + self._proxied.getattr(name, context)
-            except NotFoundError:
+            except exceptions.NotFoundError:
                 pass
         return values
 
     def igetattr(self, name, context=None):
         """inferred getattr"""
         if not context:
-            context = InferenceContext()
+            context = contextmod.InferenceContext()
         try:
             # avoid recursively inferring the same attr on the same class
-
             context.push((self._proxied, name))
             # XXX frame should be self._proxied, or not ?
             get_attr = self.getattr(name, context, lookupclass=False)
@@ -145,22 +144,22 @@ class Instance(Proxy):
                 context,
                 frame=self,
             )
-        except NotFoundError:
+        except exceptions.NotFoundError:
             try:
                 # fallback to class'igetattr since it has some logic to handle
                 # descriptors
                 return self._wrap_attr(self._proxied.igetattr(name, context),
                                        context)
-            except NotFoundError:
-                raise InferenceError(name)
+            except exceptions.NotFoundError:
+                raise exceptions.InferenceError(name)
 
     def _wrap_attr(self, attrs, context=None):
         """wrap bound methods of attrs in a InstanceMethod proxies"""
         for attr in attrs:
             if isinstance(attr, UnboundMethod):
                 if _is_property(attr):
-                    for infered in attr.infer_call_result(self, context):
-                        yield infered
+                    for inferred in attr.infer_call_result(self, context):
+                        yield inferred
                 else:
                     yield BoundMethod(attr, self)
             elif hasattr(attr, 'name') and attr.name == '<lambda>':
@@ -179,15 +178,15 @@ class Instance(Proxy):
 
     def infer_call_result(self, caller, context=None):
         """infer what a class instance is returning when called"""
-        infered = False
+        inferred = False
         for node in self._proxied.igetattr('__call__', context):
             if node is util.YES:
                 continue
             for res in node.infer_call_result(caller, context):
-                infered = True
+                inferred = True
                 yield res
-        if not infered:
-            raise InferenceError()
+        if not inferred:
+            raise exceptions.InferenceError()
 
     def __repr__(self):
         return '<Instance of %s.%s at 0x%s>' % (self._proxied.root().name,
@@ -201,7 +200,7 @@ class Instance(Proxy):
         try:
             self._proxied.getattr('__call__')
             return True
-        except NotFoundError:
+        except exceptions.NotFoundError:
             return False
 
     def pytype(self):
@@ -291,7 +290,7 @@ def path_wrapper(func):
     def wrapped(node, context=None, _func=func, **kwargs):
         """wrapper function handling context"""
         if context is None:
-            context = InferenceContext()
+            context = contextmod.InferenceContext()
         context.push(node)
         yielded = set()
         for res in _func(node, context, **kwargs):
@@ -300,29 +299,29 @@ def path_wrapper(func):
                 ares = res._proxied
             else:
                 ares = res
-            if not ares in yielded:
+            if ares not in yielded:
                 yield res
                 yielded.add(ares)
     return wrapped
 
-def yes_if_nothing_infered(func):
+def yes_if_nothing_inferred(func):
     def wrapper(*args, **kwargs):
-        infered = False
+        inferred = False
         for node in func(*args, **kwargs):
-            infered = True
+            inferred = True
             yield node
-        if not infered:
+        if not inferred:
             yield util.YES
     return wrapper
 
-def raise_if_nothing_infered(func):
+def raise_if_nothing_inferred(func):
     def wrapper(*args, **kwargs):
-        infered = False
+        inferred = False
         for node in func(*args, **kwargs):
-            infered = True
+            inferred = True
             yield node
-        if not infered:
-            raise InferenceError()
+        if not inferred:
+            raise exceptions.InferenceError()
     return wrapper
 
 
@@ -334,8 +333,8 @@ class NodeNG(object):
     It represents a node of the new abstract syntax tree.
     """
     is_statement = False
-    optional_assign = False # True  for For (and for Comprehension if py <3.0)
-    is_function = False # True for Function nodes
+    optional_assign = False # True for For (and for Comprehension if py <3.0)
+    is_function = False # True for FunctionDef nodes
     # attributes below are set by the builder module or by raw factories
     lineno = None
     fromlineno = None
@@ -359,7 +358,7 @@ class NodeNG(object):
             # explicit_inference is not bound, give it self explicitly
             try:
                 return self._explicit_inference(self, context, **kwargs)
-            except UseInferenceDefault:
+            except exceptions.UseInferenceDefault:
                 pass
 
         if not context:
@@ -367,8 +366,8 @@ class NodeNG(object):
 
         key = (self, context.lookupname,
                context.callcontext, context.boundnode)
-        if key in context.infered:
-            return iter(context.infered[key])
+        if key in context.inferred:
+            return iter(context.inferred[key])
 
         return context.cache_generator(key, self._infer(context, **kwargs))
 
@@ -408,7 +407,7 @@ class NodeNG(object):
             attr = getattr(self, field)
             if not attr: # None or empty listy / tuple
                 continue
-            if attr.__class__ in (list, tuple):
+            if isinstance(attr, (list, tuple)):
                 return attr[-1]
             else:
                 return attr
@@ -430,13 +429,16 @@ class NodeNG(object):
         return self.parent.statement()
 
     def frame(self):
-        """return the first parent frame node (i.e. Module, Function or Class)
+        """return the first parent frame node (i.e. Module, FunctionDef or
+        ClassDef)
+
         """
         return self.parent.frame()
 
     def scope(self):
-        """return the first node defining a new scope (i.e. Module, Function,
-        Class, Lambda but also GenExpr)
+        """return the first node defining a new scope (i.e. Module,
+        FunctionDef, ClassDef, Lambda but also GenExpr)
+
         """
         return self.parent.scope()
 
@@ -453,11 +455,12 @@ class NodeNG(object):
             if node_or_sequence is child:
                 return [node_or_sequence]
             # /!\ compiler.ast Nodes have an __iter__ walking over child nodes
-            if isinstance(node_or_sequence, (tuple, list)) and child in node_or_sequence:
+            if (isinstance(node_or_sequence, (tuple, list))
+                    and child in node_or_sequence):
                 return node_or_sequence
-        else:
-            msg = 'Could not find %s in %s\'s children'
-            raise AstroidError(msg % (repr(child), repr(self)))
+
+        msg = 'Could not find %s in %s\'s children'
+        raise exceptions.AstroidError(msg % (repr(child), repr(self)))
 
     def locate_child(self, child):
         """return a 2-uple (child attribute name, sequence or node)"""
@@ -469,7 +472,7 @@ class NodeNG(object):
             if isinstance(node_or_sequence, (tuple, list)) and child in node_or_sequence:
                 return field, node_or_sequence
         msg = 'Could not find %s in %s\'s children'
-        raise AstroidError(msg % (repr(child), repr(self)))
+        raise exceptions.AstroidError(msg % (repr(child), repr(self)))
     # FIXME : should we merge child_sequence and locate_child ? locate_child
     # is only used in are_exclusive, child_sequence one time in pylint.
 
@@ -502,14 +505,14 @@ class NodeNG(object):
     # these are lazy because they're relatively expensive to compute for every
     # single node, and they rarely get looked at
 
-    @cachedproperty
+    @decoratorsmod.cachedproperty
     def fromlineno(self):
         if self.lineno is None:
             return self._fixed_source_line()
         else:
             return self.lineno
 
-    @cachedproperty
+    @decoratorsmod.cachedproperty
     def tolineno(self):
         if not self._astroid_fields:
             # can't have children
@@ -567,20 +570,27 @@ class NodeNG(object):
                 yield matching
 
     def _infer_name(self, frame, name):
-        # overridden for From, Import, Global, TryExcept and Arguments
+        # overridden for ImportFrom, Import, Global, TryExcept and Arguments
         return None
 
     def _infer(self, context=None):
         """we don't know how to resolve a statement by default"""
         # this method is overridden by most concrete classes
-        raise InferenceError(self.__class__.__name__)
+        raise exceptions.InferenceError(self.__class__.__name__)
 
-    def infered(self):
-        '''return list of infered values for a more simple inference usage'''
+    def inferred(self):
+        '''return list of inferred values for a more simple inference usage'''
         return list(self.infer())
 
+    def infered(self):
+        warnings.warn('%s.infered() is deprecated and slated for removal '
+                      'in astroid 2.0, use %s.inferred() instead.'
+                      % (type(self).__name__, type(self).__name__),
+                      PendingDeprecationWarning)
+        return self.inferred()
+
     def instanciate_class(self):
-        """instanciate a node if it is a Class node, else return self"""
+        """instanciate a node if it is a ClassDef node, else return self"""
         return self
 
     def has_base(self, node):

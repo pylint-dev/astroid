@@ -19,9 +19,10 @@
 # The code in this file was originally part of logilab-common, licensed under
 # the same license.
 
-""" A few useful function/method decorators. """
+""" A few useful function/method decorators."""
 
 import functools
+
 
 def cached(func):
     """Simple decorator to cache result of method calls without args."""
@@ -34,11 +35,11 @@ def cached(func):
         try:
             return cache[func]
         except KeyError:
-            result = func(wrapped_self)
-            cache[func] = result
+            cache[func] = result = func(wrapped_self)
             return result
 
     return wrapped
+
 
 class cachedproperty(object):
     """ Provides a cached property equivalent to the stacking of

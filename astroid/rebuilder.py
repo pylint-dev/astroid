@@ -20,8 +20,9 @@ order to get a single Astroid representation
 """
 
 import sys
+import _ast
 from _ast import (
-    Expr as Discard, Str,
+    Expr, Str,
     # binary operators
     Add, BinOp, Div, FloorDiv, Mod, Mult, Pow, Sub, BitAnd, BitOr, BitXor,
     LShift, RShift,
@@ -82,19 +83,11 @@ CONST_NAME_TRANSFORMS = {'None':  None,
                         }
 
 REDIRECT = {'arguments': 'Arguments',
-            'Attribute': 'Getattr',
             'comprehension': 'Comprehension',
-            'Call': 'CallFunc',
-            'ClassDef': 'Class',
             "ListCompFor": 'Comprehension',
             "GenExprFor": 'Comprehension',
             'excepthandler': 'ExceptHandler',
-            'Expr': 'Discard',
-            'FunctionDef': 'Function',
-            'GeneratorExp': 'GenExpr',
-            'ImportFrom': 'From',
             'keyword': 'Keyword',
-            'Repr': 'Backquote',
            }
 PY3K = sys.version_info >= (3, 0)
 PY34 = sys.version_info >= (3, 4)
@@ -102,7 +95,7 @@ PY34 = sys.version_info >= (3, 4)
 def _init_set_doc(node, newnode):
     newnode.doc = None
     try:
-        if isinstance(node.body[0], Discard) and isinstance(node.body[0].value, Str):
+        if isinstance(node.body[0], _ast.Expr) and isinstance(node.body[0].value, _ast.Str):
             newnode.doc = node.body[0].value.s
             node.body = node.body[1:]
 
@@ -136,7 +129,7 @@ class TreeRebuilder(object):
         self._manager = manager
         self.asscontext = None
         self._global_names = []
-        self._from_nodes = []
+        self._import_from_nodes = []
         self._delayed_assattr = []
         self._visit_meths = {}
         self._peepholer = astpeephole.ASTPeepholeOptimizer()
@@ -174,7 +167,7 @@ class TreeRebuilder(object):
         """visit a Arguments node by returning a fresh instance of it"""
         newnode = new.Arguments()
         newnode.parent = parent
-        self.asscontext = "Ass"
+        self.asscontext = "Assign"
         newnode.args = [self.visit(child, newnode) for child in node.args]
         self.asscontext = None
         newnode.defaults = [self.visit(child, newnode) for child in node.defaults]
@@ -211,10 +204,10 @@ class TreeRebuilder(object):
             newnode.parent.set_local(kwarg, newnode)
         return newnode
 
-    def visit_assattr(self, node, parent):
+    def visit_assignattr(self, node, parent):
         """visit a AssAttr node by returning a fresh instance of it"""
         assc, self.asscontext = self.asscontext, None
-        newnode = new.AssAttr()
+        newnode = new.AssignAttr()
         _lineno_parent(node, newnode, parent)
         newnode.expr = self.visit(node.expr, newnode)
         self.asscontext = assc
@@ -234,15 +227,15 @@ class TreeRebuilder(object):
         """visit a Assign node by returning a fresh instance of it"""
         newnode = new.Assign()
         _lineno_parent(node, newnode, parent)
-        self.asscontext = "Ass"
+        self.asscontext = "Assign"
         newnode.targets = [self.visit(child, newnode) for child in node.targets]
         self.asscontext = None
         newnode.value = self.visit(node.value, newnode)
         return newnode
 
-    def visit_assname(self, node, parent, node_name=None):
+    def visit_assignname(self, node, parent, node_name=None):
         '''visit a node and return a AssName node'''
-        newnode = new.AssName()
+        newnode = new.AssignName()
         _set_infos(node, newnode, parent)
         newnode.name = node_name
         self._save_assignment(newnode)
@@ -253,13 +246,13 @@ class TreeRebuilder(object):
         newnode = new.AugAssign()
         _lineno_parent(node, newnode, parent)
         newnode.op = _BIN_OP_CLASSES[node.op.__class__] + "="
-        self.asscontext = "Ass"
+        self.asscontext = "Assign"
         newnode.target = self.visit(node.target, newnode)
         self.asscontext = None
         newnode.value = self.visit(node.value, newnode)
         return newnode
 
-    def visit_backquote(self, node, parent):
+    def visit_repr(self, node, parent):
         """visit a Backquote node by returning a fresh instance of it"""
         newnode = new.Backquote()
         _lineno_parent(node, newnode, parent)
@@ -268,7 +261,7 @@ class TreeRebuilder(object):
 
     def visit_binop(self, node, parent):
         """visit a BinOp node by returning a fresh instance of it"""
-        if isinstance(node.left, BinOp) and self._manager.optimize_ast:
+        if isinstance(node.left, _ast.BinOp) and self._manager.optimize_ast:
             # Optimize BinOp operations in order to remove
             # redundant recursion. For instance, if the
             # following code is parsed in order to obtain
@@ -307,9 +300,9 @@ class TreeRebuilder(object):
         _set_infos(node, newnode, parent)
         return newnode
 
-    def visit_callfunc(self, node, parent):
+    def visit_call(self, node, parent):
         """visit a CallFunc node by returning a fresh instance of it"""
-        newnode = new.CallFunc()
+        newnode = new.Call()
         _lineno_parent(node, newnode, parent)
         newnode.func = self.visit(node.func, newnode)
         newnode.args = [self.visit(child, newnode) for child in node.args]
@@ -323,9 +316,9 @@ class TreeRebuilder(object):
                                 for child in node.keywords]
         return newnode
 
-    def visit_class(self, node, parent):
+    def visit_classdef(self, node, parent):
         """visit a Class node to become astroid"""
-        newnode = new.Class(node.name, None)
+        newnode = new.ClassDef(node.name, None)
         _lineno_parent(node, newnode, parent)
         _init_set_doc(node, newnode)
         newnode.bases = [self.visit(child, newnode) for child in node.bases]
@@ -360,7 +353,7 @@ class TreeRebuilder(object):
         """visit a Comprehension node by returning a fresh instance of it"""
         newnode = new.Comprehension()
         newnode.parent = parent
-        self.asscontext = "Ass"
+        self.asscontext = "Assign"
         newnode.target = self.visit(node.target, newnode)
         self.asscontext = None
         newnode.iter = self.visit(node.iter, newnode)
@@ -404,9 +397,9 @@ class TreeRebuilder(object):
                               for child in node.generators]
         return newnode
 
-    def visit_discard(self, node, parent):
+    def visit_expr(self, node, parent):
         """visit a Discard node by returning a fresh instance of it"""
-        newnode = new.Discard()
+        newnode = new.Expr()
         _lineno_parent(node, newnode, parent)
         newnode.value = self.visit(node.value, newnode)
         return newnode
@@ -431,7 +424,7 @@ class TreeRebuilder(object):
             newnode.type = self.visit(node.type, newnode)
         if node.name is not None:
             # /!\ node.name can be a tuple
-            self.asscontext = "Ass"
+            self.asscontext = "Assign"
             newnode.name = self.visit(node.name, newnode)
             self.asscontext = None
         newnode.body = [self.visit(child, newnode) for child in node.body]
@@ -459,7 +452,7 @@ class TreeRebuilder(object):
         """visit a For node by returning a fresh instance of it"""
         newnode = new.For()
         _lineno_parent(node, newnode, parent)
-        self.asscontext = "Ass"
+        self.asscontext = "Assign"
         newnode.target = self.visit(node.target, newnode)
         self.asscontext = None
         newnode.iter = self.visit(node.iter, newnode)
@@ -467,19 +460,19 @@ class TreeRebuilder(object):
         newnode.orelse = [self.visit(child, newnode) for child in node.orelse]
         return newnode
 
-    def visit_from(self, node, parent):
+    def visit_importfrom(self, node, parent):
         """visit a From node by returning a fresh instance of it"""
         names = [(alias.name, alias.asname) for alias in node.names]
-        newnode = new.From(node.module or '', names, node.level or None)
+        newnode = new.ImportFrom(node.module or '', names, node.level or None)
         _set_infos(node, newnode, parent)
         # store From names to add them to locals after building
-        self._from_nodes.append(newnode)
+        self._import_from_nodes.append(newnode)
         return newnode
 
-    def visit_function(self, node, parent):
+    def visit_functiondef(self, node, parent):
         """visit an Function node to become astroid"""
         self._global_names.append({})
-        newnode = new.Function(node.name, None)
+        newnode = new.FunctionDef(node.name, None)
         _lineno_parent(node, newnode, parent)
         _init_set_doc(node, newnode)
         newnode.args = self.visit(node.args, newnode)
@@ -494,26 +487,26 @@ class TreeRebuilder(object):
         frame.set_local(newnode.name, newnode)
         return newnode
 
-    def visit_genexpr(self, node, parent):
+    def visit_generatorexp(self, node, parent):
         """visit a GenExpr node by returning a fresh instance of it"""
-        newnode = new.GenExpr()
+        newnode = new.GeneratorExp()
         _lineno_parent(node, newnode, parent)
         newnode.elt = self.visit(node.elt, newnode)
         newnode.generators = [self.visit(child, newnode) for child in node.generators]
         return newnode
 
-    def visit_getattr(self, node, parent):
+    def visit_attribute(self, node, parent):
         """visit a Getattr node by returning a fresh instance of it"""
         if self.asscontext == "Del":
             # FIXME : maybe we should reintroduce and visit_delattr ?
             # for instance, deactivating asscontext
             newnode = new.DelAttr()
-        elif self.asscontext == "Ass":
+        elif self.asscontext == "Assign":
             # FIXME : maybe we should call visit_assattr ?
-            newnode = new.AssAttr()
+            newnode = new.AssignAttr()
             self._delayed_assattr.append(newnode)
         else:
-            newnode = new.Getattr()
+            newnode = new.Attribute()
         _lineno_parent(node, newnode, parent)
         asscontext, self.asscontext = self.asscontext, None
         newnode.expr = self.visit(node.value, newnode)
@@ -605,7 +598,7 @@ class TreeRebuilder(object):
         if self.asscontext == "Del":
             newnode = new.DelName()
         elif self.asscontext is not None: # Ass
-            assert self.asscontext == "Ass"
+            assert self.asscontext == "Assign"
             newnode = new.AssName()
         elif node.id in CONST_NAME_TRANSFORMS:
             newnode = new.Const(CONST_NAME_TRANSFORMS[node.id])
@@ -616,7 +609,7 @@ class TreeRebuilder(object):
         _lineno_parent(node, newnode, parent)
         newnode.name = node.id
         # XXX REMOVE me :
-        if self.asscontext in ('Del', 'Ass'): # 'Aug' ??
+        if self.asscontext in ('Del', 'Assign'): # 'Aug' ??
             self._save_assignment(newnode)
         return newnode
 
@@ -757,7 +750,7 @@ class TreeRebuilder(object):
         newnode = new.With()
         _lineno_parent(node, newnode, parent)
         expr = self.visit(node.context_expr, newnode)
-        self.asscontext = "Ass"
+        self.asscontext = "Assign"
         if node.optional_vars is not None:
             vars = self.visit(node.optional_vars, newnode)
         else:
@@ -777,7 +770,7 @@ class TreeRebuilder3k(TreeRebuilder):
     def visit_arg(self, node, parent):
         """visit a arg node by returning a fresh AssName instance"""
         # TODO(cpopa): introduce an Arg node instead of using AssName.
-        return self.visit_assname(node, parent, node.arg)
+        return self.visit_assignname(node, parent, node.arg)
 
     def visit_nameconstant(self, node, parent):
         # in Python 3.4 we have NameConstant for True / False / None
@@ -787,7 +780,7 @@ class TreeRebuilder3k(TreeRebuilder):
 
     def visit_arguments(self, node, parent):
         newnode = super(TreeRebuilder3k, self).visit_arguments(node, parent)
-        self.asscontext = "Ass"
+        self.asscontext = "Assign"
         newnode.kwonlyargs = [self.visit(child, newnode) for child in node.kwonlyargs]
         self.asscontext = None
         newnode.kw_defaults = [self.visit(child, newnode) if child else None for child in node.kw_defaults]
@@ -803,7 +796,7 @@ class TreeRebuilder3k(TreeRebuilder):
         if node.type is not None:
             newnode.type = self.visit(node.type, newnode)
         if node.name is not None:
-            newnode.name = self.visit_assname(node, newnode, node.name)
+            newnode.name = self.visit_assignname(node, newnode, node.name)
         newnode.body = [self.visit(child, newnode) for child in node.body]
         return newnode
 
@@ -863,7 +856,7 @@ class TreeRebuilder3k(TreeRebuilder):
         _lineno_parent(node, newnode, parent)
         def visit_child(child):
             expr = self.visit(child.context_expr, newnode)
-            self.asscontext = 'Ass'
+            self.asscontext = 'Assign'
             if child.optional_vars:
                 var = self.visit(child.optional_vars, newnode)
             else:
@@ -878,8 +871,8 @@ class TreeRebuilder3k(TreeRebuilder):
     def visit_yieldfrom(self, node, parent):
         return _create_yield_node(node, parent, self, new.YieldFrom)
 
-    def visit_class(self, node, parent):
-        newnode = super(TreeRebuilder3k, self).visit_class(node, parent)
+    def visit_classdef(self, node, parent):
+        newnode = super(TreeRebuilder3k, self).visit_classdef(node, parent)
         newnode._newstyle = True
         for keyword in node.keywords:
             if keyword.arg == 'metaclass':

@@ -26,6 +26,10 @@ from astroid import modutils
 from astroid.tests import resources
 
 
+def _get_file_from_object(obj):
+    return modutils._path_from_filename(obj.__file__)
+
+
 class ModuleFileTest(unittest.TestCase):
     package = "mypypa"
 
@@ -122,8 +126,9 @@ class FileFromModPathTest(resources.SysPathSetup, unittest.TestCase):
     if it exists"""
 
     def test_site_packages(self):
-        self.assertEqual(os.path.realpath(modutils.file_from_modpath(['astroid', 'modutils'])),
-                         os.path.realpath(modutils.__file__.replace('.pyc', '.py')))
+        filename = _get_file_from_object(modutils)
+        result = modutils.file_from_modpath(['astroid', 'modutils'])
+        self.assertEqual(os.path.realpath(result), os.path.realpath(filename))
 
     def test_std_lib(self):
         from os import path
@@ -157,8 +162,9 @@ class FileFromModPathTest(resources.SysPathSetup, unittest.TestCase):
 class GetSourceFileTest(unittest.TestCase):
 
     def test(self):
+        filename = _get_file_from_object(os.path)
         self.assertEqual(modutils.get_source_file(os.path.__file__),
-                         os.path.normpath(os.path.__file__.replace('.pyc', '.py')))
+                         os.path.normpath(filename))
 
     def test_raise(self):
         self.assertRaises(modutils.NoSourceFile, modutils.get_source_file, 'whatever')
@@ -180,15 +186,13 @@ class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_builtin(self):
         self.assertEqual(modutils.is_standard_module('sys'), True)
+        self.assertEqual(modutils.is_standard_module('marshal'), True)
 
     def test_nonstandard(self):
         self.assertEqual(modutils.is_standard_module('astroid'), False)
 
     def test_unknown(self):
         self.assertEqual(modutils.is_standard_module('unknown'), False)
-
-    def test_builtin(self):
-        self.assertEqual(modutils.is_standard_module('marshal'), True)
 
     def test_4(self):
         self.assertEqual(modutils.is_standard_module('hashlib'), True)
@@ -238,14 +242,12 @@ class IsRelativeTest(unittest.TestCase):
 class GetModuleFilesTest(unittest.TestCase):
 
     def test_get_module_files_1(self):
-        """given a directory return a list of all available python module's files, even
-        in subdirectories
-        """
         package = resources.find('data/find_test')
         modules = set(modutils.get_module_files(package, []))
-        self.assertEqual(
-            modules,
-            {os.path.join(package, x) for x in ['__init__.py', 'module.py', 'module2.py', 'noendingnewline.py', 'nonregr.py']})
+        expected = ['__init__.py', 'module.py', 'module2.py',
+                    'noendingnewline.py', 'nonregr.py']
+        self.assertEqual(modules,
+                         {os.path.join(package, x) for x in expected})
 
     def test_load_module_set_attribute(self):
         import xml.etree.ElementTree

@@ -13,7 +13,6 @@ _TRANSIENT_FUNCTION = '__'
 # when calling extract_node.
 _STATEMENT_SELECTOR = '#@'
 
-
 def _extract_expressions(node):
     """Find expressions in a call to _TRANSIENT_FUNCTION and extract them.
 
@@ -27,7 +26,7 @@ def _extract_expressions(node):
     :yields: The sequence of wrapped expressions on the modified tree
     expression can be found.
     """
-    if (isinstance(node, nodes.CallFunc)
+    if (isinstance(node, nodes.Call)
             and isinstance(node.func, nodes.Name)
             and node.func.name == _TRANSIENT_FUNCTION):
         real_expr = node.args[0]
@@ -67,7 +66,7 @@ def _find_statement_by_line(node, line):
       can be found.
     :rtype:  astroid.bases.NodeNG or None
     """
-    if isinstance(node, (nodes.Class, nodes.Function)):
+    if isinstance(node, (nodes.ClassDef, nodes.FunctionDef)):
         # This is an inaccuracy in the AST: the nodes that can be
         # decorated do not carry explicit information on which line
         # the actual definition (class/def), but .fromline seems to
@@ -141,7 +140,7 @@ def extract_node(code, module_name=''):
     :rtype: astroid.bases.NodeNG, or a list of nodes.
     """
     def _extract(node):
-        if isinstance(node, nodes.Discard):
+        if isinstance(node, nodes.Expr):
             return node.value
         else:
             return node

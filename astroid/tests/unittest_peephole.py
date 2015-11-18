@@ -108,7 +108,7 @@ class PeepholeOptimizer(unittest.TestCase):
             module = builder.parse("""
             '1' + '2' + '3'
             """)
-            self.assertIsInstance(module.body[0], astroid.Discard)
+            self.assertIsInstance(module.body[0], astroid.Expr)
             self.assertIsInstance(module.body[0].value, astroid.BinOp)
             self.assertIsInstance(module.body[0].value.left, astroid.BinOp)
             self.assertIsInstance(module.body[0].value.left.left,

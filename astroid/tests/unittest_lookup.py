@@ -17,15 +17,16 @@
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 """tests for the astroid variable lookup capabilities
 """
+import functools
 import sys
-from functools import partial
 import unittest
 
-from astroid import nodes, InferenceError, NotFoundError, UnresolvableName
-from astroid.scoped_nodes import builtin_lookup
-from astroid.util import YES
 from astroid import builder
+from astroid import exceptions
+from astroid import nodes
+from astroid import scoped_nodes
 from astroid import test_utils
+from astroid import util
 from astroid.tests import resources
 
 
@@ -68,7 +69,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         b_value = next(b_infer)
         self.assertEqual(b_value.value, 1)
         # c
-        self.assertRaises(StopIteration, partial(next, b_infer))
+        self.assertRaises(StopIteration, functools.partial(next, b_infer))
         func = astroid.locals['func'][0]
         self.assertEqual(len(func.lookup('c')[1]), 1)
 
@@ -78,9 +79,10 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         none = next(astroid.ilookup('None'))
         self.assertIsNone(none.value)
         obj = next(astroid.ilookup('object'))
-        self.assertIsInstance(obj, nodes.Class)
+        self.assertIsInstance(obj, nodes.ClassDef)
         self.assertEqual(obj.name, 'object')
-        self.assertRaises(InferenceError, partial(next, astroid.ilookup('YOAA')))
+        self.assertRaises(exceptions.InferenceError,
+                          functools.partial(next, astroid.ilookup('YOAA')))
 
         # XXX
         self.assertEqual(len(list(self.nonregr.ilookup('enumerate'))), 2)
@@ -106,13 +108,13 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertTrue(isinstance(my_dict, nodes.Dict), my_dict)
         none = next(method.ilookup('None'))
         self.assertIsNone(none.value)
-        self.assertRaises(InferenceError, partial(next, method.ilookup('YOAA')))
-
+        self.assertRaises(exceptions.InferenceError,
+                          functools.partial(next, method.ilookup('YOAA')))
 
     def test_function_argument_with_default(self):
         make_class = self.module2['make_class']
         base = next(make_class.ilookup('base'))
-        self.assertTrue(isinstance(base, nodes.Class), base.__class__)
+        self.assertTrue(isinstance(base, nodes.ClassDef), base.__class__)
         self.assertEqual(base.name, 'YO')
         self.assertEqual(base.root().name, 'data.module')
 
@@ -123,14 +125,14 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         none = next(klass.ilookup('None'))
         self.assertIsNone(none.value)
         obj = next(klass.ilookup('object'))
-        self.assertIsInstance(obj, nodes.Class)
+        self.assertIsInstance(obj, nodes.ClassDef)
         self.assertEqual(obj.name, 'object')
-        self.assertRaises(InferenceError, partial(next, klass.ilookup('YOAA')))
+        self.assertRaises(exceptions.InferenceError,
+                          functools.partial(next, klass.ilookup('YOAA')))
 
     def test_inner_classes(self):
         ddd = list(self.nonregr['Ccc'].ilookup('Ddd'))
         self.assertEqual(ddd[0].name, 'Ddd')
-
 
     def test_loopvar_hiding(self):
         astroid = builder.parse("""
@@ -170,9 +172,9 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         """)
         var = astroid.body[1].value
         if sys.version_info < (3, 0):
-            self.assertEqual(var.infered(), [YES])
+            self.assertEqual(var.inferred(), [util.YES])
         else:
-            self.assertRaises(UnresolvableName, var.infered)
+            self.assertRaises(exceptions.UnresolvableName, var.inferred)
 
     def test_dict_comps(self):
         astroid = builder.parse("""
@@ -208,7 +210,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
             var
         """)
         var = astroid.body[1].value
-        self.assertRaises(UnresolvableName, var.infered)
+        self.assertRaises(exceptions.UnresolvableName, var.inferred)
 
     def test_generator_attributes(self):
         tree = builder.parse("""
@@ -219,15 +221,15 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
             iterer = count()
             num = iterer.next()
         """)
-        next = tree.body[2].value.func # Getattr
-        gener = next.expr.infered()[0] # Generator
+        next_node = tree.body[2].value.func
+        gener = next_node.expr.inferred()[0]
         if sys.version_info < (3, 0):
-            self.assertIsInstance(gener.getattr('next')[0], nodes.Function)
+            self.assertIsInstance(gener.getattr('next')[0], nodes.FunctionDef)
         else:
-            self.assertIsInstance(gener.getattr('__next__')[0], nodes.Function)
-        self.assertIsInstance(gener.getattr('send')[0], nodes.Function)
-        self.assertIsInstance(gener.getattr('throw')[0], nodes.Function)
-        self.assertIsInstance(gener.getattr('close')[0], nodes.Function)
+            self.assertIsInstance(gener.getattr('__next__')[0], nodes.FunctionDef)
+        self.assertIsInstance(gener.getattr('send')[0], nodes.FunctionDef)
+        self.assertIsInstance(gener.getattr('throw')[0], nodes.FunctionDef)
+        self.assertIsInstance(gener.getattr('close')[0], nodes.FunctionDef)
 
     def test_explicit___name__(self):
         code = '''
@@ -248,8 +250,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertTrue(p2.getattr('__name__'))
         self.assertTrue(astroid['NoName'].getattr('__name__'))
         p3 = next(astroid['p3'].infer())
-        self.assertRaises(NotFoundError, p3.getattr, '__name__')
-
+        self.assertRaises(exceptions.NotFoundError, p3.getattr, '__name__')
 
     def test_function_module_special(self):
         astroid = builder.parse('''
@@ -260,15 +261,13 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         path = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == '__path__'][0]
         self.assertEqual(len(path.lookup('__path__')[1]), 1)
 
-
     def test_builtin_lookup(self):
-        self.assertEqual(builtin_lookup('__dict__')[1], ())
-        intstmts = builtin_lookup('int')[1]
+        self.assertEqual(scoped_nodes.builtin_lookup('__dict__')[1], ())
+        intstmts = scoped_nodes.builtin_lookup('int')[1]
         self.assertEqual(len(intstmts), 1)
-        self.assertIsInstance(intstmts[0], nodes.Class)
+        self.assertIsInstance(intstmts[0], nodes.ClassDef)
         self.assertEqual(intstmts[0].name, 'int')
         self.assertIs(intstmts[0], nodes.const_factory(1)._proxied)
-
 
     def test_decorator_arguments_lookup(self):
         code = '''
@@ -289,8 +288,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         obj = next(it)
         self.assertIsInstance(obj, nodes.Const)
         self.assertEqual(obj.value, 10)
-        self.assertRaises(StopIteration, partial(next, it))
-
+        self.assertRaises(StopIteration, functools.partial(next, it))
 
     def test_inner_decorator_member_lookup(self):
         code = '''
@@ -305,9 +303,8 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         decname = test_utils.extract_node(code, __name__)
         it = decname.infer()
         obj = next(it)
-        self.assertIsInstance(obj, nodes.Function)
-        self.assertRaises(StopIteration, partial(next, it))
-
+        self.assertIsInstance(obj, nodes.FunctionDef)
+        self.assertRaises(StopIteration, functools.partial(next, it))
 
     def test_static_method_lookup(self):
         code = '''
@@ -326,9 +323,8 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         astroid = builder.parse(code, __name__)
         it = astroid['Test']['__init__'].ilookup('FileA')
         obj = next(it)
-        self.assertIsInstance(obj, nodes.Class)
-        self.assertRaises(StopIteration, partial(next, it))
-
+        self.assertIsInstance(obj, nodes.ClassDef)
+        self.assertRaises(StopIteration, functools.partial(next, it))
 
     def test_global_delete(self):
         code = '''

@@ -21,16 +21,18 @@ import os
 import sys
 import unittest
 
-from astroid import builder, nodes, InferenceError, NotFoundError
-from astroid.bases import BUILTINS
-from astroid import exceptions
-from astroid.manager import AstroidManager
-from astroid import test_utils
-from astroid.tests import resources
-from astroid.util import YES
+import six
 
-MANAGER = AstroidManager()
-IS_PY3 = sys.version_info[0] == 3
+from astroid import builder
+from astroid import exceptions
+from astroid import manager
+from astroid import nodes
+from astroid import test_utils
+from astroid import util
+from astroid.tests import resources
+
+MANAGER = manager.AstroidManager()
+BUILTINS = six.moves.builtins.__name__
 
 
 class FromToLineNoTest(unittest.TestCase):
@@ -44,11 +46,11 @@ class FromToLineNoTest(unittest.TestCase):
         #    function('aeozrijz\
         #    earzer', hop)
         discard = stmts[0]
-        self.assertIsInstance(discard, nodes.Discard)
+        self.assertIsInstance(discard, nodes.Expr)
         self.assertEqual(discard.fromlineno, 4)
         self.assertEqual(discard.tolineno, 5)
         callfunc = discard.value
-        self.assertIsInstance(callfunc, nodes.CallFunc)
+        self.assertIsInstance(callfunc, nodes.Call)
         self.assertEqual(callfunc.fromlineno, 4)
         self.assertEqual(callfunc.tolineno, 5)
         name = callfunc.func
@@ -73,11 +75,11 @@ class FromToLineNoTest(unittest.TestCase):
         #             3,
         #             4)
         discard = stmts[2]
-        self.assertIsInstance(discard, nodes.Discard)
+        self.assertIsInstance(discard, nodes.Expr)
         self.assertEqual(discard.fromlineno, 10)
         self.assertEqual(discard.tolineno, 13)
         callfunc = discard.value
-        self.assertIsInstance(callfunc, nodes.CallFunc)
+        self.assertIsInstance(callfunc, nodes.Call)
         self.assertEqual(callfunc.fromlineno, 10)
         self.assertEqual(callfunc.tolineno, 13)
         name = callfunc.func
@@ -97,7 +99,7 @@ class FromToLineNoTest(unittest.TestCase):
         #                   c):
         #        return a + b + c
         function = stmts[3]
-        self.assertIsInstance(function, nodes.Function)
+        self.assertIsInstance(function, nodes.FunctionDef)
         self.assertEqual(function.fromlineno, 15)
         self.assertEqual(function.tolineno, 18)
         return_ = function.body[0]
@@ -136,7 +138,7 @@ class FromToLineNoTest(unittest.TestCase):
         #                 object):
         #       pass
         class_ = stmts[4]
-        self.assertIsInstance(class_, nodes.Class)
+        self.assertIsInstance(class_, nodes.ClassDef)
         self.assertEqual(class_.fromlineno, 20)
         self.assertEqual(class_.tolineno, 22)
         self.assertEqual(class_.blockstart_tolineno, 21)
@@ -271,21 +273,21 @@ class BuilderTest(unittest.TestCase):
     def test_inspect_build0(self):
         """test astroid tree build from a living object"""
         builtin_ast = MANAGER.ast_from_module_name(BUILTINS)
-        if not IS_PY3:
+        if six.PY2:
             fclass = builtin_ast['file']
             self.assertIn('name', fclass)
             self.assertIn('mode', fclass)
             self.assertIn('read', fclass)
             self.assertTrue(fclass.newstyle)
             self.assertTrue(fclass.pytype(), '%s.type' % BUILTINS)
-            self.assertIsInstance(fclass['read'], nodes.Function)
+            self.assertIsInstance(fclass['read'], nodes.FunctionDef)
             # check builtin function has args.args == None
             dclass = builtin_ast['dict']
             self.assertIsNone(dclass['has_key'].args.args)
         # just check type and object are there
         builtin_ast.getattr('type')
         objectastroid = builtin_ast.getattr('object')[0]
-        self.assertIsInstance(objectastroid.getattr('__new__')[0], nodes.Function)
+        self.assertIsInstance(objectastroid.getattr('__new__')[0], nodes.FunctionDef)
         # check open file alias
         builtin_ast.getattr('open')
         # check 'help' is there (defined dynamically by site.py)
@@ -296,12 +298,12 @@ class BuilderTest(unittest.TestCase):
         self.assertIsInstance(builtin_ast['None'], nodes.Const)
         self.assertIsInstance(builtin_ast['True'], nodes.Const)
         self.assertIsInstance(builtin_ast['False'], nodes.Const)
-        if IS_PY3:
-            self.assertIsInstance(builtin_ast['Exception'], nodes.Class)
-            self.assertIsInstance(builtin_ast['NotImplementedError'], nodes.Class)
+        if six.PY3:
+            self.assertIsInstance(builtin_ast['Exception'], nodes.ClassDef)
+            self.assertIsInstance(builtin_ast['NotImplementedError'], nodes.ClassDef)
         else:
-            self.assertIsInstance(builtin_ast['Exception'], nodes.From)
-            self.assertIsInstance(builtin_ast['NotImplementedError'], nodes.From)
+            self.assertIsInstance(builtin_ast['Exception'], nodes.ImportFrom)
+            self.assertIsInstance(builtin_ast['NotImplementedError'], nodes.ImportFrom)
 
     def test_inspect_build1(self):
         time_ast = MANAGER.ast_from_module_name('time')
@@ -342,17 +344,17 @@ class BuilderTest(unittest.TestCase):
     def test_inspect_build_type_object(self):
         builtin_ast = MANAGER.ast_from_module_name(BUILTINS)
 
-        infered = list(builtin_ast.igetattr('object'))
-        self.assertEqual(len(infered), 1)
-        infered = infered[0]
-        self.assertEqual(infered.name, 'object')
-        infered.as_string() # no crash test
+        inferred = list(builtin_ast.igetattr('object'))
+        self.assertEqual(len(inferred), 1)
+        inferred = inferred[0]
+        self.assertEqual(inferred.name, 'object')
+        inferred.as_string() # no crash test
 
-        infered = list(builtin_ast.igetattr('type'))
-        self.assertEqual(len(infered), 1)
-        infered = infered[0]
-        self.assertEqual(infered.name, 'type')
-        infered.as_string() # no crash test
+        inferred = list(builtin_ast.igetattr('type'))
+        self.assertEqual(len(inferred), 1)
+        inferred = inferred[0]
+        self.assertEqual(inferred.name, 'type')
+        inferred.as_string() # no crash test
 
     def test_inspect_transform_module(self):
         # ensure no cached version of the time module
@@ -386,11 +388,11 @@ class BuilderTest(unittest.TestCase):
                     yield more
         """
         func = test_utils.extract_node(code)
-        self.assertIsInstance(func, nodes.Function)
+        self.assertIsInstance(func, nodes.FunctionDef)
         stmt = func.body[0]
-        self.assertIsInstance(stmt, nodes.Discard)
+        self.assertIsInstance(stmt, nodes.Expr)
         self.assertIsInstance(stmt.value, nodes.Yield)
-        self.assertIsInstance(func.body[1].body[0], nodes.Discard)
+        self.assertIsInstance(func.body[1].body[0], nodes.Expr)
         self.assertIsInstance(func.body[1].body[0].value, nodes.Yield)
 
     def test_object(self):
@@ -420,7 +422,7 @@ class BuilderTest(unittest.TestCase):
                 "new style"
         '''
         mod_ast = builder.parse(data, __name__)
-        if IS_PY3:
+        if six.PY3:
             self.assertTrue(mod_ast['A'].newstyle)
             self.assertTrue(mod_ast['B'].newstyle)
             self.assertTrue(mod_ast['E'].newstyle)
@@ -446,12 +448,12 @@ class BuilderTest(unittest.TestCase):
         '''
         astroid = builder.parse(data, __name__)
         self.assertEqual(len(astroid.getattr('CSTE')), 2)
-        self.assertIsInstance(astroid.getattr('CSTE')[0], nodes.AssName)
+        self.assertIsInstance(astroid.getattr('CSTE')[0], nodes.AssignName)
         self.assertEqual(astroid.getattr('CSTE')[0].fromlineno, 2)
         self.assertEqual(astroid.getattr('CSTE')[1].fromlineno, 6)
-        with self.assertRaises(NotFoundError):
+        with self.assertRaises(exceptions.NotFoundError):
             astroid.getattr('CSTE2')
-        with self.assertRaises(InferenceError):
+        with self.assertRaises(exceptions.InferenceError):
             next(astroid['global_no_effect'].ilookup('CSTE2'))
 
     @unittest.skipIf(os.name == 'java',
@@ -480,7 +482,7 @@ class BuilderTest(unittest.TestCase):
         n = test_utils.get_name_node(astroid, 'n')
         self.assertIsNot(n.scope(), astroid)
         self.assertEqual([i.__class__ for i in n.infer()],
-                         [YES.__class__])
+                         [util.YES.__class__])
 
     def test_no_future_imports(self):
         mod = builder.parse("import sys")
@@ -497,20 +499,20 @@ class BuilderTest(unittest.TestCase):
             """)
         self.assertEqual(set(['print_function', 'absolute_import']), mod.future_imports)
 
-    def test_infered_build(self):
+    def test_inferred_build(self):
         code = '''
             class A: pass
             A.type = "class"
 
-            def A_ass_type(self):
+            def A_assign_type(self):
                 print (self)
-            A.ass_type = A_ass_type
+            A.assign_type = A_assign_type
             '''
         astroid = builder.parse(code)
         lclass = list(astroid.igetattr('A'))
         self.assertEqual(len(lclass), 1)
         lclass = lclass[0]
-        self.assertIn('ass_type', lclass.locals)
+        self.assertIn('assign_type', lclass.locals)
         self.assertIn('type', lclass.locals)
 
     def test_augassign_attr(self):
@@ -523,7 +525,7 @@ class BuilderTest(unittest.TestCase):
         # TODO: Check self.v += 1 generate AugAssign(AssAttr(...)),
         # not AugAssign(GetAttr(AssName...))
 
-    def test_infered_dont_pollute(self):
+    def test_inferred_dont_pollute(self):
         code = '''
             def func(a=None):
                 a.custom_attr = 0
@@ -639,7 +641,7 @@ class FileBuildTest(unittest.TestCase):
         self.assertEqual(klass.parent.frame(), module)
         self.assertEqual(klass.root(), module)
         self.assertEqual(klass.basenames, [])
-        if IS_PY3:
+        if six.PY3:
             self.assertTrue(klass.newstyle)
         else:
             self.assertFalse(klass.newstyle)
@@ -717,7 +719,7 @@ class ModuleBuildTest(resources.SysPathSetup, FileBuildTest):
         else:
             self.module = abuilder.module_build(data.module, 'data.module')
 
-@unittest.skipIf(IS_PY3, "guess_encoding not used on Python 3")
+@unittest.skipIf(six.PY3, "guess_encoding not used on Python 3")
 class TestGuessEncoding(unittest.TestCase):
     def setUp(self):
         self.guess_encoding = builder._guess_encoding
