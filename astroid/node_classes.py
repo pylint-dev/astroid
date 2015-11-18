@@ -343,8 +343,8 @@ class Arguments(mixins.AssignTypeMixin, bases.NodeNG):
         result = []
         if self.args:
             result.append(
-                _format_args(self.args, getattr(self, 'annotations', None),
-                             self.defaults)
+                _format_args(self.args, self.defaults,
+                             getattr(self, 'annotations', None))
             )
         if self.vararg:
             result.append('*%s' % self.vararg)
@@ -404,7 +404,7 @@ def _find_arg(argname, args, rec=False):
     return None, None
 
 
-def _format_args(args, annotations=None, defaults=None):
+def _format_args(args, defaults=None, annotations=None):
     values = []
     if args is None:
         return ''
