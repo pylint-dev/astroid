@@ -1206,7 +1206,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             __slots__ = ("a", "b")
         """)
         msg = "The concept of slots is undefined for old-style classes."
-        with self.assertRaises(NotImplementedError) as cm:
+        with self.assertRaises(TypeError) as cm:
             module['OldStyle'].slots()
         self.assertEqual(str(cm.exception), msg)
 
@@ -1227,7 +1227,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
     def test_no_mro_for_old_style(self):
         node = test_utils.extract_node("""
         class Old: pass""")
-        with self.assertRaises(NotImplementedError) as cm:
+        with self.assertRaises(TypeError) as cm:
             node.mro()
         self.assertEqual(str(cm.exception), "Could not obtain mro for "
                                             "old-style classes.")

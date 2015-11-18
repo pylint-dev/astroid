@@ -2086,7 +2086,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         """Get the method resolution order, using C3 linearization.
 
         It returns the list of ancestors sorted by the mro.
-        This will raise `MroError` for old-style classes, since
+        This will raise `TypeError` for old-style classes, since
         they don't have the concept of MRO.
         """
         if not self.newstyle:
