@@ -121,6 +121,18 @@ def _create_yield_node(node, parent, rebuilder, factory):
         newnode.value = rebuilder.visit(node.value, newnode, None)
     return newnode
 
+def _visit_or_none(node, attr, visitor, parent, assign_ctx, visit='visit',
+                   **kws):
+    """If the given node has an attribute, visits the attribute, and
+    otherwise returns None.
+
+    """
+    value = getattr(node, attr, None)
+    if value:
+        return getattr(visitor, visit)(value, parent, assign_ctx, **kws)
+    else:
+        return None
+
 
 class TreeRebuilder(object):
     """Rebuilds the _ast tree to become an Astroid tree"""
@@ -303,12 +315,10 @@ class TreeRebuilder(object):
         args = [self.visit(child, newnode, assign_ctx)
                 for child in node.args]
 
-        starargs = None
-        if node.starargs is not None:
-            starargs = self.visit(node.starargs, newnode, assign_ctx)
-        kwargs = None    
-        if node.kwargs is not None:
-            kwargs = self.visit(node.kwargs, newnode, assign_ctx)
+        starargs = _visit_or_none(node, 'starargs', self, newnode,
+                                  assign_ctx)
+        kwargs = _visit_or_none(node, 'kwargs', self, newnode,
+                                assign_ctx)
         keywords = None
         if node.keywords:
             keywords = [self.visit(child, newnode, assign_ctx)
@@ -948,8 +958,11 @@ class TreeRebuilder3k(TreeRebuilder):
                                assign_ctx=assign_ctx)
 
     def visit_await(self, node, parent, assign_ctx=None):
-        newnode = new.Await(node.lineno, node.col_offset, parent)
-        newnode.postinit(value=self.visit(node.value, newnode, None))
+        newnode = new.Await()
+        newnode.lineno = node.lineno
+        newnode.col_offset = node.col_offset
+        newnode.parent = parent
+        newnode.value = self.visit(node.value, newnode, None)
         return newnode
 
     def visit_asyncwith(self, node, parent, assign_ctx=None):
