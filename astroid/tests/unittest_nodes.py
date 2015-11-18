@@ -665,7 +665,7 @@ class DeprecationWarningsTest(unittest.TestCase):
     def test_isinstance_warnings(self):
         msg_format = ("%r is deprecated and slated for removal in astroid "
                       "2.0, use %r instead")
-        for cls in (nodes.Discard, nodes.Backquote, nodes.AssName,
+        for cls in (nodes.Discard, nodes.Repr, nodes.AssName,
                     nodes.AssAttr, nodes.Getattr, nodes.CallFunc, nodes.From):
             with warnings.catch_warnings(record=True) as w:
                 warnings.simplefilter('always')
