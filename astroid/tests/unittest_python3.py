@@ -233,7 +233,7 @@ class Python3TC(unittest.TestCase):
         self.assertEqual(node.as_string(), code)
         keys = [key for (key, _) in node.items]
         self.assertIsInstance(keys[0], nodes.Const)
-        self.assertIsInstance(keys[1], nodes.DictUnpack)        
+        self.assertIsInstance(keys[1], nodes.DictUnpack)
 
     @require_version('3.5')
     def test_nested_unpacking_in_dicts(self):
@@ -248,7 +248,6 @@ class Python3TC(unittest.TestCase):
             value = node.getitem(key)
             self.assertIsInstance(value, nodes.Const)
             self.assertEqual(value.value, expected)
-        
 
 
 if __name__ == '__main__':

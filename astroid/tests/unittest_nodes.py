@@ -649,7 +649,7 @@ class AliasesTest(unittest.TestCase):
         self.assertIsInstance(module.body[5].value, nodes.Attribute)
         self.assertEqual(module.body[6].value.elt.value, 2)
         self.assertIsInstance(module.body[6].value, nodes.GeneratorExp)
-        
+
     @unittest.skipIf(six.PY3, "Python 3 doesn't have Repr nodes.")
     def test_repr(self):
         def test_backquote(node):
@@ -678,7 +678,7 @@ class DeprecationWarningsTest(unittest.TestCase):
         parent_assign_type_mixin = module.body[2]
 
         warnings.simplefilter('always')
-        
+
         with warnings.catch_warnings(record=True) as w:
             filter_stmts_mixin.ass_type()
             self.assertIsInstance(w[0].message, PendingDeprecationWarning)
@@ -704,7 +704,7 @@ class DeprecationWarningsTest(unittest.TestCase):
 
 @test_utils.require_version('3.5')
 class Python35AsyncTest(unittest.TestCase):
-    
+
     def test_async_await_keywords(self):
         async_def, async_for, async_with, await_node = test_utils.extract_node('''
         async def func(): #@
@@ -745,7 +745,6 @@ class Python35AsyncTest(unittest.TestCase):
                 await 42
         ''')
         self._test_await_async_as_string(code)
-    
 
 
 if __name__ == '__main__':

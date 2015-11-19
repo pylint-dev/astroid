@@ -70,7 +70,7 @@ ALL_NODE_CLASSES = (
     Decorators, DelAttr, DelName, Delete,
     Dict, DictComp, DictUnpack, Expr,
     Ellipsis, EmptyNode, ExceptHandler, Exec, ExtSlice,
-    For, ImportFrom, FunctionDef,    
+    For, ImportFrom, FunctionDef,
     Attribute, GeneratorExp, Global,
     If, IfExp, Import, Index,
     Keyword,

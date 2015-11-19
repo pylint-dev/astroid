@@ -22,9 +22,8 @@ order to get a single Astroid representation
 import sys
 import _ast
 from _ast import (
-    Expr, Str,
     # binary operators
-    Add, BinOp, Div, FloorDiv, Mod, Mult, Pow, Sub, BitAnd, BitOr, BitXor,
+    Add, Div, FloorDiv, Mod, Mult, Pow, Sub, BitAnd, BitOr, BitXor,
     LShift, RShift,
     # logical operators
     And, Or,
@@ -342,7 +341,7 @@ class TreeRebuilder(object):
                 keywords.append(new_kwargs)
             else:
                 keywords = [new_kwargs]
-       
+
         newnode.args = args
         newnode.keywords = keywords
         return newnode

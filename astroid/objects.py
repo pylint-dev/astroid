@@ -31,7 +31,7 @@ import six
 from astroid import MANAGER
 from astroid.bases import (
     BUILTINS, NodeNG, Instance, _infer_stmts,
-    BoundMethod, UnboundMethod,
+    BoundMethod,
 )
 from astroid.decorators import cachedproperty
 from astroid.exceptions import (

@@ -22,12 +22,8 @@ new local scope in the language definition : Module, ClassDef, FunctionDef (and
 Lambda, GeneratorExp, DictComp and SetComp to some extent).
 """
 
-from __future__ import print_function
-import inspect
-
 import io
 import itertools
-import sys
 import warnings
 
 import six

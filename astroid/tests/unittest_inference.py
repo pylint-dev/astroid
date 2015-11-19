@@ -17,7 +17,6 @@
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 """tests for the astroid inference capabilities
 """
-import os
 import sys
 from functools import partial
 import unittest
@@ -31,7 +30,6 @@ from astroid.inference import infer_end as inference_infer_end
 from astroid.bases import Instance, BoundMethod, UnboundMethod,\
                                 path_wrapper, BUILTINS
 from astroid import arguments
-from astroid import context
 from astroid import objects
 from astroid import test_utils
 from astroid import util
@@ -1811,7 +1809,7 @@ class ArgumentsTest(unittest.TestCase):
         ''')
         for node, expected_value in zip(ast_nodes, expected_values):
             inferred = next(node.infer())
-            self.assertIsInstance(inferred, nodes.Tuple)           
+            self.assertIsInstance(inferred, nodes.Tuple)
             self.assertEqual(self._get_tuple_value(inferred), expected_value)
 
     @test_utils.require_version('3.5')
@@ -1828,7 +1826,7 @@ class ArgumentsTest(unittest.TestCase):
         ''')
         for node, expected_value in zip(ast_nodes, expected_values):
             inferred = next(node.infer())
-            self.assertIsInstance(inferred, nodes.Tuple)           
+            self.assertIsInstance(inferred, nodes.Tuple)
             self.assertEqual(self._get_tuple_value(inferred), expected_value)
 
     def test_defaults(self):
@@ -1872,7 +1870,7 @@ class ArgumentsTest(unittest.TestCase):
         expected = [
             [('a', 1), ('b', 2), ('c', 3)],
             [('a', 1)],
-            [('a', 'b')], 
+            [('a', 'b')],
         ]
         ast_nodes = test_utils.extract_node('''
         def test(**kwargs):
@@ -1923,7 +1921,7 @@ class ArgumentsTest(unittest.TestCase):
         for ast_node, value in zip(ast_nodes, expected_values):
              inferred = next(ast_node.infer())
              self.assertIsInstance(inferred, nodes.Const)
-             self.assertEqual(inferred.value, value)        
+             self.assertEqual(inferred.value, value)
 
     def test_infer_call_result_invalid_dunder_call_on_instance(self):
         ast_nodes = test_utils.extract_node('''
@@ -1952,7 +1950,7 @@ class ArgumentsTest(unittest.TestCase):
        flow['app'] = AttributeDict()
        flow['app']['config'] = AttributeDict()
        flow['app']['config']['doffing'] = AttributeDict() #@
-       ''')       
+       ''')
        self.assertIsNone(util.safe_infer(ast_node.targets[0]))
 
     def test_classmethod_inferred_by_context(self):
@@ -2032,7 +2030,7 @@ class ArgumentsTest(unittest.TestCase):
         def test(*args): return args
         test(*unknown) #@
         ''')
-        for node in ast_nodes: 
+        for node in ast_nodes:
             inferred = next(node.infer())
             self.assertEqual(inferred, util.YES)
 
@@ -2105,9 +2103,7 @@ class CallSiteTest(unittest.TestCase):
         values = [
             "f()", "f(*(1, ))", "f(1, 2, *(2, 3))",
         ]
-        self._test_call_site_valid_arguments(values, invalid=False)          
-
-
+        self._test_call_site_valid_arguments(values, invalid=False)
 
     def test_duplicated_keyword_arguments(self):
         ast_node = test_utils.extract_node('f(f=24, **{"f": 25})')

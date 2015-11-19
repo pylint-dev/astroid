@@ -435,7 +435,7 @@ class EnumBrainTest(unittest.TestCase):
         inferred_cls = next(cls.infer())
         self.assertIsInstance(inferred_cls, nodes.ClassDef)
         inferred_instance = next(instance.infer())
-        self.assertIsInstance(inferred_instance, bases.Instance)        
+        self.assertIsInstance(inferred_instance, bases.Instance)
 
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
