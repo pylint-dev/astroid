@@ -157,7 +157,7 @@ nodes.List.infer_binary_op = bases.yes_if_nothing_inferred(tl_infer_binary_op)
 
 def dict_infer_binary_op(self, operator, other, context):
     for other in other.infer(context):
-        if isinstance(other, bases.Instance) and isinstance(other._proxied, nodes.Class):
+        if isinstance(other, bases.Instance) and isinstance(other._proxied, nodes.ClassDef):
             yield util.YES
         # XXX else log TypeError
 nodes.Dict.infer_binary_op = bases.yes_if_nothing_inferred(dict_infer_binary_op)
@@ -170,7 +170,7 @@ def instance_infer_binary_op(self, operator, other, context):
         yield util.YES
     else:
         for method in methods:
-            if not isinstance(method, nodes.Function):
+            if not isinstance(method, nodes.FunctionDef):
                 continue
             for result in method.infer_call_result(self, context):
                 if result is not util.YES:

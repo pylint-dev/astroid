@@ -39,7 +39,7 @@ from astroid.exceptions import (
     NotFoundError, MroError
 )
 from astroid.node_classes import const_factory
-from astroid.scoped_nodes import Class, Function
+from astroid.scoped_nodes import ClassDef, FunctionDef
 from astroid.mixins import ParentAssignTypeMixin
 
 
@@ -98,16 +98,16 @@ class Super(NodeNG):
 
     def super_mro(self):
         """Get the MRO which will be used to lookup attributes in this super."""
-        if not isinstance(self.mro_pointer, Class):
+        if not isinstance(self.mro_pointer, ClassDef):
             raise SuperArgumentTypeError("The first super argument must be type.")
 
-        if isinstance(self.type, Class):
+        if isinstance(self.type, ClassDef):
             # `super(type, type)`, most likely in a class method.
             self._class_based = True
             mro_type = self.type
         else:
             mro_type = getattr(self.type, '_proxied', None)
-            if not isinstance(mro_type, (Instance, Class)):
+            if not isinstance(mro_type, (Instance, ClassDef)):
                 raise SuperArgumentTypeError("super(type, obj): obj must be an "
                                              "instance or subtype of type")
 
@@ -160,7 +160,7 @@ class Super(NodeNG):
 
             found = True
             for infered in _infer_stmts([cls[name]], context, frame=self):
-                if not isinstance(infered, Function):
+                if not isinstance(infered, FunctionDef):
                     yield infered
                     continue
 

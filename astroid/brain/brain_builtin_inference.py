@@ -258,7 +258,7 @@ def infer_dict(node, context=None):
 
 def _node_class(node):
     klass = node.frame()
-    while klass is not None and not isinstance(klass, nodes.Class):
+    while klass is not None and not isinstance(klass, nodes.ClassDef):
         if klass.parent is None:
             klass = None
         else:
@@ -284,7 +284,7 @@ def infer_super(node, context=None):
         raise UseInferenceDefault
 
     scope = node.scope()
-    if not isinstance(scope, nodes.Function):
+    if not isinstance(scope, nodes.FunctionDef):
         # Ignore non-method uses of super.
         raise UseInferenceDefault
     if scope.type not in ('classmethod', 'method'):
