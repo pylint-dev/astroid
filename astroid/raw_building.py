@@ -551,42 +551,25 @@ def ast_from_builtin_singleton_factory(node_class):
                                    node_class=node_class):
         '''Handles builtin singletons, currently True, False, None,
         NotImplemented, and Ellipsis.'''
-        # A builtin singleton is assigned to a name.
         if name and name != str(builtin_singleton):
-            parent = node_classes.Assign(parent=parent)
-            name_node = node_classes.AssignName(name=name, parent=parent)
-        # This case handles the initial assignment of singletons to names
-        # in the builtins module.  It can be triggered in other cases with
-        # an object that contains a builtin singleton by its own name, like,
-        # 
-        # class C:
-        #    None
-        #
-        # but there's never any reason to write that kind of code since
-        # it's a no-op, and even if it happens it shouldn't cause any
-        # harm.
-        elif name and name == str(builtin_singleton):
-            parent = node_classes.ReservedName(name=name, parent=parent)
-        builtin_singleton_node = node_class(value=builtin_singleton, parent=parent)
-        if name and name != str(builtin_singleton):
-            parent.postinit(targets=[name_node], value=builtin_singleton_node)
-            node = parent
-        elif name and name == str(builtin_singleton):
-            parent.postinit(value=builtin_singleton_node)
-            node = parent
+            assign_node = node_classes.Assign(parent=parent)
+            target_node = node_classes.AssignName(name, parent=assign_node)
+            value_node = node_class(builtin_singleton, parent=assign_node)
+            assign_node.postinit(targets=[target_node], value=value_node)
+            return (assign_node,)
         else:
-            node = builtin_singleton_node
-        return (node,)
+            return (node_class(builtin_singleton, parent=parent),)
     return ast_from_builtin_singleton
 
-BUILTIN_SINGLETONS = {type(None): node_classes.NameConstant,
-                      type(NotImplemented): node_classes.NameConstant,
-                      bool: node_classes.NameConstant,
-                      type(Ellipsis): lambda value=None, parent=None:
+BUILTIN_SINGLETONS = {None: node_classes.NameConstant,
+                      NotImplemented: node_classes.NameConstant,
+                      False: node_classes.NameConstant,
+                      True: node_classes.NameConstant,
+                      Ellipsis: lambda value=None, parent=None:
                       node_classes.Ellipsis(parent=parent)}
 
-for singleton_type, node_type in BUILTIN_SINGLETONS.items():
-    _ast_from_object.register(singleton_type, ast_from_builtin_singleton_factory(node_type))
+for singleton, node_class in BUILTIN_SINGLETONS.items():
+    _ast_from_object.register(type(singleton), ast_from_builtin_singleton_factory(node_class))
 
 
 def _make_assignment(new_name, old_name, parent):
@@ -626,6 +609,12 @@ def ast_from_builtins():
     for builtin_type in BUILTIN_TYPES:
         built_objects[id(builtin_type)] = _NameAST(builtin_type.__name__, _ast_from_object(builtin_type, built_objects, six.moves.builtins)[0])
 
+    for singleton, node_class in BUILTIN_SINGLETONS.items():
+        reserved_name = node_classes.ReservedName(name=str(singleton))
+        singleton_node = node_class(value=singleton, parent=reserved_name)
+        reserved_name.postinit(value=singleton_node)
+        built_objects[id(singleton)] = _NameAST(str(singleton), reserved_name)
+
     builtins_ast = _ast_from_object(six.moves.builtins,
                                     built_objects,
                                     six.moves.builtins)[0]
@@ -634,6 +623,11 @@ def ast_from_builtins():
         type_node = built_objects[id(builtin_type)].ast
         builtins_ast.body.append(type_node)
         type_node.parent = builtins_ast
+
+    for singleton, _ in BUILTIN_SINGLETONS.items():
+        reserved_name = built_objects[id(singleton)].ast
+        builtins_ast.body.append(reserved_name)
+        reserved_name.parent = builtins_ast
 
     MANAGER.astroid_cache[six.moves.builtins.__name__] = builtins_ast
     return builtins_ast
