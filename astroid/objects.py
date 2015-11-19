@@ -26,7 +26,6 @@ inferred FrozenSet:
 
 """
 
-from logilab.common.decorators import cachedproperty
 import six
 
 from astroid import MANAGER
@@ -34,6 +33,7 @@ from astroid.bases import (
     BUILTINS, NodeNG, Instance, _infer_stmts,
     BoundMethod, UnboundMethod,
 )
+from astroid.decorators import cachedproperty
 from astroid.exceptions import (
     SuperError, SuperArgumentTypeError,
     NotFoundError, MroError
