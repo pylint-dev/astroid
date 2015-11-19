@@ -523,7 +523,7 @@ def infer_type_dunder_new(caller, context=None):
     """
     if len(caller.args) != 4:
         raise UseInferenceDefault
-       
+
     # Verify the metaclass
     mcs = next(caller.args[0].infer(context=context))
     if not isinstance(mcs, nodes.ClassDef):
@@ -543,42 +543,43 @@ def infer_type_dunder_new(caller, context=None):
         raise UseInferenceDefault
 
     # Verify the bases
-    cls_bases = next(caller.args[2].infer(context=context))
-    if not isinstance(cls_bases, nodes.Tuple):
+    bases = next(caller.args[2].infer(context=context))
+    if not isinstance(bases, nodes.Tuple):
         # Needs to be a tuple.
         raise UseInferenceDefault
     inferred_bases = [next(elt.infer(context=context))
-                      for elt in cls_bases.elts]
-    if any(not isinstance(base, nodes.ClassDef) for base in inferred_bases):
+                      for elt in bases.elts]
+    if not all(isinstance(base, nodes.ClassDef)
+           for base in inferred_bases):
         # All the bases needs to be Classes
         raise UseInferenceDefault
+
+    cls = nodes.Class(name=name.value, lineno=caller.lineno,
+                      col_offset=caller.col_offset, parent=caller)
 
     # Verify the attributes.
     attrs = next(caller.args[3].infer(context=context))
     if not isinstance(attrs, nodes.Dict):
         # Needs to be a dictionary.
         raise UseInferenceDefault
-    cls_locals = collections.defaultdict(list)
+    body = []
     for key, value in attrs.items:
         key = next(key.infer(context=context))
         value = next(value.infer(context=context))
         if not isinstance(key, nodes.Const):
             # Something invalid as an attribute.
-            raise UseInferenceDefault                
+            raise UseInferenceDefault
         if not isinstance(key.value, str):
             # Not a proper attribute.
-            raise UseInferenceDefault                
-        cls_locals[key.value].append(value)
+            raise UseInferenceDefault
+        assign = nodes.Assign(parent=cls)
+        assign.postinit(targets=nodes.AssignName(key.value, parent=assign),
+                        value=value)
+        body.append(assign)
 
-    # Build the class from now.
-    cls = nodes.Class(name=name.value, lineno=caller.lineno,
-                      col_offset=caller.col_offset,
-                      parent=caller)
-    empty = nodes.Pass()
-    cls.postinit(bases=cls_bases.elts, body=[empty], decorators=[],
+    cls.postinit(bases=bases.elts, body=body, decorators=[],
                  newstyle=True, metaclass=mcs)
-    cls.locals = cls_locals
-    return iter([cls])
+    return iter((cls,))
 
 
 def _looks_like_type_dunder_new(node):
