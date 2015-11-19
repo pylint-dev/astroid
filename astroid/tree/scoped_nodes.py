@@ -139,8 +139,8 @@ def builtin_lookup(name):
         return builtin_astroid, ()
     stmts = builtin_astroid.locals.get(name, ())
     # Use inference to find what AssignName nodes point to in builtins.
-    # stmts = [next(s.infer()) if isinstance(s, node_classes.ImportFrom) else s
-    #          for s in stmts]
+    stmts = [next(s.infer()) if isinstance(s, node_classes.AssignName) else s
+             for s in stmts]
     return builtin_astroid, stmts
 
 

@@ -99,7 +99,7 @@ def ast_from_object(object_, name=None):
     instance, know anything about the action of functions on their
     arguments.  It uses InterpreterObject nodes as containers to
     insert astroid objects representing runtime-only objects like
-    ClassInstances and FrozenSets.  ReservedNames are for special
+    Instances and FrozenSets.  ReservedNames are for special
     names in the builtins module and Unknown nodes are used in place
     of Arguments nodes for functions who arguments can't be
     introspected.
@@ -123,7 +123,6 @@ def ast_from_object(object_, name=None):
     '''
     return _ast_from_object(object_, _ChainMap({}),
                             inspect.getmodule(object_), name)[0]
-
 
 
 @util.singledispatch
@@ -164,10 +163,10 @@ def _ast_from_object(instance, built_objects, module, name=None, parent=None):
             to construct an appropriate AST.
 
     '''
-    # Since all ClassInstances pointing to the same ClassDef are
+    # Since all Instances pointing to the same ClassDef are
     # identical, they can all share the same node.
-    if id(instance) in built_objects:
-        return (built_objects[id(instance)],)
+    if name is not None and id(instance) in built_objects:
+        return (_make_assignment(name, built_objects[id(instance)].name, parent),)
 
     # Since this ultimately inherits from object but not any type,
     # it's presumably an instance of some kind.
@@ -185,23 +184,31 @@ def _ast_from_object(instance, built_objects, module, name=None, parent=None):
         # TODO: this solution is not complete, because it doesn't add
         # instance attributes, but adding instance attributes to class
         # nodes causes problems in general and laziness in the
-        # building system needs to be refatored in general.
+        # building system needs to be refactored in general.  Note
+        # that encapsulating the instance attributes setting in a
+        # function won't work, because it contains a call to
+        # _ast_from_object, which takes a mutable object whose state
+        # won't be preserved in a closure.
         def lazy_instance(node=node, cls=cls, name=name, parent=parent):
             # Handle ImportFrom chains.
             while True:
-                modname = node.modname
+                try:
+                    modname = node.modname
+                except AttributeError:
+                    # print(node, parent)
+                    raise
                 node = MANAGER.ast_from_module_name(modname).getattr(cls.__name__)[0]
                 if isinstance(node, scoped_nodes.ClassDef):
                     # class_node = node
                     # break
                     return node_classes.InterpreterObject(name=name, object_=node.instantiate_class(), parent=parent)
         result.append(lazy_object_proxy.Proxy(lazy_instance))
-        built_objects[id(instance)] = result[-1]
+        built_objects[id(instance)] = _NameAST(name, result[-1])
         return result
-    elif isinstance(node, node_classes.Name):
+    elif isinstance(node, node_classes.Assign):
         # A Name node means a ClassDef node already exists somewhere,
         # so there's no need to add another one.
-        class_node = built_objects[id(cls)]
+        class_node = built_objects[id(cls)].ast
         result = []
     else:
         raise TypeError('Unexpected node, %s, when calling _ast_from_object on '
@@ -216,7 +223,8 @@ def _ast_from_object(instance, built_objects, module, name=None, parent=None):
 
     # Create an instance of the class we just created an AST for.
     result.append(node_classes.InterpreterObject(name=name, object_=class_node.instantiate_class(), parent=parent))
-    built_objects[id(instance)] = result[-1]
+    if name is not None:
+        built_objects[id(instance)] = _NameAST(name, result[-1])
     return result
 
 
@@ -224,9 +232,12 @@ def _ast_from_object(instance, built_objects, module, name=None, parent=None):
 @_ast_from_object.register(type)
 def ast_from_class(cls, built_objects, module, name=None, parent=None):
     '''Handles classes and other types not handled explicitly elsewhere.'''
+    # TODO: this can create duplicate objects
     if id(cls) in built_objects:
-        return (node_classes.Name(name=name or cls.__name__, parent=parent),)
+        return (_make_assignment(name, built_objects[id(cls)].name, parent),)
+
     inspected_module = inspect.getmodule(cls)
+
     # In some situations, a class claims to be from a module but isn't
     # available in that module.  For example, the quit instance in
     # builtins is of type Quitter.  On Python 2, this claims its
@@ -246,8 +257,11 @@ def ast_from_class(cls, built_objects, module, name=None, parent=None):
                                  getattr(inspected_module, '__name__', None),
                                  names=[[cls.__name__, name]],
                                  parent=parent),)
-    class_node = scoped_nodes.ClassDef(name=name or cls.__name__, doc=inspect.getdoc(cls), parent=parent)
-    built_objects[id(cls)] = class_node
+    class_node = scoped_nodes.ClassDef(name=cls.__name__, doc=inspect.getdoc(cls), parent=parent)
+    result = [class_node]
+    if name is not None and name != cls.__name__:
+        result.append(_make_assignment(name, cls.__name__, parent))
+    built_objects[id(cls)] = _NameAST(cls.__name__, class_node)
     built_objects = _ChainMap({}, *built_objects.maps)
     bases = [node_classes.Name(name=b.__name__, parent=class_node)
              for b in cls.__bases__]
@@ -256,7 +270,7 @@ def ast_from_class(cls, built_objects, module, name=None, parent=None):
         for t in _ast_from_object(a.object, built_objects, module, a.name, parent=class_node)]
     class_node.postinit(bases=bases, body=body, decorators=(),
                         newstyle=isinstance(cls, type))
-    return (class_node,)
+    return result
 # Old-style classes
 if six.PY2:
     _ast_from_object.register(types.ClassType, ast_from_class)
@@ -266,7 +280,7 @@ if six.PY2:
 @_ast_from_object.register(types.ModuleType)
 def ast_from_module(module, built_objects, parent_module, name=None, parent=None):
     if id(module) in built_objects:
-        return (node_classes.Name(name=name or module.__name__, parent=parent_module),)
+        return (_make_assignment(name, built_objects[id(module)].name, parent),)
     if module is not parent_module:
         # This module has been imported into another.
 
@@ -300,7 +314,7 @@ def ast_from_module(module, built_objects, parent_module, name=None, parent=None
         # Assume that if inspect couldn't find a Python source file, it's
         # probably not implemented in pure Python.
         pure_python=bool(source_file))
-    built_objects[id(module)] = module_node
+    built_objects[id(module)] = _NameAST(module_node.name, module_node)
     built_objects = _ChainMap({}, *built_objects.maps)
     # MANAGER.cache_module(module_node)
     body = [
@@ -327,17 +341,20 @@ def ast_from_module(module, built_objects, parent_module, name=None, parent=None
 def ast_from_function(func, built_objects, module, name=None, parent=None):
     '''Handles functions, including all kinds of methods.'''
     if id(func) in built_objects:
-        return (node_classes.Name(name=name or func.__name__, parent=parent),)
+        return (_make_assignment(name, built_objects[id(func)].name, parent),)
     inspected_module = inspect.getmodule(func)
     if inspected_module is not None and inspected_module is not module:
         return (node_classes.ImportFrom(
             fromname=getattr(inspected_module, '__name__', None),
             names=[[func.__name__, name]],
             parent=parent),)
-    func_node = scoped_nodes.FunctionDef(name=name or func.__name__,
+    func_node = scoped_nodes.FunctionDef(name=func.__name__,
                                   doc=inspect.getdoc(func),
                                   parent=parent)
-    built_objects[id(func)] = func_node
+    result = [func_node]
+    if name is not None and name != func.__name__:
+        result.append(_make_assignment(name, func.__name__, parent))
+    built_objects[id(func)] = _NameAST(func.__name__, func_node)
     built_objects = _ChainMap({}, *built_objects.maps)
     try:
         signature = _signature(func)
@@ -416,7 +433,7 @@ def ast_from_function(func, built_objects, module, name=None, parent=None):
             ast = _ast_from_object(getattr(func, name), built_objects,
                                    module, name=name, parent=parent)[0]
             func_node.instance_attrs[name].append(ast)
-    return (func_node,)
+    return result
 
 
 BUILTIN_CONTAINERS = {list: node_classes.List, set: node_classes.Set, frozenset:
@@ -431,8 +448,8 @@ def ast_from_builtin_container(container, built_objects, module, name=None,
                                parent=None):
     '''Handles builtin container types except for mappings.'''
     if (id(container) in built_objects and
-        built_objects[id(container)].targets[0].name == name):
-        return (node_classes.Name(name=name, parent=parent),)
+        built_objects[id(container)].name != name):
+        return (_make_assignment(name, built_objects[id(container)].name, parent),)
     if name:
         parent = node_classes.Assign(parent=parent)
         name_node = node_classes.AssignName(name, parent=parent)
@@ -447,7 +464,8 @@ def ast_from_builtin_container(container, built_objects, module, name=None,
         node = parent
     else:
         node = container_node
-    built_objects[id(container)] = node
+    if name is not None:
+        built_objects[id(container)] = _NameAST(name, node)
     container_node.postinit(
         elts=[t for i in container
               for t in _ast_from_object(i, built_objects, module, parent=node)])
@@ -462,8 +480,8 @@ def ast_from_dict(dictionary, built_objects, module, name=None,
                                parent=None):
     '''Handles dictionaries, including DictProxyType and MappingProxyType.'''
     if (id(dictionary) in built_objects and
-        built_objects[id(dictionary)].targets[0].name == name):
-        return (node_classes.Name(name=name, parent=parent),)
+        built_objects[id(dictionary)].name != name):
+        return (_make_assignment(name, built_objects[id(dictionary)].name, parent),)
     if name:
         parent = node_classes.Assign(parent=parent)
         name_node = node_classes.AssignName(name, parent=parent)
@@ -472,7 +490,8 @@ def ast_from_dict(dictionary, built_objects, module, name=None,
         node = parent
     else:
         node = dict_node
-    built_objects[id(dictionary)] = node
+    if name is not None:
+        built_objects[id(dictionary)] = _NameAST(name, node)
     dict_node.postinit(items=[
         (x, y) for k, v in dictionary.items()
         for x, y in zip(_ast_from_object(k, built_objects, module, parent=node),
@@ -495,10 +514,15 @@ else:
 @_ast_from_object.register(complex)
 def ast_from_builtin_number_text_binary(builtin_number_text_binary, built_objects, module, name=None, parent=None):
     '''Handles the builtin numeric and text/binary sequence types.'''
+    if (id(builtin_number_text_binary) in built_objects and
+        built_objects[id(builtin_number_text_binary)].name != name):
+        return (_make_assignment(name, built_objects[id(builtin_number_text_binary)].name, parent),)
     if name:
         parent = node_classes.Assign(parent=parent)
         name_node = node_classes.AssignName(name, parent=parent)
     builtin_number_text_binary_node = node_classes.Const(value=builtin_number_text_binary, parent=parent)
+    if name is not None:
+        built_objects[id(builtin_number_text_binary)] = _NameAST(name, builtin_number_text_binary_node)
     if name:
         parent.postinit(targets=[name_node], value=builtin_number_text_binary_node)
         node = parent
@@ -565,6 +589,16 @@ for singleton_type, node_type in BUILTIN_SINGLETONS.items():
     _ast_from_object.register(singleton_type, ast_from_builtin_singleton_factory(node_type))
 
 
+def _make_assignment(new_name, old_name, parent):
+    assign_node = node_classes.Assign(parent=parent)
+    target_node = node_classes.AssignName(new_name, parent=assign_node)
+    value_node = node_classes.Name(old_name, parent=assign_node)
+    assign_node.postinit(targets=[target_node], value=value_node)
+    return assign_node
+
+_NameAST = collections.namedtuple('_NameAST', 'name ast')
+
+
 # @scoped_nodes.get_locals.register(Builtins)
 # def scoped_node(node):
 #     locals_ = collections.defaultdict(list)
@@ -590,14 +624,14 @@ def ast_from_builtins():
     # that the types are included as Name nodes, not explicit ASTs.
     built_objects = _ChainMap({})
     for builtin_type in BUILTIN_TYPES:
-        built_objects[id(builtin_type)] = _ast_from_object(builtin_type, built_objects, six.moves.builtins)[0]
+        built_objects[id(builtin_type)] = _NameAST(builtin_type.__name__, _ast_from_object(builtin_type, built_objects, six.moves.builtins)[0])
 
     builtins_ast = _ast_from_object(six.moves.builtins,
                                     built_objects,
                                     six.moves.builtins)[0]
 
     for builtin_type in BUILTIN_TYPES:
-        type_node = built_objects[id(builtin_type)]
+        type_node = built_objects[id(builtin_type)].ast
         builtins_ast.body.append(type_node)
         type_node.parent = builtins_ast
 
