@@ -277,54 +277,6 @@ if six.PY2:
 
 
 # pylint: disable=unused-variable; doesn't understand singledispatch
-@_ast_from_object.register(types.ModuleType)
-def ast_from_module(module, built_objects, parent_module, name=None, parent=None):
-    if id(module) in built_objects:
-        return (_make_assignment(name, built_objects[id(module)].name, parent),)
-    if module is not parent_module:
-        # This module has been imported into another.
-
-        # TODO: this work around an obscure issue in pylib/apikpkg,
-        # https://pylib.readthedocs.org/en/latest/index.html /
-        # https://bitbucket.org/hpk42/apipkg.  In its
-        # __init__.py, pylib has the following line:
-
-        # sys.modules['py.error'] = _apipkg.AliasModule("py.error", "py._error", 'error')
-
-        # AliasModule is a very odd object that has a getattr method
-        # that raises an AttributeError for, among other things,
-        # __name__.  This probably doesn't comply with the contract
-        # for things that should be in sys.modules.
-        try:
-            return (node_classes.Import([[module.__name__, name]], parent=parent),)
-        except AttributeError:
-            return ()
-    try:
-        source_file = inspect.getsourcefile(module)
-    except TypeError:
-        # inspect.getsourcefile raises TypeError for built-in modules.
-        source_file = None
-    module_node = scoped_nodes.Module(
-        name=name or module.__name__,
-        # inspect.getdoc returns None for modules without docstrings like
-        # Jython Java modules.
-        doc=inspect.getdoc(module),
-        source_file=source_file,
-        package=hasattr(module, '__path__'),
-        # Assume that if inspect couldn't find a Python source file, it's
-        # probably not implemented in pure Python.
-        pure_python=bool(source_file))
-    built_objects[id(module)] = _NameAST(module_node.name, module_node)
-    built_objects = _ChainMap({}, *built_objects.maps)
-    # MANAGER.cache_module(module_node)
-    body = [
-        t for n, m in inspect.getmembers(module) if n not in scoped_nodes.Module.special_attributes
-        for t in _ast_from_object(m, built_objects, module, n, module_node)]
-    module_node.postinit(body=body)
-    return (module_node,)
-
-
-# pylint: disable=unused-variable; doesn't understand singledispatch
 
 # These two types are the same on CPython but not necessarily the same
 # on other implementations.
@@ -436,6 +388,54 @@ def ast_from_function(func, built_objects, module, name=None, parent=None):
     return result
 
 
+# pylint: disable=unused-variable; doesn't understand singledispatch
+@_ast_from_object.register(types.ModuleType)
+def ast_from_module(module, built_objects, parent_module, name=None, parent=None):
+    if id(module) in built_objects:
+        return (_make_assignment(name, built_objects[id(module)].name, parent),)
+    if module is not parent_module:
+        # This module has been imported into another.
+
+        # TODO: this work around an obscure issue in pylib/apikpkg,
+        # https://pylib.readthedocs.org/en/latest/index.html /
+        # https://bitbucket.org/hpk42/apipkg.  In its
+        # __init__.py, pylib has the following line:
+
+        # sys.modules['py.error'] = _apipkg.AliasModule("py.error", "py._error", 'error')
+
+        # AliasModule is a very odd object that has a getattr method
+        # that raises an AttributeError for, among other things,
+        # __name__.  This probably doesn't comply with the contract
+        # for things that should be in sys.modules.
+        try:
+            return (node_classes.Import([[module.__name__, name]], parent=parent),)
+        except AttributeError:
+            return ()
+    try:
+        source_file = inspect.getsourcefile(module)
+    except TypeError:
+        # inspect.getsourcefile raises TypeError for built-in modules.
+        source_file = None
+    module_node = scoped_nodes.Module(
+        name=name or module.__name__,
+        # inspect.getdoc returns None for modules without docstrings like
+        # Jython Java modules.
+        doc=inspect.getdoc(module),
+        source_file=source_file,
+        package=hasattr(module, '__path__'),
+        # Assume that if inspect couldn't find a Python source file, it's
+        # probably not implemented in pure Python.
+        pure_python=bool(source_file))
+    built_objects[id(module)] = _NameAST(module_node.name, module_node)
+    built_objects = _ChainMap({}, *built_objects.maps)
+    # MANAGER.cache_module(module_node)
+    body = [
+        t for n, m in inspect.getmembers(module) if n not in scoped_nodes.Module.special_attributes
+        for t in _ast_from_object(m, built_objects, module, n, module_node)]
+    module_node.postinit(body=body)
+    return (module_node,)
+
+
 BUILTIN_CONTAINERS = {list: node_classes.List, set: node_classes.Set, frozenset:
                       objects.FrozenSet, tuple: node_classes.Tuple}
 
@@ -514,7 +514,7 @@ else:
 @_ast_from_object.register(complex)
 def ast_from_builtin_number_text_binary(builtin_number_text_binary, built_objects, module, name=None, parent=None):
     '''Handles the builtin numeric and text/binary sequence types.'''
-    if (id(builtin_number_text_binary) in built_objects and
+    if (name is not None and id(builtin_number_text_binary) in built_objects and
         built_objects[id(builtin_number_text_binary)].name != name):
         return (_make_assignment(name, built_objects[id(builtin_number_text_binary)].name, parent),)
     if name:
