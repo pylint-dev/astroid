@@ -573,6 +573,8 @@ for singleton, node_class in BUILTIN_SINGLETONS.items():
 
 
 def _make_assignment(new_name, old_name, parent):
+    # if new_name is None:
+    #     raise TypeError
     assign_node = node_classes.Assign(parent=parent)
     target_node = node_classes.AssignName(new_name, parent=assign_node)
     value_node = node_classes.Name(old_name, parent=assign_node)

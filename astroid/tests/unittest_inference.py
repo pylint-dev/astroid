@@ -2807,10 +2807,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(inferred.value, 42)
 
     def _slicing_test_helper(self, pairs, cls, get_elts):
-        # print('Slicing test:', pairs)
         for code, expected in pairs:
             ast_node = test_utils.extract_node(code)
-            # print(ast_node.repr_tree())
             inferred = next(ast_node.infer())
             self.assertIsInstance(inferred, cls)
             self.assertEqual(get_elts(inferred), expected,

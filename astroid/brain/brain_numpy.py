@@ -56,7 +56,7 @@ def numpy_transform():
                'show_config'] + core.__all__ + _mat.__all__ + lib.__all__
 
     ''')
-    
+
 
 astroid.register_module_extender(astroid.MANAGER, 'numpy.core', numpy_core_transform)
 astroid.register_module_extender(astroid.MANAGER, 'numpy', numpy_transform)
