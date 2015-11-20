@@ -149,7 +149,7 @@ def infer_binary_op(self, operator, other, context, method, nodes):
 @infer_binary_op.register(treeabc.Const)
 @decorators.yes_if_nothing_inferred
 def const_infer_binary_op(self, operator, other, context, _, nodes):
-    not_implemented = nodes.const_factory(NotImplemented)
+    not_implemented = nodes.NameConstant(NotImplemented)
     if isinstance(other, treeabc.Const):
         try:
             impl = BIN_OP_IMPL[operator]

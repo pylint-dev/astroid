@@ -301,7 +301,7 @@ class Module(LocalsDictNodeNG):
          '__loader__', '__spec__', '__cached__'))
 
     # names of module attributes available through the global scope
-    scope_attrs = frozenset(('__name__', '__doc__', '__file__'))
+    scope_attrs = frozenset(('__name__', '__doc__', '__file__', '__path__'))
 
     if six.PY2:
         _other_fields = ('name', 'doc', 'file_encoding', 'package',
