@@ -357,23 +357,19 @@ class NodeNG(object):
                   ast_state=False, indent='   ', max_depth=0, max_width=80):
         """Returns a string representation of the AST from this node.
 
-        :param ids: If true, includes the ids with the node type names.
-
-        :param include_linenos: If true, includes the line numbers and
-            column offsets.
-
-        :param ast_state: If true, includes information derived from
-        the whole AST like local and global variables.
-
-        :param indent: A string to use to indent the output string.
-
-        :param max_depth: If set to a positive integer, won't return
-        nodes deeper than max_depth in the string.
-
-        :param max_width: Only positive integer values are valid, the
-        default is 80.  Attempts to format the output string to stay
-        within max_width characters, but can exceed it under some
-        circumstances.
+        Args:
+            ids (bool): If true, includes the ids with the node type names.
+            include_linenos (bool): If true, includes the line numbers and
+                column offsets.
+            ast_state (bool): If true, includes information derived from
+                the whole AST like local and global variables.
+            indent (str): A string to use to indent the output string.
+            max_depth (int): If set to a positive integer, won't return
+                nodes deeper than max_depth in the string.
+            max_width (int): Only positive integer values are valid, the
+                default is 80.  Attempts to format the output string to stay
+                within max_width characters, but can exceed it under some
+                circumstances.
         """
         @util.singledispatch
         def _repr_tree(node, result, done, cur_indent='', depth=1):
@@ -470,6 +466,10 @@ class NodeNG(object):
         result = []
         _repr_tree(self, result, set())
         return ''.join(result)
+
+    def print_tree(self, *args, **kws):
+        """Shortcut method to print the result of repr_tree()."""
+        print(self.repr_tree(*args, **kws))
 
     def bool_value(self):
         """Determine the bool value of this node
