@@ -18,8 +18,30 @@
 #
 # The code in this file was originally part of logilab-common, licensed under
 # the same license.
+import warnings
 
 from astroid import exceptions
+
+
+def generate_warning(message, warning):
+    return lambda *args: warnings.warn(message % args, warning, stacklevel=3)
+
+rename_warning = generate_warning(
+    "%r is deprecated and will be removed in astroid %.1f, use %r instead",
+    PendingDeprecationWarning)
+
+attribute_to_method_warning = generate_warning(
+    "%s is deprecated and will be removed in astroid %.1f, use the "
+    "method '%s()' instead.", PendingDeprecationWarning)
+
+attribute_to_function_warning = generate_warning(
+    "%s is deprecated and will be removed in astroid %.1f, use the "
+    "function '%s()' instead.", PendingDeprecationWarning)
+
+method_to_function_warning = generate_warning(
+    "%s() is deprecated and will be removed in astroid %.1f, use the "
+    "function '%s()' instead.", PendingDeprecationWarning)
+
 
 class _Yes(object):
     """Special inference object, which is returned when inference fails."""

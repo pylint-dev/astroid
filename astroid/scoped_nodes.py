@@ -146,6 +146,18 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, bases.NodeNG):
 
     # dictionary of locals with name as key and node defining the local as
     # value
+    @property
+    def locals(self):
+        util.attribute_to_function_warning('locals', 2.0, 'get_locals')
+        return self._locals
+    @locals.setter
+    def locals(self, _locals):
+        util.attribute_to_function_warning('locals', 2.0, 'get_locals')
+        self._locals = _locals
+    @locals.deleter
+    def locals(self):
+        util.attribute_to_function_warning('locals', 2.0, 'get_locals')
+        del self._locals
 
     def qname(self):
         """return the 'qualified' name of the node, eg module.name,
@@ -256,9 +268,9 @@ class Module(LocalsDictNodeNG):
 
     # the file from which as been extracted the astroid representation. It may
     # be None if the representation has been built from a built-in module
-    file = None
+    source_file = None
     # Alternatively, if built from a string/bytes, this can be set
-    file_bytes = None
+    source_code = None
     # encoding of python source file, so we can get unicode out of it (python2
     # only)
     file_encoding = None
@@ -270,10 +282,10 @@ class Module(LocalsDictNodeNG):
     package = None
     # dictionary of globals with name as key and node defining the global
     # as value
-    globals = None
+    _globals = None
 
     # Future imports
-    future_imports = None
+    _future_imports = None
 
     # names of python special attributes (handled by getattr impl.)
     special_attributes = set(('__name__', '__doc__', '__file__', '__path__',
@@ -289,9 +301,75 @@ class Module(LocalsDictNodeNG):
         self.body = []
         self.future_imports = set()
 
+    # Future deprecation warnings
+    @property
+    def file(self):
+        util.rename_warning('file', 2.0, 'source_file')
+        return self.source_file
+    @file.setter
+    def file(self, source_file):
+        util.rename_warning('file', 2.0, 'source_file')
+        self.source_file = source_file
+    @file.deleter
+    def file(self):
+        util.rename_warning('file', 2.0, 'source_file')
+        del self.source_file
+
+    @property
+    def path(self):
+        util.rename_warning('path', 2.0, 'source_file')
+        return self.source_file
+    @path.setter
+    def path(self, source_file):
+        util.rename_warning('path', 2.0, 'source_file')
+        self.source_file = source_file
+    @path.deleter
+    def path(self):
+        util.rename_warning('path', 2.0, 'source_file')
+        del self.source_file
+
+    @property
+    def file_bytes(self):
+        util.rename_warning('file_bytes', 2.0, 'source_code')
+        return self.source_code
+    @file_bytes.setter
+    def file_bytes(self, source_code):
+        util.rename_warning('file_bytes', 2.0, 'source_code')
+        self.source_code = source_code
+    @file_bytes.deleter
+    def file_bytes(self):
+        util.rename_warning('file_bytes', 2.0, 'source_code')
+        del self.source_code
+
+    @property
+    def globals(self):
+        util.attribute_to_function_warning('globals', 2.0, 'get_locals')
+        return self._locals
+    @globals.setter
+    def globals(self, _globals):
+        util.attribute_to_function_warning('globals', 2.0, 'get_locals')
+        self._locals = _globals
+    @globals.deleter
+    def globals(self):
+        util.attribute_to_function_warning('globals', 2.0, 'get_locals')
+        del self._locals
+
+    @property
+    def future_imports(self):
+        util.attribute_to_function_warning('future_imports', 2.0, 'future_imports')
+        return self._future_imports
+    @future_imports.setter
+    def future_imports(self, _future_imports):
+        util.attribute_to_function_warning('future_imports', 2.0, 'future_imports')
+        self._future_imports = _future_imports
+    @future_imports.deleter
+    def future_imports(self):
+        util.attribute_to_function_warning('future_imports', 2.0, 'future_imports')
+        del self._future_imports
+
     def _get_stream(self):
-        if self.file_bytes is not None:
-            return io.BytesIO(self.file_bytes)
+        if self.source_code is not None:
+            return io.BytesIO(self.source_code)
         if self.file is not None:
             stream = open(self.file, 'rb')
             return stream
@@ -1225,6 +1303,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
 
     def instanciate_class(self):
         """return Instance of ClassDef node, else return self"""
+        util.rename_warning('instanciate_class()', 2.0, 'instantiate_class()')
         return bases.Instance(self)
 
     def getattr(self, name, context=None):
