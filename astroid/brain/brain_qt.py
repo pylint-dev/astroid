@@ -7,8 +7,8 @@ from astroid import parse
 
 
 def _looks_like_signal(node, signal_name='pyqtSignal'):
-    if '__class__' in node.instance_attrs:
-        cls = node.instance_attrs['__class__'][0]
+    if '__class__' in node._instance_attrs:
+        cls = node._instance_attrs['__class__'][0]
         return cls.name == signal_name
     return False
 
@@ -24,9 +24,9 @@ def transform_pyqt_signal(node):
             pass
     ''')
     signal_cls = module['pyqtSignal']
-    node.instance_attrs['emit'] = signal_cls['emit']
-    node.instance_attrs['disconnect'] = signal_cls['disconnect']
-    node.instance_attrs['connect'] = signal_cls['connect']
+    node._instance_attrs['emit'] = signal_cls['emit']
+    node._instance_attrs['disconnect'] = signal_cls['disconnect']
+    node._instance_attrs['connect'] = signal_cls['connect']
 
 
 def pyqt4_qtcore_transform():

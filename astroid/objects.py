@@ -155,7 +155,7 @@ class Super(NodeNG):
 
         found = False
         for cls in mro:
-            if name not in cls.locals:
+            if name not in cls._locals:
                 continue
 
             found = True

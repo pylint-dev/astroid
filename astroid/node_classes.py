@@ -214,7 +214,7 @@ class LookupMixIn(object):
             if mylineno > 0 and stmt.fromlineno > mylineno:
                 break
             assert hasattr(node, 'assign_type'), (node, node.scope(),
-                                                  node.scope().locals)
+                                                  node.scope()._locals)
             assign_type = node.assign_type()
 
             if node.has_base(self):

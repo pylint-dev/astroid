@@ -393,11 +393,11 @@ from ..cave import wine\n\n"""
         next(astroid['message'].infer(ctx))
         ctx.lookupname = 'email'
         m = next(astroid['email'].infer(ctx))
-        self.assertFalse(m.file.startswith(os.path.join('data', 'email.py')))
+        self.assertFalse(m.source_file.startswith(os.path.join('data', 'email.py')))
 
     def test_more_absolute_import(self):
         astroid = resources.build_file('data/module1abs/__init__.py', 'data.module1abs')
-        self.assertIn('sys', astroid.locals)
+        self.assertIn('sys', astroid._locals)
 
 
 class CmpNodeTest(unittest.TestCase):

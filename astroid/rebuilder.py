@@ -152,7 +152,7 @@ class TreeRebuilder(object):
         newnode.parent = None
         _init_set_doc(node, newnode)
         newnode.body = [self.visit(child, newnode) for child in node.body]
-        newnode.file = newnode.path = modpath
+        newnode.source_file = modpath
         return newnode
 
     def visit(self, node, parent, assign_ctx=None):

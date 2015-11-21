@@ -486,18 +486,18 @@ class BuilderTest(unittest.TestCase):
 
     def test_no_future_imports(self):
         mod = builder.parse("import sys")
-        self.assertEqual(set(), mod.future_imports)
+        self.assertEqual(set(), mod._future_imports)
 
     def test_future_imports(self):
         mod = builder.parse("from __future__ import print_function")
-        self.assertEqual(set(['print_function']), mod.future_imports)
+        self.assertEqual(set(['print_function']), mod._future_imports)
 
     def test_two_future_imports(self):
         mod = builder.parse("""
             from __future__ import print_function
             from __future__ import absolute_import
             """)
-        self.assertEqual(set(['print_function', 'absolute_import']), mod.future_imports)
+        self.assertEqual(set(['print_function', 'absolute_import']), mod._future_imports)
 
     def test_inferred_build(self):
         code = '''
@@ -512,8 +512,8 @@ class BuilderTest(unittest.TestCase):
         lclass = list(astroid.igetattr('A'))
         self.assertEqual(len(lclass), 1)
         lclass = lclass[0]
-        self.assertIn('assign_type', lclass.locals)
-        self.assertIn('type', lclass.locals)
+        self.assertIn('assign_type', lclass._locals)
+        self.assertIn('type', lclass._locals)
 
     def test_augassign_attr(self):
         builder.parse("""
@@ -534,22 +534,22 @@ class BuilderTest(unittest.TestCase):
             '''
         builder.parse(code)
         nonetype = nodes.const_factory(None)
-        self.assertNotIn('custom_attr', nonetype.locals)
-        self.assertNotIn('custom_attr', nonetype.instance_attrs)
+        self.assertNotIn('custom_attr', nonetype._locals)
+        self.assertNotIn('custom_attr', nonetype._instance_attrs)
         nonetype = nodes.const_factory({})
-        self.assertNotIn('custom_attr', nonetype.locals)
-        self.assertNotIn('custom_attr', nonetype.instance_attrs)
+        self.assertNotIn('custom_attr', nonetype._locals)
+        self.assertNotIn('custom_attr', nonetype._instance_attrs)
 
     def test_asstuple(self):
         code = 'a, b = range(2)'
         astroid = builder.parse(code)
-        self.assertIn('b', astroid.locals)
+        self.assertIn('b', astroid._locals)
         code = '''
             def visit_if(self, node):
                 node.test, body = node.tests[0]
             '''
         astroid = builder.parse(code)
-        self.assertIn('body', astroid['visit_if'].locals)
+        self.assertIn('body', astroid['visit_if']._locals)
 
     def test_build_constants(self):
         '''test expected values of constants after rebuilding'''
@@ -589,7 +589,7 @@ class FileBuildTest(unittest.TestCase):
         self.assertIsNone(module.parent)
         self.assertEqual(module.frame(), module)
         self.assertEqual(module.root(), module)
-        self.assertEqual(module.file, os.path.abspath(resources.find('data/module.py')))
+        self.assertEqual(module.source_file, os.path.abspath(resources.find('data/module.py')))
         self.assertEqual(module.pure_python, 1)
         self.assertEqual(module.package, 0)
         self.assertFalse(module.is_statement)
@@ -599,8 +599,8 @@ class FileBuildTest(unittest.TestCase):
     def test_module_locals(self):
         """test the 'locals' dictionary of a astroid module"""
         module = self.module
-        _locals = module.locals
-        self.assertIs(_locals, module.globals)
+        _locals = module._locals
+        self.assertIs(_locals, module._globals)
         keys = sorted(_locals.keys())
         should = ['MY_DICT', 'NameNode', 'YO', 'YOUPI',
                   '__revision__', 'global_access', 'modutils', 'four_args',
@@ -624,7 +624,7 @@ class FileBuildTest(unittest.TestCase):
 
     def test_function_locals(self):
         """test the 'locals' dictionary of a astroid function"""
-        _locals = self.module['global_access'].locals
+        _locals = self.module['global_access']._locals
         self.assertEqual(len(_locals), 4)
         keys = sorted(_locals.keys())
         self.assertEqual(keys, ['i', 'key', 'local', 'val'])
@@ -650,11 +650,11 @@ class FileBuildTest(unittest.TestCase):
         """test the 'locals' dictionary of a astroid class"""
         module = self.module
         klass1 = module['YO']
-        locals1 = klass1.locals
+        locals1 = klass1._locals
         keys = sorted(locals1.keys())
         self.assertEqual(keys, ['__init__', 'a'])
         klass2 = module['YOUPI']
-        locals2 = klass2.locals
+        locals2 = klass2._locals
         keys = locals2.keys()
         self.assertEqual(sorted(keys),
                          ['__init__', 'class_attr', 'class_method',
@@ -664,8 +664,8 @@ class FileBuildTest(unittest.TestCase):
         module = self.module
         klass1 = module['YO']
         klass2 = module['YOUPI']
-        self.assertEqual(list(klass1.instance_attrs.keys()), ['yo'])
-        self.assertEqual(list(klass2.instance_attrs.keys()), ['member'])
+        self.assertEqual(list(klass1._instance_attrs.keys()), ['yo'])
+        self.assertEqual(list(klass2._instance_attrs.keys()), ['member'])
 
     def test_class_basenames(self):
         module = self.module
@@ -696,7 +696,7 @@ class FileBuildTest(unittest.TestCase):
     def test_method_locals(self):
         """test the 'locals' dictionary of a astroid method"""
         method = self.module['YOUPI']['method']
-        _locals = method.locals
+        _locals = method._locals
         keys = sorted(_locals)
         if sys.version_info < (3, 0):
             self.assertEqual(len(_locals), 5)

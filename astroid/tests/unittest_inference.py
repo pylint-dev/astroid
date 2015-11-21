@@ -235,12 +235,12 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertRaises(StopIteration, partial(next, inferred))
 
     def test_swap_assign_inference(self):
-        inferred = self.ast.locals['a'][1].infer()
+        inferred = self.ast._locals['a'][1].infer()
         const = next(inferred)
         self.assertIsInstance(const, nodes.Const)
         self.assertEqual(const.value, 1)
         self.assertRaises(StopIteration, partial(next, inferred))
-        inferred = self.ast.locals['b'][1].infer()
+        inferred = self.ast._locals['b'][1].infer()
         exc = next(inferred)
         self.assertIsInstance(exc, Instance)
         self.assertEqual(exc.name, 'Exception')
@@ -470,7 +470,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(inferred.getitem(0).value, 1)
         self.assertIsInstance(inferred._proxied, nodes.ClassDef)
         self.assertEqual(inferred._proxied.name, 'list')
-        self.assertIn('append', inferred._proxied.locals)
+        self.assertIn('append', inferred._proxied._locals)
         n = ast['t']
         inferred = next(n.infer())
         self.assertIsInstance(inferred, nodes.Tuple)
@@ -484,13 +484,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, Instance)
         self.assertIsInstance(inferred._proxied, nodes.ClassDef)
         self.assertEqual(inferred._proxied.name, 'dict')
-        self.assertIn('get', inferred._proxied.locals)
+        self.assertIn('get', inferred._proxied._locals)
         n = ast['s']
         inferred = next(n.infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, 'str')
-        self.assertIn('lower', inferred._proxied.locals)
+        self.assertIn('lower', inferred._proxied._locals)
         n = ast['s2']
         inferred = next(n.infer())
         self.assertEqual(inferred.getitem(0).value, '_')
@@ -502,7 +502,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Set)
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, 'set')
-        self.assertIn('remove', inferred._proxied.locals)
+        self.assertIn('remove', inferred._proxied._locals)
 
     @test_utils.require_version(maxver='3.0')
     def test_unicode_type(self):
@@ -513,7 +513,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, 'unicode')
-        self.assertIn('lower', inferred._proxied.locals)
+        self.assertIn('lower', inferred._proxied._locals)
 
     @unittest.expectedFailure
     def test_descriptor_are_callable(self):
@@ -1047,16 +1047,16 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         foo_class = ast['Foo']
         bar_class = ast['Bar']
         bar_self = ast['Bar']['__init__']['self']
-        assattr = bar_class.instance_attrs['attr'][0]
-        self.assertEqual(len(foo_class.instance_attrs['attr']), 1)
-        self.assertEqual(len(bar_class.instance_attrs['attr']), 1)
-        self.assertEqual(bar_class.instance_attrs, {'attr': [assattr]})
+        assattr = bar_class._instance_attrs['attr'][0]
+        self.assertEqual(len(foo_class._instance_attrs['attr']), 1)
+        self.assertEqual(len(bar_class._instance_attrs['attr']), 1)
+        self.assertEqual(bar_class._instance_attrs, {'attr': [assattr]})
         # call 'instance_attr' via 'Instance.getattr' to trigger the bug:
         instance = bar_self.inferred()[0]
         instance.getattr('attr')
-        self.assertEqual(len(bar_class.instance_attrs['attr']), 1)
-        self.assertEqual(len(foo_class.instance_attrs['attr']), 1)
-        self.assertEqual(bar_class.instance_attrs, {'attr': [assattr]})
+        self.assertEqual(len(bar_class._instance_attrs['attr']), 1)
+        self.assertEqual(len(foo_class._instance_attrs['attr']), 1)
+        self.assertEqual(bar_class._instance_attrs, {'attr': [assattr]})
 
     def test_python25_generator_exit(self):
         buffer = six.StringIO()
@@ -1087,7 +1087,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = next(test_utils.get_name_node(ast, 'string').infer())
         self.assertIsInstance(inferred, nodes.Module)
         self.assertEqual(inferred.name, 'string')
-        self.assertIn('ascii_letters', inferred.locals)
+        self.assertIn('ascii_letters', inferred._locals)
 
     def test_mechanize_open(self):
         try:
@@ -1295,12 +1295,12 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ast = parse(code, __name__)
         aclass = ast['A'].inferred()[0]
         self.assertIsInstance(aclass, nodes.ClassDef)
-        self.assertIn('a', aclass.instance_attrs)
-        self.assertIn('b', aclass.instance_attrs)
+        self.assertIn('a', aclass._instance_attrs)
+        self.assertIn('b', aclass._instance_attrs)
         bclass = ast['B'].inferred()[0]
         self.assertIsInstance(bclass, nodes.ClassDef)
-        self.assertIn('a', bclass.instance_attrs)
-        self.assertIn('b', bclass.instance_attrs)
+        self.assertIn('a', bclass._instance_attrs)
+        self.assertIn('b', bclass._instance_attrs)
 
     def test_infer_arguments(self):
         code = '''

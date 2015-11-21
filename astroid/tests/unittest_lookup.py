@@ -57,11 +57,11 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         if sys.version_info < (3, 0):
             self.assertEqual(len(astroid.lookup('b')[1]), 2)
             self.assertEqual(len(astroid.lookup('a')[1]), 3)
-            b = astroid.locals['b'][1]
+            b = astroid._locals['b'][1]
         else:
             self.assertEqual(len(astroid.lookup('b')[1]), 1)
             self.assertEqual(len(astroid.lookup('a')[1]), 2)
-            b = astroid.locals['b'][0]
+            b = astroid._locals['b'][0]
         stmts = a.lookup('a')[1]
         self.assertEqual(len(stmts), 1)
         self.assertEqual(b.lineno, 6)
@@ -70,7 +70,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(b_value.value, 1)
         # c
         self.assertRaises(StopIteration, functools.partial(next, b_infer))
-        func = astroid.locals['func'][0]
+        func = astroid._locals['func'][0]
         self.assertEqual(len(func.lookup('c')[1]), 1)
 
     def test_module(self):
@@ -96,8 +96,8 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
                 pass
         '''
         astroid = builder.parse(code, __name__)
-        cls1 = astroid.locals['A'][0]
-        cls2 = astroid.locals['A'][1]
+        cls1 = astroid._locals['A'][0]
+        cls2 = astroid._locals['A'][1]
         name = next(cls2.nodes_of_class(nodes.Name))
         self.assertEqual(next(name.infer()), cls1)
 

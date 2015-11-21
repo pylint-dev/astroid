@@ -110,7 +110,7 @@ class NamedTupleTest(unittest.TestCase):
         for base in klass.ancestors():
             if base.name == 'X':
                 break
-        self.assertSetEqual({"a", "b", "c"}, set(base.instance_attrs))
+        self.assertSetEqual({"a", "b", "c"}, set(base._instance_attrs))
 
     def test_namedtuple_inference_failure(self):
         klass = test_utils.extract_node("""
@@ -145,7 +145,7 @@ class NamedTupleTest(unittest.TestCase):
         namedtuple('a', 'a b c')(1, 2, 3) #@
         ''')
         inferred = next(result.infer())
-        for name, attr in inferred.instance_attrs.items():
+        for name, attr in inferred._instance_attrs.items():
             self.assertEqual(attr[0].attrname, name)
 
 

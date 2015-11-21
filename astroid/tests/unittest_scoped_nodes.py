@@ -285,7 +285,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         '''
         tree = builder.parse(code)
         func = tree['nested_args']
-        self.assertEqual(sorted(func.locals), ['a', 'b', 'c', 'd'])
+        self.assertEqual(sorted(func._locals), ['a', 'b', 'c', 'd'])
         self.assertEqual(func.args.format_args(), 'a, (b, c, d)')
 
     def test_four_args(self):
@@ -451,14 +451,14 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
                 def stcmethod(cls):
                     pass
         """)
-        node = astroid.locals['Node'][0]
-        self.assertEqual(node.locals['clsmethod_subclass'][0].type,
+        node = astroid._locals['Node'][0]
+        self.assertEqual(node._locals['clsmethod_subclass'][0].type,
                          'classmethod')
-        self.assertEqual(node.locals['clsmethod'][0].type,
+        self.assertEqual(node._locals['clsmethod'][0].type,
                          'classmethod')
-        self.assertEqual(node.locals['staticmethod_subclass'][0].type,
+        self.assertEqual(node._locals['staticmethod_subclass'][0].type,
                          'staticmethod')
-        self.assertEqual(node.locals['stcmethod'][0].type,
+        self.assertEqual(node._locals['stcmethod'][0].type,
                          'staticmethod')
 
     def test_decorator_builtin_descriptors(self):
@@ -524,20 +524,20 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
                 def long_classmethod(cls): 
                     pass
         """)
-        node = astroid.locals['SomeClass'][0]
-        self.assertEqual(node.locals['static'][0].type,
+        node = astroid._locals['SomeClass'][0]
+        self.assertEqual(node._locals['static'][0].type,
                          'staticmethod')
-        self.assertEqual(node.locals['classmethod'][0].type,
+        self.assertEqual(node._locals['classmethod'][0].type,
                          'classmethod')
-        self.assertEqual(node.locals['not_so_static'][0].type,
+        self.assertEqual(node._locals['not_so_static'][0].type,
                          'method')
-        self.assertEqual(node.locals['not_so_classmethod'][0].type,
+        self.assertEqual(node._locals['not_so_classmethod'][0].type,
                          'method')
-        self.assertEqual(node.locals['classmethod_wrapped'][0].type,
+        self.assertEqual(node._locals['classmethod_wrapped'][0].type,
                          'classmethod')
-        self.assertEqual(node.locals['staticmethod_wrapped'][0].type,
+        self.assertEqual(node._locals['staticmethod_wrapped'][0].type,
                          'staticmethod')
-        self.assertEqual(node.locals['long_classmethod'][0].type,
+        self.assertEqual(node._locals['long_classmethod'][0].type,
                          'classmethod')
 
     def test_igetattr(self):
@@ -545,7 +545,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         def test():
             pass
         ''')
-        func.instance_attrs['value'] = [nodes.Const(42)]
+        func._instance_attrs['value'] = [nodes.Const(42)]
         value = func.getattr('value')
         self.assertEqual(len(value), 1)
         self.assertIsInstance(value[0], nodes.Const)
@@ -776,7 +776,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         '''
         astroid = builder.parse(data, __name__)
         cls = astroid['WebAppObject']
-        self.assertEqual(sorted(cls.locals.keys()),
+        self.assertEqual(sorted(cls._locals.keys()),
                          ['appli', 'config', 'registered', 'schema'])
 
     def test_class_getattr(self):
@@ -975,9 +975,9 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                class D: pass
         """)
         a = astroid['A']
-        b = a.locals['B'][0]
+        b = a._locals['B'][0]
         c = astroid['C']
-        d = c.locals['D'][0]
+        d = c._locals['D'][0]
         self.assertEqual(a.metaclass().name, 'ABCMeta')
         self.assertFalse(b.newstyle)
         self.assertIsNone(b.metaclass())

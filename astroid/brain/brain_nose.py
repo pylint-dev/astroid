@@ -55,7 +55,7 @@ def _nose_tools_functions():
 
 def _nose_tools_transform(node):
     for method_name, method in _nose_tools_functions():
-        node.locals[method_name] = [method]
+        node._locals[method_name] = [method]
 
 
 def _nose_tools_trivial_transform():

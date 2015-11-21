@@ -62,7 +62,7 @@ def _extend_str(class_node, rvalue):
     code = code.format(rvalue=rvalue)
     fake = AstroidBuilder(MANAGER).string_build(code)['whatever']
     for method in fake.mymethods():
-        class_node.locals[method.name] = [method]
+        class_node._locals[method.name] = [method]
         method.parent = class_node
 
 def extend_builtins(class_transforms):
@@ -299,7 +299,7 @@ def infer_super(node, context=None):
         if scope.type == 'classmethod':
             mro_type = cls
         else:
-            mro_type = cls.instanciate_class()
+            mro_type = cls.instantiate_class()
     else:
         # TODO(cpopa): support flow control (multiple inference values).
         try:

@@ -87,7 +87,7 @@ def infer_func_form(node, base_type, context=None, enum=False):
         fake_node = nodes.EmptyNode()
         fake_node.parent = class_node
         fake_node.attrname = attr
-        class_node.instance_attrs[attr] = [fake_node]
+        class_node._instance_attrs[attr] = [fake_node]
     return class_node, name, attributes
 
 
@@ -282,10 +282,10 @@ class %(name)s(tuple):
     def _replace(self, **kwds):
         return self
     ''' % {'name': name, 'fields': attributes})
-    class_node.locals['_asdict'] = fake.body[0].locals['_asdict']
-    class_node.locals['_make'] = fake.body[0].locals['_make']
-    class_node.locals['_replace'] = fake.body[0].locals['_replace']
-    class_node.locals['_fields'] = fake.body[0].locals['_fields']
+    class_node._locals['_asdict'] = fake.body[0]._locals['_asdict']
+    class_node._locals['_make'] = fake.body[0]._locals['_make']
+    class_node._locals['_replace'] = fake.body[0]._locals['_replace']
+    class_node._locals['_fields'] = fake.body[0]._locals['_fields']
     # we use UseInferenceDefault, we can't be a generator so return an iterator
     return iter([class_node])
 
@@ -309,7 +309,7 @@ def infer_enum_class(node):
         if node.root().name == 'enum':
             # Skip if the class is directly from enum module.
             break
-        for local, values in node.locals.items():
+        for local, values in node._locals.items():
             if any(not isinstance(value, nodes.AssignName)
                    for value in values):
                 continue
@@ -336,9 +336,9 @@ def infer_enum_class(node):
                 fake = AstroidBuilder(MANAGER).string_build(classdef)[target.name]
                 fake.parent = target.parent
                 for method in node.mymethods():
-                    fake.locals[method.name] = [method]
-                new_targets.append(fake.instanciate_class())
-            node.locals[local] = new_targets
+                    fake._locals[method.name] = [method]
+                new_targets.append(fake.instantiate_class())
+            node._locals[local] = new_targets
         break
     return node
 
@@ -366,7 +366,7 @@ def multiprocessing_transform():
         return module
 
     for node in (context, base):
-        for key, value in node.locals.items():
+        for key, value in node._locals.items():
             if key.startswith("_"):
                 continue
 

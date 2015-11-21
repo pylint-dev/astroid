@@ -58,7 +58,7 @@ def _add_dunder_class(func, member):
         return
     bases = [ancestor.__name__ for ancestor in python_cls.__bases__]
     ast_klass = build_class(cls_name, bases, python_cls.__doc__)
-    func.instance_attrs['__class__'] = [ast_klass]
+    func._instance_attrs['__class__'] = [ast_klass]
 
 
 _marker = object()
@@ -210,7 +210,7 @@ def _base_class_object_build(node, member, basenames, name=None, localname=None)
             valnode.object = obj
             valnode.parent = klass
             valnode.lineno = 1
-            klass.instance_attrs[name] = [valnode]
+            klass._instance_attrs[name] = [valnode]
     return klass
 
 
@@ -242,7 +242,7 @@ class InspectBuilder(object):
         except AttributeError:
             # in jython, java modules have no __doc__ (see #109562)
             node = build_module(modname)
-        node.file = node.path = path and abspath(path) or path
+        node.source_file = path and abspath(path) or path
         node.name = modname
         MANAGER.cache_module(node)
         node.package = hasattr(module, '__path__')
@@ -287,7 +287,7 @@ class InspectBuilder(object):
                     continue
                 if member in self._done:
                     class_node = self._done[member]
-                    if not class_node in node.locals.get(name, ()):
+                    if not class_node in node._locals.get(name, ()):
                         node.add_local_node(class_node, name)
                 else:
                     class_node = object_build_class(node, member, name)

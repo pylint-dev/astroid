@@ -155,7 +155,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         for from_node in module._import_from_nodes:
             if from_node.modname == '__future__':
                 for symbol, _ in from_node.names:
-                    module.future_imports.add(symbol)
+                    module._future_imports.add(symbol)
             self.add_from_names_to_locals(from_node)
         # handle delayed assattr nodes
         for delayed in module._delayed_assattr:
@@ -204,10 +204,10 @@ class AstroidBuilder(raw_building.InspectBuilder):
                     continue
                 for name in imported.wildcard_import_names():
                     node.parent.set_local(name, node)
-                    sort_locals(node.parent.scope().locals[name])
+                    sort_locals(node.parent.scope()._locals[name])
             else:
                 node.parent.set_local(asname or name, node)
-                sort_locals(node.parent.scope().locals[asname or name])
+                sort_locals(node.parent.scope()._locals[asname or name])
 
     def delayed_assattr(self, node):
         """Visit a AssAttr node
@@ -222,15 +222,15 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 try:
                     if inferred.__class__ is bases.Instance:
                         inferred = inferred._proxied
-                        iattrs = inferred.instance_attrs
+                        iattrs = inferred._instance_attrs
                     elif isinstance(inferred, bases.Instance):
                         # Const, Tuple, ... we may be wrong, may be not, but
                         # anyway we don't want to pollute builtin's namespace
                         continue
                     elif inferred.is_function:
-                        iattrs = inferred.instance_attrs
+                        iattrs = inferred._instance_attrs
                     else:
-                        iattrs = inferred.locals
+                        iattrs = inferred._locals
                 except AttributeError:
                     # XXX log error
                     continue

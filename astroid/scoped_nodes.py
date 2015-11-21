@@ -107,7 +107,7 @@ def function_to_method(n, klass):
 
 def std_special_attributes(self, name, add_locals=True):
     if add_locals:
-        locals = self.locals
+        locals = self._locals
     else:
         locals = {}
     if name == '__name__':
@@ -129,7 +129,7 @@ def builtin_lookup(name):
     if name == '__dict__':
         return builtin_astroid, ()
     try:
-        stmts = builtin_astroid.locals[name]
+        stmts = builtin_astroid._locals[name]
     except KeyError:
         stmts = ()
     return builtin_astroid, stmts
@@ -181,7 +181,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, bases.NodeNG):
     def _scope_lookup(self, node, name, offset=0):
         """XXX method for interfacing the scope lookup"""
         try:
-            stmts = node._filter_stmts(self.locals[name], self, offset)
+            stmts = node._filter_stmts(self._locals[name], self, offset)
         except KeyError:
             stmts = ()
         if stmts:
@@ -202,8 +202,8 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, bases.NodeNG):
 
         if the name is already defined, ignore it
         """
-        #assert not stmt in self.locals.get(name, ()), (self, stmt)
-        self.locals.setdefault(name, []).append(stmt)
+        #assert not stmt in self._locals.get(name, ()), (self, stmt)
+        self._locals.setdefault(name, []).append(stmt)
 
     __setitem__ = set_local
 
@@ -227,7 +227,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, bases.NodeNG):
         :param item: the name of the locally defined object
         :raises KeyError: if the name is not defined
         """
-        return self.locals[item][0]
+        return self._locals[item][0]
 
     def __iter__(self):
         """method from the `dict` interface returning an iterator on
@@ -239,7 +239,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, bases.NodeNG):
         """method from the `dict` interface returning a tuple containing
         locally defined names
         """
-        return list(self.locals.keys())
+        return list(self._locals.keys())
 
     def values(self):
         """method from the `dict` interface returning a tuple containing
@@ -255,7 +255,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, bases.NodeNG):
         return list(zip(self.keys(), self.values()))
 
     def __contains__(self, name):
-        return name in self.locals
+        return name in self._locals
 
 
 class Module(LocalsDictNodeNG):
@@ -297,9 +297,9 @@ class Module(LocalsDictNodeNG):
         self.name = name
         self.doc = doc
         self.pure_python = pure_python
-        self.locals = self.globals = {}
+        self._locals = self._globals = {}
         self.body = []
-        self.future_imports = set()
+        self._future_imports = set()
 
     # Future deprecation warnings
     @property
@@ -370,8 +370,8 @@ class Module(LocalsDictNodeNG):
     def _get_stream(self):
         if self.source_code is not None:
             return io.BytesIO(self.source_code)
-        if self.file is not None:
-            stream = open(self.file, 'rb')
+        if self.source_file is not None:
+            stream = open(self.source_file, 'rb')
             return stream
         return None
 
@@ -406,7 +406,7 @@ class Module(LocalsDictNodeNG):
         return self.fromlineno, self.tolineno
 
     def scope_lookup(self, node, name, offset=0):
-        if name in self.scope_attrs and name not in self.locals:
+        if name in self.scope_attrs and name not in self._locals:
             try:
                 return self, self.getattr(name)
             except exceptions.NotFoundError:
@@ -423,12 +423,12 @@ class Module(LocalsDictNodeNG):
     def getattr(self, name, context=None, ignore_locals=False):
         if name in self.special_attributes:
             if name == '__file__':
-                return [node_classes.const_factory(self.file)] + self.locals.get(name, [])
+                return [node_classes.const_factory(self.source_file)] + self._locals.get(name, [])
             if name == '__path__' and self.package:
-                return [node_classes.List()] + self.locals.get(name, [])
+                return [node_classes.List()] + self._locals.get(name, [])
             return std_special_attributes(self, name)
-        if not ignore_locals and name in self.locals:
-            return self.locals[name]
+        if not ignore_locals and name in self._locals:
+            return self._locals[name]
         if self.package:
             try:
                 return [self.import_module(name, relative_only=True)]
@@ -454,7 +454,7 @@ class Module(LocalsDictNodeNG):
         """return True if this module has been built from a .py file
         and so contains a complete representation including the code
         """
-        return self.file is not None and self.file.endswith('.py')
+        return self.source_file is not None and self.source_file.endswith('.py')
 
     def statement(self):
         """return the first parent node marked as statement node
@@ -473,7 +473,7 @@ class Module(LocalsDictNodeNG):
     if six.PY2:
         @decorators_mod.cachedproperty
         def _absolute_import_activated(self):
-            for stmt in self.locals.get('absolute_import', ()):
+            for stmt in self._locals.get('absolute_import', ()):
                 if isinstance(stmt, node_classes.ImportFrom) and stmt.modname == '__future__':
                     return True
             return False
@@ -582,7 +582,7 @@ class GeneratorExp(ComprehensionScope):
     _astroid_fields = ('elt', 'generators')
 
     def __init__(self):
-        self.locals = {}
+        self._locals = {}
         self.elt = None
         self.generators = []
 
@@ -591,7 +591,7 @@ class DictComp(ComprehensionScope):
     _astroid_fields = ('key', 'value', 'generators')
 
     def __init__(self):
-        self.locals = {}
+        self._locals = {}
         self.key = None
         self.value = None
         self.generators = []
@@ -601,7 +601,7 @@ class SetComp(ComprehensionScope):
     _astroid_fields = ('elt', 'generators')
 
     def __init__(self):
-        self.locals = {}
+        self._locals = {}
         self.elt = None
         self.generators = []
 
@@ -617,7 +617,7 @@ if six.PY3:
     class ListComp(_ListComp, ComprehensionScope):
         """class representing a ListComp node"""
         def __init__(self):
-            self.locals = {}
+            self._locals = {}
 else:
     class ListComp(_ListComp):
         """class representing a ListComp node"""
@@ -655,7 +655,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
     type = 'function'
 
     def __init__(self):
-        self.locals = {}
+        self._locals = {}
         self.args = []
         self.body = []
 
@@ -714,12 +714,25 @@ class FunctionDef(bases.Statement, Lambda):
     decorators = None
 
     def __init__(self, name, doc):
-        self.locals = {}
+        self._locals = {}
         self.args = []
         self.body = []
         self.name = name
         self.doc = doc
-        self.instance_attrs = {}
+        self._instance_attrs = {}
+
+    @property
+    def instance_attrs(self):
+        util.attribute_to_function_warning('instance_attrs', 2.0, 'get_attributes')
+        return self._instance_attrs
+    @instance_attrs.setter
+    def instance_attrs(self, _instance_attrs):
+        util.attribute_to_function_warning('instance_attrs', 2.0, 'get_attributes')
+        self._instance_attrs = _instance_attrs
+    @instance_attrs.deleter
+    def instance_attrs(self):
+        util.attribute_to_function_warning('instance_attrs', 2.0, 'get_attributes')
+        del self._instance_attrs
 
     @decorators_mod.cachedproperty
     def extra_decorators(self):
@@ -845,8 +858,8 @@ class FunctionDef(bases.Statement, Lambda):
         """
         if name == '__module__':
             return [node_classes.const_factory(self.root().qname())]
-        if name in self.instance_attrs:
-            return self.instance_attrs[name]
+        if name in self._instance_attrs:
+            return self._instance_attrs[name]
         return std_special_attributes(self, name, False)
 
     def igetattr(self, name, context=None):
@@ -1056,12 +1069,25 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
                     "'metaclass' | 'exception'")
 
     def __init__(self, name, doc):
-        self.instance_attrs = {}
-        self.locals = {}
+        self._instance_attrs = {}
+        self._locals = {}
         self.bases = []
         self.body = []
         self.name = name
         self.doc = doc
+
+    @property
+    def instance_attrs(self):
+        util.attribute_to_function_warning('instance_attrs', 2.0, 'get_attributes')
+        return self._instance_attrs
+    @instance_attrs.setter
+    def instance_attrs(self, _instance_attrs):
+        util.attribute_to_function_warning('instance_attrs', 2.0, 'get_attributes')
+        self._instance_attrs = _instance_attrs
+    @instance_attrs.deleter
+    def instance_attrs(self):
+        util.attribute_to_function_warning('instance_attrs', 2.0, 'get_attributes')
+        del self._instance_attrs
 
     def _newstyle_impl(self, context=None):
         if context is None:
@@ -1148,7 +1174,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
             for attr, value in members.items:
                 if (isinstance(attr, node_classes.Const) and
                         isinstance(attr.value, six.string_types)):
-                    result.locals[attr.value] = [value]
+                    result._locals[attr.value] = [value]
 
         result.parent = caller.parent
         return result
@@ -1260,7 +1286,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
         which have <name> defined in their instance attribute dictionary
         """
         for astroid in self.ancestors(context=context):
-            if name in astroid.instance_attrs:
+            if name in astroid._instance_attrs:
                 yield astroid
 
     def has_base(self, node):
@@ -1276,10 +1302,10 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
           its parent classes
         """
         try:
-            return self.locals[name]
+            return self._locals[name]
         except KeyError:
             for class_node in self.local_attr_ancestors(name, context):
-                return class_node.locals[name]
+                return class_node._locals[name]
         raise exceptions.NotFoundError(name)
 
     @remove_nodes(node_classes.DelAttr)
@@ -1291,20 +1317,24 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
           if no attribute with this name has been find in this class or
           its parent classes
         """
-        # Return a copy, so we don't modify self.instance_attrs,
+        # Return a copy, so we don't modify self._instance_attrs,
         # which could lead to infinite loop.
-        values = list(self.instance_attrs.get(name, []))
+        values = list(self._instance_attrs.get(name, []))
         # get all values from parents
         for class_node in self.instance_attr_ancestors(name, context):
-            values += class_node.instance_attrs[name]
+            values += class_node._instance_attrs[name]
         if not values:
             raise exceptions.NotFoundError(name)
         return values
 
+    def instantiate_class(self):
+        """return Instance of ClassDef node, else return self"""
+        return bases.Instance(self)
+
     def instanciate_class(self):
         """return Instance of ClassDef node, else return self"""
         util.rename_warning('instanciate_class()', 2.0, 'instantiate_class()')
-        return bases.Instance(self)
+        return self.instantiate_class()
 
     def getattr(self, name, context=None):
         """this method doesn't look in the instance_attrs dictionary since it's
@@ -1313,7 +1343,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
         It may return a YES object if the attribute has not been actually
         found but a __getattr__ or __getattribute__ method is defined
         """
-        values = self.locals.get(name, [])
+        values = self._locals.get(name, [])
         if name in self.special_attributes:
             if name == '__module__':
                 return [node_classes.const_factory(self.root().qname())] + values
@@ -1328,10 +1358,10 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
                 node.elts = mro
                 return [node]
             return std_special_attributes(self, name)
-        # don't modify the list in self.locals!
+        # don't modify the list in self._locals!
         values = list(values)
         for classnode in self.ancestors(recurs=True, context=context):
-            values += classnode.locals.get(name, [])
+            values += classnode._locals.get(name, [])
         if not values:
             raise exceptions.NotFoundError(name)
         return values
@@ -1449,12 +1479,12 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
         if six.PY3:
             return None
 
-        if '__metaclass__' in self.locals:
-            assignment = self.locals['__metaclass__'][-1]
+        if '__metaclass__' in self._locals:
+            assignment = self._locals['__metaclass__'][-1]
         elif self.bases:
             return None
-        elif '__metaclass__' in self.root().locals:
-            assignments = [ass for ass in self.root().locals['__metaclass__']
+        elif '__metaclass__' in self.root()._locals:
+            assignments = [ass for ass in self.root()._locals['__metaclass__']
                            if ass.lineno < self.lineno]
             if not assignments:
                 return None
@@ -1498,7 +1528,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
 
     def _islots(self):
         """ Return an iterator with the inferred slots. """
-        if '__slots__' not in self.locals:
+        if '__slots__' not in self._locals:
             return
         for slots in self.igetattr('__slots__'):
             # check if __slots__ is a valid type
@@ -1638,6 +1668,15 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
         unmerged_mro = ([[self]] + bases_mro + [bases])
         _verify_duplicates_mro(unmerged_mro)
         return _c3_merge(unmerged_mro)
+
+def get_locals(node):
+    '''Stub function for forwards compatibility.'''
+    return node._locals
+
+def get_attributes(node):
+    '''Stub function for forwards compatibility.'''
+    return node._instance_attrs
+
 # Backwards-compatibility aliases
 Class = node_classes.proxy_alias('Class', ClassDef)
 Function = node_classes.proxy_alias('Function', FunctionDef)

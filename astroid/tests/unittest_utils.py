@@ -32,7 +32,7 @@ for x in range(5):
 if x > 0:
     print ('#' * x)
         """, __name__, __file__)
-        xass1 = astroid.locals['x'][0]
+        xass1 = astroid._locals['x'][0]
         assert xass1.lineno == 2
         xnames = [n for n in astroid.nodes_of_class(nodes.Name) if n.name == 'x']
         assert len(xnames) == 3
@@ -53,12 +53,12 @@ else:
     a = 3
     a = 4
         ''')
-        a1 = astroid.locals['a'][0]
-        a2 = astroid.locals['a'][1]
-        a3 = astroid.locals['a'][2]
-        a4 = astroid.locals['a'][3]
-        a5 = astroid.locals['a'][4]
-        a6 = astroid.locals['a'][5]
+        a1 = astroid._locals['a'][0]
+        a2 = astroid._locals['a'][1]
+        a3 = astroid._locals['a'][2]
+        a4 = astroid._locals['a'][3]
+        a5 = astroid._locals['a'][4]
+        a6 = astroid._locals['a'][5]
         self.assertEqual(are_exclusive(a1, a2), False)
         self.assertEqual(are_exclusive(a1, a3), True)
         self.assertEqual(are_exclusive(a1, a5), True)
@@ -82,10 +82,10 @@ else:
         "this one redefine the one defined line 42"
 
         ''')
-        f1 = astroid.locals['exclusive_func2'][0]
-        f2 = astroid.locals['exclusive_func2'][1]
-        f3 = astroid.locals['exclusive_func2'][2]
-        f4 = astroid.locals['exclusive_func2'][3]
+        f1 = astroid._locals['exclusive_func2'][0]
+        f2 = astroid._locals['exclusive_func2'][1]
+        f3 = astroid._locals['exclusive_func2'][2]
+        f4 = astroid._locals['exclusive_func2'][3]
         self.assertEqual(are_exclusive(f1, f2), True)
         self.assertEqual(are_exclusive(f1, f3), True)
         self.assertEqual(are_exclusive(f1, f4), False)
