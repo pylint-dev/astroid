@@ -607,7 +607,7 @@ class Dict(bases.NodeNG, bases.Instance):
             self.items = []
         else:
             self.items = [(const_factory(k), const_factory(v))
-                          for k, v in items.items()]
+                          for k, v in list(items.items())]
 
     def pytype(self):
         return '%s.dict' % BUILTINS
