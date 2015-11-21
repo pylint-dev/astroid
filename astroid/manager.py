@@ -222,5 +222,4 @@ class AstroidManager(object):
     def clear_cache(self):
         self.astroid_cache.clear()
         from astroid import raw_building
-        # self.astroid_cache[six.moves.builtins.__name__] = raw_building.ast_from_builtins()
-        self.astroid_cache[six.moves.builtins.__name__] = raw_building.builtins_ast
+        self.astroid_cache[six.moves.builtins.__name__] = raw_building.ast_from_builtins()

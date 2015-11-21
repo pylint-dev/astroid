@@ -968,7 +968,7 @@ class CallSite(object):
 @util.register_implementation(treeabc.Lambda)
 class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
     _astroid_fields = ('args', 'body',)
-    _other_other_fields = ('locals',)
+    # _other_other_fields = ('locals',)
     name = '<lambda>'
 
     # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'

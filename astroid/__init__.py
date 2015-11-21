@@ -65,7 +65,6 @@ from astroid.nodes import *
 from astroid import inference
 
 from astroid import raw_building
-from astroid.raw_building import builtins_ast as builtins
 from astroid.interpreter.util import are_exclusive, unpack_infer
 from astroid.tree.scoped_nodes import builtin_lookup
 from astroid.builder import parse
