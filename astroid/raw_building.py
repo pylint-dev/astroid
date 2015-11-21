@@ -493,7 +493,7 @@ def ast_from_dict(dictionary, built_objects, module, name=None,
     if name is not None:
         built_objects[id(dictionary)] = _NameAST(name, node)
     dict_node.postinit(items=[
-        (x, y) for k, v in dictionary.items()
+        (x, y) for k, v in list(dictionary.items())
         for x, y in zip(_ast_from_object(k, built_objects, module, parent=node),
                         _ast_from_object(v, built_objects, module, parent=node))])
     if name:
