@@ -168,7 +168,10 @@ def _ast_from_object(instance, built_objects, module, name=None, parent=None):
     '''
     # Since all Instances pointing to the same ClassDef are
     # identical, they can all share the same node.
-    if name is not None and id(instance) in built_objects:
+    if (name is not None and
+        id(instance) in built_objects and
+        built_objects[id(instance)].name is not None and
+        built_objects[id(instance)].name != name):
         return (_make_assignment(name, built_objects[id(instance)].name, parent),)
 
     # Since this ultimately inherits from object but not any type,
@@ -449,7 +452,9 @@ BUILTIN_CONTAINERS = {list: node_classes.List, set: node_classes.Set, frozenset:
 def ast_from_builtin_container(container, built_objects, module, name=None,
                                parent=None):
     '''Handles builtin container types except for mappings.'''
-    if (id(container) in built_objects and
+    if (name is not None and
+        id(container) in built_objects and
+        built_objects[id(container)].name is not None and
         built_objects[id(container)].name != name):
         return (_make_assignment(name, built_objects[id(container)].name, parent),)
     if name:
@@ -466,8 +471,7 @@ def ast_from_builtin_container(container, built_objects, module, name=None,
         node = parent
     else:
         node = container_node
-    if name is not None:
-        built_objects[id(container)] = _NameAST(name, node)
+    built_objects[id(container)] = _NameAST(name, node)
     container_node.postinit(
         elts=[t for i in container
               for t in _ast_from_object(i, built_objects, module, parent=node)])
@@ -481,7 +485,9 @@ def ast_from_builtin_container(container, built_objects, module, name=None,
 def ast_from_dict(dictionary, built_objects, module, name=None,
                                parent=None):
     '''Handles dictionaries, including DictProxyType and MappingProxyType.'''
-    if (id(dictionary) in built_objects and
+    if (name is not None and
+        id(dictionary) in built_objects and
+        built_objects[id(dictionary)].name is not None and
         built_objects[id(dictionary)].name != name):
         return (_make_assignment(name, built_objects[id(dictionary)].name, parent),)
     if name:
@@ -522,7 +528,9 @@ else:
 @_ast_from_object.register(complex)
 def ast_from_builtin_number_text_binary(builtin_number_text_binary, built_objects, module, name=None, parent=None):
     '''Handles the builtin numeric and text/binary sequence types.'''
-    if (name is not None and id(builtin_number_text_binary) in built_objects and
+    if (name is not None and
+        id(builtin_number_text_binary) in built_objects and
+        built_objects[id(builtin_number_text_binary)].name is not None and
         built_objects[id(builtin_number_text_binary)].name != name):
         return (_make_assignment(name, built_objects[id(builtin_number_text_binary)].name, parent),)
     if name:
@@ -610,6 +618,7 @@ BUILTIN_TYPES = (types.GetSetDescriptorType,
                  types.GeneratorType, types.FunctionType, types.MethodType,
                  types.BuiltinFunctionType, types.ModuleType)
 
+
 def ast_from_builtins():
     # Initialize the built_objects map for the builtins mock AST to ensure
     # that the types are included as Name nodes, not explicit ASTs.
@@ -636,6 +645,41 @@ def ast_from_builtins():
         reserved_name = built_objects[id(singleton)].ast
         builtins_ast.body.append(reserved_name)
         reserved_name.parent = builtins_ast
+
+    # There's another builtin type in CPython 3.3+ called
+    # SimpleNamespace.  While there's a statement defining it in the
+    # types standard library module,
+
+    # SimpleNamespace = type(sys.implementation)
+
+    # this doesn't create a class for it, just refer to an existing
+    # class that's probably implemented in C.  To avoid crashes that
+    # occur when ast_from_object tries to process instances of
+    # SimpleNamespace, this adds the type to the builtins mock ast.
+    if hasattr(types, 'SimpleNamespace'):
+        # 
+        simple_namespace_type = _ast_from_object(types.SimpleNamespace,
+                                                 built_objects,
+                                                 types)[0]
+        builtins_ast.body.append(simple_namespace_type)
+        simple_namespace_type.parent = builtins_ast
+        @_ast_from_object.register(types.SimpleNamespace)
+        def ast_from_simple_namespace(simple_namespace, built_objects,
+                                      module, name=None, parent=None):
+            if (name is not None and
+                id(simple_namespace) in built_objects and
+                built_objects[id(simple_namespace)].name is not None and
+                built_objects[id(simple_namespace)].name != name):
+                return (_make_assignment(name, built_objects[id(simple_namespace)].name, parent),)
+            simple_namespace_node = simple_namespace_type.instantiate_class()
+            built_objects[id(simple_namespace)] = _NameAST(name, simple_namespace_node)
+            for name in set(dir(simple_namespace)) - set(dir(simple_namespace_type)):
+                if name not in objects.Instance.special_attributes:
+                    ast = _ast_from_object(getattr(simple_namespace, name),
+                                           built_objects, module, name=name,
+                                           parent=parent)[0]
+                    simple_namespace_type.instance_attrs[name].append(ast)
+            return (node_classes.InterpreterObject(name=name, object_=simple_namespace_node, parent=parent),)
 
     MANAGER.astroid_cache[six.moves.builtins.__name__] = builtins_ast
     return builtins_ast
