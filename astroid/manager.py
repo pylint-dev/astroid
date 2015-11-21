@@ -201,7 +201,9 @@ class AstroidManager(object):
                 return self.ast_from_file(filepath, modname)
         except AttributeError:
             pass
-        return builder.AstroidBuilder(self).module_build(module, modname)
+        mock_ast = builder.AstroidBuilder(self).module_build(module, modname)
+        self.astroid_cache[modname] = mock_ast
+        return mock_ast
 
     def register_failed_import_hook(self, hook):
         """Registers a hook to resolve imports that cannot be found otherwise.

@@ -65,6 +65,10 @@ from astroid.tree import scoped_nodes
 from astroid import util
 
 
+# TODO: handle the names of lambdas better, recurse into imported
+# bases and metaclass.
+
+
 MANAGER = manager.AstroidManager()
 
 # This is a type used for some unbound methods implemented in C on
@@ -234,7 +238,7 @@ def ast_from_class(cls, built_objects, module, name=None, parent=None):
     '''Handles classes and other types not handled explicitly elsewhere.'''
     # TODO: this can create duplicate objects
     if id(cls) in built_objects:
-        return (_make_assignment(name, built_objects[id(cls)].name, parent),)
+        return (_make_assignment(name or cls.__name__, built_objects[id(cls)].name, parent),)
 
     inspected_module = inspect.getmodule(cls)
 
@@ -293,7 +297,7 @@ if six.PY2:
 def ast_from_function(func, built_objects, module, name=None, parent=None):
     '''Handles functions, including all kinds of methods.'''
     if id(func) in built_objects:
-        return (_make_assignment(name, built_objects[id(func)].name, parent),)
+        return (_make_assignment(name or func.__name__, built_objects[id(func)].name, parent),)
     inspected_module = inspect.getmodule(func)
     if inspected_module is not None and inspected_module is not module:
         return (node_classes.ImportFrom(
@@ -396,7 +400,7 @@ def ast_from_module(module, built_objects, parent_module, name=None, parent=None
     if module is not parent_module:
         # This module has been imported into another.
 
-        # TODO: this work around an obscure issue in pylib/apikpkg,
+        # TODO: this works around an obscure issue in pylib/apikpkg,
         # https://pylib.readthedocs.org/en/latest/index.html /
         # https://bitbucket.org/hpk42/apipkg.  In its
         # __init__.py, pylib has the following line:
@@ -428,7 +432,6 @@ def ast_from_module(module, built_objects, parent_module, name=None, parent=None
         pure_python=bool(source_file))
     built_objects[id(module)] = _NameAST(module_node.name, module_node)
     built_objects = _ChainMap({}, *built_objects.maps)
-    # MANAGER.cache_module(module_node)
     body = [
         t for n, m in inspect.getmembers(module) if n not in scoped_nodes.Module.special_attributes
         for t in _ast_from_object(m, built_objects, module, n, module_node)]
@@ -493,6 +496,12 @@ def ast_from_dict(dictionary, built_objects, module, name=None,
     if name is not None:
         built_objects[id(dictionary)] = _NameAST(name, node)
     dict_node.postinit(items=[
+        # This explicit list construction works around an obscure
+        # interaction: if _ast_from_dict is called on sys.modules and
+        # sys.modules contains a module that alters sys.modules upon
+        # import, as pytest.AliasModule does, then the recursive call
+        # can alter sys.modules's items() while it's being iterated
+        # over, causing a RuntimeError.
         (x, y) for k, v in list(dictionary.items())
         for x, y in zip(_ast_from_object(k, built_objects, module, parent=node),
                         _ast_from_object(v, built_objects, module, parent=node))])
@@ -573,8 +582,6 @@ for singleton, node_class in BUILTIN_SINGLETONS.items():
 
 
 def _make_assignment(new_name, old_name, parent):
-    # if new_name is None:
-    #     raise TypeError
     assign_node = node_classes.Assign(parent=parent)
     target_node = node_classes.AssignName(new_name, parent=assign_node)
     value_node = node_classes.Name(old_name, parent=assign_node)
