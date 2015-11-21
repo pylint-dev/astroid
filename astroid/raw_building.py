@@ -65,10 +65,6 @@ from astroid.tree import scoped_nodes
 from astroid import util
 
 
-# TODO: handle the names of lambdas better, recurse into imported
-# bases and metaclass.
-
-
 MANAGER = manager.AstroidManager()
 
 # This is a type used for some unbound methods implemented in C on
@@ -128,6 +124,9 @@ def ast_from_object(object_, name=None):
     return _ast_from_object(object_, _ChainMap({}),
                             inspect.getmodule(object_), name)[0]
 
+
+# TODO: handle the names of lambdas better, recurse into imported
+# bases and metaclass.
 
 @util.singledispatch
 def _ast_from_object(instance, built_objects, module, name=None, parent=None):

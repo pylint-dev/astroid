@@ -563,7 +563,12 @@ class Module(LocalsDictNodeNG):
         # to avoid catching too many Exceptions
         default = [name for name in self.keys() if not name.startswith('_')]
         if '__all__' in self:
-            all = self['__all__']
+            # This is a workaround for the case where a module defines
+            # __all__ and then dynamically alters it, requiring a
+            # custom hack to define a static __all__ for the module.
+            # The static __all__ ends up at the end of the locals list
+            # for __all__, not the beginning.
+            all = self.locals['__all__'][-1]
         else:
             return default
         try:
