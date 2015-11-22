@@ -646,7 +646,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(list(ast['process_line'].infer_call_result(None))), 3)
         self.assertEqual(len(list(ast['tupletest'].infer())), 3)
         values = ['<FunctionDef.first_word', '<FunctionDef.last_word',
-                  '<Const.NoneType']
+                  '<NameConstant.NoneType']
         self.assertTrue(all(repr(inferred).startswith(value) for inferred, value
                             in zip(ast['fct'].infer(), values)))
 

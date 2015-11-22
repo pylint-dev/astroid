@@ -198,15 +198,9 @@ def _ast_from_object(instance, built_objects, module, name=None, parent=None):
         def lazy_instance(node=node, cls=cls, name=name, parent=parent):
             # Handle ImportFrom chains.
             while True:
-                try:
-                    modname = node.modname
-                except AttributeError:
-                    # print(node, parent)
-                    raise
+                modname = node.modname
                 node = MANAGER.ast_from_module_name(modname).getattr(cls.__name__)[0]
                 if isinstance(node, scoped_nodes.ClassDef):
-                    # class_node = node
-                    # break
                     return node_classes.InterpreterObject(name=name, object_=node.instantiate_class(), parent=parent)
         result.append(lazy_object_proxy.Proxy(lazy_instance))
         built_objects[id(instance)] = _NameAST(name, result[-1])
