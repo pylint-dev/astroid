@@ -136,7 +136,7 @@ class NamedTupleTest(unittest.TestCase):
         result = __(six.moves.urllib.parse.urlparse('gopher://'))
         """)
         instance = next(result.infer())
-        self.assertEqual(len(instance.getattr('scheme')), 1)
+        self.assertEqual(len(instance.getattr('scheme')), 2)
         self.assertEqual(len(instance.getattr('port')), 1)
         with self.assertRaises(astroid.AttributeInferenceError):
             instance.getattr('foo')
