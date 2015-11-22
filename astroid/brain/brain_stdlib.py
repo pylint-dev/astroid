@@ -13,6 +13,7 @@ from astroid import exceptions
 from astroid.interpreter.objects import BoundMethod
 from astroid import nodes
 from astroid.builder import AstroidBuilder
+from astroid import parse
 from astroid import util
 
 PY3K = sys.version_info > (3, 0)
@@ -244,8 +245,20 @@ def infer_namedtuple(namedtuple_call, context=None):
                                for index, name in enumerate(field_names))
     )
 
-    # TODO: maybe memoize this call for efficiency, if it's needed.
-    namedtuple_node = AstroidBuilder(MANAGER).string_build(class_definition).getattr(type_name)[0]
+    namedtuple_node = parse(class_definition).getattr(type_name)[0]
+    init_template = '''def __init__(self, {args}):
+{assignments}'''
+    init_definition = init_template.format(
+        args=', '.join(field_names),
+        assignments='\n'.join((' '*4 + 'self.{f} = {f}').format(f=f) for f in field_names))
+    init_node = parse(init_definition).getattr('__init__')[0]
+    init_node.parent = namedtuple_node
+    namedtuple_node.body.append(init_node)
+    # This is an ugly hack to work around the normal process for
+    # assigning to instance_attrs relying on inference and thus being
+    # affected by instance_attrs already present.
+    for assignment in init_node.body:
+        namedtuple_node.instance_attrs[assignment.targets[0].attrname].append(assignment.targets[0])
     return iter([namedtuple_node])
 
 
@@ -290,25 +303,25 @@ def infer_enum(enum_call, context=None):
             """Fake __init__ for enums"""
     ''')
     code = template.format(name=type_name, attributes=', '.join(attributes))
-    assignment_lines = [(' '*8 + 'self.%(a)s = %(a)s' % {'a': a})
+    assignment_lines = [(' '*8 + 'self.{a} = {a}'.format(a=a))
                         for a in attributes]
     code += '\n'.join(assignment_lines)
     module = AstroidBuilder(MANAGER).string_build(code)
     return iter([module.body[1]])
 
 
-def infer_enum_class(node):
+def infer_enum_class(enum_node):
     """ Specific inference for enums. """
-    names = set(('Enum', 'IntEnum', 'enum.Enum', 'enum.IntEnum'))
-    for basename in node.basenames:
+    names = {'Enum', 'IntEnum', 'enum.Enum', 'enum.IntEnum'}
+    for basename in enum_node.basenames:
         # TODO: doesn't handle subclasses yet. This implementation
         # is a hack to support enums.
         if basename not in names:
             continue
-        if node.root().name == 'enum':
+        if enum_node.root().name == 'enum':
             # Skip if the class is directly from enum module.
             break
-        for local, values in node.locals.items():
+        for local, values in enum_node.locals.items():
             if any(not isinstance(value, nodes.AssignName)
                    for value in values):
                 continue
@@ -319,7 +332,7 @@ def infer_enum_class(node):
             else:
                 targets = stmt.targets
 
-            new_targets = []
+            # new_targets = []
             for target in targets:
                 # Replace all the assignments with our mocked class.
                 classdef = textwrap.dedent('''
@@ -331,15 +344,17 @@ def infer_enum_class(node):
                     @property
                     def name(self):
                         return %(name)r
-                ''' % {'name': target.name, 'types': ', '.join(node.basenames)})
-                fake = AstroidBuilder(MANAGER).string_build(classdef)[target.name]
-                fake.parent = target.parent
-                for method in node.mymethods():
-                    fake.locals[method.name] = [method]
-                new_targets.append(fake.instantiate_class())
-            node.locals[local] = new_targets
+                ''' % {'name': target.name, 'types': ', '.join(enum_node.basenames)})
+                class_node = parse(classdef)[target.name]
+                class_node.parent = target.parent
+                for method in enum_node.mymethods():
+                    class_node.body.append(method)
+                    method.parent = class_node
+                instance_node = nodes.InterpreterObject(name=local, object_=class_node.instantiate_class(), parent=enum_node.parent)
+                # Replace the Assign node with the Enum instance
+                enum_node.body[enum_node.body.index(target.parent)] = instance_node
         break
-    return node
+    return enum_node
 
 def multiprocessing_transform():
     module = AstroidBuilder(MANAGER).string_build(textwrap.dedent('''

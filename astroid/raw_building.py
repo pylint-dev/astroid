@@ -652,12 +652,11 @@ def ast_from_builtins():
 
     # SimpleNamespace = type(sys.implementation)
 
-    # this doesn't create a class for it, just refer to an existing
+    # this doesn't create a class for it, just refers to an existing
     # class that's probably implemented in C.  To avoid crashes that
     # occur when ast_from_object tries to process instances of
     # SimpleNamespace, this adds the type to the builtins mock ast.
     if hasattr(types, 'SimpleNamespace'):
-        # 
         simple_namespace_type = _ast_from_object(types.SimpleNamespace,
                                                  built_objects,
                                                  types)[0]
@@ -683,9 +682,6 @@ def ast_from_builtins():
 
     MANAGER.astroid_cache[six.moves.builtins.__name__] = builtins_ast
     return builtins_ast
-
-builtins_ast = ast_from_builtins()
-astroid_builtin = builtins_ast
 
 # def _io_discrepancy(member):
 #     # _io module names itself `io`: http://bugs.python.org/issue18602

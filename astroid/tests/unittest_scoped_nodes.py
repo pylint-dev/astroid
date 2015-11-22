@@ -783,8 +783,9 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         '''
         astroid = builder.parse(data, __name__)
         cls = astroid['WebAppObject']
-        self.assertEqual(sorted(cls.locals.keys()),
-                         ['appli', 'config', 'registered', 'schema'])
+        self.assertEqual(list(cls.locals.keys()), ['registered'])
+        self.assertEqual(sorted(cls.external_attrs.keys()),
+                                ['appli', 'config', 'schema'])
 
     def test_class_getattr(self):
         data = '''
