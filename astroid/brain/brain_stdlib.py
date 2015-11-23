@@ -27,7 +27,9 @@ PY34 = sys.version_info >= (3, 4)
 def infer_func_form(node, base_type, context=None, enum=False):
     """Specific inference function for namedtuple or Python 3 enum. """
     def infer_first(node):
-        try:
+        if node is util.YES:
+            raise UseInferenceDefault
+        try:            
             value = next(node.infer(context=context))
             if value is util.YES:
                 raise UseInferenceDefault()

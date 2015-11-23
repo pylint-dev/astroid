@@ -1248,7 +1248,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ast = parse(code, __name__)
         inferred = next(ast['Z'].infer())
         self.assertIsInstance(inferred, nodes.List)
-        self.assertEqual(len(inferred.elts), 0)
+        self.assertEqual(len(inferred.elts), 1)
+        self.assertIs(inferred.elts[0], util.YES)
 
     def test__new__(self):
         code = '''

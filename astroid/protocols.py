@@ -142,14 +142,21 @@ def _multiply_seq_by_int(self, other, context):
     return node
 
 
+def _filter_uninferable_nodes(elts, context):
+    for elt in elts:
+        if elt is util.YES:
+            yield elt
+        else:
+            for inferred in elt.infer(context):
+                yield inferred
+
+
 def tl_infer_binary_op(self, operator, other, context):
     for other in other.infer(context):
         if isinstance(other, self.__class__) and operator == '+':
             node = self.__class__()
-            elts = [n for elt in self.elts for n in elt.infer(context)
-                    if not n is util.YES]
-            elts += [n for elt in other.elts for n in elt.infer(context)
-                     if not n is util.YES]
+            elts = list(_filter_uninferable_nodes(self.elts, context))
+            elts += list(_filter_uninferable_nodes(other.elts, context))
             node.elts = elts
             yield node
         elif isinstance(other, nodes.Const) and operator == '*':
