@@ -114,7 +114,7 @@ def _gi_build_stub(parent):
 def _import_gi_module(modname):
     # we only consider gi.repository submodules
     if not modname.startswith('gi.repository.'):
-        raise AstroidBuildingException()
+        raise AstroidBuildingException(modname=modname)
     # build astroid representation unless we already tried so
     if modname not in _inspected_modules:
         modnames = [modname]
@@ -155,7 +155,7 @@ def _import_gi_module(modname):
     else:
         astng = _inspected_modules[modname]
     if astng is None:
-        raise AstroidBuildingException('Failed to import module %r' % modname)
+        raise AstroidBuildingException(modname=modname)
     return astng
 
 def _looks_like_require_version(node):

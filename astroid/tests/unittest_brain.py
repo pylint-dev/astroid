@@ -137,7 +137,7 @@ class NamedTupleTest(unittest.TestCase):
         instance = next(result.infer())
         self.assertEqual(len(instance.getattr('scheme')), 1)
         self.assertEqual(len(instance.getattr('port')), 1)
-        with self.assertRaises(astroid.NotFoundError):
+        with self.assertRaises(astroid.AttributeInferenceError):
             instance.getattr('foo')
         self.assertEqual(len(instance.getattr('geturl')), 1)
         self.assertEqual(instance.name, 'ParseResult')

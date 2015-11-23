@@ -141,9 +141,18 @@ class CallSite(object):
         return values
 
     def infer_argument(self, funcnode, name, context):
-        """infer a function argument value according to the call context"""
+        """infer a function argument value according to the call context
+
+        Arguments:
+            funcnode: The function being called.
+            name: The name of the argument whose value is being inferred.
+            context: TODO
+        """
         if name in self.duplicated_keywords:
-            raise exceptions.InferenceError(name)
+            raise exceptions.InferenceError('The arguments passed to {func!r} '
+                                            ' have duplicate keywords.',
+                                            call_site=self, func=funcnode,
+                                            arg=name, context=context)
 
         # Look into the keywords first, maybe it's already there.
         try:
@@ -154,7 +163,11 @@ class CallSite(object):
         # Too many arguments given and no variable arguments.
         if len(self.positional_arguments) > len(funcnode.args.args):
             if not funcnode.args.vararg:
-                raise exceptions.InferenceError(name)
+                raise exceptions.InferenceError('Too many positional arguments '
+                                                'passed to {func!r} that does '
+                                                'not have *args.',
+                                                call_site=self, func=funcnode,
+                                                arg=name, context=context)
 
         positional = self.positional_arguments[:len(funcnode.args.args)]
         vararg = self.positional_arguments[len(funcnode.args.args):]
@@ -214,7 +227,13 @@ class CallSite(object):
             # It wants all the keywords that were passed into
             # the call site.
             if self.has_invalid_keywords():
-                raise exceptions.InferenceError
+                raise exceptions.InferenceError(
+                    "Inference failed to find values for all keyword arguments "
+                    "to {func!r}: {unpacked_kwargs!r} doesn't correspond to "
+                    "{keyword_arguments!r}.",
+                    keyword_arguments=self.keyword_arguments,
+                    unpacked_kwargs=self._unpacked_kwargs,
+                    call_site=self, func=funcnode, arg=name, context=context)
             kwarg = nodes.Dict(lineno=funcnode.args.lineno,
                                col_offset=funcnode.args.col_offset,
                                parent=funcnode.args)
@@ -225,7 +244,13 @@ class CallSite(object):
             # It wants all the args that were passed into
             # the call site.
             if self.has_invalid_arguments():
-                raise exceptions.InferenceError
+                raise exceptions.InferenceError(
+                    "Inference failed to find values for all positional "
+                    "arguments to {func!r}: {unpacked_args!r} doesn't "
+                    "correspond to {positional_arguments!r}.",
+                    positional_arguments=self.positional_arguments,
+                    unpacked_args=self._unpacked_args,
+                    call_site=self, func=funcnode, arg=name, context=context)
             args = nodes.Tuple(lineno=funcnode.args.lineno,
                                col_offset=funcnode.args.col_offset,
                                parent=funcnode.args)
@@ -237,4 +262,6 @@ class CallSite(object):
             return funcnode.args.default_value(name).infer(context)
         except exceptions.NoDefault:
             pass
-        raise exceptions.InferenceError(name)
+        raise exceptions.InferenceError('No value found for argument {name} to '
+                                        '{func!r}', call_site=self,
+                                        func=funcnode, arg=name, context=context)

@@ -49,6 +49,41 @@ class Uninferable(object):
         return self
 
 
+class BadOperationMessage(object):
+    """Object which describes a TypeError occurred somewhere in the inference chain
+
+    This is not an exception, but a container object which holds the types and
+    the error which occurred.
+    """
+
+
+class BadUnaryOperationMessage(BadOperationMessage):
+    """Object which describes operational failures on UnaryOps."""
+
+    def __init__(self, operand, op, error):
+        self.operand = operand
+        self.op = op
+        self.error = error
+
+    def __str__(self):
+        operand_type = self.operand.name
+        msg = "bad operand type for unary {}: {}"
+        return msg.format(self.op, operand_type)
+
+
+class BadBinaryOperationMessage(BadOperationMessage):
+    """Object which describes type errors for BinOps."""
+
+    def __init__(self, left_type, op, right_type):
+        self.left_type = left_type
+        self.right_type = right_type
+        self.op = op
+
+    def __str__(self):
+        msg = "unsupported operand type(s) for {}: {!r} and {!r}"
+        return msg.format(self.op, self.left_type.name, self.right_type.name)
+
+
 def _instancecheck(cls, other):
     wrapped = cls.__wrapped__
     other_cls = other.__class__
