@@ -48,6 +48,9 @@ def unpack_infer(stmt, context=None):
     """
     if isinstance(stmt, (List, Tuple)):
         for elt in stmt.elts:
+            if elt is util.Uninferable:
+                yield elt
+                continue
             for inferred_elt in unpack_infer(elt, context):
                 yield inferred_elt
         return

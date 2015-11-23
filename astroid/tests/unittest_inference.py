@@ -1321,7 +1321,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ast = parse(code, __name__)
         inferred = next(ast['Z'].infer())
         self.assertIsInstance(inferred, nodes.List)
-        self.assertEqual(len(inferred.elts), 0)
+        self.assertEqual(len(inferred.elts), 1)
+        self.assertIs(inferred.elts[0], util.Uninferable)
 
     def test__new__(self):
         code = '''
@@ -2342,6 +2343,17 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         for node, expected in zip(ast_nodes, expected_values):
             inferred = next(node.infer())
             self.assertEqual(inferred.value, expected)
+
+    def test_binop_list_with_elts(self):
+        ast_node = test_utils.extract_node('''
+        x = [A] * 1
+        [1] + x
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.List)
+        self.assertEqual(len(inferred.elts), 2)
+        self.assertIsInstance(inferred.elts[0], nodes.Const)
+        self.assertIs(inferred.elts[1], util.Uninferable)
 
     def test_binop_same_types(self):
         ast_nodes = test_utils.extract_node('''
