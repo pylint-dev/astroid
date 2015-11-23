@@ -373,7 +373,7 @@ class EnumBrainTest(unittest.TestCase):
         """)
 
         enum = next(module['MyEnum'].infer())
-        one = enum['one']
+        one = next(enum['one'].infer())
         self.assertEqual(one.pytype(), '.MyEnum.one')
 
         property_type = '{}.property'.format(BUILTINS)
@@ -381,8 +381,8 @@ class EnumBrainTest(unittest.TestCase):
             prop = next(iter(one.getattr(propname)))
             self.assertIn(property_type, prop.decoratornames())
 
-        meth = one.getattr('mymethod')[0]
-        self.assertIsInstance(meth, astroid.FunctionDef)
+        meth = next(one.igetattr('mymethod'))
+        self.assertIsInstance(meth, objects.BoundMethod)
 
     def test_looks_like_enum_false_positive(self):
         # Test that a class named Enumeration is not considered a builtin enum.
@@ -409,8 +409,9 @@ class EnumBrainTest(unittest.TestCase):
         enum = next(module['MyEnum'].infer())
         one = enum['one']
 
-        clazz = one.getattr('__class__')[0]
-        self.assertTrue(clazz.is_subtype_of('.Mixin'),
+        instance = next(one.infer())
+        cls = next(instance.igetattr('__class__'))
+        self.assertTrue(cls.is_subtype_of('.Mixin'),
                         'Enum instance should share base classes with generating class')
 
     def test_int_enum(self):
@@ -424,9 +425,10 @@ class EnumBrainTest(unittest.TestCase):
         enum = next(module['MyEnum'].infer())
         one = enum['one']
 
-        clazz = one.getattr('__class__')[0]
+        instance = next(one.infer())
+        cls = next(instance.igetattr('__class__'))
         int_type = '{}.{}'.format(BUILTINS, 'int')
-        self.assertTrue(clazz.is_subtype_of(int_type),
+        self.assertTrue(cls.is_subtype_of(int_type),
                         'IntEnum based enums should be a subtype of int')
 
     def test_enum_func_form_is_class_not_instance(self):
