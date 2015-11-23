@@ -21,6 +21,9 @@ PY33 = sys.version_info >= (3, 3)
 PY34 = sys.version_info >= (3, 4)
 
 def infer_first(node, context):
+    if node is util.Uninferable:
+        util.reraise(InferenceError())
+
     try:
         value = next(node.infer(context=context))
         if value is util.Uninferable:
@@ -230,7 +233,8 @@ def infer_namedtuple(namedtuple_call, context=None):
     if isinstance(fields, nodes.Const) and isinstance(fields.value, str):
         field_names = tuple(fields.value.replace(',', ' ').split())
     elif isinstance(fields, (nodes.Tuple, nodes.List)):
-        field_names = tuple(infer_first(const, context).value for const in fields.elts)
+        field_names = tuple(infer_first(const, context).value
+                            for const in fields.elts)
     else:
         raise UseInferenceDefault()
 

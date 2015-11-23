@@ -90,6 +90,7 @@ class HashlibTest(unittest.TestCase):
 
 
 class NamedTupleTest(unittest.TestCase):
+
     def test_namedtuple_base(self):
         klass = test_utils.extract_node("""
         from collections import namedtuple
@@ -151,6 +152,16 @@ class NamedTupleTest(unittest.TestCase):
         inferred = next(result.infer())
         for name, attr in inferred.instance_attrs.items():
             self.assertEqual(attr[0].attrname, name)
+
+    def test_namedtuple_uninferable_fields(self):
+        node = test_utils.extract_node('''
+        x = [A] * 2
+        from collections import namedtuple
+        l = namedtuple('a', x)
+        l(1)
+        ''')        
+        inferred = next(node.infer())
+        self.assertIs(util.Uninferable, inferred)
 
 
 class ModuleExtenderTest(unittest.TestCase):
