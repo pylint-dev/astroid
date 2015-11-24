@@ -40,6 +40,7 @@ Main modules are:
 * builder contains the class responsible to build astroid trees
 """
 
+import collections
 import importlib
 import re
 import sys
@@ -68,7 +69,7 @@ from astroid import raw_building
 # Cache the builtins AST
 raw_building.ast_from_builtins()
 from astroid.interpreter.util import are_exclusive, unpack_infer
-from astroid.tree.scoped_nodes import builtin_lookup
+from astroid.tree.scoped_nodes import builtin_lookup, get_locals, replace_child
 from astroid.builder import parse
 from astroid.util import Uninferable, YES
 
@@ -117,10 +118,28 @@ def inference_tip(infer_function):
 def register_module_extender(manager, module_name, get_extension_mod):
     def transform(module):
         extension_module = get_extension_mod()
-        for statement in extension_module.body:
-            statement.parent = module
-            module.body.append(statement)
-
+        # The locals map is not one-to-one either direction.  This
+        # constructs a map from the *first* node that adds a name to
+        # the locals to the names it adds.
+        module_inverse_locals = collections.defaultdict(list)
+        for name, nodes in get_locals(module).items():
+            module_inverse_locals[nodes[0]].append(name)
+        extension_locals = get_locals(extension_module)
+        # This calculates the map from nodes in the original module
+        # that should be replaced to the nodes in the extension module
+        # that are replacing them.  It assumes that extension modules
+        # don't contain any nodes that assign to more than one name.
+        replacements = collections.defaultdict(list)
+        for node, names in module_inverse_locals.items():
+            if any(name in extension_locals for name in names):
+                replacements[node].extend(extension_locals[n][0] for n in names)
+        for to_replace, replace_with in replacements.items():
+            for node in replace_with:
+                node.parent = module
+            replace_child(module, to_replace, replace_with)
+        for node in extension_module.body:
+            if node not in replacements.values():
+                module.body.append(node)
     manager.register_transform(Module, transform, lambda n: n.name == module_name)
 
 

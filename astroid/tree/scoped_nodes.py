@@ -563,12 +563,7 @@ class Module(LocalsDictNodeNG):
         # to avoid catching too many Exceptions
         default = [name for name in self.keys() if not name.startswith('_')]
         if '__all__' in self:
-            # This is a workaround for the case where a module defines
-            # __all__ and then dynamically alters it, requiring a
-            # custom hack to define a static __all__ for the module.
-            # The static __all__ ends up at the end of the locals list
-            # for __all__, not the beginning.
-            all = self.locals['__all__'][-1]
+            all = self['__all__']
         else:
             return default
         try:
@@ -2205,6 +2200,7 @@ def locals_name(node, locals_):
     new scope so shouldn't be recursed into.'''
     locals_[node.name].append(node)
 
+# pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(node_classes.InterpreterObject)
 def locals_interpreter_object(node, locals_):
     '''InterpreterObjects add an object to the local variables under a specified
@@ -2212,6 +2208,7 @@ def locals_interpreter_object(node, locals_):
     if node.name:
         locals_[node.name].append(node)
 
+# pylint: disable=unused-variable; doesn't understand singledispatch
 @_get_locals.register(node_classes.ReservedName)
 def locals_reserved_name(node, locals_):
     '''InterpreterObjects add an object to the local variables under a specified
@@ -2259,6 +2256,42 @@ def locals_import_from(node, locals_):
         else:
             locals_[asname or name].append(node)
             sort_locals(locals_[asname or name])
+
+
+def replace_child(tree, to_replace, replace_with):
+    '''Replaces the first occurrence of a name in the body of a scoped node.
+
+    Args:
+        tree (LocalsDictNodeNG): The node containing the child to be replaced.
+            This must be a scoped node with a body, a Module, ClassDef,
+            FunctionDef, or Lambda.
+        node (NodeNG): The node to replace the child with.
+        name (str): The name to use to find the child with.
+    '''
+    stack = [tree]
+    while stack:
+        node = stack.pop()
+        for field in node._astroid_fields:
+            if isinstance(getattr(node, field), collections.Sequence):
+                if any(not isinstance(e, base.NodeNG) for e in getattr(node, field)):
+                    print(getattr(node, field))
+                if to_replace in getattr(node, field):
+                    index = getattr(node, field).index(to_replace)
+                    getattr(node, field)[index:index + 1] = replace_with
+                    return
+                else:
+                    stack.extend(getattr(node, field))
+            else:
+                if getattr(node, field) is to_replace:
+                    # TODO: what happens if replace_with has more than one element?
+                    if len(replace_with) > 1: 
+                        raise ValueError
+                    else:
+                        setattr(node, field, replace_with[0]) 
+                        return
+                else:
+                    if getattr(node, field) is not None:
+                        stack.append(getattr(node, field))
 
 
 # Backwards-compatibility aliases
