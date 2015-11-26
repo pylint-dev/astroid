@@ -91,6 +91,7 @@ class deque(object):
     def __reversed__(self): return self.iterable[::-1]
     def __getitem__(self, index): pass
     def __setitem__(self, index, value): pass
+    def __delitem__(self, index): pass
 ''')
 
 
