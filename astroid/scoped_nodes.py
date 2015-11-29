@@ -1189,6 +1189,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
             yield bases.Instance(self)
 
     def scope_lookup(self, node, name, offset=0):
+        # pylint: disable=redefined-variable-type
         if any(node == base or base.parent_of(node)
                for base in self.bases):
             # Handle the case where we have either a name

@@ -167,6 +167,7 @@ class AstroidManager(object):
         return None
 
     def file_from_module_name(self, modname, contextfile):
+        # pylint: disable=redefined-variable-type
         try:
             value = self._mod_file_cache[(modname, contextfile)]
         except KeyError:

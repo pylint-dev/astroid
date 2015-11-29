@@ -398,8 +398,6 @@ def with_assigned_stmts(self, node, context=None, asspath=None):
                 if isinstance(lst, (nodes.Tuple, nodes.List)):
                     for item in lst.nodes:
                         yield item
-nodes.With.assigned_stmts = bases.raise_if_nothing_inferred(with_assigned_stmts)
-
 nodes.With.assigned_stmts = with_assigned_stmts
 
 

@@ -1059,6 +1059,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(bar_class._instance_attrs, {'attr': [assattr]})
 
     def test_python25_generator_exit(self):
+        # pylint: disable=redefined-variable-type
         buffer = six.StringIO()
         sys.stderr = buffer
         try:

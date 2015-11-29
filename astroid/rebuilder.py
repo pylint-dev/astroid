@@ -279,10 +279,10 @@ class TreeRebuilder(object):
             # problem for the correctness of the program).
             #
             # ("a" + "b" + # one thousand more + "c")
-            newnode = self._peepholer.optimize_binop(node)
-            if newnode:
-                _lineno_parent(node, newnode, parent)
-                return newnode
+            optimized = self._peepholer.optimize_binop(node)
+            if optimized:
+                _lineno_parent(node, optimized, parent)
+                return optimized
 
         newnode = new.BinOp()
         _lineno_parent(node, newnode, parent)
@@ -553,6 +553,7 @@ class TreeRebuilder(object):
 
     def visit_attribute(self, node, parent, assign_ctx=None):
         """visit a Getattr node by returning a fresh instance of it"""
+        # pylint: disable=redefined-variable-type
         if assign_ctx == "Del":
             # FIXME : maybe we should reintroduce and visit_delattr ?
             # for instance, deactivating asscontext
@@ -652,6 +653,7 @@ class TreeRebuilder(object):
         """visit a Name node by returning a fresh instance of it"""
         # True and False can be assigned to something in py2x, so we have to
         # check first the asscontext
+        # pylint: disable=redefined-variable-type
         if assign_ctx == "Del":
             newnode = new.DelName()
         elif assign_ctx is not None: # Ass
@@ -891,6 +893,7 @@ class TreeRebuilder3k(TreeRebuilder):
 
     def visit_try(self, node, parent, assign_ctx=None):
         # python 3.3 introduce a new Try node replacing TryFinally/TryExcept nodes
+        # pylint: disable=redefined-variable-type
         if node.finalbody:
             newnode = new.TryFinally()
             _lineno_parent(node, newnode, parent)
