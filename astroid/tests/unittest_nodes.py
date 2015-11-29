@@ -62,6 +62,16 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         node = parse(code)
         self.assertEqual(node.as_string().strip(), code.strip())
 
+    def test_as_string_for_list_containing_uninferable(self):
+        node = test_utils.extract_node('''
+        def foo():
+            bar = [arg] * 1
+        ''')
+        binop = node.body[0].value
+        inferred = next(binop.infer())
+        self.assertEqual(inferred.as_string(), '[Uninferable]')
+        self.assertEqual(binop.as_string(), '([arg]) * (1)')
+
     def test_frozenset_as_string(self):
         nodes = test_utils.extract_node('''
         frozenset((1, 2, 3)) #@

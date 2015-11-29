@@ -37,17 +37,23 @@ class Uninferable(object):
     """Special inference object, which is returned when inference fails."""
     def __repr__(self):
         return 'Uninferable'
+    __str__ = __repr__
 
     def __getattribute__(self, name):
         if name == 'next':
             raise AttributeError('next method should not be called')
         if name.startswith('__') and name.endswith('__'):
             return object.__getattribute__(self, name)
+        if name == 'accept':
+            return object.__getattribute__(self, name)
         return self
 
     def __call__(self, *args, **kwargs):
         return self
 
+    def accept(self, visitor):
+        func = getattr(visitor, "visit_uninferable")
+        return func(self)
 
 class BadOperationMessage(object):
     """Object which describes a TypeError occurred somewhere in the inference chain
