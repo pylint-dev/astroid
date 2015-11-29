@@ -478,6 +478,8 @@ class AsStringVisitor(object):
     def visit_super(self, node):
         return node.parent.accept(self)
 
+    def visit_yes(self, node):
+        return "Uninferable"
 
 
 class AsStringVisitor3k(AsStringVisitor):
