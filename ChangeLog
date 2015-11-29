@@ -1,6 +1,20 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+2015-11-29 -- 1.4.1
+
+
+    * Add support for handling Uninferable nodes when calling as_string
+
+      Some object, for instance List or Tuple can have, after inference,
+      Uninferable as their elements, happening when their components
+      weren't couldn't be inferred properly. This means that as_string
+      needs to cope with expecting Uninferable nodes part of the other
+      nodes coming for a string transformation. The patch adds a visit
+      method in AsString and ``accept`` on Yes / Uninferable nodes.
+      Closes issue #270.
+
+
 2015-11-29 -- 1.4.0 
 
     * Class.getattr('__mro__') returns the actual MRO. Closes issue #128.
