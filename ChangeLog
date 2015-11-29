@@ -1,7 +1,7 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
---
+2015-11-29 -- 1.4.0 
 
     * Class.getattr('__mro__') returns the actual MRO. Closes issue #128.
     * The logilab-common dependency is not needed anymore as the needed code
