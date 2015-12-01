@@ -3,7 +3,7 @@ Change log for the astroid package (used to be astng)
 
     * Revert to using printf-style formatting in as_string, in order
       to avoid a potential problem with encodings when using .format.
-      Closes issue #273.
+      Closes issue #273. Patch by notsqrt.
 
     * Add support for handling Uninferable nodes when calling as_string
 
