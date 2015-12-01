@@ -287,13 +287,11 @@ class AsStringVisitor(object):
             trailer = return_annotation + ":"
         else:
             trailer = ":"
-        def_format = "\n{decorators}def {name}({args}){trailer}{docs}\n{body}"
-        return def_format.format(decorators=decorate,
-                                 name=node.name,
-                                 args=node.args.accept(self),
-                                 trailer=trailer,
-                                 docs=docs,
-                                 body=self._stmt_list(node.body))
+        def_format = "\n%sdef %s(%s)%s%s\n%s"
+        return def_format % (decorate, node.name,
+                             node.args.accept(self),
+                             trailer, docs,
+                             self._stmt_list(node.body))
 
     def visit_generatorexp(self, node):
         """return an astroid.GeneratorExp node as string"""
