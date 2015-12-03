@@ -22,7 +22,7 @@ distname = 'astroid'
 
 modname = 'astroid'
 
-numversion = (1, 4, 0)
+numversion = (1, 5, 0)
 version = '.'.join([str(num) for num in numversion])
 
 if sys.version_info >= (3, 4):
