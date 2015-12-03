@@ -195,13 +195,6 @@ class TreeRebuilder(object):
             newnode.parent.set_local(kwarg, newnode)
         return newnode
 
-    def visit_assignattr(self, node, parent, assign_ctx=None):
-        """visit a AssignAttr node by returning a fresh instance of it"""
-        newnode = nodes.AssignAttr(node.lineno, node.col_offset, parent)
-        newnode.postinit(self.visit(node.expr, newnode, None))
-        self._delayed_assattr.append(newnode)
-        return newnode
-
     def visit_assert(self, node, parent, assign_ctx=None):
         """visit a Assert node by returning a fresh instance of it"""
         newnode = nodes.Assert(node.lineno, node.col_offset, parent)
@@ -523,7 +516,6 @@ class TreeRebuilder(object):
             newnode = nodes.DelAttr(node.attr, node.lineno, node.col_offset,
                                     parent)
         elif assign_ctx == "Assign":
-            # FIXME : maybe we should call visit_assignattr ?
             newnode = nodes.AssignAttr(node.attr, node.lineno, node.col_offset,
                                        parent)
             self._delayed_assattr.append(newnode)
