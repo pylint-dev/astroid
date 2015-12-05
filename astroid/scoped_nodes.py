@@ -535,6 +535,7 @@ class Module(LocalsDictNodeNG):
             all = self['__all__']
         except KeyError:
             return default
+
         try:
             explicit = next(all.assigned_stmts())
         except exceptions.InferenceError:
