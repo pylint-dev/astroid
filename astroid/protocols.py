@@ -246,7 +246,7 @@ def _resolve_looppart(parts, asspath, context):
                     break
 
 @decorators.raise_if_nothing_inferred
-def for_assigned_stmts(self, node, context=None, asspath=None):
+def for_assigned_stmts(self, node=None, context=None, asspath=None):
     if asspath is None:
         for lst in self.iter.infer(context):
             if isinstance(lst, (nodes.Tuple, nodes.List)):
@@ -265,18 +265,25 @@ nodes.For.assigned_stmts = for_assigned_stmts
 nodes.Comprehension.assigned_stmts = for_assigned_stmts
 
 
-def mulass_assigned_stmts(self, node, context=None, asspath=None):
+def sequence_assigned_stmts(self, node=None, context=None, asspath=None):
     if asspath is None:
         asspath = []
-    asspath.insert(0, self.elts.index(node))
-    return self.parent.assigned_stmts(self, context, asspath)
+    try:
+        index = self.elts.index(node)
+    except ValueError:
+         util.reraise(exceptions.InferenceError(
+             'Tried to retrieve a node {node!r} which does not exist',
+             node=self, assign_path=asspath, context=context))
 
-nodes.Tuple.assigned_stmts = mulass_assigned_stmts
-nodes.List.assigned_stmts = mulass_assigned_stmts
+    asspath.insert(0, index)
+    return self.parent.assigned_stmts(node=self, context=context, asspath=asspath)
+
+nodes.Tuple.assigned_stmts = sequence_assigned_stmts
+nodes.List.assigned_stmts = sequence_assigned_stmts
 
 
-def assend_assigned_stmts(self, context=None):
-    return self.parent.assigned_stmts(self, context=context)
+def assend_assigned_stmts(self, node=None, context=None, asspath=None):
+    return self.parent.assigned_stmts(node=self, context=context)
 nodes.AssignName.assigned_stmts = assend_assigned_stmts
 nodes.AssignAttr.assigned_stmts = assend_assigned_stmts
 
@@ -329,7 +336,7 @@ def _arguments_infer_argname(self, name, context):
         yield util.Uninferable
 
 
-def arguments_assigned_stmts(self, node, context, asspath=None):
+def arguments_assigned_stmts(self, node=None, context=None, asspath=None):
     if context.callcontext:
         # reset call context/name
         callcontext = context.callcontext
@@ -343,7 +350,7 @@ nodes.Arguments.assigned_stmts = arguments_assigned_stmts
 
 
 @decorators.raise_if_nothing_inferred
-def assign_assigned_stmts(self, node, context=None, asspath=None):
+def assign_assigned_stmts(self, node=None, context=None, asspath=None):
     if not asspath:
         yield self.value
         return
@@ -388,7 +395,7 @@ def _resolve_asspart(parts, asspath, context):
 
 
 @decorators.raise_if_nothing_inferred
-def excepthandler_assigned_stmts(self, node, context=None, asspath=None):
+def excepthandler_assigned_stmts(self, node=None, context=None, asspath=None):
     for assigned in node_classes.unpack_infer(self.type):
         if isinstance(assigned, nodes.ClassDef):
             assigned = bases.Instance(assigned)
@@ -449,7 +456,7 @@ def _infer_context_manager(self, mgr, context):
 
 
 @decorators.raise_if_nothing_inferred
-def with_assigned_stmts(self, node, context=None, asspath=None):
+def with_assigned_stmts(self, node=None, context=None, asspath=None):
     """Infer names and other nodes from a *with* statement.
 
     This enables only inference for name binding in a *with* statement.
@@ -554,7 +561,7 @@ def starred_assigned_stmts(self, node=None, context=None, asspath=None):
         # be the list of values which the Starred node will represent
         # This is done in two steps, from left to right to remove
         # anything before the starred node and from right to left
-        # to remvoe anything after the starred node.
+        # to remove anything after the starred node.
 
         for index, node in enumerate(lhs.elts):
             if not isinstance(node, nodes.Starred):

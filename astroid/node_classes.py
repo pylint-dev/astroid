@@ -1847,6 +1847,27 @@ def _update_const_classes():
 _update_const_classes()
 
 
+def _two_step_initialization(cls, value):
+    instance = cls()
+    instance.postinit(value)
+    return instance
+
+
+def _dict_initialization(cls, value):
+    if isinstance(value, dict):
+        value = tuple(value.items())
+    return _two_step_initialization(cls, value)
+
+
+_CONST_CLS_CONSTRUCTORS = {
+    List: _two_step_initialization,
+    Tuple: _two_step_initialization,
+    Dict: _dict_initialization,
+    Set: _two_step_initialization,
+    Const: lambda cls, value: cls(value)
+}
+
+
 def const_factory(value):
     """return an astroid node for a python value"""
     # XXX we should probably be stricter here and only consider stuff in
@@ -1856,8 +1877,10 @@ def const_factory(value):
     # not in CONST_CLS)
     assert not isinstance(value, NodeNG)
     try:
-        return CONST_CLS[value.__class__](value)
-    except (KeyError, AttributeError):
+        initializer_cls = CONST_CLS[value.__class__]
+        initializer = _CONST_CLS_CONSTRUCTORS[initializer_cls]
+        return initializer(initializer_cls, value)
+    except (KeyError, AttributeError) as exc:
         node = EmptyNode()
         node.object = value
         return node

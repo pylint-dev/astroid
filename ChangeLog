@@ -1,9 +1,20 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+
     * Revert to using printf-style formatting in as_string, in order
       to avoid a potential problem with encodings when using .format.
       Closes issue #273. Patch by notsqrt.
+
+    * assigned_stmts methods have the same signature from now on.
+      
+      They used to have different signatures and each one made
+      assumptions about what could be passed to other implementations,
+      leading to various possible crashes when one or more arguments
+      weren't given. Closes issue #277.
+    
+
+2015-11-29 -- 1.4.1
 
     * Add support for handling Uninferable nodes when calling as_string
 
