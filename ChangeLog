@@ -3,6 +3,13 @@ Change log for the astroid package (used to be astng)
 
 --
 
+    * assigned_stmts methods have the same signature from now on.
+      
+      They used to have different signatures and each one made
+      assumptions about what could be passed to other implementations,
+      leading to various possible crashes when one or more arguments
+      weren't given. Closes issue #277.
+
     * Fix a bug in the inference of Starred nodes, when the left hand
       side of an assignment has an extra element comparing with the
       right hand side. Closes issue #239.

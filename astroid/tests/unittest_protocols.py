@@ -16,13 +16,24 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
 import unittest
 
+import astroid
 from astroid.test_utils import extract_node, require_version
 from astroid import InferenceError
 from astroid import nodes
 from astroid import util
 from astroid.tree.node_classes import AssignName, Const, Name, Starred
+
+
+@contextlib.contextmanager
+def _add_transform(manager, node, transform, predicate=None):
+    manager.register_transform(node, transform, predicate)
+    try:
+        yield
+    finally:
+        manager.unregister_transform(node, transform, predicate)
 
 
 class ProtocolTests(unittest.TestCase):
@@ -150,6 +161,11 @@ class ProtocolTests(unittest.TestCase):
         simple_mul_assnode_2 = next(assnames)
         assigned = list(simple_mul_assnode_2.assigned_stmts())
         self.assertNameNodesEqual(['c'], assigned)
+
+    def test_sequence_assigned_stmts_not_accepting_empty_node(self):
+        node = extract_node('f = __([1])')
+        inferred = next(node.infer())
+        inferred.assigned_stmts(inferred.elts[0])
 
 
 if __name__ == '__main__':
