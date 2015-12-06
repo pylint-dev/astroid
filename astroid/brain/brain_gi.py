@@ -9,7 +9,7 @@ import sys
 import re
 import warnings
 
-from astroid import MANAGER, AstroidBuildingException, nodes
+from astroid import MANAGER, AstroidBuildingError, nodes
 from astroid.builder import AstroidBuilder
 
 
@@ -114,7 +114,7 @@ def _gi_build_stub(parent):
 def _import_gi_module(modname):
     # we only consider gi.repository submodules
     if not modname.startswith('gi.repository.'):
-        raise AstroidBuildingException(modname=modname)
+        raise AstroidBuildingError(modname=modname)
     # build astroid representation unless we already tried so
     if modname not in _inspected_modules:
         modnames = [modname]
@@ -155,7 +155,7 @@ def _import_gi_module(modname):
     else:
         astng = _inspected_modules[modname]
     if astng is None:
-        raise AstroidBuildingException(modname=modname)
+        raise AstroidBuildingError(modname=modname)
     return astng
 
 def _looks_like_require_version(node):

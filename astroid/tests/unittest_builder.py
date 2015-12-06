@@ -268,7 +268,7 @@ class BuilderTest(unittest.TestCase):
         resources.build_file('data/noendingnewline.py')
 
     def test_missing_file(self):
-        with self.assertRaises(exceptions.AstroidBuildingException):
+        with self.assertRaises(exceptions.AstroidBuildingError):
             resources.build_file('data/inexistant.py')
 
     def test_inspect_build0(self):

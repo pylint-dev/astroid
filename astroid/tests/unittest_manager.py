@@ -70,7 +70,7 @@ class AstroidManagerTest(resources.SysPathSetup,
         self.assertIn('unittest', self.manager.astroid_cache)
 
     def test_ast_from_file_name_astro_builder_exception(self):
-        self.assertRaises(exceptions.AstroidBuildingException,
+        self.assertRaises(exceptions.AstroidBuildingError,
                           self.manager.ast_from_file, 'unhandledName')
 
     def test_do_not_expose_main(self):
@@ -90,7 +90,7 @@ class AstroidManagerTest(resources.SysPathSetup,
         self.assertEqual(astroid.pure_python, False)
 
     def test_ast_from_module_name_astro_builder_exception(self):
-        self.assertRaises(exceptions.AstroidBuildingException,
+        self.assertRaises(exceptions.AstroidBuildingError,
                           self.manager.ast_from_module_name,
                           'unhandledModule')
 
@@ -142,7 +142,7 @@ class AstroidManagerTest(resources.SysPathSetup,
 
     def test_file_from_module_name_astro_building_exception(self):
         """check if the method launch a exception with a wrong module name"""
-        self.assertRaises(exceptions.AstroidBuildingException,
+        self.assertRaises(exceptions.AstroidBuildingError,
                           self.manager.file_from_module_name, 'unhandledModule', None)
 
     def test_ast_from_module(self):
@@ -163,13 +163,13 @@ class AstroidManagerTest(resources.SysPathSetup,
             if modname == 'foo.bar':
                 return unittest
             else:
-                raise exceptions.AstroidBuildingException()
+                raise exceptions.AstroidBuildingError()
 
-        with self.assertRaises(exceptions.AstroidBuildingException):
+        with self.assertRaises(exceptions.AstroidBuildingError):
             self.manager.ast_from_module_name('foo.bar')
         self.manager.register_failed_import_hook(hook)
         self.assertEqual(unittest, self.manager.ast_from_module_name('foo.bar'))
-        with self.assertRaises(exceptions.AstroidBuildingException):
+        with self.assertRaises(exceptions.AstroidBuildingError):
             self.manager.ast_from_module_name('foo.bar.baz')
         del self.manager._failed_import_hooks[0]
 

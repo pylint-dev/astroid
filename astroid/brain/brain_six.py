@@ -23,7 +23,7 @@ from textwrap import dedent
 
 from astroid import MANAGER, register_module_extender
 from astroid.builder import AstroidBuilder
-from astroid.exceptions import AstroidBuildingException, InferenceError
+from astroid.exceptions import AstroidBuildingError, InferenceError
 from astroid import nodes
 
 
@@ -254,7 +254,7 @@ def six_moves_transform():
 
 def _six_fail_hook(modname):
     if modname != 'six.moves':
-        raise AstroidBuildingException(modname=modname)
+        raise AstroidBuildingError(modname=modname)
     module = AstroidBuilder(MANAGER).string_build(_IMPORTS)
     module.name = 'six.moves'
     return module

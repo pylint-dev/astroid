@@ -88,7 +88,7 @@ class AstroidManager(object):
             return builder.AstroidBuilder(self).file_build(filepath, modname)
         elif fallback and modname:
             return self.ast_from_module_name(modname)
-        raise exceptions.AstroidBuildingException(
+        raise exceptions.AstroidBuildingError(
             'Unable to build an AST for {path}.', path=filepath)
 
     def _build_stub_module(self, modname):
@@ -138,11 +138,11 @@ class AstroidManager(object):
                     "Can't find a file for module {modname}.",
                     modname=modname)
             return self.ast_from_file(filepath, modname, fallback=False)
-        except exceptions.AstroidBuildingException as e:
+        except exceptions.AstroidBuildingError as e:
             for hook in self._failed_import_hooks:
                 try:
                     return hook(modname)
-                except exceptions.AstroidBuildingException:
+                except exceptions.AstroidBuildingError:
                     pass
             raise e
         finally:
@@ -184,8 +184,8 @@ class AstroidManager(object):
                     modname=modname, error=ex)
                 traceback = sys.exc_info()[2]
             self._mod_file_cache[(modname, contextfile)] = value
-        if isinstance(value, exceptions.AstroidBuildingException):
-            six.reraise(exceptions.AstroidBuildingException,
+        if isinstance(value, exceptions.AstroidBuildingError):
+            six.reraise(exceptions.AstroidBuildingError,
                         value, traceback)
         return value
 
@@ -211,7 +211,7 @@ class AstroidManager(object):
         `hook` must be a function that accepts a single argument `modname` which
         contains the name of the module or package that could not be imported.
         If `hook` can resolve the import, must return a node of type `astroid.Module`,
-        otherwise, it must raise `AstroidBuildingException`.
+        otherwise, it must raise `AstroidBuildingError`.
         """
         self._failed_import_hooks.append(hook)
 

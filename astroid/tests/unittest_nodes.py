@@ -452,7 +452,7 @@ class NameNodeTest(unittest.TestCase):
             del True
         """
         if sys.version_info >= (3, 0):
-            with self.assertRaises(exceptions.AstroidBuildingException):
+            with self.assertRaises(exceptions.AstroidBuildingError):
                 builder.parse(code)
         else:
             ast = builder.parse(code)

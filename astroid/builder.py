@@ -121,7 +121,7 @@ class AstroidBuilder(object):
         try:
             stream, encoding, data = open_source_file(path)
         except IOError as exc:
-            util.reraise(exceptions.AstroidBuildingException(
+            util.reraise(exceptions.AstroidBuildingError(
                 'Unable to load file {path}:\n{error}',
                 modname=modname, path=path, error=exc))
         except (SyntaxError, LookupError) as exc:
@@ -130,7 +130,7 @@ class AstroidBuilder(object):
                 '{error}', modname=modname, path=path, error=exc))
         except UnicodeError:  # wrong encoding
             # detect_encoding returns utf-8 if no encoding specified
-            util.reraise(exceptions.AstroidBuildingException(
+            util.reraise(exceptions.AstroidBuildingError(
                 'Wrong ({encoding}) or no encoding specified for {filename}.',
                 encoding=encoding, filename=filename))
         with stream:
@@ -229,7 +229,7 @@ def delayed_assignments(root):
                             values.insert(0, node)
                         else:
                             values.append(node)
-            except (exceptions.InferenceError, exceptions.AstroidBuildingException):
+            except (exceptions.InferenceError, exceptions.AstroidBuildingError):
                 pass
 
 

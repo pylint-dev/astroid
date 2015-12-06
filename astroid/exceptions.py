@@ -42,7 +42,7 @@ class AstroidError(Exception):
         return self.message.format(**vars(self))
 
 
-class AstroidBuildingException(AstroidError):
+class AstroidBuildingError(AstroidError):
     """exception class when we are unable to build an astroid representation
 
     Standard attributes:
@@ -51,14 +51,14 @@ class AstroidBuildingException(AstroidError):
     """
 
     def __init__(self, message='Failed to import module {modname}.', **kws):
-        super(AstroidBuildingException, self).__init__(message, **kws)
+        super(AstroidBuildingError, self).__init__(message, **kws)
 
 
-class AstroidImportError(AstroidBuildingException):
+class AstroidImportError(AstroidBuildingError):
     """Exception class used when a module can't be imported by astroid."""
 
 
-class AstroidSyntaxError(AstroidBuildingException):
+class AstroidSyntaxError(AstroidBuildingError):
     """Exception class used when a module can't be parsed."""
 
 
