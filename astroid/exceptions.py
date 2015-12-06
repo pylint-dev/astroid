@@ -58,6 +58,21 @@ class AstroidImportError(AstroidBuildingError):
     """Exception class used when a module can't be imported by astroid."""
 
 
+class TooManyLevelsError(AstroidImportError):
+    """Exception class which is raised when a relative import was beyond the top-level.
+
+    Standard attributes:
+        level: The level which was attempted.
+        name: the name of the module on which the relative import was attempted.
+    """
+    level = None
+    name = None
+
+    def __init__(self, message='Relative import with too many levels '
+                               '({level}) for module {name!r}', **kws):
+        super(TooManyLevelsError, self).__init__(message, **kws)
+
+
 class AstroidSyntaxError(AstroidBuildingError):
     """Exception class used when a module can't be parsed."""
 
