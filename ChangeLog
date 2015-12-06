@@ -2,6 +2,9 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * relative_to_absolute_name or methods calling it will now raise
+      TooManyLevelsError when a relative import was trying to
+      access something beyond the top-level package.     
 
     * AstroidBuildingException is now AstroidBuildingError. The first
       name will exist until astroid 2.0.

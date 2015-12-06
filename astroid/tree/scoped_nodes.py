@@ -541,6 +541,10 @@ class Module(LocalsDictNodeNG):
         if level:
             if self.package:
                 level = level - 1
+            if level and self.name.count('.') < level:
+                raise exceptions.TooManyLevelsError(
+                    level=level, name=self.name)
+
             package_name = self.name.rsplit('.', level)[0]
         elif self.package:
             package_name = self.name

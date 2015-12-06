@@ -35,6 +35,7 @@ from astroid.exceptions import (
     InferenceError, AttributeInferenceError,
     NoDefault, ResolveError, MroError,
     InconsistentMroError, DuplicateBasesError,
+    TooManyLevelsError,
 )
 from astroid.interpreter.objects import (
     Instance, BoundMethod, UnboundMethod, Generator
@@ -165,6 +166,18 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         modname = mod.relative_to_absolute_name('', 1)
         self.assertEqual(modname, 'very.multi')
 
+    def test_relative_to_absolute_name_beyond_top_level(self):
+        mod = nodes.Module('a.b.c', '')
+        mod.package = True
+        for level in (5, 4):
+            with self.assertRaises(TooManyLevelsError) as cm:
+                mod.relative_to_absolute_name('test', level)
+
+            expected = ("Relative import with too many levels "
+                        "({level}) for module {name!r}".format(
+                        level=level - 1, name=mod.name))
+            self.assertEqual(expected, str(cm.exception))
+            
     def test_import_1(self):
         data = '''from . import subpackage'''
         sys.path.insert(0, resources.find('data'))
