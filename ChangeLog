@@ -1,6 +1,14 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+--
+
+    * Add two new exceptions, AstroidImportError and AstroidSyntaxError.
+      They are subclasses of AstroidBuildingException and are raised when
+      a module can't be imported from various reasons.
+      Also do_import_module lets the errors to bubble up without converting
+      them to InferenceError. This particular conversion happens only
+      during the inference.
 
     * Revert to using printf-style formatting in as_string, in order
       to avoid a potential problem with encodings when using .format.

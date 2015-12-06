@@ -127,16 +127,16 @@ class AstroidManager(object):
                 try:
                     module = modutils.load_module_from_name(modname)
                 except Exception as ex: # pylint: disable=broad-except
-                    util.reraise(exceptions.AstroidBuildingException(
+                    util.reraise(exceptions.AstroidImportError(
                         'Loading {modname} failed with:\n{error}',
                         modname=modname, path=filepath, error=ex))
                 return self.ast_from_module(module, modname)
             elif mp_type == imp.PY_COMPILED:
-                raise exceptions.AstroidBuildingException(
+                raise exceptions.AstroidImportError(
                     "Unable to load compiled module {modname}.",
                     modname=modname, path=filepath)
             if filepath is None:
-                raise exceptions.AstroidBuildingException(
+                raise exceptions.AstroidImportError(
                     "Can't find a file for module {modname}.",
                     modname=modname)
             return self.ast_from_file(filepath, modname, fallback=False)
@@ -182,7 +182,7 @@ class AstroidManager(object):
                     modname.split('.'), context_file=contextfile)
                 traceback = sys.exc_info()[2]
             except ImportError as ex:
-                value = exceptions.AstroidBuildingException(
+                value = exceptions.AstroidImportError(
                     'Failed to import module {modname} with error:\n{error}.',
                     modname=modname, error=ex)
                 traceback = sys.exc_info()[2]
@@ -232,7 +232,7 @@ class AstroidManager(object):
                 'Unable to get module for {class_repr}.',
                 cls=klass, class_repr=safe_repr(klass)))
         except Exception as ex: # pylint: disable=broad-except
-            util.reraise(exceptions.AstroidBuildingException(
+            util.reraise(exceptions.AstroidImportError(
                 'Unexpected error while retrieving module for {class_repr}:\n'
                 '{error}', cls=klass, class_repr=safe_repr(klass), error=ex))
         try:
@@ -242,7 +242,7 @@ class AstroidManager(object):
                 'Unable to get name for {class_repr}:\n',
                 cls=klass, class_repr=safe_repr(klass)))
         except Exception as ex: # pylint: disable=broad-except
-            util.reraise(exceptions.AstroidBuildingException(
+            util.reraise(exceptions.AstroidImportError(
                 'Unexpected error while retrieving name for {class_repr}:\n'
                 '{error}', cls=klass, class_repr=safe_repr(klass), error=ex))
         # take care, on living object __module__ is regularly wrong :(

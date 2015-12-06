@@ -54,6 +54,14 @@ class AstroidBuildingException(AstroidError):
         super(AstroidBuildingException, self).__init__(message, **kws)
 
 
+class AstroidImportError(AstroidBuildingException):
+    """Exception class used when a module can't be imported by astroid."""
+
+
+class AstroidSyntaxError(AstroidBuildingException):
+    """Exception class used when a module can't be parsed."""
+
+
 class NoDefault(AstroidError):
     """raised by function's `default_value` method when an argument has
     no default value
@@ -96,8 +104,10 @@ class MroError(ResolveError):
                               for m in self.mros)
         return self.message.format(mros=mro_names, cls=self.cls)
 
+
 class DuplicateBasesError(MroError):
     """Error raised when there are duplicate bases in the same class bases."""
+
 
 class InconsistentMroError(MroError):
     """Error raised when a class's MRO is inconsistent."""
