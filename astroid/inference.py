@@ -136,7 +136,7 @@ def infer_import(self, context=None, asname=True):
             yield self.do_import_module(self.real_name(name))
         else:
             yield self.do_import_module(name)
-    except exceptions.AstroidBuildingException as exc:
+    except exceptions.AstroidBuildingError as exc:
         util.reraise(exceptions.InferenceError(node=self, error=exc,
                                                context=context))        
         
@@ -161,7 +161,7 @@ def infer_import_from(self, context=None, asname=True):
 
     try:
         module = self.do_import_module()
-    except exceptions.AstroidBuildingException as exc:
+    except exceptions.AstroidBuildingError as exc:
         util.reraise(exceptions.InferenceError(node=self, error=exc,
                                                context=context))
 

@@ -3,6 +3,9 @@ Change log for the astroid package (used to be astng)
 
 --
 
+    * AstroidBuildingException is now AstroidBuildingError. The first
+      name will exist until astroid 2.0.
+
     * Add two new exceptions, AstroidImportError and AstroidSyntaxError.
       They are subclasses of AstroidBuildingException and are raised when
       a module can't be imported from various reasons.

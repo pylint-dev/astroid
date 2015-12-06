@@ -359,7 +359,7 @@ class Module(LocalsDictNodeNG):
         elif self.package:
             try:
                 result = [self.import_module(name, relative_only=True)]
-            except (exceptions.AstroidBuildingException, SyntaxError):
+            except (exceptions.AstroidBuildingError, SyntaxError):
                 util.reraise(exceptions.AttributeInferenceError(target=self,
                                                                 attribute=name,
                                                                 context=context))
@@ -422,7 +422,7 @@ class Module(LocalsDictNodeNG):
         absmodname = self.relative_to_absolute_name(modname, level)
         try:
             return MANAGER.ast_from_module_name(absmodname)
-        except exceptions.AstroidBuildingException:
+        except exceptions.AstroidBuildingError:
             # we only want to import a sub module or package of this module,
             # skip here
             if relative_only:

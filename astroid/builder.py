@@ -118,7 +118,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         try:
             stream, encoding, data = open_source_file(path)
         except IOError as exc:
-            util.reraise(exceptions.AstroidBuildingException(
+            util.reraise(exceptions.AstroidBuildingError(
                 'Unable to load file {path}:\n{error}',
                 modname=modname, path=path, error=exc))
         except (SyntaxError, LookupError) as exc:
@@ -127,7 +127,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 '{error}', modname=modname, path=path, error=exc))
         except UnicodeError:  # wrong encoding
             # detect_encoding returns utf-8 if no encoding specified
-            util.reraise(exceptions.AstroidBuildingException(
+            util.reraise(exceptions.AstroidBuildingError(
                 'Wrong ({encoding}) or no encoding specified for {filename}.',
                 encoding=encoding, filename=filename))
         with stream:
@@ -202,7 +202,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
             if name == '*':
                 try:
                     imported = node.do_import_module()
-                except exceptions.AstroidBuildingException:
+                except exceptions.AstroidBuildingError:
                     continue
                 for name in imported.wildcard_import_names():
                     node.parent.set_local(name, node)
