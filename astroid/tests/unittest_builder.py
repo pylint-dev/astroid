@@ -256,11 +256,11 @@ class BuilderTest(unittest.TestCase):
         self.builder = builder.AstroidBuilder()
 
     def test_data_build_null_bytes(self):
-        with self.assertRaises(exceptions.AstroidBuildingException):
+        with self.assertRaises(exceptions.AstroidSyntaxError):
             self.builder.string_build('\x00')
 
     def test_data_build_invalid_x_escape(self):
-        with self.assertRaises(exceptions.AstroidBuildingException):
+        with self.assertRaises(exceptions.AstroidSyntaxError):
             self.builder.string_build('"\\x1"')
 
     def test_missing_newline(self):
@@ -708,6 +708,10 @@ class FileBuildTest(unittest.TestCase):
         else:# ListComp variables are no more accessible outside
             self.assertEqual(len(_locals), 4)
             self.assertEqual(keys, ['MY_DICT', 'autre', 'local', 'self'])
+
+    def test_unknown_encoding(self):
+        with self.assertRaises(exceptions.AstroidSyntaxError):
+            resources.build_file('data/invalid_encoding.py')
 
 
 class ModuleBuildTest(resources.SysPathSetup, FileBuildTest):

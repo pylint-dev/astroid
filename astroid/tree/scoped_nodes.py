@@ -2252,7 +2252,7 @@ def locals_import_from(node, locals_):
         if name == '*':
             try:
                 imported = node.do_import_module()
-            except exceptions.InferenceError:
+            except exceptions.AstroidBuildingException:
                 continue
             for name in imported.wildcard_import_names():
                 locals_[name].append(node)

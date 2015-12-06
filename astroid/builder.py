@@ -49,13 +49,7 @@ if sys.version_info >= (3, 0):
         with open(filename, 'rb') as byte_stream:
             encoding = detect_encoding(byte_stream.readline)[0]
         stream = open(filename, 'r', newline=None, encoding=encoding)
-        try:
-            data = stream.read()
-        except UnicodeError:  # wrong encoding
-            # detect_encoding returns utf-8 if no encoding specified
-            util.reraise(exceptions.AstroidBuildingException(
-                'Wrong ({encoding}) or no encoding specified for {filename}.',
-                encoding=encoding, filename=filename))
+        data = stream.read()
         return stream, encoding, data
 
 else:
@@ -131,9 +125,14 @@ class AstroidBuilder(object):
                 'Unable to load file {path}:\n{error}',
                 modname=modname, path=path, error=exc))
         except (SyntaxError, LookupError) as exc:
-            util.reraise(exceptions.AstroidBuildingException(
+            util.reraise(exceptions.AstroidSyntaxError(
                 'Python 3 encoding specification error or unknown encoding:\n'
                 '{error}', modname=modname, path=path, error=exc))
+        except UnicodeError:  # wrong encoding
+            # detect_encoding returns utf-8 if no encoding specified
+            util.reraise(exceptions.AstroidBuildingException(
+                'Wrong ({encoding}) or no encoding specified for {filename}.',
+                encoding=encoding, filename=filename))
         with stream:
             # get module name if necessary
             if modname is None:
@@ -166,16 +165,9 @@ class AstroidBuilder(object):
         """Build tree node from data and add some informations"""
         try:
             node = _parse(data + '\n')
-        except (TypeError, ValueError) as exc:
-            util.reraise(exceptions.AstroidBuildingException(
+        except (TypeError, ValueError, SyntaxError) as exc:
+            util.reraise(exceptions.AstroidSyntaxError(
                 'Parsing Python code failed:\n{error}',
-                source=data, modname=modname, path=path, error=exc))
-        except SyntaxError as exc:
-            # Pass the entire exception object to AstroidBuildingException,
-            # since pylint uses this as an introspection method,
-            # in order to find what error happened.
-            util.reraise(exceptions.AstroidBuildingException(
-                'Syntax error in Python source: {error}',
                 source=data, modname=modname, path=path, error=exc))
         if path is not None:
             node_file = os.path.abspath(path)
@@ -237,7 +229,7 @@ def delayed_assignments(root):
                             values.insert(0, node)
                         else:
                             values.append(node)
-            except exceptions.InferenceError:
+            except (exceptions.InferenceError, exceptions.AstroidBuildingException):
                 pass
 
 

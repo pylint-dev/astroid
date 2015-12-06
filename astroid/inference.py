@@ -131,10 +131,14 @@ def infer_import(self, context=None, asname=True):
     name = context.lookupname
     if name is None:
         raise exceptions.InferenceError(node=self, context=context)
-    if asname:
-        yield self.do_import_module(self.real_name(name))
-    else:
-        yield self.do_import_module(name)
+    try:
+        if asname:
+            yield self.do_import_module(self.real_name(name))
+        else:
+            yield self.do_import_module(name)
+    except exceptions.AstroidBuildingException as exc:
+        util.reraise(exceptions.InferenceError(node=self, error=exc,
+                                               context=context))        
 
 
 @infer.register(treeabc.ImportFrom)
@@ -146,7 +150,13 @@ def infer_import_from(self, context=None, asname=True):
         raise exceptions.InferenceError(node=self, context=context)
     if asname:
         name = self.real_name(name)
-    module = self.do_import_module()
+
+    try:
+        module = self.do_import_module()
+    except exceptions.AstroidBuildingException as exc:
+        util.reraise(exceptions.InferenceError(node=self, error=exc,
+                                               context=context))
+
     try:
         context = contextmod.copy_context(context)
         context.lookupname = name
