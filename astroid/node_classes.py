@@ -1021,7 +1021,7 @@ def const_factory(value):
     assert not isinstance(value, bases.NodeNG)
     try:
         return CONST_CLS[value.__class__](value)
-    except (KeyError, AttributeError) as exc:
+    except (KeyError, AttributeError):
         node = EmptyNode()
         node.object = value
         return node

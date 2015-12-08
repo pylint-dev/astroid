@@ -160,7 +160,7 @@ class ProtocolTests(unittest.TestCase):
         assigned = list(simple_mul_assnode_2.assigned_stmts())
         self.assertNameNodesEqual(['c'], assigned)
 
-    def test_sequence_assigned_stmts_not_accepting_empty_node(self):        
+    def test_sequence_assigned_stmts_not_accepting_empty_node(self):
         def transform(node):
             node.root().locals['__all__'] = [node.value]
 
