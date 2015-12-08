@@ -25,13 +25,15 @@ modname = 'astroid'
 numversion = (1, 4, 0)
 version = '.'.join([str(num) for num in numversion])
 
-if sys.version_info >= (3, 4):
-    install_requires = ['lazy_object_proxy', 'six', 'wrapt']
-elif sys.version_info == (3, 3):
-    install_requires = ['lazy_object_proxy', 'singledispatch', 'six', 'wrapt']
-else:
-    install_requires = ['funcsigs', 'lazy_object_proxy', 'singledispatch', 'six',
-                        'wrapt']
+
+install_requires = ['lazy_object_proxy', 'six', 'wrapt']
+
+if sys.version_info <= (3, 3):
+    install_requires.append('singledispatch')
+    install_requires.append('enum34')
+
+    if sys.version_info < (3, 0):
+        install_requires.append('funcsigs')
 
 license = 'LGPL'
 

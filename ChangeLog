@@ -2,6 +2,14 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+
+    * Some nodes got a new attribute, 'ctx', which tells in which context
+      the said node was used.
+
+      The possible values for the contexts are `Load` ('a'), `Del`
+      ('del a'), `Store` ('a = 4') and the nodes that got the new
+      attribute are Starred, Subscript, List and Tuple. Closes issue #267.
+
     * relative_to_absolute_name or methods calling it will now raise
       TooManyLevelsError when a relative import was trying to
       access something beyond the top-level package.     

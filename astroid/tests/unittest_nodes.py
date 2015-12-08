@@ -25,6 +25,7 @@ import warnings
 
 import six
 
+import astroid
 from astroid import builder
 from astroid import context as contextmod
 from astroid import exceptions
@@ -891,5 +892,53 @@ class ScopeTest(unittest.TestCase):
         self.assertIsInstance(scope, nodes.GeneratorExp)
         
 
+class ContextTest(unittest.TestCase):
+
+    def test_subscript_load(self):
+        node = test_utils.extract_node('f[1]')
+        self.assertIs(node.ctx, astroid.Load)
+
+    def test_subscript_del(self):
+        node = test_utils.extract_node('del f[1]')
+        self.assertIs(node.targets[0].ctx, astroid.Del)
+
+    def test_subscript_store(self):
+        node = test_utils.extract_node('f[1] = 2')
+        subscript = node.targets[0]
+        self.assertIs(subscript.ctx, astroid.Store)
+
+    def test_list_load(self):
+        node = test_utils.extract_node('[]')
+        self.assertIs(node.ctx, astroid.Load)
+
+    def test_list_del(self):
+        node = test_utils.extract_node('del []')
+        self.assertIs(node.targets[0].ctx, astroid.Del)
+
+    def test_list_store(self):
+        with self.assertRaises(exceptions.AstroidSyntaxError):
+            test_utils.extract_node('[0] = 2')
+
+    def test_tuple_load(self):
+        node = test_utils.extract_node('(1, )')
+        self.assertIs(node.ctx, astroid.Load)
+
+    def test_tuple_store(self):
+        with self.assertRaises(exceptions.AstroidSyntaxError):
+            test_utils.extract_node('(1, ) = 3')
+
+    @test_utils.require_version(minver='3.5')
+    def test_starred_load(self):
+        node = test_utils.extract_node('a = *b')
+        starred = node.value
+        self.assertIs(starred.ctx, astroid.Load)
+
+    @test_utils.require_version(minver='3.0')
+    def test_starred_store(self):
+        node = test_utils.extract_node('a, *b = 1, 2')
+        starred = node.targets[0].elts[1]
+        self.assertIs(starred.ctx, astroid.Store) 
+        
+        
 if __name__ == '__main__':
     unittest.main()

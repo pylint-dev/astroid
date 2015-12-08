@@ -940,6 +940,12 @@ class Keyword(base.NodeNG):
 @util.register_implementation(runtimeabc.BuiltinInstance)
 class List(base.BaseContainer, AssignedStmtsMixin, objects.BaseInstance):
     """class representing a List node"""
+    _other_fields = ('ctx',)
+
+    def __init__(self, ctx=None, lineno=None,
+                 col_offset=None, parent=None):
+        self.ctx = ctx
+        super(List, self).__init__(lineno, col_offset, parent)
 
     def pytype(self):
         return '%s.list' % BUILTINS
@@ -1087,7 +1093,13 @@ class Slice(base.NodeNG):
 class Starred(mixins.ParentAssignTypeMixin, AssignedStmtsMixin, base.NodeNG):
     """class representing a Starred node"""
     _astroid_fields = ('value',)
+    _other_fields = ('ctx', )
     value = None
+
+    def __init__(self, ctx=None, lineno=None, col_offset=None, parent=None):
+        self.ctx = ctx
+        super(Starred, self).__init__(lineno=lineno,
+                                      col_offset=col_offset, parent=parent)
 
     def postinit(self, value=None):
         self.value = value
@@ -1097,8 +1109,14 @@ class Starred(mixins.ParentAssignTypeMixin, AssignedStmtsMixin, base.NodeNG):
 class Subscript(base.NodeNG):
     """class representing a Subscript node"""
     _astroid_fields = ('value', 'slice')
+    _other_fields = ('ctx', )
     value = None
     slice = None
+
+    def __init__(self, ctx=None, lineno=None, col_offset=None, parent=None):
+        self.ctx = ctx
+        super(Subscript, self).__init__(lineno=lineno,
+                                        col_offset=col_offset, parent=parent)
 
     def postinit(self, value=None, slice=None):
         self.value = value
@@ -1161,6 +1179,13 @@ class TryFinally(mixins.BlockRangeMixIn, Statement):
 @util.register_implementation(runtimeabc.BuiltinInstance)
 class Tuple(base.BaseContainer, AssignedStmtsMixin, objects.BaseInstance):
     """class representing a Tuple node"""
+
+    _other_fields = ('ctx',)
+
+    def __init__(self, ctx=None, lineno=None,
+                 col_offset=None, parent=None):
+        self.ctx = ctx
+        super(Tuple, self).__init__(lineno, col_offset, parent)
 
     def pytype(self):
         return '%s.tuple' % BUILTINS
