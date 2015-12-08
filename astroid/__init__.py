@@ -44,6 +44,16 @@ import sys
 import re
 from operator import attrgetter
 
+import enum
+
+
+_Context = enum.Enum('Context', 'Load Store Del')
+Load = _Context.Load
+Store = _Context.Store
+Del = _Context.Del
+del _Context
+
+
 # WARNING: internal imports order matters !
 
 # pylint: disable=redefined-builtin, wildcard-import
