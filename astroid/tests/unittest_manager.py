@@ -33,10 +33,11 @@ BUILTINS = six.moves.builtins.__name__
 def _get_file_from_object(obj):
     if platform.python_implementation() == 'Jython':
         return obj.__file__.split("$py.class")[0] + ".py"
-    if sys.version_info > (3, 0) or platform.python_implementation() == 'PyPy':
+    if sys.version_info > (3, 0):
         return obj.__file__
-    else:
+    if not obj.__file__.endswith(".py"):
         return obj.__file__[:-1]
+    return obj.__file__
 
 
 class AstroidManagerTest(resources.SysPathSetup,
