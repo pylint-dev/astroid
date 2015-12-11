@@ -10,7 +10,6 @@ env:
     - TOXENV=3.4
     - TOXENV=3.5
     - TOXENV=pypy
-    - TOXENV=jython
 before_install:
   - python --version
   - uname -a
@@ -22,7 +21,6 @@ install:
   - pip --version
   - tox --version
 script:
-  - pwd
   - tox -e $TOXENV
 after_failure:
   - more .tox/log/* | cat
