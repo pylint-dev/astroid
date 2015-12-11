@@ -1,6 +1,8 @@
 """Utility functions for test code that uses astroid ASTs as input."""
+import contextlib
 import functools
 import sys
+import warnings
 
 from astroid import nodes
 from astroid import builder
@@ -202,3 +204,15 @@ def require_version(minver=None, maxver=None):
 
 def get_name_node(start_from, name, index=0):
     return [n for n in start_from.nodes_of_class(nodes.Name) if n.name == name][index]
+
+
+@contextlib.contextmanager
+def enable_warning(warning):
+    warnings.simplefilter('always', warning)
+    try:
+        yield
+    finally:
+        # Reset it to default value, so it will take
+        # into account the values from the -W flag.
+        warnings.simplefilter('default', warning)
+        

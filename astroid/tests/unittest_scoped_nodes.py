@@ -229,8 +229,8 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
             # only Module.stream as the recommended way to retrieve
             # its file stream.
             with warnings.catch_warnings(record=True) as cm:
-                warnings.simplefilter("always")
-                self.assertIsNot(astroid.file_stream, astroid.file_stream)
+                with test_utils.enable_warning(PendingDeprecationWarning):
+                    self.assertIsNot(astroid.file_stream, astroid.file_stream)
             self.assertGreater(len(cm), 1)
             self.assertEqual(cm[0].category, PendingDeprecationWarning)
 

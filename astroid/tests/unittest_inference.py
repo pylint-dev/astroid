@@ -383,9 +383,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ast = parse(code, __name__)
         a = ast['a']
 
-        warnings.simplefilter('always')
         with warnings.catch_warnings(record=True) as w:
-            a.infered()
+            with test_utils.enable_warning(PendingDeprecationWarning):
+                a.infered()
             self.assertIsInstance(w[0].message, PendingDeprecationWarning)
 
     def test_exc_ancestors(self):
