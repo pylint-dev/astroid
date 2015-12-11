@@ -1,5 +1,12 @@
 language: python
 
+python:
+  - "3.5"
+  - "3.4"
+  - "3.3"
+  - "2.7"
+  - "pypy"
+
 env:
   global:
     LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
