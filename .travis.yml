@@ -22,6 +22,7 @@ install:
   - pip --version
   - tox --version
 script:
+  - pwd
   - tox -e $TOXENV
 after_failure:
   - more .tox/log/* | cat
