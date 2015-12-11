@@ -132,7 +132,7 @@ class AstroidBuilder(object):
             # detect_encoding returns utf-8 if no encoding specified
             util.reraise(exceptions.AstroidBuildingError(
                 'Wrong ({encoding}) or no encoding specified for {filename}.',
-                encoding=encoding, filename=filename))
+                encoding=encoding, filename=path))
         with stream:
             # get module name if necessary
             if modname is None:
