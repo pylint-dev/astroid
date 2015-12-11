@@ -47,13 +47,13 @@ def _gi_build_stub(parent):
         elif (inspect.ismethod(obj) or
               inspect.ismethoddescriptor(obj)):
             methods[name] = obj
-        elif isinstance(obj, (int, str)):
-            constants[name] = obj
         elif (str(obj).startswith("<flags") or
               str(obj).startswith("<enum ") or
               str(obj).startswith("<GType ") or
               inspect.isdatadescriptor(obj)):
             constants[name] = 0
+        elif isinstance(obj, (int, str)):
+            constants[name] = obj
         elif callable(obj):
             # Fall back to a function for anything callable
             functions[name] = obj
