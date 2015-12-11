@@ -1,9 +1,10 @@
-.. image:: https://drone.io/bitbucket.org/logilab/astroid/status.png
-    :alt: drone.io Build Status
-    :target: https://drone.io/bitbucket.org/logilab/astroid
-
 Astroid
 =======
+
+.. image:: https://travis-ci.org/PyCQA/astroid.svg?branch=master
+    :target: https://travis-ci.org/PyCQA/astroid
+
+
 
 What's this?
 ------------
