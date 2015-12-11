@@ -5,10 +5,10 @@ env:
     LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
   matrix:
     - TOXENV=pylint
-    - TOXENV=2.7
-    - TOXENV=3.3
-    - TOXENV=3.4
-    - TOXENV=3.5
+    - TOXENV=py27
+    - TOXENV=py33
+    - TOXENV=py34
+    - TOXENV=py35
     - TOXENV=pypy
 before_install:
   - python --version
