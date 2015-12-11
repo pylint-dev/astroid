@@ -22,17 +22,20 @@ import os
 from setuptools import setup, find_packages
 from setuptools.command import install_lib
 
-pkginfo = 'astroid/__pkginfo__.py'
+
+real_path = os.path.realpath(__file__)
+astroid_dir = os.path.dirname(real_path)
+pkginfo = os.path.join(astroid_dir, 'astroid', '__pkginfo__.py')
 
 with open(pkginfo, 'rb') as fobj:
     exec(compile(fobj.read(), pkginfo, 'exec'), locals())
 
-with open('README') as fobj:
+with open(os.path.join(astroid_dir, 'README.rst')) as fobj:
     long_description = fobj.read()
 
 class AstroidInstallLib(install_lib.install_lib):
     def byte_compile(self, files):
-        test_datadir = os.path.join('astroid', 'tests', 'testdata')
+        test_datadir = os.path.join(astroid_dir, 'tests', 'testdata')
         files = [f for f in files if test_datadir not in f]
         install_lib.install_lib.byte_compile(self, files)
 
