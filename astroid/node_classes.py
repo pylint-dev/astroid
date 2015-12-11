@@ -1901,10 +1901,20 @@ def const_factory(value):
     # node (another option being that const_factory shouldn't be called with something
     # not in CONST_CLS)
     assert not isinstance(value, NodeNG)
+
+    # Hack for ignoring elements of a sequence
+    # or a mapping, in order to avoid transforming
+    # each element to an AST. This is fixed in 2.0
+    # and this approach is a temporary hack.
+    if isinstance(value, (list, set, tuple, dict)):
+        elts = []
+    else:
+        elts = value
+
     try:
         initializer_cls = CONST_CLS[value.__class__]
         initializer = _CONST_CLS_CONSTRUCTORS[initializer_cls]
-        return initializer(initializer_cls, value)
+        return initializer(initializer_cls, elts)
     except (KeyError, AttributeError) as exc:
         node = EmptyNode()
         node.object = value
