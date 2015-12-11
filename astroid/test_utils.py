@@ -184,7 +184,7 @@ def require_version(minver=None, maxver=None):
         try:
             return tuple(int(v) for v in string.split('.'))
         except ValueError:
-            util.reraise(ValueError('%s is not a correct version : should be X.Y[.Z].' % version))
+            util.reraise(ValueError('%s is not a correct version : should be X.Y[.Z].' % string))
 
     def check_require_version(f):
         current = sys.version_info[:3]
