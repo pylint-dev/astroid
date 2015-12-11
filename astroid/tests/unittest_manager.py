@@ -35,8 +35,9 @@ def _get_file_from_object(obj):
         return obj.__file__.split("$py.class")[0] + ".py"
     if sys.version_info > (3, 0):
         return obj.__file__
-    else:
+    if not obj.__file__.endswith(".py"):
         return obj.__file__[:-1]
+    return obj.__file__
 
 
 class AstroidManagerTest(resources.SysPathSetup,
