@@ -1,0 +1,33 @@
+language: python
+
+env:
+  global:
+    LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
+  matrix:
+    - TOXENV=pylint
+    - TOXENV=2.7
+    - TOXENV=3.3
+    - TOXENV=3.4
+    - TOXENV=3.5
+    - TOXENV=pypy
+    - TOXENV=jython
+before_install:
+  - python --version
+  - uname -a
+  - lsb_release -a
+install:
+  - pip install tox
+  - virtualenv --version
+  - easy_install --version
+  - pip --version
+  - tox --version
+script:
+  - tox -v
+after_failure:
+  - more .tox/log/* | cat
+  - more .tox/*/log/* | cat
+notifications:
+  email:
+    on_success: always
+    on_failure: always
+
