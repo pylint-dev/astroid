@@ -1,6 +1,8 @@
 """Utility functions for test code that uses astroid ASTs as input."""
+import contextlib
 import functools
 import sys
+import warnings
 
 from astroid import builder
 from astroid import raw_building
@@ -211,3 +213,14 @@ def bootstrap(astroid_builtin=None):
     # unittest_lookup.LookupTC.test_builtin_lookup fail depending on the
     # test order
     raw_building.ast_from_builtins()
+
+
+@contextlib.contextmanager
+def enable_warning(warning):
+    warnings.simplefilter('always', warning)
+    try:
+        yield
+    finally:
+        # Reset it to default value, so it will take
+        # into account the values from the -W flag.
+        warnings.simplefilter('default', warning)

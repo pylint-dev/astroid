@@ -682,17 +682,18 @@ class DeprecationWarningsTest(unittest.TestCase):
         assign_type_mixin = module.body[1].targets[0]
         parent_assign_type_mixin = module.body[2]
 
-        warnings.simplefilter('always')
-
         with warnings.catch_warnings(record=True) as w:
-            filter_stmts_mixin.ass_type()
-            self.assertIsInstance(w[0].message, PendingDeprecationWarning)
+            with test_utils.enable_warning(PendingDeprecationWarning):
+                filter_stmts_mixin.ass_type()
+                self.assertIsInstance(w[0].message, PendingDeprecationWarning)
         with warnings.catch_warnings(record=True) as w:
-            assign_type_mixin.ass_type()
-            self.assertIsInstance(w[0].message, PendingDeprecationWarning)
+            with test_utils.enable_warning(PendingDeprecationWarning):
+                assign_type_mixin.ass_type()
+                self.assertIsInstance(w[0].message, PendingDeprecationWarning)
         with warnings.catch_warnings(record=True) as w:
-            parent_assign_type_mixin.ass_type()
-            self.assertIsInstance(w[0].message, PendingDeprecationWarning)
+            with test_utils.enable_warning(PendingDeprecationWarning):
+                parent_assign_type_mixin.ass_type()
+                self.assertIsInstance(w[0].message, PendingDeprecationWarning)
 
     def test_isinstance_warnings(self):
         msg_format = ("%r is deprecated and slated for removal in astroid "
@@ -700,8 +701,8 @@ class DeprecationWarningsTest(unittest.TestCase):
         for cls in (nodes.Discard, nodes.Backquote, nodes.AssName,
                     nodes.AssAttr, nodes.Getattr, nodes.CallFunc, nodes.From):
             with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter('always')
-                isinstance(42, cls)
+                with test_utils.enable_warning(PendingDeprecationWarning):
+                    isinstance(42, cls)
             self.assertIsInstance(w[0].message, PendingDeprecationWarning)
             actual_msg = msg_format % (cls.__class__.__name__, cls.__wrapped__.__name__)
             self.assertEqual(str(w[0].message), actual_msg)
