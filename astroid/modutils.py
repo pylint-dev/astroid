@@ -31,8 +31,13 @@ import imp
 import os
 import platform
 import sys
-from distutils.sysconfig import get_python_lib
+from distutils.sysconfig import get_python_lib # pylint: disable=import-error
+# pylint: disable=import-error, no-name-in-module
 from distutils.errors import DistutilsPlatformError
+# pylint: disable=wrong-import-order
+# distutils is replaced by virtualenv with a module that does
+# weird path manipulations in order to get to the
+# real distutils module.
 import zipimport
 
 try:
