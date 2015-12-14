@@ -77,7 +77,7 @@ def attach_dummy_node(node, name, runtime_object=_marker):
     _attach_local_node(node, enode, name)
 
 def _has_underlying_object(self):
-    return hasattr(self, 'object') and self.object is not _marker
+    return self.object is not None and self.object is not _marker
 
 nodes.EmptyNode.has_underlying_object = _has_underlying_object
 

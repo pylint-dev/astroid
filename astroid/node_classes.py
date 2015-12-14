@@ -24,6 +24,7 @@ import warnings
 try:
     from functools import singledispatch as _singledispatch
 except ImportError:
+    # pylint: disable=import-error
     from singledispatch import singledispatch as _singledispatch
 
 import six
