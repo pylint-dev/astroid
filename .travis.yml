@@ -18,6 +18,7 @@ before_install:
   - python --version
   - uname -a
   - lsb_release -a
+  - python -c "import distutils; print(open(distutils.__file__).read())"
 install:
   - pip install tox
   - virtualenv --version
