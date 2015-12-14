@@ -96,15 +96,15 @@ def function_to_method(n, klass):
 
 def std_special_attributes(self, name, add_locals=True):
     if add_locals:
-        locals = self.locals
+        obj_locals = self.locals
     else:
-        locals = {}
+        obj_locals = {}
     if name == '__name__':
-        return [node_classes.const_factory(self.name)] + locals.get(name, [])
+        return [node_classes.const_factory(self.name)] + obj_locals.get(name, [])
     if name == '__doc__':
-        return [node_classes.const_factory(self.doc)] + locals.get(name, [])
+        return [node_classes.const_factory(self.doc)] + obj_locals.get(name, [])
     if name == '__dict__':
-        return [node_classes.Dict()] + locals.get(name, [])
+        return [node_classes.Dict()] + obj_locals.get(name, [])
     # TODO: missing context
     raise exceptions.AttributeInferenceError(target=self, attribute=name)
 
@@ -138,10 +138,13 @@ class LocalsDictNodeNG(node_classes.LookupMixIn,
     # dictionary of locals with name as key and node defining the local as
     # value
 
+    locals = {}
+
     def qname(self):
         """return the 'qualified' name of the node, eg module.name,
         module.class.name ...
         """
+        # pylint: disable=no-member; github.com/pycqa/astroid/issues/278
         if self.parent is None:
             return self.name
         return '%s.%s' % (self.parent.frame().qname(), self.name)
@@ -188,6 +191,10 @@ class LocalsDictNodeNG(node_classes.LookupMixIn,
 
     def _append_node(self, child):
         """append a child, linking it in the tree"""
+        # pylint: disable=no-member; depending by the class
+        # which uses the current class as a mixin or base class.
+        # It's rewritten in 2.0, so it makes no sense for now
+        # to spend development time on it.
         self.body.append(child)
         child.parent = self
 
@@ -468,12 +475,12 @@ class Module(LocalsDictNodeNG):
         # to avoid catching too many Exceptions
         default = [name for name in self.keys() if not name.startswith('_')]
         try:
-            all = self['__all__']
+            all_values = self['__all__']
         except KeyError:
             return default
 
         try:
-            explicit = next(all.assigned_stmts())
+            explicit = next(all_values.assigned_stmts())
         except exceptions.InferenceError:
             return default
         except AttributeError:
@@ -664,6 +671,10 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
 
     def argnames(self):
         """return a list of argument names"""
+        # pylint: disable=no-member; github.com/pycqa/astroid/issues/291
+        # args is in fact redefined later on by postinit. Can't be changed
+        # to None due to a strong interaction between Lambda and FunctionDef.
+
         if self.args.args: # maybe None with builtin functions
             names = _rec_get_names(self.args.args)
         else:
@@ -676,9 +687,17 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
 
     def infer_call_result(self, caller, context=None):
         """infer what a function is returning when called"""
+        # pylint: disable=no-member; github.com/pycqa/astroid/issues/291
+        # args is in fact redefined later on by postinit. Can't be changed
+        # to None due to a strong interaction between Lambda and FunctionDef.
+
         return self.body.infer(context)
 
     def scope_lookup(self, node, name, offset=0):
+        # pylint: disable=no-member; github.com/pycqa/astroid/issues/291
+        # args is in fact redefined later on by postinit. Can't be changed
+        # to None due to a strong interaction between Lambda and FunctionDef.
+
         if node in self.args.defaults or node in self.args.kw_defaults:
             frame = self.parent.frame()
             # line offset to avoid that def func(f=func) resolve the default
@@ -1096,6 +1115,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         if parent is not None:
             parent.frame().set_local(name, self)
 
+    # pylint: disable=redefined-outer-name
     def postinit(self, bases, body, decorators, newstyle=None, metaclass=None):
         self.bases = bases
         self.body = body
@@ -1728,9 +1748,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             raise NotImplementedError(
                 "Could not obtain mro for old-style classes.")
 
-        bases = list(self._inferred_bases(context=context))
+        inferred_bases = list(self._inferred_bases(context=context))
         bases_mro = []
-        for base in bases:
+        for base in inferred_bases:
             try:
                 mro = base.mro(context=context)
                 bases_mro.append(mro)
@@ -1743,7 +1763,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                 ancestors = list(base.ancestors(context=context))
                 bases_mro.append(ancestors)
 
-        unmerged_mro = ([[self]] + bases_mro + [bases])
+        unmerged_mro = ([[self]] + bases_mro + [inferred_bases])
         _verify_duplicates_mro(unmerged_mro, self, context)
         return _c3_merge(unmerged_mro, self, context)
 

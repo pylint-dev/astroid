@@ -394,7 +394,7 @@ def get_module_part(dotted_name, context_file=None):
             file_from_modpath(parts[starti:i+1], path=path,
                               context_file=context_file)
         except ImportError:
-            if not i >= max(1, len(parts) - 2):
+            if i < max(1, len(parts) - 2):
                 raise
             return '.'.join(parts[:i])
     return dotted_name
@@ -425,7 +425,7 @@ def get_module_files(src_directory, blacklist, list_all=False):
     for directory, dirnames, filenames in os.walk(src_directory):
         _handle_blacklist(blacklist, dirnames, filenames)
         # check for __init__.py
-        if not list_all and not '__init__.py' in filenames:
+        if not list_all and '__init__.py' not in filenames:
             dirnames[:] = ()
             continue
         for filename in filenames:
@@ -581,13 +581,9 @@ def _search_zip(modpath, pic):
                         filepath)
     raise ImportError('No module named %s' % '.'.join(modpath))
 
-try:
-    import pkg_resources
-except ImportError:
-    pkg_resources = None
-
 
 def _is_namespace(modname):
+    # pylint: disable=no-member; astroid issue #290, modifying globals at runtime.
     return (pkg_resources is not None
             and modname in pkg_resources._namespace_packages)
 
@@ -614,7 +610,7 @@ def _module_file(modpath, path=None):
         pic = sys.path_importer_cache
         _path = (path is None and sys.path or path)
         for __path in _path:
-            if not __path in pic:
+            if __path not in pic:
                 try:
                     pic[__path] = zipimport.zipimporter(__path)
                 except zipimport.ZipImportError:

@@ -15,31 +15,13 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with logilab-astng. If not, see <http://www.gnu.org/licenses/>.
 """Tests for basic functionality in astroid.brain."""
-import sys
-import unittest
-
-import six
-
-from astroid import MANAGER
-from astroid import bases
-from astroid import builder
-from astroid import nodes
-from astroid import test_utils
-from astroid import util
-import astroid
-
-
-try:
-    import nose # pylint: disable=unused-import
-    HAS_NOSE = True
-except ImportError:
-    HAS_NOSE = False
-
 try:
     import multiprocessing # pylint: disable=unused-import
     HAS_MULTIPROCESSING = True
 except ImportError:
     HAS_MULTIPROCESSING = False
+import sys
+import unittest
 
 try:
     import enum # pylint: disable=unused-import
@@ -50,6 +32,12 @@ except ImportError:
         HAS_ENUM = True
     except ImportError:
         HAS_ENUM = False
+
+try:
+    import nose # pylint: disable=unused-import
+    HAS_NOSE = True
+except ImportError:
+    HAS_NOSE = False
 
 try:
     import dateutil # pylint: disable=unused-import
@@ -68,6 +56,15 @@ try:
     HAS_PYTEST = True
 except ImportError:
     HAS_PYTEST = False
+import six
+
+from astroid import MANAGER
+from astroid import bases
+from astroid import builder
+from astroid import nodes
+from astroid import test_utils
+from astroid import util
+import astroid
 
 
 class HashlibTest(unittest.TestCase):
@@ -112,9 +109,8 @@ class NamedTupleTest(unittest.TestCase):
         class X(namedtuple(name, fields)):
            pass
         """)
-        for base in klass.ancestors():
-            if base.name == 'X':
-                break
+        base = next(base for base in klass.ancestors()
+                    if base.name == 'X')
         self.assertSetEqual({"a", "b", "c"}, set(base.instance_attrs))
 
     def test_namedtuple_inference_failure(self):
@@ -381,8 +377,8 @@ class EnumBrainTest(unittest.TestCase):
 
         """)
 
-        enum = next(module['MyEnum'].infer())
-        one = enum['one']
+        enumeration = next(module['MyEnum'].infer())
+        one = enumeration['one']
         self.assertEqual(one.pytype(), '.MyEnum.one')
 
         property_type = '{}.property'.format(bases.BUILTINS)
@@ -401,8 +397,8 @@ class EnumBrainTest(unittest.TestCase):
                 pass
             test = 42
         ''')
-        enum = module['Enumeration']
-        test = next(enum.igetattr('test'))
+        enumeration = module['Enumeration']
+        test = next(enumeration.igetattr('test'))
         self.assertEqual(test.value, 42)
 
     def test_enum_multiple_base_classes(self):
@@ -415,8 +411,8 @@ class EnumBrainTest(unittest.TestCase):
         class MyEnum(Mixin, enum.Enum):
             one = 1
         """)
-        enum = next(module['MyEnum'].infer())
-        one = enum['one']
+        enumeration = next(module['MyEnum'].infer())
+        one = enumeration['one']
 
         clazz = one.getattr('__class__')[0]
         self.assertTrue(clazz.is_subtype_of('.Mixin'),
@@ -430,8 +426,8 @@ class EnumBrainTest(unittest.TestCase):
             one = 1
         """)
 
-        enum = next(module['MyEnum'].infer())
-        one = enum['one']
+        enumeration = next(module['MyEnum'].infer())
+        one = enumeration['one']
 
         clazz = one.getattr('__class__')[0]
         int_type = '{}.{}'.format(bases.BUILTINS, 'int')

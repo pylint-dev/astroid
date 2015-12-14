@@ -34,6 +34,7 @@ class AstroidError(Exception):
     arguments.
     """
     def __init__(self, message='', **kws):
+        super(AstroidError, self).__init__(message)
         self.message = message
         for key, value in kws.items():
             setattr(self, key, value)

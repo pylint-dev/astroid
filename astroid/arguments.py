@@ -16,13 +16,14 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 
+import six
+
 from astroid import bases
 from astroid import context as contextmod
 from astroid import exceptions
 from astroid import nodes
 from astroid import util
 
-import six
 
 
 class CallSite(object):

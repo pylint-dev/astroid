@@ -18,10 +18,13 @@
 """
 unit tests for module modutils (module manipulation utilities)
 """
+import email
 import os
 import sys
 import unittest
+from xml import etree
 
+import astroid
 from astroid import modutils
 from astroid.tests import resources
 
@@ -116,6 +119,7 @@ class LoadModuleFromPathTest(resources.SysPathSetup, unittest.TestCase):
     def test_do_not_load_twice(self):
         modutils.load_module_from_modpath(['data', 'lmfp', 'foo'])
         modutils.load_module_from_modpath(['data', 'lmfp'])
+        # pylint: disable=no-member; just-once is added by a test file dynamically.
         self.assertEqual(len(sys.just_once), 1)
         del sys.just_once
 
@@ -131,24 +135,12 @@ class FileFromModPathTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(os.path.realpath(result), os.path.realpath(filename))
 
     def test_std_lib(self):
-        from os import path
-        self.assertEqual(os.path.realpath(modutils.file_from_modpath(['os', 'path']).replace('.pyc', '.py')),
-                         os.path.realpath(path.__file__.replace('.pyc', '.py')))
-
-    def test_xmlplus(self):
-        try:
-            # don't fail if pyxml isn't installed
-            from xml.dom import ext
-        except ImportError:
-            pass
-        else:
-            self.assertEqual(os.path.realpath(modutils.file_from_modpath(['xml', 'dom', 'ext']).replace('.pyc', '.py')),
-                             os.path.realpath(ext.__file__.replace('.pyc', '.py')))
+        path = modutils.file_from_modpath(['os', 'path']).replace('.pyc', '.py')
+        self.assertEqual(os.path.realpath(path),
+                         os.path.realpath(os.path.__file__.replace('.pyc', '.py')))
 
     def test_builtin(self):
-        self.assertEqual(modutils.file_from_modpath(['sys']),
-                         None)
-
+        self.assertIsNone(modutils.file_from_modpath(['sys']))
 
     def test_unexisting(self):
         self.assertRaises(ImportError, modutils.file_from_modpath, ['turlututu'])
@@ -178,65 +170,61 @@ class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_builtins(self):
         if sys.version_info < (3, 0):
-            self.assertEqual(modutils.is_standard_module('__builtin__'), True)
-            self.assertEqual(modutils.is_standard_module('builtins'), False)
+            self.assertTrue(modutils.is_standard_module('__builtin__'))
+            self.assertFalse(modutils.is_standard_module('builtins'))
         else:
-            self.assertEqual(modutils.is_standard_module('__builtin__'), False)
-            self.assertEqual(modutils.is_standard_module('builtins'), True)
+            self.assertFalse(modutils.is_standard_module('__builtin__'))
+            self.assertTrue(modutils.is_standard_module('builtins'))
 
     def test_builtin(self):
-        self.assertEqual(modutils.is_standard_module('sys'), True)
-        self.assertEqual(modutils.is_standard_module('marshal'), True)
+        self.assertTrue(modutils.is_standard_module('sys'))
+        self.assertTrue(modutils.is_standard_module('marshal'))
 
     def test_nonstandard(self):
-        self.assertEqual(modutils.is_standard_module('astroid'), False)
+        self.assertFalse(modutils.is_standard_module('astroid'))
 
     def test_unknown(self):
-        self.assertEqual(modutils.is_standard_module('unknown'), False)
+        self.assertFalse(modutils.is_standard_module('unknown'))
 
     def test_4(self):
-        self.assertEqual(modutils.is_standard_module('hashlib'), True)
-        self.assertEqual(modutils.is_standard_module('pickle'), True)
-        self.assertEqual(modutils.is_standard_module('email'), True)
-        self.assertEqual(modutils.is_standard_module('io'), sys.version_info >= (2, 6))
-        self.assertEqual(modutils.is_standard_module('StringIO'), sys.version_info < (3, 0))
-        self.assertEqual(modutils.is_standard_module('unicodedata'), True)
+        self.assertTrue(modutils.is_standard_module('hashlib'))
+        self.assertTrue(modutils.is_standard_module('pickle'))
+        self.assertTrue(modutils.is_standard_module('email'))
+        self.assertEqual(modutils.is_standard_module('io'),
+                         sys.version_info >= (2, 6))
+        self.assertEqual(modutils.is_standard_module('StringIO'),
+                         sys.version_info < (3, 0))
+        self.assertTrue(modutils.is_standard_module('unicodedata'))
 
     def test_custom_path(self):
         datadir = resources.find('')
         if datadir.startswith(modutils.EXT_LIB_DIR):
             self.skipTest('known breakage of is_standard_module on installed package')
-        self.assertEqual(modutils.is_standard_module('data.module', (datadir,)), True)
-        self.assertEqual(modutils.is_standard_module('data.module', (os.path.abspath(datadir),)), True)
+
+        self.assertTrue(modutils.is_standard_module('data.module', (datadir,)))
+        self.assertTrue(modutils.is_standard_module('data.module', (os.path.abspath(datadir),)))
 
     def test_failing_edge_cases(self):
-        from xml import etree
         # using a subpackage/submodule path as std_path argument
-        self.assertEqual(modutils.is_standard_module('xml.etree', etree.__path__), False)
+        self.assertFalse(modutils.is_standard_module('xml.etree', etree.__path__))
         # using a module + object name as modname argument
-        self.assertEqual(modutils.is_standard_module('sys.path'), True)
+        self.assertTrue(modutils.is_standard_module('sys.path'))
         # this is because only the first package/module is considered
-        self.assertEqual(modutils.is_standard_module('sys.whatever'), True)
-        self.assertEqual(modutils.is_standard_module('xml.whatever', etree.__path__), False)
+        self.assertTrue(modutils.is_standard_module('sys.whatever'))
+        self.assertFalse(modutils.is_standard_module('xml.whatever', etree.__path__))
 
 
 class IsRelativeTest(unittest.TestCase):
 
-
     def test_knownValues_is_relative_1(self):
-        import email
-        self.assertEqual(modutils.is_relative('utils', email.__path__[0]),
-                         True)
+        self.assertTrue(modutils.is_relative('utils', email.__path__[0]))
 
     def test_knownValues_is_relative_2(self):
-        from xml.etree import ElementTree
-        self.assertEqual(modutils.is_relative('ElementPath', ElementTree.__file__),
-                         True)
+        self.assertTrue(modutils.is_relative('ElementPath',
+                                             etree.ElementTree.__file__))
 
     def test_knownValues_is_relative_3(self):
-        import astroid
-        self.assertEqual(modutils.is_relative('astroid', astroid.__path__[0]),
-                         False)
+        self.assertFalse(modutils.is_relative('astroid', astroid.__path__[0]))
 
 
 class GetModuleFilesTest(unittest.TestCase):

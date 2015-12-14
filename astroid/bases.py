@@ -263,7 +263,6 @@ class Instance(Proxy):
 
     # TODO(cpopa): this is set in inference.py
     # The circular dependency hell goes deeper and deeper.
-    # pylint: disable=unused-argument
     def getitem(self, index, context=None):
         pass
 

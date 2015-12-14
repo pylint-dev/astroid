@@ -259,9 +259,9 @@ class TreeRebuilder(object):
             # problem for the correctness of the program).
             #
             # ("a" + "b" + # one thousand more + "c")
-            newnode = self._peepholer.optimize_binop(node, parent)
-            if newnode:
-                return newnode
+            optimized = self._peepholer.optimize_binop(node, parent)
+            if optimized:
+                return optimized
 
         newnode = nodes.BinOp(_BIN_OP_CLASSES[type(node.op)],
                               node.lineno, node.col_offset, parent)

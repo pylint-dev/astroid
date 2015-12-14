@@ -26,6 +26,10 @@ import sys
 
 import six
 
+# pylint: disable=no-self-use; some visit methods don't need the self argument.
+# pylint: disable=unused-argument
+
+
 class AsStringVisitor(object):
     """Visitor to render an Astroid node as a valid python code string"""
 

@@ -17,6 +17,7 @@
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
 """tests for the astroid inference capabilities
 """
+# pylint: disable=too-many-lines
 import os
 import sys
 from functools import partial
@@ -398,9 +399,12 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(nie, nodes.ClassDef)
         nie_ancestors = [c.name for c in nie.ancestors()]
         if sys.version_info < (3, 0):
-            self.assertEqual(nie_ancestors, ['RuntimeError', 'StandardError', 'Exception', 'BaseException', 'object'])
+            expected = ['RuntimeError', 'StandardError',
+                        'Exception', 'BaseException', 'object']
+            self.assertEqual(nie_ancestors, expected)
         else:
-            self.assertEqual(nie_ancestors, ['RuntimeError', 'Exception', 'BaseException', 'object'])
+            expected = ['RuntimeError', 'Exception', 'BaseException', 'object']
+            self.assertEqual(nie_ancestors, expected)
 
     def test_except_inference(self):
         code = '''
@@ -3188,7 +3192,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ''')
         # This is not supported yet
         inferred = next(ast_node.infer())
-        self.assertIsInstance(inferred, ClassDef)
+        self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, 'A')
 
 

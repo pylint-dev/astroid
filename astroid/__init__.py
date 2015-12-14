@@ -39,7 +39,7 @@ Main modules are:
 
 * builder contains the class responsible to build astroid trees
 """
-
+import os
 import sys
 import re
 from operator import attrgetter
@@ -48,6 +48,7 @@ import enum
 
 
 _Context = enum.Enum('Context', 'Load Store Del')
+# pylint: disable=no-member; github.com/pycqa/pylint/issues/690
 Load = _Context.Load
 Store = _Context.Store
 Del = _Context.Del
@@ -57,6 +58,8 @@ del _Context
 # WARNING: internal imports order matters !
 
 # pylint: disable=redefined-builtin, wildcard-import
+# pylint: disable=wrong-import-position; the current order of imports is critical
+# here, that's why we don't respect it.
 
 # make all exception classes accessible from astroid package
 from astroid.exceptions import *
@@ -101,6 +104,7 @@ class AsStringRegexpPredicate(object):
 
     def __call__(self, node):
         if self.expression is not None:
+            # pylint: disable=no-member; github.com/pycqa/astroid/126
             node = attrgetter(self.expression)(node)
         return self.regexp.search(node.as_string())
 
@@ -131,13 +135,11 @@ def register_module_extender(manager, module_name, get_extension_mod):
 
 
 # load brain plugins
-from os import listdir
-from os.path import join, dirname
-BRAIN_MODULES_DIR = join(dirname(__file__), 'brain')
+BRAIN_MODULES_DIR = os.path.join(os.path.dirname(__file__), 'brain')
 if BRAIN_MODULES_DIR not in sys.path:
     # add it to the end of the list so user path take precedence
     sys.path.append(BRAIN_MODULES_DIR)
 # load modules in this directory
-for module in listdir(BRAIN_MODULES_DIR):
+for module in os.listdir(BRAIN_MODULES_DIR):
     if module.endswith('.py'):
         __import__(module[:-3])

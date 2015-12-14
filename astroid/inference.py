@@ -18,8 +18,6 @@
 """this module contains a set of functions to handle inference on astroid trees
 """
 
-# pylint: disable=no-value-for-parameter; Pylint FP #629, please remove afterwards.
-
 import functools
 import itertools
 import operator
@@ -138,8 +136,8 @@ def infer_import(self, context=None, asname=True):
             yield self.do_import_module(name)
     except exceptions.AstroidBuildingError as exc:
         util.reraise(exceptions.InferenceError(node=self, error=exc,
-                                               context=context))        
-        
+                                               context=context))
+
 nodes.Import._infer = infer_import
 
 
@@ -209,7 +207,8 @@ def infer_global(self, context=None):
                                   context)
     except exceptions.AttributeInferenceError as error:
         util.reraise(exceptions.InferenceError(
-            error.message, target=self, attribute=name, context=context))
+            error.message, target=self, attribute=context.lookupname,
+            context=context))
 nodes.Global._infer = infer_global
 
 
@@ -289,7 +288,7 @@ def infer_subscript(self, context=None):
     except (IndexError, TypeError, AttributeError) as exc:
         util.reraise(exceptions.InferenceError(node=self, error=exc,
                                                context=context))
-        
+
     # Prevent inferring if the inferred subscript
     # is the same as the original subscripted object.
     if self is assigned or assigned is util.Uninferable:

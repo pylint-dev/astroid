@@ -170,9 +170,9 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
 
             expected = ("Relative import with too many levels "
                         "({level}) for module {name!r}".format(
-                        level=level - 1, name=mod.name))
+                            level=level - 1, name=mod.name))
             self.assertEqual(expected, str(cm.exception))
-            
+
     def test_import_1(self):
         data = '''from . import subpackage'''
         sys.path.insert(0, resources.find('data'))
@@ -253,7 +253,8 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(func.getattr('__name__')[0].value, 'make_class')
         self.assertEqual(len(func.getattr('__doc__')), 1)
         self.assertIsInstance(func.getattr('__doc__')[0], nodes.Const)
-        self.assertEqual(func.getattr('__doc__')[0].value, 'check base is correctly resolved to Concrete0')
+        self.assertEqual(func.getattr('__doc__')[0].value,
+                         'check base is correctly resolved to Concrete0')
         self.assertEqual(len(self.module.getattr('__dict__')), 1)
         self.assertIsInstance(self.module.getattr('__dict__')[0], nodes.Dict)
 
@@ -1075,7 +1076,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIn('JJJ', ancestors)
 
     def test_no_infinite_metaclass_loop_with_redefine(self):
-        nodes = test_utils.extract_node("""
+        ast_nodes = test_utils.extract_node("""
             import datetime
 
             class A(datetime.date): #@
@@ -1089,7 +1090,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             datetime.date = A
             datetime.date = B
         """)
-        for klass in nodes:
+        for klass in ast_nodes:
             self.assertEqual(None, klass.metaclass())
 
     def test_metaclass_generator_hack(self):

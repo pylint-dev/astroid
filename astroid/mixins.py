@@ -22,7 +22,6 @@ import warnings
 
 from astroid import decorators
 from astroid import exceptions
-from astroid import util
 
 
 class BlockRangeMixIn(object):

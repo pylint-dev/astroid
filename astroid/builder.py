@@ -22,6 +22,7 @@ at the same time.
 """
 
 import _ast
+import re
 import os
 import sys
 import textwrap
@@ -41,6 +42,8 @@ def _parse(string):
 
 if sys.version_info >= (3, 0):
     # pylint: disable=no-name-in-module; We don't understand flows yet.
+    # pylint: disable=wrong-import-order, wrong-import-position; have to do it here,
+    # rather than moving the entire block between standard and local imports.
     from tokenize import detect_encoding
 
     def open_source_file(filename):
@@ -51,8 +54,6 @@ if sys.version_info >= (3, 0):
         return stream, encoding, data
 
 else:
-    import re
-
     _ENCODING_RGX = re.compile(r"\s*#+.*coding[:=]\s*([-\w.]+)")
 
     def _guess_encoding(string):
@@ -86,7 +87,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
     applied after the tree was built from source or from a live object,
     by default being True.
     """
-
+    # pylint: disable=redefined-outer-name
     def __init__(self, manager=None, apply_transforms=True):
         super(AstroidBuilder, self).__init__()
         self._manager = manager or MANAGER
@@ -129,7 +130,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
             # detect_encoding returns utf-8 if no encoding specified
             util.reraise(exceptions.AstroidBuildingError(
                 'Wrong ({encoding}) or no encoding specified for {filename}.',
-                encoding=encoding, filename=filename))
+                encoding=encoding, filename=path))
         with stream:
             # get module name if necessary
             if modname is None:
@@ -241,7 +242,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
                     continue
                 # get assign in __init__ first XXX useful ?
                 if (frame.name == '__init__' and values and
-                        not values[0].frame().name == '__init__'):
+                        values[0].frame().name != '__init__'):
                     values.insert(0, node)
                 else:
                     values.append(node)

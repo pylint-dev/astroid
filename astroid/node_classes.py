@@ -68,7 +68,7 @@ def unpack_infer(stmt, context=None):
                 yield inf_inf
 
 
-def are_exclusive(stmt1, stmt2, exceptions=None):
+def are_exclusive(stmt1, stmt2, exceptions=None): # pylint: disable=redefined-outer-name
     """return true if the two given statements are mutually exclusive
 
     `exceptions` may be a list of exception names. If specified, discard If
@@ -106,12 +106,22 @@ def are_exclusive(stmt1, stmt2, exceptions=None):
                 c2attr, c2node = node.locate_child(previous)
                 c1attr, c1node = node.locate_child(children[node])
                 if c1node is not c2node:
-                    if ((c2attr == 'body'
-                         and c1attr == 'handlers'
-                         and children[node].catch(exceptions)) or
-                            (c2attr == 'handlers' and c1attr == 'body' and previous.catch(exceptions)) or
-                            (c2attr == 'handlers' and c1attr == 'orelse') or
-                            (c2attr == 'orelse' and c1attr == 'handlers')):
+                    first_in_body_catched_by_handlers = (
+                        c2attr == 'handlers'
+                        and c1attr == 'body'
+                        and previous.catch(exceptions))
+                    second_in_body_catched_by_handlers = (
+                        c2attr == 'body'
+                        and c1attr == 'handlers'
+                        and children[node].catch(exceptions))
+                    first_in_else_other_in_handlers = (
+                        c2attr == 'handlers' and c1attr == 'orelse')
+                    second_in_else_other_in_handlers = (
+                        c2attr == 'orelse' and c1attr == 'handlers')
+                    if any((first_in_body_catched_by_handlers,
+                            second_in_body_catched_by_handlers,
+                            first_in_else_other_in_handlers,
+                            second_in_else_other_in_handlers)):
                         return True
                 elif c2attr == 'handlers' and c1attr == 'handlers':
                     return previous is not children[node]
@@ -619,7 +629,6 @@ class _BaseContainer(mixins.ParentAssignTypeMixin,
 
     @classmethod
     def from_constants(cls, elts=None):
-        # pylint: disable=abstract-class-instantiated; False positive on Pylint #627.
         node = cls()
         if elts is None:
             node.elts = []
@@ -695,7 +704,7 @@ class LookupMixIn(object):
 
             if self.statement() is myframe and myframe.parent:
                 myframe = myframe.parent.frame()
-        if not myframe is frame or self is frame:
+        if myframe is not frame or self is frame:
             return stmts
         mystmt = self.statement()
         # line filtering if we are in the same frame
@@ -838,9 +847,9 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
     _other_fields = ('vararg', 'kwarg')
 
     def __init__(self, vararg=None, kwarg=None, parent=None):
+        super(Arguments, self).__init__(parent=parent)
         self.vararg = vararg
         self.kwarg = kwarg
-        self.parent = parent
         self.args = []
         self.defaults = []
         self.kwonlyargs = []
@@ -1140,8 +1149,10 @@ class Comprehension(NodeNG):
     ifs = None
 
     def __init__(self, parent=None):
+        super(Comprehension, self).__init__()
         self.parent = parent
 
+    # pylint: disable=redefined-builtin; same name as builtin ast module.
     def postinit(self, target=None, iter=None, ifs=None):
         self.target = target
         self.iter = iter
@@ -1327,6 +1338,8 @@ class Ellipsis(NodeNG): # pylint: disable=redefined-builtin
 class EmptyNode(NodeNG):
     """class representing an EmptyNode node"""
 
+    object = None
+
 
 class ExceptHandler(mixins.AssignTypeMixin, Statement):
     """class representing an ExceptHandler node"""
@@ -1335,6 +1348,7 @@ class ExceptHandler(mixins.AssignTypeMixin, Statement):
     name = None
     body = None
 
+    # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
     def postinit(self, type=None, name=None, body=None):
         self.type = type
         self.name = name
@@ -1349,7 +1363,7 @@ class ExceptHandler(mixins.AssignTypeMixin, Statement):
         else:
             return self.lineno
 
-    def catch(self, exceptions):
+    def catch(self, exceptions): # pylint: disable=redefined-outer-name
         if self.type is None or exceptions is None:
             return True
         for node in self.type.nodes_of_class(Name):
@@ -1364,6 +1378,7 @@ class Exec(Statement):
     globals = None
     locals = None
 
+    # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
     def postinit(self, expr=None, globals=None, locals=None):
         self.expr = expr
         self.globals = globals
@@ -1387,6 +1402,7 @@ class For(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, Statement):
     body = None
     orelse = None
 
+    # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
     def postinit(self, target=None, iter=None, body=None, orelse=None):
         self.target = target
         self.iter = iter
@@ -1684,6 +1700,7 @@ class Subscript(NodeNG):
         super(Subscript, self).__init__(lineno=lineno,
                                         col_offset=col_offset, parent=parent)
 
+    # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
     def postinit(self, value=None, slice=None):
         self.value = value
         self.slice = slice
@@ -1865,6 +1882,7 @@ def _update_const_classes():
     """update constant classes, so the keys of CONST_CLS can be reused"""
     klasses = (bool, int, float, complex, str)
     if six.PY2:
+        # pylint: disable=undefined-variable
         klasses += (unicode, long)
     klasses += (bytes,)
     for kls in klasses:
@@ -1915,7 +1933,7 @@ def const_factory(value):
         initializer_cls = CONST_CLS[value.__class__]
         initializer = _CONST_CLS_CONSTRUCTORS[initializer_cls]
         return initializer(initializer_cls, elts)
-    except (KeyError, AttributeError) as exc:
+    except (KeyError, AttributeError):
         node = EmptyNode()
         node.object = value
         return node

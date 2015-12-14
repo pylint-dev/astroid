@@ -74,7 +74,7 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(binop.as_string(), '([arg]) * (1)')
 
     def test_frozenset_as_string(self):
-        nodes = test_utils.extract_node('''
+        ast_nodes = test_utils.extract_node('''
         frozenset((1, 2, 3)) #@
         frozenset({1, 2, 3}) #@
         frozenset([1, 2, 3,]) #@
@@ -82,14 +82,14 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         frozenset(None) #@
         frozenset(1) #@
         ''')
-        nodes = [next(node.infer()) for node in nodes]
+        ast_nodes = [next(node.infer()) for node in ast_nodes]
 
-        self.assertEqual(nodes[0].as_string(), 'frozenset((1, 2, 3))')
-        self.assertEqual(nodes[1].as_string(), 'frozenset({1, 2, 3})')
-        self.assertEqual(nodes[2].as_string(), 'frozenset([1, 2, 3])')
+        self.assertEqual(ast_nodes[0].as_string(), 'frozenset((1, 2, 3))')
+        self.assertEqual(ast_nodes[1].as_string(), 'frozenset({1, 2, 3})')
+        self.assertEqual(ast_nodes[2].as_string(), 'frozenset([1, 2, 3])')
 
-        self.assertNotEqual(nodes[3].as_string(), 'frozenset(None)')
-        self.assertNotEqual(nodes[4].as_string(), 'frozenset(1)')
+        self.assertNotEqual(ast_nodes[3].as_string(), 'frozenset(None)')
+        self.assertNotEqual(ast_nodes[4].as_string(), 'frozenset(1)')
 
     def test_varargs_kwargs_as_string(self):
         ast = abuilder.string_build('raise_string(*args, **kwargs)').body[0]
@@ -186,9 +186,9 @@ class _NodeTest(unittest.TestCase):
         try:
             return self.__class__.__dict__['CODE_Astroid']
         except KeyError:
-            astroid = builder.parse(self.CODE)
-            self.__class__.CODE_Astroid = astroid
-            return astroid
+            module = builder.parse(self.CODE)
+            self.__class__.CODE_Astroid = module
+            return module
 
 
 class IfNodeTest(_NodeTest):
@@ -384,8 +384,8 @@ from ..cave import wine\n\n"""
             except PickleError:
                 pass
         '''
-        astroid = builder.parse(code)
-        handler_type = astroid.body[1].handlers[0].type
+        module = builder.parse(code)
+        handler_type = module.body[1].handlers[0].type
 
         excs = list(node_classes.unpack_infer(handler_type))
         # The number of returned object can differ on Python 2
@@ -397,18 +397,18 @@ from ..cave import wine\n\n"""
         self.assertIs(excs[-1], util.Uninferable)
 
     def test_absolute_import(self):
-        astroid = resources.build_file('data/absimport.py')
+        module = resources.build_file('data/absimport.py')
         ctx = contextmod.InferenceContext()
         # will fail if absolute import failed
         ctx.lookupname = 'message'
-        next(astroid['message'].infer(ctx))
+        next(module['message'].infer(ctx))
         ctx.lookupname = 'email'
-        m = next(astroid['email'].infer(ctx))
+        m = next(module['email'].infer(ctx))
         self.assertFalse(m.file.startswith(os.path.join('data', 'email.py')))
 
     def test_more_absolute_import(self):
-        astroid = resources.build_file('data/module1abs/__init__.py', 'data.module1abs')
-        self.assertIn('sys', astroid.locals)
+        module = resources.build_file('data/module1abs/__init__.py', 'data.module1abs')
+        self.assertIn('sys', module.locals)
 
 
 class CmpNodeTest(unittest.TestCase):
@@ -420,6 +420,7 @@ class CmpNodeTest(unittest.TestCase):
 class ConstNodeTest(unittest.TestCase):
 
     def _test(self, value):
+        # pylint: disable=no-member; union type in const_factory, this shouldn't happen
         node = nodes.const_factory(value)
         self.assertIsInstance(node._proxied, nodes.ClassDef)
         self.assertEqual(node._proxied.name, value.__class__.__name__)
@@ -804,9 +805,8 @@ class ContextTest(unittest.TestCase):
     def test_starred_store(self):
         node = test_utils.extract_node('a, *b = 1, 2')
         starred = node.targets[0].elts[1]
-        self.assertIs(starred.ctx, astroid.Store) 
-        
-        
+        self.assertIs(starred.ctx, astroid.Store)
+
 
 if __name__ == '__main__':
     unittest.main()

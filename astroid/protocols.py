@@ -20,7 +20,7 @@ where it makes sense.
 """
 
 import collections
-import operator
+import operator as operator_mod
 import sys
 
 import six
@@ -74,10 +74,10 @@ UNARY_OP_METHOD = {'+': '__pos__',
                    'not': None, # XXX not '__nonzero__'
                   }
 _UNARY_OPERATORS = {
-    '+': operator.pos,
-    '-': operator.neg,
-    '~': operator.invert,
-    'not': operator.not_,
+    '+': operator_mod.pos,
+    '-': operator_mod.neg,
+    '~': operator_mod.invert,
+    'not': operator_mod.not_,
 }
 
 
@@ -109,7 +109,7 @@ BIN_OP_IMPL = {'+':  lambda a, b: a + b,
               }
 if sys.version_info >= (3, 5):
     # MatMult is available since Python 3.5+.
-    BIN_OP_IMPL['@'] = operator.matmul
+    BIN_OP_IMPL['@'] = operator_mod.matmul
 
 for _KEY, _IMPL in list(BIN_OP_IMPL.items()):
     BIN_OP_IMPL[_KEY + '='] = _IMPL
@@ -271,9 +271,9 @@ def sequence_assigned_stmts(self, node=None, context=None, asspath=None):
     try:
         index = self.elts.index(node)
     except ValueError:
-         util.reraise(exceptions.InferenceError(
-             'Tried to retrieve a node {node!r} which does not exist',
-             node=self, assign_path=asspath, context=context))
+        util.reraise(exceptions.InferenceError(
+            'Tried to retrieve a node {node!r} which does not exist',
+            node=self, assign_path=asspath, context=context))
 
     asspath.insert(0, index)
     return self.parent.assigned_stmts(node=self, context=context, asspath=asspath)

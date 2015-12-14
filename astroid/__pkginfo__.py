@@ -30,6 +30,7 @@ install_requires = ['lazy_object_proxy', 'six', 'wrapt']
 if sys.version_info < (3, 4):
     install_requires += ['enum34', 'singledispatch']
 
+# pylint: disable=redefined-builtin; why license is a builtin anyway?
 license = 'LGPL'
 
 author = 'Logilab'

@@ -70,7 +70,7 @@ confidence=
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
 # multiple time. See also the "--disable" option for examples.
-#enable=
+enable=useless-suppression
 
 # Disable the message, report, category or checker with the given id(s). You
 # can either give multiple identifiers separated by comma (,) or put this
@@ -81,20 +81,34 @@ confidence=
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
-disable=invalid-name,protected-access,no-self-use,unused-argument,
-        no-member,line-too-long,too-many-branches,too-few-public-methods,
-        too-many-public-methods,too-many-instance-attributes,
-        super-init-not-called,redefined-builtin,cyclic-import,
-        too-many-return-statements,redefined-outer-name,undefined-variable,
-        too-many-locals,method-hidden,duplicate-code,attribute-defined-outside-init,
-        fixme,missing-docstring,too-many-lines,too-many-statements,undefined-loop-variable,
-        unpacking-non-sequence,import-error,no-name-in-module,bad-builtin,too-many-arguments
+
+disable=fixme,invalid-name, missing-docstring, too-few-public-methods,
+        too-many-public-methods,
+        # We know about it and we're doing our best to remove it
+        # in 2.0
+        cyclic-import,
+        # The check is faulty in most cases and it doesn't take in
+        # account how the variable is being used. For instance,
+        # using a variable that is a list or a generator in an
+        # iteration context is fine.
+        redefined-variable-type,
+        # Requires major redesign for fixing this (and private
+        # access in the same project is fine)
+        protected-access,
+        # Most of them are conforming to an API. Putting staticmethod
+        # all over the place changes the aesthetics when these methods
+        # are following a local pattern (visit methods for instance).
+        no-self-use,
+        # API requirements in most of the occurences
+        unused-argument,
+        # Not very useful when it warns about imports..
+        duplicate-code,
 
 
 [BASIC]
 
 # List of builtins function names that should not be used, separated by a comma
-bad-functions=map,filter
+bad-functions=
 
 # Good variable names which should always be accepted, separated by a comma
 good-names=i,j,k,ex,Run,_
@@ -193,8 +207,8 @@ single-line-if-stmt=no
 # List of optional constructs for which whitespace checking is disabled
 no-space-check=trailing-comma,dict-separator
 
-# Maximum number of lines in a module
-max-module-lines=1000
+# Maximum number of lines in a module 
+max-module-lines=3000
 
 # String used as indentation unit. This is usually " " (4 spaces) or "\t" (1
 # tab).
@@ -310,29 +324,29 @@ exclude-protected=_asdict,_fields,_replace,_source,_make
 [DESIGN]
 
 # Maximum number of arguments for function / method
-max-args=5
+max-args=10
 
 # Argument names that match this expression will be ignored. Default to name
 # with leading underscore
 ignored-argument-names=_.*
 
 # Maximum number of locals for function / method body
-max-locals=15
+max-locals=25
 
 # Maximum number of return / yield for function / method body
-max-returns=6
+max-returns=10
 
 # Maximum number of branch for function / method body
-max-branches=12
+max-branches=25
 
 # Maximum number of statements in function / method body
-max-statements=50
+max-statements=60
 
 # Maximum number of parents for a class (see R0901).
 max-parents=10
 
 # Maximum number of attributes for a class (see R0902).
-max-attributes=7
+max-attributes=15
 
 # Minimum number of public methods for a class (see R0903).
 min-public-methods=2

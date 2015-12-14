@@ -120,7 +120,8 @@ class FromToLineNoTest(unittest.TestCase):
                 print (arg)
             ''', __name__)
         function = astroid['function']
-        self.assertEqual(function.fromlineno, 3) # XXX discussable, but that's what is expected by pylint right now
+        # XXX discussable, but that's what is expected by pylint right now
+        self.assertEqual(function.fromlineno, 3)
         self.assertEqual(function.tolineno, 5)
         self.assertEqual(function.decorators.fromlineno, 2)
         self.assertEqual(function.decorators.tolineno, 2)
@@ -331,7 +332,7 @@ class BuilderTest(unittest.TestCase):
     @test_utils.require_version(maxver='3.0')
     def test_inspect_build_instance(self):
         """test astroid tree build from a living object"""
-        import exceptions
+        import exceptions # pylint: disable=redefined-outer-name
         builtin_ast = self.builder.inspect_build(exceptions)
         fclass = builtin_ast['OSError']
         # things like OSError.strerror are now (2.5) data descriptors on the
@@ -534,6 +535,7 @@ class BuilderTest(unittest.TestCase):
             '''
         builder.parse(code)
         nonetype = nodes.const_factory(None)
+        # pylint: disable=no-member; union type in const_factory, this shouldn't happen
         self.assertNotIn('custom_attr', nonetype.locals)
         self.assertNotIn('custom_attr', nonetype.instance_attrs)
         nonetype = nodes.const_factory({})

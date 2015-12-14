@@ -60,20 +60,20 @@ def _add_dunder_class(func, member):
     cls_name = getattr(python_cls, '__name__', None)
     if not cls_name:
         return
-    bases = [ancestor.__name__ for ancestor in python_cls.__bases__]
-    ast_klass = build_class(cls_name, bases, python_cls.__doc__)
+    cls_bases = [ancestor.__name__ for ancestor in python_cls.__bases__]
+    ast_klass = build_class(cls_name, cls_bases, python_cls.__doc__)
     func.instance_attrs['__class__'] = [ast_klass]
 
 
 _marker = object()
 
 
-def attach_dummy_node(node, name, object=_marker):
+def attach_dummy_node(node, name, runtime_object=_marker):
     """create a dummy node and register it in the locals of the given
     node with the specified name
     """
     enode = nodes.EmptyNode()
-    enode.object = object
+    enode.object = runtime_object
     _attach_local_node(node, enode, name)
 
 def _has_underlying_object(self):
@@ -115,7 +115,7 @@ def build_class(name, basenames=(), doc=None):
     return node
 
 
-def build_function(name, args=None, defaults=None, flag=0, doc=None):
+def build_function(name, args=None, defaults=None, doc=None):
     """create and initialize a astroid FunctionDef node"""
     args, defaults = args or [], defaults or []
     # first argument is now a list of decorators
@@ -170,14 +170,14 @@ def object_build_class(node, member, localname):
 
 def object_build_function(node, member, localname):
     """create astroid for a living function object"""
+    # pylint: disable=deprecated-method; completely removed in 2.0
     args, varargs, varkw, defaults = inspect.getargspec(member)
     if varargs is not None:
         args.append(varargs)
     if varkw is not None:
         args.append(varkw)
     func = build_function(getattr(member, '__name__', None) or localname, args,
-                          defaults, six.get_function_code(member).co_flags,
-                          member.__doc__)
+                          defaults, member.__doc__)
     node.add_local_node(func, localname)
 
 

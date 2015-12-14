@@ -49,7 +49,7 @@ class FrozenSet(node_classes._BaseContainer):
         yield self
 
     @decorators.cachedproperty
-    def _proxied(self):
+    def _proxied(self): # pylint: disable=method-hidden
         builtins = MANAGER.astroid_cache[BUILTINS]
         return builtins.getattr('frozenset')[0]
 
@@ -66,7 +66,7 @@ class Super(node_classes.NodeNG):
     *self_class* is the class where the super call is, while
     *scope* is the function where the super call is.
     """
-
+    # pylint: disable=super-init-not-called
     def __init__(self, mro_pointer, mro_type, self_class, scope):
         self.type = mro_type
         self.mro_pointer = mro_pointer

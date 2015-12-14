@@ -183,7 +183,7 @@ def require_version(minver=None, maxver=None):
         try:
             return tuple(int(v) for v in string.split('.'))
         except ValueError:
-            util.reraise(ValueError('%s is not a correct version : should be X.Y[.Z].' % version))
+            util.reraise(ValueError('%s is not a correct version : should be X.Y[.Z].' % string))
 
     def check_require_version(f):
         current = sys.version_info[:3]
@@ -194,9 +194,11 @@ def require_version(minver=None, maxver=None):
             @functools.wraps(f)
             def new_f(self, *args, **kwargs):
                 if minver is not None:
-                    self.skipTest('Needs Python > %s. Current version is %s.' % (minver, str_version))
+                    self.skipTest('Needs Python > %s. Current version is %s.'
+                                  % (minver, str_version))
                 elif maxver is not None:
-                    self.skipTest('Needs Python <= %s. Current version is %s.' % (maxver, str_version))
+                    self.skipTest('Needs Python <= %s. Current version is %s.'
+                                  % (maxver, str_version))
             return new_f
 
 
