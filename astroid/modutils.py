@@ -68,21 +68,22 @@ try:
         # Take care of installations where exec_prefix != prefix.
         get_python_lib(standard_lib=True, prefix=sys.exec_prefix),
         get_python_lib(standard_lib=True)])
-    if os.name == 'nt':
-        STD_LIB_DIRS.add(os.path.join(sys.prefix, 'dlls'))
-        try:
-            # real_prefix is defined when running inside virtualenv.
-            STD_LIB_DIRS.add(os.path.join(sys.real_prefix, 'dlls'))
-        except AttributeError:
-            pass
-    if platform.python_implementation() == 'PyPy':
-        _root = os.path.join(sys.prefix, 'lib_pypy')
-        STD_LIB_DIRS.add(_root)
-        del _root
 # get_python_lib(standard_lib=1) is not available on pypy, set STD_LIB_DIR to
 # non-valid path, see https://bugs.pypy.org/issue1164
 except DistutilsPlatformError:
     STD_LIB_DIRS = set()
+
+if os.name == 'nt':
+    STD_LIB_DIRS.add(os.path.join(sys.prefix, 'dlls'))
+    try:
+        # real_prefix is defined when running inside virtualenv.
+        STD_LIB_DIRS.add(os.path.join(sys.real_prefix, 'dlls'))
+    except AttributeError:
+        pass
+if platform.python_implementation() == 'PyPy':
+    _root = os.path.join(sys.prefix, 'lib_pypy')
+    STD_LIB_DIRS.add(_root)
+    del _root
 
 EXT_LIB_DIR = get_python_lib()
 BUILTIN_MODULES = dict.fromkeys(sys.builtin_module_names, True)
