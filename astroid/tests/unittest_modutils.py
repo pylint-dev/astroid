@@ -171,6 +171,15 @@ class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
     def test_datetime(self):
         # This is an interesting example, since datetime, on pypy,
         # is under lib_pypy, rather than the usual Lib directory.
+        print(modutils.STD_LIB_DIRS)
+        modname = 'datetime'.split('.')[0]
+        try:
+            filename = modutils.file_from_modpath([modname])
+        except ImportError:
+            # import failed, i'm probably not so wrong by supposing it's
+            # not standard...
+            pass
+        else: print(filename) 
         self.assertTrue(modutils.is_standard_module('datetime'))
 
     def test_builtins(self):
