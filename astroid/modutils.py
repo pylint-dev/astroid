@@ -86,6 +86,11 @@ if os.name == 'nt':
 if platform.python_implementation() == 'PyPy':
     _root = os.path.join(sys.prefix, 'lib_pypy')
     STD_LIB_DIRS.add(_root)
+    try:
+        # real_prefix is defined when running inside virtualenv.
+        STD_LIB_DIRS.add(os.path.join(sys.real_prefix, 'lib_pypy'))
+    except AttributeError:
+        pass
     del _root
 
 EXT_LIB_DIR = get_python_lib()
