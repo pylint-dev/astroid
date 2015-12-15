@@ -179,7 +179,9 @@ class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
             # import failed, i'm probably not so wrong by supposing it's
             # not standard...
             pass
-        else: print(filename) 
+        else: print(filename)
+        import datetime
+        print(datetime) 
         self.assertTrue(modutils.is_standard_module('datetime'))
 
     def test_builtins(self):
