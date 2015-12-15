@@ -176,6 +176,11 @@ class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
     library
     """
 
+    def test_datetime(self):
+        # This is an interesting example, since datetime, on pypy,
+        # is under lib_pypy, rather than the usual Lib directory.
+        self.assertTrue(modutils.is_standard_module('datetime'))
+
     def test_builtins(self):
         if sys.version_info < (3, 0):
             self.assertEqual(modutils.is_standard_module('__builtin__'), True)
