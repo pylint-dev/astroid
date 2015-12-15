@@ -75,8 +75,9 @@ try:
         except AttributeError:
             pass
     if platform.python_implementation() == 'PyPy':
-        _root = os.path.dirname(sys.executable)
-        STD_LIB_DIRS.add(os.path.join(_root, 'lib_pypy'))
+        _root = os.path.join(sys.prefix, 'lib_pypy')
+        STD_LIB_DIRS.add(_root)
+        del _root
 # get_python_lib(standard_lib=1) is not available on pypy, set STD_LIB_DIR to
 # non-valid path, see https://bugs.pypy.org/issue1164
 except DistutilsPlatformError:
