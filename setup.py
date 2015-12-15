@@ -20,6 +20,7 @@
 """Setup script for astroid."""
 import os
 from setuptools import setup, find_packages
+from setuptools.command import easy_install
 from setuptools.command import install_lib
 
 
@@ -35,10 +36,19 @@ with open(os.path.join(astroid_dir, 'README.rst')) as fobj:
 
 class AstroidInstallLib(install_lib.install_lib):
     def byte_compile(self, files):
-        test_datadir = os.path.join(astroid_dir, 'tests', 'testdata')
+        test_datadir = os.path.join('astroid', 'tests', 'testdata')
         files = [f for f in files if test_datadir not in f]
         install_lib.install_lib.byte_compile(self, files)
 
+
+class AstroidEasyInstallLib(easy_install.easy_install):
+    # override this since pip/easy_install attempt to byte compile
+    # test data files, some of them being syntactically wrong by design,
+    # and this scares the end-user
+    def byte_compile(self, files):
+        test_datadir = os.path.join('astroid', 'tests', 'testdata')
+        files = [f for f in files if test_datadir not in f]
+        easy_install.easy_install.byte_compile(self, files)
 
 
 def install():
@@ -54,7 +64,8 @@ def install():
                  include_package_data = True,
                  install_requires = install_requires,
                  packages = find_packages(),
-                 cmdclass={'install_lib': AstroidInstallLib}
+                 cmdclass={'install_lib': AstroidInstallLib,
+                           'easy_install': AstroidEasyInstallLib}
                  )
 
 
