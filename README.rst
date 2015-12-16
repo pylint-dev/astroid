@@ -4,6 +4,10 @@ Astroid
 .. image:: https://travis-ci.org/PyCQA/astroid.svg?branch=master
     :target: https://travis-ci.org/PyCQA/astroid
 
+.. image:: https://ci.appveyor.com/api/projects/status/github/PCManticore/astroid?branch=master&svg=true
+    :alt: AppVeyor Build Status
+    :target: https://ci.appveyor.com/project/PCManticore/astroid
+
 
 
 What's this?
