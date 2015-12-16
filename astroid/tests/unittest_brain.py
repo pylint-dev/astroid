@@ -301,6 +301,15 @@ class MultiprocessingBrainTest(unittest.TestCase):
         else:
             self.assertIsInstance(cpu_count, astroid.BoundMethod)
 
+    def test_module_name(self):
+        module = test_utils.extract_node("""
+        import multiprocessing
+        multiprocessing.SyncManager()
+        """)
+        inferred_sync_mgr = next(module.infer())
+        module = inferred_sync_mgr.root()
+        self.assertEqual(module.name, 'multiprocessing.managers')
+
     def test_multiprocessing_manager(self):
         # Test that we have the proper attributes
         # for a multiprocessing.managers.SyncManager
