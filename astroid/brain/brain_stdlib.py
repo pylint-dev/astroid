@@ -453,6 +453,17 @@ def multiprocessing_managers_transform():
             pass
     '''))
 
+def thread_transform():
+    return AstroidBuilder(MANAGER).string_build('''
+class lock(object):
+    def acquire(self, blocking=True):
+        pass
+    def release(self):
+        pass
+
+def Lock():
+    return lock()
+''')
 
 MANAGER.register_transform(nodes.Call, inference_tip(infer_namedtuple),
                            _looks_like_namedtuple)
@@ -466,3 +477,4 @@ register_module_extender(MANAGER, 'subprocess', subprocess_transform)
 register_module_extender(MANAGER, 'multiprocessing.managers',
                          multiprocessing_managers_transform)
 register_module_extender(MANAGER, 'multiprocessing', multiprocessing_transform)
+register_module_extender(MANAGER, 'threading', thread_transform)

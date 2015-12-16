@@ -1,9 +1,17 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+--
+
     * Revert to using printf-style formatting in as_string, in order
       to avoid a potential problem with encodings when using .format.
       Closes issue #273. Patch by notsqrt.
+
+    * Add support for inference on threading.Lock
+
+      As a matter of fact, astroid can infer on threading.RLock,
+      threading.Semaphore, but can't do it on threading.Lock (because it comes
+      from an extension module).
 
     * Add support for handling Uninferable nodes when calling as_string
 
