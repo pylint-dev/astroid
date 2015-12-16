@@ -22,7 +22,7 @@ distname = 'astroid'
 
 modname = 'astroid'
 
-numversion = (1, 4, 0)
+numversion = (2, 0, 0)
 version = '.'.join([str(num) for num in numversion])
 
 
