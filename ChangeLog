@@ -2,6 +2,11 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * Add support for inference on threading.Lock
+
+      As a matter of fact, astroid can infer on threading.RLock,
+      threading.Semaphore, but can't do it on threading.Lock (because it comes
+      from an extension module).
 
     * pkg_resources brain tips are a bit more specific,
       by specifiying proper returns.
