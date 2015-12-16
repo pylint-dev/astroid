@@ -101,7 +101,7 @@ disable=fixme,invalid-name, missing-docstring, too-few-public-methods,
         no-self-use,
         # API requirements in most of the occurences
         unused-argument,
-        # Not very useful when it warns about imports..
+        # Not very useful when it warns about imports.
         duplicate-code,
 
 
