@@ -357,6 +357,21 @@ class MultiprocessingBrainTest(unittest.TestCase):
         self.assertTrue(manager.getattr('start'))
         self.assertTrue(manager.getattr('shutdown'))
 
+class ThreadingBrainTest(unittest.TestCase):
+    def test_threading(self):
+        module = test_utils.extract_node("""
+        import threading
+        threading.Lock()
+        """)
+        inferred = next(module.infer())
+        self.assertIsInstance(inferred.root(), astroid.Module)
+        self.assertEqual(inferred.root().name, 'threading')
+        self.assertEqual(inferred.pytype(), 'threading.Lock')
+        self.assertIsInstance(inferred.getattr('acquire')[0],
+                              astroid.FunctionDef)
+        self.assertIsInstance(inferred.getattr('release')[0],
+                              astroid.FunctionDef)
+
 
 @unittest.skipUnless(HAS_ENUM,
                      'The enum module was only added in Python 3.4. Support for '
