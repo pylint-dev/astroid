@@ -129,8 +129,8 @@ class AstroidBuilder(raw_building.InspectBuilder):
         except UnicodeError:  # wrong encoding
             # detect_encoding returns utf-8 if no encoding specified
             util.reraise(exceptions.AstroidBuildingError(
-                'Wrong ({encoding}) or no encoding specified for {filename}.',
-                encoding=encoding, filename=path))
+                'Wrong or no encoding specified for {filename}.',
+                filename=path))
         with stream:
             # get module name if necessary
             if modname is None:
