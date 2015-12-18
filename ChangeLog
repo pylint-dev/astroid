@@ -15,6 +15,13 @@ Change log for the astroid package (used to be astng)
       method in AsString and ``accept`` on Yes / Uninferable nodes.
       Closes issue #270.
 
+    * The slots() method conflates all the slots from the ancestors
+      into a list of current and parent slots.
+
+      We're doing this because this is the right semantics of slots,
+      they get inherited, as long as each parent defines a __slots__
+      entry.
+
     * Some nodes got a new attribute, 'ctx', which tells in which context
       the said node was used.
 
