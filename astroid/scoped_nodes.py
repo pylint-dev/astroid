@@ -1618,6 +1618,10 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
                 else:
                     yield None
 
+        if not self.newstyle:
+            raise NotImplementedError(
+                "The concept of slots is undefined for old-style classes.")
+
         slots = list(grouped_slots())
         if not all(slot is not None for slot in slots):
             return None
