@@ -1203,6 +1203,41 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             module['OldStyle'].slots()
         self.assertEqual(str(cm.exception), msg)
 
+    def test_slots_empty_list_of_slots(self):
+        module = builder.parse("""
+        class Klass(object):
+            __slots__ = ()
+        """)
+        cls = module['Klass']
+        self.assertEqual(cls.slots(), [])
+
+    def test_slots_taken_from_parents(self):
+        module = builder.parse('''
+        class FirstParent(object):
+            __slots__ = ('a', 'b', 'c')
+        class SecondParent(FirstParent):
+            __slots__ = ('d', 'e')
+        class Third(SecondParent):
+            __slots__ = ('d', )
+        ''')
+        cls = module['Third']
+        slots = cls.slots()
+        self.assertEqual(sorted(set(slot.value for slot in slots)),
+                         ['a', 'b', 'c', 'd', 'e'])
+
+    def test_all_ancestors_need_slots(self):
+        module = builder.parse('''
+        class A(object):
+            __slots__ = ('a', )
+        class B(A): pass
+        class C(B):
+            __slots__ = ('a', )
+        ''')
+        cls = module['C']
+        self.assertIsNone(cls.slots())
+        cls = module['B']
+        self.assertIsNone(cls.slots())
+
     def assertEqualMro(self, klass, expected_mro):
         self.assertEqual(
             [member.name for member in klass.mro()],

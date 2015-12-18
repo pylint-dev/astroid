@@ -1579,16 +1579,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
                 except exceptions.InferenceError:
                     continue
 
-    # Cached, because inferring them all the time is expensive
-    @decorators_mod.cached
-    def slots(self):
-        """Get all the slots for this node.
-
-        If the class doesn't define any slot, through `__slots__`
-        variable, then this function will return a None.
-        Also, it will return None in the case the slots weren't inferred.
-        Otherwise, it will return a list of slot names.
-        """
+    def _slots(self):
         if not self.newstyle:
             raise NotImplementedError(
                 "The concept of slots is undefined for old-style classes.")
@@ -1603,6 +1594,35 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, bases.Statement):
             return None
         # pylint: disable=unsupported-binary-operation; false positive
         return [first] + list(slots)
+
+    # Cached, because inferring them all the time is expensive
+    @decorators_mod.cached
+    def slots(self):
+        """Get all the slots for this node.
+
+        If the class doesn't define any slot, through `__slots__`
+        variable, then this function will return a None.
+        Also, it will return None in the case the slots weren't inferred.
+        Otherwise, it will return a list of slot names.
+        """
+        def grouped_slots():
+            # Not interested in object, since it can't have slots.
+            for cls in self.mro()[:-1]:
+                try:
+                    cls_slots = cls._slots()
+                except NotImplementedError:
+                    continue
+                if cls_slots is not None:
+                    for slot in cls_slots:
+                        yield slot
+                else:
+                    yield None
+
+        slots = list(grouped_slots())
+        if not all(slot is not None for slot in slots):
+            return None
+
+        return sorted(slots, key=lambda item: item.value)
 
     def _inferred_bases(self, context=None):
         # TODO(cpopa): really similar with .ancestors,
