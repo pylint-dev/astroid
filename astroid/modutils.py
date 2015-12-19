@@ -51,12 +51,7 @@ else:
     PY_SOURCE_EXTS = ('py',)
     PY_COMPILED_EXTS = ('so',)
 
-# Notes about STD_LIB_DIRS
-# Consider arch-specific installation for STD_LIB_DIRS definition
-# :mod:`distutils.sysconfig` contains to much hardcoded values to rely on
-#
-# :see: `Problems with /usr/lib64 builds <http://bugs.python.org/issue1294959>`_
-# :see: `FHS <http://www.pathname.com/fhs/pub/fhs-2.3.html#LIBLTQUALGTALTERNATEFORMATESSENTIAL>`_
+
 try:
     # The explicit sys.prefix is to work around a patch in virtualenv that
     # replaces the 'real' sys.prefix (i.e. the location of the binary)
@@ -89,6 +84,28 @@ if platform.python_implementation() == 'PyPy':
     except AttributeError:
         pass
     del _root
+if os.name == 'posix':
+    # Need the real prefix is we're under a virtualenv, otherwise
+    # the usual one will do.
+    try:
+        prefix = sys.real_prefix
+    except AttributeError:
+        prefix = sys.prefix
+
+    def _posix_path(path):
+        base_python = 'python%d.%d' % sys.version_info[:2]
+        return os.path.join(prefix, path, base_python)
+
+    STD_LIB_DIRS.add(_posix_path('lib'))
+    if sys.maxsize > 2**32:
+        # This tries to fix a problem with /usr/lib64 builds,
+        # where systems are running both 32-bit and 64-bit code
+        # on the same machine, which reflects into the places where
+        # standard library could be found. More details can be found
+        # here http://bugs.python.org/issue1294959.
+        # An easy reproducing case would be
+        # https://github.com/PyCQA/pylint/issues/712#issuecomment-163178753
+        STD_LIB_DIRS.add(_posix_path('lib64'))
 
 EXT_LIB_DIR = get_python_lib()
 BUILTIN_MODULES = dict.fromkeys(sys.builtin_module_names, True)
