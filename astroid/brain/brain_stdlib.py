@@ -156,30 +156,36 @@ class deque(object):
 
 def pkg_resources_transform():
     return AstroidBuilder(MANAGER).string_build('''
-
 def resource_exists(package_or_requirement, resource_name):
-    pass
+    return get_provider(package_or_requirement).has_resource(resource_name)
 
 def resource_isdir(package_or_requirement, resource_name):
-    pass
+    return get_provider(package_or_requirement).resource_isdir(
+        resource_name)
 
 def resource_filename(package_or_requirement, resource_name):
-    pass
+    return get_provider(package_or_requirement).get_resource_filename(
+        self, resource_name)
 
 def resource_stream(package_or_requirement, resource_name):
-    pass
+    return get_provider(package_or_requirement).get_resource_stream(
+        self, resource_name)
 
 def resource_string(package_or_requirement, resource_name):
-    pass
+    return get_provider(package_or_requirement).get_resource_string(
+        self, resource_name)
 
 def resource_listdir(package_or_requirement, resource_name):
-    pass
+    return get_provider(package_or_requirement).resource_listdir(
+        resource_name)
 
 def extraction_error():
     pass
 
 def get_cache_path(archive_name, names=()):
-    pass
+    extract_path = self.extraction_path or get_default_cache()
+    target_path = os.path.join(extract_path, archive_name+'-tmp', *names)
+    return target_path
 
 def postprocess(tempname, filename):
     pass
