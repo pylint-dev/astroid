@@ -3,6 +3,9 @@ Change log for the astroid package (used to be astng)
 
 --
 
+    * pkg_resources brain tips are a bit more specific,
+      by specifiying proper returns.
+
     * The slots() method conflates all the slots from the ancestors
       into a list of current and parent slots.
 
