@@ -1,7 +1,7 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
---
+2015-12-21 -- 1.4.2
 
     * The slots() method conflates all the slots from the ancestors
       into a list of current and parent slots.
