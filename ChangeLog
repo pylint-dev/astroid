@@ -5,6 +5,10 @@ Change log for the astroid package (used to be astng)
     * pkg_resources brain tips are a bit more specific,
       by specifiying proper returns.
 
+    * Standard library modules are properly detected by is_standard_module.
+
+      This should fix issues such as https://github.com/PyCQA/pylint/issues/725.
+
 2015-12-21 -- 1.4.2
 
     * The slots() method conflates all the slots from the ancestors
