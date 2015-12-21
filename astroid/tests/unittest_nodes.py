@@ -534,6 +534,7 @@ class BoundMethodNodeTest(unittest.TestCase):
             pass
         def lazyproperty():
             pass
+        def lazy(): pass
         class A(object):
             @property
             def builtin_property(self):
@@ -550,6 +551,8 @@ class BoundMethodNodeTest(unittest.TestCase):
             @lazyproperty
             def lazyprop(self): return 42
             def not_prop(self): pass
+            @lazy
+            def decorated_with_lazy(self): return 42
 
         cls = A()
         builtin_property = cls.builtin_property
@@ -559,9 +562,10 @@ class BoundMethodNodeTest(unittest.TestCase):
         not_prop = cls.not_prop
         lazy_prop = cls.lazy_prop
         lazyprop = cls.lazyprop
+        decorated_with_lazy = cls.decorated_with_lazy
         ''')
         for prop in ('builtin_property', 'abc_property', 'cached_p', 'reified',
-                     'lazy_prop', 'lazyprop'):
+                     'lazy_prop', 'lazyprop', 'decorated_with_lazy'):
             inferred = next(ast[prop].infer())
             self.assertIsInstance(inferred, nodes.Const, prop)
             self.assertEqual(inferred.value, 42, prop)
