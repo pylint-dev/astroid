@@ -1,7 +1,8 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
---
+2015-12-24 -- 1.4.3
+
     * pkg_resources brain tips are a bit more specific,
       by specifiying proper returns.
 
