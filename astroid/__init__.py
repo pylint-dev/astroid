@@ -78,7 +78,7 @@ from astroid import raw_building
 # Cache the builtins AST
 raw_building.ast_from_builtins()
 from astroid.interpreter.util import are_exclusive, unpack_infer
-from astroid.tree.scoped_nodes import builtin_lookup
+from astroid.interpreter.lookup import builtin_lookup
 from astroid.builder import parse
 from astroid.util import Uninferable, YES
 

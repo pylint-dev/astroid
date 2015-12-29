@@ -28,6 +28,7 @@ import six
 
 from astroid import builder
 from astroid import context
+from astroid.interpreter import lookup
 from astroid import nodes
 from astroid.tree import scoped_nodes
 from astroid import util
@@ -1414,7 +1415,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         class A(object):
             pass
         """)
-        type_cls = scoped_nodes.builtin_lookup("type")[1][0]
+        type_cls = lookup.builtin_lookup("type")[1][0]
         self.assertEqual(cls.implicit_metaclass(), type_cls)
 
     def test_implicit_metaclass_lookup(self):

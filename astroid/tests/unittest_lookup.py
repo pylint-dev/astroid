@@ -23,6 +23,7 @@ import unittest
 
 from astroid import builder
 from astroid import exceptions
+from astroid.interpreter import lookup
 from astroid import nodes
 from astroid.tree import scoped_nodes
 from astroid import test_utils
@@ -262,8 +263,8 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(path.lookup('__path__')[1]), 1)
 
     def test_builtin_lookup(self):
-        self.assertEqual(scoped_nodes.builtin_lookup('__dict__')[1], ())
-        intstmts = scoped_nodes.builtin_lookup('int')[1]
+        self.assertEqual(lookup.builtin_lookup('__dict__')[1], ())
+        intstmts = lookup.builtin_lookup('int')[1]
         self.assertEqual(len(intstmts), 1)
         self.assertIsInstance(intstmts[0], nodes.ClassDef)
         self.assertEqual(intstmts[0].name, 'int')
