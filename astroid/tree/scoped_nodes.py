@@ -2070,7 +2070,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                     yield None
 
         if not self.newstyle:
-            raise NotImplementedError(
+            raise TypeError(
                 "The concept of slots is undefined for old-style classes.")
 
         slots = list(grouped_slots())
