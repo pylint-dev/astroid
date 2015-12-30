@@ -48,14 +48,6 @@ class LocalsDictNode(mixins.LookupMixIn,
     def locals(self):
         return MappingProxyType(get_locals(self))
 
-    def qname(self):
-        """return the 'qualified' name of the node, eg module.name,
-        module.class.name ...
-        """
-        if self.parent is None:
-            return self.name
-        return '%s.%s' % (self.parent.frame().qname(), self.name)
-
     def frame(self):
         """return the first parent frame node (i.e. Module, FunctionDef or
         ClassDef)

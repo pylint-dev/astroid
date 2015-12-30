@@ -305,6 +305,11 @@ def test():
 
         next(node.value.infer()).as_string()
 
+    def test_qname_not_on_generatorexp(self):
+        node = extract_node('''(i for i in range(10))''')
+        with self.assertRaises(AttributeError):
+            node.qname
+
 
 class Whatever(object):
     a = property(lambda x: x, lambda x: x)

@@ -130,8 +130,17 @@ def std_special_attributes(self, name, add_locals=True):
     raise exceptions.AttributeInferenceError(target=self, attribute=name)
 
 
+class QualifiedNameMixin(object):
+
+    def qname(node):
+        """Return the 'qualified' name of the node."""
+        if node.parent is None:
+            return node.name
+        return '%s.%s' % (node.parent.frame().qname(), node.name)
+
+
 @util.register_implementation(treeabc.Module)
-class Module(lookup.LocalsDictNode):
+class Module(QualifiedNameMixin, lookup.LocalsDictNode):
     _astroid_fields = ('body',)
 
     fromlineno = 0
@@ -842,7 +851,7 @@ class CallSite(object):
 
 
 @util.register_implementation(treeabc.Lambda)
-class Lambda(mixins.FilterStmtsMixin, lookup.LocalsDictNode):
+class Lambda(QualifiedNameMixin, mixins.FilterStmtsMixin, lookup.LocalsDictNode):
     _astroid_fields = ('args', 'body',)
     _other_other_fields = ('locals',)
     name = '<lambda>'
@@ -1302,7 +1311,8 @@ def get_wrapping_class(node):
 
 
 @util.register_implementation(treeabc.ClassDef)
-class ClassDef(mixins.FilterStmtsMixin, lookup.LocalsDictNode,
+class ClassDef(QualifiedNameMixin, mixins.FilterStmtsMixin,
+               lookup.LocalsDictNode,
                node_classes.Statement):
 
     # some of the attributes below are set by the builder module or
