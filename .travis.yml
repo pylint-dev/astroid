@@ -14,18 +14,28 @@ matrix:
       env: TOXENV=pypy
     - python: 3.5
       env: TOXENV=pylint
+    - python: 2.7
+      env: JYTHON=true; TOXENV=jython
+
 before_install:
+  - if [ "$JYTHON" == "true" ]; then hg clone http://hg.python.org/jython; cd jython; ant; cd ..; chmod +x "$(pwd)/jython/dist/bin/jython"; fi
+  - if [ "$JYTHON" == "true" ]; then export PYTHON_EXE="$(pwd)/jython/dist/bin/jython"; else export PYTHON_EXE=python; fi
+  - if [ "$JYTHON" == "true" ]; then alias jython="$(pwd)/jython/dist/bin/jython"; export PATH="$(pwd)/jython/dist/bin:$PATH"; fi
+  - if [ "$JYTHON" == "true" ]; then wget https://bootstrap.pypa.io/get-pip.py; $PYTHON_EXE get-pip.py; fi
   - python --version
   - uname -a
   - lsb_release -a
 install:
-  - pip install tox
-  - virtualenv --version
-  - easy_install --version
-  - pip --version
-  - tox --version
+  - $PYTHON_EXE -m pip install pip -U
+  - python -m pip install tox
+  - python -m pip install pip -U
+  - $PYTHON_EXE -m pip install tox
+  - $PYTHON_EXE -m virtualenv --version
+  - $PYTHON_EXE -m easy_install --version
+  - $PYTHON_EXE -m pip --version
+  - $PYTHON_EXE -m tox --version
 script:
-  - tox -e $TOXENV
+  - python -m tox -e $TOXENV
 after_failure:
   - more .tox/log/* | cat
   - more .tox/*/log/* | cat
