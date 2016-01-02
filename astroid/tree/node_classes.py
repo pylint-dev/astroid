@@ -815,7 +815,7 @@ class Await(base.NodeNG):
 
 
 @util.register_implementation(treeabc.ImportFrom)
-class ImportFrom(mixins.ImportFromMixin, Statement):
+class ImportFrom(mixins.FilterStmtsMixin, Statement):
     """class representing a ImportFrom node"""
     _other_fields = ('modname', 'names', 'level')
 
@@ -825,6 +825,9 @@ class ImportFrom(mixins.ImportFromMixin, Statement):
         self.names = names
         self.level = level
         super(ImportFrom, self).__init__(lineno, col_offset, parent)
+
+    def _infer_name(self, frame, name):
+        return name
 
 
 @util.register_implementation(treeabc.Attribute)
@@ -897,7 +900,7 @@ class IfExp(base.NodeNG):
 
 
 @util.register_implementation(treeabc.Import)
-class Import(mixins.ImportFromMixin, Statement):
+class Import(mixins.FilterStmtsMixin, Statement):
     """class representing an Import node"""
     _other_fields = ('names',)
 
@@ -909,6 +912,9 @@ class Import(mixins.ImportFromMixin, Statement):
         context = contextmod.InferenceContext()
         context.lookupname = name
         return self.infer(context, asname=False)
+
+    def _infer_name(self, frame, name):
+        return name
 
 
 @util.register_implementation(treeabc.Index)

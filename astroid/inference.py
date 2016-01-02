@@ -133,9 +133,10 @@ def infer_import(self, context=None, asname=True):
         raise exceptions.InferenceError(node=self, context=context)
     try:
         if asname:
-            yield self.do_import_module(self.real_name(name))
+            real_name = inferenceutil.real_name(self, name)
+            yield inferenceutil.do_import_module(self, real_name)
         else:
-            yield self.do_import_module(name)
+            yield inferenceutil.do_import_module(self, name)
     except exceptions.AstroidBuildingError as exc:
         util.reraise(exceptions.InferenceError(node=self, error=exc,
                                                context=context))        
@@ -149,10 +150,9 @@ def infer_import_from(self, context=None, asname=True):
     if name is None:
         raise exceptions.InferenceError(node=self, context=context)
     if asname:
-        name = self.real_name(name)
-
+        name = inferenceutil.real_name(self, name)
     try:
-        module = self.do_import_module()
+        module = inferenceutil.do_import_module(self, self.modname)
     except exceptions.AstroidBuildingError as exc:
         util.reraise(exceptions.InferenceError(node=self, error=exc,
                                                context=context))

@@ -278,3 +278,45 @@ def object_type(node, context=None):
     if len(types) > 1 or not types:
         return util.Uninferable
     return list(types)[0]
+
+
+def do_import_module(node, modname):
+    """Return the ast for a module whose name is <modname> imported by the given node."""
+
+    # handle special case where we are on a package node importing a module
+    # using the same name as the package, which may end in an infinite loop
+    # on relative imports
+    # XXX: no more needed ?
+    if not isinstance(node, (treeabc.Import, treeabc.ImportFrom)):
+        raise TypeError('Operation is undefined for node of type %s'
+                        % type(node))
+
+    mymodule = node.root()
+    level = getattr(node, 'level', None) # Import as no level
+    # XXX we should investigate deeper if we really want to check
+    # importing itself: modname and mymodule.name be relative or absolute
+    if mymodule.relative_to_absolute_name(modname, level) == mymodule.name:
+        # FIXME: we used to raise InferenceError here, but why ?
+        return mymodule
+
+    return mymodule.import_module(modname, level=level,
+                                  relative_only=level and level >= 1)
+
+
+def real_name(node, asname):
+    """get name from 'as' name"""
+    if not isinstance(node, (treeabc.Import, treeabc.ImportFrom)):
+        raise TypeError('Operation is undefined for node of type %s'
+                        % type(node))
+
+    for name, _asname in node.names:
+        if name == '*':
+            return asname
+        if not _asname:
+            name = name.split('.', 1)[0]
+            _asname = name
+        if asname == _asname:
+            return name
+    raise exceptions.AttributeInferenceError(
+        'Could not find original name for {attribute} in {target!r}',
+        target=node, attribute=asname)

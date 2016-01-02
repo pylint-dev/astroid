@@ -2,6 +2,17 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * Remove do_import_module and real_name from ImportFrom and Import nodes.
+
+      do_import_module was broken for Import, since it was relying on a
+      missing attribute `modname`. do_import_module
+      in fact required all the time for a name parameter to be passed
+      as an argument. The inherent problem is that Import doesn't have
+      an underlying module name, but more of them, in the .names attribute.
+      Thus requiring for do_import_module to pick one name from .names or
+      to return multiple modules was deemed inappropiate and the method
+      became a function which always requires the import name to be given.
+      Closes issue #293.
 
     * Revert to using printf-style formatting in as_string, in order
       to avoid a potential problem with encodings when using .format.

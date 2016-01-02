@@ -25,6 +25,7 @@ from astroid import mixins
 from astroid.util import _singledispatch
 from astroid.tree import treeabc
 from astroid.tree import base as treebase
+from astroid.interpreter import util
 
 try:
     from types import MappingProxyType
@@ -294,7 +295,7 @@ def locals_import_from(node, locals_):
     for name, asname in node.names:
         if name == '*':
             try:
-                imported = node.do_import_module()
+                imported = util.do_import_module(node, node.modname)
             except exceptions.AstroidBuildingError:
                 continue
             for name in imported.wildcard_import_names():

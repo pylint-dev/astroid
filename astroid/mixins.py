@@ -97,46 +97,6 @@ class ParentAssignTypeMixin(AssignTypeMixin):
         return self.assign_type()
 
 
-class ImportFromMixin(FilterStmtsMixin):
-    """MixIn for From and Import Nodes"""
-
-    def _infer_name(self, frame, name):
-        return name
-
-    def do_import_module(self, modname=None):
-        """return the ast for a module whose name is <modname> imported by <self>
-        """
-        # handle special case where we are on a package node importing a module
-        # using the same name as the package, which may end in an infinite loop
-        # on relative imports
-        # XXX: no more needed ?
-        mymodule = self.root()
-        level = getattr(self, 'level', None) # Import as no level
-        if modname is None:
-            modname = self.modname
-        # XXX we should investigate deeper if we really want to check
-        # importing itself: modname and mymodule.name be relative or absolute
-        if mymodule.relative_to_absolute_name(modname, level) == mymodule.name:
-            # FIXME: we used to raise InferenceError here, but why ?
-            return mymodule
-
-        return mymodule.import_module(modname, level=level,
-                                      relative_only=level and level >= 1)
-
-    def real_name(self, asname):
-        """get name from 'as' name"""
-        for name, _asname in self.names:
-            if name == '*':
-                return asname
-            if not _asname:
-                name = name.split('.', 1)[0]
-                _asname = name
-            if asname == _asname:
-                return name
-        raise exceptions.AttributeInferenceError(
-            'Could not find original name for {attribute} in {target!r}',
-            target=self, attribute=asname)
-
 class LookupMixIn(object):
     """Mixin looking up a name in the right scope
     """

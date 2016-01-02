@@ -322,6 +322,18 @@ class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
         self.module = resources.build_file('data/module.py', 'data.module')
         self.module2 = resources.build_file('data/module2.py', 'data.module2')
 
+    def test_do_import_module_works_for_all(self):
+        import_from, import_ = test_utils.extract_node('''
+        from collections import deque #@
+        import collections #@
+        ''')
+        inferred = inferenceutil.do_import_module(import_from, 'collections')
+        self.assertIsInstance(inferred, nodes.Module)
+        self.assertEqual(inferred.name, 'collections')
+        inferred = inferenceutil.do_import_module(import_, 'collections')
+        self.assertIsInstance(inferred, nodes.Module)
+        self.assertEqual(inferred.name, 'collections')
+
     def test_import_self_resolve(self):
         myos = next(self.module2.igetattr('myos'))
         self.assertTrue(isinstance(myos, nodes.Module), myos)
@@ -343,16 +355,19 @@ class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_real_name(self):
         from_ = self.module['NameNode']
-        self.assertEqual(from_.real_name('NameNode'), 'Name')
+        self.assertEqual(inferenceutil.real_name(from_, 'NameNode'), 'Name')
         imp_ = self.module['os']
-        self.assertEqual(imp_.real_name('os'), 'os')
-        self.assertRaises(exceptions.AttributeInferenceError, imp_.real_name, 'os.path')
+        self.assertEqual(inferenceutil.real_name(imp_, 'os'), 'os')
+        self.assertRaises(exceptions.AttributeInferenceError,
+                          inferenceutil.real_name, imp_, 'os.path')
         imp_ = self.module['NameNode']
-        self.assertEqual(imp_.real_name('NameNode'), 'Name')
-        self.assertRaises(exceptions.AttributeInferenceError, imp_.real_name, 'Name')
+        self.assertEqual(inferenceutil.real_name(imp_, 'NameNode'), 'Name')
+        self.assertRaises(exceptions.AttributeInferenceError,
+                          inferenceutil.real_name, imp_, 'Name')
         imp_ = self.module2['YO']
-        self.assertEqual(imp_.real_name('YO'), 'YO')
-        self.assertRaises(exceptions.AttributeInferenceError, imp_.real_name, 'data')
+        self.assertEqual(inferenceutil.real_name(imp_, 'YO'), 'YO')
+        self.assertRaises(exceptions.AttributeInferenceError,
+                          inferenceutil.real_name, imp_, 'data')
 
     def test_as_string(self):
         ast = self.module['modutils']

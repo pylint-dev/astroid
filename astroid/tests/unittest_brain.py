@@ -24,6 +24,7 @@ from astroid import MANAGER
 from astroid import builder
 from astroid import nodes
 from astroid.interpreter import objects
+from astroid.interpreter import util as interpreterutil
 from astroid import test_utils
 from astroid import util
 import astroid
@@ -298,7 +299,7 @@ class MultiprocessingBrainTest(unittest.TestCase):
         module = test_utils.extract_node("""
         import multiprocessing
         """)
-        module = module.do_import_module('multiprocessing')
+        module = interpreterutil.do_import_module(module, 'multiprocessing')
         cpu_count = next(module.igetattr('cpu_count'))
         if sys.version_info < (3, 4):
             self.assertIsInstance(cpu_count, nodes.FunctionDef)
