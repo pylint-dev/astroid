@@ -21,7 +21,6 @@ import collections
 import six
 
 from astroid import exceptions
-from astroid import mixins
 from astroid.util import _singledispatch
 from astroid.tree import treeabc
 from astroid.tree import base as treebase
@@ -33,7 +32,7 @@ except ImportError:
     from dictproxyhack import dictproxy as MappingProxyType
 
 
-class LocalsDictNode(mixins.LookupMixIn,
+class LocalsDictNode(treebase.LookupMixIn,
                      treebase.NodeNG):
     """Provides locals handling common to Module, FunctionDef
     and ClassDef nodes, including a dict like interface for direct access

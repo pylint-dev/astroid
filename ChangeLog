@@ -2,6 +2,8 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * mixins are now found in tree.base.
+
     * Remove do_import_module and real_name from ImportFrom and Import nodes.
 
       do_import_module was broken for Import, since it was relying on a

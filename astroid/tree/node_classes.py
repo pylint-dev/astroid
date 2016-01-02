@@ -31,7 +31,6 @@ from astroid import inference
 from astroid.interpreter import runtimeabc
 from astroid.interpreter import objects
 from astroid import manager
-from astroid import mixins
 from astroid import protocols
 from astroid.tree import base
 from astroid.tree import treeabc
@@ -100,7 +99,7 @@ class AssignedStmtsMixin(object):
 # Name classes
 
 @util.register_implementation(treeabc.AssignName)
-class AssignName(mixins.LookupMixIn, mixins.ParentAssignTypeMixin,
+class AssignName(base.LookupMixIn, base.ParentAssignTypeMixin,
                  AssignedStmtsMixin, base.NodeNG):
     """class representing an AssignName node"""
     _other_fields = ('name',)
@@ -113,7 +112,7 @@ class AssignName(mixins.LookupMixIn, mixins.ParentAssignTypeMixin,
 
 
 @util.register_implementation(treeabc.DelName)
-class DelName(mixins.LookupMixIn, mixins.ParentAssignTypeMixin, base.NodeNG):
+class DelName(base.LookupMixIn, base.ParentAssignTypeMixin, base.NodeNG):
     """class representing a DelName node"""
     _other_fields = ('name',)
 
@@ -123,7 +122,7 @@ class DelName(mixins.LookupMixIn, mixins.ParentAssignTypeMixin, base.NodeNG):
 
 
 @util.register_implementation(treeabc.Name)
-class Name(mixins.LookupMixIn, base.NodeNG):
+class Name(base.LookupMixIn, base.NodeNG):
     """class representing a Name node"""
     _other_fields = ('name',)
 
@@ -133,7 +132,7 @@ class Name(mixins.LookupMixIn, base.NodeNG):
 
 
 @util.register_implementation(treeabc.Arguments)
-class Arguments(mixins.AssignTypeMixin, AssignedStmtsMixin, base.NodeNG):
+class Arguments(base.AssignTypeMixin, AssignedStmtsMixin, base.NodeNG):
     """class representing an Arguments node"""
     if six.PY3:
         # Python 3.4+ uses a different approach regarding annotations,
@@ -293,7 +292,7 @@ class Unknown(base.NodeNG):
 
 
 @util.register_implementation(treeabc.AssignAttr)
-class AssignAttr(mixins.ParentAssignTypeMixin,
+class AssignAttr(base.ParentAssignTypeMixin,
                  AssignedStmtsMixin, base.NodeNG):
     """class representing an AssignAttr node"""
     _astroid_fields = ('expr',)
@@ -323,7 +322,7 @@ class Assert(Statement):
 
 
 @util.register_implementation(treeabc.Assign)
-class Assign(mixins.AssignTypeMixin, AssignedStmtsMixin, Statement):
+class Assign(base.AssignTypeMixin, AssignedStmtsMixin, Statement):
     """class representing an Assign node"""
     _astroid_fields = ('targets', 'value',)
     targets = None
@@ -335,7 +334,7 @@ class Assign(mixins.AssignTypeMixin, AssignedStmtsMixin, Statement):
 
 
 @util.register_implementation(treeabc.AugAssign)
-class AugAssign(mixins.AssignTypeMixin, AssignedStmtsMixin, Statement):
+class AugAssign(base.AssignTypeMixin, AssignedStmtsMixin, Statement):
     """class representing an AugAssign node"""
     _astroid_fields = ('target', 'value')
     _other_fields = ('op',)
@@ -603,7 +602,7 @@ class Decorators(base.NodeNG):
 
 
 @util.register_implementation(treeabc.DelAttr)
-class DelAttr(mixins.ParentAssignTypeMixin, base.NodeNG):
+class DelAttr(base.ParentAssignTypeMixin, base.NodeNG):
     """class representing a DelAttr node"""
     _astroid_fields = ('expr',)
     _other_fields = ('attrname',)
@@ -618,7 +617,7 @@ class DelAttr(mixins.ParentAssignTypeMixin, base.NodeNG):
 
 
 @util.register_implementation(treeabc.Delete)
-class Delete(mixins.AssignTypeMixin, Statement):
+class Delete(base.AssignTypeMixin, Statement):
     """class representing a Delete node"""
     _astroid_fields = ('targets',)
     targets = None
@@ -723,7 +722,7 @@ class InterpreterObject(base.NodeNG):
 
 
 @util.register_implementation(treeabc.ExceptHandler)
-class ExceptHandler(mixins.AssignTypeMixin, AssignedStmtsMixin, Statement):
+class ExceptHandler(base.AssignTypeMixin, AssignedStmtsMixin, Statement):
     """class representing an ExceptHandler node"""
     _astroid_fields = ('type', 'name', 'body',)
     type = None
@@ -777,7 +776,7 @@ class ExtSlice(base.NodeNG):
 
 
 @util.register_implementation(treeabc.For)
-class For(mixins.BlockRangeMixIn, mixins.AssignTypeMixin,
+class For(base.BlockRangeMixIn, base.AssignTypeMixin,
           AssignedStmtsMixin, Statement):
     """class representing a For node"""
     _astroid_fields = ('target', 'iter', 'body', 'orelse',)
@@ -815,7 +814,7 @@ class Await(base.NodeNG):
 
 
 @util.register_implementation(treeabc.ImportFrom)
-class ImportFrom(mixins.FilterStmtsMixin, Statement):
+class ImportFrom(base.FilterStmtsMixin, Statement):
     """class representing a ImportFrom node"""
     _other_fields = ('modname', 'names', 'level')
 
@@ -859,7 +858,7 @@ class Global(Statement):
 
 
 @util.register_implementation(treeabc.If)
-class If(mixins.BlockRangeMixIn, Statement):
+class If(base.BlockRangeMixIn, Statement):
     """class representing an If node"""
     _astroid_fields = ('test', 'body', 'orelse')
     test = None
@@ -900,7 +899,7 @@ class IfExp(base.NodeNG):
 
 
 @util.register_implementation(treeabc.Import)
-class Import(mixins.FilterStmtsMixin, Statement):
+class Import(base.FilterStmtsMixin, Statement):
     """class representing an Import node"""
     _other_fields = ('names',)
 
@@ -1096,7 +1095,7 @@ class Slice(base.NodeNG):
 
 
 @util.register_implementation(treeabc.Starred)
-class Starred(mixins.ParentAssignTypeMixin, AssignedStmtsMixin, base.NodeNG):
+class Starred(base.ParentAssignTypeMixin, AssignedStmtsMixin, base.NodeNG):
     """class representing a Starred node"""
     _astroid_fields = ('value',)
     _other_fields = ('ctx', )
@@ -1132,7 +1131,7 @@ class Subscript(base.NodeNG):
 
 
 @util.register_implementation(treeabc.TryExcept)
-class TryExcept(mixins.BlockRangeMixIn, Statement):
+class TryExcept(base.BlockRangeMixIn, Statement):
     """class representing a TryExcept node"""
     _astroid_fields = ('body', 'handlers', 'orelse',)
     body = None
@@ -1161,7 +1160,7 @@ class TryExcept(mixins.BlockRangeMixIn, Statement):
 
 
 @util.register_implementation(treeabc.TryFinally)
-class TryFinally(mixins.BlockRangeMixIn, Statement):
+class TryFinally(base.BlockRangeMixIn, Statement):
     """class representing a TryFinally node"""
     _astroid_fields = ('body', 'finalbody',)
     body = None
@@ -1238,7 +1237,7 @@ class UnaryOp(base.NodeNG):
 
 
 @util.register_implementation(treeabc.While)
-class While(mixins.BlockRangeMixIn, Statement):
+class While(base.BlockRangeMixIn, Statement):
     """class representing a While node"""
     _astroid_fields = ('test', 'body', 'orelse',)
     test = None
@@ -1260,7 +1259,7 @@ class While(mixins.BlockRangeMixIn, Statement):
 
 
 @util.register_implementation(treeabc.With)
-class With(mixins.BlockRangeMixIn, mixins.AssignTypeMixin,
+class With(base.BlockRangeMixIn, base.AssignTypeMixin,
            AssignedStmtsMixin, Statement):
     """class representing a With node"""
     _astroid_fields = ('items', 'body')

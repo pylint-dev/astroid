@@ -43,7 +43,6 @@ from astroid.interpreter import objects
 from astroid.interpreter import runtimeabc
 from astroid.interpreter.util import infer_stmts
 from astroid import manager
-from astroid import mixins
 from astroid.tree import base as treebase
 from astroid.tree import node_classes
 from astroid.tree import treeabc
@@ -851,7 +850,7 @@ class CallSite(object):
 
 
 @util.register_implementation(treeabc.Lambda)
-class Lambda(QualifiedNameMixin, mixins.FilterStmtsMixin, lookup.LocalsDictNode):
+class Lambda(QualifiedNameMixin, base.FilterStmtsMixin, lookup.LocalsDictNode):
     _astroid_fields = ('args', 'body',)
     _other_other_fields = ('locals',)
     name = '<lambda>'
@@ -1311,7 +1310,7 @@ def get_wrapping_class(node):
 
 
 @util.register_implementation(treeabc.ClassDef)
-class ClassDef(QualifiedNameMixin, mixins.FilterStmtsMixin,
+class ClassDef(QualifiedNameMixin, base.FilterStmtsMixin,
                lookup.LocalsDictNode,
                node_classes.Statement):
 
