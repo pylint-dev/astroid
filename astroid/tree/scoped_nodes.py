@@ -282,24 +282,9 @@ class Module(QualifiedNameMixin, lookup.LocalsDictNode):
             return stream
         return None
 
-    @property
-    def file_stream(self):
-        util.attr_to_method_warning(('file_stream', type(self).__name__))
-        return self._get_stream()
-
     def stream(self):
         """Get a stream to the underlying file or bytes."""
         return self._get_stream()
-
-    def close(self):
-        """Close the underlying file streams."""
-        warnings.warn("The close method is deprecated and is "
-                      "slated for removal in astroid 1.6, along "
-                      "with 'file_stream'. "
-                      "Its behavior is replaced by managing each "
-                      "file stream returned by the 'stream' method.",
-                      PendingDeprecationWarning,
-                      stacklevel=2)
 
     def block_range(self, lineno):
         """return block line numbers.

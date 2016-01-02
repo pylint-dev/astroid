@@ -41,7 +41,6 @@ from astroid.exceptions import (
 from astroid.interpreter.objects import (
     Instance, BoundMethod, UnboundMethod, Generator
 )
-from astroid import __pkginfo__
 from astroid import test_utils
 from astroid.tests import resources
 
@@ -211,34 +210,15 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         data = '''irrelevant_variable is irrelevant'''
         astroid = builder.parse(data, 'in_memory')
         with warnings.catch_warnings(record=True):
-            self.assertEqual(astroid.file_stream.read().decode(), data)
+            with astroid.stream() as stream:
+                self.assertEqual(stream.read().decode(), data)
 
     def test_file_stream_physical(self):
         path = resources.find('data/all.py')
         astroid = builder.AstroidBuilder().file_build(path, 'all')
         with open(path, 'rb') as file_io:
-            with warnings.catch_warnings(record=True):
-                self.assertEqual(astroid.file_stream.read(), file_io.read())
-
-    def test_file_stream_api(self):
-        path = resources.find('data/all.py')
-        astroid = builder.AstroidBuilder().file_build(path, 'all')
-        if __pkginfo__.numversion >= (1, 6):
-            # file_stream is slated for removal in astroid 1.6.
-            with self.assertRaises(AttributeError):
-                # pylint: disable=pointless-statement
-                astroid.file_stream
-        else:
-            # Until astroid 1.6, Module.file_stream will emit
-            # PendingDeprecationWarning in 1.4, DeprecationWarning
-            # in 1.5 and finally it will be removed in 1.6, leaving
-            # only Module.stream as the recommended way to retrieve
-            # its file stream.
-            with warnings.catch_warnings(record=True) as cm:
-                with test_utils.enable_warning(PendingDeprecationWarning):
-                    self.assertIsNot(astroid.file_stream, astroid.file_stream)
-            self.assertGreater(len(cm), 1)
-            self.assertEqual(cm[0].category, PendingDeprecationWarning)
+            with astroid.stream() as stream:
+                self.assertEqual(stream.read(), file_io.read())
 
     def test_stream_api(self):
         path = resources.find('data/all.py')
