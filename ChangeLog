@@ -2,6 +2,12 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * Lambda is no longer at the top of the FunctionDef.
+
+      This means that checks such as ``isinstance(node, Lambda)`` will not
+      hold true anymore for Functions.
+      Closes issue #291.
+
     * mixins are now found in tree.base.
 
     * Remove do_import_module and real_name from ImportFrom and Import nodes.

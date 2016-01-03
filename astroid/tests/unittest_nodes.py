@@ -827,6 +827,17 @@ class ContextTest(unittest.TestCase):
         starred = node.targets[0].elts[1]
         self.assertIs(starred.ctx, astroid.Store) 
         
-        
+
+class FunctionTest(unittest.TestCase):
+
+    def test_function_not_on_top_of_lambda(self):
+        lambda_, function_ = test_utils.extract_node('''
+        lambda x: x #@
+        def func(): pass #@
+        ''')
+        self.assertNotIsInstance(lambda_, astroid.FunctionDef)
+        self.assertNotIsInstance(function_, astroid.Lambda)
+
+
 if __name__ == '__main__':
     unittest.main()

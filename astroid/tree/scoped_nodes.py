@@ -794,8 +794,53 @@ class CallSite(object):
                                         func=self._funcnode, arg=name, context=context)
 
 
+class LambdaFunctionMixin(QualifiedNameMixin, base.FilterStmtsMixin):
+    """Common code for lambda and functions."""
+
+    def called_with(self, args, keywords):
+        """Get a CallSite object with the given arguments
+
+        Given these arguments, this will return an object
+        which considers them as being passed into the current function,
+        which can then be used to infer their values.
+        `args` needs to be a list of arguments, while `keywords`
+        needs to be a list of tuples, where each tuple is formed
+        by a keyword name and a keyword value.
+        """
+        return CallSite(self, args, keywords)
+
+    def scope_lookup(self, node, name, offset=0):
+        if node in self.args.defaults or node in self.args.kw_defaults:
+            frame = self.parent.frame()
+            # line offset to avoid that def func(f=func) resolve the default
+            # value to the defined function
+            offset = -1
+        else:
+            # check this is not used in function decorators
+            frame = self
+        return frame._scope_lookup(node, name, offset)
+
+    def argnames(self):
+        """return a list of argument names"""
+        if self.args.args: # maybe None with builtin functions
+            names = _rec_get_names(self.args.args)
+        else:
+            names = []
+        if self.args.vararg:
+            names.append(self.args.vararg)
+        if self.args.kwarg:
+            names.append(self.args.kwarg)
+        return names
+
+    def callable(self):
+        return True
+
+    def bool_value(self):
+        return True
+
+
 @util.register_implementation(treeabc.Lambda)
-class Lambda(QualifiedNameMixin, base.FilterStmtsMixin, lookup.LocalsDictNode):
+class Lambda(LambdaFunctionMixin, lookup.LocalsDictNode):
     _astroid_fields = ('args', 'body',)
     _other_other_fields = ('locals',)
     name = '<lambda>'
@@ -818,63 +863,19 @@ class Lambda(QualifiedNameMixin, base.FilterStmtsMixin, lookup.LocalsDictNode):
     #     return MappingProxyType(get_external_assignments(self, collections.defaultdict(list)))
 
     def pytype(self):
-        if 'method' in self.type:
-            return '%s.instancemethod' % BUILTINS
         return '%s.function' % BUILTINS
 
     def display_type(self):
-        if 'method' in self.type:
-            return 'Method'
         return 'Function'
-
-    def callable(self):
-        return True
-
-    def argnames(self):
-        """return a list of argument names"""
-        if self.args.args: # maybe None with builtin functions
-            names = _rec_get_names(self.args.args)
-        else:
-            names = []
-        if self.args.vararg:
-            names.append(self.args.vararg)
-        if self.args.kwarg:
-            names.append(self.args.kwarg)
-        return names
 
     def infer_call_result(self, caller, context=None):
         """infer what a function is returning when called"""
         return self.body.infer(context)
 
-    def scope_lookup(self, node, name, offset=0):
-        if node in self.args.defaults or node in self.args.kw_defaults:
-            frame = self.parent.frame()
-            # line offset to avoid that def func(f=func) resolve the default
-            # value to the defined function
-            offset = -1
-        else:
-            # check this is not used in function decorators
-            frame = self
-        return frame._scope_lookup(node, name, offset)
-
-    def bool_value(self):
-        return True
-
-    def called_with(self, args, keywords):
-        """Get a CallSite object with the given arguments
-
-        Given these arguments, this will return an object
-        which considers them as being passed into the current function,
-        which can then be used to infer their values.
-        `args` needs to be a list of arguments, while `keywords`
-        needs to be a list of tuples, where each tuple is formed
-        by a keyword name and a keyword value.
-        """
-        return CallSite(self, args, keywords)
-
 
 @util.register_implementation(treeabc.FunctionDef)
-class FunctionDef(node_classes.Statement, Lambda):
+class FunctionDef(LambdaFunctionMixin, lookup.LocalsDictNode,
+                  node_classes.Statement):
     '''Setting FunctionDef.args to Unknown, rather than an Arguments node,
     means that the corresponding function's arguments are unknown,
     probably because it represents a function implemented in C or that
@@ -904,7 +905,7 @@ class FunctionDef(node_classes.Statement, Lambda):
                  col_offset=None, parent=None):
         self.name = name
         self.doc = doc
-        self.instance_attrs = {}
+        self.instance_attrs = collections.defaultdict(list)
         super(FunctionDef, self).__init__(lineno, col_offset, parent)
 
     # pylint: disable=arguments-differ; different than Lambdas
@@ -913,6 +914,16 @@ class FunctionDef(node_classes.Statement, Lambda):
         self.body = body
         self.decorators = decorators
         self.returns = returns
+
+    def pytype(self):
+        if 'method' in self.type:
+            return '%s.instancemethod' % BUILTINS
+        return '%s.function' % BUILTINS
+
+    def display_type(self):
+        if 'method' in self.type:
+            return 'Method'
+        return 'Function'
 
     @decorators_mod.cachedproperty
     def extra_decorators(self):
@@ -1147,9 +1158,6 @@ class FunctionDef(node_classes.Statement, Lambda):
                         yield inferred
                 except exceptions.InferenceError:
                     yield util.Uninferable
-
-    def bool_value(self):
-        return True
 
 
 @util.register_implementation(treeabc.AsyncFunctionDef)
