@@ -182,9 +182,6 @@ def infer_attribute(self, context=None):
             context.boundnode = None
         except (exceptions.AttributeInferenceError, exceptions.InferenceError):
             context.boundnode = None
-        except AttributeError:
-            # XXX method / function
-            context.boundnode = None
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
     raise StopIteration(dict(node=self, context=context))
@@ -251,6 +248,10 @@ def infer_subscript(self, context=None):
         yield util.Uninferable
         return
 
+    if not hasattr(value, 'getitem'):
+        # TODO: we could have a Sequence protocol class or something similar.
+        raise exceptions.InferenceError(node=self, context=context)
+
     index = next(self.slice.infer(context))
     if index is util.Uninferable:
         yield util.Uninferable
@@ -281,7 +282,7 @@ def infer_subscript(self, context=None):
 
     try:
         assigned = value.getitem(index_value, context)
-    except (IndexError, TypeError, AttributeError) as exc:
+    except (IndexError, TypeError) as exc:
         util.reraise(exceptions.InferenceError(node=self, error=exc,
                                                context=context))
 
@@ -438,6 +439,11 @@ def _is_not_implemented(const):
 
 def _invoke_binop_inference(instance, op, other, context, method_name, nodes):
     """Invoke binary operation inference on the given instance."""
+    if not hasattr(instance, 'getattr'):
+        # The operation is undefined for the given node. We can stop
+        # the inference at this point.
+        raise exceptions.BinaryOperationNotSupportedError
+
     method = instance.getattr(method_name)[0]
     inferred = next(method.infer(context=context))
     return protocols.infer_binary_op(instance, op, other, context, inferred, nodes)
@@ -573,7 +579,7 @@ def _infer_binary_operation(left, right, op, context, flow_factory, nodes):
             results = list(method())
         except exceptions.BinaryOperationNotSupportedError:
             continue
-        except (AttributeError, exceptions.AttributeInferenceError):
+        except exceptions.AttributeInferenceError:
             continue
         except exceptions.InferenceError:
             yield util.Uninferable
