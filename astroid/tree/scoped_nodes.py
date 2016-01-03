@@ -205,46 +205,6 @@ class Module(QualifiedNameMixin, lookup.LocalsDictNode):
     def postinit(self, body=None):
         self.body = body
 
-    # Legacy API aliases
-    @property
-    def file(self):
-        util.rename_warning(('file', 'source_file'))
-        return self.source_file
-    @file.setter
-    def file(self, source_file):
-        util.rename_warning(('file', 'source_file'))
-        self.source_file = source_file
-    @file.deleter
-    def file(self):
-        util.rename_warning(('file', 'source_file'))
-        del self.source_file
-
-    @property
-    def path(self):
-        util.rename_warning(('path', 'source_file'))
-        return self.source_file
-    @path.setter
-    def path(self, source_file):
-        util.rename_warning(('path', 'source_file'))
-        self.source_file = source_file
-    @path.deleter
-    def path(self):
-        util.rename_warning(('path', 'source_file'))
-        del self.source_file
-
-    @property
-    def files_bytes(self):
-        util.rename_warning(('files_bytes', 'source_code'))
-        return self.source_code
-    @files_bytes.setter
-    def files_bytes(self, source_code):
-        util.rename_warning(('files_bytes', 'source_code'))
-        self.source_code = source_code
-    @files_bytes.deleter
-    def files_bytes(self):
-        util.rename_warning(('files_bytes', 'source_code'))
-        del self.source_code
-
     @property
     def globals(self):
         return MappingProxyType(lookup.get_locals(self))
@@ -2013,9 +1973,3 @@ class ClassDef(QualifiedNameMixin, base.FilterStmtsMixin,
 
     def bool_value(self):
         return True
-
-
-# Backwards-compatibility aliases
-Class = util.proxy_alias('Class', ClassDef)
-Function = util.proxy_alias('Function', FunctionDef)
-GenExpr = util.proxy_alias('GenExpr', GeneratorExp)

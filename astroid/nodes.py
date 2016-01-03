@@ -45,8 +45,6 @@ from astroid.tree.node_classes import (
     List, Name, NameConstant, Nonlocal, Pass, Print, Raise, Return, Set, Slice,
     Starred, Subscript, TryExcept, TryFinally, Tuple, UnaryOp, While, With,
     Yield, YieldFrom, AsyncFor, Await, AsyncWith,
-    # Backwards-compatibility aliases
-    Backquote, Discard, AssName, AssAttr, Getattr, CallFunc, From,
     # Node not present in the builtin ast module.
     DictUnpack,
     # Special nodes for building from live objects.
@@ -56,8 +54,6 @@ from astroid.tree.scoped_nodes import (
     Module, GeneratorExp, Lambda, DictComp,
     ListComp, SetComp, FunctionDef, ClassDef,
     AsyncFunctionDef,
-    # Backwards-compatibility aliases
-    Class, Function, GenExpr,
 )
 
 

@@ -554,8 +554,8 @@ def infer_type_dunder_new(caller, context=None):
         # All the bases needs to be Classes
         raise UseInferenceDefault
 
-    cls = nodes.Class(name=name.value, lineno=caller.lineno,
-                      col_offset=caller.col_offset, parent=caller)
+    cls = nodes.ClassDef(name=name.value, lineno=caller.lineno,
+                         col_offset=caller.col_offset, parent=caller)
 
     # Verify the attributes.
     attrs = next(caller.args[3].infer(context=context))

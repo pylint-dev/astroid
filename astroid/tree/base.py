@@ -524,19 +524,11 @@ class FilterStmtsMixin(object):
     def assign_type(self):
         return self
 
-    def ass_type(self):
-        util.rename_warning((type(self).__name__, type(self).__name__))
-        return self.assign_type()
-
 
 class AssignTypeMixin(object):
 
     def assign_type(self):
         return self
-
-    def ass_type(self):
-        util.rename_warning((type(self).__name__, type(self).__name__))
-        return self.assign_type()
 
     def _get_filtered_stmts(self, lookup_node, node, _stmts, mystmt):
         """method used in filter_stmts"""
@@ -553,10 +545,6 @@ class ParentAssignTypeMixin(AssignTypeMixin):
 
     def assign_type(self):
         return self.parent.assign_type()
-
-    def ass_type(self):
-        util.rename_warning((type(self).__name__, type(self).__name__))
-        return self.assign_type()
 
 
 class LookupMixIn(object):

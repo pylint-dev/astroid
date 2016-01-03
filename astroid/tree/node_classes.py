@@ -499,10 +499,6 @@ class Comprehension(AssignedStmtsMixin, base.NodeNG):
     def assign_type(self):
         return self
 
-    def ass_type(self):
-        util.rename_warning((type(self).__name__, type(self).__name__))
-        return self.assign_type()
-
     def _get_filtered_stmts(self, lookup_node, node, stmts, mystmt):
         """method used in filter_stmts"""
         if self is mystmt:
@@ -1306,17 +1302,6 @@ class YieldFrom(Yield):
 @util.register_implementation(treeabc.DictUnpack)
 class DictUnpack(base.NodeNG):
     """Represents the unpacking of dicts into dicts using PEP 448."""
-
-
-# Backward-compatibility aliases
-
-Backquote = util.proxy_alias('Backquote', Repr)
-Discard = util.proxy_alias('Discard', Expr)
-AssName = util.proxy_alias('AssName', AssignName)
-AssAttr = util.proxy_alias('AssAttr', AssignAttr)
-Getattr = util.proxy_alias('Getattr', Attribute)
-CallFunc = util.proxy_alias('CallFunc', Call)
-From = util.proxy_alias('From', ImportFrom)
 
 
 # Register additional inference dispatched functions. We do
