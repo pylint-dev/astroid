@@ -763,9 +763,12 @@ class CallSite(object):
             kwarg = node_classes.Dict(lineno=self._funcnode.args.lineno,
                                       col_offset=self._funcnode.args.col_offset,
                                       parent=self._funcnode.args)
-            kwarg.postinit([(node_classes.Const(key, parent=kwarg), value)
-                            for key, value in kwargs.items()])
+            items = [(node_classes.Const(key, parent=kwarg), value)
+                     for key, value in kwargs.items()]
+            keys, values = zip(*items)
+            kwarg.postinit(keys, values)
             return iter((kwarg, ))
+
         elif self._funcnode.args.vararg == name:
             # It wants all the args that were passed into
             # the call site.

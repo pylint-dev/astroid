@@ -839,5 +839,17 @@ class FunctionTest(unittest.TestCase):
         self.assertNotIsInstance(function_, astroid.Lambda)
 
 
+class DictTest(unittest.TestCase):
+
+    def test_keys_values_items(self):
+        node = test_utils.extract_node('''
+        {1: 2, 2:3}
+        ''')
+        self.assertEqual([key.value for key in node.keys], [1, 2])
+        self.assertEqual([value.value for value in node.values], [2, 3])
+        self.assertEqual([(key.value, value.value) for (key, value) in node.items],
+                         [(1, 2), (2, 3)])
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -626,14 +626,20 @@ class Delete(base.AssignTypeMixin, Statement):
 @util.register_implementation(runtimeabc.BuiltinInstance)
 class Dict(base.NodeNG, objects.BaseInstance):
     """class representing a Dict node"""
-    _astroid_fields = ('items',)
+    _astroid_fields = ('keys', 'values')
 
     def __init__(self, lineno=None, col_offset=None, parent=None):
-        self.items = []
+        self.keys = []
+        self.values = []
         super(Dict, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, items):
-        self.items = items
+    def postinit(self, keys, values):
+        self.keys = keys
+        self.values = values
+
+    @property
+    def items(self):
+        return list(zip(self.keys, self.values))
 
     def pytype(self):
         return '%s.dict' % BUILTINS
@@ -641,21 +647,21 @@ class Dict(base.NodeNG, objects.BaseInstance):
     def get_children(self):
         """get children of a Dict node"""
         # overrides get_children
-        for key, value in self.items:
+        for key, value in zip(self.keys, self.values):
             yield key
             yield value
 
     def last_child(self):
         """override last_child"""
-        if self.items:
-            return self.items[-1][1]
+        if self.values:
+            return self.values[-1]
         return None
 
     def itered(self):
-        return self.items[::2]
+        return self.keys
 
     def getitem(self, lookup_key, context=None):
-        for key, value in self.items:
+        for key, value in zip(self.keys, self.values):
             # TODO(cpopa): no support for overriding yet, {1:2, **{1: 3}}.
             if isinstance(key, DictUnpack):
                 try:
@@ -673,7 +679,7 @@ class Dict(base.NodeNG, objects.BaseInstance):
         raise IndexError(lookup_key)
 
     def bool_value(self):
-        return bool(self.items)
+        return bool(self.keys)
 
     @decorators.cachedproperty
     def _proxied(self):

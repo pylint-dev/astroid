@@ -2,8 +2,11 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
-    * Lambda is no longer at the top of the FunctionDef.
+    * Dict nodes are constructed with two arguments, keys and values,
+      in the same way that ast.Dict is built.
 
+    * Lambda is no longer at the top of the FunctionDef.
+ 
       This means that checks such as ``isinstance(node, Lambda)`` will not
       hold true anymore for Functions.
       Closes issue #291.

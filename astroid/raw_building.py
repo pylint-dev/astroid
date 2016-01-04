@@ -474,6 +474,22 @@ def ast_from_builtin_container(container, built_objects, module, name=None,
     return (node,)
 
 
+def _build_from_dictionary(dictionary, built_objects, module, parent):
+    # This explicit list construction works around an obscure
+    # interaction: if _ast_from_dict is called on sys.modules and
+    # sys.modules contains a module that alters sys.modules upon
+    # import, as pytest.AliasModule does, then the recursive call
+    # can alter sys.modules's items() while it's being iterated
+    # over, causing a RuntimeError.
+    for key, value in list(dictionary.items()):
+        built_key_objects = _ast_from_object(key, built_objects,
+                                             module, parent=parent)
+        built_value_objects = _ast_from_object(value, built_objects,
+                                               module, parent=parent)
+        for built_key, built_value in zip(built_key_objects, built_value_objects):
+            yield built_key, built_value
+
+
 # pylint: disable=unused-variable; doesn't understand singledispatch
 @_ast_from_object.register(dict)
 def ast_from_dict(dictionary, built_objects, module, name=None,
@@ -494,16 +510,14 @@ def ast_from_dict(dictionary, built_objects, module, name=None,
         node = dict_node
     if name is not None:
         built_objects[id(dictionary)] = _NameAST(name, node)
-    dict_node.postinit(items=[
-        # This explicit list construction works around an obscure
-        # interaction: if _ast_from_dict is called on sys.modules and
-        # sys.modules contains a module that alters sys.modules upon
-        # import, as pytest.AliasModule does, then the recursive call
-        # can alter sys.modules's items() while it's being iterated
-        # over, causing a RuntimeError.
-        (x, y) for k, v in list(dictionary.items())
-        for x, y in zip(_ast_from_object(k, built_objects, module, parent=node),
-                        _ast_from_object(v, built_objects, module, parent=node))])
+
+    items = list(_build_from_dictionary(dictionary, built_objects, module, node))
+    if items:
+        keys, values = zip(*items)
+    else:
+        keys, values = [], []
+
+    dict_node.postinit(keys, values)
     if name:
         parent.postinit(targets=[name_node], value=dict_node)
     return (node,)

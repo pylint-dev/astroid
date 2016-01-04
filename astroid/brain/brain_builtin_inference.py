@@ -300,7 +300,7 @@ def infer_dict(node, context=None):
     value = nodes.Dict(col_offset=node.col_offset,
                        lineno=node.lineno,
                        parent=node.parent)
-    value.postinit(items)
+    value.postinit(*zip(*items))
     return value
 
 

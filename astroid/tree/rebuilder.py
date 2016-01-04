@@ -370,7 +370,11 @@ class TreeRebuilder(object):
         """visit a Dict node by returning a fresh instance of it"""
         newnode = nodes.Dict(node.lineno, node.col_offset, parent)
         items = list(self._visit_dict_items(node, parent, newnode))
-        newnode.postinit(items)
+        if items:
+            keys, values = zip(*items)
+        else:
+            keys, values = [], []
+        newnode.postinit(keys, values)
         return newnode
 
     def visit_dictcomp(self, node, parent):
