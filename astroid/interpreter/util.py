@@ -227,7 +227,7 @@ def is_supertype(type1, type2):
 
 def _object_type(node, context=None):
     context = context or contextmod.InferenceContext()
-    builtins_ast = MANAGER.astroid_cache[BUILTINS]
+    builtins_ast = MANAGER.builtins()
 
     for inferred in node.infer(context=context):
         if isinstance(inferred, treeabc.ClassDef):

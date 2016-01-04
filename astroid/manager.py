@@ -205,6 +205,13 @@ class AstroidManager(object):
         self.astroid_cache[modname] = mock_ast
         return mock_ast
 
+    def builtins(self):
+        """Get the builtins module
+
+        This module is special since it's always built.
+        """
+        return self.astroid_cache[six.moves.builtins.__name__]
+
     def register_failed_import_hook(self, hook):
         """Registers a hook to resolve imports that cannot be found otherwise.
 

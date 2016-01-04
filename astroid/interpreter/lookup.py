@@ -145,7 +145,7 @@ def builtin_lookup(name):
     """
     from astroid import MANAGER # TODO(cpopa) needs to be removed.
 
-    builtin_astroid = MANAGER.ast_from_module(six.moves.builtins)
+    builtin_astroid = MANAGER.builtins()
     if name == '__dict__':
         return builtin_astroid, ()
     stmts = builtin_astroid.locals.get(name, ())

@@ -550,7 +550,7 @@ class Const(base.NodeNG, objects.BaseInstance):
 
     @decorators.cachedproperty
     def _proxied(self):
-        builtins = MANAGER.astroid_cache[BUILTINS]
+        builtins = MANAGER.builtins()
         return builtins.getattr(type(self.value).__name__)[0]
 
     
@@ -564,7 +564,7 @@ class NameConstant(Const):
     # @decorators.cachedproperty
     # def _proxied(self):
     #     return self
-    #     # builtins = MANAGER.astroid_cache[BUILTINS]
+    #     # builtins = MANAGER.builtins()
     #     # return builtins.getattr(str(self.value))[0]
 
 
@@ -677,7 +677,7 @@ class Dict(base.NodeNG, objects.BaseInstance):
 
     @decorators.cachedproperty
     def _proxied(self):
-        builtins = MANAGER.astroid_cache[BUILTINS]
+        builtins = MANAGER.builtins()
         return builtins.getattr('dict')[0]
 
 
@@ -956,7 +956,7 @@ class List(base.BaseContainer, AssignedStmtsMixin, objects.BaseInstance):
 
     @decorators.cachedproperty
     def _proxied(self):
-        builtins = MANAGER.astroid_cache[BUILTINS]
+        builtins = MANAGER.builtins()
         return builtins.getattr('list')[0]
 
 
@@ -1044,7 +1044,7 @@ class Set(base.BaseContainer, objects.BaseInstance):
 
     @decorators.cachedproperty
     def _proxied(self):
-        builtins = MANAGER.astroid_cache[BUILTINS]
+        builtins = MANAGER.builtins()
         return builtins.getattr('set')[0]
 
 
@@ -1069,7 +1069,7 @@ class Slice(base.NodeNG):
 
     @decorators.cachedproperty
     def _proxied(self):
-        builtins = MANAGER.astroid_cache[BUILTINS]
+        builtins = MANAGER.builtins()
         return builtins.getattr('slice')[0]
 
     def pytype(self):
@@ -1196,7 +1196,7 @@ class Tuple(base.BaseContainer, AssignedStmtsMixin, objects.BaseInstance):
 
     @decorators.cachedproperty
     def _proxied(self):
-        builtins = MANAGER.astroid_cache[BUILTINS]
+        builtins = MANAGER.builtins()
         return builtins.getattr('tuple')[0]
 
 

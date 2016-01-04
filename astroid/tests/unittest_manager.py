@@ -173,6 +173,10 @@ class AstroidManagerTest(resources.SysPathSetup,
             self.manager.ast_from_module_name('foo.bar.baz')
         del self.manager._failed_import_hooks[0]
 
+    def test_builtins(self):
+        builtins_module = self.manager.builtins()
+        self.assertEqual(builtins_module.name, BUILTINS)
+
 
 class BorgAstroidManagerTC(unittest.TestCase):
 
