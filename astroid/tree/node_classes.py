@@ -458,25 +458,28 @@ class Call(base.NodeNG):
 @util.register_implementation(treeabc.Compare)
 class Compare(base.NodeNG):
     """class representing a Compare node"""
-    _astroid_fields = ('left', 'ops',)
+    _astroid_fields = ('left', 'comparators')
+    _other_fields = ('ops',)
     left = None
-    ops = None
 
-    def postinit(self, left=None, ops=None):
-        self.left = left
+    def __init__(self, ops, lineno=None, col_offset=None, parent=None):
+        self.comparators = []
         self.ops = ops
+        super(Compare, self).__init__(lineno, col_offset, parent)
+
+    def postinit(self, left=None, comparators=None):
+        self.left = left
+        self.comparators = comparators
 
     def get_children(self):
         """override get_children for tuple fields"""
         yield self.left
-        for _, comparator in self.ops:
-            yield comparator # we don't want the 'op'
+        for comparator in self.comparators:
+            yield comparator
 
     def last_child(self):
         """override last_child"""
-        # XXX maybe if self.ops:
-        return self.ops[-1][1]
-        #return self.left
+        return self.comparators[-1]
 
 
 @util.register_implementation(treeabc.Comprehension)

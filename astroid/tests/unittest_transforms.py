@@ -69,7 +69,7 @@ class TestTransforms(unittest.TestCase):
         # by going recursively into the _astroid_fields per each node.
         def transform_compare(node):
             # Let's check the values of the ops
-            _, right = node.ops[0]
+            right = node.comparators[0]
             # Assume they are Consts and they were transformed before
             # us.
             return nodes.Const(node.left.value < right.value)

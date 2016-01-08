@@ -123,7 +123,7 @@ class AsStringVisitor(object):
     def visit_compare(self, node):
         """return an astroid.Compare node as string"""
         rhs_str = ' '.join(['%s %s' % (op, expr.accept(self))
-                            for op, expr in node.ops])
+                            for op, expr in zip(node.ops, node.comparators)])
         return '%s %s' % (node.left.accept(self), rhs_str)
 
     def visit_comprehension(self, node):

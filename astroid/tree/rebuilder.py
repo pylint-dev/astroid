@@ -322,11 +322,12 @@ class TreeRebuilder(object):
 
     def visit_compare(self, node, parent):
         """visit a Compare node by returning a fresh instance of it"""
-        newnode = nodes.Compare(node.lineno, node.col_offset, parent)
+        newnode = nodes.Compare([_CMP_OP_CLASSES[type(op)] for op in
+                                 node.ops], node.lineno,
+                                node.col_offset, parent)
         newnode.postinit(self.visit(node.left, newnode),
-                         [(_CMP_OP_CLASSES[op.__class__],
-                           self.visit(expr, newnode))
-                          for (op, expr) in zip(node.ops, node.comparators)])
+                         [self.visit(expr, newnode)
+                          for expr in node.comparators])
         return newnode
 
     def visit_comprehension(self, node, parent):
