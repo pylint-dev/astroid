@@ -471,8 +471,7 @@ def _infer_context_manager(self, mgr, context, nodes):
 
 @assigned_stmts.register(treeabc.WithItem)
 def withitem_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
-    print(node, self, self.parent)
-    return self.parent.assigned_stmts(nodes, node=node, asspath=asspath)
+    return assigned_stmts(self.parent, nodes=nodes, node=node, context=context, asspath=asspath)
 
 
 @assigned_stmts.register(treeabc.With)
@@ -501,9 +500,6 @@ def with_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
         context: TODO
         asspath: TODO
     """
-    print('SELF', self)
-    print('NODES', nodes)
-    print('NODE', node)
     mgr = next(item.context_expr for item in self.items if
                item.optional_vars == node) 
     if asspath is None:
