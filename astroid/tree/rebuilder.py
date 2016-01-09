@@ -709,14 +709,13 @@ class TreeRebuilder(object):
 
     def visit_with(self, node, parent):
         newnode = nodes.With(node.lineno, node.col_offset, parent)
-        expr = self.visit(node.context_expr, newnode)
-        if node.optional_vars is not None:
-            optional_vars = self.visit(node.optional_vars, newnode)
-        else:
-            optional_vars = None
-        newnode.postinit([(expr, optional_vars)],
-                         [self.visit(child, newnode)
-                          for child in node.body])
+        with_item = nodes.WithItem(node.context_expr.lineno,
+                                   node.context_expr.col_offset, newnode)
+        context_expr = self.visit(node.context_expr, with_item)
+        optional_vars = _visit_or_none(node, 'optional_vars', self, with_item)
+        with_item.postinit(context_expr, optional_vars)
+        newnode.postinit([with_item],
+                         [self.visit(child, newnode) for child in node.body])
         return newnode
 
     def visit_yield(self, node, parent):
@@ -793,23 +792,19 @@ class TreeRebuilder3(TreeRebuilder):
         elif node.handlers:
             return self.visit_tryexcept(node, parent)
 
-    def _visit_with(self, cls, node, parent):
-        if 'items' not in node._fields:
-            # python < 3.3
-            return super(TreeRebuilder3, self).visit_with(node, parent)
-
-        newnode = cls(node.lineno, node.col_offset, parent)
-        def visit_child(child):
-            expr = self.visit(child.context_expr, newnode)
-            var = _visit_or_none(child, 'optional_vars', self, newnode)
-            return expr, var
-        newnode.postinit([visit_child(child) for child in node.items],
-                         [self.visit(child, newnode)
-                          for child in node.body])
+    def visit_with(self, node, parent):
+        newnode = nodes.With(node.lineno, node.col_offset, parent)
+        newnode.postinit([self.visit(item, newnode) for item in node.items],
+                         [self.visit(child, newnode) for child in node.body])
         return newnode
 
-    def visit_with(self, node, parent):
-        return self._visit_with(nodes.With, node, parent)
+    def visit_withitem(self, node, parent):
+        newnode = nodes.WithItem(node.context_expr.lineno,
+                                 node.context_expr.col_offset, parent)
+        context_expr = self.visit(node.context_expr, newnode)
+        optional_vars = _visit_or_none(node, 'optional_vars', self, newnode)
+        newnode.postinit(context_expr=context_expr, optional_vars=optional_vars)
+        return newnode
 
     def visit_yieldfrom(self, node, parent):
         newnode = nodes.YieldFrom(node.lineno, node.col_offset, parent)
@@ -834,7 +829,7 @@ class TreeRebuilder3(TreeRebuilder):
         return newnode
 
     def visit_asyncwith(self, node, parent):
-        return self._visit_with(nodes.AsyncWith, node, parent)
+        return self.visit_with(nodes.AsyncWith, node, parent)
 
 
 if sys.version_info >= (3, 0):

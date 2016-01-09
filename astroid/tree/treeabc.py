@@ -273,6 +273,10 @@ class With(Statement):
     """Class representing a With node"""
 
 
+class WithItem(NodeNG):
+    """Class representing a WithItem node"""
+
+
 class AsyncWith(With):
     """Asynchronous `with` built with the `async` keyword."""
 

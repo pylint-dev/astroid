@@ -1268,8 +1268,11 @@ class With(base.BlockRangeMixIn, base.AssignTypeMixin,
            AssignedStmtsMixin, Statement):
     """class representing a With node"""
     _astroid_fields = ('items', 'body')
-    items = None
-    body = None
+
+    def __init__(self, lineno=None, col_offset=None, parent=None):
+        self.items = []
+        self.body = []
+        super(With, self).__init__(lineno, col_offset, parent)
 
     def postinit(self, items=None, body=None):
         self.items = items
@@ -1277,15 +1280,18 @@ class With(base.BlockRangeMixIn, base.AssignTypeMixin,
 
     @decorators.cachedproperty
     def blockstart_tolineno(self):
-        return self.items[-1][0].tolineno
+        return self.items[-1].context_expr.tolineno
 
-    def get_children(self):
-        for expr, var in self.items:
-            yield expr
-            if var:
-                yield var
-        for elt in self.body:
-            yield elt
+
+@util.register_implementation(treeabc.WithItem)
+class WithItem(base.NodeNG, base.ParentAssignTypeMixin, AssignedStmtsMixin):
+    _astroid_fields = ('context_expr', 'optional_vars')
+    context_expr = None
+    optional_vars = None
+
+    def postinit(self, context_expr=None, optional_vars=None):
+        self.context_expr = context_expr
+        self.optional_vars = optional_vars
 
 
 @util.register_implementation(treeabc.AsyncWith)
