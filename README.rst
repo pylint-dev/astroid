@@ -26,15 +26,6 @@ usages.  They include some support for static inference and local name
 scopes.  Furthermore, astroid builds partial trees by inspecting living
 objects.
 
-Main modules are:
-
-* `bases`, `node_classses` and `scoped_nodes` contain the classes for the
-  different type of nodes of the tree.
-
-* the `manager` contains a high level object to get astroid trees from
-  source files and living objects. It maintains a cache of previously
-  constructed tree for quick access.
-
 
 Installation
 ------------
