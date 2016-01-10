@@ -78,12 +78,12 @@ class Statement(base.NodeNG):
 class AssignedStmtsMixin(object):
     """Provide an `assigned_stmts` method to classes which inherits it."""
 
-    def assigned_stmts(self, node=None, context=None, asspath=None):
+    def assigned_stmts(self, node=None, context=None, assign_path=None):
         """Responsible to return the assigned statement
         (e.g. not inferred) according to the assignment type.
 
-        The `asspath` parameter is used to record the lhs path of the original node.
-        For instance if we want assigned statements for 'c' in 'a, (b,c)', asspath
+        The `assign_path` parameter is used to record the lhs path of the original node.
+        For instance if we want assigned statements for 'c' in 'a, (b,c)', assign_path
         will be [1, 1] once arrived to the Assign node.
 
         The `context` parameter is the current inference context which should be given
@@ -93,7 +93,7 @@ class AssignedStmtsMixin(object):
         # circular dependencies between these modules.
         return protocols.assigned_stmts(self, sys.modules[__name__],
                                         node=node, context=context,
-                                        asspath=asspath)
+                                        assign_path=assign_path)
 
 
 # Name classes

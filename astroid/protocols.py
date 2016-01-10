@@ -224,14 +224,14 @@ def instance_infer_binary_op(self, operator, other, context, method, nodes):
 
 
 @util.singledispatch
-def assigned_stmts(self, nodes, node=None, context=None, asspath=None):
+def assigned_stmts(self, nodes, node=None, context=None, assign_path=None):
     raise exceptions.NotSupportedError
 
 
-def _resolve_looppart(parts, asspath, context):
+def _resolve_looppart(parts, assign_path, context):
     """recursive function to resolve multiple assignments on loops"""
-    asspath = asspath[:]
-    index = asspath.pop(0)
+    assign_path = assign_path[:]
+    index = assign_path.pop(0)
     for part in parts:
         if part is util.Uninferable:
             continue
@@ -249,7 +249,7 @@ def _resolve_looppart(parts, asspath, context):
                 continue
             except TypeError: # stmt is unsubscriptable Const
                 continue
-            if not asspath:
+            if not assign_path:
                 # we achieved to resolved the assignment path,
                 # don't infer the last part
                 yield assigned
@@ -260,7 +260,7 @@ def _resolve_looppart(parts, asspath, context):
                 # search on each possibly inferred value
                 try:
                     for inferred in _resolve_looppart(assigned.infer(context),
-                                                      asspath, context):
+                                                      assign_path, context):
                         yield inferred
                 except exceptions.InferenceError:
                     break
@@ -269,42 +269,42 @@ def _resolve_looppart(parts, asspath, context):
 @assigned_stmts.register(treeabc.For)
 @assigned_stmts.register(treeabc.Comprehension)
 @decorators.raise_if_nothing_inferred
-def for_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
-    if asspath is None:
+def for_assigned_stmts(self, nodes, node=None, context=None, assign_path=None):
+    if assign_path is None:
         for lst in self.iter.infer(context):
             if isinstance(lst, (treeabc.Tuple, treeabc.List)):
                 for item in lst.elts:
                     yield item
     else:
         for inferred in _resolve_looppart(self.iter.infer(context),
-                                          asspath, context):
+                                          assign_path, context):
             yield inferred
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
     raise StopIteration(dict(node=self, unknown=node,
-                             assign_path=asspath, context=context))
+                             assign_path=assign_path, context=context))
 
 
 @assigned_stmts.register(treeabc.Tuple)
 @assigned_stmts.register(treeabc.List)
-def mulass_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
-    if asspath is None:
-        asspath = []
+def mulass_assigned_stmts(self, nodes, node=None, context=None, assign_path=None):
+    if assign_path is None:
+        assign_path = []
 
     try:
         index = self.elts.index(node)
     except ValueError:
          util.reraise(exceptions.InferenceError(
              'Tried to retrieve a node {node!r} which does not exist',
-             node=self, assign_path=asspath, context=context))
+             node=self, assign_path=assign_path, context=context))
 
-    asspath.insert(0, index)
-    return self.parent.assigned_stmts(node=self, context=context, asspath=asspath)
+    assign_path.insert(0, index)
+    return self.parent.assigned_stmts(node=self, context=context, assign_path=assign_path)
 
 
 @assigned_stmts.register(treeabc.AssignName)
 @assigned_stmts.register(treeabc.AssignAttr)
-def assend_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
+def assend_assigned_stmts(self, nodes, node=None, context=None, assign_path=None):
     return self.parent.assigned_stmts(self, context=context)
 
 
@@ -354,7 +354,7 @@ def _arguments_infer_argname(self, name, context, nodes):
 
 
 @assigned_stmts.register(treeabc.Arguments)
-def arguments_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
+def arguments_assigned_stmts(self, nodes, node=None, context=None, assign_path=None):
     if context.callcontext:
         # reset call context/name
         callcontext = context.callcontext
@@ -369,23 +369,23 @@ def arguments_assigned_stmts(self, nodes, node=None, context=None, asspath=None)
 @assigned_stmts.register(treeabc.Assign)
 @assigned_stmts.register(treeabc.AugAssign)
 @decorators.raise_if_nothing_inferred
-def assign_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
-    if not asspath:
+def assign_assigned_stmts(self, nodes, node=None, context=None, assign_path=None):
+    if not assign_path:
         yield self.value
         return
-    for inferred in _resolve_asspart(self.value.infer(context), asspath, context):
+    for inferred in _resolve_asspart(self.value.infer(context), assign_path, context):
         yield inferred
 
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
     raise StopIteration(dict(node=self, unknown=node,
-                             assign_path=asspath, context=context))
+                             assign_path=assign_path, context=context))
 
 
-def _resolve_asspart(parts, asspath, context):
+def _resolve_asspart(parts, assign_path, context):
     """recursive function to resolve multiple assignments"""
-    asspath = asspath[:]
-    index = asspath.pop(0)
+    assign_path = assign_path[:]
+    index = assign_path.pop(0)
     for part in parts:
         if hasattr(part, 'getitem'):
             try:
@@ -394,7 +394,7 @@ def _resolve_asspart(parts, asspath, context):
             # unexpected exception ?
             except (TypeError, IndexError):
                 return
-            if not asspath:
+            if not assign_path:
                 # we achieved to resolved the assignment path, don't infer the
                 # last part
                 yield assigned
@@ -405,7 +405,7 @@ def _resolve_asspart(parts, asspath, context):
                 # possibly inferred value
                 try:
                     for inferred in _resolve_asspart(assigned.infer(context),
-                                                     asspath, context):
+                                                     assign_path, context):
                         yield inferred
                 except exceptions.InferenceError:
                     return
@@ -413,7 +413,7 @@ def _resolve_asspart(parts, asspath, context):
 
 @assigned_stmts.register(treeabc.ExceptHandler)
 @decorators.raise_if_nothing_inferred
-def excepthandler_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
+def excepthandler_assigned_stmts(self, nodes, node=None, context=None, assign_path=None):
     for assigned in inferenceutil.unpack_infer(self.type):
         if isinstance(assigned, treeabc.ClassDef):
             assigned = assigned.instantiate_class()
@@ -422,7 +422,7 @@ def excepthandler_assigned_stmts(self, nodes, node=None, context=None, asspath=N
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
     raise StopIteration(dict(node=self, unknown=node,
-                             assign_path=asspath, context=context))
+                             assign_path=assign_path, context=context))
 
 
 def _infer_context_manager(self, mgr, context, nodes):
@@ -470,13 +470,13 @@ def _infer_context_manager(self, mgr, context, nodes):
 
 
 @assigned_stmts.register(treeabc.WithItem)
-def withitem_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
-    return assigned_stmts(self.parent, nodes=nodes, node=node, context=context, asspath=asspath)
+def withitem_assigned_stmts(self, nodes, node=None, context=None, assign_path=None):
+    return assigned_stmts(self.parent, nodes=nodes, node=node, context=context, assign_path=assign_path)
 
 
 @assigned_stmts.register(treeabc.With)
 @decorators.raise_if_nothing_inferred
-def with_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
+def with_assigned_stmts(self, nodes, node=None, context=None, assign_path=None):
     """Infer names and other nodes from a *with* statement.
 
     This enables only inference for name binding in a *with* statement.
@@ -498,22 +498,22 @@ def with_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
         self: nodes.With
         node: The target of the assignment, `as (a, b)` in `with foo as (a, b)`.
         context: TODO
-        asspath: TODO
+        assign_path: TODO
     """
     mgr = next(item.context_expr for item in self.items if
                item.optional_vars == node) 
-    if asspath is None:
+    if assign_path is None:
         for result in _infer_context_manager(self, mgr, context, nodes):
             yield result
     else:
         for result in _infer_context_manager(self, mgr, context, nodes):
-            # Walk the asspath and get the item at the final index.
+            # Walk the assign_path and get the item at the final index.
             obj = result
-            for index in asspath:
+            for index in assign_path:
                 if not hasattr(obj, 'elts'):
                     raise exceptions.InferenceError(
                         'Wrong type ({targets!r}) for {node!r} assignment',
-                        node=self, targets=node, assign_path=asspath,
+                        node=self, targets=node, assign_path=assign_path,
                         context=context)
 
                 try:
@@ -522,24 +522,24 @@ def with_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
                     util.reraise(exceptions.InferenceError(
                         'Tried to infer a nonexistent target with index {index} '
                         'in {node!r}.', node=self, targets=node,
-                        assign_path=asspath, context=context))
+                        assign_path=assign_path, context=context))
 
             yield obj
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
     raise StopIteration(dict(node=self, unknown=node,
-                             assign_path=asspath, context=context))
+                             assign_path=assign_path, context=context))
 
 
 @assigned_stmts.register(treeabc.Starred)
 @decorators.yes_if_nothing_inferred
-def starred_assigned_stmts(self, nodes, node=None, context=None, asspath=None):
+def starred_assigned_stmts(self, nodes, node=None, context=None, assign_path=None):
     """
     Arguments:
         self: nodes.Starred
         node: TODO
         context: TODO
-        asspath: TODO
+        assign_path: TODO
     """
     stmt = self.statement()
     if not isinstance(stmt, (treeabc.Assign, treeabc.For)):
