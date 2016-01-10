@@ -1284,7 +1284,7 @@ class With(base.BlockRangeMixIn, base.AssignTypeMixin,
 
 
 @util.register_implementation(treeabc.WithItem)
-class WithItem(base.NodeNG, base.ParentAssignTypeMixin, AssignedStmtsMixin):
+class WithItem(base.ParentAssignTypeMixin, AssignedStmtsMixin, base.NodeNG):
     _astroid_fields = ('context_expr', 'optional_vars')
     context_expr = None
     optional_vars = None
