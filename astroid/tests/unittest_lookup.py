@@ -55,13 +55,14 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         a = next(astroid.nodes_of_class(nodes.Name))
         self.assertEqual(a.lineno, 2)
         if sys.version_info < (3, 0):
-            self.assertEqual(len(astroid.lookup('b')[1]), 2)
-            self.assertEqual(len(astroid.lookup('a')[1]), 3)
+            self.assertEqual(len(astroid.lookup('b')[1]), 1)
+            self.assertEqual(len(astroid.lookup('a')[1]), 1)
             b = astroid._locals['b'][1]
         else:
             self.assertEqual(len(astroid.lookup('b')[1]), 1)
-            self.assertEqual(len(astroid.lookup('a')[1]), 2)
+            self.assertEqual(len(astroid.lookup('a')[1]), 1)
             b = astroid._locals['b'][0]
+
         stmts = a.lookup('a')[1]
         self.assertEqual(len(stmts), 1)
         self.assertEqual(b.lineno, 6)

@@ -1,6 +1,20 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+--
+
+    * Enforce strong updates per frames.
+
+      When looking up a name in a scope, Scope.lookup will return
+      only the values which will be reachable after execution, as seen
+      in the following code:
+      
+           a = 1
+           a = 2
+
+      In this case it doesn't make sense to return two values, but
+      only the last one.
+
 2015-12-24 -- 1.4.3
 
     * pkg_resources brain tips are a bit more specific,
