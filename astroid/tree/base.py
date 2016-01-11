@@ -603,8 +603,7 @@ class LookupMixIn(object):
 
             if self.statement() is myframe and myframe.parent:
                 myframe = myframe.parent.frame()
-        if not myframe is frame or self is frame:
-            return stmts
+
         mystmt = self.statement()
         # line filtering if we are in the same frame
         #

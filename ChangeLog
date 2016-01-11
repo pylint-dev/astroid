@@ -2,6 +2,7 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+
     * Dict nodes are constructed with two arguments, keys and values,
       in the same way that ast.Dict is built.
 
@@ -28,6 +29,18 @@ Change log for the astroid package (used to be astng)
     * Revert to using printf-style formatting in as_string, in order
       to avoid a potential problem with encodings when using .format.
       Closes issue #273. Patch by notsqrt.
+
+    * Enforce strong updates per frames.
+
+      When looking up a name in a scope, Scope.lookup will return
+      only the values which will be reachable after execution, as seen
+      in the following code:
+      
+           a = 1
+           a = 2
+
+      In this case it doesn't make sense to return two values, but
+      only the last one.
 
     * Add support for inference on threading.Lock
 
