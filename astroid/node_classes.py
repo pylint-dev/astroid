@@ -705,8 +705,6 @@ class LookupMixIn(object):
 
             if self.statement() is myframe and myframe.parent:
                 myframe = myframe.parent.frame()
-        if myframe is not frame or self is frame:
-            return stmts
         mystmt = self.statement()
         # line filtering if we are in the same frame
         #
@@ -728,7 +726,6 @@ class LookupMixIn(object):
             assert hasattr(node, 'assign_type'), (node, node.scope(),
                                                   node.scope().locals)
             assign_type = node.assign_type()
-
             if node.has_base(self):
                 break
 
