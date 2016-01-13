@@ -268,7 +268,7 @@ class Instance(BaseInstance):
         try:
             return next(method.infer_call_result(self, new_context))
         except StopIteration:
-            util.reraise(exceptions.InferenceError())
+            util.reraise(exceptions.InferenceError)
 
 
 @util.register_implementation(runtimeabc.UnboundMethod)
