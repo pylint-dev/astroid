@@ -39,7 +39,7 @@ MANAGER = manager.AstroidManager()
 
 @util.singledispatch
 def infer(self, context=None):
-    raise exceptions.InferenceError
+    raise exceptions.InferenceError('No inference implementation found for {node!r}', node=self, context=context)
 
 
 @infer.register(treeabc.Module)
