@@ -156,6 +156,15 @@ class deque(object):
 
 def pkg_resources_transform():
     return AstroidBuilder(MANAGER).string_build('''
+def require(*requirements):
+    return pkg_resources.working_set.require(*requirements)
+
+def run_script(requires, script_name):
+    return pkg_resources.working_set.run_script(requires, script_name)
+
+def iter_entry_points(group, name=None):
+    return pkg_resources.working_set.iter_entry_points(group, name)
+
 def resource_exists(package_or_requirement, resource_name):
     return get_provider(package_or_requirement).has_resource(resource_name)
 
