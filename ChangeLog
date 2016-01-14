@@ -30,6 +30,8 @@ Change log for the astroid package (used to be astng)
       to avoid a potential problem with encodings when using .format.
       Closes issue #273. Patch by notsqrt.
 
+    * Support accessing properties with super().
+
     * Enforce strong updates per frames.
 
       When looking up a name in a scope, Scope.lookup will return
