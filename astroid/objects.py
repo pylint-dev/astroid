@@ -173,6 +173,10 @@ class Super(node_classes.NodeNG):
                     yield inferred
                 elif self._class_based or inferred.type == 'staticmethod':
                     yield inferred
+                elif bases._is_property(inferred):
+                    # TODO: support other descriptors as well.
+                    for value in inferred.infer_call_result(self, context):
+                        yield value
                 else:
                     yield bases.BoundMethod(inferred, cls)
 

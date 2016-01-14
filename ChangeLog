@@ -2,6 +2,8 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * Support accessing properties with super().
+
     * Enforce strong updates per frames.
 
       When looking up a name in a scope, Scope.lookup will return
