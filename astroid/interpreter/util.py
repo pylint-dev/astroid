@@ -22,6 +22,7 @@ import types
 import six
 
 from astroid import context as contextmod
+from astroid import decorators
 from astroid import exceptions
 from astroid.interpreter import runtimeabc
 from astroid import manager
@@ -63,6 +64,7 @@ def infer_stmts(stmts, context, frame=None):
         raise exceptions.InferenceError(str(stmt))
 
 
+@decorators.raise_if_nothing_inferred
 def unpack_infer(stmt, context=None):
     """recursively generate nodes inferred by the given statement.
     If the inferred value is a list or a tuple, recurse on the elements
