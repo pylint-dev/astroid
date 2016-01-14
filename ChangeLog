@@ -2,6 +2,9 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * unpack_infer raises InferenceError if it can't operate
+      with the given sequences of nodes.
+
     * Support accessing properties with super().
 
     * Enforce strong updates per frames.
