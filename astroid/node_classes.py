@@ -43,6 +43,7 @@ BUILTINS = six.moves.builtins.__name__
 MANAGER = manager.AstroidManager()
 
 
+@decorators.raise_if_nothing_inferred
 def unpack_infer(stmt, context=None):
     """recursively generate nodes inferred by the given statement.
     If the inferred value is a list or a tuple, recurse on the elements
