@@ -31,7 +31,7 @@ import six
 from astroid import MANAGER
 from astroid.bases import (
     BUILTINS, NodeNG, Instance, _infer_stmts,
-    BoundMethod,
+    BoundMethod, _is_property
 )
 from astroid.decorators import cachedproperty
 from astroid.exceptions import (
@@ -172,6 +172,10 @@ class Super(NodeNG):
                     yield infered
                 elif self._class_based or infered.type == 'staticmethod':
                     yield infered
+                elif _is_property(infered):
+                    # TODO: support other descriptors as well.
+                    for value in infered.infer_call_result(self, context):
+                        yield value
                 else:
                     yield BoundMethod(infered, cls)
 

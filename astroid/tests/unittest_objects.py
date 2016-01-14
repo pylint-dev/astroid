@@ -507,6 +507,24 @@ class SuperTests(unittest.TestCase):
         self.assertEqual(inferred.display_type(), 'Super of')
         self.assertEqual(inferred.name, 'A')
 
+    def test_super_properties(self):
+        node = test_utils.extract_node('''
+        class Foo(object):
+            @property
+            def dict(self):
+                return 42
+
+        class Bar(Foo):
+            @property
+            def dict(self):
+                return super(Bar, self).dict
+
+        Bar().dict
+        ''')
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 42)
+
 
 if __name__ == '__main__':
     unittest.main()

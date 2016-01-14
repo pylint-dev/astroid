@@ -2,6 +2,7 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * Support accessing properties with super().
 
     * Enforce strong updates per frames.
 
