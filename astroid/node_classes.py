@@ -42,6 +42,7 @@ from astroid import util
 BUILTINS = six.moves.builtins.__name__
 MANAGER = manager.AstroidManager()
 
+
 @decorators.raise_if_nothing_inferred
 def unpack_infer(stmt, context=None):
     """recursively generate nodes inferred by the given statement.
