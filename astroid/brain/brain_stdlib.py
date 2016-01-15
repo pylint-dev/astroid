@@ -22,16 +22,15 @@ PY34 = sys.version_info >= (3, 4)
 
 def infer_first(node, context):
     if node is util.Uninferable:
-        util.reraise(InferenceError)
+        raise exceptions.InferenceError(
+            'Could not infer an Uninferable node.',
+            node=node, context=context)
 
-    try:
-        value = next(node.infer(context=context))
-        if value is util.Uninferable:
-            raise UseInferenceDefault()
-        else:
-            return value
-    except StopIteration:
-        util.reraise(InferenceError)
+    value = next(node.infer(context=context), None)
+    if value in (util.Uninferable, None):
+        raise UseInferenceDefault()
+    else:
+        return value
 
 
 # module specific transformation functions #####################################

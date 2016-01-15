@@ -263,12 +263,16 @@ class Instance(BaseInstance):
 
         method = next(self.igetattr('__getitem__', context=context))
         if not isinstance(method, BoundMethod):
-            raise exceptions.InferenceError
+            raise exceptions.InferenceError(
+                'Could not find __getitem__ for {node!r}.',
+                node=self, context=context)
 
         try:
             return next(method.infer_call_result(self, new_context))
         except StopIteration:
-            util.reraise(exceptions.InferenceError)
+            util.reraise(exceptions.InferenceError(
+                message='Inference for {node!r}[{index!s}] failed.',
+                node=self, index=index, context=context))
 
 
 @util.register_implementation(runtimeabc.UnboundMethod)
