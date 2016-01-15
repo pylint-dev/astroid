@@ -411,7 +411,7 @@ class AsStringVisitor(object):
 
     def visit_withitem(self, node):
         return ('(%s)' % node.context_expr.accept(self) + ' as (%s)' %
-                (optional_vars.accept(self)) if optional_vars else '')
+                (node.optional_vars.accept(self)) if node.optional_vars else '')
 
     def visit_yield(self, node):
         """yield an ast.Yield node as string"""

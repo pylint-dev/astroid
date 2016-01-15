@@ -829,7 +829,7 @@ class TreeRebuilder3(TreeRebuilder):
         return newnode
 
     def visit_asyncwith(self, node, parent):
-        return self.visit_with(nodes.AsyncWith, node, parent)
+        return self.visit_with(node, parent)
 
 
 if sys.version_info >= (3, 0):
