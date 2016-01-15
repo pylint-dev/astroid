@@ -792,8 +792,8 @@ class TreeRebuilder3(TreeRebuilder):
         elif node.handlers:
             return self.visit_tryexcept(node, parent)
 
-    def visit_with(self, node, parent):
-        newnode = nodes.With(node.lineno, node.col_offset, parent)
+    def visit_with(self, node, parent, constructor=nodes.With):
+        newnode = constructor(node.lineno, node.col_offset, parent)
         newnode.postinit([self.visit(item, newnode) for item in node.items],
                          [self.visit(child, newnode) for child in node.body])
         return newnode
@@ -829,7 +829,7 @@ class TreeRebuilder3(TreeRebuilder):
         return newnode
 
     def visit_asyncwith(self, node, parent):
-        return self.visit_with(node, parent)
+        return self.visit_with(node, parent, constructor=nodes.AsyncWith)
 
 
 if sys.version_info >= (3, 0):
