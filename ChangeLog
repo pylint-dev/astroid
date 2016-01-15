@@ -1,7 +1,8 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
---
+2016-01-15 -- 1.4.4
+
     * unpack_infer raises InferenceError if it can't operate
       with the given sequences of nodes.
 
