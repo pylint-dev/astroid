@@ -76,12 +76,14 @@ def unpack_infer(stmt, context=None):
                 continue
             for inferred_elt in unpack_infer(elt, context):
                 yield inferred_elt
-        return
+        # Explicit StopIteration to return error information, see comment
+        # in raise_if_nothing_inferred.
+        raise StopIteration(dict(node=stmt, context=context))
     # if inferred is a final node, return it and stop
     inferred = next(stmt.infer(context))
     if inferred is stmt:
         yield inferred
-        return
+        raise StopIteration(dict(node=stmt, context=context))
     # else, infer recursivly, except Uninferable object that should be returned as is
     for inferred in stmt.infer(context):
         if inferred is util.Uninferable:
@@ -89,7 +91,7 @@ def unpack_infer(stmt, context=None):
         else:
             for inf_inf in unpack_infer(inferred, context):
                 yield inf_inf
-
+    raise StopIteration(dict(node=stmt, context=context))
 
 def are_exclusive(stmt1, stmt2, exceptions=None):
     """return true if the two given statements are mutually exclusive
