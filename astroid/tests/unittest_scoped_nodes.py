@@ -1093,6 +1093,15 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         for klass in ast_nodes:
             self.assertEqual(None, klass.metaclass())
 
+    def test_no_infinite_metaclass_loop_with_self_meta(self):
+        klass = test_utils.extract_node("""
+            class SSS(object):  #@
+              pass
+
+            SSS.__metaclass__ = type(SSS)
+        """)
+        self.assertEqual(None, klass.metaclass())
+
     def test_metaclass_generator_hack(self):
         klass = test_utils.extract_node("""
             import six

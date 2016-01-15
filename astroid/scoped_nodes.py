@@ -1548,7 +1548,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             return builtin_lookup('type')[1][0]
 
     _metaclass = None
-    def declared_metaclass(self):
+    def declared_metaclass(self, context=None):
         """Return the explicit declared metaclass for the current class.
 
         An explicit declared metaclass is defined
@@ -1591,35 +1591,35 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             return None
 
         try:
-            inferred = next(assignment.infer())
+            inferred = next(assignment.infer(context=context))
         except exceptions.InferenceError:
             return
         if inferred is util.Uninferable: # don't expose this
             return None
         return inferred
 
-    def _find_metaclass(self, seen=None):
+    def _find_metaclass(self, seen=None, context=None):
         if seen is None:
             seen = set()
         seen.add(self)
 
-        klass = self.declared_metaclass()
+        klass = self.declared_metaclass(context=context)
         if klass is None:
             for parent in self.ancestors():
                 if parent not in seen:
-                    klass = parent._find_metaclass(seen)
+                    klass = parent._find_metaclass(seen, context=context)
                     if klass is not None:
                         break
         return klass
 
-    def metaclass(self):
+    def metaclass(self, context=None):
         """Return the metaclass of this class.
 
         If this class does not define explicitly a metaclass,
         then the first defined metaclass in ancestors will be used
         instead.
         """
-        return self._find_metaclass()
+        return self._find_metaclass(context=context)
 
     def has_metaclass_hack(self):
         return self._metaclass_hack
