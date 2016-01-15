@@ -18,6 +18,7 @@
 import unittest
 
 from astroid import builder
+from astroid import InferenceError
 from astroid import nodes
 from astroid import node_classes
 from astroid import test_utils
@@ -110,7 +111,14 @@ class InferenceUtil(unittest.TestCase):
         self.assertTrue(all(elt is astroid_util.Uninferable
                             for elt in unpacked))
 
+    def test_unpack_infer_empty_tuple(self):
+        node = test_utils.extract_node('''
+        ()
+        ''')
+        inferred = next(node.infer())
+        with self.assertRaises(InferenceError) as cm:
+          unpacked = list(node_classes.unpack_infer(inferred))
+
 
 if __name__ == '__main__':
     unittest.main()
-
