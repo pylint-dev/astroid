@@ -35,7 +35,7 @@ from astroid import util
 BUILTINS = six.moves.builtins.__name__
 
 
-@decorators.raise_if_nothing_inferred
+@bases.raise_if_nothing_inferred
 def unpack_infer(stmt, context=None):
     """recursively generate nodes inferred by the given statement.
     If the inferred value is a list or a tuple, recurse on the elements
