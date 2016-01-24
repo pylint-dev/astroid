@@ -231,10 +231,7 @@ class NodeNG(object):
 
     @decorators.cachedproperty
     def fromlineno(self):
-        if self.lineno is None:
-            return self._fixed_source_line()
-        else:
-            return self.lineno
+        return self.lineno
 
     @decorators.cachedproperty
     def tolineno(self):
@@ -247,29 +244,6 @@ class NodeNG(object):
             return self.fromlineno
         else:
             return lastchild.tolineno
-
-        # TODO / FIXME:
-        assert self.fromlineno is not None, self
-        assert self.tolineno is not None, self
-
-    def _fixed_source_line(self):
-        """return the line number where the given node appears
-
-        we need this method since not all nodes have the lineno attribute
-        correctly set...
-        """
-        line = self.lineno
-        _node = self
-        try:
-            while line is None:
-                _node = next(_node.get_children())
-                line = _node.lineno
-        except StopIteration:
-            _node = self.parent
-            while _node and line is None:
-                line = _node.lineno
-                _node = _node.parent
-        return line
 
     def block_range(self, lineno):
         """handle block line numbers range for non block opening statements
@@ -592,7 +566,6 @@ class LookupMixIn(object):
         # take care node may be missing lineno information (this is the case for
         # nodes inserted for living objects)
         if myframe is frame and mystmt.fromlineno is not None:
-            assert mystmt.fromlineno is not None, mystmt
             mylineno = mystmt.fromlineno + offset
         else:
             # disabling lineno filtering
@@ -602,7 +575,7 @@ class LookupMixIn(object):
         for node in stmts:
             stmt = node.statement()
             # line filtering is on and we have reached our location, break
-            if mylineno > 0 and stmt.fromlineno > mylineno:
+            if mylineno > 0 and stmt.fromlineno and stmt.fromlineno > mylineno:
                 break
             assert hasattr(node, 'assign_type'), (node, node.scope(),
                                                   node.scope().locals)

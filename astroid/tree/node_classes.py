@@ -185,8 +185,11 @@ class Arguments(base.AssignTypeMixin, AssignedStmtsMixin, base.NodeNG):
 
     @decorators.cachedproperty
     def fromlineno(self):
-        lineno = super(Arguments, self).fromlineno
-        return max(lineno, self.parent.fromlineno or 0)
+        # Let the Function's lineno be the lineno for this.
+        if self.parent.fromlineno:
+            return self.parent.fromlineno
+
+        return super(Arguments, self).fromlineno
 
     def format_args(self):
         """return arguments formatted as string"""

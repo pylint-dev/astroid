@@ -291,7 +291,7 @@ def locals_import_from(node, locals_):
     # Sort the list for having the locals ordered by their first
     # appearance.
     def sort_locals(my_list):
-        my_list.sort(key=lambda node: node.fromlineno)
+        my_list.sort(key=lambda node: node.fromlineno or 0)
 
     for name, asname in node.names:
         if name == '*':
