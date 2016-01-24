@@ -3,6 +3,9 @@ Change log for the astroid package (used to be astng)
 
 --
 
+    * NodeNG.nearest was removed. It's not an API that we were using
+      and it was buggy.
+
     * Dict nodes are constructed with two arguments, keys and values,
       in the same way that ast.Dict is built.
 
