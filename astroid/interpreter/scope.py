@@ -50,6 +50,7 @@ def _scope_by_argument_parent(parent, node):
         look_for = itertools.chain(
             (args.kwargannotation, ),
             (args.varargannotation, ),
+            args.kwonly_annotations,
             args.annotations)
         if node in look_for:
             return args.parent.parent.scope()
