@@ -30,7 +30,8 @@ BUILTINS = six.moves.builtins.__name__
 
 def find(name):
     return pkg_resources.resource_filename(
-        'astroid.tests', os.path.normpath(os.path.join(DATA_DIR, name)))
+        pkg_resources.Requirement.parse('astroid'),
+        os.path.normpath(os.path.join(DATA_DIR, name)))
 
 
 def build_file(path, modname=None):
