@@ -1,7 +1,6 @@
+graft testdata
 include ChangeLog
 include README.rst
 include COPYING
 include COPYING.LESSER
 include tox.ini
-recursive-include testdata *.py *.zip *.egg
-
