@@ -41,19 +41,22 @@ def _scope_by_parent(parent, node):
     # in order to decouple the implementation for the normal cases.
 
 
+def _node_arguments(node):
+    for arg in itertools.chain(node.positional_and_keyword, node.keyword_only,
+                               (node.vararg, ), (node.kwarg, )):
+        if arg and arg.annotation:
+            yield arg
+
+
 @_scope_by_parent.register(treeabc.Arguments)
 def _scope_by_argument_parent(parent, node):
     args = parent
-    if node in itertools.chain(args.defaults, args.kw_defaults):
-        return args.parent.parent.scope()
-    if six.PY3:
-        look_for = itertools.chain(
-            (args.kwargannotation, ),
-            (args.varargannotation, ),
-            args.kwonly_annotations,
-            args.annotations)
-        if node in look_for:
+    for param in itertools.chain(args.positional_and_keyword, args.keyword_only):
+        if param.default == node:
             return args.parent.parent.scope()
+
+    if six.PY3 and node in _node_arguments(args):
+        return args.parent.parent.scope()
 
 
 @_scope_by_parent.register(treeabc.FunctionDef)

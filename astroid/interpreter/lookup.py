@@ -238,6 +238,7 @@ def locals_new_scope(node, locals_):
 @_get_locals.register(treeabc.DelName)
 @_get_locals.register(treeabc.FunctionDef)
 @_get_locals.register(treeabc.ClassDef)
+@_get_locals.register(treeabc.Parameter)
 def locals_name(node, locals_):
     '''These nodes add a name to the local variables.  AssignName and
     DelName have no children while FunctionDef and ClassDef start a

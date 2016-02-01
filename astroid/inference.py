@@ -698,6 +698,7 @@ def infer_arguments(self, context=None, nodes=None):
 
 @infer.register(treeabc.AssignName)
 @infer.register(treeabc.AssignAttr)
+@infer.register(treeabc.Parameter)
 @decorators.path_wrapper
 def infer_assign(self, context=None):
     """infer a AssignName/AssignAttr: need to inspect the RHS part of the

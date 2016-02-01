@@ -2,6 +2,25 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * Changed the way how parameters are being built
+
+      The old way consisted in having the parameter names, their
+      defaults and their annotations separated in different components
+      of the Arguments node. We introduced a new Param node, which holds
+      the name of a parameter, its default value and its annotation.
+      If any of the last two values are missing, then that slot will be
+      filled with a new node kind, Empty, which is used for specifying the
+      lack of something (None could have been used instead, but that means having
+      non-AST nodes in the Arguments node).
+      We're also having support for positional only arguments, for the moment
+      only in raw_building.
+     
+    * We don't support nested arguments in functions in Python 2
+      anymore.
+
+      This was dropped in order to simplify the implementation.
+      When they are encountered, we'll unflatten them into a list
+      of parameters, as if they were not nested from the beginning.      
 
     * NodeNG.nearest was removed. It's not an API that we were using
       and it was buggy.

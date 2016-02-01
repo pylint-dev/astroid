@@ -633,7 +633,7 @@ class LookupMixIn(object):
                 if not (optional_assign or interpreterutil.are_exclusive(_stmts[pindex], node)):
                     del _stmt_parents[pindex]
                     del _stmts[pindex]
-            if isinstance(node, treeabc.AssignName):
+            if isinstance(node, (treeabc.Parameter, treeabc.AssignName)):
                 if not optional_assign and stmt.parent is mystmt.parent:
                     _stmts = []
                     _stmt_parents = []

@@ -20,6 +20,7 @@ order to get a single Astroid representation
 """
 
 import ast
+import collections
 import sys
 
 import astroid
@@ -113,6 +114,53 @@ def _get_context(node):
     return CONTEXTS.get(type(node.ctx), astroid.Load)
 
 
+class ParameterVisitor(object):
+    """A visitor which is used for building the components of Arguments node."""
+
+    def __init__(self, visitor):
+        self._visitor = visitor
+
+    def visit(self, param_node, *args):
+        cls_name = param_node.__class__.__name__
+        visit_name = 'visit_' + REDIRECT.get(cls_name, cls_name).lower()
+        visit_method = getattr(self, visit_name)
+        return visit_method(param_node, *args) 
+
+    def visit_arg(self, param_node, *args):
+        name = param_node.arg
+        return self._build_parameter(param_node, name, *args)
+
+    def visit_name(self, param_node, *args):
+        name = param_node.id
+        return self._build_parameter(param_node, name, *args)
+
+    def visit_tuple(self, param_node, parent, default):
+        # We're not supporting nested arguments anymore, but in order to
+        # simply not crash when running on Python 2, we're unpacking the elements
+        # before hand. We simply don't want to support this feature anymore,
+        # so it's possible to be broken.
+        converted_node = self._visitor.visit(param_node, parent)
+        for element in converted_node.elts:
+            param = nodes.Parameter(name=element.name, lineno=param_node.lineno,
+                                    col_offset=param_node.col_offset,
+                                    parent=parent)
+            param.postinit(default=default, annotation=nodes.Empty)
+            yield param
+
+    def _build_parameter(self, param_node, name, parent, default):
+        param = nodes.Parameter(name=name, lineno=getattr(param_node, 'lineno', None),
+                                col_offset=getattr(param_node, 'col_offset', None),
+                                parent=parent)
+        annotation = nodes.Empty
+        param_annotation = getattr(param_node, 'annotation', None)
+        if param_annotation:
+            annotation = self._visitor.visit(param_annotation, param)
+
+        param.postinit(default=default, annotation=annotation)
+        yield param
+
+
+
 class TreeRebuilder(object):
     """Rebuilds the ast tree to become an Astroid tree"""
 
@@ -141,57 +189,64 @@ class TreeRebuilder(object):
 
     def visit_arguments(self, node, parent):
         """visit a Arguments node by returning a fresh instance of it"""
-        vararg, kwarg = node.vararg, node.kwarg
-        if PY34:
-            newnode = nodes.Arguments(vararg.arg if vararg else None,
-                                      kwarg.arg if kwarg else None,
-                                      parent)
-        else:
-            newnode = nodes.Arguments(vararg, kwarg, parent)
-        args = [self.visit(child, newnode) for child in node.args]
-        defaults = [self.visit(child, newnode)
-                    for child in node.defaults]
-        varargannotation = None
-        kwargannotation = None
-        # change added in 82732 (7c5c678e4164), vararg and kwarg
-        # are instances of `ast.arg`, not strings
-        if vararg:
-            if PY34:
-                if node.vararg.annotation:
-                    varargannotation = self.visit(node.vararg.annotation,
-                                                  newnode)
-                vararg = vararg.arg
-            elif PY3 and node.varargannotation:
-                varargannotation = self.visit(node.varargannotation,
-                                              newnode)
-        if kwarg:
-            if PY34:
-                if node.kwarg.annotation:
-                    kwargannotation = self.visit(node.kwarg.annotation,
-                                                 newnode)
-                kwarg = kwarg.arg
-            elif PY3:
-                if node.kwargannotation:
-                    kwargannotation = self.visit(node.kwargannotation,
-                                                 newnode)
-        if PY3:
-            kwonlyargs = [self.visit(child, newnode) for child
-                          in node.kwonlyargs]
-            kw_defaults = [self.visit(child, newnode) if child else
-                           None for child in node.kw_defaults]
-            annotations = [self.visit(arg.annotation, newnode) if
-                           arg.annotation else None for arg in node.args]
-            kwonly_annotations = [self.visit(arg.annotation, newnode)
-                                  if arg.annotation else None
-                                  for arg in node.kwonlyargs]
-        else:
-            kwonlyargs = []
-            kw_defaults = []
-            annotations = []
-            kwonly_annotations = []
-        newnode.postinit(args, defaults, kwonlyargs, kw_defaults,
-                         annotations, kwonly_annotations,
-                         varargannotation, kwargannotation)
+        def _build_variadic(field_name):
+            param = nodes.Empty
+            variadic = getattr(node, field_name)
+
+            if variadic:
+                # Various places to get the name from.
+                try:
+                    param_name = variadic.id
+                except AttributeError:
+                    try:
+                        param_name = variadic.arg
+                    except AttributeError:
+                        param_name = variadic
+
+                param = nodes.Parameter(name=param_name,
+                                        lineno=newnode.lineno,
+                                        col_offset=newnode.col_offset,
+                                        parent=newnode)
+                # Get the annotation of the variadic node.
+                annotation = nodes.Empty
+                default = nodes.Empty
+                variadic_annotation = getattr(variadic, 'annotation', None)
+                if variadic_annotation is None:
+                    # Support for Python 3.3.
+                    variadic_annotation = getattr(node, field_name + 'annotation', None)
+                if variadic_annotation:
+                    annotation = self.visit(variadic_annotation, param)
+
+                param.postinit(default=default, annotation=annotation)
+            return param
+
+        def _build_args(params, defaults):
+            # Pad the list of defaults so that each arguments gets a default.
+            defaults = collections.deque(defaults)
+            while len(defaults) != len(params):
+                defaults.appendleft(nodes.Empty)
+
+            param_visitor = ParameterVisitor(self)
+            for parameter in params:
+                default = defaults.popleft()
+                if default:
+                    default = self.visit(default, newnode)
+
+                for param in param_visitor.visit(parameter, newnode, default):
+                    yield param
+
+        newnode = nodes.Arguments(parent=parent)
+        # Build the arguments list.
+        positional_args = list(_build_args(node.args, node.defaults))
+        kwonlyargs = list(_build_args(getattr(node, 'kwonlyargs', ()),
+                                              getattr(node, 'kw_defaults', ())))
+        # Build vararg and kwarg.
+        vararg = _build_variadic('vararg')
+        kwarg = _build_variadic('kwarg')
+        # Prepare the arguments new node.
+        newnode.postinit(args=positional_args, vararg=vararg, kwarg=kwarg,
+                         keyword_only=kwonlyargs,
+                         positional_only=[])
         return newnode
 
     def visit_assert(self, node, parent):
@@ -728,11 +783,6 @@ class TreeRebuilder(object):
 
 class TreeRebuilder3(TreeRebuilder):
     """extend and overwrite TreeRebuilder for python3k"""
-
-    def visit_arg(self, node, parent):
-        """visit a arg node by returning a fresh AssName instance"""
-        # TODO(cpopa): introduce an Arg node instead of using AssignName.
-        return self.visit_assignname(node, parent, node.arg)
 
     def visit_nameconstant(self, node, parent):
         # in Python 3.4 we have NameConstant for True / False / None
