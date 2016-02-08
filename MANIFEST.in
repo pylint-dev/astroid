@@ -1,4 +1,4 @@
-graft testdata
+graft astroid
 include ChangeLog
 include README.rst
 include COPYING
