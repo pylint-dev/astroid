@@ -26,7 +26,7 @@ before_install:
   - uname -a
   - lsb_release -a
 before_script:
-  - ls -a ~ | echo
+  - find ~ -name '*.*' | cat
 install:
   - $PYTHON_EXE -m pip install pip -U
   - python -m pip install tox
