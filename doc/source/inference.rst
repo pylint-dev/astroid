@@ -81,7 +81,7 @@ of the :mod:`inference`.
 
 .. todo:: actually annotate the doc to structure its approach
 
-.. automodule:: inference
+.. automodule:: astroid.inference
    :members:
    :undoc-members:
 .. :special-members: in autodoc/sphinx 1.1
