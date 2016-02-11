@@ -65,9 +65,7 @@ def install():
                  install_requires = install_requires,
                  packages = find_packages(),
                  cmdclass={'install_lib': AstroidInstallLib,
-                           'easy_install': AstroidEasyInstallLib},
-                 data_files=[(p, [os.path.join(p, n) for n in ns]) for p, _, ns in os.walk('testdata/')]
-                 # [('testdata', [os.path.join(p, n) for p, _, ns in os.walk('testdata/') for n in ns])]
+                           'easy_install': AstroidEasyInstallLib}
                  )
 
 
