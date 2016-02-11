@@ -25,7 +25,7 @@ from astroid import builder
 from astroid import MANAGER
 
 
-DATA_DIR = 'astroid/testdata/python{}/'.format(sys.version_info[0])
+DATA_DIR = 'testdata/python{}/'.format(sys.version_info[0])
 BUILTINS = six.moves.builtins.__name__
 
 def find(name):
