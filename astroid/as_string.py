@@ -193,8 +193,8 @@ class AsStringVisitor(object):
     def visit_excepthandler(self, node):
         if node.type:
             if node.name:
-                excs = 'except %s, %s' % (node.type.accept(self),
-                                          node.name.accept(self))
+                excs = 'except %s as %s' % (node.type.accept(self),
+                                            node.name.accept(self))
             else:
                 excs = 'except %s' % node.type.accept(self)
         else:
@@ -441,17 +441,6 @@ class AsStringVisitor(object):
 
 class AsStringVisitor3(AsStringVisitor):
     """AsStringVisitor3 overwrites some AsStringVisitor methods"""
-
-    def visit_excepthandler(self, node):
-        if node.type:
-            if node.name:
-                excs = 'except %s as %s' % (node.type.accept(self),
-                                            node.name.accept(self))
-            else:
-                excs = 'except %s' % node.type.accept(self)
-        else:
-            excs = 'except'
-        return '%s:\n%s' % (excs, self._stmt_list(node.body))
 
     def visit_nonlocal(self, node):
         """return an astroid.Nonlocal node as string"""

@@ -106,6 +106,7 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         with open(resources.find('data/module.py'), 'r') as fobj:
             self.assertMultiLineEqual(module.as_string(), fobj.read())
 
+    maxDiff = None
     def test_module2_as_string(self):
         """check as_string on a whole module prepared to be returned identically
         """

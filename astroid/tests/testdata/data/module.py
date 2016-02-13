@@ -29,7 +29,7 @@ class YO:
     def __init__(self):
         try:
             self.yo = 1
-        except ValueError, ex:
+        except ValueError as ex:
             pass
         except (NameError, TypeError):
             raise XXXError()
@@ -66,7 +66,7 @@ class YOUPI(YO):
     
     def class_method(cls):
         """class method test"""
-        exec a in b
+        pass
     class_method = classmethod(class_method)
 
 
@@ -83,6 +83,6 @@ def four_args(a, b, c, d):
         d = ((a) and (b)) or (c)
     else:
         c = ((a) and (b)) or (d)
-    map(lambda x, y: (y, x), a)
+    list(map(lambda x, y: (y, x), a))
 redirect = four_args
 

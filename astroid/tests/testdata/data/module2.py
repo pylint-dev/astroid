@@ -1,3 +1,4 @@
+from __future__ import print_function
 from data.module import YO, YOUPI
 import data
 
@@ -70,16 +71,14 @@ class Concrete23(Concrete1):
 del YO.member
 del YO
 [SYN1, SYN2] = (Concrete0, Concrete1)
-assert '1'
+assert repr(1)
 b = (1) | (((2) & (3)) ^ (8))
 bb = ((1) | (two)) | (6)
 ccc = ((one) & (two)) & (three)
 dddd = ((x) ^ (o)) ^ (r)
-exec 'c = 3'
-exec 'c = 3' in {}, {}
 
 def raise_string(a=2, *args, **kwargs):
-    raise Exception, 'yo'
+    raise Exception('yo')
     yield 'coucou'
     yield
 a = (b) + (2)
@@ -97,8 +96,8 @@ d = [c]
 e = d[:]
 e = d[a:b:c]
 raise_string(*args, **kwargs)
-print >> stream, 'bonjour'
-print >> stream, 'salut',
+print('bonjour', file=stream)
+print('salut', end=' ', file=stream)
 
 def make_class(any, base=data.module.YO, *args, **kwargs):
     """check base is correctly resolved to Concrete0"""

@@ -244,6 +244,7 @@ class GetModuleFilesTest(unittest.TestCase):
     def test_get_module_files_1(self):
         package = resources.find('data/find_test')
         modules = set(modutils.get_module_files(package, []))
+
         expected = ['__init__.py', 'module.py', 'module2.py',
                     'noendingnewline.py', 'nonregr.py']
         self.assertEqual(modules,
@@ -254,6 +255,7 @@ class GetModuleFilesTest(unittest.TestCase):
         """
         non_package = resources.find('data/notamodule')
         modules = modutils.get_module_files(non_package, [], list_all=True)
+
         self.assertEqual(
             modules,
             [os.path.join(non_package, 'file.py')],

@@ -110,9 +110,23 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         self.assertRaises(InferenceError, self.nonregr.igetattr, 'YOAA')
 
     def test_wildcard_import_names(self):
-        m = resources.build_file('data/all.py', 'all')
+        m = builder.parse('''
+        name = 'a'
+        _bla = 2
+        other = 'o'
+        class Aaa: pass
+        def func(): print('yo')
+        __all__ = 'Aaa', '_bla', 'name'
+        ''')
         self.assertEqual(m.wildcard_import_names(), ['Aaa', '_bla', 'name'])
-        m = resources.build_file('data/notall.py', 'notall')
+        m = builder.parse('''
+        name = 'a'
+        _bla = 2
+        other = 'o'
+        class Aaa: pass
+
+        def func(): return 'yo'
+        ''')
         res = sorted(m.wildcard_import_names())
         self.assertEqual(res, ['Aaa', 'func', 'name', 'other'])
 
@@ -214,14 +228,14 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
                 self.assertEqual(stream.read().decode(), data)
 
     def test_file_stream_physical(self):
-        path = resources.find('data/all.py')
+        path = resources.find('data/absimport.py')
         astroid = builder.AstroidBuilder().file_build(path, 'all')
         with open(path, 'rb') as file_io:
             with astroid.stream() as stream:
                 self.assertEqual(stream.read(), file_io.read())
 
     def test_stream_api(self):
-        path = resources.find('data/all.py')
+        path = resources.find('data/absimport.py')
         astroid = builder.AstroidBuilder().file_build(path, 'all')
         stream = astroid.stream()
         self.assertTrue(hasattr(stream, 'close'))

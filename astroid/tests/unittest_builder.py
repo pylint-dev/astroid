@@ -39,7 +39,41 @@ BUILTINS = six.moves.builtins.__name__
 class FromToLineNoTest(unittest.TestCase):
 
     def setUp(self):
-        self.astroid = resources.build_file('data/format.py')
+        self.astroid = builder.parse('''
+        """A multiline string
+        """
+
+        function('aeozrijz\
+        earzer', hop)
+        # XXX write test
+        x = [i for i in range(5)
+             if i % 4]
+
+        fonction(1,
+                 2,
+                 3,
+                 4)
+
+        def definition(a,
+                       b,
+                       c):
+            return a + b + c
+
+        class debile(dict,
+                     object):
+            pass
+
+        if aaaa: pass
+        else:
+            aaaa,bbbb = 1,2
+            aaaa,bbbb = bbbb,aaaa
+        # XXX write test
+        hop = \
+            aaaa
+
+
+        __revision__.lower();
+        ''')
 
     def test_callfunc_lineno(self):
         stmts = self.astroid.body
@@ -48,16 +82,16 @@ class FromToLineNoTest(unittest.TestCase):
         #    earzer', hop)
         discard = stmts[0]
         self.assertIsInstance(discard, nodes.Expr)
-        self.assertEqual(discard.fromlineno, 4)
+        self.assertEqual(discard.fromlineno, 5)
         self.assertEqual(discard.tolineno, 5)
         callfunc = discard.value
         self.assertIsInstance(callfunc, nodes.Call)
-        self.assertEqual(callfunc.fromlineno, 4)
+        self.assertEqual(callfunc.fromlineno, 5)
         self.assertEqual(callfunc.tolineno, 5)
         name = callfunc.func
         self.assertIsInstance(name, nodes.Name)
-        self.assertEqual(name.fromlineno, 4)
-        self.assertEqual(name.tolineno, 4)
+        self.assertEqual(name.fromlineno, 5)
+        self.assertEqual(name.tolineno, 5)
         strarg = callfunc.args[0]
         self.assertIsInstance(strarg, nodes.Const)
         if hasattr(sys, 'pypy_version_info'):
@@ -262,10 +296,6 @@ class BuilderTest(unittest.TestCase):
     def test_data_build_invalid_x_escape(self):
         with self.assertRaises(exceptions.AstroidSyntaxError):
             self.builder.string_build('"\\x1"')
-
-    def test_missing_newline(self):
-        """check that a file with no trailing new line is parseable"""
-        resources.build_file('data/noendingnewline.py')
 
     def test_missing_file(self):
         with self.assertRaises(exceptions.AstroidBuildingError):
@@ -711,7 +741,8 @@ class FileBuildTest(unittest.TestCase):
 
     def test_unknown_encoding(self):
         with self.assertRaises(exceptions.AstroidSyntaxError):
-            resources.build_file('data/invalid_encoding.py')
+            with resources.tempfile_with_content(b'# -*- coding: lala -*-') as tmp:
+                builder.AstroidBuilder().file_build(tmp)
 
 
 class ModuleBuildTest(resources.SysPathSetup, FileBuildTest):
