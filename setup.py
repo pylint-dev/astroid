@@ -64,8 +64,8 @@ def install():
                  include_package_data = True,
                  install_requires = install_requires,
                  packages = find_packages(),
-                 cmdclass={'install_lib': AstroidInstallLib,
-                           'easy_install': AstroidEasyInstallLib}
+                 cmdclass = {'install_lib': AstroidInstallLib,
+                             'easy_install': AstroidEasyInstallLib}
                  )
 
 

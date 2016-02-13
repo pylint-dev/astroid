@@ -4,4 +4,3 @@ include COPYING
 include COPYING.LESSER
 include tox.ini
 recursive-include astroid/tests/testdata *.py *.zip *.egg
-recursive-include astroid/brain *.py
