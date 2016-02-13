@@ -40,6 +40,7 @@ from astroid import exceptions
 from astroid import decorators as decorators_mod
 from astroid.interpreter import lookup
 from astroid.interpreter import objects
+from astroid.interpreter import objectmodel
 from astroid.interpreter import runtimeabc
 from astroid.interpreter.util import infer_stmts
 from astroid import manager
@@ -114,21 +115,6 @@ def function_to_method(n, klass):
     return n
 
 
-def std_special_attributes(self, name, add_locals=True):
-    if add_locals:
-        locals = self.locals
-    else:
-        locals = {}
-    if name == '__name__':
-        return [node_classes.Const(self.name)] + locals.get(name, [])
-    if name == '__doc__':
-        return [node_classes.Const(self.doc)] + locals.get(name, [])
-    if name == '__dict__':
-        return [node_classes.Dict()] + locals.get(name, [])
-    # TODO: missing context
-    raise exceptions.AttributeInferenceError(target=self, attribute=name)
-
-
 class QualifiedNameMixin(object):
 
     def qname(node):
@@ -162,22 +148,7 @@ class Module(QualifiedNameMixin, lookup.LocalsDictNode):
     # boolean for package module
     package = None
 
-    special_attributes = frozenset(
-        # These attributes are listed in the data model documentation.
-        # https://docs.python.org/3/reference/datamodel.html#the-standard-type-hierarchy
-        ('__name__', '__doc__', '__file__', '__dict__',
-         # __path__ is a standard attribute on *packages* not
-         # non-package modules.  The only mention of it in the
-         # official 2.7 documentation I can find is in the
-         # tutorial.  __package__ isn't mentioned anywhere outside a PEP:
-         # https://www.python.org/dev/peps/pep-0366/
-         '__path__', '__package__',
-         # The builtins package is a member of every module's namespace.
-         six.moves.builtins.__name__,
-         # These are related to the Python 3 implementation of the
-         # import system,
-         # https://docs.python.org/3/reference/import.html#import-related-module-attributes
-         '__loader__', '__spec__', '__cached__'))
+    special_attributes = objectmodel.ModuleModel()
 
     # names of module attributes available through the global scope
     scope_attrs = frozenset(('__name__', '__doc__', '__file__', '__path__'))
@@ -270,12 +241,7 @@ class Module(QualifiedNameMixin, lookup.LocalsDictNode):
     def getattr(self, name, context=None, ignore_locals=False):
         result = []
         if name in self.special_attributes:
-            if name == '__file__':
-                result = ([node_classes.Const(self.source_file)] + self.locals.get(name, []))
-            elif name == '__path__' and self.package:
-                result = [node_classes.List()] + self.locals.get(name, [])
-            else:
-                result = std_special_attributes(self, name)
+            result = [self.special_attributes.lookup(name)]
         elif not ignore_locals and name in self.locals:
             result = self.locals[name]
         # TODO: should ignore_locals also affect external_attrs?
@@ -857,10 +823,7 @@ class FunctionDef(LambdaFunctionMixin, lookup.LocalsDictNode,
         _astroid_fields = ('decorators', 'args', 'body')
     decorators = None
 
-    special_attributes = frozenset(
-        ('__doc__', '__name__', '__qualname__', '__module__', '__defaults__',
-         '__code__', '__globals__', '__dict__', '__closure__', '__annotations__',
-         '__kwdefaults__'))
+    special_attributes = objectmodel.FunctionModel()
     is_function = True
     # attributes below are set by the builder module or by raw factories
     _other_fields = ('name', 'doc')
@@ -1016,11 +979,11 @@ class FunctionDef(LambdaFunctionMixin, lookup.LocalsDictNode,
         """this method doesn't look in the instance_attrs dictionary since it's
         done by an Instance proxy at inference time.
         """
-        if name == '__module__':
-            return [node_classes.Const(self.root().qname())]
         if name in self.instance_attrs:
             return self.instance_attrs[name]
-        return std_special_attributes(self, name, False)
+        if name in self.special_attributes:
+            return [self.special_attributes.lookup(name)]
+        raise exceptions.AttributeInferenceError(target=self, attribute=name)
 
     def igetattr(self, name, context=None):
         """Inferred getattr, which returns an iterator of inferred statements."""
@@ -1240,9 +1203,7 @@ class ClassDef(QualifiedNameMixin, base.FilterStmtsMixin,
     _astroid_fields = ('decorators', 'bases', 'body')
 
     decorators = None
-    special_attributes = frozenset(
-        ('__name__', '__module__', '__dict__', '__bases__', '__doc__',
-         '__qualname__', '__mro__', '__subclasses__', '__class__'))
+    special_attributes = objectmodel.ClassModel()
 
     _type = None
     _metaclass_hack = False
@@ -1551,20 +1512,14 @@ class ClassDef(QualifiedNameMixin, base.FilterStmtsMixin,
 
         """
         values = self.locals.get(name, []) + self.external_attrs.get(name, [])
-        if name in self.special_attributes:
-            if name == '__module__':
-                return [node_classes.Const(self.root().qname())] + values
+        if name in self.special_attributes and class_context:
+            result = [self.special_attributes.lookup(name)]            
             if name == '__bases__':
-                node = node_classes.Tuple()
-                elts = list(self._inferred_bases(context))
-                node.postinit(elts=elts)
-                return [node] + values
-            if name == '__mro__' and self.newstyle:
-                mro = self.mro()
-                node = node_classes.Tuple()
-                node.postinit(elts=mro)
-                return [node]
-            return std_special_attributes(self, name)
+                # Need special treatment, since they are mutable
+                # and we need to return all the values.
+                result += values
+            return result
+
         # don't modify the list in self.locals!
         values = list(values)
         for classnode in self.ancestors(recurs=True, context=context):
@@ -1619,7 +1574,7 @@ class ClassDef(QualifiedNameMixin, base.FilterStmtsMixin,
             else:
                 yield objects.BoundMethod(attr, self)
 
-    def igetattr(self, name, context=None):
+    def igetattr(self, name, context=None, class_context=True):
         """inferred getattr, need special treatment in class to handle
         descriptors
         """
@@ -1628,7 +1583,7 @@ class ClassDef(QualifiedNameMixin, base.FilterStmtsMixin,
         context = contextmod.copy_context(context)
         context.lookupname = name
         try:
-            for inferred in infer_stmts(self.getattr(name, context),
+            for inferred in infer_stmts(self.getattr(name, context, class_context=class_context),
                                         context, frame=self):
                 # yield Uninferable object instead of descriptors when necessary
                 if (not isinstance(inferred, node_classes.Const)

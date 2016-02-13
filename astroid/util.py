@@ -49,6 +49,13 @@ def singledispatch(func):
     return new_generic_func
 
 
+def lazy_descriptor(obj):
+    class DescriptorProxy(lazy_object_proxy.Proxy):
+        def __get__(self, instance, owner=None):
+            return self.__class__.__get__(self, instance)
+    return DescriptorProxy(obj)
+
+
 def lazy_import(module_name):
     return lazy_object_proxy.Proxy(
         lambda: importlib.import_module('.' + module_name, 'astroid'))

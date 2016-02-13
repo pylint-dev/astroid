@@ -39,6 +39,7 @@ from astroid.tree import treeabc
 from astroid import util
 
 manager = util.lazy_import('manager')
+objectmodel = util.lazy_import('interpreter.objectmodel')
 MANAGER = manager.AstroidManager()
 
 BUILTINS = six.moves.builtins.__name__
@@ -108,9 +109,10 @@ def _infer_method_result_truth(instance, method_name, context):
     return util.Uninferable
 
 
-
 class BaseInstance(Proxy):
     """An instance base class, which provides lookup methods for potential instances."""
+
+    special_attributes = None
 
     def display_type(self):
         return 'Instance of'
@@ -119,15 +121,15 @@ class BaseInstance(Proxy):
         try:
             values = self._proxied.instance_attr(name, context)
         except exceptions.AttributeInferenceError:
-            if name == '__class__':
-                return [self._proxied]
+            if self.special_attributes and name in self.special_attributes:
+                return [self.special_attributes.lookup(name)]
+
             if lookupclass:
                 # Class attributes not available through the instance
                 # unless they are explicitly defined.
-                if name in ('__name__', '__bases__', '__mro__', '__subclasses__'):
-                    return self._proxied.local_attr(name)
                 return self._proxied.getattr(name, context,
                                              class_context=False)
+
             util.reraise(exceptions.AttributeInferenceError(target=self,
                                                             attribute=name,
                                                             context=context))
@@ -151,16 +153,16 @@ class BaseInstance(Proxy):
                 return
 
             # XXX frame should be self._proxied, or not ?
-            get_attr = self.getattr(name, context, lookupclass=False)
-            for stmt in infer_stmts(self._wrap_attr(get_attr, context),
+            attrs = self.getattr(name, context, lookupclass=False)
+            for stmt in infer_stmts(self._wrap_attr(attrs, context),
                                     context, frame=self):
                 yield stmt
         except exceptions.AttributeInferenceError:
             try:
                 # fallback to class'igetattr since it has some logic to handle
                 # descriptors
-                for stmt in self._wrap_attr(self._proxied.igetattr(name, context),
-                                            context):
+                attrs = self._proxied.igetattr(name, context, class_context=False) 
+                for stmt in self._wrap_attr(attrs, context):
                     yield stmt
             except exceptions.AttributeInferenceError as error:
                 util.reraise(exceptions.InferenceError(**vars(error)))
@@ -205,7 +207,8 @@ class BaseInstance(Proxy):
 @util.register_implementation(runtimeabc.Instance)
 class Instance(BaseInstance):
     """A special node representing a class instance."""
-    special_attributes = frozenset(('__dict__', '__class__'))
+
+    special_attributes = util.lazy_descriptor(lambda: objectmodel.InstanceModel())
 
     def __repr__(self):
         return '<Instance of %s.%s at 0x%s>' % (self._proxied.root().name,
@@ -278,6 +281,9 @@ class Instance(BaseInstance):
 @util.register_implementation(runtimeabc.UnboundMethod)
 class UnboundMethod(Proxy):
     """a special node representing a method not bound to an instance"""
+
+    special_attributes = util.lazy_descriptor(lambda: objectmodel.UnboundMethodModel())
+
     def __repr__(self):
         frame = self._proxied.parent.frame()
         return '<%s %s of %s at 0x%s' % (self.__class__.__name__,
@@ -288,13 +294,13 @@ class UnboundMethod(Proxy):
         return False
 
     def getattr(self, name, context=None):
-        if name == 'im_func':
-            return [self._proxied]
+        if name in self.special_attributes:
+            return [self.special_attributes.lookup(name)]
         return self._proxied.getattr(name, context)
 
     def igetattr(self, name, context=None):
-        if name == 'im_func':
-            return iter((self._proxied,))
+        if name in self.special_attributes:
+            return iter((self.special_attributes.lookup(name), ))
         return self._proxied.igetattr(name, context)
 
     def infer_call_result(self, caller, context):
@@ -315,10 +321,8 @@ class BoundMethod(UnboundMethod):
     """a special node representing a method bound to an instance"""
     # __func__ and __self__ are method-only special attributes, the
     # rest are general function special attributes.
-    special_attributes = frozenset(
-        ('__doc__', '__name__', '__qualname__', '__module__', '__defaults__',
-         '__code__', '__globals__', '__dict__', '__closure__',
-         '__annotations__', '__kwdefaults__', '__func__', '__self__'))
+
+    special_attributes = util.lazy_descriptor(lambda: objectmodel.BoundMethodModel())
 
     def __init__(self, proxy, bound):
         UnboundMethod.__init__(self, proxy)
@@ -344,6 +348,9 @@ class Generator(BaseInstance):
 
     Proxied class is set once for all in raw_building.
     """
+
+    special_attributes = util.lazy_descriptor(lambda: objectmodel.GeneratorModel())
+
     def __init__(self, parent):
         self.parent = parent
 
@@ -398,18 +405,15 @@ class Super(base.NodeNG):
     *scope* is the function where the super call is.
     """
 
+    # Need to make this lazy, due to circular dependencies.
+    special_attributes = util.lazy_descriptor(lambda: objectmodel.SuperModel())
+
     def __init__(self, mro_pointer, mro_type, self_class, scope):
         self.type = mro_type
         self.mro_pointer = mro_pointer
         self._class_based = False
         self._self_class = self_class
         self._scope = scope
-        self._model = {
-            '__thisclass__': self.mro_pointer,
-            '__self_class__': self._self_class,
-            '__self__': self.type,
-            '__class__': self._proxied,
-        }
 
     def super_mro(self):
         """Get the MRO which will be used to lookup attributes in this super."""
@@ -462,9 +466,8 @@ class Super(base.NodeNG):
     def igetattr(self, name, context=None):
         """Retrieve the inferred values of the given attribute name."""
 
-        local_name = self._model.get(name)
-        if local_name:
-            yield local_name
+        if name in self.special_attributes:
+            yield self.special_attributes.lookup(name)
             return
 
         try:
