@@ -492,6 +492,9 @@ class NameNodeTest(unittest.TestCase):
 
 
 class ArgumentsNodeTC(unittest.TestCase):
+
+    @unittest.skipIf(sys.version_info[:2] == (3, 3),
+                     "Line numbering is broken on Python 3.3.")
     def test_linenumbering(self):
         ast = builder.parse('''
             def func(a,

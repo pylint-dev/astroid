@@ -686,7 +686,7 @@ class CallSite(object):
             pass
 
         # Too many arguments given and no variable arguments.
-        if len(self.positional_arguments) > len(self._funcnode.args.args):
+        if len(self.positional_arguments) > len(self._funcnode.args.positional_and_keyword):
             if not self._funcnode.args.vararg:
                 raise exceptions.InferenceError('Too many positional arguments '
                                                 'passed to {func!r} that does '
@@ -694,10 +694,10 @@ class CallSite(object):
                                                 call_site=self, func=self._funcnode,
                                                 arg=name, context=context)
 
-        positional = self.positional_arguments[:len(self._funcnode.args.args)]
-        vararg = self.positional_arguments[len(self._funcnode.args.args):]
+        positional = self.positional_arguments[:len(self._funcnode.args.positional_and_keyword)]
+        vararg = self.positional_arguments[len(self._funcnode.args.positional_and_keyword):]
         argindex = self._funcnode.args.find_argname(name)[0]
-        kwonlyargs = set(arg.name for arg in self._funcnode.args.kwonlyargs)
+        kwonlyargs = set(arg.name for arg in self._funcnode.args.keyword_only)
         kwargs = {
             key: value for key, value in self.keyword_arguments.items()
             if key not in kwonlyargs
@@ -707,8 +707,8 @@ class CallSite(object):
         # if the missing positional arguments were passed
         # as keyword arguments and if so, place them into the
         # positional args list.
-        if len(positional) < len(self._funcnode.args.args):
-            for func_arg in self._funcnode.args.args:
+        if len(positional) < len(self._funcnode.args.positional_and_keyword):
+            for func_arg in self._funcnode.args.positional_and_keyword:
                 if func_arg.name in kwargs:
                     arg = kwargs.pop(func_arg.name)
                     positional.append(arg)
@@ -748,7 +748,7 @@ class CallSite(object):
             except IndexError:
                 pass
 
-        if self._funcnode.args.kwarg == name:
+        if self._funcnode.args.kwarg and self._funcnode.args.kwarg.name == name:
             # It wants all the keywords that were passed into
             # the call site.
             if self.has_invalid_keywords():
@@ -769,7 +769,7 @@ class CallSite(object):
             kwarg.postinit(keys, values)
             return iter((kwarg, ))
 
-        elif self._funcnode.args.vararg == name:
+        if self._funcnode.args.vararg and self._funcnode.args.vararg.name == name:
             # It wants all the args that were passed into
             # the call site.
             if self.has_invalid_arguments():
@@ -813,7 +813,9 @@ class LambdaFunctionMixin(QualifiedNameMixin, base.FilterStmtsMixin):
         return CallSite(self, args, keywords)
 
     def scope_lookup(self, node, name, offset=0):
-        if node in self.args.defaults or node in self.args.kw_defaults:
+        
+        if node in itertools.chain((self.args.positional_and_keyword,
+                                    self.args.keyword_only)):
             frame = self.parent.frame()
             # line offset to avoid that def func(f=func) resolve the default
             # value to the defined function
@@ -825,14 +827,16 @@ class LambdaFunctionMixin(QualifiedNameMixin, base.FilterStmtsMixin):
 
     def argnames(self):
         """return a list of argument names"""
-        if self.args.args: # maybe None with builtin functions
-            names = _rec_get_names(self.args.args)
+        if self.args.positional_and_keyword: # maybe None with builtin functions
+            names = _rec_get_names(self.args.positional_and_keyword)
         else:
             names = []
         if self.args.vararg:
-            names.append(self.args.vararg)
+            names.append(self.args.vararg.name)
         if self.args.kwarg:
-            names.append(self.args.kwarg)
+            names.append(self.args.kwarg.name)
+        if self.args.keyword_only:
+            names.extend([arg.name for arg in self.keyword_only])
         return names
 
     def callable(self):

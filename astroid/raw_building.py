@@ -319,65 +319,71 @@ def ast_from_function(func, built_objects, module, name=None, parent=None):
                   itertools.groupby(signature.parameters.values(),
                                     operator.attrgetter('kind'))}
 
-    def extract_args(parameters, parent):
-        '''Takes an iterator over Parameter objects and returns three
-        sequences, arg names, default values, and annotations.
-
-        '''
-        names = []
-        defaults = []
-        annotations = []
+    def _extract_args(parameters, parent):
+        """Generate an iterator of Parameter nodes from a list of inspect.Parameter objects."""
         for parameter in parameters:
-            names.append(parameter.name)
+            param = node_classes.Parameter(name=parameter.name,
+                                           col_offset=parent.col_offset,
+                                           lineno=parent.lineno,
+                                           parent=parent)
+            default = node_classes.Empty
+            annotation = node_classes.Empty
             if parameter.default is not _Parameter.empty:
-                defaults.extend(_ast_from_object(parameter.default, built_objects, module, parent=parent))
+                default = _ast_from_object(parameter.default, built_objects,
+                                           module, parent=parent)
+
             if parameter.annotation is not _Parameter.empty:
-                annotations.extend(_ast_from_object(parameter.annotation, built_objects, module, parent=parent))
-            else:
-                annotations.append(None)
-        return names, defaults, annotations
+                annotation = _ast_from_object(parameter.annotation, built_objects,
+                                              module, parent=parent)
 
-    def extract_vararg(parameter):
-        '''Takes a single-element iterator possibly containing a Parameter and
-        returns a name and an annotation.
+            param.postinit(default=default, annotation=annotation)
+            yield param
 
-        '''
+    def _extract_vararg(parameter, parent):
+        """Build a variadic Parameter node from an inspect.Parameter object."""
         try:
-            return parameter[0].name
+            parameter = parameter[0]
         except IndexError:
-            return None
+            return node_classes.Empty
 
-    vararg = parameters.get(_Parameter.VAR_POSITIONAL, ())
-    kwarg = parameters.get(_Parameter.VAR_KEYWORD, ())
-    vararg_name = extract_vararg(vararg)
-    kwarg_name = extract_vararg(kwarg)
-    args_node = node_classes.Arguments(vararg=vararg_name, kwarg=kwarg_name, parent=func_node)
+        if parameter.annotation is not _Parameter.empty:
+            annotation = _ast_from_object(parameter.annotation,
+                                          built_objects, module, parent=parent)[0]
+        else:
+            annotation = node_classes.Empty
 
-    # This ignores POSITIONAL_ONLY args, because they only appear in
-    # functions implemented in C and can't be mimicked by any Python
-    # function.
-    names, defaults, annotations = extract_args(parameters.get(_Parameter.POSITIONAL_OR_KEYWORD, ()), args_node)
-    kwonlynames, kw_defaults, kwonly_annotations = extract_args(parameters.get(_Parameter.KEYWORD_ONLY, ()), args_node)
-    args = [node_classes.AssignName(name=n, parent=args_node) for n in names]
-    kwonlyargs = [node_classes.AssignName(name=n, parent=args_node) for n in kwonlynames]
-    if vararg_name and vararg[0].annotation is not _Parameter.empty:
-        varargannotation = vararg.annotation
-    else:
-        varargannotation = None
-    if kwarg_name and kwarg[0].annotation is not _Parameter.empty:
-        kwargannotation = kwarg.annotation
-    else:
-        kwargannotation = None
+        param = node_classes.Parameter(name=parameter.name,
+                                       lineno=parent.lineno,
+                                       col_offset=parent.col_offset,
+                                       parent=parent)
+        param.postinit(annotation=annotation, default=node_classes.Empty)
+        return param
+
+    args_node = node_classes.Arguments(parent=func_node)
+    args = _extract_args(parameters.get(_Parameter.POSITIONAL_OR_KEYWORD, ()),
+                         args_node)
+    keyword_only = _extract_args(parameters.get(_Parameter.KEYWORD_ONLY, ()),
+                                 args_node)
+    positional_only = _extract_args(parameters.get(_Parameter.POSITIONAL_ONLY, ()),
+                                    args_node)
+    python_vararg = parameters.get(_Parameter.VAR_POSITIONAL, ())
+    python_kwarg = parameters.get(_Parameter.VAR_KEYWORD, ())
+    vararg = _extract_vararg(python_vararg, args_node)
+    kwarg = _extract_vararg(python_kwarg, args_node)
+
     returns = None
     if signature.return_annotation is not _Parameter.empty:
         returns = _ast_from_object(signature.return_annotation,
                                    built_objects,
                                    module,
                                    parent=func_node)[0]
-    args_node.postinit(args, defaults, kwonlyargs, kw_defaults,
-                       annotations, kwonly_annotations,
-                       varargannotation, kwargannotation)
+    args_node.postinit(args=list(args),
+                       vararg=vararg,
+                       kwarg=kwarg,
+                       keyword_only=list(keyword_only),
+                       positional_only=list(positional_only))
     func_node.postinit(args=args_node, body=[], returns=returns)
+
     for name in set(dir(func)) - set(dir(type(func))):
         # This checks against method special attributes because
         # methods are also dispatched through this function.

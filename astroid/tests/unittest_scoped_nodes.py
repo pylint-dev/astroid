@@ -298,7 +298,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         tree = builder.parse(code)
         func = tree['nested_args']
         self.assertEqual(sorted(func.locals), ['a', 'b', 'c', 'd'])
-        self.assertEqual(func.args.format_args(), 'a, (b, c, d)')
+        self.assertEqual(func.args.format_args(), 'a, b, c, d')
 
     def test_four_args(self):
         func = self.module['four_args']

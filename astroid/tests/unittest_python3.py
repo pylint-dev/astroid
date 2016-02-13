@@ -20,6 +20,7 @@ import unittest
 
 from astroid import nodes
 from astroid.tree.node_classes import Assign, Expr, YieldFrom, Name, Const
+from astroid import raw_building
 from astroid.builder import AstroidBuilder
 from astroid.tree.scoped_nodes import ClassDef, FunctionDef
 from astroid.test_utils import require_version, extract_node
@@ -187,31 +188,31 @@ class Python3TC(unittest.TestCase):
             pass
         """))
         func = astroid['test']
-        self.assertIsInstance(func.args.varargannotation, Name)
-        self.assertEqual(func.args.varargannotation.name, 'float')
-        self.assertIsInstance(func.args.kwargannotation, Name)
-        self.assertEqual(func.args.kwargannotation.name, 'int')
+        self.assertIsInstance(func.args.vararg.annotation, Name)
+        self.assertEqual(func.args.vararg.annotation.name, 'float')
+        self.assertIsInstance(func.args.kwarg.annotation, Name)
+        self.assertEqual(func.args.kwarg.annotation.name, 'int')
         self.assertIsInstance(func.returns, Name)
         self.assertEqual(func.returns.name, 'int')
         arguments = func.args
-        self.assertIsInstance(arguments.annotations[0], Name)
-        self.assertEqual(arguments.annotations[0].name, 'int')
-        self.assertIsInstance(arguments.annotations[1], Name)
-        self.assertEqual(arguments.annotations[1].name, 'str')
-        self.assertIsInstance(arguments.annotations[2], Const)
-        self.assertIsNone(arguments.annotations[2].value)
-        self.assertIsNone(arguments.annotations[3])
-        self.assertIsNone(arguments.annotations[4])
+        self.assertIsInstance(arguments.args[0].annotation, Name)
+        self.assertEqual(arguments.args[0].annotation.name, 'int')
+        self.assertIsInstance(arguments.args[1].annotation, Name)
+        self.assertEqual(arguments.args[1].annotation.name, 'str')
+        self.assertIsInstance(arguments.args[2].annotation, Const)
+        self.assertIsNone(arguments.args[2].annotation.value)
+        self.assertIs(arguments.args[3].annotation, nodes.Empty)
+        self.assertIs(arguments.args[4].annotation, nodes.Empty)
 
         astroid = self.builder.string_build(dedent("""
         def test(a: int=1, b: str=2):
             pass
         """))
         func = astroid['test']
-        self.assertIsInstance(func.args.annotations[0], Name)
-        self.assertEqual(func.args.annotations[0].name, 'int')
-        self.assertIsInstance(func.args.annotations[1], Name)
-        self.assertEqual(func.args.annotations[1].name, 'str')
+        self.assertIsInstance(func.args.args[0].annotation, Name)
+        self.assertEqual(func.args.args[0].annotation.name, 'int')
+        self.assertIsInstance(func.args.args[1].annotation, Name)
+        self.assertEqual(func.args.args[1].annotation.name, 'str')
         self.assertIsNone(func.returns)
 
     @require_version('3.0')
@@ -248,6 +249,13 @@ class Python3TC(unittest.TestCase):
             value = node.getitem(key)
             self.assertIsInstance(value, nodes.Const)
             self.assertEqual(value.value, expected)
+
+    @require_version('3.4')
+    def test_positional_only_parameters(self):
+        ast = raw_building.ast_from_object(issubclass)
+        self.assertEqual(len(ast.args.positional_only), 2)
+        for name, arg in zip(('cls', 'class_or_tuple'), ast.args.positional_only):
+            self.assertEqual(arg.name, name)
 
 
 if __name__ == '__main__':
