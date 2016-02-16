@@ -116,7 +116,7 @@ for _KEY, _IMPL in list(BIN_OP_IMPL.items()):
 
 
 @decorators.yes_if_nothing_inferred
-def const_infer_binary_op(self, operator, other, context, _):
+def const_infer_binary_op(self, opnode, operator, other, context, _):
     not_implemented = nodes.Const(NotImplemented)
     if isinstance(other, nodes.Const):
         try:
@@ -139,8 +139,8 @@ def const_infer_binary_op(self, operator, other, context, _):
 nodes.Const.infer_binary_op = const_infer_binary_op
 
 
-def _multiply_seq_by_int(self, other, context):
-    node = self.__class__()
+def _multiply_seq_by_int(self, opnode, other, context):
+    node = self.__class__(parent=opnode)
     elts = []
     for elt in self.elts:
         infered = helpers.safe_infer(elt, context)
@@ -161,10 +161,10 @@ def _filter_uninferable_nodes(elts, context):
 
 
 @decorators.yes_if_nothing_inferred
-def tl_infer_binary_op(self, operator, other, context, method):
+def tl_infer_binary_op(self, opnode, operator, other, context, method):
     not_implemented = nodes.Const(NotImplemented)
     if isinstance(other, self.__class__) and operator == '+':
-        node = self.__class__()
+        node = self.__class__(parent=opnode)
         elts = list(_filter_uninferable_nodes(self.elts, context))
         elts += list(_filter_uninferable_nodes(other.elts, context))
         node.elts = elts
@@ -173,14 +173,14 @@ def tl_infer_binary_op(self, operator, other, context, method):
         if not isinstance(other.value, int):
             yield not_implemented
             return
-        yield _multiply_seq_by_int(self, other, context)
+        yield _multiply_seq_by_int(self, opnode, other, context)
     elif isinstance(other, bases.Instance) and operator == '*':
         # Verify if the instance supports __index__.
         as_index = helpers.class_instance_as_index(other)
         if not as_index:
             yield util.Uninferable
         else:
-            yield _multiply_seq_by_int(self, as_index, context)
+            yield _multiply_seq_by_int(self, opnode, as_index, context)
     else:
         yield not_implemented
 
@@ -189,7 +189,7 @@ nodes.List.infer_binary_op = tl_infer_binary_op
 
 
 @decorators.yes_if_nothing_inferred
-def instance_infer_binary_op(self, operator, other, context, method):
+def instance_infer_binary_op(self, opnode, operator, other, context, method):
     return method.infer_call_result(self, context)
 
 bases.Instance.infer_binary_op = instance_infer_binary_op
