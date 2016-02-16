@@ -4,9 +4,9 @@ import collections
 # has to be optimized as much as possible.  Using wrapt here instead
 # of lazy_object_proxy avoids several additional function calls every
 # time an AST node method has to be accessed through a new zipper.
-# Importing ObjectProxy into the local name space avoids an extra
-# indirection during initialization.
-from wrapt import ObjectProxy as _ObjectProxy
+import wrapt
+
+from astroid.tree import base
 
 
 # The following are helper functions for working with singly-linked
@@ -16,10 +16,10 @@ def linked_list(*values, **kws):
     '''Builds a new linked list of tuples out of its arguments, appending
     to the front of an existing list if that's given.
 
-    :param values: The values to add to the front of list.
-
-    :param tail: The existing list to append to.  Must be provided as 
-        a keyword argument and not required.
+    Args:
+        values: The values to add to the front of list.
+        tail: The existing list to append to.  Must be provided as 
+            a keyword argument and is optional.
 
     '''
     if values:
@@ -90,24 +90,31 @@ def initial(linked_list):
     return tail
 
 
+
+# class NodeSequence(list):
+#     lineno = None
+#     col_offset = None
+#     def children(self):
+#         return tuple(self)
+#     def make_node(self, linked_list):
+#         return type(self)(*iterate(linked_list))
+
 Path = collections.namedtuple('Path', 'left right parent_nodes parent_path changed')
 
-
-class NodeSequence(list):
-    lineno = None
-    col_offset = None
-    def children(self):
-        return tuple(self)
-    def make_node(self, linked_list):
-        return type(self)(*iterate(linked_list))
-
-
-class Zipper(_ObjectProxy):
+class Zipper(wrapt.ObjectProxy):
     __slots__ = ('path')
 
-    def __init__(self, focus, path=None):
-        # Call ObjectProxy.__init__ directly to avoid the super call.  
-        _ObjectProxy.__init__(self, focus)
+    # Setting wrapt.ObjectProxy.__init__ as a default value turns it into a
+    # local variable, avoiding a super() call, two globals lookups,
+    # and two dict lookups (on wrapt's and ObjectProxy's dicts).
+    def __init__(self, focus, path=None, init=wrapt.ObjectProxy.__init__):
+        try:
+            assert(isinstance(focus, (base.NodeNG, collections.Sequence)))
+        except AssertionError:
+            print(focus)
+            print(path)
+            raise
+        init(self, focus)
         self._self_path = path
 
     def left(self):
@@ -135,7 +142,7 @@ class Zipper(_ObjectProxy):
 
     def down(self):
         try:
-            children = self.__wrapped__.get_children()
+            children = iter(self.__wrapped__)
             first = next(children)
         except StopIteration:
             return
