@@ -247,12 +247,12 @@ def infer_unaryop(self, context=None):
                     yield util.YES
 nodes.UnaryOp._infer = bases.path_wrapper(infer_unaryop)
 
-def _infer_binop(operator, operand1, operand2, context, failures=None):
+def _infer_binop(binop, operand1, operand2, context, failures=None):
     if operand1 is util.YES:
         yield operand1
         return
     try:
-        for valnode in operand1.infer_binary_op(operator, operand2, context):
+        for valnode in operand1.infer_binary_op(binop, operand2, context):
             yield valnode
     except AttributeError:
         try:
@@ -270,11 +270,11 @@ def _infer_binop(operator, operand1, operand2, context, failures=None):
 def infer_binop(self, context=None):
     failures = []
     for lhs in self.left.infer(context):
-        for val in _infer_binop(self.op, lhs, self.right, context, failures):
+        for val in _infer_binop(self, lhs, self.right, context, failures):
             yield val
     for lhs in failures:
         for rhs in self.right.infer(context):
-            for val in _infer_binop(self.op, rhs, lhs, context):
+            for val in _infer_binop(self, rhs, lhs, context):
                 yield val
 nodes.BinOp._infer = bases.path_wrapper(infer_binop)
 
@@ -304,11 +304,11 @@ nodes.AssignAttr._infer = infer_assign
 def infer_augassign(self, context=None):
     failures = []
     for lhs in self.target.infer_lhs(context):
-        for val in _infer_binop(self.op, lhs, self.value, context, failures):
+        for val in _infer_binop(self, lhs, self.value, context, failures):
             yield val
     for lhs in failures:
         for rhs in self.value.infer(context):
-            for val in _infer_binop(self.op, rhs, lhs, context):
+            for val in _infer_binop(self, rhs, lhs, context):
                 yield val
 nodes.AugAssign._infer = bases.path_wrapper(infer_augassign)
 

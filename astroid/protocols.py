@@ -103,7 +103,8 @@ if sys.version_info >= (3, 5):
 for key, impl in list(BIN_OP_IMPL.items()):
     BIN_OP_IMPL[key+'='] = impl
 
-def const_infer_binary_op(self, operator, other, context):
+def const_infer_binary_op(self, binop, other, context):
+    operator = binop.op
     for other in other.infer(context):
         if isinstance(other, nodes.Const):
             try:
@@ -122,7 +123,7 @@ def const_infer_binary_op(self, operator, other, context):
             yield other
         else:
             try:
-                for val in other.infer_binary_op(operator, self, context):
+                for val in other.infer_binary_op(binop, self, context):
                     yield val
             except AttributeError:
                 yield util.YES
@@ -130,8 +131,9 @@ nodes.Const.infer_binary_op = bases.yes_if_nothing_inferred(const_infer_binary_o
 
 
 
-def _multiply_seq_by_int(self, other, context):
+def _multiply_seq_by_int(self, binop, other, context):
     node = self.__class__()
+    node.parent = binop
     elts = []
     for elt in self.elts:
         infered = util.safe_infer(elt, context)
@@ -151,10 +153,12 @@ def _filter_uninferable_nodes(elts, context):
                 yield inferred
 
 
-def tl_infer_binary_op(self, operator, other, context):
+def tl_infer_binary_op(self, binop, other, context):
+    operator = binop.op
     for other in other.infer(context):
         if isinstance(other, self.__class__) and operator == '+':
             node = self.__class__()
+            node.parent = binop
             elts = list(_filter_uninferable_nodes(self.elts, context))
             elts += list(_filter_uninferable_nodes(other.elts, context))
             node.elts = elts
@@ -163,7 +167,7 @@ def tl_infer_binary_op(self, operator, other, context):
             if not isinstance(other.value, int):
                 yield util.YES
                 continue
-            yield _multiply_seq_by_int(self, other, context)
+            yield _multiply_seq_by_int(self, binop, other, context)
         elif isinstance(other, bases.Instance) and not isinstance(other, nodes.Const):
             yield util.YES
     # XXX else log TypeError
@@ -171,14 +175,15 @@ nodes.Tuple.infer_binary_op = bases.yes_if_nothing_inferred(tl_infer_binary_op)
 nodes.List.infer_binary_op = bases.yes_if_nothing_inferred(tl_infer_binary_op)
 
 
-def dict_infer_binary_op(self, operator, other, context):
+def dict_infer_binary_op(self, binop, other, context):
     for other in other.infer(context):
         if isinstance(other, bases.Instance) and isinstance(other._proxied, nodes.ClassDef):
             yield util.YES
         # XXX else log TypeError
 nodes.Dict.infer_binary_op = bases.yes_if_nothing_inferred(dict_infer_binary_op)
 
-def instance_infer_binary_op(self, operator, other, context):
+def instance_infer_binary_op(self, binop, other, context):
+    operator = binop.op
     try:
         methods = self.getattr(BIN_OP_METHOD[operator])
     except (exceptions.NotFoundError, KeyError):
