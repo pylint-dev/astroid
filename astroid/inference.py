@@ -437,7 +437,7 @@ def _is_not_implemented(const):
     return isinstance(const, treeabc.Const) and const.value is NotImplemented
 
 
-def _invoke_binop_inference(instance, op, other, context, method_name, nodes):
+def  _invoke_binop_inference(instance, opnode, op, other, context, method_name, nodes):
     """Invoke binary operation inference on the given instance."""
     if not hasattr(instance, 'getattr'):
         # The operation is undefined for the given node. We can stop
@@ -446,21 +446,21 @@ def _invoke_binop_inference(instance, op, other, context, method_name, nodes):
 
     method = instance.getattr(method_name)[0]
     inferred = next(method.infer(context=context))
-    return protocols.infer_binary_op(instance, op, other, context, inferred, nodes)
+    return protocols.infer_binary_op(instance, opnode, op, other, context, inferred, nodes)
 
 
-def _aug_op(instance, op, other, context, nodes, reverse=False):
+def _aug_op(instance, opnode, op, other, context, nodes, reverse=False):
     """Get an inference callable for an augmented binary operation."""
     method_name = protocols.AUGMENTED_OP_METHOD[op]
     return functools.partial(_invoke_binop_inference,
                              instance=instance,
-                             op=op, other=other,
+                             op=op, opnode=opnode, other=other,
                              context=context,
                              method_name=method_name,
                              nodes=nodes)
 
 
-def _bin_op(instance, op, other, context, nodes, reverse=False):
+def _bin_op(instance, opnode, op, other, context, nodes, reverse=False):
     """Get an inference callable for a normal binary operation.
 
     If *reverse* is True, then the reflected method will be used instead.
@@ -471,7 +471,7 @@ def _bin_op(instance, op, other, context, nodes, reverse=False):
         method_name = protocols.BIN_OP_METHOD[op]
     return functools.partial(_invoke_binop_inference,
                              instance=instance,
-                             op=op, other=other,
+                             op=op, opnode=opnode, other=other,
                              context=context,
                              method_name=method_name,
                              nodes=nodes)
@@ -498,7 +498,7 @@ def _same_type(type1, type2):
     return type1.qname() == type2.qname()
 
 
-def _get_binop_flow(left, left_type, op, right, right_type,
+def _get_binop_flow(left, left_type, binary_opnode, right, right_type,
                     context, reverse_context, nodes):
     """Get the flow for binary operations.
 
@@ -514,20 +514,21 @@ def _get_binop_flow(left, left_type, op, right, right_type,
         * if left is a supertype of right, then right.__rop__(left)
           is first tried and then left.__op__(right)
     """
+    op = binary_opnode.op
     if _same_type(left_type, right_type):
-        methods = [_bin_op(left, op, right, context, nodes)]
+        methods = [_bin_op(left, binary_opnode, op, right, context, nodes)]
     elif inferenceutil.is_subtype(left_type, right_type):
-        methods = [_bin_op(left, op, right, context, nodes)]
+        methods = [_bin_op(left, binary_opnode, op, right, context, nodes)]
     elif inferenceutil.is_supertype(left_type, right_type):
-        methods = [_bin_op(right, op, left, reverse_context, nodes, reverse=True),
-                   _bin_op(left, op, right, context, nodes)]
+        methods = [_bin_op(right, binary_opnode, op, left, reverse_context, nodes, reverse=True),
+                   _bin_op(left, binary_opnode, op, right, context, nodes)]
     else:
-        methods = [_bin_op(left, op, right, context, nodes),
-                   _bin_op(right, op, left, reverse_context, nodes, reverse=True)]
+        methods = [_bin_op(left, binary_opnode, op, right, context, nodes),
+                   _bin_op(right, binary_opnode, op, left, reverse_context, nodes, reverse=True)]
     return methods
 
 
-def _get_aug_flow(left, left_type, aug_op, right, right_type,
+def _get_aug_flow(left, left_type, aug_opnode, right, right_type,
                   context, reverse_context, nodes):
     """Get the flow for augmented binary operations.
 
@@ -544,25 +545,26 @@ def _get_aug_flow(left, left_type, aug_op, right, right_type,
           is tried, then right.__rop__(left) and then
           left.__op__(right)
     """
-    op = aug_op.strip("=")
+    bin_op = aug_opnode.op.strip("=")
+    aug_op = aug_opnode.op
     if _same_type(left_type, right_type):
-        methods = [_aug_op(left, aug_op, right, context, nodes),
-                   _bin_op(left, op, right, context, nodes)]
+        methods = [_aug_op(left, aug_opnode, aug_op, right, context, nodes),
+                   _bin_op(left, aug_opnode, bin_op, right, context, nodes)]
     elif inferenceutil.is_subtype(left_type, right_type):
-        methods = [_aug_op(left, aug_op, right, context, nodes),
-                   _bin_op(left, op, right, context, nodes)]
+        methods = [_aug_op(left, aug_opnode, aug_op, right, context, nodes),
+                   _bin_op(left, aug_opnode, bin_op, right, context, nodes)]
     elif inferenceutil.is_supertype(left_type, right_type):
-        methods = [_aug_op(left, aug_op, right, context, nodes),
-                   _bin_op(right, op, left, reverse_context, nodes, reverse=True),
-                   _bin_op(left, op, right, context, nodes)]
+        methods = [_aug_op(left, aug_opnode, aug_op, right, context, nodes),
+                   _bin_op(right, aug_opnode, bin_op, left, reverse_context, nodes, reverse=True),
+                   _bin_op(left, aug_opnode, bin_op, right, context, nodes)]
     else:
-        methods = [_aug_op(left, aug_op, right, context, nodes),
-                   _bin_op(left, op, right, context, nodes),
-                   _bin_op(right, op, left, reverse_context, nodes, reverse=True)]
+        methods = [_aug_op(left, aug_opnode, aug_op, right, context, nodes),
+                   _bin_op(left, aug_opnode, bin_op, right, context, nodes),
+                   _bin_op(right, aug_opnode, bin_op, left, reverse_context, nodes, reverse=True)]
     return methods
 
 
-def _infer_binary_operation(left, right, op, context, flow_factory, nodes):
+def _infer_binary_operation(left, right, binary_opnode, context, flow_factory, nodes):
     """Infer a binary operation between a left operand and a right operand
 
     This is used by both normal binary operations and augmented binary
@@ -572,7 +574,7 @@ def _infer_binary_operation(left, right, op, context, flow_factory, nodes):
     context, reverse_context = _get_binop_contexts(context, left, right)
     left_type = inferenceutil.object_type(left)
     right_type = inferenceutil.object_type(right)
-    methods = flow_factory(left, left_type, op, right, right_type,
+    methods = flow_factory(left, left_type, binary_opnode, right, right_type,
                            context, reverse_context, nodes)
     for method in methods:
         try:
@@ -606,7 +608,7 @@ def _infer_binary_operation(left, right, op, context, flow_factory, nodes):
             return
     # TODO(cpopa): yield a BadBinaryOperationMessage here,
     # since the operation is not supported
-    yield util.BadBinaryOperationMessage(left_type, op, right_type)
+    yield util.BadBinaryOperationMessage(left_type, binary_opnode.op, right_type)
 
 
 def infer_binop(self, context, nodes):
@@ -615,7 +617,6 @@ def infer_binop(self, context, nodes):
         context = contextmod.InferenceContext()
     left = self.left
     right = self.right
-    op = self.op
 
     # we use two separate contexts for evaluating lhs and rhs because
     # 1. evaluating lhs may leave some undesired entries in context.path
@@ -635,7 +636,7 @@ def infer_binop(self, context, nodes):
                 yield util.Uninferable
                 return
 
-            results = _infer_binary_operation(lhs, rhs, op, context,
+            results = _infer_binary_operation(lhs, rhs, self, context,
                                               _get_binop_flow, nodes)
             for result in results:
                 yield result
@@ -653,7 +654,6 @@ def infer_augassign(self, context=None, nodes=None):
     """Inferrence logic for augmented binary operations."""
     if context is None:
         context = contextmod.InferenceContext()
-    op = self.op
 
     for lhs in self.target.infer_lhs(context=context):
         if lhs is util.Uninferable:
@@ -673,7 +673,7 @@ def infer_augassign(self, context=None, nodes=None):
                 yield util.Uninferable
                 return
 
-            results = _infer_binary_operation(lhs, rhs, op,
+            results = _infer_binary_operation(lhs, rhs, self,
                                               context, _get_aug_flow, nodes)
             for result in results:
                 yield result

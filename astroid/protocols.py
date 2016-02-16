@@ -148,7 +148,7 @@ def infer_binary_op(self, operator, other, context, method, nodes):
 
 @infer_binary_op.register(treeabc.Const)
 @decorators.yes_if_nothing_inferred
-def const_infer_binary_op(self, operator, other, context, _, nodes):
+def const_infer_binary_op(self, opnode, operator, other, context, _, nodes):
     not_implemented = nodes.NameConstant(NotImplemented)
     if isinstance(other, treeabc.Const):
         try:
@@ -169,8 +169,8 @@ def const_infer_binary_op(self, operator, other, context, _, nodes):
         yield not_implemented
 
 
-def _multiply_seq_by_int(self, other, context):
-    node = self.__class__()
+def _multiply_seq_by_int(self, opnode, other, context):
+    node = self.__class__(parent=opnode)
     elts = []
     for elt in self.elts:
         infered = inferenceutil.safe_infer(elt, context)
@@ -193,10 +193,10 @@ def _filter_uninferable_nodes(elts, context):
 @infer_binary_op.register(treeabc.Tuple)
 @infer_binary_op.register(treeabc.List)
 @decorators.yes_if_nothing_inferred
-def tl_infer_binary_op(self, operator, other, context, method, nodes):
+def tl_infer_binary_op(self, opnode, operator, other, context, method, nodes):
     not_implemented = nodes.NameConstant(NotImplemented)
     if isinstance(other, self.__class__) and operator == '+':
-        node = self.__class__()
+        node = self.__class__(parent=opnode)
         elts = list(_filter_uninferable_nodes(self.elts, context))
         elts += list(_filter_uninferable_nodes(other.elts, context))
         node.elts = elts
@@ -205,21 +205,21 @@ def tl_infer_binary_op(self, operator, other, context, method, nodes):
         if not isinstance(other.value, int):
             yield not_implemented
             return
-        yield _multiply_seq_by_int(self, other, context)
+        yield _multiply_seq_by_int(self, opnode, other, context)
     elif isinstance(other, runtimeabc.Instance) and operator == '*':
         # Verify if the instance supports __index__.
         as_index = inferenceutil.class_instance_as_index(other)
         if not as_index:
             yield util.Uninferable
         else:
-            yield _multiply_seq_by_int(self, as_index, context)
+            yield _multiply_seq_by_int(self, opnode, as_index, context)
     else:
         yield not_implemented
 
 
 @infer_binary_op.register(runtimeabc.Instance)
 @decorators.yes_if_nothing_inferred
-def instance_infer_binary_op(self, operator, other, context, method, nodes):
+def instance_infer_binary_op(self, opnode, operator, other, context, method, nodes):
     return method.infer_call_result(self, context)
 
 

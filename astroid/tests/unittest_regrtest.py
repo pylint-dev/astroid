@@ -317,6 +317,19 @@ def test():
         locals_ = {'a': [function]}
         lookup._get_locals(node, locals_)
 
+    def test_binop_generates_nodes_with_parents(self):
+        node = extract_node('''
+        def no_op(*args):
+            pass
+        def foo(*args):
+            def inner(*more_args):
+                args + more_args #@
+            return inner
+        ''')
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, nodes.Tuple)
+        self.assertIsNotNone(inferred.parent)
+        self.assertIsInstance(inferred.parent, nodes.BinOp)
 
 
 class Whatever(object):
