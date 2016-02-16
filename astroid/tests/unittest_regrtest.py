@@ -24,6 +24,7 @@ import six
 from astroid import MANAGER, Instance, nodes
 from astroid.builder import AstroidBuilder
 from astroid import exceptions
+from astroid.interpreter import lookup
 from astroid.manager import AstroidManager
 from astroid import raw_building
 from astroid.test_utils import require_version, extract_node, bootstrap
@@ -309,6 +310,13 @@ def test():
         node = extract_node('''(i for i in range(10))''')
         with self.assertRaises(AttributeError):
             node.qname
+
+    def test_null_fromlineno_does_not_crash_lookup(self):
+        node = nodes.ImportFrom('test', [('a', 'a')])
+        function = nodes.FunctionDef()
+        locals_ = {'a': [function]}
+        lookup._get_locals(node, locals_)
+
 
 
 class Whatever(object):

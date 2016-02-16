@@ -106,6 +106,7 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         with open(resources.find('data/module.py'), 'r') as fobj:
             self.assertMultiLineEqual(module.as_string(), fobj.read())
 
+    maxDiff = None
     def test_module2_as_string(self):
         """check as_string on a whole module prepared to be returned identically
         """
@@ -491,6 +492,9 @@ class NameNodeTest(unittest.TestCase):
 
 
 class ArgumentsNodeTC(unittest.TestCase):
+
+    @unittest.skipIf(sys.version_info[:2] == (3, 3),
+                     "Line numbering is broken on Python 3.3.")
     def test_linenumbering(self):
         ast = builder.parse('''
             def func(a,
@@ -508,14 +512,6 @@ class ArgumentsNodeTC(unittest.TestCase):
         else:
             self.skipTest('FIXME  http://bugs.python.org/issue10445 '
                           '(no line number on function args)')
-
-    def test_builtin_fromlineno_missing(self):
-        cls = test_utils.extract_node('''
-        class Foo(Exception): #@
-            pass
-        ''')
-        new = cls.getattr('__new__')[-1]
-        self.assertEqual(new.args.fromlineno, 0)
 
 
 class UnboundMethodNodeTest(unittest.TestCase):

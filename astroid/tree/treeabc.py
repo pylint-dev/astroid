@@ -67,6 +67,10 @@ class Name(NodeNG):
     """Class representing a Name node"""
 
 
+class Parameter(NodeNG):
+    """Class representing a parameter node."""
+
+
 class Arguments(NodeNG):
     """Class representing an Arguments node"""
 
@@ -339,3 +343,12 @@ class ReservedName(NodeNG):
 
 class Unknown(NodeNG):
     pass
+
+
+class Empty(NodeNG):
+    """Empty nodes represents the lack of something
+
+    For instance, they can be used to represent missing annotations
+    or defaults for arguments or anything where None is a valid
+    value.
+    """

@@ -98,17 +98,35 @@ class AssignedStmtsMixin(object):
 
 # Name classes
 
-@util.register_implementation(treeabc.AssignName)
-class AssignName(base.LookupMixIn, base.ParentAssignTypeMixin,
-                 AssignedStmtsMixin, base.NodeNG):
-    """class representing an AssignName node"""
+
+class BaseAssignName(base.LookupMixIn, base.ParentAssignTypeMixin,
+                     AssignedStmtsMixin, base.NodeNG):
     _other_fields = ('name',)
 
     def __init__(self, name=None, lineno=None, col_offset=None, parent=None):
         self.name = name
-        super(AssignName, self).__init__(lineno, col_offset, parent)
+        super(BaseAssignName, self).__init__(lineno, col_offset, parent)
 
     infer_lhs = inference.infer_name
+
+@util.register_implementation(treeabc.AssignName)
+class AssignName(BaseAssignName):
+    """class representing an AssignName node"""
+
+
+@util.register_implementation(treeabc.Parameter)
+class Parameter(BaseAssignName):
+
+    _astroid_fields = ('default', 'annotation')
+    _other_fields = ('name', )
+
+    def __init__(self, name=None, lineno=None, col_offset=None, parent=None):
+        super(Parameter, self).__init__(name=name, lineno=lineno,
+                                        col_offset=col_offset, parent=parent)
+
+    def postinit(self, default, annotation):
+        self.default = default
+        self.annotation = annotation
 
 
 @util.register_implementation(treeabc.DelName)
@@ -129,54 +147,25 @@ class Name(base.LookupMixIn, base.NodeNG):
     def __init__(self, name=None, lineno=None, col_offset=None, parent=None):
         self.name = name
         super(Name, self).__init__(lineno, col_offset, parent)
-
+    
 
 @util.register_implementation(treeabc.Arguments)
 class Arguments(base.AssignTypeMixin, AssignedStmtsMixin, base.NodeNG):
     """class representing an Arguments node"""
-    if six.PY3:
-        # Python 3.4+ uses a different approach regarding annotations,
-        # each argument is a new class, _ast.arg, which exposes an
-        # 'annotation' attribute. In astroid though, arguments are exposed
-        # as is in the Arguments node and the only way to expose annotations
-        # is by using something similar with Python 3.3:
-        #  - we expose 'varargannotation' and 'kwargannotation' of annotations
-        #    of varargs and kwargs.
-        #  - we expose 'annotation', a list with annotations for
-        #    for each normal argument. If an argument doesn't have an
-        #    annotation, its value will be None.
 
-        _astroid_fields = ('args', 'defaults', 'kwonlyargs',
-                           'kw_defaults', 'annotations', 'kwonly_annotations',
-                           'varargannotation', 'kwargannotation')
-        varargannotation = None
-        kwargannotation = None
-    else:
-        _astroid_fields = ('args', 'defaults', 'kwonlyargs', 'kw_defaults')
-    _other_fields = ('vararg', 'kwarg')
+    _astroid_fields = ('args', 'vararg', 'kwarg', 'keyword_only', 'positional_only')
 
-    def __init__(self, vararg=None, kwarg=None, parent=None):
+    def __init__(self, parent=None):
+        # We don't want lineno and col_offset from the parent's __init__.
+        super(Arguments, self).__init__(parent=parent)
+
+    def postinit(self, args, vararg, kwarg, keyword_only, positional_only):
+        self.args = args
         self.vararg = vararg
         self.kwarg = kwarg
-        self.parent = parent
-        self.args = []
-        self.defaults = []
-        self.kwonlyargs = []
-        self.kw_defaults = []
-        self.annotations = []
-        self.kwonly_annotations = []
-
-    def postinit(self, args, defaults, kwonlyargs, kw_defaults,
-                 annotations, kwonly_annotations, varargannotation=None,
-                 kwargannotation=None):
-        self.args = args
-        self.defaults = defaults
-        self.kwonlyargs = kwonlyargs
-        self.kw_defaults = kw_defaults
-        self.annotations = annotations
-        self.varargannotation = varargannotation
-        self.kwargannotation = kwargannotation
-        self.kwonly_annotations = kwonly_annotations
+        self.keyword_only = keyword_only
+        self.positional_only = positional_only
+        self.positional_and_keyword = self.args + self.positional_only
 
     def _infer_name(self, frame, name):
         if self.parent is frame:
@@ -185,25 +174,25 @@ class Arguments(base.AssignTypeMixin, AssignedStmtsMixin, base.NodeNG):
 
     @decorators.cachedproperty
     def fromlineno(self):
-        lineno = super(Arguments, self).fromlineno
-        return max(lineno, self.parent.fromlineno or 0)
+        # Let the Function's lineno be the lineno for this.
+        if self.parent.fromlineno:
+            return self.parent.fromlineno
+
+        return super(Arguments, self).fromlineno
 
     def format_args(self):
         """return arguments formatted as string"""
         result = []
-        if self.args:
-            result.append(
-                _format_args(self.args, self.defaults,
-                             getattr(self, 'annotations', None))
-            )
+        if self.positional_and_keyword:
+            result.append(_format_args(self.positional_and_keyword))
         if self.vararg:
-            result.append('*%s' % self.vararg)
-        if self.kwonlyargs:
+            result.append('*%s' % _format_args((self.vararg, )))
+        if self.keyword_only:
             if not self.vararg:
                 result.append('*')
-            result.append(_format_args(self.kwonlyargs, self.kw_defaults))
+            result.append(_format_args(self.keyword_only))
         if self.kwarg:
-            result.append('**%s' % self.kwarg)
+            result.append('**%s' % _format_args((self.kwarg, )))
         return ', '.join(result)
 
     def default_value(self, argname):
@@ -211,28 +200,28 @@ class Arguments(base.AssignTypeMixin, AssignedStmtsMixin, base.NodeNG):
 
         :raise `NoDefault`: if there is no default value defined
         """
-        i = _find_arg(argname, self.args)[0]
-        if i is not None:
-            idx = i - (len(self.args) - len(self.defaults))
-            if idx >= 0:
-                return self.defaults[idx]
-        i = _find_arg(argname, self.kwonlyargs)[0]
-        if i is not None and self.kw_defaults[i] is not None:
-            return self.kw_defaults[i]
+        for place in (self.positional_and_keyword, self.keyword_only):
+            i = _find_arg(argname, place)[0]
+            if i is not None:
+                value = place[i]
+                if not value.default:
+                    continue
+                return value.default
+
         raise exceptions.NoDefault(func=self.parent, name=argname)
 
     def is_argument(self, name):
         """return True if the name is defined in arguments"""
-        if name == self.vararg:
+        if self.vararg and name == self.vararg.name:
             return True
-        if name == self.kwarg:
+        if self.kwarg and name == self.kwarg.name:
             return True
         return self.find_argname(name, True)[1] is not None
 
     def find_argname(self, argname, rec=False):
         """return index and Name node with given name"""
-        if self.args: # self.args may be None in some cases (builtin function)
-            return _find_arg(argname, self.args, rec)
+        if self.positional_and_keyword: # self.args may be None in some cases (builtin function)
+            return _find_arg(argname, self.positional_and_keyword, rec)
         return None, None
 
     def get_children(self):
@@ -254,27 +243,24 @@ def _find_arg(argname, args, rec=False):
     return None, None
 
 
-def _format_args(args, defaults=None, annotations=None):
+def _format_args(args):
     values = []
-    if args is None:
+    if not args:
         return ''
-    if annotations is None:
-        annotations = []
-    if defaults is not None:
-        default_offset = len(args) - len(defaults)
-    packed = six.moves.zip_longest(args, annotations)
-    for i, (arg, annotation) in enumerate(packed):
+    for i, arg in enumerate(args):
         if isinstance(arg, Tuple):
             values.append('(%s)' % _format_args(arg.elts))
         else:
             argname = arg.name
-            if annotation is not None:
+            annotation = arg.annotation
+            if annotation:
                 argname += ':' + annotation.as_string()
             values.append(argname)
+            
+            default = arg.default
+            if default:
+                values[-1] += '=' + default.as_string()
 
-            if defaults is not None and i >= default_offset:
-                if defaults[i-default_offset] is not None:
-                    values[-1] += '=' + defaults[i-default_offset].as_string()
     return ', '.join(values)
 
 
@@ -1317,6 +1303,22 @@ class YieldFrom(Yield):
 @util.register_implementation(treeabc.DictUnpack)
 class DictUnpack(base.NodeNG):
     """Represents the unpacking of dicts into dicts using PEP 448."""
+
+
+@object.__new__
+@util.register_implementation(treeabc.Empty)
+class Empty(base.NodeNG):
+    """Empty nodes represents the lack of something
+
+    For instance, they can be used to represent missing annotations
+    or defaults for arguments or anything where None is a valid
+    value.
+    """
+
+    def __bool__(self):
+        return False
+
+    __nonzero__ = __bool__
 
 
 # Register additional inference dispatched functions. We do

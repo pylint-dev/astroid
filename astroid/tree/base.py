@@ -226,33 +226,12 @@ class NodeNG(object):
         """return the previous sibling statement"""
         return self.parent.previous_sibling()
 
-    def nearest(self, nodes):
-        """return the node which is the nearest before this one in the
-        given list of nodes
-        """
-        myroot = self.root()
-        mylineno = self.fromlineno
-        nearest = None, 0
-        for node in nodes:
-            assert node.root() is myroot, \
-                   'nodes %s and %s are not from the same module' % (self, node)
-            lineno = node.fromlineno
-            if node.fromlineno > mylineno:
-                break
-            if lineno > nearest[1]:
-                nearest = node, lineno
-        # FIXME: raise an exception if nearest is None ?
-        return nearest[0]
-
     # these are lazy because they're relatively expensive to compute for every
     # single node, and they rarely get looked at
 
     @decorators.cachedproperty
     def fromlineno(self):
-        if self.lineno is None:
-            return self._fixed_source_line()
-        else:
-            return self.lineno
+        return self.lineno
 
     @decorators.cachedproperty
     def tolineno(self):
@@ -265,29 +244,6 @@ class NodeNG(object):
             return self.fromlineno
         else:
             return lastchild.tolineno
-
-        # TODO / FIXME:
-        assert self.fromlineno is not None, self
-        assert self.tolineno is not None, self
-
-    def _fixed_source_line(self):
-        """return the line number where the given node appears
-
-        we need this method since not all nodes have the lineno attribute
-        correctly set...
-        """
-        line = self.lineno
-        _node = self
-        try:
-            while line is None:
-                _node = next(_node.get_children())
-                line = _node.lineno
-        except StopIteration:
-            _node = self.parent
-            while _node and line is None:
-                line = _node.lineno
-                _node = _node.parent
-        return line
 
     def block_range(self, lineno):
         """handle block line numbers range for non block opening statements
@@ -610,7 +566,6 @@ class LookupMixIn(object):
         # take care node may be missing lineno information (this is the case for
         # nodes inserted for living objects)
         if myframe is frame and mystmt.fromlineno is not None:
-            assert mystmt.fromlineno is not None, mystmt
             mylineno = mystmt.fromlineno + offset
         else:
             # disabling lineno filtering
@@ -620,7 +575,7 @@ class LookupMixIn(object):
         for node in stmts:
             stmt = node.statement()
             # line filtering is on and we have reached our location, break
-            if mylineno > 0 and stmt.fromlineno > mylineno:
+            if mylineno > 0 and stmt.fromlineno and stmt.fromlineno > mylineno:
                 break
             assert hasattr(node, 'assign_type'), (node, node.scope(),
                                                   node.scope().locals)
@@ -678,7 +633,7 @@ class LookupMixIn(object):
                 if not (optional_assign or interpreterutil.are_exclusive(_stmts[pindex], node)):
                     del _stmt_parents[pindex]
                     del _stmts[pindex]
-            if isinstance(node, treeabc.AssignName):
+            if isinstance(node, (treeabc.Parameter, treeabc.AssignName)):
                 if not optional_assign and stmt.parent is mystmt.parent:
                     _stmts = []
                     _stmt_parents = []

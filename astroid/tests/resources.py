@@ -15,8 +15,12 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with astroid. If not, see <http://www.gnu.org/licenses/>.
+import binascii
+import contextlib
 import os
 import sys
+import shutil
+import tempfile
 
 import pkg_resources
 import six
@@ -25,12 +29,31 @@ from astroid import builder
 from astroid import MANAGER
 
 
-DATA_DIR = 'testdata/python{}/'.format(sys.version_info[0])
+DATA_DIR = 'testdata'
 BUILTINS = six.moves.builtins.__name__
+
+
+@contextlib.contextmanager
+def _temporary_file():
+    name = binascii.hexlify(os.urandom(5)).decode()
+    path = find(name)
+    try:
+        yield path
+    finally:
+        os.remove(path)
+
+@contextlib.contextmanager
+def tempfile_with_content(content):
+    with _temporary_file() as tmp:
+        with open(tmp, 'wb') as stream:
+            stream.write(content)
+        yield tmp
+
 
 def find(name):
     return pkg_resources.resource_filename(
-        'astroid.tests', os.path.normpath(os.path.join(DATA_DIR, name)))
+        'astroid.tests',
+        os.path.normpath(os.path.join(DATA_DIR, name)))
 
 
 def build_file(path, modname=None):

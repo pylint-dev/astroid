@@ -238,6 +238,7 @@ def locals_new_scope(node, locals_):
 @_get_locals.register(treeabc.DelName)
 @_get_locals.register(treeabc.FunctionDef)
 @_get_locals.register(treeabc.ClassDef)
+@_get_locals.register(treeabc.Parameter)
 def locals_name(node, locals_):
     '''These nodes add a name to the local variables.  AssignName and
     DelName have no children while FunctionDef and ClassDef start a
@@ -287,9 +288,11 @@ def locals_import_from(node, locals_):
     # Don't add future imports to locals.
     if node.modname == '__future__':
         return
-    # Inherited code, I don't know why this function sorts this list.
+
+    # Sort the list for having the locals ordered by their first
+    # appearance.
     def sort_locals(my_list):
-        my_list.sort(key=lambda node: node.fromlineno)
+        my_list.sort(key=lambda node: node.fromlineno or 0)
 
     for name, asname in node.names:
         if name == '*':
