@@ -35,7 +35,7 @@ install:
   - $PYTHON_EXE -m pip --version
   - $PYTHON_EXE -m tox --version
 script:
-  - tox -e $TOXENV
+  - python -m tox -e $TOXENV
 after_failure:
   - more .tox/log/* | cat
   - more .tox/*/log/* | cat
