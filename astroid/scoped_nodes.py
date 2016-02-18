@@ -568,6 +568,10 @@ class Module(LocalsDictNodeNG):
                     inferred.append(inferred_node.value)
         return inferred
 
+    def _public_names(self):
+        """Get the list of the names which are publicly available in this module."""
+        return [name for name in self.keys() if not name.startswith('_')]
+
     def bool_value(self):
         return True
 

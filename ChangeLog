@@ -1,6 +1,22 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+--
+
+    * wildcard_imported_names() got replaced by _public_names()
+
+      Our understanding of wildcard imports through __all__ was
+      half baked to say at least, since we couldn't account for
+      modifications of the list, which results in tons of false positives.
+      Instead, we replaced it with _public_names(), a method which returns
+      all the names that are publicly available in a module, that is that
+      don't start with an underscore, even though this means that there
+      is a possibility for other names to be leaked out even though
+      they are not present in the __all__ variable.
+
+      The method is private in 1.4.X.
+
+
 2016-01-15 -- 1.4.4
 
     * unpack_infer raises InferenceError if it can't operate
