@@ -109,7 +109,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(len(self.nonregr.getattr('enumerate')), 2)
         self.assertRaises(InferenceError, self.nonregr.igetattr, 'YOAA')
 
-    def test_wildcard_import_names(self):
+    def test_public_names(self):
         m = builder.parse('''
         name = 'a'
         _bla = 2
@@ -118,7 +118,8 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         def func(): print('yo')
         __all__ = 'Aaa', '_bla', 'name'
         ''')
-        self.assertEqual(m.wildcard_import_names(), ['Aaa', '_bla', 'name'])
+        values = sorted(['Aaa', 'name', 'other', 'func'])
+        self.assertEqual(sorted(m.public_names()), values)
         m = builder.parse('''
         name = 'a'
         _bla = 2
@@ -127,22 +128,22 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
 
         def func(): return 'yo'
         ''')
-        res = sorted(m.wildcard_import_names())
-        self.assertEqual(res, ['Aaa', 'func', 'name', 'other'])
+        res = sorted(m.public_names())
+        self.assertEqual(res, values)
 
         m = builder.parse('''
             from missing import tzop
             trop = "test"
             __all__ = (trop, "test1", tzop, 42)
         ''')
-        res = sorted(m.wildcard_import_names())
-        self.assertEqual(res, ["test", "test1"])
+        res = sorted(m.public_names())
+        self.assertEqual(res, ["trop", "tzop"])
 
         m = builder.parse('''
             test = tzop = 42
             __all__ = ('test', ) + ('tzop', )
         ''')
-        res = sorted(m.wildcard_import_names())
+        res = sorted(m.public_names())
         self.assertEqual(res, ['test', 'tzop'])
 
     def test_module_getattr(self):

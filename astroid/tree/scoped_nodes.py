@@ -380,57 +380,9 @@ class Module(QualifiedNameMixin, lookup.LocalsDictNode):
             return '%s.%s' % (package_name, modname)
         return modname
 
-    def wildcard_import_names(self):
-        """return the list of imported names when this module is 'wildcard
-        imported'
-
-        It doesn't include the '__builtins__' name which is added by the
-        current CPython implementation of wildcard imports.
-        """
-        # We separate the different steps of lookup in try/excepts
-        # to avoid catching too many Exceptions
-        default = [name for name in self.keys() if not name.startswith('_')]
-        if '__all__' in self:
-            # This is a workaround for the case where a module defines
-            # __all__ and then dynamically alters it, requiring a
-            # custom hack to define a static __all__ for the module.
-            # The static __all__ ends up at the end of the locals list
-            # for __all__, not the beginning.
-            all = self.locals['__all__'][-1]
-        else:
-            return default
-
-        try:
-            explicit = next(all.assigned_stmts())
-        except exceptions.InferenceError:
-            return default
-        except AttributeError:
-            # not an assignment node
-            # XXX infer?
-            return default
-
-        # Try our best to detect the exported name.
-        inferred = []
-        try:
-            explicit = next(explicit.infer())
-        except exceptions.InferenceError:
-            return default
-        if not isinstance(explicit, (node_classes.Tuple, node_classes.List)):
-            return default
-
-        str_const = lambda node: (isinstance(node, node_classes.Const) and
-                                  isinstance(node.value, six.string_types))
-        for node in explicit.elts:
-            if str_const(node):
-                inferred.append(node.value)
-            else:
-                try:
-                    inferred_node = next(node.infer())
-                except exceptions.InferenceError:
-                    continue
-                if str_const(inferred_node):
-                    inferred.append(inferred_node.value)
-        return inferred
+    def public_names(self):
+        """Get the list of the names which are publicly available in this module."""
+        return [name for name in self.keys() if not name.startswith('_')]
 
     def bool_value(self):
         return True

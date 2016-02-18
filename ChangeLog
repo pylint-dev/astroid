@@ -2,6 +2,20 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+
+    * wildcard_imported_names() got replaced by public_names()
+
+      Our understanding of wildcard imports through __all__ was
+      half baked to say at least, since we couldn't account for
+      modifications of the list, which results in tons of false positives.
+      Instead, we replaced it with public_names(), a method which returns
+      all the names that are publicly available in a module, that is that
+      don't start with an underscore, even though this means that there
+      is a possibility for other names to be leaked out even though
+      they are not present in the __all__ variable.
+
+      Closes issue #322
+
     * Changed the way how parameters are being built
 
       The old way consisted in having the parameter names, their

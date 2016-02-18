@@ -300,7 +300,7 @@ def locals_import_from(node, locals_):
                 imported = util.do_import_module(node, node.modname)
             except exceptions.AstroidBuildingError:
                 continue
-            for name in imported.wildcard_import_names():
+            for name in imported.public_names():
                 locals_[name].append(node)
                 sort_locals(locals_[name])
         else:
