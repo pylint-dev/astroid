@@ -477,29 +477,13 @@ def _bin_op(instance, opnode, op, other, context, nodes, reverse=False):
                              nodes=nodes)
 
 
-def _get_binop_contexts(context, left, right):
-    """Get contexts for binary operations.
-
-    This will return two inferrence contexts, the first one
-    for x.__op__(y), the other one for y.__rop__(x), where
-    only the arguments are inversed.
-    """
-    # The order is important, since the first one should be
-    # left.__op__(right).
-    for arg in (right, left):
-        new_context = context.clone()
-        new_context.callcontext = contextmod.CallContext(args=[arg])
-        new_context.boundnode = None
-        yield new_context
-
-
 def _same_type(type1, type2):
     """Check if type1 is the same as type2."""
     return type1.qname() == type2.qname()
 
 
 def _get_binop_flow(left, left_type, binary_opnode, right, right_type,
-                    context, reverse_context, nodes):
+                    context, nodes):
     """Get the flow for binary operations.
 
     The rules are a bit messy:
@@ -520,16 +504,16 @@ def _get_binop_flow(left, left_type, binary_opnode, right, right_type,
     elif inferenceutil.is_subtype(left_type, right_type):
         methods = [_bin_op(left, binary_opnode, op, right, context, nodes)]
     elif inferenceutil.is_supertype(left_type, right_type):
-        methods = [_bin_op(right, binary_opnode, op, left, reverse_context, nodes, reverse=True),
+        methods = [_bin_op(right, binary_opnode, op, left, context, nodes, reverse=True),
                    _bin_op(left, binary_opnode, op, right, context, nodes)]
     else:
         methods = [_bin_op(left, binary_opnode, op, right, context, nodes),
-                   _bin_op(right, binary_opnode, op, left, reverse_context, nodes, reverse=True)]
+                   _bin_op(right, binary_opnode, op, left, context, nodes, reverse=True)]
     return methods
 
 
 def _get_aug_flow(left, left_type, aug_opnode, right, right_type,
-                  context, reverse_context, nodes):
+                  context, nodes):
     """Get the flow for augmented binary operations.
 
     The rules are a bit messy:
@@ -555,12 +539,12 @@ def _get_aug_flow(left, left_type, aug_opnode, right, right_type,
                    _bin_op(left, aug_opnode, bin_op, right, context, nodes)]
     elif inferenceutil.is_supertype(left_type, right_type):
         methods = [_aug_op(left, aug_opnode, aug_op, right, context, nodes),
-                   _bin_op(right, aug_opnode, bin_op, left, reverse_context, nodes, reverse=True),
+                   _bin_op(right, aug_opnode, bin_op, left, context, nodes, reverse=True),
                    _bin_op(left, aug_opnode, bin_op, right, context, nodes)]
     else:
         methods = [_aug_op(left, aug_opnode, aug_op, right, context, nodes),
                    _bin_op(left, aug_opnode, bin_op, right, context, nodes),
-                   _bin_op(right, aug_opnode, bin_op, left, reverse_context, nodes, reverse=True)]
+                   _bin_op(right, aug_opnode, bin_op, left, context, nodes, reverse=True)]
     return methods
 
 
@@ -570,12 +554,10 @@ def _infer_binary_operation(left, right, binary_opnode, context, flow_factory, n
     This is used by both normal binary operations and augmented binary
     operations, the only difference is the flow factory used.
     """
-
-    context, reverse_context = _get_binop_contexts(context, left, right)
     left_type = inferenceutil.object_type(left)
     right_type = inferenceutil.object_type(right)
     methods = flow_factory(left, left_type, binary_opnode, right, right_type,
-                           context, reverse_context, nodes)
+                           context, nodes)
     for method in methods:
         try:
             results = list(method())

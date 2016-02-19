@@ -217,9 +217,17 @@ def tl_infer_binary_op(self, opnode, operator, other, context, method, nodes):
         yield not_implemented
 
 
+
+def _get_binop_context(context, other):
+    context.callcontext = contextmod.CallContext(args=[other])
+    context.boundnode = None
+    return context
+
+
 @infer_binary_op.register(runtimeabc.Instance)
 @decorators.yes_if_nothing_inferred
 def instance_infer_binary_op(self, opnode, operator, other, context, method, nodes):
+    context = _get_binop_context(context, other)
     return method.infer_call_result(self, context)
 
 
