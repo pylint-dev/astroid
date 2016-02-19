@@ -535,6 +535,14 @@ class CallSite(object):
             if value is not util.Uninferable
         }
 
+    def __repr__(self):
+        string = '{name}(funcnode={funcnode}, args={args}, keywords={keywords})'
+        return string.format(name=type(self).__name__,
+                             funcnode=self._funcnode,
+                             args=self.positional_arguments,
+                             keywords=self.keyword_arguments)
+
+
     def has_invalid_arguments(self):
         """Check if in the current CallSite were passed *invalid* arguments
 
