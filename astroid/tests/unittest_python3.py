@@ -250,7 +250,7 @@ class Python3TC(unittest.TestCase):
             self.assertIsInstance(value, nodes.Const)
             self.assertEqual(value.value, expected)
 
-    @require_version('3.4')
+    @require_version(minver='3.5')
     def test_positional_only_parameters(self):
         ast = raw_building.ast_from_object(issubclass)
         self.assertEqual(len(ast.args.positional_only), 2)
