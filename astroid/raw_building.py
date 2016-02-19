@@ -330,11 +330,11 @@ def ast_from_function(func, built_objects, module, name=None, parent=None):
             annotation = node_classes.Empty
             if parameter.default is not _Parameter.empty:
                 default = _ast_from_object(parameter.default, built_objects,
-                                           module, parent=parent)
+                                           module, parent=parent)[0]
 
             if parameter.annotation is not _Parameter.empty:
                 annotation = _ast_from_object(parameter.annotation, built_objects,
-                                              module, parent=parent)
+                                              module, parent=parent)[0]
 
             param.postinit(default=default, annotation=annotation)
             yield param
