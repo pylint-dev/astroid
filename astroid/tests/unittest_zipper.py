@@ -1,6 +1,8 @@
-import cProfile
+import collections
 import itertools
+import pprint
 import os
+import unittest
 
 import hypothesis
 from hypothesis import strategies
@@ -9,68 +11,60 @@ import astroid
 from astroid.tree import zipper
 
 
-# __init__.py screens out the empty init files, testdata because of
-# the deliberately-broken files, and unittests because of #310.
+# This screens out the empty init files.
 astroid_file = strategies.sampled_from(os.path.join(p, n) for p, _, ns in os.walk('astroid/') for n in ns if n.endswith('.py') and '__init__.py' not in n)
 
-def parse_ast(name):
+MapNode = collections.namedtuple('MapNode', 'children parent moves')
+
+def ast_from_file_name(name):
     with open(name, 'r') as source_file:
         print(name)
-        ast = zipper.Zipper(astroid.parse(source_file.read()))
-        return (ast.down,)
+        root = astroid.parse(source_file.read())
+        to_visit = [(root, None)]
+        ast = {}
+        while to_visit:
+            node, parent = to_visit.pop()
+            children = tuple(iter(node)) if node else ()
+            to_visit.extend((c, node) for c in children)
+            moves = []
+            if children:
+                moves.append(zipper.Zipper.down)
+            if parent:
+                moves.append(zipper.Zipper.up)
+                index = ast[id(parent)].children.index(node)
+                if index > 0:
+                    moves.append(zipper.Zipper.left)
+                if index < len(ast[id(parent)].children) - 1:
+                    moves.append(zipper.Zipper.right)
+            ast[id(node)] = MapNode(children, parent, tuple(moves))
+    return ast, root
 
-base_case = strategies.builds(parse_ast, astroid_file)
- 
-def possible_moves(path):
-    # position = path[-1]()
-    # previous_position = path[-1].__self__
-    # if not len(previous_position):
-    #     return ()
-    # length = 0
-    # # If the zipper produces a position that is not the child of the
-    # # previous position, this is a bug and thus should crash.
-    # for child in previous_position:
-    #     length += 1
-    #     if child == position:
-    #         index = length
-    #         break
-    # else:
-    #     print(position)
-    #     print([repr(c) for c in previous_position])
-    #     raise astroid.exceptions.AstroidError(
-    #         'Invalid AST: {child!r} is not a child of {parent!r}',
-    #         child=position, parent=previous_position) 
-    # moves = []
-    # if position._self_path:
-    #     moves.append(position.up)
-    # if length > 0:
-    #     moves.append(position.down)
-    # if index < length:
-    #     moves.append(position.right)
-    # if index > 0:
-    #     moves.append(position.left)
-    position = path[-1]()
-    return tuple(m for m in (position.down, position.up, position.left, position.right) if m() is not None)
+ast_strategy = strategies.builds(ast_from_file_name, astroid_file)
 
-extend = lambda path_strategy: path_strategy.flatmap(lambda path: strategies.sampled_from(possible_moves(path)).map(lambda move: path + (move,)))
+# pprint.pprint(ast_strategy.example())
 
-walk_ast = strategies.recursive(base_case, extend)
-
-# print(walk_ast.example())
-
-# cProfile.run('print(walk_ast.example())')
-
-@hypothesis.given(walk_ast)
-def test(moves):
-    print(moves)
-    moves = tuple(reversed(moves))
-    visited_positions = {id(moves[0].__self__): moves[0].__self__}
-    for move in moves:
-        position = move()
-        if id(position) in visited_positions:
-            assert(position == visited_positions[id(position)])
-        visited_positions[id(position)] = position
+class TestZipper(unittest.TestCase):
+    @hypothesis.settings(perform_health_check=False)
+    @hypothesis.given(ast_strategy, strategies.integers(min_value=0, max_value=100), strategies.choices())
+    def test(self, ast_root, length, choice):
+        ast, root = ast_root
+        old_position = zipper.Zipper(root)
+        for _ in range(length):
+            move = choice(ast[id(old_position.__wrapped__)].moves)
+            new_position = move(old_position)
+            if move is zipper.Zipper.down:
+                assert(new_position.__wrapped__ is next(iter(old_position)))
+            if move is zipper.Zipper.up:
+                assert(new_position.__wrapped__ is ast[id(old_position.__wrapped__)].parent)
+            if move is zipper.Zipper.left or move is zipper.Zipper.right:
+                parent = ast[id(old_position.__wrapped__)].parent
+                siblings = ast[id(parent)].children
+                index = siblings.index(old_position.__wrapped__)
+                if move is zipper.Zipper.left:
+                    assert(new_position.__wrapped__ is siblings[index - 1])
+                if move is zipper.Zipper.right:
+                    assert(new_position.__wrapped__ is siblings[index + 1])
+            old_position = new_position
 
 if __name__ == '__main__':
-    test()
-    # pass
+    unittest.main()

@@ -32,8 +32,7 @@ except ImportError:
     from dictproxyhack import dictproxy as MappingProxyType
 
 
-class LocalsDictNode(treebase.LookupMixIn,
-                     treebase.NodeNG):
+class LocalsDictNode(treebase.LookupMixIn, treebase.NodeNG):
     """Provides locals handling common to Module, FunctionDef
     and ClassDef nodes, including a dict like interface for direct access
     to locals information
@@ -109,11 +108,11 @@ class LocalsDictNode(treebase.LookupMixIn,
         """
         return self.locals[item][0]
 
-    def __iter__(self):
-        """method from the `dict` interface returning an iterator on
-        `self.keys()`
-        """
-        return iter(self.locals)
+    # def __iter__(self):
+    #     """method from the `dict` interface returning an iterator on
+    #     `self.keys()`
+    #     """
+    #     return iter(self.locals)
 
     def keys(self):
         """method from the `dict` interface returning a tuple containing

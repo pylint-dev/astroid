@@ -61,6 +61,26 @@ class NodeNG(object):
         self.lineno = lineno
         self.col_offset = col_offset
         self.parent = parent
+ 
+    def __iter__(self):
+        for field in self._astroid_fields:
+            yield getattr(self, field)
+
+    # def __eq__(self, other):
+    #     if self.__class__ is other.__class__:
+    #         return (all(getattr(self, f) == getattr(other, f)
+    #                    for f in self._astroid_fields) and
+    #                 all(getattr(self, f) == getattr(other, f)
+    #                     for f in self._other_fields))
+    #     else:
+    #         return False
+
+    # def __ne__(self, other):
+    #     return not self == other
+
+    # # Must be defined to retain object.__hash__, see
+    # # https://docs.python.org/3/reference/datamodel.html#object.__hash__
+    # __hash__ = object.__hash__
 
     def infer(self, context=None, **kwargs):
         """main interface to the interface system, return a generator on inferred
