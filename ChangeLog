@@ -16,6 +16,14 @@ Change log for the astroid package (used to be astng)
 
       Closes issue #322
 
+    * Introduce a special attributes model
+
+      Through this model, astroid starts knowing special attributes of certain Python objects,
+      such as functions, classes, super objects and so on. This was previously possible before,
+      but now the lookup and the attributes themselves are separated into a new module,
+      objectmodel.py, which describes, in a more comprehensive way, the data model of each
+      object.
+
     * Changed the way how parameters are being built
 
       The old way consisted in having the parameter names, their

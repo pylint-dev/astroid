@@ -636,12 +636,18 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(astroid['A'].getattr('__bases__')[1], nodes.AssignAttr)
 
     def test_instance_special_attributes(self):
-        for inst in (Instance(self.module['YO']), nodes.List(), nodes.Const(1)):
+        instance = self.module['YO'].instantiate_class()
+        self.assertEqual(len(instance.getattr('__dict__')), 1)
+        self.assertEqual(len(instance.getattr('__doc__')), 1)
+
+        # Don't have these special attributes, because they belong to the Instance,
+        # not BaseInstance.         
+        for inst in (nodes.List(), nodes.Const(1)):
             self.assertRaises(AttributeInferenceError, inst.getattr, '__mro__')
             self.assertRaises(AttributeInferenceError, inst.getattr, '__bases__')
             self.assertRaises(AttributeInferenceError, inst.getattr, '__name__')
-            self.assertEqual(len(inst.getattr('__dict__')), 1)
-            self.assertEqual(len(inst.getattr('__doc__')), 1)
+            self.assertRaises(AttributeInferenceError, inst.getattr, '__doc__')
+            self.assertRaises(AttributeInferenceError, inst.getattr, '__dict__')
 
     def test_navigation(self):
         klass = self.module['YO']
