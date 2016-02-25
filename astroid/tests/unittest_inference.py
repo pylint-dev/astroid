@@ -293,7 +293,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
     def test_unbound_method_inference(self):
         inferred = self.ast['m_unbound'].infer()
         meth1 = next(inferred)
-        self.assertIsInstance(meth1, UnboundMethod)
+        self.assertIsInstance(meth1, UnboundMethod if six.PY2 else nodes.FunctionDef)
         self.assertEqual(meth1.name, 'meth1')
         self.assertEqual(meth1.parent.frame().name, 'C')
         self.assertRaises(StopIteration, partial(next, inferred))
@@ -1223,6 +1223,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(propinferred.name, 'SendMailController')
         self.assertEqual(propinferred.root().name, __name__)
 
+    @unittest.skipUnless(six.PY2, "Tests UnboundMethod's im_func, which don't exist in Python 3.")
     def test_im_func_unwrap(self):
         code = '''
             class EnvBasedTC:
@@ -1449,7 +1450,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         callfunc = next(ast.nodes_of_class(nodes.Call))
         func = callfunc.func
         inferred = func.inferred()[0]
-        self.assertIsInstance(inferred, UnboundMethod)
+        self.assertIsInstance(inferred, UnboundMethod if six.PY2 else nodes.FunctionDef)
 
     def test_instance_binary_operations(self):
         code = """
@@ -3285,7 +3286,7 @@ class GetattrTest(unittest.TestCase):
         self.assertEqual(first.bound.name, 'A')
 
         second = next(ast_nodes[1].infer())
-        self.assertIsInstance(second, UnboundMethod)
+        self.assertIsInstance(second, UnboundMethod if six.PY2 else nodes.FunctionDef)
         self.assertIsInstance(second.parent, nodes.ClassDef)
         self.assertEqual(second.parent.name, 'A')
 
@@ -3293,12 +3294,12 @@ class GetattrTest(unittest.TestCase):
         self.assertIsInstance(third, BoundMethod)
         # Bound to E, but the provider is B.
         self.assertEqual(third.bound.name, 'E')
-        self.assertEqual(third._proxied._proxied.parent.name, 'B')
+        self.assertEqual(third.parent.name, 'B')
 
         fourth = next(ast_nodes[3].infer())
         self.assertIsInstance(fourth, BoundMethod)
         self.assertEqual(fourth.bound.name, 'E')
-        self.assertEqual(third._proxied._proxied.parent.name, 'B')
+        self.assertEqual(third.parent.name, 'B')
 
         fifth = next(ast_nodes[4].infer())
         self.assertIsInstance(fifth, BoundMethod)

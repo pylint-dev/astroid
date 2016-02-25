@@ -518,5 +518,63 @@ class SuperTests(unittest.TestCase):
         self.assertEqual(inferred.value, 42)
 
 
+class MethodTest(unittest.TestCase):
+
+    def test_unbound_function_method_difference(self):
+        node = test_utils.extract_node('''
+        class A:
+            def test(self): pass
+        A.test
+        ''')
+        inferred = next(node.infer())
+        if six.PY2:
+             self.assertIsInstance(inferred, objects.UnboundMethod)
+        else:
+             self.assertIsInstance(inferred, nodes.FunctionDef)
+
+    def test_unbound_function_from_classmethods(self):
+        node = test_utils.extract_node('''
+        class A:
+            @classmethod
+            def test(cls): return cls.b
+            def b(self): return self
+        A.test()
+        ''')
+        inferred = next(node.infer())
+        if six.PY2:
+             self.assertIsInstance(inferred, objects.UnboundMethod)
+        else:
+             self.assertIsInstance(inferred, nodes.FunctionDef)
+
+    def test_static_method(self):
+        node = test_utils.extract_node('''
+        class A:
+            @staticmethod
+            def test(self): pass
+        A.test
+        ''')
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, nodes.FunctionDef)
+
+    @unittest.skipUnless(six.PY2, "Unbound methods are available only on Python 2")
+    def test_underlying_proxied_unbound_method(self):
+        node = test_utils.extract_node('''
+        class A:
+            def test(self): pass
+        A.test
+        ''')
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred._proxied, nodes.FunctionDef)
+
+    def test_underlying_proxied_bound_method(self):
+        node = test_utils.extract_node('''
+        class A:
+            def test(self): pass
+        A().test
+        ''')
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred._proxied, nodes.FunctionDef)
+
+
 if __name__ == '__main__':
     unittest.main()

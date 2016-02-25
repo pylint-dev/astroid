@@ -104,6 +104,7 @@ class BoundMethodModelTest(unittest.TestCase):
 
 class UnboundMethodModelTest(unittest.TestCase):
 
+    @unittest.skipUnless(six.PY2, "Unbound methods are available in Python 2 only.")
     def test_unbound_method_model(self):
         ast_nodes = test_utils.extract_node('''
         class A:
@@ -119,10 +120,7 @@ class UnboundMethodModelTest(unittest.TestCase):
 
         cls = next(ast_nodes[0].infer())
         self.assertIsInstance(cls, astroid.ClassDef)
-        if six.PY2:
-            unbound = BUILTINS.locals[types.MethodType.__name__][0]
-        else:
-            unbound = BUILTINS.locals[types.FunctionType.__name__][0]
+        unbound = BUILTINS.locals[types.MethodType.__name__][0]
         self.assertIs(cls, unbound)
 
         func = next(ast_nodes[1].infer())
@@ -286,7 +284,7 @@ class FunctionModelTest(unittest.TestCase):
         ''')
         bound = next(bound.infer())
         self.assertIsInstance(bound, astroid.BoundMethod)
-        self.assertEqual(bound._proxied._proxied.name, 'test')
+        self.assertEqual(bound.name, 'test')
         result = next(result.infer())
         self.assertIsInstance(result, astroid.Const)
         self.assertEqual(result.value, 42)

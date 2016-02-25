@@ -175,7 +175,7 @@ class BaseInstance(Proxy):
                     for inferred in attr.infer_call_result(self, context):
                         yield inferred
                 else:
-                    yield BoundMethod(attr, self)
+                    yield BoundMethod(attr._proxied, self)
             elif hasattr(attr, 'name') and attr.name == '<lambda>':
                 # This is a lambda function defined at class level,
                 # since its scope is the underlying _proxied class.
@@ -278,20 +278,13 @@ class Instance(BaseInstance):
                 node=self, index=index, context=context))
 
 
-@util.register_implementation(runtimeabc.UnboundMethod)
-class UnboundMethod(Proxy):
-    """a special node representing a method not bound to an instance"""
-
-    special_attributes = util.lazy_descriptor(lambda: objectmodel.UnboundMethodModel())
+class Method(Proxy):
 
     def __repr__(self):
         frame = self._proxied.parent.frame()
         return '<%s %s of %s at 0x%s' % (self.__class__.__name__,
                                          self._proxied.name,
                                          frame.qname(), id(self))
-
-    def is_bound(self):
-        return False
 
     def getattr(self, name, context=None):
         if name in self.special_attributes:
@@ -303,6 +296,16 @@ class UnboundMethod(Proxy):
             return iter((self.special_attributes.lookup(name), ))
         return self._proxied.igetattr(name, context)
 
+    def bool_value(self):
+        return True
+
+
+@util.register_implementation(runtimeabc.UnboundMethod)
+class UnboundMethod(Method):
+    """a special node representing a method not bound to an instance"""
+
+    special_attributes = util.lazy_descriptor(lambda: objectmodel.UnboundMethodModel())
+
     def infer_call_result(self, caller, context):
         # If we're unbound method __new__ of builtin object, the result is an
         # instance of the class given as first argument.
@@ -312,15 +315,13 @@ class UnboundMethod(Proxy):
             return ((x is util.Uninferable and x or Instance(x)) for x in infer)
         return self._proxied.infer_call_result(caller, context)
 
-    def bool_value(self):
-        return True
+    def is_bound(self):
+        return False
 
 
 @util.register_implementation(runtimeabc.BoundMethod)
 class BoundMethod(UnboundMethod):
     """a special node representing a method bound to an instance"""
-    # __func__ and __self__ are method-only special attributes, the
-    # rest are general function special attributes.
 
     special_attributes = util.lazy_descriptor(lambda: objectmodel.BoundMethodModel())
 
@@ -337,9 +338,6 @@ class BoundMethod(UnboundMethod):
         context = context.clone()
         context.boundnode = self.bound
         return super(BoundMethod, self).infer_call_result(caller, context)
-
-    def bool_value(self):
-        return True
 
 
 @util.register_implementation(runtimeabc.Generator)

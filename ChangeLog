@@ -3,6 +3,12 @@ Change log for the astroid package (used to be astng)
 
 --
 
+    * Unbound methods don't occur anymore on Python 3
+
+      Instead, we're inferring FunctionDefs where an unbound access
+      to a method was found.
+      Closes issue #257
+
     * wildcard_imported_names() got replaced by public_names()
 
       Our understanding of wildcard imports through __all__ was

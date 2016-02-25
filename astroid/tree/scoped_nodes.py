@@ -106,12 +106,17 @@ def _verify_duplicates_mro(sequences, cls, context):
                 mros=sequences, cls=cls, context=context)
 
 
-def function_to_method(n, klass):
+def function_to_method(n, klass, klass_context):
     if isinstance(n, FunctionDef):
         if n.type == 'classmethod':
             return objects.BoundMethod(n, klass)
         if n.type != 'staticmethod':
-            return objects.UnboundMethod(n)
+            if six.PY2:
+                return objects.UnboundMethod(n)
+            else:
+                if klass_context:
+                    return n
+                return objects.BoundMethod(n, klass)
     return n
 
 
@@ -1595,7 +1600,7 @@ class ClassDef(QualifiedNameMixin, base.FilterStmtsMixin,
                     else:
                         yield util.Uninferable
                 else:
-                    yield function_to_method(inferred, self)
+                    yield function_to_method(inferred, self, class_context)
         except exceptions.AttributeInferenceError as error:
             if not name.startswith('__') and self.has_dynamic_getattr(context):
                 # class handle some dynamic attributes, return a Uninferable object

@@ -212,6 +212,10 @@ class ModuleModel(ObjectModel):
 class FunctionModel(ObjectModel):
 
     @property
+    def py__class__(self):
+        return util.object_type(self._instance)
+
+    @property
     def py__name__(self):
         return node_classes.Const(value=self._instance.name,
                                   parent=self._instance)
@@ -305,8 +309,7 @@ class FunctionModel(ObjectModel):
                                   func.decorators, func.returns)
 
                 # Build a proper bound method that points to our newly built function.
-                proxy = objects.UnboundMethod(new_func)
-                yield objects.BoundMethod(proxy=proxy, bound=cls)
+                yield objects.BoundMethod(proxy=new_func, bound=cls)
 
         return DescriptorBoundMethod(proxy=self._instance, bound=self._instance)
 
@@ -333,7 +336,6 @@ class FunctionModel(ObjectModel):
     py__init__ = py__ne__
     py__dir__ = py__ne__
     py__call__ = py__ne__
-    py__class__ = py__ne__
     py__closure__ = py__ne__
     py__code__ = py__ne__
 
@@ -462,8 +464,12 @@ class UnboundMethodModel(ObjectModel):
 class BoundMethodModel(FunctionModel):
 
     @property
+    def py__class__(self):
+        return util.object_type(self._instance)
+
+    @property
     def py__func__(self):
-        return self._instance._proxied._proxied
+        return self._instance._proxied
 
     @property
     def py__self__(self):

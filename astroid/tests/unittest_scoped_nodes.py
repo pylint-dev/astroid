@@ -876,7 +876,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         for method in ('m1', 'm2', 'm3'):
             inferred = list(cls.igetattr(method))
             self.assertEqual(len(inferred), 1)
-            self.assertIsInstance(inferred[0], UnboundMethod)
+            self.assertIsInstance(inferred[0], UnboundMethod if six.PY2 else nodes.FunctionDef)
             inferred = list(Instance(cls).igetattr(method))
             self.assertEqual(len(inferred), 1)
             self.assertIsInstance(inferred[0], BoundMethod)
@@ -1489,7 +1489,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         #   from the class that uses the metaclass, the value
         #   of the property
         property_meta = next(module['Metaclass'].igetattr('meta_property'))
-        self.assertIsInstance(property_meta, UnboundMethod)
+        self.assertIsInstance(property_meta, UnboundMethod if six.PY2 else nodes.FunctionDef)
         wrapping = scoped_nodes.get_wrapping_class(property_meta)
         self.assertEqual(wrapping, module['Metaclass'])
 
