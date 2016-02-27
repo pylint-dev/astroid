@@ -170,7 +170,7 @@ class BaseInstance(Proxy):
     def _wrap_attr(self, attrs, context=None):
         """wrap bound methods of attrs in a InstanceMethod proxies"""
         for attr in attrs:
-            if isinstance(attr, UnboundMethod):
+            if isinstance(attr, Method):
                 if is_property(attr):
                     for inferred in attr.infer_call_result(self, context):
                         yield inferred
@@ -296,8 +296,14 @@ class Method(Proxy):
             return iter((self.special_attributes.lookup(name), ))
         return self._proxied.igetattr(name, context)
 
+    def infer_call_result(self, caller, context):
+        return self._proxied.infer_call_result(caller, context)
+
     def bool_value(self):
         return True
+
+    def is_bound(self):
+        return False
 
 
 @util.register_implementation(runtimeabc.UnboundMethod)
@@ -306,27 +312,15 @@ class UnboundMethod(Method):
 
     special_attributes = util.lazy_descriptor(lambda: objectmodel.UnboundMethodModel())
 
-    def infer_call_result(self, caller, context):
-        # If we're unbound method __new__ of builtin object, the result is an
-        # instance of the class given as first argument.
-        if (self._proxied.name == '__new__' and
-                self._proxied.parent.frame().qname() == '%s.object' % BUILTINS):
-            infer = caller.args[0].infer() if caller.args else []
-            return ((x is util.Uninferable and x or Instance(x)) for x in infer)
-        return self._proxied.infer_call_result(caller, context)
-
-    def is_bound(self):
-        return False
-
 
 @util.register_implementation(runtimeabc.BoundMethod)
-class BoundMethod(UnboundMethod):
+class BoundMethod(Method):
     """a special node representing a method bound to an instance"""
 
     special_attributes = util.lazy_descriptor(lambda: objectmodel.BoundMethodModel())
 
     def __init__(self, proxy, bound):
-        UnboundMethod.__init__(self, proxy)
+        super(BoundMethod, self).__init__(proxy)
         self.bound = bound
 
     def is_bound(self):

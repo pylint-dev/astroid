@@ -40,11 +40,15 @@ class BuiltinInstance(RuntimeObject):
     """Represents an instance of a builtin."""
 
 
-class UnboundMethod(RuntimeObject):
+class Method(RuntimeObject):
+    """Base class for methods."""
+
+
+class UnboundMethod(Method):
     """Class representing an unbound method."""
 
 
-class BoundMethod(UnboundMethod):
+class BoundMethod(Method):
     """Class representing a bound method."""
 
 

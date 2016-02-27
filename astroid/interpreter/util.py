@@ -241,7 +241,7 @@ def _object_type(node, context=None):
                     yield metaclass
                     continue
             yield builtins_ast.getattr('type')[0]
-        elif isinstance(inferred, (treeabc.Lambda, runtimeabc.UnboundMethod)):
+        elif isinstance(inferred, (treeabc.Lambda, runtimeabc.Method)):
             if isinstance(inferred, treeabc.Lambda):
                 if inferred.root() is builtins_ast:
                     yield builtins_ast[types.BuiltinFunctionType.__name__]

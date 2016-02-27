@@ -514,45 +514,55 @@ def infer_slice(node, context=None):
 
 
 def infer_type_dunder_new(caller, context=None):
-    """Try to infer what type.__new__(mcs, name, bases, attrs) returns.
+    """Try to infer what __new__ returns when called
 
+    It also looks for type.__new__(mcs, name, bases, attrs).
     In order for such call to be valid, the metaclass needs to be
     a subtype of ``type``, the name needs to be a string, the bases
     needs to be a tuple of classes and the attributes a dictionary
     of strings to values.
     """
-    if len(caller.args) != 4:
+    if not caller.args:
         raise UseInferenceDefault
+
+    inferred = next(caller.args[0].infer())
+    if inferred is util.Uninferable:
+        raise UseInferenceDefault
+
+    default = iter((objects.Instance(inferred), ))
+
+    if len(caller.args) != 4:
+        return default
 
     # Verify the metaclass
     mcs = next(caller.args[0].infer(context=context))
     if not isinstance(mcs, nodes.ClassDef):
         # Not a valid first argument.
-        raise UseInferenceDefault
+        return default
     if not mcs.is_subtype_of("%s.type" % BUILTINS):
         # Not a valid metaclass.
-        raise UseInferenceDefault
+        return default
 
     # Verify the name
     name = next(caller.args[1].infer(context=context))
     if not isinstance(name, nodes.Const):
         # Not a valid name, needs to be a const.
-        raise UseInferenceDefault
+        return default
     if not isinstance(name.value, str):
         # Needs to be a string.
-        raise UseInferenceDefault
+        return default
 
     # Verify the bases
     bases = next(caller.args[2].infer(context=context))
     if not isinstance(bases, nodes.Tuple):
         # Needs to be a tuple.
-        raise UseInferenceDefault
+        return default
     inferred_bases = [next(elt.infer(context=context))
                       for elt in bases.elts]
     if not all(isinstance(base, nodes.ClassDef)
            for base in inferred_bases):
         # All the bases needs to be Classes
-        raise UseInferenceDefault
+        return default
 
     cls = nodes.ClassDef(name=name.value, lineno=caller.lineno,
                          col_offset=caller.col_offset, parent=caller)
@@ -561,17 +571,17 @@ def infer_type_dunder_new(caller, context=None):
     attrs = next(caller.args[3].infer(context=context))
     if not isinstance(attrs, nodes.Dict):
         # Needs to be a dictionary.
-        raise UseInferenceDefault
+        return default
     body = []
     for key, value in attrs.items:
         key = next(key.infer(context=context))
         value = next(value.infer(context=context))
         if not isinstance(key, nodes.Const):
             # Something invalid as an attribute.
-            raise UseInferenceDefault
+            return default
         if not isinstance(key.value, str):
             # Not a proper attribute.
-            raise UseInferenceDefault
+            return default
         assign = nodes.Assign(parent=cls)
         assign.postinit(targets=nodes.AssignName(key.value, parent=assign),
                         value=value)
@@ -584,10 +594,7 @@ def infer_type_dunder_new(caller, context=None):
 
 def _looks_like_type_dunder_new(node):
     return (isinstance(node.func, nodes.Attribute)
-                and isinstance(node.func.expr, nodes.Name)
-                and node.func.expr.name == 'type'
                 and node.func.attrname == '__new__')
-
 
 # Builtins inference
 register_builtin_transform(infer_bool, 'bool')

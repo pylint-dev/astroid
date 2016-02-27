@@ -154,11 +154,11 @@ class AstroidBuilder(object):
         """Handles encoding and delayed nodes after a module has been built"""
         module.file_encoding = encoding
         self._manager.cache_module(module)
-        delayed_assignments(module)
 
         # Visit the transforms
         if self._apply_transforms:
             module = self._manager.visit_transforms(module)
+        delayed_assignments(module)
         return module
 
     def _data_build(self, data, modname, path):
