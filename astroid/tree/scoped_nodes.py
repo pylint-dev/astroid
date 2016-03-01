@@ -1593,12 +1593,19 @@ class ClassDef(QualifiedNameMixin, base.FilterStmtsMixin,
                 # yield Uninferable object instead of descriptors when necessary
                 if (not isinstance(inferred, node_classes.Const)
                         and isinstance(inferred, objects.Instance)):
-                    try:
-                        inferred._proxied.getattr('__get__', context)
-                    except exceptions.AttributeInferenceError:
-                        yield inferred
+                    if inferred.root().pure_python:
+                        # We need to process only those descriptors which are custom
+                        # classes, with their own implementation of __get__.
+                        # Other objects, coming from builtins, shouldn't be of interest.
+                        # TODO: do the __get__ computation.
+                        try:
+                            inferred._proxied.local_attr('__get__', context)
+                        except exceptions.AttributeInferenceError:
+                            yield inferred
+                        else:
+                            yield util.Uninferable
                     else:
-                        yield util.Uninferable
+                        yield inferred
                 else:
                     yield function_to_method(inferred, self, class_context)
         except exceptions.AttributeInferenceError as error:

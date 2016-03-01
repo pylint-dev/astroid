@@ -151,7 +151,6 @@ class BaseInstance(Proxy):
             # avoid recursively inferring the same attr on the same class
             if context.push((self._proxied, name)):
                 return
-
             # XXX frame should be self._proxied, or not ?
             attrs = self.getattr(name, context, lookupclass=False)
             for stmt in infer_stmts(self._wrap_attr(attrs, context),
