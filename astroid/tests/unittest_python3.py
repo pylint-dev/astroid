@@ -213,7 +213,7 @@ class Python3TC(unittest.TestCase):
         self.assertEqual(func.args.args[0].annotation.name, 'int')
         self.assertIsInstance(func.args.args[1].annotation, Name)
         self.assertEqual(func.args.args[1].annotation.name, 'str')
-        self.assertIsNone(func.returns)
+        self.assertIs(func.returns, nodes.Empty)
 
     @require_version('3.0')
     def test_annotation_as_string(self):

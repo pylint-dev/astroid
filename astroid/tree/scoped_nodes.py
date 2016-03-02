@@ -202,7 +202,7 @@ class Module(QualifiedNameMixin, lookup.LocalsDictNode):
         self.body = []
         self.external_attrs = collections.defaultdict(list)
 
-    def postinit(self, body=None):
+    def postinit(self, body=()):
         self.body = body
 
     @property
@@ -447,15 +447,15 @@ class ComprehensionScope(lookup.LocalsDictNode):
 class GeneratorExp(ComprehensionScope):
     _astroid_fields = ('elt', 'generators')
     # _other_other_fields = ('locals',)
-    elt = None
-    generators = None
+    elt = node_classes.Empty
+    generators = node_classes.Empty
 
     def __init__(self, lineno=None, col_offset=None, parent=None):
         super(GeneratorExp, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, elt=None, generators=None):
+    def postinit(self, elt=node_classes.Empty, generators=node_classes.Empty):
         self.elt = elt
-        if generators is None:
+        if generators is node_classes.Empty:
             self.generators = []
         else:
             self.generators = generators
@@ -468,17 +468,17 @@ class GeneratorExp(ComprehensionScope):
 class DictComp(ComprehensionScope):
     _astroid_fields = ('key', 'value', 'generators')
     # _other_other_fields = ('locals',)
-    key = None
-    value = None
-    generators = None
+    key = node_classes.Empty
+    value = node_classes.Empty
+    generators = node_classes.Empty
 
     def __init__(self, lineno=None, col_offset=None, parent=None):
         super(DictComp, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, key=None, value=None, generators=None):
+    def postinit(self, key=node_classes.Empty, value=node_classes.Empty, generators=node_classes.Empty):
         self.key = key
         self.value = value
-        if generators is None:
+        if generators is node_classes.Empty:
             self.generators = []
         else:
             self.generators = generators
@@ -491,15 +491,15 @@ class DictComp(ComprehensionScope):
 class SetComp(ComprehensionScope):
     _astroid_fields = ('elt', 'generators')
     # _other_other_fields = ('locals',)
-    elt = None
-    generators = None
+    elt = node_classes.Empty
+    generators = node_classes.Empty
 
     def __init__(self, lineno=None, col_offset=None, parent=None):
         super(SetComp, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, elt=None, generators=None):
+    def postinit(self, elt=node_classes.Empty, generators=node_classes.Empty):
         self.elt = elt
-        if generators is None:
+        if generators is node_classes.Empty:
             self.generators = []
         else:
             self.generators = generators
@@ -512,10 +512,10 @@ class SetComp(ComprehensionScope):
 class _ListComp(treebase.NodeNG):
     """class representing a ListComp node"""
     _astroid_fields = ('elt', 'generators')
-    elt = None
-    generators = None
+    elt = node_classes.Empty
+    generators = node_classes.Empty
 
-    def postinit(self, elt=None, generators=None):
+    def postinit(self, elt=node_classes.Empty, generators=node_classes.Empty):
         self.elt = elt
         self.generators = generators
 
@@ -892,10 +892,10 @@ class FunctionDef(LambdaFunctionMixin, lookup.LocalsDictNode,
 
     if six.PY3:
         _astroid_fields = ('decorators', 'args', 'body', 'returns')
-        returns = None
+        returns = node_classes.Empty
     else:
         _astroid_fields = ('decorators', 'args', 'body')
-    decorators = None
+    decorators = node_classes.Empty
 
     special_attributes = frozenset(
         ('__doc__', '__name__', '__qualname__', '__module__', '__defaults__',
@@ -916,7 +916,7 @@ class FunctionDef(LambdaFunctionMixin, lookup.LocalsDictNode,
         super(FunctionDef, self).__init__(lineno, col_offset, parent)
 
     # pylint: disable=arguments-differ; different than Lambdas
-    def postinit(self, args, body, decorators=None, returns=None):
+    def postinit(self, args, body, decorators=node_classes.Empty, returns=node_classes.Empty):
         self.args = args
         self.body = body
         self.decorators = decorators
@@ -1035,7 +1035,7 @@ class FunctionDef(LambdaFunctionMixin, lookup.LocalsDictNode,
         # lineno is the line number of the first decorator, we want the def
         # statement lineno
         lineno = self.lineno
-        if self.decorators is not None:
+        if self.decorators is not node_classes.Empty:
             lineno += sum(node.tolineno - node.lineno + 1
                           for node in self.decorators.nodes)
 
@@ -1084,7 +1084,7 @@ class FunctionDef(LambdaFunctionMixin, lookup.LocalsDictNode,
         """return a list of decorator qualified names"""
         result = set()
         decoratornodes = []
-        if self.decorators is not None:
+        if self.decorators is not node_classes.Empty:
             # pylint: disable=unsupported-binary-operation; damn flow control.
             decoratornodes += self.decorators.nodes
         decoratornodes += self.extra_decorators
@@ -1144,7 +1144,7 @@ class FunctionDef(LambdaFunctionMixin, lookup.LocalsDictNode,
         # metaclass generators, and filter it out later.
         if (self.name == 'with_metaclass' and
                 len(self.args.args) == 1 and
-                self.args.vararg is not None):
+                self.args.vararg is not node_classes.Empty):
             metaclass = next(caller.args[0].infer(context))
             if isinstance(metaclass, ClassDef):
                 c = ClassDef('temporary_class', None)
@@ -1157,7 +1157,7 @@ class FunctionDef(LambdaFunctionMixin, lookup.LocalsDictNode,
                 return
         returns = self.nodes_of_class(node_classes.Return, skip_klass=FunctionDef)
         for returnnode in returns:
-            if returnnode.value is None:
+            if returnnode.value is node_classes.Empty:
                 yield node_classes.NameConstant(None)
             else:
                 try:
@@ -1279,7 +1279,7 @@ class ClassDef(QualifiedNameMixin, base.FilterStmtsMixin,
 
     _astroid_fields = ('decorators', 'bases', 'body')
 
-    decorators = None
+    decorators = node_classes.Empty
     special_attributes = frozenset(
         ('__name__', '__module__', '__dict__', '__bases__', '__doc__',
          '__qualname__', '__mro__', '__subclasses__', '__class__'))

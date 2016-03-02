@@ -504,7 +504,7 @@ def infer_slice(node, context=None):
 
     if len(args) < 3:
         # Make sure we have 3 arguments.
-        args.extend([None] * (3 - len(args)))
+        args.extend([nodes.Empty] * (3 - len(args)))
 
     slice_node = nodes.Slice(lineno=node.lineno,
                              col_offset=node.col_offset,

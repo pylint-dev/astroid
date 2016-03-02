@@ -397,7 +397,7 @@ class NodeNG(object):
         def _repr_node(node, result, done, cur_indent='', depth=1):
             """Outputs a strings representation of an astroid node."""
             if node in done:
-                result.append(indent + '<Recursion on %s with id=%s' %
+                result.append('<Recursion on %s with id=%s' %
                               (type(node).__name__, id(node)))
                 return False
             else:

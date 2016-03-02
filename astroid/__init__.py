@@ -82,6 +82,9 @@ from astroid.interpreter.lookup import builtin_lookup
 from astroid.builder import parse
 from astroid.util import Uninferable, YES
 
+# ???
+from astroid.tree import zipper
+
 
 # transform utilities (filters and decorator)
 

@@ -371,7 +371,7 @@ def ast_from_function(func, built_objects, module, name=None, parent=None):
     vararg = _extract_vararg(python_vararg, args_node)
     kwarg = _extract_vararg(python_kwarg, args_node)
 
-    returns = None
+    returns = node_classes.Empty
     if signature.return_annotation is not _Parameter.empty:
         returns = _ast_from_object(signature.return_annotation,
                                    built_objects,

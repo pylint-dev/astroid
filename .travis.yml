@@ -1,5 +1,9 @@
 language: python
 
+cache:
+  directories:
+    - $HOME/.hypothesis
+
 matrix:
   include:
     - python: 2.7
@@ -25,6 +29,7 @@ before_install:
   - python --version
   - uname -a
   - lsb_release -a
+
 install:
   - $PYTHON_EXE -m pip install pip -U
   - python -m pip install tox
@@ -34,13 +39,15 @@ install:
   - $PYTHON_EXE -m easy_install --version
   - $PYTHON_EXE -m pip --version
   - $PYTHON_EXE -m tox --version
+
 script:
   - tox -e $TOXENV
+
 after_failure:
   - more .tox/log/* | cat
   - more .tox/*/log/* | cat
+
 notifications:
   email:
     on_success: always
     on_failure: always
-

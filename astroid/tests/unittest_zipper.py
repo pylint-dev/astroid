@@ -8,35 +8,55 @@ import hypothesis
 from hypothesis import strategies
 
 import astroid
+from astroid.tree import base
 from astroid.tree import zipper
 
 
 # This screens out the empty init files.
 astroid_file = strategies.sampled_from(os.path.join(p, n) for p, _, ns in os.walk('astroid/') for n in ns if n.endswith('.py') and '__init__.py' not in n)
 
-MapNode = collections.namedtuple('MapNode', 'children parent moves')
+class ASTMap(dict):
+    def __repr__(self):
+        return repr(self[1])
+
+class AssignLabels(object):
+    Node = collections.namedtuple('Node', 'node children parent')    
+    def __init__(self):
+        self.label = 1
+    def __call__(self, labels, node, parent_label=0):
+        label = self.label
+        self.label += 1
+        children = tuple(self(labels, c, label) for c in node)
+        labels[label] = self.Node(node, children, parent_label)
+        return label
+
+Node = collections.namedtuple('Node', 'node children parent edges')
+Edge = collections.namedtuple('Edge', 'label move')
 
 def ast_from_file_name(name):
     with open(name, 'r') as source_file:
-        print(name)
+        # print(name)
         root = astroid.parse(source_file.read())
-        to_visit = [(root, None)]
-        ast = {}
+        ast = ASTMap()
+        AssignLabels()(ast, root)
+        to_visit = [1]
         while to_visit:
-            node, parent = to_visit.pop()
-            children = tuple(iter(node)) if node else ()
-            to_visit.extend((c, node) for c in children)
-            moves = []
+            label = to_visit.pop()
+            children = ast[label].children
+            parent = ast[label].parent
+            to_visit.extend(c for c in reversed(children))
+            edges = []
             if children:
-                moves.append(zipper.Zipper.down)
+                edges.append(Edge(children[0], zipper.Zipper.down))
             if parent:
-                moves.append(zipper.Zipper.up)
-                index = ast[id(parent)].children.index(node)
+                edges.append(Edge(parent, zipper.Zipper.up))
+                siblings = ast[parent].children
+                index = siblings.index(label)
                 if index > 0:
-                    moves.append(zipper.Zipper.left)
-                if index < len(ast[id(parent)].children) - 1:
-                    moves.append(zipper.Zipper.right)
-            ast[id(node)] = MapNode(children, parent, tuple(moves))
+                    edges.append(Edge(siblings[index - 1], zipper.Zipper.left))
+                if index < len(siblings) - 1:
+                    edges.append(Edge(siblings[index + 1], zipper.Zipper.right))
+            ast[label] = Node(ast[label].node, children, parent, tuple(edges))
     return ast, root
 
 ast_strategy = strategies.builds(ast_from_file_name, astroid_file)
@@ -48,23 +68,18 @@ class TestZipper(unittest.TestCase):
     @hypothesis.given(ast_strategy, strategies.integers(min_value=0, max_value=100), strategies.choices())
     def test(self, ast_root, length, choice):
         ast, root = ast_root
-        old_position = zipper.Zipper(root)
+        hypothesis.note(str(root))
+        old_label = 1
+        old_zipper = zipper.Zipper(root)
         for _ in range(length):
-            move = choice(ast[id(old_position.__wrapped__)].moves)
-            new_position = move(old_position)
-            if move is zipper.Zipper.down:
-                assert(new_position.__wrapped__ is next(iter(old_position)))
-            if move is zipper.Zipper.up:
-                assert(new_position.__wrapped__ is ast[id(old_position.__wrapped__)].parent)
-            if move is zipper.Zipper.left or move is zipper.Zipper.right:
-                parent = ast[id(old_position.__wrapped__)].parent
-                siblings = ast[id(parent)].children
-                index = siblings.index(old_position.__wrapped__)
-                if move is zipper.Zipper.left:
-                    assert(new_position.__wrapped__ is siblings[index - 1])
-                if move is zipper.Zipper.right:
-                    assert(new_position.__wrapped__ is siblings[index + 1])
-            old_position = new_position
+            new_label, move = choice(ast[old_label].edges)
+            new_zipper = move(old_zipper)
+            hypothesis.note(new_zipper)
+            assert(isinstance(new_zipper.__wrapped__,
+                              (base.NodeNG, collections.Sequence)))
+            assert(new_zipper.__wrapped__ is ast[new_label].node)
+            old_zipper = new_zipper
+            old_label = new_label
 
 if __name__ == '__main__':
     unittest.main()

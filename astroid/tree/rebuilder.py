@@ -97,8 +97,7 @@ def _get_doc(node):
     except IndexError:
         return node, None
 
-def _visit_or_none(node, attr, visitor, parent, visit='visit',
-                   **kws):
+def _visit_or_empty(node, attr, visitor, parent, visit='visit', **kws):
     """If the given node has an attribute, visits the attribute, and
     otherwise returns None.
 
@@ -107,7 +106,7 @@ def _visit_or_none(node, attr, visitor, parent, visit='visit',
     if value:
         return getattr(visitor, visit)(value, parent, **kws)
     else:
-        return None
+        return nodes.Empty
 
 
 def _get_context(node):
@@ -152,7 +151,7 @@ class ParameterVisitor(object):
                                 col_offset=getattr(param_node, 'col_offset', None),
                                 parent=parent)
         annotation = nodes.Empty
-        param_annotation = getattr(param_node, 'annotation', None)
+        param_annotation = getattr(param_node, 'annotation', nodes.Empty)
         if param_annotation:
             annotation = self._visitor.visit(param_annotation, param)
 
@@ -210,10 +209,10 @@ class TreeRebuilder(object):
                 # Get the annotation of the variadic node.
                 annotation = nodes.Empty
                 default = nodes.Empty
-                variadic_annotation = getattr(variadic, 'annotation', None)
+                variadic_annotation = getattr(variadic, 'annotation', nodes.Empty)
                 if variadic_annotation is None:
                     # Support for Python 3.3.
-                    variadic_annotation = getattr(node, field_name + 'annotation', None)
+                    variadic_annotation = getattr(node, field_name + 'annotation', nodes.Empty)
                 if variadic_annotation:
                     annotation = self.visit(variadic_annotation, param)
 
@@ -255,7 +254,7 @@ class TreeRebuilder(object):
         if node.msg:
             msg = self.visit(node.msg, newnode)
         else:
-            msg = None
+            msg = nodes.Empty
         newnode.postinit(self.visit(node.test, newnode), msg)
         return newnode
 
@@ -312,8 +311,8 @@ class TreeRebuilder(object):
     def visit_call(self, node, parent):
         """visit a CallFunc node by returning a fresh instance of it"""
         newnode = nodes.Call(node.lineno, node.col_offset, parent)
-        starargs = _visit_or_none(node, 'starargs', self, newnode)
-        kwargs = _visit_or_none(node, 'kwargs', self, newnode)
+        starargs = _visit_or_empty(node, 'starargs', self, newnode)
+        kwargs = _visit_or_empty(node, 'kwargs', self, newnode)
         args = [self.visit(child, newnode)
                 for child in node.args]
 
@@ -321,7 +320,7 @@ class TreeRebuilder(object):
             keywords = [self.visit(child, newnode)
                         for child in node.keywords]
         else:
-            keywords = None
+            keywords = ()
         if starargs:
             new_starargs = nodes.Starred(col_offset=starargs.col_offset,
                                          lineno=starargs.lineno,
@@ -356,7 +355,7 @@ class TreeRebuilder(object):
         if node.decorator_list:
             decorators = self.visit_decorators(node, newnode)
         else:
-            decorators = None
+            decorators = nodes.Empty
         newnode.postinit([self.visit(child, newnode)
                           for child in node.bases],
                          [self.visit(child, newnode)
@@ -457,8 +456,8 @@ class TreeRebuilder(object):
         """visit an ExceptHandler node by returning a fresh instance of it"""
         newnode = nodes.ExceptHandler(node.lineno, node.col_offset, parent)
         # /!\ node.name can be a tuple
-        newnode.postinit(_visit_or_none(node, 'type', self, newnode),
-                         _visit_or_none(node, 'name', self, newnode),
+        newnode.postinit(_visit_or_empty(node, 'type', self, newnode),
+                         _visit_or_empty(node, 'name', self, newnode),
                          [self.visit(child, newnode)
                           for child in node.body])
         return newnode
@@ -467,15 +466,14 @@ class TreeRebuilder(object):
         """visit an Exec node by returning a fresh instance of it"""
         newnode = nodes.Exec(node.lineno, node.col_offset, parent)
         newnode.postinit(self.visit(node.body, newnode),
-                         _visit_or_none(node, 'globals', self, newnode),
-                         _visit_or_none(node, 'locals', self, newnode))
+                         _visit_or_empty(node, 'globals', self, newnode),
+                         _visit_or_empty(node, 'locals', self, newnode))
         return newnode
 
     def visit_extslice(self, node, parent):
         """visit an ExtSlice node by returning a fresh instance of it"""
         newnode = nodes.ExtSlice(parent=parent)
-        newnode.postinit([self.visit(dim, newnode)
-                          for dim in node.dims])
+        newnode.postinit([self.visit(dim, newnode) for dim in node.dims])
         return newnode
 
     def _visit_for(self, cls, node, parent):
@@ -509,11 +507,11 @@ class TreeRebuilder(object):
         if node.decorator_list:
             decorators = self.visit_decorators(node, newnode)
         else:
-            decorators = None
+            decorators = nodes.Empty
         if PY3 and node.returns:
             returns = self.visit(node.returns, newnode)
         else:
-            returns = None
+            returns = nodes.Empty
         newnode.postinit(self.visit(node.args, newnode),
                          [self.visit(child, newnode)
                           for child in node.body],
@@ -660,7 +658,7 @@ class TreeRebuilder(object):
     def visit_print(self, node, parent):
         """visit a Print node by returning a fresh instance of it"""
         newnode = nodes.Print(node.nl, node.lineno, node.col_offset, parent)
-        newnode.postinit(_visit_or_none(node, 'dest', self, newnode),
+        newnode.postinit(_visit_or_empty(node, 'dest', self, newnode),
                          [self.visit(child, newnode)
                           for child in node.values])
         return newnode
@@ -668,9 +666,9 @@ class TreeRebuilder(object):
     def visit_raise(self, node, parent):
         """visit a Raise node by returning a fresh instance of it"""
         newnode = nodes.Raise(node.lineno, node.col_offset, parent)
-        newnode.postinit(_visit_or_none(node, 'type', self, newnode),
-                         _visit_or_none(node, 'inst', self, newnode),
-                         _visit_or_none(node, 'tback', self, newnode))
+        newnode.postinit(_visit_or_empty(node, 'type', self, newnode),
+                         _visit_or_empty(node, 'inst', self, newnode),
+                         _visit_or_empty(node, 'tback', self, newnode))
         return newnode
 
     def visit_return(self, node, parent):
@@ -698,9 +696,9 @@ class TreeRebuilder(object):
     def visit_slice(self, node, parent):
         """visit a Slice node by returning a fresh instance of it"""
         newnode = nodes.Slice(parent=parent)
-        newnode.postinit(_visit_or_none(node, 'lower', self, newnode),
-                         _visit_or_none(node, 'upper', self, newnode),
-                         _visit_or_none(node, 'step', self, newnode))
+        newnode.postinit(_visit_or_empty(node, 'lower', self, newnode),
+                         _visit_or_empty(node, 'upper', self, newnode),
+                         _visit_or_empty(node, 'step', self, newnode))
         return newnode
 
     def visit_subscript(self, node, parent):
@@ -767,7 +765,7 @@ class TreeRebuilder(object):
         with_item = nodes.WithItem(node.context_expr.lineno,
                                    node.context_expr.col_offset, newnode)
         context_expr = self.visit(node.context_expr, with_item)
-        optional_vars = _visit_or_none(node, 'optional_vars', self, with_item)
+        optional_vars = _visit_or_empty(node, 'optional_vars', self, with_item)
         with_item.postinit(context_expr, optional_vars)
         newnode.postinit([with_item],
                          [self.visit(child, newnode) for child in node.body])
@@ -795,8 +793,8 @@ class TreeRebuilder3(TreeRebuilder):
         if node.name:
             name = self.visit_assignname(node, newnode, node.name)
         else:
-            name = None
-        newnode.postinit(_visit_or_none(node, 'type', self, newnode),
+            name = nodes.Empty
+        newnode.postinit(_visit_or_empty(node, 'type', self, newnode),
                          name,
                          [self.visit(child, newnode)
                           for child in node.body])
@@ -812,8 +810,8 @@ class TreeRebuilder3(TreeRebuilder):
         """visit a Raise node by returning a fresh instance of it"""
         newnode = nodes.Raise(node.lineno, node.col_offset, parent)
         # no traceback; anyway it is not used in Pylint
-        newnode.postinit(_visit_or_none(node, 'exc', self, newnode),
-                         _visit_or_none(node, 'cause', self, newnode))
+        newnode.postinit(_visit_or_empty(node, 'exc', self, newnode),
+                         _visit_or_empty(node, 'cause', self, newnode))
         return newnode
 
     def visit_starred(self, node, parent):
@@ -852,7 +850,7 @@ class TreeRebuilder3(TreeRebuilder):
         newnode = nodes.WithItem(node.context_expr.lineno,
                                  node.context_expr.col_offset, parent)
         context_expr = self.visit(node.context_expr, newnode)
-        optional_vars = _visit_or_none(node, 'optional_vars', self, newnode)
+        optional_vars = _visit_or_empty(node, 'optional_vars', self, newnode)
         newnode.postinit(context_expr=context_expr, optional_vars=optional_vars)
         return newnode
 

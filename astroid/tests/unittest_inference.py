@@ -2924,7 +2924,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.Slice)
         self.assertEqual(inferred.lower.value, 1)
-        self.assertIsNone(inferred.upper)
+        self.assertIs(inferred.upper, nodes.Empty)
 
     def test_instance_slicing_fails(self):
         ast_nodes = test_utils.extract_node('''

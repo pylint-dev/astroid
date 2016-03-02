@@ -597,7 +597,7 @@ class BuilderTest(unittest.TestCase):
         none, nothing, chain = [ret.value for ret in astroid.body[0].body]
         self.assertIsInstance(none, nodes.Const)
         self.assertIsNone(none.value)
-        self.assertIsNone(nothing)
+        self.assertIs(nothing, nodes.Empty)
         self.assertIsInstance(chain, nodes.Const)
         self.assertEqual(chain.value, 'None')
 

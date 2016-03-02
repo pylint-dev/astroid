@@ -109,6 +109,23 @@ class BaseAssignName(base.LookupMixIn, base.ParentAssignTypeMixin,
 
     infer_lhs = inference.infer_name
 
+
+@object.__new__
+@util.register_implementation(treeabc.Empty)
+class Empty(base.NodeNG):
+    """Empty nodes represents the lack of something
+
+    For instance, they can be used to represent missing annotations
+    or defaults for arguments or anything where None is a valid
+    value.
+    """
+
+    def __bool__(self):
+        return False
+
+    __nonzero__ = __bool__
+
+
 @util.register_implementation(treeabc.AssignName)
 class AssignName(BaseAssignName):
     """class representing an AssignName node"""
@@ -283,13 +300,13 @@ class AssignAttr(base.ParentAssignTypeMixin,
     """class representing an AssignAttr node"""
     _astroid_fields = ('expr',)
     _other_fields = ('attrname',)
-    expr = None
+    expr = Empty
 
     def __init__(self, attrname=None, lineno=None, col_offset=None, parent=None):
         self.attrname = attrname
         super(AssignAttr, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, expr=None):
+    def postinit(self, expr=Empty):
         self.expr = expr
 
     infer_lhs = inference.infer_attribute
@@ -299,10 +316,10 @@ class AssignAttr(base.ParentAssignTypeMixin,
 class Assert(Statement):
     """class representing an Assert node"""
     _astroid_fields = ('test', 'fail',)
-    test = None
-    fail = None
+    test = Empty
+    fail = Empty
 
-    def postinit(self, test=None, fail=None):
+    def postinit(self, test=Empty, fail=Empty):
         self.fail = fail
         self.test = test
 
@@ -311,10 +328,10 @@ class Assert(Statement):
 class Assign(base.AssignTypeMixin, AssignedStmtsMixin, Statement):
     """class representing an Assign node"""
     _astroid_fields = ('targets', 'value',)
-    targets = None
-    value = None
+    targets = Empty
+    value = Empty
 
-    def postinit(self, targets=None, value=None):
+    def postinit(self, targets=Empty, value=Empty):
         self.targets = targets
         self.value = value
 
@@ -324,14 +341,14 @@ class AugAssign(base.AssignTypeMixin, AssignedStmtsMixin, Statement):
     """class representing an AugAssign node"""
     _astroid_fields = ('target', 'value')
     _other_fields = ('op',)
-    target = None
-    value = None
+    target = Empty
+    value = Empty
 
     def __init__(self, op=None, lineno=None, col_offset=None, parent=None):
         self.op = op
         super(AugAssign, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, target=None, value=None):
+    def postinit(self, target=Empty, value=Empty):
         self.target = target
         self.value = value
 
@@ -357,9 +374,9 @@ class AugAssign(base.AssignTypeMixin, AssignedStmtsMixin, Statement):
 class Repr(base.NodeNG):
     """class representing a Repr node"""
     _astroid_fields = ('value',)
-    value = None
+    value = Empty
 
-    def postinit(self, value=None):
+    def postinit(self, value=Empty):
         self.value = value
 
 
@@ -368,14 +385,14 @@ class BinOp(base.NodeNG):
     """class representing a BinOp node"""
     _astroid_fields = ('left', 'right')
     _other_fields = ('op',)
-    left = None
-    right = None
+    left = Empty
+    right = Empty
 
     def __init__(self, op=None, lineno=None, col_offset=None, parent=None):
         self.op = op
         super(BinOp, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, left=None, right=None):
+    def postinit(self, left=Empty, right=Empty):
         self.left = left
         self.right = right
 
@@ -402,13 +419,13 @@ class BoolOp(base.NodeNG):
     """class representing a BoolOp node"""
     _astroid_fields = ('values',)
     _other_fields = ('op',)
-    values = None
+    values = Empty
 
     def __init__(self, op=None, lineno=None, col_offset=None, parent=None):
         self.op = op
         super(BoolOp, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, values=None):
+    def postinit(self, values=Empty):
         self.values = values
 
 
@@ -421,11 +438,11 @@ class Break(Statement):
 class Call(base.NodeNG):
     """class representing a Call node"""
     _astroid_fields = ('func', 'args', 'keywords')
-    func = None
-    args = None
-    keywords = None
+    func = Empty
+    args = Empty
+    keywords = Empty
 
-    def postinit(self, func=None, args=None, keywords=None):
+    def postinit(self, func=Empty, args=Empty, keywords=Empty):
         self.func = func
         self.args = args
         self.keywords = keywords
@@ -438,7 +455,7 @@ class Call(base.NodeNG):
     @property
     def kwargs(self):
         keywords = self.keywords or []
-        return [keyword for keyword in keywords if keyword.arg is None]
+        return [keyword for keyword in keywords if keyword.arg is Empty]
 
 
 @util.register_implementation(treeabc.Compare)
@@ -446,14 +463,15 @@ class Compare(base.NodeNG):
     """class representing a Compare node"""
     _astroid_fields = ('left', 'comparators')
     _other_fields = ('ops',)
-    left = None
+    left = Empty
+    comparators = Empty
 
     def __init__(self, ops, lineno=None, col_offset=None, parent=None):
         self.comparators = []
         self.ops = ops
         super(Compare, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, left=None, comparators=None):
+    def postinit(self, left=Empty, comparators=Empty):
         self.left = left
         self.comparators = comparators
 
@@ -472,14 +490,14 @@ class Compare(base.NodeNG):
 class Comprehension(AssignedStmtsMixin, base.NodeNG):
     """class representing a Comprehension node"""
     _astroid_fields = ('target', 'iter', 'ifs')
-    target = None
-    iter = None
-    ifs = None
+    target = Empty
+    iter = Empty
+    ifs = Empty
 
     def __init__(self, parent=None):
         self.parent = parent
 
-    def postinit(self, target=None, iter=None, ifs=None):
+    def postinit(self, target=Empty, iter=Empty, ifs=Empty):
         self.target = target
         self.iter = iter
         self.ifs = ifs
@@ -580,7 +598,7 @@ class Continue(Statement):
 class Decorators(base.NodeNG):
     """class representing a Decorators node"""
     _astroid_fields = ('nodes',)
-    nodes = None
+    nodes = Empty
 
     def postinit(self, nodes):
         self.nodes = nodes
@@ -591,13 +609,13 @@ class DelAttr(base.ParentAssignTypeMixin, base.NodeNG):
     """class representing a DelAttr node"""
     _astroid_fields = ('expr',)
     _other_fields = ('attrname',)
-    expr = None
+    expr = Empty
 
     def __init__(self, attrname=None, lineno=None, col_offset=None, parent=None):
         self.attrname = attrname
         super(DelAttr, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, expr=None):
+    def postinit(self, expr=Empty):
         self.expr = expr
 
 
@@ -605,9 +623,9 @@ class DelAttr(base.ParentAssignTypeMixin, base.NodeNG):
 class Delete(base.AssignTypeMixin, Statement):
     """class representing a Delete node"""
     _astroid_fields = ('targets',)
-    targets = None
+    targets = Empty
 
-    def postinit(self, targets=None):
+    def postinit(self, targets=Empty):
         self.targets = targets
 
 
@@ -680,9 +698,9 @@ class Dict(base.NodeNG, objects.BaseInstance):
 class Expr(Statement):
     """class representing a Expr node"""
     _astroid_fields = ('value',)
-    value = None
+    value = Empty
 
-    def postinit(self, value=None):
+    def postinit(self, value=Empty):
         self.value = value
 
 
@@ -716,11 +734,11 @@ class InterpreterObject(base.NodeNG):
 class ExceptHandler(base.AssignTypeMixin, AssignedStmtsMixin, Statement):
     """class representing an ExceptHandler node"""
     _astroid_fields = ('type', 'name', 'body',)
-    type = None
-    name = None
-    body = None
+    type = Empty
+    name = Empty
+    body = Empty
 
-    def postinit(self, type=None, name=None, body=None):
+    def postinit(self, type=Empty, name=Empty, body=Empty):
         self.type = type
         self.name = name
         self.body = body
@@ -746,11 +764,11 @@ class ExceptHandler(base.AssignTypeMixin, AssignedStmtsMixin, Statement):
 class Exec(Statement):
     """class representing an Exec node"""
     _astroid_fields = ('expr', 'globals', 'locals')
-    expr = None
-    globals = None
-    locals = None
+    expr = Empty
+    globals = Empty
+    locals = Empty
 
-    def postinit(self, expr=None, globals=None, locals=None):
+    def postinit(self, expr=Empty, globals=Empty, locals=Empty):
         self.expr = expr
         self.globals = globals
         self.locals = locals
@@ -760,9 +778,9 @@ class Exec(Statement):
 class ExtSlice(base.NodeNG):
     """class representing an ExtSlice node"""
     _astroid_fields = ('dims',)
-    dims = None
+    dims = Empty
 
-    def postinit(self, dims=None):
+    def postinit(self, dims=Empty):
         self.dims = dims
 
 
@@ -771,12 +789,12 @@ class For(base.BlockRangeMixIn, base.AssignTypeMixin,
           AssignedStmtsMixin, Statement):
     """class representing a For node"""
     _astroid_fields = ('target', 'iter', 'body', 'orelse',)
-    target = None
-    iter = None
-    body = None
-    orelse = None
+    target = Empty
+    iter = Empty
+    body = Empty
+    orelse = Empty
 
-    def postinit(self, target=None, iter=None, body=None, orelse=None):
+    def postinit(self, target=Empty, iter=Empty, body=Empty, orelse=Empty):
         self.target = target
         self.iter = iter
         self.body = body
@@ -798,9 +816,9 @@ class Await(base.NodeNG):
     """Await node for the `await` keyword."""
 
     _astroid_fields = ('value', )
-    value = None
+    value = Empty
 
-    def postinit(self, value=None):
+    def postinit(self, value=Empty):
         self.value = value
 
 
@@ -825,13 +843,13 @@ class Attribute(base.NodeNG):
     """class representing a Attribute node"""
     _astroid_fields = ('expr',)
     _other_fields = ('attrname',)
-    expr = None
+    expr = Empty
 
     def __init__(self, attrname=None, lineno=None, col_offset=None, parent=None):
         self.attrname = attrname
         super(Attribute, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, expr=None):
+    def postinit(self, expr=Empty):
         self.expr = expr
 
 
@@ -852,11 +870,11 @@ class Global(Statement):
 class If(base.BlockRangeMixIn, Statement):
     """class representing an If node"""
     _astroid_fields = ('test', 'body', 'orelse')
-    test = None
-    body = None
-    orelse = None
+    test = Empty
+    body = Empty
+    orelse = Empty
 
-    def postinit(self, test=None, body=None, orelse=None):
+    def postinit(self, test=Empty, body=Empty, orelse=Empty):
         self.test = test
         self.body = body
         self.orelse = orelse
@@ -879,11 +897,11 @@ class If(base.BlockRangeMixIn, Statement):
 class IfExp(base.NodeNG):
     """class representing an IfExp node"""
     _astroid_fields = ('test', 'body', 'orelse')
-    test = None
-    body = None
-    orelse = None
+    test = Empty
+    body = Empty
+    orelse = Empty
 
-    def postinit(self, test=None, body=None, orelse=None):
+    def postinit(self, test=Empty, body=Empty, orelse=Empty):
         self.test = test
         self.body = body
         self.orelse = orelse
@@ -911,9 +929,9 @@ class Import(base.FilterStmtsMixin, Statement):
 class Index(base.NodeNG):
     """class representing an Index node"""
     _astroid_fields = ('value',)
-    value = None
+    value = Empty
 
-    def postinit(self, value=None):
+    def postinit(self, value=Empty):
         self.value = value
 
 
@@ -922,13 +940,13 @@ class Keyword(base.NodeNG):
     """class representing a Keyword node"""
     _astroid_fields = ('value',)
     _other_fields = ('arg',)
-    value = None
+    value = Empty
 
     def __init__(self, arg=None, lineno=None, col_offset=None, parent=None):
         self.arg = arg
         super(Keyword, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, value=None):
+    def postinit(self, value=Empty):
         self.value = value
 
 
@@ -977,14 +995,14 @@ class Pass(Statement):
 class Print(Statement):
     """class representing a Print node"""
     _astroid_fields = ('dest', 'values',)
-    dest = None
-    values = None
+    dest = Empty
+    values = Empty
 
     def __init__(self, nl=None, lineno=None, col_offset=None, parent=None):
         self.nl = nl
         super(Print, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, dest=None, values=None):
+    def postinit(self, dest=Empty, values=Empty):
         self.dest = dest
         self.values = values
 
@@ -992,22 +1010,22 @@ class Print(Statement):
 @util.register_implementation(treeabc.Raise)
 class Raise(Statement):
     """class representing a Raise node"""
-    exc = None
+    exc = Empty
     if six.PY2:
         _astroid_fields = ('exc', 'inst', 'tback')
-        inst = None
-        tback = None
+        inst = Empty
+        tback = Empty
 
-        def postinit(self, exc=None, inst=None, tback=None):
+        def postinit(self, exc=Empty, inst=Empty, tback=Empty):
             self.exc = exc
             self.inst = inst
             self.tback = tback
     else:
         _astroid_fields = ('exc', 'cause')
-        exc = None
-        cause = None
+        exc = Empty
+        cause = Empty
 
-        def postinit(self, exc=None, cause=None):
+        def postinit(self, exc=Empty, cause=Empty):
             self.exc = exc
             self.cause = cause
 
@@ -1023,9 +1041,9 @@ class Raise(Statement):
 class Return(Statement):
     """class representing a Return node"""
     _astroid_fields = ('value',)
-    value = None
+    value = Empty
 
-    def postinit(self, value=None):
+    def postinit(self, value=Empty):
         self.value = value
 
 
@@ -1047,11 +1065,11 @@ class Set(base.BaseContainer, objects.BaseInstance):
 class Slice(base.NodeNG):
     """class representing a Slice node"""
     _astroid_fields = ('lower', 'upper', 'step')
-    lower = None
-    upper = None
-    step = None
+    lower = Empty
+    upper = Empty
+    step = Empty
 
-    def postinit(self, lower=None, upper=None, step=None):
+    def postinit(self, lower=Empty, upper=Empty, step=Empty):
         self.lower = lower
         self.upper = upper
         self.step = step
@@ -1090,14 +1108,14 @@ class Starred(base.ParentAssignTypeMixin, AssignedStmtsMixin, base.NodeNG):
     """class representing a Starred node"""
     _astroid_fields = ('value',)
     _other_fields = ('ctx', )
-    value = None
+    value = Empty
 
     def __init__(self, ctx=None, lineno=None, col_offset=None, parent=None):
         self.ctx = ctx
         super(Starred, self).__init__(lineno=lineno,
                                       col_offset=col_offset, parent=parent)
 
-    def postinit(self, value=None):
+    def postinit(self, value=Empty):
         self.value = value
 
 
@@ -1106,15 +1124,15 @@ class Subscript(base.NodeNG):
     """class representing a Subscript node"""
     _astroid_fields = ('value', 'slice')
     _other_fields = ('ctx', )
-    value = None
-    slice = None
+    value = Empty
+    slice = Empty
 
     def __init__(self, ctx=None, lineno=None, col_offset=None, parent=None):
         self.ctx = ctx
         super(Subscript, self).__init__(lineno=lineno,
                                         col_offset=col_offset, parent=parent)
 
-    def postinit(self, value=None, slice=None):
+    def postinit(self, value=Empty, slice=Empty):
         self.value = value
         self.slice = slice
 
@@ -1125,11 +1143,11 @@ class Subscript(base.NodeNG):
 class TryExcept(base.BlockRangeMixIn, Statement):
     """class representing a TryExcept node"""
     _astroid_fields = ('body', 'handlers', 'orelse',)
-    body = None
-    handlers = None
-    orelse = None
+    body = Empty
+    handlers = Empty
+    orelse = Empty
 
-    def postinit(self, body=None, handlers=None, orelse=None):
+    def postinit(self, body=Empty, handlers=Empty, orelse=Empty):
         self.body = body
         self.handlers = handlers
         self.orelse = orelse
@@ -1154,10 +1172,10 @@ class TryExcept(base.BlockRangeMixIn, Statement):
 class TryFinally(base.BlockRangeMixIn, Statement):
     """class representing a TryFinally node"""
     _astroid_fields = ('body', 'finalbody',)
-    body = None
-    finalbody = None
+    body = Empty
+    finalbody = Empty
 
-    def postinit(self, body=None, finalbody=None):
+    def postinit(self, body=Empty, finalbody=Empty):
         self.body = body
         self.finalbody = finalbody
 
@@ -1200,13 +1218,13 @@ class UnaryOp(base.NodeNG):
     """class representing an UnaryOp node"""
     _astroid_fields = ('operand',)
     _other_fields = ('op',)
-    operand = None
+    operand = Empty
 
     def __init__(self, op=None, lineno=None, col_offset=None, parent=None):
         self.op = op
         super(UnaryOp, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, operand=None):
+    def postinit(self, operand=Empty):
         self.operand = operand
 
     def _infer_unaryop(self, context=None):
@@ -1231,11 +1249,11 @@ class UnaryOp(base.NodeNG):
 class While(base.BlockRangeMixIn, Statement):
     """class representing a While node"""
     _astroid_fields = ('test', 'body', 'orelse',)
-    test = None
-    body = None
-    orelse = None
+    test = Empty
+    body = Empty
+    orelse = Empty
 
-    def postinit(self, test=None, body=None, orelse=None):
+    def postinit(self, test=Empty, body=Empty, orelse=Empty):
         self.test = test
         self.body = body
         self.orelse = orelse
@@ -1260,7 +1278,7 @@ class With(base.BlockRangeMixIn, base.AssignTypeMixin,
         self.body = []
         super(With, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, items=None, body=None):
+    def postinit(self, items=Empty, body=Empty):
         self.items = items
         self.body = body
 
@@ -1272,10 +1290,10 @@ class With(base.BlockRangeMixIn, base.AssignTypeMixin,
 @util.register_implementation(treeabc.WithItem)
 class WithItem(base.ParentAssignTypeMixin, AssignedStmtsMixin, base.NodeNG):
     _astroid_fields = ('context_expr', 'optional_vars')
-    context_expr = None
-    optional_vars = None
+    context_expr = Empty
+    optional_vars = Empty
 
-    def postinit(self, context_expr=None, optional_vars=None):
+    def postinit(self, context_expr=Empty, optional_vars=Empty):
         self.context_expr = context_expr
         self.optional_vars = optional_vars
 
@@ -1289,9 +1307,9 @@ class AsyncWith(With):
 class Yield(base.NodeNG):
     """class representing a Yield node"""
     _astroid_fields = ('value',)
-    value = None
+    value = Empty
 
-    def postinit(self, value=None):
+    def postinit(self, value=Empty):
         self.value = value
 
 
@@ -1303,22 +1321,6 @@ class YieldFrom(Yield):
 @util.register_implementation(treeabc.DictUnpack)
 class DictUnpack(base.NodeNG):
     """Represents the unpacking of dicts into dicts using PEP 448."""
-
-
-@object.__new__
-@util.register_implementation(treeabc.Empty)
-class Empty(base.NodeNG):
-    """Empty nodes represents the lack of something
-
-    For instance, they can be used to represent missing annotations
-    or defaults for arguments or anything where None is a valid
-    value.
-    """
-
-    def __bool__(self):
-        return False
-
-    __nonzero__ = __bool__
 
 
 # Register additional inference dispatched functions. We do

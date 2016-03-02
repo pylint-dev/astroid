@@ -212,7 +212,7 @@ def _slice_value(index, context=None):
     if isinstance(index, treeabc.Const):
         if isinstance(index.value, (int, type(None))):
             return index.value
-    elif index is None:
+    elif isinstance(index, treeabc.Empty):
         return None
     else:
         # Try to infer what the index actually is.

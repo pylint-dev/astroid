@@ -108,12 +108,6 @@ class Zipper(wrapt.ObjectProxy):
     # local variable, avoiding a super() call, two globals lookups,
     # and two dict lookups (on wrapt's and ObjectProxy's dicts).
     def __init__(self, focus, path=None, init=wrapt.ObjectProxy.__init__):
-        try:
-            assert(isinstance(focus, (base.NodeNG, collections.Sequence)))
-        except AssertionError:
-            print(focus)
-            print(path)
-            raise
         init(self, focus)
         self._self_path = path
 
