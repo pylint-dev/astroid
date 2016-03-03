@@ -34,6 +34,7 @@ from astroid.tree import treeabc
 from astroid import util
 
 raw_building = util.lazy_import('raw_building')
+objects = util.lazy_import('interpreter.objects')
 
 
 def _reflected_name(name):
@@ -425,7 +426,8 @@ def _resolve_asspart(parts, assign_path, context):
 def excepthandler_assigned_stmts(self, nodes, node=None, context=None, assign_path=None):
     for assigned in inferenceutil.unpack_infer(self.type):
         if isinstance(assigned, treeabc.ClassDef):
-            assigned = assigned.instantiate_class()
+            assigned = objects.ExceptionInstance(assigned)
+
         yield assigned
 
     # Explicit StopIteration to return error information, see comment

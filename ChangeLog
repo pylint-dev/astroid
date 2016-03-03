@@ -9,6 +9,17 @@ Change log for the astroid package (used to be astng)
       to a method was found.
       Closes issue #257
 
+    * Exceptions have their own object model
+
+      Some of exceptions's attributes, such as .args and .message,
+      can't be inferred correctly since they are descriptors that get
+      transformed into the proper objects at runtime. This can cause issues
+      with the static analysis, since they are inferred as different than
+      what's expected. Now when we're creating instances of exceptions,
+      we're inferring a special object that knows how to transform those
+      runtime attributes into the proper objects via a custom object model.
+      Closes issue #81
+
     * wildcard_imported_names() got replaced by public_names()
 
       Our understanding of wildcard imports through __all__ was

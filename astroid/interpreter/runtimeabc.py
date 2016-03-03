@@ -36,6 +36,10 @@ class Instance(RuntimeObject):
     """Class representing an instance."""
 
 
+class ExceptionInstance(Instance):
+    pass
+
+
 class BuiltinInstance(RuntimeObject):
     """Represents an instance of a builtin."""
 

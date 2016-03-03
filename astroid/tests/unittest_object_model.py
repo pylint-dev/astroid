@@ -426,5 +426,47 @@ class GeneratorModelTest(unittest.TestCase):
         self.assertIsInstance(send, astroid.FunctionDef)
 
 
+class ExceptionModelTest(unittest.TestCase):
+
+    @unittest.skipIf(six.PY2, "needs Python 3")
+    def test_model_py3(self):
+        ast_nodes = test_utils.extract_node('''
+        try:
+            x[42]
+        except ValueError as err:
+           err.args #@
+           err.__traceback__ #@
+
+           err.message #@
+        ''')
+        args = next(ast_nodes[0].infer())
+        self.assertIsInstance(args, astroid.Tuple)
+        tb = next(ast_nodes[1].infer())
+        self.assertIsInstance(tb, astroid.Instance)
+        self.assertEqual(tb.name, 'traceback')
+
+        with self.assertRaises(exceptions.InferenceError):
+            next(ast_nodes[2].infer())
+
+    @unittest.skipUnless(six.PY2, "needs Python 2")
+    def test_model_py3(self):
+        ast_nodes = test_utils.extract_node('''
+        try:
+            x[42]
+        except ValueError as err:
+           err.args #@
+           err.message #@
+
+           err.__traceback__ #@
+        ''')
+        args = next(ast_nodes[0].infer())
+        self.assertIsInstance(args, astroid.Tuple)
+        message = next(ast_nodes[1].infer())
+        self.assertIsInstance(message, astroid.Const)
+
+        with self.assertRaises(exceptions.InferenceError):
+            next(ast_nodes[2].infer())
+
+
 if __name__ == '__main__':
     unittest.main()

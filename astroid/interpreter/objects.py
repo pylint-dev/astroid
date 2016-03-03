@@ -277,6 +277,18 @@ class Instance(BaseInstance):
                 node=self, index=index, context=context))
 
 
+@util.register_implementation(runtimeabc.ExceptionInstance)
+class ExceptionInstance(Instance):
+    """Class for instances of exceptions
+
+    It has special treatment for some of the exceptions's attributes,
+    which are transformed at runtime into certain concrete objects, such as
+    the case of .args.
+    """
+
+    special_attributes = util.lazy_descriptor(lambda: objectmodel.ExceptionInstanceModel())
+
+
 class Method(Proxy):
 
     def __repr__(self):

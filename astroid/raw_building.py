@@ -630,7 +630,7 @@ _NameAST = collections.namedtuple('_NameAST', 'name ast')
 BUILTIN_TYPES = (types.GetSetDescriptorType,
                  types.MemberDescriptorType, type(None), type(NotImplemented),
                  types.GeneratorType, types.FunctionType, types.MethodType,
-                 types.BuiltinFunctionType, types.ModuleType)
+                 types.BuiltinFunctionType, types.ModuleType, types.TracebackType)
 
 
 def ast_from_builtins():
