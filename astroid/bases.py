@@ -271,7 +271,6 @@ class Instance(BaseInstance):
         pass
 
 
-
 class UnboundMethod(Proxy):
     """a special node representing a method not bound to an instance"""
 

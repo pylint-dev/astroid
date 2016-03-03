@@ -30,6 +30,17 @@ Change log for the astroid package (used to be astng)
       objectmodel.py, which describes, in a more comprehensive way, the data model of each
       object.
 
+    * Exceptions have their own object model
+
+      Some of exceptions's attributes, such as .args and .message,
+      can't be inferred correctly since they are descriptors that get
+      transformed into the proper objects at runtime. This can cause issues
+      with the static analysis, since they are inferred as different than
+      what's expected. Now when we're creating instances of exceptions,
+      we're inferring a special object that knows how to transform those
+      runtime attributes into the proper objects via a custom object model.
+      Closes issue #81
+
     * Fix a crash which occurred when a method had a same name as a builtin object,
       decorated at the same time by that builtin object ( a property for instance)
 

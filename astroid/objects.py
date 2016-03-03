@@ -169,3 +169,14 @@ class Super(node_classes.NodeNG):
 
     def getattr(self, name, context=None):
         return list(self.igetattr(name, context=context))
+
+
+class ExceptionInstance(bases.Instance):
+    """Class for instances of exceptions
+
+    It has special treatment for some of the exceptions's attributes,
+    which are transformed at runtime into certain concrete objects, such as
+    the case of .args.
+    """
+
+    special_attributes = util.lazy_descriptor(lambda: objectmodel.ExceptionInstanceModel())

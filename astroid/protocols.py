@@ -21,6 +21,8 @@ from astroid import helpers
 from astroid import nodes
 from astroid import util
 
+raw_building = util.lazy_import('raw_building')
+objects = util.lazy_import('objects')
 
 def _reflected_name(name):
     return "__r" + name[2:]
@@ -384,7 +386,8 @@ def _resolve_asspart(parts, asspath, context):
 def excepthandler_assigned_stmts(self, node=None, context=None, asspath=None):
     for assigned in node_classes.unpack_infer(self.type):
         if isinstance(assigned, nodes.ClassDef):
-            assigned = bases.Instance(assigned)
+            assigned = objects.ExceptionInstance(assigned)
+
         yield assigned
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.

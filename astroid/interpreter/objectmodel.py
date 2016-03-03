@@ -41,6 +41,7 @@ mechanism.
 import itertools
 import pprint
 import os
+import types
 
 import six
 
@@ -537,3 +538,29 @@ class InstanceModel(ObjectModel):
     @property
     def py__dict__(self):
         return _dunder_dict(self._instance, self._instance.instance_attrs)
+
+
+class ExceptionInstanceModel(InstanceModel):
+
+    @property
+    def pyargs(self):
+        message = node_classes.Const('')
+        args = node_classes.Tuple(parent=self._instance)
+        args.postinit((message, ))
+        return args
+
+    if six.PY3:
+        # It's available only on Python 3.
+
+        @property
+        def py__traceback__(self):
+            builtins = astroid.MANAGER.builtins()
+            traceback_type = builtins[types.TracebackType.__name__]
+            return traceback_type.instantiate_class()
+
+    if six.PY2:
+        # It's available only on Python 2.
+
+        @property
+        def pymessage(self):
+            return node_classes.Const('')
