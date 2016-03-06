@@ -345,6 +345,15 @@ class FunctionModel(ObjectModel):
     py__closure__ = py__ne__
     py__code__ = py__ne__
 
+    if six.PY2:
+       pyfunc_name = py__name__
+       pyfunc_doc = py__doc__
+       pyfunc_globals = py__globals__
+       pyfunc_dict = py__dict__
+       pyfunc_defaults = py__defaults__
+       pyfunc_code = py__code__
+       pyfunc_closure = py__closure__
+
 
 class ClassModel(ObjectModel):
 
