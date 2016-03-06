@@ -180,3 +180,35 @@ class ExceptionInstance(bases.Instance):
     """
 
     special_attributes = util.lazy_descriptor(lambda: objectmodel.ExceptionInstanceModel())
+
+
+class DictInstance(bases.Instance):
+    """Special kind of instances for dictionaries
+
+    This instance knows the underlying object model of the dictionaries, which means
+    that methods such as .values or .items can be properly inferred.
+    """
+
+    special_attributes = util.lazy_descriptor(lambda: objectmodel.DictModel())
+
+
+# Custom objects tailored for dictionaries, which are used to
+# disambiguate between the types of Python 2 dict's method returns
+# and Python 3 (where they return set like objects).
+class DictItems(bases.Proxy):
+    __str__ = node_classes.NodeNG.__str__
+    __repr__ = node_classes.NodeNG.__repr__
+
+
+class DictKeys(bases.Proxy):
+    __str__ = node_classes.NodeNG.__str__
+    __repr__ = node_classes.NodeNG.__repr__
+
+
+class DictValues(bases.Proxy):
+    __str__ = node_classes.NodeNG.__str__
+    __repr__ = node_classes.NodeNG.__repr__
+
+# TODO: Hack to solve the circular import problem between node_classes and objects
+# This is not needed in 2.0, which has a cleaner design overall
+node_classes.Dict.__bases__ = (node_classes.NodeNG, DictInstance)

@@ -564,3 +564,61 @@ class ExceptionInstanceModel(InstanceModel):
         @property
         def pymessage(self):
             return node_classes.Const('')
+
+
+class DictModel(ObjectModel):
+
+    @property
+    def py__class__(self):
+        return self._instance._proxied
+
+    def _generic_dict_attribute(self, obj, name):
+        """Generate a bound method that can infer the given *obj*."""
+
+        class DictMethodBoundMethod(astroid.BoundMethod):
+            def infer_call_result(self, caller, context=None):
+                yield obj
+
+        meth = next(self._instance._proxied.igetattr(name))
+        return DictMethodBoundMethod(proxy=meth, bound=self._instance)
+
+    @property
+    def pyitems(self):
+        elems = []
+        obj = node_classes.List(parent=self._instance)
+        for key, value in self._instance.items:
+            elem = node_classes.Tuple(parent=obj)
+            elem.postinit((key, value))
+            elems.append(elem)
+        obj.postinit(elts=elems)
+
+        if six.PY3:
+            from astroid import objects
+            obj = objects.DictItems(obj)
+
+        return self._generic_dict_attribute(obj, 'items')
+
+    @property
+    def pykeys(self):
+        keys = [key for (key, _) in self._instance.items]
+        obj = node_classes.List(parent=self._instance)
+        obj.postinit(elts=keys)
+
+        if six.PY3:
+            from astroid import objects
+            obj = objects.DictKeys(obj)
+
+        return self._generic_dict_attribute(obj, 'keys')
+
+    @property
+    def pyvalues(self):
+
+        values = [value for (_, value) in self._instance.items]
+        obj = node_classes.List(parent=self._instance)
+        obj.postinit(values)
+
+        if six.PY3:
+            from astroid import objects
+            obj = objects.DictValues(obj)
+
+        return self._generic_dict_attribute(obj, 'values')

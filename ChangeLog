@@ -41,6 +41,10 @@ Change log for the astroid package (used to be astng)
       runtime attributes into the proper objects via a custom object model.
       Closes issue #81
 
+    * dict.values, dict.keys and dict.items are properly
+      inferred to their corresponding type, which also
+      includes the proper containers for Python 3.
+
     * Fix a crash which occurred when a method had a same name as a builtin object,
       decorated at the same time by that builtin object ( a property for instance)
 
