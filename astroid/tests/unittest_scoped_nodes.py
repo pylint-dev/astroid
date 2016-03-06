@@ -1224,6 +1224,18 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             module['OldStyle'].slots()
         self.assertEqual(str(cm.exception), msg)
 
+    def test_slots_for_dict_keys(self):
+        module = builder.parse('''
+        class Issue(object):
+          SlotDefaults = {'id': 0, 'id1':1}
+          __slots__ = SlotDefaults.keys()
+        ''')
+        cls = module['Issue']
+        slots = cls.slots()
+        self.assertEqual(len(slots), 2)
+        self.assertEqual(slots[0].value, 'id')
+        self.assertEqual(slots[1].value, 'id1')
+
     def test_slots_empty_list_of_slots(self):
         module = builder.parse("""
         class Klass(object):
