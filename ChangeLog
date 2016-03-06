@@ -2,6 +2,9 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * dict.values, dict.keys and dict.items are properly
+      inferred to their corresponding type, which also
+      includes the proper containers for Python 3.
 
     * Unbound methods don't occur anymore on Python 3
 

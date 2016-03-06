@@ -29,6 +29,7 @@ import astroid
 from astroid import exceptions
 from astroid import MANAGER
 from astroid import test_utils
+from astroid.interpreter import objects
 
 
 BUILTINS = MANAGER.builtins()
@@ -495,6 +496,62 @@ class ExceptionModelTest(unittest.TestCase):
 
         with self.assertRaises(exceptions.InferenceError):
             next(ast_nodes[2].infer())
+
+
+class DictObjectModelTest(unittest.TestCase):
+
+    def test__class__(self):
+        ast_node = test_utils.extract_node('{}.__class__')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, astroid.ClassDef)
+        self.assertEqual(inferred.name, 'dict')
+
+    def test_attributes_inferred_as_methods(self):
+        ast_nodes = test_utils.extract_node('''
+        {}.values #@
+        {}.items #@
+        {}.keys #@
+        ''')
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, astroid.BoundMethod)
+
+    @unittest.skipUnless(six.PY2, "needs Python 2")
+    def test_concrete_objects_for_dict_methods(self):
+        ast_nodes = test_utils.extract_node('''
+        {1:1, 2:3}.values() #@
+        {1:1, 2:3}.keys() #@
+        {1:1, 2:3}.items() #@
+        ''')
+        values = next(ast_nodes[0].infer())
+        self.assertIsInstance(values, astroid.List)
+        self.assertEqual([value.value for value in values.elts], [1, 3])
+
+        keys = next(ast_nodes[1].infer())
+        self.assertIsInstance(keys, astroid.List)
+        self.assertEqual([key.value for key in keys.elts], [1, 2])
+
+        items = next(ast_nodes[2].infer())
+        self.assertIsInstance(items, astroid.List)
+        for expected, elem in zip([(1, 1), (2, 3)], items.elts):
+            self.assertIsInstance(elem, astroid.Tuple)
+            self.assertEqual(list(expected), [elt.value for elt in elem.elts])
+
+    @unittest.skipIf(six.PY2, "needs Python 3")
+    def test_wrapper_objects_for_dict_methods_python3(self):
+        ast_nodes = test_utils.extract_node('''
+        {1:1, 2:3}.values() #@
+        {1:1, 2:3}.keys() #@
+        {1:1, 2:3}.items() #@
+        ''')
+        values = next(ast_nodes[0].infer())
+        self.assertIsInstance(values, objects.DictValues)
+        self.assertEqual([elt.value for elt in values.elts], [1, 3])
+        keys = next(ast_nodes[1].infer())
+        self.assertIsInstance(keys, objects.DictKeys)
+        self.assertEqual([elt.value for elt in keys.elts], [1, 2])
+        items = next(ast_nodes[2].infer())
+        self.assertIsInstance(items, objects.DictItems)
 
 
 if __name__ == '__main__':

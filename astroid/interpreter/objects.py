@@ -173,8 +173,12 @@ class BaseInstance(Proxy):
                 if is_property(attr):
                     for inferred in attr.infer_call_result(self, context):
                         yield inferred
-                else:
+                elif type(attr) in (BoundMethod, UnboundMethod):
+                    # This is a strict type check because we can have subclasses
+                    # of these two objects which we don't want to be unproxied.
                     yield BoundMethod(attr._proxied, self)
+                else:
+                    yield attr
             elif hasattr(attr, 'name') and attr.name == '<lambda>':
                 # This is a lambda function defined at class level,
                 # since its scope is the underlying _proxied class.
@@ -526,3 +530,30 @@ class Super(base.NodeNG):
 
     def getattr(self, name, context=None):
         return list(self.igetattr(name, context=context))
+
+
+class DictInstance(BaseInstance):
+    """Special kind of instances for dictionaries
+
+    This instance knows the underlying object model of the dictionaries, which means
+    that methods such as .values or .items can be properly inferred.
+    """
+
+    special_attributes = util.lazy_descriptor(lambda: objectmodel.DictModel())
+
+
+# Custom objects tailored for dictionaries, which are used to
+# disambiguate between the types of Python 2 dict's method returns
+# and Python 3 (where they return set like objects).
+class DictItems(Proxy):
+    __str__ = base.NodeNG.__str__
+    __repr__ = base.NodeNG.__repr__
+
+
+class DictKeys(Proxy):
+    __str__ = base.NodeNG.__str__
+    __repr__ = base.NodeNG.__repr__
+
+class DictValues(Proxy):
+    __str__ = base.NodeNG.__str__
+    __repr__ = base.NodeNG.__repr__

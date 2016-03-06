@@ -1694,6 +1694,20 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertIsInstance(inferred, Instance)
             self.assertEqual(inferred.qname(), "{}.list".format(BUILTINS))
 
+    def test_conversion_of_dict_methods(self):
+        ast_nodes = test_utils.extract_node('''
+        list({1:2, 2:3}.values()) #@
+        list({1:2, 2:3}.keys()) #@
+        tuple({1:2, 2:3}.values()) #@
+        tuple({1:2, 3:4}.keys()) #@
+        set({1:2, 2:4}.keys()) #@
+        ''')
+        self.assertInferList(ast_nodes[0], [2, 3])
+        self.assertInferList(ast_nodes[1], [1, 2])
+        self.assertInferTuple(ast_nodes[2], [2, 3])
+        self.assertInferTuple(ast_nodes[3], [1, 3])
+        self.assertInferSet(ast_nodes[4], [1, 2])
+
     @test_utils.require_version('3.0')
     def test_builtin_inference_py3k(self):
         code = """

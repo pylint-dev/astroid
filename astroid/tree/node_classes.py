@@ -613,7 +613,7 @@ class Delete(base.AssignTypeMixin, Statement):
 
 @util.register_implementation(treeabc.Dict)
 @util.register_implementation(runtimeabc.BuiltinInstance)
-class Dict(base.NodeNG, objects.BaseInstance):
+class Dict(base.NodeNG, objects.DictInstance):
     """class representing a Dict node"""
     _astroid_fields = ('keys', 'values')
 
