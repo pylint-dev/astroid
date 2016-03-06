@@ -391,6 +391,35 @@ class FunctionModelTest(unittest.TestCase):
         self.assertIsInstance(kwdefaults, astroid.Dict)
         self.assertEqual(kwdefaults.getitem('f').value, 'lala')
 
+    @test_utils.require_version(maxver='3.0')
+    def test_function_model_for_python2(self):
+        ast_nodes = test_utils.extract_node('''
+        def test(a=1):
+          "a"
+
+        test.func_name #@
+        test.func_doc #@
+        test.func_dict #@
+        test.func_globals #@
+        test.func_defaults #@
+        test.func_code #@
+        test.func_closure #@
+        ''')
+        name = next(ast_nodes[0].infer())
+        self.assertIsInstance(name, astroid.Const)
+        self.assertEqual(name.value, 'test')
+        doc = next(ast_nodes[1].infer())
+        self.assertIsInstance(doc, astroid.Const)
+        self.assertEqual(doc.value, 'a')
+        pydict = next(ast_nodes[2].infer())
+        self.assertIsInstance(pydict, astroid.Dict)
+        pyglobals = next(ast_nodes[3].infer())
+        self.assertIsInstance(pyglobals, astroid.Dict)
+        defaults = next(ast_nodes[4].infer())
+        self.assertIsInstance(defaults, astroid.Tuple)
+        for node in ast_nodes[5:]:
+            self.assertIs(next(node.infer()), astroid.Uninferable)
+
 
 class GeneratorModelTest(unittest.TestCase):
 
