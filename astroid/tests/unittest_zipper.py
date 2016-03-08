@@ -114,25 +114,6 @@ def ast_from_file_name(name):
 # file names.
 ast_strategy = strategies.builds(ast_from_file_name, astroid_file)
 
-def check_linked_list(linked_list):
-    '''Check that this linked list of tuples is correctly formed.'''
-    while linked_list:
-        assert(isinstance(linked_list, tuple))
-        assert(len(linked_list) == 2)
-        linked_list = linked_list[1]
-    assert(len(linked_list) == 0)
-
-def check_zipper(position):
-    '''Check that a zipper is correctly formed.'''
-    assert(isinstance(position, (base.NodeNG, collections.Sequence)))
-    assert(isinstance(position._self_path, (zipper.Path, type(None))))
-    if position._self_path:
-        assert(isinstance(position._self_path.parent_path, (zipper.Path, type(None))))
-        check_linked_list(position._self_path.right)
-        check_linked_list(position._self_path.left)
-        check_linked_list(position._self_path.parent_nodes)
-        assert isinstance(position._self_path.changed, bool)
-
 # These two functions are recursive implementations of preorder and
 # postorder traversals that iterate over labels rather than nodes.
 # Using recursion reduces the probability of the error being in both
@@ -168,6 +149,8 @@ def common_ancestor(label1, label2, ast):
     return label2
 
 def traverse_to_node(label, ast, location):
+    '''Given a label, a digraph AST, and a starting zipper, traverses the
+    zipper to the node for that label.'''
     moves = collections.deque()
     while label != 1:
         siblings = ast[ast[label].parent].children
@@ -189,6 +172,25 @@ node_types_strategy = strategies.sampled_from(_all_subclasses(base.NodeNG))
 
 
 class TestZipper(unittest.TestCase):
+    def check_linked_list(self, linked_list):
+        '''Check that this linked list of tuples is correctly formed.'''
+        while linked_list:
+            self.assertIsInstance(linked_list, tuple)
+            self.assertEqual(len(linked_list), 2)
+            linked_list = linked_list[1]
+        self.assertEqual(len(linked_list), 0)
+
+    def check_zipper(self, position):
+        '''Check that a zipper is correctly formed.'''
+        self.assertIsInstance(position, (base.NodeNG, collections.Sequence))
+        self.assertIsInstance(position._self_path, (zipper.Path, type(None)))
+        if position._self_path:
+            self.assertIsInstance(position._self_path.parent_path, (zipper.Path, type(None)))
+            self.check_linked_list(position._self_path.right)
+            self.check_linked_list(position._self_path.left)
+            self.check_linked_list(position._self_path.parent_nodes)
+            self.assertIsInstance(position._self_path.changed, bool)
+    
     @hypothesis.settings(perform_health_check=False)
     @hypothesis.given(ast_strategy, strategies.integers(min_value=0, max_value=100), strategies.choices())
     def test_traversal(self, ast, length, choice):
@@ -198,10 +200,10 @@ class TestZipper(unittest.TestCase):
         for _ in range(length):
             new_label, move = choice(ast[old_label].edges)
             new_zipper = move(old_zipper)
-            check_zipper(new_zipper)
+            self.check_zipper(new_zipper)
             hypothesis.note(new_zipper)
             hypothesis.note(ast[new_label].node)
-            assert(new_zipper.__wrapped__ is ast[new_label].node)
+            self.assertIs(new_zipper.__wrapped__, ast[new_label].node)
             old_zipper = new_zipper
             old_label = new_label
 
@@ -212,15 +214,15 @@ class TestZipper(unittest.TestCase):
         random_label = choice(nodes)
         random_node = zipper.Zipper(ast[random_label].node)
         for node, label in zip(random_node.get_children(), ast[random_label].children):
-            assert(node.__wrapped__ is ast[label].node)
+            self.assertIs(node.__wrapped__, ast[label].node)
         for node, label in zip(random_node.preorder_descendants(), preorder_descendants(random_label, ast)):
-            assert(node.__wrapped__ is ast[label].node)
+            self.assertIs(node.__wrapped__, ast[label].node)
         for node, label in zip(random_node.preorder_descendants(dont_recurse_on=node_type), preorder_descendants(random_label, ast, dont_recurse_on=node_type)):
-            assert(node.__wrapped__ is ast[label].node)
+            self.assertIs(node.__wrapped__, ast[label].node)
         for node, label in zip(random_node.postorder_descendants(), postorder_descendants(random_label, ast)):
-            assert(node.__wrapped__ is ast[label].node)
+            self.assertIs(node.__wrapped__, ast[label].node)
         for node, label in zip(random_node.postorder_descendants(dont_recurse_on=node_type), postorder_descendants(random_label, ast, dont_recurse_on=node_type)):
-            assert(node.__wrapped__ is ast[label].node)
+            self.assertIs(node.__wrapped__, ast[label].node)
 
     @hypothesis.settings(perform_health_check=False)
     @hypothesis.given(ast_strategy, strategies.choices())
@@ -230,14 +232,14 @@ class TestZipper(unittest.TestCase):
         random_node = traverse_to_node(choice(nodes), ast, root)
         if random_node.up() is not None:
             if isinstance(random_node.up(), collections.Sequence) and random_node.up().up() is not None:
-                assert(random_node.parent.__wrapped__ is random_node.up().up().__wrapped__)
+                self.assertIs(random_node.parent.__wrapped__, random_node.up().up().__wrapped__)
             if isinstance(random_node.up(), base.NodeNG):
-                assert(random_node.parent.__wrapped__ is random_node.up().__wrapped__)
+                self.assertIs(random_node.parent.__wrapped__, random_node.up().__wrapped__)
         if random_node.right() is not None:
-            assert(random_node.last_child().__wrapped__ is random_node.rightmost().__wrapped__)
-            assert(random_node.next_sibling().__wrapped__ is random_node.right().__wrapped__)
+            self.assertIs(random_node.last_child().__wrapped__, random_node.rightmost().__wrapped__)
+            self.assertIs(random_node.next_sibling().__wrapped__, random_node.right().__wrapped__)
         if random_node.left() is not None:
-            assert(random_node.previous_sibling().__wrapped__ is random_node.left().__wrapped__)
+            self.assertIs(random_node.previous_sibling().__wrapped__, random_node.left().__wrapped__)
 
     @hypothesis.settings(perform_health_check=False)
     @hypothesis.given(ast_strategy, ast_strategy, strategies.choices())
@@ -255,12 +257,12 @@ class TestZipper(unittest.TestCase):
         random_node12 = traverse_to_node(random_label12, ast1, root1)
         random_node21 = traverse_to_node(random_label21, ast2, root2)
         random_node22 = traverse_to_node(random_label22, ast2, root2)
-        assert(random_node11.common_ancestor(random_node12).__wrapped__ is
-               ast1[common_ancestor(random_label11, random_label12, ast1)].node)
-        assert(random_node21.common_ancestor(random_node22).__wrapped__ is
+        self.assertIs(random_node11.common_ancestor(random_node12).__wrapped__,
+                      ast1[common_ancestor(random_label11, random_label12, ast1)].node)
+        self.assertIs(random_node21.common_ancestor(random_node22).__wrapped__,
                ast2[common_ancestor(random_label21, random_label22, ast2)].node)
-        assert(random_node11.common_ancestor(random_node22) is None)
-        assert(random_node12.common_ancestor(random_node21) is None)
+        self.assertIsNone(random_node11.common_ancestor(random_node22))
+        self.assertIsNone(random_node12.common_ancestor(random_node21))
 
 if __name__ == '__main__':
     unittest.main()
