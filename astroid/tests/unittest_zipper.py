@@ -1,6 +1,12 @@
+'''Rather than generating a random AST, the zipper tests pick a random
+file out of astroid's code and parse it, running tests on the
+resulting AST.  The tests create a dict-of-lists graph representation
+of the AST by using the recursive structure only, without using the
+zipper, with each node labeled by a unique integer, and then compares
+the zipper's result with what the zipper should return.
+
+'''
 import collections
-import itertools
-import pprint
 import os
 import unittest
 
@@ -13,19 +19,33 @@ from astroid.tree import base
 from astroid.tree import zipper
 
 
-def _all_subclasses(cls):
-    return cls.__subclasses__() + [g for s in cls.__subclasses__()
-                                   for g in _all_subclasses(s)]
-node_types_strategy = strategies.sampled_from(_all_subclasses(base.NodeNG))
-
-# This screens out the empty init files.
+# This is a strategy that generates a random file name, screening out
+# the empty init files because they produce 1-element ASTs that aren't
+# useful for testing.
 astroid_file = strategies.sampled_from(os.path.join(p, n) for p, _, ns in os.walk('astroid/') for n in ns if n.endswith('.py') and '__init__.py' not in n)
 
+
 class ASTMap(dict):
+    '''Hypothesis uses the repr of arguments to a function when printing
+    output for failed tests but the ASTs are too large to be legible,
+    so this is a simple dict subclass with a shortened repr.
+
+    '''
     def __repr__(self):
         return '{ 1: ' + repr(self[1]) + '...}'
 
 class AssignLabels(object):
+    '''Traverses an AST, creating a dict with integer labels representing
+    AST nodes.
+
+    The keys of the resulting dictionary contain the actual AST node,
+    the labels of its children, and the label of its parent.  The
+    labels are assigned starting at 1, for the root, in prefix order.
+    This is a replacement for an inner function in ast_from_file_name.
+    On Python 3, self.label would instead be a closure variable with
+    the nonlocal statement.
+
+    '''
     Node = collections.namedtuple('Node', 'node children parent')    
     def __init__(self):
         self.label = 1
@@ -36,12 +56,29 @@ class AssignLabels(object):
         labels[label] = self.Node(node, children, parent_label)
         return label
 
+
 Node = collections.namedtuple('Node', 'node children parent edges')
+# Each edge represents a valid zipper method, with move being the
+# function corresponding to that method and label corresponding to the
+# label of the destination node.
 Edge = collections.namedtuple('Edge', 'label move')
 
 AST_CACHE = {}
 
 def ast_from_file_name(name):
+    '''Takes a file name and creates a dict-of-lists representation of that AST.
+
+    Each key is a unique integer assigned to a node, the values are
+    tuples containing the actual node, the integer labels of the
+    children, the label of the parent, and pairs of zipper
+    methods/functions with the labels of the corresponding node that
+    zipper function will generate when applied at the key's node's
+    position.
+
+    '''
+    # Generating ASTs is slow right now because it depends on
+    # inference, so this caches one AST per file.  Avoiding the global
+    # caching ensures that other tests can't mutate these ASTs.
     if name in AST_CACHE:
         return AST_CACHE[name]
     with open(name, 'r') as source_file:
@@ -73,9 +110,9 @@ def ast_from_file_name(name):
     AST_CACHE[name] = ast
     return ast
 
+# Buid a strategy that generates digraph representations of ASTs from
+# file names.
 ast_strategy = strategies.builds(ast_from_file_name, astroid_file)
-
-# pprint.pprint(ast_strategy.example())
 
 def check_linked_list(linked_list):
     '''Check that this linked list of tuples is correctly formed.'''
@@ -86,6 +123,7 @@ def check_linked_list(linked_list):
     assert(len(linked_list) == 0)
 
 def check_zipper(position):
+    '''Check that a zipper is correctly formed.'''
     assert(isinstance(position, (base.NodeNG, collections.Sequence)))
     assert(isinstance(position._self_path, (zipper.Path, type(None))))
     if position._self_path:
@@ -95,6 +133,11 @@ def check_zipper(position):
         check_linked_list(position._self_path.parent_nodes)
         assert isinstance(position._self_path.changed, bool)
 
+# These two functions are recursive implementations of preorder and
+# postorder traversals that iterate over labels rather than nodes.
+# Using recursion reduces the probability of the error being in both
+# implementations, the recursive test and the iterative functional
+# code.
 def preorder_descendants(label, ast, dont_recurse_on=None):
     def _preorder_descendants(label):
         if dont_recurse_on is not None and isinstance(ast[label].node, dont_recurse_on):
@@ -111,15 +154,16 @@ def postorder_descendants(label, ast, dont_recurse_on=None):
             return sum((_postorder_descendants(l) for l in ast[label].children), ()) + (label,)
     return sum((_postorder_descendants(l) for l in ast[label].children), ()) + (label,)
 
+# This test function uses a set-based implementation for finding the
+# common parent rather than the reverse-based implementation in the
+# functional code.
 def common_ancestor(label1, label2, ast):
     ancestors = set()
     while label1:
         if ast[label1].node is not nodes.Empty:
             ancestors.add(label1)
         label1 = ast[label1].parent
-    # print([ast[a].node for a in ancestors])
     while label2 not in ancestors:
-        # print(repr(ast[label2].node))
         label2 = ast[label2].parent
     return label2
 
@@ -134,6 +178,14 @@ def traverse_to_node(label, ast, location):
     for move in moves:
         location = move(location)
     return location
+
+# This function and strategy creates a strategy for generating a
+# random node class, for testing that the iterators properly exclude
+# nodes of that type and their descendants.
+def _all_subclasses(cls):
+    return cls.__subclasses__() + [g for s in cls.__subclasses__()
+                                   for g in _all_subclasses(s)]
+node_types_strategy = strategies.sampled_from(_all_subclasses(base.NodeNG))
 
 
 class TestZipper(unittest.TestCase):

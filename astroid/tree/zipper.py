@@ -1,3 +1,14 @@
+'''This contains an implementation of a zipper for astroid ASTs.
+
+A zipper is a data structure for traversing and editing immutable
+recursive data types that can act as a doubly-linked structure without
+actual double links.
+http://blog.ezyang.com/2010/04/you-could-have-invented-zippers/ has a
+brief introduction to zippers as a whole.  This implementation is
+based on the Clojure implementation,
+https://github.com/clojure/clojure/blob/master/src/clj/clojure/zip.clj .
+
+'''
 import collections
 
 # Because every zipper method creates a new zipper, zipper creation
@@ -80,20 +91,56 @@ def initial(linked_list):
     return tail
 
 
+# Attributes:
+#     left (linked list): The siblings to the left of the zipper's focus.
+#     right (linked list): The siblings to the right of the zipper's focus.
+#     parent_nodes (linked list): The ancestors of the zipper's focus
+#     parent_path (Path): The Path from the zipper that created this zipper.
+#     changed (bool): Whether this zipper has been edited or not.
 Path = collections.namedtuple('Path', 'left right parent_nodes parent_path changed')
 
 class Zipper(wrapt.ObjectProxy):
+    '''This an object-oriented version of a zipper with methods instead of
+    functions.  All the methods return a new zipper or None, and none
+    of them mutate the underlying AST nodes.  They return None when
+    the method is not valid for that zipper.  The zipper acts as a
+    proxy so the underlying node's or sequence's methods and
+    attributes are accessible through it.
+
+    Attributes:
+        __wrapped__ (base.NodeNG, collections.Sequence): The AST node or
+            sequence at the zipper's focus.
+        _self_path (Path): The Path tuple containing information about the
+            zipper's history.  This must be accessed as ._self_path.
+
+    '''
     __slots__ = ('path')
 
-    # Setting wrapt.ObjectProxy.__init__ as a default value turns it into a
-    # local variable, avoiding a super() call, two globals lookups,
-    # and two dict lookups (on wrapt's and ObjectProxy's dicts).
-    def __init__(self, focus, path=None, init=wrapt.ObjectProxy.__init__):
-        init(self, focus)
+    # Setting wrapt.ObjectProxy.__init__ as a default value turns it
+    # into a local variable, avoiding a super() call, two globals
+    # lookups, and two dict lookups (on wrapt's and ObjectProxy's
+    # dicts) in the most common zipper operation on CPython.
+    def __init__(self, focus, path=None, _init=wrapt.ObjectProxy.__init__):
+        '''Make a new zipper.
+
+        Args:
+            focus (base.NodeNG, collections.Sequence): The focus for this
+                zipper, will be assigned to self.__wrapped__ by
+                wrapt.ObjectProxy's __init__.
+            path: The path of the zipper used to create the new zipper, if any.
+
+        Returns:
+            A new zipper object.
+        '''
+        _init(self, focus)
         self._self_path = path
+
 
     # Traversal
     def left(self):
+        '''Go to the next sibling that's directly to the left of the focus.
+
+        This takes constant time.'''
         if self._self_path and self._self_path.left:
             focus, left = self._self_path.left
             path = self._self_path._replace(left=left,
@@ -102,12 +149,18 @@ class Zipper(wrapt.ObjectProxy):
             return type(self)(focus=focus, path=path)
 
     def leftmost(self):
+        '''Go to the leftmost sibling of the focus.
+
+        This takes time linear in the number of left siblings.'''
         if self._self_path and self._self_path.left:
             focus, siblings = last(self._self_path.left), initial(self._self_path.left) 
             path = self._self_path._replace(left=(), right=concatenate(reverse(siblings), (self.__wrapped__, self._self_path.right)))
             return type(self)(focus=focus, path=path)
 
     def right(self):
+        '''Go to the next sibling that's directly to the right of the focus.
+
+        This takes constant time.'''
         if self._self_path and self._self_path.right:
             focus, right = self._self_path.right
             path = self._self_path._replace(left=(self.__wrapped__,
@@ -116,6 +169,9 @@ class Zipper(wrapt.ObjectProxy):
             return type(self)(focus=focus, path=path)
 
     def rightmost(self):
+        '''Go to the rightmost sibling of the focus.
+
+        This takes time linear in the number of right siblings.'''
         if self._self_path and self._self_path.right:
             siblings, focus = initial(self._self_path.right), last(self._self_path.right)
             path = self._self_path._replace(left=concatenate(reverse(siblings), (self.__wrapped__, self._self_path.left)),
@@ -123,6 +179,9 @@ class Zipper(wrapt.ObjectProxy):
             return type(self)(focus=focus, path=path)
 
     def down(self):
+        '''Go to the leftmost child of the focus.
+
+        This takes constant time.'''
         try:
             children = iter(self.__wrapped__)
             first = next(children)
@@ -137,10 +196,19 @@ class Zipper(wrapt.ObjectProxy):
         return type(self)(focus=first, path=path)
 
     def up(self):
+        '''Go to the parent of the focus.
+
+        This takes time linear in the number of left siblings if the
+        focus has been edited or constant time if it hasn't been
+        edited.
+
+        '''
         if self._self_path:
             left, right, parent_nodes, parent_path, changed = self._self_path
             if parent_nodes:
                 focus = parent_nodes[0]
+                # This conditional uses parent_nodes to make going up
+                # take constant time if the focus hasn't been edited.
                 if changed:
                     return type(self)(
                         focus=focus.make_node(concatenate(reverse(left), (self.__wrapped__, right))),
@@ -149,13 +217,24 @@ class Zipper(wrapt.ObjectProxy):
                     return type(self)(focus=focus, path=parent_path)
 
     def root(self):
-        """return the root node of the tree"""
+        '''Go to the root of the AST for the focus.
+
+        This takes time linear in the number of ancestors of the focus.'''
         location = self
         while location._self_path:
             location = location.up()
         return location
 
     def common_ancestor(self, other):
+        '''Find the most recent common ancestor of two different zippers.
+
+        This takes time linear in the number of ancestors of both foci
+        and will return None for zippers from two different ASTs.  The
+        new zipper is derived from the zipper the method is called on,
+        so edits in the second argument will not be included in the
+        new zipper.
+
+        '''
         if self._self_path:
             self_ancestors = reverse((self.__wrapped__, self._self_path.parent_nodes))
         else:
@@ -182,12 +261,24 @@ class Zipper(wrapt.ObjectProxy):
         return location
 
     def get_children(self):
+        '''Iterates over the children of the focus.'''
         child = self.down()
         while child is not None:
             yield child
             child = child.right()
 
+    # Iterative algorithms for these two methods, with explicit
+    # stacks, avoid the problem of yield from only being available on
+    # Python 3 and ensure that no AST will overflow the call stack.
+    # On CPython, avoiding the extra function calls necessary for a
+    # recursive algorithm will probably make them faster too.
     def preorder_descendants(self, dont_recurse_on=None):
+        '''Iterates over the descendants of the focus in prefix order.
+
+        Args:
+            dont_recurse_on (base.NodeNG): If not None, will not include nodes
+                of this type or types or any of the descendants of those nodes.
+        '''
         to_visit = [self]
         while to_visit:
             location = to_visit.pop()
@@ -201,6 +292,12 @@ class Zipper(wrapt.ObjectProxy):
                                 if not isinstance(c, dont_recurse_on))
 
     def postorder_descendants(self, dont_recurse_on=None):
+        '''Iterates over the descendants of the focus in postfix order.
+
+        Args:
+            dont_recurse_on (base.NodeNG): If not None, will not include nodes
+                of this type or types or any of the descendants of those nodes.
+        '''
         to_visit = [self]
         visited_ancestors = []
         while to_visit:
@@ -220,10 +317,14 @@ class Zipper(wrapt.ObjectProxy):
             to_visit.pop()
 
     def find_descendants_of_type(self, cls, skip_class=None):
-        """return an iterator on nodes which are instance of the given class(es)
+        '''Iterates over the descendants of the focus of a given type in
+        prefix order.
 
-        cls may be a class object or a tuple of class objects
-        """
+        Args:
+            skip_class (base.NodeNG, tuple(base.NodeNG)): If not None, will
+                not include nodes of this type or types or any of the
+                descendants of those nodes.
+        '''
         return (d for d in self.preorder_descendants(skip_class) if isinstance(node, cls))
         # if isinstance(self, cls):
         #     yield self
@@ -241,6 +342,8 @@ class Zipper(wrapt.ObjectProxy):
     # Legacy APIs
     @property
     def parent(self):
+        '''Goes up to the next ancestor of the focus that's a node, not a
+        sequence.'''
         location = self.up()
         if isinstance(location, collections.Sequence):
             return location.up()
@@ -292,6 +395,12 @@ class Zipper(wrapt.ObjectProxy):
 
     # Editing
     def replace(self, focus):
+        '''Replaces the existing node at the focus.
+
+        Args:
+            focus (base.NodeNG, collections.Sequence): The object to replace
+                the focus with.
+        '''
         return type(self)(focus=focus, path=self._self_path._replace(changed=True))
 
     # def edit(self, *args, **kws):
