@@ -7,40 +7,28 @@ import collections
 import wrapt
 
 from astroid.tree import base
-
+from astroid.tree import treeabc
 
 # The following are helper functions for working with singly-linked
-# lists made with two-tuples.  The zipper needs singly-linked lists
-# for most of its operations to take constant time.
-def linked_list(*values, **kws):
-    '''Builds a new linked list of tuples out of its arguments, appending
-    to the front of an existing list if that's given.
-
-    Args:
-        values: The values to add to the front of list.
-        tail: The existing list to append to.  Must be provided as 
-            a keyword argument and is optional.
-
-    '''
-    if values:
-        # The use of varkws here is a workaround for the lack of
-        # keyword-only arguments on Python 2.
-        tail = (values[-1], kws.get('tail', None))
-        for value in reversed(values[:-1]):
-            tail = (value, tail)
-        return tail
-    else:
-        return None
+# lists made with two-tuples.  The empty tuple is used to denote the
+# end of a linked list.  The zipper needs singly-linked lists for most
+# of its operations to take constant time.
+def linked_list(*values):
+    '''Builds a new linked list of tuples out of its arguments.'''
+    tail = ()
+    for value in reversed(values):
+        tail = (value, tail)
+    return tail
 
 def reverse(linked_list):
     '''Reverses an existing linked list of tuples.'''
     if linked_list:
         result = collections.deque((linked_list[0],))
         tail = linked_list[1]
-        while tail is not None:
+        while tail:
             result.appendleft(tail[0])
             tail = tail[1]
-        tail = (result.pop(), None)
+        tail = (result.pop(), ())
         while result:
             tail = (result.pop(), tail)
         return tail
@@ -48,7 +36,7 @@ def reverse(linked_list):
 def iterate(linked_list):
     '''Return an iterator over a linked list of tuples.'''
     node = linked_list
-    while node is not None:
+    while node:
         yield node[0]
         node = node[1]
 
@@ -57,14 +45,14 @@ def concatenate(left, right):
     first one onto the second.
 
     '''
-    if left is None:
+    if not left:
         return right
-    elif right is None:
+    elif not right:
         return left
     else:
         result = [left[0]]
         tail = left[1]
-        while tail is not None:
+        while tail:
             result.append(tail[0])
             tail = tail[1]
         tail = (result.pop(), right)
@@ -73,15 +61,17 @@ def concatenate(left, right):
         return tail
 
 def last(linked_list):
+    '''Returns the last element of a linked list of tuples.'''
     node = linked_list
-    while node[1] is not None:
+    while node[1]:
         node = node[1]
-    return node
+    return node[0]
 
 def initial(linked_list):
+    '''Returns a linked list of tuples containing all elements but the last.'''
     result = [linked_list[0]]
     tail = linked_list[1]
-    while tail is not None:
+    while tail:
         result.append(tail[0])
         tail = tail[1]
     result.pop()
@@ -89,15 +79,6 @@ def initial(linked_list):
         tail = (result.pop(), tail)
     return tail
 
-
-
-# class NodeSequence(list):
-#     lineno = None
-#     col_offset = None
-#     def children(self):
-#         return tuple(self)
-#     def make_node(self, linked_list):
-#         return type(self)(*iterate(linked_list))
 
 Path = collections.namedtuple('Path', 'left right parent_nodes parent_path changed')
 
@@ -111,12 +92,19 @@ class Zipper(wrapt.ObjectProxy):
         init(self, focus)
         self._self_path = path
 
+    # Traversal
     def left(self):
         if self._self_path and self._self_path.left:
             focus, left = self._self_path.left
             path = self._self_path._replace(left=left,
                                             right=(self.__wrapped__,
                                                    self._self_path.right))
+            return type(self)(focus=focus, path=path)
+
+    def leftmost(self):
+        if self._self_path and self._self_path.left:
+            focus, siblings = last(self._self_path.left), initial(self._self_path.left) 
+            path = self._self_path._replace(left=(), right=concatenate(reverse(siblings), (self.__wrapped__, self._self_path.right)))
             return type(self)(focus=focus, path=path)
 
     def right(self):
@@ -130,7 +118,7 @@ class Zipper(wrapt.ObjectProxy):
     def rightmost(self):
         if self._self_path and self._self_path.right:
             siblings, focus = initial(self._self_path.right), last(self._self_path.right)
-            path = self._self_path._replace(left=concatenate(siblings, (self.__wrapped__, self._self_path.left)),
+            path = self._self_path._replace(left=concatenate(reverse(siblings), (self.__wrapped__, self._self_path.left)),
                                             right=())
             return type(self)(focus=focus, path=path)
 
@@ -141,9 +129,9 @@ class Zipper(wrapt.ObjectProxy):
         except StopIteration:
             return
         path = Path(
-            left=None,
+            left=(),
             right=linked_list(*children),
-            parent_nodes=(self.__wrapped__, self._self_path.parent_nodes) if self._self_path else (self.__wrapped__, None),
+            parent_nodes=(self.__wrapped__, self._self_path.parent_nodes) if self._self_path else (self.__wrapped__, ()),
             parent_path=self._self_path,
             changed=False)
         return type(self)(focus=first, path=path)
@@ -167,59 +155,94 @@ class Zipper(wrapt.ObjectProxy):
             location = location.up()
         return location
 
-    # Specialized traversal functions
-    def next_statement(self):
-        location = self
-        while not location.is_statement:
-            location = location.up()
-        return location.right()
+    def common_ancestor(self, other):
+        if self._self_path:
+            self_ancestors = reverse((self.__wrapped__, self._self_path.parent_nodes))
+        else:
+            self_ancestors = (self.__wrapped__, ())
+        if other._self_path:
+            other_ancestors = reverse((other.__wrapped__, other._self_path.parent_nodes))
+        else:
+            other_ancestors = (other.__wrapped__, ())
+        ancestor = None
+        for self_ancestor, other_ancestor in zip(iterate(self_ancestors), iterate(other_ancestors)):
+            # This is a kludge to work around the problem of two Empty
+            # nodes in different parts of an AST.  Empty nodes can
+            # never be ancestors, so they can be safely skipped.
+            if self_ancestor is other_ancestor and not isinstance(self_ancestor, treeabc.Empty):
+                ancestor = self_ancestor
+            else:
+                break
+        if ancestor is None:
+            return None
+        else:
+            location = self
+            while location.__wrapped__ is not ancestor:
+                location = location.up()
+        return location
 
-    def previous_statement(self):
-        location = self
-        while not location.is_statement:
-            location = location.up()
-        return location.left()
+    def get_children(self):
+        child = self.down()
+        while child is not None:
+            yield child
+            child = child.right()
 
-    def nodes_of_class(self, cls, skip_class=None):
+    def preorder_descendants(self, dont_recurse_on=None):
+        to_visit = [self]
+        while to_visit:
+            location = to_visit.pop()
+            yield location
+            if dont_recurse_on is None:
+                to_visit.extend(c for c in
+                                reversed(tuple(location.get_children())))
+            else:
+                to_visit.extend(c for c in
+                                reversed(tuple(location.get_children()))
+                                if not isinstance(c, dont_recurse_on))
+
+    def postorder_descendants(self, dont_recurse_on=None):
+        to_visit = [self]
+        visited_ancestors = []
+        while to_visit:
+            location = to_visit[-1]
+            if not visited_ancestors or visited_ancestors[-1] is not location:
+                visited_ancestors.append(location)
+                if dont_recurse_on is None:
+                    to_visit.extend(c for c in
+                                    reversed(tuple(location.get_children())))
+                else:
+                    to_visit.extend(c for c in
+                                    reversed(tuple(location.get_children()))
+                                    if not isinstance(c, dont_recurse_on))
+                continue
+            visited_ancestors.pop()
+            yield location
+            to_visit.pop()
+
+    def find_descendants_of_type(self, cls, skip_class=None):
         """return an iterator on nodes which are instance of the given class(es)
 
         cls may be a class object or a tuple of class objects
         """
-        if isinstance(self, cls):
-            yield self
-        child = self.down()
-        while child:
-            if skip_class is not None and isinstance(location, skip_class):
-                continue
-            for matching in child.nodes_of_class(cls, skip_class):
-                yield matching
-            child = child.right()
-            if isinstance(child, collections.Sequence):
-                child = child.down()
+        return (d for d in self.preorder_descendants(skip_class) if isinstance(node, cls))
+        # if isinstance(self, cls):
+        #     yield self
+        # child = self.down()
+        # while child:
+        #     if skip_class is not None and isinstance(location, skip_class):
+        #         continue
+        #     for matching in child.nodes_of_class(cls, skip_class):
+        #         yield matching
+        #     child = child.right()
+        #     if isinstance(child, collections.Sequence):
+        #         child = child.down()
 
-    def nearest(self, nodes):
-        """return the node which is the nearest before this one in the
-        given list of nodes
-        """
-        myroot = self.root()
-        mylineno = self.fromlineno
-        nearest = None, 0
-        for node in nodes:
-            assert node.root() is myroot, \
-                   'nodes %s and %s are not from the same AST' % (self, node)
-            lineno = node.fromlineno
-            if node.fromlineno > mylineno:
-                break
-            if lineno > nearest[1]:
-                nearest = node, lineno
-        # FIXME: raise an exception if nearest is None ?
-        return nearest[0]
-    
+
     # Legacy APIs
     @property
     def parent(self):
         location = self.up()
-        if isinstance(self, collections.Sequence):
+        if isinstance(location, collections.Sequence):
             return location.up()
         else:
             return location
@@ -228,13 +251,16 @@ class Zipper(wrapt.ObjectProxy):
         return self.rightmost()
 
     def next_sibling(self):
-        return self.next_statement()
+        return self.right()
 
     def previous_sibling(self):
-        return self.previous_statement()
+        return self.left()
 
-    def child_sequence(self, child):
-        return self.locate_child(child)[1]
+    def nodes_of_class(self, cls, skip_class=None):
+        return self.find_descendants_of_type(cls, skip_class)
+
+    # def child_sequence(self, child):
+    #     return self.locate_child(child)[1]
 
     # def child_sequence(self, child):
     #     """search for the right sequence where the child lies in"""
@@ -248,26 +274,26 @@ class Zipper(wrapt.ObjectProxy):
     #     msg = 'Could not find %s in %s\'s children'
     #     raise exceptions.AstroidError(msg % (repr(child), repr(self)))
 
-    def locate_child(self, child):
-        """return a 2-uple (child attribute name, sequence or node)"""
-        location = self.down()
-        index = 0
-        while location:
-            if location is child:
-                return self._astroid_fields[index], location
-            if (isinstance(location, collections.Sequence)
-                and child in location):
-                return self._astroid_fields[index], location
-            index += 1
-        msg = 'Could not find %s in %s\'s children'
-        raise exceptions.AstroidError(msg % (repr(child), repr(self)))
-    # FIXME : should we merge child_sequence and locate_child ? locate_child
-    # is only used in are_exclusive, child_sequence one time in pylint.
+    # def locate_child(self, child):
+    #     """return a 2-uple (child attribute name, sequence or node)"""
+    #     location = self.down()
+    #     index = 0
+    #     while location:
+    #         if location is child:
+    #             return self._astroid_fields[index], location
+    #         if (isinstance(location, collections.Sequence)
+    #             and child in location):
+    #             return self._astroid_fields[index], location
+    #         index += 1
+    #     msg = 'Could not find %s in %s\'s children'
+    #     raise exceptions.AstroidError(msg % (repr(child), repr(self)))
+    # # FIXME : should we merge child_sequence and locate_child ? locate_child
+    # # is only used in are_exclusive, child_sequence one time in pylint.
 
     # Editing
     def replace(self, focus):
         return type(self)(focus=focus, path=self._self_path._replace(changed=True))
 
-    def edit(self, *args, **kws):
-        return type(self)(focus=self.__wrapped__.make_focus(*args, **kws),
-                          path=self._self_path._replace(changed=True))
+    # def edit(self, *args, **kws):
+    #     return type(self)(focus=self.__wrapped__.make_focus(*args, **kws),
+    #                       path=self._self_path._replace(changed=True))

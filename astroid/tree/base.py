@@ -127,6 +127,10 @@ class NodeNG(object):
             lines = pprint.pformat(value, indent=2,
                                    width=width).splitlines(True)
 
+            # Some fields, notably source_code for Module nodes, are
+            # too long to display comfortably, so this limits them.
+            if len(lines[0]) > 160:
+                lines[0] = lines[0][:160] + '...'
             inner = [lines[0]]
             for line in lines[1:]:
                 inner.append(' ' * alignment + line)
