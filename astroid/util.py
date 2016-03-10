@@ -37,10 +37,32 @@ except ImportError:
 
 
 def singledispatch(func):
+    '''Modified singledispatch decorator that doesn't crash on old-style classes.
+
+    This is a workaround in particular for the Python 2 standard
+    library, because some modules export old-style classes that cause
+    raw_building.py to crash.  Old-style classes themselves (not their
+    instances) have no __class__ attribute, so the standard
+    library/backport singledispatch decorator raises an
+    AttributeError.  For forward compatibility, in particular for
+    proxy objects like the zipper, the wrapper function tries
+    __class__ first and if that fails, falls back to calling type(),
+    which doesn't raise an exception on old-style classes.  This new
+    wrapped function is then used to replace the singledispatch
+    wrapper function, avoiding the overhead of another function call.
+    This will be slightly slower than the standard library/backport
+    function because of the try/except block, but hopefully not enough
+    to matter.
+
+    '''
+    
     old_generic_func = _singledispatch(func)
     @wrapt.decorator
     def wrapper(func, instance, args, kws):
-        return old_generic_func.dispatch(type(args[0]))(*args, **kws)
+        try:
+            return old_generic_func.dispatch(args[0].__class__)(*args, **kws)
+        except AttributeError:
+            return old_generic_func.dispatch(type(args[0]))(*args, **kws)
     new_generic_func = wrapper(func)
     new_generic_func.register = old_generic_func.register
     new_generic_func.dispatch = old_generic_func.dispatch

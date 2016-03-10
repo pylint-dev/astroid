@@ -84,7 +84,7 @@ from astroid.util import Uninferable, YES
 
 # ???
 from astroid.tree import zipper
-
+from astroid.tree.base import NodeNG
 
 # transform utilities (filters and decorator)
 
