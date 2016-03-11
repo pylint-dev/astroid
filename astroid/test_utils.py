@@ -37,6 +37,7 @@ def _extract_expressions(node):
             and isinstance(node.func, nodes.Name)
             and node.func.name == _TRANSIENT_FUNCTION):
         real_expr = node.args[0]
+        # real_expr = node.down().right().down()
         real_expr.parent = node.parent
         # Search for node in all _astng_fields (the fields checked when
         # get_children is called) of its parent. Some of those fields may

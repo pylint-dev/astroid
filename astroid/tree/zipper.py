@@ -260,7 +260,7 @@ class Zipper(wrapt.ObjectProxy):
                 location = location.up()
         return location
 
-    def get_children(self):
+    def children(self):
         '''Iterates over the children of the focus.'''
         child = self.down()
         while child is not None:
@@ -285,10 +285,10 @@ class Zipper(wrapt.ObjectProxy):
             yield location
             if dont_recurse_on is None:
                 to_visit.extend(c for c in
-                                reversed(tuple(location.get_children())))
+                                reversed(tuple(location.children())))
             else:
                 to_visit.extend(c for c in
-                                reversed(tuple(location.get_children()))
+                                reversed(tuple(location.children()))
                                 if not isinstance(c, dont_recurse_on))
 
     def postorder_descendants(self, dont_recurse_on=None):
@@ -306,10 +306,10 @@ class Zipper(wrapt.ObjectProxy):
                 visited_ancestors.append(location)
                 if dont_recurse_on is None:
                     to_visit.extend(c for c in
-                                    reversed(tuple(location.get_children())))
+                                    reversed(tuple(location.children())))
                 else:
                     to_visit.extend(c for c in
-                                    reversed(tuple(location.get_children()))
+                                    reversed(tuple(location.children()))
                                     if not isinstance(c, dont_recurse_on))
                 continue
             visited_ancestors.pop()
@@ -325,7 +325,7 @@ class Zipper(wrapt.ObjectProxy):
                 not include nodes of this type or types or any of the
                 descendants of those nodes.
         '''
-        return (d for d in self.preorder_descendants(skip_class) if isinstance(node, cls))
+        return (d for d in self.preorder_descendants(skip_class) if isinstance(d, cls))
         # if isinstance(self, cls):
         #     yield self
         # child = self.down()
@@ -349,6 +349,22 @@ class Zipper(wrapt.ObjectProxy):
             return location.up()
         else:
             return location
+
+    def get_children(self):
+        '''Iterates over nodes that are children or grandchildren, no
+        sequences.
+
+        '''
+        child = self.down()
+        while child is not None:
+            if isinstance(child, collections.Sequence):
+                grandchild = child.down()
+                for _ in range(len(child)):
+                    yield grandchild
+                    grandchild = grandchild.right()
+            else:
+                yield child
+            child = child.right()
 
     def last_child(self):
         return self.rightmost()

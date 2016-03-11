@@ -83,7 +83,7 @@ def ast_from_file_name(name):
         return AST_CACHE[name]
     with open(name, 'r') as source_file:
         # print(name)
-        root = astroid.parse(source_file.read())
+        root = astroid.parse(source_file.read()).__wrapped__
         ast = ASTMap()
         AssignLabels()(ast, root)
         to_visit = [1]
@@ -137,7 +137,7 @@ def postorder_descendants(label, ast, dont_recurse_on=None):
 
 # This test function uses a set-based implementation for finding the
 # common parent rather than the reverse-based implementation in the
-# functional code.
+# actual code.
 def common_ancestor(label1, label2, ast):
     ancestors = set()
     while label1:
@@ -161,6 +161,14 @@ def traverse_to_node(label, ast, location):
     for move in moves:
         location = move(location)
     return location
+
+def get_children(label, ast):
+    for child_label in ast[label].children:
+        if isinstance(ast[child_label].node, collections.Sequence):
+            for grandchild_label in ast[child_label].children:
+                yield grandchild_label
+        else:
+            yield child_label
 
 # This function and strategy creates a strategy for generating a
 # random node class, for testing that the iterators properly exclude
@@ -213,7 +221,7 @@ class TestZipper(unittest.TestCase):
         nodes = tuple(ast)
         random_label = choice(nodes)
         random_node = zipper.Zipper(ast[random_label].node)
-        for node, label in zip(random_node.get_children(), ast[random_label].children):
+        for node, label in zip(random_node.children(), ast[random_label].children):
             self.assertIs(node.__wrapped__, ast[label].node)
         for node, label in zip(random_node.preorder_descendants(), preorder_descendants(random_label, ast)):
             self.assertIs(node.__wrapped__, ast[label].node)
@@ -222,6 +230,8 @@ class TestZipper(unittest.TestCase):
         for node, label in zip(random_node.postorder_descendants(), postorder_descendants(random_label, ast)):
             self.assertIs(node.__wrapped__, ast[label].node)
         for node, label in zip(random_node.postorder_descendants(dont_recurse_on=node_type), postorder_descendants(random_label, ast, dont_recurse_on=node_type)):
+            self.assertIs(node.__wrapped__, ast[label].node)
+        for node, label in zip(random_node.get_children(), get_children(random_label, ast)):
             self.assertIs(node.__wrapped__, ast[label].node)
 
     @hypothesis.settings(perform_health_check=False)
