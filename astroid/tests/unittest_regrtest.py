@@ -331,6 +331,21 @@ def test():
         self.assertIsNotNone(inferred.parent)
         self.assertIsInstance(inferred.parent, nodes.BinOp)
 
+    def test_decorator_names_inference_error_leaking(self):
+        node = extract_node('''
+        class Parent(object):
+            @property
+            def foo(self):
+                pass
+
+        class Child(Parent):
+            @Parent.foo.getter
+            def foo(self): #@
+                return super(Child, self).foo + ['oink']
+        ''')
+        inferred = next(node.infer())
+        self.assertEqual(inferred.decoratornames(), set())
+
 
 class Whatever(object):
     a = property(lambda x: x, lambda x: x)

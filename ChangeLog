@@ -6,6 +6,8 @@ Change log for the astroid package (used to be astng)
       inferred to their corresponding type, which also
       includes the proper containers for Python 3.
 
+    * decoratornames() does not leak InferenceError anymore.
+
     * Unbound methods don't occur anymore on Python 3
 
       Instead, we're inferring FunctionDefs where an unbound access
