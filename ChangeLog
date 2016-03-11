@@ -3,6 +3,8 @@ Change log for the astroid package (used to be astng)
 
 --
 
+    * decoratornames() does not leak InferenceError anymore.
+
     * wildcard_imported_names() got replaced by _public_names()
 
       Our understanding of wildcard imports through __all__ was

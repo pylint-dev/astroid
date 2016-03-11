@@ -891,8 +891,11 @@ class FunctionDef(bases.Statement, Lambda):
             decoratornodes += self.decorators.nodes
         decoratornodes += self.extra_decorators
         for decnode in decoratornodes:
-            for infnode in decnode.infer():
-                result.add(infnode.qname())
+            try:
+                for infnode in decnode.infer():
+                    result.add(infnode.qname())
+            except exceptions.InferenceError:
+                continue
         return result
 
     def is_bound(self):
