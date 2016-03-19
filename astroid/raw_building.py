@@ -250,13 +250,17 @@ def ast_from_class(cls, built_objects, module, name=None, parent=None):
     # appropriate ClassDef node is returned.  Arguably, it would be
     # possible to check if a class is in a module under another name,
     # but does this ever happen?
-    if (inspected_module is not None and
-        inspected_module is not module and
-        hasattr(inspected_module, cls.__name__)):
-        return (node_classes.ImportFrom(fromname=
-                                 getattr(inspected_module, '__name__', None),
-                                 names=[[cls.__name__, name]],
-                                 parent=parent),)
+    if inspected_module is not None and inspected_module is not module:
+        sentinel = object()
+        declared_obj = getattr(inspected_module, cls.__name__, sentinel)
+        if declared_obj is not sentinel and declared_obj == cls:
+            # They are indeed the same objects, but one of them declares to be in
+            # another module.
+            return (node_classes.ImportFrom(fromname=
+                                     getattr(inspected_module, '__name__', None),
+                                     names=[[cls.__name__, name]],
+                                     parent=parent),)
+
     class_node = scoped_nodes.ClassDef(name=cls.__name__, doc=inspect.getdoc(cls), parent=parent)
     result = [class_node]
     if name is not None and name != cls.__name__:
