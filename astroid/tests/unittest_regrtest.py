@@ -311,7 +311,7 @@ def test():
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Tuple)
         self.assertIsNotNone(inferred.parent)
-        self.assertIsInstance(inferred.parent, nodes.BinOp)                  
+        self.assertIsInstance(inferred.parent, nodes.BinOp)
 
     def test_decorator_names_inference_error_leaking(self):
         node = extract_node('''
