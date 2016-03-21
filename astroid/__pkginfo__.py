@@ -20,7 +20,7 @@ distname = 'astroid'
 
 modname = 'astroid'
 
-numversion = (1, 4, 4)
+numversion = (1, 4, 5)
 version = '.'.join([str(num) for num in numversion])
 
 install_requires = ['six', 'lazy_object_proxy', 'wrapt']
