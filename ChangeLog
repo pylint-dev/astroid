@@ -6,6 +6,8 @@ Change log for the astroid package (used to be astng)
       inferred to their corresponding type, which also
       includes the proper containers for Python 3.
 
+    * Brain tips for the ssl library.
+
     * decoratornames() does not leak InferenceError anymore.
 
     * Unbound methods don't occur anymore on Python 3
