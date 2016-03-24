@@ -1,6 +1,9 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+--
+    * Brain tips for the ssl library.
+
 2016-03-21 -- 1.4.5
 
     * decoratornames() does not leak InferenceError anymore.
