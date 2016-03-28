@@ -2,6 +2,8 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * Add brain tips for functools.lru_cache.
+
     * New function, astroid.extract_node, exported out from astroid.test_utils.
 
     * Stop saving assignment locals in ExceptHandlers, when the context is a store.
