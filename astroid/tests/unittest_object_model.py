@@ -554,5 +554,29 @@ class DictObjectModelTest(unittest.TestCase):
         self.assertIsInstance(items, objects.DictItems)
 
 
+class LruCacheModelTest(unittest.TestCase):
+
+    @unittest.skipIf(six.PY2, "needs Python 3")
+    def test_lru_cache(self):
+        ast_nodes = test_utils.extract_node('''
+        import functools
+        class Foo(object):
+            @functools.lru_cache()
+            def foo():
+                pass
+        f = Foo()
+        f.foo.cache_clear #@
+        f.foo.__wrapped__ #@
+        f.foo.cache_info() #@
+        ''')
+        cache_clear = next(ast_nodes[0].infer())
+        self.assertIsInstance(cache_clear, objects.BoundMethod)
+        wrapped = next(ast_nodes[1].infer())
+        self.assertIsInstance(wrapped, astroid.FunctionDef)
+        self.assertEqual(wrapped.name, 'foo')
+        cache_info = next(ast_nodes[2].infer())
+        self.assertIsInstance(cache_info, objects.Instance)
+
+
 if __name__ == '__main__':
     unittest.main()
