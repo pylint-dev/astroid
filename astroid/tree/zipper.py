@@ -123,7 +123,7 @@ class Zipper(wrapt.ObjectProxy):
     def __init__(self, focus, path=None, _init=wrapt.ObjectProxy.__init__):
         '''Make a new zipper.
 
-        Args:
+        Arguments:
             focus (base.NodeNG, collections.Sequence): The focus for this
                 zipper, will be assigned to self.__wrapped__ by
                 wrapt.ObjectProxy's __init__.
@@ -275,7 +275,7 @@ class Zipper(wrapt.ObjectProxy):
     def preorder_descendants(self, dont_recurse_on=None):
         '''Iterates over the descendants of the focus in prefix order.
 
-        Args:
+        Arguments:
             dont_recurse_on (base.NodeNG): If not None, will not include nodes
                 of this type or types or any of the descendants of those nodes.
         '''
@@ -294,7 +294,7 @@ class Zipper(wrapt.ObjectProxy):
     def postorder_descendants(self, dont_recurse_on=None):
         '''Iterates over the descendants of the focus in postfix order.
 
-        Args:
+        Arguments:
             dont_recurse_on (base.NodeNG): If not None, will not include nodes
                 of this type or types or any of the descendants of those nodes.
         '''
@@ -320,7 +320,7 @@ class Zipper(wrapt.ObjectProxy):
         '''Iterates over the descendants of the focus of a given type in
         prefix order.
 
-        Args:
+        Arguments:
             skip_class (base.NodeNG, tuple(base.NodeNG)): If not None, will
                 not include nodes of this type or types or any of the
                 descendants of those nodes.
@@ -413,12 +413,12 @@ class Zipper(wrapt.ObjectProxy):
     def replace(self, focus):
         '''Replaces the existing node at the focus.
 
-        Args:
+        Arguments:
             focus (base.NodeNG, collections.Sequence): The object to replace
                 the focus with.
         '''
         return type(self)(focus=focus, path=self._self_path._replace(changed=True))
-
+    
     # def edit(self, *args, **kws):
     #     return type(self)(focus=self.__wrapped__.make_focus(*args, **kws),
     #                       path=self._self_path._replace(changed=True))
