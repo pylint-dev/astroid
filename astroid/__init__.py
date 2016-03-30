@@ -127,9 +127,10 @@ def inference_tip(infer_function):
 def register_module_extender(manager, module_name, get_extension_mod):
     def transform(module):
         extension_module = get_extension_mod()
-        for statement in extension_module.body:
-            statement.parent = module
-            module.body.append(statement)
+        if extension_module:
+            for statement in extension_module.body:
+                statement.parent = module
+                module.body.append(statement)
 
     manager.register_transform(Module, transform, lambda n: n.name == module_name)
 

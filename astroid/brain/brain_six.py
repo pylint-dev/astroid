@@ -280,7 +280,6 @@ def transform_six_add_metaclass(node):
             node._metaclass = metaclass
             return node
 
-
 register_module_extender(MANAGER, 'six', six_moves_transform)
 register_module_extender(MANAGER, 'requests.packages.urllib3.packages.six',
                          six_moves_transform)

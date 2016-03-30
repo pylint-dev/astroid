@@ -7,7 +7,8 @@ import textwrap
 
 import six
 from astroid import (MANAGER, UseInferenceDefault, AttributeInferenceError,
-                     inference_tip, InferenceError, NameInferenceError)
+                     inference_tip, InferenceError, NameInferenceError,
+                     register_module_extender)
 from astroid.builder import AstroidBuilder
 from astroid.interpreter import objects
 from astroid.interpreter import util as interpreterutil
@@ -85,14 +86,6 @@ def extend_builtins(class_transforms):
     builtin_ast = MANAGER.builtins()
     for class_name, transform in class_transforms.items():
         transform(builtin_ast[class_name])
-
-if sys.version_info > (3, 0):
-    extend_builtins({'bytes': functools.partial(_extend_str, rvalue="b''"),
-                     'str': functools.partial(_extend_str, rvalue="''")})
-else:
-    # TODO: what about unicode_literals?  This is hopelessly broken.
-    extend_builtins({'str': functools.partial(_extend_str, rvalue="''"),
-                     'unicode': functools.partial(_extend_str, rvalue="u''")})
 
 
 def register_builtin_transform(transform, builtin_name):
@@ -602,6 +595,16 @@ def _looks_like_type_dunder_new(node):
     return (isinstance(node.func, nodes.Attribute)
                 and node.func.attrname == '__new__')
 
+
+def _patch_strings():
+    if sys.version_info > (3, 0):
+        extend_builtins({'bytes': functools.partial(_extend_str, rvalue="b''"),
+                         'str': functools.partial(_extend_str, rvalue="''")})
+    else:
+        # TODO: what about unicode_literals?  This is hopelessly broken.
+        extend_builtins({'str': functools.partial(_extend_str, rvalue="''"),
+                         'unicode': functools.partial(_extend_str, rvalue="u''")})
+
 # Builtins inference
 register_builtin_transform(infer_bool, 'bool')
 register_builtin_transform(infer_super, 'super')
@@ -619,3 +622,4 @@ register_builtin_transform(infer_slice, 'slice')
 # infer type.__new__ calls
 MANAGER.register_transform(nodes.Call, inference_tip(infer_type_dunder_new),
                            _looks_like_type_dunder_new)
+register_module_extender(MANAGER, six.moves.builtins.__name__, _patch_strings)
