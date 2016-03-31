@@ -34,6 +34,10 @@ from astroid import util
 inference = util.lazy_import('inference')
 
 
+# The maximum number of characters to print for a field in a string
+# representation of a node.
+FIELD_CHARACTERS_LIMIT = 160
+
 @util.register_implementation(treeabc.NodeNG)
 class NodeNG(object):
     """Base Class for all Astroid node classes.
@@ -129,7 +133,7 @@ class NodeNG(object):
 
             # Some fields, notably source_code for Module nodes, are
             # too long to display comfortably, so this limits them.
-            if len(lines[0]) > 160:
+            if len(lines[0]) > FIELD_CHARACTERS_LIMIT:
                 lines[0] = lines[0][:160] + '...'
             inner = [lines[0]]
             for line in lines[1:]:
