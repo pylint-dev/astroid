@@ -3888,5 +3888,125 @@ class SliceTest(unittest.TestCase):
         self.assertEqual(inferred.name, 'slice')
 
 
+class DirTest(unittest.TestCase):
+
+    def test_instance_custom_ok_dir(self):
+        ast_nodes = test_utils.extract_node('''
+        class A:
+            def __dir__(self):
+                return ['a', 'b', 'c']
+        dir(A()) #@
+
+        class B:
+            x = ['a', 'b']
+            def __dir__(self):
+                return self.x
+        dir(B()) #@
+        class C:
+            y = 24
+            def __init__(self):
+                self.x = 24
+
+        dir(C()) #@
+
+        class D(C):
+            z = 24
+            def __init__(self):
+                self.t = 24
+        dir(D()) #@
+        ''')
+        expected = [
+            ['a', 'b', 'c'],
+            ['a', 'b'],
+            ['__class__', '__module__', '__init__', '__dict__', '__doc__', 'y', 'x'],
+            ['__class__', '__module__', '__init__', '__dict__', '__doc__', 't', 'x', 'y', 'z'],
+        ]
+        for node, expected_values in zip(ast_nodes, expected):
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, nodes.List)
+            self.assertEqual(sorted([elt.value for elt in inferred.elts]),
+                             sorted(expected_values))
+
+    def test_modules_dir(self):
+        ast_nodes = test_utils.extract_node('''
+        import collections
+        class A:
+            def __dir__(self):
+                return dir(collections)
+        dir(collections) #@
+        dir(A()) #@
+        ''')
+        for ast_node in ast_nodes:
+            inferred = next(ast_node.infer())
+            self.assertIsInstance(inferred, nodes.List)
+            elts = {elt.value for elt in inferred.elts}
+            self.assertTrue({'OrderedDict', 'deque', 'defaultdict', 'namedtuple'}.issubset(elts))
+
+    def test_list_dir(self):
+        ast_node = test_utils.extract_node('dir([])')
+        inferred = next(ast_node.infer())
+        elts = {elt.value for elt in inferred.elts}
+        self.assertTrue({'append', 'count', 'extend', 'index', 'insert',
+                         'mro', 'pop', 'remove', 'reverse', 'sort'}.issubset(elts))
+
+    def test_metaclass_dir(self):
+        ast_nodes = test_utils.extract_node('''
+        import six
+        class Meta(type):
+            def __dir__(self):
+                return ['a', 'b']
+        class Meta1(type):
+            @property
+            def teta(cls):
+                return ['a', 'b']
+            def __dir__(cls):
+                return cls.teta
+        @six.add_metaclass(Meta)
+        class A(object):
+            pass
+        @six.add_metaclass(Meta1)
+        class B(object):
+            pass
+        dir(A) #@
+        dir(B) #@
+        ''')
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, nodes.List)
+            elts = [elt.value for elt in inferred.elts]
+            self.assertEqual(elts, ['a', 'b'])
+
+    def test_class_dir(self):
+        ast_nodes = test_utils.extract_node('''
+        class A:
+            x = 42
+        class B(A):
+            y = 24
+        dir(A) #@
+        dir(B) #@
+        ''')
+        first = next(ast_nodes[0].infer())
+        self.assertIsInstance(first, nodes.List)
+        elts = {elt.value for elt in first.elts}
+        self.assertTrue({'__bases__', 'x', '__dict__', '__doc__'}.issubset(elts))
+
+        second = next(ast_nodes[1].infer())
+        elts = {elt.value for elt in second.elts}
+        self.assertTrue({'__bases__', 'x', 'y', '__dict__', '__doc__'}.issubset(elts))
+
+    def test_no_args_dir(self):
+        ast_node = test_utils.extract_node('''
+        class A:
+            pass
+        class B:
+            pass
+        dir() #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.List)
+        elts = [elt.value for elt in inferred.elts]
+        self.assertEqual(elts, ['A', 'B'])
+
+
 if __name__ == '__main__':
     unittest.main()

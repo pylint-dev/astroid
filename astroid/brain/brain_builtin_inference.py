@@ -2,6 +2,7 @@
 
 import collections
 import functools
+import itertools
 import sys
 import textwrap
 
@@ -10,7 +11,9 @@ from astroid import (MANAGER, UseInferenceDefault, AttributeInferenceError,
                      inference_tip, InferenceError, NameInferenceError,
                      register_module_extender)
 from astroid.builder import AstroidBuilder
+from astroid import context as contextmod
 from astroid.interpreter import objects
+from astroid.interpreter import runtimeabc
 from astroid.interpreter import util as interpreterutil
 from astroid import nodes
 from astroid import raw_building
@@ -512,6 +515,118 @@ def infer_slice(node, context=None):
     return slice_node
 
 
+def _custom_dir_result(node):
+    context = contextmod.InferenceContext()
+    context.callcontext = contextmod.CallContext(args=[node])
+
+    try:
+        for inferred in node.igetattr('__dir__', context=context):
+            if isinstance(inferred, nodes.FunctionDef):
+                # Need to rewrap it as a bound method.
+                inferred = objects.BoundMethod(inferred, node)
+            if not isinstance(inferred, runtimeabc.Method):
+                continue
+
+            method_root = inferred.root()
+            if method_root.name != BUILTINS and getattr(method_root, 'pure_python', None):
+                for result in inferred.infer_call_result(node, context=context):
+                    return result
+    except InferenceError:
+        pass
+
+
+@util.singledispatch
+def _object_dir(obj):
+    """Generic dispatch method for determining the `dir` results of objects."""
+    obj_type = interpreterutil.object_type(obj)
+    if obj_type is util.Uninferable:
+        raise UseInferenceDefault
+
+    attributes = obj_type.special_attributes.attributes() + list(obj_type.locals)
+    return _attrs_to_node(attributes, obj_type)
+
+
+def _attrs_to_node(attrs, parent):
+    """Convert the given list of attributes into a List node."""
+    new_node = nodes.List(parent=parent)
+    attrs = sorted([nodes.Const(attr, parent=new_node) for attr in set(attrs)],
+                   key=lambda const: const.value)
+    new_node.postinit(attrs)
+    return new_node
+
+
+def _instance_attrs(instance):
+    """Get the attributes of the given instance."""
+    attrs = instance.special_attributes.attributes() + list(instance.locals.keys())
+    attrs += [item.value for item in instance.special_attributes.py__dict__.keys]
+    return attrs
+
+
+def _complete_instance_attrs(instance):
+    """Get the attributes of the given instance recursively."""
+    for item in _instance_attrs(instance):
+        yield item
+    for parent in instance.ancestors():
+        if parent.name == 'object':
+            # Just ignore the builtin object, since it doesn't provide any real value.
+            continue
+        for item in _instance_attrs(parent.instantiate_class()):
+            yield item
+
+
+@_object_dir.register(objects.Instance)
+def _object_dir_instance(instance):
+    result = _custom_dir_result(instance)
+    if result and result is not util.Uninferable:
+        return result
+
+    attrs = sorted(set(_complete_instance_attrs(instance)))
+    return _attrs_to_node(attrs, instance)
+
+
+@_object_dir.register(nodes.ClassDef)
+def _object_dir_class(cls):
+    metaclass = cls.metaclass()
+    if metaclass is not None:
+        result = _custom_dir_result(metaclass)
+        if result is not util.Uninferable:
+            return result
+
+    attrs = []
+    for ancestor in itertools.chain(cls.ancestors(), (cls, )):
+        if isinstance(ancestor, nodes.ClassDef) and ancestor.name == 'object':
+            continue
+
+        attrs += list(ancestor.locals.keys()) + ancestor.special_attributes.attributes()
+
+    return _attrs_to_node(sorted(set(attrs)), cls)
+
+
+@_object_dir.register(nodes.Module)
+def _object_dir_module(module):
+    attrs = sorted(module.locals.keys())
+    return _attrs_to_node(attrs, module)
+
+
+def infer_dir(node, context=None):
+    """Understand `dir` calls."""
+    if len(node.args) > 1:
+        raise UseInferenceDefault
+
+    if not node.args:
+        root = node.root()
+        return _object_dir(root)
+
+    inferred = interpreterutil.safe_infer(node.args[0])
+    if not inferred or inferred is util.Uninferable:
+        raise UseInferenceDefault
+
+    attrs = _object_dir(inferred)
+    if attrs is None:
+        raise UseInferenceDefault
+    return attrs
+
+
 def infer_type_dunder_new(caller, context=None):
     """Try to infer what __new__ returns when called
 
@@ -618,6 +733,7 @@ register_builtin_transform(infer_dict, 'dict')
 register_builtin_transform(infer_frozenset, 'frozenset')
 register_builtin_transform(infer_type, 'type')
 register_builtin_transform(infer_slice, 'slice')
+register_builtin_transform(infer_dir, 'dir')
 
 # infer type.__new__ calls
 MANAGER.register_transform(nodes.Call, inference_tip(infer_type_dunder_new),
