@@ -17,8 +17,13 @@ import collections
 # time an AST node method has to be accessed through a new zipper.
 import wrapt
 
+from astroid import context
+from astroid import exceptions
+from astroid import inference
+from astroid.interpreter import scope
 from astroid.tree import base
 from astroid.tree import treeabc
+
 
 # The following are helper functions for working with singly-linked
 # lists made with two-tuples.  The empty tuple is used to denote the
@@ -338,7 +343,21 @@ class Zipper(wrapt.ObjectProxy):
         #     if isinstance(child, collections.Sequence):
         #         child = child.down()
 
+    # Editing
+    def replace(self, focus):
+        '''Replaces the existing node at the focus.
 
+        Arguments:
+            focus (base.NodeNG, collections.Sequence): The object to replace
+                the focus with.
+        '''
+        return type(self)(focus=focus, path=self._self_path._replace(changed=True))
+    
+    # def edit(self, *args, **kws):
+    #     return type(self)(focus=self.__wrapped__.make_focus(*args, **kws),
+    #                       path=self._self_path._replace(changed=True))
+
+    
     # Legacy APIs
     @property
     def parent(self):
@@ -409,16 +428,61 @@ class Zipper(wrapt.ObjectProxy):
     # # FIXME : should we merge child_sequence and locate_child ? locate_child
     # # is only used in are_exclusive, child_sequence one time in pylint.
 
-    # Editing
-    def replace(self, focus):
-        '''Replaces the existing node at the focus.
+    def frame(self):
+        '''Go to the first ancestor of the focus that creates a new frame.
 
-        Arguments:
-            focus (base.NodeNG, collections.Sequence): The object to replace
-                the focus with.
-        '''
-        return type(self)(focus=focus, path=self._self_path._replace(changed=True))
-    
-    # def edit(self, *args, **kws):
-    #     return type(self)(focus=self.__wrapped__.make_focus(*args, **kws),
-    #                       path=self._self_path._replace(changed=True))
+        This takes time linear in the number of ancestors of the focus.'''
+        location = self
+        while (location is not None and 
+               not isinstance(location.__wrapped__,
+                              (treeabc.FunctionDef, treeabc.Lambda,
+                               treeabc.ClassDef, treeabc.Module))):
+            location = location.up()
+        return location
+
+    def infer(self, context=None, **kwargs):
+        """main interface to the interface system, return a generator on inferred
+        values.
+
+        If the instance has some explicit inference function set, it will be
+        called instead of the default interface.
+        """
+        if self._explicit_inference is not None:
+            # explicit_inference is not bound, give it self explicitly
+            try:
+                # pylint: disable=not-callable
+                return self._explicit_inference(self, context, **kwargs)
+            except exceptions.UseInferenceDefault:
+                pass
+
+        if not context:
+            return inference.infer(self, context, **kwargs)
+
+        key = (self, context.lookupname,
+               context.callcontext, context.boundnode)
+        if key in context.inferred:
+            return iter(context.inferred[key])
+
+        return context.cache_generator(key, inference.infer(self, context, **kwargs))
+
+    def scope(self):
+        """Get the first node defining a new scope
+
+        Scopes are introduced in Python 3 by Module, FunctionDef,
+        ClassDef, Lambda, GeneratorExp, and comprehension nodes.  On
+        Python 2, the same is true except that list comprehensions
+        don't generate a new scope.
+
+        """
+        return scope.node_scope(self)
+
+    def statement(self):
+        '''Go to the first ancestor of the focus that's a Statement.
+
+        This takes time linear in the number of ancestors of the focus.'''
+        location = self
+        while (location is not None and 
+               not isinstance(location.__wrapped__,
+                              (treeabc.Module, treeabc.Statement))):
+            location = location.up()
+        return location
