@@ -7,3 +7,4 @@ build
 dist/
 astroid.egg-info/
 .tox
+.hypothesis

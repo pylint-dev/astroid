@@ -2,7 +2,7 @@
 file out of astroid's code and parse it, running tests on the
 resulting AST.  The tests create a dict-of-lists graph representation
 of the AST by using the recursive structure only, without using the
-zipper, with each node labeled by a unique integer, and then compares
+zipper, with each node labeled by a unique integer, and then compare
 the zipper's result with what the zipper should return.
 
 '''

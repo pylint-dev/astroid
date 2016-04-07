@@ -711,6 +711,7 @@ class Ellipsis(base.NodeNG): # pylint: disable=redefined-builtin
     def bool_value(self):
         return True
 
+
 @util.register_implementation(treeabc.InterpreterObject)
 class InterpreterObject(base.NodeNG):
     '''InterpreterObjects are used in manufactured ASTs that simulate features of
