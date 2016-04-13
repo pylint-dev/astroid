@@ -316,18 +316,26 @@ def infer_enum(enum_call, context=None):
     """Mock module to hold enum classes"""
     class EnumMeta(object):
         """Mock Enum metaclass"""
+    class EnumAttribute(object):
+         def __init__(self,  name=''):
+             self.name = name
+             self.value = 0
 
     class {name}(EnumMeta):
         """Mock Enum class"""
+        def __call__(self, node):
+            return EnumAttribute()
+
         def __init__(self, {attributes}):
             """Fake __init__ for enums"""
     ''')
     code = template.format(name=type_name, attributes=', '.join(attributes))
-    assignment_lines = [(' '*8 + 'self.{a} = {a}'.format(a=a))
+    assignment_lines = [(' '*8 + 'self.{a} = EnumAttribute("{a}")'.format(a=a))
                         for a in attributes]
     code += '\n'.join(assignment_lines)
     module = AstroidBuilder(MANAGER).string_build(code)
-    return iter([module.body[1]])
+    built_class = module.locals[type_name][0]
+    return iter([built_class.instantiate_class()])
 
 
 def infer_enum_class(enum_node):

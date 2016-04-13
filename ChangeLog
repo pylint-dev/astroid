@@ -2,6 +2,8 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * Functional form of enums support accessing values through __call__
+
     * Understand the `dir` builtin.
 
       This can be used for understanding highly dynamic code, which involves
