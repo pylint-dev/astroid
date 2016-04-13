@@ -2,6 +2,7 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * Functional form of enums support accessing values through __call__.
 
     * Brain tips for the ssl library.
 
