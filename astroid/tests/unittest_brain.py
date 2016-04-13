@@ -450,12 +450,14 @@ class EnumBrainTest(unittest.TestCase):
         from enum import Enum
         f = Enum('Audience', ['a', 'b', 'c'])
         f #@
-        f() #@
+        f(1) #@
         ''')
         inferred_cls = next(cls.infer())
-        self.assertIsInstance(inferred_cls, nodes.ClassDef)
+        self.assertIsInstance(inferred_cls, bases.Instance)
         inferred_instance = next(instance.infer())
         self.assertIsInstance(inferred_instance, bases.Instance)
+        self.assertIsInstance(next(inferred_instance.igetattr('name')), nodes.Const)
+        self.assertIsInstance(next(inferred_instance.igetattr('value')), nodes.Const)
 
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
