@@ -2,6 +2,11 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * Don't take in consideration invalid assignments, especially when __slots__
+      declaration forbids them.
+      
+      Close issue #332
+
     * Functional form of enums support accessing values through __call__
 
     * Understand the `dir` builtin.

@@ -27,6 +27,7 @@ import sys
 import textwrap
 
 from astroid import exceptions
+from astroid.interpreter import assign
 from astroid.interpreter import runtimeabc
 from astroid import manager
 from astroid import modutils
@@ -80,6 +81,7 @@ MANAGER = manager.AstroidManager()
 
 
 class AstroidBuilder(object):
+
     """Class for building an astroid tree from source code or from a live module.
 
     The param *manager* specifies the manager class which should be used.
@@ -219,6 +221,8 @@ def delayed_assignments(root):
                     else:
                         continue
                     if node in values:
+                        continue
+                    elif not assign.can_assign(inferred, node.attrname):
                         continue
                     else:
                         # I have no idea why there's a special case

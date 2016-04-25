@@ -27,6 +27,7 @@ import six
 
 from astroid import InferenceError, builder, nodes
 from astroid.builder import parse
+from astroid import exceptions
 from astroid.inference import infer_end as inference_infer_end
 from astroid.interpreter.objects import (
     Instance, BoundMethod, UnboundMethod, FrozenSet
@@ -3214,6 +3215,66 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, ClassDef)
         self.assertEqual(inferred.name, 'A')
+
+    def test_delayed_attributes_without_slots(self):
+        ast_node = test_utils.extract_node('''
+        class A(object):
+            __slots__ = ('a', )
+        a = A()
+        a.teta = 24
+        a.a = 24
+        a #@
+        ''')
+        inferred = next(ast_node.infer())
+        with self.assertRaises(exceptions.AttributeInferenceError):
+            inferred.getattr('teta')
+        inferred.getattr('a')
+
+    @test_utils.require_version(maxver='3.0')
+    def test_delayed_attributes_with_old_style_classes(self):
+        ast_node = test_utils.extract_node('''
+        class A:
+            __slots__ = ('a', )
+        a = A()
+        a.teta = 42
+        a #@
+        ''')
+        next(ast_node.infer()).getattr('teta')
+
+    def test_delayed_attributes_writable_property(self):
+        ast_node = test_utils.extract_node('''
+        class A(object):
+            @property
+            def test(self):
+                return 24
+            @test.setter
+            def test(self, value):
+                pass
+        a = A()
+        a.test = "a"
+        a #@
+        ''')
+        inferred = next(ast_node.infer())
+        value = next(inferred.igetattr('test'))
+        self.assertIsInstance(value, nodes.Const)
+        self.assertEqual(value.value, "a")
+
+    def test_delayed_attributes_non_writable_property(self):
+        ast_node = test_utils.extract_node('''
+        class A(object):
+            @property
+            def test(self):
+                return 24
+        a = A()
+        a.test = "a"
+        a #@
+        ''')
+        inferred = next(ast_node.infer())
+        values = list(inferred.igetattr('test'))
+        self.assertEqual(len(values), 1)
+        value = values[0]
+        self.assertIsInstance(value, nodes.Const)
+        self.assertEqual(value.value, 24)
 
 
 class GetattrTest(unittest.TestCase):

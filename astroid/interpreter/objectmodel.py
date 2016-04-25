@@ -66,7 +66,7 @@ def _dunder_dict(instance, attributes):
     # The original attribute has a list of elements for each key,
     # but that is not useful for retrieving the special attribute's value.
     # In this case, we're picking the last value from each list.
-    values = [elem[-1] for elem in attributes.values()]
+    values = [elem[-1] for elem in attributes.values() if elem]
 
     obj.postinit(keys=keys, values=values)
     return obj
