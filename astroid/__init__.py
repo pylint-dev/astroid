@@ -76,7 +76,7 @@ from astroid import inference
 
 from astroid import raw_building
 # Cache the builtins AST
-raw_building.ast_from_builtins()
+_builtins = raw_building.ast_from_builtins()
 from astroid.interpreter.util import are_exclusive, unpack_infer
 from astroid.interpreter.lookup import builtin_lookup
 from astroid.builder import parse
@@ -146,3 +146,7 @@ if BRAIN_MODULES_DIR not in sys.path:
 for module in listdir(BRAIN_MODULES_DIR):
     if module.endswith('.py'):
         importlib.import_module(module[:-3])
+
+# Apply transforms to be builtin module at this point.
+MANAGER.visit_transforms(_builtins)
+del _builtins
