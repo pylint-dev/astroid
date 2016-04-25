@@ -78,6 +78,17 @@ else:
 MANAGER = manager.AstroidManager()
 
 
+def _can_assign_attr(node, attrname):
+    try:
+        slots = node.slots()
+    except NotImplementedError:
+        pass
+    else:
+        if slots and attrname not in set(slot.value for slot in slots):
+            return False
+    return True
+
+
 class AstroidBuilder(raw_building.InspectBuilder):
     """Class for building an astroid tree from source code or from a live module.
 
@@ -226,6 +237,8 @@ class AstroidBuilder(raw_building.InspectBuilder):
                     if inferred.__class__ is bases.Instance:
                         inferred = inferred._proxied
                         iattrs = inferred.instance_attrs
+                        if not _can_assign_attr(inferred, node.attrname):
+                            continue
                     elif isinstance(inferred, bases.Instance):
                         # Const, Tuple, ... we may be wrong, may be not, but
                         # anyway we don't want to pollute builtin's namespace
