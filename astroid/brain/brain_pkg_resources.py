@@ -74,6 +74,9 @@ def set_extraction_path(path):
 def cleanup_resources(force=False):
     pass
 
+def get_distribution(dist):
+    return Distribution(dist)
+
 ''')
 
 register_module_extender(MANAGER, 'pkg_resources', pkg_resources_transform)
