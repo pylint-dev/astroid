@@ -3288,6 +3288,48 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 28)
 
+    def test_inner_value_redefined_by_subclass(self):
+        ast_node = test_utils.extract_node('''
+        class X(object):
+            M = lambda self, arg: "a"
+            x = 24
+            def __init__(self):
+                x = 24
+                self.m = self.M(x)
+
+        class Y(X):
+            M = lambda self, arg: arg + 1
+            def blurb(self):
+                self.m #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 25)
+
+    @unittest.expectedFailure
+    def test_inner_value_redefined_by_subclass_with_mro(self):
+        # This might work, but it currently doesn't due to not being able
+        # to reuse inference contexts.
+        ast_node = test_utils.extract_node('''
+        class X(object):
+            M = lambda self, arg: arg + 1
+            x = 24
+            def __init__(self):
+                y = self
+                self.m = y.M(1) + y.z
+
+        class C(object):
+            z = 24
+
+        class Y(X, C):
+            M = lambda self, arg: arg + 1
+            def blurb(self):
+                self.m #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 25)
+
 
 class GetattrTest(unittest.TestCase):
 
