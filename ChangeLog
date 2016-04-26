@@ -2,6 +2,8 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * Calling lambda methods (defined at class level) can be understood.
+
     * Don't take in consideration invalid assignments, especially when __slots__
       declaration forbids them.
       
