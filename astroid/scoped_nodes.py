@@ -648,7 +648,12 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
     name = '<lambda>'
 
     # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
-    type = 'function'
+    @property
+    def type(self):
+        if self.args.args and self.args.args[0].name == 'self':
+            if isinstance(self.parent.scope(), ClassDef):
+                return 'method'
+        return 'function'
 
     def __init__(self, lineno=None, col_offset=None, parent=None):
         self.locals = {}

@@ -3221,6 +3221,18 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ''')
         next(ast_node.infer()).getattr('teta')
 
+    def test_lambda_as_methods(self):
+        ast_node = test_utils.extract_node('''
+        class X:
+           m = lambda self, arg: self.z + arg
+           z = 24
+
+        X().m(4) #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 28)
+
 
 class GetattrTest(unittest.TestCase):
 
