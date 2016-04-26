@@ -149,60 +149,6 @@ class deque(object):
 ''')
 
 
-def pkg_resources_transform():
-    return AstroidBuilder(MANAGER).string_build('''
-def require(*requirements):
-    return pkg_resources.working_set.require(*requirements)
-
-def run_script(requires, script_name):
-    return pkg_resources.working_set.run_script(requires, script_name)
-
-def iter_entry_points(group, name=None):
-    return pkg_resources.working_set.iter_entry_points(group, name)
-
-def resource_exists(package_or_requirement, resource_name):
-    return get_provider(package_or_requirement).has_resource(resource_name)
-
-def resource_isdir(package_or_requirement, resource_name):
-    return get_provider(package_or_requirement).resource_isdir(
-        resource_name)
-
-def resource_filename(package_or_requirement, resource_name):
-    return get_provider(package_or_requirement).get_resource_filename(
-        self, resource_name)
-
-def resource_stream(package_or_requirement, resource_name):
-    return get_provider(package_or_requirement).get_resource_stream(
-        self, resource_name)
-
-def resource_string(package_or_requirement, resource_name):
-    return get_provider(package_or_requirement).get_resource_string(
-        self, resource_name)
-
-def resource_listdir(package_or_requirement, resource_name):
-    return get_provider(package_or_requirement).resource_listdir(
-        resource_name)
-
-def extraction_error():
-    pass
-
-def get_cache_path(archive_name, names=()):
-    extract_path = self.extraction_path or get_default_cache()
-    target_path = os.path.join(extract_path, archive_name+'-tmp', *names)
-    return target_path
-
-def postprocess(tempname, filename):
-    pass
-
-def set_extraction_path(path):
-    pass
-
-def cleanup_resources(force=False):
-    pass
-
-''')
-
-
 def subprocess_transform():
     if PY3K:
         communicate = (bytes('string', 'ascii'), bytes('string', 'ascii'))
@@ -467,7 +413,6 @@ MANAGER.register_transform(nodes.Call, inference_tip(infer_enum),
 MANAGER.register_transform(nodes.ClassDef, infer_enum_class)
 register_module_extender(MANAGER, 'hashlib', hashlib_transform)
 register_module_extender(MANAGER, 'collections', collections_transform)
-register_module_extender(MANAGER, 'pkg_resources', pkg_resources_transform)
 register_module_extender(MANAGER, 'subprocess', subprocess_transform)
 register_module_extender(MANAGER, 'multiprocessing.managers',
                          multiprocessing_managers_transform)
