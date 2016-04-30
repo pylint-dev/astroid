@@ -133,16 +133,17 @@ def _import_gi_module(modname):
             modcode = ''
             for m in itertools.chain(modnames, optional_modnames):
                 try:
-                    __import__(m)
                     with warnings.catch_warnings():
                         # Just inspecting the code can raise gi deprecation
                         # warnings, so ignore them.
                         try:
-                            from gi import PyGIDeprecationWarning
+                            from gi import PyGIDeprecationWarning, PyGIWarning
                             warnings.simplefilter("ignore", PyGIDeprecationWarning)
+                            warnings.simplefilter("ignore", PyGIWarning)
                         except Exception:
                             pass
 
+                        __import__(m)
                         modcode += _gi_build_stub(sys.modules[m])
                 except ImportError:
                     if m not in optional_modnames:
