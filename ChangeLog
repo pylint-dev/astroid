@@ -2,6 +2,9 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --  
+    * Fix a crash which occurred when a method had a same name as a builtin object,
+      decorated at the same time by that builtin object ( a property for instance)
+
     * The inference can handle the case where the attribute is accessed through a subclass
       of a base class and the attribute is defined at the base class's level,
       by taking in consideration a redefinition in the subclass.

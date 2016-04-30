@@ -354,6 +354,16 @@ def test():
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Const)
 
+    def test_recursive_property_method(self):
+        node = extract_node('''
+        class APropert():
+            @property
+            def property(self):
+                return self
+        APropert().property
+        ''')
+        next(node.infer())
+
 
 class Whatever(object):
     a = property(lambda x: x, lambda x: x)
