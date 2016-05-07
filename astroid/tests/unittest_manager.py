@@ -22,6 +22,7 @@ import unittest
 
 import six
 
+import astroid
 from astroid import exceptions
 from astroid import manager
 from astroid.tests import resources
@@ -92,6 +93,24 @@ class AstroidManagerTest(resources.SysPathSetup,
         self.assertRaises(exceptions.AstroidBuildingError,
                           self.manager.ast_from_module_name,
                           'unhandledModule')
+
+    def _test_ast_from_old_namespace_package_protocol(self, root):
+        origpath = sys.path[:]
+        paths = [resources.find('data/path_{}_{}'.format(root, index))
+                 for index in range(1, 4)]
+        sys.path.extend(paths)
+        try:
+            for name in ('foo', 'bar', 'baz'):
+                module = self.manager.ast_from_module_name('package.' + name)
+                self.assertIsInstance(module, astroid.Module)
+        finally:
+            sys.path = origpath
+
+    def test_ast_from_namespace_pkgutil(self):
+        self._test_ast_from_old_namespace_package_protocol('pkgutil')
+
+    def test_ast_from_namespace_pkg_resources(self):
+        self._test_ast_from_old_namespace_package_protocol('pkg_resources')
 
     def _test_ast_from_zip(self, archive):
         origpath = sys.path[:]
