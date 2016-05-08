@@ -114,7 +114,7 @@ class AstroidManagerTest(resources.SysPathSetup,
 
     @unittest.skipUnless(sys.version_info[:2] > (3, 3), "Needs PEP 420 namespace protocol")
     def test_implicit_namespace_package(self):
-        data_dir = os.path.abspath(os.path.join(resources.DATA_DIR, 'data'))
+        data_dir = os.path.dirname(resources.find('data/namespace_pep_420'))
         sys.path.insert(0, data_dir)
         try:
             module = self.manager.ast_from_module_name('namespace_pep_420.module')
