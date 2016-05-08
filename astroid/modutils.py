@@ -769,7 +769,7 @@ class PEP420SpecFinder(Finder):
 
 def _find_spec_with_path(search_path, modname, module_parts, processed, submodule_path):
     finders = [finder(search_path) for finder in (ImpFinder, ZipFinder)]
-    if _HAS_MACHINERY:
+    if _HAS_MACHINERY and sys.version_info[:2] > (3, 3):
         finders.append(PEP420SpecFinder(search_path))
 
     for finder in finders:
