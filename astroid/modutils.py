@@ -780,9 +780,7 @@ def _find_spec_with_path(search_path, modname, module_parts, processed, submodul
             continue
         return finder, spec
 
-    raise ImportError('No module %s in %s' % ('.'.join(module_parts),
-                                              '.'.join(processed)))
-
+    raise ImportError('No module named %s' % '.'.join(module_parts))
 
 
 def _find_spec(modpath, path=None):
