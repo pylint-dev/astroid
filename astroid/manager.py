@@ -116,30 +116,30 @@ class AstroidManager(object):
         if context_file:
             os.chdir(os.path.dirname(context_file))
         try:
-            filepath, mp_type = self.file_from_module_name(modname, context_file)
-            if mp_type == modutils.PY_ZIPMODULE:
-                module = self.zip_import_data(filepath)
+            spec = self.file_from_module_name(modname, context_file)
+            if spec.type == modutils.ModuleType.PY_ZIPMODULE:
+                module = self.zip_import_data(spec.location)
                 if module is not None:
                     return module
-            elif mp_type in (imp.C_BUILTIN, imp.C_EXTENSION):
-                if mp_type == imp.C_EXTENSION and not self._can_load_extension(modname):
+            elif spec.type in (modutils.ModuleType.C_BUILTIN, modutils.ModuleType.C_EXTENSION):
+                if spec.type == modutils.ModuleType.C_EXTENSION and not self._can_load_extension(modname):
                     return self._build_stub_module(modname)
                 try:
                     module = modutils.load_module_from_name(modname)
                 except Exception as ex: # pylint: disable=broad-except
                     util.reraise(exceptions.AstroidImportError(
                         'Loading {modname} failed with:\n{error}',
-                        modname=modname, path=filepath, error=ex))
+                        modname=modname, path=spec.location, error=ex))
                 return self.ast_from_module(module, modname)
-            elif mp_type == imp.PY_COMPILED:
+            elif spec.type == modutils.ModuleType.PY_COMPILED:
                 raise exceptions.AstroidImportError(
                     "Unable to load compiled module {modname}.",
-                    modname=modname, path=filepath)
-            if filepath is None:
+                    modname=modname, path=spec.location)
+            if spec.location is None:
                 raise exceptions.AstroidImportError(
                     "Can't find a file for module {modname}.",
                     modname=modname)
-            return self.ast_from_file(filepath, modname, fallback=False)
+            return self.ast_from_file(spec.location, modname, fallback=False)
         except exceptions.AstroidBuildingError as e:
             for hook in self._failed_import_hooks:
                 try:

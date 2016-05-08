@@ -42,16 +42,16 @@ class ModuleFileTest(unittest.TestCase):
                 del sys.path_importer_cache[k]
 
     def test_find_zipped_module(self):
-        mtype, mfile = modutils._module_file(
+        spec = modutils._find_spec(
             [self.package], [resources.find('data/MyPyPa-0.1.0-py2.5.zip')])
-        self.assertEqual(mtype, modutils.PY_ZIPMODULE)
-        self.assertEqual(mfile.split(os.sep)[-3:], ["data", "MyPyPa-0.1.0-py2.5.zip", self.package])
+        self.assertEqual(spec.type, modutils.ModuleType.PY_ZIPMODULE)
+        self.assertEqual(spec.location.split(os.sep)[-3:], ["data", "MyPyPa-0.1.0-py2.5.zip", self.package])
 
     def test_find_egg_module(self):
-        mtype, mfile = modutils._module_file(
+        spec = modutils._find_spec(
             [self.package], [resources.find('data/MyPyPa-0.1.0-py2.5.egg')])
-        self.assertEqual(mtype, modutils.PY_ZIPMODULE)
-        self.assertEqual(mfile.split(os.sep)[-3:], ["data", "MyPyPa-0.1.0-py2.5.egg", self.package])
+        self.assertEqual(spec.type, modutils.ModuleType.PY_ZIPMODULE)
+        self.assertEqual(spec.location.split(os.sep)[-3:], ["data", "MyPyPa-0.1.0-py2.5.egg", self.package])
 
 
 class LoadModuleFromNameTest(unittest.TestCase):
