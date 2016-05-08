@@ -652,7 +652,7 @@ def _precache_zipimporters(path=None):
             try:
                 pic[entry_path] = zipimport.zipimporter(entry_path)
             except zipimport.ZipImportError:
-                pic[entry_path] = None
+                continue
     return pic
 
 
@@ -805,7 +805,7 @@ def _find_spec(modpath, path=None):
     # Need a copy for not mutating the argument.
     modpath = modpath[:]
 
-    submodule_path = []
+    submodule_path = None
     module_parts = modpath[:]
     processed = []
 
