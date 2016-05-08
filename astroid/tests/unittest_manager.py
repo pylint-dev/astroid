@@ -112,6 +112,17 @@ class AstroidManagerTest(resources.SysPathSetup,
     def test_ast_from_namespace_pkg_resources(self):
         self._test_ast_from_old_namespace_package_protocol('pkg_resources')
 
+    @unittest.skipUnless(sys.version_info[:2] > (3, 3), "Needs PEP 420 namespace protocol")
+    def test_implicit_namespace_package(self):
+        data_dir = os.path.abspath(os.path.join(resources.DATA_DIR, 'data'))
+        sys.path.insert(0, data_dir)
+        try:
+            module = self.manager.ast_from_module_name('namespace_pep_420.module')
+            self.assertIsInstance(module, astroid.Module)
+            self.assertEqual(module.name, 'namespace_pep_420.module')
+        finally:
+            sys.path.pop(0)
+
     def _test_ast_from_zip(self, archive):
         origpath = sys.path[:]
         sys.modules.pop('mypypa', None)
