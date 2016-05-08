@@ -157,7 +157,7 @@ class AstroidManagerTest(resources.SysPathSetup,
         """check if the unittest filepath is equals to the result of the method"""
         self.assertEqual(
             _get_file_from_object(unittest),
-            self.manager.file_from_module_name('unittest', None)[0])
+            self.manager.file_from_module_name('unittest', None).location)
 
     def test_file_from_module_name_astro_building_exception(self):
         """check if the method launch a exception with a wrong module name"""
