@@ -1,7 +1,18 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
---  
+--
+    * Add support for implicit namespace packages (PEP 420)
+
+      This change involves a couple of modifications. First, we're relying on a
+      spec finder protocol, inspired by importlib's ModuleSpec, for finding where
+      a file or package is, using importlib's PathFinder as well, which enable
+      us to discover namespace packages as well.
+      This discovery is the center piece of the namespace package support,
+      the other part being the construction of a dummy Module node whenever
+      a namespace package root directory is requested during astroid's import
+      references.
+
     * Fix a crash which occurred when a method had a same name as a builtin object,
       decorated at the same time by that builtin object ( a property for instance)
 

@@ -48,6 +48,8 @@ try:
 except ImportError:
     pkg_resources = None
 
+from astroid import util
+
 ModuleType = enum.Enum('ModuleType', 'C_BUILTIN C_EXTENSION PKG_DIRECTORY '
                                      'PY_CODERESOURCE PY_COMPILED PY_FROZEN PY_RESOURCE '
                                      'PY_SOURCE PY_ZIPMODULE PY_NAMESPACE')
