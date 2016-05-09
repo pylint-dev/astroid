@@ -296,8 +296,10 @@ def _check_init(path, mod_path):
     for part in mod_path:
         modpath.append(part)
         path = os.path.join(path, part)
-        if not _is_namespace('.'.join(modpath)) and not _has_init(path):
-            return False
+        if not _has_init(path):
+            old_namespace = _is_namespace('.'.join(modpath))
+            if not (old_namespace or sys.version_info[:2] > (3, 3)):
+                return False
     return True
 
 
