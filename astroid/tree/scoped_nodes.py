@@ -314,6 +314,7 @@ class Module(QualifiedNameMixin, lookup.LocalsDictNode):
         if relative_only and level is None:
             level = 0
         absmodname = self.relative_to_absolute_name(modname, level)
+
         try:
             return MANAGER.ast_from_module_name(absmodname)
         except exceptions.AstroidBuildingError:
@@ -345,6 +346,7 @@ class Module(QualifiedNameMixin, lookup.LocalsDictNode):
             package_name = self.name
         else:
             package_name = self.name.rsplit('.', 1)[0]
+
         if package_name:
             if not modname:
                 return package_name

@@ -36,6 +36,7 @@ from astroid.tree import treeabc
 from astroid import util
 
 raw_building = util.lazy_import('raw_building')
+nodes = util.lazy_import('nodes')
 
 
 def _parse(string):
@@ -235,6 +236,10 @@ def delayed_assignments(root):
                             values.append(node)
             except (exceptions.InferenceError, exceptions.AstroidBuildingError):
                 pass
+
+
+def build_namespace_package_module(name, path):
+    return nodes.Module(name, doc='', path=path, package=True)
 
 
 def parse(code, module_name='', path=None, apply_transforms=True):

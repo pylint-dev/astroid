@@ -94,6 +94,10 @@ class AstroidManager(object):
     def _build_stub_module(self, modname):
         return builder.AstroidBuilder(self).string_build('', modname)
 
+    def _build_namespace_module(self, modname, path):
+        from astroid.builder import build_namespace_package_module
+        return build_namespace_package_module(modname, path)
+
     def _can_load_extension(self, modname):
         if self.always_load_extensions:
             return True
@@ -133,6 +137,8 @@ class AstroidManager(object):
                 raise exceptions.AstroidImportError(
                     "Unable to load compiled module {modname}.",
                     modname=modname, path=spec.location)
+            elif spec.type == modutils.ModuleType.PY_NAMESPACE:
+                return self._build_namespace_module(modname, spec.submodule_search_locations)
             if spec.location is None:
                 raise exceptions.AstroidImportError(
                     "Can't find a file for module {modname}.",
