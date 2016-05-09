@@ -113,6 +113,7 @@ class ModPathFromFileTest(unittest.TestCase):
     def test_raise_modpath_from_file_Exception(self):
         self.assertRaises(Exception, modutils.modpath_from_file, '/turlututu')
 
+    @unittest.skipUnless(sys.version_info[:2] > (3, 3), "Needs Python 3.3+ namespace package.")
     def test_modpath_from_file_namespace(self):
         datadir = os.path.abspath(resources.find('data'))
         path = os.path.abspath(

@@ -33,6 +33,7 @@ from astroid import manager
 from astroid import modutils
 from astroid import raw_building
 from astroid import rebuilder
+from astroid import nodes
 from astroid import util
 
 
@@ -261,6 +262,10 @@ class AstroidBuilder(raw_building.InspectBuilder):
                     values.append(node)
         except exceptions.InferenceError:
             pass
+
+
+def build_namespace_package_module(name, path):
+    return nodes.Module(name, doc='', path=path, package=True)
 
 
 def parse(code, module_name='', path=None, apply_transforms=True):
