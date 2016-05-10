@@ -292,7 +292,7 @@ def load_module_from_file(filepath, path=None, use_sys=True, extrapath=None):
     return load_module_from_modpath(modpath, path, use_sys)
 
 
-def _check_init(path, mod_path):
+def check_modpath_has_init(path, mod_path):
     """check there are some __init__.py all along the way"""
     modpath = []
     for part in mod_path:
@@ -300,9 +300,32 @@ def _check_init(path, mod_path):
         path = os.path.join(path, part)
         if not _has_init(path):
             old_namespace = _is_namespace('.'.join(modpath))
-            if not (old_namespace or sys.version_info[:2] > (3, 3)):
+            if not old_namespace:
                 return False
     return True
+
+
+def modpath_from_file_with_callback(filename, extrapath=None, is_package_cb=None):
+    filename = _path_from_filename(filename)
+    filename = os.path.abspath(filename)
+    base = os.path.splitext(filename)[0]
+    if extrapath is not None:
+        for path_ in extrapath:
+            path = os.path.abspath(path_)
+            if path and os.path.normcase(base[:len(path)]) == os.path.normcase(path):
+                submodpath = [pkg for pkg in base[len(path):].split(os.sep)
+                              if pkg]
+                if is_package_cb(path, submodpath[:-1]):
+                    return extrapath[path_].split('.') + submodpath
+    for path in sys.path:
+        path = _cache_normalize_path(path)
+        if path and os.path.normcase(base).startswith(path):
+            modpath = [pkg for pkg in base[len(path):].split(os.sep) if pkg]
+            if is_package_cb(path, modpath[:-1]):
+                return modpath
+    raise ImportError('Unable to find module for %s in %s' % (
+        filename, ', \n'.join(sys.path)))
+
 
 
 def modpath_from_file(filename, extrapath=None):
@@ -325,25 +348,7 @@ def modpath_from_file(filename, extrapath=None):
     :rtype: list(str)
     :return: the corresponding splitted module's name
     """
-    filename = _path_from_filename(filename)
-    filename = os.path.abspath(filename)
-    base = os.path.splitext(filename)[0]
-    if extrapath is not None:
-        for path_ in extrapath:
-            path = os.path.abspath(path_)
-            if path and os.path.normcase(base[:len(path)]) == os.path.normcase(path):
-                submodpath = [pkg for pkg in base[len(path):].split(os.sep)
-                              if pkg]
-                if _check_init(path, submodpath[:-1]):
-                    return extrapath[path_].split('.') + submodpath
-    for path in sys.path:
-        path = _cache_normalize_path(path)
-        if path and os.path.normcase(base).startswith(path):
-            modpath = [pkg for pkg in base[len(path):].split(os.sep) if pkg]
-            if _check_init(path, modpath[:-1]):
-                return modpath
-    raise ImportError('Unable to find module for %s in %s' % (
-        filename, ', \n'.join(sys.path)))
+    return modpath_from_file_with_callback(filename, extrapath, check_modpath_has_init)
 
 
 def file_from_modpath(modpath, path=None, context_file=None):
