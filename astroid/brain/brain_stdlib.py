@@ -185,6 +185,10 @@ def infer_namedtuple_enum_fields(call_node, context):
     # whitespace-separate string
     try:
         type_name = infer_first(call_node.args[0], context).value
+        # The type might not be inferred properly in the case it is a string
+        # formatting operation, such as '{...}'.format(...)
+        type_name = type_name or "Uninferable"
+
         fields = infer_first(call_node.args[1], context)
         return type_name, fields
     except (AttributeError, exceptions.InferenceError):
@@ -203,6 +207,9 @@ def infer_namedtuple(namedtuple_call, context=None):
     else:
         raise UseInferenceDefault()
 
+    if not field_names:
+        raise UseInferenceDefault()
+
     class_definition = _class_template.format(
         typename = type_name,
         field_names = field_names,
@@ -213,13 +220,14 @@ def infer_namedtuple(namedtuple_call, context=None):
         field_defs = '\n'.join(_field_template.format(index=index, name=name)
                                for index, name in enumerate(field_names))
     )
-
     namedtuple_node = parse(class_definition).getattr(type_name)[0]
     init_template = '''def __init__(self, {args}):
-{assignments}'''
+{assignments}
+    '''
     init_definition = init_template.format(
         args=', '.join(field_names),
-        assignments='\n'.join((' '*4 + 'self.{f} = {f}').format(f=f) for f in field_names))
+        assignments='\n'.join((' ' * 4 + 'self.{f} = {f}').format(f=f) for f in field_names))
+
     init_node = parse(init_definition).getattr('__init__')[0]
     init_node.parent = namedtuple_node
     namedtuple_node.body.append(init_node)
