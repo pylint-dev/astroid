@@ -336,6 +336,13 @@ def test():
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Const)
 
+    def test_uninferable_string_argument_of_namedtuple(self):
+        node = extract_node('''
+        import collections
+        collections.namedtuple('{}'.format("a"), '')()
+        ''')
+        next(node.infer())
+
 
 class Whatever(object):
     a = property(lambda x: x, lambda x: x)

@@ -80,6 +80,10 @@ def infer_func_form(node, base_type, context=None, enum=False):
                     raise AttributeError
     except (AttributeError, exceptions.InferenceError):
         raise UseInferenceDefault()
+
+    # If we can't iner the name of the class, don't crash, up to this point
+    # we know it is a namedtuple anyway.
+    name = name or 'Uninferable'
     # we want to return a Class node instance with proper attributes set
     class_node = nodes.ClassDef(name, 'docstring')
     class_node.parent = node.parent
