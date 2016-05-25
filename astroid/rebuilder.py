@@ -507,7 +507,9 @@ class TreeRebuilder(object):
         elif context == astroid.Store:
             newnode = nodes.AssignAttr(node.attr, node.lineno, node.col_offset,
                                        parent)
-            self._delayed_assattr.append(newnode)
+            # Prohibit a local save if we are in an ExceptHandler.
+            if not isinstance(parent, astroid.ExceptHandler):
+                self._delayed_assattr.append(newnode)
         else:
             newnode = nodes.Attribute(node.attr, node.lineno, node.col_offset,
                                       parent)
