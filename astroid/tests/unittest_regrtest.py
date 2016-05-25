@@ -343,6 +343,19 @@ def test():
         ''')
         next(node.infer())
 
+    @require_version(maxver='3.0')
+    def test_reassignment_in_except_handler(self):
+        node = extract_node('''
+        import exceptions
+        try:
+            {}["a"]
+        except KeyError, exceptions.IndexError:
+            pass
+
+        IndexError #@
+        ''')
+        self.assertEqual(len(node.inferred()), 1)
+
 
 class Whatever(object):
     a = property(lambda x: x, lambda x: x)

@@ -1,6 +1,15 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+ -- 1.4.7
+
+    * Stop saving assignment locals in ExceptHandlers, when the context is a store.
+
+      This fixes a tripping case, where the RHS of a ExceptHandler can be redefined
+      by the LHS, leading to a local save. For instance, ``except KeyError, exceptions.IndexError``
+      could result in a local save for IndexError as KeyError, resulting in potential unexpected
+      inferences. Since we don't lose a lot, this syntax gets prohibited.
+
 2016-06-06 -- 1.4.6
 
     * Fix a crash which occurred when the class of a namedtuple could not be inferred.

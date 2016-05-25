@@ -560,8 +560,10 @@ class TreeRebuilder(object):
             newnode = new.DelAttr()
         elif assign_ctx == "Assign":
             # FIXME : maybe we should call visit_assattr ?
+            # Prohibit a local save if we are in an ExceptHandler.
             newnode = new.AssignAttr()
-            self._delayed_assattr.append(newnode)
+            if not isinstance(parent, new.ExceptHandler):
+                self._delayed_assattr.append(newnode)
         else:
             newnode = new.Attribute()
         _lineno_parent(node, newnode, parent)
