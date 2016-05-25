@@ -2,6 +2,7 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+
     * Fix a crash which occurred when the class of a namedtuple could not be inferred.
 
     * Add support for implicit namespace packages (PEP 420)
