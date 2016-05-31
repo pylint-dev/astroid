@@ -293,8 +293,9 @@ def check_modpath_has_init(path, mod_path):
 
 def modpath_from_file_with_callback(filename, extrapath=None, is_package_cb=None):
     filename = _path_from_filename(filename)
-    filename = os.path.abspath(filename)
+    filename = os.path.realpath(os.path.expanduser(filename))
     base = os.path.splitext(filename)[0]
+
     if extrapath is not None:
         for path_ in extrapath:
             path = os.path.abspath(path_)
