@@ -10,10 +10,8 @@ import sys
 import textwrap
 
 from astroid import (
-    MANAGER, UseInferenceDefault, inference_tip,
-    InferenceError, register_module_extender)
+    MANAGER, UseInferenceDefault, inference_tip)
 from astroid import exceptions
-from astroid.interpreter.objects import BoundMethod
 from astroid import nodes
 from astroid.builder import AstroidBuilder
 from astroid import parse
@@ -34,131 +32,6 @@ def infer_first(node, context):
         raise UseInferenceDefault()
     else:
         return value
-
-
-# module specific transformation functions #####################################
-
-def hashlib_transform():
-    template = '''
-
-class %(name)s(object):
-  def __init__(self, value=''): pass
-  def digest(self):
-    return %(digest)s
-  def copy(self):
-    return self
-  def update(self, value): pass
-  def hexdigest(self):
-    return ''
-  @property
-  def name(self):
-    return %(name)r
-  @property
-  def block_size(self):
-    return 1
-  @property
-  def digest_size(self):
-    return 1
-'''
-    algorithms = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')
-    classes = "".join(
-        template % {'name': hashfunc, 'digest': 'b""' if PY3K else '""'}
-        for hashfunc in algorithms)
-    return AstroidBuilder(MANAGER).string_build(classes)
-
-
-def collections_transform():
-    return AstroidBuilder(MANAGER).string_build('''
-
-class defaultdict(dict):
-    default_factory = None
-    def __missing__(self, key): pass
-
-class deque(object):
-    maxlen = 0
-    def __init__(self, iterable=None, maxlen=None):
-        self.iterable = iterable
-    def append(self, x): pass
-    def appendleft(self, x): pass
-    def clear(self): pass
-    def count(self, x): return 0
-    def extend(self, iterable): pass
-    def extendleft(self, iterable): pass
-    def pop(self): pass
-    def popleft(self): pass
-    def remove(self, value): pass
-    def reverse(self): pass
-    def rotate(self, n): pass
-    def __iter__(self): return self
-    def __reversed__(self): return self.iterable[::-1]
-    def __getitem__(self, index): pass
-    def __setitem__(self, index, value): pass
-    def __delitem__(self, index): pass
-''')
-
-
-def subprocess_transform():
-    if PY3K:
-        communicate = (bytes('string', 'ascii'), bytes('string', 'ascii'))
-        communicate_signature = 'def communicate(self, input=None, timeout=None)'
-        init = """
-        def __init__(self, args, bufsize=0, executable=None,
-                     stdin=None, stdout=None, stderr=None,
-                     preexec_fn=None, close_fds=False, shell=False,
-                     cwd=None, env=None, universal_newlines=False,
-                     startupinfo=None, creationflags=0, restore_signals=True,
-                     start_new_session=False, pass_fds=()):
-            pass
-        """
-    else:
-        communicate = ('string', 'string')
-        communicate_signature = 'def communicate(self, input=None)'
-        init = """
-        def __init__(self, args, bufsize=0, executable=None,
-                     stdin=None, stdout=None, stderr=None,
-                     preexec_fn=None, close_fds=False, shell=False,
-                     cwd=None, env=None, universal_newlines=False,
-                     startupinfo=None, creationflags=0):
-            pass
-        """
-    if PY33:
-        wait_signature = 'def wait(self, timeout=None)'
-    else:
-        wait_signature = 'def wait(self)'
-    if PY3K:
-        ctx_manager = '''
-        def __enter__(self): return self
-        def __exit__(self, *args): pass
-        '''
-    else:
-        ctx_manager = ''
-    code = textwrap.dedent('''
-
-    class Popen(object):
-        returncode = pid = 0
-        stdin = stdout = stderr = file()
-
-        %(init)s
-
-        %(communicate_signature)s:
-            return %(communicate)r
-        %(wait_signature)s:
-            return self.returncode
-        def poll(self):
-            return self.returncode
-        def send_signal(self, signal):
-            pass
-        def terminate(self):
-            pass
-        def kill(self):
-            pass
-        %(ctx_manager)s
-       ''' % {'init': init,
-              'communicate': communicate,
-              'communicate_signature': communicate_signature,
-              'wait_signature': wait_signature,
-              'ctx_manager': ctx_manager})
-    return AstroidBuilder(MANAGER).string_build(code)
 
 
 # namedtuple and Enum support
@@ -341,112 +214,9 @@ def infer_enum_class(enum_node):
         break
     return enum_node
 
-def multiprocessing_transform():
-    module = AstroidBuilder(MANAGER).string_build(textwrap.dedent('''
-    from multiprocessing.managers import SyncManager
-    def Manager():
-        return SyncManager()
-    '''))
-    if not PY34:
-        return module
-
-    # On Python 3.4, multiprocessing uses a getattr lookup inside contexts,
-    # in order to get the attributes they need. Since it's extremely
-    # dynamic, we use this approach to fake it.
-    node = AstroidBuilder(MANAGER).string_build(textwrap.dedent('''
-    from multiprocessing.context import DefaultContext, BaseContext
-    default = DefaultContext()
-    base = BaseContext()
-    '''))
-    try:
-        context = next(node['default'].infer())
-        base = next(node['base'].infer())
-    except InferenceError:
-        return module
-
-    for node in (context, base):
-        for key, value in node.locals.items():
-            if key.startswith("_"):
-                continue
-
-            value = value[0]
-            if isinstance(value, nodes.FunctionDef):
-                # We need to rebind this, since otherwise
-                # it will have an extra argument (self).
-                value = BoundMethod(value, node)
-            module.body.append(nodes.InterpreterObject(object_=value, name=key,
-                                               parent=module))
-    return module
-
-def multiprocessing_managers_transform():
-    return AstroidBuilder(MANAGER).string_build(textwrap.dedent('''
-    import array
-    import threading
-    import multiprocessing.pool as pool
-
-    import six
-
-    class Namespace(object):
-        pass
-
-    class Value(object):
-        def __init__(self, typecode, value, lock=True):
-            self._typecode = typecode
-            self._value = value
-        def get(self):
-            return self._value
-        def set(self, value):
-            self._value = value
-        def __repr__(self):
-            return '%s(%r, %r)'%(type(self).__name__, self._typecode, self._value)
-        value = property(get, set)
-
-    def Array(typecode, sequence, lock=True):
-        return array.array(typecode, sequence)
-
-    class SyncManager(object):
-        Queue = JoinableQueue = six.moves.queue.Queue
-        Event = threading.Event
-        RLock = threading.RLock
-        BoundedSemaphore = threading.BoundedSemaphore
-        Condition = threading.Condition
-        Barrier = threading.Barrier
-        Pool = pool.Pool
-        list = list
-        dict = dict
-        Value = Value
-        Array = Array
-        Namespace = Namespace
-        __enter__ = lambda self: self
-        __exit__ = lambda *args: args
-        
-        def start(self, initializer=None, initargs=None):
-            pass
-        def shutdown(self):
-            pass
-    '''))
-
-def thread_transform():
-    return AstroidBuilder(MANAGER).string_build('''
-class lock(object):
-    def acquire(self, blocking=True):
-        pass
-    def release(self):
-        pass
-
-def Lock():
-    return lock()
-''')
 
 MANAGER.register_transform(nodes.Call, inference_tip(infer_namedtuple),
                            _looks_like_namedtuple)
 MANAGER.register_transform(nodes.Call, inference_tip(infer_enum),
                            _looks_like_enum)
 MANAGER.register_transform(nodes.ClassDef, infer_enum_class)
-register_module_extender(MANAGER, 'hashlib', hashlib_transform)
-register_module_extender(MANAGER, 'collections', collections_transform)
-register_module_extender(MANAGER, 'subprocess', subprocess_transform)
-register_module_extender(MANAGER, 'multiprocessing.managers',
-                         multiprocessing_managers_transform)
-register_module_extender(MANAGER, 'multiprocessing', multiprocessing_transform)
-register_module_extender(MANAGER, 'threading', thread_transform)
