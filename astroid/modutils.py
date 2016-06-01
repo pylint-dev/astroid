@@ -33,6 +33,7 @@ try:
     import pkg_resources
 except ImportError:
     pkg_resources = None
+import six
 
 from astroid import util
 
@@ -128,6 +129,10 @@ class NoSourceFile(Exception):
 
 def _normalize_path(path):
     return os.path.normcase(os.path.abspath(path))
+
+
+def _canonicalize_path(path):
+    return os.path.realpath(os.path.expanduser(path))
 
 
 def _path_from_filename(filename, is_jython=util.JYTHON):
@@ -297,19 +302,21 @@ def modpath_from_file_with_callback(filename, extrapath=None, is_package_cb=None
     base = os.path.splitext(filename)[0]
 
     if extrapath is not None:
-        for path_ in extrapath:
+        for path_ in six.moves.map(_canonicalize_path, extrapath):
             path = os.path.abspath(path_)
             if path and os.path.normcase(base[:len(path)]) == os.path.normcase(path):
                 submodpath = [pkg for pkg in base[len(path):].split(os.sep)
                               if pkg]
                 if is_package_cb(path, submodpath[:-1]):
                     return extrapath[path_].split('.') + submodpath
-    for path in sys.path:
+
+    for path in six.moves.map(_canonicalize_path, sys.path):
         path = _cache_normalize_path(path)
         if path and os.path.normcase(base).startswith(path):
             modpath = [pkg for pkg in base[len(path):].split(os.sep) if pkg]
             if is_package_cb(path, modpath[:-1]):
                 return modpath
+
     raise ImportError('Unable to find module for %s in %s' % (
         filename, ', \n'.join(sys.path)))
 
