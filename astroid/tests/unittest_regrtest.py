@@ -120,7 +120,7 @@ class A(gobject.GObject):
 
     def test_numpy_crash(self):
         """test don't crash on numpy"""
-        #a crash occured somewhere in the past, and an
+        #a crash occurred somewhere in the past, and an
         # InferenceError instead of a crash was better, but now we even infer!
         try:
             import numpy # pylint: disable=unused-variable

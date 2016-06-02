@@ -739,7 +739,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         method_locals = klass2.local_attr('method')
         self.assertEqual(len(method_locals), 1)
         self.assertEqual(method_locals[0].name, 'method')
-        self.assertRaises(AttributeInferenceError, klass2.local_attr, 'nonexistant')
+        self.assertRaises(AttributeInferenceError, klass2.local_attr, 'nonexistent')
         methods = {m.name for m in klass2.methods()}
         self.assertTrue(methods.issuperset(expected_methods))
 

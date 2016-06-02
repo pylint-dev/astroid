@@ -25,7 +25,7 @@ execution branches.
 How does it work ?
 ------------------
 
-.. todo :: double chek this :func:`infer` is monkey-patched point
+.. todo :: double check this :func:`infer` is monkey-patched point
 
 The :meth:`NodeNG.infer` method either delegates the actual inference
 to the instance specific method :meth:`NodeNG._explicit_inference`
@@ -66,7 +66,7 @@ on several more global objects, mainly :
 
 :class:`InferenceContext`
     Instances of this class can be passed to the :meth:`infer` methods
-    to convey aditionnal information on the context of the current
+    to convey additional information on the context of the current
     node, and especially the current scope.
 
 .. todo:: Write something about :class:`Scope` objects and
@@ -76,7 +76,7 @@ on several more global objects, mainly :
 API documentation
 =================
 
-Here is the annotaded API documentation extracted from the source code
+Here is the annotated API documentation extracted from the source code
 of the :mod:`inference`.
 
 .. todo:: actually annotate the doc to structure its approach

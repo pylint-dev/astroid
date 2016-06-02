@@ -34,7 +34,7 @@ class FilterStmtsMixin(object):
     """Mixin for statement filtering and assignment type"""
 
     def _get_filtered_stmts(self, _, node, _stmts, mystmt):
-        """method used in _filter_stmts to get statemtents and trigger break"""
+        """method used in _filter_stmts to get statements and trigger break"""
         if self.statement() is mystmt:
             # original node's statement is the assignment, only keep
             # current node (gen exp, list comp)

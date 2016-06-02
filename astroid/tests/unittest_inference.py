@@ -3828,7 +3828,7 @@ class ArgumentsTest(unittest.TestCase):
         value = self._get_dict_value(inferred)
         self.assertEqual(value, expected_value)
 
-    def test_kwargs_are_overriden(self):
+    def test_kwargs_are_overridden(self):
         ast_nodes = test_utils.extract_node('''
         def test(f):
              return f

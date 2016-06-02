@@ -311,7 +311,7 @@ class InspectBuilder(object):
                 attach_const_node(node, name, member)
             elif inspect.isroutine(member):
                 # This should be called for Jython, where some builtin
-                # methods aren't catched by isbuiltin branch.
+                # methods aren't caught by isbuiltin branch.
                 _build_from_function(node, name, member, self._module)
             else:
                 # create an empty node so that the name is actually defined
