@@ -9,6 +9,7 @@ import six
 from six.moves import builtins
 
 from astroid import builder
+from astroid import exceptions
 from astroid.interpreter import util as interpreterutil
 from astroid import manager
 from astroid import nodes
@@ -193,8 +194,9 @@ class TestHelpers(unittest.TestCase):
         class F(D, E): pass #@
         ''')
         self.assertFalse(interpreterutil.is_subtype(cls_e, cls_f))
-        self.assertEqual(interpreterutil.is_subtype(cls_f, cls_e), util.Uninferable)
-        self.assertEqual(interpreterutil.is_supertype(cls_e, cls_f), util.Uninferable)
+        self.assertFalse(interpreterutil.is_subtype(cls_e, cls_f))
+        with self.assertRaises(exceptions._NonDeducibleTypeHierarchy):
+            interpreterutil.is_subtype(cls_f, cls_e)
         self.assertFalse(interpreterutil.is_supertype(cls_f, cls_e))
 
     def test_is_subtype_supertype_unknown_bases(self):
@@ -203,8 +205,10 @@ class TestHelpers(unittest.TestCase):
         class A(Unknown): pass #@
         class B(A): pass #@
         ''')
-        self.assertTrue(interpreterutil.is_subtype(cls_b, cls_a))
-        self.assertTrue(interpreterutil.is_supertype(cls_a, cls_b))
+        with self.assertRaises(exceptions._NonDeducibleTypeHierarchy):
+            interpreterutil.is_subtype(cls_a, cls_b)
+        with self.assertRaises(exceptions._NonDeducibleTypeHierarchy):
+            interpreterutil.is_supertype(cls_a, cls_b)
 
     def test_is_subtype_supertype_unrelated_classes(self):
         cls_a, cls_b = test_utils.extract_node('''
@@ -236,7 +240,6 @@ class TestHelpers(unittest.TestCase):
 
     @test_utils.require_version(maxver='3.0')
     def test_old_style_class(self):
-        # TODO: what is this test supposed to be testing?  It will crash as-is because it calls helpers.
         cls = test_utils.extract_node('''class A: pass''')
         builtin_type = self._look_up_in_builtins('type')
         self.assertEqual(interpreterutil.object_type(cls), builtin_type)

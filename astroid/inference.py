@@ -168,9 +168,14 @@ def infer_attribute(self, context=None):
             # by taking in consideration a redefinition in the subclass.
             if (isinstance(owner, runtimeabc.Instance)
                   and isinstance(context.boundnode, runtimeabc.Instance)):
-                if inferenceutil.is_subtype(inferenceutil.object_type(context.boundnode),
-                                            inferenceutil.object_type(owner)):
-                    owner = context.boundnode
+                try:
+                    if inferenceutil.is_subtype(inferenceutil.object_type(context.boundnode),
+                                                inferenceutil.object_type(owner)):
+                        owner = context.boundnode
+                except exceptions._NonDeducibleTypeHierarchy:
+                    # Can't determine anything useful.
+                    pass
+
 
         try:
             context.boundnode = owner
@@ -615,10 +620,14 @@ def infer_binop(self, context, nodes):
                 yield util.Uninferable
                 return
 
-            results = _infer_binary_operation(lhs, rhs, self, context,
-                                              _get_binop_flow, nodes)
-            for result in results:
-                yield result
+            try:
+                results = _infer_binary_operation(lhs, rhs, self, context,
+                                                  _get_binop_flow, nodes)
+            except exceptions._NonDeducibleTypeHierarchy:
+                yield util.Uninferable
+            else:
+                for result in results:
+                    yield result
 
 
 @decorators.yes_if_nothing_inferred
@@ -652,10 +661,14 @@ def infer_augassign(self, context=None, nodes=None):
                 yield util.Uninferable
                 return
 
-            results = _infer_binary_operation(lhs, rhs, self,
-                                              context, _get_aug_flow, nodes)
-            for result in results:
-                yield result
+            try:
+                results = _infer_binary_operation(lhs, rhs, self,
+                                                  context, _get_aug_flow, nodes)
+            except exceptions._NonDeducibleTypeHierarchy:
+                yield util.Uninferable
+            else:
+                for result in results:
+                    yield result
 
 
 @decorators.path_wrapper
