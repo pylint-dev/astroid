@@ -8,6 +8,7 @@ import six
 from six.moves import builtins
 
 from astroid import builder
+from astroid import exceptions
 from astroid import helpers
 from astroid import manager
 from astroid import raw_building
@@ -202,8 +203,10 @@ class TestHelpers(unittest.TestCase):
         class F(D, E): pass #@
         ''')
         self.assertFalse(helpers.is_subtype(cls_e, cls_f))
-        self.assertEqual(helpers.is_subtype(cls_f, cls_e), util.Uninferable)
-        self.assertEqual(helpers.is_supertype(cls_e, cls_f), util.Uninferable)
+
+        self.assertFalse(helpers.is_subtype(cls_e, cls_f))
+        with self.assertRaises(exceptions._NonDeducibleTypeHierarchy):
+            helpers.is_subtype(cls_f, cls_e)
         self.assertFalse(helpers.is_supertype(cls_f, cls_e))
 
     def test_is_subtype_supertype_unknown_bases(self):
@@ -212,8 +215,10 @@ class TestHelpers(unittest.TestCase):
         class A(Unknown): pass #@
         class B(A): pass #@
         ''')
-        self.assertTrue(helpers.is_subtype(cls_b, cls_a))
-        self.assertTrue(helpers.is_supertype(cls_a, cls_b))
+        with self.assertRaises(exceptions._NonDeducibleTypeHierarchy):
+            helpers.is_subtype(cls_a, cls_b)
+        with self.assertRaises(exceptions._NonDeducibleTypeHierarchy):
+            helpers.is_supertype(cls_a, cls_b)
 
     def test_is_subtype_supertype_unrelated_classes(self):
         cls_a, cls_b = test_utils.extract_node('''

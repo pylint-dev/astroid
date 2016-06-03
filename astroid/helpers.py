@@ -126,7 +126,7 @@ def has_known_bases(klass, context=None):
 
 def _type_check(type1, type2):
     if not all(map(has_known_bases, (type1, type2))):
-        return util.Uninferable
+        raise exceptions._NonDeducibleTypeHierarchy
 
     if not all([type1.newstyle, type2.newstyle]):
         return False
@@ -134,7 +134,7 @@ def _type_check(type1, type2):
         return type1 in type2.mro()[:-1]
     except exceptions.MroError:
         # The MRO is invalid.
-        return util.Uninferable
+        raise exceptions._NonDeducibleTypeHierarchy
 
 
 def is_subtype(type1, type2):

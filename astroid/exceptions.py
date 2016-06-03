@@ -181,6 +181,10 @@ class UseInferenceDefault(Exception):
     """
 
 
+class _NonDeducibleTypeHierarchy(Exception):
+    """Raised when is_subtype / is_supertype can't deduce the relation between two types."""
+
+
 # Backwards-compatibility aliases
 OperationError = util.BadOperationMessage
 UnaryOperationError = util.BadUnaryOperationMessage

@@ -174,9 +174,13 @@ def infer_attribute(self, context=None):
             # by taking in consideration a redefinition in the subclass.
             if (isinstance(owner, bases.Instance)
                   and isinstance(context.boundnode, bases.Instance)):
-                if helpers.is_subtype(helpers.object_type(context.boundnode),
-                                      helpers.object_type(owner)):
-                    owner = context.boundnode
+                try:
+                    if helpers.is_subtype(helpers.object_type(context.boundnode),
+                                          helpers.object_type(owner)):
+                        owner = context.boundnode
+                except exceptions._NonDeducibleTypeHierarchy:
+                    # Can't determine anything useful.
+                    pass
 
         try:
             context.boundnode = owner
@@ -632,9 +636,13 @@ def _infer_binop(self, context):
                 yield util.Uninferable
                 return
 
-            results = _infer_binary_operation(lhs, rhs, self, context, _get_binop_flow)
-            for result in results:
-                yield result
+            try:
+                results = _infer_binary_operation(lhs, rhs, self, context, _get_binop_flow)
+            except exceptions._NonDeducibleTypeHierarchy:
+                yield util.Uninferable
+            else:
+                for result in results:
+                    yield result
 
 
 @decorators.yes_if_nothing_inferred
@@ -670,9 +678,13 @@ def _infer_augassign(self, context=None):
                 yield util.Uninferable
                 return
 
-            results = _infer_binary_operation(lhs, rhs, self, context, _get_aug_flow)
-            for result in results:
-                yield result
+            try:
+                results = _infer_binary_operation(lhs, rhs, self, context, _get_aug_flow)
+            except exceptions._NonDeducibleTypeHierarchy:
+                yield util.Uninferable
+            else:
+                for result in results:
+                    yield result
 
 
 @decorators.path_wrapper
