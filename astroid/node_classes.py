@@ -51,7 +51,7 @@ def unpack_infer(stmt, context=None):
         # Explicit StopIteration to return error information, see comment
         # in raise_if_nothing_inferred.
         raise StopIteration(dict(node=stmt, context=context))
-    # else, infer recursivly, except Uninferable object that should be returned as is
+    # else, infer recursively, except Uninferable object that should be returned as is
     for inferred in stmt.infer(context):
         if inferred is util.Uninferable:
             yield inferred
@@ -99,11 +99,11 @@ def are_exclusive(stmt1, stmt2, exceptions=None): # pylint: disable=redefined-ou
                 c2attr, c2node = node.locate_child(previous)
                 c1attr, c1node = node.locate_child(children[node])
                 if c1node is not c2node:
-                    first_in_body_catched_by_handlers = (
+                    first_in_body_caught_by_handlers = (
                         c2attr == 'handlers'
                         and c1attr == 'body'
                         and previous.catch(exceptions))
-                    second_in_body_catched_by_handlers = (
+                    second_in_body_caught_by_handlers = (
                         c2attr == 'body'
                         and c1attr == 'handlers'
                         and children[node].catch(exceptions))
@@ -111,8 +111,8 @@ def are_exclusive(stmt1, stmt2, exceptions=None): # pylint: disable=redefined-ou
                         c2attr == 'handlers' and c1attr == 'orelse')
                     second_in_else_other_in_handlers = (
                         c2attr == 'orelse' and c1attr == 'handlers')
-                    if any((first_in_body_catched_by_handlers,
-                            second_in_body_catched_by_handlers,
+                    if any((first_in_body_caught_by_handlers,
+                            second_in_body_caught_by_handlers,
                             first_in_else_other_in_handlers,
                             second_in_else_other_in_handlers)):
                         return True
@@ -727,8 +727,8 @@ class LookupMixIn(object):
 
             optional_assign = assign_type.optional_assign
             if optional_assign and assign_type.parent_of(self):
-                # we are inside a loop, loop var assigment is hidding previous
-                # assigment
+                # we are inside a loop, loop var assignment is hiding previous
+                # assignment
                 _stmts = [node]
                 _stmt_parents = [stmt.parent]
                 continue
@@ -745,7 +745,7 @@ class LookupMixIn(object):
                     # both statements are not at the same block level
                     continue
                 # if currently visited node is following previously considered
-                # assignement and both are not exclusive, we can drop the
+                # assignment and both are not exclusive, we can drop the
                 # previous one. For instance in the following code ::
                 #
                 #   if a:
@@ -765,7 +765,7 @@ class LookupMixIn(object):
                 #
                 # moreover, on loop assignment types, assignment won't
                 # necessarily be done if the loop has no iteration, so we don't
-                # want to clear previous assigments if any (hence the test on
+                # want to clear previous assignments if any (hence the test on
                 # optional_assign)
                 if not (optional_assign or are_exclusive(_stmts[pindex], node)):
                     del _stmt_parents[pindex]
@@ -1809,7 +1809,7 @@ class While(mixins.BlockRangeMixIn, Statement):
         return self.test.tolineno
 
     def block_range(self, lineno):
-        """handle block line numbers range for for and while statements"""
+        """handle block line numbers range for and while statements"""
         return self. _elsed_block_range(lineno, self.orelse)
 
 

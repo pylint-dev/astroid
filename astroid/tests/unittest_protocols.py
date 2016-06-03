@@ -123,7 +123,7 @@ class ProtocolTests(unittest.TestCase):
         # Too many lhs values
         self._helper_starred_inference_error("a, *b, c = (1, 2) #@")
         # This could be solved properly, but it complicates needlessly the
-        # code for assigned_stmts, without oferring real benefit.
+        # code for assigned_stmts, without offering real benefit.
         self._helper_starred_inference_error(
             "(*a, b), (c, *d) = (1, 2, 3), (4, 5, 6) #@")
 

@@ -135,7 +135,7 @@ class TestTransforms(unittest.TestCase):
     def test_transforms_are_separated(self):
         # Test that the transforming is done at a separate
         # step, which means that we are not doing inference
-        # on a partially constructred tree anymore, which was the
+        # on a partially constructed tree anymore, which was the
         # source of crashes in the past when certain inference rules
         # were used in a transform.
         def transform_function(node):

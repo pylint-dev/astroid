@@ -206,11 +206,11 @@ def load_module_from_name(dotted_name, path=None, use_sys=True):
 
 
 def load_module_from_modpath(parts, path=None, use_sys=1):
-    """Load a python module from its splitted name.
+    """Load a python module from its split name.
 
     :type parts: list(str) or tuple(str)
     :param parts:
-      python name of a module or package splitted on '.'
+      python name of a module or package split on '.'
 
     :type path: list or None
     :param path:
@@ -327,8 +327,8 @@ def modpath_from_file_with_callback(filename, extrapath=None, is_package_cb=None
 
 
 def modpath_from_file(filename, extrapath=None):
-    """given a file path return the corresponding splitted module's name
-    (i.e name of a module or package splitted on '.')
+    """given a file path return the corresponding split module's name
+    (i.e name of a module or package split on '.')
 
     :type filename: str
     :param filename: file's path for which we want the module's name
@@ -336,7 +336,7 @@ def modpath_from_file(filename, extrapath=None):
     :type extrapath: dict
     :param extrapath:
       optional extra search path, with path as key and package name for the path
-      as value. This is usually useful to handle package splitted in multiple
+      as value. This is usually useful to handle package split in multiple
       directories using __path__ trick.
 
 
@@ -344,7 +344,7 @@ def modpath_from_file(filename, extrapath=None):
       if the corresponding module's name has not been found
 
     :rtype: list(str)
-    :return: the corresponding splitted module's name
+    :return: the corresponding split module's name
     """
     return modpath_from_file_with_callback(filename, extrapath, check_modpath_has_init)
 
@@ -353,13 +353,13 @@ def file_from_modpath(modpath, path=None, context_file=None):
     return file_info_from_modpath(modpath, path, context_file).location
 
 def file_info_from_modpath(modpath, path=None, context_file=None):
-    """given a mod path (i.e. splitted module / package name), return the
+    """given a mod path (i.e. split module / package name), return the
     corresponding file, giving priority to source file over precompiled
     file if it exists
 
     :type modpath: list or tuple
     :param modpath:
-      splitted module's name (i.e name of a module or package splitted
+      split module's name (i.e name of a module or package split
       on '.')
       (this means explicit relative imports that start with dots have
       empty strings in this list!)
@@ -599,7 +599,7 @@ def is_relative(modname, from_file):
 # internal only functions #####################################################
 
 def _spec_from_modpath(modpath, path=None, context=None):
-    """given a mod path (i.e. splitted module / package name), return the
+    """given a mod path (i.e. split module / package name), return the
     corresponding spec
 
     this function is used internally, see `file_from_modpath`'s
@@ -789,7 +789,7 @@ def _find_spec(modpath, path=None):
 
     :type modpath: list or tuple
     :param modpath:
-      splitted module's name (i.e name of a module or package splitted
+      split module's name (i.e name of a module or package split
       on '.'), with leading empty strings for explicit relative import
 
     :type path: list or None

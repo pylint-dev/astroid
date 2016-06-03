@@ -67,7 +67,7 @@ def _gi_build_stub(parent):
     ret = ""
 
     if constants:
-        ret += "# %s contants\n\n" % parent.__name__
+        ret += "# %s constants\n\n" % parent.__name__
     for name in sorted(constants):
         if name[0].isdigit():
             # GDK has some busted constant names like

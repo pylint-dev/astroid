@@ -10,7 +10,7 @@ attributes.
 
 Modifications in the AST are now possible using the using the generic
 transformation API. You can find examples in the `brain/`
-subdirectory, which are taken from the the `pylint-brain`_ project.
+subdirectory, which are taken from the `pylint-brain`_ project.
 
 Transformation functions are registered using the `register_transform` method of
 the Astroid manager:

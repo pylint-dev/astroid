@@ -81,7 +81,7 @@ Change log for the astroid package (used to be astng)
       from an extension module).
 
     * pkg_resources brain tips are a bit more specific,
-      by specifiying proper returns.
+      by specifying proper returns.
 
     * The slots() method conflates all the slots from the ancestors
       into a list of current and parent slots.
@@ -441,14 +441,14 @@ Change log for the astroid package (used to be astng)
       Discard will use Expr under the hood and the implemented visit_discard
       in checkers will be called with Expr nodes instead. The AST does not
       contain the old nodes, only the interoperability between them hides this
-      fact. Recommandations to move to the new nodes are emitted accordingly,
+      fact. Recommendations to move to the new nodes are emitted accordingly,
       the old names will be removed in astroid 2.0.
 
     * Add support for understanding class creation using `type.__new__(mcs, name, bases, attrs)``
 
       Until now, inferring this kind of calls resulted in Instances, not in classes,
       since astroid didn't understand that the presence of the metaclass in the call
-      leads to a class creationg, not to an instance creation.
+      leads to a class creating, not to an instance creation.
 
     * Understand the `slice` builtin. Closes issue #184.
 
@@ -561,7 +561,7 @@ Change log for the astroid package (used to be astng)
 
 2014-11-20 -- 1.3.0
 
-    * Fix a maximum recursion error occured during the inference,
+    * Fix a maximum recursion error occurred during the inference,
       where statements with the same name weren't filtered properly.
       Closes pylint issue #295.
 
@@ -662,7 +662,7 @@ Change log for the astroid package (used to be astng)
       most things there are for pylint/astroid only and we want to be
       able to fix them without requiring a new logilab.common release
 
-    * Fix names grabed using wildcard import in "absolute import mode"
+    * Fix names grabbed using wildcard import in "absolute import mode"
       (ie with absolute_import activated from the __future__ or with
       python 3). Fix pylint issue #58.
 
@@ -812,7 +812,7 @@ Change log for the astroid package (used to be astng)
     * #74746: should return empty module when __main__ is imported (patch by
       google)
 
-    * #74748: getitem protocal return constant value instead of a Const node
+    * #74748: getitem protocol return constant value instead of a Const node
       (patch by google)
 
     * #77188: support lgc.decorators.classproperty
@@ -829,7 +829,7 @@ Change log for the astroid package (used to be astng)
 
     * #70497: Crash on AttributeError: 'NoneType' object has no attribute '_infer_name'
 
-    * #70381: IndendationError in import causes crash
+    * #70381: IndentationError in import causes crash
 
     * #70565: absolute imports treated as relative (patch by Jacek Konieczny)
 
@@ -892,7 +892,7 @@ Change log for the astroid package (used to be astng)
 
 2010-09-10  --  0.20.2
     * fix astng building bug: we've to set module.package flag at the node
-      creation time otherwise we'll miss this information when infering relative
+      creation time otherwise we'll miss this information when inferring relative
       import during the build process (this should fix for instance some problems
       with numpy)
 

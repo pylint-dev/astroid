@@ -648,7 +648,7 @@ nodes.BinOp._infer = infer_binop
 
 
 def _infer_augassign(self, context=None):
-    """Inferrence logic for augmented binary operations."""
+    """Inference logic for augmented binary operations."""
     if context is None:
         context = contextmod.InferenceContext()
 
@@ -660,7 +660,7 @@ def _infer_augassign(self, context=None):
 
         # TODO(cpopa): if we have A() * A(), trying to infer
         # the rhs with the same context will result in an
-        # inferrence error, so we create another context for it.
+        # inference error, so we create another context for it.
         # This is a bug which should be fixed in InferenceContext at some point.
         rhs_context = context.clone()
         rhs_context.path = set()

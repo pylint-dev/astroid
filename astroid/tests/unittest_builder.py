@@ -745,13 +745,13 @@ class TestGuessEncoding(unittest.TestCase):
         self.assertIsNone(e)
 
     def test_wrong_coding(self):
-        # setting "coding" varaible
+        # setting "coding" variable
         e = self.guess_encoding("coding = UTF-8")
         self.assertIsNone(e)
-        # setting a dictionnary entry
+        # setting a dictionary entry
         e = self.guess_encoding("coding:UTF-8")
         self.assertIsNone(e)
-        # setting an arguement
+        # setting an argument
         e = self.guess_encoding("def do_something(a_word_with_coding=None):")
         self.assertIsNone(e)
 

@@ -110,7 +110,7 @@ def extract_node(code, module_name=''):
        >>>   def meth(self): #@
        >>>     pass
 
-      The funcion object 'meth' will be extracted.
+      The function object 'meth' will be extracted.
 
     Expressions:
      To extract arbitrary expressions, surround them with the fake

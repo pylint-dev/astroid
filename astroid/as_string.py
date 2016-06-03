@@ -3,7 +3,7 @@
 
 """This module renders Astroid nodes as string:
 
-* :func:`to_code` function return equivalent (hopefuly valid) python string
+* :func:`to_code` function return equivalent (hopefully valid) python string
 
 * :func:`dump` function return an internal representation of nodes found
   in the tree, useful for debugging or understanding the tree structure
