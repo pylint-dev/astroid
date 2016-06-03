@@ -1857,6 +1857,17 @@ class DictUnpack(NodeNG):
     """Represents the unpacking of dicts into dicts using PEP 448."""
 
 
+class Unknown(NodeNG):
+    '''This node represents a node in a constructed AST where
+    introspection is not possible.  At the moment, it's only used in
+    the args attribute of FunctionDef nodes where function signature
+    introspection failed.
+    '''
+    def infer(self, context=None, **kwargs):
+        '''Inference on an Unknown node immediately terminates.'''
+        yield util.Uninferable
+
+
 # constants ##############################################################
 
 CONST_CLS = {

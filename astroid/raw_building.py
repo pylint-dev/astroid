@@ -396,3 +396,15 @@ _GeneratorType = nodes.ClassDef(types.GeneratorType.__name__, types.GeneratorTyp
 _GeneratorType.parent = MANAGER.astroid_cache[six.moves.builtins.__name__]
 bases.Generator._proxied = _GeneratorType
 Astroid_BUILDER.object_build(bases.Generator._proxied, types.GeneratorType)
+
+_builtins = MANAGER.astroid_cache[six.moves.builtins.__name__]
+BUILTIN_TYPES = (types.GetSetDescriptorType, types.GeneratorType,
+                 types.MemberDescriptorType, type(None), type(NotImplemented),
+                 types.FunctionType, types.MethodType,
+                 types.BuiltinFunctionType, types.ModuleType, types.TracebackType)
+for _type in BUILTIN_TYPES:
+   if _type.__name__ not in _builtins:
+       cls = nodes.ClassDef(_type.__name__, _type.__doc__)
+       cls.parent = MANAGER.astroid_cache[six.moves.builtins.__name__]
+       Astroid_BUILDER.object_build(cls, _type)
+       _builtins[_type.__name__] = cls

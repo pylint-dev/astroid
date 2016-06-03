@@ -17,6 +17,8 @@ import six
 from astroid import bases
 from astroid import context as contextmod
 from astroid import exceptions
+from astroid import decorators as decorators_mod
+from astroid.interpreter import objectmodel
 from astroid import manager
 from astroid import mixins
 from astroid import node_classes
@@ -78,21 +80,6 @@ def function_to_method(n, klass):
         if n.type != 'staticmethod':
             return bases.UnboundMethod(n)
     return n
-
-
-def std_special_attributes(self, name, add_locals=True):
-    if add_locals:
-        obj_locals = self.locals
-    else:
-        obj_locals = {}
-    if name == '__name__':
-        return [node_classes.const_factory(self.name)] + obj_locals.get(name, [])
-    if name == '__doc__':
-        return [node_classes.const_factory(self.doc)] + obj_locals.get(name, [])
-    if name == '__dict__':
-        return [node_classes.Dict()] + obj_locals.get(name, [])
-    # TODO: missing context
-    raise exceptions.AttributeInferenceError(target=self, attribute=name)
 
 
 MANAGER = manager.AstroidManager()
@@ -258,10 +245,10 @@ class Module(LocalsDictNodeNG):
 
     # Future imports
     future_imports = None
+    special_attributes = objectmodel.ModuleModel()
 
     # names of python special attributes (handled by getattr impl.)
-    special_attributes = set(('__name__', '__doc__', '__file__', '__path__',
-                              '__dict__'))
+
     # names of module attributes available through the global scope
     scope_attrs = set(('__name__', '__doc__', '__file__', '__path__'))
 
@@ -340,13 +327,7 @@ class Module(LocalsDictNodeNG):
     def getattr(self, name, context=None, ignore_locals=False):
         result = []
         if name in self.special_attributes:
-            if name == '__file__':
-                result = ([node_classes.const_factory(self.file)] +
-                          self.locals.get(name, []))
-            elif name == '__path__' and self.package:
-                result = [node_classes.List()] + self.locals.get(name, [])
-            else:
-                result = std_special_attributes(self, name)
+            result = [self.special_attributes.lookup(name)]
         elif not ignore_locals and name in self.locals:
             result = self.locals[name]
         elif self.package:
@@ -716,7 +697,7 @@ class FunctionDef(node_classes.Statement, Lambda):
     else:
         _astroid_fields = ('decorators', 'args', 'body')
     decorators = None
-    special_attributes = set(('__name__', '__doc__', '__dict__'))
+    special_attributes = objectmodel.FunctionModel()
     is_function = True
     # attributes below are set by the builder module or by raw factories
     _other_fields = ('name', 'doc')
@@ -864,11 +845,11 @@ class FunctionDef(node_classes.Statement, Lambda):
         """this method doesn't look in the instance_attrs dictionary since it's
         done by an Instance proxy at inference time.
         """
-        if name == '__module__':
-            return [node_classes.const_factory(self.root().qname())]
         if name in self.instance_attrs:
             return self.instance_attrs[name]
-        return std_special_attributes(self, name, False)
+        if name in self.special_attributes:
+            return [self.special_attributes.lookup(name)]
+        raise exceptions.AttributeInferenceError(target=self, attribute=name)
 
     def igetattr(self, name, context=None):
         """Inferred getattr, which returns an iterator of inferred statements."""
@@ -942,8 +923,7 @@ class FunctionDef(node_classes.Statement, Lambda):
     def infer_call_result(self, caller, context=None):
         """infer what a function is returning when called"""
         if self.is_generator():
-            result = bases.Generator()
-            result.parent = self
+            result = bases.Generator(self)
             yield result
             return
         # This is really a gigantic hack to work around metaclass generators
@@ -1091,8 +1071,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
     _astroid_fields = ('decorators', 'bases', 'body') # name
 
     decorators = None
-    special_attributes = set(('__name__', '__doc__', '__dict__', '__module__',
-                              '__bases__', '__mro__', '__subclasses__'))
+    special_attributes = objectmodel.ClassModel()
+
     _type = None
     _metaclass_hack = False
     hide = False
@@ -1404,20 +1384,14 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
         """
         values = self.locals.get(name, [])
-        if name in self.special_attributes:
-            if name == '__module__':
-                return [node_classes.const_factory(self.root().qname())] + values
+        if name in self.special_attributes and class_context:
+            result = [self.special_attributes.lookup(name)]
             if name == '__bases__':
-                node = node_classes.Tuple()
-                elts = list(self._inferred_bases(context))
-                node.postinit(elts=elts)
-                return [node] + values
-            if name == '__mro__' and self.newstyle:
-                mro = self.mro()
-                node = node_classes.Tuple()
-                node.postinit(elts=mro)
-                return [node]
-            return std_special_attributes(self, name)
+                # Need special treatment, since they are mutable
+                # and we need to return all the values.
+                result += values
+            return result
+
         # don't modify the list in self.locals!
         values = list(values)
         for classnode in self.ancestors(recurs=True, context=context):
@@ -1472,7 +1446,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             else:
                 yield bases.BoundMethod(attr, self)
 
-    def igetattr(self, name, context=None):
+    def igetattr(self, name, context=None, class_context=True):
         """inferred getattr, need special treatment in class to handle
         descriptors
         """
@@ -1481,7 +1455,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         context = contextmod.copy_context(context)
         context.lookupname = name
         try:
-            for inferred in bases._infer_stmts(self.getattr(name, context),
+            for inferred in bases._infer_stmts(self.getattr(name, context, class_context=class_context),
                                                context, frame=self):
                 # yield Uninferable object instead of descriptors when necessary
                 if (not isinstance(inferred, node_classes.Const)

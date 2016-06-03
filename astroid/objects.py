@@ -23,6 +23,7 @@ from astroid import util
 
 
 BUILTINS = six.moves.builtins.__name__
+objectmodel = util.lazy_import('interpreter.objectmodel')
 
 
 class FrozenSet(node_classes._BaseContainer):
@@ -52,6 +53,8 @@ class Super(node_classes.NodeNG):
     *self_class* is the class where the super call is, while
     *scope* is the function where the super call is.
     """
+    special_attributes = util.lazy_descriptor(lambda: objectmodel.SuperModel())
+
     # pylint: disable=super-init-not-called
     def __init__(self, mro_pointer, mro_type, self_class, scope):
         self.type = mro_type
@@ -59,12 +62,6 @@ class Super(node_classes.NodeNG):
         self._class_based = False
         self._self_class = self_class
         self._scope = scope
-        self._model = {
-            '__thisclass__': self.mro_pointer,
-            '__self_class__': self._self_class,
-            '__self__': self.type,
-            '__class__': self._proxied,
-        }
 
     def _infer(self, context=None):
         yield self
@@ -120,9 +117,8 @@ class Super(node_classes.NodeNG):
     def igetattr(self, name, context=None):
         """Retrieve the inferred values of the given attribute name."""
 
-        local_name = self._model.get(name)
-        if local_name:
-            yield local_name
+        if name in self.special_attributes:
+            yield self.special_attributes.lookup(name)
             return
 
         try:

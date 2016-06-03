@@ -8,8 +8,21 @@
 import sys
 import warnings
 
+import importlib
 import lazy_object_proxy
 import six
+
+
+def lazy_descriptor(obj):
+    class DescriptorProxy(lazy_object_proxy.Proxy):
+        def __get__(self, instance, owner=None):
+            return self.__class__.__get__(self, instance)
+    return DescriptorProxy(obj)
+
+
+def lazy_import(module_name):
+    return lazy_object_proxy.Proxy(
+        lambda: importlib.import_module('.' + module_name, 'astroid'))
 
 
 def reraise(exception):
