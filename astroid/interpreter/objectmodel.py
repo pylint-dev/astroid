@@ -367,6 +367,10 @@ class ClassModel(ObjectModel):
 
     @property
     def pymro(self):
+        if not self._instance.newstyle:
+            raise exceptions.AttributeInferenceError(target=self._instance,
+                                                     attribute='mro')
+
         other_self = self
 
         # Cls.mro is a method and we need to return one in order to have a proper inference.
@@ -374,7 +378,10 @@ class ClassModel(ObjectModel):
         class MroBoundMethod(objects.BoundMethod):
             def infer_call_result(self, caller, context=None):
                 yield other_self.py__mro__
-        return MroBoundMethod(proxy=self._instance, bound=self._instance)
+
+        implicit_metaclass = self._instance.implicit_metaclass()
+        mro_method = implicit_metaclass.locals['mro'][0]
+        return MroBoundMethod(proxy=mro_method, bound=implicit_metaclass)
 
     @property
     def py__bases__(self):
@@ -412,7 +419,10 @@ class ClassModel(ObjectModel):
             def infer_call_result(self, caller, context=None):
                 yield obj
 
-        return SubclassesBoundMethod(proxy=self._instance, bound=self._instance)
+        implicit_metaclass = self._instance.implicit_metaclass()
+        subclasses_method = implicit_metaclass.locals['__subclasses__'][0]
+        return SubclassesBoundMethod(proxy=subclasses_method,
+                                     bound=implicit_metaclass)
 
     @property
     def py__dict__(self):
