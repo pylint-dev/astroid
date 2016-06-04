@@ -387,6 +387,10 @@ class ClassModel(ObjectModel):
 
     @property
     def pymro(self):
+        if not self._instance.newstyle:
+            raise exceptions.AttributeInferenceError(target=self._instance,
+                                                     attribute='mro')
+
         from astroid import bases
 
         other_self = self
@@ -396,7 +400,10 @@ class ClassModel(ObjectModel):
         class MroBoundMethod(bases.BoundMethod):
             def infer_call_result(self, caller, context=None):
                 yield other_self.py__mro__
-        return MroBoundMethod(proxy=self._instance, bound=self._instance)
+
+        implicit_metaclass = self._instance.implicit_metaclass()
+        mro_method = implicit_metaclass.locals['mro'][0]
+        return MroBoundMethod(proxy=mro_method, bound=implicit_metaclass)
 
     @property
     def py__bases__(self):
@@ -427,7 +434,6 @@ class ClassModel(ObjectModel):
 
         qname = self._instance.qname()
         root = self._instance.root()
-        # TODO:
         classes = [cls for cls in root.nodes_of_class(scoped_nodes.ClassDef)
                    if cls != self._instance and cls.is_subtype_of(qname)]
 
@@ -438,7 +444,10 @@ class ClassModel(ObjectModel):
             def infer_call_result(self, caller, context=None):
                 yield obj
 
-        return SubclassesBoundMethod(proxy=self._instance, bound=self._instance)
+        implicit_metaclass = self._instance.implicit_metaclass()
+        subclasses_method = implicit_metaclass.locals['__subclasses__'][0]
+        return SubclassesBoundMethod(proxy=subclasses_method,
+                                     bound=implicit_metaclass)
 
     @property
     def py__dict__(self):

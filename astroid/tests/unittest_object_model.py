@@ -160,6 +160,30 @@ class ClassModelTest(unittest.TestCase):
         ''')
         with self.assertRaises(exceptions.InferenceError):
             next(ast_node.infer())
+
+    def test_class_model_correct_mro_subclasses_proxied(self):
+        ast_nodes = test_utils.extract_node('''
+        class A(object):
+            pass
+        A.mro #@
+        A.__subclasses__ #@
+        ''')
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, astroid.BoundMethod)
+            self.assertIsInstance(inferred._proxied, astroid.FunctionDef)
+            self.assertIsInstance(inferred.bound, astroid.ClassDef)
+            self.assertEqual(inferred.bound.name, 'type')
+
+    @unittest.skipUnless(six.PY2, "Needs old style classes")
+    def test_old_style_classes_no_mro(self):
+        ast_node = test_utils.extract_node('''
+        class A:
+            pass
+        A.mro #@
+        ''')
+        with self.assertRaises(exceptions.InferenceError):
+            next(ast_node.infer())
         
     def test_class_model(self):
         ast_nodes = test_utils.extract_node('''
