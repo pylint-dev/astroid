@@ -491,8 +491,8 @@ class GeneratorModel(FunctionModel):
         for name, values in generator.locals.items():
             method = values[0]
             patched = lambda self, meth=method: meth
-
-            setattr(type(cls), 'py' + name, property(patched))
+            if not hasattr(type(cls), 'py' + name):
+                setattr(type(cls), 'py' + name, property(patched))
 
         return cls
 

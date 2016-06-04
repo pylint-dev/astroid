@@ -632,7 +632,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             self.assertRaises(AttributeInferenceError, inst.getattr, '__mro__')
             self.assertRaises(AttributeInferenceError, inst.getattr, '__bases__')
             self.assertRaises(AttributeInferenceError, inst.getattr, '__name__')
-            self.assertRaises(AttributeInferenceError, inst.getattr, '__doc__')
             self.assertRaises(AttributeInferenceError, inst.getattr, '__dict__')
 
     def test_navigation(self):

@@ -256,7 +256,7 @@ def ast_from_class(cls, built_objects, module, name=None, parent=None):
     bases = [node_classes.Name(name=b.__name__, parent=class_node)
              for b in cls.__bases__]
     body = [
-        t for a in _classify_class_attrs(cls) if a.defining_class is cls and a.name not in scoped_nodes.ClassDef.special_attributes
+        t for a in _classify_class_attrs(cls) if a.defining_class is cls
         for t in _ast_from_object(a.object, built_objects, module, a.name, parent=class_node)]
     class_node.postinit(bases=bases, body=body, decorators=(),
                         newstyle=isinstance(cls, type))
