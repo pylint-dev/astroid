@@ -326,9 +326,11 @@ class Module(LocalsDictNodeNG):
 
     def getattr(self, name, context=None, ignore_locals=False):
         result = []
-        if name in self.special_attributes:
+        name_in_locals = name in self.locals
+
+        if name in self.special_attributes and not ignore_locals and not name_in_locals:
             result = [self.special_attributes.lookup(name)]
-        elif not ignore_locals and name in self.locals:
+        elif not ignore_locals and name_in_locals:
             result = self.locals[name]
         elif self.package:
             try:
@@ -1384,7 +1386,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
         """
         values = self.locals.get(name, [])
-        if name in self.special_attributes and class_context:
+        if name in self.special_attributes and class_context and not values:
             result = [self.special_attributes.lookup(name)]
             if name == '__bases__':
                 # Need special treatment, since they are mutable
@@ -1399,6 +1401,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
         if class_context:
             values += self._metaclass_lookup_attribute(name, context)
+
         if not values:
             raise exceptions.AttributeInferenceError(target=self, attribute=name,
                                                      context=context)

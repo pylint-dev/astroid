@@ -10,6 +10,8 @@ from functools import partial
 import unittest
 import warnings
 
+import six
+
 from astroid import builder
 from astroid import nodes
 from astroid import scoped_nodes
@@ -630,14 +632,14 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
     def test_cls_special_attributes_2(self):
         astroid = builder.parse('''
-            class A: pass
-            class B: pass
+            class A(object): pass
+            class B(object): pass
 
             A.__bases__ += (B,)
         ''', __name__)
         self.assertEqual(len(astroid['A'].getattr('__bases__')), 2)
-        self.assertIsInstance(astroid['A'].getattr('__bases__')[0], nodes.Tuple)
-        self.assertIsInstance(astroid['A'].getattr('__bases__')[1], nodes.AssignAttr)
+        self.assertIsInstance(astroid['A'].getattr('__bases__')[1], nodes.Tuple)
+        self.assertIsInstance(astroid['A'].getattr('__bases__')[0], nodes.AssignAttr)
 
     def test_instance_special_attributes(self):
         for inst in (Instance(self.module['YO']), nodes.List(), nodes.Const(1)):
