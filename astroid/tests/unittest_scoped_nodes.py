@@ -612,8 +612,8 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
     def test_cls_special_attributes_2(self):
         astroid = builder.parse('''
-            class A: pass
-            class B: pass
+            class A(object): pass
+            class B(object): pass
 
             A.__bases__ += (B,)
         ''', __name__)

@@ -125,6 +125,16 @@ class UnboundMethodModelTest(unittest.TestCase):
 
 class ClassModelTest(unittest.TestCase):
 
+    def test_priority_to_local_defined_values(self):
+        ast_node = test_utils.extract_node('''
+        class A:
+            __doc__ = "first"
+        A.__doc__ #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, astroid.Const)
+        self.assertEqual(inferred.value, "first")
+
     @test_utils.require_version(maxver='3.0')
     def test__mro__old_style(self):
         ast_node = test_utils.extract_node('''
@@ -231,6 +241,14 @@ class ClassModelTest(unittest.TestCase):
 
 
 class ModuleModelTest(unittest.TestCase):
+
+    def test_priority_to_local_defined_values(self):
+        ast_node = astroid.parse('''
+        __file__ = "mine"
+        ''')
+        file_value = next(ast_node.igetattr('__file__'))
+        self.assertIsInstance(file_value, astroid.Const)
+        self.assertEqual(file_value.value, "mine")
 
     def test__path__not_a_package(self):
         ast_node = test_utils.extract_node('''

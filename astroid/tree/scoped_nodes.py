@@ -231,9 +231,11 @@ class Module(QualifiedNameMixin, lookup.LocalsDictNode):
 
     def getattr(self, name, context=None, ignore_locals=False):
         result = []
-        if name in self.special_attributes:
+        name_in_locals = name in self.locals
+
+        if name in self.special_attributes and not ignore_locals and not name_in_locals:
             result = [self.special_attributes.lookup(name)]
-        elif not ignore_locals and name in self.locals:
+        elif not ignore_locals and name_in_locals:
             result = self.locals[name]
         # TODO: should ignore_locals also affect external_attrs?
         elif name in self.external_attrs:
@@ -1520,8 +1522,23 @@ class ClassDef(QualifiedNameMixin, base.FilterStmtsMixin,
         metaclass will be done.
 
         """
-        values = self.locals.get(name, []) + self.external_attrs.get(name, [])
-        if name in self.special_attributes and class_context:
+        local_values = self.locals.get(name, [])
+        external_values = self.external_attrs.get(name, [])
+        values = local_values + external_values
+
+        # Determine if we should look retrieve special attributes.
+        # If a class has local values with the given name and that given
+        # name is also a special attribute, then priority should be given
+        # to the local defined value, irrespective of the underlying
+        # potential attributes defined by the special model.
+        # But this is not the case for builtins, for which the
+        # value can't be redefined locally. In the case of builtins though,
+        # we always look into the special method and for the rest,
+        # we only look if there is no local value defined with the same name.
+        is_builtin = self.root().name == BUILTINS
+        look_special_attributes = is_builtin or not local_values
+
+        if name in self.special_attributes and class_context and look_special_attributes:
             result = [self.special_attributes.lookup(name)]            
             if name == '__bases__':
                 # Need special treatment, since they are mutable
@@ -1536,9 +1553,11 @@ class ClassDef(QualifiedNameMixin, base.FilterStmtsMixin,
 
         if class_context:
             values += self._metaclass_lookup_attribute(name, context)
+
         if not values:
             raise exceptions.AttributeInferenceError(target=self, attribute=name,
                                                      context=context)
+
         return values
 
     def _metaclass_lookup_attribute(self, name, context):
