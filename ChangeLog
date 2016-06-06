@@ -1,7 +1,8 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
---
+2016-06-06 -- 1.4.6
+
     * Fix a crash which occurred when the class of a namedtuple could not be inferred.
 
     * Functional form of enums support accessing values through __call__.
