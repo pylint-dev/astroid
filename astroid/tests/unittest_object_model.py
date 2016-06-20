@@ -16,6 +16,7 @@ from astroid import exceptions
 from astroid import MANAGER
 from astroid import test_utils
 from astroid.interpreter import objects
+from astroid.interpreter import runtimeabc
 
 
 BUILTINS = MANAGER.builtins()
@@ -574,12 +575,15 @@ class DictObjectModelTest(unittest.TestCase):
         ''')
         values = next(ast_nodes[0].infer())
         self.assertIsInstance(values, objects.DictValues)
+        self.assertIsInstance(values, runtimeabc.DictValues)
         self.assertEqual([elt.value for elt in values.elts], [1, 3])
         keys = next(ast_nodes[1].infer())
         self.assertIsInstance(keys, objects.DictKeys)
+        self.assertIsInstance(keys, runtimeabc.DictKeys)
         self.assertEqual([elt.value for elt in keys.elts], [1, 2])
         items = next(ast_nodes[2].infer())
         self.assertIsInstance(items, objects.DictItems)
+        self.assertIsInstance(items, runtimeabc.DictItems)
 
 
 class LruCacheModelTest(unittest.TestCase):

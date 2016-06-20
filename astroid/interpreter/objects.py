@@ -518,6 +518,7 @@ class Super(base.NodeNG):
         return list(self.igetattr(name, context=context))
 
 
+@util.register_implementation(treeabc.Dict)
 class DictInstance(BaseInstance):
     """Special kind of instances for dictionaries
 
@@ -531,15 +532,19 @@ class DictInstance(BaseInstance):
 # Custom objects tailored for dictionaries, which are used to
 # disambiguate between the types of Python 2 dict's method returns
 # and Python 3 (where they return set like objects).
+@util.register_implementation(runtimeabc.DictItems)
 class DictItems(Proxy):
     __str__ = base.NodeNG.__str__
     __repr__ = base.NodeNG.__repr__
 
 
+@util.register_implementation(runtimeabc.DictKeys)
 class DictKeys(Proxy):
     __str__ = base.NodeNG.__str__
     __repr__ = base.NodeNG.__repr__
 
+
+@util.register_implementation(runtimeabc.DictValues)
 class DictValues(Proxy):
     __str__ = base.NodeNG.__str__
     __repr__ = base.NodeNG.__repr__

@@ -52,3 +52,15 @@ class Super(RuntimeObject):
 
 class FrozenSet(RuntimeObject):
     """Class representing a frozenset."""
+
+
+class DictKeys(RuntimeObject):
+    """The class of {}.keys."""
+
+
+class DictValues(RuntimeObject):
+    """The class of {}.values."""
+
+
+class DictItems(RuntimeObject):
+    """The class of {}.items()."""
