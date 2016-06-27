@@ -29,13 +29,15 @@ install:
   - $PYTHON_EXE -m pip install pip -U
   - python -m pip install tox
   - python -m pip install pip -U
-  - $PYTHON_EXE -m pip install tox
+  - $PYTHON_EXE -m pip install tox coverage coveralls
   - $PYTHON_EXE -m virtualenv --version
   - $PYTHON_EXE -m easy_install --version
   - $PYTHON_EXE -m pip --version
   - $PYTHON_EXE -m tox --version
 script:
-  - python -m tox -e $TOXENV
+  - python -m tox -e coverage-erase,$TOXENV
+after_success:
+  - tox -e coveralls
 after_failure:
   - more .tox/log/* | cat
   - more .tox/*/log/* | cat
