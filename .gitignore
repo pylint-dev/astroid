@@ -7,3 +7,5 @@ build
 dist/
 astroid.egg-info/
 .tox
+.coverage
+.coverage.*
