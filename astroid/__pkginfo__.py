@@ -19,10 +19,10 @@ if sys.version_info < (3, 4):
 # pylint: disable=redefined-builtin; why license is a builtin anyway?
 license = 'LGPL'
 
-author = 'Logilab'
-author_email = 'pylint-dev@lists.logilab.org'
+author = 'Python Code Quality Authority'
+author_email = 'code-quality@python.org'
 mailinglist = "mailto://%s" % author_email
-web = 'http://bitbucket.org/logilab/astroid'
+web = 'https://github.com/PyCQA/astroid'
 
 description = "A abstract syntax tree for Python with inference support."
 
