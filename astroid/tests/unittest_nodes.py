@@ -833,5 +833,33 @@ class DictTest(unittest.TestCase):
                          [(1, 2), (2, 3)])
 
 
+class ParameterTest(unittest.TestCase):
+
+    def _variadics_test_helper(self, vararg_lineno, vararg_col_offset,
+                               kwarg_lineno, kwarg_col_offset):
+        node = test_utils.extract_node('''
+        def test(*args, **kwargs): pass
+        ''')
+        args = node.args
+        self.assertIsInstance(args.vararg, astroid.Parameter)
+        self.assertEqual(args.vararg.lineno, vararg_lineno)
+        self.assertEqual(args.vararg.col_offset, vararg_col_offset)
+        self.assertIsInstance(args.kwarg, astroid.Parameter)
+        self.assertEqual(args.kwarg.lineno, kwarg_lineno)
+        self.assertEqual(args.kwarg.col_offset, kwarg_col_offset)
+
+    @unittest.skipUnless(sys.version_info[:2] < (3, 5),
+                         "variadics support lineno & col_offset in 3.5+")
+    def test_no_lineno_for_variadics(self):
+        self._variadics_test_helper(vararg_lineno=None, vararg_col_offset=None,
+                                    kwarg_lineno=None, kwarg_col_offset=None)
+
+    @unittest.skipUnless(sys.version_info[:2] >= (3, 5),
+                         "variadics support lineno & col_offset in 3.5+")
+    def test_no_lineno_for_variadics(self):
+        self._variadics_test_helper(vararg_lineno=2, vararg_col_offset=10,
+                                    kwarg_lineno=2, kwarg_col_offset=18)
+
+
 if __name__ == '__main__':
     unittest.main()

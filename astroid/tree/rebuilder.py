@@ -189,9 +189,11 @@ class TreeRebuilder(object):
                     except AttributeError:
                         param_name = variadic
 
+                lineno = getattr(variadic, 'lineno', newnode.lineno)
+                col_offset = getattr(variadic, 'col_offset', newnode.col_offset)
                 param = nodes.Parameter(name=param_name,
-                                        lineno=newnode.lineno,
-                                        col_offset=newnode.col_offset,
+                                        lineno=lineno,
+                                        col_offset=col_offset,
                                         parent=newnode)
                 # Get the annotation of the variadic node.
                 annotation = nodes.Empty
