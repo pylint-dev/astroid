@@ -50,7 +50,7 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(node.as_string().strip(), code.strip())
 
     def test_as_string_for_list_containing_uninferable(self):
-        node = test_utils.extract_node('''
+        node = builder.extract_node('''
         def foo():
             bar = [arg] * 1
         ''')
@@ -60,7 +60,7 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(binop.as_string(), '([arg]) * (1)')
 
     def test_frozenset_as_string(self):
-        ast_nodes = test_utils.extract_node('''
+        ast_nodes = builder.extract_node('''
         frozenset((1, 2, 3)) #@
         frozenset({1, 2, 3}) #@
         frozenset([1, 2, 3,]) #@
@@ -478,7 +478,7 @@ class ArgumentsNodeTC(unittest.TestCase):
                           '(no line number on function args)')
 
     def test_builtin_fromlineno_missing(self):
-        cls = test_utils.extract_node('''
+        cls = builder.extract_node('''
         class Foo(Exception): #@
             pass
         ''')
@@ -709,7 +709,7 @@ class DeprecationWarningsTest(unittest.TestCase):
 class Python35AsyncTest(unittest.TestCase):
 
     def test_async_await_keywords(self):
-        async_def, async_for, async_with, await_node = test_utils.extract_node('''
+        async_def, async_for, async_with, await_node = builder.extract_node('''
         async def func(): #@
             async for i in range(10): #@
                 f = __(await i)
@@ -753,47 +753,47 @@ class Python35AsyncTest(unittest.TestCase):
 class ContextTest(unittest.TestCase):
 
     def test_subscript_load(self):
-        node = test_utils.extract_node('f[1]')
+        node = builder.extract_node('f[1]')
         self.assertIs(node.ctx, astroid.Load)
 
     def test_subscript_del(self):
-        node = test_utils.extract_node('del f[1]')
+        node = builder.extract_node('del f[1]')
         self.assertIs(node.targets[0].ctx, astroid.Del)
 
     def test_subscript_store(self):
-        node = test_utils.extract_node('f[1] = 2')
+        node = builder.extract_node('f[1] = 2')
         subscript = node.targets[0]
         self.assertIs(subscript.ctx, astroid.Store)
 
     def test_list_load(self):
-        node = test_utils.extract_node('[]')
+        node = builder.extract_node('[]')
         self.assertIs(node.ctx, astroid.Load)
 
     def test_list_del(self):
-        node = test_utils.extract_node('del []')
+        node = builder.extract_node('del []')
         self.assertIs(node.targets[0].ctx, astroid.Del)
 
     def test_list_store(self):
         with self.assertRaises(exceptions.AstroidSyntaxError):
-            test_utils.extract_node('[0] = 2')
+            builder.extract_node('[0] = 2')
 
     def test_tuple_load(self):
-        node = test_utils.extract_node('(1, )')
+        node = builder.extract_node('(1, )')
         self.assertIs(node.ctx, astroid.Load)
 
     def test_tuple_store(self):
         with self.assertRaises(exceptions.AstroidSyntaxError):
-            test_utils.extract_node('(1, ) = 3')
+            builder.extract_node('(1, ) = 3')
 
     @test_utils.require_version(minver='3.5')
     def test_starred_load(self):
-        node = test_utils.extract_node('a = *b')
+        node = builder.extract_node('a = *b')
         starred = node.value
         self.assertIs(starred.ctx, astroid.Load)
 
     @test_utils.require_version(minver='3.0')
     def test_starred_store(self):
-        node = test_utils.extract_node('a, *b = 1, 2')
+        node = builder.extract_node('a, *b = 1, 2')
         starred = node.targets[0].elts[1]
         self.assertIs(starred.ctx, astroid.Store)
 

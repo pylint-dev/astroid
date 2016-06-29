@@ -6,7 +6,8 @@ import contextlib
 import unittest
 
 import astroid
-from astroid.test_utils import extract_node, require_version
+from astroid import extract_node
+from astroid.test_utils import require_version
 from astroid import InferenceError
 from astroid import nodes
 from astroid import util

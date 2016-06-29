@@ -12,9 +12,8 @@ from astroid import (
     InferenceError)
 from astroid import exceptions
 from astroid import nodes
-from astroid.builder import AstroidBuilder
+from astroid.builder import AstroidBuilder, extract_node
 from astroid import util
-from astroid import test_utils
 
 PY3K = sys.version_info > (3, 0)
 PY33 = sys.version_info >= (3, 3)
@@ -132,7 +131,7 @@ class %(name)s(tuple):
 
 def infer_enum(node, context=None):
     """ Specific inference function for enum Call node. """
-    enum_meta = test_utils.extract_node('''
+    enum_meta = extract_node('''
     class EnumMeta(object):
         'docstring'
         def __call__(self, node):

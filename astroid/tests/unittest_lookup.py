@@ -270,7 +270,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
                 def test(self):
                     pass
         '''
-        member = test_utils.extract_node(code, __name__).targets[0]
+        member = builder.extract_node(code, __name__).targets[0]
         it = member.infer()
         obj = next(it)
         self.assertIsInstance(obj, nodes.Const)
@@ -287,7 +287,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
                 def funcA():
                     return 4
         '''
-        decname = test_utils.extract_node(code, __name__)
+        decname = builder.extract_node(code, __name__)
         it = decname.infer()
         obj = next(it)
         self.assertIsInstance(obj, nodes.FunctionDef)

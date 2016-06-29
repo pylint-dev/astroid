@@ -52,12 +52,12 @@ class TestHelpers(unittest.TestCase):
             ('import sys\nsys#@', self._build_custom_builtin('module')),
         ]
         for code, expected in pairs:
-            node = test_utils.extract_node(code)
+            node = builder.extract_node(code)
             objtype = helpers.object_type(node)
             self.assert_classes_equal(objtype, expected)
 
     def test_object_type_classes_and_functions(self):
-        ast_nodes = test_utils.extract_node('''
+        ast_nodes = builder.extract_node('''
         def generator():
             yield
 
@@ -120,7 +120,7 @@ class TestHelpers(unittest.TestCase):
 
     @test_utils.require_version(minver='3.0')
     def test_object_type_most_derived(self):
-        node = test_utils.extract_node('''
+        node = builder.extract_node('''
         class A(type):
             def __new__(*args, **kwargs):
                  return type.__new__(*args, **kwargs)
@@ -137,14 +137,14 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(metaclass, obj_type)
 
     def test_inference_errors(self):
-        node = test_utils.extract_node('''
+        node = builder.extract_node('''
         from unknown import Unknown
         u = Unknown #@
         ''')
         self.assertEqual(helpers.object_type(node), util.Uninferable)
 
     def test_object_type_too_many_types(self):
-        node = test_utils.extract_node('''
+        node = builder.extract_node('''
         from unknown import Unknown
         def test(x):
             if x:
@@ -156,7 +156,7 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(helpers.object_type(node), util.Uninferable)
 
     def test_is_subtype(self):
-        ast_nodes = test_utils.extract_node('''
+        ast_nodes = builder.extract_node('''
         class int_subclass(int):
             pass
         class A(object): pass #@
@@ -182,7 +182,7 @@ class TestHelpers(unittest.TestCase):
 
     @test_utils.require_version(maxver='3.0')
     def test_is_subtype_supertype_old_style_classes(self):
-        cls_a, cls_b = test_utils.extract_node('''
+        cls_a, cls_b = builder.extract_node('''
         class A: #@
             pass
         class B(A): #@
@@ -194,7 +194,7 @@ class TestHelpers(unittest.TestCase):
         self.assertFalse(helpers.is_supertype(cls_b, cls_a))
 
     def test_is_subtype_supertype_mro_error(self):
-        cls_e, cls_f = test_utils.extract_node('''
+        cls_e, cls_f = builder.extract_node('''
         class A(object): pass
         class B(A): pass
         class C(A): pass
@@ -210,7 +210,7 @@ class TestHelpers(unittest.TestCase):
         self.assertFalse(helpers.is_supertype(cls_f, cls_e))
 
     def test_is_subtype_supertype_unknown_bases(self):
-        cls_a, cls_b = test_utils.extract_node('''
+        cls_a, cls_b = builder.extract_node('''
         from unknown import Unknown
         class A(Unknown): pass #@
         class B(A): pass #@
@@ -221,7 +221,7 @@ class TestHelpers(unittest.TestCase):
             helpers.is_supertype(cls_a, cls_b)
 
     def test_is_subtype_supertype_unrelated_classes(self):
-        cls_a, cls_b = test_utils.extract_node('''
+        cls_a, cls_b = builder.extract_node('''
         class A(object): pass #@
         class B(object): pass #@
         ''')
@@ -231,7 +231,7 @@ class TestHelpers(unittest.TestCase):
         self.assertFalse(helpers.is_supertype(cls_b, cls_a))
 
     def test_is_subtype_supertype_classes_no_type_ancestor(self):
-        cls_a = test_utils.extract_node('''
+        cls_a = builder.extract_node('''
         class A(object): #@
             pass
         ''')
@@ -240,7 +240,7 @@ class TestHelpers(unittest.TestCase):
         self.assertFalse(helpers.is_subtype(cls_a, builtin_type))
 
     def test_is_subtype_supertype_classes_metaclasses(self):
-        cls_a = test_utils.extract_node('''
+        cls_a = builder.extract_node('''
         class A(type): #@
             pass
         ''')

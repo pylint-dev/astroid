@@ -342,7 +342,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertFalse(func.is_abstract(pass_is_abstract=False))
 
     def test_is_abstract_decorated(self):
-        methods = test_utils.extract_node("""
+        methods = builder.extract_node("""
             import abc
 
             class Klass(object):
@@ -564,7 +564,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
                          'classmethod')
 
     def test_igetattr(self):
-        func = test_utils.extract_node('''
+        func = builder.extract_node('''
         def test():
             pass
         ''')
@@ -608,7 +608,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             self.assertEqual(len(cls.getattr('__mro__')), 1)
 
     def test__mro__attribute(self):
-        node = test_utils.extract_node('''
+        node = builder.extract_node('''
         class A(object): pass
         class B(object): pass
         class C(A, B): pass        
@@ -618,7 +618,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(mro.elts, node.mro())
 
     def test__bases__attribute(self):
-        node = test_utils.extract_node('''
+        node = builder.extract_node('''
         class A(object): pass
         class B(object): pass
         class C(A, B): pass
@@ -1052,7 +1052,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                 self.assertEqual(meta.name, metaclass)
 
     def test_metaclass_type(self):
-        klass = test_utils.extract_node("""
+        klass = builder.extract_node("""
             def with_metaclass(meta, base=object):
                 return meta("NewBase", (base, ), {})
 
@@ -1064,7 +1064,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             [base.name for base in klass.ancestors()])
 
     def test_no_infinite_metaclass_loop(self):
-        klass = test_utils.extract_node("""
+        klass = builder.extract_node("""
             class SSS(object):
 
                 class JJJ(object):
@@ -1086,7 +1086,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIn('JJJ', ancestors)
 
     def test_no_infinite_metaclass_loop_with_redefine(self):
-        ast_nodes = test_utils.extract_node("""
+        ast_nodes = builder.extract_node("""
             import datetime
 
             class A(datetime.date): #@
@@ -1104,7 +1104,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             self.assertEqual(None, klass.metaclass())
 
     def test_metaclass_generator_hack(self):
-        klass = test_utils.extract_node("""
+        klass = builder.extract_node("""
             import six
 
             class WithMeta(six.with_metaclass(type, object)): #@
@@ -1117,7 +1117,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             'type', klass.metaclass().name)
 
     def test_using_six_add_metaclass(self):
-        klass = test_utils.extract_node('''
+        klass = builder.extract_node('''
         import six
         import abc
 
@@ -1131,7 +1131,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(metaclass.qname(), 'abc.ABCMeta')
 
     def test_using_invalid_six_add_metaclass_call(self):
-        klass = test_utils.extract_node('''
+        klass = builder.extract_node('''
         import six
         @six.add_metaclass()
         class Invalid(object):
@@ -1280,7 +1280,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
     @test_utils.require_version(maxver='3.0')
     def test_no_mro_for_old_style(self):
-        node = test_utils.extract_node("""
+        node = builder.extract_node("""
         class Old: pass""")
         with self.assertRaises(NotImplementedError) as cm:
             node.mro()
@@ -1289,7 +1289,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
     @test_utils.require_version(maxver='3.0')
     def test_combined_newstyle_oldstyle_in_mro(self):
-        node = test_utils.extract_node('''
+        node = builder.extract_node('''
         class Old:
             pass
         class New(object):
@@ -1395,7 +1395,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(cm.exception, ResolveError)
 
     def test_generator_from_infer_call_result_parent(self):
-        func = test_utils.extract_node("""
+        func = builder.extract_node("""
         import contextlib
 
         @contextlib.contextmanager
@@ -1407,7 +1407,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(result.parent, func)
 
     def test_type_three_arguments(self):
-        classes = test_utils.extract_node("""
+        classes = builder.extract_node("""
         type('A', (object, ), {"a": 1, "b": 2, missing: 3}) #@
         """)
         first = next(classes.infer())
@@ -1422,7 +1422,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             first.getattr("missing")
 
     def test_implicit_metaclass(self):
-        cls = test_utils.extract_node("""
+        cls = builder.extract_node("""
         class A(object):
             pass
         """)
@@ -1430,7 +1430,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(cls.implicit_metaclass(), type_cls)
 
     def test_implicit_metaclass_lookup(self):
-        cls = test_utils.extract_node('''
+        cls = builder.extract_node('''
         class A(object):
             pass
         ''')
@@ -1441,7 +1441,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
     def test_metaclass_lookup_using_same_class(self):
         # Check that we don't have recursive attribute access for metaclass
-        cls = test_utils.extract_node('''
+        cls = builder.extract_node('''
         class A(object): pass            
         ''')
         self.assertEqual(len(cls.getattr('mro')), 1)
@@ -1512,13 +1512,13 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
     @test_utils.require_version(maxver='3.0')
     def test_implicit_metaclass_is_none(self):
-        cls = test_utils.extract_node("""
+        cls = builder.extract_node("""
         class A: pass
         """)
         self.assertIsNone(cls.implicit_metaclass())
 
     def test_local_attr_invalid_mro(self):
-        cls = test_utils.extract_node("""
+        cls = builder.extract_node("""
         # A has an invalid MRO, local_attr should fallback
         # to using .ancestors.
         class A(object, object):
@@ -1567,7 +1567,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertRaises(DuplicateBasesError, module['B'].mro)
 
     def test_instance_bound_method_lambdas(self):
-        ast_nodes = test_utils.extract_node('''
+        ast_nodes = builder.extract_node('''
         class Test(object): #@
             lam = lambda self: self
             not_method = lambda xargs: xargs
@@ -1584,7 +1584,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(not_method, scoped_nodes.Lambda)
 
     def test_class_extra_decorators_frame_is_not_class(self):
-        ast_node = test_utils.extract_node('''
+        ast_node = builder.extract_node('''
         def ala():
             def bala(): #@
                 func = 42
@@ -1592,7 +1592,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(ast_node.extra_decorators, [])
 
     def test_class_extra_decorators_only_callfunc_are_considered(self):
-        ast_node = test_utils.extract_node('''
+        ast_node = builder.extract_node('''
         class Ala(object):
              def func(self): #@
                  pass
@@ -1601,7 +1601,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(ast_node.extra_decorators, [])
 
     def test_class_extra_decorators_only_assignment_names_are_considered(self):
-        ast_node = test_utils.extract_node('''
+        ast_node = builder.extract_node('''
         class Ala(object):
              def func(self): #@
                  pass
@@ -1612,7 +1612,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(ast_node.extra_decorators, [])
 
     def test_class_extra_decorators_only_same_name_considered(self):
-        ast_node = test_utils.extract_node('''
+        ast_node = builder.extract_node('''
         class Ala(object):
              def func(self): #@
                 pass
@@ -1622,7 +1622,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(ast_node.type, 'method')
 
     def test_class_extra_decorators(self):
-        static_method, clsmethod = test_utils.extract_node('''
+        static_method, clsmethod = builder.extract_node('''
         class Ala(object):
              def static(self): #@
                  pass
@@ -1637,7 +1637,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(static_method.type, 'staticmethod')
 
     def test_extra_decorators_only_class_level_assignments(self):
-        node = test_utils.extract_node('''
+        node = builder.extract_node('''
         def _bind(arg):
             return arg.bind
 

@@ -75,7 +75,7 @@ class HashlibTest(unittest.TestCase):
 class NamedTupleTest(unittest.TestCase):
 
     def test_namedtuple_base(self):
-        klass = test_utils.extract_node("""
+        klass = builder.extract_node("""
         from collections import namedtuple
 
         class X(namedtuple("X", ["a", "b", "c"])):
@@ -88,7 +88,7 @@ class NamedTupleTest(unittest.TestCase):
             self.assertFalse(anc.parent is None)
 
     def test_namedtuple_inference(self):
-        klass = test_utils.extract_node("""
+        klass = builder.extract_node("""
         from collections import namedtuple
 
         name = "X"
@@ -101,7 +101,7 @@ class NamedTupleTest(unittest.TestCase):
         self.assertSetEqual({"a", "b", "c"}, set(base.instance_attrs))
 
     def test_namedtuple_inference_failure(self):
-        klass = test_utils.extract_node("""
+        klass = builder.extract_node("""
         from collections import namedtuple
 
         def foo(fields):
@@ -112,7 +112,7 @@ class NamedTupleTest(unittest.TestCase):
     def test_namedtuple_advanced_inference(self):
         # urlparse return an object of class ParseResult, which has a
         # namedtuple call and a mixin as base classes
-        result = test_utils.extract_node("""
+        result = builder.extract_node("""
         import six
 
         result = __(six.moves.urllib.parse.urlparse('gopher://'))
@@ -126,7 +126,7 @@ class NamedTupleTest(unittest.TestCase):
         self.assertEqual(instance.name, 'ParseResult')
 
     def test_namedtuple_instance_attrs(self):
-        result = test_utils.extract_node('''
+        result = builder.extract_node('''
         from collections import namedtuple
         namedtuple('a', 'a b c')(1, 2, 3) #@
         ''')
@@ -135,7 +135,7 @@ class NamedTupleTest(unittest.TestCase):
             self.assertEqual(attr[0].attrname, name)
 
     def test_namedtuple_uninferable_fields(self):
-        node = test_utils.extract_node('''
+        node = builder.extract_node('''
         x = [A] * 2
         from collections import namedtuple
         l = namedtuple('a', x)
@@ -157,7 +157,7 @@ class ModuleExtenderTest(unittest.TestCase):
 class NoseBrainTest(unittest.TestCase):
 
     def test_nose_tools(self):
-        methods = test_utils.extract_node("""
+        methods = builder.extract_node("""
         from nose.tools import assert_equal
         from nose.tools import assert_equals
         from nose.tools import assert_true
@@ -183,7 +183,7 @@ class NoseBrainTest(unittest.TestCase):
 class SixBrainTest(unittest.TestCase):
 
     def test_attribute_access(self):
-        ast_nodes = test_utils.extract_node('''
+        ast_nodes = builder.extract_node('''
         import six
         six.moves.http_client #@
         six.moves.urllib_parse #@
@@ -253,7 +253,7 @@ class SixBrainTest(unittest.TestCase):
             self.assertEqual(urlretrieve.qname(), 'urllib.request.urlretrieve')
 
     def test_from_imports(self):
-        ast_node = test_utils.extract_node('''
+        ast_node = builder.extract_node('''
         from six.moves import http_client
         http_client.HTTPSConnection #@
         ''')
@@ -276,7 +276,7 @@ class MultiprocessingBrainTest(unittest.TestCase):
         # Test that module attributes are working,
         # especially on Python 3.4+, where they are obtained
         # from a context.
-        module = test_utils.extract_node("""
+        module = builder.extract_node("""
         import multiprocessing
         """)
         module = module.do_import_module('multiprocessing')
@@ -287,7 +287,7 @@ class MultiprocessingBrainTest(unittest.TestCase):
             self.assertIsInstance(cpu_count, astroid.BoundMethod)
 
     def test_module_name(self):
-        module = test_utils.extract_node("""
+        module = builder.extract_node("""
         import multiprocessing
         multiprocessing.SyncManager()
         """)
@@ -356,7 +356,7 @@ class MultiprocessingBrainTest(unittest.TestCase):
 class ThreadingBrainTest(unittest.TestCase):
 
     def test_threading(self):
-        module = test_utils.extract_node("""
+        module = builder.extract_node("""
         import threading
         threading.Lock()
         """)
@@ -446,7 +446,7 @@ class EnumBrainTest(unittest.TestCase):
                         'IntEnum based enums should be a subtype of int')
 
     def test_enum_func_form_is_class_not_instance(self):
-        cls, instance = test_utils.extract_node('''
+        cls, instance = builder.extract_node('''
         from enum import Enum
         f = Enum('Audience', ['a', 'b', 'c'])
         f #@
@@ -475,7 +475,7 @@ class DateutilBrainTest(unittest.TestCase):
 class NumpyBrainTest(unittest.TestCase):
 
     def test_numpy(self):
-        node = test_utils.extract_node('''
+        node = builder.extract_node('''
         import numpy
         numpy.ones #@
         ''')
@@ -487,7 +487,7 @@ class NumpyBrainTest(unittest.TestCase):
 class PytestBrainTest(unittest.TestCase):
 
     def test_pytest(self):
-        ast_node = test_utils.extract_node('''
+        ast_node = builder.extract_node('''
         import pytest
         pytest #@
         ''')
