@@ -41,7 +41,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Astroid'
-copyright = u'2013, Logilab S.A.'
+copyright = u'Logilab, PyCQA and contributors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -184,7 +184,7 @@ htmlhelp_basename = 'Astroiddoc'
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'Astroid.tex', u'Astroid Documentation',
-   u'Logilab S.A.', 'manual'),
+   u'Logilab, PyCQA and contributors', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -217,7 +217,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'astroid', u'Astroid Documentation',
-     [u'Logilab S.A.'], 1)
+     [u'Logilab, PyCQA and contributors'], 1)
 ]
 
 
