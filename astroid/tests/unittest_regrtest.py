@@ -105,25 +105,6 @@ class A(gobject.GObject):
         a = astroid['A']
         self.assertTrue(a.newstyle)
 
-
-    def test_pylint_config_attr(self):
-        try:
-            from pylint import lint # pylint: disable=unused-variable
-        except ImportError:
-            self.skipTest('pylint not available')
-        mod = MANAGER.ast_from_module_name('pylint.lint')
-        pylinter = mod['PyLinter']
-        expect = ['OptionsManagerMixIn', 'object', 'MessagesHandlerMixIn',
-                  'ReportsHandlerMixIn', 'BaseTokenChecker', 'BaseChecker',
-                  'OptionsProviderMixIn']
-        self.assertListEqual([c.name for c in pylinter.ancestors()],
-                             expect)
-        self.assertTrue(list(Instance(pylinter).getattr('config')))
-        inferred = list(Instance(pylinter).igetattr('config'))
-        self.assertEqual(len(inferred), 1)
-        self.assertEqual(inferred[0].root().name, 'optparse')
-        self.assertEqual(inferred[0].name, 'Values')
-
     @unittest.skipIf(six.PY2, "TODO: numpy is currently infinitely looping")
     def test_numpy_crash(self):
         """test don't crash on numpy"""
