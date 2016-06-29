@@ -11,6 +11,10 @@ Astroid
 .. image:: https://coveralls.io/repos/github/PyCQA/astroid/badge.svg?branch=master
     :target: https://coveralls.io/github/PyCQA/astroid?branch=master
 
+.. image:: https://readthedocs.org/projects/astroid/badge/?version=latest
+    :target: http://astroid.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
 
 
 What's this?
