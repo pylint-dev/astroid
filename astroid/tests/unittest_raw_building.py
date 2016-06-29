@@ -7,7 +7,7 @@ import unittest
 
 from six.moves import builtins # pylint: disable=import-error
 
-from astroid.builder import AstroidBuilder
+from astroid.builder import AstroidBuilder, extract_node
 from astroid import nodes
 from astroid import raw_building
 from astroid import test_utils
@@ -37,7 +37,7 @@ class RawBuildingTC(unittest.TestCase):
         for name, _ in inspect.getmembers(builtins, predicate=inspect.isbuiltin):
             if name == 'print':
                 continue
-            node = test_utils.extract_node('{0} #@'.format(name))
+            node = extract_node('{0} #@'.format(name))
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.FunctionDef, name)
             self.assertEqual(inferred.root().name, BUILTINS, name)

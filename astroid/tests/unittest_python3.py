@@ -7,9 +7,9 @@ import unittest
 from astroid import nodes
 from astroid.tree.node_classes import Assign, Expr, YieldFrom, Name, Const
 from astroid import raw_building
-from astroid.builder import AstroidBuilder
+from astroid.builder import AstroidBuilder, extract_node
 from astroid.tree.scoped_nodes import ClassDef, FunctionDef
-from astroid.test_utils import require_version, extract_node
+from astroid.test_utils import require_version
 
 
 class Python3TC(unittest.TestCase):

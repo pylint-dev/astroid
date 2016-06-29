@@ -8,12 +8,12 @@ import textwrap
 import six
 
 from astroid import MANAGER, Instance, nodes
-from astroid.builder import AstroidBuilder
+from astroid.builder import AstroidBuilder, extract_node
 from astroid import exceptions
 from astroid.interpreter import lookup
 from astroid.manager import AstroidManager
 from astroid import raw_building
-from astroid.test_utils import require_version, extract_node, bootstrap
+from astroid.test_utils import require_version, bootstrap
 from astroid.tests import resources
 from astroid import transforms
 

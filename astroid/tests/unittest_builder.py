@@ -407,7 +407,7 @@ class BuilderTest(unittest.TestCase):
                 if noe:
                     yield more
         """
-        func = test_utils.extract_node(code)
+        func = builder.extract_node(code)
         self.assertIsInstance(func, nodes.FunctionDef)
         stmt = func.body[0]
         self.assertIsInstance(stmt, nodes.Expr)
@@ -555,7 +555,7 @@ class BuilderTest(unittest.TestCase):
             a.custom_attr = 0
             a #@
         '''
-        name_nodes = test_utils.extract_node(code)
+        name_nodes = builder.extract_node(code)
         for node in name_nodes:
             self.assertNotIn('custom_attr', next(node.infer()).locals)
             self.assertNotIn('custom_attr', next(node.infer()).instance_attrs)
@@ -588,7 +588,7 @@ class BuilderTest(unittest.TestCase):
         self.assertEqual(chain.value, 'None')
 
     def test_not_implemented(self):
-        node = test_utils.extract_node('''
+        node = builder.extract_node('''
         NotImplemented #@
         ''')
         inferred = next(node.infer())

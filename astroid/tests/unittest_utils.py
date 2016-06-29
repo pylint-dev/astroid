@@ -7,7 +7,6 @@ from astroid import builder
 from astroid import InferenceError
 from astroid import nodes
 from astroid.interpreter import util
-from astroid import test_utils
 from astroid import util as astroid_util
 
 
@@ -86,7 +85,7 @@ class InferenceUtil(unittest.TestCase):
         self.assertEqual(util.are_exclusive(f4, f2), True)
 
     def test_unpack_infer_uninferable_nodes(self):
-        node = test_utils.extract_node('''
+        node = builder.extract_node('''
         x = [A] * 1
         f = [x, [A] * 2]
         f
@@ -98,7 +97,7 @@ class InferenceUtil(unittest.TestCase):
                             for elt in unpacked))
 
     def test_unpack_infer_empty_tuple(self):
-        node = test_utils.extract_node('''
+        node = builder.extract_node('''
         ()
         ''')
         inferred = next(node.infer())

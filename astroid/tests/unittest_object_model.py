@@ -25,7 +25,7 @@ BUILTINS = MANAGER.builtins()
 class InstanceModelTest(unittest.TestCase):
 
     def test_instance_special_model(self):
-        ast_nodes = test_utils.extract_node('''
+        ast_nodes = astroid.extract_node('''
         class A:
             "test"
             def __init__(self):
@@ -58,7 +58,7 @@ class InstanceModelTest(unittest.TestCase):
     @unittest.expectedFailure
     def test_instance_local_attributes_overrides_object_model(self):
         # The instance lookup needs to be changed in order for this to work.
-        ast_node = test_utils.extract_node('''
+        ast_node = astroid.extract_node('''
         class A:
             @property
             def __dict__(self):
@@ -73,7 +73,7 @@ class InstanceModelTest(unittest.TestCase):
 class BoundMethodModelTest(unittest.TestCase):
 
     def test_bound_method_model(self):
-        ast_nodes = test_utils.extract_node('''
+        ast_nodes = astroid.extract_node('''
         class A:
             def test(self): pass
         a = A()
@@ -94,7 +94,7 @@ class UnboundMethodModelTest(unittest.TestCase):
 
     @unittest.skipUnless(six.PY2, "Unbound methods are available in Python 2 only.")
     def test_unbound_method_model(self):
-        ast_nodes = test_utils.extract_node('''
+        ast_nodes = astroid.extract_node('''
         class A:
             def test(self): pass
         t = A.test
@@ -127,7 +127,7 @@ class UnboundMethodModelTest(unittest.TestCase):
 class ClassModelTest(unittest.TestCase):
 
     def test_priority_to_local_defined_values(self):
-        ast_node = test_utils.extract_node('''
+        ast_node = astroid.extract_node('''
         class A:
             __doc__ = "first"
         A.__doc__ #@
@@ -138,7 +138,7 @@ class ClassModelTest(unittest.TestCase):
 
     @test_utils.require_version(maxver='3.0')
     def test__mro__old_style(self):
-        ast_node = test_utils.extract_node('''
+        ast_node = astroid.extract_node('''
         class A:
             pass
         A.__mro__
@@ -148,7 +148,7 @@ class ClassModelTest(unittest.TestCase):
 
     @test_utils.require_version(maxver='3.0')
     def test__subclasses__old_style(self):
-        ast_node = test_utils.extract_node('''
+        ast_node = astroid.extract_node('''
         class A:
             pass
         A.__subclasses__
@@ -157,7 +157,7 @@ class ClassModelTest(unittest.TestCase):
             next(ast_node.infer())
 
     def test_class_model_correct_mro_subclasses_proxied(self):
-        ast_nodes = test_utils.extract_node('''
+        ast_nodes = astroid.extract_node('''
         class A(object):
             pass
         A.mro #@
@@ -172,7 +172,7 @@ class ClassModelTest(unittest.TestCase):
 
     @unittest.skipUnless(six.PY2, "Needs old style classes")
     def test_old_style_classes_no_mro(self):
-        ast_node = test_utils.extract_node('''
+        ast_node = astroid.extract_node('''
         class A:
             pass
         A.mro #@
@@ -181,7 +181,7 @@ class ClassModelTest(unittest.TestCase):
             next(ast_node.infer())
         
     def test_class_model(self):
-        ast_nodes = test_utils.extract_node('''
+        ast_nodes = astroid.extract_node('''
         class A(object):
             "test"
 
@@ -252,7 +252,7 @@ class ModuleModelTest(unittest.TestCase):
         self.assertEqual(file_value.value, "mine")
 
     def test__path__not_a_package(self):
-        ast_node = test_utils.extract_node('''
+        ast_node = astroid.extract_node('''
         import sys
         sys.__path__ #@
         ''')
@@ -260,7 +260,7 @@ class ModuleModelTest(unittest.TestCase):
             next(ast_node.infer())
 
     def test_module_model(self):
-        ast_nodes = test_utils.extract_node('''
+        ast_nodes = astroid.extract_node('''
         import xml
         xml.__path__ #@
         xml.__name__ #@
@@ -305,7 +305,7 @@ class ModuleModelTest(unittest.TestCase):
 class FunctionModelTest(unittest.TestCase):
 
     def test_partial_descriptor_support(self):
-        bound, result = test_utils.extract_node('''
+        bound, result = astroid.extract_node('''
         class A(object): pass
         def test(self): return 42
         f = test.__get__(A(), A)
@@ -323,7 +323,7 @@ class FunctionModelTest(unittest.TestCase):
     def test_descriptor_not_inferrring_self(self):
         # We can't infer __get__(X, Y)() when the bounded function
         # uses self, because of the tree's parent not being propagating good enough.
-        result = test_utils.extract_node('''
+        result = astroid.extract_node('''
         class A(object):
             x = 42
         def test(self): return self.x
@@ -335,7 +335,7 @@ class FunctionModelTest(unittest.TestCase):
         self.assertEqual(result.value, 42)
 
     def test_descriptors_binding_invalid(self):
-        ast_nodes = test_utils.extract_node('''
+        ast_nodes = astroid.extract_node('''
         class A: pass
         def test(self): return 42
         test.__get__()() #@
@@ -347,7 +347,7 @@ class FunctionModelTest(unittest.TestCase):
                 next(node.infer())
 
     def test_function_model(self):
-        ast_nodes = test_utils.extract_node('''
+        ast_nodes = astroid.extract_node('''
         def func(a=1, b=2):
             """test"""
         func.__name__ #@
@@ -392,7 +392,7 @@ class FunctionModelTest(unittest.TestCase):
 
     @test_utils.require_version(minver='3.0')
     def test_empty_return_annotation(self):
-        ast_node = test_utils.extract_node('''
+        ast_node = astroid.extract_node('''
         def test(): pass
         test.__annotations__
         ''')
@@ -402,7 +402,7 @@ class FunctionModelTest(unittest.TestCase):
 
     @test_utils.require_version(minver='3.0')
     def test_annotations_kwdefaults(self):
-        ast_node = test_utils.extract_node('''
+        ast_node = astroid.extract_node('''
         def test(a: 1, *args: 2, f:4='lala', **kwarg:3)->2: pass
         test.__annotations__ #@
         test.__kwdefaults__ #@
@@ -423,7 +423,7 @@ class FunctionModelTest(unittest.TestCase):
 
     @test_utils.require_version(maxver='3.0')
     def test_function_model_for_python2(self):
-        ast_nodes = test_utils.extract_node('''
+        ast_nodes = astroid.extract_node('''
         def test(a=1):
           "a"
 
@@ -454,7 +454,7 @@ class FunctionModelTest(unittest.TestCase):
 class GeneratorModelTest(unittest.TestCase):
 
     def test_model(self):
-        ast_nodes = test_utils.extract_node('''
+        ast_nodes = astroid.extract_node('''
         def test():
            "a"
            yield
@@ -489,7 +489,7 @@ class ExceptionModelTest(unittest.TestCase):
 
     @unittest.skipIf(six.PY2, "needs Python 3")
     def test_model_py3(self):
-        ast_nodes = test_utils.extract_node('''
+        ast_nodes = astroid.extract_node('''
         try:
             x[42]
         except ValueError as err:
@@ -509,7 +509,7 @@ class ExceptionModelTest(unittest.TestCase):
 
     @unittest.skipUnless(six.PY2, "needs Python 2")
     def test_model_py3(self):
-        ast_nodes = test_utils.extract_node('''
+        ast_nodes = astroid.extract_node('''
         try:
             x[42]
         except ValueError as err:
@@ -530,13 +530,13 @@ class ExceptionModelTest(unittest.TestCase):
 class DictObjectModelTest(unittest.TestCase):
 
     def test__class__(self):
-        ast_node = test_utils.extract_node('{}.__class__')
+        ast_node = astroid.extract_node('{}.__class__')
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, astroid.ClassDef)
         self.assertEqual(inferred.name, 'dict')
 
     def test_attributes_inferred_as_methods(self):
-        ast_nodes = test_utils.extract_node('''
+        ast_nodes = astroid.extract_node('''
         {}.values #@
         {}.items #@
         {}.keys #@
@@ -547,7 +547,7 @@ class DictObjectModelTest(unittest.TestCase):
 
     @unittest.skipUnless(six.PY2, "needs Python 2")
     def test_concrete_objects_for_dict_methods(self):
-        ast_nodes = test_utils.extract_node('''
+        ast_nodes = astroid.extract_node('''
         {1:1, 2:3}.values() #@
         {1:1, 2:3}.keys() #@
         {1:1, 2:3}.items() #@
@@ -568,7 +568,7 @@ class DictObjectModelTest(unittest.TestCase):
 
     @unittest.skipIf(six.PY2, "needs Python 3")
     def test_wrapper_objects_for_dict_methods_python3(self):
-        ast_nodes = test_utils.extract_node('''
+        ast_nodes = astroid.extract_node('''
         {1:1, 2:3}.values() #@
         {1:1, 2:3}.keys() #@
         {1:1, 2:3}.items() #@
@@ -590,7 +590,7 @@ class LruCacheModelTest(unittest.TestCase):
 
     @unittest.skipIf(six.PY2, "needs Python 3")
     def test_lru_cache(self):
-        ast_nodes = test_utils.extract_node('''
+        ast_nodes = astroid.extract_node('''
         import functools
         class Foo(object):
             @functools.lru_cache()

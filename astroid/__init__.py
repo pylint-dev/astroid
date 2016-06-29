@@ -65,7 +65,7 @@ from astroid import raw_building
 _builtins = raw_building.ast_from_builtins()
 from astroid.interpreter.util import are_exclusive, unpack_infer
 from astroid.interpreter.lookup import builtin_lookup
-from astroid.builder import parse
+from astroid.builder import parse, extract_node
 from astroid.util import Uninferable, YES
 
 

@@ -7,7 +7,6 @@ import astroid
 from astroid.interpreter import util as interpreter_util
 from astroid.interpreter import objects
 from astroid.interpreter import objectmodel
-from astroid.test_utils import extract_node
 from astroid import MANAGER
 
 
@@ -27,7 +26,7 @@ class LruWrappedModel(objectmodel.FunctionModel):
 
     @property
     def pycache_info(self):
-        cache_info = extract_node('''
+        cache_info = astroid.extract_node('''
         from functools import _CacheInfo
         _CacheInfo(0, 0, 0, 0)
         ''')
@@ -39,7 +38,7 @@ class LruWrappedModel(objectmodel.FunctionModel):
 
     @property
     def pycache_clear(self):
-        node = extract_node('''def cache_clear(): pass''')
+        node = astroid.extract_node('''def cache_clear(): pass''')
         return objects.BoundMethod(proxy=node, bound=self._instance.parent.scope())
 
 

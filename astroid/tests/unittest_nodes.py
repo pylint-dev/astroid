@@ -54,7 +54,7 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(node.as_string().strip(), code.strip())
 
     def test_as_string_for_list_containing_uninferable(self):
-        node = test_utils.extract_node('''
+        node = astroid.extract_node('''
         def foo():
             bar = [arg] * 1
         ''')
@@ -64,7 +64,7 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(binop.as_string(), '([arg]) * (1)')
 
     def test_frozenset_as_string(self):
-        nodes = test_utils.extract_node('''
+        nodes = astroid.extract_node('''
         frozenset((1, 2, 3)) #@
         frozenset({1, 2, 3}) #@
         frozenset([1, 2, 3,]) #@
@@ -310,7 +310,7 @@ class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
         self.module2 = resources.build_file('data/module2.py', 'data.module2')
 
     def test_do_import_module_works_for_all(self):
-        import_from, import_ = test_utils.extract_node('''
+        import_from, import_ = astroid.extract_node('''
         from collections import deque #@
         import collections #@
         ''')
@@ -581,7 +581,7 @@ class BoundMethodNodeTest(unittest.TestCase):
 class Python35AsyncTest(unittest.TestCase):
 
     def test_async_await_keywords(self):
-        async_def, async_for, async_with, await_node = test_utils.extract_node('''
+        async_def, async_for, async_with, await_node = astroid.extract_node('''
         async def func(): #@
             async for i in range(10): #@
                 f = __(await i)
@@ -639,7 +639,7 @@ class BaseTypesTest(unittest.TestCase):
 class ScopeTest(unittest.TestCase):
 
     def test_decorators(self):
-        ast_node = test_utils.extract_node('''
+        ast_node = astroid.extract_node('''
         @test
         def foo(): pass
         ''')
@@ -672,7 +672,7 @@ class ScopeTest(unittest.TestCase):
             self.assertIsInstance(module['listcomp'].parent.value.scope(), nodes.Module)
 
     def test_scope_of_default_argument_value(self):
-        node = test_utils.extract_node('''
+        node = astroid.extract_node('''
         def test(a=__(b)):
             pass
         ''')
@@ -681,7 +681,7 @@ class ScopeTest(unittest.TestCase):
 
     @test_utils.require_version(minver='3.0')
     def test_scope_of_default_keyword_argument_value(self):
-        node = test_utils.extract_node('''
+        node = astroid.extract_node('''
         def test(*, b=__(c)):
             pass
         ''')
@@ -690,7 +690,7 @@ class ScopeTest(unittest.TestCase):
 
     @test_utils.require_version(minver='3.0')
     def test_scope_of_annotations(self):
-        ast_nodes = test_utils.extract_node('''
+        ast_nodes = astroid.extract_node('''
         def test(a: __(b), *args:__(f), c:__(d)=4, **kwargs: _(l))->__(x):
             pass
         ''')
@@ -699,7 +699,7 @@ class ScopeTest(unittest.TestCase):
             self.assertIsInstance(scope, nodes.Module)
 
     def test_scope_of_list_comprehension_target_composite_nodes(self):
-        ast_node = test_utils.extract_node('''
+        ast_node = astroid.extract_node('''
         [i for data in __([DATA1, DATA2]) for i in data]
         ''')
         node = ast_node.elts[0]
@@ -707,7 +707,7 @@ class ScopeTest(unittest.TestCase):
         self.assertIsInstance(scope, nodes.Module)
 
     def test_scope_of_nested_list_comprehensions(self):
-        ast_node = test_utils.extract_node('''
+        ast_node = astroid.extract_node('''
         [1 for data in DATA for x in __(data)]
         ''')
         scope = ast_node.scope()
@@ -717,7 +717,7 @@ class ScopeTest(unittest.TestCase):
             self.assertIsInstance(scope, nodes.ListComp)
 
     def test_scope_of_list_comprehension_targets(self):
-        ast_node = test_utils.extract_node('''
+        ast_node = astroid.extract_node('''
         [1 for data in DATA]
         ''')
         # target is `data` from the list comprehension
@@ -729,7 +729,7 @@ class ScopeTest(unittest.TestCase):
             self.assertIsInstance(scope, nodes.ListComp)
 
     def test_scope_of_list_comprehension_value(self):
-        ast_node = test_utils.extract_node('''
+        ast_node = astroid.extract_node('''
         [__(i) for i in DATA]
         ''')
         scope = ast_node.scope()
@@ -739,7 +739,7 @@ class ScopeTest(unittest.TestCase):
             self.assertIsInstance(scope, nodes.Module)
 
     def test_scope_of_dict_comprehension(self):        
-        ast_nodes = test_utils.extract_node('''
+        ast_nodes = astroid.extract_node('''
         {i: __(j) for (i, j) in DATA}
         {i:j for (i, j) in __(DATA)}
         ''')
@@ -748,14 +748,14 @@ class ScopeTest(unittest.TestCase):
         iter_scope = ast_nodes[1].scope()
         self.assertIsInstance(iter_scope, nodes.Module)
 
-        ast_node = test_utils.extract_node('''
+        ast_node = astroid.extract_node('''
         {i:1 for i in DATA}''')
         target = ast_node.generators[0].target
         target_scope = target.scope()
         self.assertIsInstance(target_scope, nodes.DictComp)
 
     def test_scope_elt_of_generator_exp(self):
-        ast_node = test_utils.extract_node('''
+        ast_node = astroid.extract_node('''
         list(__(i) for i in range(10))
         ''')
         scope = ast_node.scope()
@@ -765,47 +765,47 @@ class ScopeTest(unittest.TestCase):
 class ContextTest(unittest.TestCase):
 
     def test_subscript_load(self):
-        node = test_utils.extract_node('f[1]')
+        node = astroid.extract_node('f[1]')
         self.assertIs(node.ctx, astroid.Load)
 
     def test_subscript_del(self):
-        node = test_utils.extract_node('del f[1]')
+        node = astroid.extract_node('del f[1]')
         self.assertIs(node.targets[0].ctx, astroid.Del)
 
     def test_subscript_store(self):
-        node = test_utils.extract_node('f[1] = 2')
+        node = astroid.extract_node('f[1] = 2')
         subscript = node.targets[0]
         self.assertIs(subscript.ctx, astroid.Store)
 
     def test_list_load(self):
-        node = test_utils.extract_node('[]')
+        node = astroid.extract_node('[]')
         self.assertIs(node.ctx, astroid.Load)
 
     def test_list_del(self):
-        node = test_utils.extract_node('del []')
+        node = astroid.extract_node('del []')
         self.assertIs(node.targets[0].ctx, astroid.Del)
 
     def test_list_store(self):
         with self.assertRaises(exceptions.AstroidSyntaxError):
-            test_utils.extract_node('[0] = 2')
+            astroid.extract_node('[0] = 2')
 
     def test_tuple_load(self):
-        node = test_utils.extract_node('(1, )')
+        node = astroid.extract_node('(1, )')
         self.assertIs(node.ctx, astroid.Load)
 
     def test_tuple_store(self):
         with self.assertRaises(exceptions.AstroidSyntaxError):
-            test_utils.extract_node('(1, ) = 3')
+            astroid.extract_node('(1, ) = 3')
 
     @test_utils.require_version(minver='3.5')
     def test_starred_load(self):
-        node = test_utils.extract_node('a = *b')
+        node = astroid.extract_node('a = *b')
         starred = node.value
         self.assertIs(starred.ctx, astroid.Load)
 
     @test_utils.require_version(minver='3.0')
     def test_starred_store(self):
-        node = test_utils.extract_node('a, *b = 1, 2')
+        node = astroid.extract_node('a, *b = 1, 2')
         starred = node.targets[0].elts[1]
         self.assertIs(starred.ctx, astroid.Store) 
         
@@ -813,7 +813,7 @@ class ContextTest(unittest.TestCase):
 class FunctionTest(unittest.TestCase):
 
     def test_function_not_on_top_of_lambda(self):
-        lambda_, function_ = test_utils.extract_node('''
+        lambda_, function_ = astroid.extract_node('''
         lambda x: x #@
         def func(): pass #@
         ''')
@@ -824,7 +824,7 @@ class FunctionTest(unittest.TestCase):
 class DictTest(unittest.TestCase):
 
     def test_keys_values_items(self):
-        node = test_utils.extract_node('''
+        node = astroid.extract_node('''
         {1: 2, 2:3}
         ''')
         self.assertEqual([key.value for key in node.keys], [1, 2])
@@ -837,7 +837,7 @@ class ParameterTest(unittest.TestCase):
 
     def _variadics_test_helper(self, vararg_lineno, vararg_col_offset,
                                kwarg_lineno, kwarg_col_offset):
-        node = test_utils.extract_node('''
+        node = astroid.extract_node('''
         def test(*args, **kwargs): pass
         ''')
         args = node.args
