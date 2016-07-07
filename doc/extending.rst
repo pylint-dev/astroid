@@ -15,17 +15,13 @@ subdirectory, which are taken from the `pylint-brain`_ project.
 Transformation functions are registered using the `register_transform` method of
 the Astroid manager:
 
-.. automethod:: astroid.manager.AstroidManager.register_transform
 
 To add filtering based on the `as_string` representation of the node
 in addition to the type, the :class:`astroid.AsStringRegexpPredicate`
 predicate object can be used.
 
-.. autoclass:: astroid.AsStringRegexpPredicate
-
 Last but not least, the :func:`inference_tip` function is there to register
 a custom inference function.
 
-.. autofunction:: astroid.inference_tip
 
 .. _`pylint-brain`: https://bitbucket.org/logilab/pylint-brain
