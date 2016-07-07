@@ -1,7 +1,7 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
-2016-07-02 -- 1.4.7
+2016-07-07 -- 1.4.7
 
     * Stop saving assignment locals in ExceptHandlers, when the context is a store.
 
