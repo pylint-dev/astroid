@@ -55,6 +55,7 @@ if hasattr(imp, 'PY_RESOURCE'):
 if hasattr(imp, 'PY_CODERESOURCE'):
     _ImpTypes[imp.PY_CODERESOURCE] = ModuleType.PY_CODERESOURCE
 
+
 def _imp_type_to_module_type(imp_type):
     return _ImpTypes[imp_type]
 
@@ -131,6 +132,7 @@ class NoSourceFile(Exception):
     source file for a precompiled file
     """
 
+
 def _normalize_path(path):
     return os.path.normcase(os.path.abspath(path))
 
@@ -167,6 +169,7 @@ def _handle_blacklist(blacklist, dirnames, filenames):
 
 _NORM_PATH_CACHE = {}
 
+
 def _cache_normalize_path(path):
     """abspath with caching"""
     # _module_file calls abspath on every path in sys.path every time it's
@@ -179,6 +182,7 @@ def _cache_normalize_path(path):
             return _normalize_path(path)
         result = _NORM_PATH_CACHE[path] = _normalize_path(path)
         return result
+
 
 def load_module_from_name(dotted_name, path=None, use_sys=True):
     """Load a Python module from its name.
@@ -325,7 +329,6 @@ def modpath_from_file_with_callback(filename, extrapath=None, is_package_cb=None
         filename, ', \n'.join(sys.path)))
 
 
-
 def modpath_from_file(filename, extrapath=None):
     """given a file path return the corresponding split module's name
     (i.e name of a module or package split on '.')
@@ -351,6 +354,7 @@ def modpath_from_file(filename, extrapath=None):
 
 def file_from_modpath(modpath, path=None, context_file=None):
     return file_info_from_modpath(modpath, path, context_file).location
+
 
 def file_info_from_modpath(modpath, path=None, context_file=None):
     """given a mod path (i.e. split module / package name), return the
@@ -565,7 +569,6 @@ def is_standard_module(modname, std_path=None):
     return False
 
 
-
 def is_relative(modname, from_file):
     """return true if the given module name is relative to the given
     file name
@@ -682,6 +685,7 @@ def _is_setuptools_namespace(location):
 
 _ModuleSpec = collections.namedtuple('_ModuleSpec', 'name type location '
                                                     'origin submodule_search_locations')
+
 
 class ModuleSpec(_ModuleSpec):
 

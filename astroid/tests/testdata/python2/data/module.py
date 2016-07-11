@@ -8,6 +8,7 @@ from astroid.utils import *
 import os.path
 MY_DICT = {}
 
+
 def global_access(key, val):
     """function test"""
     local = 1
@@ -35,7 +36,6 @@ class YO:
             raise XXXError()
         except:
             raise
-
 
 
 class YOUPI(YO):

@@ -83,6 +83,8 @@ def function_to_method(n, klass):
 
 
 MANAGER = manager.AstroidManager()
+
+
 def builtin_lookup(name):
     """lookup a name into the builtin module
     return the list of matching statements and the astroid for the builtin
@@ -1062,7 +1064,6 @@ def get_wrapping_class(node):
     return klass
 
 
-
 class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                node_classes.Statement):
 
@@ -1533,6 +1534,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             return builtin_lookup('type')[1][0]
 
     _metaclass = None
+
     def declared_metaclass(self):
         """Return the explicit declared metaclass for the current class.
 

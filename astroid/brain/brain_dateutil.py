@@ -8,6 +8,7 @@ import textwrap
 from astroid import MANAGER, register_module_extender
 from astroid.builder import AstroidBuilder
 
+
 def dateutil_transform():
     return AstroidBuilder(MANAGER).string_build(textwrap.dedent('''
     import datetime

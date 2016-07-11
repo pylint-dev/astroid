@@ -1,4 +1,6 @@
 from data import SSL1
+
+
 class MyConnection(SSL1.Connection):
 
     """An SSL connection."""

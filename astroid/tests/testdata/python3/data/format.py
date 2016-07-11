@@ -12,10 +12,12 @@ fonction(1,
          3,
          4)
 
+
 def definition(a,
                b,
                c):
     return a + b + c
+
 
 class debile(dict,
              object):

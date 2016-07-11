@@ -35,6 +35,7 @@ def _io_discrepancy(member):
             member_self.__name__ == '_io' and
             member.__module__ == 'io')
 
+
 def _attach_local_node(parent, node, name):
     node.name = name # needed by add_local_node
     parent.add_local_node(node)
@@ -62,10 +63,12 @@ def attach_dummy_node(node, name, runtime_object=_marker):
     enode.object = runtime_object
     _attach_local_node(node, enode, name)
 
+
 def _has_underlying_object(self):
     return self.object is not None and self.object is not _marker
 
 nodes.EmptyNode.has_underlying_object = _has_underlying_object
+
 
 def attach_const_node(node, name, value):
     """create a Const node and register it in the locals of the given
@@ -73,6 +76,7 @@ def attach_const_node(node, name, value):
     """
     if name not in node.special_attributes:
         _attach_local_node(node, nodes.const_factory(value), name)
+
 
 def attach_import_node(node, modname, membername):
     """create a ImportFrom node and register it in the locals of the given
@@ -127,6 +131,7 @@ def build_function(name, args=None, defaults=None, doc=None):
 def build_from_import(fromname, names):
     """create and initialize an astroid ImportFrom import statement"""
     return nodes.ImportFrom(fromname, [(name, None) for name in names])
+
 
 def register_arguments(func, args=None):
     """add given arguments to local
@@ -361,6 +366,8 @@ class InspectBuilder(object):
 Astroid_BUILDER = InspectBuilder()
 
 _CONST_PROXY = {}
+
+
 def _astroid_bootstrapping(astroid_builtin=None):
     """astroid boot strapping the builtins module"""
     # this boot strapping is necessary since we need the Const nodes to
@@ -388,6 +395,8 @@ _astroid_bootstrapping()
 # TODO : find a nicer way to handle this situation;
 # However __proxied introduced an
 # infinite recursion (see https://bugs.launchpad.net/pylint/+bug/456870)
+
+
 def _set_proxied(const):
     return _CONST_PROXY[const.value.__class__]
 nodes.Const._proxied = property(_set_proxied)

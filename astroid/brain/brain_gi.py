@@ -20,6 +20,7 @@ _inspected_modules = {}
 
 _identifier_re = r'^[A-Za-z_]\w*$'
 
+
 def _gi_build_stub(parent):
     """
     Inspect the passed module recursively and build stubs for functions,
@@ -114,6 +115,7 @@ def _gi_build_stub(parent):
 
     return ret
 
+
 def _import_gi_module(modname):
     # we only consider gi.repository submodules
     if not modname.startswith('gi.repository.'):
@@ -162,6 +164,7 @@ def _import_gi_module(modname):
         raise AstroidBuildingError(modname=modname)
     return astng
 
+
 def _looks_like_require_version(node):
     # Return whether this looks like a call to gi.require_version(<name>, <version>)
     # Only accept function calls with two constant arguments
@@ -184,6 +187,7 @@ def _looks_like_require_version(node):
         return func.name == 'require_version'
 
     return False
+
 
 def _register_require_version(node):
     # Load the gi.require_version locally

@@ -59,7 +59,6 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin,
         module = next(subpackage.igetattr('module'))
         self.assertEqual(module.name, 'package.subpackage.module')
 
-
     def test_package_sidepackage(self):
         manager = self.brainless_manager()
         assert 'package.sidepackage' not in MANAGER.astroid_cache
@@ -71,13 +70,11 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin,
         self.assertTrue(subpackage.package)
         self.assertEqual(subpackage.name, 'absimp.sidepackage')
 
-
     def test_living_property(self):
         builder = AstroidBuilder()
         builder._done = {}
         builder._module = sys.modules[__name__]
         builder.object_build(build_module('module_name', ''), Whatever)
-
 
     def test_new_style_class_detection(self):
         try:

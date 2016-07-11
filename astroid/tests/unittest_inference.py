@@ -58,11 +58,13 @@ def _assertInferElts(node_type, self, node, elts):
     self.assertEqual(sorted(elt.value for elt in inferred.elts),
                      elts)
 
+
 def partialmethod(func, arg):
     """similar to functools.partial but return a lambda instead of a class so returned value may be
     turned into a method.
     """
     return lambda *args, **kwargs: func(arg, *args, **kwargs)
+
 
 class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
@@ -673,7 +675,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         values = [i.value for i in test_utils.get_name_node(ast, 'something', -1).infer()]
         self.assertEqual(values, [1.0, 1.0j])
 
-
     def test_simple_subscript(self):
         code = '''
             class A(object):
@@ -774,7 +775,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual([i.value for i in
                           test_utils.get_name_node(ast, 'e', -1).infer()], [1, 3])
 
-
     def test_builtin_help(self):
         code = '''
             help()
@@ -850,7 +850,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(inferred), 1)
         self.assertIsInstance(inferred[0], Instance)
         self.assertEqual(inferred[0]._proxied.name, 'Sub')
-
 
     def test_import_as(self):
         code = '''

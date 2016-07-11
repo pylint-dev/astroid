@@ -28,6 +28,7 @@ class LruWrappedModel(objectmodel.FunctionModel):
         from functools import _CacheInfo
         _CacheInfo(0, 0, 0, 0)
         ''')
+
         class CacheInfoBoundMethod(BoundMethod):
             def infer_call_result(self, caller, context=None):
                 yield helpers.safe_infer(cache_info)
@@ -38,7 +39,6 @@ class LruWrappedModel(objectmodel.FunctionModel):
     def pycache_clear(self):
         node = extract_node('''def cache_clear(): pass''')
         return BoundMethod(proxy=node, bound=self._instance.parent.scope())
-
 
 
 class LruWrappedFunctionDef(astroid.FunctionDef):

@@ -34,6 +34,7 @@ with open(pkginfo, 'rb') as fobj:
 with open(os.path.join(astroid_dir, 'README.rst')) as fobj:
     long_description = fobj.read()
 
+
 class AstroidInstallLib(install_lib.install_lib):
     def byte_compile(self, files):
         test_datadir = os.path.join('astroid', 'tests', 'testdata')

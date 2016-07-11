@@ -71,6 +71,7 @@ del AstroidManager
 
 # transform utilities (filters and decorator)
 
+
 class AsStringRegexpPredicate(object):
     """ClassDef to be used as predicate that may be given to `register_transform`
 
@@ -84,6 +85,7 @@ class AsStringRegexpPredicate(object):
     WARNING: This can be fairly slow, as it has to convert every AST node back
     to Python code; you should consider examining the AST directly instead.
     """
+
     def __init__(self, regexp, expression=None):
         self.regexp = re.compile(regexp)
         self.expression = expression
@@ -93,6 +95,7 @@ class AsStringRegexpPredicate(object):
             # pylint: disable=no-member; github.com/pycqa/astroid/126
             node = attrgetter(self.expression)(node)
         return self.regexp.search(node.as_string())
+
 
 def inference_tip(infer_function):
     """Given an instance specific inference function, return a function to be

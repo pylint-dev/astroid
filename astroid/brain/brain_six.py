@@ -245,6 +245,7 @@ def _six_fail_hook(modname):
     module.name = 'six.moves'
     return module
 
+
 def transform_six_add_metaclass(node):
     """Check if the given class node is decorated with *six.add_metaclass*
 

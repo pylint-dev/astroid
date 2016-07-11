@@ -6,35 +6,28 @@ class Specialization(YOUPI, YO):
     pass
 
 
-
 class Metaclass(type):
     pass
-
 
 
 class Interface:
     pass
 
 
-
 class MyIFace(Interface):
     pass
-
 
 
 class AnotherIFace(Interface):
     pass
 
 
-
 class MyException(Exception):
     pass
 
 
-
 class MyError(MyException):
     pass
-
 
 
 class AbstractClass(object):
@@ -48,20 +41,16 @@ class AbstractClass(object):
         return
 
 
-
 class Concrete0:
     __implements__ = MyIFace
-
 
 
 class Concrete1:
     __implements__ = (MyIFace, AnotherIFace)
 
 
-
 class Concrete2:
     __implements__ = (MyIFace, AnotherIFace)
-
 
 
 class Concrete23(Concrete1):
@@ -77,6 +66,7 @@ ccc = ((one) & (two)) & (three)
 dddd = ((x) ^ (o)) ^ (r)
 exec 'c = 3'
 exec 'c = 3' in {}, {}
+
 
 def raise_string(a=2, *args, **kwargs):
     raise Exception, 'yo'
@@ -100,14 +90,13 @@ raise_string(*args, **kwargs)
 print >> stream, 'bonjour'
 print >> stream, 'salut',
 
+
 def make_class(any, base=data.module.YO, *args, **kwargs):
     """check base is correctly resolved to Concrete0"""
-    
     
     class Aaaa(base):
         """dynamic class"""
         
-    
     return Aaaa
 from os.path import abspath
 import os as myos
@@ -115,7 +104,6 @@ import os as myos
 
 class A:
     pass
-
 
 
 class A(A):
@@ -126,12 +114,14 @@ def generator():
     """A generator."""
     yield
 
+
 def not_a_generator():
     """A function that contains generator, but is not one."""
     
     def generator():
         yield
     genl = lambda : (yield)
+
 
 def with_metaclass(meta, *bases):
     return meta('NewBase', bases, {})
