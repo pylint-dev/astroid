@@ -50,6 +50,11 @@ class Uninferable(object):
     def __call__(self, *args, **kwargs):
         return self
 
+    def __bool__(self):
+        return False
+
+    __nonzero__ = __bool__
+
     def accept(self, visitor):
         func = getattr(visitor, "visit_uninferable")
         return func(self)
