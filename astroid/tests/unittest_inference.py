@@ -2237,6 +2237,18 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             inferred = next(node.infer())
             self.assertEqual(inferred.bool_value(), expected)
 
+    def test_genexpr_bool_value(self):
+        node = extract_node('''(x for x in range(10))''')
+        self.assertTrue(node.bool_value())
+
+    def test_name_bool_value(self):
+        node = extract_node('''
+        x = 42
+        y = x
+        y
+        ''')
+        self.assertIs(node.bool_value(), util.Uninferable)
+
     def test_bool_value(self):
         # Verify the truth value of nodes.
         module = parse('''
@@ -2245,7 +2257,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         def function(): pass
         class Class(object):
             def method(self): pass
-        genexpr = (x for x in range(10))
         dict_comp = {x:y for (x, y) in ((1, 2), (2, 3))}
         set_comp = {x for x in range(10)}
         list_comp = [x for x in range(10)]
@@ -2258,7 +2269,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         def true_value():
              return True
         generator = generator_func()
-        name = generator
         bin_op = 1 + 2
         bool_op = x and y
         callfunc = test()
@@ -2273,8 +2283,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertTrue(function.bool_value())
         klass = module['Class']
         self.assertTrue(klass.bool_value())
-        genexpr = next(module['genexpr'].infer())
-        self.assertTrue(genexpr.bool_value())
         dict_comp = next(module['dict_comp'].infer())
         self.assertEqual(dict_comp, util.Uninferable)
         set_comp = next(module['set_comp'].infer())
@@ -2289,10 +2297,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertTrue(bound_method)
         generator = next(module['generator'].infer())
         self.assertTrue(generator)
-        name = module['name'].parent.value
-        self.assertTrue(name.bool_value())
         bin_op = module['bin_op'].parent.value
-        self.assertTrue(bin_op.bool_value())
+        self.assertIs(bin_op.bool_value(), util.Uninferable)
         bool_op = module['bool_op'].parent.value
         self.assertEqual(bool_op.bool_value(), util.Uninferable)
         callfunc = module['callfunc'].parent.value
