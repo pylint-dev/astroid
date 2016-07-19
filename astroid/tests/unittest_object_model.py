@@ -1,3 +1,5 @@
+# Copyright (c) 2016 LOGILAB S.A. (Paris, FRANCE)
+# http://www.logilab.fr/ -- mailto:contact@logilab.fr
 # copyright 2003-2016 LOGILAB S.A. (Paris, FRANCE), all rights reserved.
 # contact http://www.logilab.fr/ -- mailto:contact@logilab.fr
 #
