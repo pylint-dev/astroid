@@ -1,5 +1,5 @@
-# Copyright (c) 2016 LOGILAB S.A. (Paris, FRANCE)
-# http://www.logilab.fr/ -- mailto:contact@logilab.fr
+# Copyright (c) 2016 Claudiu Popa <pcmanticore@gmail.com>
+
 """Astroid hooks for understanding functools library module."""
 
 import astroid
