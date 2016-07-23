@@ -1371,8 +1371,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
     def instanciate_class(self):
         warnings.warn('%s.instanciate_class() is deprecated and slated for '
-                      ' removal in astroid 2.0, use %s.instantiate_class() '
-                      ' instead.' % (type(self).__name__, type(self).__name__),
+                      'removal in astroid 2.0, use %s.instantiate_class() '
+                      'instead.' % (type(self).__name__, type(self).__name__),
                       PendingDeprecationWarning, stacklevel=2)
         return self.instantiate_class()
 
