@@ -8,6 +8,7 @@
 
 import functools
 import sys
+import keyword
 from textwrap import dedent
 
 from astroid import (
@@ -89,12 +90,29 @@ def infer_func_form(node, base_type, context=None, enum=False):
     # set base class=tuple
     class_node.bases.append(base_type)
     # XXX add __init__(*attributes) method
+
+    if not enum and node.keywords and next((kw for kw in node.keywords if kw.arg == 'rename'), False):
+        _rename_namedtuple_attributes(attributes)
+
     for attr in attributes:
         fake_node = nodes.EmptyNode()
         fake_node.parent = class_node
         fake_node.attrname = attr
         class_node.instance_attrs[attr] = [fake_node]
     return class_node, name, attributes
+
+
+def _rename_namedtuple_attributes(attributes):
+    seen = set()
+    for index, name in enumerate(attributes):
+        if (not all(c.isalnum() or c == '_' for c in name)
+            or keyword.iskeyword(name)
+            or not name
+            or name[0].isdigit()
+            or name.startswith('_')
+            or name in seen):
+            attributes[index] = '_%d' % index
+        seen.add(name)
 
 
 def _looks_like(node, name):
@@ -113,7 +131,15 @@ def infer_named_tuple(node, context=None):
     """Specific inference function for namedtuple Call node"""
     class_node, name, attributes = infer_func_form(node, nodes.Tuple._proxied,
                                                    context=context)
-    fake = AstroidBuilder(MANAGER).string_build('''
+
+    property_template = '''\
+    @property
+    def {name}(self):
+        return self[{index:d}]'''
+    field_defs = '\n'.join(property_template.format(index=index, name=name)
+                           for index, name in enumerate(attributes))
+
+    class_template = '''
 class %(name)s(tuple):
     _fields = %(fields)r
     def _asdict(self):
@@ -123,11 +149,13 @@ class %(name)s(tuple):
         return new(cls, iterable)
     def _replace(self, **kwds):
         return self
-    ''' % {'name': name, 'fields': attributes})
-    class_node.locals['_asdict'] = fake.body[0].locals['_asdict']
-    class_node.locals['_make'] = fake.body[0].locals['_make']
-    class_node.locals['_replace'] = fake.body[0].locals['_replace']
-    class_node.locals['_fields'] = fake.body[0].locals['_fields']
+%(field_defs)s
+        ''' % {'name': name, 'fields': attributes, 'field_defs': field_defs}
+
+
+    for k in fake.body[0].locals:
+        class_node.locals[k] = fake.body[0].locals[k]
+
     # we use UseInferenceDefault, we can't be a generator so return an iterator
     return iter([class_node])
 
