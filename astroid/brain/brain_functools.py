@@ -38,7 +38,7 @@ class LruWrappedModel(objectmodel.FunctionModel):
 
     @property
     def pycache_clear(self):
-        node = extract_node('''def cache_clear(): pass''')
+        node = extract_node('''def cache_clear(self): pass''')
         return BoundMethod(proxy=node, bound=self._instance.parent.scope())
 
 
