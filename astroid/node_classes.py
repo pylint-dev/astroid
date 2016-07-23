@@ -141,7 +141,6 @@ def _container_getitem(instance, elts, index):
         return elts[index]
 
 
-
 class NodeNG(object):
     """Base Class for all Astroid node classes.
 
@@ -609,7 +608,6 @@ class Statement(NodeNG):
         index = stmts.index(self)
         if index >= 1:
             return stmts[index -1]
-
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -1155,6 +1153,7 @@ class Comprehension(NodeNG):
         self.ifs = ifs
 
     optional_assign = True
+
     def assign_type(self):
         return self
 
@@ -1406,6 +1405,7 @@ class For(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, Statement):
         self.orelse = orelse
 
     optional_assign = True
+
     @decorators.cachedproperty
     def blockstart_tolineno(self):
         return self.iter.tolineno
@@ -1869,6 +1869,7 @@ class Unknown(NodeNG):
     the args attribute of FunctionDef nodes where function signature
     introspection failed.
     '''
+
     def infer(self, context=None, **kwargs):
         '''Inference on an Unknown node immediately terminates.'''
         yield util.Uninferable
@@ -1884,6 +1885,7 @@ CONST_CLS = {
     type(None): Const,
     type(NotImplemented): Const,
     }
+
 
 def _update_const_classes():
     """update constant classes, so the keys of CONST_CLS can be reused"""

@@ -278,6 +278,7 @@ class FunctionModel(ObjectModel):
 
         class DescriptorBoundMethod(bases.BoundMethod):
             """Bound method which knows how to understand calling descriptor binding."""
+
             def infer_call_result(self, caller, context=None):
                 if len(caller.args) != 2:
                     raise exceptions.InferenceError(

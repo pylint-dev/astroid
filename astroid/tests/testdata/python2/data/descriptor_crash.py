@@ -1,6 +1,7 @@
 
 import urllib
 
+
 class Page(object):
     _urlOpen = staticmethod(urllib.urlopen)
 

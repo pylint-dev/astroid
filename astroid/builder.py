@@ -100,6 +100,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
     by default being True.
     """
     # pylint: disable=redefined-outer-name
+
     def __init__(self, manager=None, apply_transforms=True):
         super(AstroidBuilder, self).__init__()
         self._manager = manager or MANAGER
@@ -208,6 +209,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         Resort the locals if coming from a delayed node
         """
         _key_func = lambda node: node.fromlineno
+
         def sort_locals(my_list):
             my_list.sort(key=_key_func)
 

@@ -6,6 +6,7 @@
 from astroid import MANAGER, register_module_extender
 from astroid.builder import AstroidBuilder
 
+
 def mechanize_transform():
     return AstroidBuilder(MANAGER).string_build('''
 

@@ -11,6 +11,7 @@ except NameError:
             yield i, val
             i += 1
 
+
 def toto(value):
     for k, v in value:
         print(v.get('yo'))
@@ -19,6 +20,7 @@ def toto(value):
 import imp
 fp, mpath, desc = imp.find_module('optparse',a)
 s_opt = imp.load_module('std_optparse', fp, mpath, desc)
+
 
 class OptionParser(s_opt.OptionParser):
 
@@ -33,6 +35,7 @@ class OptionParser(s_opt.OptionParser):
 
 class Aaa(object):
     """docstring"""
+
     def __init__(self):
         self.__setattr__('a','b')
         pass
@@ -44,6 +47,7 @@ class Aaa(object):
     def another_public(self):
         """docstring"""
         pass
+
 
 class Ccc(Aaa):
     """docstring"""

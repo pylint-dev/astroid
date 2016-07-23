@@ -29,8 +29,10 @@ from astroid import util
 raw_building = util.lazy_import('raw_building')
 objects = util.lazy_import('objects')
 
+
 def _reflected_name(name):
     return "__r" + name[2:]
+
 
 def _augmented_name(name):
     return "__i" + name[2:]
@@ -201,6 +203,7 @@ The `context` argument is the current inference context which should be given
 to any intermediary inference necessary.
 """
 
+
 def _resolve_looppart(parts, asspath, context):
     """recursive function to resolve multiple assignments on loops"""
     asspath = asspath[:]
@@ -237,6 +240,7 @@ def _resolve_looppart(parts, asspath, context):
                         yield inferred
                 except exceptions.InferenceError:
                     break
+
 
 @decorators.raise_if_nothing_inferred
 def for_assigned_stmts(self, node=None, context=None, asspath=None):

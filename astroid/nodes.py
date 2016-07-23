@@ -51,7 +51,6 @@ from astroid.scoped_nodes import (
 )
 
 
-
 ALL_NODE_CLASSES = (
     AsyncFunctionDef, AsyncFor, AsyncWith, Await,
 

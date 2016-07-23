@@ -14,6 +14,7 @@ from astroid import nodes
 from astroid import objects
 from astroid import test_utils
 
+
 class ObjectsTest(unittest.TestCase):
 
     def test_frozenset(self):

@@ -203,7 +203,6 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         finally:
             del sys.path[0]
 
-
     def test_import_2(self):
         data = '''from . import subpackage as pouet'''
         astroid = builder.parse(data, 'package', 'data/package/__init__.py')
@@ -216,7 +215,6 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
             self.assertEqual(inferred[0].name, 'package.subpackage')
         finally:
             del sys.path[0]
-
 
     def test_file_stream_in_memory(self):
         data = '''irrelevant_variable is irrelevant'''
@@ -793,7 +791,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         eee = self.nonregr['Ccc']['Eee']
         self.assertEqual([n.name for n in eee.ancestors()], ['Ddd', 'Aaa', 'object'])
 
-
     def test_classmethod_attributes(self):
         data = '''
             class WebAppObject(object):
@@ -821,7 +818,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         # test del statement not returned by getattr
         self.assertEqual(len(cls.getattr('appli')), 2)
 
-
     def test_instance_getattr(self):
         data = '''
             class WebAppObject(object):
@@ -834,7 +830,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         inst = Instance(astroid['WebAppObject'])
         # test del statement not returned by getattr
         self.assertEqual(len(inst.getattr('appli')), 2)
-
 
     def test_instance_getattr_with_class_attr(self):
         data = '''
@@ -859,7 +854,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(len(inst.getattr('aa')), 3, inst.getattr('aa'))
         self.assertEqual(len(inst.getattr('bb')), 1, inst.getattr('bb'))
         self.assertEqual(len(inst.getattr('cc')), 2, inst.getattr('cc'))
-
 
     def test_getattr_method_transform(self):
         data = '''

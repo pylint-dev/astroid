@@ -16,6 +16,7 @@ from astroid.bases import  BUILTINS
 
 DATA_DIR = 'testdata/python{}/'.format(sys.version_info[0])
 
+
 def find(name):
     return pkg_resources.resource_filename(
         'astroid.tests', os.path.normpath(os.path.join(DATA_DIR, name)))

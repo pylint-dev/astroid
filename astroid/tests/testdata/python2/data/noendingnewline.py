@@ -6,14 +6,12 @@ class TestCase(unittest.TestCase):
     def setUp(self):
         unittest.TestCase.setUp(self)
 
-
     def tearDown(self):
         unittest.TestCase.tearDown(self)
 
     def testIt(self):
         self.a = 10
         self.xxx()
-
 
     def xxx(self):
         if False:

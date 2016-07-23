@@ -24,6 +24,7 @@ class AstroidError(Exception):
     will be called with the field names and values supplied as keyword
     arguments.
     """
+
     def __init__(self, message='', **kws):
         super(AstroidError, self).__init__(message)
         self.message = message

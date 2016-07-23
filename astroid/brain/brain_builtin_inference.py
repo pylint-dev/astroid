@@ -21,6 +21,7 @@ from astroid import objects
 from astroid import scoped_nodes
 from astroid import util
 
+
 def _extend_str(class_node, rvalue):
     """function to extend builtin str/unicode class"""
     # TODO(cpopa): this approach will make astroid to believe
@@ -72,6 +73,7 @@ def _extend_str(class_node, rvalue):
     for method in fake.mymethods():
         class_node.locals[method.name] = [method]
         method.parent = class_node
+
 
 def extend_builtins(class_transforms):
     from astroid.bases import BUILTINS
@@ -227,6 +229,7 @@ def _get_elts(arg, context):
     else:
         raise UseInferenceDefault()
     return items
+
 
 def infer_dict(node, context=None):
     """Try to infer a dict call to a Dict node.

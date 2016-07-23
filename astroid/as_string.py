@@ -36,7 +36,6 @@ class AsStringVisitor(object):
         stmts = '\n'.join([nstr for nstr in [n.accept(self) for n in stmts] if nstr])
         return self.indent + stmts.replace('\n', '\n'+self.indent)
 
-
     ## visit_<node> methods ###########################################
 
     def visit_arguments(self, node):

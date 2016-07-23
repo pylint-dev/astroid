@@ -360,6 +360,7 @@ class MultiprocessingBrainTest(unittest.TestCase):
         self.assertTrue(manager.getattr('start'))
         self.assertTrue(manager.getattr('shutdown'))
 
+
 class ThreadingBrainTest(unittest.TestCase):
 
     def test_threading(self):

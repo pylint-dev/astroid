@@ -122,7 +122,6 @@ class FromToLineNoTest(unittest.TestCase):
             self.skipTest('FIXME  http://bugs.python.org/issue10445 '
                           '(no line number on function args)')
 
-
     def test_class_lineno(self):
         stmts = self.astroid.body
         # on line 20:
@@ -196,7 +195,6 @@ class FromToLineNoTest(unittest.TestCase):
         self.assertEqual(hdlr.tolineno, 5)
         self.assertEqual(hdlr.blockstart_tolineno, 4)
 
-
     def test_try_finally_lineno(self):
         astroid = builder.parse('''
             try:
@@ -210,7 +208,6 @@ class FromToLineNoTest(unittest.TestCase):
         self.assertEqual(try_.blockstart_tolineno, 2)
         self.assertEqual(try_.finalbody[0].fromlineno, 5) # XXX
         self.assertEqual(try_.finalbody[0].tolineno, 5)
-
 
     def test_try_finally_25_lineno(self):
         astroid = builder.parse('''
@@ -227,7 +224,6 @@ class FromToLineNoTest(unittest.TestCase):
         self.assertEqual(try_.blockstart_tolineno, 2)
         self.assertEqual(try_.finalbody[0].fromlineno, 7) # XXX
         self.assertEqual(try_.finalbody[0].tolineno, 7)
-
 
     def test_with_lineno(self):
         astroid = builder.parse('''
@@ -352,6 +348,7 @@ class BuilderTest(unittest.TestCase):
         # ensure no cached version of the time module
         MANAGER._mod_file_cache.pop(('time', None), None)
         MANAGER.astroid_cache.pop('time', None)
+
         def transform_time(node):
             if node.name == 'time':
                 node.transformed = True
@@ -715,6 +712,7 @@ class ModuleBuildTest(resources.SysPathSetup, FileBuildTest):
             self.skipTest('Unable to load data.module')
         else:
             self.module = abuilder.module_build(data.module, 'data.module')
+
 
 @unittest.skipIf(six.PY3, "guess_encoding not used on Python 3")
 class TestGuessEncoding(unittest.TestCase):

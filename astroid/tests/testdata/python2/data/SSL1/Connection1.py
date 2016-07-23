@@ -6,6 +6,7 @@ RCS_id='$Id: Connection1.py,v 1.1 2005-06-13 20:55:22 syt Exp $'
 
 #Some code deleted here
 
+
 class Connection:
 
     """An SSL connection."""

@@ -227,6 +227,7 @@ class Instance(BaseInstance):
         return '<Instance of %s.%s at 0x%s>' % (self._proxied.root().name,
                                                 self._proxied.name,
                                                 id(self))
+
     def __str__(self):
         return 'Instance of %s.%s' % (self._proxied.root().name,
                                       self._proxied.name)

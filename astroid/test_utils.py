@@ -32,6 +32,7 @@ def require_version(minver=None, maxver=None):
             return f
         else:
             str_version = '.'.join(str(v) for v in sys.version_info)
+
             @functools.wraps(f)
             def new_f(self, *args, **kwargs):
                 if minver is not None:
@@ -42,8 +43,8 @@ def require_version(minver=None, maxver=None):
                                   % (maxver, str_version))
             return new_f
 
-
     return check_require_version
+
 
 def get_name_node(start_from, name, index=0):
     return [n for n in start_from.nodes_of_class(nodes.Name) if n.name == name][index]

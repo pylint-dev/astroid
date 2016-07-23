@@ -298,7 +298,6 @@ class TryExcept2xNodeTest(_NodeTest):
             pass
     """
 
-
     def test_tuple_attribute(self):
         handler = self.astroid.body[0].handlers[0]
         self.assertIsInstance(handler.name, nodes.Tuple)
@@ -600,6 +599,7 @@ class AliasesTest(unittest.TestCase):
             if node.name == 'foo':
                 return nodes.AssignName('bar', node.lineno, node.col_offset,
                                         node.parent)
+
         def test_assattr(node):
             if node.attrname == 'a':
                 node.attrname = 'b'

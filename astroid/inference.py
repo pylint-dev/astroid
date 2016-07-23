@@ -66,6 +66,7 @@ def _higher_function_scope(node):
     if current and current.parent:
         return current.parent
 
+
 def infer_name(self, context=None):
     """infer a Name: use name lookup rules"""
     frame, stmts = self.lookup(self.name)
@@ -219,6 +220,7 @@ nodes.Global._infer = infer_global
 
 
 _SLICE_SENTINEL = object()
+
 
 def _slice_value(index, context=None):
     """Get the value of the given slice index."""
@@ -748,6 +750,8 @@ nodes.Index._infer = infer_index
 
 # TODO: move directly into bases.Instance when the dependency hell
 # will be solved.
+
+
 def instance_getitem(self, index, context=None):
     # Rewrap index to Const for this case
     if context:

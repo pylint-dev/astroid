@@ -18,7 +18,6 @@ from astroid import astpeephole
 from astroid import nodes
 
 
-
 _BIN_OP_CLASSES = {_ast.Add: '+',
                    _ast.BitAnd: '&',
                    _ast.BitOr: '|',
@@ -86,6 +85,7 @@ def _get_doc(node):
     except IndexError:
         pass # ast built from scratch
     return node, None
+
 
 def _visit_or_none(node, attr, visitor, parent, visit='visit',
                    **kws):
@@ -413,12 +413,10 @@ class TreeRebuilder(object):
         return nodes.Ellipsis(getattr(node, 'lineno', None),
                               getattr(node, 'col_offset', None), parent)
 
-
     def visit_emptynode(self, node, parent):
         """visit an EmptyNode node by returning a fresh instance of it"""
         return nodes.EmptyNode(getattr(node, 'lineno', None),
                                getattr(node, 'col_offset', None), parent)
-
 
     def visit_excepthandler(self, node, parent):
         """visit an ExceptHandler node by returning a fresh instance of it"""
@@ -791,7 +789,6 @@ class TreeRebuilder3(TreeRebuilder):
         return nodes.Nonlocal(node.names, getattr(node, 'lineno', None),
                               getattr(node, 'col_offset', None), parent)
 
-
     def visit_raise(self, node, parent):
         """visit a Raise node by returning a fresh instance of it"""
         newnode = nodes.Raise(node.lineno, node.col_offset, parent)
@@ -832,6 +829,7 @@ class TreeRebuilder3(TreeRebuilder):
             return super(TreeRebuilder3, self).visit_with(node, parent)
 
         newnode = cls(node.lineno, node.col_offset, parent)
+
         def visit_child(child):
             expr = self.visit(child.context_expr, newnode)
             var = _visit_or_none(child, 'optional_vars', self, newnode)

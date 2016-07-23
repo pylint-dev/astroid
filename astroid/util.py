@@ -33,6 +33,7 @@ def reraise(exception):
 @object.__new__
 class Uninferable(object):
     """Special inference object, which is returned when inference fails."""
+
     def __repr__(self):
         return 'Uninferable'
     __str__ = __repr__
@@ -57,6 +58,7 @@ class Uninferable(object):
     def accept(self, visitor):
         func = getattr(visitor, "visit_uninferable")
         return func(self)
+
 
 class BadOperationMessage(object):
     """Object which describes a TypeError occurred somewhere in the inference chain
