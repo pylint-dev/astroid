@@ -152,7 +152,7 @@ class %(name)s(tuple):
 %(field_defs)s
         ''' % {'name': name, 'fields': attributes, 'field_defs': field_defs}
 
-
+    fake = AstroidBuilder(MANAGER).string_build(class_template)
     for k in fake.body[0].locals:
         class_node.locals[k] = fake.body[0].locals[k]
 
