@@ -576,6 +576,18 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 42)
 
+    @test_utils.require_version(minver='3.0')
+    def test_return_annotation_is_not_the_last(self):
+        func = builder.parse('''
+        def test() -> bytes:
+            pass
+            pass
+            return
+        ''').body[0]
+        last_child = func.last_child()
+        self.assertIsInstance(last_child, nodes.Return)
+        self.assertEqual(func.tolineno, 5)
+
 
 class ClassNodeTest(ModuleLoader, unittest.TestCase):
 

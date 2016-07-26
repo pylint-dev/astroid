@@ -1,6 +1,14 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+2016-07-27 -- 1.4.8
+
+    * Add `returns` into the proper order in FunctionDef._astroid_fields
+
+      The order is important, since it determines the last child,
+      which in turn determines the last line number of a scoped node.
+
+
 2016-07-07 -- 1.4.7
 
     * Stop saving assignment locals in ExceptHandlers, when the context is a store.
