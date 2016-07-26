@@ -3,6 +3,11 @@ Change log for the astroid package (used to be astng)
 
 --
 
+    * Add `returns` into the proper order in FunctionDef._astroid_fields
+
+      The order is important, since it determines the last child,
+      which in turn determines the last line number of a scoped node.
+
     * New function, astroid.extract_node, exported out from astroid.test_utils.
 
     * Fix a crash which occurred when the class of a namedtuple could not be inferred.
