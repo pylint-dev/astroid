@@ -700,7 +700,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
 
 class FunctionDef(node_classes.Statement, Lambda):
     if six.PY3:
-        _astroid_fields = ('decorators', 'args', 'body', 'returns')
+        _astroid_fields = ('decorators', 'args', 'returns', 'body')
         returns = None
     else:
         _astroid_fields = ('decorators', 'args', 'body')
