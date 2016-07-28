@@ -42,19 +42,15 @@ class LruWrappedModel(objectmodel.FunctionModel):
         return BoundMethod(proxy=node, bound=self._instance.parent.scope())
 
 
-
-class LruWrappedFunctionDef(astroid.FunctionDef):
-    special_attributes = LruWrappedModel()
-
-
 def _transform_lru_cache(node, context=None):
-    # TODO: this needs the zipper, because the new node's attributes
-    # will still point to the old node.
-    new_func = LruWrappedFunctionDef(name=node.name, doc=node.name,
-                                     lineno=node.lineno, col_offset=node.col_offset,
-                                     parent=node.parent)
-    new_func.postinit(node.args, node.body, node.decorators, node.returns)
-    return new_func
+    # TODO: this is not ideal, since the node should be immutable,
+    # but due to https://github.com/PyCQA/astroid/issues/354,
+    # there's not much we can do now.
+    # Replacing the node would work partially, because,
+    # in pylint, the old node would still be available, leading
+    # to spurious false positives.
+    node.special_attributes = LruWrappedModel()(node)
+    return
 
 
 def _looks_like_lru_cache(node):
