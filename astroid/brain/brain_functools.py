@@ -51,6 +51,7 @@ class LruWrappedFunctionDef(astroid.FunctionDef):
 def _transform_lru_cache(node, context=None):
     # TODO: this needs the zipper, because the new node's attributes
     # will still point to the old node.
+    # TODO: please check https://github.com/PyCQA/astroid/issues/354 as well.
     new_func = LruWrappedFunctionDef(name=node.name, doc=node.name,
                                      lineno=node.lineno, col_offset=node.col_offset,
                                      parent=node.parent)
