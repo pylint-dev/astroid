@@ -6,8 +6,6 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
 """astroid packaging information"""
-import sys
-
 distname = 'astroid'
 
 modname = 'astroid'
@@ -15,15 +13,10 @@ modname = 'astroid'
 numversion = (2, 0, 0)
 version = '.'.join([str(num) for num in numversion])
 
-
+extras_require = {}
 install_requires = ['lazy_object_proxy', 'six', 'wrapt']
-
-if sys.version_info <= (3, 3):
-    install_requires.append('singledispatch')
-    install_requires.append('enum34')
-
-    if sys.version_info < (3, 0):
-        install_requires.append('funcsigs')
+extras_require[':python_version<"3.4"'] = ['enum34', 'singledispatch']
+extras_require[':python_version<"3.0"'] = ['funcsigs']
 
 license = 'LGPL'
 
