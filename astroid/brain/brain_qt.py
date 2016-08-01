@@ -13,8 +13,12 @@ from astroid import parse
 
 def _looks_like_signal(node, signal_name='pyqtSignal'):
     if '__class__' in node.instance_attrs:
-        cls = node.instance_attrs['__class__'][0]
-        return cls.name == signal_name
+        try:
+            cls = node.instance_attrs['__class__'][0]
+            return cls.name == signal_name
+        except AttributeError:
+            # return False if the cls does not have a name attribute
+            pass
     return False
 
 
