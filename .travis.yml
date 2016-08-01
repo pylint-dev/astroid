@@ -34,6 +34,7 @@ install:
   - $PYTHON_EXE -m easy_install --version
   - $PYTHON_EXE -m pip --version
   - $PYTHON_EXE -m tox --version
+  - $PYTHON_EXE -m pip install -U setuptools
 script:
   - python -m tox -e coverage-erase,$TOXENV
 after_success:
