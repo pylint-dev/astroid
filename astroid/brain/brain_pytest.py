@@ -25,13 +25,15 @@ except ImportError:
 else:
     deprecated_call = _pytest.recwarn.deprecated_call
     warns = _pytest.recwarn.warns
-    xfail = _pytest.skipping.xfail
+
     exit = _pytest.runner.exit
     fail = _pytest.runner.fail
+    skip = _pytest.runner.skip
     importorskip = _pytest.runner.importorskip
+
+    xfail = _pytest.skipping.xfail
     mark = _pytest.mark.MarkGenerator()
     raises = _pytest.python.raises
-    skip = _pytest.runner.skip
 
     # New in pytest 3.0
     try:
