@@ -18,11 +18,8 @@ try:
     import _pytest.recwarn
     import _pytest.runner
     import _pytest.python
-    import _pytest.freeze_support
     import _pytest.skipping
     import _pytest.assertion
-    import _pytest.debugging
-    import _pytest.fixtures
 except ImportError:
     pass
 else:
@@ -31,16 +28,52 @@ else:
     xfail = _pytest.skipping.xfail
     exit = _pytest.runner.exit
     fail = _pytest.runner.fail
-    fixture = _pytest.fixtures.fixture
     importorskip = _pytest.runner.importorskip
     mark = _pytest.mark.MarkGenerator()
     raises = _pytest.python.raises
-    approx = _pytest.python.approx
     skip = _pytest.runner.skip
+
+    # New in pytest 3.0
+    try:
+        approx = _pytest.python.approx
+        register_assert_rewrite = _pytest.assertion.register_assert_rewrite
+    except AttributeError:
+        pass
+
+
+# Moved in pytest 3.0
+
+try:
+    import _pytest.freeze_support
     freeze_includes = _pytest.freeze_support.freeze_includes
-    yield_fixture = _pytest.fixtures.yield_fixture
-    register_assert_rewrite = _pytest.assertion.register_assert_rewrite
+except ImportError:
+    try:
+        import _pytest.genscript
+        freeze_includes = _pytest.genscript.freeze_includes
+    except ImportError:
+        pass
+
+try:
+    import _pytest.debugging
     set_trace = _pytest.debugging.pytestPDB().set_trace
+except ImportError:
+    try:
+        import _pytest.pdb
+        set_trace = _pytest.pdb.pytestPDB().set_trace
+    except ImportError:
+        pass
+
+try:
+    import _pytest.fixtures
+    fixture = _pytest.fixtures.fixture
+    yield_fixture = _pytest.fixtures.yield_fixture
+except ImportError:
+    try:
+        import _pytest.python
+        fixture = _pytest.python.fixture
+        yield_fixture = _pytest.python.yield_fixture
+    except ImportError:
+        pass
 ''')
 
 register_module_extender(MANAGER, 'pytest', pytest_transform)
