@@ -683,14 +683,23 @@ class Ellipsis(base.NodeNG): # pylint: disable=redefined-builtin
     def bool_value(self):
         return True
 
+
+_INTERPRETER_OBJECT_SENTINEL = object()
+
+
 @util.register_implementation(treeabc.InterpreterObject)
 class InterpreterObject(base.NodeNG):
-    '''InterpreterObjects are used in manufactured ASTs that simulate features of
-    real ASTs for inference, usually to handle behavior implemented in
-    the interpreter or in C extensions.
+    '''Used for connecting ASTs and runtime objects
 
+    InterpreterObjects are used in manufactured ASTs that simulate features of
+    real ASTs for inference, usually to handle behavior implemented in
+    the interpreter or in C extensions. They can be used as a "translator"
+    from a non-AST object, or in astroid's parlance, a runtime object
+    to an AST. They mimick their underlying object, which means that an
+    InterpreterObject can act as the object it is wrapping.
     '''
     _other_fields = ('name', 'object')
+    object = _INTERPRETER_OBJECT_SENTINEL
 
     def __init__(self, object_=None, name=None, lineno=None, col_offset=None, parent=None):
         if object_ is not None:
@@ -699,7 +708,12 @@ class InterpreterObject(base.NodeNG):
         super(InterpreterObject, self).__init__(lineno, col_offset, parent)
 
     def has_underlying_object(self):
-        return hasattr(self, 'object')
+        return self.object != _INTERPRETER_OBJECT_SENTINEL
+
+    def __getattr__(self, attr):
+        if self.has_underlying_object():
+            return getattr(self.object, attr)
+        raise AttributeError(attr)
 
 
 @util.register_implementation(treeabc.ExceptHandler)
