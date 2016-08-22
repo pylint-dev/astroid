@@ -1,6 +1,9 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+--
+    * Add support for pytest 3.0.
+
 2016-07-27 -- 1.4.8
 
     * Add `returns` into the proper order in FunctionDef._astroid_fields

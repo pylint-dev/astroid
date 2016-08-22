@@ -492,11 +492,14 @@ class PytestBrainTest(unittest.TestCase):
         pytest #@
         ''')
         module = next(ast_node.infer())
-        self.assertIn('deprecated_call', module)
-        self.assertIn('exit', module)
-        self.assertIn('fail', module)
-        self.assertIn('fixture', module)
-        self.assertIn('mark', module)
+        attrs = ['deprecated_call', 'warns', 'exit', 'fail', 'skip',
+                 'importorskip', 'xfail', 'mark', 'raises', 'freeze_includes',
+                 'set_trace', 'fixture', 'yield_fixture']
+        if pytest.__version__.split('.')[0] == '3':
+            attrs += ['approx', 'register_assert_rewrite']
+
+        for attr in attrs:
+            self.assertIn(attr, module)
 
 
 if __name__ == '__main__':
