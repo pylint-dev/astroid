@@ -29,6 +29,9 @@ Main modules are:
 
 * builder contains the class responsible to build astroid trees
 """
+
+__version__ = '1.5.0'
+
 import os
 import sys
 import re
