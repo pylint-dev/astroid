@@ -46,6 +46,7 @@ Del = _Context.Del
 del _Context
 
 
+from .__pkginfo__ import version as __version__
 # WARNING: internal imports order matters !
 
 # pylint: disable=redefined-builtin, wildcard-import
