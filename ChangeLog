@@ -3,6 +3,8 @@ Change log for the astroid package (used to be astng)
 
 --
 
+    * Add brain tips for _io.TextIOWrapper's buffer and raw attributes.
+
     * Add `returns` into the proper order in FunctionDef._astroid_fields
 
       The order is important, since it determines the last child,
