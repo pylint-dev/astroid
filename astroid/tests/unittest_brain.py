@@ -506,5 +506,23 @@ class PytestBrainTest(unittest.TestCase):
         self.assertIn('mark', module)
 
 
+class IOBrainTest(unittest.TestCase):
+
+    @unittest.skipUnless(six.PY3, 'Needs Python 3 io model')
+    def test_sys_streams(self):
+        for name in {'stdout', 'stderr', 'stdin'}:
+            node = astroid.extract_node('''
+            import sys
+            sys.{}
+            '''.format(name))
+            inferred = next(node.infer())
+            buffer = next(inferred.igetattr('buffer'))
+            self.assertIsInstance(buffer, astroid.Instance)
+            self.assertEqual(buffer.name, 'BufferedWriter')
+            raw = next(buffer.igetattr('raw'))
+            self.assertIsInstance(raw, astroid.Instance)
+            self.assertEqual(raw.name, 'FileIO')
+
+
 if __name__ == '__main__':
     unittest.main()
