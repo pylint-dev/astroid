@@ -6,6 +6,12 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
 """astroid packaging information"""
+
+from sys import version_info as py_version
+
+from setuptools import __version__ as setuptools_version
+
+
 distname = 'astroid'
 
 modname = 'astroid'
@@ -15,7 +21,12 @@ version = '.'.join([str(num) for num in numversion])
 
 extras_require = {}
 install_requires = ['lazy_object_proxy', 'six', 'wrapt']
-extras_require[':python_version<"3.4"'] = ['enum34', 'singledispatch']
+
+if py_version < (3, 4) and setuptools_version < '21.0.0':
+    install_requires += ['enum34', 'singledispatch']
+else:
+    extras_require[':python_version<"3.4"'] = ['enum34', 'singledispatch']
+
 
 # pylint: disable=redefined-builtin; why license is a builtin anyway?
 license = 'LGPL'
