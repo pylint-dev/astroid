@@ -9,8 +9,8 @@
 
 from sys import version_info as py_version
 
+from pkg_resources import parse_version
 from setuptools import __version__ as setuptools_version
-
 
 distname = 'astroid'
 
@@ -22,10 +22,21 @@ version = '.'.join([str(num) for num in numversion])
 extras_require = {}
 install_requires = ['lazy_object_proxy', 'six', 'wrapt']
 
-if py_version < (3, 4) and setuptools_version < '21.0.0':
-    install_requires += ['enum34', 'singledispatch']
-else:
+
+def has_environment_marker_support():
+    """Code extracted from 'pytest/setup.py'
+    https://github.com/pytest-dev/pytest/blob/7538680c/setup.py#L31
+    """
+    try:
+        return parse_version(setuptools_version) >= parse_version('21.0.0')
+    except Exception:
+        return False
+
+
+if has_environment_marker_support():
     extras_require[':python_version<"3.4"'] = ['enum34', 'singledispatch']
+elif py_version < (3, 4):
+    install_requires.extend(['enum34', 'singledispatch'])
 
 
 # pylint: disable=redefined-builtin; why license is a builtin anyway?
