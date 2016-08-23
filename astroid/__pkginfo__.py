@@ -23,17 +23,20 @@ extras_require = {}
 install_requires = ['lazy_object_proxy', 'six', 'wrapt']
 
 
-def has_environment_marker_support():
+def has_environment_marker_range_operators_support():
     """Code extracted from 'pytest/setup.py'
     https://github.com/pytest-dev/pytest/blob/7538680c/setup.py#L31
+
+    The first known release to support environment marker with range operators
+    it is 17.1, see: https://setuptools.readthedocs.io/en/latest/history.html#id113
     """
     try:
-        return parse_version(setuptools_version) >= parse_version('21.0.0')
+        return parse_version(setuptools_version) >= parse_version('17.1')
     except Exception:
         return False
 
 
-if has_environment_marker_support():
+if has_environment_marker_range_operators_support():
     extras_require[':python_version<"3.4"'] = ['enum34', 'singledispatch']
 elif py_version < (3, 4):
     install_requires.extend(['enum34', 'singledispatch'])
