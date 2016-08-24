@@ -11,7 +11,6 @@ possible by providing a class responsible to get astroid representation
 from various source and using a cache of built modules)
 """
 
-import imp
 import os
 import sys
 import zipimport
@@ -19,6 +18,7 @@ import zipimport
 import six
 
 from astroid import exceptions
+from astroid.interpreter._import import spec
 from astroid import modutils
 from astroid import transforms
 from astroid import util
@@ -111,13 +111,16 @@ class AstroidManager(object):
         if context_file:
             os.chdir(os.path.dirname(context_file))
         try:
-            spec = self.file_from_module_name(modname, context_file)
-            if spec.type == modutils.ModuleType.PY_ZIPMODULE:
-                module = self.zip_import_data(spec.location)
+            found_spec = self.file_from_module_name(modname, context_file)
+            if found_spec.type == spec.ModuleType.PY_ZIPMODULE:
+                module = self.zip_import_data(found_spec.location)
                 if module is not None:
                     return module
-            elif spec.type in (modutils.ModuleType.C_BUILTIN, modutils.ModuleType.C_EXTENSION):
-                if spec.type == modutils.ModuleType.C_EXTENSION and not self._can_load_extension(modname):
+
+            elif found_spec.type in (spec.ModuleType.C_BUILTIN,
+                                     spec.ModuleType.C_EXTENSION):
+                if (found_spec.type == spec.ModuleType.C_EXTENSION
+                        and not self._can_load_extension(modname)):
                     return self._build_stub_module(modname)
                 try:
                     module = modutils.load_module_from_name(modname)
@@ -126,17 +129,22 @@ class AstroidManager(object):
                         'Loading {modname} failed with:\n{error}',
                         modname=modname, path=spec.location, error=ex))
                 return self.ast_from_module(module, modname)
-            elif spec.type == modutils.ModuleType.PY_COMPILED:
+
+            elif found_spec.type == spec.ModuleType.PY_COMPILED:
                 raise exceptions.AstroidImportError(
                     "Unable to load compiled module {modname}.",
-                    modname=modname, path=spec.location)
-            elif spec.type == modutils.ModuleType.PY_NAMESPACE:
-                return self._build_namespace_module(modname, spec.submodule_search_locations)
-            if spec.location is None:
+                    modname=modname, path=found_spec.location)
+
+            elif found_spec.type == spec.ModuleType.PY_NAMESPACE:
+                return self._build_namespace_module(modname,
+                                                    found_spec.submodule_search_locations)
+
+            if found_spec.location is None:
                 raise exceptions.AstroidImportError(
                     "Can't find a file for module {modname}.",
                     modname=modname)
-            return self.ast_from_file(spec.location, modname, fallback=False)
+
+            return self.ast_from_file(found_spec.location, modname, fallback=False)
         except exceptions.AstroidBuildingError as e:
             for hook in self._failed_import_hooks:
                 try:
