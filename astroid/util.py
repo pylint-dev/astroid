@@ -13,7 +13,7 @@ import lazy_object_proxy
 import six
 import wrapt
 
-JYTHON = True if platform.python_implementation() == 'Jython' else False
+JYTHON = platform.python_implementation() == 'Jython'
 
 try:
     from functools import singledispatch as _singledispatch
