@@ -33,12 +33,15 @@ if hasattr(imp, 'PY_CODERESOURCE'):
 def _imp_type_to_module_type(imp_type):
     return _ImpTypes[imp_type]
 
-
-
 _ModuleSpec = collections.namedtuple('_ModuleSpec', 'name type location '
                                                     'origin submodule_search_locations')
 
 class ModuleSpec(_ModuleSpec):
+    """Defines a class similar to PEP 420's ModuleSpec
+
+    A module spec defines a name of a module, its type, location
+    and where submodules can be found, if the module is a package.
+    """
 
     def __new__(cls, name, type, location=None, origin=None,
                 submodule_search_locations=None):
@@ -48,19 +51,36 @@ class ModuleSpec(_ModuleSpec):
 
 
 class Finder(object):
+    """A finder is a class which knows how to find a particular module."""
 
     def __init__(self, path=None):
         self._path = path or sys.path
 
     @abc.abstractmethod
     def find_module(self, modname, module_parts, processed, submodule_path):
-        pass
+        """Find the given module
+
+        Each finder is responsible for each protocol of finding, as long as
+        they all return a ModuleSpec.
+
+        :param str modname: The module which needs to be searched.
+        :param list module_parts: It should be a list of strings,
+                                  where each part contributes to the module's
+                                  namespace.
+        :param list processed: What parts from the module parts were processed
+                               so far.
+        :param list submodule_path: A list of paths where the module
+                                    can be looked into.
+        :returns: A ModuleSpec, describing how and where the module was found,
+                  None, otherwise.
+        """
 
     def contribute_to_path(self, filename, processed):
-        return None
+        """Get a list of extra paths where this finder can search."""
 
 
 class ImpFinder(Finder):
+    """A finder based on the imp module."""
 
     def find_module(self, modname, _, processed, submodule_path):
         try:
@@ -90,7 +110,8 @@ class ImpFinder(Finder):
         return path
 
 
-class DynamicImpFinder(ImpFinder):
+class ExplicitNamespacePackageFinder(ImpFinder):
+    """A finder for the explicit namespace packages, generated through pkg_resources."""
 
     def find_module(self, modname, module_parts, processed, submodule_path):
         if util.is_namespace(modname) and modname in sys.modules:
@@ -105,8 +126,8 @@ class DynamicImpFinder(ImpFinder):
         return spec.submodule_search_locations
 
 
-
 class ZipFinder(Finder):
+    """Finder that knows how to find a module inside zip files."""
 
     def __init__(self, path):
         super(ZipFinder, self).__init__(path)
@@ -123,7 +144,8 @@ class ZipFinder(Finder):
                           submodule_search_locations=path)
 
 
-class PEP420SpecFinder(Finder):
+class PathSpecFinder(Finder):
+    """Finder based on importlib.machinery.PathFinder."""
 
     def find_module(self, modname, module_parts, processed, submodule_path):
         spec = importlib.machinery.PathFinder.find_spec(modname, path=submodule_path)
@@ -140,13 +162,14 @@ class PEP420SpecFinder(Finder):
             return spec.submodule_search_locations
         return None
 
+
 _SPEC_FINDERS = (
     ImpFinder,
     ZipFinder,
 )
 if _HAS_MACHINERY and sys.version_info[:2] > (3, 3):
-    _SPEC_FINDERS += (PEP420SpecFinder, )
-_SPEC_FINDERS += (DynamicImpFinder, )
+    _SPEC_FINDERS += (PathSpecFinder, )
+_SPEC_FINDERS += (ExplicitNamespacePackageFinder, )
 
 
 def _is_setuptools_namespace(location):
@@ -202,7 +225,7 @@ def _find_spec_with_path(search_path, modname, module_parts, processed, submodul
 
 
 def find_spec(modpath, path=None):
-    """get a module type / file path
+    """Find a spec for the given module.
 
     :type modpath: list or tuple
     :param modpath:
@@ -214,9 +237,9 @@ def find_spec(modpath, path=None):
       optional list of path where the module or package should be
       searched (use sys.path if nothing or None is given)
 
-
-    :rtype: tuple(int, str)
-    :return: the module type flag and the file path for a module
+    :rtype: ModuleSpec
+    :return: A module spec, which describes how the module was
+             found and where.
     """
     _path = path or sys.path
 
