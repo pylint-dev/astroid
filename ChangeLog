@@ -2,6 +2,7 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * Add support for explicit namespace packages, created with pkg_resources.
 
     * Add brain tips for _io.TextIOWrapper's buffer and raw attributes.
 
