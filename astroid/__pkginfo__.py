@@ -30,10 +30,7 @@ def has_environment_marker_range_operators_support():
     The first known release to support environment marker with range operators
     it is 17.1, see: https://setuptools.readthedocs.io/en/latest/history.html#id113
     """
-    try:
-        return parse_version(setuptools_version) >= parse_version('17.1')
-    except Exception:
-        return False
+    return parse_version(setuptools_version) >= parse_version('17.1')
 
 
 if has_environment_marker_range_operators_support():

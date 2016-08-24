@@ -35,7 +35,9 @@ install:
   - $PYTHON_EXE -m pip --version
   - $PYTHON_EXE -m tox --version
 script:
-  - python -m tox -e coverage-erase,$TOXENV
+    # Test install with current version of setuptools
+  - $PYTHON_EXE -m pip install .
+    # Run the tests with newest version of setuptools
   - $PYTHON_EXE -m pip install -U setuptools
   - python -m tox -e coverage-erase,$TOXENV
 after_success:
