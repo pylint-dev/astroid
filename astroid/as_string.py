@@ -17,7 +17,7 @@ import sys
 
 import six
 
-# pylint: disable=no-self-use; some visit methods don't need the self argument.
+
 # pylint: disable=unused-argument
 
 

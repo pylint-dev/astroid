@@ -323,8 +323,8 @@ class BuilderTest(unittest.TestCase):
     @test_utils.require_version(maxver='3.0')
     def test_inspect_build_instance(self):
         """test astroid tree build from a living object"""
-        import exceptions # pylint: disable=redefined-outer-name
-        builtin_ast = self.builder.inspect_build(exceptions)
+        import exceptions as builtin_exceptions
+        builtin_ast = self.builder.inspect_build(builtin_exceptions)
         fclass = builtin_ast['OSError']
         # things like OSError.strerror are now (2.5) data descriptors on the
         # class instead of entries in the __dict__ of an instance

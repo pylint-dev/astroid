@@ -30,7 +30,7 @@ class ModuleFileTest(unittest.TestCase):
     package = "mypypa"
 
     def tearDown(self):
-        for k in list(sys.path_importer_cache.keys()):
+        for k in list(sys.path_importer_cache):
             if 'MyPyPa' in k:
                 del sys.path_importer_cache[k]
 

@@ -16,7 +16,6 @@ from astroid import builder
 from astroid import exceptions
 from astroid import nodes
 from astroid import scoped_nodes
-from astroid import test_utils
 from astroid import util
 from astroid.tests import resources
 

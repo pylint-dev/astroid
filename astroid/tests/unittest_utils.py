@@ -10,7 +10,6 @@ from astroid import builder
 from astroid import InferenceError
 from astroid import nodes
 from astroid import node_classes
-from astroid import test_utils
 from astroid import util as astroid_util
 
 
@@ -105,8 +104,8 @@ class InferenceUtil(unittest.TestCase):
         ()
         ''')
         inferred = next(node.infer())
-        with self.assertRaises(InferenceError) as cm:
-            unpacked = list(node_classes.unpack_infer(inferred))
+        with self.assertRaises(InferenceError):
+            list(node_classes.unpack_infer(inferred))
 
 
 if __name__ == '__main__':

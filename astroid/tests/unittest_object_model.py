@@ -41,14 +41,14 @@ class InstanceModelTest(unittest.TestCase):
         module = next(ast_nodes[1].infer())
         self.assertIsInstance(module, astroid.Const)
         self.assertEqual(module.value, 'collections')
-        
+
         doc = next(ast_nodes[2].infer())
         self.assertIsInstance(doc, astroid.Const)
         self.assertEqual(doc.value, 'test')
 
         dunder_dict = next(ast_nodes[3].infer())
         self.assertIsInstance(dunder_dict, astroid.Dict)
-        attr = next(dunder_dict.getitem('a').infer())          
+        attr = next(dunder_dict.getitem('a').infer())
         self.assertIsInstance(attr, astroid.Const)
         self.assertEqual(attr.value, 42)
 
@@ -178,7 +178,7 @@ class ClassModelTest(unittest.TestCase):
         ''')
         with self.assertRaises(exceptions.InferenceError):
             next(ast_node.infer())
-        
+
     def test_class_model(self):
         ast_nodes = builder.extract_node('''
         class A(object):
@@ -509,7 +509,7 @@ class ExceptionModelTest(unittest.TestCase):
             next(ast_nodes[2].infer())
 
     @unittest.skipUnless(six.PY2, "needs Python 2")
-    def test_model_py3(self):
+    def test_model_py2(self):
         ast_nodes = builder.extract_node('''
         try:
             x[42]

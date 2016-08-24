@@ -178,7 +178,7 @@ def infer_attribute(self, context=None):
             # of a base class and the attribute is defined at the base class's level,
             # by taking in consideration a redefinition in the subclass.
             if (isinstance(owner, bases.Instance)
-                  and isinstance(context.boundnode, bases.Instance)):
+                    and isinstance(context.boundnode, bases.Instance)):
                 try:
                     if helpers.is_subtype(helpers.object_type(context.boundnode),
                                           helpers.object_type(owner)):

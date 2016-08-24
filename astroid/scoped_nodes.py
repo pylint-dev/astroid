@@ -28,7 +28,6 @@ from astroid.interpreter import objectmodel
 from astroid import manager
 from astroid import mixins
 from astroid import node_classes
-from astroid import decorators as decorators_mod
 from astroid import util
 
 
@@ -262,6 +261,7 @@ class Module(LocalsDictNodeNG):
                      'pure_python', 'future_imports')
     _other_other_fields = ('locals', 'globals')
 
+    # pylint: disable=redefined-builtin
     def __init__(self, name, doc, file=None, path=None, package=None,
                  parent=None, pure_python=True):
         self.name = name
@@ -274,6 +274,7 @@ class Module(LocalsDictNodeNG):
         self.locals = self.globals = {}
         self.body = []
         self.future_imports = set()
+    # pylint: enable=redefined-builtin
 
     def postinit(self, body=None):
         self.body = body
@@ -1464,8 +1465,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         context = contextmod.copy_context(context)
         context.lookupname = name
         try:
-            for inferred in bases._infer_stmts(self.getattr(name, context, class_context=class_context),
-                                               context, frame=self):
+            attrs = self.getattr(name, context, class_context=class_context)
+            for inferred in bases._infer_stmts(attrs, context, frame=self):
                 # yield Uninferable object instead of descriptors when necessary
                 if (not isinstance(inferred, node_classes.Const)
                         and isinstance(inferred, bases.Instance)):

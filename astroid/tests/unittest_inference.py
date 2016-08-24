@@ -1129,22 +1129,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(foo_class.instance_attrs['attr']), 1)
         self.assertEqual(bar_class.instance_attrs, {'attr': [assattr]})
 
-    def test_python25_generator_exit(self):
-        buffer = six.StringIO()
-        sys.stderr = buffer
-        try:
-            data = "b = {}[str(0)+''].a"
-            ast = builder.string_build(data, __name__, __file__)
-            list(ast['b'].infer())
-            output = buffer.getvalue()
-        finally:
-            sys.stderr = sys.__stderr__
-        # I have no idea how to test for this in another way...
-        msg = ("Exception exceptions.RuntimeError: "
-               "'generator ignored GeneratorExit' in <generator object> "
-               "ignored")
-        self.assertNotIn("RuntimeError", output, msg)
-
     def test_python25_no_relative_import(self):
         ast = resources.build_file('data/package/absimport.py')
         self.assertTrue(ast.absolute_import_activated(), True)

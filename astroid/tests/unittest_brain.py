@@ -46,7 +46,7 @@ except ImportError:
     HAS_NUMPY = False
 
 try:
-    import pytest # pylint: disable=unused-import
+    import pytest
     HAS_PYTEST = True
 except ImportError:
     HAS_PYTEST = False
@@ -56,7 +56,6 @@ from astroid import MANAGER
 from astroid import bases
 from astroid import builder
 from astroid import nodes
-from astroid import test_utils
 from astroid import util
 import astroid
 
@@ -519,10 +518,10 @@ class IOBrainTest(unittest.TestCase):
             sys.{}
             '''.format(name))
             inferred = next(node.infer())
-            buffer = next(inferred.igetattr('buffer'))
-            self.assertIsInstance(buffer, astroid.Instance)
-            self.assertEqual(buffer.name, 'BufferedWriter')
-            raw = next(buffer.igetattr('raw'))
+            buffer_attr = next(inferred.igetattr('buffer'))
+            self.assertIsInstance(buffer_attr, astroid.Instance)
+            self.assertEqual(buffer_attr.name, 'BufferedWriter')
+            raw = next(buffer_attr.igetattr('raw'))
             self.assertIsInstance(raw, astroid.Instance)
             self.assertEqual(raw.name, 'FileIO')
 

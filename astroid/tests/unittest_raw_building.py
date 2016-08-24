@@ -8,7 +8,7 @@ import inspect
 import os
 import unittest
 
-from six.moves import builtins # pylint: disable=import-error
+from six.moves import builtins
 
 from astroid.builder import AstroidBuilder, extract_node
 from astroid.raw_building import (

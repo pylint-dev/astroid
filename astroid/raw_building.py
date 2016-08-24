@@ -408,8 +408,8 @@ BUILTIN_TYPES = (types.GetSetDescriptorType, types.GeneratorType,
                  types.FunctionType, types.MethodType,
                  types.BuiltinFunctionType, types.ModuleType, types.TracebackType)
 for _type in BUILTIN_TYPES:
-   if _type.__name__ not in _builtins:
-       cls = nodes.ClassDef(_type.__name__, _type.__doc__)
-       cls.parent = MANAGER.astroid_cache[six.moves.builtins.__name__]
-       Astroid_BUILDER.object_build(cls, _type)
-       _builtins[_type.__name__] = cls
+    if _type.__name__ not in _builtins:
+        cls = nodes.ClassDef(_type.__name__, _type.__doc__)
+        cls.parent = MANAGER.astroid_cache[six.moves.builtins.__name__]
+        Astroid_BUILDER.object_build(cls, _type)
+        _builtins[_type.__name__] = cls

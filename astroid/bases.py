@@ -16,7 +16,6 @@ import sys
 import six
 
 from astroid import context as contextmod
-from astroid import decorators
 from astroid import exceptions
 from astroid import util
 

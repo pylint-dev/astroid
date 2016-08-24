@@ -44,21 +44,21 @@ class AstroidManagerTest(resources.SysPathSetup,
 
     def test_ast_from_file(self):
         filepath = unittest.__file__
-        astroid = self.manager.ast_from_file(filepath)
-        self.assertEqual(astroid.name, 'unittest')
+        ast = self.manager.ast_from_file(filepath)
+        self.assertEqual(ast.name, 'unittest')
         self.assertIn('unittest', self.manager.astroid_cache)
 
     def test_ast_from_file_cache(self):
         filepath = unittest.__file__
         self.manager.ast_from_file(filepath)
-        astroid = self.manager.ast_from_file('unhandledName', 'unittest')
-        self.assertEqual(astroid.name, 'unittest')
+        ast = self.manager.ast_from_file('unhandledName', 'unittest')
+        self.assertEqual(ast.name, 'unittest')
         self.assertIn('unittest', self.manager.astroid_cache)
 
     def test_ast_from_file_astro_builder(self):
         filepath = unittest.__file__
-        astroid = self.manager.ast_from_file(filepath, None, True, True)
-        self.assertEqual(astroid.name, 'unittest')
+        ast = self.manager.ast_from_file(filepath, None, True, True)
+        self.assertEqual(ast.name, 'unittest')
         self.assertIn('unittest', self.manager.astroid_cache)
 
     def test_ast_from_file_name_astro_builder_exception(self):
@@ -71,15 +71,15 @@ class AstroidManagerTest(resources.SysPathSetup,
         self.assertEqual(obj.items(), [])
 
     def test_ast_from_module_name(self):
-        astroid = self.manager.ast_from_module_name('unittest')
-        self.assertEqual(astroid.name, 'unittest')
+        ast = self.manager.ast_from_module_name('unittest')
+        self.assertEqual(ast.name, 'unittest')
         self.assertIn('unittest', self.manager.astroid_cache)
 
     def test_ast_from_module_name_not_python_source(self):
-        astroid = self.manager.ast_from_module_name('time')
-        self.assertEqual(astroid.name, 'time')
+        ast = self.manager.ast_from_module_name('time')
+        self.assertEqual(ast.name, 'time')
         self.assertIn('time', self.manager.astroid_cache)
-        self.assertEqual(astroid.pure_python, False)
+        self.assertEqual(ast.pure_python, False)
 
     def test_ast_from_module_name_astro_builder_exception(self):
         self.assertRaises(exceptions.AstroidBuildingError,
@@ -126,6 +126,7 @@ class AstroidManagerTest(resources.SysPathSetup,
         directory = os.path.join(resources.DATA_DIR, 'data')
         pth = 'foogle_fax-0.12.5-py2.7-nspkg.pth'
         site.addpackage(directory, pth, [])
+        # pylint: disable=no-member; can't infer _namespace_packages, created at runtime.
         pkg_resources._namespace_packages['foogle'] = []
         try:
             module = self.manager.ast_from_module_name('foogle.fax')
@@ -171,8 +172,8 @@ class AstroidManagerTest(resources.SysPathSetup,
     def test_zip_import_data(self):
         """check if zip_import_data works"""
         filepath = resources.find('data/MyPyPa-0.1.0-py2.5.zip/mypypa')
-        astroid = self.manager.zip_import_data(filepath)
-        self.assertEqual(astroid.name, 'mypypa')
+        ast = self.manager.zip_import_data(filepath)
+        self.assertEqual(ast.name, 'mypypa')
 
     def test_zip_import_data_without_zipimport(self):
         """check if zip_import_data return None without zipimport"""
@@ -182,6 +183,7 @@ class AstroidManagerTest(resources.SysPathSetup,
         """check if the unittest filepath is equals to the result of the method"""
         self.assertEqual(
             _get_file_from_object(unittest),
+            # pylint: disable=no-member; can't infer the ModuleSpec
             self.manager.file_from_module_name('unittest', None).location)
 
     def test_file_from_module_name_astro_building_exception(self):
@@ -190,38 +192,38 @@ class AstroidManagerTest(resources.SysPathSetup,
                           self.manager.file_from_module_name, 'unhandledModule', None)
 
     def test_ast_from_module(self):
-        astroid = self.manager.ast_from_module(unittest)
-        self.assertEqual(astroid.pure_python, True)
+        ast = self.manager.ast_from_module(unittest)
+        self.assertEqual(ast.pure_python, True)
         import time
-        astroid = self.manager.ast_from_module(time)
-        self.assertEqual(astroid.pure_python, False)
+        ast = self.manager.ast_from_module(time)
+        self.assertEqual(ast.pure_python, False)
 
     def test_ast_from_module_cache(self):
         """check if the module is in the cache manager"""
-        astroid = self.manager.ast_from_module(unittest)
-        self.assertEqual(astroid.name, 'unittest')
+        ast = self.manager.ast_from_module(unittest)
+        self.assertEqual(ast.name, 'unittest')
         self.assertIn('unittest', self.manager.astroid_cache)
 
     def test_ast_from_class(self):
-        astroid = self.manager.ast_from_class(int)
-        self.assertEqual(astroid.name, 'int')
-        self.assertEqual(astroid.parent.frame().name, BUILTINS)
+        ast = self.manager.ast_from_class(int)
+        self.assertEqual(ast.name, 'int')
+        self.assertEqual(ast.parent.frame().name, BUILTINS)
 
-        astroid = self.manager.ast_from_class(object)
-        self.assertEqual(astroid.name, 'object')
-        self.assertEqual(astroid.parent.frame().name, BUILTINS)
-        self.assertIn('__setattr__', astroid)
+        ast = self.manager.ast_from_class(object)
+        self.assertEqual(ast.name, 'object')
+        self.assertEqual(ast.parent.frame().name, BUILTINS)
+        self.assertIn('__setattr__', ast)
 
     def test_ast_from_class_with_module(self):
         """check if the method works with the module name"""
-        astroid = self.manager.ast_from_class(int, int.__module__)
-        self.assertEqual(astroid.name, 'int')
-        self.assertEqual(astroid.parent.frame().name, BUILTINS)
+        ast = self.manager.ast_from_class(int, int.__module__)
+        self.assertEqual(ast.name, 'int')
+        self.assertEqual(ast.parent.frame().name, BUILTINS)
 
-        astroid = self.manager.ast_from_class(object, object.__module__)
-        self.assertEqual(astroid.name, 'object')
-        self.assertEqual(astroid.parent.frame().name, BUILTINS)
-        self.assertIn('__setattr__', astroid)
+        ast = self.manager.ast_from_class(object, object.__module__)
+        self.assertEqual(ast.name, 'object')
+        self.assertEqual(ast.parent.frame().name, BUILTINS)
+        self.assertIn('__setattr__', ast)
 
     def test_ast_from_class_attr_error(self):
         """give a wrong class at the ast_from_class method"""
