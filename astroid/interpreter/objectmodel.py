@@ -104,7 +104,7 @@ class ObjectModel(object):
 class ModuleModel(ObjectModel):
 
     def _builtins(self):
-        builtins = astroid.MANAGER.builtins()
+        builtins = astroid.MANAGER.astroid_cache[six.moves.builtins.__name__]
         return builtins.special_attributes.lookup('__dict__')
 
     if six.PY3:
@@ -544,7 +544,7 @@ class ExceptionInstanceModel(InstanceModel):
 
         @property
         def py__traceback__(self):
-            builtins = astroid.MANAGER.builtins()
+            builtins = astroid.MANAGER.astroid_cache[six.moves.builtins.__name__]
             traceback_type = builtins[types.TracebackType.__name__]
             return traceback_type.instantiate_class()
 
