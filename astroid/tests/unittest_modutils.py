@@ -14,6 +14,8 @@ import os
 import sys
 import unittest
 
+import astroid
+from astroid.interpreter._import import spec
 from astroid import modutils
 from astroid.tests import resources
 
@@ -31,16 +33,20 @@ class ModuleFileTest(unittest.TestCase):
                 del sys.path_importer_cache[k]
 
     def test_find_zipped_module(self):
-        spec = modutils._find_spec(
+        found_spec = spec.find_spec(
             [self.package], [resources.find('data/MyPyPa-0.1.0-py2.5.zip')])
-        self.assertEqual(spec.type, modutils.ModuleType.PY_ZIPMODULE)
-        self.assertEqual(spec.location.split(os.sep)[-3:], ["data", "MyPyPa-0.1.0-py2.5.zip", self.package])
+        self.assertEqual(found_spec.type,
+                         spec.ModuleType.PY_ZIPMODULE)
+        self.assertEqual(found_spec.location.split(os.sep)[-3:],
+                         ["data", "MyPyPa-0.1.0-py2.5.zip", self.package])
 
     def test_find_egg_module(self):
-        spec = modutils._find_spec(
+        found_spec = spec.find_spec(
             [self.package], [resources.find('data/MyPyPa-0.1.0-py2.5.egg')])
-        self.assertEqual(spec.type, modutils.ModuleType.PY_ZIPMODULE)
-        self.assertEqual(spec.location.split(os.sep)[-3:], ["data", "MyPyPa-0.1.0-py2.5.egg", self.package])
+        self.assertEqual(found_spec.type,
+                         spec.ModuleType.PY_ZIPMODULE)
+        self.assertEqual(found_spec.location.split(os.sep)[-3:],
+                         ["data", "MyPyPa-0.1.0-py2.5.egg", self.package])
 
 
 class LoadModuleFromNameTest(unittest.TestCase):
