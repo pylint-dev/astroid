@@ -633,3 +633,10 @@ def _has_init(directory):
         if os.path.exists(mod_or_pack + '.' + ext):
             return mod_or_pack + '.' + ext
     return None
+
+
+def is_namespace(specobj):
+    return specobj.type == spec.ModuleType.PY_NAMESPACE
+
+def is_directory(specobj):
+    return specobj.type == spec.ModuleType.PKG_DIRECTORY
