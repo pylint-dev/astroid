@@ -741,6 +741,22 @@ class ImpFinder(Finder):
         return path
 
 
+class DynamicImpFinder(ImpFinder):
+
+    def find_module(self, modname, module_parts, processed, submodule_path):
+        if _is_namespace(modname) and modname in sys.modules:
+            submodule_path = sys.modules[modname].__path__
+            return ModuleSpec(name=modname, location='',
+                              origin='namespace',
+                              type=ModuleType.PY_NAMESPACE,
+                              submodule_search_locations=submodule_path)
+
+
+    def contribute_to_path(self, spec, processed):
+        return spec.submodule_search_locations
+
+
+
 class ZipFinder(Finder):
 
     def __init__(self, path):
@@ -775,12 +791,17 @@ class PEP420SpecFinder(Finder):
             return spec.submodule_search_locations
         return None
 
+_SPEC_FINDERS = (
+    ImpFinder,
+    ZipFinder,
+)
+if _HAS_MACHINERY and sys.version_info[:2] > (3, 3):
+    _SPEC_FINDERS += (PEP420SpecFinder, )
+_SPEC_FINDERS += (DynamicImpFinder, )
+
 
 def _find_spec_with_path(search_path, modname, module_parts, processed, submodule_path):
-    finders = [finder(search_path) for finder in (ImpFinder, ZipFinder)]
-    if _HAS_MACHINERY and sys.version_info[:2] > (3, 3):
-        finders.append(PEP420SpecFinder(search_path))
-
+    finders = [finder(search_path) for finder in _SPEC_FINDERS]
     for finder in finders:
         spec = finder.find_module(modname, module_parts, processed, submodule_path)
         if spec is None:

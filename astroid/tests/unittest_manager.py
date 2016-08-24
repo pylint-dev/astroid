@@ -7,9 +7,11 @@
 
 import os
 import platform
+import site
 import sys
 import unittest
 
+import pkg_resources
 import six
 
 import astroid
@@ -120,6 +122,22 @@ class AstroidManagerTest(resources.SysPathSetup,
         finally:
             for _ in range(2):
                 sys.path.pop(0)
+
+    def test_namespace_package_pth_support(self):
+        directory = os.path.join(resources.DATA_DIR, 'data')
+        pth = 'foogle_fax-0.12.5-py2.7-nspkg.pth'
+        site.addpackage(directory, pth, [])
+        pkg_resources._namespace_packages['foogle'] = []
+        try:
+            module = self.manager.ast_from_module_name('foogle.fax')
+            submodule = next(module.igetattr('a'))
+            value = next(submodule.igetattr('x'))
+            self.assertIsInstance(value, astroid.Const)
+            with self.assertRaises(exceptions.AstroidImportError):
+                self.manager.ast_from_module_name('foogle.moogle')
+        finally:
+            del pkg_resources._namespace_packages['foogle']
+            sys.modules.pop('foogle')
 
     def _test_ast_from_zip(self, archive):
         origpath = sys.path[:]
