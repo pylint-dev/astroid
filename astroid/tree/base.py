@@ -7,7 +7,6 @@
 
 import abc
 import pprint
-import warnings
 
 import six
 
@@ -269,23 +268,9 @@ class NodeNG(object):
         '''return list of inferred values for a more simple inference usage'''
         return list(self.infer())
 
-    def infered(self):
-        warnings.warn('%s.infered() is deprecated and slated for removal '
-                      'in astroid 2.0, use %s.inferred() instead.'
-                      % (type(self).__name__, type(self).__name__),
-                      PendingDeprecationWarning, stacklevel=2)
-        return self.inferred()
-
     def instantiate_class(self):
         """instanciate a node if it is a ClassDef node, else return self"""
         return self
-
-    def instanciate_class(self):
-        warnings.warn('%s.instanciate_class() is deprecated and slated for '
-                      ' removal in astroid 2.0, use %s.instantiate_class() '
-                      ' instead.' % (type(self).__name__, type(self).__name__),
-                      PendingDeprecationWarning, stacklevel=2)
-        return self.instantiate_class()
 
     def has_base(self, node):
         return False
