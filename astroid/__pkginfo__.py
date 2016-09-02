@@ -6,6 +6,12 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
 """astroid packaging information"""
+
+from sys import version_info as py_version
+
+from pkg_resources import parse_version
+from setuptools import __version__ as setuptools_version
+
 distname = 'astroid'
 
 modname = 'astroid'
@@ -15,7 +21,23 @@ numversion = tuple(map(int, version.split('.')))
 
 extras_require = {}
 install_requires = ['lazy_object_proxy', 'six', 'wrapt']
-extras_require[':python_version<"3.4"'] = ['enum34', 'singledispatch']
+
+
+def has_environment_marker_range_operators_support():
+    """Code extracted from 'pytest/setup.py'
+    https://github.com/pytest-dev/pytest/blob/7538680c/setup.py#L31
+
+    The first known release to support environment marker with range operators
+    it is 17.1, see: https://setuptools.readthedocs.io/en/latest/history.html#id113
+    """
+    return parse_version(setuptools_version) >= parse_version('17.1')
+
+
+if has_environment_marker_range_operators_support():
+    extras_require[':python_version<"3.4"'] = ['enum34', 'singledispatch']
+elif py_version < (3, 4):
+    install_requires.extend(['enum34', 'singledispatch'])
+
 
 # pylint: disable=redefined-builtin; why license is a builtin anyway?
 license = 'LGPL'
