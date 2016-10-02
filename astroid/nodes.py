@@ -37,6 +37,7 @@ from astroid.node_classes import (
     TryExcept, TryFinally, Tuple, UnaryOp, While, With, Yield, YieldFrom,
     const_factory,
     AsyncFor, Await, AsyncWith,
+    FormattedValue, JoinedStr,
     # Backwards-compatibility aliases
     Backquote, Discard, AssName, AssAttr, Getattr, CallFunc, From,
     # Node not present in the builtin ast module.
@@ -75,4 +76,5 @@ ALL_NODE_CLASSES = (
     UnaryOp,
     While, With,
     Yield, YieldFrom,
+    FormattedValue, JoinedStr,
     )

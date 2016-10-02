@@ -869,6 +869,18 @@ class TreeRebuilder3(TreeRebuilder):
     def visit_asyncwith(self, node, parent):
         return self._visit_with(nodes.AsyncWith, node, parent)
 
+    def visit_joinedstr(self, node, parent):
+        newnode = nodes.JoinedStr(node.lineno, node.col_offset, parent)
+        newnode.postinit([self.visit(child, newnode)
+                          for child in node.values])
+        return newnode
+
+    def visit_formattedvalue(self, node, parent):
+        newnode = nodes.FormattedValue(node.lineno, node.col_offset, parent)
+        newnode.postinit(self.visit(node.value, newnode),
+                         node.conversion,
+                         _visit_or_none(node, 'format_spec', self, newnode))
+        return newnode
 
 if sys.version_info >= (3, 0):
     TreeRebuilder = TreeRebuilder3

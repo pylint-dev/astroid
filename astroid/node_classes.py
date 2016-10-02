@@ -1863,6 +1863,28 @@ class DictUnpack(NodeNG):
     """Represents the unpacking of dicts into dicts using PEP 448."""
 
 
+class FormattedValue(NodeNG):
+    """Represents a PEP 498 format string."""
+    _astroid_fields = ('value', 'format_spec')
+    value = None
+    conversion = None
+    format_spec = None
+
+    def postinit(self, value, conversion=None, format_spec=None):
+        self.value = value
+        self.conversion = conversion
+        self.format_spec = format_spec
+
+
+class JoinedStr(NodeNG):
+    """Represents a list of string expressions to be joined."""
+    _astroid_fields = ('values',)
+    value = None
+
+    def postinit(self, values=None):
+        self.values = values
+
+
 class Unknown(NodeNG):
     '''This node represents a node in a constructed AST where
     introspection is not possible.  At the moment, it's only used in
