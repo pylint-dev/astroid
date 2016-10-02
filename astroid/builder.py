@@ -237,6 +237,8 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 try:
                     if inferred.__class__ is bases.Instance:
                         inferred = inferred._proxied
+                        if inferred is util.Uninferable:
+                            continue
                         iattrs = inferred.instance_attrs
                         if not _can_assign_attr(inferred, node.attrname):
                             continue
