@@ -603,7 +603,7 @@ def _spec_from_modpath(modpath, path=None, context=None):
             location = get_source_file(found_spec.location)
             return found_spec._replace(location=location, type=spec.ModuleSpec.PY_SOURCE)
         except NoSourceFile:
-            return found_spec.replace(location=location)
+            return found_spec._replace(location=location)
     elif found_spec.type == spec.ModuleType.C_BUILTIN:
         # integrated builtin module
         return found_spec._replace(location=None)
