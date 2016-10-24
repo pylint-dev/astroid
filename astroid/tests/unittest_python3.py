@@ -87,7 +87,7 @@ class Python3TC(unittest.TestCase):
     @require_version('3.0')
     def test_metaclass_imported(self):
         astroid = self.builder.string_build(dedent("""
-        from abc import ABCMeta 
+        from abc import ABCMeta
         class Test(metaclass=ABCMeta): pass"""))
         klass = astroid.body[1]
 
@@ -98,7 +98,7 @@ class Python3TC(unittest.TestCase):
     @require_version('3.0')
     def test_as_string(self):
         body = dedent("""
-        from abc import ABCMeta 
+        from abc import ABCMeta
         class Test(metaclass=ABCMeta): pass""")
         astroid = self.builder.string_build(body)
         klass = astroid.body[1]
@@ -238,6 +238,13 @@ class Python3TC(unittest.TestCase):
             value = node.getitem(key)
             self.assertIsInstance(value, nodes.Const)
             self.assertEqual(value.value, expected)
+
+    @require_version('3.6')
+    def test_format_string(self):
+        code = "f'{greetings} {person}'"
+        node = extract_node(code)
+        self.assertEqual(node.as_string(), code)
+
 
 
 if __name__ == '__main__':
