@@ -747,19 +747,19 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
     def test_methods(self):
         expected_methods = set(['__init__', 'class_method', 'method', 'static_method'])
         klass2 = self.module['YOUPI']
-        methods = {m.name for m in klass2.methods()}
+        methods = set([m.name for m in klass2.methods()])
         self.assertTrue(
             methods.issuperset(expected_methods))
-        methods = {m.name for m in klass2.mymethods()}
+        methods = set([m.name for m in klass2.mymethods()])
         self.assertSetEqual(expected_methods, methods)
         klass2 = self.module2['Specialization']
-        methods = {m.name for m in klass2.mymethods()}
+        methods = set([m.name for m in klass2.mymethods()])
         self.assertSetEqual(set([]), methods)
         method_locals = klass2.local_attr('method')
         self.assertEqual(len(method_locals), 1)
         self.assertEqual(method_locals[0].name, 'method')
         self.assertRaises(AttributeInferenceError, klass2.local_attr, 'nonexistent')
-        methods = {m.name for m in klass2.methods()}
+        methods = set([m.name for m in klass2.methods()])
         self.assertTrue(methods.issuperset(expected_methods))
 
     #def test_rhs(self):

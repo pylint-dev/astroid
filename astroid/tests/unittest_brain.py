@@ -512,7 +512,7 @@ class IOBrainTest(unittest.TestCase):
 
     @unittest.skipUnless(six.PY3, 'Needs Python 3 io model')
     def test_sys_streams(self):
-        for name in {'stdout', 'stderr', 'stdin'}:
+        for name in set(['stdout', 'stderr', 'stdin']):
             node = astroid.extract_node('''
             import sys
             sys.{}
