@@ -38,7 +38,7 @@ class CallSite(object):
         ]
         self.keyword_arguments = dict(
             (key, value) for (key, value) in self._unpacked_kwargs.items()
-            if value is not util.YES
+            if value is not util.Uninferable
         )
 
     @classmethod
