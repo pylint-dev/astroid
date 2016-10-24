@@ -88,7 +88,7 @@ class Python3TC(unittest.TestCase):
     @require_version('3.0')
     def test_metaclass_imported(self):
         astroid = self.builder.string_build(dedent("""
-        from abc import ABCMeta 
+        from abc import ABCMeta
         class Test(metaclass=ABCMeta): pass"""))
         klass = astroid.body[1]
 
@@ -99,7 +99,7 @@ class Python3TC(unittest.TestCase):
     @require_version('3.0')
     def test_as_string(self):
         body = dedent("""
-        from abc import ABCMeta 
+        from abc import ABCMeta
         class Test(metaclass=ABCMeta): pass""")
         astroid = self.builder.string_build(body)
         klass = astroid.body[1]

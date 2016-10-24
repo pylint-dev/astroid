@@ -36,6 +36,7 @@ from astroid.tree.node_classes import (
     List, Name, NameConstant, Nonlocal, Pass, Parameter, Print, Raise, Return, Set, Slice,
     Starred, Subscript, TryExcept, TryFinally, Tuple, UnaryOp, While, With,
     WithItem, Yield, YieldFrom, AsyncFor, Await, AsyncWith,
+    FormattedValue, JoinedStr,
     # Node not present in the builtin ast module.
     DictUnpack,
     # Special nodes for building from live objects.
@@ -72,4 +73,5 @@ ALL_NODE_CLASSES = (
     UnaryOp, Unknown,
     While, With, WithItem,
     Yield, YieldFrom,
+    FormattedValue, JoinedStr,
     )

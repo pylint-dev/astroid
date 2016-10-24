@@ -17,6 +17,9 @@ import sys
 
 import six
 
+from astroid.tree import treeabc
+
+
 class AsStringVisitor(object):
     """Visitor to render an Astroid node as a valid python code string"""
 
@@ -468,6 +471,19 @@ class AsStringVisitor3(AsStringVisitor):
     def visit_asyncfor(self, node):
         return 'async %s' % self.visit_for(node)
 
+    def visit_joinedstr(self, node):
+        # Special treatment for constants,
+        # as we want to join literals not reprs
+        string = ''.join(
+            value.value if isinstance(value, treeabc.Const)
+            else value.accept(self)
+            for value in node.values
+        )
+        return "f'%s'" % string
+
+    def visit_formattedvalue(self, node):
+        return '{%s}' % node.value.accept(self)
+
 
 def _import_string(names):
     """return a list of (name, asname) formatted as a string"""
@@ -477,7 +493,7 @@ def _import_string(names):
             _names.append('%s as %s' % (name, asname))
         else:
             _names.append(name)
-    return  ', '.join(_names)
+    return ', '.join(_names)
 
 
 if sys.version_info >= (3, 0):

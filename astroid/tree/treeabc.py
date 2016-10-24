@@ -341,3 +341,10 @@ class Empty(NodeNG):
     or defaults for arguments or anything where None is a valid
     value.
     """
+
+class FormattedValue(NodeNG):
+    """Represents a PEP 498 string formatting"""
+
+
+class JoinedStr(NodeNG):
+    """Represents a list of string expressions to be joined."""

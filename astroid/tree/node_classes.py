@@ -1401,6 +1401,31 @@ class Empty(base.NodeNG):
     __nonzero__ = __bool__
 
 
+@util.register_implementation(treeabc.FormattedValue)
+class FormattedValue(base.NodeNG):
+    """Represents a PEP 498 format string."""
+    _astroid_fields = ('value', 'format_spec')
+    value = None
+    conversion = None
+    format_spec = None
+
+    def postinit(self, value, conversion=None, format_spec=None):
+        self.value = value
+        self.conversion = conversion
+        self.format_spec = format_spec
+
+
+@util.register_implementation(treeabc.JoinedStr)
+class JoinedStr(base.NodeNG):
+    """Represents a list of string expressions to be joined."""
+    _astroid_fields = ('values',)
+    value = None
+
+    def postinit(self, values=None):
+        self.values = values
+
+
+
 # Register additional inference dispatched functions. We do
 # this here, since we need to pass this module as an argument
 # to these functions, in order to avoid circular dependencies
