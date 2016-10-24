@@ -560,8 +560,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         '''
         ast = parse(code, __name__)
         xxx = ast['xxx']
-        self.assertSetEqual({n.__class__ for n in xxx.inferred()},
-                            {nodes.Const, util.Uninferable.__class__})
+        self.assertSetEqual(set([n.__class__ for n in xxx.inferred()]),
+                            set([nodes.Const, util.Uninferable.__class__]))
 
     def test_method_argument(self):
         code = '''
@@ -2036,7 +2036,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             __pos__ = lambda self: self.lala
             __neg__ = lambda self: self.lala + 1
             @property
-            def lala(self): return 24            
+            def lala(self): return 24
         instance = GoodInstance()
         lambda_instance = LambdaInstance()
         +instance #@
@@ -2775,7 +2775,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         a = [1, 2, 3, 4]
         a[Index()] #@
         a[LambdaIndex()] #@
-        a[NonIndex()] #@         
+        a[NonIndex()] #@
         ''')
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, nodes.Const)
@@ -3155,7 +3155,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ast_node = extract_node('''
         class A(type):
             def test(cls):
-                return cls        
+                return cls
         import six
         @six.add_metaclass(A)
         class B(object):
@@ -3174,7 +3174,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 cls #@
         class B(object):
             def __call__(cls):
-                cls #@        
+                cls #@
         ''')
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, nodes.ClassDef)

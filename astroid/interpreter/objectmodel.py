@@ -223,9 +223,10 @@ class FunctionModel(ObjectModel):
             returns = self._instance.returns
 
         args = self._instance.args
-        annotations = {arg.name: annotation
-                       for (arg, annotation) in zip(args.args, args.annotations)
-                       if annotation}
+        annotations = dict(
+            (arg.name, annotation)
+            for (arg, annotation) in zip(args.args, args.annotations)
+            if annotation)
         if args.varargannotation:
             annotations[args.vararg] = args.varargannotation
         if args.kwargannotation:

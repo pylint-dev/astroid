@@ -1419,7 +1419,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         attrs = set()
         implicit_meta = self.implicit_metaclass()
         metaclass = self.metaclass()
-        for cls in {implicit_meta, metaclass}:
+        for cls in set([implicit_meta, metaclass]):
             if cls and cls != self and isinstance(cls, ClassDef):
                 cls_attributes = self._get_attribute_from_metaclass(
                     cls, name, context)

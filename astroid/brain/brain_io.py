@@ -8,7 +8,7 @@
 import astroid
 
 
-BUFFERED = {'BufferedWriter', 'BufferedReader'}
+BUFFERED = set(['BufferedWriter', 'BufferedReader'])
 TextIOWrapper = 'TextIOWrapper'
 FileIO = 'FileIO'
 BufferedWriter = 'BufferedWriter'
