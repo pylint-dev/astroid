@@ -232,7 +232,7 @@ else:
 def six_moves_transform():
     code = dedent('''
     class Moves(object):
-    {}
+    {0}
     moves = Moves()
     ''').format(_indent(_IMPORTS, "    "))
     module = AstroidBuilder(MANAGER).string_build(code)

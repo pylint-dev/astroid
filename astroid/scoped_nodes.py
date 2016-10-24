@@ -773,7 +773,7 @@ class FunctionDef(node_classes.Statement, Lambda):
 
         Possible values are: method, function, staticmethod, classmethod.
         """
-        builtin_descriptors = {'classmethod', 'staticmethod'}
+        builtin_descriptors = set(['classmethod', 'staticmethod'])
 
         for decorator in self.extra_decorators:
             if decorator.func.name in builtin_descriptors:

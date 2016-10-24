@@ -30,7 +30,7 @@ if sys.version_info >= (3, 0):
 else:
     BUILTINS = '__builtin__'
     BOOL_SPECIAL_METHOD = '__nonzero__'
-PROPERTIES = {BUILTINS + '.property', 'abc.abstractproperty'}
+PROPERTIES = set([BUILTINS + '.property', 'abc.abstractproperty'])
 # List of possible property names. We use this list in order
 # to see if a method is a property or not. This should be
 # pretty reliable and fast, the alternative being to check each
@@ -40,17 +40,17 @@ PROPERTIES = {BUILTINS + '.property', 'abc.abstractproperty'}
 # define them, we shouldn't expect to know every possible
 # property-like decorator!
 # TODO(cpopa): just implement descriptors already.
-POSSIBLE_PROPERTIES = {"cached_property", "cachedproperty",
-                       "lazyproperty", "lazy_property", "reify",
-                       "lazyattribute", "lazy_attribute",
-                       "LazyProperty", "lazy"}
+POSSIBLE_PROPERTIES = set(["cached_property", "cachedproperty",
+                           "lazyproperty", "lazy_property", "reify",
+                           "lazyattribute", "lazy_attribute",
+                           "LazyProperty", "lazy"])
 
 
 def _is_property(meth):
     if PROPERTIES.intersection(meth.decoratornames()):
         return True
-    stripped = {name.split(".")[-1] for name in meth.decoratornames()
-                if name is not util.Uninferable}
+    stripped = set([name.split(".")[-1] for name in meth.decoratornames()
+                   if name is not util.Uninferable])
     return any(name in stripped for name in POSSIBLE_PROPERTIES)
 
 

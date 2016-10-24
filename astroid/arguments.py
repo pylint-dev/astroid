@@ -36,10 +36,10 @@ class CallSite(object):
             arg for arg in self._unpacked_args
             if arg is not util.Uninferable
         ]
-        self.keyword_arguments = {
-            key: value for key, value in self._unpacked_kwargs.items()
-            if value is not util.Uninferable
-        }
+        self.keyword_arguments = dict(
+            (key, value) for (key, value) in self._unpacked_kwargs.items()
+            if value is not util.YES
+        )
 
     @classmethod
     def from_call(cls, call_node):
@@ -163,10 +163,10 @@ class CallSite(object):
         vararg = self.positional_arguments[len(funcnode.args.args):]
         argindex = funcnode.args.find_argname(name)[0]
         kwonlyargs = set(arg.name for arg in funcnode.args.kwonlyargs)
-        kwargs = {
-            key: value for key, value in self.keyword_arguments.items()
+        kwargs = dict(
+            (key, value) for (key, value) in self.keyword_arguments.items()
             if key not in kwonlyargs
-        }
+        )
         # If there are too few positionals compared to
         # what the function expects to receive, check to see
         # if the missing positional arguments were passed
