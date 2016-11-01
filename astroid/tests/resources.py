@@ -16,9 +16,11 @@ import six
 
 from astroid import builder
 from astroid import MANAGER
+from astroid import tests
 
 
 DATA_DIR = 'testdata'
+RESOURCE_PATH = os.path.join(tests.__path__[0], DATA_DIR, 'data')
 BUILTINS = six.moves.builtins.__name__
 
 
