@@ -123,11 +123,11 @@ class AstroidManagerTest(resources.SysPathSetup,
                 sys.path.pop(0)
 
     def test_namespace_package_pth_support(self):
-        directory = os.path.join(resources.DATA_DIR, 'data')
         pth = 'foogle_fax-0.12.5-py2.7-nspkg.pth'
-        site.addpackage(directory, pth, [])
+        site.addpackage(resources.RESOURCE_PATH, pth, [])
         # pylint: disable=no-member; can't infer _namespace_packages, created at runtime.
         pkg_resources._namespace_packages['foogle'] = []
+
         try:
             module = self.manager.ast_from_module_name('foogle.fax')
             submodule = next(module.igetattr('a'))

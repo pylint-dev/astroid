@@ -12,9 +12,11 @@ import pkg_resources
 from astroid import builder
 from astroid import MANAGER
 from astroid.bases import  BUILTINS
+from astroid import tests
 
 
-DATA_DIR = 'testdata/python{}/'.format(sys.version_info[0])
+DATA_DIR = os.path.join('testdata', 'python{}'.format(sys.version_info[0]))
+RESOURCE_PATH = os.path.join(tests.__path__[0], DATA_DIR, 'data')
 
 def find(name):
     return pkg_resources.resource_filename(
