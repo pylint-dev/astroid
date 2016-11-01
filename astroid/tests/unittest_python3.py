@@ -247,6 +247,25 @@ class Python3TC(unittest.TestCase):
         for name, arg in zip(('cls', 'class_or_tuple'), ast.args.positional_only):
             self.assertEqual(arg.name, name)
 
+    @require_version('3.6')
+    def test_format_string(self):
+        code = "f'{greetings} {person}'"
+        node = extract_node(code)
+        self.assertEqual(node.as_string(), code)
+
+    @require_version('3.6')
+    def test_underscores_in_numeral_literal(self):
+        pairs = [
+            ('10_1000', 101000),
+            ('10_000_000', 10000000),
+            ('0x_FF_FF', 65535),
+        ]
+        for value, expected in pairs:
+            node = extract_node(value)
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, nodes.Const)
+            self.assertEqual(inferred.value, expected)
+
 
 if __name__ == '__main__':
     unittest.main()
