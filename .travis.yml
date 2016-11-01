@@ -16,6 +16,8 @@ matrix:
       env: TOXENV=pylint
     - python: 2.7
       env: JYTHON=true; TOXENV=jython
+    - python: 3.6-dev
+      env: TOXENV=py36
 
 before_install:
   - if [ "$JYTHON" == "true" ]; then hg clone http://hg.python.org/jython; cd jython; ant; cd ..; chmod +x "$(pwd)/jython/dist/bin/jython"; fi
