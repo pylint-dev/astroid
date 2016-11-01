@@ -305,7 +305,7 @@ class UnboundMethod(Proxy):
         if (self._proxied.name == '__new__' and
                 self._proxied.parent.frame().qname() == '%s.object' % BUILTINS):
             infer = caller.args[0].infer() if caller.args else []
-            return ((x is util.Uninferable and x or Instance(x)) for x in infer)
+            return (Instance(x) if x is not util.Uninferable else x for x in infer)
         return self._proxied.infer_call_result(caller, context)
 
     def bool_value(self):
