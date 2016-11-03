@@ -239,7 +239,10 @@ def load_module_from_modpath(parts, path=None, use_sys=1):
             continue
         if not _file and len(modpath) != len(parts):
             raise ImportError('no module in %s' % '.'.join(parts[len(modpath):]))
-        path = [os.path.dirname(_file)]
+        if hasattr(module, '__path__'):
+            path = module.__path__
+        else:
+            path = [os.path.dirname(_file)]
     return module
 
 
