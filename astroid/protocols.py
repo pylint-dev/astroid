@@ -228,8 +228,9 @@ def assigned_stmts(self, nodes, node=None, context=None, assign_path=None):
     raise exceptions.NotSupportedError
 
 
-def _resolve_looppart(parts, assign_path, context):
+def _resolve_looppart(parts, assign_path, context, nodes):
     """recursive function to resolve multiple assignments on loops"""
+
     assign_path = assign_path[:]
     index = assign_path.pop(0)
     for part in parts:
@@ -243,8 +244,9 @@ def _resolve_looppart(parts, assign_path, context):
         except TypeError:
             continue # XXX log error
         for stmt in itered:
+            index_node = nodes.Const(index)
             try:
-                assigned = stmt.getitem(index, context)
+                assigned = stmt.getitem(index_node, context)
             except (AttributeError, IndexError):
                 continue
             except TypeError: # stmt is unsubscriptable Const
@@ -259,8 +261,10 @@ def _resolve_looppart(parts, assign_path, context):
                 # we are not yet on the last part of the path
                 # search on each possibly inferred value
                 try:
-                    for inferred in _resolve_looppart(assigned.infer(context),
-                                                      assign_path, context):
+                    for inferred in _resolve_looppart(
+                            assigned.infer(context),
+                            assign_path, context,
+                            nodes=nodes):
                         yield inferred
                 except exceptions.InferenceError:
                     break
@@ -276,8 +280,10 @@ def for_assigned_stmts(self, nodes, node=None, context=None, assign_path=None):
                 for item in lst.elts:
                     yield item
     else:
-        for inferred in _resolve_looppart(self.iter.infer(context),
-                                          assign_path, context):
+        for inferred in _resolve_looppart(
+                self.iter.infer(context),
+                assign_path, context,
+                nodes=nodes):
             yield inferred
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
@@ -374,7 +380,11 @@ def assign_assigned_stmts(self, nodes, node=None, context=None, assign_path=None
     if not assign_path:
         yield self.value
         return
-    for inferred in _resolve_asspart(self.value.infer(context), assign_path, context):
+    for inferred in _resolve_asspart(
+            self.value.infer(context),
+            assign_path,
+            context,
+            nodes=nodes):
         yield inferred
 
     # Explicit StopIteration to return error information, see comment
@@ -383,14 +393,15 @@ def assign_assigned_stmts(self, nodes, node=None, context=None, assign_path=None
                              assign_path=assign_path, context=context))
 
 
-def _resolve_asspart(parts, assign_path, context):
+def _resolve_asspart(parts, assign_path, context, nodes):
     """recursive function to resolve multiple assignments"""
     assign_path = assign_path[:]
     index = assign_path.pop(0)
     for part in parts:
         if hasattr(part, 'getitem'):
+            index_node = nodes.Const(index)
             try:
-                assigned = part.getitem(index, context)
+                assigned = part.getitem(index_node, context)
             # XXX raise a specific exception to avoid potential hiding of
             # unexpected exception ?
             except (TypeError, IndexError):
@@ -405,8 +416,11 @@ def _resolve_asspart(parts, assign_path, context):
                 # we are not yet on the last part of the path search on each
                 # possibly inferred value
                 try:
-                    for inferred in _resolve_asspart(assigned.infer(context),
-                                                     assign_path, context):
+                    for inferred in _resolve_asspart(
+                            assigned.infer(context),
+                            assign_path,
+                            context,
+                            nodes=nodes):
                         yield inferred
                 except exceptions.InferenceError:
                     return
