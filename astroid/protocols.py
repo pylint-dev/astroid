@@ -216,8 +216,9 @@ def _resolve_looppart(parts, asspath, context):
         except TypeError:
             continue # XXX log error
         for stmt in itered:
+            index_node = nodes.Const(index)
             try:
-                assigned = stmt.getitem(index, context)
+                assigned = stmt.getitem(index_node, context)
             except (AttributeError, IndexError):
                 continue
             except TypeError: # stmt is unsubscriptable Const
@@ -364,8 +365,9 @@ def _resolve_asspart(parts, asspath, context):
     index = asspath.pop(0)
     for part in parts:
         if hasattr(part, 'getitem'):
+            index_node = nodes.Const(index)
             try:
-                assigned = part.getitem(index, context)
+                assigned = part.getitem(index_node, context)
             # XXX raise a specific exception to avoid potential hiding of
             # unexpected exception ?
             except (TypeError, IndexError):

@@ -235,7 +235,7 @@ class Python3TC(unittest.TestCase):
     def test_unpacking_in_dict_getitem(self):
         node = extract_node('{1:2, **{2:3, 3:4}, **{5: 6}}')
         for key, expected in ((1, 2), (2, 3), (3, 4), (5, 6)):
-            value = node.getitem(key)
+            value = node.getitem(nodes.Const(key))
             self.assertIsInstance(value, nodes.Const)
             self.assertEqual(value.value, expected)
 

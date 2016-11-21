@@ -470,7 +470,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = next(n.infer())
         self.assertIsInstance(inferred, nodes.List)
         self.assertIsInstance(inferred, Instance)
-        self.assertEqual(inferred.getitem(0).value, 1)
+        self.assertEqual(inferred.getitem(nodes.Const(0)).value, 1)
         self.assertIsInstance(inferred._proxied, nodes.ClassDef)
         self.assertEqual(inferred._proxied.name, 'list')
         self.assertIn('append', inferred._proxied.locals)
@@ -478,7 +478,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = next(n.infer())
         self.assertIsInstance(inferred, nodes.Tuple)
         self.assertIsInstance(inferred, Instance)
-        self.assertEqual(inferred.getitem(0).value, 2)
+        self.assertEqual(inferred.getitem(nodes.Const(0)).value, 2)
         self.assertIsInstance(inferred._proxied, nodes.ClassDef)
         self.assertEqual(inferred._proxied.name, 'tuple')
         n = ast['d']
@@ -496,7 +496,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIn('lower', inferred._proxied.locals)
         n = ast['s2']
         inferred = next(n.infer())
-        self.assertEqual(inferred.getitem(0).value, '_')
+        self.assertEqual(inferred.getitem(nodes.Const(0)).value, '_')
 
         code = 's = {1}'
         ast = parse(code, __name__)

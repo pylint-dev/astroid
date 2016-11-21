@@ -130,16 +130,61 @@ def are_exclusive(stmt1, stmt2, exceptions=None): # pylint: disable=redefined-ou
     return False
 
 
-def _container_getitem(instance, elts, index):
+# getitem() helpers.
+
+_SLICE_SENTINEL = object()
+
+
+def _slice_value(index, context=None):
+    """Get the value of the given slice index."""
+
+    if isinstance(index, Const):
+        if isinstance(index.value, (int, type(None))):
+            return index.value
+    elif index is None:
+        return None
+    else:
+        # Try to infer what the index actually is.
+        # Since we can't return all the possible values,
+        # we'll stop at the first possible value.
+        try:
+            inferred = next(index.infer(context=context))
+        except exceptions.InferenceError:
+            pass
+        else:
+            if isinstance(inferred, Const):
+                if isinstance(inferred.value, (int, type(None))):
+                    return inferred.value
+
+    # Use a sentinel, because None can be a valid
+    # value that this function can return,
+    # as it is the case for unspecified bounds.
+    return _SLICE_SENTINEL
+
+
+def _infer_slice(node, context=None):
+    lower = _slice_value(node.lower, context)
+    upper = _slice_value(node.upper, context)
+    step = _slice_value(node.step, context)
+    if all(elem is not _SLICE_SENTINEL for elem in (lower, upper, step)):
+        return slice(lower, upper, step)
+
+    raise TypeError('Could not infer slice used in subscript.')
+
+
+def _container_getitem(instance, elts, index, context=None):
     """Get a slice or an item, using the given *index*, for the given sequence."""
-    if isinstance(index, slice):
+
+    if isinstance(index, Slice):
+        index_slice = _infer_slice(index, context=context)
         new_cls = instance.__class__()
-        new_cls.elts = elts[index]
+        new_cls.elts = elts[index_slice]
         new_cls.parent = instance.parent
         return new_cls
-    else:
-        return elts[index]
+    elif isinstance(index, Const):
+        return elts[index.value]
 
+    raise TypeError('Could not use %s as subscript index' % index)
 
 
 class NodeNG(object):
@@ -1189,13 +1234,23 @@ class Const(NodeNG, bases.Instance):
         super(Const, self).__init__(lineno, col_offset, parent)
 
     def getitem(self, index, context=None):
+        if isinstance(index, Const):
+            index_value = index.value
+        elif isinstance(index, Slice):
+            index_value = _infer_slice(index, context=context)
+        else:
+            raise TypeError(
+                'Could not use type {} as subscript index'.format(type(index))
+            )
+
         if isinstance(self.value, six.string_types):
-            return Const(self.value[index])
+            return Const(self.value[index_value])
         if isinstance(self.value, bytes) and six.PY3:
             # Bytes aren't instances of six.string_types
             # on Python 3. Also, indexing them should return
             # integers.
-            return Const(self.value[index])
+            return Const(self.value[index_value])
+
         raise TypeError('%r (value=%s)' % (self, self.value))
 
     def has_dynamic_getattr(self):
@@ -1304,9 +1359,9 @@ class Dict(NodeNG, bases.Instance):
             for inferredkey in key.infer(context):
                 if inferredkey is util.Uninferable:
                     continue
-                if isinstance(inferredkey, Const) \
-                        and inferredkey.value == lookup_key:
-                    return value
+                if isinstance(inferredkey, Const) and isinstance(lookup_key, Const):
+                    if inferredkey.value == lookup_key.value:
+                        return value
         # This should raise KeyError, but all call sites only catch
         # IndexError. Let's leave it like that for now.
         raise IndexError(lookup_key)
@@ -1547,7 +1602,7 @@ class List(_BaseContainer):
         return '%s.list' % BUILTINS
 
     def getitem(self, index, context=None):
-        return _container_getitem(self, self.elts, index)
+        return _container_getitem(self, self.elts, index, context=context)
 
 
 class Nonlocal(Statement):
@@ -1764,7 +1819,7 @@ class Tuple(_BaseContainer):
         return '%s.tuple' % BUILTINS
 
     def getitem(self, index, context=None):
-        return _container_getitem(self, self.elts, index)
+        return _container_getitem(self, self.elts, index, context=context)
 
 
 class UnaryOp(NodeNG):

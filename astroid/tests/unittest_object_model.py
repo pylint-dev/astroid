@@ -48,7 +48,7 @@ class InstanceModelTest(unittest.TestCase):
 
         dunder_dict = next(ast_nodes[3].infer())
         self.assertIsInstance(dunder_dict, astroid.Dict)
-        attr = next(dunder_dict.getitem('a').infer())
+        attr = next(dunder_dict.getitem(astroid.Const('a')).infer())
         self.assertIsInstance(attr, astroid.Const)
         self.assertEqual(attr.value, 42)
 
@@ -409,12 +409,12 @@ class FunctionModelTest(unittest.TestCase):
         ''')
         annotations = next(ast_node[0].infer())
         self.assertIsInstance(annotations, astroid.Dict)
-        self.assertIsInstance(annotations.getitem('return'), astroid.Const)
-        self.assertEqual(annotations.getitem('return').value, 2)
-        self.assertIsInstance(annotations.getitem('a'), astroid.Const)
-        self.assertEqual(annotations.getitem('a').value, 1)
-        self.assertEqual(annotations.getitem('args').value, 2)
-        self.assertEqual(annotations.getitem('kwarg').value, 3)
+        self.assertIsInstance(annotations.getitem(astroid.Const('return')), astroid.Const)
+        self.assertEqual(annotations.getitem(astroid.Const('return')).value, 2)
+        self.assertIsInstance(annotations.getitem(astroid.Const('a')), astroid.Const)
+        self.assertEqual(annotations.getitem(astroid.Const('a')).value, 1)
+        self.assertEqual(annotations.getitem(astroid.Const('args')).value, 2)
+        self.assertEqual(annotations.getitem(astroid.Const('kwarg')).value, 3)
 
         # Currently not enabled.
         # self.assertEqual(annotations.getitem('f').value, 4)

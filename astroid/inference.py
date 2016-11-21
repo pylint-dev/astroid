@@ -218,32 +218,7 @@ def infer_global(self, context=None):
 nodes.Global._infer = infer_global
 
 
-_SLICE_SENTINEL = object()
-
-def _slice_value(index, context=None):
-    """Get the value of the given slice index."""
-    if isinstance(index, nodes.Const):
-        if isinstance(index.value, (int, type(None))):
-            return index.value
-    elif index is None:
-        return None
-    else:
-        # Try to infer what the index actually is.
-        # Since we can't return all the possible values,
-        # we'll stop at the first possible value.
-        try:
-            inferred = next(index.infer(context=context))
-        except exceptions.InferenceError:
-            pass
-        else:
-            if isinstance(inferred, nodes.Const):
-                if isinstance(inferred.value, (int, type(None))):
-                    return inferred.value
-
-    # Use a sentinel, because None can be a valid
-    # value that this function can return,
-    # as it is the case for unspecified bounds.
-    return _SLICE_SENTINEL
+_SUBSCRIPT_SENTINEL = object()
 
 
 @decorators.raise_if_nothing_inferred
@@ -266,27 +241,18 @@ def infer_subscript(self, context=None):
         yield util.Uninferable
         return
 
+    # Try to deduce the index value.
+    index_value = _SUBSCRIPT_SENTINEL
     if value.__class__ == bases.Instance:
         index_value = index
     else:
-        index_value = _SLICE_SENTINEL
-        if isinstance(index, nodes.Const):
-            index_value = index.value
-        elif isinstance(index, nodes.Slice):
-            # Infer slices from the original object.
-            lower = _slice_value(index.lower, context)
-            upper = _slice_value(index.upper, context)
-            step = _slice_value(index.step, context)
-            if all(elem is not _SLICE_SENTINEL for elem in (lower, upper, step)):
-                index_value = slice(lower, upper, step)
-        elif isinstance(index, bases.Instance):
-            index = helpers.class_instance_as_index(index)
-            if index:
-                index_value = index.value
+        if index.__class__ == bases.Instance:
+            instance_as_index = helpers.class_instance_as_index(index)
+            if instance_as_index:
+                index_value = instance_as_index
         else:
-            raise exceptions.InferenceError(node=self, context=context)
-
-    if index_value is _SLICE_SENTINEL:
+            index_value = index
+    if index_value is _SUBSCRIPT_SENTINEL:
         raise exceptions.InferenceError(node=self, context=context)
 
     try:
