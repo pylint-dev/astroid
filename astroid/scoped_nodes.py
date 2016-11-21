@@ -1767,6 +1767,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         inferred_bases = list(self._inferred_bases(context=context))
         bases_mro = []
         for base in inferred_bases:
+            if base is self:
+                continue
+
             try:
                 mro = base.mro(context=context)
                 bases_mro.append(mro)
