@@ -105,10 +105,11 @@ class UnboundMethodModelTest(unittest.TestCase):
         cls = next(ast_nodes[0].infer())
         self.assertIsInstance(cls, astroid.ClassDef)
         if six.PY2:
-            unbound = BUILTINS.locals[types.MethodType.__name__][0]
+            unbound_name = 'instancemethod'
         else:
-            unbound = BUILTINS.locals[types.FunctionType.__name__][0]
-        self.assertEqual(cls.name, unbound.name)
+            unbound_name = 'function'
+
+        self.assertEqual(cls.name, unbound_name)
 
         func = next(ast_nodes[1].infer())
         self.assertIsInstance(func, astroid.FunctionDef)
