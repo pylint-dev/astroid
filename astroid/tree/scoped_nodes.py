@@ -1925,6 +1925,8 @@ class ClassDef(QualifiedNameMixin, base.FilterStmtsMixin,
         bases = list(self._inferred_bases(context=context))
         bases_mro = []
         for base in bases:
+            if base is self:
+                continue
             try:
                 mro = base.mro(context=context)
                 bases_mro.append(mro)
