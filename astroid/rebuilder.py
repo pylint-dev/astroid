@@ -10,8 +10,8 @@
 order to get a single Astroid representation
 """
 
-import _ast
 import sys
+import _ast
 
 import astroid
 from astroid import astpeephole

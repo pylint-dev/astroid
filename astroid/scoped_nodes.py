@@ -261,7 +261,6 @@ class Module(LocalsDictNodeNG):
                      'pure_python', 'future_imports')
     _other_other_fields = ('locals', 'globals')
 
-    # pylint: disable=redefined-builtin
     def __init__(self, name, doc, file=None, path=None, package=None,
                  parent=None, pure_python=True):
         self.name = name
@@ -628,6 +627,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
     # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
     @property
     def type(self):
+        # pylint: disable=no-member
         if self.args.args and self.args.args[0].name == 'self':
             if isinstance(self.parent.scope(), ClassDef):
                 return 'method'
@@ -881,7 +881,6 @@ class FunctionDef(node_classes.Statement, Lambda):
         result = set()
         decoratornodes = []
         if self.decorators is not None:
-            # pylint: disable=unsupported-binary-operation; damn flow control.
             decoratornodes += self.decorators.nodes
         decoratornodes += self.extra_decorators
         for decnode in decoratornodes:
@@ -1680,7 +1679,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             if exc.args and exc.args[0] not in ('', None):
                 return exc.args[0]
             return None
-        # pylint: disable=unsupported-binary-operation; false positive
         return [first] + list(slots)
 
     # Cached, because inferring them all the time is expensive

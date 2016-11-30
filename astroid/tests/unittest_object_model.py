@@ -3,7 +3,6 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
 import unittest
-import types
 import xml
 
 import six

@@ -56,6 +56,7 @@ class Super(node_classes.NodeNG):
     *self_class* is the class where the super call is, while
     *scope* is the function where the super call is.
     """
+    # pylint: disable=unnecessary-lambda
     special_attributes = util.lazy_descriptor(lambda: objectmodel.SuperModel())
 
     # pylint: disable=super-init-not-called
@@ -182,6 +183,7 @@ class ExceptionInstance(bases.Instance):
     the case of .args.
     """
 
+    # pylint: disable=unnecessary-lambda
     special_attributes = util.lazy_descriptor(lambda: objectmodel.ExceptionInstanceModel())
 
 
@@ -192,6 +194,7 @@ class DictInstance(bases.Instance):
     that methods such as .values or .items can be properly inferred.
     """
 
+    # pylint: disable=unnecessary-lambda
     special_attributes = util.lazy_descriptor(lambda: objectmodel.DictModel())
 
 

@@ -12,11 +12,11 @@ The builder is not thread safe and can't be used to parse different sources
 at the same time.
 """
 
-import _ast
 import re
 import os
 import sys
 import textwrap
+import _ast
 
 from astroid import bases
 from astroid import exceptions
@@ -42,9 +42,6 @@ def _parse(string):
 
 
 if sys.version_info >= (3, 0):
-    # pylint: disable=no-name-in-module; We don't understand flows yet.
-    # pylint: disable=wrong-import-order, wrong-import-position; have to do it here,
-    # rather than moving the entire block between standard and local imports.
     from tokenize import detect_encoding
 
     def open_source_file(filename):

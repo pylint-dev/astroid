@@ -24,7 +24,7 @@ _ImpTypes = {imp.C_BUILTIN: ModuleType.C_BUILTIN,
              imp.PY_COMPILED: ModuleType.PY_COMPILED,
              imp.PY_FROZEN: ModuleType.PY_FROZEN,
              imp.PY_SOURCE: ModuleType.PY_SOURCE,
-             }
+            }
 if hasattr(imp, 'PY_RESOURCE'):
     _ImpTypes[imp.PY_RESOURCE] = ModuleType.PY_RESOURCE
 if hasattr(imp, 'PY_CODERESOURCE'):
@@ -43,9 +43,9 @@ class ModuleSpec(_ModuleSpec):
     and where submodules can be found, if the module is a package.
     """
 
-    def __new__(cls, name, type, location=None, origin=None,
+    def __new__(cls, name, module_type, location=None, origin=None,
                 submodule_search_locations=None):
-        return _ModuleSpec.__new__(cls, name=name, type=type,
+        return _ModuleSpec.__new__(cls, name=name, type=module_type,
                                    location=location, origin=origin,
                                    submodule_search_locations=submodule_search_locations)
 
@@ -75,14 +75,14 @@ class Finder(object):
                   None, otherwise.
         """
 
-    def contribute_to_path(self, filename, processed):
+    def contribute_to_path(self, spec, processed):
         """Get a list of extra paths where this finder can search."""
 
 
 class ImpFinder(Finder):
     """A finder based on the imp module."""
 
-    def find_module(self, modname, _, processed, submodule_path):
+    def find_module(self, modname, module_parts, processed, submodule_path):
         try:
             stream, mp_filename, mp_desc = imp.find_module(modname, submodule_path)
         except ImportError:
@@ -93,7 +93,7 @@ class ImpFinder(Finder):
             stream.close()
 
         return ModuleSpec(name=modname, location=mp_filename,
-                          type=_imp_type_to_module_type(mp_desc[2]))
+                          module_type=_imp_type_to_module_type(mp_desc[2]))
 
     def contribute_to_path(self, spec, processed):
         if spec.location is None:
@@ -118,7 +118,7 @@ class ExplicitNamespacePackageFinder(ImpFinder):
             submodule_path = sys.modules[modname].__path__
             return ModuleSpec(name=modname, location='',
                               origin='namespace',
-                              type=ModuleType.PY_NAMESPACE,
+                              module_type=ModuleType.PY_NAMESPACE,
                               submodule_search_locations=submodule_path)
 
 
@@ -140,7 +140,7 @@ class ZipFinder(Finder):
             return None
 
         return ModuleSpec(name=modname, location=filename,
-                          origin='egg', type=file_type,
+                          origin='egg', module_type=file_type,
                           submodule_search_locations=path)
 
 
@@ -151,10 +151,11 @@ class PathSpecFinder(Finder):
         spec = importlib.machinery.PathFinder.find_spec(modname, path=submodule_path)
         if spec:
             location = spec.origin if spec.origin != 'namespace' else None
-            type = ModuleType.PY_NAMESPACE if spec.origin == 'namespace' else None
+            module_type = ModuleType.PY_NAMESPACE if spec.origin == 'namespace' else None
             spec = ModuleSpec(name=spec.name, location=location,
-                              origin=spec.origin, type=type,
-                              submodule_search_locations=list(spec.submodule_search_locations or []))
+                              origin=spec.origin, module_type=module_type,
+                              submodule_search_locations=list(spec.submodule_search_locations
+                                                              or []))
         return spec
 
     def contribute_to_path(self, spec, processed):
@@ -257,7 +258,7 @@ def find_spec(modpath, path=None):
                                             submodule_path or path)
         processed.append(modname)
         if modpath:
-           submodule_path = finder.contribute_to_path(spec, processed)
+            submodule_path = finder.contribute_to_path(spec, processed)
 
         if spec.type == ModuleType.PKG_DIRECTORY:
             spec = spec._replace(submodule_search_locations=submodule_path)

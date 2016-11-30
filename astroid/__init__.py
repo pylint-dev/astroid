@@ -39,7 +39,6 @@ import enum
 
 
 _Context = enum.Enum('Context', 'Load Store Del')
-# pylint: disable=no-member; github.com/pycqa/pylint/issues/690
 Load = _Context.Load
 Store = _Context.Store
 Del = _Context.Del
@@ -50,8 +49,6 @@ from .__pkginfo__ import version as __version__
 # WARNING: internal imports order matters !
 
 # pylint: disable=redefined-builtin, wildcard-import
-# pylint: disable=wrong-import-position; the current order of imports is critical
-# here, that's why we don't respect it.
 
 # make all exception classes accessible from astroid package
 from astroid.exceptions import *
@@ -96,8 +93,8 @@ class AsStringRegexpPredicate(object):
 
     def __call__(self, node):
         if self.expression is not None:
-            # pylint: disable=no-member; github.com/pycqa/astroid/126
             node = attrgetter(self.expression)(node)
+        # pylint: disable=no-member; github.com/pycqa/astroid/126
         return self.regexp.search(node.as_string())
 
 def inference_tip(infer_function):

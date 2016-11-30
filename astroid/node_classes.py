@@ -16,7 +16,6 @@ import warnings
 try:
     from functools import singledispatch as _singledispatch
 except ImportError:
-    # pylint: disable=import-error
     from singledispatch import singledispatch as _singledispatch
 
 import six
@@ -540,7 +539,7 @@ class NodeNG(object):
             """Outputs a representation of a sequence that's contained within an AST."""
             cur_indent += indent
             result.append('[')
-            if len(node) == 0:
+            if not node:
                 broken = False
             elif len(node) == 1:
                 broken = _repr_tree(node[0], result, done, cur_indent, depth)
@@ -591,7 +590,7 @@ class NodeNG(object):
             fields.extend(node._astroid_fields)
             if ast_state:
                 fields.extend(node._other_other_fields)
-            if len(fields) == 0:
+            if not fields:
                 broken = False
             elif len(fields) == 1:
                 result.append('%s=' % fields[0])
@@ -1348,23 +1347,23 @@ class Dict(NodeNG, bases.Instance):
     def itered(self):
         return self.items[::2]
 
-    def getitem(self, lookup_key, context=None):
+    def getitem(self, index, context=None):
         for key, value in self.items:
             # TODO(cpopa): no support for overriding yet, {1:2, **{1: 3}}.
             if isinstance(key, DictUnpack):
                 try:
-                    return value.getitem(lookup_key, context)
+                    return value.getitem(index, context)
                 except IndexError:
                     continue
             for inferredkey in key.infer(context):
                 if inferredkey is util.Uninferable:
                     continue
-                if isinstance(inferredkey, Const) and isinstance(lookup_key, Const):
-                    if inferredkey.value == lookup_key.value:
+                if isinstance(inferredkey, Const) and isinstance(index, Const):
+                    if inferredkey.value == index.value:
                         return value
         # This should raise KeyError, but all call sites only catch
         # IndexError. Let's leave it like that for now.
-        raise IndexError(lookup_key)
+        raise IndexError(index)
 
     def bool_value(self):
         return bool(self.items)
@@ -1934,7 +1933,7 @@ class FormattedValue(NodeNG):
 class JoinedStr(NodeNG):
     """Represents a list of string expressions to be joined."""
     _astroid_fields = ('values',)
-    value = None
+    values = None
 
     def postinit(self, values=None):
         self.values = values

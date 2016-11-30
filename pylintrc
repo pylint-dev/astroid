@@ -103,6 +103,9 @@ disable=fixme,invalid-name, missing-docstring, too-few-public-methods,
         unused-argument,
         # Not very useful when it warns about imports.
         duplicate-code,
+        # Don't care about these two too much
+        wrong-import-order,
+        wrong-import-position
 
 
 [BASIC]

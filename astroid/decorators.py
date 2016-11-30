@@ -94,7 +94,7 @@ def path_wrapper(func):
         except StopIteration as error:
             # Explicit StopIteration to return error information, see
             # comment in raise_if_nothing_inferred.
-            if len(error.args) > 0:
+            if error.args:
                 raise StopIteration(error.args[0])
             else:
                 raise StopIteration
@@ -139,7 +139,8 @@ def raise_if_nothing_inferred(func, instance, args, kwargs):
             inferred = True
     except StopIteration as error:
         if not inferred:
-            if len(error.args) > 0:
+            if error.args:
+                # pylint: disable=not-a-mapping
                 raise exceptions.InferenceError(**error.args[0])
             else:
                 raise exceptions.InferenceError(

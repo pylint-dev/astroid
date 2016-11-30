@@ -50,6 +50,9 @@ def _dunder_dict(instance, attributes):
 
 class ObjectModel(object):
 
+    def __init__(self):
+        self._instance = None
+
     def __repr__(self):
         result = []
         cname = type(self).__name__
@@ -291,6 +294,7 @@ class FunctionModel(ObjectModel):
                 new_func = func.__class__(name=func.name, doc=func.doc,
                                           lineno=func.lineno, col_offset=func.col_offset,
                                           parent=cls)
+                # pylint: disable=no-member
                 new_func.postinit(func.args, func.body,
                                   func.decorators, func.returns)
 
@@ -487,18 +491,18 @@ class BoundMethodModel(FunctionModel):
 
 class GeneratorModel(FunctionModel):
 
-    def __new__(self, *args, **kwargs):
+    def __new__(cls, *args, **kwargs):
         # Append the values from the GeneratorType unto this object.
-        cls = super(GeneratorModel, self).__new__(self, *args, **kwargs)
+        ret = super(GeneratorModel, cls).__new__(cls, *args, **kwargs)
         generator = astroid.MANAGER.astroid_cache[six.moves.builtins.__name__]['generator']
         for name, values in generator.locals.items():
             print(name, values)
             method = values[0]
-            patched = lambda self, meth=method: meth
+            patched = lambda cls, meth=method: meth
 
-            setattr(type(cls), 'py' + name, property(patched))
+            setattr(type(ret), 'py' + name, property(patched))
 
-        return cls
+        return ret
 
     @property
     def py__name__(self):
