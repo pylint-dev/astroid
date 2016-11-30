@@ -26,15 +26,10 @@ import sys
 from distutils.sysconfig import get_python_lib # pylint: disable=import-error
 # pylint: disable=import-error, no-name-in-module
 from distutils.errors import DistutilsPlatformError
-# pylint: disable=wrong-import-order
 # distutils is replaced by virtualenv with a module that does
 # weird path manipulations in order to get to the
 # real distutils module.
 
-try:
-    import pkg_resources
-except ImportError:
-    pkg_resources = None
 import six
 
 from .interpreter._import import spec
@@ -376,7 +371,7 @@ def file_info_from_modpath(modpath, path=None, context_file=None):
             return _spec_from_modpath(modpath, path, context)
     elif modpath == ['os', 'path']:
         # FIXME: currently ignoring search_path...
-        return spec.ModuleSpec(name='os.path', location=os.path.__file__, type=imp.PY_SOURCE)
+        return spec.ModuleSpec(name='os.path', location=os.path.__file__, module_type=imp.PY_SOURCE)
     return _spec_from_modpath(modpath, path, context)
 
 
@@ -587,7 +582,7 @@ def _spec_from_modpath(modpath, path=None, context=None):
     this function is used internally, see `file_from_modpath`'s
     documentation for more information
     """
-    assert len(modpath) > 0
+    assert modpath
     location = None
     if context is not None:
         try:
@@ -601,7 +596,7 @@ def _spec_from_modpath(modpath, path=None, context=None):
     if found_spec.type == spec.ModuleType.PY_COMPILED:
         try:
             location = get_source_file(found_spec.location)
-            return found_spec._replace(location=location, type=spec.ModuleSpec.PY_SOURCE)
+            return found_spec._replace(location=location, type=spec.ModuleType.PY_SOURCE)
         except NoSourceFile:
             return found_spec._replace(location=location)
     elif found_spec.type == spec.ModuleType.C_BUILTIN:

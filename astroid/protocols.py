@@ -557,13 +557,13 @@ def starred_assigned_stmts(self, node=None, context=None, asspath=None):
         # anything before the starred node and from right to left
         # to remove anything after the starred node.
 
-        for index, node in enumerate(lhs.elts):
-            if not isinstance(node, nodes.Starred):
+        for index, left_node in enumerate(lhs.elts):
+            if not isinstance(left_node, nodes.Starred):
                 elts.popleft()
                 continue
             lhs_elts = collections.deque(reversed(lhs.elts[index:]))
-            for node in lhs_elts:
-                if not isinstance(node, nodes.Starred):
+            for right_node in lhs_elts:
+                if not isinstance(right_node, nodes.Starred):
                     elts.pop()
                     continue
                 # We're done
