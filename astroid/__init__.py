@@ -39,13 +39,13 @@ import enum
 
 
 _Context = enum.Enum('Context', 'Load Store Del')
-# pylint: disable=no-member; github.com/pycqa/pylint/issues/690
 Load = _Context.Load
 Store = _Context.Store
 Del = _Context.Del
 del _Context
 
 
+# pylint: disable=wrong-import-position
 from .__pkginfo__ import version as __version__
 # WARNING: internal imports order matters !
 
@@ -54,23 +54,33 @@ from .__pkginfo__ import version as __version__
 # here, that's why we don't respect it.
 
 # make all exception classes accessible from astroid package
+# pylint: disable=wrong-import-order
 from astroid.exceptions import *
 
 # make all node classes accessible from astroid package
+# pylint: disable=wrong-import-order
 from astroid.nodes import *
 
 # trigger extra monkey-patching
+# pylint: disable=wrong-import-order
 from astroid import inference
 
 # more stuff available
+# pylint: disable=wrong-import-order
 from astroid import raw_building
+# pylint: disable=wrong-import-order
 from astroid.bases import BaseInstance, Instance, BoundMethod, UnboundMethod
+# pylint: disable=wrong-import-order
 from astroid.node_classes import are_exclusive, unpack_infer
+# pylint: disable=wrong-import-order
 from astroid.scoped_nodes import builtin_lookup
+# pylint: disable=wrong-import-order
 from astroid.builder import parse, extract_node
+# pylint: disable=wrong-import-order
 from astroid.util import Uninferable, YES
 
 # make a manager instance (borg) accessible from astroid package
+# pylint: disable=wrong-import-order
 from astroid.manager import AstroidManager
 MANAGER = AstroidManager()
 del AstroidManager
@@ -96,8 +106,8 @@ class AsStringRegexpPredicate(object):
 
     def __call__(self, node):
         if self.expression is not None:
-            # pylint: disable=no-member; github.com/pycqa/astroid/126
             node = attrgetter(self.expression)(node)
+        # pylint: disable=no-member; github.com/pycqa/astroid/126
         return self.regexp.search(node.as_string())
 
 def inference_tip(infer_function):

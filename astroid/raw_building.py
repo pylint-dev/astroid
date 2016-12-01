@@ -209,12 +209,12 @@ def _base_class_object_build(node, member, basenames, name=None, localname=None)
     except: # pylint: disable=bare-except
         pass
     else:
-        for name, obj in instdict.items():
+        for item_name, obj in instdict.items():
             valnode = nodes.EmptyNode()
             valnode.object = obj
             valnode.parent = klass
             valnode.lineno = 1
-            klass.instance_attrs[name] = [valnode]
+            klass.instance_attrs[item_name] = [valnode]
     return klass
 
 
@@ -374,6 +374,7 @@ def _astroid_bootstrapping(astroid_builtin=None):
         from six.moves import builtins
         astroid_builtin = Astroid_BUILDER.inspect_build(builtins)
 
+    # pylint: disable=redefined-outer-name
     for cls, node_cls in node_classes.CONST_CLS.items():
         if cls is type(None):
             proxy = build_class('NoneType')

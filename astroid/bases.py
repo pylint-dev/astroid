@@ -220,6 +220,7 @@ class BaseInstance(Proxy):
 class Instance(BaseInstance):
     """A special node representing a class instance."""
 
+    # pylint: disable=unnecessary-lambda
     special_attributes = util.lazy_descriptor(lambda: objectmodel.InstanceModel())
 
     def __repr__(self):
@@ -278,6 +279,7 @@ class Instance(BaseInstance):
 class UnboundMethod(Proxy):
     """a special node representing a method not bound to an instance"""
 
+    # pylint: disable=unnecessary-lambda
     special_attributes = util.lazy_descriptor(lambda: objectmodel.UnboundMethodModel())
 
     def __repr__(self):
@@ -315,6 +317,7 @@ class UnboundMethod(Proxy):
 class BoundMethod(UnboundMethod):
     """a special node representing a method bound to an instance"""
 
+    # pylint: disable=unnecessary-lambda
     special_attributes = util.lazy_descriptor(lambda: objectmodel.BoundMethodModel())
 
     def __init__(self, proxy, bound):
@@ -420,8 +423,10 @@ class Generator(BaseInstance):
     Proxied class is set once for all in raw_building.
     """
 
+    # pylint: disable=unnecessary-lambda
     special_attributes = util.lazy_descriptor(lambda: objectmodel.GeneratorModel())
 
+    # pylint: disable=super-init-not-called
     def __init__(self, parent=None):
         self.parent = parent
 
