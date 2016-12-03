@@ -90,7 +90,7 @@ def _container_getitem(instance, elts, index, context=None):
             message='Index {index!s} out of range',
             node=instance, index=index, context=context))
     except TypeError as exc:
-        util.reraise(exceptions.AstroidIndexError(
+        util.reraise(exceptions.AstroidTypeError(
             message='Type error {error!r}', error=exc,
             node=instance, index=index, context=context))
 
@@ -576,10 +576,14 @@ class Const(base.NodeNG, objects.BaseInstance):
                 # on Python 3. Also, indexing them should return
                 # integers.
                 return Const(self.value[index_value])
-        except TypeError:
-            # The object does not support this operation, let the
-            # following error be raised instead.
-            pass
+        except IndexError as exc:
+            util.reraise(exceptions.AstroidIndexError(
+                message='Index {index!r} out of range', error=exc,
+                node=self, index=index, context=context))
+        except TypeError as exc:
+            util.reraise(exceptions.AstroidTypeError(
+                message='Type error {error!r}', error=exc,
+                node=self, index=index, context=context))
 
         raise exceptions.AstroidTypeError(
             '%r (value=%s)' % (self, self.value)
@@ -725,7 +729,7 @@ class Dict(base.NodeNG, objects.DictInstance):
                 if isinstance(inferredkey, Const) and isinstance(lookup_key, Const):
                     if inferredkey.value == lookup_key.value:
                         return value
-        raise exceptions.AstroidIndexError(index)
+        raise exceptions.AstroidIndexError(lookup_key)
 
     def bool_value(self):
         return bool(self.keys)
