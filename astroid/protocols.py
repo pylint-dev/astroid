@@ -247,9 +247,9 @@ def _resolve_looppart(parts, assign_path, context, nodes):
             index_node = nodes.Const(index)
             try:
                 assigned = stmt.getitem(index_node, context)
-            except (AttributeError, IndexError):
-                continue
-            except TypeError: # stmt is unsubscriptable Const
+            except (AttributeError,
+                    exceptions.AstroidTypeError,
+                    exceptions.AstroidIndexError):
                 continue
             if not assign_path:
                 # we achieved to resolved the assignment path,
@@ -404,7 +404,7 @@ def _resolve_asspart(parts, assign_path, context, nodes):
                 assigned = part.getitem(index_node, context)
             # XXX raise a specific exception to avoid potential hiding of
             # unexpected exception ?
-            except (TypeError, IndexError):
+            except (exceptions.AstroidTypeError, exceptions.AstroidIndexError):
                 return
             if not assign_path:
                 # we achieved to resolved the assignment path, don't infer the

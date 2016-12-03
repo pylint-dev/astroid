@@ -76,16 +76,27 @@ def _infer_slice(node, context=None):
 
 def _container_getitem(instance, elts, index, context=None):
     """Get a slice or an item, using the given *index*, for the given sequence."""
-    if isinstance(index, Slice):
-        index_slice = _infer_slice(index, context=context)
-        new_cls = instance.__class__()
-        new_cls.elts = elts[index_slice]
-        new_cls.parent = instance.parent
-        return new_cls
-    elif isinstance(index, Const):
-        return elts[index.value]
+    try:
+        if isinstance(index, Slice):
+            index_slice = _infer_slice(index, context=context)
+            new_cls = instance.__class__()
+            new_cls.elts = elts[index_slice]
+            new_cls.parent = instance.parent
+            return new_cls
+        elif isinstance(index, Const):
+            return elts[index.value]
+    except IndexError:
+        util.reraise(exceptions.AstroidIndexError(
+            message='Index {index!s} out of range',
+            node=instance, index=index, context=context))
+    except TypeError as exc:
+        util.reraise(exceptions.AstroidIndexError(
+            message='Type error {error!r}', error=exc,
+            node=instance, index=index, context=context))
 
-    raise TypeError('Could not use %s as subscript index' % index)
+    raise exceptions.AstroidTypeError(
+        'Could not use %s as subscript index' % index
+    )
 
 @util.register_implementation(treeabc.Statement)
 class Statement(base.NodeNG):
@@ -553,19 +564,26 @@ class Const(base.NodeNG, objects.BaseInstance):
         elif isinstance(index, Slice):
             index_value = _infer_slice(index, context=context)
         else:
-            raise TypeError(
+            raise exceptions.AstroidTypeError(
                 'Could not use type {} as subscript index'.format(type(index))
             )
 
-        if isinstance(self.value, six.string_types):
-            return Const(self.value[index_value])
-        if isinstance(self.value, bytes) and six.PY3:
-            # Bytes aren't instances of six.string_types
-            # on Python 3. Also, indexing them should return
-            # integers.
-            return Const(self.value[index_value])
+        try:
+            if isinstance(self.value, six.string_types):
+                return Const(self.value[index_value])
+            if isinstance(self.value, bytes) and six.PY3:
+                # Bytes aren't instances of six.string_types
+                # on Python 3. Also, indexing them should return
+                # integers.
+                return Const(self.value[index_value])
+        except TypeError:
+            # The object does not support this operation, let the
+            # following error be raised instead.
+            pass
 
-        raise TypeError('%r (value=%s)' % (self, self.value))
+        raise exceptions.AstroidTypeError(
+            '%r (value=%s)' % (self, self.value)
+        )
 
     def has_dynamic_getattr(self):
         return False
@@ -699,7 +717,7 @@ class Dict(base.NodeNG, objects.DictInstance):
             if isinstance(key, DictUnpack):
                 try:
                     return value.getitem(lookup_key, context)
-                except IndexError:
+                except (exceptions.AstroidTypeError, exceptions.AstroidIndexError):
                     continue
             for inferredkey in key.infer(context):
                 if inferredkey is util.Uninferable:
@@ -707,9 +725,7 @@ class Dict(base.NodeNG, objects.DictInstance):
                 if isinstance(inferredkey, Const) and isinstance(lookup_key, Const):
                     if inferredkey.value == lookup_key.value:
                         return value
-        # This should raise KeyError, but all call sites only catch
-        # IndexError. Let's leave it like that for now.
-        raise IndexError(lookup_key)
+        raise exceptions.AstroidIndexError(index)
 
     def bool_value(self):
         return bool(self.keys)
