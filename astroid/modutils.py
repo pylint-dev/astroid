@@ -66,10 +66,18 @@ except DistutilsPlatformError:
 if os.name == 'nt':
     STD_LIB_DIRS.add(os.path.join(sys.prefix, 'dlls'))
     try:
-        # real_prefix is defined when running inside virtualenv.
+        # real_prefix is defined when running inside virtual environments,
+        # created with the **virtualenv** library.
         STD_LIB_DIRS.add(os.path.join(sys.real_prefix, 'dlls'))
     except AttributeError:
-        pass
+        # sys.base_exec_prefix is always defined, but in a virtual environment
+        # created with the stdlib **venv** module, it points to the original
+        # installation, if the virtual env is activated.
+        try:
+            STD_LIB_DIRS.add(os.path.join(sys.base_exec_prefix, 'dlls'))
+        except AttributeError:
+            pass
+
 if platform.python_implementation() == 'PyPy':
     _root = os.path.join(sys.prefix, 'lib_pypy')
     STD_LIB_DIRS.add(_root)
