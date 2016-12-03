@@ -196,6 +196,14 @@ class _NonDeducibleTypeHierarchy(Exception):
     """Raised when is_subtype / is_supertype can't deduce the relation between two types."""
 
 
+class AstroidIndexError(AstroidError):
+    """Raised when an Indexable / Mapping does not have an index / key."""
+
+
+class AstroidTypeError(AstroidError):
+    """Raised when a TypeError would be expected in Python code."""
+
+
 # Backwards-compatibility aliases
 OperationError = util.BadOperationMessage
 UnaryOperationError = util.BadUnaryOperationMessage
