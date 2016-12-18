@@ -168,7 +168,9 @@ def _infer_slice(node, context=None):
     if all(elem is not _SLICE_SENTINEL for elem in (lower, upper, step)):
         return slice(lower, upper, step)
 
-    raise TypeError('Could not infer slice used in subscript.')
+    raise exceptions.AstroidTypeError(
+        message='Could not infer slice used in subscript',
+        node=node, index=node.parent, context=context)
 
 
 def _container_getitem(instance, elts, index, context=None):
@@ -1243,6 +1245,7 @@ class Const(NodeNG, bases.Instance):
             index_value = index.value
         elif isinstance(index, Slice):
             index_value = _infer_slice(index, context=context)
+
         else:
             raise exceptions.AstroidTypeError(
                 'Could not use type {} as subscript index'.format(type(index))
