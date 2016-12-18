@@ -84,7 +84,8 @@ class ImpFinder(Finder):
 
     def find_module(self, modname, _, processed, submodule_path):
         try:
-            stream, mp_filename, mp_desc = imp.find_module(modname, submodule_path)
+            stream, mp_filename, mp_desc = imp.find_module(
+                modname, list(submodule_path))
         except ImportError:
             return None
 
