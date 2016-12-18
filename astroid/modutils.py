@@ -651,7 +651,7 @@ def _module_file(modpath, path=None):
         # setuptools has added into sys.modules a module object with proper
         # __path__, get back information from there
         module = sys.modules[modpath.pop(0)]
-        path = module.__path__
+        path = list(module.__path__)
         if not modpath:
             return imp.C_BUILTIN, None
     imported = []
