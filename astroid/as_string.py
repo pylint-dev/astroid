@@ -98,10 +98,10 @@ class AsStringVisitor(object):
 
     def visit_classdef(self, node):
         """return an astroid.ClassDef node as string"""
-        decorate = node.decorators and node.decorators.accept(self)  or ''
+        decorate = node.decorators.accept(self) if node.decorators else ''
         bases = ', '.join([n.accept(self) for n in node.bases])
         if sys.version_info[0] == 2:
-            bases = bases and '(%s)' % bases or ''
+            bases = '(%s)' % bases if bases else ''
         else:
             metaclass = node.metaclass()
             if metaclass and not node.has_metaclass_hack():
@@ -110,8 +110,8 @@ class AsStringVisitor(object):
                 else:
                     bases = '(metaclass=%s)' % metaclass.name
             else:
-                bases = bases and '(%s)' % bases or ''
-        docs = node.doc and '\n%s"""%s"""' % (self.indent, node.doc) or ''
+                bases = '(%s)' % bases if bases else ''
+        docs = '\n%s"""%s"""' % (self.indent, node.doc) if node.doc else ''
         return '\n\n%sclass %s%s:%s\n%s\n' % (decorate, node.name, bases, docs,
                                               self._stmt_list(node.body))
 
@@ -232,8 +232,8 @@ class AsStringVisitor(object):
 
     def visit_functiondef(self, node):
         """return an astroid.Function node as string"""
-        decorate = node.decorators and node.decorators.accept(self)  or ''
-        docs = node.doc and '\n%s"""%s"""' % (self.indent, node.doc) or ''
+        decorate = node.decorators.accept(self) if node.decorators else ''
+        docs = '\n%s"""%s"""' % (self.indent, node.doc) if node.doc else ''
         return_annotation = ''
         if six.PY3 and node.returns:
             return_annotation = '->' + node.returns.as_string()
@@ -298,7 +298,7 @@ class AsStringVisitor(object):
 
     def visit_module(self, node):
         """return an astroid.Module node as string"""
-        docs = node.doc and '"""%s"""\n\n' % node.doc or ''
+        docs = '"""%s"""\n\n' % node.doc if node.doc else ''
         return docs + '\n'.join([n.accept(self) for n in node.body]) + '\n\n'
 
     def visit_name(self, node):
@@ -335,8 +335,8 @@ class AsStringVisitor(object):
         """return an astroid.Return node as string"""
         if node.value:
             return 'return %s' % node.value.accept(self)
-        else:
-            return 'return'
+
+        return 'return'
 
     def visit_index(self, node):
         """return a astroid.Index node as string"""
@@ -353,9 +353,9 @@ class AsStringVisitor(object):
 
     def visit_slice(self, node):
         """return a astroid.Slice node as string"""
-        lower = node.lower and node.lower.accept(self) or ''
-        upper = node.upper and node.upper.accept(self) or ''
-        step = node.step and node.step.accept(self) or ''
+        lower = node.lower.accept(self) if node.lower else ''
+        upper = node.upper.accept(self) if node.upper else''
+        step = node.step.accept(self) if node.step else ''
         if step:
             return '%s:%s:%s' % (lower, upper, step)
         return  '%s:%s' % (lower, upper)
@@ -409,12 +409,12 @@ class AsStringVisitor(object):
 
     def visit_yield(self, node):
         """yield an ast.Yield node as string"""
-        yi_val = node.value and (" " + node.value.accept(self)) or ""
+        yi_val = (" " + node.value.accept(self)) if node.value else ""
         expr = 'yield' + yi_val
         if node.parent.is_statement:
             return expr
-        else:
-            return "(%s)" % (expr,)
+
+        return "(%s)" % (expr,)
 
     def visit_starred(self, node):
         """return Starred node as string"""
@@ -461,12 +461,12 @@ class AsStringVisitor3(AsStringVisitor):
 
     def visit_yieldfrom(self, node):
         """ Return an astroid.YieldFrom node as string. """
-        yi_val = node.value and (" " + node.value.accept(self)) or ""
+        yi_val = (" " + node.value.accept(self)) if node.value else ""
         expr = 'yield from' + yi_val
         if node.parent.is_statement:
             return expr
-        else:
-            return "(%s)" % (expr,)
+
+        return "(%s)" % (expr,)
 
     def visit_asyncfunctiondef(self, node):
         function = super(AsStringVisitor3, self).visit_functiondef(node)

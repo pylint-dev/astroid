@@ -311,8 +311,8 @@ class NodeNG(object):
                 continue
             if isinstance(attr, (list, tuple)):
                 return attr[-1]
-            else:
-                return attr
+
+            return attr
         return None
 
     def parent_of(self, node):
@@ -411,8 +411,8 @@ class NodeNG(object):
     def fromlineno(self):
         if self.lineno is None:
             return self._fixed_source_line()
-        else:
-            return self.lineno
+
+        return self.lineno
 
     @decorators.cachedproperty
     def tolineno(self):
@@ -423,12 +423,8 @@ class NodeNG(object):
             lastchild = self.last_child()
         if lastchild is None:
             return self.fromlineno
-        else:
-            return lastchild.tolineno
 
-        # TODO / FIXME:
-        assert self.fromlineno is not None, self
-        assert self.tolineno is not None, self
+        return lastchild.tolineno
 
     def _fixed_source_line(self):
         """return the line number where the given node appears
@@ -1430,8 +1426,8 @@ class ExceptHandler(mixins.AssignTypeMixin, Statement):
             return self.name.tolineno
         elif self.type:
             return self.type.tolineno
-        else:
-            return self.lineno
+
+        return self.lineno
 
     def catch(self, exceptions): # pylint: disable=redefined-outer-name
         if self.type is None or exceptions is None:

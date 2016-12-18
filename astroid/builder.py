@@ -192,7 +192,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
             modname = modname[:-9]
             package = True
         else:
-            package = path and path.find('__init__.py') > -1 or False
+            package = path.find('__init__.py') > -1 if path else False
         builder = rebuilder.TreeRebuilder(self._manager)
         module = builder.visit_module(node, modname, node_file, package)
         module._import_from_nodes = builder._import_from_nodes
@@ -411,8 +411,8 @@ def extract_node(code, module_name=''):
     def _extract(node):
         if isinstance(node, nodes.Expr):
             return node.value
-        else:
-            return node
+
+        return node
 
     requested_lines = []
     for idx, line in enumerate(code.splitlines()):
@@ -434,5 +434,4 @@ def extract_node(code, module_name=''):
     extracted = [_extract(node) for node in extracted]
     if len(extracted) == 1:
         return extracted[0]
-    else:
-        return extracted
+    return extracted

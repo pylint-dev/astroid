@@ -262,7 +262,7 @@ class InspectBuilder(object):
         except AttributeError:
             # in jython, java modules have no __doc__ (see #109562)
             node = build_module(modname)
-        node.file = node.path = path and os.path.abspath(path) or path
+        node.file = node.path = os.path.abspath(path) if path else path
         node.name = modname
         MANAGER.cache_module(node)
         node.package = hasattr(module, '__path__')

@@ -96,8 +96,8 @@ def _visit_or_none(node, attr, visitor, parent, visit='visit',
     value = getattr(node, attr, None)
     if value:
         return getattr(visitor, visit)(value, parent, **kws)
-    else:
-        return None
+
+    return None
 
 
 def _get_context(node):

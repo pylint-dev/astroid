@@ -1140,8 +1140,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
     def blockstart_tolineno(self):
         if self.bases:
             return self.bases[-1].tolineno
-        else:
-            return self.fromlineno
+
+        return self.fromlineno
 
     def block_range(self, lineno):
         """return block line numbers.

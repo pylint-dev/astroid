@@ -74,5 +74,5 @@ class CallContext(object):
 def copy_context(context):
     if context is not None:
         return context.clone()
-    else:
-        return InferenceContext()
+
+    return InferenceContext()

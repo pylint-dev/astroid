@@ -57,8 +57,8 @@ class TransformVisitor(object):
             return [self._visit_generic(child) for child in node]
         elif isinstance(node, tuple):
             return tuple(self._visit_generic(child) for child in node)
-        else:
-            return self._visit(node)
+
+        return self._visit(node)
 
     def register_transform(self, node_class, transform, predicate=None):
         """Register `transform(node)` function to be applied on the given

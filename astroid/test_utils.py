@@ -30,17 +30,17 @@ def require_version(minver=None, maxver=None):
         current = sys.version_info[:3]
         if parse(minver, "0") < current <= parse(maxver, "4"):
             return f
-        else:
-            str_version = '.'.join(str(v) for v in sys.version_info)
-            @functools.wraps(f)
-            def new_f(self, *args, **kwargs):
-                if minver is not None:
-                    self.skipTest('Needs Python > %s. Current version is %s.'
-                                  % (minver, str_version))
-                elif maxver is not None:
-                    self.skipTest('Needs Python <= %s. Current version is %s.'
-                                  % (maxver, str_version))
-            return new_f
+
+        str_version = '.'.join(str(v) for v in sys.version_info)
+        @functools.wraps(f)
+        def new_f(self, *args, **kwargs):
+            if minver is not None:
+                self.skipTest('Needs Python > %s. Current version is %s.'
+                              % (minver, str_version))
+            elif maxver is not None:
+                self.skipTest('Needs Python <= %s. Current version is %s.'
+                              % (maxver, str_version))
+        return new_f
 
 
     return check_require_version
