@@ -82,10 +82,12 @@ class Finder(object):
 class ImpFinder(Finder):
     """A finder based on the imp module."""
 
-    def find_module(self, modname, _, processed, submodule_path):
+    def find_module(self, modname, module_parts, processed, submodule_path):
+        if submodule_path is not None:
+            submodule_path = list(submodule_path)
+
         try:
-            stream, mp_filename, mp_desc = imp.find_module(
-                modname, list(submodule_path))
+            stream, mp_filename, mp_desc = imp.find_module(modname, submodule_path)
         except ImportError:
             return None
 
