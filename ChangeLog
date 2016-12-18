@@ -1,7 +1,14 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
---
+2016-12-18 -- 1.4.9
+
+    * Cast __path__ to a list in _module_file
+
+      _path__ can be an '_frozen_importlib_external._NamespacePath'
+      object for a namespace module (declared by setuptools) with python 3.5+
+      This should prevent a crash ocurring when working with namespace packages.
+
     * Add support for pytest 3.0.
 
 2016-07-27 -- 1.4.8
