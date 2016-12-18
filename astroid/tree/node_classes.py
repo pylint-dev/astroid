@@ -71,7 +71,9 @@ def _infer_slice(node, context=None):
     if all(elem is not _SLICE_SENTINEL for elem in (lower, upper, step)):
         return slice(lower, upper, step)
 
-    raise TypeError('Could not infer slice used in subscript.')
+    raise exceptions.AstroidTypeError(
+        message='Could not infer slice used in subscript',
+        node=node, index=node.parent, context=context)
 
 
 def _container_getitem(instance, elts, index, context=None):
