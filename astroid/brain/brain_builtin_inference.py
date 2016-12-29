@@ -550,7 +550,7 @@ def _get_py3_open_call_model(node):  # pylint: disable=unused-argument
             def writable(self): return True
             def writelines(self, lines): return None
     ''')
-    module_name = "__builtin__"
+    module_name = "_io"
     return code, module_name
 
 
