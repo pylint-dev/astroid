@@ -14,7 +14,7 @@ import six
 from astroid import (MANAGER, UseInferenceDefault, AttributeInferenceError,
                      inference_tip, InferenceError, NameInferenceError)
 from astroid import arguments
-from astroid.builder import AstroidBuilder
+from astroid.builder import AstroidBuilder, extract_node
 from astroid import helpers
 from astroid import nodes
 from astroid import objects
@@ -481,6 +481,79 @@ def infer_slice(node, context=None):
     return slice_node
 
 
+def infer_open(node, context=None):  # pylint: disable=unused-argument
+    """Understand `open` (and `file` in Python 2) calls."""
+
+    if six.PY2:
+        code, module_name = _get_py2_open_call_model(node)
+    else:
+        code, module_name = _get_py3_open_call_model(node)
+
+    node = extract_node(code, module_name)
+    return node.instantiate_class()
+
+
+def _get_py2_open_call_model(node):  # pylint: disable=unused-argument
+    # https://docs.python.org/2/library/stdtypes.html#file-objects
+    # https://github.com/python/typeshed/blob/master/stdlib/2/_io.pyi
+    code = dedent('''
+        class file(object): #@
+            closed = True
+            def __enter__(self): return self
+            def __exit__(self, type, value, traceback): return False
+            def __iter__(self): return self
+            def close(self): return None
+            def fileno(self): return 0
+            def flush(self): return None
+            def isatty(self): return True
+            def next(self): return ""
+            def read(self, size=-1): return ""
+            def readline(self, size=-1): return ""
+            def readlines(self, sizehint=-1): return [""]
+            def xreadlines(self, sizehint=-1): yield ""
+            def seek(self, offset, whence=0): return None
+            def tell(self): return 0
+            def truncate(self, size=0): return None
+            def write(self, s): return None
+            def writelines(self, seq): return None
+    ''')
+    module_name = "__builtin__"
+    return code, module_name
+
+
+def _get_py3_open_call_model(node):  # pylint: disable=unused-argument
+    # TODO: mimic exact intepreter behavior (e.g. buffered and bytes IO)
+    # Based on: https://github.com/python/typeshed/blob/master/stdlib/2/_io.pyi
+    code = dedent('''
+        class _IOBase(object): #@
+            closed = True
+            def __enter__(self): return self
+            def __exit__(self, type, value, traceback): return False
+            def __iter__(self): return _IOBase
+            def _checkClosed(self): return None
+            def _checkReadable(self): return None
+            def _checkSeekable(self): return None
+            def _checkWritable(self): return None
+            def close(self): return None
+            def fileno(self): return 0
+            def flush(self): return None
+            def isatty(self): return True
+            def __next__(self): return ""
+            def readable(self): return True
+            def read(self, size=-1): return ""
+            def readline(self, limit=0): return ""
+            def readlines(self, hint=0): return [""]
+            def seek(self, offset, whence=0): return None
+            def seekable(self): return True
+            def tell(self): return 0
+            def truncate(self, size=0): return 0
+            def writable(self): return True
+            def writelines(self, lines): return None
+    ''')
+    module_name = "__builtin__"
+    return code, module_name
+
+
 # Builtins inference
 register_builtin_transform(infer_bool, 'bool')
 register_builtin_transform(infer_super, 'super')
@@ -494,3 +567,6 @@ register_builtin_transform(infer_dict, 'dict')
 register_builtin_transform(infer_frozenset, 'frozenset')
 register_builtin_transform(infer_type, 'type')
 register_builtin_transform(infer_slice, 'slice')
+register_builtin_transform(infer_open, 'open')
+if six.PY2:
+    register_builtin_transform(infer_open, 'file')

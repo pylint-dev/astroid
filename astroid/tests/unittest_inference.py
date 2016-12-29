@@ -811,6 +811,41 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
     if os.name == 'java':
         test_builtin_open = unittest.expectedFailure(test_builtin_open)
 
+    def test_builtin_open_ctxmgr(self):
+        code = '''
+            with open("toto.txt") as fh:
+                pass
+        '''
+        ast = parse(code, __name__)
+        node = ast['fh']
+        inferred = list(node.infer())
+        self.assertEqual(len(inferred), 1)
+        instance = inferred[0]
+        self.assertEqual(instance.name, '_IOBase' if six.PY3 else 'file')
+
+    def test_builtin_open_assignment(self):
+        code = '''
+            fh = open("toto.txt")
+        '''
+        ast = parse(code, __name__)
+        node = ast['fh']
+        inferred = list(node.infer())
+        self.assertEqual(len(inferred), 1)
+        instance = inferred[0]
+        self.assertEqual(instance.name, '_IOBase' if six.PY3 else 'file')
+
+    @unittest.skipIf(six.PY3, "file() is available only in Python2")
+    def test_builtin_file_assignment(self):
+        code = '''
+            fh = file("toto.txt")
+        '''
+        ast = parse(code, __name__)
+        node = ast['fh']
+        inferred = list(node.infer())
+        self.assertEqual(len(inferred), 1)
+        instance = inferred[0]
+        self.assertEqual(instance.name, '_IOBase' if six.PY3 else 'file')
+
     def test_callfunc_context_func(self):
         code = '''
             def mirror(arg=None):
