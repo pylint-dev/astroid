@@ -400,7 +400,7 @@ class FunctionModelTest(unittest.TestCase):
         ''')
         annotations = next(ast_node.infer())
         self.assertIsInstance(annotations, astroid.Dict)
-        self.assertIs(annotations.getitem('return'), astroid.Empty)
+        self.assertIs(annotations.getitem(astroid.Const('return')), astroid.Empty)
 
     @test_utils.require_version(minver='3.0')
     def test_annotations_kwdefaults(self):
@@ -421,7 +421,7 @@ class FunctionModelTest(unittest.TestCase):
 
         kwdefaults = next(ast_node[1].infer())
         self.assertIsInstance(kwdefaults, astroid.Dict)
-        self.assertEqual(kwdefaults.getitem('f').value, 'lala')
+        self.assertEqual(kwdefaults.getitem(astroid.Const('f')).value, 'lala')
 
     @test_utils.require_version(maxver='3.0')
     def test_function_model_for_python2(self):
