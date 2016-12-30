@@ -426,7 +426,12 @@ def _is_not_implemented(const):
 
 def  _invoke_binop_inference(instance, opnode, op, other, context, method_name):
     """Invoke binary operation inference on the given instance."""
-    method = instance.getattr(method_name)[0]
+    try:
+        methods = dunder_lookup.lookup(instance, method_name)
+    except exceptions.NotSupportedError:
+        raise exceptions.BinaryOperationNotSupportedError
+
+    method = methods[0]
     inferred = next(method.infer(context=context))
     return instance.infer_binary_op(opnode, op, other, context, inferred)
 
