@@ -2820,9 +2820,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_unary_op_classes(self):
         ast_node = extract_node('''
-        class A(object):
+        import six
+        class Meta(type):
             def __invert__(self):
                 return 42
+        @six.add_metaclass(Meta)
+        class A(object):
+            pass
         ~A
         ''')
         inferred = next(ast_node.infer())
