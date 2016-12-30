@@ -370,7 +370,7 @@ def _infer_unaryop(self, context=None):
                 else:
                     yield util.Uninferable
             else:
-                if not isinstance(operand, bases.Instance, nodes.ClassDef):
+                if not isinstance(operand, (bases.Instance, nodes.ClassDef)):
                     # The operation was used on something which
                     # doesn't support it.
                     yield util.BadUnaryOperationMessage(operand, self.op, exc)
@@ -379,7 +379,7 @@ def _infer_unaryop(self, context=None):
                 try:
                     try:
                         methods = dunder_lookup.lookup(operand, meth)
-                    except exceptions.NotSupportedError:
+                    except exceptions.AttributeInferenceError:
                         yield util.BadUnaryOperationMessage(operand, self.op, exc)
                         continue
 
@@ -426,11 +426,7 @@ def _is_not_implemented(const):
 
 def  _invoke_binop_inference(instance, opnode, op, other, context, method_name):
     """Invoke binary operation inference on the given instance."""
-    try:
-        methods = dunder_lookup.lookup(instance, method_name)
-    except exceptions.NotSupportedError:
-        raise exceptions.BinaryOperationNotSupportedError
-
+    methods = dunder_lookup.lookup(instance, method_name)
     method = methods[0]
     inferred = next(method.infer(context=context))
     return instance.infer_binary_op(opnode, op, other, context, inferred)

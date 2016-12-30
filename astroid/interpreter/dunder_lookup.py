@@ -16,59 +16,54 @@ import itertools
 
 import astroid
 from astroid import exceptions
-from astroid import util
-from astroid.interpreter import runtimeabc
-from astroid.tree import treeabc
 
 
 def _lookup_in_mro(node, name):
-    local_attrs = node.locals.get(name, [])
-    external_attrs = node.external_attrs.get(name, [])
-    attrs = itertools.chain(local_attrs, external_attrs)
+    attrs = node.locals.get(name, [])
 
     nodes = itertools.chain.from_iterable(
-        itertools.chain(
-            ancestor.locals.get(name, []),
-            ancestor.external_attrs.get(name, [])
-        )
+        ancestor.locals.get(name, [])
         for ancestor in node.ancestors(recurs=True)
     )
     values = list(itertools.chain(attrs, nodes))
     if not values:
-        raise exceptions.NotSupportedError
+        raise exceptions.AttributeInferenceError
 
     return values
 
 
-@util.singledispatch
 def lookup(node, name):
     """Lookup the given special method name in the given *node*
 
     If the special method was found, then a list of attributes
-    will be returned. Otherwise, `astroid.NotSupportedError`
+    will be returned. Otherwise, `astroid.AttributeInferenceError`
     is going to be raised.
     """
-    raise exceptions.NotSupportedError
+    if isinstance(node, (astroid.List,
+                         astroid.Tuple,
+                         astroid.Const,
+                         astroid.Dict,
+                         astroid.Set)):
+        return _builtin_lookup(node, name)
+    elif isinstance(node, astroid.Instance):
+        return _lookup_in_mro(node, name)
+    elif isinstance(node, astroid.ClassDef):
+        return _class_lookup(node, name)
+
+    raise exceptions.AttributeInferenceError
 
 
-@lookup.register(treeabc.ClassDef)
-def _(node, name):
+def _class_lookup(node, name):
     metaclass = node.metaclass()
     if metaclass is None:
-        raise exceptions.NotSupportedError
+        raise exceptions.AttributeInferenceError
 
     return _lookup_in_mro(metaclass, name)
 
 
-@lookup.register(runtimeabc.Instance)
-def _(node, name):
-    return _lookup_in_mro(node, name)
-
-
-@lookup.register(runtimeabc.BuiltinInstance)
-def _(node, name):
+def _builtin_lookup(node, name):
     values = node.locals.get(name, [])
     if not values:
-        raise exceptions.NotSupportedError
+        raise exceptions.AttributeInferenceError
 
     return values
