@@ -20,6 +20,7 @@ from astroid import decorators
 from astroid import helpers
 from astroid import manager
 from astroid import nodes
+from astroid.interpreter import dunder_lookup
 from astroid import protocols
 from astroid import util
 
@@ -376,7 +377,13 @@ def _infer_unaryop(self, context=None):
                     continue
 
                 try:
-                    meth = operand.getattr(meth, context=context)[0]
+                    try:
+                        methods = dunder_lookup.lookup(operand, meth)
+                    except exceptions.NotSupportedError:
+                        yield util.BadUnaryOperationMessage(operand, self.op, exc)
+                        continue
+
+                    meth = methods[0]
                     inferred = next(meth.infer(context=context))
                     if inferred is util.Uninferable or not inferred.callable():
                         continue
