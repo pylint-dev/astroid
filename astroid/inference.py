@@ -20,6 +20,7 @@ from astroid import decorators
 from astroid import helpers
 from astroid import manager
 from astroid import nodes
+from astroid.interpreter import dunder_lookup
 from astroid import protocols
 from astroid import util
 
@@ -369,14 +370,20 @@ def _infer_unaryop(self, context=None):
                 else:
                     yield util.Uninferable
             else:
-                if not isinstance(operand, bases.Instance):
+                if not isinstance(operand, (bases.Instance, nodes.ClassDef)):
                     # The operation was used on something which
                     # doesn't support it.
                     yield util.BadUnaryOperationMessage(operand, self.op, exc)
                     continue
 
                 try:
-                    meth = operand.getattr(meth, context=context)[0]
+                    try:
+                        methods = dunder_lookup.lookup(operand, meth)
+                    except exceptions.AttributeInferenceError:
+                        yield util.BadUnaryOperationMessage(operand, self.op, exc)
+                        continue
+
+                    meth = methods[0]
                     inferred = next(meth.infer(context=context))
                     if inferred is util.Uninferable or not inferred.callable():
                         continue
@@ -419,7 +426,8 @@ def _is_not_implemented(const):
 
 def  _invoke_binop_inference(instance, opnode, op, other, context, method_name):
     """Invoke binary operation inference on the given instance."""
-    method = instance.getattr(method_name)[0]
+    methods = dunder_lookup.lookup(instance, method_name)
+    method = methods[0]
     inferred = next(method.infer(context=context))
     return instance.infer_binary_op(opnode, op, other, context, inferred)
 

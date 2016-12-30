@@ -2624,6 +2624,22 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         for node in ast_nodes:
             self.assertEqual(next(node.infer()), util.Uninferable)
 
+    def test_bin_op_classes(self):
+        ast_node = extract_node('''
+        class Meta(type):
+            def __or__(self, other):
+                return 24
+        import six
+        @six.add_metaclass(Meta)
+        class A(object):
+            pass
+
+        A | A
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 24)
+
     def test_bin_op_supertype_more_complicated_example(self):
         ast_node = extract_node('''
         class A(object):
@@ -2900,6 +2916,21 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         A.__pos__ = pos
         f = A()
         +f #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 42)
+
+    def test_unary_op_classes(self):
+        ast_node = extract_node('''
+        import six
+        class Meta(type):
+            def __invert__(self):
+                return 42
+        @six.add_metaclass(Meta)
+        class A(object):
+            pass
+        ~A
         ''')
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.Const)

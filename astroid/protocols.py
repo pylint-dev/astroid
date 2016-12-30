@@ -182,10 +182,11 @@ nodes.List.infer_binary_op = tl_infer_binary_op
 
 
 @decorators.yes_if_nothing_inferred
-def instance_infer_binary_op(self, opnode, operator, other, context, method):
+def instance_class_infer_binary_op(self, opnode, operator, other, context, method):
     return method.infer_call_result(self, context)
 
-bases.Instance.infer_binary_op = instance_infer_binary_op
+bases.Instance.infer_binary_op = instance_class_infer_binary_op
+nodes.ClassDef.infer_binary_op = instance_class_infer_binary_op
 
 
 # assignment ##################################################################
