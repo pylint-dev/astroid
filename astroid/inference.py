@@ -369,7 +369,7 @@ def _infer_unaryop(self, context=None):
                 else:
                     yield util.Uninferable
             else:
-                if not isinstance(operand, bases.Instance):
+                if not isinstance(operand, bases.Instance, nodes.ClassDef):
                     # The operation was used on something which
                     # doesn't support it.
                     yield util.BadUnaryOperationMessage(operand, self.op, exc)
