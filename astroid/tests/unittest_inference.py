@@ -823,6 +823,30 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = list(node.infer())
         self.assertEqual(len(inferred), 1)
         self.assertNotEqual(inferred[0], util.Uninferable)
+        self.assertIn(inferred[0].root().name, ['__builtin__', "_io"])
+
+    def test_non_inferable_open_ctxmgr(self):
+        code = '''
+            from somewhere import open
+            with open("toto.txt") as fh:
+                pass
+        '''
+        ast = parse(code, __name__)
+        node = ast['fh']
+        with self.assertRaises(InferenceError):
+            list(node.infer())
+
+    def test_non_builtin_open_ctxmgr(self):
+        code = '''
+            def open(fname):
+                return fname
+            fh = open("toto.txt")
+        '''
+        ast = parse(code, __name__)
+        node = ast['fh']
+        inferred = list(node.infer())
+        self.assertEqual(len(inferred), 1)
+        self.assertNotIn(inferred[0].root().name, ['__builtin__', "_io"])
 
     def test_builtin_open_assignment_infers_proper_class(self):
         """ Brute-force check for proper inference of open() result """

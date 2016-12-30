@@ -483,6 +483,13 @@ def infer_slice(node, context=None):
 
 def infer_open(node, context=None):
     """Understand `open` (and `file` in Python 2) calls."""
+    inferred = helpers.safe_infer(node.func)
+    if inferred in (None, util.Uninferable):
+        raise UseInferenceDefault
+    module = inferred.root().name
+    if not ((six.PY2 and module == '__builtin__') or (six.PY3 and module == '_io')):
+        raise UseInferenceDefault
+
     open_return_classdef_node = _get_open_return_classdef_node(node, context)
     return open_return_classdef_node.instantiate_class()
 
