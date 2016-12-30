@@ -217,8 +217,10 @@ def _get_binop_context(context, other):
 
 
 @infer_binary_op.register(runtimeabc.Instance)
+@infer_binary_op.register(treeabc.ClassDef)
 @decorators.yes_if_nothing_inferred
-def instance_infer_binary_op(self, opnode, operator, other, context, method, nodes):
+def instance_class_infer_binary_op(
+        self, opnode, operator, other, context, method, nodes):
     context = _get_binop_context(context, other)
     return method.infer_call_result(self, context)
 

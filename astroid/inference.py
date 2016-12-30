@@ -131,7 +131,7 @@ def infer_import(self, context=None, asname=True):
             yield inferenceutil.do_import_module(self, name)
     except exceptions.AstroidBuildingError as exc:
         util.reraise(exceptions.InferenceError(node=self, error=exc,
-                                               context=context))        
+                                               context=context))
 
 
 @infer.register(treeabc.ImportFrom)
@@ -424,7 +424,12 @@ def  _invoke_binop_inference(instance, opnode, op, other, context, method_name, 
         # the inference at this point.
         raise exceptions.BinaryOperationNotSupportedError
 
-    method = instance.getattr(method_name)[0]
+    try:
+        methods = dunder_lookup.lookup(instance, method_name)
+    except exceptions.NotSupportedError:
+        raise exceptions.BinaryOperationNotSupportedError
+
+    method = methods[0]
     inferred = next(method.infer(context=context))
     return protocols.infer_binary_op(instance, opnode, op, other, context, inferred, nodes)
 
