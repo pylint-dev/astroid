@@ -134,7 +134,7 @@ for _KEY, _IMPL in list(BIN_OP_IMPL.items()):
 
 
 @util.singledispatch
-def infer_binary_op(self, operator, other, context, method, nodes):
+def infer_binary_op(self, opnode, operator, other, context, method, nodes):
     raise exceptions.BinaryOperationNotSupportedError
 
 
