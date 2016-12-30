@@ -363,7 +363,7 @@ def infer_unaryop(self, context=None, nodes=None):
                 else:
                     yield util.Uninferable
             else:
-                if not isinstance(operand, runtimeabc.Instance):
+                if not isinstance(operand, (treeabc.ClassDef, runtimeabc.Instance)):
                     # The operation was used on something which
                     # doesn't support it.
                     yield util.BadUnaryOperationMessage(operand, self.op, exc)

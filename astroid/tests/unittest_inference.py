@@ -2818,6 +2818,17 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 42)
 
+    def test_unary_op_classes(self):
+        ast_node = extract_node('''
+        class A(object):
+            def __invert__(self):
+                return 42
+        ~A
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 42)
+
     def _slicing_test_helper(self, pairs, cls, get_elts):
         for code, expected in pairs:
             ast_node = extract_node(code)
