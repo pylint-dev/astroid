@@ -481,77 +481,97 @@ def infer_slice(node, context=None):
     return slice_node
 
 
-def infer_open(node, context=None):  # pylint: disable=unused-argument
+def infer_open(node, context=None):
     """Understand `open` (and `file` in Python 2) calls."""
+    open_return_classdef_node = _get_open_return_classdef_node(node, context)
+    return open_return_classdef_node.instantiate_class()
 
+
+def _get_open_return_classdef_node(node, context):
     if six.PY2:
-        code, module_name = _get_py2_open_call_model(node)
+        node = _get_py2_open_return_class(node, context)
     else:
-        code, module_name = _get_py3_open_call_model(node)
-
-    node = extract_node(code, module_name)
-    return node.instantiate_class()
+        node = _get_py3_open_return_class(node, context)
+    return next(node.infer())
 
 
-def _get_py2_open_call_model(node):  # pylint: disable=unused-argument
-    # https://docs.python.org/2/library/stdtypes.html#file-objects
-    # https://github.com/python/typeshed/blob/master/stdlib/2/_io.pyi
+def _get_py2_open_return_class(node, context):  # pylint: disable=unused-argument
     code = dedent('''
-        class file(object): #@
-            closed = True
-            def __enter__(self): return self
-            def __exit__(self, type, value, traceback): return False
-            def __iter__(self): return self
-            def close(self): return None
-            def fileno(self): return 0
-            def flush(self): return None
-            def isatty(self): return True
-            def next(self): return ""
-            def read(self, size=-1): return ""
-            def readline(self, size=-1): return ""
-            def readlines(self, sizehint=-1): return [""]
-            def xreadlines(self, sizehint=-1): yield ""
-            def seek(self, offset, whence=0): return None
-            def tell(self): return 0
-            def truncate(self, size=0): return None
-            def write(self, s): return None
-            def writelines(self, seq): return None
+        file #@
     ''')
-    module_name = "__builtin__"
-    return code, module_name
+    return extract_node(code)
 
 
-def _get_py3_open_call_model(node):  # pylint: disable=unused-argument
-    # TODO: mimic exact intepreter behavior (e.g. buffered and bytes IO)
-    # Based on: https://github.com/python/typeshed/blob/master/stdlib/2/_io.pyi
-    code = dedent('''
-        class _IOBase(object): #@
-            closed = True
-            def __enter__(self): return self
-            def __exit__(self, type, value, traceback): return False
-            def __iter__(self): return _IOBase
-            def _checkClosed(self): return None
-            def _checkReadable(self): return None
-            def _checkSeekable(self): return None
-            def _checkWritable(self): return None
-            def close(self): return None
-            def fileno(self): return 0
-            def flush(self): return None
-            def isatty(self): return True
-            def __next__(self): return ""
-            def readable(self): return True
-            def read(self, size=-1): return ""
-            def readline(self, limit=0): return ""
-            def readlines(self, hint=0): return [""]
-            def seek(self, offset, whence=0): return None
-            def seekable(self): return True
-            def tell(self): return 0
-            def truncate(self, size=0): return 0
-            def writable(self): return True
-            def writelines(self, lines): return None
-    ''')
-    module_name = "_io"
-    return code, module_name
+def _get_py3_open_return_class(node, context):
+    code = '''
+        import io
+        io.{class_name}  #@
+    '''
+    class_name = _get_py3_open_class_name(node, context)
+    return extract_node(code.format(class_name=class_name))
+
+
+def _get_py3_open_class_name(node, context):
+    # https://docs.python.org/3/library/functions.html#open
+    # TODO: use call_site
+    mode = _get_mode(node, context)
+    buffering = _get_buffering(node, context)
+
+    if not buffering:
+        return 'FileIO'
+
+    if 'b' not in mode:
+        return 'TextIOWrapper'
+    else:
+        if '+' in mode:
+            return 'BufferedRandom'
+        elif 'w' in mode or 'a' in mode:
+            return 'BufferedWriter'
+        else:
+            return 'BufferedReader'
+
+
+def _get_mode(node, context):
+    return _get_call_arg(node, context, arg=1, kwarg='mode', default='r')
+
+
+def _get_buffering(node, context):
+    return _get_call_arg(node, context, arg=2, kwarg='buffering', default=-1)
+
+
+def _get_call_arg(node, context, arg, kwarg, default):
+    """TODO: move to generic solution"""
+    if len(node.args) > arg:
+        inferred = helpers.safe_infer(node.args[arg], context)
+        if inferred:
+            return inferred.value
+    kws = [kw for kw in node.keywords or [] if kw.arg == kwarg]
+    if len(kws) == 1:
+        inferred = helpers.safe_infer(kws[0].value, context)
+        if inferred:
+            return inferred.value
+    return default
+
+
+def enter_returns_self(node):
+    """ Make Pylint understand context manager protocol for file classes """
+    from astroid import FunctionDef
+    enter_funcdefs = [funcdef for funcdef in node.body
+                      if isinstance(funcdef, FunctionDef)
+                      and funcdef.name == "__enter__"]
+    if not enter_funcdefs:
+        return
+    enter_funcdef = enter_funcdefs[0]
+    if enter_funcdef.body:
+        return
+    code = """
+    class Class(object):
+        def __enter__(self):
+            return self
+    """
+    fake_node = extract_node(code)
+    enter_funcdef.args = fake_node.body[0].args
+    enter_funcdef.body = fake_node.body[0].body
 
 
 # Builtins inference
@@ -570,3 +590,4 @@ register_builtin_transform(infer_slice, 'slice')
 register_builtin_transform(infer_open, 'open')
 if six.PY2:
     register_builtin_transform(infer_open, 'file')
+    extend_builtins({'file': enter_returns_self})

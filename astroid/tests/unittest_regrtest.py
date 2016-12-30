@@ -141,7 +141,8 @@ with open('a.txt') as stream, open('b.txt'):
         astroid = builder.string_build(data, __name__, __file__)
         # Used to crash due to the fact that the second
         # context manager didn't use an assignment name.
-        list(astroid.nodes_of_class(nodes.Call))[-1].inferred()
+        with self.assertRaises(exceptions.InferenceError):
+            list(astroid.nodes_of_class(nodes.Call))[-1].inferred()
 
     def test_recursion_regression_issue25(self):
         builder = AstroidBuilder()

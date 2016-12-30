@@ -16,6 +16,8 @@ import sys
 from functools import partial
 import unittest
 import warnings
+import tempfile
+import itertools
 
 import six
 
@@ -820,19 +822,51 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         node = ast['fh']
         inferred = list(node.infer())
         self.assertEqual(len(inferred), 1)
-        instance = inferred[0]
-        self.assertEqual(instance.name, '_IOBase' if six.PY3 else 'file')
+        self.assertNotEqual(inferred[0], util.Uninferable)
 
-    def test_builtin_open_assignment(self):
-        code = '''
-            fh = open("toto.txt")
-        '''
-        ast = parse(code, __name__)
-        node = ast['fh']
+    def test_builtin_open_assignment_infers_proper_class(self):
+        """ Brute-force check for proper inference of open() result """
+        modes_to_check = ['r', 'w', 'a', 'rb', 'wb', 'ab', 'r+b', 'w+b', 'a+b']
+        buffering_to_check = [-1, 0, 1, 2]
+        for mode, buff in itertools.product(modes_to_check, buffering_to_check):
+            self._check_if_open_class_is_correct(mode, buff)
+
+    def _check_if_open_class_is_correct(self, mode, buff):
+        expected = self._get_expected_open_returned_class(mode, buff)
+        if expected is None:
+            return
+
+        code = 'open("toto.txt", {mode!r}, {buff!r})'.format(mode=mode, buff=buff)
+        node = extract_node(code, __name__)
         inferred = list(node.infer())
         self.assertEqual(len(inferred), 1)
-        instance = inferred[0]
-        self.assertEqual(instance.name, '_IOBase' if six.PY3 else 'file')
+        msg = "Bad value for open(..., {mode!r}, {buff!r})"
+        self.assertEqual(expected.__name__, inferred[0].name,
+                         msg.format(mode=mode, buff=buff))
+
+        code = 'open("toto.txt", mode={mode!r}, buffering={buff!r})'.format(mode=mode, buff=buff)
+        node = extract_node(code, __name__)
+        inferred = list(node.infer())
+        self.assertEqual(len(inferred), 1)
+        msg = "Bad value for open(..., mode={mode!r}, buffering={buff!r})"
+        self.assertEqual(expected.__name__, inferred[0].name,
+                         msg.format(mode=mode, buff=buff))
+
+    def _get_expected_open_returned_class(self, mode, buff):
+        test_file = None
+        try:
+            test_fh, test_file = tempfile.mkstemp()
+            os.close(test_fh)
+
+            try:
+                with open(test_file, mode, buff) as fh:
+                    return type(fh)
+            except ValueError:  # ValueError: can't have unbuffered text I/O
+                return None
+
+        finally:
+            if test_file is not None:
+                os.unlink(test_file)
 
     @unittest.skipIf(six.PY3, "file() is available only in Python2")
     def test_builtin_file_assignment(self):
@@ -844,7 +878,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = list(node.infer())
         self.assertEqual(len(inferred), 1)
         instance = inferred[0]
-        self.assertEqual(instance.name, '_IOBase' if six.PY3 else 'file')
+        self.assertEqual(instance.name, 'file')
 
     def test_callfunc_context_func(self):
         code = '''

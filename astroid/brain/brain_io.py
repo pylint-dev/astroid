@@ -8,10 +8,11 @@
 import astroid
 
 
-BUFFERED = {'BufferedWriter', 'BufferedReader'}
+BUFFERED = {'BufferedWriter', 'BufferedReader', 'BufferedRandom'}
 TextIOWrapper = 'TextIOWrapper'
 FileIO = 'FileIO'
 BufferedWriter = 'BufferedWriter'
+IOBase = '_IOBase'
 
 
 def _generic_io_transform(node, name, cls):
@@ -35,9 +36,37 @@ def _transform_buffered(node):
     return _generic_io_transform(node, name='raw', cls=FileIO)
 
 
+def _enter_returns_self(node):
+    """
+    Transform ClassDef nodes in such way, that empty __enter__ nodes returns
+    `self`. Mandatory for correct inference of context manager protocol.
+    TODO: implement whole known file protocol?
+    (for less Uninferable results on method calls)
+    """
+    enter_funcdefs = [funcdef for funcdef in node.body
+                      if isinstance(funcdef, astroid.FunctionDef)
+                      and funcdef.name == "__enter__"]
+    if not enter_funcdefs:
+        return
+    enter_funcdef = enter_funcdefs[0]
+    if enter_funcdef.body:
+        return
+    code = """
+    class Class(object):
+        def __enter__(self):
+            return self
+    """
+    fake_node = astroid.extract_node(code)
+    enter_funcdef.args = fake_node.body[0].args
+    enter_funcdef.body = fake_node.body[0].body
+
+
 astroid.MANAGER.register_transform(astroid.ClassDef,
                                    _transform_buffered,
                                    lambda node: node.name in BUFFERED)
 astroid.MANAGER.register_transform(astroid.ClassDef,
                                    _transform_text_io_wrapper,
                                    lambda node: node.name == TextIOWrapper)
+astroid.MANAGER.register_transform(astroid.ClassDef,
+                                   _enter_returns_self,
+                                   lambda node: any(c.name == IOBase for c in node.ancestors()))
