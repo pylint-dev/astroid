@@ -33,7 +33,8 @@ def _collections_transform():
         def __setitem__(self, index, value): pass
         def __delitem__(self, index): pass
 
-    class OrderedDict(dict): pass
+        def OrderedDict(dict):
+            def __reversed__(self): return self[::-1]
     ''')
 
 
