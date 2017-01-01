@@ -389,7 +389,7 @@ class BoundMethod(UnboundMethod):
                             parent=caller)
         empty = node_classes.Pass()
         cls.postinit(bases=bases.elts, body=[empty], decorators=[],
-                     newstyle=True, metaclass=mcs)
+                     newstyle=True, metaclass=mcs, keywords=[])
         cls.locals = cls_locals
         return cls
 

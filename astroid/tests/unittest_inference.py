@@ -3224,6 +3224,19 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, 'A')
 
+    @test_utils.require_version(minver='3.0')
+    def test_metaclass_with_keyword_args(self):
+        ast_node = extract_node('''
+        class TestMetaKlass(type):
+            def __new__(mcs, name, bases, ns, kwo_arg):
+                return super().__new__(mcs, name, bases, ns)
+
+        class TestKlass(metaclass=TestMetaKlass, kwo_arg=42): #@
+            pass
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.ClassDef)
+
     def test_delayed_attributes_without_slots(self):
         ast_node = extract_node('''
         class A(object):
