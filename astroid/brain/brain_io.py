@@ -43,22 +43,18 @@ def _enter_returns_self(node):
     TODO: implement whole known file protocol?
     (for less Uninferable results on method calls)
     """
-    enter_funcdefs = [funcdef for funcdef in node.body
-                      if isinstance(funcdef, astroid.FunctionDef)
-                      and funcdef.name == "__enter__"]
-    if not enter_funcdefs:
-        return
-    enter_funcdef = enter_funcdefs[0]
-    if enter_funcdef.body:
-        return
-    code = """
-    class Class(object):
-        def __enter__(self):
-            return self
-    """
-    fake_node = astroid.extract_node(code)
-    enter_funcdef.args = fake_node.body[0].args
-    enter_funcdef.body = fake_node.body[0].body
+    from astroid import FunctionDef, extract_node
+    for idx, n in enumerate(node.locals.get('__enter__', [])):
+        if not isinstance(n, FunctionDef) or n.body:
+            continue
+        code = """
+        class Class(object):
+            def __enter__(self):
+                return self
+        """
+        fake_node = extract_node(code)
+        n.args = fake_node.body[0].args
+        n.body = fake_node.body[0].body
 
 
 astroid.MANAGER.register_transform(astroid.ClassDef,

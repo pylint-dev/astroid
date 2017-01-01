@@ -490,35 +490,37 @@ def infer_open(node, context=None):
     if not ((six.PY2 and module == '__builtin__') or (six.PY3 and module == '_io')):
         raise UseInferenceDefault
 
-    open_return_classdef_node = _get_open_return_classdef_node(node, context)
+    open_return_classdef_node = _open_return_classdef_node(node, context)
+    if open_return_classdef_node is None:
+        raise UseInferenceDefault
     return open_return_classdef_node.instantiate_class()
 
 
-def _get_open_return_classdef_node(node, context):
+def _open_return_classdef_node(node, context):
     if six.PY2:
-        node = _get_py2_open_return_class(node, context)
+        node = _py2_open_return_class(node, context)
     else:
-        node = _get_py3_open_return_class(node, context)
-    return next(node.infer())
+        node = _py3_open_return_class(node, context)
+    try:
+        return next(node.infer())
+    except InferenceError:
+        return None
 
 
-def _get_py2_open_return_class(node, context):  # pylint: disable=unused-argument
-    code = dedent('''
-        file #@
-    ''')
-    return extract_node(code)
+def _py2_open_return_class(node, context):  # pylint: disable=unused-argument
+    return extract_node('file')
 
 
-def _get_py3_open_return_class(node, context):
+def _py3_open_return_class(node, context):
     code = '''
         import io
         io.{class_name}  #@
     '''
-    class_name = _get_py3_open_class_name(node, context)
+    class_name = _py3_open_class_name(node, context)
     return extract_node(code.format(class_name=class_name))
 
 
-def _get_py3_open_class_name(node, context):
+def _py3_open_class_name(node, context):
     # https://docs.python.org/3/library/functions.html#open
     # TODO: use call_site
     mode = _get_mode(node, context)
@@ -562,23 +564,19 @@ def _get_call_arg(node, context, arg, kwarg, default):
 
 def enter_returns_self(node):
     """ Make Pylint understand context manager protocol for file classes """
-    from astroid import FunctionDef
-    enter_funcdefs = [funcdef for funcdef in node.body
-                      if isinstance(funcdef, FunctionDef)
-                      and funcdef.name == "__enter__"]
-    if not enter_funcdefs:
-        return
-    enter_funcdef = enter_funcdefs[0]
-    if enter_funcdef.body:
-        return
-    code = """
-    class Class(object):
-        def __enter__(self):
-            return self
-    """
-    fake_node = extract_node(code)
-    enter_funcdef.args = fake_node.body[0].args
-    enter_funcdef.body = fake_node.body[0].body
+    from astroid import FunctionDef, extract_node
+    for idx, n in enumerate(node.locals.get('__enter__', [])):
+        if not isinstance(n, FunctionDef) or n.body:
+            continue
+        code = """
+        class Class(object):
+            def __enter__(self):
+                return self
+        """
+        # TODO: nodes in astroid 2.0 should be immutable
+        fake_node = extract_node(code)
+        n.args = fake_node.body[0].args
+        n.body = fake_node.body[0].body
 
 
 # Builtins inference
