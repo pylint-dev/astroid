@@ -34,6 +34,7 @@ from astroid.interpreter import objects
 from astroid.interpreter import objectmodel
 from astroid.interpreter import runtimeabc
 from astroid.interpreter.util import infer_stmts
+from astroid.interpreter import dunder_lookup
 from astroid import manager
 from astroid.tree import base as treebase
 from astroid.tree import node_classes
@@ -1670,6 +1671,30 @@ class ClassDef(QualifiedNameMixin, base.FilterStmtsMixin,
             except exceptions.AttributeInferenceError:
                 pass
         return False
+
+    def getitem(self, index, context=None):
+        """Return the inference of a subscript.
+
+        This is basically looking up the method in the metaclass and calling it.
+        """
+        try:
+            methods = dunder_lookup.lookup(self, '__getitem__')
+        except (exceptions.AttributeInferenceError,
+                exceptions.NotSupportedError) as error:
+            util.reraise(exceptions.InferenceError(**vars(error)))
+
+        method = methods[0]
+
+        # Create a new callcontext for providing index as an argument.
+        if context:
+            new_context = context.clone()
+        else:
+            new_context = contextmod.InferenceContext()
+
+        new_context.callcontext = contextmod.CallContext(args=[index])
+        new_context.boundnode = self
+
+        return next(method.infer_call_result(self, new_context))
 
     def methods(self):
         """return an iterator on all methods defined in the class and
