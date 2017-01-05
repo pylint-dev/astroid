@@ -2531,6 +2531,22 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         for node in ast_nodes:
             self.assertEqual(next(node.infer()), util.Uninferable)
 
+    def test_metaclass__getitem__(self):
+        ast_node = extract_node('''
+        class Meta(type):
+            def __getitem__(cls, arg):
+                return 24
+        import six
+        @six.add_metaclass(Meta)
+        class A(object):
+            pass
+
+        A['Awesome'] #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 24)
+
     def test_bin_op_classes(self):
         ast_node = extract_node('''
         class Meta(type):

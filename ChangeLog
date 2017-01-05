@@ -2,6 +2,8 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * ClassDef now supports __getitem__ inference through the metaclass.
+
     * getitem() method accepts nodes now, instead of Python objects.
 
     * Add support for explicit namespace packages, created with pkg_resources.
