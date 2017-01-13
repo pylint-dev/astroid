@@ -17,6 +17,7 @@ import os
 import sys
 import textwrap
 import _ast
+import tokenize
 
 import collections
 from six import StringIO
@@ -66,6 +67,7 @@ def expr_for_comment(comment):
     if IGNORE.match(expr):
         return None
 
+    expr = expr.split("#")[0].strip()
     # Does it look like a signature annotation?
     m = FUNCTION_ANNOTATION.match(expr)
     if m:
@@ -98,41 +100,49 @@ def expr_for_comment(comment):
     return ret
 
 def fill_scope_map(scope_map, node):
-    # type: (List[NodeNG], NodeNG) -> None
     """Fill in the scope_map so that we get a quick lookup table of line numbers to scopes."""
 
     if isinstance(node, nodes.FunctionDef):
+        # For functions we look at the first item in the body.
         for line in range(node.fromlineno, node.body[0].fromlineno + 2):
             scope_map[line] = node
     elif isinstance(node, (nodes.Assign, nodes.With, nodes.For)):
-        # We want our line numbers to be 1 indexed, however fromlineno and to lineno
-        # are 0 indexed so add 1, except fromlineno always starts one line after the
-        # def or class so just don't add 1 to that one.
         for line in range(node.fromlineno, node.tolineno + 1):
             scope_map[line] = node
+
     for child in node.get_children():
         fill_scope_map(scope_map, child)
 
-def inject_imports(data, module):
-    if not re.search(r'#\s*type:', data):
-        return
-
+def inject_imports(builder, data, module):
     # Build a scope_map for faster lookups.
     scope_map = [None] * (data.count("\n") + 2)
     fill_scope_map(scope_map, module)
 
-    # Tokenize the file looking for those juicy # type: annotations.
-    import tokenize
+    def build(token, lineno, parent):
+        """Build an astroid node from token at lineno"""
+        # For performance reasons try to create NodeNG objects directly.
+        if token == 'None':
+            ret = nodes.Const(None, lineno, parent=parent)
+        elif re.match(r".*[,(\[]", token) is None:
+            ret = nodes.Name(token, lineno, parent=parent)
+        else:
+            # This is faster than using extract_node.
+            ret = builder.string_build("\n" * (lineno - 1) + token).body[0].value
+            ret.parent = parent
+        return ret
 
-    module.injected_lines = []
+    # Tokenize the file looking for those juicy # type: annotations.
     tokens = tokenize.generate_tokens(StringIO(data).readline)
-    last_token = None
+    last_name = None
     for tok_type, tok_val, (lineno, _), _, _ in tokens:
-        if tok_type == tokenize.COMMENT:
+        if tok_type == tokenize.NAME:
+            # Save this name for parsing *arg and **kwarg type comments. See below.
+            last_name = tok_val
+        elif tok_type == tokenize.COMMENT:
             expr = expr_for_comment(tok_val)
             if expr:
-                scope = scope_map[lineno]
-                if not scope:
+                target = scope_map[lineno]
+                if not target:
                     continue
 
                 arg, vararg, kwarg, returns = expr
@@ -141,65 +151,48 @@ def inject_imports(data, module):
                     assert vararg is None
                     assert kwarg is None
 
-                    annotation = extract_node("\n" * (lineno-1) + arg)
-                    if isinstance(scope, nodes.FunctionDef):
-                        for i, argument in enumerate(scope.args.args):
-                            if scope.args.args[i].lineno == lineno:
-                                annotation.parent = scope
-                                scope.args.annotations[i] = annotation
+                    annotation = build(arg, lineno, target)
+                    if isinstance(target, nodes.FunctionDef):
+                        for i, argument in enumerate(target.args.args):
+                            if target.args.args[i].lineno == lineno:
+                                target.args.annotations[i] = annotation
                                 break
                         else:
-                            # Sadly, vararg and kwarg lose their line numbers.
-                            # So we'll use the last_name to approximate where we are
-                            if last_token == scope.args.vararg:
-                                annotation.parent = scope
-                                scope.args.varargannotation = annotation
-                            elif last_token == scope.args.kwarg:
-                                annotation.parent = scope
-                                scope.args.kwargannotation = annotation
-                    elif isinstance(scope, (nodes.Assign, nodes.With, nodes.For)):
-                        annotation.parent = scope
-                        scope.type_comment = annotation
+                            # Sadly, vararg and kwarg lose their line numbers in the AST.
+                            # So we'll use the last_name to figure out which argument this
+                            # might be.
+                            if last_name == target.args.vararg:
+                                target.args.varargannotation = annotation
+                            elif last_name == target.args.kwarg:
+                                target.args.kwargannotation = annotation
+                    elif isinstance(target, (nodes.Assign, nodes.With, nodes.For)):
+                        target.type_comment = annotation
                 else:
                     # This is a "(arg, *vararg, *kwarg) -> returns" comment
-                    if isinstance(scope, nodes.FunctionDef):
-                        try:
-                            if arg:
-                                annotations = extract_node("\n" * (lineno-1) + arg).elts
+                    if isinstance(target, nodes.FunctionDef):
+                        if arg:
+                            # Arg will always be a tuple of arguments.
+                            annotations = build(arg, lineno, target).elts
 
-                                if len(annotations) == len(scope.args.annotations):
-                                    start = 0
-                                elif scope.is_method() and len(annotations) == len(scope.args.annotations) - 1:
-                                    # In methods you're allowed to not type `self`.
-                                    start = 1
-                                else:
-                                    raise Exception("Mismatch in args")
+                            if len(annotations) == len(target.args.annotations):
+                                start = 0
+                            elif len(annotations) == len(target.args.annotations) - 1:
+                                # XXX: Check if it could be a method, self.is_method() is pretty expensive
+                                # In methods you're allowed to not type `self`.
+                                start = 1
+                            else:
+                                raise Exception("Mismatch in args")
 
-                                for i, elt in enumerate(annotations):
-                                    elt.parent = scope
-                                    scope.args.annotations[i + start] = elt
+                            for i, elt in enumerate(annotations):
+                                target.args.annotations[i + start] = elt
 
-                            if vararg:
-                                varargannotation = extract_node("\n" * (lineno-1) + vararg)
-                                varargannotation.parent = scope
-                                scope.args.varargannotation = varargannotation
+                        if vararg:
+                            target.args.varargannotation = build(vararg, lineno, target)
 
-                            if kwarg:
-                                kwargannotation = extract_node("\n" * (lineno - 1) + kwarg)
-                                kwargannotation.parent = scope
-                                scope.args.kwargannotation = kwargannotation
+                        if kwarg:
+                            target.args.kwargannotation = build(kwarg, lineno, target)
 
-                            return_type = extract_node("\n" * (lineno-1) + returns)
-                            return_type.parent = scope
-                            scope.returns = return_type
-                        except Exception:
-                            import pdb; pdb.set_trace()
-                            raise
-
-        if tok_type == tokenize.NAME:
-            last_token = tok_val
-
-    return module
+                        target.returns = build(returns, lineno, target)
 
 if sys.version_info >= (3, 0):
     from tokenize import detect_encoding
@@ -357,7 +350,10 @@ class AstroidBuilder(raw_building.InspectBuilder):
         module = builder.visit_module(node, modname, node_file, package)
         module._import_from_nodes = builder._import_from_nodes
         module._delayed_assattr = builder._delayed_assattr
-        inject_imports(data, module)
+
+        if '# type:' in data:
+            inject_imports(self, data, module)
+
         return module
 
     def add_from_names_to_locals(self, node):
