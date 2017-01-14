@@ -103,8 +103,9 @@ def fill_scope_map(scope_map, node):
     """Fill in the scope_map so that we get a quick lookup table of line numbers to scopes."""
 
     if isinstance(node, nodes.FunctionDef):
-        # For functions we look at the first item in the body.
-        for line in range(node.fromlineno, node.body[0].fromlineno + 2):
+        # For functions we look until the first item in the body.
+        # Sadly the docstring doesn't count in the body so it's not perfect.
+        for line in range(node.fromlineno, node.body[0].fromlineno):
             scope_map[line] = node
     elif isinstance(node, (nodes.Assign, nodes.With, nodes.For)):
         for line in range(node.fromlineno, node.tolineno + 1):
