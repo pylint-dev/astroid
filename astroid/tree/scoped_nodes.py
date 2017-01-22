@@ -1224,7 +1224,8 @@ class ClassDef(QualifiedNameMixin, base.FilterStmtsMixin,
     _newstyle = None
 
     def __init__(self, name=None, doc=None, lineno=None,
-                 col_offset=None, parent=None):
+                 col_offset=None, parent=None, keywords=None):
+        self.keywords = keywords
         self.bases = []
         self.body = []
         self.name = name
@@ -1233,7 +1234,9 @@ class ClassDef(QualifiedNameMixin, base.FilterStmtsMixin,
         self.external_attrs = collections.defaultdict(list)
         super(ClassDef, self).__init__(lineno, col_offset, parent)
 
-    def postinit(self, bases, body, decorators, newstyle=None, metaclass=None):
+    # pylint: disable=redefined-outer-name
+    def postinit(self, bases, body, decorators, newstyle=None, metaclass=None, keywords=None):
+        self.keywords = keywords
         self.bases = bases
         self.body = body
         self.decorators = decorators

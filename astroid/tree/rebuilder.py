@@ -353,7 +353,9 @@ class TreeRebuilder(object):
                           for child in node.bases],
                          [self.visit(child, newnode)
                           for child in node.body],
-                         decorators, newstyle, metaclass)
+                         decorators, newstyle, metaclass,
+                         [self.visit(kwd, newnode) for kwd in node.keywords
+                          if kwd.arg != 'metaclass'] if PY3 else [])
         return newnode
 
     def visit_const(self, node, parent):
