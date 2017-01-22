@@ -483,6 +483,15 @@ class ArgumentsNodeTC(unittest.TestCase):
             self.skipTest('FIXME  http://bugs.python.org/issue10445 '
                           '(no line number on function args)')
 
+    @test_utils.require_version(minver='3.0')
+    def test_kwoargs(self):
+        ast = builder.parse('''
+            def func(*, x):
+                pass
+        ''')
+        args = ast['func'].args
+        self.assertTrue(args.is_argument('x'))
+
 
 class UnboundMethodNodeTest(unittest.TestCase):
 

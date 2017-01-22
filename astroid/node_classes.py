@@ -963,7 +963,8 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
             return True
         if name == self.kwarg:
             return True
-        return self.find_argname(name, True)[1] is not None
+        return (self.find_argname(name, True)[1] is not None or
+                self.kwonlyargs and _find_arg(name, self.kwonlyargs, True)[1] is not None)
 
     def find_argname(self, argname, rec=False):
         """return index and Name node with given name"""
