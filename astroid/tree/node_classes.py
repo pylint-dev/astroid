@@ -263,7 +263,12 @@ class Arguments(base.AssignTypeMixin, AssignedStmtsMixin, base.NodeNG):
             return True
         if self.kwarg and name == self.kwarg.name:
             return True
-        return self.find_argname(name, True)[1] is not None
+        is_arg = self.find_argname(name, True)[1] is not None
+        is_kwarg = (
+            self.kwonlyargs and
+            _find_arg(name, self.kwonlyargs, True)[1] is not None
+        )
+        return is_arg or is_kwarg
 
     def find_argname(self, argname, rec=False):
         """return index and Name node with given name"""
