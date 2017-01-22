@@ -1095,6 +1095,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                  col_offset=None, parent=None):
         self.instance_attrs = {}
         self.locals = {}
+        self.keywords = []
         self.bases = []
         self.body = []
         self.name = name
@@ -1104,7 +1105,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             parent.frame().set_local(name, self)
 
     # pylint: disable=redefined-outer-name
-    def postinit(self, bases, body, decorators, newstyle=None, metaclass=None):
+    def postinit(self, bases, body, decorators, newstyle=None, metaclass=None, keywords=None):
+        self.keywords = keywords
         self.bases = bases
         self.body = body
         self.decorators = decorators

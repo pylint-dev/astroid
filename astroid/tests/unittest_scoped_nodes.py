@@ -1676,6 +1676,18 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         parent = bind.scope()
         self.assertEqual(len(parent.extra_decorators), 0)
 
+    @test_utils.require_version(minver='3.0')
+    def test_class_keywords(self):
+        data = '''
+            class TestKlass(object, metaclass=TestMetaKlass,
+                    foo=42, bar='baz'):
+                pass
+        '''
+        astroid = builder.parse(data, __name__)
+        cls = astroid['TestKlass']
+        self.assertEqual(len(cls.keywords), 2)
+        self.assertEqual([x.arg for x in cls.keywords], ['foo', 'bar'])
+
 
 if __name__ == '__main__':
     unittest.main()
