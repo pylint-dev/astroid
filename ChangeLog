@@ -2,6 +2,11 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * Classes can now know their definition-time arguments.
+
+      Classes can support keyword arguments, which are passed when
+      a class is constructed using ``__new__``.
+
     * getitem() method accepts nodes now, instead of Python objects.
 
     * Add support for explicit namespace packages, created with pkg_resources.
