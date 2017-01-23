@@ -151,6 +151,19 @@ class NamedTupleTest(unittest.TestCase):
         self.assertIs(util.Uninferable, inferred)
 
 
+class DefaultDictTest(unittest.TestCase):
+
+    def test_1(self):
+        node = builder.extract_node('''
+        from collections import defaultdict
+
+        X = defaultdict(int)
+        X[0]
+        ''')
+        inferred = next(node.infer())
+        self.assertIs(util.Uninferable, inferred)
+
+
 class ModuleExtenderTest(unittest.TestCase):
     def testExtensionModules(self):
         transformer = MANAGER._transform
