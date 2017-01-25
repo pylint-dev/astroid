@@ -718,6 +718,13 @@ class FileBuildTest(unittest.TestCase):
         self.assertEqual(method.args.args, [])
         self.assertEqual(method.type, 'staticmethod')
 
+    @test_utils.require_version(minver='3.6')
+    def test_method_init_subclass(self):
+        klass2 = self.module['YOUPI']
+        method = klass2['__init_subclass__']
+        self.assertEqual([n.name for n in method.args.args], ['cls'])
+        self.assertEqual(method.type, 'classmethod')
+
     def test_method_locals(self):
         """test the 'locals' dictionary of a astroid method"""
         method = self.module['YOUPI']['method']
