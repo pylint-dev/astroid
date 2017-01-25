@@ -2927,7 +2927,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         examples = [
             "(lambda x: x)[1:2]",
             "1[2]",
-            "enumerate[2]",
             "(1, 2, 3)[a:]",
             "(1, 2, 3)[object:object]",
             "(1, 2, 3)[1:object]",
@@ -2935,6 +2934,11 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         for code in examples:
             node = extract_node(code)
             self.assertRaises(InferenceError, next, node.infer())
+
+        node = extract_node('enumerate[2]')
+        self.assertRaises(
+            exceptions.AttributeInferenceError, next, node.infer()
+        )
 
     def test_instance_slicing(self):
         ast_nodes = extract_node('''
