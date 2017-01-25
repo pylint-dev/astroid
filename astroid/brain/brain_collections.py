@@ -11,6 +11,7 @@ def _collections_transform():
     class defaultdict(dict):
         default_factory = None
         def __missing__(self, key): pass
+        def __getitem__(self, key): return default_factory
 
     class deque(object):
         maxlen = 0
