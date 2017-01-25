@@ -265,8 +265,8 @@ class Arguments(base.AssignTypeMixin, AssignedStmtsMixin, base.NodeNG):
             return True
         is_arg = self.find_argname(name, True)[1] is not None
         is_kwarg = (
-            self.kwonlyargs and
-            _find_arg(name, self.kwonlyargs, True)[1] is not None
+            self.keyword_only and
+            _find_arg(name, self.keyword_only, True)[1] is not None
         )
         return is_arg or is_kwarg
 
