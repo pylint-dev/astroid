@@ -27,7 +27,10 @@ def _lookup_in_mro(node, name):
     )
     values = list(itertools.chain(attrs, nodes))
     if not values:
-        raise exceptions.AttributeInferenceError
+        raise exceptions.AttributeInferenceError(
+            attribute=name,
+            target=node
+        )
 
     return values
 
@@ -50,13 +53,19 @@ def lookup(node, name):
     elif isinstance(node, astroid.ClassDef):
         return _class_lookup(node, name)
 
-    raise exceptions.AttributeInferenceError
+    raise exceptions.AttributeInferenceError(
+        attribute=name,
+        target=node
+    )
 
 
 def _class_lookup(node, name):
     metaclass = node.metaclass()
     if metaclass is None:
-        raise exceptions.AttributeInferenceError
+        raise exceptions.AttributeInferenceError(
+            attribute=name,
+            target=node
+        )
 
     return _lookup_in_mro(metaclass, name)
 
@@ -64,6 +73,9 @@ def _class_lookup(node, name):
 def _builtin_lookup(node, name):
     values = node.locals.get(name, [])
     if not values:
-        raise exceptions.AttributeInferenceError
+        raise exceptions.AttributeInferenceError(
+            attribute=name,
+            target=node
+        )
 
     return values
