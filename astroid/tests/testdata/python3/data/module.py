@@ -70,6 +70,8 @@ class YOUPI(YO):
         exec(a, b)
     class_method = classmethod(class_method)
 
+
+class InitSubclassClass(object):
     def __init_subclass__(cls, **kwargs):
         """This method is implicitly classmethod in Python 3.6+
         See: https://www.python.org/dev/peps/pep-0487
