@@ -70,7 +70,7 @@ class YOUPI(YO):
     class_method = classmethod(class_method)
 
     def __init_subclass__(cls, **kwargs):
-        """This method is implicitly classmethod in Python 3.6+
+        """This methid is implicitly classmethod in python3.6+
         See: https://www.python.org/dev/peps/pep-0487
         """
         pass
