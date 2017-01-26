@@ -276,7 +276,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(r_sibling, nodes.ClassDef)
         self.assertEqual(r_sibling.name, 'YO')
         self.assertIs(r_sibling, child.next_sibling())
-        last = r_sibling.next_sibling().next_sibling().next_sibling().next_sibling()
+        last = r_sibling.next_sibling().next_sibling().next_sibling()
         self.assertIsInstance(last, nodes.Assign)
         self.assertIsNone(last.next_sibling())
         first = l_sibling.root().body[0]
