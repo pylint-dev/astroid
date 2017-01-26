@@ -594,6 +594,17 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(last_child, nodes.Return)
         self.assertEqual(func.tolineno, 5)
 
+    @test_utils.require_version(minver='3.6')
+    def test_method_init_subclass(self):
+        klass = builder.extract_node('''
+        class MyClass:
+            def __init_subclass__(cls):
+                pass
+        ''')
+        method = klass['__init_subclass__']
+        self.assertEqual([n.name for n in method.args.args], ['cls'])
+        self.assertEqual(method.type, 'classmethod')
+
 
 class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
