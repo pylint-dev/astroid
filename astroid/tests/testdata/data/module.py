@@ -69,12 +69,6 @@ class YOUPI(YO):
         pass
     class_method = classmethod(class_method)
 
-    def __init_subclass__(cls, **kwargs):
-        """This methid is implicitly classmethod in python3.6+
-        See: https://www.python.org/dev/peps/pep-0487
-        """
-        pass
-
 
 def four_args(a, b, c, d):
     """four arguments (was nested_args)"""
