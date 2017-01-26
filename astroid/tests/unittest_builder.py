@@ -597,7 +597,7 @@ class FileBuildTest(unittest.TestCase):
         keys = sorted(_locals.keys())
         should = ['MY_DICT', 'NameNode', 'YO', 'YOUPI',
                   '__revision__', 'global_access', 'modutils', 'four_args',
-                  'os', 'redirect', 'InitSubclassClass']
+                  'os', 'redirect']
         should.sort()
         self.assertEqual(keys, sorted(should))
 
@@ -688,8 +688,8 @@ class FileBuildTest(unittest.TestCase):
 
     @test_utils.require_version(minver='3.6')
     def test_method_init_subclass(self):
-        klass = self.module['InitSubclassClass']
-        method = klass['__init_subclass__']
+        klass2 = self.module['YOUPI']
+        method = klass2['__init_subclass__']
         self.assertEqual([n.name for n in method.args.args], ['cls'])
         self.assertEqual(method.type, 'classmethod')
 
