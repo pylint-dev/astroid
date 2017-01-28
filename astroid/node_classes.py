@@ -312,7 +312,9 @@ class NodeNG(object):
             if not attr: # None or empty listy / tuple
                 continue
             if isinstance(attr, (list, tuple)):
-                return attr[-1]
+                if attr[-1]:
+                    return attr[-1]
+                continue
 
             return attr
         return None

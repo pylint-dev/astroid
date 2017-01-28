@@ -69,7 +69,12 @@ def get_scope_map(module):
         if isinstance(node, nodes.FunctionDef):
             # For functions we look until the first item in the body.
             # Sadly the docstring doesn't count in the body so it's not perfect.
-            for line in range(node.fromlineno, node.body[0].fromlineno):
+            if node.body:
+                tolineno = node.body[0].fromlineno
+            else:
+                # For functions without bodies (so just a docstring) we just sort of take the 2 lines after the start.
+                tolineno = node.blockstart_tolineno + 3
+            for line in range(node.fromlineno, tolineno):
                 scope_map[line] = node
         elif isinstance(node, (nodes.Assign, nodes.With, nodes.For)):
             for line in range(node.fromlineno, node.tolineno + 1):

@@ -201,6 +201,13 @@ class TestFunctionTypeComments(unittest.TestCase):
             return str(a)
         """, ['int', 'bytes'], vararg='str', kwarg='int', returns='str', lines=[3, 4, 5, 6, 8])
 
+    def test_only_docstring(self):
+        self.check_annotations('''
+        def test():  #@
+            # type: () -> str
+            """This really sucks"""
+        ''', [], returns='str', lines=[3])
+
     def test_assignment(self):
         assign = extract_node(dedent("x = []  # type: List[Employee]"))
         self.assertIsInstance(assign, nodes.Assign)
