@@ -312,8 +312,9 @@ class NodeNG(object):
             if not attr: # None or empty listy / tuple
                 continue
             if isinstance(attr, (list, tuple)):
-                if attr[-1]:
-                    return attr[-1]
+                for item in attr[::-1]:
+                    if item:
+                        return item
                 continue
 
             return attr
@@ -1467,12 +1468,12 @@ class ExtSlice(NodeNG):
 
 class For(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, Statement):
     """class representing a For node"""
-    _astroid_fields = ('target', 'iter', 'body', 'orelse', 'type_comment',)
+    _astroid_fields = ('target', 'iter', 'type_comment', 'body', 'orelse')
     target = None
     iter = None
+    type_comment = None
     body = None
     orelse = None
-    type_comment = None
 
     # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
     def postinit(self, target=None, iter=None, body=None, orelse=None, type_comment=None):
@@ -1898,10 +1899,10 @@ class While(mixins.BlockRangeMixIn, Statement):
 
 class With(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, Statement):
     """class representing a With node"""
-    _astroid_fields = ('items', 'body', 'type_comment')
+    _astroid_fields = ('items', 'type_comment', 'body')
     items = None
-    body = None
     type_comment = None
+    body = None
 
     def postinit(self, items=None, body=None, type_comment=None):
         self.items = items
@@ -1917,6 +1918,8 @@ class With(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, Statement):
             yield expr
             if var:
                 yield var
+        if self.type_comment:
+            yield self.type_comment
         for elt in self.body:
             yield elt
 
