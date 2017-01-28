@@ -402,8 +402,11 @@ class Module(LocalsDictNodeNG):
         """import the given module considering self as context"""
         if relative_only and level is None:
             level = 0
-        absmodname = self.relative_to_absolute_name(modname, level)
 
+        if not self.package and level is None:
+            absmodname = modname
+        else:
+            absmodname = self.relative_to_absolute_name(modname, level)
         try:
             return MANAGER.ast_from_module_name(absmodname)
         except exceptions.AstroidBuildingError:
