@@ -1581,6 +1581,51 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertIsInstance(inferred, Instance)
             self.assertEqual(inferred.qname(), "{}.tuple".format(BUILTINS))
 
+    @test_utils.require_version('3.5')
+    def test_starred_in_tuple_literal(self):
+        code = """
+        var = (1, 2, 3)
+        (0, *var) #@
+        (0, *var, 4) #@
+        """
+        ast = extract_node(code, __name__)
+        self.assertInferTuple(ast[0], [0, 1, 2, 3])
+        self.assertInferTuple(ast[1], [0, 1, 2, 3, 4])
+
+    @test_utils.require_version('3.5')
+    def test_starred_in_list_literal(self):
+        code = """
+        var = [1, 2, 3]
+        [0, *var] #@
+        [0, *var, 4] #@
+        """
+        ast = extract_node(code, __name__)
+        self.assertInferList(ast[0], [0, 1, 2, 3])
+        self.assertInferList(ast[1], [0, 1, 2, 3, 4])
+
+    @test_utils.require_version('3.5')
+    def test_starred_in_mapping_literal(self):
+        code = """
+        var = {1: 'b', 2: 'c'}
+        {0: 'a', **var} #@
+        {0: 'a', **var, 3: 'd'} #@
+        """
+        ast = extract_node(code, __name__)
+        self.assertInferDict(ast[0], {0: 'a', 1: 'b', 2: 'c'})
+        self.assertInferDict(ast[1], {0: 'a', 1: 'b', 2: 'c', 3: 'd'})
+
+    @test_utils.require_version('3.5')
+    def test_starred_in_mapping_literal_non_const_keys_values(self):
+        code = """
+        a, b, c, d, e, f, g, h = "ABCDEFGH"
+        var = {c: d, e: f}
+        {a: b, **var} #@
+        {a: b, **var, g: h} #@
+        """
+        ast = extract_node(code, __name__)
+        self.assertInferDict(ast[0], {"A": "B", "C": "D", "E": "F"})
+        self.assertInferDict(ast[1], {"A": "B", "C": "D", "E": "F", "G": "H"})
+
     def test_frozenset_builtin_inference(self):
         code = """
         var = (1, 2)

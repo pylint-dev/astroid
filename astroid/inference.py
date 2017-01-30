@@ -42,11 +42,105 @@ nodes.ClassDef._infer = infer_end
 nodes.FunctionDef._infer = infer_end
 nodes.Lambda._infer = infer_end
 nodes.Const._infer = infer_end
-nodes.List._infer = infer_end
-nodes.Tuple._infer = infer_end
 nodes.Dict._infer = infer_end
 nodes.Set._infer = infer_end
 nodes.Slice._infer = infer_end
+
+
+def infer_seq(self, context=None):
+    if not any(isinstance(e, nodes.Starred) for e in self.elts):
+        yield self
+    else:
+        values = _infer_seq(self.elts, context)
+        new_seq = type(self)()
+        new_seq.postinit(values)
+        yield new_seq
+
+
+def _infer_seq(elts, context=None):
+    """Infer all key-values pairs based on _BaseContainer.elts
+
+    TODO: refactor to achieve smaller functions"""
+    values = []
+    for elt in elts:
+        if isinstance(elt, nodes.Starred):
+            try:
+                inferred = next(elt.value.infer(context=context))
+            except exceptions.InferenceError:
+                values.append(util.Uninferable)
+                continue
+
+            if inferred is util.Uninferable:
+                values.append(util.Uninferable)
+                continue
+            if not hasattr(inferred, 'elts'):
+                values.append(util.Uninferable)
+                continue
+            values.extend(inferred.elts)
+        else:
+            values.append(elt)
+    return values
+
+
+nodes.List._infer = infer_seq
+nodes.Tuple._infer = infer_seq
+
+
+def infer_map(self, context=None):
+    if not any(isinstance(k, nodes.DictUnpack) for k, v in self.items):
+        yield self
+    else:
+        items = _infer_map(self.items, context)
+        new_seq = type(self)()
+        new_seq.postinit(list(items.items()))
+        yield new_seq
+
+
+def _infer_map(items, context):
+    """Infer all key-values pairs based on Dict.items
+
+    TODO: refactor to achieve smaller functions"""
+    values = {}
+
+    for name, value in items:
+        if isinstance(name, nodes.DictUnpack):
+            # Then it's an unpacking operation (**)
+            try:
+                inferred = next(value.infer(context=context))
+            except exceptions.InferenceError:
+                continue
+
+            if not isinstance(inferred, nodes.Dict):
+                continue
+
+            for dict_key, dict_value in inferred.items:
+                try:
+                    dict_key = next(dict_key.infer(context=context))
+                except exceptions.InferenceError:
+                    continue
+
+                try:
+                    dict_value = next(dict_value.infer(context=context))
+                except exceptions.InferenceError:
+                    dict_value = util.Uninferable
+                values[dict_key] = dict_value
+        else:
+            try:
+                key = next(name.infer(context=context))
+            except exceptions.InferenceError:
+                continue
+
+            try:
+                value = next(value.infer(context=context))
+            except exceptions.InferenceError:
+                value = util.Uninferable
+
+            values[key] = value
+
+    return values
+
+
+nodes.Dict._infer = infer_map
 
 
 def _higher_function_scope(node):
