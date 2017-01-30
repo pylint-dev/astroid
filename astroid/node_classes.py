@@ -1051,6 +1051,23 @@ class Assign(mixins.AssignTypeMixin, Statement):
         self.value = value
 
 
+class AnnAssign(mixins.AssignTypeMixin, Statement):
+    """Class representing an AnnAssign node"""
+
+    _astroid_fields = ('target', 'annotation', 'value',)
+    _other_fields = ('simple',)
+    target = None
+    annotation = None
+    value = None
+    simple = None
+
+    def postinit(self, target, annotation, simple, value=None):
+        self.target = target
+        self.annotation = annotation
+        self.value = value
+        self.simple = simple
+
+
 class AugAssign(mixins.AssignTypeMixin, Statement):
     """class representing an AugAssign node"""
     _astroid_fields = ('target', 'value')

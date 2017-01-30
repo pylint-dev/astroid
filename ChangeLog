@@ -170,6 +170,8 @@ Change log for the astroid package (used to be astng)
     * Fix metaclass detection, when multiple keyword arguments
       are used in class definition.
     
+    * Add support for annotated variable assignments (PEP 526)
+
 
 2015-11-29 -- 1.4.1
 
