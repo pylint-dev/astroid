@@ -13,6 +13,7 @@ new local scope in the language definition : Module, ClassDef, FunctionDef (and
 Lambda, GeneratorExp, DictComp and SetComp to some extent).
 """
 
+import sys
 import collections
 import io
 import itertools
@@ -914,6 +915,8 @@ class FunctionDef(LambdaFunctionMixin, lookup.LocalsDictNode,
         type_name = 'function'
         if isinstance(frame, ClassDef):
             if self.name == '__new__':
+                return 'classmethod'
+            elif sys.version_info >= (3, 6) and self.name == '__init_subclass__':
                 return 'classmethod'
             else:
                 type_name = 'method'
