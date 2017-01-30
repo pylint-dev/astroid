@@ -464,6 +464,23 @@ class NameNodeTest(unittest.TestCase):
             self.assertEqual(del_true.name, "True")
 
 
+class AnnAssignNodeTest(unittest.TestCase):
+    def test_ann_assign(self):
+        """test annotated assignment node"""
+        code = textwrap.dedent("""
+            test: int = 5
+        """)
+        if sys.version_info < (3, 6):
+            with self.assertRaises(exceptions.AstroidBuildingError):
+                builder.parse(code)
+        else:
+            assign = builder.extract_node(code)
+            self.assertIsInstance(assign, nodes.AnnAssign)
+            self.assertEqual(assign.targets[0].name, "test")
+            self.assertEqual(assign.annotation.name, "int")
+            self.assertEqual(assign.value.value, 5)
+
+
 class ArgumentsNodeTC(unittest.TestCase):
     def test_linenumbering(self):
         ast = builder.parse('''

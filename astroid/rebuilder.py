@@ -828,6 +828,15 @@ class TreeRebuilder3(TreeRebuilder):
         elif node.handlers:
             return self.visit_tryexcept(node, parent)
 
+    def visit_annassign(self, node, parent):
+        """visit a AnnAssign node by returning a fresh instance of it"""
+        newnode = nodes.AnnAssign(node.lineno, node.col_offset, parent)
+        annotation = _visit_or_none(node, 'annotation', self, newnode)
+        newnode.postinit([self.visit(node.target, newnode)],
+                         self.visit(node.value, newnode),
+                         annotation)
+        return newnode
+
     def _visit_with(self, cls, node, parent):
         if 'items' not in node._fields:
             # python < 3.3
