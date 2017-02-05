@@ -772,17 +772,16 @@ class TestImportAll(unittest.TestCase):
         self.astroid_builder = builder.AstroidBuilder()
 
     def test_x(self):
-        import textwrap
-        m1_string = textwrap.dedent("""
+        m1_string = """
         __all__ = ['a', 'b', 'c']
         a = 1
         b = 2
         c = 3
         d = 4
-        """)
+        """
         m2_string = "from m1 import *"
-        m1 = self.astroid_builder.string_build(m1_string, 'm1')
-        m2 = self.astroid_builder.string_build(m2_string, 'm2')
+        m1 = builder.parse(m1_string, 'm1')
+        m2 = builder.parse(m2_string, 'm2')
         exported = ['a', 'b', 'c']
         self.assertEqual(m1.wildcard_import_names(), exported)
         self.assertEqual(len(m2.locals), 3)
