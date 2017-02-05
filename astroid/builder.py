@@ -214,7 +214,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
                     imported = node.do_import_module()
                 except exceptions.AstroidBuildingError:
                     continue
-                for name in imported.wildcard_import_names():
+                for name in imported.public_names():
                     node.parent.set_local(name, node)
                     sort_locals(node.parent.scope().locals[name])
             else:
