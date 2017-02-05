@@ -767,5 +767,28 @@ class TestGuessEncoding(unittest.TestCase):
         self.assertIsNone(e)
 
 
+class TestImportAll(unittest.TestCase):
+    def setUp(self):
+        self.astroid_builder = builder.AstroidBuilder()
+
+    def test_x(self):
+        import textwrap
+        m1_string = textwrap.dedent("""
+        __all__ = ['a', 'b', 'c']
+        a = 1
+        b = 2
+        c = 3
+        d = 4
+        """)
+        m2_string = "from m1 import *"
+        m1 = self.astroid_builder.string_build(m1_string, 'm1')
+        m2 = self.astroid_builder.string_build(m2_string, 'm2')
+        exported = ['a', 'b', 'c']
+        self.assertEqual(m1.wildcard_import_names(), exported)
+        self.assertEqual(len(m2.locals), 3)
+        for n in exported:
+            self.assertIn(n, m2.locals)
+
+
 if __name__ == '__main__':
     unittest.main()
