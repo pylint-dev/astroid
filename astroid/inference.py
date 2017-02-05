@@ -42,8 +42,6 @@ nodes.ClassDef._infer = infer_end
 nodes.FunctionDef._infer = infer_end
 nodes.Lambda._infer = infer_end
 nodes.Const._infer = infer_end
-nodes.Dict._infer = infer_end
-nodes.Set._infer = infer_end
 nodes.Slice._infer = infer_end
 
 
@@ -58,25 +56,17 @@ def infer_seq(self, context=None):
 
 
 def _infer_seq(elts, context=None):
-    """Infer all key-values pairs based on _BaseContainer.elts
-
-    TODO: refactor to achieve smaller functions"""
+    """Infer all key-values pairs based on _BaseContainer.elts"""
     values = []
+
     for elt in elts:
         if isinstance(elt, nodes.Starred):
-            try:
-                inferred = next(elt.value.infer(context=context))
-            except exceptions.InferenceError:
-                values.append(util.Uninferable)
-                continue
-
-            if inferred is util.Uninferable:
-                values.append(util.Uninferable)
-                continue
+            inferred = helpers.safe_infer(elt.value, context)
+            if inferred in (None, util.Uninferable):
+                raise exceptions.InferenceError
             if not hasattr(inferred, 'elts'):
-                values.append(util.Uninferable)
-                continue
-            values.extend(inferred.elts)
+                raise exceptions.InferenceError
+            values.extend(_infer_seq(inferred.elts))
         else:
             values.append(elt)
     return values
@@ -84,6 +74,7 @@ def _infer_seq(elts, context=None):
 
 nodes.List._infer = infer_seq
 nodes.Tuple._infer = infer_seq
+nodes.Set._infer = infer_seq
 
 
 def infer_map(self, context=None):
@@ -97,46 +88,23 @@ def infer_map(self, context=None):
 
 
 def _infer_map(items, context):
-    """Infer all key-values pairs based on Dict.items
-
-    TODO: refactor to achieve smaller functions"""
+    """Infer all key-values pairs based on Dict.items"""
     values = {}
 
     for name, value in items:
         if isinstance(name, nodes.DictUnpack):
-            # Then it's an unpacking operation (**)
-            try:
-                inferred = next(value.infer(context=context))
-            except exceptions.InferenceError:
-                continue
-
+            inferred = helpers.safe_infer(value, context)
+            if inferred in (None, util.Uninferable):
+                raise exceptions.InferenceError
             if not isinstance(inferred, nodes.Dict):
-                continue
-
-            for dict_key, dict_value in inferred.items:
-                try:
-                    dict_key = next(dict_key.infer(context=context))
-                except exceptions.InferenceError:
-                    continue
-
-                try:
-                    dict_value = next(dict_value.infer(context=context))
-                except exceptions.InferenceError:
-                    dict_value = util.Uninferable
-                values[dict_key] = dict_value
+                raise exceptions.InferenceError
+            values.update(_infer_map(inferred.items, context))
         else:
-            try:
-                key = next(name.infer(context=context))
-            except exceptions.InferenceError:
-                continue
-
-            try:
-                value = next(value.infer(context=context))
-            except exceptions.InferenceError:
-                value = util.Uninferable
-
+            key = helpers.safe_infer(name, context=context)
+            value = helpers.safe_infer(value, context=context)
+            if key is None or value is None:
+                raise exceptions.InferenceError
             values[key] = value
-
     return values
 
 

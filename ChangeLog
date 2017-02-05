@@ -166,6 +166,9 @@ Change log for the astroid package (used to be astng)
       assumptions about what could be passed to other implementations,
       leading to various possible crashes when one or more arguments
       weren't given. Closes issue #277.
+
+    * Starred expressions are now inferred correctly for tuple, list
+      and dictionary literals.
     
 
 2015-11-29 -- 1.4.1
