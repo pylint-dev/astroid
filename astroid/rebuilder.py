@@ -832,8 +832,8 @@ class TreeRebuilder3(TreeRebuilder):
         """visit a AnnAssign node by returning a fresh instance of it"""
         newnode = nodes.AnnAssign(node.lineno, node.col_offset, parent)
         annotation = _visit_or_none(node, 'annotation', self, newnode)
-        newnode.postinit([self.visit(node.target, newnode)],
-                         self.visit(node.value, newnode),
+        newnode.postinit(self.visit(node.target, newnode),
+                         _visit_or_none(node, 'value', self, newnode),
                          annotation)
         return newnode
 

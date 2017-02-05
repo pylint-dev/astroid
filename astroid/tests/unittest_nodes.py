@@ -465,20 +465,48 @@ class NameNodeTest(unittest.TestCase):
 
 
 class AnnAssignNodeTest(unittest.TestCase):
-    def test_ann_assign(self):
-        """test annotated assignment node"""
+    @test_utils.require_version(minver='3.6')
+    def test_primitive(self):
         code = textwrap.dedent("""
             test: int = 5
         """)
-        if sys.version_info < (3, 6):
-            with self.assertRaises(exceptions.AstroidBuildingError):
-                builder.parse(code)
-        else:
-            assign = builder.extract_node(code)
-            self.assertIsInstance(assign, nodes.AnnAssign)
-            self.assertEqual(assign.targets[0].name, "test")
-            self.assertEqual(assign.annotation.name, "int")
-            self.assertEqual(assign.value.value, 5)
+        assign = builder.extract_node(code)
+        self.assertIsInstance(assign, nodes.AnnAssign)
+        self.assertEqual(assign.target.name, "test")
+        self.assertEqual(assign.annotation.name, "int")
+        self.assertEqual(assign.value.value, 5)
+
+    @test_utils.require_version(minver='3.6')
+    def test_primitive_without_initial_value(self):
+        code = textwrap.dedent("""
+            test: str
+        """)
+        assign = builder.extract_node(code)
+        self.assertIsInstance(assign, nodes.AnnAssign)
+        self.assertEqual(assign.target.name, "test")
+        self.assertEqual(assign.annotation.name, "str")
+        self.assertEqual(assign.value, None)
+
+    @test_utils.require_version(minver='3.6')
+    def test_complex(self):
+        code = textwrap.dedent("""
+            test: Dict[List[str]] = {}
+        """)
+        assign = builder.extract_node(code)
+        self.assertIsInstance(assign, nodes.AnnAssign)
+        self.assertEqual(assign.target.name, "test")
+        self.assertIsInstance(assign.annotation, astroid.Subscript)
+        self.assertIsInstance(assign.value, astroid.Dict)
+
+    @test_utils.require_version(minver='3.6')
+    def test_as_string(self):
+        code = '''print()
+test: int = 5
+test2: str
+test3: List[Dict[str]] = []
+\n'''
+        ast = abuilder.string_build(code)
+        self.assertMultiLineEqual(ast.as_string(), code)
 
 
 class ArgumentsNodeTC(unittest.TestCase):
