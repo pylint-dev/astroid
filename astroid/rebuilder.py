@@ -829,12 +829,16 @@ class TreeRebuilder3(TreeRebuilder):
             return self.visit_tryexcept(node, parent)
 
     def visit_annassign(self, node, parent):
-        """visit a AnnAssign node by returning a fresh instance of it"""
+        """visit an AnnAssign node by returning a fresh instance of it"""
         newnode = nodes.AnnAssign(node.lineno, node.col_offset, parent)
         annotation = _visit_or_none(node, 'annotation', self, newnode)
         newnode.postinit(self.visit(node.target, newnode),
+                         annotation,
                          _visit_or_none(node, 'value', self, newnode),
-                         annotation)
+                        nodes.Const(node.simple,
+                                    getattr(node, 'lineno', None),
+                                    getattr(node, 'col_offset', None),
+                                    parent))
         return newnode
 
     def _visit_with(self, cls, node, parent):

@@ -475,6 +475,7 @@ class AnnAssignNodeTest(unittest.TestCase):
         self.assertEqual(assign.target.name, "test")
         self.assertEqual(assign.annotation.name, "int")
         self.assertEqual(assign.value.value, 5)
+        self.assertEqual(assign.simple.value, 1)
 
     @test_utils.require_version(minver='3.6')
     def test_primitive_without_initial_value(self):
@@ -500,13 +501,14 @@ class AnnAssignNodeTest(unittest.TestCase):
 
     @test_utils.require_version(minver='3.6')
     def test_as_string(self):
-        code = '''print()
-test: int = 5
-test2: str
-test3: List[Dict[str]] = []
-\n'''
+        code = textwrap.dedent("""
+            print()
+            test: int = 5
+            test2: str
+            test3: List[Dict[(str, str)]] = []
+        """)
         ast = abuilder.string_build(code)
-        self.assertMultiLineEqual(ast.as_string(), code)
+        self.assertEqual(ast.as_string().strip(), code.strip())
 
 
 class ArgumentsNodeTC(unittest.TestCase):
