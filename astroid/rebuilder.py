@@ -358,7 +358,7 @@ class TreeRebuilder(object):
                          self.visit(node.iter, newnode),
                          [self.visit(child, newnode)
                           for child in node.ifs],
-                         nodes.Const(node.is_async,
+                         nodes.Const(getattr(node, 'is_async'),
                                      getattr(node, 'lineno', None),
                                      getattr(node, 'col_offset', None),
                                      parent)

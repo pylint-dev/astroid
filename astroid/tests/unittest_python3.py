@@ -260,10 +260,6 @@ class Python3TC(unittest.TestCase):
 
     @require_version('3.6')
     def test_async_comprehensions(self):
-        """
-        TODO: when async and await will become keywords, async comprehensions
-        will be allowed outside of coroutines body, we'll need extra tests for this
-        """
         return_async_comp_funcs = [
             extract_node("async def f(): return [i async for i in aiter() if i % 2]"),
             extract_node("async def f(): return {i async for i in aiter() if i % 2}"),
