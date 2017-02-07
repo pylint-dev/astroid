@@ -49,24 +49,26 @@ def infer_seq(self, context=None):
     if not any(isinstance(e, nodes.Starred) for e in self.elts):
         yield self
     else:
-        values = _infer_seq(self.elts, context)
-        new_seq = type(self)()
+        values = _infer_seq(self, context)
+        new_seq = type(self)(self.lineno, self.col_offset, self.parent)
         new_seq.postinit(values)
         yield new_seq
 
 
-def _infer_seq(elts, context=None):
-    """Infer all key-values pairs based on _BaseContainer.elts"""
+def _infer_seq(node, context=None):
+    """Infer all values based on _BaseContainer.elts"""
     values = []
 
-    for elt in elts:
+    for elt in node.elts:
         if isinstance(elt, nodes.Starred):
-            inferred = helpers.safe_infer(elt.value, context)
-            if inferred in (None, util.Uninferable):
-                raise exceptions.InferenceError
-            if not hasattr(inferred, 'elts'):
-                raise exceptions.InferenceError
-            values.extend(_infer_seq(inferred.elts))
+            starred = helpers.safe_infer(elt.value, context)
+            if starred in (None, util.Uninferable):
+                raise exceptions.InferenceError(node=node,
+                                                context=context)
+            if not hasattr(starred, 'elts'):
+                raise exceptions.InferenceError(node=node,
+                                                context=context)
+            values.extend(_infer_seq(starred))
         else:
             values.append(elt)
     return values
@@ -81,29 +83,30 @@ def infer_map(self, context=None):
     if not any(isinstance(k, nodes.DictUnpack) for k, v in self.items):
         yield self
     else:
-        items = _infer_map(self.items, context)
-        new_seq = type(self)()
+        items = _infer_map(self, context)
+        new_seq = type(self)(self.lineno, self.col_offset, self.parent)
         new_seq.postinit(list(items.items()))
         yield new_seq
 
 
-def _infer_map(items, context):
-    """Infer all key-values pairs based on Dict.items"""
+def _infer_map(node, context):
+    """Infer all values based on Dict.items"""
     values = {}
-
-    for name, value in items:
+    for name, value in node.items:
         if isinstance(name, nodes.DictUnpack):
-            inferred = helpers.safe_infer(value, context)
-            if inferred in (None, util.Uninferable):
+            double_starred = helpers.safe_infer(value, context)
+            if double_starred in (None, util.Uninferable):
                 raise exceptions.InferenceError
-            if not isinstance(inferred, nodes.Dict):
-                raise exceptions.InferenceError
-            values.update(_infer_map(inferred.items, context))
+            if not isinstance(double_starred, nodes.Dict):
+                raise exceptions.InferenceError(node=node,
+                                                context=context)
+            values.update(_infer_map(double_starred, context))
         else:
             key = helpers.safe_infer(name, context=context)
             value = helpers.safe_infer(value, context=context)
             if key is None or value is None:
-                raise exceptions.InferenceError
+                raise exceptions.InferenceError(node=node,
+                                                context=context)
             values[key] = value
     return values
 
