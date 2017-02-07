@@ -835,10 +835,10 @@ class TreeRebuilder3(TreeRebuilder):
         newnode.postinit(self.visit(node.target, newnode),
                          annotation,
                          _visit_or_none(node, 'value', self, newnode),
-                        nodes.Const(node.simple,
-                                    getattr(node, 'lineno', None),
-                                    getattr(node, 'col_offset', None),
-                                    parent))
+                         nodes.Const(node.simple,
+                                     getattr(node, 'lineno', None),
+                                     getattr(node, 'col_offset', None),
+                                     parent))
         return newnode
 
     def _visit_with(self, cls, node, parent):
