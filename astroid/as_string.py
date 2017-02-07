@@ -71,7 +71,8 @@ class AsStringVisitor(object):
         """return an astroid.AugAssign node as string"""
         if node.value is None:
             return '%s: %s' % (node.target.accept(self), node.annotation.accept(self))
-        return '%s: %s = %s' % (node.target.accept(self), node.annotation.accept(self), node.value.accept(self))
+        return '%s: %s = %s' % (
+            node.target.accept(self), node.annotation.accept(self), node.value.accept(self))
 
     def visit_repr(self, node):
         """return an astroid.Repr node as string"""
