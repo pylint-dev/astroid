@@ -331,9 +331,10 @@ class TreeRebuilder(object):
                           if kwd.arg != 'metaclass'] if PY3 else [])
         return newnode
 
-    def visit_const(self, node, parent):
+    def visit_const(self, node, parent, value_attr='value'):
         """visit a Const node by returning a fresh instance of it"""
-        return nodes.Const(node.value, getattr(node, 'lineno', None),
+        return nodes.Const(getattr(node, value_attr),
+                           getattr(node, 'lineno', None),
                            getattr(node, 'col_offset', None), parent)
 
     def visit_continue(self, node, parent):
@@ -832,10 +833,7 @@ class TreeRebuilder3(TreeRebuilder):
         """visit an AnnAssign node by returning a fresh instance of it"""
         newnode = nodes.AnnAssign(node.lineno, node.col_offset, parent)
         annotation = _visit_or_none(node, 'annotation', self, newnode)
-        simple = nodes.Const(node.simple,
-                             getattr(node, 'lineno', None),
-                             getattr(node, 'col_offset', None),
-                             parent)
+        simple = self.visit_const(node, parent, value_attr='simple')
         newnode.postinit(self.visit(node.target, newnode),
                          annotation,
                          simple,
