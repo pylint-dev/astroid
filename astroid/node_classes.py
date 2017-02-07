@@ -1059,7 +1059,7 @@ class AnnAssign(mixins.AssignTypeMixin, Statement):
     value = None
     simple = None
 
-    def postinit(self, target=None, annotation=None, value=None, simple=None):
+    def postinit(self, target, annotation, simple, value=None):
         self.target = target
         self.annotation = annotation
         self.value = value
