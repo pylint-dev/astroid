@@ -361,8 +361,7 @@ class TreeRebuilder(object):
                          nodes.Const(getattr(node, 'is_async', None),
                                      getattr(node, 'lineno', None),
                                      getattr(node, 'col_offset', None),
-                                     parent)
-                         )
+                                     parent))
         return newnode
 
     def visit_decorators(self, node, parent):

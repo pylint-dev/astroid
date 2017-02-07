@@ -300,7 +300,8 @@ class Python3TC(unittest.TestCase):
         ]
 
         for comp in comprehensions:
-            self.assertTrue(comp.is_async.value)
+            node = extract_node(comp)
+            self.assertTrue(node.is_async.value)
 
     @require_version('3.6')
     def test_async_comprehensions_as_string(self):
