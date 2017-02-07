@@ -258,7 +258,77 @@ class Python3TC(unittest.TestCase):
             self.assertIsInstance(inferred, nodes.Const)
             self.assertEqual(inferred.value, expected)
 
+    @require_version('3.6')
+    def test_async_comprehensions(self):
+        """
+        TODO: when async and await will become keywords, async comprehensions
+        will be allowed outside of coroutines body, we'll need extra tests for this
+        """
+        return_async_comp_funcs = [
+            extract_node("async def f(): return [i async for i in aiter() if i % 2]"),
+            extract_node("async def f(): return {i async for i in aiter() if i % 2}"),
+            extract_node("async def f(): return (i async for i in aiter() if i % 2)"),
+            extract_node("async def f(): return {i: i async for i in aiter() if i % 2}")
+        ]
+        return_non_async_comp_funcs = [
+            extract_node("async def f(): return {i: i for i in iter() if i % 2}")
+        ]
 
+        for func in return_async_comp_funcs:
+            comp = func.body[-1].value.generators[0]
+            self.assertTrue(comp.is_async.value)
+        for func in return_non_async_comp_funcs:
+            comp = func.body[-1].value.generators[0]
+            self.assertFalse(comp.is_async.value)
+
+    @require_version('3.7')
+    def test_async_comprehensions_outside_coroutine(self):
+        """
+        When async and await will become keywords, async comprehensions
+        will be allowed outside of coroutines body
+        """
+        comprehensions = [
+            "[i async for i in aiter() if condition(i)]",
+            "[await fun() for fun in funcs]",
+            "{await fun() for fun in funcs}",
+            "{fun: await fun() for fun in funcs}",
+            "[await fun() for fun in funcs if await smth]",
+            "{await fun() for fun in funcs if await smth}",
+            "{fun: await fun() for fun in funcs if await smth}",
+            "[await fun() async for fun in funcs]",
+            "{await fun() async for fun in funcs}",
+            "{fun: await fun() async for fun in funcs}",
+            "[await fun() async for fun in funcs if await smth]",
+            "{await fun() async for fun in funcs if await smth}",
+            "{fun: await fun() async for fun in funcs if await smth}",
+        ]
+
+        for comp in comprehensions:
+            self.assertTrue(comp.is_async.value)
+
+    @require_version('3.6')
+    def test_async_comprehensions_as_string(self):
+        func_bodies = [
+            "return [i async for i in aiter() if condition(i)]",
+            "return [await fun() for fun in funcs]",
+            "return {await fun() for fun in funcs}",
+            "return {fun: await fun() for fun in funcs}",
+            "return [await fun() for fun in funcs if await smth]",
+            "return {await fun() for fun in funcs if await smth}",
+            "return {fun: await fun() for fun in funcs if await smth}",
+            "return [await fun() async for fun in funcs]",
+            "return {await fun() async for fun in funcs}",
+            "return {fun: await fun() async for fun in funcs}",
+            "return [await fun() async for fun in funcs if await smth]",
+            "return {await fun() async for fun in funcs if await smth}",
+            "return {fun: await fun() async for fun in funcs if await smth}",
+        ]
+        for func_body in func_bodies:
+            code = dedent('''
+            async def f():
+                {}'''.format(func_body))
+            func = extract_node(code)
+            self.assertEqual(func.as_string().strip(), code.strip())
 
 
 if __name__ == '__main__':

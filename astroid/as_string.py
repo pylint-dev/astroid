@@ -494,6 +494,13 @@ class AsStringVisitor3(AsStringVisitor):
     def visit_formattedvalue(self, node):
         return '{%s}' % node.value.accept(self)
 
+    def visit_comprehension(self, node):
+        """return an astroid.Comprehension node as string"""
+        ifs = ''.join([' if %s' % n.accept(self) for n in node.ifs])
+        return '%sfor %s in %s%s' % ('async ' if node.is_async.value else '',
+                                     node.target.accept(self),
+                                     node.iter.accept(self), ifs)
+
 
 def _import_string(names):
     """return a list of (name, asname) formatted as a string"""

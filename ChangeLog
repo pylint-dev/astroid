@@ -166,7 +166,10 @@ Change log for the astroid package (used to be astng)
       assumptions about what could be passed to other implementations,
       leading to various possible crashes when one or more arguments
       weren't given. Closes issue #277.
-    
+
+    * Support for asynchronous comprehensions introduced in Python 3.6.
+
+      Fixes #399. See PEP530 for details.
 
 2015-11-29 -- 1.4.1
 
