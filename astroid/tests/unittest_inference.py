@@ -3338,7 +3338,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     @test_utils.require_version('3.5')
     def test_typing_namedtuple_is_callable(self):
-        import typing
         node = extract_node("""
         import typing
         MyNamedTuple = typing.NamedTuple('Named', [('foo', int), ('bar', int)])
