@@ -3336,6 +3336,17 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 25)
 
+    @test_utils.require_version('3.5')
+    def test_typing_namedtuple_is_callable(self):
+        node = extract_node("""
+        import typing
+        Named = typing.NamedTuple('Named', [('foo', int), ('bar', int)])
+        Named
+        """)
+        inferred = list(node.infer())
+        assert len(inferred) == 1
+        assert inferred[0].callable()
+
 
 class GetattrTest(unittest.TestCase):
 
