@@ -3338,14 +3338,16 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     @test_utils.require_version('3.5')
     def test_typing_namedtuple_is_callable(self):
+        import typing
         node = extract_node("""
         import typing
-        Named = typing.NamedTuple('Named', [('foo', int), ('bar', int)])
-        Named
+        MyNamedTuple = typing.NamedTuple('Named', [('foo', int), ('bar', int)])
+        MyNamedTuple
         """)
+        MyNamedTuple = typing.NamedTuple('Named', [('foo', int), ('bar', int)])  # pylint: disable=invalid-name
         inferred = list(node.infer())
-        assert len(inferred) == 1
-        assert inferred[0].callable()
+        self.assertEqual(1, len(inferred))
+        self.assertEqual(callable(MyNamedTuple), inferred[0].callable())
 
 
 class GetattrTest(unittest.TestCase):
