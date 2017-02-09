@@ -28,7 +28,7 @@ on ImportFrom and Import :
 # pylint: disable=unused-import,redefined-builtin
 
 from astroid.node_classes import (
-    Arguments, AssignAttr, Assert, Assign,
+    Arguments, AssignAttr, Assert, Assign, AnnAssign,
     AssignName, AugAssign, Repr, BinOp, BoolOp, Break, Call, Compare,
     Comprehension, Const, Continue, Decorators, DelAttr, DelName, Delete,
     Dict, Expr, Ellipsis, EmptyNode, ExceptHandler, Exec, ExtSlice, For,
@@ -56,7 +56,7 @@ from astroid.scoped_nodes import (
 ALL_NODE_CLASSES = (
     AsyncFunctionDef, AsyncFor, AsyncWith, Await,
 
-    Arguments, AssignAttr, Assert, Assign, AssignName, AugAssign,
+    Arguments, AssignAttr, Assert, Assign, AnnAssign, AssignName, AugAssign,
     Repr, BinOp, BoolOp, Break,
     Call, ClassDef, Compare, Comprehension, Const, Continue,
     Decorators, DelAttr, DelName, Delete,

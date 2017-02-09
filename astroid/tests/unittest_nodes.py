@@ -464,6 +464,53 @@ class NameNodeTest(unittest.TestCase):
             self.assertEqual(del_true.name, "True")
 
 
+class AnnAssignNodeTest(unittest.TestCase):
+    @test_utils.require_version(minver='3.6')
+    def test_primitive(self):
+        code = textwrap.dedent("""
+            test: int = 5
+        """)
+        assign = builder.extract_node(code)
+        self.assertIsInstance(assign, nodes.AnnAssign)
+        self.assertEqual(assign.target.name, "test")
+        self.assertEqual(assign.annotation.name, "int")
+        self.assertEqual(assign.value.value, 5)
+        self.assertEqual(assign.simple, 1)
+
+    @test_utils.require_version(minver='3.6')
+    def test_primitive_without_initial_value(self):
+        code = textwrap.dedent("""
+            test: str
+        """)
+        assign = builder.extract_node(code)
+        self.assertIsInstance(assign, nodes.AnnAssign)
+        self.assertEqual(assign.target.name, "test")
+        self.assertEqual(assign.annotation.name, "str")
+        self.assertEqual(assign.value, None)
+
+    @test_utils.require_version(minver='3.6')
+    def test_complex(self):
+        code = textwrap.dedent("""
+            test: Dict[List[str]] = {}
+        """)
+        assign = builder.extract_node(code)
+        self.assertIsInstance(assign, nodes.AnnAssign)
+        self.assertEqual(assign.target.name, "test")
+        self.assertIsInstance(assign.annotation, astroid.Subscript)
+        self.assertIsInstance(assign.value, astroid.Dict)
+
+    @test_utils.require_version(minver='3.6')
+    def test_as_string(self):
+        code = textwrap.dedent("""
+            print()
+            test: int = 5
+            test2: str
+            test3: List[Dict[(str, str)]] = []
+        """)
+        ast = abuilder.string_build(code)
+        self.assertEqual(ast.as_string().strip(), code.strip())
+
+
 class ArgumentsNodeTC(unittest.TestCase):
     def test_linenumbering(self):
         ast = builder.parse('''
