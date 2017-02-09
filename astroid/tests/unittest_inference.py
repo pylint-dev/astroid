@@ -3336,6 +3336,52 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 25)
 
+    def test_factory_methods_cls_call(self):
+        ast = extract_node("""
+        class C:
+            @classmethod
+            def factory(cls):
+                return cls()
+
+            def m(self):
+                return self.__class__.factory()
+
+        class D(C):
+            pass
+
+        C().m() #@
+        D().m() #@
+        """, 'm')
+        should_be_C = list(ast[0].infer())
+        should_be_D = list(ast[1].infer())
+        self.assertEqual(1, len(should_be_C))
+        self.assertEqual(1, len(should_be_D))
+        self.assertEqual('m.C', should_be_C[0].qname())
+        self.assertEqual('m.D', should_be_D[0].qname())
+
+    def test_factory_methods_object_new_call(self):
+        ast = extract_node("""
+        class C:
+            @classmethod
+            def factory(cls):
+                return object.__new__(cls)
+
+            def m(self):
+                return self.__class__.factory()
+
+        class D(C):
+            pass
+
+        C().m() #@
+        D().m() #@
+        """, 'm')
+        should_be_C = list(ast[0].infer())
+        should_be_D = list(ast[1].infer())
+        self.assertEqual(1, len(should_be_C))
+        self.assertEqual(1, len(should_be_D))
+        self.assertEqual('m.C', should_be_C[0].qname())
+        self.assertEqual('m.D', should_be_D[0].qname())
+
 
 class GetattrTest(unittest.TestCase):
 
