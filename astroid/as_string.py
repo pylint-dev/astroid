@@ -132,7 +132,7 @@ class AsStringVisitor(object):
 
     def visit_comprehension(self, node):
         """return an astroid.Comprehension node as string"""
-        ifs = ''.join(' if %s' % n.accept(self) for n in node.ifs)
+        ifs = ''.join([' if %s' % n.accept(self) for n in node.ifs])
         return 'for %s in %s%s' % (node.target.accept(self),
                                    node.iter.accept(self), ifs)
 
@@ -505,10 +505,8 @@ class AsStringVisitor3(AsStringVisitor):
 
     def visit_comprehension(self, node):
         """return an astroid.Comprehension node as string"""
-        ifs = ''.join(' if %s' % n.accept(self) for n in node.ifs)
-        return '%sfor %s in %s%s' % ('async ' if node.is_async else '',
-                                     node.target.accept(self),
-                                     node.iter.accept(self), ifs)
+        return '%s%s' % ('async ' if node.is_async else '',
+                         super(AsStringVisitor3, self).visit_comprehension(node))
 
 
 def _import_string(names):
