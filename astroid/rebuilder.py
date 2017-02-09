@@ -317,7 +317,7 @@ class TreeRebuilder(object):
             for keyword in node.keywords:
                 if keyword.arg == 'metaclass':
                     metaclass = self.visit(keyword, newnode).value
-                break
+                    break
         if node.decorator_list:
             decorators = self.visit_decorators(node, newnode)
         else:
