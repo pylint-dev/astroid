@@ -359,10 +359,7 @@ class TreeRebuilder(object):
                          self.visit(node.iter, newnode),
                          [self.visit(child, newnode)
                           for child in node.ifs],
-                         nodes.Const(getattr(node, 'is_async', None),
-                                     getattr(node, 'lineno', None),
-                                     getattr(node, 'col_offset', None),
-                                     parent))
+                         getattr(node, 'is_async', None))
         return newnode
 
     def visit_decorators(self, node, parent):

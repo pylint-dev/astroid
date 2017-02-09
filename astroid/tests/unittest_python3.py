@@ -269,29 +269,25 @@ class Python3TC(unittest.TestCase):
 
     @require_version('3.6')
     def test_async_comprehensions(self):
-        return_async_comp_funcs = [
-            extract_node("async def f(): return [i async for i in aiter() if i % 2]"),
-            extract_node("async def f(): return {i async for i in aiter() if i % 2}"),
-            extract_node("async def f(): return (i async for i in aiter() if i % 2)"),
-            extract_node("async def f(): return {i: i async for i in aiter() if i % 2}")
+        async_comprehensions = [
+            extract_node("async def f(): return __([i async for i in aiter() if i % 2])"),
+            extract_node("async def f(): return __({i async for i in aiter() if i % 2})"),
+            extract_node("async def f(): return __((i async for i in aiter() if i % 2))"),
+            extract_node("async def f(): return __({i: i async for i in aiter() if i % 2})")
         ]
-        return_non_async_comp_funcs = [
-            extract_node("async def f(): return {i: i for i in iter() if i % 2}")
+        non_async_comprehensions = [
+            extract_node("async def f(): return __({i: i for i in iter() if i % 2})")
         ]
 
-        for func in return_async_comp_funcs:
-            comp = func.body[-1].value.generators[0]
-            self.assertTrue(comp.is_async.value)
-        for func in return_non_async_comp_funcs:
-            comp = func.body[-1].value.generators[0]
-            self.assertFalse(comp.is_async.value)
+        for comp in async_comprehensions:
+            self.assertTrue(comp.generators[0].is_async)
+        for comp in non_async_comprehensions:
+            self.assertFalse(comp.generators[0].is_async)
 
     @require_version('3.7')
     def test_async_comprehensions_outside_coroutine(self):
-        """
-        When async and await will become keywords, async comprehensions
-        will be allowed outside of coroutines body
-        """
+        # When async and await will become keywords, async comprehensions
+        # will be allowed outside of coroutines body
         comprehensions = [
             "[i async for i in aiter() if condition(i)]",
             "[await fun() for fun in funcs]",
@@ -310,7 +306,7 @@ class Python3TC(unittest.TestCase):
 
         for comp in comprehensions:
             node = extract_node(comp)
-            self.assertTrue(node.is_async.value)
+            self.assertTrue(node.generators[0].is_async)
 
     @require_version('3.6')
     def test_async_comprehensions_as_string(self):

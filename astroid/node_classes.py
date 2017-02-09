@@ -1209,7 +1209,8 @@ class Compare(NodeNG):
 
 class Comprehension(NodeNG):
     """class representing a Comprehension node"""
-    _astroid_fields = ('target', 'iter', 'ifs', 'is_async')
+    _astroid_fields = ('target', 'iter', 'ifs')
+    _other_fields = ('is_async',)
     target = None
     iter = None
     ifs = None
