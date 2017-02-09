@@ -317,7 +317,7 @@ class TreeRebuilder(object):
             for keyword in node.keywords:
                 if keyword.arg == 'metaclass':
                     metaclass = self.visit(keyword, newnode).value
-                break
+                    break
         if node.decorator_list:
             decorators = self.visit_decorators(node, newnode)
         else:
@@ -333,7 +333,8 @@ class TreeRebuilder(object):
 
     def visit_const(self, node, parent):
         """visit a Const node by returning a fresh instance of it"""
-        return nodes.Const(node.value, getattr(node, 'lineno', None),
+        return nodes.Const(node.value,
+                           getattr(node, 'lineno', None),
                            getattr(node, 'col_offset', None), parent)
 
     def visit_continue(self, node, parent):
@@ -831,6 +832,16 @@ class TreeRebuilder3(TreeRebuilder):
             return newnode
         elif node.handlers:
             return self.visit_tryexcept(node, parent)
+
+    def visit_annassign(self, node, parent):
+        """visit an AnnAssign node by returning a fresh instance of it"""
+        newnode = nodes.AnnAssign(node.lineno, node.col_offset, parent)
+        annotation = _visit_or_none(node, 'annotation', self, newnode)
+        newnode.postinit(target=self.visit(node.target, newnode),
+                         annotation=annotation,
+                         simple=node.simple,
+                         value=_visit_or_none(node, 'value', self, newnode))
+        return newnode
 
     def _visit_with(self, cls, node, parent):
         if 'items' not in node._fields:

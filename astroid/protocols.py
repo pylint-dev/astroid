@@ -357,6 +357,7 @@ def assign_assigned_stmts(self, node=None, context=None, asspath=None):
                              assign_path=asspath, context=context))
 
 nodes.Assign.assigned_stmts = assign_assigned_stmts
+nodes.AnnAssign.assigned_stmts = assign_assigned_stmts
 nodes.AugAssign.assigned_stmts = assign_assigned_stmts
 
 

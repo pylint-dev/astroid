@@ -96,6 +96,15 @@ class Python3TC(unittest.TestCase):
         self.assertEqual(metaclass.name, 'ABCMeta')
 
     @require_version('3.0')
+    def test_metaclass_multiple_keywords(self):
+        astroid = self.builder.string_build("class Test(magic=None, metaclass=type): pass")
+        klass = astroid.body[0]
+
+        metaclass = klass.metaclass()
+        self.assertIsInstance(metaclass, ClassDef)
+        self.assertEqual(metaclass.name, 'type')
+
+    @require_version('3.0')
     def test_as_string(self):
         body = dedent("""
         from abc import ABCMeta

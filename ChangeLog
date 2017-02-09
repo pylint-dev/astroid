@@ -167,6 +167,11 @@ Change log for the astroid package (used to be astng)
       leading to various possible crashes when one or more arguments
       weren't given. Closes issue #277.
 
+    * Fix metaclass detection, when multiple keyword arguments
+      are used in class definition.
+    
+    * Add support for annotated variable assignments (PEP 526)
+
     * Support for asynchronous comprehensions introduced in Python 3.6.
 
       Fixes #399. See PEP530 for details.
