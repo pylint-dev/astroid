@@ -113,8 +113,12 @@ def infer_named_tuple(node, context=None):
     """Specific inference function for namedtuple Call node"""
     class_node, name, attributes = infer_func_form(node, nodes.Tuple._proxied,
                                                    context=context)
+    field_def = "    {name} = property(lambda self: self[{index:d}], doc='Alias for field number {index:d}')"
+    field_defs = '\n'.join(field_def.format(name=name, index=index)
+                           for index, name in enumerate(attributes))
     fake = AstroidBuilder(MANAGER).string_build('''
 class %(name)s(tuple):
+    __slots__ = ()
     _fields = %(fields)r
     def _asdict(self):
         return self.__dict__
@@ -123,11 +127,16 @@ class %(name)s(tuple):
         return new(cls, iterable)
     def _replace(self, **kwds):
         return self
-    ''' % {'name': name, 'fields': attributes})
+    def __getnewargs__(self):
+        return tuple(self)
+%(field_defs)s
+    ''' % {'name': name, 'fields': attributes, 'field_defs': field_defs})
     class_node.locals['_asdict'] = fake.body[0].locals['_asdict']
     class_node.locals['_make'] = fake.body[0].locals['_make']
     class_node.locals['_replace'] = fake.body[0].locals['_replace']
     class_node.locals['_fields'] = fake.body[0].locals['_fields']
+    for attr in attributes:
+        class_node.locals[attr] = fake.body[0].locals[attr]
     # we use UseInferenceDefault, we can't be a generator so return an iterator
     return iter([class_node])
 
