@@ -67,6 +67,15 @@ class AsStringVisitor(object):
         """return an astroid.AugAssign node as string"""
         return '%s %s %s' % (node.target.accept(self), node.op, node.value.accept(self))
 
+    def visit_annassign(self, node):
+        """Return an astroid.AugAssign node as string"""
+
+        target = node.target.accept(self)
+        annotation = node.annotation.accept(self)
+        if node.value is None:
+            return '%s: %s' % (target, annotation)
+        return '%s: %s = %s' % (target, annotation, node.value.accept(self))
+
     def visit_repr(self, node):
         """return an astroid.Repr node as string"""
         return '`%s`' % node.value.accept(self)
