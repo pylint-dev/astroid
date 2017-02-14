@@ -42,11 +42,76 @@ nodes.ClassDef._infer = infer_end
 nodes.FunctionDef._infer = infer_end
 nodes.Lambda._infer = infer_end
 nodes.Const._infer = infer_end
-nodes.List._infer = infer_end
-nodes.Tuple._infer = infer_end
-nodes.Dict._infer = infer_end
-nodes.Set._infer = infer_end
 nodes.Slice._infer = infer_end
+
+
+def infer_seq(self, context=None):
+    if not any(isinstance(e, nodes.Starred) for e in self.elts):
+        yield self
+    else:
+        values = _infer_seq(self, context)
+        new_seq = type(self)(self.lineno, self.col_offset, self.parent)
+        new_seq.postinit(values)
+        yield new_seq
+
+
+def _infer_seq(node, context=None):
+    """Infer all values based on _BaseContainer.elts"""
+    values = []
+
+    for elt in node.elts:
+        if isinstance(elt, nodes.Starred):
+            starred = helpers.safe_infer(elt.value, context)
+            if starred in (None, util.Uninferable):
+                raise exceptions.InferenceError(node=node,
+                                                context=context)
+            if not hasattr(starred, 'elts'):
+                raise exceptions.InferenceError(node=node,
+                                                context=context)
+            values.extend(_infer_seq(starred))
+        else:
+            values.append(elt)
+    return values
+
+
+nodes.List._infer = infer_seq
+nodes.Tuple._infer = infer_seq
+nodes.Set._infer = infer_seq
+
+
+def infer_map(self, context=None):
+    if not any(isinstance(k, nodes.DictUnpack) for k, _ in self.items):
+        yield self
+    else:
+        items = _infer_map(self, context)
+        new_seq = type(self)(self.lineno, self.col_offset, self.parent)
+        new_seq.postinit(list(items.items()))
+        yield new_seq
+
+
+def _infer_map(node, context):
+    """Infer all values based on Dict.items"""
+    values = {}
+    for name, value in node.items:
+        if isinstance(name, nodes.DictUnpack):
+            double_starred = helpers.safe_infer(value, context)
+            if double_starred in (None, util.Uninferable):
+                raise exceptions.InferenceError
+            if not isinstance(double_starred, nodes.Dict):
+                raise exceptions.InferenceError(node=node,
+                                                context=context)
+            values.update(_infer_map(double_starred, context))
+        else:
+            key = helpers.safe_infer(name, context=context)
+            value = helpers.safe_infer(value, context=context)
+            if key is None or value is None:
+                raise exceptions.InferenceError(node=node,
+                                                context=context)
+            values[key] = value
+    return values
+
+
+nodes.Dict._infer = infer_map
 
 
 def _higher_function_scope(node):
