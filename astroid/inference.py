@@ -80,7 +80,7 @@ nodes.Set._infer = infer_seq
 
 
 def infer_map(self, context=None):
-    if not any(isinstance(k, nodes.DictUnpack) for k, v in self.items):
+    if not any(isinstance(k, nodes.DictUnpack) for k, _ in self.items):
         yield self
     else:
         items = _infer_map(self, context)
