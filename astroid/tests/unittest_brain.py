@@ -124,11 +124,11 @@ class NamedTupleTest(unittest.TestCase):
         result = __(six.moves.urllib.parse.urlparse('gopher://'))
         """)
         instance = next(result.infer())
-        self.assertEqual(len(instance.getattr('scheme')), 1)
-        self.assertEqual(len(instance.getattr('port')), 1)
+        self.assertGreaterEqual(len(instance.getattr('scheme')), 1)
+        self.assertGreaterEqual(len(instance.getattr('port')), 1)
         with self.assertRaises(astroid.AttributeInferenceError):
             instance.getattr('foo')
-        self.assertEqual(len(instance.getattr('geturl')), 1)
+        self.assertGreaterEqual(len(instance.getattr('geturl')), 1)
         self.assertEqual(instance.name, 'ParseResult')
 
     def test_namedtuple_instance_attrs(self):
@@ -149,6 +149,16 @@ class NamedTupleTest(unittest.TestCase):
         ''')
         inferred = next(node.infer())
         self.assertIs(util.Uninferable, inferred)
+
+    def test_namedtuple_access_class_fields(self):
+        node = builder.extract_node("""
+        from collections import namedtuple
+        Tuple = namedtuple("Tuple", "field other")
+        Tuple #@
+        """)
+        inferred = next(node.infer())
+        self.assertIn('field', inferred.locals)
+        self.assertIn('other', inferred.locals)
 
 
 class DefaultDictTest(unittest.TestCase):
