@@ -113,7 +113,8 @@ def infer_named_tuple(node, context=None):
     """Specific inference function for namedtuple Call node"""
     class_node, name, attributes = infer_func_form(node, nodes.Tuple._proxied,
                                                    context=context)
-    field_def = "    {name} = property(lambda self: self[{index:d}], doc='Alias for field number {index:d}')"
+    field_def = ("    {name} = property(lambda self: self[{index:d}], "
+                 "doc='Alias for field number {index:d}')")
     field_defs = '\n'.join(field_def.format(name=name, index=index)
                            for index, name in enumerate(attributes))
     fake = AstroidBuilder(MANAGER).string_build('''
