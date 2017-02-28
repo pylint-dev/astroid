@@ -242,6 +242,10 @@ def _resolve_looppart(parts, asspath, context):
 
 @decorators.raise_if_nothing_inferred
 def for_assigned_stmts(self, node=None, context=None, asspath=None):
+    if isinstance(self, nodes.AsyncFor) or getattr(self, 'is_async', False):
+        # Skip inferring of async code for now
+        raise StopIteration(dict(node=self, unknown=node,
+                                 assign_path=asspath, context=context))
     if asspath is None:
         for lst in self.iter.infer(context):
             if isinstance(lst, (nodes.Tuple, nodes.List)):
