@@ -1581,6 +1581,117 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertIsInstance(inferred, Instance)
             self.assertEqual(inferred.qname(), "{}.tuple".format(BUILTINS))
 
+    @test_utils.require_version('3.5')
+    def test_starred_in_tuple_literal(self):
+        code = """
+        var = (1, 2, 3)
+        bar = (5, 6, 7)
+        foo = [999, 1000, 1001]
+        (0, *var) #@
+        (0, *var, 4) #@
+        (0, *var, 4, *bar) #@
+        (0, *var, 4, *(*bar, 8)) #@
+        (0, *var, 4, *(*bar, *foo)) #@
+        """
+        ast = extract_node(code, __name__)
+        self.assertInferTuple(ast[0], [0, 1, 2, 3])
+        self.assertInferTuple(ast[1], [0, 1, 2, 3, 4])
+        self.assertInferTuple(ast[2], [0, 1, 2, 3, 4, 5, 6, 7])
+        self.assertInferTuple(ast[3], [0, 1, 2, 3, 4, 5, 6, 7, 8])
+        self.assertInferTuple(ast[4], [0, 1, 2, 3, 4, 5, 6, 7, 999, 1000, 1001])
+
+    @test_utils.require_version('3.5')
+    def test_starred_in_list_literal(self):
+        code = """
+        var = (1, 2, 3)
+        bar = (5, 6, 7)
+        foo = [999, 1000, 1001]
+        [0, *var] #@
+        [0, *var, 4] #@
+        [0, *var, 4, *bar] #@
+        [0, *var, 4, *[*bar, 8]] #@
+        [0, *var, 4, *[*bar, *foo]] #@
+        """
+        ast = extract_node(code, __name__)
+        self.assertInferList(ast[0], [0, 1, 2, 3])
+        self.assertInferList(ast[1], [0, 1, 2, 3, 4])
+        self.assertInferList(ast[2], [0, 1, 2, 3, 4, 5, 6, 7])
+        self.assertInferList(ast[3], [0, 1, 2, 3, 4, 5, 6, 7, 8])
+        self.assertInferList(ast[4], [0, 1, 2, 3, 4, 5, 6, 7, 999, 1000, 1001])
+
+    @test_utils.require_version('3.5')
+    def test_starred_in_set_literal(self):
+        code = """
+        var = (1, 2, 3)
+        bar = (5, 6, 7)
+        foo = [999, 1000, 1001]
+        {0, *var} #@
+        {0, *var, 4} #@
+        {0, *var, 4, *bar} #@
+        {0, *var, 4, *{*bar, 8}} #@
+        {0, *var, 4, *{*bar, *foo}} #@
+        """
+        ast = extract_node(code, __name__)
+        self.assertInferSet(ast[0], [0, 1, 2, 3])
+        self.assertInferSet(ast[1], [0, 1, 2, 3, 4])
+        self.assertInferSet(ast[2], [0, 1, 2, 3, 4, 5, 6, 7])
+        self.assertInferSet(ast[3], [0, 1, 2, 3, 4, 5, 6, 7, 8])
+        self.assertInferSet(ast[4], [0, 1, 2, 3, 4, 5, 6, 7, 999, 1000, 1001])
+
+    @test_utils.require_version('3.5')
+    def test_starred_in_literals_inference_issues(self):
+        code = """
+        {0, *var} #@
+        {0, *var, 4} #@
+        {0, *var, 4, *bar} #@
+        {0, *var, 4, *{*bar, 8}} #@
+        {0, *var, 4, *{*bar, *foo}} #@
+        """
+        ast = extract_node(code, __name__)
+        for node in ast:
+            with self.assertRaises(InferenceError):
+                next(node.infer())
+
+    @test_utils.require_version('3.5')
+    def test_starred_in_mapping_literal(self):
+        code = """
+        var = {1: 'b', 2: 'c'}
+        bar = {4: 'e', 5: 'f'}
+        {0: 'a', **var} #@
+        {0: 'a', **var, 3: 'd'} #@
+        {0: 'a', **var, 3: 'd', **{**bar, 6: 'g'}} #@
+        """
+        ast = extract_node(code, __name__)
+        self.assertInferDict(ast[0], {0: 'a', 1: 'b', 2: 'c'})
+        self.assertInferDict(ast[1], {0: 'a', 1: 'b', 2: 'c', 3: 'd'})
+        self.assertInferDict(ast[2], {0: 'a', 1: 'b', 2: 'c', 3: 'd',
+                                      4: 'e', 5: 'f', 6: 'g'})
+
+    @test_utils.require_version('3.5')
+    def test_starred_in_mapping_inference_issues(self):
+        code = """
+        {0: 'a', **var} #@
+        {0: 'a', **var, 3: 'd'} #@
+        {0: 'a', **var, 3: 'd', **{**bar, 6: 'g'}} #@
+        """
+        ast = extract_node(code, __name__)
+        for node in ast:
+            with self.assertRaises(InferenceError):
+                next(node.infer())
+
+    @test_utils.require_version('3.5')
+    def test_starred_in_mapping_literal_non_const_keys_values(self):
+        code = """
+        a, b, c, d, e, f, g, h, i, j = "ABCDEFGHIJ"
+        var = {c: d, e: f}
+        bar = {i: j}
+        {a: b, **var} #@
+        {a: b, **var, **{g: h, **bar}} #@
+        """
+        ast = extract_node(code, __name__)
+        self.assertInferDict(ast[0], {"A": "B", "C": "D", "E": "F"})
+        self.assertInferDict(ast[1], {"A": "B", "C": "D", "E": "F", "G": "H", "I": "J"})
+
     def test_frozenset_builtin_inference(self):
         code = """
         var = (1, 2)
@@ -2036,7 +2147,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             __pos__ = lambda self: self.lala
             __neg__ = lambda self: self.lala + 1
             @property
-            def lala(self): return 24            
+            def lala(self): return 24
         instance = GoodInstance()
         lambda_instance = LambdaInstance()
         +instance #@
@@ -2807,7 +2918,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         a = [1, 2, 3, 4]
         a[Index()] #@
         a[LambdaIndex()] #@
-        a[NonIndex()] #@         
+        a[NonIndex()] #@
         ''')
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, nodes.Const)
@@ -2930,15 +3041,11 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             "(1, 2, 3)[a:]",
             "(1, 2, 3)[object:object]",
             "(1, 2, 3)[1:object]",
+            'enumerate[2]'
         ]
         for code in examples:
             node = extract_node(code)
             self.assertRaises(InferenceError, next, node.infer())
-
-        node = extract_node('enumerate[2]')
-        self.assertRaises(
-            exceptions.AttributeInferenceError, next, node.infer()
-        )
 
     def test_instance_slicing(self):
         ast_nodes = extract_node('''
@@ -3206,7 +3313,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ast_node = extract_node('''
         class A(type):
             def test(cls):
-                return cls        
+                return cls
         import six
         @six.add_metaclass(A)
         class B(object):
@@ -3225,7 +3332,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 cls #@
         class B(object):
             def __call__(cls):
-                cls #@        
+                cls #@
         ''')
         first = next(ast_nodes[0].infer())
         self.assertIsInstance(first, nodes.ClassDef)
