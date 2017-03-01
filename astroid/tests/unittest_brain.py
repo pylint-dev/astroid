@@ -585,7 +585,9 @@ class TypingBrain(unittest.TestCase):
         fields = [("a", int), ("b", str), ("c", bytes)]
         NamedTuple(name, fields)
         """)
-        self.assertIs(util.Uninferable, next(klass.infer()))
+        inferred = next(klass.infer())
+        self.assertIsInstance(inferred, astroid.Instance)
+        self.assertEquals(inferred.qname(), "typing.NamedTuple")
 
     def test_namedtuple_instance_attrs(self):
         result = builder.extract_node('''
@@ -610,14 +612,18 @@ class TypingBrain(unittest.TestCase):
         from typing import NamedTuple
         NamedTuple("A")
         ''')
-        self.assertIs(util.Uninferable, next(result.infer()))
+        inferred = next(result.infer())
+        self.assertIsInstance(inferred, astroid.Instance)
+        self.assertEquals(inferred.qname(), "typing.NamedTuple")
 
     def test_namedtuple_few_fields(self):
         result = builder.extract_node('''
         from typing import NamedTuple
         NamedTuple("A", [("a",), ("b", str), ("c", bytes)])
         ''')
-        self.assertIs(util.Uninferable, next(result.infer()))
+        inferred = next(result.infer())
+        self.assertIsInstance(inferred, astroid.Instance)
+        self.assertEquals(inferred.qname(), "typing.NamedTuple")
 
 if __name__ == '__main__':
     unittest.main()
