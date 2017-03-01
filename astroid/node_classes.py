@@ -1210,19 +1210,22 @@ class Compare(NodeNG):
 class Comprehension(NodeNG):
     """class representing a Comprehension node"""
     _astroid_fields = ('target', 'iter', 'ifs')
+    _other_fields = ('is_async',)
     target = None
     iter = None
     ifs = None
+    is_async = None
 
     def __init__(self, parent=None):
         super(Comprehension, self).__init__()
         self.parent = parent
 
     # pylint: disable=redefined-builtin; same name as builtin ast module.
-    def postinit(self, target=None, iter=None, ifs=None):
+    def postinit(self, target=None, iter=None, ifs=None, is_async=None):
         self.target = target
         self.iter = iter
         self.ifs = ifs
+        self.is_async = is_async
 
     optional_assign = True
     def assign_type(self):

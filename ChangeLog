@@ -177,6 +177,9 @@ Change log for the astroid package (used to be astng)
     * Starred expressions are now inferred correctly for tuple,
       list, set, and dictionary literals.
 
+    * Support for asynchronous comprehensions introduced in Python 3.6.
+
+      Fixes #399. See PEP530 for details.
 
 2015-11-29 -- 1.4.1
 

@@ -503,6 +503,11 @@ class AsStringVisitor3(AsStringVisitor):
     def visit_formattedvalue(self, node):
         return '{%s}' % node.value.accept(self)
 
+    def visit_comprehension(self, node):
+        """return an astroid.Comprehension node as string"""
+        return '%s%s' % ('async ' if node.is_async else '',
+                         super(AsStringVisitor3, self).visit_comprehension(node))
+
 
 def _import_string(names):
     """return a list of (name, asname) formatted as a string"""
