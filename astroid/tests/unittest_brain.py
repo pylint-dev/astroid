@@ -549,5 +549,15 @@ class IOBrainTest(unittest.TestCase):
             self.assertEqual(raw.name, 'FileIO')
 
 
+class ReBrainTest(unittest.TestCase):
+    def test_regex_flags(self):
+        import re
+        names = [name for name in dir(re) if name.isupper()]
+        re_ast = MANAGER.ast_from_module_name('re')
+        for name in names:
+            self.assertIn(name, re_ast)
+            self.assertEqual(next(re_ast[name].infer()).value, getattr(re, name))
+
+
 if __name__ == '__main__':
     unittest.main()
