@@ -57,6 +57,7 @@ from astroid import bases
 from astroid import builder
 from astroid import nodes
 from astroid import util
+from astroid import test_utils
 import astroid
 
 
@@ -548,6 +549,7 @@ class IOBrainTest(unittest.TestCase):
             self.assertIsInstance(raw, astroid.Instance)
             self.assertEqual(raw.name, 'FileIO')
 
+@test_utils.require_version('3.6')
 class TypingBrain(unittest.TestCase):
 
     def test_namedtuple_base(self):

@@ -5,6 +5,7 @@
 from astroid import (
     MANAGER, UseInferenceDefault, extract_node, inference_tip,
     nodes, InferenceError)
+from astroid.nodes import List, Tuple
 
 def infer_typing_namedtuple(node, context=None):
     """Infer a typing.NamedTuple(...) call."""
@@ -13,7 +14,7 @@ def infer_typing_namedtuple(node, context=None):
     try:
         func = next(node.func.infer())
     except InferenceError:
-        raise UseInferenceDefault()
+        raise UseInferenceDefault
 
     if func.qname() != 'typing.NamedTuple':
         raise UseInferenceDefault
@@ -21,16 +22,18 @@ def infer_typing_namedtuple(node, context=None):
     if len(node.args) != 2:
         raise UseInferenceDefault
 
-    typename = node.args[0].as_string()
-    names = []
-    try:
-        for elt in node.args[1].elts:
-            if len(elt.elts) != 2:
-                raise UseInferenceDefault
-            names.append(elt.elts[0].as_string())
-    except AttributeError:
+    if not isinstance(node.args[1], (List, Tuple)):
         raise UseInferenceDefault
 
+    names = []
+    for elt in node.args[1].elts:
+        if not isinstance(elt, (List, Tuple)):
+            raise UseInferenceDefault
+        if len(elt.elts) != 2:
+            raise UseInferenceDefault
+        names.append(elt.elts[0].as_string())
+
+    typename = node.args[0].as_string()
     node = extract_node('namedtuple(%(typename)s, (%(fields)s,)) ' %
         {'typename': typename, 'fields': ",".join(names)})
     return node.infer(context=context)
