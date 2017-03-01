@@ -57,6 +57,7 @@ from astroid import bases
 from astroid import builder
 from astroid import nodes
 from astroid import util
+from astroid import test_utils
 import astroid
 
 
@@ -548,6 +549,81 @@ class IOBrainTest(unittest.TestCase):
             self.assertIsInstance(raw, astroid.Instance)
             self.assertEqual(raw.name, 'FileIO')
 
+@test_utils.require_version('3.6')
+class TypingBrain(unittest.TestCase):
+
+    def test_namedtuple_base(self):
+        klass = builder.extract_node("""
+        from typing import NamedTuple
+
+        class X(NamedTuple("X", [("a", int), ("b", str), ("c", bytes)])):
+           pass
+        """)
+        self.assertEqual(
+            [anc.name for anc in klass.ancestors()],
+            ['X', 'tuple', 'object'])
+        for anc in klass.ancestors():
+            self.assertFalse(anc.parent is None)
+
+    def test_namedtuple_inference(self):
+        klass = builder.extract_node("""
+        from typing import NamedTuple
+
+        class X(NamedTuple("X", [("a", int), ("b", str), ("c", bytes)])):
+           pass
+        """)
+        base = next(base for base in klass.ancestors()
+                    if base.name == 'X')
+        self.assertSetEqual({"a", "b", "c"}, set(base.instance_attrs))
+
+    def test_namedtuple_inference_nonliteral(self):
+        # Note: NamedTuples in mypy only work with literals.
+        klass = builder.extract_node("""
+        from typing import NamedTuple
+
+        name = "X"
+        fields = [("a", int), ("b", str), ("c", bytes)]
+        NamedTuple(name, fields)
+        """)
+        inferred = next(klass.infer())
+        self.assertIsInstance(inferred, astroid.Instance)
+        self.assertEqual(inferred.qname(), "typing.NamedTuple")
+
+    def test_namedtuple_instance_attrs(self):
+        result = builder.extract_node('''
+        from typing import NamedTuple
+        NamedTuple("A", [("a", int), ("b", str), ("c", bytes)])(1, 2, 3) #@
+        ''')
+        inferred = next(result.infer())
+        for name, attr in inferred.instance_attrs.items():
+            self.assertEqual(attr[0].attrname, name)
+
+    def test_namedtuple_simple(self):
+        result = builder.extract_node('''
+        from typing import NamedTuple
+        NamedTuple("A", [("a", int), ("b", str), ("c", bytes)])
+        ''')
+        inferred = next(result.infer())
+        self.assertIsInstance(inferred, nodes.ClassDef)
+        self.assertSetEqual({"a", "b", "c"}, set(inferred.instance_attrs))
+
+    def test_namedtuple_few_args(self):
+        result = builder.extract_node('''
+        from typing import NamedTuple
+        NamedTuple("A")
+        ''')
+        inferred = next(result.infer())
+        self.assertIsInstance(inferred, astroid.Instance)
+        self.assertEqual(inferred.qname(), "typing.NamedTuple")
+
+    def test_namedtuple_few_fields(self):
+        result = builder.extract_node('''
+        from typing import NamedTuple
+        NamedTuple("A", [("a",), ("b", str), ("c", bytes)])
+        ''')
+        inferred = next(result.infer())
+        self.assertIsInstance(inferred, astroid.Instance)
+        self.assertEqual(inferred.qname(), "typing.NamedTuple")
 
 class ReBrainTest(unittest.TestCase):
     def test_regex_flags(self):
