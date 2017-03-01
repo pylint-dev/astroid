@@ -325,6 +325,7 @@ def infer_subscript(self, context=None):
         assigned = value.getitem(index_value, context)
     except (exceptions.AstroidTypeError,
             exceptions.AstroidIndexError,
+            exceptions.AttributeInferenceError,
             AttributeError) as exc:
         util.reraise(exceptions.InferenceError(node=self, error=exc,
                                                context=context))

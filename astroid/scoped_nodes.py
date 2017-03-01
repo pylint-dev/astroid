@@ -1520,11 +1520,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
         This is basically looking up the method in the metaclass and calling it.
         """
-        try:
-            methods = dunder_lookup.lookup(self, '__getitem__')
-        except exceptions.AttributeInferenceError as exc:
-            util.reraise(exceptions.InferenceError(node=self, error=exc,
-                                                   context=context))
+        methods = dunder_lookup.lookup(self, '__getitem__')
 
         method = methods[0]
 
