@@ -105,7 +105,7 @@ class NamedTupleTest(unittest.TestCase):
         """)
         base = next(base for base in klass.ancestors()
                     if base.name == 'X')
-        self.assertSetEqual({"a", "b", "c"}, set(base.instance_attrs))
+        self.assertSetEqual(set(["a", "b", "c"]), set(base.instance_attrs))
 
     def test_namedtuple_inference_failure(self):
         klass = builder.extract_node("""
@@ -536,7 +536,7 @@ class IOBrainTest(unittest.TestCase):
 
     @unittest.skipUnless(six.PY3, 'Needs Python 3 io model')
     def test_sys_streams(self):
-        for name in {'stdout', 'stderr', 'stdin'}:
+        for name in set(['stdout', 'stderr', 'stdin']):
             node = astroid.extract_node('''
             import sys
             sys.{}

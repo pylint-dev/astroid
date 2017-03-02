@@ -52,14 +52,14 @@ BIN_OP_METHOD = {'+':  '__add__',
                  '@': '__matmul__'
                 }
 
-REFLECTED_BIN_OP_METHOD = {
-    key: _reflected_name(value)
+REFLECTED_BIN_OP_METHOD = dict(
+    (key, _reflected_name(value))
     for (key, value) in BIN_OP_METHOD.items()
-}
-AUGMENTED_OP_METHOD = {
-    key + "=": _augmented_name(value)
+)
+AUGMENTED_OP_METHOD = dict(
+    (key + "=", _augmented_name(value))
     for (key, value) in BIN_OP_METHOD.items()
-}
+)
 
 UNARY_OP_METHOD = {'+': '__pos__',
                    '-': '__neg__',

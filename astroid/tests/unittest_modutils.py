@@ -237,7 +237,7 @@ class GetModuleFilesTest(unittest.TestCase):
         expected = ['__init__.py', 'module.py', 'module2.py',
                     'noendingnewline.py', 'nonregr.py']
         self.assertEqual(modules,
-                         {os.path.join(package, x) for x in expected})
+                         set([os.path.join(package, x) for x in expected]))
 
     def test_get_all_files(self):
         """test that list_all returns all Python files from given location

@@ -560,8 +560,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         '''
         ast = parse(code, __name__)
         xxx = ast['xxx']
-        self.assertSetEqual({n.__class__ for n in xxx.inferred()},
-                            {nodes.Const, util.Uninferable.__class__})
+        self.assertSetEqual(set([n.__class__ for n in xxx.inferred()]),
+                            set([nodes.Const, util.Uninferable.__class__]))
 
     def test_method_argument(self):
         code = '''
