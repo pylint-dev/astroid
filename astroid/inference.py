@@ -611,6 +611,22 @@ def _get_aug_flow(left, left_type, aug_opnode, right, right_type,
     return methods
 
 
+def quickstart(func):
+    """
+    Run a generator enough to get the first value, and then buffer that value.
+    This will raise any exceptions that happen during the generator startup
+    when func is called, rather than when it is used.
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        result_generator = func(*args, **kwargs)
+        first_value = next(result_generator)
+
+        return itertools.chain([first_value], result_generator)
+    return wrapper
+
+
+@quickstart
 def _infer_binary_operation(left, right, binary_opnode, context, flow_factory):
     """Infer a binary operation between a left operand and a right operand
 
