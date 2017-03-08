@@ -2510,6 +2510,20 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, 'A')
 
+    def test_binop_different_types_unknown_bases(self):
+        node = extract_node('''
+        from foo import bar
+
+        class A(bar):
+            pass
+        class B(object):
+            def __radd__(self, other):
+                return other
+        A() + B() #@
+        ''')
+        inferred = next(node.infer())
+        self.assertIs(inferred, util.Uninferable)
+
     def test_binop_different_types_normal_not_implemented_and_reflected(self):
         node = extract_node('''
         class A(object):
