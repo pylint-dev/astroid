@@ -35,8 +35,12 @@ def has_environment_marker_range_operators_support():
 
 if has_environment_marker_range_operators_support():
     extras_require[':python_version<"3.4"'] = ['enum34', 'singledispatch']
-elif py_version < (3, 4):
-    install_requires.extend(['enum34', 'singledispatch'])
+    extras_require[':python_version<"3.2"'] = ['functools32']
+else:
+    if py_version < (3, 4):
+        install_requires.extend(['enum34', 'singledispatch'])
+    if py_version < (3, 2):
+        install_requires.append('functools32')
 
 
 # pylint: disable=redefined-builtin; why license is a builtin anyway?
