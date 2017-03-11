@@ -258,7 +258,8 @@ class Instance(BaseInstance):
              all its instances are considered true.
         """
         context = contextmod.InferenceContext()
-        context.callcontext = contextmod.CallContext(args=[self])
+        context.callcontext = contextmod.CallContext(args=[])
+        context.boundnode = self
 
         try:
             result = _infer_method_result_truth(self, BOOL_SPECIAL_METHOD, context)
