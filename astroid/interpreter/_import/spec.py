@@ -191,13 +191,13 @@ def _is_setuptools_namespace(location):
 
 def _precache_zipimporters(path=None):
     pic = sys.path_importer_cache
-    path = path or sys.path
+    path = set(path or sys.path)
+    path.difference_update(pic)
     for entry_path in path:
-        if entry_path not in pic:
-            try:
-                pic[entry_path] = zipimport.zipimporter(entry_path)
-            except zipimport.ZipImportError:
-                continue
+        try:
+            pic[entry_path] = zipimport.zipimporter(entry_path)
+        except zipimport.ZipImportError:
+            continue
     return pic
 
 
