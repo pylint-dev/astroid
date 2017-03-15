@@ -13,6 +13,11 @@ try:
 except ImportError:
     _HAS_MACHINERY = False
 
+try:
+    from functools import lru_cache
+except ImportError:
+    from backports.functools_lru_cache import lru_cache
+
 from . import util
 
 ModuleType = enum.Enum('ModuleType', 'C_BUILTIN C_EXTENSION PKG_DIRECTORY '
@@ -189,11 +194,25 @@ def _is_setuptools_namespace(location):
         return extend_path or declare_namespace
 
 
+@lru_cache()
+def _cached_set_diff(left, right):
+    result = set(left)
+    result.difference_update(right)
+    return result
+
+
 def _precache_zipimporters(path=None):
     pic = sys.path_importer_cache
-    path = set(path or sys.path)
-    path.difference_update(pic)
-    for entry_path in path:
+
+    # When measured, despite having the same complexity (O(n)),
+    # converting to tuples and then caching the conversion to sets
+    # and the set difference is faster than converting to sets
+    # and then only caching the set difference.
+
+    req_paths = tuple(path or sys.path)
+    cached_paths = tuple(pic)
+    new_paths = _cached_set_diff(req_paths, cached_paths)
+    for entry_path in new_paths:
         try:
             pic[entry_path] = zipimport.zipimporter(entry_path)
         except zipimport.ZipImportError:
