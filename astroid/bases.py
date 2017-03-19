@@ -130,7 +130,8 @@ class BaseInstance(Proxy):
     def display_type(self):
         return 'Instance of'
 
-    def getattr(self, name, context=None, lookupclass=True):
+    def getattr(self, name, context=None, lookupclass=True, **kwargs):
+        util.check_extra_kwargs(**kwargs)
         try:
             values = self._proxied.instance_attr(name, context)
         except exceptions.AttributeInferenceError:
@@ -140,8 +141,12 @@ class BaseInstance(Proxy):
             if lookupclass:
                 # Class attributes not available through the instance
                 # unless they are explicitly defined.
-                return self._proxied.getattr(name, context,
-                                             class_context=False)
+                try:
+                    return self._proxied.getattr(name, context,
+                                                 class_context=False)
+                except exceptions.AstroidTypeError:
+                    # if self._proxied isn't ClassDef, getattr throws an AstroidTypeError
+                    return []
 
             util.reraise(exceptions.AttributeInferenceError(target=self,
                                                             attribute=name,
@@ -152,12 +157,14 @@ class BaseInstance(Proxy):
             try:
                 return values + self._proxied.getattr(name, context,
                                                       class_context=False)
-            except exceptions.AttributeInferenceError:
+            except (exceptions.AttributeInferenceError, exceptions.AstroidTypeError):
+                # if self._proxied isn't ClassDef, getattr throws a AstroidTypeError
                 pass
         return values
 
-    def igetattr(self, name, context=None):
+    def igetattr(self, name, context=None, **kwargs):
         """inferred getattr"""
+        util.check_extra_kwargs(**kwargs)
         if not context:
             context = contextmod.InferenceContext()
         try:
@@ -177,7 +184,8 @@ class BaseInstance(Proxy):
                 attrs = self._proxied.igetattr(name, context, class_context=False)
                 for stmt in self._wrap_attr(attrs, context):
                     yield stmt
-            except exceptions.AttributeInferenceError as error:
+            except (exceptions.AttributeInferenceError, exceptions.AstroidTypeError) as error:
+                # if self._proxied isn't ClassDef, igetattr throws a AstroidTypeError
                 util.reraise(exceptions.InferenceError(**vars(error)))
 
     def _wrap_attr(self, attrs, context=None):
@@ -292,12 +300,14 @@ class UnboundMethod(Proxy):
     def is_bound(self):
         return False
 
-    def getattr(self, name, context=None):
+    def getattr(self, name, context=None, **kwargs):
+        util.check_extra_kwargs(**kwargs)
         if name in self.special_attributes:
             return [self.special_attributes.lookup(name)]
         return self._proxied.getattr(name, context)
 
-    def igetattr(self, name, context=None):
+    def igetattr(self, name, context=None, **kwargs):
+        util.check_extra_kwargs(**kwargs)
         if name in self.special_attributes:
             return iter((self.special_attributes.lookup(name), ))
         return self._proxied.igetattr(name, context)

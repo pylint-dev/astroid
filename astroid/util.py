@@ -111,6 +111,19 @@ def proxy_alias(alias_name, node_type):
                   '__instancecheck__': _instancecheck})
     return proxy(lambda: node_type)
 
+def check_extra_kwargs(**kwargs):
+    if not kwargs:
+        return
+
+    import inspect
+    from astroid.exceptions import AstroidTypeError
+
+    if len(kwargs) == 1:
+        msg = '{} got an unexpected keyword argument {}'
+    else:
+        msg = '{} got unexpected keyword arguments {}'
+    raise AstroidTypeError(msg.format(inspect.stack()[1][3], ', '.join(kwargs.keys())))
+
 
 # Backwards-compatibility aliases
 YES = Uninferable

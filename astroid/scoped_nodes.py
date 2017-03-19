@@ -332,7 +332,8 @@ class Module(LocalsDictNodeNG):
     def display_type(self):
         return 'Module'
 
-    def getattr(self, name, context=None, ignore_locals=False):
+    def getattr(self, name, context=None, ignore_locals=False, **kwargs):
+        util.check_extra_kwargs(**kwargs)
         result = []
         name_in_locals = name in self.locals
 
@@ -353,10 +354,11 @@ class Module(LocalsDictNodeNG):
         raise exceptions.AttributeInferenceError(target=self, attribute=name,
                                                  context=context)
 
-    def igetattr(self, name, context=None):
+    def igetattr(self, name, context=None, **kwargs):
         """inferred getattr"""
         # set lookup name since this is necessary to infer on import nodes for
         # instance
+        util.check_extra_kwargs(**kwargs)
         context = contextmod.copy_context(context)
         context.lookupname = name
         try:
@@ -854,18 +856,20 @@ class FunctionDef(node_classes.Statement, Lambda):
         """
         return self.fromlineno, self.tolineno
 
-    def getattr(self, name, context=None):
+    def getattr(self, name, context=None, **kwargs):
         """this method doesn't look in the instance_attrs dictionary since it's
         done by an Instance proxy at inference time.
         """
+        util.check_extra_kwargs(**kwargs)
         if name in self.instance_attrs:
             return self.instance_attrs[name]
         if name in self.special_attributes:
             return [self.special_attributes.lookup(name)]
         raise exceptions.AttributeInferenceError(target=self, attribute=name)
 
-    def igetattr(self, name, context=None):
+    def igetattr(self, name, context=None, **kwargs):
         """Inferred getattr, which returns an iterator of inferred statements."""
+        util.check_extra_kwargs(**kwargs)
         try:
             return bases._infer_stmts(self.getattr(name, context),
                                       context, frame=self)
@@ -1382,7 +1386,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                       PendingDeprecationWarning, stacklevel=2)
         return self.instantiate_class()
 
-    def getattr(self, name, context=None, class_context=True):
+    def getattr(self, name, context=None, class_context=True, **kwargs):
         """Get an attribute from this class, using Python's attribute semantic
 
         This method doesn't look in the instance_attrs dictionary
@@ -1397,6 +1401,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         metaclass will be done.
 
         """
+        util.check_extra_kwargs(**kwargs)
         values = self.locals.get(name, [])
         if name in self.special_attributes and class_context and not values:
             result = [self.special_attributes.lookup(name)]
@@ -1461,10 +1466,11 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             else:
                 yield bases.BoundMethod(attr, self)
 
-    def igetattr(self, name, context=None, class_context=True):
+    def igetattr(self, name, context=None, class_context=True, **kwargs):
         """inferred getattr, need special treatment in class to handle
         descriptors
         """
+        util.check_extra_kwargs(**kwargs)
         # set lookup name since this is necessary to infer on import nodes for
         # instance
         context = contextmod.copy_context(context)

@@ -1748,7 +1748,8 @@ class Slice(NodeNG):
     def pytype(self):
         return '%s.slice' % BUILTINS
 
-    def igetattr(self, attrname, context=None):
+    def igetattr(self, attrname, context=None, **kwargs):
+        util.check_extra_kwargs(**kwargs)
         if attrname == 'start':
             yield self._wrap_attribute(self.lower)
         elif attrname == 'stop':
@@ -1759,7 +1760,8 @@ class Slice(NodeNG):
             for value in self.getattr(attrname, context=context):
                 yield value
 
-    def getattr(self, attrname, context=None):
+    def getattr(self, attrname, context=None, **kwargs):
+        util.check_extra_kwargs(**kwargs)
         return self._proxied.getattr(attrname, context)
 
 
