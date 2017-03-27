@@ -7,6 +7,8 @@ Change log for the astroid package (used to be astng)
       Classes can support keyword arguments, which are passed when
       a class is constructed using ``__new__``.
 
+    * Add support for inferring typing.NamedTuple.
+
     * ClassDef now supports __getitem__ inference through the metaclass.
 
     * getitem() method accepts nodes now, instead of Python objects.
@@ -175,6 +177,9 @@ Change log for the astroid package (used to be astng)
     * Starred expressions are now inferred correctly for tuple,
       list, set, and dictionary literals.
 
+    * Support for asynchronous comprehensions introduced in Python 3.6.
+
+      Fixes #399. See PEP530 for details.
 
 2015-11-29 -- 1.4.1
 

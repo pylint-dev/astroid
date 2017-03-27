@@ -325,6 +325,7 @@ def infer_subscript(self, context=None):
         assigned = value.getitem(index_value, context)
     except (exceptions.AstroidTypeError,
             exceptions.AstroidIndexError,
+            exceptions.AttributeInferenceError,
             AttributeError) as exc:
         util.reraise(exceptions.InferenceError(node=self, error=exc,
                                                context=context))
@@ -489,7 +490,7 @@ def _is_not_implemented(const):
     return isinstance(const, nodes.Const) and const.value is NotImplemented
 
 
-def  _invoke_binop_inference(instance, opnode, op, other, context, method_name):
+def _invoke_binop_inference(instance, opnode, op, other, context, method_name):
     """Invoke binary operation inference on the given instance."""
     methods = dunder_lookup.lookup(instance, method_name)
     method = methods[0]

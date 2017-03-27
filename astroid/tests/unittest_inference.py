@@ -2441,6 +2441,19 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             inferred = next(node.infer())
             self.assertEqual(inferred.bool_value(), expected_value)
 
+    def test_bool_value_variable(self):
+        instance = extract_node('''
+        class VariableBoolInstance(object):
+            def __init__(self, value):
+                self.value = value
+            def {bool}(self):
+                return self.value
+
+        not VariableBoolInstance(True)
+        '''.format(bool=BOOL_SPECIAL_METHOD))
+        inferred = next(instance.infer())
+        self.assertIs(inferred.bool_value(), util.Uninferable)
+
     def test_infer_coercion_rules_for_floats_complex(self):
         ast_nodes = extract_node('''
         1 + 1.0 #@
@@ -3041,15 +3054,11 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             "(1, 2, 3)[a:]",
             "(1, 2, 3)[object:object]",
             "(1, 2, 3)[1:object]",
+            'enumerate[2]'
         ]
         for code in examples:
             node = extract_node(code)
             self.assertRaises(InferenceError, next, node.infer())
-
-        node = extract_node('enumerate[2]')
-        self.assertRaises(
-            exceptions.AttributeInferenceError, next, node.infer()
-        )
 
     def test_instance_slicing(self):
         ast_nodes = extract_node('''
