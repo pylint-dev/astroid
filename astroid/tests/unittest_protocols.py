@@ -158,7 +158,8 @@ class ProtocolTests(unittest.TestCase):
         simple_annassign_node = next(annassign_stmts[0].nodes_of_class(AssignName))
         assigned = list(simple_annassign_node.assigned_stmts())
         self.assertEqual(1, len(assigned))
-        self.assertIsInstance(assigned[0], Name)
+        self.assertIsInstance(assigned[0], Const)
+        self.assertEqual(assigned[0].value, "abc")
 
         empty_annassign_node = next(annassign_stmts[1].nodes_of_class(AssignName))
         assigned = list(empty_annassign_node.assigned_stmts())
