@@ -638,7 +638,7 @@ def _infer_binary_operation(left, right, binary_opnode, context, flow_factory):
                 yield util.Uninferable
                 return
 
-            # TODO(cpopa): since the inferrence engine might return
+            # TODO(cpopa): since the inference engine might return
             # more values than are actually possible, we decide
             # to return util.Uninferable if we have union types.
             if all(map(_is_not_implemented, results)):
@@ -684,12 +684,11 @@ def _infer_binop(self, context):
                 return
 
             try:
-                results = _infer_binary_operation(lhs, rhs, self, context, _get_binop_flow)
+                for result in _infer_binary_operation(lhs, rhs, self,
+                                                      context, _get_binop_flow):
+                    yield result
             except exceptions._NonDeducibleTypeHierarchy:
                 yield util.Uninferable
-            else:
-                for result in results:
-                    yield result
 
 
 @decorators.yes_if_nothing_inferred

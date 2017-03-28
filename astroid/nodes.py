@@ -42,6 +42,7 @@ from astroid.node_classes import (
     Backquote, Discard, AssName, AssAttr, Getattr, CallFunc, From,
     # Node not present in the builtin ast module.
     DictUnpack,
+    Unknown,
 )
 from astroid.scoped_nodes import (
     Module, GeneratorExp, Lambda, DictComp,

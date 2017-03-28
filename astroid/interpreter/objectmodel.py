@@ -20,6 +20,11 @@ attribute. Thus the model can be viewed as a special part of the lookup
 mechanism.
 """
 
+try:
+    from functools import lru_cache
+except ImportError:
+    from backports.functools_lru_cache import lru_cache
+
 import pprint
 import os
 import types
@@ -88,6 +93,7 @@ class ObjectModel(object):
     def __contains__(self, name):
         return name in self.attributes()
 
+    @lru_cache(maxsize=None)
     def attributes(self):
         """Get the attributes which are exported by this object model."""
         return [obj[2:] for obj in dir(self) if obj.startswith('py')]

@@ -1304,7 +1304,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = next(ast['Z'].infer())
         self.assertIsInstance(inferred, nodes.List)
         self.assertEqual(len(inferred.elts), 1)
-        self.assertIs(inferred.elts[0], util.Uninferable)
+        self.assertIsInstance(inferred.elts[0], nodes.Unknown)
 
     def test__new__(self):
         code = '''
@@ -2479,7 +2479,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.List)
         self.assertEqual(len(inferred.elts), 2)
         self.assertIsInstance(inferred.elts[0], nodes.Const)
-        self.assertIs(inferred.elts[1], util.Uninferable)
+        self.assertIsInstance(inferred.elts[1], nodes.Unknown)
 
     def test_binop_same_types(self):
         ast_nodes = extract_node('''
@@ -2509,6 +2509,20 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = next(node.infer())
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, 'A')
+
+    def test_binop_different_types_unknown_bases(self):
+        node = extract_node('''
+        from foo import bar
+
+        class A(bar):
+            pass
+        class B(object):
+            def __radd__(self, other):
+                return other
+        A() + B() #@
+        ''')
+        inferred = next(node.infer())
+        self.assertIs(inferred, util.Uninferable)
 
     def test_binop_different_types_normal_not_implemented_and_reflected(self):
         node = extract_node('''

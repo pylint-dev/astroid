@@ -147,10 +147,13 @@ def _multiply_seq_by_int(self, opnode, other, context):
 def _filter_uninferable_nodes(elts, context):
     for elt in elts:
         if elt is util.Uninferable:
-            yield elt
+            yield nodes.Unknown()
         else:
             for inferred in elt.infer(context):
-                yield inferred
+                if inferred is not util.Uninferable:
+                    yield inferred
+                else:
+                    yield nodes.Unknown()
 
 
 @decorators.yes_if_nothing_inferred
