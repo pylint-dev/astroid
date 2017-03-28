@@ -149,6 +149,22 @@ class ProtocolTests(unittest.TestCase):
         assigned = list(simple_mul_assnode_2.assigned_stmts())
         self.assertNameNodesEqual(['c'], assigned)
 
+    @require_version(minver='3.6')
+    def test_assigned_stmts_annassignments(self):
+        annassign_stmts = extract_node("""
+        a: str = "abc"  #@
+        b: str  #@
+        """)
+        simple_annassign_node = next(annassign_stmts[0].nodes_of_class(AssignName))
+        assigned = list(simple_annassign_node.assigned_stmts())
+        self.assertEqual(1, len(assigned))
+        self.assertIsInstance(assigned[0], Name)
+
+        empty_annassign_node = next(annassign_stmts[1].nodes_of_class(AssignName))
+        assigned = list(empty_annassign_node.assigned_stmts())
+        self.assertEqual(1, len(assigned))
+        self.assertIs(assigned[0], util.Uninferable)
+
     def test_sequence_assigned_stmts_not_accepting_empty_node(self):
         def transform(node):
             node.root().locals['__all__'] = [node.value]
