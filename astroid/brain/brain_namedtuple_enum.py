@@ -115,7 +115,6 @@ def infer_named_tuple(node, context=None):
     """Specific inference function for namedtuple Call node"""
     class_node, name, attributes = infer_func_form(node, nodes.Tuple._proxied,
                                                    context=context)
-
     call_site = arguments.CallSite.from_call(node)
     func = next(extract_node('import collections; collections.namedtuple').infer())
     try:

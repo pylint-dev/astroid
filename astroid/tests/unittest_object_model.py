@@ -31,7 +31,7 @@ class InstanceModelTest(unittest.TestCase):
         a.__module__ #@
         a.__doc__ #@
         a.__dict__ #@
-        ''', module_name='collections')
+        ''', module_name='fake_module')
 
         cls = next(ast_nodes[0].infer())
         self.assertIsInstance(cls, astroid.ClassDef)
@@ -39,7 +39,7 @@ class InstanceModelTest(unittest.TestCase):
 
         module = next(ast_nodes[1].infer())
         self.assertIsInstance(module, astroid.Const)
-        self.assertEqual(module.value, 'collections')
+        self.assertEqual(module.value, 'fake_module')
 
         doc = next(ast_nodes[2].infer())
         self.assertIsInstance(doc, astroid.Const)
@@ -197,11 +197,11 @@ class ClassModelTest(unittest.TestCase):
         A.__class__ #@
         A.__dict__ #@
         A.__subclasses__() #@
-        ''', module_name='collections')
+        ''', module_name='fake_module')
 
         module = next(ast_nodes[0].infer())
         self.assertIsInstance(module, astroid.Const)
-        self.assertEqual(module.value, 'collections')
+        self.assertEqual(module.value, 'fake_module')
 
         name = next(ast_nodes[1].infer())
         self.assertIsInstance(name, astroid.Const)
@@ -209,7 +209,7 @@ class ClassModelTest(unittest.TestCase):
 
         qualname = next(ast_nodes[2].infer())
         self.assertIsInstance(qualname, astroid.Const)
-        self.assertEqual(qualname.value, 'collections.A')
+        self.assertEqual(qualname.value, 'fake_module.A')
 
         doc = next(ast_nodes[3].infer())
         self.assertIsInstance(doc, astroid.Const)
@@ -358,7 +358,7 @@ class FunctionModelTest(unittest.TestCase):
         func.__globals__ #@
         func.__code__ #@
         func.__closure__ #@
-        ''', module_name='collections')
+        ''', module_name='fake_module')
 
         name = next(ast_nodes[0].infer())
         self.assertIsInstance(name, astroid.Const)
@@ -370,11 +370,11 @@ class FunctionModelTest(unittest.TestCase):
 
         qualname = next(ast_nodes[2].infer())
         self.assertIsInstance(qualname, astroid.Const)
-        self.assertEqual(qualname.value, 'collections.func')
+        self.assertEqual(qualname.value, 'fake_module.func')
 
         module = next(ast_nodes[3].infer())
         self.assertIsInstance(module, astroid.Const)
-        self.assertEqual(module.value, 'collections')
+        self.assertEqual(module.value, 'fake_module')
 
         defaults = next(ast_nodes[4].infer())
         self.assertIsInstance(defaults, astroid.Tuple)
