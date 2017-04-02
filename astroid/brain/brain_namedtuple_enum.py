@@ -8,11 +8,13 @@
 
 import functools
 import sys
+import keyword
 from textwrap import dedent
 
 from astroid import (
     MANAGER, UseInferenceDefault, inference_tip,
     InferenceError)
+from astroid import arguments
 from astroid import exceptions
 from astroid import nodes
 from astroid.builder import AstroidBuilder, extract_node
@@ -113,6 +115,17 @@ def infer_named_tuple(node, context=None):
     """Specific inference function for namedtuple Call node"""
     class_node, name, attributes = infer_func_form(node, nodes.Tuple._proxied,
                                                    context=context)
+
+    call_site = arguments.CallSite.from_call(node)
+    func = next(extract_node('import collections; collections.namedtuple').infer())
+    try:
+        rename = next(call_site.infer_argument(func, 'rename', context)).bool_value()
+    except InferenceError:
+        rename = False
+
+    if rename:
+        attributes = _get_renamed_namedtuple_atributes(attributes)
+
     field_def = ("    {name} = property(lambda self: self[{index:d}], "
                  "doc='Alias for field number {index:d}')")
     field_defs = '\n'.join(field_def.format(name=name, index=index)
@@ -140,6 +153,17 @@ class %(name)s(tuple):
         class_node.locals[attr] = fake.body[0].locals[attr]
     # we use UseInferenceDefault, we can't be a generator so return an iterator
     return iter([class_node])
+
+
+def _get_renamed_namedtuple_atributes(field_names):
+    names = list(field_names)
+    seen = set()
+    for i, name in enumerate(field_names):
+        if (not all(c.isalnum() or c == '_' for c in name) or keyword.iskeyword(name)
+            or not name or name[0].isdigit() or name.startswith('_') or name in seen):
+            names[i] = '_%d' % i
+        seen.add(name)
+    return tuple(names)
 
 
 def infer_enum(node, context=None):
