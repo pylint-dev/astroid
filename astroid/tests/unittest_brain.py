@@ -182,6 +182,17 @@ class NamedTupleTest(unittest.TestCase):
         self.assertIn('_1', inferred.locals)
         self.assertIn('_2', inferred.locals)
 
+    def test_namedtuple_rename_uninferable(self):
+        node = builder.extract_node("""
+        from collections import namedtuple
+        Tuple = namedtuple("Tuple", "abc def ghi", rename=UNINFERABLE)
+        Tuple #@
+        """)
+        inferred = next(node.infer())
+        self.assertIn('abc', inferred.locals)
+        self.assertIn('def', inferred.locals)
+        self.assertIn('ghi', inferred.locals)
+
 
 class DefaultDictTest(unittest.TestCase):
 
