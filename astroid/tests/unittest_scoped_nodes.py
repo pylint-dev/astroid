@@ -55,12 +55,6 @@ class ModuleLoader(resources.SysPathSetup):
 
 
 class ModuleNodeTest(ModuleLoader, unittest.TestCase):
-    def test_is_package(self):
-        self.assertFalse(self.module.package)
-        self.assertFalse(self.module2.package)
-        self.assertFalse(self.nonregr.package)
-        self.assertTrue(self.pack.package)
-
     def test_special_attributes(self):
         self.assertEqual(len(self.module.getattr('__name__')), 1)
         self.assertIsInstance(self.module.getattr('__name__')[0], nodes.Const)
