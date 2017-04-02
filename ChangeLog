@@ -2,6 +2,8 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+    * `namedtuple` inference now understands `rename` keyword argument
+
     * Classes can now know their definition-time arguments.
 
       Classes can support keyword arguments, which are passed when
