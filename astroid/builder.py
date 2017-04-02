@@ -26,6 +26,7 @@ from astroid import raw_building
 from astroid import rebuilder
 from astroid import nodes
 from astroid import util
+from astroid import type_comments
 
 # The name of the transient function that is used to
 # wrap expressions to be extracted when calling
@@ -197,6 +198,9 @@ class AstroidBuilder(raw_building.InspectBuilder):
         module = builder.visit_module(node, modname, node_file, package)
         module._import_from_nodes = builder._import_from_nodes
         module._delayed_assattr = builder._delayed_assattr
+
+        type_comments.inject_type_comments(self, data, module)
+
         return module
 
     def add_from_names_to_locals(self, node):

@@ -186,7 +186,7 @@ class TreeRebuilder(object):
         else:
             kwonlyargs = []
             kw_defaults = []
-            annotations = []
+            annotations = [None] * len(node.args)
         newnode.postinit(args, defaults, kwonlyargs, kw_defaults,
                          annotations, varargannotation, kwargannotation)
         # save argument names in locals:

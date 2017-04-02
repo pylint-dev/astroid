@@ -312,7 +312,10 @@ class NodeNG(object):
             if not attr: # None or empty listy / tuple
                 continue
             if isinstance(attr, (list, tuple)):
-                return attr[-1]
+                for item in attr[::-1]:
+                    if item:
+                        return item
+                continue
 
             return attr
         return None
@@ -873,25 +876,22 @@ class Name(LookupMixIn, NodeNG):
 
 class Arguments(mixins.AssignTypeMixin, NodeNG):
     """class representing an Arguments node"""
-    if six.PY3:
-        # Python 3.4+ uses a different approach regarding annotations,
-        # each argument is a new class, _ast.arg, which exposes an
-        # 'annotation' attribute. In astroid though, arguments are exposed
-        # as is in the Arguments node and the only way to expose annotations
-        # is by using something similar with Python 3.3:
-        #  - we expose 'varargannotation' and 'kwargannotation' of annotations
-        #    of varargs and kwargs.
-        #  - we expose 'annotation', a list with annotations for
-        #    for each normal argument. If an argument doesn't have an
-        #    annotation, its value will be None.
+    # Python 3.4+ uses a different approach regarding annotations,
+    # each argument is a new class, _ast.arg, which exposes an
+    # 'annotation' attribute. In astroid though, arguments are exposed
+    # as is in the Arguments node and the only way to expose annotations
+    # is by using something similar with Python 3.3:
+    #  - we expose 'varargannotation' and 'kwargannotation' of annotations
+    #    of varargs and kwargs.
+    #  - we expose 'annotation', a list with annotations for
+    #    for each normal argument. If an argument doesn't have an
+    #    annotation, its value will be None.
 
-        _astroid_fields = ('args', 'defaults', 'kwonlyargs',
-                           'kw_defaults', 'annotations', 'varargannotation',
-                           'kwargannotation')
-        varargannotation = None
-        kwargannotation = None
-    else:
-        _astroid_fields = ('args', 'defaults', 'kwonlyargs', 'kw_defaults')
+    _astroid_fields = ('args', 'defaults', 'kwonlyargs',
+                       'kw_defaults', 'annotations', 'varargannotation',
+                       'kwargannotation')
+    varargannotation = None
+    kwargannotation = None
     _other_fields = ('vararg', 'kwarg')
 
     def __init__(self, vararg=None, kwarg=None, parent=None):
@@ -1042,13 +1042,15 @@ class Assert(Statement):
 
 class Assign(mixins.AssignTypeMixin, Statement):
     """class representing an Assign node"""
-    _astroid_fields = ('targets', 'value',)
+    _astroid_fields = ('targets', 'value', 'type_comment')
     targets = None
     value = None
+    type_comment = None
 
-    def postinit(self, targets=None, value=None):
+    def postinit(self, targets=None, value=None, type_comment=None):
         self.targets = targets
         self.value = value
+        self.type_comment = type_comment
 
 
 class AnnAssign(mixins.AssignTypeMixin, Statement):
@@ -1486,18 +1488,20 @@ class ExtSlice(NodeNG):
 
 class For(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, Statement):
     """class representing a For node"""
-    _astroid_fields = ('target', 'iter', 'body', 'orelse',)
+    _astroid_fields = ('target', 'iter', 'type_comment', 'body', 'orelse')
     target = None
     iter = None
+    type_comment = None
     body = None
     orelse = None
 
     # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
-    def postinit(self, target=None, iter=None, body=None, orelse=None):
+    def postinit(self, target=None, iter=None, body=None, orelse=None, type_comment=None):
         self.target = target
         self.iter = iter
         self.body = body
         self.orelse = orelse
+        self.type_comment = type_comment
 
     optional_assign = True
     @decorators.cachedproperty
@@ -1915,13 +1919,15 @@ class While(mixins.BlockRangeMixIn, Statement):
 
 class With(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, Statement):
     """class representing a With node"""
-    _astroid_fields = ('items', 'body')
+    _astroid_fields = ('items', 'type_comment', 'body')
     items = None
+    type_comment = None
     body = None
 
-    def postinit(self, items=None, body=None):
+    def postinit(self, items=None, body=None, type_comment=None):
         self.items = items
         self.body = body
+        self.type_comment = type_comment
 
     @decorators.cachedproperty
     def blockstart_tolineno(self):
@@ -1932,6 +1938,8 @@ class With(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, Statement):
             yield expr
             if var:
                 yield var
+        if self.type_comment:
+            yield self.type_comment
         for elt in self.body:
             yield elt
 
