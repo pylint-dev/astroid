@@ -55,6 +55,7 @@ class ModuleLoader(resources.SysPathSetup):
 
 
 class ModuleNodeTest(ModuleLoader, unittest.TestCase):
+
     def test_special_attributes(self):
         self.assertEqual(len(self.module.getattr('__name__')), 1)
         self.assertIsInstance(self.module.getattr('__name__')[0], nodes.Const)
