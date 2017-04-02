@@ -370,6 +370,9 @@ class BuilderTest(unittest.TestCase):
         datap = resources.build_file('data/__init__.py', 'data.__init__')
         self.assertEqual(datap.name, 'data')
         self.assertEqual(datap.package, 1)
+        datap = resources.build_file('data/tmp__init__.py', 'data.tmp__init__')
+        self.assertEqual(datap.name, 'data.tmp__init__')
+        self.assertEqual(datap.package, 0)
 
     def test_yield_parent(self):
         """check if we added discard nodes as yield parent (w/ compiler)"""

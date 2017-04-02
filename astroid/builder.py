@@ -192,7 +192,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
             modname = modname[:-9]
             package = True
         else:
-            package = path.find('__init__.py') > -1 if path else False
+            package = path is not None and os.path.splitext(os.path.basename(path))[0] == '__init__'
         builder = rebuilder.TreeRebuilder(self._manager)
         module = builder.visit_module(node, modname, node_file, package)
         module._import_from_nodes = builder._import_from_nodes
