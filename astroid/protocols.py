@@ -363,8 +363,16 @@ def assign_assigned_stmts(self, node=None, context=None, asspath=None):
     raise StopIteration(dict(node=self, unknown=node,
                              assign_path=asspath, context=context))
 
+
+def assign_annassigned_stmts(self, node=None, context=None, asspath=None):
+    for inferred in assign_assigned_stmts(self, node, context, asspath):
+        if inferred is None:
+            yield util.Uninferable
+        else:
+            yield inferred
+
 nodes.Assign.assigned_stmts = assign_assigned_stmts
-nodes.AnnAssign.assigned_stmts = assign_assigned_stmts
+nodes.AnnAssign.assigned_stmts = assign_annassigned_stmts
 nodes.AugAssign.assigned_stmts = assign_assigned_stmts
 
 
