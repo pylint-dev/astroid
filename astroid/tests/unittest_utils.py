@@ -126,14 +126,14 @@ class NonInferenceUtil(unittest.TestCase):
     def test_check_extra_kwargs_one_kwarg(self):
         # pylint: disable=deprecated-method
         self.assertRaisesAstroid(exceptions.AstroidTypeError,
-                                 "mock_function got an unexpected keyword argument a",
+                                 "Calling function got an unexpected keyword argument a",
                                  self.mock_function,
                                  a=1)
 
     def test_check_extra_kwargs_two_kwargs(self):
         # pylint: disable=deprecated-method
         self.assertRaisesAstroid(exceptions.AstroidTypeError,
-                                 "mock_function got unexpected keyword arguments ",
+                                 "Calling function got unexpected keyword arguments ",
                                  self.mock_function,
                                  a=1, b=2)
 

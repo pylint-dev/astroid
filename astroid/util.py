@@ -115,14 +115,13 @@ def check_extra_kwargs(**kwargs):
     if not kwargs:
         return
 
-    import inspect
     from astroid.exceptions import AstroidTypeError
 
     if len(kwargs) == 1:
-        msg = '{} got an unexpected keyword argument {}'
+        msg = 'Calling function got an unexpected keyword argument {}.'
     else:
-        msg = '{} got unexpected keyword arguments {}'
-    raise AstroidTypeError(msg.format(inspect.stack()[1][3], ', '.join(kwargs.keys())))
+        msg = 'Calling function got unexpected keyword arguments {}.'
+    raise AstroidTypeError(msg.format(', '.join(kwargs.keys())))
 
 
 # Backwards-compatibility aliases
