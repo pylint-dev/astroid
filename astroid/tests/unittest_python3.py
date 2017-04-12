@@ -214,6 +214,23 @@ class Python3TC(unittest.TestCase):
         self.assertIsNone(func.returns)
 
     @require_version('3.0')
+    def test_kwonlyargs_annotations_supper(self):
+        node = self.builder.string_build(dedent("""
+        def test(*, a: int, b: str, c: None, d, e):
+            pass
+        """))
+        func = node['test']
+        arguments = func.args
+        self.assertIsInstance(arguments.kwonlyargs_annotations[0], Name)
+        self.assertEqual(arguments.kwonlyargs_annotations[0].name, 'int')
+        self.assertIsInstance(arguments.kwonlyargs_annotations[1], Name)
+        self.assertEqual(arguments.kwonlyargs_annotations[1].name, 'str')
+        self.assertIsInstance(arguments.kwonlyargs_annotations[2], Const)
+        self.assertIsNone(arguments.kwonlyargs_annotations[2].value)
+        self.assertIsNone(arguments.kwonlyargs_annotations[3])
+        self.assertIsNone(arguments.kwonlyargs_annotations[4])
+
+    @require_version('3.0')
     def test_annotation_as_string(self):
         code1 = dedent('''
         def test(a, b:int=4, c=2, f:'lala'=4)->2:

@@ -318,7 +318,6 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
 
     def test_four_args(self):
         func = self.module['four_args']
-        #self.assertEqual(func.args.args, ['a', ('b', 'c', 'd')])
         local = sorted(func.keys())
         self.assertEqual(local, ['a', 'b', 'c', 'd'])
         self.assertEqual(func.type, 'function')
@@ -329,6 +328,15 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
                          'any, base=data.module.YO, *args, **kwargs')
         func = self.module['four_args']
         self.assertEqual(func.args.format_args(), 'a, b, c, d')
+
+    @test_utils.require_version('3.0')
+    def test_format_args_keyword_only_args(self):
+        node = builder.parse('''
+        def test(a: int, *, b: dict):
+            pass
+        ''').body[-1].args
+        formatted = node.format_args()
+        self.assertEqual(formatted, 'a:int, *, b:dict')
 
     def test_is_generator(self):
         self.assertTrue(self.module2['generator'].is_generator())

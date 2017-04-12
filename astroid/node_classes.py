@@ -887,7 +887,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
 
         _astroid_fields = ('args', 'defaults', 'kwonlyargs',
                            'kw_defaults', 'annotations', 'varargannotation',
-                           'kwargannotation')
+                           'kwargannotation', 'kwonlyargs_annotations')
         varargannotation = None
         kwargannotation = None
     else:
@@ -903,14 +903,19 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         self.kwonlyargs = []
         self.kw_defaults = []
         self.annotations = []
+        self.kwonlyargs_annotations = []
 
     def postinit(self, args, defaults, kwonlyargs, kw_defaults,
-                 annotations, varargannotation=None, kwargannotation=None):
+                 annotations,
+                 kwonlyargs_annotations=None,
+                 varargannotation=None,
+                 kwargannotation=None):
         self.args = args
         self.defaults = defaults
         self.kwonlyargs = kwonlyargs
         self.kw_defaults = kw_defaults
         self.annotations = annotations
+        self.kwonlyargs_annotations = kwonlyargs_annotations
         self.varargannotation = varargannotation
         self.kwargannotation = kwargannotation
 
@@ -937,7 +942,11 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         if self.kwonlyargs:
             if not self.vararg:
                 result.append('*')
-            result.append(_format_args(self.kwonlyargs, self.kw_defaults))
+            result.append(_format_args(
+                self.kwonlyargs,
+                self.kw_defaults,
+                self.kwonlyargs_annotations
+            ))
         if self.kwarg:
             result.append('**%s' % self.kwarg)
         return ', '.join(result)

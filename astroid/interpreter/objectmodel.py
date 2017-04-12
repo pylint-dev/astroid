@@ -25,6 +25,7 @@ try:
 except ImportError:
     from backports.functools_lru_cache import lru_cache
 
+import itertools
 import pprint
 import os
 import types
@@ -232,9 +233,16 @@ class FunctionModel(ObjectModel):
             returns = self._instance.returns
 
         args = self._instance.args
-        annotations = {arg.name: annotation
-                       for (arg, annotation) in zip(args.args, args.annotations)
-                       if annotation}
+        pair_annotations = itertools.chain(
+            six.moves.zip(args.args, args.annotations),
+            six.moves.zip(args.kwonlyargs, args.kwonlyargs_annotations)
+        )
+
+        annotations = {
+            arg.name: annotation
+            for (arg, annotation) in pair_annotations
+            if annotation
+        }
         if args.varargannotation:
             annotations[args.vararg] = args.varargannotation
         if args.kwargannotation:

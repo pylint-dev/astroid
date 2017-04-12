@@ -183,12 +183,26 @@ class TreeRebuilder(object):
                            None for child in node.kw_defaults]
             annotations = [self.visit(arg.annotation, newnode) if
                            arg.annotation else None for arg in node.args]
+            kwonlyargs_annotations = [
+                self.visit(arg.annotation, newnode) if arg.annotation else None
+                for arg in node.kwonlyargs
+            ]
         else:
             kwonlyargs = []
             kw_defaults = []
             annotations = []
-        newnode.postinit(args, defaults, kwonlyargs, kw_defaults,
-                         annotations, varargannotation, kwargannotation)
+            kwonlyargs_annotations = []
+
+        newnode.postinit(
+            args=args,
+            defaults=defaults,
+            kwonlyargs=kwonlyargs,
+            kw_defaults=kw_defaults,
+            annotations=annotations,
+            kwonlyargs_annotations=kwonlyargs_annotations,
+            varargannotation=varargannotation,
+            kwargannotation=kwargannotation
+        )
         # save argument names in locals:
         if vararg:
             newnode.parent.set_local(vararg, newnode)

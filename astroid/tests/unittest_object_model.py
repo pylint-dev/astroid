@@ -415,8 +415,7 @@ class FunctionModelTest(unittest.TestCase):
         self.assertEqual(annotations.getitem(astroid.Const('args')).value, 2)
         self.assertEqual(annotations.getitem(astroid.Const('kwarg')).value, 3)
 
-        # Currently not enabled.
-        # self.assertEqual(annotations.getitem('f').value, 4)
+        self.assertEqual(annotations.getitem(astroid.Const('f')).value, 4)
 
         kwdefaults = next(ast_node[1].infer())
         self.assertIsInstance(kwdefaults, astroid.Dict)
