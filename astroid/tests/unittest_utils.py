@@ -7,6 +7,7 @@
 import unittest
 
 from astroid import builder
+from astroid import exceptions
 from astroid import InferenceError
 from astroid import nodes
 from astroid import node_classes
@@ -106,6 +107,35 @@ class InferenceUtil(unittest.TestCase):
         inferred = next(node.infer())
         with self.assertRaises(InferenceError):
             list(node_classes.unpack_infer(inferred))
+
+
+class NonInferenceUtil(unittest.TestCase):
+    assertRaisesAstroid = None
+    def setUp(self):
+        try:
+            self.assertRaisesAstroid = self.assertRaisesRegex
+        except AttributeError:
+            self.assertRaisesAstroid = self.assertRaisesRegexp
+
+    def mock_function(self, **kwargs):
+        astroid_util.check_extra_kwargs(**kwargs)
+
+    def test_check_extra_kwargs_no_errors(self):
+        self.assertIsNone(self.mock_function())
+
+    def test_check_extra_kwargs_one_kwarg(self):
+        # pylint: disable=deprecated-method
+        self.assertRaisesAstroid(exceptions.AstroidTypeError,
+                                 "Calling function got an unexpected keyword argument a",
+                                 self.mock_function,
+                                 a=1)
+
+    def test_check_extra_kwargs_two_kwargs(self):
+        # pylint: disable=deprecated-method
+        self.assertRaisesAstroid(exceptions.AstroidTypeError,
+                                 "Calling function got unexpected keyword arguments ",
+                                 self.mock_function,
+                                 a=1, b=2)
 
 
 if __name__ == '__main__':

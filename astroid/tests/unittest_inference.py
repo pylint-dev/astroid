@@ -2303,6 +2303,27 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             error = errors[0]
             self.assertEqual(str(error), expected_value)
 
+    def test_unary_type_errors_crash(self):
+        ast_nodes = extract_node('''
+        class EnumMeta(type):
+            def __new__(mcs, cls, bases, classdict):
+                __new__ = object.__new__
+                enum_class = super().__new__(mcs, cls, bases, classdict)
+        
+                enum_member = __new__(enum_class)
+                not hasattr(enum_member, '_value_') #@
+                for _ in classdict._member_names:
+                    enum_member = __new__(enum_class)
+                    if not hasattr(enum_member, '_value_'): #@
+                        enum_member._value_ = 0
+        ''')
+        ast_nodes[1] = next(ast_nodes[1].get_children())
+        for node in ast_nodes:
+            try:
+                node.type_errors()
+            except TypeError:
+                self.fail("node.type_errors raises unexpected TypeError.")
+
     def test_unary_empty_type_errors(self):
         # These aren't supported right now
         ast_nodes = extract_node('''
@@ -3469,6 +3490,22 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 25)
+
+    def test_infer_crash(self):
+        ast_node = extract_node('''
+        class EnumMeta(type):
+            def __new__(metacls, cls, bases, classdict):
+                __new__ = object.__new__
+        
+                enum_class = super().__new__(metacls, cls, bases, classdict)
+                enum_member = __new__(enum_class)
+                enum_member.__init__(*args) #@
+        ''')
+        try:
+            _ = next(ast_node.infer())
+        except InferenceError:
+            return
+        self.fail("node.infer raises unexpected exception.")
 
 
 class GetattrTest(unittest.TestCase):

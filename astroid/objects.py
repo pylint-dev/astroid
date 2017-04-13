@@ -118,9 +118,10 @@ class Super(node_classes.NodeNG):
         """Get the name of the MRO pointer."""
         return self.mro_pointer.name
 
-    def igetattr(self, name, context=None):
+    def igetattr(self, name, context=None, **kwargs):
         """Retrieve the inferred values of the given attribute name."""
 
+        util.check_extra_kwargs(**kwargs)
         if name in self.special_attributes:
             yield self.special_attributes.lookup(name)
             return
@@ -171,7 +172,8 @@ class Super(node_classes.NodeNG):
                                                      attribute=name,
                                                      context=context)
 
-    def getattr(self, name, context=None):
+    def getattr(self, name, context=None, **kwargs):
+        util.check_extra_kwargs(**kwargs)
         return list(self.igetattr(name, context=context))
 
 
