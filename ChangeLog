@@ -1,7 +1,8 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
---
+2017-04-13 -- 1.5.0
+
     * Arguments node gained a new attribute, ``kwonlyargs_annotations``
 
       This new attribute holds the annotations for the keyword-only
