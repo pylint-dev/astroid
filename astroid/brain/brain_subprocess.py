@@ -11,21 +11,34 @@ import astroid
 
 
 PY33 = sys.version_info >= (3, 3)
+PY36 = sys.version_info >= (3, 6)
 
 
 def _subprocess_transform():
     if six.PY3:
         communicate = (bytes('string', 'ascii'), bytes('string', 'ascii'))
         communicate_signature = 'def communicate(self, input=None, timeout=None)'
-        init = """
-        def __init__(self, args, bufsize=0, executable=None,
-                     stdin=None, stdout=None, stderr=None,
-                     preexec_fn=None, close_fds=False, shell=False,
-                     cwd=None, env=None, universal_newlines=False,
-                     startupinfo=None, creationflags=0, restore_signals=True,
-                     start_new_session=False, pass_fds=()):
-            pass
-        """
+        if PY36:
+            init = """
+            def __init__(self, args, bufsize=0, executable=None,
+                         stdin=None, stdout=None, stderr=None,
+                         preexec_fn=None, close_fds=False, shell=False,
+                         cwd=None, env=None, universal_newlines=False,
+                         startupinfo=None, creationflags=0, restore_signals=True,
+                         start_new_session=False, pass_fds=(), *,
+                         encoding=None, errors=None):
+                pass
+            """
+        else:
+            init = """
+            def __init__(self, args, bufsize=0, executable=None,
+                         stdin=None, stdout=None, stderr=None,
+                         preexec_fn=None, close_fds=False, shell=False,
+                         cwd=None, env=None, universal_newlines=False,
+                         startupinfo=None, creationflags=0, restore_signals=True,
+                         start_new_session=False, pass_fds=()):
+                pass
+            """
     else:
         communicate = ('string', 'string')
         communicate_signature = 'def communicate(self, input=None)'
