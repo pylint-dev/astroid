@@ -657,6 +657,27 @@ class TypingBrain(unittest.TestCase):
         self.assertIsInstance(inferred, astroid.Instance)
         self.assertEqual(inferred.qname(), "typing.NamedTuple")
 
+
+class JsonBrainTest(unittest.TestCase):
+    def test_load_type(self):
+        result = builder.extract_node('''
+        import json
+        json.load('path')
+        ''')
+        inferred = list(result.infer())
+        for inferred in result.infer():
+            self.assertIsInstance(inferred, (nodes.Const, nodes.Dict, nodes.List))
+
+    def test_loads_type(self):
+        result = builder.extract_node('''
+        import json
+        json.loads('{}')
+        ''')
+        inferred = list(result.infer())
+        for inferred in result.infer():
+            self.assertIsInstance(inferred, (nodes.Const, nodes.Dict, nodes.List))
+
+
 class ReBrainTest(unittest.TestCase):
     def test_regex_flags(self):
         import re
