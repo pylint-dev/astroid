@@ -233,7 +233,7 @@ class Instance(BaseInstance):
 
     def callable(self):
         try:
-            self._proxied.getattr('__call__', class_context=False)
+            self._proxied.getattr('__call__')
             return True
         except exceptions.AttributeInferenceError:
             return False
