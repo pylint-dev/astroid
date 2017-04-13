@@ -4,6 +4,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
 import sys
+import textwrap
 
 import six
 
@@ -61,12 +62,10 @@ def _subprocess_transform():
         '''
     else:
         ctx_manager = ''
-    code = '''
+    code = textwrap.dedent('''
     class Popen(object):
         returncode = pid = 0
         stdin = stdout = stderr = file()
-
-        %(init)s
 
         %(communicate_signature)s:
             return %(communicate)r
@@ -81,11 +80,14 @@ def _subprocess_transform():
         def kill(self):
             pass
         %(ctx_manager)s
-       ''' % {'init': init,
-              'communicate': communicate,
+       ''' % {'communicate': communicate,
               'communicate_signature': communicate_signature,
               'wait_signature': wait_signature,
-              'ctx_manager': ctx_manager}
+              'ctx_manager': ctx_manager})
+
+    init_lines = textwrap.dedent(init).splitlines()
+    indented_init = '\n'.join([' ' * 4 + line for line in init_lines])
+    code += indented_init
     return astroid.parse(code)
 
 
