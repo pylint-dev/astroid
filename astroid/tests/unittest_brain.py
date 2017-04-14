@@ -581,6 +581,7 @@ class IOBrainTest(unittest.TestCase):
             self.assertIsInstance(raw, astroid.Instance)
             self.assertEqual(raw.name, 'FileIO')
 
+
 @test_utils.require_version('3.6')
 class TypingBrain(unittest.TestCase):
 
@@ -656,6 +657,19 @@ class TypingBrain(unittest.TestCase):
         inferred = next(result.infer())
         self.assertIsInstance(inferred, astroid.Instance)
         self.assertEqual(inferred.qname(), "typing.NamedTuple")
+
+    def test_namedtuple_class_form(self):
+        result = builder.extract_node('''
+        from typing import NamedTuple
+
+        class Example(NamedTuple):
+            mything: int
+
+        Example(mything=1)
+        ''')
+        inferred = next(result.infer())
+        self.assertIsInstance(inferred, astroid.Instance)
+
 
 class ReBrainTest(unittest.TestCase):
     def test_regex_flags(self):

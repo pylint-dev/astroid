@@ -1,11 +1,19 @@
 # Copyright (c) 2016 David Euresti <david@dropbox.com>
 
 """Astroid hooks for typing.py support."""
+import textwrap
 
 from astroid import (
     MANAGER, UseInferenceDefault, extract_node, inference_tip,
     nodes, InferenceError)
 from astroid.nodes import List, Tuple
+
+
+TYPING_NAMEDTUPLE_BASENAMES = {
+    'NamedTuple',
+    'typing.NamedTuple'
+}
+
 
 def infer_typing_namedtuple(node, context=None):
     """Infer a typing.NamedTuple(...) call."""
@@ -38,6 +46,29 @@ def infer_typing_namedtuple(node, context=None):
         {'typename': typename, 'fields': ",".join(names)})
     return node.infer(context=context)
 
+
+def infer_typing_namedtuple_class(node, context=None):
+    """Infer a subclass of typing.NamedTuple"""
+
+    # Check if it has the corresponding bases
+    if not set(node.basenames) & TYPING_NAMEDTUPLE_BASENAMES:
+        raise UseInferenceDefault
+
+    annassigns_fields = [
+        annassign.target.name for annassign in node.body
+        if isinstance(annassign, nodes.AnnAssign)
+    ]
+    code = textwrap.dedent('''
+    from collections import namedtuple
+    namedtuple({typename!r}, {fields!r})
+    ''').format(
+        typename=node.name,
+        fields=",".join(annassigns_fields)
+    )
+    node = extract_node(code)
+    return node.infer(context=context)
+
+
 def looks_like_typing_namedtuple(node):
     func = node.func
     if isinstance(func, nodes.Attribute):
@@ -46,5 +77,13 @@ def looks_like_typing_namedtuple(node):
         return func.name == 'NamedTuple'
     return False
 
-MANAGER.register_transform(nodes.Call, inference_tip(infer_typing_namedtuple),
-                           looks_like_typing_namedtuple)
+
+MANAGER.register_transform(
+    nodes.Call,
+    inference_tip(infer_typing_namedtuple),
+    looks_like_typing_namedtuple
+)
+MANAGER.register_transform(
+    nodes.ClassDef,
+    inference_tip(infer_typing_namedtuple_class)
+)
