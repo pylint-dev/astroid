@@ -1324,6 +1324,33 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
                                             "old-style classes.")
 
     @test_utils.require_version(maxver='3.0')
+    def test_mro_for_classes_with_old_style_in_mro(self):
+        node = builder.extract_node('''
+        class Factory:
+            pass
+        class ClientFactory(Factory):
+            pass
+        class ReconnectingClientFactory(ClientFactory):
+            pass
+        class WebSocketAdapterFactory(object):
+            pass
+        class WebSocketClientFactory(WebSocketAdapterFactory, ClientFactory):
+            pass
+        class WampWebSocketClientFactory(WebSocketClientFactory):
+            pass
+        class RetryFactory(WampWebSocketClientFactory, ReconnectingClientFactory):
+            pas
+        ''')
+        self.assertEqualMro(
+            node,
+            ['RetryFactory', 'WampWebSocketClientFactory',
+             'WebSocketClientFactory', 'WebSocketAdapterFactory', 'object',
+             'ReconnectingClientFactory', 'ClientFactory',
+             'Factory'
+             ]
+        )
+
+    @test_utils.require_version(maxver='3.0')
     def test_combined_newstyle_oldstyle_in_mro(self):
         node = builder.extract_node('''
         class Old:

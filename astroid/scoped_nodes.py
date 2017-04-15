@@ -1777,17 +1777,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                 for base in baseobj.bases:
                     yield base
 
-    def mro(self, context=None):
-        """Get the method resolution order, using C3 linearization.
-
-        It returns the list of ancestors sorted by the mro.
-        This will raise `NotImplementedError` for old-style classes, since
-        they don't have the concept of MRO.
-        """
-        if not self.newstyle:
-            raise NotImplementedError(
-                "Could not obtain mro for old-style classes.")
-
+    def _compute_mro(self, context=None):
         inferred_bases = list(self._inferred_bases(context=context))
         bases_mro = []
         for base in inferred_bases:
@@ -1795,7 +1785,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                 continue
 
             try:
-                mro = base.mro(context=context)
+                mro = base._compute_mro(context=context)
                 bases_mro.append(mro)
             except NotImplementedError:
                 # Some classes have in their ancestors both newstyle and
@@ -1809,6 +1799,20 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         unmerged_mro = ([[self]] + bases_mro + [inferred_bases])
         _verify_duplicates_mro(unmerged_mro, self, context)
         return _c3_merge(unmerged_mro, self, context)
+
+    def mro(self, context=None):
+        """Get the method resolution order, using C3 linearization.
+
+        It returns the list of ancestors sorted by the mro.
+        This will raise `NotImplementedError` for old-style classes, since
+        they don't have the concept of MRO.
+        """
+
+        if not self.newstyle:
+            raise NotImplementedError(
+                "Could not obtain mro for old-style classes.")
+
+        return self._compute_mro(context=context)
 
     def bool_value(self):
         return True

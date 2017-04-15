@@ -5,6 +5,8 @@ Change log for the astroid package (used to be astng)
 
    * Basic support for the class form of typing.NamedTuple
 
+   * mro() can be computed for classes with old style classes in the hierarchy
+
 
 2017-04-13 -- 1.5.0
 
