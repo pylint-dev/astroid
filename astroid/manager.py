@@ -158,7 +158,6 @@ class AstroidManager(object):
                     return hook(modname)
                 except exceptions.AstroidBuildingError:
                     pass
-            # pylint: disable=raising-bad-type; https://github.com/PyCQA/pylint/issues/157
             raise e
         finally:
             os.chdir(old_cwd)

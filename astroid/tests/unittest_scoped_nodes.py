@@ -1346,8 +1346,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             ['RetryFactory', 'WampWebSocketClientFactory',
              'WebSocketClientFactory', 'WebSocketAdapterFactory', 'object',
              'ReconnectingClientFactory', 'ClientFactory',
-             'Factory'
-             ]
+             'Factory']
         )
 
     @test_utils.require_version(maxver='3.0')
