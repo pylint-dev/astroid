@@ -3470,6 +3470,18 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 25)
 
+    def test_getitem_of_class_raised_type_error(self):
+        # Test that we wrap an AttributeInferenceError
+        # and reraise it as a TypeError in Class.getitem
+        node = extract_node('''
+        def test():
+            yield
+        test()
+        ''')
+        inferred = next(node.infer())
+        with self.assertRaises(exceptions.AstroidTypeError):
+            inferred.getitem(nodes.Const('4'))
+
 
 class GetattrTest(unittest.TestCase):
 
