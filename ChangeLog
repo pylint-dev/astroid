@@ -1,7 +1,7 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
---
+2017-04-17 -- 1.5.2
 
    * Basic support for the class form of typing.NamedTuple
 
