@@ -999,6 +999,9 @@ def _is_metaclass(klass, seen=None):
     for base in klass.bases:
         try:
             for baseobj in base.infer():
+                if isinstance(baseobj, mixins.AssignTypeMixin):
+                    baseobj = baseobj.frame().lookup(baseobj.parent.value.name)[1][0]
+
                 baseobj_name = baseobj.qname()
                 if baseobj_name in seen:
                     continue
