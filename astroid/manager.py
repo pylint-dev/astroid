@@ -130,7 +130,7 @@ class AstroidManager(object):
                 except Exception as ex: # pylint: disable=broad-except
                     util.reraise(exceptions.AstroidImportError(
                         'Loading {modname} failed with:\n{error}',
-                        modname=modname, path=spec.location, error=ex))
+                        modname=modname, path=found_spec.location, error=ex))
                 return self.ast_from_module(module, modname)
 
             elif found_spec.type == spec.ModuleType.PY_COMPILED:
