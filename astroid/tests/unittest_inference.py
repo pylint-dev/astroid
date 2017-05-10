@@ -2098,6 +2098,85 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ''')
         self.assertRaises(InferenceError, next, module['a'].infer())
 
+    def test_inferring_context_manager_unpacking_uninferable_value(self):
+        # https://github.com/PyCQA/pylint/issues/1463
+        module = parse('''
+        import contextlib
+        @contextlib.contextmanager
+        def _select_source(guess=None, filename=None, url=None, file_obj=None,
+                           string=None, tree=None, base_url=None,
+                           url_fetcher=default_url_fetcher, check_css_mime_type=False):
+            if base_url is not None:
+                base_url = ensure_url(base_url)
+        
+            nones = [guess is None, filename is None, url is None,
+                     file_obj is None, string is None, tree is None]
+            if nones == [False, True, True, True, True, True]:
+                if hasattr(guess, 'read'):
+                    type_ = 'file_obj'
+                elif url_is_absolute(guess):
+                    type_ = 'url'
+                else:
+                    type_ = 'filename'
+                result = _select_source(
+                    base_url=base_url, url_fetcher=url_fetcher,
+                    check_css_mime_type=check_css_mime_type,
+                    # Use str() to work around http://bugs.python.org/issue4978
+                    # See https://github.com/Kozea/WeasyPrint/issues/97
+                    **{str(type_): guess})
+                with result as result:
+                    yield result
+            elif nones == [True, False, True, True, True, True]:
+                if base_url is None:
+                    base_url = path2url(filename)
+                with open(filename, 'rb') as file_obj:
+                    yield 'file_obj', file_obj, base_url, None
+            elif nones == [True, True, False, True, True, True]:
+                with fetch(url_fetcher, url) as result:
+                    if check_css_mime_type and result['mime_type'] != 'text/css':
+                        LOGGER.warning(
+                            'Unsupported stylesheet type %s for %s',
+                            result['mime_type'], result['redirected_url'])
+                        yield 'string', '', base_url, None
+                    else:
+                        proto_encoding = result.get('encoding')
+                        if base_url is None:
+                            base_url = result.get('redirected_url', url)
+                        if 'string' in result:
+                            yield 'string', result['string'], base_url, proto_encoding
+                        else:
+                            yield (
+                                'file_obj', result['file_obj'], base_url,
+                                proto_encoding)
+            elif nones == [True, True, True, False, True, True]:
+                if base_url is None:
+                    # filesystem file-like objects have a 'name' attribute.
+                    name = getattr(file_obj, 'name', None)
+                    # Some streams have a .name like '<stdin>', not a filename.
+                    if name and not name.startswith('<'):
+                        base_url = ensure_url(name)
+                yield 'file_obj', file_obj, base_url, None
+            elif nones == [True, True, True, True, False, True]:
+                yield 'string', string, base_url, None
+            elif nones == [True, True, True, True, True, False]:
+                yield 'tree', tree, base_url, None
+            else:
+                raise TypeError('Expected exactly one source, got ' + (
+                    ', '.join(
+                        name for i, name in enumerate(
+                            'guess filename url file_obj string tree'.split())
+                        if not nones[i]
+                    ) or 'nothing'
+                ))
+
+        result = _select_source(
+            guess, filename, url, file_obj, string, tree, base_url,
+            url_fetcher)
+        with result as (source_type, source, base_url, protocol_encoding):
+            pass
+        ''')
+        self.assertRaises(InferenceError, next, module['source_type'].infer())
+
     def test_inferring_with_contextlib_contextmanager_failures(self):
         module = parse('''
         from contextlib import contextmanager
