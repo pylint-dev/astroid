@@ -34,7 +34,7 @@ def has_environment_marker_range_operators_support():
 
 
 if has_environment_marker_range_operators_support():
-    extras_require[':python_version<"3.4"'] = ['enum34', 'singledispatch']
+    extras_require[':python_version<"3.4"'] = ['enum34>=1.1.3', 'singledispatch']
     extras_require[':python_version<"3.3"'] = ['backports.functools_lru_cache']
 else:
     if py_version < (3, 4):
