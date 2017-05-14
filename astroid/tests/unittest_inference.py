@@ -2103,16 +2103,16 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         module = parse('''
         import contextlib
 
-        src = _select_source()
-        with src as (source_type, source):
-            pass
-
         @contextlib.contextmanager
-        def _select_source():
-            yield
+        def _select_source(a=None):
+            with _select_source() as result:
+                yield result
+
+        result = _select_source()
+        with result as (a, b, c):
+            pass
         ''')
-        self.assertRaises(InferenceError, next, module['src'].infer())
-        self.assertRaises(InferenceError, next, module['source_type'].infer())
+        self.assertRaises(InferenceError, next, module['a'].infer())
 
     def test_inferring_with_contextlib_contextmanager_failures(self):
         module = parse('''
