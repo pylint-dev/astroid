@@ -9,3 +9,6 @@ astroid.egg-info/
 .tox
 .coverage
 .coverage.*
+.idea/
+.eggs/
+.cache/
