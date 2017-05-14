@@ -12,6 +12,9 @@ TBD -- 1.5.3
     - https://bitbucket.org/ambv/singledispatch/issues/8/inconsistent-hierarchy-with-enum
     - https://bitbucket.org/stoneleaf/enum34/commits/da50803651ab644e6fce66ebc85562f1117c344b
 
+    * Lock objects from ``threading`` module are now correctly recognised
+      as context managers.
+
 2017-04-17 -- 1.5.2
 
    * Basic support for the class form of typing.NamedTuple

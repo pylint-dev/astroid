@@ -415,20 +415,33 @@ class MultiprocessingBrainTest(unittest.TestCase):
         self.assertTrue(manager.getattr('start'))
         self.assertTrue(manager.getattr('shutdown'))
 
-class ThreadingBrainTest(unittest.TestCase):
 
-    def test_threading(self):
-        module = builder.extract_node("""
+class ThreadingBrainTest(unittest.TestCase):
+    def test_lock(self):
+        self._test_lock_object('Lock')
+
+    def test_rlock(self):
+        self._test_lock_object('RLock')
+
+    def test_semaphore(self):
+        self._test_lock_object('Semaphore')
+
+    def test_boundedsemaphore(self):
+        self._test_lock_object('BoundedSemaphore')
+
+    def _test_lock_object(self, object_name):
+        lock_instance = builder.extract_node("""
         import threading
-        threading.Lock()
-        """)
-        inferred = next(module.infer())
+        threading.{0}()
+        """.format(object_name))
+        inferred = next(lock_instance.infer())
+        self.assert_is_valid_lock(inferred)
+
+    def assert_is_valid_lock(self, inferred):
         self.assertIsInstance(inferred, astroid.Instance)
         self.assertEqual(inferred.root().name, 'threading')
-        self.assertIsInstance(inferred.getattr('acquire')[0],
-                              astroid.FunctionDef)
-        self.assertIsInstance(inferred.getattr('release')[0],
-                              astroid.FunctionDef)
+        for method in {'acquire', 'release', '__enter__', '__exit__'}:
+            self.assertIsInstance(next(inferred.igetattr(method)), astroid.BoundMethod)
 
 
 @unittest.skipUnless(HAS_ENUM,
