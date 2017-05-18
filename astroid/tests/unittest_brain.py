@@ -50,6 +50,13 @@ try:
     HAS_PYTEST = True
 except ImportError:
     HAS_PYTEST = False
+
+try:
+    import asyncio
+    HAS_ASYNCIO = True
+except ImportError:
+    HAS_ASYNCIO = False
+
 import six
 
 from astroid import MANAGER
@@ -680,6 +687,20 @@ class ReBrainTest(unittest.TestCase):
             self.assertIn(name, re_ast)
             self.assertEqual(next(re_ast[name].infer()).value, getattr(re, name))
 
+
+class SubprocessBrainTest(unittest.TestCase):
+    @unittest.skipUnless(HAS_ASYNCIO, 'Needs asyncio')
+    def test_aliasing(self):
+        module_name_node, attribute_node = builder.extract_node('''
+        from asyncio import subprocess
+        subprocess #@
+        subprocess.create_subprocess_exec  #@
+        ''')
+        module = next(module_name_node.infer())
+        function = next(attribute_node.infer())
+        # inferred2 = next(attribute_node.infer())
+        self.assertEqual('subprocess.asyncio', module.qname())
+        self.assertIsInstance(function, astroid.FunctionDef)
 
 if __name__ == '__main__':
     unittest.main()

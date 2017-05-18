@@ -877,6 +877,20 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred[0], nodes.FunctionDef)
         self.assertEqual(inferred[0].name, 'exists')
 
+    def test_import_aliased(self):
+        code = '''
+        import asyncio.subprocess as subprocess
+        subprocess'''
+        module_name_node = extract_node(code)
+        self.assertEqual('asyncio.subprocess', next(module_name_node.infer()).qname())
+
+    def test_import_from_aliased(self):
+        code = '''
+        from asyncio import subprocess
+        subprocess'''
+        module_name_node = extract_node(code)
+        self.assertEqual('asyncio.subprocess', next(module_name_node.infer()).qname())
+
     def _test_const_inferred(self, node, value):
         inferred = list(node.infer())
         self.assertEqual(len(inferred), 1)
