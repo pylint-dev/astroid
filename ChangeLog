@@ -14,6 +14,9 @@ TBD -- 1.5.3
 
     * Do not raise an exception when uninferable value is unpacked in ``with`` statement.
 
+    * Lock objects from ``threading`` module are now correctly recognised
+      as context managers.
+
 2017-04-17 -- 1.5.2
 
    * Basic support for the class form of typing.NamedTuple

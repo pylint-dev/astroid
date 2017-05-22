@@ -13,6 +13,10 @@ def _thread_transform():
             pass
         def release(self):
             pass
+        def __enter__(self):
+            return True
+        def __exit__(self, *args):
+            pass
 
     def Lock():
         return lock()
