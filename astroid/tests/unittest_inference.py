@@ -2098,6 +2098,22 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ''')
         self.assertRaises(InferenceError, next, module['a'].infer())
 
+    def test_inferring_context_manager_unpacking_inference_error(self):
+        # https://github.com/PyCQA/pylint/issues/1463
+        module = parse('''
+        import contextlib
+
+        @contextlib.contextmanager
+        def _select_source(a=None):
+            with _select_source() as result:
+                yield result
+
+        result = _select_source()
+        with result as (a, b, c):
+            pass
+        ''')
+        self.assertRaises(InferenceError, next, module['a'].infer())
+
     def test_inferring_with_contextlib_contextmanager_failures(self):
         module = parse('''
         from contextlib import contextmanager

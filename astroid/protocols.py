@@ -514,6 +514,11 @@ def with_assigned_stmts(self, node=None, context=None, asspath=None):
                         'Tried to infer a nonexistent target with index {index} '
                         'in {node!r}.', node=self, targets=node,
                         assign_path=asspath, context=context))
+                except TypeError:
+                    util.reraise(exceptions.InferenceError(
+                        'Tried to unpack an non-iterable value '
+                        'in {node!r}.', node=self, targets=node,
+                        assign_path=asspath, context=context))
             yield obj
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
