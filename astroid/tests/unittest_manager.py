@@ -139,6 +139,20 @@ class AstroidManagerTest(resources.SysPathSetup,
             del pkg_resources._namespace_packages['foogle']
             sys.modules.pop('foogle')
 
+    def test_namespace_and_file_mismatch(self):
+        filepath = unittest.__file__
+        ast = self.manager.ast_from_file(filepath)
+        self.assertEqual(ast.name, 'unittest')
+        pth = 'foogle_fax-0.12.5-py2.7-nspkg.pth'
+        site.addpackage(resources.RESOURCE_PATH, pth, [])
+        pkg_resources._namespace_packages['foogle'] = []
+        try:
+            with self.assertRaises(exceptions.AstroidImportError):
+                self.manager.ast_from_module_name('unittest.foogle.fax')
+        finally:
+            del pkg_resources._namespace_packages['foogle']
+            sys.modules.pop('foogle')
+
     def _test_ast_from_zip(self, archive):
         origpath = sys.path[:]
         sys.modules.pop('mypypa', None)
