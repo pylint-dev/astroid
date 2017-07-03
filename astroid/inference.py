@@ -725,12 +725,10 @@ def _infer_augassign(self, context=None):
                 return
 
             try:
-                results = _infer_binary_operation(lhs, rhs, self, context, _get_aug_flow)
+                for result in _infer_binary_operation(lhs, rhs, self, context, _get_aug_flow):
+                    yield result
             except exceptions._NonDeducibleTypeHierarchy:
                 yield util.Uninferable
-            else:
-                for result in results:
-                    yield result
 
 
 @decorators.path_wrapper
