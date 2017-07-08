@@ -74,8 +74,29 @@ class BadUnaryOperationMessage(BadOperationMessage):
         self.op = op
         self.error = error
 
+    @property
+    def _object_type_helper(self):
+        helpers = lazy_import('helpers')
+        return helpers.object_type
+
+    def _object_type(self, obj):
+        objtype = self._object_type_helper(obj)
+        if objtype is Uninferable:
+            return None
+
+        return objtype
+
     def __str__(self):
-        operand_type = self.operand.name
+        if hasattr(self.operand, 'name'):
+            operand_type = self.operand.name
+        else:
+            object_type = self._object_type(self.operand)
+            if hasattr(object_type, 'name'):
+                operand_type = object_type.name
+            else:
+                # Just fallback to as_string
+                operand_type = object_type.as_string()
+
         msg = "bad operand type for unary {}: {}"
         return msg.format(self.op, operand_type)
 

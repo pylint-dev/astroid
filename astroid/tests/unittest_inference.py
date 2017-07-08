@@ -2334,6 +2334,15 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertEqual(len(errors), 1, (expected, node))
             self.assertEqual(str(errors[0]), expected_value)
 
+    def test_unary_type_errors_for_non_instance_objects(self):
+        node = extract_node('~slice(1, 2, 3)')
+        errors = node.type_errors()
+        self.assertEqual(len(errors), 1)
+        self.assertEqual(
+            str(errors[0]),
+            'bad operand type for unary ~: slice'
+        )
+
     def test_bool_value_recursive(self):
         pairs = [
             ('{}', False),
