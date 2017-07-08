@@ -79,6 +79,34 @@ class HashlibTest(unittest.TestCase):
             self.assertEqual(len(class_obj['hexdigest'].args.args), 1)
 
 
+class CollectionsDequeTests(unittest.TestCase):
+    def _inferred_queue_instance(self):
+        node = builder.extract_node("""
+        import collections
+        q = collections.deque([])
+        q
+        """)
+        return next(node.infer())
+
+    def test_deque(self):
+        inferred = self._inferred_queue_instance()
+        self.assertTrue(inferred.getattr('__len__'))
+
+    @test_utils.require_version(minver='3.5')
+    def test_deque_py35methods(self):
+        inferred = self._inferred_queue_instance()
+        self.assertIn('copy', inferred.locals)
+        self.assertIn('insert', inferred.locals)
+        self.assertIn('index', inferred.locals)
+
+    @test_utils.require_version(maxver='3.4')
+    def test_deque_py35methods(self):
+        inferred = self._inferred_queue_instance()
+        self.assertNotIn('copy', inferred.locals)
+        self.assertNotIn('insert', inferred.locals)
+        self.assertNotIn('index', inferred.locals)
+
+
 class NamedTupleTest(unittest.TestCase):
 
     def test_namedtuple_base(self):
