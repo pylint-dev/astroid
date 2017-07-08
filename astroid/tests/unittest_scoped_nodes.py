@@ -1626,7 +1626,10 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
         class B(A): pass
         """)
-        self.assertRaises(DuplicateBasesError, module['B'].mro)
+        names = ['B', 'A', 'A', 'tuple', 'object']
+        mro = module['B'].mro()
+        class_names = [i.name for i in mro]
+        self.assertEqual(names, class_names)
 
     def test_instance_bound_method_lambdas(self):
         ast_nodes = builder.extract_node('''

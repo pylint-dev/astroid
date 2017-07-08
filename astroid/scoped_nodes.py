@@ -73,7 +73,7 @@ def _c3_merge(sequences, cls, context):
 
 def _verify_duplicates_mro(sequences, cls, context):
     for sequence in sequences:
-        names = [node.qname() for node in sequence]
+        names = [(node.lineno, node.qname()) for node in sequence]
         if len(names) != len(set(names)):
             raise exceptions.DuplicateBasesError(
                 message='Duplicates found in MROs {mros} for {cls!r}.',
