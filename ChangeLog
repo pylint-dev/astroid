@@ -25,6 +25,10 @@ Change log for the astroid package (used to be astng)
 
       Close PyCQA/pylint#1530
 
+    * Dunder class at method level is now inferred as the class of the method
+
+      Close PyCQA/pylint#1328
+
 2017-06-03 -- 1.5.3
 
     * enum34 dependency is forced to be at least version 1.1.3. Fixes spurious

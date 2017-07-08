@@ -26,6 +26,7 @@ from astroid.exceptions import (
     NoDefault, ResolveError, MroError,
     InconsistentMroError, DuplicateBasesError,
     TooManyLevelsError,
+    NameInferenceError
 )
 from astroid.bases import (
     BUILTINS, Instance,
@@ -612,6 +613,38 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         method = klass['__init_subclass__']
         self.assertEqual([n.name for n in method.args.args], ['cls'])
         self.assertEqual(method.type, 'classmethod')
+
+    @test_utils.require_version(minver='3.0')
+    def test_dunder_class_local_to_method(self):
+        node = builder.extract_node('''
+        class MyClass:
+            def test(self):
+                __class__ #@
+        ''')
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, nodes.ClassDef)
+        self.assertEqual(inferred.name, 'MyClass')
+
+    @test_utils.require_version(minver='3.0')
+    def test_dunder_class_local_to_function(self):
+        node = builder.extract_node('''
+        def test(self):
+            __class__ #@
+        ''')
+        with self.assertRaises(NameInferenceError):
+            next(node.infer())
+
+    @test_utils.require_version(minver='3.0')
+    def test_dunder_class_local_to_classmethod(self):
+        node = builder.extract_node('''
+        class MyClass:
+            @classmethod
+            def test(cls):
+                __class__ #@
+        ''')
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, nodes.ClassDef)
+        self.assertEqual(inferred.name, 'MyClass')
 
 
 class ClassNodeTest(ModuleLoader, unittest.TestCase):

@@ -732,6 +732,9 @@ class FunctionDef(node_classes.Statement, Lambda):
         self.decorators = decorators
         self.returns = returns
 
+        if six.PY3 and isinstance(self.parent.frame(), ClassDef):
+            self.set_local('__class__', self.parent.frame())
+
     @decorators_mod.cachedproperty
     def extra_decorators(self):
         """Get the extra decorators that this function can haves
