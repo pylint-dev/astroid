@@ -24,43 +24,61 @@ PY3K = sys.version_info > (3, 0)
 PY33 = sys.version_info >= (3, 3)
 PY34 = sys.version_info >= (3, 4)
 
-# general function
+
+def _infer_first(node, context):
+    if node is util.Uninferable:
+        raise UseInferenceDefault
+    try:
+        value = next(node.infer(context=context))
+        if value is util.Uninferable:
+            raise UseInferenceDefault()
+        else:
+            return value
+    except StopIteration:
+        raise InferenceError()
+
+
+def _find_func_form_arguments(node, context):
+    args = node.args
+    keywords = node.keywords
+
+    if args and len(args) == 2:
+        name = _infer_first(node.args[0], context).value
+        names = _infer_first(node.args[1], context)
+
+        return name, names
+    elif keywords:
+        found_keywords = {
+            keyword.arg: keyword.value for keyword in keywords
+        }
+        if {'field_names', 'typename'}.issubset(found_keywords.keys()):
+            name = _infer_first(found_keywords['typename'], context).value
+            names = _infer_first(found_keywords['field_names'], context)
+            return name, names
+    raise UseInferenceDefault()
+
 
 def infer_func_form(node, base_type, context=None, enum=False):
     """Specific inference function for namedtuple or Python 3 enum. """
-    def infer_first(node):
-        if node is util.Uninferable:
-            raise UseInferenceDefault
-        try:            
-            value = next(node.infer(context=context))
-            if value is util.Uninferable:
-                raise UseInferenceDefault()
-            else:
-                return value
-        except StopIteration:
-            raise InferenceError()
-
     # node is a Call node, class name as first argument and generated class
     # attributes as second argument
-    if len(node.args) != 2:
-        # something weird here, go back to class implementation
-        raise UseInferenceDefault()
+
     # namedtuple or enums list of attributes can be a list of strings or a
     # whitespace-separate string
     try:
-        name = infer_first(node.args[0]).value
-        names = infer_first(node.args[1])
+        name, names = _find_func_form_arguments(node, context)
         try:
             attributes = names.value.replace(',', ' ').split()
         except AttributeError:
             if not enum:
-                attributes = [infer_first(const).value for const in names.elts]
+                attributes = [_infer_first(const, context).value
+                              for const in names.elts]
             else:
                 # Enums supports either iterator of (name, value) pairs
                 # or mappings.
                 # TODO: support only list, tuples and mappings.
                 if hasattr(names, 'items') and isinstance(names.items, list):
-                    attributes = [infer_first(const[0]).value
+                    attributes = [_infer_first(const[0], context).value
                                   for const in names.items
                                   if isinstance(const[0], nodes.Const)]
                 elif hasattr(names, 'elts'):
@@ -69,11 +87,11 @@ def infer_func_form(node, base_type, context=None, enum=False):
                     # be mixed.
                     if all(isinstance(const, nodes.Tuple)
                            for const in names.elts):
-                        attributes = [infer_first(const.elts[0]).value
+                        attributes = [_infer_first(const.elts[0], context).value
                                       for const in names.elts
                                       if isinstance(const, nodes.Tuple)]
                     else:
-                        attributes = [infer_first(const).value
+                        attributes = [_infer_first(const, context).value
                                       for const in names.elts]
                 else:
                     raise AttributeError
