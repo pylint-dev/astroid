@@ -177,7 +177,7 @@ def _get_renamed_namedtuple_atributes(field_names):
     seen = set()
     for i, name in enumerate(field_names):
         if (not all(c.isalnum() or c == '_' for c in name) or keyword.iskeyword(name)
-            or not name or name[0].isdigit() or name.startswith('_') or name in seen):
+                or not name or name[0].isdigit() or name.startswith('_') or name in seen):
             names[i] = '_%d' % i
         seen.add(name)
     return tuple(names)
