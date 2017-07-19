@@ -584,6 +584,19 @@ class EnumBrainTest(unittest.TestCase):
         self.assertIsInstance(inferred, astroid.Instance)
         self.assertTrue(inferred.getattr('__iter__'))
 
+    def test_enum_func_form_subscriptable(self):
+        instance, name = builder.extract_node('''
+        from enum import Enum
+        Animal = Enum('Animal', 'ant bee cat dog')
+        Animal['ant'] #@
+        Animal['ant'].name #@
+        ''')
+        instance = next(instance.infer())
+        self.assertIsInstance(instance, astroid.Instance)
+
+        inferred = next(name.infer())
+        self.assertIsInstance(inferred, astroid.Const)
+
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
 class DateutilBrainTest(unittest.TestCase):

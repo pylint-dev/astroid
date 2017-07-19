@@ -200,6 +200,16 @@ def infer_enum(node, context=None):
             return [EnumAttribute()]
         def __next__(self):
             return next(iter(self))
+        def __getitem__(self, attr):
+            class Value(object):
+                @property
+                def name(self):
+                    return ''
+                @property
+                def value(self):
+                    return attr
+
+            return Value()
     ''')
     class_node = infer_func_form(node, enum_meta,
                                  context=context, enum=True)[0]

@@ -4,6 +4,8 @@ Change log for the astroid package (used to be astng)
 --
    * Enums created with functional syntax are now iterable
 
+   * Enums created with functional syntax are now subscriptable
+
    * Don't crash when getting the string representation of BadUnaryOperationMessage
 
      In some cases, when the operand does not have a .name attribute,
