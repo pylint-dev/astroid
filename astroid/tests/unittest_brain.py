@@ -574,6 +574,16 @@ class EnumBrainTest(unittest.TestCase):
         self.assertIsInstance(next(inferred_instance.igetattr('name')), nodes.Const)
         self.assertIsInstance(next(inferred_instance.igetattr('value')), nodes.Const)
 
+    def test_enum_func_form_iterable(self):
+        instance = builder.extract_node('''
+        from enum import Enum
+        Animal = Enum('Animal', 'ant bee cat dog')
+        Animal
+        ''')
+        inferred = next(instance.infer())
+        self.assertIsInstance(inferred, astroid.Instance)
+        self.assertTrue(inferred.getattr('__iter__'))
+
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
 class DateutilBrainTest(unittest.TestCase):

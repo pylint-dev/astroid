@@ -2,6 +2,7 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+   * Enums created with functional syntax are now iterable
 
    * Don't crash when getting the string representation of BadUnaryOperationMessage
 
