@@ -210,6 +210,7 @@ def infer_enum(node, context=None):
                     return attr
 
             return Value()
+        __members__ = ['']
     ''')
     class_node = infer_func_form(node, enum_meta,
                                  context=context, enum=True)[0]

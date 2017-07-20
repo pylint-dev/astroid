@@ -597,6 +597,17 @@ class EnumBrainTest(unittest.TestCase):
         inferred = next(name.infer())
         self.assertIsInstance(inferred, astroid.Const)
 
+    def test_enum_func_form_has_dunder_members(self):
+        instance = builder.extract_node('''
+        from enum import Enum
+        Animal = Enum('Animal', 'ant bee cat dog')
+        for i in Animal.__members__:
+            i #@
+        ''')
+        instance = next(instance.infer())
+        self.assertIsInstance(instance, astroid.Const)
+        self.assertIsInstance(instance.value, str)
+
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
 class DateutilBrainTest(unittest.TestCase):
