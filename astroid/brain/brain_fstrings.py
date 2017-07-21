@@ -27,7 +27,7 @@ def _clone_node_with_lineno(node, parent, lineno):
             for param in other_fields
         })
     new_node = cls(**init_params)
-    if hasattr(node, 'postinit'):
+    if hasattr(node, 'postinit') and _astroid_fields:
         new_node.postinit(**postinit_params)
     return new_node
 
@@ -58,4 +58,3 @@ if sys.version_info[:2] >= (3, 6):
     astroid.MANAGER.register_transform(
         astroid.FormattedValue,
         _transform_formatted_value)
-

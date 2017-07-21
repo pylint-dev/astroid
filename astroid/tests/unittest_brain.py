@@ -768,5 +768,21 @@ class ReBrainTest(unittest.TestCase):
             self.assertEqual(next(re_ast[name].infer()).value, getattr(re, name))
 
 
+class BrainFStrings(unittest.TestCase):
+
+    def test_no_crash_on_const_reconstruction(self):
+        node = builder.extract_node('''
+        max_width = 10
+
+        test1 = f'{" ":{max_width+4}}'
+        print(f'"{test1}"')
+
+        test2 = f'[{"7":>{max_width}}:0]'
+        test2
+        ''')
+        inferred = next(node.infer())
+        self.assertIs(inferred, util.Uninferable)
+
+
 if __name__ == '__main__':
     unittest.main()
