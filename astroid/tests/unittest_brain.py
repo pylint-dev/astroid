@@ -768,6 +768,7 @@ class ReBrainTest(unittest.TestCase):
             self.assertEqual(next(re_ast[name].infer()).value, getattr(re, name))
 
 
+@test_utils.require_version('3.6')
 class BrainFStrings(unittest.TestCase):
 
     def test_no_crash_on_const_reconstruction(self):
