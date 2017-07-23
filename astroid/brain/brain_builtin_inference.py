@@ -21,6 +21,10 @@ from astroid import objects
 from astroid import scoped_nodes
 from astroid import util
 
+
+OBJECT_DUNDER_NEW = 'object.__new__'
+
+
 def _extend_str(class_node, rvalue):
     """function to extend builtin str/unicode class"""
     # TODO(cpopa): this approach will make astroid to believe
@@ -73,11 +77,13 @@ def _extend_str(class_node, rvalue):
         class_node.locals[method.name] = [method]
         method.parent = class_node
 
+
 def extend_builtins(class_transforms):
     from astroid.bases import BUILTINS
     builtin_ast = MANAGER.astroid_cache[BUILTINS]
     for class_name, transform in class_transforms.items():
         transform(builtin_ast[class_name])
+
 
 if sys.version_info > (3, 0):
     extend_builtins({'bytes': partial(_extend_str, rvalue="b''"),
@@ -481,6 +487,17 @@ def infer_slice(node, context=None):
     return slice_node
 
 
+def _infer_object__new__decorator(node, context=None):
+    if not node.decorators:
+        raise UseInferenceDefault
+
+    for decorator in node.decorators.nodes:
+        if isinstance(decorator, nodes.Attribute):
+            if decorator.as_string() == OBJECT_DUNDER_NEW:
+                return iter((node.instantiate_class(),))
+    raise UseInferenceDefault
+
+
 # Builtins inference
 register_builtin_transform(infer_bool, 'bool')
 register_builtin_transform(infer_super, 'super')
@@ -494,3 +511,9 @@ register_builtin_transform(infer_dict, 'dict')
 register_builtin_transform(infer_frozenset, 'frozenset')
 register_builtin_transform(infer_type, 'type')
 register_builtin_transform(infer_slice, 'slice')
+
+# Infer object.__new__ calls
+MANAGER.register_transform(
+    nodes.ClassDef,
+    inference_tip(_infer_object__new__decorator)
+)

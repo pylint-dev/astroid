@@ -4257,5 +4257,17 @@ class CallSiteTest(unittest.TestCase):
         self.assertIn('f', site.duplicated_keywords)
 
 
+class ObjectDunderNewTest(unittest.TestCase):
+
+    def test_object_dunder_new_is_inferred_if_decorator(self):
+        node = extract_node('''
+        @object.__new__
+        class instance(object):
+            pass
+        ''')
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, Instance)
+
+
 if __name__ == '__main__':
     unittest.main()
