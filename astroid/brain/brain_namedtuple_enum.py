@@ -143,6 +143,11 @@ def infer_named_tuple(node, context=None):
     if rename:
         attributes = _get_renamed_namedtuple_atributes(attributes)
 
+    replace_args = ', '.join(
+        '{arg}=None'.format(arg=arg)
+        for arg in attributes
+    )
+
     field_def = ("    {name} = property(lambda self: self[{index:d}], "
                  "doc='Alias for field number {index:d}')")
     field_defs = '\n'.join(field_def.format(name=name, index=index)
@@ -156,12 +161,15 @@ class %(name)s(tuple):
     @classmethod
     def _make(cls, iterable, new=tuple.__new__, len=len):
         return new(cls, iterable)
-    def _replace(self, **kwds):
+    def _replace(self, %(replace_args)s):
         return self
     def __getnewargs__(self):
         return tuple(self)
 %(field_defs)s
-    ''' % {'name': name, 'fields': attributes, 'field_defs': field_defs})
+    ''' % {'name': name,
+           'fields': attributes,
+           'field_defs': field_defs,
+           'replace_args': replace_args})
     class_node.locals['_asdict'] = fake.body[0].locals['_asdict']
     class_node.locals['_make'] = fake.body[0].locals['_make']
     class_node.locals['_replace'] = fake.body[0].locals['_replace']
