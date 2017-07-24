@@ -785,5 +785,20 @@ class BrainFStrings(unittest.TestCase):
         self.assertIs(inferred, util.Uninferable)
 
 
+@test_utils.require_version('3.6')
+class BrainNamedtupleAnnAssignTest(unittest.TestCase):
+
+    def test_no_crash_on_ann_assign_in_namedtuple(self):
+        node = builder.extract_node('''
+        from enum import Enum
+        from typing import Optional
+
+        class A(Enum):
+            B: str = 'B'
+        ''')
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, nodes.ClassDef)
+
+
 if __name__ == '__main__':
     unittest.main()

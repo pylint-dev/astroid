@@ -242,10 +242,13 @@ def infer_enum_class(node):
                 continue
 
             stmt = values[0].statement()
-            if isinstance(stmt.targets[0], nodes.Tuple):
-                targets = stmt.targets[0].itered()
-            else:
-                targets = stmt.targets
+            if isinstance(stmt, nodes.Assign):
+                if isinstance(stmt.targets[0], nodes.Tuple):
+                    targets = stmt.targets[0].itered()
+                else:
+                    targets = stmt.targets
+            elif isinstance(stmt, nodes.AnnAssign):
+                targets = [stmt.target]
 
             new_targets = []
             for target in targets:
