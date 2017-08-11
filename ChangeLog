@@ -2,6 +2,10 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+   * Add brain tips for UUID.int
+
+     Close PyCQA/pylint#961
+
    * The result of using object.__new__ as class decorator is correctly inferred as instance
 
      Close #172
@@ -1041,7 +1045,7 @@ Change log for the astroid package (used to be astng)
 
 
 2010-03-22  --  0.20.0
-    * fix #20464: raises “TypeError: '_Yes' object is not iterable” on list inference
+    * fix #20464: raises ?TypeError: '_Yes' object is not iterable? on list inference
 
     * fix #19882: pylint hangs
 

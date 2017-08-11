@@ -800,5 +800,17 @@ class BrainNamedtupleAnnAssignTest(unittest.TestCase):
         self.assertIsInstance(inferred, nodes.ClassDef)
 
 
+class BrainUUIDTest(unittest.TestCase):
+
+    def test_uuid_has_int_member(self):
+        node = builder.extract_node('''
+        import uuid
+        u = uuid.UUID('{12345678-1234-5678-1234-567812345678}')
+        u.int
+        ''')
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+
+
 if __name__ == '__main__':
     unittest.main()
