@@ -1668,6 +1668,22 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                                       4: 'e', 5: 'f', 6: 'g'})
 
     @test_utils.require_version('3.5')
+    def test_starred_in_mapping_literal_no_inference_possible(self):
+        node = extract_node('''
+        from unknown import unknown
+
+        def test(a):
+           return a + 1
+
+        def func():
+            a = {unknown: 'a'}
+            return {0: 1, **a}
+
+        test(**func())
+        ''')
+        self.assertEqual(next(node.infer()), util.Uninferable)
+
+    @test_utils.require_version('3.5')
     def test_starred_in_mapping_inference_issues(self):
         code = """
         {0: 'a', **var} #@

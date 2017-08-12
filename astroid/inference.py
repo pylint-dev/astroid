@@ -104,7 +104,7 @@ def _infer_map(node, context):
         else:
             key = helpers.safe_infer(name, context=context)
             value = helpers.safe_infer(value, context=context)
-            if key is None or value is None:
+            if any(elem in (None, util.Uninferable) for elem in (key, value)):
                 raise exceptions.InferenceError(node=node,
                                                 context=context)
             values[key] = value
