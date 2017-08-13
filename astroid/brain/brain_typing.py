@@ -87,6 +87,13 @@ def looks_like_typing_typevar_or_newtype(node):
     return False
 
 
+TYPING_TYPE_TEMPLATE = """
+class {0}:
+    def __getitem__(self, item):
+        return self
+"""
+
+
 def infer_typing_typevar_or_newtype(node, context=None):
     """Infer a typing.TypeVar(...) or typing.NewType(...) call"""
     try:
@@ -101,7 +108,7 @@ def infer_typing_typevar_or_newtype(node, context=None):
         raise UseInferenceDefault
 
     typename = node.args[0].as_string().strip("'")
-    node = extract_node('class {0}: pass'.format(typename))
+    node = extract_node(TYPING_TYPE_TEMPLATE.format(typename))
     return node.infer(context=context)
 
 
@@ -115,7 +122,7 @@ def infer_typing_attr(node, context=None):
     if not value.qname().startswith('typing.'):
         raise UseInferenceDefault
 
-    node = extract_node('class {0}: pass'.format(value.qname().split('.')[-1]))
+    node = extract_node(TYPING_TYPE_TEMPLATE.format(value.qname().split('.')[-1]))
     return node.infer(context=context)
 
 
