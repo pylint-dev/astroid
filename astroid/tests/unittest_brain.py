@@ -812,5 +812,21 @@ class BrainUUIDTest(unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
 
 
+@test_utils.require_version('3.6')
+class BrainTypingTest(unittest.TestCase):
+    def test_typing_types(self):
+        ast_nodes = builder.extract_node("""
+        from typing import TypeVar, Iterable, Tuple, NewType, Dict, Union
+        TypeVar('MyTypeVar', int, float, complex) #@
+        Iterable[Tuple[MyTypeVar, MyTypeVar]] #@
+        TypeVar('AnyStr', str, bytes) #@
+        NewType('UserId', str) #@
+        Dict[str, str] #@
+        Union[int, str] #@
+        """)
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, nodes.ClassDef)
+
 if __name__ == '__main__':
     unittest.main()
