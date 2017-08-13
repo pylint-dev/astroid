@@ -88,9 +88,12 @@ def looks_like_typing_typevar_or_newtype(node):
 
 
 TYPING_TYPE_TEMPLATE = """
-class {0}:
+class Meta:
     def __getitem__(self, item):
         return self
+
+class {0}(metaclass=Meta):
+    pass
 """
 
 
