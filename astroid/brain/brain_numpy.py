@@ -21,6 +21,22 @@ def numpy_core_transform():
     from numpy.core import machar
     from numpy.core import getlimits
     from numpy.core import shape_base
+    from numpy.core.umath import (
+        absolute, add, arccos, arccosh, arcsin, arcsinh,
+        arctan, arctan2, arctanh, bitwise_and, bitwise_or,
+        bitwise_xor, cbrt, ceil, conj, conjugate, copysign,
+        cos, cosh, deg2rad, degrees, divide, e, equal,
+        euler_gamma, exp, exp2, expm1, fabs, float_power,
+        floor, floor_divide, fmax, fmin, fmod, frexp,
+        frompyfunc, geterrobj, greater, greater_equal,
+        hypot, invert, isfinite, isinf, isnan, ldexp,
+        left_shift, less, less_equal, log, log10, log1p,
+        log2, logaddexp, logaddexp2, logical_and, logical_not,
+        logical_or, logical_xor, maximum, minimum, mod, modf,
+        multiply, negative, nextafter, not_equal, pi, power,
+        rad2deg, radians, reciprocal, remainder, right_shift,
+        rint, seterrobj, sign, signbit, sin, sinh, spacing,
+        sqrt, square, subtract, tan, tanh, true_divide, trunc)
     __all__ = (['char', 'rec', 'memmap', 'chararray'] + numeric.__all__ +
                fromnumeric.__all__ +
                records.__all__ +
@@ -44,7 +60,7 @@ def numpy_transform():
                'show_config'] + core.__all__ + _mat.__all__ + lib.__all__
 
     ''')
-    
+
 
 astroid.register_module_extender(astroid.MANAGER, 'numpy.core', numpy_core_transform)
 astroid.register_module_extender(astroid.MANAGER, 'numpy', numpy_transform)
