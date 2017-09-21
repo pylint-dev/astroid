@@ -39,22 +39,31 @@ def _infer_first(node, context):
 
 
 def _find_func_form_arguments(node, context):
+
+    def _extract_namedtuple_arg_or_keyword(position, key_name=None):
+
+        if len(args) > position:
+            return _infer_first(args[position], context)
+        if key_name and key_name in found_keywords:
+            return _infer_first(found_keywords[key_name], context)
+
     args = node.args
     keywords = node.keywords
+    found_keywords = {
+        keyword.arg: keyword.value for keyword in keywords
+    } if keywords else {}
 
-    if args and len(args) == 2:
-        name = _infer_first(node.args[0], context).value
-        names = _infer_first(node.args[1], context)
+    name = _extract_namedtuple_arg_or_keyword(
+        position=0,
+        key_name='typename'
+    )
+    names = _extract_namedtuple_arg_or_keyword(
+        position=1,
+        key_name='field_names'
+    )
+    if name and names:
+        return name.value, names
 
-        return name, names
-    elif keywords:
-        found_keywords = {
-            keyword.arg: keyword.value for keyword in keywords
-        }
-        if {'field_names', 'typename'}.issubset(found_keywords.keys()):
-            name = _infer_first(found_keywords['typename'], context).value
-            names = _infer_first(found_keywords['field_names'], context)
-            return name, names
     raise UseInferenceDefault()
 
 

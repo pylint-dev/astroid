@@ -233,6 +233,18 @@ class NamedTupleTest(unittest.TestCase):
         self.assertIn('b', inferred.locals)
         self.assertIn('c', inferred.locals)
 
+    def test_namedtuple_func_form_args_and_kwargs(self):
+        node = builder.extract_node("""
+        from collections import namedtuple
+        Tuple = namedtuple("Tuple", field_names="a b c", rename=UNINFERABLE)
+        Tuple #@
+        """)
+        inferred = next(node.infer())
+        self.assertEqual(inferred.name, 'Tuple')
+        self.assertIn('a', inferred.locals)
+        self.assertIn('b', inferred.locals)
+        self.assertIn('c', inferred.locals)
+
 
 class DefaultDictTest(unittest.TestCase):
 
