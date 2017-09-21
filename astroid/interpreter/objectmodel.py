@@ -510,7 +510,6 @@ class GeneratorModel(FunctionModel):
         ret = super(GeneratorModel, cls).__new__(cls, *args, **kwargs)
         generator = astroid.MANAGER.astroid_cache[six.moves.builtins.__name__]['generator']
         for name, values in generator.locals.items():
-            print(name, values)
             method = values[0]
             patched = lambda cls, meth=method: meth
 
