@@ -23,6 +23,7 @@ from astroid import modutils
 from astroid import transforms
 from astroid import util
 
+NUMPY_C_MODULES = ('numpy.core.umath', 'numpy.core.multiarray', 'numpy.random.mtrand')
 
 def safe_repr(obj):
     try:
@@ -92,6 +93,8 @@ class AstroidManager(object):
         return build_namespace_package_module(modname, path)
 
     def _can_load_extension(self, modname):
+        if modname in NUMPY_C_MODULES:
+            return True
         if self.always_load_extensions:
             return True
         if modutils.is_standard_module(modname):
