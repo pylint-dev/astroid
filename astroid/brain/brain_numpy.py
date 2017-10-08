@@ -13,54 +13,19 @@ import astroid
 
 def numpy_core_transform():
     return astroid.parse('''
-    from numpy.core import numeric
-    from numpy.core import fromnumeric
-    from numpy.core import defchararray
-    from numpy.core import records
-    from numpy.core import function_base
-    from numpy.core import machar
-    from numpy.core import getlimits
-    from numpy.core import shape_base
-    from numpy.core.umath import (
-        absolute, add, arccos, arccosh, arcsin, arcsinh,
-        arctan, arctan2, arctanh, bitwise_and, bitwise_or,
-        bitwise_xor, cbrt, ceil, conj, conjugate, copysign,
-        cos, cosh, deg2rad, degrees, divide, e, equal,
-        euler_gamma, exp, exp2, expm1, fabs, float_power,
-        floor, floor_divide, fmax, fmin, fmod, frexp,
-        frompyfunc, geterrobj, greater, greater_equal,
-        hypot, invert, isfinite, isinf, isnan, ldexp,
-        left_shift, less, less_equal, log, log10, log1p,
-        log2, logaddexp, logaddexp2, logical_and, logical_not,
-        logical_or, logical_xor, maximum, minimum, mod, modf,
-        multiply, negative, nextafter, not_equal, pi, power,
-        rad2deg, radians, reciprocal, remainder, right_shift,
-        rint, seterrobj, sign, signbit, sin, sinh, spacing,
-        sqrt, square, subtract, tan, tanh, true_divide, trunc)
-    __all__ = (['char', 'rec', 'memmap', 'chararray'] + numeric.__all__ +
-               fromnumeric.__all__ +
-               records.__all__ +
-               function_base.__all__ +
-               machar.__all__ +
-               getlimits.__all__ +
-               shape_base.__all__)
+    from numpy.core.numerictypes import (sctypeDict, sctypeNA, typeDict,
+        typeNA, sctypes, ScalarType, obj2sctype, cast, nbytes, sctype2char,
+        maximum_sctype, issctype, typecodes, find_common_type, issubdtype,
+        datetime_data, datetime_as_string, busday_offset, busday_count,
+        is_busday, busdaycalendar, complex_, clongfloat, uintp, intc, int32,
+        unsignedinteger, longdouble, bool8, number, object0, single, complex64,
+        intp, complexfloating, float128, floating, int16, cfloat, uint0, float16,
+        uintc, ulonglong, longcomplex, generic, datetime64, int_, cdouble, character,
+        complex128, csingle, uint16, flexible, ubyte, longfloat, uint32, string0,
+        unicode_, longlong, complex256, str_, void, inexact, uint8, string_, unicode0,
+        uint, int0, half, integer, byte, int8, void0, uint64, short, bool_, float64,
+        timedelta64, double, ushort, float32, float_, int64, clongdouble,
+        singlecomplex, signedinteger, bytes_, object_)
     ''')
-
-
-def numpy_transform():
-    return astroid.parse('''
-    from numpy import core
-    from numpy import matrixlib as _mat
-    from numpy import lib
-    __all__ = ['add_newdocs',
-               'ModuleDeprecationWarning',
-               'VisibleDeprecationWarning', 'linalg', 'fft', 'random',
-               'ctypeslib', 'ma',
-               '__version__', 'pkgload', 'PackageLoader',
-               'show_config'] + core.__all__ + _mat.__all__ + lib.__all__
-
-    ''')
-
 
 astroid.register_module_extender(astroid.MANAGER, 'numpy.core', numpy_core_transform)
-astroid.register_module_extender(astroid.MANAGER, 'numpy', numpy_transform)
