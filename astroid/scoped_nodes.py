@@ -257,7 +257,7 @@ class Module(LocalsDictNodeNG):
     # names of python special attributes (handled by getattr impl.)
 
     # names of module attributes available through the global scope
-    scope_attrs = set(('__name__', '__doc__', '__file__', '__path__'))
+    scope_attrs = {'__name__', '__doc__', '__file__', '__path__', '__package__'}
 
     _other_fields = ('name', 'doc', 'file', 'path', 'package',
                      'pure_python', 'future_imports')
