@@ -126,7 +126,7 @@ class AstroidManagerTest(resources.SysPathSetup,
         pth = 'foogle_fax-0.12.5-py2.7-nspkg.pth'
         site.addpackage(resources.RESOURCE_PATH, pth, [])
         # pylint: disable=no-member; can't infer _namespace_packages, created at runtime.
-        pkg_resources._namespace_packages['foogle'] = []
+        pkg_resources._namespace_packages['foogle'] = []  # pylint: disable=no-member
 
         try:
             module = self.manager.ast_from_module_name('foogle.fax')
@@ -136,7 +136,7 @@ class AstroidManagerTest(resources.SysPathSetup,
             with self.assertRaises(exceptions.AstroidImportError):
                 self.manager.ast_from_module_name('foogle.moogle')
         finally:
-            del pkg_resources._namespace_packages['foogle']
+            del pkg_resources._namespace_packages['foogle'] # pylint: disable=no-member
             sys.modules.pop('foogle')
 
     def test_namespace_and_file_mismatch(self):
@@ -145,12 +145,12 @@ class AstroidManagerTest(resources.SysPathSetup,
         self.assertEqual(ast.name, 'unittest')
         pth = 'foogle_fax-0.12.5-py2.7-nspkg.pth'
         site.addpackage(resources.RESOURCE_PATH, pth, [])
-        pkg_resources._namespace_packages['foogle'] = []
+        pkg_resources._namespace_packages['foogle'] = [] # pylint: disable=no-member
         try:
             with self.assertRaises(exceptions.AstroidImportError):
                 self.manager.ast_from_module_name('unittest.foogle.fax')
         finally:
-            del pkg_resources._namespace_packages['foogle']
+            del pkg_resources._namespace_packages['foogle'] # pylint: disable=no-member
             sys.modules.pop('foogle')
 
     def _test_ast_from_zip(self, archive):
