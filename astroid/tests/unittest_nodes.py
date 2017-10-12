@@ -643,26 +643,32 @@ class AliasesTest(unittest.TestCase):
             if node.func.name == 'Foo':
                 node.func.name = 'Bar'
                 return node
+            return None
 
         def test_assname(node):
             if node.name == 'foo':
                 return nodes.AssignName('bar', node.lineno, node.col_offset,
                                         node.parent)
+            return None
+
         def test_assattr(node):
             if node.attrname == 'a':
                 node.attrname = 'b'
                 return node
+            return None
 
         def test_getattr(node):
             if node.attrname == 'a':
                 node.attrname = 'b'
                 return node
+            return None
 
         def test_genexpr(node):
             if node.elt.value == 1:
                 node.elt = nodes.Const(2, node.lineno, node.col_offset,
                                        node.parent)
                 return node
+            return None
 
         self.transformer.register_transform(nodes.From, test_from)
         self.transformer.register_transform(nodes.Class, test_class)

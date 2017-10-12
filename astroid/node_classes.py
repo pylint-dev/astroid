@@ -661,7 +661,7 @@ class Statement(NodeNG):
         index = stmts.index(self)
         if index >= 1:
             return stmts[index -1]
-
+        return None
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -1468,6 +1468,7 @@ class ExceptHandler(mixins.AssignTypeMixin, Statement):
         for node in self.type.nodes_of_class(Name):
             if node.name in exceptions:
                 return True
+        return False
 
 
 class Exec(Statement):
@@ -1707,10 +1708,11 @@ class Raise(Statement):
 
     def raises_not_implemented(self):
         if not self.exc:
-            return
+            return False
         for name in self.exc.nodes_of_class(Name):
             if name.name == 'NotImplementedError':
                 return True
+        return False
 
 
 class Return(Statement):

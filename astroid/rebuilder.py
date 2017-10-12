@@ -843,6 +843,7 @@ class TreeRebuilder3(TreeRebuilder):
             return newnode
         elif node.handlers:
             return self.visit_tryexcept(node, parent)
+        return None
 
     def visit_annassign(self, node, parent):
         """visit an AnnAssign node by returning a fresh instance of it"""

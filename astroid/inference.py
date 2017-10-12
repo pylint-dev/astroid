@@ -131,6 +131,7 @@ def _higher_function_scope(node):
         current = current.parent
     if current and current.parent:
         return current.parent
+    return None
 
 def infer_name(self, context=None):
     """infer a Name: use name lookup rules"""

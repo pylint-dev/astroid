@@ -69,6 +69,7 @@ def _c3_merge(sequences, cls, context):
         for seq in sequences:
             if seq[0] == candidate:
                 del seq[0]
+    return None
 
 
 def _verify_duplicates_mro(sequences, cls, context):
@@ -602,16 +603,16 @@ def _infer_decorator_callchain(node):
     static or a classmethod.
     """
     if not isinstance(node, FunctionDef):
-        return
+        return None
     if not node.parent:
-        return
+        return None
     try:
         # TODO: We don't handle multiple inference results right now,
         #       because there's no flow to reason when the return
         #       is what we are looking for, a static or a class method.
         result = next(node.infer_call_result(node.parent))
     except (StopIteration, exceptions.InferenceError):
-        return
+        return None
     if isinstance(result, bases.Instance):
         result = result._proxied
     if isinstance(result, ClassDef):
@@ -619,6 +620,7 @@ def _infer_decorator_callchain(node):
             return 'classmethod'
         if result.is_subtype_of('%s.staticmethod' % BUILTINS):
             return 'staticmethod'
+    return None
 
 
 class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
@@ -1176,6 +1178,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         for anc in self.ancestors(context=context):
             if anc.qname() == type_name:
                 return True
+        return False
 
     def _infer_type_call(self, caller, context):
         name_node = next(caller.args[0].infer(context))
@@ -1574,6 +1577,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
         if self.newstyle:
             return builtin_lookup('type')[1][0]
+        return None
 
     _metaclass = None
     def declared_metaclass(self):
@@ -1621,7 +1625,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         try:
             inferred = next(assignment.infer())
         except exceptions.InferenceError:
-            return
+            return None
         if inferred is util.Uninferable: # don't expose this
             return None
         return inferred

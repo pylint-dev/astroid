@@ -147,6 +147,7 @@ class TestTransforms(unittest.TestCase):
                     inferred = next(decorator.infer())
                     if inferred.qname() == 'abc.abstractmethod':
                         return next(node.infer_call_result(node))
+            return None
 
         manager = builder.MANAGER
         with add_transform(manager, nodes.FunctionDef, transform_function):

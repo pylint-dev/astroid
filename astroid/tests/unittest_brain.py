@@ -99,13 +99,6 @@ class CollectionsDequeTests(unittest.TestCase):
         self.assertIn('insert', inferred.locals)
         self.assertIn('index', inferred.locals)
 
-    @test_utils.require_version(maxver='3.4')
-    def test_deque_py35methods(self):
-        inferred = self._inferred_queue_instance()
-        self.assertNotIn('copy', inferred.locals)
-        self.assertNotIn('insert', inferred.locals)
-        self.assertNotIn('index', inferred.locals)
-
 
 class NamedTupleTest(unittest.TestCase):
 

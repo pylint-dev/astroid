@@ -39,14 +39,14 @@ class ASTPeepholeOptimizer(object):
         while isinstance(current, _ast.BinOp):
             # lhs must be a BinOp with the addition operand.
             if not isinstance(current.left, _ast.BinOp):
-                return
+                return None
             if (not isinstance(current.left.op, _ast.Add)
                     or not isinstance(current.op, _ast.Add)):
-                return
+                return None
 
             # rhs must a str / bytes.
             if not isinstance(current.right, _TYPES):
-                return
+                return None
 
             ast_nodes.append(current.right.s)
             current = current.left
@@ -61,13 +61,13 @@ class ASTPeepholeOptimizer(object):
                 break
 
         if not ast_nodes:
-            return
+            return None
 
         # If we have inconsistent types, bail out.
         known = type(ast_nodes[0])
         if any(not isinstance(element, known)
                for element in ast_nodes[1:]):
-            return
+            return None
 
         value = known().join(reversed(ast_nodes))
         newnode = nodes.Const(value, node.lineno, node.col_offset, parent)

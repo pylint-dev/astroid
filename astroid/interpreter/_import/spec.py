@@ -122,13 +122,14 @@ class ExplicitNamespacePackageFinder(ImpFinder):
 
     def find_module(self, modname, module_parts, processed, submodule_path):
         if processed:
-           return None
+            return None
         if util.is_namespace(modname) and modname in sys.modules:
             submodule_path = sys.modules[modname].__path__
             return ModuleSpec(name=modname, location='',
                               origin='namespace',
                               module_type=ModuleType.PY_NAMESPACE,
                               submodule_search_locations=submodule_path)
+        return None
 
 
     def contribute_to_path(self, spec, processed):
