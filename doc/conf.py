@@ -25,7 +25,14 @@ sys.path.insert(0, os.path.abspath('../../'))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.doctest', 'sphinx.ext.intersphinx', 'sphinx.ext.todo', 'sphinx.ext.viewcode']
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.doctest',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.todo',
+    'sphinx.ext.viewcode',
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -219,3 +226,9 @@ man_pages = [
     ('index', 'astroid', u'Astroid Documentation',
      [u'Logilab, PyCQA and contributors'], 1)
 ]
+
+autodoc_default_flags = ['members', 'undoc-members', 'show-inheritance']
+intersphinx_mapping = {
+    'green_tree_snakes':
+        ('http://greentreesnakes.readthedocs.io/en/latest/', 'ast_objects.inv'),
+}

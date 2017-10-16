@@ -21,6 +21,8 @@ Contents:
 
    extending
 
+   api/astroid.rst
+
 
 Indices and tables
 ==================

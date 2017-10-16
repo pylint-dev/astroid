@@ -484,6 +484,7 @@ def with_assigned_stmts(self, node=None, context=None, asspath=None):
                 return 42
         with ContextManager() as f:
             pass
+
         # ContextManager().infer() will return ContextManager
         # f.infer() will return 42.
 
