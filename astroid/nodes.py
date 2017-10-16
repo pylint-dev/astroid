@@ -6,24 +6,12 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
-"""
-on all nodes :
- .is_statement, returning true if the node should be considered as a
-  statement node
- .root(), returning the root node of the tree (i.e. a Module)
- .previous_sibling(), returning previous sibling statement node
- .next_sibling(), returning next sibling statement node
- .statement(), returning the first parent node marked as statement node
- .frame(), returning the first node defining a new local scope (i.e.
-  Module, FunctionDef or ClassDef)
- .set_local(name, node), define an identifier <name> on the first parent frame,
-  with the node defining it. This is used by the astroid builder and should not
-  be used from out there.
+"""Every available node class.
 
-on ImportFrom and Import :
- .real_name(name),
+.. seealso::
+    :doc:`ast documentation <green_tree_snakes:nodes>`
 
-
+All nodes inherit from :class:`~astroid.node_classes.NodeNG`.
 """
 # pylint: disable=unused-import,redefined-builtin
 
