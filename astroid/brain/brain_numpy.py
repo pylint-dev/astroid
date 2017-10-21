@@ -11,6 +11,91 @@ import astroid
 
 # TODO(cpopa): drop when understanding augmented assignments
 
+def numpy_core_umath_transform():
+    ufunc_optional_keyword_arguments = ("""out=None, where=True, casting='same_kind', order='K', """
+                                        """dtype=None, subok=True""")
+    return astroid.parse('''
+    # Constants
+    e = 2.718281828459045
+    euler_gamma = 0.5772156649015329
+
+    # No arg functions
+    def geterrobj(): pass
+
+    # One arg functions
+    def seterrobj(errobj): pass
+
+    # One arg functions with optional kwargs
+    def arccos(x, {opt_args:s}): pass
+    def arccosh(x, {opt_args:s}): pass
+    def arcsin(x, {opt_args:s}): pass
+    def arcsinh(x, {opt_args:s}): pass
+    def arctan(x, {opt_args:s}): pass
+    def arctanh(x, {opt_args:s}): pass
+    def cbrt(x, {opt_args:s}): pass
+    def conj(x, {opt_args:s}): pass
+    def conjugate(x, {opt_args:s}): pass
+    def cosh(x, {opt_args:s}): pass
+    def deg2rad(x, {opt_args:s}): pass
+    def degrees(x, {opt_args:s}): pass
+    def exp2(x, {opt_args:s}): pass
+    def expm1(x, {opt_args:s}): pass
+    def fabs(x, {opt_args:s}): pass
+    def frexp(x, {opt_args:s}): pass
+    def isfinite(x, {opt_args:s}): pass
+    def isinf(x, {opt_args:s}): pass
+    def log(x, {opt_args:s}): pass
+    def log1p(x, {opt_args:s}): pass
+    def log2(x, {opt_args:s}): pass
+    def logical_not(x, {opt_args:s}): pass
+    def modf(x, {opt_args:s}): pass
+    def negative(x, {opt_args:s}): pass
+    def rad2deg(x, {opt_args:s}): pass
+    def radians(x, {opt_args:s}): pass
+    def reciprocal(x, {opt_args:s}): pass
+    def rint(x, {opt_args:s}): pass
+    def sign(x, {opt_args:s}): pass
+    def signbit(x, {opt_args:s}): pass
+    def sinh(x, {opt_args:s}): pass
+    def spacing(x, {opt_args:s}): pass
+    def square(x, {opt_args:s}): pass
+    def tan(x, {opt_args:s}): pass
+    def tanh(x, {opt_args:s}): pass
+    def trunc(x, {opt_args:s}): pass
+    
+    # Two args functions with optional kwargs
+    def bitwise_and(x1, x2, {opt_args:s}): pass
+    def bitwise_or(x1, x2, {opt_args:s}): pass
+    def bitwise_xor(x1, x2, {opt_args:s}): pass
+    def copysign(x1, x2, {opt_args:s}): pass
+    def divide(x1, x2, {opt_args:s}): pass
+    def equal(x1, x2, {opt_args:s}): pass
+    def float_power(x1, x2, {opt_args:s}): pass
+    def floor_divide(x1, x2, {opt_args:s}): pass
+    def fmax(x1, x2, {opt_args:s}): pass
+    def fmin(x1, x2, {opt_args:s}): pass
+    def fmod(x1, x2, {opt_args:s}): pass
+    def greater(x1, x2, {opt_args:s}): pass
+    def hypot(x1, x2, {opt_args:s}): pass
+    def ldexp(x1, x2, {opt_args:s}): pass
+    def left_shift(x1, x2, {opt_args:s}): pass
+    def less(x1, x2, {opt_args:s}): pass
+    def logaddexp(x1, x2, {opt_args:s}): pass
+    def logaddexp2(x1, x2, {opt_args:s}): pass
+    def logical_and(x1, x2, {opt_args:s}): pass
+    def logical_or(x1, x2, {opt_args:s}): pass
+    def logical_xor(x1, x2, {opt_args:s}): pass
+    def maximum(x1, x2, {opt_args:s}): pass
+    def minimum(x1, x2, {opt_args:s}): pass
+    def nextafter(x1, x2, {opt_args:s}): pass
+    def not_equal(x1, x2, {opt_args:s}): pass
+    def power(x1, x2, {opt_args:s}): pass
+    def remainder(x1, x2, {opt_args:s}): pass
+    def right_shift(x1, x2, {opt_args:s}): pass
+    def subtract(x1, x2, {opt_args:s}): pass
+    def true_divide(x1, x2, {opt_args:s}): pass
+    '''.format(opt_args=ufunc_optional_keyword_arguments))
+
 def numpy_core_transform():
     return astroid.parse('''
     from numpy.core import numeric
@@ -21,22 +106,6 @@ def numpy_core_transform():
     from numpy.core import machar
     from numpy.core import getlimits
     from numpy.core import shape_base
-    from numpy.core.umath import (
-        absolute, add, arccos, arccosh, arcsin, arcsinh,
-        arctan, arctan2, arctanh, bitwise_and, bitwise_or,
-        bitwise_xor, cbrt, ceil, conj, conjugate, copysign,
-        cos, cosh, deg2rad, degrees, divide, e, equal,
-        euler_gamma, exp, exp2, expm1, fabs, float_power,
-        floor, floor_divide, fmax, fmin, fmod, frexp,
-        frompyfunc, geterrobj, greater, greater_equal,
-        hypot, invert, isfinite, isinf, isnan, ldexp,
-        left_shift, less, less_equal, log, log10, log1p,
-        log2, logaddexp, logaddexp2, logical_and, logical_not,
-        logical_or, logical_xor, maximum, minimum, mod, modf,
-        multiply, negative, nextafter, not_equal, pi, power,
-        rad2deg, radians, reciprocal, remainder, right_shift,
-        rint, seterrobj, sign, signbit, sin, sinh, spacing,
-        sqrt, square, subtract, tan, tanh, true_divide, trunc)
     __all__ = (['char', 'rec', 'memmap', 'chararray'] + numeric.__all__ +
                fromnumeric.__all__ +
                records.__all__ +
@@ -62,5 +131,6 @@ def numpy_transform():
     ''')
 
 
-astroid.register_module_extender(astroid.MANAGER, 'numpy.core', numpy_core_transform)
-astroid.register_module_extender(astroid.MANAGER, 'numpy', numpy_transform)
+astroid.register_module_extender(astroid.MANAGER, 'numpy.core.umath', numpy_core_umath_transform)
+#astroid.register_module_extender(astroid.MANAGER, 'numpy.core', numpy_core_transform)
+#astroid.register_module_extender(astroid.MANAGER, 'numpy', numpy_transform)
