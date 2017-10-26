@@ -122,7 +122,7 @@ class ExplicitNamespacePackageFinder(ImpFinder):
 
     def find_module(self, modname, module_parts, processed, submodule_path):
         if processed:
-            return None
+            modname = '.'.join(processed + [modname])
         if util.is_namespace(modname) and modname in sys.modules:
             submodule_path = sys.modules[modname].__path__
             return ModuleSpec(name=modname, location='',
