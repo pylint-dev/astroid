@@ -138,6 +138,17 @@ class AstroidManagerTest(resources.SysPathSetup,
             del pkg_resources._namespace_packages['foogle'] # pylint: disable=no-member
             sys.modules.pop('foogle')
 
+    def test_nested_namespace_import(self):
+        pth = 'foogle_fax-0.12.5-py2.7-nspkg.pth'
+        site.addpackage(resources.RESOURCE_PATH, pth, [])
+        pkg_resources._namespace_packages['foogle'] = ['foogle.crank'] # pylint: disable=no-member
+        pkg_resources._namespace_packages['foogle.crank'] = [] # pylint: disable=no-member
+        try:
+            self.manager.ast_from_module_name('foogle.crank')
+        finally:
+            del pkg_resources._namespace_packages['foogle'] # pylint: disable=no-member
+            sys.modules.pop('foogle')
+
     def test_namespace_and_file_mismatch(self):
         filepath = unittest.__file__
         ast = self.manager.ast_from_file(filepath)
