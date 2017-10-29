@@ -9,7 +9,57 @@
 import astroid
 
 
-# TODO(cpopa): drop when understanding augmented assignments
+def numpy_random_mtrand_transform():
+    return astroid.parse('''
+    def beta(a, b, size=None): pass
+    def binomial(n, p, size=None): pass
+    def bytes(length): pass
+    def chisquare(df, size=None): pass
+    def choice(a, size=None, replace=True, p=None): pass
+    def dirichlet(alpha, size=None): pass
+    def exponential(scale=1.0, size=None): pass
+    def f(dfnum, dfden, size=None): pass
+    def gamma(shape, scale=1.0, size=None): pass
+    def geometric(p, size=None): pass
+    def get_state(): pass
+    def gumbel(loc=0.0, scale=1.0, size=None): pass
+    def hypergeometric(ngood, nbad, nsample, size=None): pass
+    def laplace(loc=0.0, scale=1.0, size=None): pass
+    def logistic(loc=0.0, scale=1.0, size=None): pass
+    def lognormal(mean=0.0, sigma=1.0, size=None): pass
+    def logseries(p, size=None): pass
+    def multinomial(n, pvals, size=None): pass
+    def multivariate_normal(mean, cov, size=None): pass
+    def negative_binomial(n, p, size=None): pass
+    def noncentral_chisquare(df, nonc, size=None): pass
+    def noncentral_f(dfnum, dfden, nonc, size=None): pass
+    def normal(loc=0.0, scale=1.0, size=None): pass
+    def pareto(a, size=None): pass
+    def permutation(x): pass
+    def poisson(lam=1.0, size=None): pass
+    def power(a, size=None): pass
+    def rand(*args): pass
+    def randint(low, high=None, size=None, dtype='l'): pass
+    def randn(*args): pass
+    def random_integers(low, high=None, size=None): pass
+    def random_sample(size=None): pass
+    def rayleigh(scale=1.0, size=None): pass
+    def seed(seed=None): pass
+    def set_state(state): pass
+    def shuffle(x): pass
+    def standard_cauchy(size=None): pass
+    def standard_exponential(size=None): pass
+    def standard_gamma(shape, size=None): pass
+    def standard_normal(size=None): pass
+    def standard_t(df, size=None): pass
+    def triangular(left, mode, right, size=None): pass
+    def uniform(low=0.0, high=1.0, size=None): pass
+    def vonmises(mu, kappa, size=None): pass
+    def wald(mean, scale, size=None): pass
+    def weibull(a, size=None): pass
+    def zipf(a, size=None): pass
+    ''')
+
 
 def numpy_core_umath_transform():
     ufunc_optional_keyword_arguments = ("""out=None, where=True, casting='same_kind', order='K', """
@@ -96,41 +146,6 @@ def numpy_core_umath_transform():
     def true_divide(x1, x2, {opt_args:s}): pass
     '''.format(opt_args=ufunc_optional_keyword_arguments))
 
-def numpy_core_transform():
-    return astroid.parse('''
-    from numpy.core import numeric
-    from numpy.core import fromnumeric
-    from numpy.core import defchararray
-    from numpy.core import records
-    from numpy.core import function_base
-    from numpy.core import machar
-    from numpy.core import getlimits
-    from numpy.core import shape_base
-    __all__ = (['char', 'rec', 'memmap', 'chararray'] + numeric.__all__ +
-               fromnumeric.__all__ +
-               records.__all__ +
-               function_base.__all__ +
-               machar.__all__ +
-               getlimits.__all__ +
-               shape_base.__all__)
-    ''')
-
-
-def numpy_transform():
-    return astroid.parse('''
-    from numpy import core
-    from numpy import matrixlib as _mat
-    from numpy import lib
-    __all__ = ['add_newdocs',
-               'ModuleDeprecationWarning',
-               'VisibleDeprecationWarning', 'linalg', 'fft', 'random',
-               'ctypeslib', 'ma',
-               '__version__', 'pkgload', 'PackageLoader',
-               'show_config'] + core.__all__ + _mat.__all__ + lib.__all__
-
-    ''')
-
-
 astroid.register_module_extender(astroid.MANAGER, 'numpy.core.umath', numpy_core_umath_transform)
-#astroid.register_module_extender(astroid.MANAGER, 'numpy.core', numpy_core_transform)
-#astroid.register_module_extender(astroid.MANAGER, 'numpy', numpy_transform)
+astroid.register_module_extender(astroid.MANAGER, 'numpy.random.mtrand',
+                                 numpy_random_mtrand_transform)
