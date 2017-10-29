@@ -1,3 +1,4 @@
+#-*- encoding=utf-8 -*-
 # Copyright (c) 2013-2014 Google, Inc.
 # Copyright (c) 2014-2016 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2015 Philip Lorenz <philip@bithub.de>
