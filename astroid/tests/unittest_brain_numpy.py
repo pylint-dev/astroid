@@ -8,6 +8,7 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 import unittest
+import contextlib
 
 try:
     import numpy # pylint: disable=unused-import
@@ -19,9 +20,32 @@ from astroid import builder
 from astroid import nodes
 
 
-@unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
-class NumpyBrainCoreUmathTest(unittest.TestCase):
+class SubTestWrapper(unittest.TestCase):
+    """
+    A class for supporting all unittest version wether or not subTest is available
+    """
+    def subTest(self, msg=None, **params):
+        try:
+            # For python versions above 3.5 this should be ok
+            return super(SubTestWrapper, self).subTest(msg, **params)
+        except AttributeError:
+            # For python versions below 3.5
+            return subTestMock(msg, **params)
 
+
+@contextlib.contextmanager
+def subTestMock(msg=None, **params):
+    """
+    A mock for subTest which do nothing
+    """
+    yield msg
+
+
+@unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
+class NumpyBrainCoreUmathTest(SubTestWrapper):
+    """
+    Test of all members of numpy.core.umath module
+    """
     no_arg_ufunc = ('geterrobj',)
 
     one_arg_ufunc_spec = ('seterrobj',)
@@ -56,12 +80,18 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
         return next(node.infer())
 
     def test_numpy_core_umath_constants(self):
+        """
+        Test that constants have Const type.
+        """
         for const in self.constants:
             with self.subTest(const=const):
                 inferred = self._inferred_numpy_attribute(const)
                 self.assertIsInstance(inferred, nodes.Const)
 
     def test_numpy_core_umath_constants_values(self):
+        """
+        Test the values of the constants.
+        """
         exact_values = {'e': 2.718281828459045,
                         'euler_gamma': 0.5772156649015329}
         for const in self.constants:
@@ -70,18 +100,27 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
                 self.assertEqual(inferred.value, exact_values[const])
 
     def test_numpy_core_umath_functions(self):
+        """
+        Test that functions have FunctionDef type.
+        """
         for func in self.all_ufunc:
             with self.subTest(func=func):
                 inferred = self._inferred_numpy_attribute(func)
                 self.assertIsInstance(inferred, nodes.FunctionDef)
 
     def test_numpy_core_umath_functions_no_arg(self):
+        """
+        Test that functions with no arguments have really no arguments.
+        """
         for func in self.no_arg_ufunc:
             with self.subTest(func=func):
                 inferred = self._inferred_numpy_attribute(func)
                 self.assertFalse(inferred.argnames())
 
     def test_numpy_core_umath_functions_one_arg_spec(self):
+        """
+        Test the arguments names of functions.
+        """
         exact_arg_names = ['errobj']
         for func in self.one_arg_ufunc_spec:
             with self.subTest(func=func):
@@ -89,6 +128,9 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
                 self.assertEqual(inferred.argnames(), exact_arg_names)
 
     def test_numpy_core_umath_functions_one_arg(self):
+        """
+        Test the arguments names of functions.
+        """
         exact_arg_names = ['x', 'out', 'where', 'casting', 'order', 'dtype', 'subok']
         for func in self.one_arg_ufunc:
             with self.subTest(func=func):
@@ -96,6 +138,9 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
                 self.assertEqual(inferred.argnames(), exact_arg_names)
 
     def test_numpy_core_umath_functions_two_args(self):
+        """
+        Test the arguments names of functions.
+        """
         exact_arg_names = ['x1', 'x2', 'out', 'where', 'casting', 'order', 'dtype', 'subok']
         for func in self.two_args_ufunc:
             with self.subTest(func=func):
@@ -103,6 +148,9 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
                 self.assertEqual(inferred.argnames(), exact_arg_names)
 
     def test_numpy_core_umath_functions_kwargs_default_values(self):
+        """
+        Test the default values for keyword arguments.
+        """
         exact_kwargs_default_values = [None, True, 'same_kind', 'K', None, True]
         for func in self.one_arg_ufunc + self.two_args_ufunc:
             with self.subTest(func=func):
@@ -111,8 +159,11 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
                 self.assertEqual(default_args_values, exact_kwargs_default_values)
 
 
-class NumpyBrainRandomMtrandTest(unittest.TestCase):
-
+class NumpyBrainRandomMtrandTest(SubTestWrapper):
+    """
+    Test of all the functions of numpy.random.mtrand module.
+    """
+    # Map between functions names and arguments names and default values
     all_mtrand = {
         'beta': (['a', 'b', 'size'], [None]),
         'binomial': (['n', 'p', 'size'], [None]),
@@ -170,12 +221,18 @@ class NumpyBrainRandomMtrandTest(unittest.TestCase):
         return next(node.infer())
 
     def test_numpy_random_mtrand_functions(self):
+        """
+        Test that all functions have FunctionDef type.
+        """
         for func in self.all_mtrand:
             with self.subTest(func=func):
                 inferred = self._inferred_numpy_attribute(func)
                 self.assertIsInstance(inferred, nodes.FunctionDef)
 
     def test_numpy_core_umath_functions_signature(self):
+        """
+        Test the arguments names and default values.
+        """
         for func, (exact_arg_names, exact_kwargs_default_values) in self.all_mtrand.items():
             with self.subTest(func=func):
                 inferred = self._inferred_numpy_attribute(func)
