@@ -2,6 +2,10 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+   * Add brain tip for attrs library to prevent unsupported-assignment-operation false positives
+
+	 Close PYCQA/pylint#1698
+
    * file_stream was removed, since it was deprecated for three releases
 
      Instead one should use the .stream() method.
