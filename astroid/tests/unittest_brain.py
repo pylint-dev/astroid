@@ -44,6 +44,13 @@ try:
     HAS_PYTEST = True
 except ImportError:
     HAS_PYTEST = False
+
+try:
+    import attr as attr_module # pylint: disable=unused-import
+    HAS_ATTR = True
+except ImportError:
+    HAS_ATTR = False
+
 import six
 
 from astroid import MANAGER
@@ -797,6 +804,25 @@ class BrainUUIDTest(unittest.TestCase):
         ''')
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Const)
+
+
+@unittest.skipUnless(HAS_ATTR, "These tests require the attr library")
+class AttrsTest(unittest.TestCase):
+    def test_attr_transform(self):
+        module = astroid.parse("""
+        import attr
+
+        @attr.s
+        class Foo:
+
+            d = attr.ib(attr.Factory(dict))
+
+        f = Foo()
+        f.d['answer'] = 42
+        """)
+
+        should_be_attribute = next(module.getattr('f')[0].infer()).getattr('d')[0]
+        self.assertIsInstance(should_be_attribute, astroid.Attribute)
 
 
 if __name__ == '__main__':
