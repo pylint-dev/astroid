@@ -932,8 +932,8 @@ class FunctionDef(node_classes.Statement, Lambda):
             return True
 
     def is_generator(self):
-        """return true if this is a generator function"""
-        yield_nodes = (node_classes.Yield, node_classes.YieldFrom)
+        """return true if this is a generator function (or coroutine)"""
+        yield_nodes = (node_classes.Yield, node_classes.YieldFrom, node_classes.Await)
         return next(self.nodes_of_class(yield_nodes,
                                         skip_klass=(FunctionDef, Lambda)), False)
 
@@ -979,6 +979,9 @@ class FunctionDef(node_classes.Statement, Lambda):
 
 class AsyncFunctionDef(FunctionDef):
     """Asynchronous function created with the `async` keyword."""
+    def is_generator(self):
+        # coroutines are "kind-of" generators
+        return True
 
 
 def _rec_get_names(args, names=None):
