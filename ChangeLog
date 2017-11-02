@@ -2,6 +2,10 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+   * Add brain tips for curses
+
+     Close PyCQA/pylint#1703
+
    * Add brain tips for UUID.int
 
      Close PyCQA/pylint#961
