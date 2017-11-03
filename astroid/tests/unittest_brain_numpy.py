@@ -5,6 +5,7 @@
 # Copyright (c) 2015 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2015 raylu <lurayl@gmail.com>
 # Copyright (c) 2015-2016 Cara Vinson <ceridwenv@gmail.com>
+# Copyright (c) 2017 Guillaume Peillex <guillaume.peillex@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -31,11 +32,11 @@ class SubTestWrapper(unittest.TestCase):
             return super(SubTestWrapper, self).subTest(msg, **params)
         except AttributeError:
             # For python versions below 3.5
-            return subTestMock(msg, **params)
+            return subTestMock(msg)
 
 
 @contextlib.contextmanager
-def subTestMock(msg=None, **params):
+def subTestMock(msg=None):
     """
     A mock for subTest which do nothing
     """
