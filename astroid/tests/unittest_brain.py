@@ -40,12 +40,6 @@ except ImportError:
     HAS_DATEUTIL = False
 
 try:
-    import numpy # pylint: disable=unused-import
-    HAS_NUMPY = True
-except ImportError:
-    HAS_NUMPY = False
-
-try:
     import pytest
     HAS_PYTEST = True
 except ImportError:
@@ -623,18 +617,6 @@ class DateutilBrainTest(unittest.TestCase):
         """)
         d_type = next(module['d'].infer())
         self.assertEqual(d_type.qname(), "datetime.datetime")
-
-
-@unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
-class NumpyBrainTest(unittest.TestCase):
-
-    def test_numpy(self):
-        node = builder.extract_node('''
-        import numpy
-        numpy.ones #@
-        ''')
-        inferred = next(node.infer())
-        self.assertIsInstance(inferred, nodes.FunctionDef)
 
 
 @unittest.skipUnless(HAS_PYTEST, "This test requires the pytest library.")
