@@ -161,6 +161,7 @@ class NumpyBrainCoreUmathTest(SubTestWrapper):
                 self.assertEqual(default_args_values, exact_kwargs_default_values)
 
 
+@unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
 class NumpyBrainRandomMtrandTest(SubTestWrapper):
     """
     Test of all the functions of numpy.random.mtrand module.
@@ -231,7 +232,7 @@ class NumpyBrainRandomMtrandTest(SubTestWrapper):
                 inferred = self._inferred_numpy_attribute(func)
                 self.assertIsInstance(inferred, nodes.FunctionDef)
 
-    def test_numpy_core_umath_functions_signature(self):
+    def test_numpy_random_mtrand_functions_signature(self):
         """
         Test the arguments names and default values.
         """
