@@ -1,10 +1,4 @@
 #-*- encoding=utf-8 -*-
-# Copyright (c) 2013-2014 Google, Inc.
-# Copyright (c) 2014-2016 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2015 Philip Lorenz <philip@bithub.de>
-# Copyright (c) 2015 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2015 raylu <lurayl@gmail.com>
-# Copyright (c) 2015-2016 Cara Vinson <ceridwenv@gmail.com>
 # Copyright (c) 2017 Guillaume Peillex <guillaume.peillex@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
