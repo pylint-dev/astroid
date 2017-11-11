@@ -2,6 +2,8 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+   * Vast improvements to numpy support
+
    * Add brain tips for curses
 
      Close PyCQA/pylint#1703
