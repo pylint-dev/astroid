@@ -15,7 +15,6 @@ import os
 import sys
 from functools import partial
 import unittest
-import warnings
 
 from astroid import builder
 from astroid import nodes

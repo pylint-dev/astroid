@@ -125,7 +125,6 @@ class AstroidManagerTest(resources.SysPathSetup,
     def test_namespace_package_pth_support(self):
         pth = 'foogle_fax-0.12.5-py2.7-nspkg.pth'
         site.addpackage(resources.RESOURCE_PATH, pth, [])
-        # pylint: disable=no-member; can't infer _namespace_packages, created at runtime.
         pkg_resources._namespace_packages['foogle'] = []  # pylint: disable=no-member
 
         try:
