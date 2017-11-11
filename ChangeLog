@@ -2,6 +2,10 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+   * file_stream was removed, since it was deprecated for three releases
+
+     Instead one should use the .stream() method.
+
    * Vast improvements to numpy support
 
    * Add brain tips for curses

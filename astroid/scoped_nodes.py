@@ -415,21 +415,6 @@ class Module(LocalsDictNodeNG):
             return stream
         return None
 
-    @property
-    def file_stream(self):
-        """Get a stream to the underlying file or bytes.
-
-        .. deprecated:: 1.5
-
-        :type: file or io.BytesIO or None
-        """
-        warnings.warn("file_stream property is deprecated and "
-                      "it is slated for removal in astroid 1.6."
-                      "Use the new method 'stream' instead.",
-                      PendingDeprecationWarning,
-                      stacklevel=2)
-        return self._get_stream()
-
     def stream(self):
         """Get a stream to the underlying file or bytes.
 
@@ -438,19 +423,6 @@ class Module(LocalsDictNodeNG):
         :type: file or io.BytesIO or None
         """
         return self._get_stream()
-
-    def close(self):
-        """Close the underlying file streams.
-
-        .. deprecated:: 1.5
-        """
-        warnings.warn("close method is deprecated and it is "
-                      "slated for removal in astroid 1.6, along "
-                      "with 'file_stream' property. "
-                      "Its behaviour is replaced by managing each "
-                      "file stream returned by the 'stream' method.",
-                      PendingDeprecationWarning,
-                      stacklevel=2)
 
     def block_range(self, lineno):
         """Get a range from where this node starts to where this node ends.
