@@ -20,7 +20,7 @@ class Python3TC(unittest.TestCase):
     def setUpClass(cls):
         cls.builder = AstroidBuilder()
 
-    @require_version('3.0')
+    @require_version('3.4')
     def test_starred_notation(self):
         astroid = self.builder.string_build("*a, b = [1, 2, 3]", 'test', 'test')
 
@@ -29,7 +29,7 @@ class Python3TC(unittest.TestCase):
 
         self.assertTrue(isinstance(node.assign_type(), Assign))
 
-    @require_version('3.3')
+    @require_version('3.4')
     def test_yield_from(self):
         body = dedent("""
         def func():
@@ -45,7 +45,7 @@ class Python3TC(unittest.TestCase):
         self.assertEqual(yieldfrom_stmt.as_string(),
                          'yield from iter([1, 2])')
 
-    @require_version('3.3')
+    @require_version('3.4')
     def test_yield_from_is_generator(self):
         body = dedent("""
         def func():
@@ -56,7 +56,7 @@ class Python3TC(unittest.TestCase):
         self.assertIsInstance(func, FunctionDef)
         self.assertTrue(func.is_generator())
 
-    @require_version('3.3')
+    @require_version('3.4')
     def test_yield_from_as_string(self):
         body = dedent("""
         def func():
@@ -69,7 +69,7 @@ class Python3TC(unittest.TestCase):
 
     # metaclass tests
 
-    @require_version('3.0')
+    @require_version('3.4')
     def test_simple_metaclass(self):
         astroid = self.builder.string_build("class Test(metaclass=type): pass")
         klass = astroid.body[0]
@@ -78,13 +78,13 @@ class Python3TC(unittest.TestCase):
         self.assertIsInstance(metaclass, ClassDef)
         self.assertEqual(metaclass.name, 'type')
 
-    @require_version('3.0')
+    @require_version('3.4')
     def test_metaclass_error(self):
         astroid = self.builder.string_build("class Test(metaclass=typ): pass")
         klass = astroid.body[0]
         self.assertFalse(klass.metaclass())
 
-    @require_version('3.0')
+    @require_version('3.4')
     def test_metaclass_imported(self):
         astroid = self.builder.string_build(dedent("""
         from abc import ABCMeta
@@ -95,7 +95,7 @@ class Python3TC(unittest.TestCase):
         self.assertIsInstance(metaclass, ClassDef)
         self.assertEqual(metaclass.name, 'ABCMeta')
 
-    @require_version('3.0')
+    @require_version('3.4')
     def test_metaclass_multiple_keywords(self):
         astroid = self.builder.string_build("class Test(magic=None, metaclass=type): pass")
         klass = astroid.body[0]
@@ -104,7 +104,7 @@ class Python3TC(unittest.TestCase):
         self.assertIsInstance(metaclass, ClassDef)
         self.assertEqual(metaclass.name, 'type')
 
-    @require_version('3.0')
+    @require_version('3.4')
     def test_as_string(self):
         body = dedent("""
         from abc import ABCMeta
@@ -115,7 +115,7 @@ class Python3TC(unittest.TestCase):
         self.assertEqual(klass.as_string(),
                          '\n\nclass Test(metaclass=ABCMeta):\n    pass\n')
 
-    @require_version('3.0')
+    @require_version('3.4')
     def test_old_syntax_works(self):
         astroid = self.builder.string_build(dedent("""
         class Test:
@@ -126,7 +126,7 @@ class Python3TC(unittest.TestCase):
         metaclass = klass.metaclass()
         self.assertIsNone(metaclass)
 
-    @require_version('3.0')
+    @require_version('3.4')
     def test_metaclass_yes_leak(self):
         astroid = self.builder.string_build(dedent("""
         # notice `ab` instead of `abc`
@@ -137,7 +137,7 @@ class Python3TC(unittest.TestCase):
         klass = astroid['Meta']
         self.assertIsNone(klass.metaclass())
 
-    @require_version('3.0')
+    @require_version('3.4')
     def test_parent_metaclass(self):
         astroid = self.builder.string_build(dedent("""
         from abc import ABCMeta
@@ -150,7 +150,7 @@ class Python3TC(unittest.TestCase):
         self.assertIsInstance(metaclass, ClassDef)
         self.assertEqual(metaclass.name, 'ABCMeta')
 
-    @require_version('3.0')
+    @require_version('3.4')
     def test_metaclass_ancestors(self):
         astroid = self.builder.string_build(dedent("""
         from abc import ABCMeta
@@ -178,7 +178,7 @@ class Python3TC(unittest.TestCase):
                 self.assertIsInstance(meta, ClassDef)
                 self.assertEqual(meta.name, metaclass)
 
-    @require_version('3.0')
+    @require_version('3.4')
     def test_annotation_support(self):
         astroid = self.builder.string_build(dedent("""
         def test(a: int, b: str, c: None, d, e,
@@ -213,7 +213,7 @@ class Python3TC(unittest.TestCase):
         self.assertEqual(func.args.annotations[1].name, 'str')
         self.assertIsNone(func.returns)
 
-    @require_version('3.0')
+    @require_version('3.4')
     def test_kwonlyargs_annotations_supper(self):
         node = self.builder.string_build(dedent("""
         def test(*, a: int, b: str, c: None, d, e):
@@ -230,7 +230,7 @@ class Python3TC(unittest.TestCase):
         self.assertIsNone(arguments.kwonlyargs_annotations[3])
         self.assertIsNone(arguments.kwonlyargs_annotations[4])
 
-    @require_version('3.0')
+    @require_version('3.4')
     def test_annotation_as_string(self):
         code1 = dedent('''
         def test(a, b:int=4, c=2, f:'lala'=4)->2:

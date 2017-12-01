@@ -52,6 +52,7 @@ def install():
                  author_email = author_email,
                  url = web,
                  include_package_data = True,
+                 python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*',
                  install_requires = install_requires,
                  extras_require=extras_require,
                  packages = find_packages(),

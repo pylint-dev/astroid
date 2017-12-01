@@ -20,10 +20,6 @@ from astroid import nodes
 from astroid.builder import AstroidBuilder, extract_node
 from astroid import util
 
-PY3K = sys.version_info > (3, 0)
-PY33 = sys.version_info >= (3, 3)
-PY34 = sys.version_info >= (3, 4)
-
 
 def _infer_first(node, context):
     if node is util.Uninferable:
