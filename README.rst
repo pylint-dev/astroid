@@ -55,7 +55,7 @@ http://lists.logilab.org/mailman/listinfo/python-projects .
 Python Versions
 ---------------
 
-astroid is compatible with Python 2.7 as well as 3.3 and later. astroid uses
+astroid is compatible with Python 2.7 as well as 3.4 and later. astroid uses
 the same code base for both Python versions, using six.
 
 Test

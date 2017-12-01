@@ -163,19 +163,12 @@ class TreeRebuilder(object):
                     varargannotation = self.visit(node.vararg.annotation,
                                                   newnode)
                 vararg = vararg.arg
-            elif PY3 and node.varargannotation:
-                varargannotation = self.visit(node.varargannotation,
-                                              newnode)
         if kwarg:
             if PY34:
                 if node.kwarg.annotation:
                     kwargannotation = self.visit(node.kwarg.annotation,
                                                  newnode)
                 kwarg = kwarg.arg
-            elif PY3:
-                if node.kwargannotation:
-                    kwargannotation = self.visit(node.kwargannotation,
-                                                 newnode)
         if PY3:
             kwonlyargs = [self.visit(child, newnode) for child
                           in node.kwonlyargs]
