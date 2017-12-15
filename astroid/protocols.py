@@ -135,7 +135,8 @@ nodes.Const.infer_binary_op = const_infer_binary_op
 def _multiply_seq_by_int(self, opnode, other, context):
     node = self.__class__(parent=opnode)
     elts = []
-    for elt in self.elts:
+    filtered_elts = (elt for elt in self.elts if elt is not util.Uninferable)
+    for elt in filtered_elts:
         infered = helpers.safe_infer(elt, context)
         if infered is None:
             infered = util.Uninferable
