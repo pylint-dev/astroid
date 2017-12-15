@@ -31,7 +31,12 @@ def attr_attributes_transform(node):
         if not isinstance(cdefbodynode, astroid.Assign):
             continue
         for target in cdefbodynode.targets:
-            node.locals[target.name] = [astroid.Attribute(target.name)]
+            rhs_node = astroid.Unknown(
+                lineno=cdefbodynode.lineno,
+                col_offset=cdefbodynode.col_offset,
+                parent=cdefbodynode
+            )
+            node.locals[target.name] = [rhs_node]
 
 
 MANAGER.register_transform(

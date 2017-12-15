@@ -822,7 +822,7 @@ class AttrsTest(unittest.TestCase):
         """)
 
         should_be_attribute = next(module.getattr('f')[0].infer()).getattr('d')[0]
-        self.assertIsInstance(should_be_attribute, astroid.Attribute)
+        self.assertIsInstance(should_be_attribute, astroid.Unknown)
 
 
 if __name__ == '__main__':
