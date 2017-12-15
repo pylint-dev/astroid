@@ -107,7 +107,6 @@ def safe_infer(node, context=None):
         return None# there is some kind of ambiguity
     except StopIteration:
         return value
-    return None
 
 
 def has_known_bases(klass, context=None):
