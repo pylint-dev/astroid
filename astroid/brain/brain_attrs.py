@@ -11,6 +11,9 @@ import astroid
 from astroid import MANAGER
 
 
+ATTR_IB = 'attr.ib'
+
+
 def is_decorated_with_attrs(
         node, decorator_names=('attr.s', 'attr.attrs', 'attr.attributes')):
     """Return True if a decorated node has
@@ -30,7 +33,11 @@ def attr_attributes_transform(node):
     for cdefbodynode in node.body:
         if not isinstance(cdefbodynode, astroid.Assign):
             continue
+        if isinstance(cdefbodynode.value, astroid.Call):
+            if cdefbodynode.value.func.as_string() != ATTR_IB:
+                continue
         for target in cdefbodynode.targets:
+
             rhs_node = astroid.Unknown(
                 lineno=cdefbodynode.lineno,
                 col_offset=cdefbodynode.col_offset,
