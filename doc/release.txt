@@ -17,7 +17,10 @@ Release Process
 
 4. Run
    
-   $ python setup.py register sdist --formats=gztar bdist_wheel upload
+   $ git clean -fd && find . -name '*.pyc' -delete
+   $ python setup.py sdist --formats=gztar bdist_wheel
+   $ twine upload dist/*
+
 
    to release a new version to PyPI.
   
