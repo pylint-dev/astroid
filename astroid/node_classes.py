@@ -4173,7 +4173,7 @@ class JoinedStr(NodeNG):
         self.values = values
 
 
-class Unknown(NodeNG):
+class Unknown(mixins.AssignTypeMixin, NodeNG):
     """This node represents a node in a constructed AST where
     introspection is not possible.  At the moment, it's only used in
     the args attribute of FunctionDef nodes where function signature
