@@ -1475,6 +1475,35 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(cm.exception, MroError)
         self.assertIsInstance(cm.exception, ResolveError)
 
+    def test_mro_with_factories(self):
+        cls = builder.extract_node('''
+        def MixinFactory(cls):
+            mixin_name = '{}Mixin'.format(cls.__name__)
+            mixin_bases = (object,)
+            mixin_attrs = {}
+            mixin = type(mixin_name, mixin_bases, mixin_attrs)
+            return mixin
+        class MixinA(MixinFactory(int)):
+            pass
+        class MixinB(MixinFactory(str)):
+            pass
+        class Base(object):
+            pass
+        class ClassA(MixinA, Base):
+            pass
+        class ClassB(MixinB, ClassA):
+            pass
+        class FinalClass(ClassB):
+            def __init__(self):
+                self.name = 'x'
+        ''')
+        self.assertEqualMro(
+            cls,
+            [
+                "FinalClass", "ClassB", "MixinB", "", "ClassA", "MixinA", "", "Base", "object"
+            ]
+        )
+
     def test_generator_from_infer_call_result_parent(self):
         func = builder.extract_node("""
         import contextlib

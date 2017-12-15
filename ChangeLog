@@ -2,6 +2,10 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+   * When verifying duplicates classes in MRO, ignore on-the-fly generated classes
+
+     Close PyCQA/pylint#1706
+
    * Add brain tip for attrs library to prevent unsupported-assignment-operation false positives
 
 	 Close PYCQA/pylint#1698
