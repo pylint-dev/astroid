@@ -2,6 +2,10 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+   * Fix missing __module__ and __qualname__ from class definition locals
+
+	Close PYCQA/pylint#1753
+
    * Fix a crash when __annotations__ access a parent's __init__ that does not have arguments
 
      Close #473
