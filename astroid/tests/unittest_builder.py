@@ -648,13 +648,18 @@ class FileBuildTest(unittest.TestCase):
         klass1 = module['YO']
         locals1 = klass1.locals
         keys = sorted(locals1.keys())
-        self.assertEqual(keys, ['__init__', 'a'])
+        assert_keys = ['__init__', '__module__', '__qualname__', 'a']
+        if sys.version_info < (3, 3):
+            assert_keys.pop(assert_keys.index('__qualname__'))
+        self.assertEqual(keys, assert_keys)
         klass2 = module['YOUPI']
         locals2 = klass2.locals
         keys = locals2.keys()
-        self.assertEqual(sorted(keys),
-                         ['__init__', 'class_attr', 'class_method',
-                          'method', 'static_method'])
+        assert_keys = ['__init__', '__module__', '__qualname__', 'class_attr', 'class_method',
+              'method', 'static_method']
+        if sys.version_info < (3, 3):
+            assert_keys.pop(assert_keys.index('__qualname__'))
+        self.assertEqual(sorted(keys), assert_keys)
 
     def test_class_instance_attrs(self):
         module = self.module

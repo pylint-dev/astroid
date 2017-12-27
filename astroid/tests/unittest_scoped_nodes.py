@@ -647,7 +647,10 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(len(cls.getattr('__doc__')), 1)
         self.assertIsInstance(cls.getattr('__doc__')[0], nodes.Const)
         self.assertEqual(cls.getattr('__doc__')[0].value, 'hehe')
-        self.assertEqual(len(cls.getattr('__module__')), 1)
+        # YO is an old styled class for Python 2.7
+        # May want to stop locals from referencing namespaced variables in the future
+        module_attr_num = 4 if sys.version_info > (3, 3) else 1
+        self.assertEqual(len(cls.getattr('__module__')), module_attr_num)
         self.assertIsInstance(cls.getattr('__module__')[0], nodes.Const)
         self.assertEqual(cls.getattr('__module__')[0].value, 'data.module')
         self.assertEqual(len(cls.getattr('__dict__')), 1)
@@ -658,7 +661,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             self.assertEqual(len(cls.getattr('__name__')), 1)
             self.assertEqual(len(cls.getattr('__doc__')), 1, (cls, cls.getattr('__doc__')))
             self.assertEqual(cls.getattr('__doc__')[0].value, cls.doc)
-            self.assertEqual(len(cls.getattr('__module__')), 1)
+            self.assertEqual(len(cls.getattr('__module__')), 4)
             self.assertEqual(len(cls.getattr('__dict__')), 1)
             self.assertEqual(len(cls.getattr('__mro__')), 1)
 
@@ -854,8 +857,10 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         '''
         astroid = builder.parse(data, __name__)
         cls = astroid['WebAppObject']
-        self.assertEqual(sorted(cls.locals.keys()),
-                         ['appli', 'config', 'registered', 'schema'])
+        assert_keys = ['__module__', '__qualname__', 'appli', 'config', 'registered', 'schema']
+        if sys.version_info < (3, 3):
+            assert_keys.pop(assert_keys.index('__qualname__'))
+        self.assertEqual(sorted(cls.locals.keys()), assert_keys)
 
     def test_class_getattr(self):
         data = '''

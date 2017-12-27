@@ -1797,6 +1797,21 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         if parent is not None:
             parent.frame().set_local(name, self)
 
+        for local_name, node in self.implicit_locals():
+            self.add_local_node(node, local_name)
+
+    def implicit_locals(self):
+        """Get implicitly defined class definition locals.
+
+        :returns: the the name and Const pair for each local
+        :rtype: tuple(tuple(str, node_classes.Const), ...)
+        """
+        locals_ = (('__module__', self.special_attributes.py__module__),)
+        if sys.version_info >= (3, 3):
+            # __qualname__ is defined in PEP3155
+            locals_ += (("__qualname__", self.special_attributes.py__qualname__),)
+        return locals_
+
     # pylint: disable=redefined-outer-name
     def postinit(self, bases, body, decorators, newstyle=None, metaclass=None, keywords=None):
         """Do some setup after initialisation.
