@@ -234,8 +234,8 @@ class FunctionModel(ObjectModel):
 
         args = self._instance.args
         pair_annotations = itertools.chain(
-            six.moves.zip(args.args, args.annotations),
-            six.moves.zip(args.kwonlyargs, args.kwonlyargs_annotations)
+            six.moves.zip(args.args or [], args.annotations),
+            six.moves.zip(args.kwonlyargs , args.kwonlyargs_annotations)
         )
 
         annotations = {

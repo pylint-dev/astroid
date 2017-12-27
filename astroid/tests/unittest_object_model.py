@@ -400,6 +400,18 @@ class FunctionModelTest(unittest.TestCase):
         self.assertEqual(len(annotations.items), 0)
 
     @test_utils.require_version(minver='3.0')
+    def test_builtin_dunder_init_does_not_crash_when_accessing_annotations(self):
+        ast_node = builder.extract_node('''
+        class Class:
+            @classmethod
+            def class_method(cls):
+                cls.__init__.__annotations__ #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, astroid.Dict)
+        self.assertEqual(len(inferred.items), 0)
+
+    @test_utils.require_version(minver='3.0')
     def test_annotations_kwdefaults(self):
         ast_node = builder.extract_node('''
         def test(a: 1, *args: 2, f:4='lala', **kwarg:3)->2: pass
