@@ -655,8 +655,10 @@ class FileBuildTest(unittest.TestCase):
         klass2 = module['YOUPI']
         locals2 = klass2.locals
         keys = locals2.keys()
-        assert_keys = ['__init__', '__module__', '__qualname__', 'class_attr', 'class_method',
-              'method', 'static_method']
+        assert_keys = [
+            '__init__', '__module__', '__qualname__', 'class_attr', 'class_method',
+            'method', 'static_method'
+        ]
         if sys.version_info < (3, 3):
             assert_keys.pop(assert_keys.index('__qualname__'))
         self.assertEqual(sorted(keys), assert_keys)
