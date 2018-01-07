@@ -2,6 +2,10 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+   * Fix submodule imports from six
+
+   Close PYCQA/pylint#1640
+
    * Fix missing __module__ and __qualname__ from class definition locals
 
 	Close PYCQA/pylint#1753
