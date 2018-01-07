@@ -373,6 +373,20 @@ class SixBrainTest(unittest.TestCase):
             qname = 'httplib.HTTPSConnection'
         self.assertEqual(inferred.qname(), qname)
 
+    @unittest.skipIf(six.PY2,
+                     "The python 2 six brain uses dummy classes")
+    def test_from_submodule_imports(self):
+        """Make sure ulrlib submodules can be imported from
+
+        See PyCQA/pylint#1640 for relevant issue
+        """
+        ast_node = builder.extract_node('''
+        from six.moves.urllib.parse import urlparse
+        urlparse #@
+        ''')
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.FunctionDef)
+
 
 @unittest.skipUnless(HAS_MULTIPROCESSING,
                      'multiprocesing is required for this test, but '

@@ -11,7 +11,7 @@ from textwrap import dedent
 
 from astroid import MANAGER, register_module_extender
 from astroid.builder import AstroidBuilder
-from astroid.exceptions import AstroidBuildingError, InferenceError
+from astroid.exceptions import AstroidBuildingError, InferenceError, AttributeInferenceError
 from astroid import nodes
 
 
@@ -187,7 +187,7 @@ else:
     import html.entities as html_entities
     import html.parser as html_parser
     import http.client as http_client
-    import http.server
+    import http.server as http_server
     BaseHTTPServer = CGIHTTPServer = SimpleHTTPServer = http.server
     import pickle as cPickle
     import queue
@@ -218,7 +218,8 @@ else:
     import tkinter.filedialog as tkinter_tkfiledialog
     import tkinter.font as tkinter_font
     import tkinter.messagebox as tkinter_messagebox
-    import urllib.request
+    import urllib
+    import urllib.request as urllib_request
     import urllib.robotparser as urllib_robotparser
     import urllib.parse as urllib_parse
     import urllib.error as urllib_error
@@ -241,10 +242,38 @@ def six_moves_transform():
 
 
 def _six_fail_hook(modname):
-    if modname != 'six.moves':
+    """Fix six.moves imports due to the dynamic nature of this
+    class.
+
+    Construct a psuedo-module which contains all the nessecary imports
+    for six
+
+    :param modname: Name of failed module
+    :type modname: str
+
+    :return: An astroid module
+    :rtype: nodes.Module
+    """
+
+    attribute_of = (modname != "six.moves" and
+                    modname.startswith("six.moves"))
+    if modname != 'six.moves' and not attribute_of:
         raise AstroidBuildingError(modname=modname)
     module = AstroidBuilder(MANAGER).string_build(_IMPORTS)
     module.name = 'six.moves'
+    if attribute_of:
+        # Facilitate import of submodules in Moves
+        start_index = len(module.name)
+        attribute = modname[start_index:].lstrip(".").replace(".", "_")
+        try:
+            import_attr = module.getattr(attribute)[0]
+        except AttributeInferenceError:
+            raise AstroidBuildingError(modname=modname)
+        if isinstance(import_attr, nodes.Import):
+            submodule = MANAGER.ast_from_module_name(import_attr.names[0][0])
+            return submodule
+    # Let dummy submodule imports pass through
+    # This will cause an Uninferable result, which is okay
     return module
 
 def transform_six_add_metaclass(node):
