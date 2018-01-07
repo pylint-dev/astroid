@@ -1,6 +1,10 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+   * Fix submodule imports from six
+
+     Close PYCQA/pylint#1640
+
    * Enhancement of brain_numpy by adding different types from
      numpy.core.numerictypes
 
