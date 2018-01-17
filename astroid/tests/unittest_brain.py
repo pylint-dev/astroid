@@ -819,10 +819,18 @@ class AttrsTest(unittest.TestCase):
 
         f = Foo()
         f.d['answer'] = 42
+
+        @attr.s(slots=True)
+        class Bar:
+            d = attr.ib(attr.Factory(dict))
+
+        g = Bar()
+        g.d['answer'] = 42
         """)
 
-        should_be_attribute = next(module.getattr('f')[0].infer()).getattr('d')[0]
-        self.assertIsInstance(should_be_attribute, astroid.Unknown)
+        for name in ('f', 'g'):
+            should_be_unknown = next(module.getattr(name)[0].infer()).getattr('d')[0]
+            self.assertIsInstance(should_be_unknown, astroid.Unknown)
 
 
 if __name__ == '__main__':

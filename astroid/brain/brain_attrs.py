@@ -21,6 +21,8 @@ def is_decorated_with_attrs(
     if not node.decorators:
         return False
     for decorator_attribute in node.decorators.nodes:
+        if isinstance(decorator_attribute, astroid.Call):  # decorator with arguments
+            decorator_attribute = decorator_attribute.func
         if decorator_attribute.as_string() in decorator_names:
             return True
     return False
