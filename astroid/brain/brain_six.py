@@ -245,7 +245,7 @@ def _six_fail_hook(modname):
     """Fix six.moves imports due to the dynamic nature of this
     class.
 
-    Construct a psuedo-module which contains all the nessecary imports
+    Construct a pseudo-module which contains all the necessary imports
     for six
 
     :param modname: Name of failed module
