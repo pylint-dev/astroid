@@ -89,6 +89,29 @@ def infer_map(self, context=None):
         yield new_seq
 
 
+def _update_with_replacement(lhs_dict, rhs_dict):
+    """Delete nodes that equate to duplicate keys
+
+    Since an astroid node doesn't 'equal' another node with the same value,
+    this function uses the as_string method to make sure duplicate keys
+    don't get through
+
+    Note that both the key and the value are astroid nodes
+
+    Fixes issue with DictUnpack causing duplicte keys
+    in inferred Dict items
+
+    :param dict(nodes.NodeNG, nodes.NodeNG) lhs_dict: Dictionary to 'merge' nodes into
+    :param dict(nodes.NodeNG, nodes.NodeNG) rhs_dict: Dictionary with nodes to pull from
+    :return dict(nodes.NodeNG, nodes.NodeNG): merged dictionary of nodes
+    """
+    combined_dict = itertools.chain(lhs_dict.items(), rhs_dict.items())
+    # Overwrite keys which have the same string values
+    string_map = {key.as_string(): (key, value) for key, value in combined_dict}
+    # Return to dictionary
+    return dict(string_map.values())
+
+
 def _infer_map(node, context):
     """Infer all values based on Dict.items"""
     values = {}
@@ -100,14 +123,15 @@ def _infer_map(node, context):
             if not isinstance(double_starred, nodes.Dict):
                 raise exceptions.InferenceError(node=node,
                                                 context=context)
-            values.update(_infer_map(double_starred, context))
+            unpack_items = _infer_map(double_starred, context)
+            values = _update_with_replacement(values, unpack_items)
         else:
             key = helpers.safe_infer(name, context=context)
             value = helpers.safe_infer(value, context=context)
             if any(elem in (None, util.Uninferable) for elem in (key, value)):
                 raise exceptions.InferenceError(node=node,
                                                 context=context)
-            values[key] = value
+            values = _update_with_replacement(values, {key: value})
     return values
 
 

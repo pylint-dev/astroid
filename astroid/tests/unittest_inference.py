@@ -1925,6 +1925,30 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             node = extract_node(code)
             self.assertInferDict(node, expected_value)
 
+    @test_utils.require_version('3.5')
+    def test_dict_inference_unpack_repeated_key(self):
+        """Make sure astroid does not infer repeated keys in a dictionary
+
+        Regression test for https://github.com/PyCQA/pylint/issues/1843
+        """
+        code = """
+        base = {'data': 0}
+        new = {**base, 'data': 1} #@
+        new2 = {'data': 1, **base} #@ # Make sure overwrite works
+        a = 'd' + 'ata'
+        b3 = {**base, a: 3} #@  Make sure keys are properly inferred
+        b4 = {a: 3, **base} #@
+        """
+        ast = extract_node(code)
+        final_values = (
+            "{'data': 1}",
+            "{'data': 0}",
+            "{'data': 3}",
+            "{'data': 0}",
+        )
+        for node, final_value in zip(ast, final_values):
+            assert node.targets[0].inferred()[0].as_string() == final_value
+
     def test_dict_invalid_args(self):
         invalid_values = [
             'dict(*1)',

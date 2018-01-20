@@ -50,6 +50,12 @@ Change log for the astroid package (used to be astng)
 
      Close #98
 
+    * Stop duplicate nodes with the same key values
+        from appearing in dictionaries from dictionary
+        unpacking
+
+     Close PyCQA/pylint#1843
+
 
 2017-12-15 -- 1.6.0
 
