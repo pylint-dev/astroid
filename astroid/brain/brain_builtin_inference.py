@@ -108,8 +108,10 @@ def register_builtin_transform(transform, builtin_name):
                 # we set it to be the node we transformed from.
                 result.parent = node
 
-            result.lineno = node.lineno
-            result.col_offset = node.col_offset
+            if result.lineno is None:
+                result.lineno = node.lineno
+            if result.col_offset is None:
+                result.col_offset = node.col_offset
         return iter([result])
 
     MANAGER.register_transform(nodes.Call,
