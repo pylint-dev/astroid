@@ -19,6 +19,11 @@ Change log for the astroid package (used to be astng)
 
      Close #483
 
+   * Fix improper modification of col_offset, lineno upon inference of builtin
+   functions
+
+     Close PyCQA/pylint#1839
+
 2017-12-15 -- 1.6.0
 
    * When verifying duplicates classes in MRO, ignore on-the-fly generated classes
