@@ -46,14 +46,12 @@ class RawBuildingTC(unittest.TestCase):
 
     def test_build_function_args(self):
         args = ['myArgs1', 'myArgs2']
-        # pylint: disable=no-member; not aware of postinit
         node = build_function('MyFunction', args)
         self.assertEqual('myArgs1', node.args.args[0].name)
         self.assertEqual('myArgs2', node.args.args[1].name)
         self.assertEqual(2, len(node.args.args))
 
     def test_build_function_defaults(self):
-        # pylint: disable=no-member; not aware of postinit
         defaults = ['defaults1', 'defaults2']
         node = build_function('MyFunction', None, defaults)
         self.assertEqual(2, len(node.args.defaults))
