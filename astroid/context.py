@@ -7,20 +7,43 @@
 """Various context related utilities, including inference and call contexts."""
 
 import contextlib
+import copy
 import pprint
 
 
 class InferenceContext(object):
+    """Provide context for inference
+
+    Store already inferred nodes to save time
+    Account for already visited nodes to infinite stop infinite recursion
+    """
+
     __slots__ = ('path', 'lookupname', 'callcontext', 'boundnode', 'inferred')
 
     def __init__(self, path=None, inferred=None):
         self.path = path or set()
+        """Path of visited nodes and their lookupname
+        :type: set(tuple(NodeNG, optional(str)))"""
         self.lookupname = None
         self.callcontext = None
         self.boundnode = None
         self.inferred = inferred or {}
+        """
+        :type: dict(seq, seq)
+
+        Inferred node contexts to their mapped results
+        Currently the key is (node, lookupname, callcontext, boundnode)
+        and the value is tuple of the inferred results
+        """
 
     def push(self, node):
+        """Push node into inference path
+
+        :return: True if node is already in context path else False
+        :rtype: bool
+
+        Allows one to see if the given node has already
+        been looked at for this inference context"""
         name = self.lookupname
         if (node, name) in self.path:
             return True
@@ -29,13 +52,21 @@ class InferenceContext(object):
         return False
 
     def clone(self):
+        """Clone inference path
+
+        For example, each side of a binary operation (BinOp)
+        starts with the same context but diverge as each side is inferred
+        so the InferenceContext will need be cloned"""
         # XXX copy lookupname/callcontext ?
-        clone = InferenceContext(self.path, inferred=self.inferred)
+        clone = InferenceContext(copy.copy(self.path), inferred=self.inferred)
         clone.callcontext = self.callcontext
         clone.boundnode = self.boundnode
         return clone
 
     def cache_generator(self, key, generator):
+        """Cache result of generator into dictionary
+
+        Used to cache inference results"""
         results = []
         for result in generator:
             results.append(result)
