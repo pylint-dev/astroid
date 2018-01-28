@@ -233,7 +233,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
         path = resources.find('data/all.py')
         astroid = builder.AstroidBuilder().file_build(path, 'all')
         with self.assertRaises(AttributeError):
-            # pylint: disable=pointless-statement
+            # pylint: disable=pointless-statement,no-member
             astroid.file_stream
 
     def test_stream_api(self):

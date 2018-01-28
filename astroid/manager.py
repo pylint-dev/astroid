@@ -112,16 +112,13 @@ class AstroidManager(object):
             os.chdir(os.path.dirname(context_file))
         try:
             found_spec = self.file_from_module_name(modname, context_file)
-            # pylint: disable=no-member
             if found_spec.type == spec.ModuleType.PY_ZIPMODULE:
-                # pylint: disable=no-member
                 module = self.zip_import_data(found_spec.location)
                 if module is not None:
                     return module
 
             elif found_spec.type in (spec.ModuleType.C_BUILTIN,
                                      spec.ModuleType.C_EXTENSION):
-                # pylint: disable=no-member
                 if (found_spec.type == spec.ModuleType.C_EXTENSION
                         and not self._can_load_extension(modname)):
                     return self._build_stub_module(modname)
@@ -136,21 +133,17 @@ class AstroidManager(object):
             elif found_spec.type == spec.ModuleType.PY_COMPILED:
                 raise exceptions.AstroidImportError(
                     "Unable to load compiled module {modname}.",
-                    # pylint: disable=no-member
                     modname=modname, path=found_spec.location)
 
             elif found_spec.type == spec.ModuleType.PY_NAMESPACE:
                 return self._build_namespace_module(modname,
-                                                    # pylint: disable=no-member
                                                     found_spec.submodule_search_locations)
 
-            # pylint: disable=no-member
             if found_spec.location is None:
                 raise exceptions.AstroidImportError(
                     "Can't find a file for module {modname}.",
                     modname=modname)
 
-            # pylint: disable=no-member
             return self.ast_from_file(found_spec.location, modname, fallback=False)
         except exceptions.AstroidBuildingError as e:
             for hook in self._failed_import_hooks:
