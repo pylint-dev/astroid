@@ -68,7 +68,11 @@ class cachedproperty(object):
 
 
 def path_wrapper(func):
-    """return the given infer function wrapped to handle the path"""
+    """return the given infer function wrapped to handle the path
+
+    Used to stop inference if the node has already been looked
+    at for a given `InferenceContext` to prevent infinite recursion
+    """
     # TODO: switch this to wrapt after the monkey-patching is fixed (ceridwen)
     @functools.wraps(func)
     def wrapped(node, context=None, _func=func, **kwargs):
