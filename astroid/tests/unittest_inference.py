@@ -1129,6 +1129,33 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(len(foo_class.instance_attrs['attr']), 1)
         self.assertEqual(bar_class.instance_attrs, {'attr': [assattr]})
 
+    def test_nonregr_multi_referential_addition(self):
+        """Regression test for https://github.com/PyCQA/astroid/issues/483
+        Make sure issue where referring to the same variable
+        in the same inferred expression caused an uninferable result.
+        """
+        code = """
+        b = 1
+        a = b + b
+        a #@
+        """
+        variable_a = extract_node(code)
+        self.assertEqual(variable_a.inferred()[0].value, 2)
+
+    @test_utils.require_version(minver='3.5')
+    def test_nonregr_layed_dictunpack(self):
+        """Regression test for https://github.com/PyCQA/astroid/issues/483
+        Make sure mutliple dictunpack references are inferable
+        """
+        code = """
+        base = {'data': 0}
+        new = {**base, 'data': 1}
+        new3 = {**base, **new}
+        new3 #@
+        """
+        ass = extract_node(code)
+        self.assertIsInstance(ass.inferred()[0], nodes.Dict)
+
     def test_python25_no_relative_import(self):
         ast = resources.build_file('data/package/absimport.py')
         self.assertTrue(ast.absolute_import_activated(), True)
