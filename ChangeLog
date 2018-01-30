@@ -2,6 +2,10 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+   * Added brain tips for random.sample
+
+     Part of PyCQA/pylint#811
+
    * Fix submodule imports from six
 
    Close PYCQA/pylint#1640

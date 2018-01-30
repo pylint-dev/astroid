@@ -847,5 +847,66 @@ class AttrsTest(unittest.TestCase):
             self.assertIsInstance(should_be_unknown, astroid.Unknown)
 
 
+class RandomSampleTest(unittest.TestCase):
+
+    def test_different_arguments(self):
+        too_many_args_node = astroid.extract_node('''
+        import random
+        random.sample([1, 2], 2, 3) #@
+        ''')
+        inferred = next(too_many_args_node.infer())
+        self.assertIsInstance(inferred, astroid.List)
+        self.assertEqual(inferred.as_string(), '[None, None]')
+
+        too_few_args_nodes = astroid.extract_node('''
+        import random
+        random.sample([1, 2]) #@
+        random.sample() #@
+        ''')
+        for node in too_few_args_nodes:
+            self.assertIs(next(node.infer()), astroid.Uninferable)
+
+    def test_length_is_not_int(self):
+        invalid_length_first, invalid_length_second = astroid.extract_node('''
+        import random
+        random.sample([1], 'a') #@
+        random.sample([1], []) #@
+        ''')
+        for node in invalid_length_first, invalid_length_second:
+            inferred = next(node.infer())
+            self.assertIs(inferred, astroid.Uninferable)
+
+    def test_not_acceptable_sequences(self):
+        invalid_nodes = astroid.extract_node('''
+        import random
+        random.sample({1: 2}, 1) #@
+        random.sample((i for i in range(10)), 1) #@
+        random.sample(42, 1) #@
+        ''')
+        for node in invalid_nodes:
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, astroid.List)
+            self.assertEqual(inferred.as_string(), '[None]')
+
+    def test_length_is_too_big(self):
+        node = astroid.extract_node('''
+        import random
+        random.sample([1, 2, 3], 4) #@
+        ''')
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, astroid.List)
+        self.assertEqual(inferred.as_string(), '[None, None, None, None]')
+
+    def test_inferred_successfully(self):
+        node = astroid.extract_node('''
+        import random
+        random.sample([1, 2], 2) #@
+        ''')
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, astroid.List)
+        elems = sorted(elem.value for elem in inferred.elts)
+        self.assertEqual(elems, [1, 2])
+
+
 if __name__ == '__main__':
     unittest.main()
