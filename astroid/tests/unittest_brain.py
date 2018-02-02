@@ -860,5 +860,24 @@ class RandomSampleTest(unittest.TestCase):
         self.assertEqual(elems, [1, 2])
 
 
+class SubprocessTest(unittest.TestCase):
+    """Test subprocess brain"""
+    # TODO Add more tests so that we can some day
+    # Remove this brain when all the tests work without the brain
+    @unittest.skipIf(sys.version_info < (3, 3),
+                     reason="Python 2.7 subprocess doesnt have args")
+    def test_subprocess_args(self):
+        """Make sure the args attribute exists for Popen
+
+        Test for https://github.com/PyCQA/pylint/issues/1860"""
+        name = astroid.extract_node("""
+        import subprocess
+        p = subprocess.Popen(['ls'])
+        p #@
+        """)
+        [inst] = name.inferred()
+        self.assertIsInstance(next(inst.igetattr("args")), nodes.List)
+
+
 if __name__ == '__main__':
     unittest.main()
