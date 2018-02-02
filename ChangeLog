@@ -28,6 +28,11 @@ Change log for the astroid package (used to be astng)
 
      Close PyCQA/pylint#1839
 
+   * Subprocess.Popen brain now knows of the args member
+
+     Close PyCQA/pylint#1860
+
+
 2017-12-15 -- 1.6.0
 
    * When verifying duplicates classes in MRO, ignore on-the-fly generated classes

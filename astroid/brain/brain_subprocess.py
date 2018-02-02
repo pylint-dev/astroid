@@ -13,6 +13,7 @@ import astroid
 
 PY34 = sys.version_info >= (3, 4)
 PY36 = sys.version_info >= (3, 6)
+PY33 = sys.version_info >= (3, 3)
 
 
 def _subprocess_transform():
@@ -62,10 +63,14 @@ def _subprocess_transform():
         '''
     else:
         ctx_manager = ''
+    py3_args = ""
+    if PY33:
+        py3_args = "args = []"
     code = textwrap.dedent('''
     class Popen(object):
         returncode = pid = 0
         stdin = stdout = stderr = file()
+        %(py3_args)s
 
         %(communicate_signature)s:
             return %(communicate)r
@@ -83,7 +88,9 @@ def _subprocess_transform():
        ''' % {'communicate': communicate,
               'communicate_signature': communicate_signature,
               'wait_signature': wait_signature,
-              'ctx_manager': ctx_manager})
+              'ctx_manager': ctx_manager,
+              'py3_args': py3_args,
+              })
 
     init_lines = textwrap.dedent(init).splitlines()
     indented_init = '\n'.join([' ' * 4 + line for line in init_lines])
