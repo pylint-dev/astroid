@@ -1387,6 +1387,3 @@ Change log for the astroid package (used to be astng)
       longer be maintained (this explains that this package is starting with
       the 0.13 version number, since the fork occurs with the version
       released in logilab-common 0.12).
-
-
-
