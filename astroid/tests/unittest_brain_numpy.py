@@ -238,5 +238,32 @@ class NumpyBrainRandomMtrandTest(SubTestWrapper):
                 self.assertEqual(default_args_values, exact_kwargs_default_values)
 
 
+@unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
+class NumpyBrainCoreNumericTypesTest(SubTestWrapper):
+    """
+    Test of all the missing types defined in numerictypes module.
+    """
+    all_types = ['uint16', 'uint32', 'uint64', 'int128', 'uint128',
+                 'float16', 'float32', 'float64', 'float80', 'float96',
+                 'float128', 'float256', 'complex32', 'complex64', 'complex128',
+                 'complex160', 'complex192', 'complex256', 'complex512',
+                 'timedelta64', 'datetime64', 'unicode_', 'string_', 'object_']
+
+    def _inferred_numpy_attribute(self, attrib):
+        node = builder.extract_node("""
+        import numpy.core.numerictypes as tested_module
+        missing_type = tested_module.{:s}""".format(attrib))
+        return next(node.value.infer())
+
+    def test_numpy_core_types(self):
+        """
+        Test that all defined types have ClassDef type.
+        """
+        for typ in self.all_types:
+            with self.subTest(typ=typ):
+                inferred = self._inferred_numpy_attribute(typ)
+                self.assertIsInstance(inferred, nodes.ClassDef)
+
+
 if __name__ == '__main__':
     unittest.main()
