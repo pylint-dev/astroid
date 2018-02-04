@@ -536,7 +536,7 @@ class Module(LocalsDictNodeNG):
         """
         return self
 
-    def previous_sibling(self):
+    def previous_sibling(self): #pylint: disable=useless-return
         """The previous sibling statement.
 
         :returns: The previous sibling statement node.
@@ -544,7 +544,7 @@ class Module(LocalsDictNodeNG):
         """
         return
 
-    def next_sibling(self):
+    def next_sibling(self): #pylint: disable=useless-return
         """The next sibling statement node.
 
         :returns: The next sibling statement node.

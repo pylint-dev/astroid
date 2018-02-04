@@ -636,7 +636,7 @@ class NodeNG(object):
             for matching in child_node.nodes_of_class(klass, skip_klass):
                 yield matching
 
-    def _infer_name(self, frame, name):
+    def _infer_name(self, frame, name): #pylint: disable=useless-return
         # overridden for ImportFrom, Import, Global, TryExcept and Arguments
         return None
 
