@@ -146,6 +146,39 @@ def numpy_core_umath_transform():
     def true_divide(x1, x2, {opt_args:s}): pass
     '''.format(opt_args=ufunc_optional_keyword_arguments))
 
+
+def numpy_core_numerictypes_transform():
+    return astroid.parse('''
+    # different types defined in numerictypes.py
+    uint16 = type('uint16') 
+    uint32 = type('uint32')
+    uint64 = type('uint64')
+    int128 = type('int128')
+    uint128 = type('uint128')
+    float16 = type('float16')
+    float32 = type('float32')
+    float64 = type('float64')
+    float80 = type('float80')
+    float96 = type('float96')
+    float128 = type('float128')
+    float256 = type('float256')
+    complex32 = type('complex32')
+    complex64 = type('complex64')
+    complex128 = type('complex128')
+    complex160 = type('complex160')
+    complex192 = type('complex192')
+    complex256 = type('complex256')
+    complex512 = type('complex512')
+    timedelta64 = type('timedelta64')
+    datetime64 = type('datetime64')
+    unicode_ = type('unicode_')
+    string_ = type('string_')
+    object_ = type('object_')
+    ''')
+
+
 astroid.register_module_extender(astroid.MANAGER, 'numpy.core.umath', numpy_core_umath_transform)
 astroid.register_module_extender(astroid.MANAGER, 'numpy.random.mtrand',
                                  numpy_random_mtrand_transform)
+astroid.register_module_extender(astroid.MANAGER, 'numpy.core.numerictypes',
+                                 numpy_core_numerictypes_transform)

@@ -1,6 +1,9 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+   * Enhancement of brain_numpy by adding different types from
+     numpy.core.numerictypes
+
 2018-01-23 -- 1.6.1
 
    * Fix a crash when __annotations__ access a parent's __init__ that does not have arguments
@@ -1384,6 +1387,3 @@ Change log for the astroid package (used to be astng)
       longer be maintained (this explains that this package is starting with
       the 0.13 version number, since the fork occurs with the version
       released in logilab-common 0.12).
-
-
-

@@ -42,7 +42,6 @@ class InferenceContext(object):
             yield result
 
         self.inferred[key] = tuple(results)
-        return
 
     @contextlib.contextmanager
     def restore_path(self):
