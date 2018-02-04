@@ -81,14 +81,14 @@ CONTEXTS = {_ast.Load: astroid.Load,
 def _get_doc(node):
 
     try:
-        if (node.body
-                and isinstance(node.body[0], _ast.Expr)
-                and isinstance(node.body[0].value, _ast.Str)):
+        if PY37 and hasattr(node, 'docstring'):
+            doc = node.docstring
+            return node, doc
+        elif (node.body
+                 and isinstance(node.body[0], _ast.Expr)
+                 and isinstance(node.body[0].value, _ast.Str)):
             doc = node.body[0].value.s
             node.body = node.body[1:]
-            return node, doc
-        elif PY37 and hasattr(node, 'docstring'):
-            doc = node.docstring
             return node, doc
     except IndexError:
         pass # ast built from scratch
