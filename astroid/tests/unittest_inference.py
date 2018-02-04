@@ -4273,7 +4273,7 @@ class CallSiteTest(unittest.TestCase):
         self.assertIn('f', site.duplicated_keywords)
 
 
-@unittest.expectedFailure
+@unittest.skip
 class ObjectDunderNewTest(unittest.TestCase):
 
     def test_object_dunder_new_is_inferred_if_decorator(self):
