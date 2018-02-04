@@ -85,8 +85,8 @@ def _get_doc(node):
             doc = node.docstring
             return node, doc
         elif (node.body
-                 and isinstance(node.body[0], _ast.Expr)
-                 and isinstance(node.body[0].value, _ast.Str)):
+              and isinstance(node.body[0], _ast.Expr)
+              and isinstance(node.body[0].value, _ast.Str)):
             doc = node.body[0].value.s
             node.body = node.body[1:]
             return node, doc
