@@ -71,6 +71,7 @@ REDIRECT = {'arguments': 'Arguments',
            }
 PY3 = sys.version_info >= (3, 0)
 PY34 = sys.version_info >= (3, 4)
+PY37 = sys.version_info >= (3, 7)
 CONTEXTS = {_ast.Load: astroid.Load,
             _ast.Store: astroid.Store,
             _ast.Del: astroid.Del,
@@ -78,10 +79,16 @@ CONTEXTS = {_ast.Load: astroid.Load,
 
 
 def _get_doc(node):
+
     try:
-        if isinstance(node.body[0], _ast.Expr) and isinstance(node.body[0].value, _ast.Str):
+        if (node.body
+                and isinstance(node.body[0], _ast.Expr)
+                and isinstance(node.body[0].value, _ast.Str)):
             doc = node.body[0].value.s
             node.body = node.body[1:]
+            return node, doc
+        elif PY37 and hasattr(node, 'docstring'):
+            doc = node.docstring
             return node, doc
     except IndexError:
         pass # ast built from scratch
