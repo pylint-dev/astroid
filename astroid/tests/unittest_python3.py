@@ -307,12 +307,12 @@ class Python3TC(unittest.TestCase):
         # will be allowed outside of coroutines body
         comprehensions = [
             "[i async for i in aiter() if condition(i)]",
-            "[await fun() for fun in funcs]",
-            "{await fun() for fun in funcs}",
-            "{fun: await fun() for fun in funcs}",
-            "[await fun() for fun in funcs if await smth]",
-            "{await fun() for fun in funcs if await smth}",
-            "{fun: await fun() for fun in funcs if await smth}",
+            "[await fun() async for fun in funcs]",
+            "{await fun() async for fun in funcs}",
+            "{fun: await fun() async for fun in funcs}",
+            "[await fun() async for fun in funcs if await smth]",
+            "{await fun() async for fun in funcs if await smth}",
+            "{fun: await fun() async for fun in funcs if await smth}",
             "[await fun() async for fun in funcs]",
             "{await fun() async for fun in funcs}",
             "{fun: await fun() async for fun in funcs}",
