@@ -4318,10 +4318,7 @@ class CallSiteTest(unittest.TestCase):
         self.assertIn('f', site.duplicated_keywords)
 
 
-@unittest.skip(
-    reason="This test is pass/failing in in a non-determenistic manner")
 class ObjectDunderNewTest(unittest.TestCase):
-
     def test_object_dunder_new_is_inferred_if_decorator(self):
         node = extract_node('''
         @object.__new__
