@@ -8,6 +8,13 @@ Change log for the astroid package (used to be astng)
 
      Close #437, #447, #313, PyCQA/pylint#1642, PyCQA/pylint#1805, PyCQA/pylint#1854, PyCQA/pylint#1452
 
+
+* Stop most inference tip overwrites from happening by using
+    predicates on existing inference_tip transforms.
+
+        Close #472
+
+
 2018-01-23 -- 1.6.1
 
    * Fix a crash when __annotations__ access a parent's __init__ that does not have arguments

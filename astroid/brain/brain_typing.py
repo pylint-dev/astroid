@@ -51,9 +51,6 @@ def infer_typing_namedtuple_class(node, context=None):
     """Infer a subclass of typing.NamedTuple"""
 
     # Check if it has the corresponding bases
-    if not set(node.basenames) & TYPING_NAMEDTUPLE_BASENAMES:
-        raise UseInferenceDefault
-
     annassigns_fields = [
         annassign.target.name for annassign in node.body
         if isinstance(annassign, nodes.AnnAssign)
@@ -67,6 +64,15 @@ def infer_typing_namedtuple_class(node, context=None):
     )
     node = extract_node(code)
     return node.infer(context=context)
+
+
+def has_namedtuple_base(node):
+    """Predicate for class inference tip
+
+    :type node: ClassDef
+    :rtype: bool
+    """
+    return set(node.basenames) & TYPING_NAMEDTUPLE_BASENAMES
 
 
 def looks_like_typing_namedtuple(node):
@@ -83,7 +89,9 @@ MANAGER.register_transform(
     inference_tip(infer_typing_namedtuple),
     looks_like_typing_namedtuple
 )
+
 MANAGER.register_transform(
     nodes.ClassDef,
-    inference_tip(infer_typing_namedtuple_class)
+    inference_tip(infer_typing_namedtuple_class),
+    has_namedtuple_base
 )

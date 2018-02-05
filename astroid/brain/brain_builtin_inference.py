@@ -488,14 +488,24 @@ def infer_slice(node, context=None):
 
 
 def _infer_object__new__decorator(node, context=None):
+    # Instantiate class immediately
+    # since that's what @object.__new__ does
+    return iter((node.instantiate_class(),))
+
+
+def _infer_object__new__decorator_check(node):
+    """Predicate before inference_tip
+
+    Check if the given ClassDef has a @object.__new__ decorator
+    """
     if not node.decorators:
-        raise UseInferenceDefault
+        return False
 
     for decorator in node.decorators.nodes:
         if isinstance(decorator, nodes.Attribute):
             if decorator.as_string() == OBJECT_DUNDER_NEW:
-                return iter((node.instantiate_class(),))
-    raise UseInferenceDefault
+                return True
+    return False
 
 
 # Builtins inference
@@ -515,5 +525,6 @@ register_builtin_transform(infer_slice, 'slice')
 # Infer object.__new__ calls
 MANAGER.register_transform(
     nodes.ClassDef,
-    inference_tip(_infer_object__new__decorator)
+    inference_tip(_infer_object__new__decorator),
+    _infer_object__new__decorator_check
 )
