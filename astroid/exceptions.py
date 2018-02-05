@@ -198,6 +198,13 @@ class AstroidTypeError(AstroidError):
     """Raised when a TypeError would be expected in Python code."""
 
 
+class InferenceOverwriteError(AstroidError):
+    """Raised when an inference tip is overwritten
+
+    Currently only used for debugging.
+    """
+
+
 # Backwards-compatibility aliases
 OperationError = util.BadOperationMessage
 UnaryOperationError = util.BadUnaryOperationMessage
