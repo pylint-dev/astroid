@@ -696,6 +696,10 @@ class Module(LocalsDictNodeNG):
         """
         return True
 
+    def get_children(self):
+        for elt in self.body:
+            yield elt
+
 
 class ComprehensionScope(LocalsDictNodeNG):
     """Scoping for different types of comprehensions."""
@@ -777,6 +781,11 @@ class GeneratorExp(ComprehensionScope):
         """
         return True
 
+    def get_children(self):
+        yield self.elt
+
+        yield from self.generators
+
 
 class DictComp(ComprehensionScope):
     """Class representing an :class:`ast.DictComp` node.
@@ -851,6 +860,12 @@ class DictComp(ComprehensionScope):
         """
         return util.Uninferable
 
+    def get_children(self):
+        yield self.key
+        yield self.value
+
+        yield from self.generators
+
 
 class SetComp(ComprehensionScope):
     """Class representing an :class:`ast.SetComp` node.
@@ -916,6 +931,11 @@ class SetComp(ComprehensionScope):
         """
         return util.Uninferable
 
+    def get_children(self):
+        yield self.elt
+
+        yield from self.generators
+
 
 class _ListComp(node_classes.NodeNG):
     """Class representing an :class:`ast.ListComp` node.
@@ -956,6 +976,11 @@ class _ListComp(node_classes.NodeNG):
         :rtype: Uninferable
         """
         return util.Uninferable
+
+    def get_children(self):
+        yield self.elt
+
+        yield from self.generators
 
 
 class ListComp(_ListComp, ComprehensionScope):
@@ -1173,6 +1198,10 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         :rtype: bool
         """
         return True
+
+    def get_children(self):
+        yield self.args
+        yield self.body
 
 
 class FunctionDef(node_classes.Statement, Lambda):
@@ -1553,6 +1582,18 @@ class FunctionDef(node_classes.Statement, Lambda):
         :rtype: bool
         """
         return True
+
+    def get_children(self):
+        if self.decorators is not None:
+            yield self.decorators
+
+        yield self.args
+
+        if self.returns is not None:
+            yield self.returns
+
+        for elt in self.body:
+            yield elt
 
 
 class AsyncFunctionDef(FunctionDef):
@@ -2650,6 +2691,16 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         :rtype: bool
         """
         return True
+
+    def get_children(self):
+        for elt in self.body:
+            yield elt
+
+        for elt in self.bases:
+            yield elt
+
+        if self.decorators is not None:
+            yield self.decorators
 
 
 # Backwards-compatibility aliases
