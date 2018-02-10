@@ -101,6 +101,21 @@ class CollectionsDequeTests(unittest.TestCase):
         self.assertIn('index', inferred.locals)
 
 
+class OrderedDictTest(unittest.TestCase):
+    def _inferred_ordered_dict_instance(self):
+        node = builder.extract_node("""
+        import collections
+        d = collections.OrderedDict()
+        d
+        """)
+        return next(node.infer())
+
+    @test_utils.require_version(minver='3.4')
+    def test_ordered_dict_py34method(self):
+        inferred = self._inferred_ordered_dict_instance()
+        self.assertIn('move_to_end', inferred.locals)
+
+
 class NamedTupleTest(unittest.TestCase):
 
     def test_namedtuple_base(self):
