@@ -32,6 +32,10 @@ Change log for the astroid package (used to be astng)
 
      Close PyCQA/pylint#1860
 
+   * add move_to_end method to collections.OrderedDict brain
+
+     Close PyCQA/pylint#1872
+
 
 2017-12-15 -- 1.6.0
 

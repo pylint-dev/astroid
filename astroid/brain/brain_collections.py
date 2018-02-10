@@ -6,6 +6,7 @@ import sys
 
 import astroid
 
+PY34 = sys.version_info >= (3, 4)
 PY35 = sys.version_info >= (3, 5)
 
 
@@ -16,11 +17,7 @@ def _collections_transform():
         def __missing__(self, key): pass
         def __getitem__(self, key): return default_factory
 
-    ''' + _deque_mock() + '''
-
-    class OrderedDict(dict):
-        def __reversed__(self): return self[::-1]
-    ''')
+    ''' + _deque_mock() + _ordered_dict_mock())
 
 
 def _deque_mock():
@@ -61,6 +58,17 @@ def _deque_mock():
         def __imul__(self, other): pass
         def __rmul__(self, other): pass'''
     return base_deque_class
+
+
+def _ordered_dict_mock():
+    base_ordered_dict_class = '''
+    class OrderedDict(dict):
+        def __reversed__(self): return self[::-1]
+    '''
+    if PY34:
+        base_ordered_dict_class += '''
+        def move_to_end(self, key, last=False): pass'''
+    return base_ordered_dict_class
 
 astroid.register_module_extender(astroid.MANAGER, 'collections', _collections_transform)
 
