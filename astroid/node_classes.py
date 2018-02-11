@@ -627,8 +627,16 @@ class NodeNG(object):
         """
         if isinstance(self, klass):
             yield self
+
+        if skip_klass is None:
+            for child_node in self.get_children():
+                for matching in child_node.nodes_of_class(klass, skip_klass):
+                    yield matching
+
+            return
+
         for child_node in self.get_children():
-            if skip_klass is not None and isinstance(child_node, skip_klass):
+            if isinstance(child_node, skip_klass):
                 continue
             for matching in child_node.nodes_of_class(klass, skip_klass):
                 yield matching
