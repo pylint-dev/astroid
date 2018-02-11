@@ -74,6 +74,11 @@ def _extend_str(class_node, rvalue):
     code = code.format(rvalue=rvalue)
     fake = AstroidBuilder(MANAGER).string_build(code)['whatever']
     for method in fake.mymethods():
+        method.parent = class_node
+        method.lineno = None
+        method.col_offset = None
+        if '__class__' in method.locals:
+            method.locals['__class__'] = [class_node]
         class_node.locals[method.name] = [method]
         method.parent = class_node
 
