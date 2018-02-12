@@ -674,10 +674,27 @@ class PytestBrainTest(unittest.TestCase):
             self.assertIn(attr, module)
 
 
-class IOBrainTest(unittest.TestCase):
+def streams_are_fine():
+    """Check if streams are being overwritten,
+    for example, by pytest
 
-    @unittest.skipUnless(six.PY3, 'Needs Python 3 io model')
-    def test_sys_streams(self):
+    stream inference will not work if they are overwritten
+
+    PY3 only
+    """
+    import io
+    for stream in (sys.stdout, sys.stderr, sys.stdin):
+        if not isinstance(stream, io.IOBase):
+            return False
+    return True
+
+
+class IOBrainTest(unittest.TestCase):
+    @unittest.skipUnless(
+        six.PY3 and streams_are_fine(),
+        "Needs Python 3 io model / doesn't work with plain pytest."
+        "use pytest -s for this test to work")
+    def test_sys_streams(self, capsys):
         for name in {'stdout', 'stderr', 'stdin'}:
             node = astroid.extract_node('''
             import sys
