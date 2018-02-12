@@ -694,7 +694,7 @@ class IOBrainTest(unittest.TestCase):
         six.PY3 and streams_are_fine(),
         "Needs Python 3 io model / doesn't work with plain pytest."
         "use pytest -s for this test to work")
-    def test_sys_streams(self, capsys):
+    def test_sys_streams(self):
         for name in {'stdout', 'stderr', 'stdin'}:
             node = astroid.extract_node('''
             import sys
