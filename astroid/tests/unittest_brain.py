@@ -63,21 +63,31 @@ import astroid
 
 
 class HashlibTest(unittest.TestCase):
+    def _assert_hashlib_class(self, class_obj):
+        self.assertIn('update', class_obj)
+        self.assertIn('digest', class_obj)
+        self.assertIn('hexdigest', class_obj)
+        self.assertIn('block_size', class_obj)
+        self.assertIn('digest_size', class_obj)
+        self.assertEqual(len(class_obj['__init__'].args.args), 2)
+        self.assertEqual(len(class_obj['__init__'].args.defaults), 1)
+        self.assertEqual(len(class_obj['update'].args.args), 2)
+        self.assertEqual(len(class_obj['digest'].args.args), 1)
+        self.assertEqual(len(class_obj['hexdigest'].args.args), 1)
+
     def test_hashlib(self):
         """Tests that brain extensions for hashlib work."""
         hashlib_module = MANAGER.ast_from_module_name('hashlib')
         for class_name in ['md5', 'sha1']:
             class_obj = hashlib_module[class_name]
-            self.assertIn('update', class_obj)
-            self.assertIn('digest', class_obj)
-            self.assertIn('hexdigest', class_obj)
-            self.assertIn('block_size', class_obj)
-            self.assertIn('digest_size', class_obj)
-            self.assertEqual(len(class_obj['__init__'].args.args), 2)
-            self.assertEqual(len(class_obj['__init__'].args.defaults), 1)
-            self.assertEqual(len(class_obj['update'].args.args), 2)
-            self.assertEqual(len(class_obj['digest'].args.args), 1)
-            self.assertEqual(len(class_obj['hexdigest'].args.args), 1)
+            self._assert_hashlib_class(class_obj)
+
+    @test_utils.require_version(minver='3.6')
+    def test_hashlib_py36(self):
+        hashlib_module = MANAGER.ast_from_module_name('hashlib')
+        for class_name in ['sha3_224', 'sha3_512', 'shake_128']:
+            class_obj = hashlib_module[class_name]
+            self._assert_hashlib_class(class_obj)
 
 
 class CollectionsDequeTests(unittest.TestCase):
