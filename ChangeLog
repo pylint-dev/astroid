@@ -36,6 +36,8 @@ Change log for the astroid package (used to be astng)
 
      Close PyCQA/pylint#1872
 
+   * Include new hashlib classes added in python 3.6
+
 
 2017-12-15 -- 1.6.0
 
