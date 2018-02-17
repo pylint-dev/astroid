@@ -38,6 +38,10 @@ Change log for the astroid package (used to be astng)
 
    * Include new hashlib classes added in python 3.6
 
+   * Fix RecursionError for augmented assign
+
+     Close #437, #447, #313, PyCQA/pylint#1642, PyCQA/pylint#1805, PyCQA/pylint#1854, PyCQA/pylint#1452
+
 
 2017-12-15 -- 1.6.0
 
