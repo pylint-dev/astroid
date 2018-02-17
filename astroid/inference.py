@@ -713,12 +713,7 @@ def _infer_augassign(self, context=None):
             yield util.Uninferable
             return
 
-        # TODO(cpopa): if we have A() * A(), trying to infer
-        # the rhs with the same context will result in an
-        # inference error, so we create another context for it.
-        # This is a bug which should be fixed in InferenceContext at some point.
         rhs_context = context.clone()
-        rhs_context.path = set()
         for rhs in self.value.infer(context=rhs_context):
             if rhs is util.Uninferable:
                 # Don't know how to process this.
