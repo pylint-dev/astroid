@@ -4286,5 +4286,24 @@ class ObjectDunderNewTest(unittest.TestCase):
         self.assertIsInstance(inferred, Instance)
 
 
+def test_augassign_recursion():
+    """Make sure inference doesn't throw a RecursionError
+
+    Regression test for augmented assign dropping context.path
+    causing recursion errors
+
+    """
+    # infinitely recurses in python
+    code = """
+    def rec():
+        a = 0
+        a += rec()
+        return a
+    rec()
+    """
+    cls_node = extract_node(code)
+    assert next(cls_node.infer()) is util.Uninferable
+
+
 if __name__ == '__main__':
     unittest.main()
