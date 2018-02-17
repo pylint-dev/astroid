@@ -1517,7 +1517,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         def test(): #@
             yield
         """)
-        result = next(func.infer_call_result(func))
+        result = next(func.infer_call_result())
         self.assertIsInstance(result, Generator)
         self.assertEqual(result.parent, func)
 

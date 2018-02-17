@@ -1526,7 +1526,7 @@ class FunctionDef(node_classes.Statement, Lambda):
         return next(self.nodes_of_class(yield_nodes,
                                         skip_klass=(FunctionDef, Lambda)), False)
 
-    def infer_call_result(self, caller, context=None):
+    def infer_call_result(self, caller=None, context=None):
         """Infer what the function returns when called.
 
         :returns: What the function returns.
