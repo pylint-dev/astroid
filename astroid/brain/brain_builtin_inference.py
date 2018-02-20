@@ -12,7 +12,8 @@ from textwrap import dedent
 
 import six
 from astroid import (MANAGER, UseInferenceDefault, AttributeInferenceError,
-                     inference_tip, InferenceError, NameInferenceError)
+                     inference_tip, InferenceError, NameInferenceError,
+                     AstroidTypeError, AstroidError)
 from astroid import arguments
 from astroid.builder import AstroidBuilder
 from astroid import helpers
@@ -515,6 +516,64 @@ def _infer_object__new__decorator_check(node):
     return False
 
 
+def infer_isinstance(callnode, context=None):
+    """Infer isinstance calls
+
+    :param nodes.Call callnode: an isinstance call
+    :param InferenceContext: context for call
+        (currently unused but is a common interface for inference)
+    :rtype nodes.Const: Boolean Const value of isinstance call
+
+    :raises UseInferenceDefault: If the node cannot be inferred
+    """
+    call = arguments.CallSite.from_call(callnode)
+    if call.keyword_arguments:
+        # isinstance doesn't support keyword arguments
+        raise UseInferenceDefault("TypeError: isinstance() takes no keyword arguments")
+    if len(call.positional_arguments) != 2:
+        raise UseInferenceDefault(
+            "Expected two arguments, got {count}"
+            .format(count=len(call.positional_arguments)))
+    # The left hand argument is the obj to be checked
+    obj_node, class_or_tuple_node = call.positional_arguments
+    # The right hand argument is the class(es) that the given
+    # obj is to be check is an instance of
+    try:
+        class_container = _class_or_tuple_to_container(
+            class_or_tuple_node, context=context)
+    except InferenceError:
+        raise UseInferenceDefault
+    try:
+        isinstance_bool = helpers.object_isinstance(
+            obj_node, class_container, context)
+    except AstroidTypeError as exc:
+        raise UseInferenceDefault("TypeError: " + str(exc))
+    except AstroidError:
+        raise UseInferenceDefault
+    return nodes.Const(isinstance_bool)
+
+
+def _class_or_tuple_to_container(node, context=None):
+    # Move inferences results into container
+    # to simplify later logic
+    # raises InferenceError if any of the inferences fall through
+    node_infer = next(node.infer(context=context))
+    # arg2 MUST be a type or a TUPLE of types
+    # for isinstance
+    if isinstance(node_infer, nodes.Tuple):
+        class_container = [
+            next(node.infer(context=context))
+            for node in node_infer.elts
+        ]
+        class_container = [
+            klass_node for klass_node
+            in class_container if klass_node is not None
+        ]
+    else:
+        class_container = [node_infer]
+    return class_container
+
+
 # Builtins inference
 register_builtin_transform(infer_bool, 'bool')
 register_builtin_transform(infer_super, 'super')
@@ -528,6 +587,7 @@ register_builtin_transform(infer_dict, 'dict')
 register_builtin_transform(infer_frozenset, 'frozenset')
 register_builtin_transform(infer_type, 'type')
 register_builtin_transform(infer_slice, 'slice')
+register_builtin_transform(infer_isinstance, 'isinstance')
 
 # Infer object.__new__ calls
 MANAGER.register_transform(

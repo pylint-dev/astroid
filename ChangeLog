@@ -46,6 +46,10 @@ Change log for the astroid package (used to be astng)
 
 	Close PyCQA/pylint#1884
 
+    * Inference now understands the 'isinstance' builtin
+
+     Close #98
+
 
 2017-12-15 -- 1.6.0
 
