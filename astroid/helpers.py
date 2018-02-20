@@ -83,6 +83,41 @@ def object_type(node, context=None):
     return list(types)[0]
 
 
+def object_isinstance(node, class_or_seq, context=None):
+    """Check if a node 'isinstance' any node in class_or_seq
+
+    :param node: A given node
+    :param class_or_seq: Union[Nodes.NodeNG], Sequence[nodes.NodeNG]]
+    :rtype: bool
+
+    :raises AstroidTypeError: if the given ``classes_or_seq`` are not types
+    :raises AstroidError: if the type of the given node cannot be inferred
+        or its type's mro doesn't work
+    """
+    if not isinstance(class_or_seq, (tuple, list)):
+        class_seq = (class_or_seq,)
+    else:
+        class_seq = class_or_seq
+    obj_type = object_type(node, context)
+    if obj_type is util.Uninferable:
+        return exceptions.InferenceError(
+            "{node} cannot be inferred".format(node=node))
+    # Instances are not types
+    class_seq = [item if not isinstance(item, bases.Instance)
+                 else util.Uninferable for item in class_seq]
+    # strict compatibility with isinstance
+    # isinstance(1, (int, 1)) evaluates to true
+    # isinstance(1, (1, int)) raises TypeError
+    for klass in class_seq:
+        if klass is util.Uninferable:
+            raise exceptions.AstroidTypeError(
+                "isinstance() arg 2 must be a type or tuple of types")
+        for obj_subclass in obj_type.mro():
+            if obj_subclass == klass:
+                return True
+    return False
+
+
 def safe_infer(node, context=None):
     """Return the inferred value for the given node.
 
