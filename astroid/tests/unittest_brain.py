@@ -897,5 +897,134 @@ class SubprocessTest(unittest.TestCase):
         self.assertIsInstance(next(inst.igetattr("args")), nodes.List)
 
 
+class TestIsinstanceInference:
+    """Test isinstance builtin inference"""
+    def test_type_type(self):
+        """Make sure isinstance can check builtin int types"""
+        assert _get_result("isinstance(type, type)") == "True" == str(isinstance(type, type))
+
+    def test_object_type(self):
+        assert _get_result("isinstance(object, type)") == "True" == str(isinstance(object, type))
+
+    def test_type_object(self):
+        assert _get_result("isinstance(type, object)") == "True" == str(isinstance(type, object))
+
+    def test_isinstance_int_true(self):
+        """Make sure isinstance can check builtin int types"""
+        assert _get_result("isinstance(1, int)") == "True" == str(isinstance(1, int))
+
+    def test_isinstance_int_false(self):
+        assert _get_result("isinstance('a', int)") == "False" == str(isinstance('a', int))
+
+    def test_isinstance_object_true(self):
+        class Bar(object):
+            pass
+        assert _get_result("""
+        class Bar(object):
+            pass
+        isinstance(Bar(), object)
+        """) == "True" == str(isinstance(Bar(), object))
+
+    def test_isinstance_object_true3(self):
+        class Bar(object):
+            pass
+        assert _get_result("""
+        class Bar(object):
+            pass
+        isinstance(Bar(), Bar)
+        """) == "True" == str(isinstance(Bar(), Bar))
+    def test_isinstance_class_false(self):
+        class Foo(object):
+            pass
+        class Bar(object):
+            pass
+        assert _get_result("""
+        class Foo(object):
+            pass
+        class Bar(object):
+            pass
+        isinstance(Bar(), Foo)
+        """) == "False" == str(isinstance(Bar(), Foo))
+    def test_isinstance_type_false(self):
+        class Bar(object):
+            pass
+        assert _get_result("""
+        class Bar(object):
+            pass
+        isinstance(Bar(), type)
+        """) == "False" == str(isinstance(Bar(), type))
+
+    def test_isinstance_str_true(self):
+        """Make sure isinstance can check bultin str types"""
+        assert _get_result("isinstance('a', str)") == "True" == str(isinstance('a', str))
+
+    def test_isinstance_str_false(self):
+        assert _get_result("isinstance(1, str)") == "False" == str(isinstance(1, str))
+
+    def test_isinstance_tuple_argument(self):
+        """obj just has to be an instance of ANY class/type on the right"""
+        assert _get_result("isinstance(1, (str, int))") == "True" == str(isinstance(1, (str, int)))
+
+    def test_isinstance_type_false2(self):
+        assert _get_result("""
+        isinstance(1, type)
+        """) == "False" == str(isinstance(1, type))
+
+    def test_isinstance_object_true2(self):
+        class Bar(type):
+            pass
+        mainbar = Bar("Bar", tuple(), {})
+        assert _get_result("""
+        class Bar(type):
+            pass
+        mainbar = Bar("Bar", tuple(), {})
+        isinstance(mainbar, object)
+        """) == "True" == str(isinstance(mainbar, object))
+
+    def test_isinstance_type_true(self):
+        class Bar(type):
+            pass
+        mainbar = Bar("Bar", tuple(), {})
+        assert _get_result("""
+        class Bar(type):
+            pass
+        mainbar = Bar("Bar", tuple(), {})
+        isinstance(mainbar, type)
+        """) == "True" == str(isinstance(mainbar, type))
+
+    def test_isinstance_edge_case(self):
+        """isinstance allows bad type short-circuting"""
+        assert _get_result("isinstance(1, (int, 1))") == "True" == str(isinstance(1, (int, 1)))
+
+    def test_uninferable_bad_type(self):
+        """The second argument must be a class or a tuple of classes"""
+        # Should I subclass
+        with pytest.raises(astroid.InferenceError):
+            _get_result_node("isinstance(int, 1)")
+        with pytest.raises(TypeError):
+            isinstance(int, 1)
+
+    def test_uninferable_keywords(self):
+        """isinstance does not allow keywords"""
+        with pytest.raises(astroid.InferenceError):
+            _get_result_node("isinstance(1, class_or_tuple=int)")
+        with pytest.raises(TypeError):
+            isinstance(1, class_or_tuple=int)
+
+    def test_too_many_args(self):
+        """isinstance must have two arguments"""
+        with pytest.raises(astroid.InferenceError):
+            _get_result_node("isinstance(1, int, str)")
+        with pytest.raises(TypeError):
+            isinstance(1, int, str)
+
+def _get_result_node(code):
+    node = next(astroid.extract_node(code).infer())
+    return node
+
+def _get_result(code):
+    return _get_result_node(code).as_string()
+
+
 if __name__ == '__main__':
     unittest.main()
