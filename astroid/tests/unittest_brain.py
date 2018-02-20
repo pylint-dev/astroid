@@ -41,11 +41,8 @@ try:
 except ImportError:
     HAS_DATEUTIL = False
 
-try:
-    import pytest
-    HAS_PYTEST = True
-except ImportError:
-    HAS_PYTEST = False
+import pytest
+HAS_PYTEST = True
 
 try:
     import attr as attr_module # pylint: disable=unused-import
