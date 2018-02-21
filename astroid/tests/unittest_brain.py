@@ -888,6 +888,22 @@ class AttrsTest(unittest.TestCase):
             should_be_unknown = next(module.getattr(name)[0].infer()).getattr('d')[0]
             self.assertIsInstance(should_be_unknown, astroid.Unknown)
 
+    def test_special_attributes(self):
+        """Make sure special attrs attributes exist"""
+
+        code = """
+        import attr
+
+        @attr.s
+        class Foo:
+            pass
+        Foo()
+        """
+        foo_inst = next(astroid.extract_node(code).infer())
+        [attr_node] = foo_inst.getattr("__attrs_attrs__")
+        # Prevents https://github.com/PyCQA/pylint/issues/1884
+        assert isinstance(attr_node, nodes.Unknown)
+
 
 class RandomSampleTest(unittest.TestCase):
 
