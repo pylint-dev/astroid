@@ -14,12 +14,11 @@ new local scope in the language definition : Module, ClassDef, FunctionDef (and
 Lambda, GeneratorExp, DictComp and SetComp to some extent).
 """
 
+import builtins
 import sys
 import io
 import itertools
 import warnings
-
-import six
 
 from astroid import bases
 from astroid import context as contextmod
@@ -33,7 +32,7 @@ from astroid import node_classes
 from astroid import util
 
 
-BUILTINS = six.moves.builtins.__name__
+BUILTINS = builtins.__name__
 ITER_METHODS = ('__iter__', '__getitem__')
 
 
@@ -96,7 +95,7 @@ def builtin_lookup(name):
     return the list of matching statements and the astroid for the builtin
     module
     """
-    builtin_astroid = MANAGER.ast_from_module(six.moves.builtins)
+    builtin_astroid = MANAGER.ast_from_module(builtins)
     if name == '__dict__':
         return builtin_astroid, ()
     try:
@@ -552,15 +551,7 @@ class Module(LocalsDictNodeNG):
         """
         return
 
-    if six.PY2:
-        @decorators_mod.cachedproperty
-        def _absolute_import_activated(self):
-            for stmt in self.locals.get('absolute_import', ()):
-                if isinstance(stmt, node_classes.ImportFrom) and stmt.modname == '__future__':
-                    return True
-            return False
-    else:
-        _absolute_import_activated = True
+    _absolute_import_activated = True
 
     def absolute_import_activated(self):
         """Whether :pep:`328` absolute import behaviour has been enabled.
@@ -675,7 +666,7 @@ class Module(LocalsDictNodeNG):
             return default
 
         str_const = lambda node: (isinstance(node, node_classes.Const) and
-                                  isinstance(node.value, six.string_types))
+                                  isinstance(node.value, str))
         for node in explicit.elts:
             if str_const(node):
                 inferred.append(node.value)
@@ -967,32 +958,23 @@ class _ListComp(node_classes.NodeNG):
         return util.Uninferable
 
 
-if six.PY3:
-    class ListComp(_ListComp, ComprehensionScope):
-        """Class representing an :class:`ast.ListComp` node.
+class ListComp(_ListComp, ComprehensionScope):
+    """Class representing an :class:`ast.ListComp` node.
 
-        >>> node = astroid.extract_node('[thing for thing in things if thing]')
-        >>> node
-        <ListComp l.1 at 0x7f23b2e418d0>
+    >>> node = astroid.extract_node('[thing for thing in things if thing]')
+    >>> node
+    <ListComp l.1 at 0x7f23b2e418d0>
+    """
+    _other_other_fields = ('locals',)
+
+    def __init__(self, lineno=None, col_offset=None, parent=None):
+        self.locals = {}
+        """A map of the name of a local variable to the node defining it.
+
+        :type: dict(str, NodeNG)
         """
-        _other_other_fields = ('locals',)
 
-        def __init__(self, lineno=None, col_offset=None, parent=None):
-            self.locals = {}
-            """A map of the name of a local variable to the node defining it.
-
-            :type: dict(str, NodeNG)
-            """
-
-            super(ListComp, self).__init__(lineno, col_offset, parent)
-else:
-    class ListComp(_ListComp):
-        """Class representing an :class:`ast.ListComp` node.
-
-        >>> node = astroid.extract_node('[thing for thing in things if thing]')
-        >>> node
-        <ListComp l.1 at 0x7f23b2e418d0>
-        """
+        super(ListComp, self).__init__(lineno, col_offset, parent)
 
 
 def _infer_decorator_callchain(node):
@@ -1203,11 +1185,8 @@ class FunctionDef(node_classes.Statement, Lambda):
     >>> node
     <FunctionDef.my_func l.2 at 0x7f23b2e71e10>
     """
-    if six.PY3:
-        _astroid_fields = ('decorators', 'args', 'returns', 'body')
-        returns = None
-    else:
-        _astroid_fields = ('decorators', 'args', 'body')
+    _astroid_fields = ('decorators', 'args', 'returns', 'body')
+    returns = None
     decorators = None
     """The decorators that are applied to this method or function.
 
@@ -1286,7 +1265,7 @@ class FunctionDef(node_classes.Statement, Lambda):
         self.decorators = decorators
         self.returns = returns
 
-        if six.PY3 and isinstance(self.parent.frame(), ClassDef):
+        if isinstance(self.parent.frame(), ClassDef):
             self.set_local('__class__', self.parent.frame())
 
     @decorators_mod.cachedproperty
@@ -1936,7 +1915,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
     def _infer_type_call(self, caller, context):
         name_node = next(caller.args[0].infer(context))
         if (isinstance(name_node, node_classes.Const) and
-                isinstance(name_node.value, six.string_types)):
+                isinstance(name_node.value, str)):
             name = name_node.value
         else:
             return util.Uninferable
@@ -1962,7 +1941,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         if members and isinstance(members, node_classes.Dict):
             for attr, value in members.items:
                 if (isinstance(attr, node_classes.Const) and
-                        isinstance(attr.value, six.string_types)):
+                        isinstance(attr.value, str)):
                     result.locals[attr.value] = [value]
 
         result.parent = caller.parent
@@ -2001,7 +1980,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         # inside this class.
         lookup_upper_frame = (
             isinstance(node.parent, node_classes.Decorators) and
-            name in MANAGER.astroid_cache[six.moves.builtins.__name__]
+            name in MANAGER.astroid_cache[builtins.__name__]
         )
         if any(node == base or base.parent_of(node)
                for base in self.bases) or lookup_upper_frame:
@@ -2050,10 +2029,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         yielded = set([self])
         if context is None:
             context = contextmod.InferenceContext()
-        if six.PY3:
-            if not self.bases and self.qname() != 'builtins.object':
-                yield builtin_lookup("object")[1][0]
-                return
+        if not self.bases and self.qname() != 'builtins.object':
+            yield builtin_lookup("object")[1][0]
+            return
 
         for stmt in self.bases:
             with context.restore_path():
@@ -2456,29 +2434,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                             if node is not util.Uninferable)
             except (exceptions.InferenceError, StopIteration):
                 return None
-        if six.PY3:
-            return None
 
-        if '__metaclass__' in self.locals:
-            assignment = self.locals['__metaclass__'][-1]
-        elif self.bases:
-            return None
-        elif '__metaclass__' in self.root().locals:
-            assignments = [ass for ass in self.root().locals['__metaclass__']
-                           if ass.lineno < self.lineno]
-            if not assignments:
-                return None
-            assignment = assignments[-1]
-        else:
-            return None
-
-        try:
-            inferred = next(assignment.infer())
-        except exceptions.InferenceError:
-            return None
-        if inferred is util.Uninferable: # don't expose this
-            return None
-        return inferred
+        return None
 
     def _find_metaclass(self, seen=None):
         if seen is None:
@@ -2551,8 +2508,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                         if inferred is util.Uninferable:
                             continue
                         if (not isinstance(inferred, node_classes.Const) or
-                                not isinstance(inferred.value,
-                                               six.string_types)):
+                                not isinstance(inferred.value, str)):
                             continue
                         if not inferred.value:
                             continue
@@ -2626,10 +2582,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
         if context is None:
             context = contextmod.InferenceContext()
-        if six.PY3:
-            if not self.bases and self.qname() != 'builtins.object':
-                yield builtin_lookup("object")[1][0]
-                return
+        if not self.bases and self.qname() != 'builtins.object':
+            yield builtin_lookup("object")[1][0]
+            return
 
         for stmt in self.bases:
             try:

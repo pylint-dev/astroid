@@ -14,8 +14,6 @@ import collections
 import operator as operator_mod
 import sys
 
-import six
-
 from astroid import arguments
 from astroid import bases
 from astroid import context as contextmod
@@ -39,7 +37,7 @@ def _augmented_name(name):
 _CONTEXTLIB_MGR = 'contextlib.contextmanager'
 BIN_OP_METHOD = {'+':  '__add__',
                  '-':  '__sub__',
-                 '/':  '__div__' if six.PY2 else '__truediv__',
+                 '/':  '__truediv__',
                  '//': '__floordiv__',
                  '*':  '__mul__',
                  '**': '__pow__',
@@ -123,7 +121,7 @@ def const_infer_binary_op(self, opnode, operator, other, context, _):
                 yield util.Uninferable
         except TypeError:
             yield not_implemented
-    elif isinstance(self.value, six.string_types) and operator == '%':
+    elif isinstance(self.value, str) and operator == '%':
         # TODO(cpopa): implement string interpolation later on.
         yield util.Uninferable
     else:

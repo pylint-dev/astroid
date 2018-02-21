@@ -9,7 +9,7 @@
 Various helper utilities.
 """
 
-import six
+import builtins
 
 from astroid import bases
 from astroid import context as contextmod
@@ -21,7 +21,7 @@ from astroid import scoped_nodes
 from astroid import util
 
 
-BUILTINS = six.moves.builtins.__name__
+BUILTINS = builtins.__name__
 
 
 def _build_proxy_class(cls_name, builtins):
@@ -37,15 +37,9 @@ def _function_type(function, builtins):
         else:
             cls_name = 'function'
     elif isinstance(function, bases.BoundMethod):
-        if six.PY2:
-            cls_name = 'instancemethod'
-        else:
-            cls_name = 'method'
+        cls_name = 'method'
     elif isinstance(function, bases.UnboundMethod):
-        if six.PY2:
-            cls_name = 'instancemethod'
-        else:
-            cls_name = 'function'
+        cls_name = 'function'
     return _build_proxy_class(cls_name, builtins)
 
 

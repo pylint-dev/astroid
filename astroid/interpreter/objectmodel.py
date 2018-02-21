@@ -20,17 +20,12 @@ attribute. Thus the model can be viewed as a special part of the lookup
 mechanism.
 """
 
-try:
-    from functools import lru_cache
-except ImportError:
-    from backports.functools_lru_cache import lru_cache
-
+import builtins
 import itertools
 import pprint
 import os
 import types
-
-import six
+from functools import lru_cache
 
 import astroid
 from astroid import context as contextmod
@@ -114,18 +109,12 @@ class ObjectModel(object):
 class ModuleModel(ObjectModel):
 
     def _builtins(self):
-        builtins = astroid.MANAGER.astroid_cache[six.moves.builtins.__name__]
-        return builtins.special_attributes.lookup('__dict__')
+        builtins_ast_module = astroid.MANAGER.astroid_cache[builtins.__name__]
+        return builtins_ast_module.special_attributes.lookup('__dict__')
 
-    if six.PY3:
-        @property
-        def pybuiltins(self):
-            return self._builtins()
-
-    else:
-        @property
-        def py__builtin__(self):
-            return self._builtins()
+    @property
+    def pybuiltins(self):
+        return self._builtins()
 
     # __path__ is a standard attribute on *packages* not
     # non-package modules.  The only mention of it in the
@@ -234,8 +223,8 @@ class FunctionModel(ObjectModel):
 
         args = self._instance.args
         pair_annotations = itertools.chain(
-            six.moves.zip(args.args or [], args.annotations),
-            six.moves.zip(args.kwonlyargs, args.kwonlyargs_annotations)
+            zip(args.args or [], args.annotations),
+            zip(args.kwonlyargs, args.kwonlyargs_annotations)
         )
 
         annotations = {
@@ -344,15 +333,6 @@ class FunctionModel(ObjectModel):
     py__class__ = py__ne__
     py__closure__ = py__ne__
     py__code__ = py__ne__
-
-    if six.PY2:
-        pyfunc_name = py__name__
-        pyfunc_doc = py__doc__
-        pyfunc_globals = py__globals__
-        pyfunc_dict = py__dict__
-        pyfunc_defaults = py__defaults__
-        pyfunc_code = py__code__
-        pyfunc_closure = py__closure__
 
 
 class ClassModel(ObjectModel):
@@ -508,7 +488,7 @@ class GeneratorModel(FunctionModel):
     def __new__(cls, *args, **kwargs):
         # Append the values from the GeneratorType unto this object.
         ret = super(GeneratorModel, cls).__new__(cls, *args, **kwargs)
-        generator = astroid.MANAGER.astroid_cache[six.moves.builtins.__name__]['generator']
+        generator = astroid.MANAGER.astroid_cache[builtins.__name__]['generator']
         for name, values in generator.locals.items():
             method = values[0]
             patched = lambda cls, meth=method: meth
@@ -556,21 +536,11 @@ class ExceptionInstanceModel(InstanceModel):
         args.postinit((message, ))
         return args
 
-    if six.PY3:
-        # It's available only on Python 3.
-
-        @property
-        def py__traceback__(self):
-            builtins = astroid.MANAGER.astroid_cache[six.moves.builtins.__name__]
-            traceback_type = builtins[types.TracebackType.__name__]
-            return traceback_type.instantiate_class()
-
-    if six.PY2:
-        # It's available only on Python 2.
-
-        @property
-        def pymessage(self):
-            return node_classes.Const('')
+    @property
+    def py__traceback__(self):
+        builtins_ast_module = astroid.MANAGER.astroid_cache[builtins.__name__]
+        traceback_type = builtins_ast_module[types.TracebackType.__name__]
+        return traceback_type.instantiate_class()
 
 
 class DictModel(ObjectModel):
@@ -599,9 +569,8 @@ class DictModel(ObjectModel):
             elems.append(elem)
         obj.postinit(elts=elems)
 
-        if six.PY3:
-            from astroid import objects
-            obj = objects.DictItems(obj)
+        from astroid import objects
+        obj = objects.DictItems(obj)
 
         return self._generic_dict_attribute(obj, 'items')
 
@@ -611,9 +580,8 @@ class DictModel(ObjectModel):
         obj = node_classes.List(parent=self._instance)
         obj.postinit(elts=keys)
 
-        if six.PY3:
-            from astroid import objects
-            obj = objects.DictKeys(obj)
+        from astroid import objects
+        obj = objects.DictKeys(obj)
 
         return self._generic_dict_attribute(obj, 'keys')
 
@@ -624,8 +592,7 @@ class DictModel(ObjectModel):
         obj = node_classes.List(parent=self._instance)
         obj.postinit(values)
 
-        if six.PY3:
-            from astroid import objects
-            obj = objects.DictValues(obj)
+        from astroid import objects
+        obj = objects.DictValues(obj)
 
         return self._generic_dict_attribute(obj, 'values')

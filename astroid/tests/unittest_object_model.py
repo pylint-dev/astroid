@@ -2,10 +2,9 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
+import builtins
 import unittest
 import xml
-
-import six
 
 import astroid
 from astroid import builder
@@ -15,7 +14,7 @@ from astroid import test_utils
 from astroid import objects
 
 
-BUILTINS = MANAGER.astroid_cache[six.moves.builtins.__name__]
+BUILTINS = MANAGER.astroid_cache[builtins.__name__]
 
 
 class InstanceModelTest(unittest.TestCase):
@@ -103,10 +102,7 @@ class UnboundMethodModelTest(unittest.TestCase):
 
         cls = next(ast_nodes[0].infer())
         self.assertIsInstance(cls, astroid.ClassDef)
-        if six.PY2:
-            unbound_name = 'instancemethod'
-        else:
-            unbound_name = 'function'
+        unbound_name = 'function'
 
         self.assertEqual(cls.name, unbound_name)
 
@@ -168,16 +164,6 @@ class ClassModelTest(unittest.TestCase):
             self.assertIsInstance(inferred._proxied, astroid.FunctionDef)
             self.assertIsInstance(inferred.bound, astroid.ClassDef)
             self.assertEqual(inferred.bound.name, 'type')
-
-    @unittest.skipUnless(six.PY2, "Needs old style classes")
-    def test_old_style_classes_no_mro(self):
-        ast_node = builder.extract_node('''
-        class A:
-            pass
-        A.mro #@
-        ''')
-        with self.assertRaises(exceptions.InferenceError):
-            next(ast_node.infer())
 
     def test_class_model(self):
         ast_nodes = builder.extract_node('''
@@ -499,7 +485,6 @@ class GeneratorModelTest(unittest.TestCase):
 
 class ExceptionModelTest(unittest.TestCase):
 
-    @unittest.skipIf(six.PY2, "needs Python 3")
     def test_model_py3(self):
         ast_nodes = builder.extract_node('''
         try:
@@ -515,25 +500,6 @@ class ExceptionModelTest(unittest.TestCase):
         tb = next(ast_nodes[1].infer())
         self.assertIsInstance(tb, astroid.Instance)
         self.assertEqual(tb.name, 'traceback')
-
-        with self.assertRaises(exceptions.InferenceError):
-            next(ast_nodes[2].infer())
-
-    @unittest.skipUnless(six.PY2, "needs Python 2")
-    def test_model_py2(self):
-        ast_nodes = builder.extract_node('''
-        try:
-            x[42]
-        except ValueError as err:
-           err.args #@
-           err.message #@
-
-           err.__traceback__ #@
-        ''')
-        args = next(ast_nodes[0].infer())
-        self.assertIsInstance(args, astroid.Tuple)
-        message = next(ast_nodes[1].infer())
-        self.assertIsInstance(message, astroid.Const)
 
         with self.assertRaises(exceptions.InferenceError):
             next(ast_nodes[2].infer())
@@ -557,28 +523,6 @@ class DictObjectModelTest(unittest.TestCase):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, astroid.BoundMethod)
 
-    @unittest.skipUnless(six.PY2, "needs Python 2")
-    def test_concrete_objects_for_dict_methods(self):
-        ast_nodes = builder.extract_node('''
-        {1:1, 2:3}.values() #@
-        {1:1, 2:3}.keys() #@
-        {1:1, 2:3}.items() #@
-        ''')
-        values = next(ast_nodes[0].infer())
-        self.assertIsInstance(values, astroid.List)
-        self.assertEqual([value.value for value in values.elts], [1, 3])
-
-        keys = next(ast_nodes[1].infer())
-        self.assertIsInstance(keys, astroid.List)
-        self.assertEqual([key.value for key in keys.elts], [1, 2])
-
-        items = next(ast_nodes[2].infer())
-        self.assertIsInstance(items, astroid.List)
-        for expected, elem in zip([(1, 1), (2, 3)], items.elts):
-            self.assertIsInstance(elem, astroid.Tuple)
-            self.assertEqual(list(expected), [elt.value for elt in elem.elts])
-
-    @unittest.skipIf(six.PY2, "needs Python 3")
     def test_wrapper_objects_for_dict_methods_python3(self):
         ast_nodes = builder.extract_node('''
         {1:1, 2:3}.values() #@
@@ -597,7 +541,6 @@ class DictObjectModelTest(unittest.TestCase):
 
 class LruCacheModelTest(unittest.TestCase):
 
-    @unittest.skipIf(six.PY2, "needs Python 3")
     def test_lru_cache(self):
         ast_nodes = builder.extract_node('''
         import functools

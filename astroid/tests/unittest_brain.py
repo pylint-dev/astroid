@@ -9,6 +9,8 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
 """Tests for basic functionality in astroid.brain."""
+import queue
+
 try:
     import multiprocessing # pylint: disable=unused-import
     HAS_MULTIPROCESSING = True
@@ -50,8 +52,6 @@ try:
     HAS_ATTR = True
 except ImportError:
     HAS_ATTR = False
-
-import six
 
 from astroid import MANAGER
 from astroid import bases
@@ -325,65 +325,35 @@ class SixBrainTest(unittest.TestCase):
         ''')
         http_client = next(ast_nodes[0].infer())
         self.assertIsInstance(http_client, nodes.Module)
-        self.assertEqual(http_client.name,
-                         'http.client' if six.PY3 else 'httplib')
+        self.assertEqual(http_client.name, 'http.client')
 
         urllib_parse = next(ast_nodes[1].infer())
-        if six.PY3:
-            self.assertIsInstance(urllib_parse, nodes.Module)
-            self.assertEqual(urllib_parse.name, 'urllib.parse')
-        else:
-            # On Python 2, this is a fake module, the same behaviour
-            # being mimicked in brain's tip for six.moves.
-            self.assertIsInstance(urllib_parse, astroid.Instance)
+        self.assertIsInstance(urllib_parse, nodes.Module)
+        self.assertEqual(urllib_parse.name, 'urllib.parse')
         urljoin = next(urllib_parse.igetattr('urljoin'))
         urlencode = next(urllib_parse.igetattr('urlencode'))
-        if six.PY2:
-            # In reality it's a function, but our implementations
-            # transforms it into a method.
-            self.assertIsInstance(urljoin, astroid.BoundMethod)
-            self.assertEqual(urljoin.qname(), 'urlparse.urljoin')
-            self.assertIsInstance(urlencode, astroid.BoundMethod)
-            self.assertEqual(urlencode.qname(), 'urllib.urlencode')
-        else:
-            self.assertIsInstance(urljoin, nodes.FunctionDef)
-            self.assertEqual(urljoin.qname(), 'urllib.parse.urljoin')
-            self.assertIsInstance(urlencode, nodes.FunctionDef)
-            self.assertEqual(urlencode.qname(), 'urllib.parse.urlencode')
+        self.assertIsInstance(urljoin, nodes.FunctionDef)
+        self.assertEqual(urljoin.qname(), 'urllib.parse.urljoin')
+        self.assertIsInstance(urlencode, nodes.FunctionDef)
+        self.assertEqual(urlencode.qname(), 'urllib.parse.urlencode')
 
         urllib_error = next(ast_nodes[2].infer())
-        if six.PY3:
-            self.assertIsInstance(urllib_error, nodes.Module)
-            self.assertEqual(urllib_error.name, 'urllib.error')
-        else:
-            # On Python 2, this is a fake module, the same behaviour
-            # being mimicked in brain's tip for six.moves.
-            self.assertIsInstance(urllib_error, astroid.Instance)
+        self.assertIsInstance(urllib_error, nodes.Module)
+        self.assertEqual(urllib_error.name, 'urllib.error')
         urlerror = next(urllib_error.igetattr('URLError'))
         self.assertIsInstance(urlerror, nodes.ClassDef)
         content_too_short = next(urllib_error.igetattr('ContentTooShortError'))
         self.assertIsInstance(content_too_short, nodes.ClassDef)
 
         urllib_request = next(ast_nodes[3].infer())
-        if six.PY3:
-            self.assertIsInstance(urllib_request, nodes.Module)
-            self.assertEqual(urllib_request.name, 'urllib.request')
-        else:
-            self.assertIsInstance(urllib_request, astroid.Instance)
+        self.assertIsInstance(urllib_request, nodes.Module)
+        self.assertEqual(urllib_request.name, 'urllib.request')
         urlopen = next(urllib_request.igetattr('urlopen'))
         urlretrieve = next(urllib_request.igetattr('urlretrieve'))
-        if six.PY2:
-            # In reality it's a function, but our implementations
-            # transforms it into a method.
-            self.assertIsInstance(urlopen, astroid.BoundMethod)
-            self.assertEqual(urlopen.qname(), 'urllib2.urlopen')
-            self.assertIsInstance(urlretrieve, astroid.BoundMethod)
-            self.assertEqual(urlretrieve.qname(), 'urllib.urlretrieve')
-        else:
-            self.assertIsInstance(urlopen, nodes.FunctionDef)
-            self.assertEqual(urlopen.qname(), 'urllib.request.urlopen')
-            self.assertIsInstance(urlretrieve, nodes.FunctionDef)
-            self.assertEqual(urlretrieve.qname(), 'urllib.request.urlretrieve')
+        self.assertIsInstance(urlopen, nodes.FunctionDef)
+        self.assertEqual(urlopen.qname(), 'urllib.request.urlopen')
+        self.assertIsInstance(urlretrieve, nodes.FunctionDef)
+        self.assertEqual(urlretrieve.qname(), 'urllib.request.urlretrieve')
 
     def test_from_imports(self):
         ast_node = builder.extract_node('''
@@ -392,14 +362,9 @@ class SixBrainTest(unittest.TestCase):
         ''')
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
-        if six.PY3:
-            qname = 'http.client.HTTPSConnection'
-        else:
-            qname = 'httplib.HTTPSConnection'
+        qname = 'http.client.HTTPSConnection'
         self.assertEqual(inferred.qname(), qname)
 
-    @unittest.skipIf(six.PY2,
-                     "The python 2 six brain uses dummy classes")
     def test_from_submodule_imports(self):
         """Make sure ulrlib submodules can be imported from
 
@@ -462,16 +427,15 @@ class MultiprocessingBrainTest(unittest.TestCase):
         array = manager.Array()
         namespace = manager.Namespace()
         """)
-        queue = next(module['queue'].infer())
-        self.assertEqual(queue.qname(),
-                         "{}.Queue".format(six.moves.queue.__name__))
+        ast_queue = next(module['queue'].infer())
+        self.assertEqual(ast_queue.qname(), "{}.Queue".format(queue.__name__))
 
         joinable_queue = next(module['joinable_queue'].infer())
         self.assertEqual(joinable_queue.qname(),
-                         "{}.Queue".format(six.moves.queue.__name__))
+                         "{}.Queue".format(queue.__name__))
 
         event = next(module['event'].infer())
-        event_name = "threading.{}".format("Event" if six.PY3 else "_Event")
+        event_name = "threading.Event"
         self.assertEqual(event.qname(), event_name)
 
         rlock = next(module['rlock'].infer())
@@ -479,8 +443,7 @@ class MultiprocessingBrainTest(unittest.TestCase):
         self.assertEqual(rlock.qname(), rlock_name)
 
         bounded_semaphore = next(module['bounded_semaphore'].infer())
-        semaphore_name = "threading.{}".format(
-            "BoundedSemaphore" if six.PY3 else "_BoundedSemaphore")
+        semaphore_name = "threading.BoundedSemaphore"
         self.assertEqual(bounded_semaphore.qname(), semaphore_name)
 
         pool = next(module['pool'].infer())
@@ -701,7 +664,7 @@ def streams_are_fine():
 
 class IOBrainTest(unittest.TestCase):
     @unittest.skipUnless(
-        six.PY3 and streams_are_fine(),
+        streams_are_fine(),
         "Needs Python 3 io model / doesn't work with plain pytest."
         "use pytest -s for this test to work")
     def test_sys_streams(self):

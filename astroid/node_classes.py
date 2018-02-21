@@ -12,14 +12,11 @@
 """
 
 import abc
+import builtins
+import itertools
 import pprint
 import warnings
-try:
-    from functools import singledispatch as _singledispatch
-except ImportError:
-    from singledispatch import singledispatch as _singledispatch
-
-import six
+from functools import singledispatch as _singledispatch
 
 from astroid import as_string
 from astroid import bases
@@ -31,7 +28,7 @@ from astroid import mixins
 from astroid import util
 
 
-BUILTINS = six.moves.builtins.__name__
+BUILTINS = builtins.__name__
 MANAGER = manager.AstroidManager()
 
 
@@ -891,9 +888,10 @@ class Statement(NodeNG):
             return stmts[index -1]
         return None
 
-@six.add_metaclass(abc.ABCMeta)
+
 class _BaseContainer(mixins.ParentAssignTypeMixin,
-                     NodeNG, bases.Instance):
+                     NodeNG, bases.Instance,
+                     metaclass=abc.ABCMeta):
     """Base class for Set, FrozenSet, Tuple and List."""
 
     _astroid_fields = ('elts',)
@@ -1262,33 +1260,31 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
     >>> node.args
     <Arguments l.1 at 0x7effe1db82e8>
     """
-    if six.PY3:
-        # Python 3.4+ uses a different approach regarding annotations,
-        # each argument is a new class, _ast.arg, which exposes an
-        # 'annotation' attribute. In astroid though, arguments are exposed
-        # as is in the Arguments node and the only way to expose annotations
-        # is by using something similar with Python 3.3:
-        #  - we expose 'varargannotation' and 'kwargannotation' of annotations
-        #    of varargs and kwargs.
-        #  - we expose 'annotation', a list with annotations for
-        #    for each normal argument. If an argument doesn't have an
-        #    annotation, its value will be None.
+    # Python 3.4+ uses a different approach regarding annotations,
+    # each argument is a new class, _ast.arg, which exposes an
+    # 'annotation' attribute. In astroid though, arguments are exposed
+    # as is in the Arguments node and the only way to expose annotations
+    # is by using something similar with Python 3.3:
+    #  - we expose 'varargannotation' and 'kwargannotation' of annotations
+    #    of varargs and kwargs.
+    #  - we expose 'annotation', a list with annotations for
+    #    for each normal argument. If an argument doesn't have an
+    #    annotation, its value will be None.
 
-        _astroid_fields = ('args', 'defaults', 'kwonlyargs',
-                           'kw_defaults', 'annotations', 'varargannotation',
-                           'kwargannotation', 'kwonlyargs_annotations')
-        varargannotation = None
-        """The type annotation for the variable length arguments.
+    _astroid_fields = ('args', 'defaults', 'kwonlyargs',
+                       'kw_defaults', 'annotations', 'varargannotation',
+                       'kwargannotation', 'kwonlyargs_annotations')
+    varargannotation = None
+    """The type annotation for the variable length arguments.
 
-        :type: NodeNG
-        """
-        kwargannotation = None
-        """The type annotation for the variable length keyword arguments.
+    :type: NodeNG
+    """
+    kwargannotation = None
+    """The type annotation for the variable length keyword arguments.
 
-        :type: NodeNG
-        """
-    else:
-        _astroid_fields = ('args', 'defaults', 'kwonlyargs', 'kw_defaults')
+    :type: NodeNG
+    """
+
     _other_fields = ('vararg', 'kwarg')
 
     def __init__(self, vararg=None, kwarg=None, parent=None):
@@ -1525,7 +1521,7 @@ def _format_args(args, defaults=None, annotations=None):
         annotations = []
     if defaults is not None:
         default_offset = len(args) - len(defaults)
-    packed = six.moves.zip_longest(args, annotations)
+    packed = itertools.zip_longest(args, annotations)
     for i, (arg, annotation) in enumerate(packed):
         if isinstance(arg, Tuple):
             values.append('(%s)' % _format_args(arg.elts))
@@ -2246,12 +2242,7 @@ class Const(NodeNG, bases.Instance):
             )
 
         try:
-            if isinstance(self.value, six.string_types):
-                return Const(self.value[index_value])
-            if isinstance(self.value, bytes) and six.PY3:
-                # Bytes aren't instances of six.string_types
-                # on Python 3. Also, indexing them should return
-                # integers.
+            if isinstance(self.value, (str, bytes)):
                 return Const(self.value[index_value])
         except IndexError as exc:
             util.reraise(exceptions.AstroidIndexError(
@@ -2284,7 +2275,7 @@ class Const(NodeNG, bases.Instance):
 
         :raises TypeError: If this node does not represent something that is iterable.
         """
-        if isinstance(self.value, six.string_types):
+        if isinstance(self.value, str):
             return self.value
         raise TypeError()
 
@@ -3404,53 +3395,24 @@ class Raise(Statement):
 
     :type: NodeNG or None
     """
-    if six.PY2:
-        _astroid_fields = ('exc', 'inst', 'tback')
-        inst = None
-        """The "value" of the exception being raised.
+    _astroid_fields = ('exc', 'cause')
+    cause = None
+    """The exception being used to raise this one.
 
-        :type: NodeNG or None
+    :type: NodeNG or None
+    """
+
+    def postinit(self, exc=None, cause=None):
+        """Do some setup after initialisation.
+
+        :param exc: What is being raised.
+        :type exc: NodeNG or None
+
+        :param cause: The exception being used to raise this one.
+        :type cause: NodeNG or None
         """
-        tback = None
-        """The traceback object to raise with.
-
-        :type: NodeNG or None
-        """
-
-        def postinit(self, exc=None, inst=None, tback=None):
-            """Do some setup after initialisation.
-
-            :param exc: What is being raised.
-            :type exc: NodeNG or None
-
-            :param inst: The "value" of the exception being raised.
-            :type inst: NodeNG or None
-
-            :param tback: The traceback object to raise with.
-            :type tback: NodeNG or None
-            """
-            self.exc = exc
-            self.inst = inst
-            self.tback = tback
-    else:
-        _astroid_fields = ('exc', 'cause')
-        cause = None
-        """The exception being used to raise this one.
-
-        :type: NodeNG or None
-        """
-
-        def postinit(self, exc=None, cause=None):
-            """Do some setup after initialisation.
-
-            :param exc: What is being raised.
-            :type exc: NodeNG or None
-
-            :param cause: The exception being used to raise this one.
-            :type cause: NodeNG or None
-            """
-            self.exc = exc
-            self.cause = cause
+        self.exc = exc
+        self.cause = cause
 
     def raises_not_implemented(self):
         """Check if this node raises a :class:`NotImplementedError`.
@@ -4197,11 +4159,7 @@ CONST_CLS = {
 
 def _update_const_classes():
     """update constant classes, so the keys of CONST_CLS can be reused"""
-    klasses = (bool, int, float, complex, str)
-    if six.PY2:
-        # pylint: disable=undefined-variable
-        klasses += (unicode, long)
-    klasses += (bytes,)
+    klasses = (bool, int, float, complex, str, bytes)
     for kls in klasses:
         CONST_CLS[kls] = Const
 _update_const_classes()

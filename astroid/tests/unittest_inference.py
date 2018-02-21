@@ -17,8 +17,6 @@ from functools import partial
 import unittest
 import warnings
 
-import six
-
 from astroid import InferenceError, builder, nodes
 from astroid.builder import parse, extract_node
 from astroid.inference import infer_end as inference_infer_end
@@ -732,10 +730,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         node = extract_node('''b'a'[0]''')
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Const)
-        if six.PY2:
-            self.assertEqual(inferred.value, 'a')
-        else:
-            self.assertEqual(inferred.value, 97)
+        self.assertEqual(inferred.value, 97)
 
     def test_simple_tuple(self):
         module = parse("""

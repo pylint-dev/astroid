@@ -8,11 +8,10 @@
 
 """tests for the astroid builder and rebuilder module"""
 
+import builtins
 import os
 import sys
 import unittest
-
-import six
 
 from astroid import builder
 from astroid import exceptions
@@ -23,7 +22,7 @@ from astroid import util
 from astroid.tests import resources
 
 MANAGER = manager.AstroidManager()
-BUILTINS = six.moves.builtins.__name__
+BUILTINS = builtins.__name__
 
 
 class FromToLineNoTest(unittest.TestCase):
@@ -265,17 +264,6 @@ class BuilderTest(unittest.TestCase):
     def test_inspect_build0(self):
         """test astroid tree build from a living object"""
         builtin_ast = MANAGER.ast_from_module_name(BUILTINS)
-        if six.PY2:
-            fclass = builtin_ast['file']
-            self.assertIn('name', fclass)
-            self.assertIn('mode', fclass)
-            self.assertIn('read', fclass)
-            self.assertTrue(fclass.newstyle)
-            self.assertTrue(fclass.pytype(), '%s.type' % BUILTINS)
-            self.assertIsInstance(fclass['read'], nodes.FunctionDef)
-            # check builtin function has args.args == None
-            dclass = builtin_ast['dict']
-            self.assertIsNone(dclass['has_key'].args.args)
         # just check type and object are there
         builtin_ast.getattr('type')
         objectastroid = builtin_ast.getattr('object')[0]
@@ -290,12 +278,8 @@ class BuilderTest(unittest.TestCase):
         self.assertIsInstance(builtin_ast['None'], nodes.Const)
         self.assertIsInstance(builtin_ast['True'], nodes.Const)
         self.assertIsInstance(builtin_ast['False'], nodes.Const)
-        if six.PY3:
-            self.assertIsInstance(builtin_ast['Exception'], nodes.ClassDef)
-            self.assertIsInstance(builtin_ast['NotImplementedError'], nodes.ClassDef)
-        else:
-            self.assertIsInstance(builtin_ast['Exception'], nodes.ImportFrom)
-            self.assertIsInstance(builtin_ast['NotImplementedError'], nodes.ImportFrom)
+        self.assertIsInstance(builtin_ast['Exception'], nodes.ClassDef)
+        self.assertIsInstance(builtin_ast['NotImplementedError'], nodes.ClassDef)
 
     def test_inspect_build1(self):
         time_ast = MANAGER.ast_from_module_name('time')
@@ -417,14 +401,9 @@ class BuilderTest(unittest.TestCase):
                 "new style"
         '''
         mod_ast = builder.parse(data, __name__)
-        if six.PY3:
-            self.assertTrue(mod_ast['A'].newstyle)
-            self.assertTrue(mod_ast['B'].newstyle)
-            self.assertTrue(mod_ast['E'].newstyle)
-        else:
-            self.assertFalse(mod_ast['A'].newstyle)
-            self.assertFalse(mod_ast['B'].newstyle)
-            self.assertFalse(mod_ast['E'].newstyle)
+        self.assertTrue(mod_ast['A'].newstyle)
+        self.assertTrue(mod_ast['B'].newstyle)
+        self.assertTrue(mod_ast['E'].newstyle)
         self.assertTrue(mod_ast['C'].newstyle)
         self.assertTrue(mod_ast['D'].newstyle)
         self.assertTrue(mod_ast['F'].newstyle)
@@ -637,10 +616,7 @@ class FileBuildTest(unittest.TestCase):
         self.assertEqual(klass.parent.frame(), module)
         self.assertEqual(klass.root(), module)
         self.assertEqual(klass.basenames, [])
-        if six.PY3:
-            self.assertTrue(klass.newstyle)
-        else:
-            self.assertFalse(klass.newstyle)
+        self.assertTrue(klass.newstyle)
 
     def test_class_locals(self):
         """test the 'locals' dictionary of a astroid class"""
@@ -725,56 +701,6 @@ class ModuleBuildTest(resources.SysPathSetup, FileBuildTest):
             self.skipTest('Unable to load data.module')
         else:
             self.module = abuilder.module_build(data.module, 'data.module')
-
-@unittest.skipIf(six.PY3, "guess_encoding not used on Python 3")
-class TestGuessEncoding(unittest.TestCase):
-    def setUp(self):
-        self.guess_encoding = builder._guess_encoding
-
-    def testEmacs(self):
-        e = self.guess_encoding('# -*- coding: UTF-8  -*-')
-        self.assertEqual(e, 'UTF-8')
-        e = self.guess_encoding('# -*- coding:UTF-8 -*-')
-        self.assertEqual(e, 'UTF-8')
-        e = self.guess_encoding('''
-        ### -*- coding: ISO-8859-1  -*-
-        ''')
-        self.assertEqual(e, 'ISO-8859-1')
-        e = self.guess_encoding('''
-
-        ### -*- coding: ISO-8859-1  -*-
-        ''')
-        self.assertIsNone(e)
-
-    def testVim(self):
-        e = self.guess_encoding('# vim:fileencoding=UTF-8')
-        self.assertEqual(e, 'UTF-8')
-        e = self.guess_encoding('''
-        ### vim:fileencoding=ISO-8859-1
-        ''')
-        self.assertEqual(e, 'ISO-8859-1')
-        e = self.guess_encoding('''
-
-        ### vim:fileencoding= ISO-8859-1
-        ''')
-        self.assertIsNone(e)
-
-    def test_wrong_coding(self):
-        # setting "coding" variable
-        e = self.guess_encoding("coding = UTF-8")
-        self.assertIsNone(e)
-        # setting a dictionary entry
-        e = self.guess_encoding("coding:UTF-8")
-        self.assertIsNone(e)
-        # setting an argument
-        e = self.guess_encoding("def do_something(a_word_with_coding=None):")
-        self.assertIsNone(e)
-
-    def testUTF8(self):
-        e = self.guess_encoding('\xef\xbb\xbf any UTF-8 data')
-        self.assertEqual(e, 'UTF-8')
-        e = self.guess_encoding(' any UTF-8 data \xef\xbb\xbf')
-        self.assertIsNone(e)
 
 
 if __name__ == '__main__':
