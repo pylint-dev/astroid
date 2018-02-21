@@ -42,6 +42,10 @@ Change log for the astroid package (used to be astng)
 
      Close #437, #447, #313, PyCQA/pylint#1642, PyCQA/pylint#1805, PyCQA/pylint#1854, PyCQA/pylint#1452
 
+   * Add missing attrs special attribute
+
+	Close PyCQA/pylint#1884
+
 
 2017-12-15 -- 1.6.0
 
