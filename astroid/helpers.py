@@ -9,7 +9,7 @@
 Various helper utilities.
 """
 
-import builtins
+import builtins as builtins_mod
 
 from astroid import bases
 from astroid import context as contextmod
@@ -21,7 +21,7 @@ from astroid import scoped_nodes
 from astroid import util
 
 
-BUILTINS = builtins.__name__
+BUILTINS = builtins_mod.__name__
 
 
 def _build_proxy_class(cls_name, builtins):

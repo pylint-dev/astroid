@@ -664,6 +664,7 @@ class TreeRebuilder(object):
     def visit_raise(self, node, parent):
         """visit a Raise node by returning a fresh instance of it"""
         newnode = nodes.Raise(node.lineno, node.col_offset, parent)
+        # pylint: disable=too-many-function-args
         newnode.postinit(_visit_or_none(node, 'type', self, newnode),
                          _visit_or_none(node, 'inst', self, newnode),
                          _visit_or_none(node, 'tback', self, newnode))

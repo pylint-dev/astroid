@@ -12,7 +12,7 @@
 """
 
 import abc
-import builtins
+import builtins as builtins_mod
 import itertools
 import pprint
 import warnings
@@ -28,7 +28,7 @@ from astroid import mixins
 from astroid import util
 
 
-BUILTINS = builtins.__name__
+BUILTINS = builtins_mod.__name__
 MANAGER = manager.AstroidManager()
 
 
