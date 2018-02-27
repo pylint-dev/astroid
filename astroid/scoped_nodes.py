@@ -2632,6 +2632,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
         :raises NotImplementedError: If this is an old style class,
             since they don't have the concept of an MRO.
+        :raises DuplicateBasesError: Duplicate bases in the same class base
+        :raises InconsistentMroError: A class' MRO is inconsistent
         """
 
         if not self.newstyle:
