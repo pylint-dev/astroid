@@ -91,8 +91,6 @@ def object_isinstance(node, class_or_seq, context=None):
     :rtype: bool
 
     :raises AstroidTypeError: if the given ``classes_or_seq`` are not types
-    :raises AstroidError: if the type of the given node cannot be inferred
-        or its type's mro doesn't work
     """
     if not isinstance(class_or_seq, (tuple, list)):
         class_seq = (class_or_seq,)

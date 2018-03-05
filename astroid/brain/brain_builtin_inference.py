@@ -13,7 +13,7 @@ from textwrap import dedent
 import six
 from astroid import (MANAGER, UseInferenceDefault, AttributeInferenceError,
                      inference_tip, InferenceError, NameInferenceError,
-                     AstroidTypeError, AstroidError)
+                     AstroidTypeError, MroError)
 from astroid import arguments
 from astroid.builder import AstroidBuilder
 from astroid import helpers
@@ -548,8 +548,8 @@ def infer_isinstance(callnode, context=None):
             obj_node, class_container, context)
     except AstroidTypeError as exc:
         raise UseInferenceDefault("TypeError: " + str(exc))
-    except AstroidError:
-        raise UseInferenceDefault
+    except MroError as exc:
+        raise UseInferenceDefault from exc
     if isinstance_bool is util.Uninferable:
         raise UseInferenceDefault
     return nodes.Const(isinstance_bool)
