@@ -83,6 +83,31 @@ def object_type(node, context=None):
     return list(types)[0]
 
 
+def _object_type_is_subclass(obj_type, class_or_seq, context=None):
+    if not isinstance(class_or_seq, (tuple, list)):
+        class_seq = (class_or_seq,)
+    else:
+        class_seq = class_or_seq
+
+    if obj_type is util.Uninferable:
+        return util.Uninferable
+
+    # Instances are not types
+    class_seq = [item if not isinstance(item, bases.Instance)
+                 else util.Uninferable for item in class_seq]
+    # strict compatibility with issubclass
+    # issubclass(1, (int, 1)) evaluates to true
+    # issubclass(1, (1, int)) raises TypeError
+    for klass in class_seq:
+        if klass is util.Uninferable:
+            raise exceptions.AstroidTypeError("arg 2 must be a type or tuple of types")
+
+        for obj_subclass in obj_type.mro():
+            if obj_subclass == klass:
+                return True
+    return False
+
+
 def object_isinstance(node, class_or_seq, context=None):
     """Check if a node 'isinstance' any node in class_or_seq
 
@@ -92,28 +117,10 @@ def object_isinstance(node, class_or_seq, context=None):
 
     :raises AstroidTypeError: if the given ``classes_or_seq`` are not types
     """
-    if not isinstance(class_or_seq, (tuple, list)):
-        class_seq = (class_or_seq,)
-    else:
-        class_seq = class_or_seq
     obj_type = object_type(node, context)
     if obj_type is util.Uninferable:
         return util.Uninferable
-
-    # Instances are not types
-    class_seq = [item if not isinstance(item, bases.Instance)
-                 else util.Uninferable for item in class_seq]
-    # strict compatibility with isinstance
-    # isinstance(1, (int, 1)) evaluates to true
-    # isinstance(1, (1, int)) raises TypeError
-    for klass in class_seq:
-        if klass is util.Uninferable:
-            raise exceptions.AstroidTypeError(
-                "isinstance() arg 2 must be a type or tuple of types")
-        for obj_subclass in obj_type.mro():
-            if obj_subclass == klass:
-                return True
-    return False
+    return _object_type_is_subclass(obj_type, class_or_seq, context=context)
 
 
 def object_issubclass(node, class_or_seq, context=None):
@@ -127,28 +134,9 @@ def object_issubclass(node, class_or_seq, context=None):
     :raises AstroidError: if the type of the given node cannot be inferred
         or its type's mro doesn't work
     """
-    if not isinstance(class_or_seq, (tuple, list)):
-        class_seq = (class_or_seq,)
-    else:
-        class_seq = class_or_seq
-
     if not isinstance(node, nodes.ClassDef):
         raise TypeError("{node} needs to be a ClassDef node".format(node=node))
-
-    # Instances are not types
-    class_seq = [item if not isinstance(item, bases.Instance)
-                 else util.Uninferable for item in class_seq]
-    # strict compatibility with issubclass
-    # issubclass(int, (int, 1)) evaluates to true
-    # issubclass(int, (1, int)) raises TypeError
-    for klass in class_seq:
-        if klass is util.Uninferable:
-            raise exceptions.AstroidTypeError(
-                "issubclass() arg 2 must be a type or tuple of types")
-        for obj_subclass in node.mro():
-            if obj_subclass == klass:
-                return True
-    return False
+    return _object_type_is_subclass(node, class_or_seq, context=context)
 
 
 def safe_infer(node, context=None):
