@@ -1002,6 +1002,87 @@ class TestIsinstanceInference:
             _get_result_node('isinstance(something, int)')
 
 
+
+class TestIssubclassBrain:
+    """Test issubclass() builtin inference"""
+
+    def test_type_type(self):
+        assert _get_result("issubclass(type, type)") == "True"
+
+    def test_object_type(self):
+        assert _get_result("issubclass(object, type)") == "False"
+
+    def test_type_object(self):
+        assert _get_result("issubclass(type, object)") == "True"
+
+    def test_issubclass_same_class(self):
+        assert _get_result("issubclass(int, int)") == "True"
+
+    def test_issubclass_not_the_same_class(self):
+        assert _get_result("issubclass(str, int)") == "False"
+
+    def test_issubclass_object_true(self):
+        assert _get_result("""
+        class Bar(object):
+            pass
+        issubclass(Bar, object)
+        """) == "True"
+
+    def test_issubclass_same_user_defined_class(self):
+        assert _get_result("""
+        class Bar(object):
+            pass
+        issubclass(Bar, Bar)
+        """) == "True"
+
+    def test_issubclass_different_user_defined_classes(self):
+        assert _get_result("""
+        class Foo(object):
+            pass
+        class Bar(object):
+            pass
+        issubclass(Bar, Foo)
+        """) == "False"
+
+    def test_issubclass_type_false(self):
+        assert _get_result("""
+        class Bar(object):
+            pass
+        issubclass(Bar, type)
+        """) == "False"
+
+    def test_isinstance_tuple_argument(self):
+        """obj just has to be a subclass of ANY class/type on the right"""
+        assert _get_result("issubclass(int, (str, int))") == "True"
+
+    def test_isinstance_object_true2(self):
+        assert _get_result("""
+        class Bar(type):
+            pass
+        issubclass(Bar, object)
+        """) == "True"
+
+    def test_issubclass_short_circuit(self):
+        """issubclasss allows bad type short-circuting"""
+        assert _get_result("issubclass(int, (int, 1))") == "True"
+
+    def test_uninferable_bad_type(self):
+        """The second argument must be a class or a tuple of classes"""
+        # Should I subclass
+        with pytest.raises(astroid.InferenceError):
+            _get_result_node("issubclass(int, 1)")
+
+    def test_uninferable_keywords(self):
+        """issubclass does not allow keywords"""
+        with pytest.raises(astroid.InferenceError):
+            _get_result_node("issubclass(int, class_or_tuple=int)")
+
+    def test_too_many_args(self):
+        """issubclass must have two arguments"""
+        with pytest.raises(astroid.InferenceError):
+            _get_result_node("issubclass(int, int, str)")
+
+
 def _get_result_node(code):
     node = next(astroid.extract_node(code).infer())
     return node

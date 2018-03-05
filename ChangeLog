@@ -6,6 +6,10 @@ Change log for the astroid package (used to be astng)
 
      Part of PyCQA/pylint#811
 
+   * Add brain tip for `issubclass` builtin
+
+     Close #101.
+
    * Fix submodule imports from six
 
    Close PYCQA/pylint#1640
