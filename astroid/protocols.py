@@ -445,7 +445,10 @@ def _infer_context_manager(self, mgr, context):
         # Get the first yield point. If it has multiple yields,
         # then a RuntimeError will be raised.
         # TODO(cpopa): Handle flows.
-        yield_point = next(func.nodes_of_class(nodes.Yield), None)
+        possible_yield_points = func.nodes_of_class(nodes.Yield)
+        # Ignore yields in nested functions
+        yield_point = next((node for node in possible_yield_points
+                            if node.scope() == func), None)
         if yield_point:
             if not yield_point.value:
                 # TODO(cpopa): an empty yield. Should be wrapped to Const.
