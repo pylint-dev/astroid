@@ -56,6 +56,11 @@ Change log for the astroid package (used to be astng)
 
      Close PyCQA/pylint#1843
 
+    * Fix ``contextlib.contextmanager`` inference for nested
+        context managers
+
+        Close #1699
+
 
 2017-12-15 -- 1.6.0
 
