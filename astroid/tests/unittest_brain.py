@@ -997,6 +997,10 @@ class TestIsinstanceInference:
         with pytest.raises(astroid.InferenceError):
             _get_result_node("isinstance(1, int, str)")
 
+    def test_first_param_is_uninferable(self):
+        with pytest.raises(astroid.InferenceError):
+            _get_result_node('isinstance(something, int)')
+
 
 def _get_result_node(code):
     node = next(astroid.extract_node(code).infer())

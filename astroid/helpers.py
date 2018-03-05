@@ -100,8 +100,8 @@ def object_isinstance(node, class_or_seq, context=None):
         class_seq = class_or_seq
     obj_type = object_type(node, context)
     if obj_type is util.Uninferable:
-        return exceptions.InferenceError(
-            "{node} cannot be inferred".format(node=node))
+        return util.Uninferable
+
     # Instances are not types
     class_seq = [item if not isinstance(item, bases.Instance)
                  else util.Uninferable for item in class_seq]

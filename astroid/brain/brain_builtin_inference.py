@@ -550,6 +550,8 @@ def infer_isinstance(callnode, context=None):
         raise UseInferenceDefault("TypeError: " + str(exc))
     except AstroidError:
         raise UseInferenceDefault
+    if isinstance_bool is util.Uninferable:
+        raise UseInferenceDefault
     return nodes.Const(isinstance_bool)
 
 
