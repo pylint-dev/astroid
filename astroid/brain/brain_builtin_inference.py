@@ -516,6 +516,48 @@ def _infer_object__new__decorator_check(node):
     return False
 
 
+def infer_issubclass(callnode, context=None):
+    """Infer issubclass() calls
+
+    :param nodes.Call callnode: a `issubclass` call
+    :param InferenceContext: the context for the inference
+    :rtype nodes.Const: Boolean Const value of the `issubclass` call
+    :raises UseInferenceDefault: If the node cannot be inferred
+    """
+    call = arguments.CallSite.from_call(callnode)
+    if call.keyword_arguments:
+        # issubclass doesn't support keyword arguments
+        raise UseInferenceDefault("TypeError: issubclass() takes no keyword arguments")
+    if len(call.positional_arguments) != 2:
+        raise UseInferenceDefault(
+            "Expected two arguments, got {count}"
+            .format(count=len(call.positional_arguments)))
+    # The left hand argument is the obj to be checked
+    obj_node, class_or_tuple_node = call.positional_arguments
+
+    try:
+        obj_type = next(obj_node.infer(context=context))
+    except InferenceError as exc:
+        raise UseInferenceDefault from exc
+    if not isinstance(obj_type, nodes.ClassDef):
+        raise UseInferenceDefault("TypeError: arg 1 must be class")
+
+    # The right hand argument is the class(es) that the given
+    # object is to be checked against.
+    try:
+        class_container = _class_or_tuple_to_container(
+            class_or_tuple_node, context=context)
+    except InferenceError as exc:
+        raise UseInferenceDefault from exc
+    try:
+        issubclass_bool = helpers.object_issubclass(obj_type, class_container, context)
+    except AstroidTypeError as exc:
+        raise UseInferenceDefault("TypeError: " + str(exc)) from exc
+    except MroError as exc:
+        raise UseInferenceDefault from exc
+    return nodes.Const(issubclass_bool)
+
+
 def infer_isinstance(callnode, context=None):
     """Infer isinstance calls
 
@@ -590,6 +632,7 @@ register_builtin_transform(infer_frozenset, 'frozenset')
 register_builtin_transform(infer_type, 'type')
 register_builtin_transform(infer_slice, 'slice')
 register_builtin_transform(infer_isinstance, 'isinstance')
+register_builtin_transform(infer_issubclass, 'issubclass')
 
 # Infer object.__new__ calls
 MANAGER.register_transform(
