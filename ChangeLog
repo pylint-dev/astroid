@@ -65,6 +65,10 @@ Change log for the astroid package (used to be astng)
 
         Close #1699
 
+    * Implement inference for len builtin
+
+        Close #112
+
 
 2017-12-15 -- 1.6.0
 

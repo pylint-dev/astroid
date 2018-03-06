@@ -1092,5 +1092,144 @@ def _get_result(code):
     return _get_result_node(code).as_string()
 
 
+class TestLenBuiltinInference:
+    def test_len_list(self):
+        # Uses .elts
+        node = astroid.extract_node("""
+        len(['a','b','c'])
+        """)
+        node = next(node.infer())
+        assert node.as_string() == '3'
+        assert isinstance(node, nodes.Const)
+
+    def test_len_tuple(self):
+        node = astroid.extract_node("""
+        len(('a','b','c'))
+        """)
+        node = next(node.infer())
+        assert node.as_string() == '3'
+
+    def test_len_var(self):
+        # Make sure argument is inferred
+        node = astroid.extract_node("""
+        a = [1,2,'a','b','c']
+        len(a)
+        """)
+        node = next(node.infer())
+        assert node.as_string() == '5'
+
+    def test_len_dict(self):
+        # Uses .items
+        node = astroid.extract_node("""
+        a = {'a': 1, 'b': 2}
+        len(a)
+        """)
+        node = next(node.infer())
+        assert node.as_string() == '2'
+
+    def test_len_set(self):
+        node = astroid.extract_node("""
+        len({'a'})
+        """)
+        inferred_node = next(node.infer())
+        assert inferred_node.as_string() == '1'
+
+    def test_len_object(self):
+        """Test len with objects that implement the len protocol"""
+        node = astroid.extract_node("""
+        class A:
+            def __len__(self):
+                return 57
+        len(A())
+        """)
+        inferred_node = next(node.infer())
+        assert inferred_node.as_string() == '57'
+
+    def test_len_class_with_metaclass(self):
+        """Make sure proper len method is located"""
+        cls_node, inst_node = astroid.extract_node("""
+        class F2(type):
+            def __new__(cls, name, bases, attrs):
+                return super().__new__(cls, name, bases, {})
+            def __len__(self):
+                return 57
+        class F(metaclass=F2):
+            def __len__(self):
+                return 4
+        len(F) #@
+        len(F()) #@
+        """)
+        assert next(cls_node.infer()).as_string() == '57'
+        assert next(inst_node.infer()).as_string() == '4'
+
+    def test_len_object_failure(self):
+        """If taking the length of a class, do not use an instance method"""
+        node = astroid.extract_node("""
+        class F:
+            def __len__(self):
+                return 57
+        len(F)
+        """)
+        with pytest.raises(astroid.InferenceError):
+            next(node.infer())
+
+    def test_len_string(self):
+        node = astroid.extract_node("""
+        len("uwu")
+        """)
+        assert next(node.infer()).as_string() == "3"
+
+    def test_len_generator_failure(self):
+        node = astroid.extract_node("""
+        def gen():
+            yield 'a'
+            yield 'b'
+        len(gen())
+        """)
+        with pytest.raises(astroid.InferenceError):
+            next(node.infer())
+
+    def test_len_failure_missing_variable(self):
+        node = astroid.extract_node("""
+        len(a)
+        """)
+        with pytest.raises(astroid.InferenceError):
+            next(node.infer())
+
+    def test_len_bytes(self):
+        node = astroid.extract_node("""
+        len(b'uwu')
+        """)
+        assert next(node.infer()).as_string() == '3'
+
+
+    @pytest.mark.xfail(reason="Can't retrieve subclassed type value ")
+    def test_int_subclass_result(self):
+        """I am unable to figure out the value of an
+        object which subclasses int"""
+        node = astroid.extract_node("""
+        class IntSubclass(int):
+            pass
+
+        class F:
+            def __len__(self):
+                return IntSubclass(5)
+        len(F())
+        """)
+        assert next(node.infer()).as_string() == '5'
+
+
+    @pytest.mark.xfail(reason="Can't use list special astroid fields")
+    def test_int_subclass_argument(self):
+        """I am unable to access the length of a object which
+        subclasses list"""
+        node = astroid.extract_node("""
+        class ListSubclass(list):
+            pass
+        len(ListSubclass([1,2,3,4,4]))
+        """)
+        assert next(node.infer()).as_string() == '5'
+
+
 if __name__ == '__main__':
     unittest.main()

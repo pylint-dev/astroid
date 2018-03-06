@@ -618,6 +618,29 @@ def _class_or_tuple_to_container(node, context=None):
     return class_container
 
 
+def infer_len(node, context=None):
+    """Infer length calls
+
+    :param nodes.Call node: len call to infer
+    :param context.InferenceContext: node context
+    :rtype nodes.Const:
+    """
+    call = arguments.CallSite.from_call(node)
+    if call.keyword_arguments:
+        raise UseInferenceDefault(
+            "TypeError: len() must take no keyword arguments")
+    if len(call.positional_arguments) != 1:
+        raise UseInferenceDefault(
+            "TypeError: len() must take exactly one argument "
+            "({len}) given".format(len=len(call.positional_arguments)))
+    [argument_node] = call.positional_arguments
+    try:
+        return nodes.Const(helpers.object_len(argument_node))
+    except (AstroidTypeError, InferenceError) as exc:
+        raise UseInferenceDefault(str(exc)) from exc
+
+
+
 # Builtins inference
 register_builtin_transform(infer_bool, 'bool')
 register_builtin_transform(infer_super, 'super')
@@ -633,6 +656,7 @@ register_builtin_transform(infer_type, 'type')
 register_builtin_transform(infer_slice, 'slice')
 register_builtin_transform(infer_isinstance, 'isinstance')
 register_builtin_transform(infer_issubclass, 'issubclass')
+register_builtin_transform(infer_len, 'len')
 
 # Infer object.__new__ calls
 MANAGER.register_transform(

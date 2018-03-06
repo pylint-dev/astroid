@@ -222,3 +222,45 @@ def class_instance_as_index(node):
     except exceptions.InferenceError:
         pass
     return None
+
+
+def object_len(node, context=None):
+    """Infer length of given node object
+
+    :param Union[nodes.ClassDef, nodes.Instance] node:
+    :param node: Node to infer length of
+
+    :raises AstroidTypeError: If an invalid node is returned
+        from __len__ method or no __len__ method exists
+    :raises InferenceError: If the given node cannot be inferred
+        or if multiple nodes are inferred
+    :rtype int: Integer length of node
+    """
+    inferred_node = safe_infer(node, context=context)
+    if inferred_node is None or inferred_node is util.Uninferable:
+        raise exceptions.InferenceError(node=node)
+    if inferred_node.qname() in ('builtins.str', 'builtins.bytes'):
+        return len(inferred_node.value)
+    if isinstance(inferred_node, (nodes.List, nodes.Set, nodes.Tuple, nodes.FrozenSet)):
+        return len(inferred_node.elts)
+    if isinstance(inferred_node, nodes.Dict):
+        return len(inferred_node.items)
+    try:
+        node_type = object_type(inferred_node, context=context)
+        len_call = next(node_type.igetattr("__len__", context=context))
+    except exceptions.AttributeInferenceError:
+        raise exceptions.AstroidTypeError(
+            "object of type '{}' has no len()"
+            .format(len_call.pytype()))
+
+    try:
+        result_of_len = next(len_call.infer_call_result(node, context))
+        # Remove StopIteration catch when #507 is fixed
+    except StopIteration:
+        raise exceptions.InferenceError(node=node)
+    if (isinstance(result_of_len, nodes.Const) and result_of_len.pytype() == "builtins.int"):
+        return result_of_len.value
+    else:
+        raise exceptions.AstroidTypeError(
+            "'{}' object cannot be interpreted as an integer"
+            .format(result_of_len))
