@@ -96,8 +96,8 @@ def _object_type_is_subclass(obj_type, class_or_seq, context=None):
     class_seq = [item if not isinstance(item, bases.Instance)
                  else util.Uninferable for item in class_seq]
     # strict compatibility with issubclass
-    # issubclass(1, (int, 1)) evaluates to true
-    # issubclass(1, (1, int)) raises TypeError
+    # issubclass(type, (object, 1)) evaluates to true
+    # issubclass(object, (1, type)) raises TypeError
     for klass in class_seq:
         if klass is util.Uninferable:
             raise exceptions.AstroidTypeError("arg 2 must be a type or tuple of types")
@@ -112,7 +112,7 @@ def object_isinstance(node, class_or_seq, context=None):
     """Check if a node 'isinstance' any node in class_or_seq
 
     :param node: A given node
-    :param class_or_seq: Union[Nodes.NodeNG], Sequence[nodes.NodeNG]]
+    :param class_or_seq: Union[nodes.NodeNG, Sequence[nodes.NodeNG]]
     :rtype: bool
 
     :raises AstroidTypeError: if the given ``classes_or_seq`` are not types
@@ -127,7 +127,7 @@ def object_issubclass(node, class_or_seq, context=None):
     """Check if a type is a subclass of any node in class_or_seq
 
     :param node: A given node
-    :param class_or_seq: Union[Nodes.NodeNG], Sequence[nodes.NodeNG]]
+    :param class_or_seq: Union[Nodes.NodeNG, Sequence[nodes.NodeNG]]
     :rtype: bool
 
     :raises AstroidTypeError: if the given ``classes_or_seq`` are not types
