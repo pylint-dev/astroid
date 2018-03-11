@@ -2837,21 +2837,6 @@ class ExceptHandler(mixins.AssignTypeMixin, Statement):
         return False
 
 
-class FrozenSet(_BaseContainer):
-    """class representing a FrozenSet composite node"""
-
-    def pytype(self):
-        return '%s.frozenset' % BUILTINS
-
-    def _infer(self, context=None):
-        yield self
-
-    @decorators.cachedproperty
-    def _proxied(self): # pylint: disable=method-hidden
-        builtins = MANAGER.astroid_cache[BUILTINS]
-        return builtins.getattr('frozenset')[0]
-
-
 class Exec(Statement):
     """Class representing the ``exec`` statement.
 

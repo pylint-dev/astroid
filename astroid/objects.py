@@ -29,6 +29,21 @@ BUILTINS = six.moves.builtins.__name__
 objectmodel = util.lazy_import('interpreter.objectmodel')
 
 
+class FrozenSet(node_classes._BaseContainer):
+    """class representing a FrozenSet composite node"""
+
+    def pytype(self):
+        return '%s.frozenset' % BUILTINS
+
+    def _infer(self, context=None):
+        yield self
+
+    @decorators.cachedproperty
+    def _proxied(self): # pylint: disable=method-hidden
+        builtins = MANAGER.astroid_cache[BUILTINS]
+        return builtins.getattr('frozenset')[0]
+
+
 class Super(node_classes.NodeNG):
     """Proxy class over a super call.
 

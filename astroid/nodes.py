@@ -20,7 +20,7 @@ from astroid.node_classes import (
     AssignName, AugAssign, Repr, BinOp, BoolOp, Break, Call, Compare,
     Comprehension, Const, Continue, Decorators, DelAttr, DelName, Delete,
     Dict, Expr, Ellipsis, EmptyNode, ExceptHandler, Exec, ExtSlice, For,
-    FrozenSet, ImportFrom, Attribute, Global, If, IfExp, Import, Index, Keyword,
+    ImportFrom, Attribute, Global, If, IfExp, Import, Index, Keyword,
     List, Name, Nonlocal, Pass, Print, Raise, Return, Set, Slice, Starred, Subscript,
     TryExcept, TryFinally, Tuple, UnaryOp, While, With, Yield, YieldFrom,
     const_factory,

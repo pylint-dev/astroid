@@ -26,6 +26,7 @@ from astroid import arguments
 from astroid import decorators as decoratorsmod
 from astroid import exceptions
 from astroid import helpers
+from astroid import objects
 from astroid import test_utils
 from astroid import util
 from astroid.tests import resources
@@ -88,7 +89,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
     assertInferTuple = partialmethod(_assertInferElts, nodes.Tuple)
     assertInferList = partialmethod(_assertInferElts, nodes.List)
     assertInferSet = partialmethod(_assertInferElts, nodes.Set)
-    assertInferFrozenSet = partialmethod(_assertInferElts, nodes.FrozenSet)
+    assertInferFrozenSet = partialmethod(_assertInferElts, objects.FrozenSet)
 
     CODE = '''
         class C(object):

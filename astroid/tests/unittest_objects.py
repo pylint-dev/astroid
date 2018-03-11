@@ -21,7 +21,7 @@ class ObjectsTest(unittest.TestCase):
         frozenset({1: 2, 2: 3}) #@
         """)
         inferred = next(node.infer())
-        self.assertIsInstance(inferred, nodes.FrozenSet)
+        self.assertIsInstance(inferred, objects.FrozenSet)
 
         self.assertEqual(inferred.pytype(), "%s.frozenset" % bases.BUILTINS)
 
