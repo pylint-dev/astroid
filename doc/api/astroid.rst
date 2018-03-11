@@ -1,5 +1,5 @@
-:mod:`astroid`
-==============
+Nodes API
+=========
 
 .. automodule:: astroid
 
