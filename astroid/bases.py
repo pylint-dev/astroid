@@ -308,6 +308,21 @@ class UnboundMethod(Proxy):
         if (self._proxied.name == '__new__' and
                 self._proxied.parent.frame().qname() == '%s.object' % BUILTINS):
             infer = caller.args[0].infer() if caller.args else []
+            # object.__new__(cls) returns the wrong class instance
+            # when cls is the first argument of a function decorated
+            # with a classmethod.
+            # Ignore those particular instantiations since there is
+            # no current way to provide the correct class
+            # TODO(brycepg): Improve InferenceContext to provide more
+            # information about the call stack
+            frame = caller.frame()
+            has_classmethod_decorator = (
+                frame.pytype() == "builtins.instancemethod" and
+                frame.type == "classmethod" and frame.name != "__new__")
+            if (infer and has_classmethod_decorator and frame.args.args and
+                    next(caller.args[0].infer()) == next(frame.args.args[0].infer())):
+                infer = []
+
             return (Instance(x) if x is not util.Uninferable else x for x in infer)
         return self._proxied.infer_call_result(caller, context)
 
