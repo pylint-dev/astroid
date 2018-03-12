@@ -3581,6 +3581,45 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 25)
 
+    def test_factory_methods_cls_call(self):
+        ast = extract_node("""
+        class C:
+            @classmethod
+            def factory(cls):
+                return cls()
+
+        class D(C):
+            pass
+
+        C.factory() #@
+        D.factory() #@
+        """, 'module')
+        should_be_C = list(ast[0].infer())
+        should_be_D = list(ast[1].infer())
+        self.assertEqual(1, len(should_be_C))
+        self.assertEqual(1, len(should_be_D))
+        self.assertEqual('module.C', should_be_C[0].qname())
+        self.assertEqual('module.D', should_be_D[0].qname())
+
+    def test_factory_methods_object_new_call(self):
+        ast = extract_node("""
+        class C:
+            @classmethod
+            def factory(cls):
+                return object.__new__(cls)
+
+        class D(C):
+            pass
+
+        C.factory() #@
+        D.factory() #@
+        """, 'module')
+        should_be_C = list(ast[0].infer())
+        should_be_D = list(ast[1].infer())
+        self.assertEqual(1, len(should_be_C))
+        self.assertEqual(1, len(should_be_D))
+        self.assertNotEqual('module.C', should_be_D[0].qname())
+
     @unittest.expectedFailure
     def test_inner_value_redefined_by_subclass_with_mro(self):
         # This might work, but it currently doesn't due to not being able
