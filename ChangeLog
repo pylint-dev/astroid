@@ -12,23 +12,21 @@ Change log for the astroid package (used to be astng)
 
    * Fix submodule imports from six
 
-   Close PYCQA/pylint#1640
+     Close PyCQA/pylint#1640
 
    * Fix missing __module__ and __qualname__ from class definition locals
 
-	Close PYCQA/pylint#1753
+	 Close PYCQA/pylint#1753
 
    * Fix a crash when __annotations__ access a parent's __init__ that does not have arguments
 
      Close #473
 
-   * Fix multiple objects sharing the same InferenceContext.path causing
-   uninferable results
+   * Fix multiple objects sharing the same InferenceContext.path causing uninferable results
 
      Close #483
 
-   * Fix improper modification of col_offset, lineno upon inference of builtin
-   functions
+   * Fix improper modification of col_offset, lineno upon inference of builtin functions
 
      Close PyCQA/pylint#1839
 
@@ -48,26 +46,24 @@ Change log for the astroid package (used to be astng)
 
    * Add missing attrs special attribute
 
-	Close PyCQA/pylint#1884
+	 Close PyCQA/pylint#1884
 
-    * Inference now understands the 'isinstance' builtin
+   * Inference now understands the 'isinstance' builtin
 
      Close #98
 
-    * Stop duplicate nodes with the same key values
-        from appearing in dictionaries from dictionary
-        unpacking
+   * Stop duplicate nodes with the same key values
+     from appearing in dictionaries from dictionary unpacking.
 
      Close PyCQA/pylint#1843
 
-    * Fix ``contextlib.contextmanager`` inference for nested
-        context managers
+   * Fix ``contextlib.contextmanager`` inference for nested context managers
 
-        Close #1699
+     Close #1699
 
-    * Implement inference for len builtin
+   * Implement inference for len builtin
 
-        Close #112
+     Close #112
 
 
 2017-12-15 -- 1.6.0
