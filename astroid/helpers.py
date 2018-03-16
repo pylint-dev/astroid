@@ -240,7 +240,8 @@ def object_len(node, context=None):
     inferred_node = safe_infer(node, context=context)
     if inferred_node is None or inferred_node is util.Uninferable:
         raise exceptions.InferenceError(node=node)
-    if inferred_node.qname() in ('builtins.str', 'builtins.bytes'):
+    if (isinstance(inferred_node, nodes.Const) and
+            isinstance(inferred_node.value, (bytes, str))):
         return len(inferred_node.value)
     if isinstance(inferred_node, (nodes.List, nodes.Set, nodes.Tuple, FrozenSet)):
         return len(inferred_node.elts)
