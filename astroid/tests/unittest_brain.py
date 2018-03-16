@@ -1230,6 +1230,17 @@ class TestLenBuiltinInference:
         """)
         assert next(node.infer()).as_string() == '5'
 
+    def test_len_builtin_inference_attribute_error_str(self):
+        """Make sure len builtin doesn't raise an AttributeError
+        on instances of str or bytes
+
+        See https://github.com/PyCQA/pylint/issues/1942
+        """
+        code = 'len(str("F"))'
+        try:
+            next(astroid.extract_node(code).infer())
+        except astroid.InferenceError:
+            pass
 
 if __name__ == '__main__':
     unittest.main()
