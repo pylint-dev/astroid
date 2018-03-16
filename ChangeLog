@@ -1,6 +1,8 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+2018-03-16 -- 1.6.2
+
    * Fix submodule imports from six
 
      Close PYCQA/pylint#1640
