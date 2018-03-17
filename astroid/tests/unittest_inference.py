@@ -4438,5 +4438,48 @@ def test_augassign_recursion():
     assert next(cls_node.infer()) is util.Uninferable
 
 
+class TestInferencePropagation:
+    """Make sure function argument values are properly
+
+    propagated to sub functions"""
+    def test_call_context_propagation(self):
+        n = extract_node("""
+        def chest(a):
+            return a * a
+
+        def best(a, b):
+            return chest(a)
+
+        def test(a, b, c):
+            return best(a, b)
+
+        test(4, 5, 6) #@
+        """)
+        assert next(n.infer()).as_string() == "16"
+
+    def test_call_starargs_propagation(self):
+        code = """
+
+        def foo(*args):
+            return args
+
+        def bar(*args):
+            return foo(*args)
+
+        bar(4, 5, 6, 7) #@
+        """
+        assert next(extract_node(code).infer()).as_string() == "(4, 5, 6, 7)"
+
+    def test_call_kwargs_propagation(self):
+        code = """
+        def b(**kwargs):
+            return kwargs
+        def f(**kwargs):
+            return b(**kwargs)
+        f(**{'f': 1}) #@
+        """
+        assert next(extract_node(code).infer()).as_string() == "{'f': 1}"
+
+
 if __name__ == '__main__':
     unittest.main()

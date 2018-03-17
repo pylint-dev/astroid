@@ -69,6 +69,10 @@ Change log for the astroid package (used to be astng)
 
         Close #112
 
+    * Fix propogation of arguments during call inference
+
+        Close #177
+        Close #404
 
 2017-12-15 -- 1.6.0
 
