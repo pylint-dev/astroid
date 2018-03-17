@@ -1604,6 +1604,12 @@ class FunctionDef(node_classes.Statement, Lambda):
                 continue
             yield from child_node._get_return_nodes_skip_functions()
 
+    def _get_yield_nodes_skip_lambdas(self):
+        for child_node in self.body:
+            if child_node.is_lambda:
+                continue
+            yield from child_node._get_yield_nodes_skip_lambdas()
+
 
 class AsyncFunctionDef(FunctionDef):
     """Class representing an :class:`ast.FunctionDef` node.
@@ -2713,6 +2719,12 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
     def _get_assign_nodes(self):
         for child_node in self.body:
             yield from child_node._get_assign_nodes()
+
+    def _get_yield_nodes_skip_lambdas(self):
+        for child_node in self.body:
+            if child_node.is_lambda:
+                continue
+            yield from child_node._get_yield_nodes_skip_lambdas()
 
 
 # Backwards-compatibility aliases
