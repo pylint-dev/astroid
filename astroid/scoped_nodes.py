@@ -1594,6 +1594,10 @@ class FunctionDef(node_classes.Statement, Lambda):
         for elt in self.body:
             yield elt
 
+    def _get_assign_nodes(self):
+        for child_node in self.body:
+            yield from child_node._get_assign_nodes()
+
 
 class AsyncFunctionDef(FunctionDef):
     """Class representing an :class:`ast.FunctionDef` node.
@@ -1710,7 +1714,6 @@ def get_wrapping_class(node):
         else:
             klass = klass.parent.frame()
     return klass
-
 
 
 class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
@@ -2700,6 +2703,10 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
         if self.decorators is not None:
             yield self.decorators
+
+    def _get_assign_nodes(self):
+        for child_node in self.body:
+            yield from child_node._get_assign_nodes()
 
 
 # Backwards-compatibility aliases
