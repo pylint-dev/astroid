@@ -1598,6 +1598,12 @@ class FunctionDef(node_classes.Statement, Lambda):
         for child_node in self.body:
             yield from child_node._get_assign_nodes()
 
+    def _get_return_nodes_skip_functions(self):
+        for child_node in self.body:
+            if child_node.is_function:
+                continue
+            yield from child_node._get_return_nodes_skip_functions()
+
 
 class AsyncFunctionDef(FunctionDef):
     """Class representing an :class:`ast.FunctionDef` node.
