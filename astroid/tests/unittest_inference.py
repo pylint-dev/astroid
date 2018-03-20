@@ -895,6 +895,16 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual('module.C', should_be_C[0].qname())
         self.assertEqual('module.D', should_be_D[0].qname())
 
+    def test_factory_methods_inside_binary_operation(self):
+        node = extract_node("""
+        from pathlib import Path
+        h = Path("/home")
+        u = h / "user"
+        u #@
+        """)
+        assert next(node.infer()).qname() == 'pathlib.Path'
+
+
     def test_import_as(self):
         code = '''
             import os.path as osp
