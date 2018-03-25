@@ -863,6 +863,7 @@ def test_unknown():
     assert isinstance(next(nodes.Unknown().infer()),
                       type(util.Uninferable))
     assert isinstance(nodes.Unknown().name, str)
+    assert isinstance(nodes.Unknown().qname(), str)
 
 
 if __name__ == '__main__':
