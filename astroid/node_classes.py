@@ -4421,6 +4421,10 @@ class Unknown(mixins.AssignTypeMixin, NodeNG):
     introspection failed.
     """
     name = "Unknown"
+
+    def qname(self):
+        return "Unknown"
+
     def infer(self, context=None, **kwargs):
         """Inference on an Unknown node immediately terminates."""
         yield util.Uninferable
