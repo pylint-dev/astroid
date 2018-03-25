@@ -858,5 +858,12 @@ class ContextTest(unittest.TestCase):
         self.assertIs(starred.ctx, astroid.Store)
 
 
+def test_unknown():
+    """Test Unknown node"""
+    assert isinstance(next(nodes.Unknown().infer()),
+                      type(util.Uninferable))
+    assert isinstance(nodes.Unknown().name, str)
+
+
 if __name__ == '__main__':
     unittest.main()
