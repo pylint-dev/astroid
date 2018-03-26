@@ -2741,7 +2741,8 @@ class EmptyNode(NodeNG):
         yield from ()
 
 
-class ExceptHandler(mixins.AssignTypeMixin, Statement):
+class ExceptHandler(mixins.MultiLineBlockMixin,
+                    mixins.AssignTypeMixin, Statement):
     """Class representing an :class:`ast.ExceptHandler`. node.
 
     An :class:`ExceptHandler` is an ``except`` block on a try-except.
@@ -2758,6 +2759,7 @@ class ExceptHandler(mixins.AssignTypeMixin, Statement):
     [<ExceptHandler l.4 at 0x7f23b2e9e860>]
     """
     _astroid_fields = ('type', 'name', 'body',)
+    _multi_line_block_fields = ('body',)
     type = None
     """The types that the block handles.
 
@@ -2827,18 +2829,6 @@ class ExceptHandler(mixins.AssignTypeMixin, Statement):
             if node.name in exceptions:
                 return True
         return False
-
-    def _get_return_nodes_skip_functions(self):
-        for child_node in self.body:
-            if child_node.is_function:
-                continue
-            yield from child_node._get_return_nodes_skip_functions()
-
-    def _get_yield_nodes_skip_lambdas(self):
-        for child_node in self.body:
-            if child_node.is_lambda:
-                continue
-            yield from child_node._get_yield_nodes_skip_lambdas()
 
 
 class Exec(Statement):
@@ -2910,7 +2900,8 @@ class ExtSlice(NodeNG):
         self.dims = dims
 
 
-class For(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, Statement):
+class For(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn,
+          mixins.AssignTypeMixin, Statement):
     """Class representing an :class:`ast.For` node.
 
     >>> node = astroid.extract_node('for thing in things: print(thing)')
@@ -2918,6 +2909,7 @@ class For(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, Statement):
     <For l.1 at 0x7f23b2e8cf28>
     """
     _astroid_fields = ('target', 'iter', 'body', 'orelse',)
+    _multi_line_block_fields = ('body', 'orelse')
     target = None
     """What the loop assigns to.
 
@@ -2982,35 +2974,6 @@ class For(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, Statement):
 
         yield from self.body
         yield from self.orelse
-
-    def _get_assign_nodes(self):
-        for child_node in self.body:
-            yield from child_node._get_assign_nodes()
-
-        for child_node in self.orelse:
-            yield from child_node._get_assign_nodes()
-
-    def _get_return_nodes_skip_functions(self):
-        for child_node in self.body:
-            if child_node.is_function:
-                continue
-            yield from child_node._get_return_nodes_skip_functions()
-
-        for child_node in self.orelse:
-            if child_node.is_function:
-                continue
-            yield from child_node._get_return_nodes_skip_functions()
-
-    def _get_yield_nodes_skip_lambdas(self):
-        for child_node in self.body:
-            if child_node.is_lambda:
-                continue
-            yield from child_node._get_yield_nodes_skip_lambdas()
-
-        for child_node in self.orelse:
-            if child_node.is_lambda:
-                continue
-            yield from child_node._get_yield_nodes_skip_lambdas()
 
 
 class AsyncFor(For):
@@ -3214,7 +3177,7 @@ class Global(Statement):
         yield from ()
 
 
-class If(mixins.BlockRangeMixIn, Statement):
+class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
     """Class representing an :class:`ast.If` node.
 
     >>> node = astroid.extract_node('if condition: print(True)')
@@ -3222,6 +3185,7 @@ class If(mixins.BlockRangeMixIn, Statement):
     <If l.1 at 0x7f23b2e9dd30>
     """
     _astroid_fields = ('test', 'body', 'orelse')
+    _multi_line_block_fields = ('body', 'orelse')
     test = None
     """The condition that the statement tests.
 
@@ -3284,35 +3248,6 @@ class If(mixins.BlockRangeMixIn, Statement):
 
         yield from self.body
         yield from self.orelse
-
-    def _get_assign_nodes(self):
-        for child_node in self.body:
-            yield from child_node._get_assign_nodes()
-
-        for child_node in self.orelse:
-            yield from child_node._get_assign_nodes()
-
-    def _get_return_nodes_skip_functions(self):
-        for child_node in self.body:
-            if child_node.is_function:
-                continue
-            yield from child_node._get_return_nodes_skip_functions()
-
-        for child_node in self.orelse:
-            if child_node.is_function:
-                continue
-            yield from child_node._get_return_nodes_skip_functions()
-
-    def _get_yield_nodes_skip_lambdas(self):
-        for child_node in self.body:
-            if child_node.is_lambda:
-                continue
-            yield from child_node._get_yield_nodes_skip_lambdas()
-
-        for child_node in self.orelse:
-            if child_node.is_lambda:
-                continue
-            yield from child_node._get_yield_nodes_skip_lambdas()
 
 
 class IfExp(NodeNG):
@@ -3952,7 +3887,7 @@ class Subscript(NodeNG):
         yield self.slice
 
 
-class TryExcept(mixins.BlockRangeMixIn, Statement):
+class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
     """Class representing an :class:`ast.TryExcept` node.
 
     >>> node = astroid.extract_node('''
@@ -3965,6 +3900,7 @@ class TryExcept(mixins.BlockRangeMixIn, Statement):
     <TryExcept l.2 at 0x7f23b2e9d908>
     """
     _astroid_fields = ('body', 'handlers', 'orelse',)
+    _multi_line_block_fields = ('body', 'orelse')
     body = None
     """The contents of the block to catch exceptions from.
 
@@ -4026,38 +3962,9 @@ class TryExcept(mixins.BlockRangeMixIn, Statement):
         yield from self.handlers or ()
         yield from self.orelse or ()
 
-    def _get_assign_nodes(self):
-        for child_node in self.body:
-            yield from child_node._get_assign_nodes()
 
-        for child_node in self.orelse:
-            yield from child_node._get_assign_nodes()
-
-    def _get_return_nodes_skip_functions(self):
-        for child_node in self.body:
-            if child_node.is_function:
-                continue
-            yield from child_node._get_return_nodes_skip_functions()
-
-        for child_node in self.orelse or ():
-            if child_node.is_function:
-                continue
-            for matching in child_node._get_return_nodes_skip_functions():
-                yield matching
-
-    def _get_yield_nodes_skip_lambdas(self):
-        for child_node in self.body:
-            if child_node.is_lambda:
-                continue
-            yield from child_node._get_yield_nodes_skip_lambdas()
-
-        for child_node in self.orelse:
-            if child_node.is_lambda:
-                continue
-            yield from child_node._get_yield_nodes_skip_lambdas()
-
-
-class TryFinally(mixins.BlockRangeMixIn, Statement):
+class TryFinally(mixins.MultiLineBlockMixin,
+                 mixins.BlockRangeMixIn, Statement):
     """Class representing an :class:`ast.TryFinally` node.
 
     >>> node = astroid.extract_node('''
@@ -4072,6 +3979,7 @@ class TryFinally(mixins.BlockRangeMixIn, Statement):
     <TryFinally l.2 at 0x7f23b2e41d68>
     """
     _astroid_fields = ('body', 'finalbody',)
+    _multi_line_block_fields = ('body', 'finalbody')
     body = None
     """The try-except that the finally is attached to.
 
@@ -4115,36 +4023,6 @@ class TryFinally(mixins.BlockRangeMixIn, Statement):
     def get_children(self):
         yield from self.body
         yield from self.finalbody
-
-    def _get_assign_nodes(self):
-        for child_node in self.body:
-            yield from child_node._get_assign_nodes()
-
-        for child_node in self.finalbody:
-            yield from child_node._get_assign_nodes()
-
-    def _get_return_nodes_skip_functions(self):
-        for child_node in self.body:
-            if child_node.is_function:
-                continue
-            yield from child_node._get_return_nodes_skip_functions()
-
-        for child_node in self.finalbody:
-            if child_node.is_function:
-                continue
-            for matching in child_node._get_return_nodes_skip_functions():
-                yield matching
-
-    def _get_yield_nodes_skip_lambdas(self):
-        for child_node in self.body:
-            if child_node.is_lambda:
-                continue
-            yield from child_node._get_yield_nodes_skip_lambdas()
-
-        for child_node in self.finalbody:
-            if child_node.is_lambda:
-                continue
-            yield from child_node._get_yield_nodes_skip_lambdas()
 
 
 class Tuple(_BaseContainer):
@@ -4268,7 +4146,7 @@ class UnaryOp(NodeNG):
         yield self.operand
 
 
-class While(mixins.BlockRangeMixIn, Statement):
+class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
     """Class representing an :class:`ast.While` node.
 
     >>> node = astroid.extract_node('''
@@ -4279,6 +4157,7 @@ class While(mixins.BlockRangeMixIn, Statement):
     <While l.2 at 0x7f23b2e4e390>
     """
     _astroid_fields = ('test', 'body', 'orelse',)
+    _multi_line_block_fields = ('body', 'orelse')
     test = None
     """The condition that the loop tests.
 
@@ -4337,38 +4216,9 @@ class While(mixins.BlockRangeMixIn, Statement):
         yield from self.body
         yield from self.orelse
 
-    def _get_assign_nodes(self):
-        for child_node in self.body:
-            yield from child_node._get_assign_nodes()
 
-        for child_node in self.orelse:
-            yield from child_node._get_assign_nodes()
-
-    def _get_return_nodes_skip_functions(self):
-        for child_node in self.body:
-            if child_node.is_function:
-                continue
-            yield from child_node._get_return_nodes_skip_functions()
-
-        for child_node in self.orelse:
-            if child_node.is_function:
-                continue
-            for matching in child_node._get_return_nodes_skip_functions():
-                yield matching
-
-    def _get_yield_nodes_skip_lambdas(self):
-        for child_node in self.body:
-            if child_node.is_lambda:
-                continue
-            yield from child_node._get_yield_nodes_skip_lambdas()
-
-        for child_node in self.orelse:
-            if child_node.is_lambda:
-                continue
-            yield from child_node._get_yield_nodes_skip_lambdas()
-
-
-class With(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, Statement):
+class With(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn,
+           mixins.AssignTypeMixin, Statement):
     """Class representing an :class:`ast.With` node.
 
     >>> node = astroid.extract_node('''
@@ -4379,6 +4229,7 @@ class With(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, Statement):
     <With l.2 at 0x7f23b2e4e710>
     """
     _astroid_fields = ('items', 'body')
+    _multi_line_block_fields = ('body',)
     items = None
     """The pairs of context managers and the names they are assigned to.
 
@@ -4423,22 +4274,6 @@ class With(mixins.BlockRangeMixIn, mixins.AssignTypeMixin, Statement):
                 yield var
         for elt in self.body:
             yield elt
-
-    def _get_assign_nodes(self):
-        for child_node in self.body:
-            yield from child_node._get_assign_nodes()
-
-    def _get_return_nodes_skip_functions(self):
-        for child_node in self.body:
-            if child_node.is_function:
-                continue
-            yield from child_node._get_return_nodes_skip_functions()
-
-    def _get_yield_nodes_skip_lambdas(self):
-        for child_node in self.body:
-            if child_node.is_lambda:
-                continue
-            yield from child_node._get_yield_nodes_skip_lambdas()
 
 
 class AsyncWith(With):

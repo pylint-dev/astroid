@@ -1205,7 +1205,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         yield self.body
 
 
-class FunctionDef(node_classes.Statement, Lambda):
+class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     """Class representing an :class:`ast.FunctionDef`.
 
     >>> node = astroid.extract_node('''
@@ -1216,6 +1216,7 @@ class FunctionDef(node_classes.Statement, Lambda):
     <FunctionDef.my_func l.2 at 0x7f23b2e71e10>
     """
     _astroid_fields = ('decorators', 'args', 'returns', 'body')
+    _multi_line_block_fields = ('body',)
     returns = None
     decorators = None
     """The decorators that are applied to this method or function.
@@ -1593,22 +1594,6 @@ class FunctionDef(node_classes.Statement, Lambda):
 
         for elt in self.body:
             yield elt
-
-    def _get_assign_nodes(self):
-        for child_node in self.body:
-            yield from child_node._get_assign_nodes()
-
-    def _get_return_nodes_skip_functions(self):
-        for child_node in self.body:
-            if child_node.is_function:
-                continue
-            yield from child_node._get_return_nodes_skip_functions()
-
-    def _get_yield_nodes_skip_lambdas(self):
-        for child_node in self.body:
-            if child_node.is_lambda:
-                continue
-            yield from child_node._get_yield_nodes_skip_lambdas()
 
 
 class AsyncFunctionDef(FunctionDef):
@@ -2719,12 +2704,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
     def _get_assign_nodes(self):
         for child_node in self.body:
             yield from child_node._get_assign_nodes()
-
-    def _get_yield_nodes_skip_lambdas(self):
-        for child_node in self.body:
-            if child_node.is_lambda:
-                continue
-            yield from child_node._get_yield_nodes_skip_lambdas()
 
 
 # Backwards-compatibility aliases

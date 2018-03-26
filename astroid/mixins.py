@@ -131,3 +131,38 @@ class ImportFromMixin(FilterStmtsMixin):
         raise exceptions.AttributeInferenceError(
             'Could not find original name for {attribute} in {target!r}',
             target=self, attribute=asname)
+
+
+class MultiLineBlockMixin:
+    """Mixin for nodes with multi-line blocks, e.g. For and FunctionDef.
+    Note that this does not apply to every node with a `body` field.
+    For instance, an If node has a multi-line body, but the body of an
+    IfExpr is not multi-line, and hence cannot contain Return nodes,
+    Assign nodes, etc.
+    """
+
+    @decorators.cachedproperty
+    def _multi_line_blocks(self):
+        return tuple(
+            getattr(self, field)
+            for field in self._multi_line_block_fields
+        )
+
+    def _get_return_nodes_skip_functions(self):
+        for block in self._multi_line_blocks:
+            for child_node in block:
+                if child_node.is_function:
+                    continue
+                yield from child_node._get_return_nodes_skip_functions()
+
+    def _get_yield_nodes_skip_lambdas(self):
+        for block in self._multi_line_blocks:
+            for child_node in block:
+                if child_node.is_lambda:
+                    continue
+                yield from child_node._get_yield_nodes_skip_lambdas()
+
+    def _get_assign_nodes(self):
+        for block in self._multi_line_blocks:
+            for child_node in block:
+                yield from child_node._get_assign_nodes()
