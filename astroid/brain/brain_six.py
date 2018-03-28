@@ -81,31 +81,33 @@ if sys.version_info[0] == 2:
     reload_module = reload
 
     class UrllibParse(object):
-        import urlparse as _urlparse
-        import urllib as _urllib
-        ParseResult = _urlparse.ParseResult
-        SplitResult = _urlparse.SplitResult
-        parse_qs = _urlparse.parse_qs
-        parse_qsl = _urlparse.parse_qsl
-        urldefrag = _urlparse.urldefrag
-        urljoin = _urlparse.urljoin
-        urlparse = _urlparse.urlparse
-        urlsplit = _urlparse.urlsplit
-        urlunparse = _urlparse.urlunparse
-        urlunsplit = _urlparse.urlunsplit
-        quote = _urllib.quote
-        quote_plus = _urllib.quote_plus
-        unquote = _urllib.unquote
-        unquote_plus = _urllib.unquote_plus
-        urlencode = _urllib.urlencode
-        splitquery = _urllib.splitquery
-        splittag = _urllib.splittag
-        splituser = _urllib.splituser
-        uses_fragment = _urlparse.uses_fragment
-        uses_netloc = _urlparse.uses_netloc
-        uses_params = _urlparse.uses_params
-        uses_query = _urlparse.uses_query
-        uses_relative = _urlparse.uses_relative
+        def __init__(self):
+            import urlparse as _urlparse
+            import urllib as _urllib
+
+            self.ParseResult = _urlparse.ParseResult
+            self.SplitResult = _urlparse.SplitResult
+            self.parse_qs = _urlparse.parse_qs
+            self.parse_qsl = _urlparse.parse_qsl
+            self.urldefrag = _urlparse.urldefrag
+            self.urljoin = _urlparse.urljoin
+            self.urlparse = _urlparse.urlparse
+            self.urlsplit = _urlparse.urlsplit
+            self.urlunparse = _urlparse.urlunparse
+            self.urlunsplit = _urlparse.urlunsplit
+            self.quote = _urllib.quote
+            self.quote_plus = _urllib.quote_plus
+            self.unquote = _urllib.unquote
+            self.unquote_plus = _urllib.unquote_plus
+            self.urlencode = _urllib.urlencode
+            self.splitquery = _urllib.splitquery
+            self.splittag = _urllib.splittag
+            self.splituser = _urllib.splituser
+            self.uses_fragment = _urlparse.uses_fragment
+            self.uses_netloc = _urlparse.uses_netloc
+            self.uses_params = _urlparse.uses_params
+            self.uses_query = _urlparse.uses_query
+            self.uses_relative = _urlparse.uses_relative
 
     class UrllibError(object):
         import urllib2 as _urllib2
@@ -118,40 +120,41 @@ if sys.version_info[0] == 2:
         pass
 
     class UrllibRequest(object):
-        import urlparse as _urlparse
-        import urllib2 as _urllib2
-        import urllib as _urllib
-        urlopen = _urllib2.urlopen
-        install_opener = _urllib2.install_opener
-        build_opener = _urllib2.build_opener
-        pathname2url = _urllib.pathname2url
-        url2pathname = _urllib.url2pathname
-        getproxies = _urllib.getproxies
-        Request = _urllib2.Request
-        OpenerDirector = _urllib2.OpenerDirector
-        HTTPDefaultErrorHandler = _urllib2.HTTPDefaultErrorHandler
-        HTTPRedirectHandler = _urllib2.HTTPRedirectHandler
-        HTTPCookieProcessor = _urllib2.HTTPCookieProcessor
-        ProxyHandler = _urllib2.ProxyHandler
-        BaseHandler = _urllib2.BaseHandler
-        HTTPPasswordMgr = _urllib2.HTTPPasswordMgr
-        HTTPPasswordMgrWithDefaultRealm = _urllib2.HTTPPasswordMgrWithDefaultRealm
-        AbstractBasicAuthHandler = _urllib2.AbstractBasicAuthHandler
-        HTTPBasicAuthHandler = _urllib2.HTTPBasicAuthHandler
-        ProxyBasicAuthHandler = _urllib2.ProxyBasicAuthHandler
-        AbstractDigestAuthHandler = _urllib2.AbstractDigestAuthHandler
-        HTTPDigestAuthHandler = _urllib2.HTTPDigestAuthHandler
-        ProxyDigestAuthHandler = _urllib2.ProxyDigestAuthHandler
-        HTTPHandler = _urllib2.HTTPHandler
-        HTTPSHandler = _urllib2.HTTPSHandler
-        FileHandler = _urllib2.FileHandler
-        FTPHandler = _urllib2.FTPHandler
-        CacheFTPHandler = _urllib2.CacheFTPHandler
-        UnknownHandler = _urllib2.UnknownHandler
-        HTTPErrorProcessor = _urllib2.HTTPErrorProcessor
-        urlretrieve = _urllib.urlretrieve
-        urlcleanup = _urllib.urlcleanup
-        proxy_bypass = _urllib.proxy_bypass
+        def __init__(self):
+            import urlparse as _urlparse
+            import urllib2 as _urllib2
+            import urllib as _urllib
+            self.urlopen = _urllib2.urlopen
+            self.install_opener = _urllib2.install_opener
+            self.build_opener = _urllib2.build_opener
+            self.pathname2url = _urllib.pathname2url
+            self.url2pathname = _urllib.url2pathname
+            self.getproxies = _urllib.getproxies
+            self.Request = _urllib2.Request
+            self.OpenerDirector = _urllib2.OpenerDirector
+            self.HTTPDefaultErrorHandler = _urllib2.HTTPDefaultErrorHandler
+            self.HTTPRedirectHandler = _urllib2.HTTPRedirectHandler
+            self.HTTPCookieProcessor = _urllib2.HTTPCookieProcessor
+            self.ProxyHandler = _urllib2.ProxyHandler
+            self.BaseHandler = _urllib2.BaseHandler
+            self.HTTPPasswordMgr = _urllib2.HTTPPasswordMgr
+            self.HTTPPasswordMgrWithDefaultRealm = _urllib2.HTTPPasswordMgrWithDefaultRealm
+            self.AbstractBasicAuthHandler = _urllib2.AbstractBasicAuthHandler
+            self.HTTPBasicAuthHandler = _urllib2.HTTPBasicAuthHandler
+            self.ProxyBasicAuthHandler = _urllib2.ProxyBasicAuthHandler
+            self.AbstractDigestAuthHandler = _urllib2.AbstractDigestAuthHandler
+            self.HTTPDigestAuthHandler = _urllib2.HTTPDigestAuthHandler
+            self.ProxyDigestAuthHandler = _urllib2.ProxyDigestAuthHandler
+            self.HTTPHandler = _urllib2.HTTPHandler
+            self.HTTPSHandler = _urllib2.HTTPSHandler
+            self.FileHandler = _urllib2.FileHandler
+            self.FTPHandler = _urllib2.FTPHandler
+            self.CacheFTPHandler = _urllib2.CacheFTPHandler
+            self.UnknownHandler = _urllib2.UnknownHandler
+            self.HTTPErrorProcessor = _urllib2.HTTPErrorProcessor
+            self.urlretrieve = _urllib.urlretrieve
+            self.urlcleanup = _urllib.urlcleanup
+            self.proxy_bypass = _urllib.proxy_bypass
 
     urllib_parse = UrllibParse()
     urllib_error = UrllibError()

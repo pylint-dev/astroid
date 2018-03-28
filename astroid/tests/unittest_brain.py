@@ -316,9 +316,9 @@ class SixBrainTest(unittest.TestCase):
         if six.PY2:
             # In reality it's a function, but our implementations
             # transforms it into a method.
-            self.assertIsInstance(urljoin, astroid.BoundMethod)
+            self.assertIsInstance(urljoin, astroid.FunctionDef)
             self.assertEqual(urljoin.qname(), 'urlparse.urljoin')
-            self.assertIsInstance(urlencode, astroid.BoundMethod)
+            self.assertIsInstance(urlencode, astroid.FunctionDef)
             self.assertEqual(urlencode.qname(), 'urllib.urlencode')
         else:
             self.assertIsInstance(urljoin, nodes.FunctionDef)
@@ -350,9 +350,9 @@ class SixBrainTest(unittest.TestCase):
         if six.PY2:
             # In reality it's a function, but our implementations
             # transforms it into a method.
-            self.assertIsInstance(urlopen, astroid.BoundMethod)
+            self.assertIsInstance(urlopen, astroid.FunctionDef)
             self.assertEqual(urlopen.qname(), 'urllib2.urlopen')
-            self.assertIsInstance(urlretrieve, astroid.BoundMethod)
+            self.assertIsInstance(urlretrieve, astroid.FunctionDef)
             self.assertEqual(urlretrieve.qname(), 'urllib.urlretrieve')
         else:
             self.assertIsInstance(urlopen, nodes.FunctionDef)
