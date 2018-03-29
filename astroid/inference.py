@@ -186,6 +186,7 @@ def infer_call(self, context=None):
     callcontext = context.clone()
     callcontext.callcontext = contextmod.CallContext(args=self.args,
                                                      keywords=self.keywords)
+    _set_explicit_context_for_call(self, context.clone())
     callcontext.boundnode = None
     for callee in self.func.infer(context):
         if callee is util.Uninferable:
@@ -518,6 +519,8 @@ def _is_not_implemented(const):
 def _invoke_binop_inference(instance, opnode, op, other, context, method_name):
     """Invoke binary operation inference on the given instance."""
     methods = dunder_lookup.lookup(instance, method_name)
+    if context is not None:
+        context.boundnode = instance
     method = methods[0]
     inferred = next(method.infer(context=context))
     return instance.infer_binary_op(opnode, op, other, context, inferred)
@@ -832,3 +835,17 @@ def instance_getitem(self, index, context=None):
             node=self, index=index, context=context))
 
 bases.Instance.getitem = instance_getitem
+
+
+def _set_explicit_context_for_call(call, context):
+    # Set _explicit_context attribute for later inference
+    # This allows context.callcontext to be saved for later
+    # Inference inside a function
+    for arg in call.args:
+        if isinstance(arg, nodes.Starred):
+            arg.value._explicit_context = context
+        else:
+            arg._explicit_context = context
+    keywords = call.keywords if call.keywords is not None else []
+    for keyword in keywords:
+        keyword.value._explicit_context = context

@@ -255,7 +255,10 @@ class NodeNG(object):
     :type: tuple(str)
     """
     # instance specific inference function infer(node, context)
+    # Override inference
     _explicit_inference = None
+    # Override inference context
+    _explicit_context = None
 
     def __init__(self, lineno=None, col_offset=None, parent=None):
         """
@@ -286,6 +289,11 @@ class NodeNG(object):
         :returns: The inferred values.
         :rtype: iterable
         """
+        if self._explicit_context is not None:
+            # Ignore path for now
+            # TODO fix inference caching
+            self._explicit_context.path = set()
+            context = self._explicit_context
         if self._explicit_inference is not None:
             # explicit_inference is not bound, give it self explicitly
             try:

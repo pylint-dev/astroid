@@ -22,17 +22,43 @@ class InferenceContext(object):
 
     def __init__(self, path=None, inferred=None):
         self.path = path or set()
-        """Path of visited nodes and their lookupname
-        :type: set(tuple(NodeNG, optional(str)))"""
+        """
+        :type: set(tuple(NodeNG, optional(str)))
+
+        Path of visited nodes and their lookupname
+
+        Currently this key is ``(node, context.lookupname)``
+        """
         self.lookupname = None
+        """
+        :type: optional[str]
+
+        The original name of the node
+
+        e.g.
+        foo = 1
+        The inference of 'foo' is nodes.Const(1) but the lookup name is 'foo'
+        """
         self.callcontext = None
+        """
+        :type: optional[CallContext]
+
+        The call arguments and keywords for the given context
+        """
         self.boundnode = None
+        """
+        :type: optional[NodeNG]
+
+        The bound node of the given context
+
+        e.g. the bound node of object.__new__(cls) is the object node
+        """
         self.inferred = inferred or {}
         """
         :type: dict(seq, seq)
 
         Inferred node contexts to their mapped results
-        Currently the key is (node, lookupname, callcontext, boundnode)
+        Currently the key is ``(node, lookupname, callcontext, boundnode)``
         and the value is tuple of the inferred results
         """
 
@@ -94,6 +120,10 @@ class CallContext(object):
     __slots__ = ('args', 'keywords')
 
     def __init__(self, args, keywords=None):
+        """
+        :param List[NodeNG] args: Call positional arguments
+        :param Union[List[nodes.Keyword], None] keywords: Call keywords
+        """
         self.args = args
         if keywords:
             keywords = [(arg.arg, arg.value) for arg in keywords]

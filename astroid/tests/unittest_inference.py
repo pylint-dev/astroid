@@ -854,6 +854,57 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(inferred[0]._proxied.name, 'Sub')
 
 
+    def test_factory_methods_cls_call(self):
+        ast = extract_node("""
+        class C:
+            @classmethod
+            def factory(cls):
+                return cls()
+
+        class D(C):
+            pass
+
+        C.factory() #@
+        D.factory() #@
+        """, 'module')
+        should_be_C = list(ast[0].infer())
+        should_be_D = list(ast[1].infer())
+        self.assertEqual(1, len(should_be_C))
+        self.assertEqual(1, len(should_be_D))
+        self.assertEqual('module.C', should_be_C[0].qname())
+        self.assertEqual('module.D', should_be_D[0].qname())
+
+
+    def test_factory_methods_object_new_call(self):
+        ast = extract_node("""
+        class C:
+            @classmethod
+            def factory(cls):
+                return object.__new__(cls)
+
+        class D(C):
+            pass
+
+        C.factory() #@
+        D.factory() #@
+        """, 'module')
+        should_be_C = list(ast[0].infer())
+        should_be_D = list(ast[1].infer())
+        self.assertEqual(1, len(should_be_C))
+        self.assertEqual(1, len(should_be_D))
+        self.assertEqual('module.C', should_be_C[0].qname())
+        self.assertEqual('module.D', should_be_D[0].qname())
+
+    def test_factory_methods_inside_binary_operation(self):
+        node = extract_node("""
+        from pathlib import Path
+        h = Path("/home")
+        u = h / "user"
+        u #@
+        """)
+        assert next(node.infer()).qname() == 'pathlib.Path'
+
+
     def test_import_as(self):
         code = '''
             import os.path as osp
@@ -4395,6 +4446,49 @@ def test_augassign_recursion():
     """
     cls_node = extract_node(code)
     assert next(cls_node.infer()) is util.Uninferable
+
+
+class TestInferencePropagation:
+    """Make sure function argument values are properly
+
+    propagated to sub functions"""
+    def test_call_context_propagation(self):
+        n = extract_node("""
+        def chest(a):
+            return a * a
+
+        def best(a, b):
+            return chest(a)
+
+        def test(a, b, c):
+            return best(a, b)
+
+        test(4, 5, 6) #@
+        """)
+        assert next(n.infer()).as_string() == "16"
+
+    def test_call_starargs_propagation(self):
+        code = """
+
+        def foo(*args):
+            return args
+
+        def bar(*args):
+            return foo(*args)
+
+        bar(4, 5, 6, 7) #@
+        """
+        assert next(extract_node(code).infer()).as_string() == "(4, 5, 6, 7)"
+
+    def test_call_kwargs_propagation(self):
+        code = """
+        def b(**kwargs):
+            return kwargs
+        def f(**kwargs):
+            return b(**kwargs)
+        f(**{'f': 1}) #@
+        """
+        assert next(extract_node(code).infer()).as_string() == "{'f': 1}"
 
 
 if __name__ == '__main__':
