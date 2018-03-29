@@ -139,6 +139,18 @@ Change log for the astroid package (used to be astng)
 
       Close #472
 
+    * Fix object.__new__(cls) calls in classmethods by using
+        a context which has the proper boundnode for the given
+        argument
+
+        Close #404
+
+    * Fix Pathlib type inference
+
+        Close PyCQA/pylint#224
+        Close PyCQA/pylint#1660
+
+
 2017-06-03 -- 1.5.3
 
     * enum34 dependency is forced to be at least version 1.1.3. Fixes spurious
