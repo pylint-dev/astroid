@@ -163,13 +163,15 @@ def infer_call(self, context=None):
     callcontext.callcontext = contextmod.CallContext(args=self.args,
                                                      keywords=self.keywords)
     callcontext.boundnode = None
+    if context is not None:
+        context_lookup = _populate_context_lookup(self, context.clone())
     for callee in self.func.infer(context):
         if callee is util.Uninferable:
             yield callee
             continue
         try:
             if hasattr(callee, 'infer_call_result'):
-                for inferred in callee.infer_call_result(self, callcontext):
+                for inferred in callee.infer_call_result(self, callcontext, context_lookup):
                     yield inferred
         except exceptions.InferenceError:
             ## XXX log error ?
@@ -810,3 +812,20 @@ def instance_getitem(self, index, context=None):
             node=self, index=index, context=context))
 
 bases.Instance.getitem = instance_getitem
+
+
+def _populate_context_lookup(call, context):
+    # Allows context to be saved for later
+    # for inference inside a function
+    context_lookup = {}
+    if context is None:
+        return context_lookup
+    for arg in call.args:
+        if isinstance(arg, nodes.Starred):
+            context_lookup[arg.value] = context
+        else:
+            context_lookup[arg] = context
+    keywords = call.keywords if call.keywords is not None else []
+    for keyword in keywords:
+        context_lookup[keyword.value] = context
+    return context_lookup

@@ -1139,7 +1139,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
             names.append(self.args.kwarg)
         return names
 
-    def infer_call_result(self, caller, context=None):
+    def infer_call_result(self, caller, context=None, context_lookup=None):
         """Infer what the function returns when called.
 
         :param caller: Unused
@@ -1148,7 +1148,6 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         # pylint: disable=no-member; github.com/pycqa/astroid/issues/291
         # args is in fact redefined later on by postinit. Can't be changed
         # to None due to a strong interaction between Lambda and FunctionDef.
-
         return self.body.infer(context)
 
     def scope_lookup(self, node, name, offset=0):
@@ -1526,7 +1525,7 @@ class FunctionDef(node_classes.Statement, Lambda):
         return next(self.nodes_of_class(yield_nodes,
                                         skip_klass=(FunctionDef, Lambda)), False)
 
-    def infer_call_result(self, caller, context=None):
+    def infer_call_result(self, caller=None, context=None, context_lookup=None):
         """Infer what the function returns when called.
 
         :returns: What the function returns.
@@ -1953,7 +1952,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         result.parent = caller.parent
         return result
 
-    def infer_call_result(self, caller, context=None):
+    def infer_call_result(self, caller, context=None, context_lookup=None):
         """infer what a class is returning when called"""
         if (self.is_subtype_of('%s.type' % (BUILTINS,), context)
                 and len(caller.args) == 3):
