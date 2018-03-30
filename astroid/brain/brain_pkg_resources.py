@@ -65,6 +65,7 @@ def cleanup_resources(force=False):
 def get_distribution(dist):
     return Distribution(dist)
 
+_namespace_packages = {}
 ''')
 
 register_module_extender(MANAGER, 'pkg_resources', pkg_resources_transform)

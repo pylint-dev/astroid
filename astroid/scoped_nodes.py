@@ -356,7 +356,7 @@ class Module(LocalsDictNodeNG):
     _other_other_fields = ('locals', 'globals')
 
     def __init__(self, name, doc, file=None,
-                 path: Optional[List[str]]=None,
+                 path: Optional[List[str]] = None,
                  package=None,
                  parent=None, pure_python=True):
         """

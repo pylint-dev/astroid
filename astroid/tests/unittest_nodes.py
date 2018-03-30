@@ -412,7 +412,6 @@ class CmpNodeTest(unittest.TestCase):
 class ConstNodeTest(unittest.TestCase):
 
     def _test(self, value):
-        # pylint: disable=no-member; union type in const_factory, this shouldn't happen
         node = nodes.const_factory(value)
         self.assertIsInstance(node._proxied, nodes.ClassDef)
         self.assertEqual(node._proxied.name, value.__class__.__name__)
