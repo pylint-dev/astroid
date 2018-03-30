@@ -19,6 +19,7 @@ import sys
 import io
 import itertools
 import warnings
+from typing import Optional, List
 
 from astroid import bases
 from astroid import context as contextmod
@@ -354,7 +355,9 @@ class Module(LocalsDictNodeNG):
                      'pure_python', 'future_imports')
     _other_other_fields = ('locals', 'globals')
 
-    def __init__(self, name, doc, file=None, path=None, package=None,
+    def __init__(self, name, doc, file=None,
+                 path: Optional[List[str]]=None,
+                 package=None,
                  parent=None, pure_python=True):
         """
         :param name: The name of the module.
@@ -367,7 +370,7 @@ class Module(LocalsDictNodeNG):
         :type file: str or None
 
         :param path:
-        :type path: str or None
+        :type path: Optional[List[str]]
 
         :param package: Whether the node represents a package or a module.
         :type package: bool or None

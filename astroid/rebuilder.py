@@ -125,7 +125,8 @@ class TreeRebuilder(object):
     def visit_module(self, node, modname, modpath, package):
         """visit a Module node by returning a fresh instance of it"""
         node, doc = _get_doc(node)
-        newnode = nodes.Module(name=modname, doc=doc, file=modpath, path=modpath,
+        newnode = nodes.Module(name=modname, doc=doc, file=modpath,
+                               path=[modpath],
                                package=package, parent=None)
         newnode.postinit([self.visit(child, newnode) for child in node.body])
         return newnode

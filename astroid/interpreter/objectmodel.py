@@ -127,11 +127,16 @@ class ModuleModel(ObjectModel):
             raise exceptions.AttributeInferenceError(target=self._instance,
                                                      attribute='__path__')
 
-        path = os.path.dirname(self._instance.file)
-        path_obj = node_classes.Const(value=path, parent=self._instance)
+        path_objs = [
+            node_classes.Const(
+                value=path if not path.endswith('__init__.py') else os.path.dirname(path),
+                parent=self._instance
+            )
+            for path in self._instance.path
+        ]
 
         container = node_classes.List(parent=self._instance)
-        container.postinit([path_obj])
+        container.postinit(path_objs)
 
         return container
 

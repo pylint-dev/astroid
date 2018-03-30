@@ -2,6 +2,16 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+
+   * Module.__path__ is now a list
+
+     It used to be a string containing the path, but it doesn't reflect the situation
+     on Python, where it is actually a list.
+
+   * Fix a bug with namespace package's __path__ attribute.
+
+     Close #528
+
    * Added brain tips for random.sample
 
      Part of PyCQA/pylint#811
