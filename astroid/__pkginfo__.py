@@ -15,7 +15,12 @@ version = '2.0.0'
 numversion = tuple(map(int, version.split('.')))
 
 extras_require = {}
-install_requires = ['lazy_object_proxy', 'six', 'wrapt']
+install_requires = [
+    'lazy_object_proxy',
+    'six',
+    'wrapt',
+    'typing;python_version<"3.5"'
+]
 
 # pylint: disable=redefined-builtin; why license is a builtin anyway?
 license = 'LGPL'
