@@ -70,11 +70,11 @@ class Proxy(object):
             return self.__dict__[name]
         return getattr(self._proxied, name)
 
-    def infer(self, context=None):
+    def infer(self, context=None, context_lookup=None):
         yield self
 
 
-def _infer_stmts(stmts, context, frame=None):
+def _infer_stmts(stmts, context, frame=None, context_lookup=None):
     """Return an iterator on statements inferred by each statement in *stmts*."""
     stmt = None
     inferred = False
@@ -92,7 +92,7 @@ def _infer_stmts(stmts, context, frame=None):
             continue
         context.lookupname = stmt._infer_name(frame, name)
         try:
-            for inferred in stmt.infer(context=context):
+            for inferred in stmt.infer(context=context, context_lookup=context_lookup):
                 yield inferred
                 inferred = True
         except exceptions.NameInferenceError:
@@ -106,10 +106,12 @@ def _infer_stmts(stmts, context, frame=None):
             stmts=stmts, frame=frame, context=context)
 
 
-def _infer_method_result_truth(instance, method_name, context):
+def _infer_method_result_truth(instance, method_name, context, context_lookup=None):
     # Get the method from the instance and try to infer
     # its return's truth value.
-    meth = next(instance.igetattr(method_name, context=context), None)
+    meth = next(instance.igetattr(method_name,
+                                  context=context,
+                                  context_lookup=context_lookup), None)
     if meth and hasattr(meth, 'infer_call_result'):
         if not meth.callable():
             return util.Uninferable
@@ -117,7 +119,7 @@ def _infer_method_result_truth(instance, method_name, context):
             if value is util.Uninferable:
                 return value
 
-            inferred = next(value.infer(context=context))
+            inferred = next(value.infer(context=context, context_lookup=context_lookup))
             return inferred.bool_value()
     return util.Uninferable
 
@@ -156,7 +158,7 @@ class BaseInstance(Proxy):
                 pass
         return values
 
-    def igetattr(self, name, context=None):
+    def igetattr(self, name, context=None, context_lookup=None):
         """inferred getattr"""
         if not context:
             context = contextmod.InferenceContext()
@@ -168,7 +170,8 @@ class BaseInstance(Proxy):
             # XXX frame should be self._proxied, or not ?
             get_attr = self.getattr(name, context, lookupclass=False)
             for stmt in _infer_stmts(self._wrap_attr(get_attr, context),
-                                     context, frame=self):
+                                     context, frame=self,
+                                     context_lookup=context_lookup):
                 yield stmt
         except exceptions.AttributeInferenceError:
             try:
@@ -324,7 +327,7 @@ class UnboundMethod(Proxy):
                 if context_lookup is None:
                     context_lookup = {}
                 node_context = context_lookup.get(caller.args[0])
-                infer = caller.args[0].infer(context=node_context)
+                infer = caller.args[0].infer(context=node_context, context_lookup=context_lookup)
             else:
                 infer = []
             return (Instance(x) if x is not util.Uninferable else x for x in infer)
@@ -347,7 +350,7 @@ class BoundMethod(UnboundMethod):
     def is_bound(self):
         return True
 
-    def _infer_type_new_call(self, caller, context):
+    def _infer_type_new_call(self, caller, context, context_lookup=None):
         """Try to infer what type.__new__(mcs, name, bases, attrs) returns.
 
         In order for such call to be valid, the metaclass needs to be
@@ -357,7 +360,7 @@ class BoundMethod(UnboundMethod):
         """
         from astroid import node_classes
         # Verify the metaclass
-        mcs = next(caller.args[0].infer(context=context))
+        mcs = next(caller.args[0].infer(context=context, context_lookup=context_lookup))
         if mcs.__class__.__name__ != 'ClassDef':
             # Not a valid first argument.
             return None
@@ -366,7 +369,7 @@ class BoundMethod(UnboundMethod):
             return None
 
         # Verify the name
-        name = next(caller.args[1].infer(context=context))
+        name = next(caller.args[1].infer(context=context, context_lookup=context_lookup))
         if name.__class__.__name__ != 'Const':
             # Not a valid name, needs to be a const.
             return None
@@ -375,11 +378,11 @@ class BoundMethod(UnboundMethod):
             return None
 
         # Verify the bases
-        bases = next(caller.args[2].infer(context=context))
+        bases = next(caller.args[2].infer(context=context, context_lookup=context_lookup))
         if bases.__class__.__name__ != 'Tuple':
             # Needs to be a tuple.
             return None
-        inferred_bases = [next(elt.infer(context=context))
+        inferred_bases = [next(elt.infer(context=context, context_lookup=context_lookup))
                           for elt in bases.elts]
         if any(base.__class__.__name__ != 'ClassDef'
                for base in inferred_bases):
@@ -387,14 +390,14 @@ class BoundMethod(UnboundMethod):
             return None
 
         # Verify the attributes.
-        attrs = next(caller.args[3].infer(context=context))
+        attrs = next(caller.args[3].infer(context=context, context_lookup=context_lookup))
         if attrs.__class__.__name__ != 'Dict':
             # Needs to be a dictionary.
             return None
         cls_locals = collections.defaultdict(list)
         for key, value in attrs.items:
-            key = next(key.infer(context=context))
-            value = next(value.infer(context=context))
+            key = next(key.infer(context=context, context_lookup=context_lookup))
+            value = next(value.infer(context=context, context_lookup=context_lookup))
             if key.__class__.__name__ != 'Const':
                 # Something invalid as an attribute.
                 return None

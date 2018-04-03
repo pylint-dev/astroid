@@ -23,14 +23,20 @@ class CallSite(object):
     In order to infer what an argument represents, call
     :meth:`infer_argument` with the corresponding function node
     and the argument name.
+
+    The context/call_context are mainly for unpacking Starred nodes
     """
 
-    def __init__(self, callcontext):
+    def __init__(self, callcontext, context_lookup=None):
+        if context_lookup is None:
+            context_lookup = {}
+        self.context_lookup = context_lookup
         args = callcontext.args
         keywords = callcontext.keywords
         self.duplicated_keywords = set()
         self._unpacked_args = self._unpack_args(args)
         self._unpacked_kwargs = self._unpack_keywords(keywords)
+
 
         self.positional_arguments = [
             arg for arg in self._unpacked_args
@@ -75,7 +81,8 @@ class CallSite(object):
             if name is None:
                 # Then it's an unpacking operation (**)
                 try:
-                    inferred = next(value.infer(context=context))
+                    inferred = next(value.infer(context=context,
+                                                context_lookup=self.context_lookup))
                 except exceptions.InferenceError:
                     values[name] = util.Uninferable
                     continue
@@ -87,7 +94,8 @@ class CallSite(object):
 
                 for dict_key, dict_value in inferred.items:
                     try:
-                        dict_key = next(dict_key.infer(context=context))
+                        dict_key = next(dict_key.infer(context=context,
+                                                       context_lookup=self.context_lookup))
                     except exceptions.InferenceError:
                         values[name] = util.Uninferable
                         continue
@@ -107,14 +115,14 @@ class CallSite(object):
                 values[name] = value
         return values
 
-    @staticmethod
-    def _unpack_args(args):
+    def _unpack_args(self, args):
         values = []
         context = contextmod.InferenceContext()
         for arg in args:
             if isinstance(arg, nodes.Starred):
                 try:
-                    inferred = next(arg.value.infer(context=context))
+                    inferred = next(arg.value.infer(context=context,
+                                                    context_lookup=self.context_lookup))
                 except exceptions.InferenceError:
                     values.append(util.Uninferable)
                     continue
@@ -130,7 +138,7 @@ class CallSite(object):
                 values.append(arg)
         return values
 
-    def infer_argument(self, funcnode, name, context):
+    def infer_argument(self, funcnode, name, context, context_lookup=None):
         """infer a function argument value according to the call context
 
         Arguments:
@@ -146,7 +154,7 @@ class CallSite(object):
 
         # Look into the keywords first, maybe it's already there.
         try:
-            return self.keyword_arguments[name].infer(context)
+            return self.keyword_arguments[name].infer(context, context_lookup)
         except KeyError:
             pass
 
@@ -209,7 +217,7 @@ class CallSite(object):
                 argindex -= 1
             # 2. search arg index
             try:
-                return self.positional_arguments[argindex].infer(context)
+                return self.positional_arguments[argindex].infer(context, context_lookup)
             except IndexError:
                 pass
 
@@ -249,7 +257,7 @@ class CallSite(object):
 
         # Check if it's a default parameter.
         try:
-            return funcnode.args.default_value(name).infer(context)
+            return funcnode.args.default_value(name).infer(context, self.context_lookup)
         except exceptions.NoDefault:
             pass
         raise exceptions.InferenceError('No value found for argument {name} to '

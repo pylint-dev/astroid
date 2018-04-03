@@ -273,7 +273,7 @@ class NodeNG(object):
         self.col_offset = col_offset
         self.parent = parent
 
-    def infer(self, context=None, **kwargs):
+    def infer(self, context=None, context_lookup=None, **kwargs):
         """Get a generator of the inferred values.
 
         This is the main entry point to the inference system.
@@ -283,9 +283,22 @@ class NodeNG(object):
         If the instance has some explicit inference function set, it will be
         called instead of the default interface.
 
+        :param InferenceContext context: The default context for the
+            current scope/call.
+        :param dict(NodeNG, InferenceContext) context_lookup:
+        :param context_lookup: A map of nodes to their InferenceContext.
+            Helps with inferences which
+            span multiple scopes.
+            (such as nested function calls)
         :returns: The inferred values.
         :rtype: iterable
         """
+        if context_lookup is None:
+            context_lookup = {}
+        # Prefer lookup context over default given context
+        # Since the lookup context will contain the correct
+        # boundnode for the given node
+        context = context_lookup.get(self, context)
         if self._explicit_inference is not None:
             # explicit_inference is not bound, give it self explicitly
             try:
@@ -302,7 +315,8 @@ class NodeNG(object):
         if key in context.inferred:
             return iter(context.inferred[key])
 
-        return context.cache_generator(key, self._infer(context, **kwargs))
+        return context.cache_generator(key, self._infer(context,
+                                                        context_lookup=context_lookup, **kwargs))
 
     def _repr_name(self):
         """Get a name for nice representation.
@@ -660,7 +674,7 @@ class NodeNG(object):
         # overridden for ImportFrom, Import, Global, TryExcept and Arguments
         return None
 
-    def _infer(self, context=None):
+    def _infer(self, context=None, context_lookup=None):
         """we don't know how to resolve a statement by default"""
         # this method is overridden by most concrete classes
         raise exceptions.InferenceError('No inference function for {node!r}.',
@@ -4416,7 +4430,7 @@ class Unknown(mixins.AssignTypeMixin, NodeNG):
     def qname(self):
         return "Unknown"
 
-    def infer(self, context=None, **kwargs):
+    def infer(self, context=None, context_lookup=None, **kwargs):
         """Inference on an Unknown node immediately terminates."""
         yield util.Uninferable
 
