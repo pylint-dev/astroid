@@ -1,6 +1,18 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+2018-04-05 -- 1.6.3
+
+   * Fixes nested namespace package import for old-style namespace packages
+
+   * Use .path for inferring a module's __path__ attribute. Close #528
+
+   * Improve the six urllib functions for Python 2 by setting them as instance attributes
+
+    Because they were at the class level, we were considering them BoundMethods, resulting
+    in a too-many-function-args error when calling these functions.
+    Close PyCQA/pylint#1965
+
 2018-03-16 -- 1.6.2
 
    * Fix submodule imports from six
