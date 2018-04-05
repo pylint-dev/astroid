@@ -1218,7 +1218,6 @@ class TestLenBuiltinInference:
         """)
         assert next(node.infer()).as_string() == '5'
 
-
     @pytest.mark.xfail(reason="Can't use list special astroid fields")
     def test_int_subclass_argument(self):
         """I am unable to access the length of a object which
