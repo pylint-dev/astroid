@@ -177,8 +177,17 @@ def numpy_core_numerictypes_transform():
     ''')
 
 
+def numpy_funcs():
+    return astroid.parse('''
+    import builtins
+    def sum(a, axis=None, dtype=None, out=None, keepdims=None):
+        return builtins.sum(a)
+    ''')
+
+
 astroid.register_module_extender(astroid.MANAGER, 'numpy.core.umath', numpy_core_umath_transform)
 astroid.register_module_extender(astroid.MANAGER, 'numpy.random.mtrand',
                                  numpy_random_mtrand_transform)
 astroid.register_module_extender(astroid.MANAGER, 'numpy.core.numerictypes',
                                  numpy_core_numerictypes_transform)
+astroid.register_module_extender(astroid.MANAGER, 'numpy', numpy_funcs)
