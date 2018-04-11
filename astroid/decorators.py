@@ -95,13 +95,12 @@ def path_wrapper(func):
                 if ares not in yielded:
                     yield res
                     yielded.add(ares)
-        except (exceptions.MyStopIteration, StopIteration) as error:
+        except StopIteration as error:
             # Explicit StopIteration to return error information, see
             # comment in raise_if_nothing_inferred.
             if error.args:
-                raise exceptions.MyStopIteration(error.args[0])
-            else:
-                return
+                return error.args[0]
+            return
 
     return wrapped
 
@@ -141,7 +140,7 @@ def raise_if_nothing_inferred(func, instance, args, kwargs):
         while True:
             yield next(generator)
             inferred = True
-    except (exceptions.MyStopIteration, StopIteration) as error:
+    except StopIteration as error:
         if not inferred:
             if error.args:
                 # pylint: disable=not-a-mapping

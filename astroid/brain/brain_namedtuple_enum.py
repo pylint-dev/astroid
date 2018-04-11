@@ -30,7 +30,7 @@ def _infer_first(node, context):
             raise UseInferenceDefault()
         else:
             return value
-    except (exceptions.MyStopIteration, StopIteration):
+    except StopIteration:
         raise InferenceError()
 
 
