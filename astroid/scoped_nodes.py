@@ -1018,7 +1018,7 @@ def _infer_decorator_callchain(node):
         #       because there's no flow to reason when the return
         #       is what we are looking for, a static or a class method.
         result = next(node.infer_call_result(node.parent))
-    except (StopIteration, exceptions.InferenceError):
+    except (exceptions.MyStopIteration, StopIteration, exceptions.InferenceError):
         return None
     if isinstance(result, bases.Instance):
         result = result._proxied
@@ -2474,7 +2474,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             try:
                 return next(node for node in self._metaclass.infer()
                             if node is not util.Uninferable)
-            except (exceptions.InferenceError, StopIteration):
+            except (exceptions.InferenceError, exceptions.MyStopIteration, StopIteration):
                 return None
 
         return None
@@ -2542,7 +2542,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             if not values:
                 # Stop the iteration, because the class
                 # has an empty list of slots.
-                raise StopIteration(values)
+                # raise StopIteration(values)
+                return
 
             for elt in values:
                 try:
@@ -2566,7 +2567,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         slots = self._islots()
         try:
             first = next(slots)
-        except StopIteration as exc:
+        except (exceptions.MyStopIteration, StopIteration) as exc:
             # The class doesn't have a __slots__ definition or empty slots.
             if exc.args and exc.args[0] not in ('', None):
                 return exc.args[0]

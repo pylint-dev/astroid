@@ -16,6 +16,7 @@ from astroid import (MANAGER, UseInferenceDefault, AttributeInferenceError,
                      AstroidTypeError, MroError)
 from astroid import arguments
 from astroid.builder import AstroidBuilder
+from astroid import exceptions
 from astroid import helpers
 from astroid import nodes
 from astroid import objects
@@ -138,7 +139,7 @@ def _generic_inference(node, context, node_type, transform):
     if not transformed:
         try:
             inferred = next(arg.infer(context=context))
-        except (InferenceError, StopIteration):
+        except (InferenceError, exceptions.MyStopIteration, StopIteration):
             raise UseInferenceDefault()
         if inferred is util.Uninferable:
             raise UseInferenceDefault()
@@ -382,7 +383,7 @@ def infer_getattr(node, context=None):
 
     try:
         return next(obj.igetattr(attr, context=context))
-    except (StopIteration, InferenceError, AttributeInferenceError):
+    except (exceptions.MyStopIteration, StopIteration, InferenceError, AttributeInferenceError):
         if len(node.args) == 3:
             # Try to infer the default and return it instead.
             try:

@@ -46,14 +46,14 @@ def unpack_infer(stmt, context=None):
                 yield inferred_elt
         # Explicit StopIteration to return error information, see comment
         # in raise_if_nothing_inferred.
-        raise StopIteration(dict(node=stmt, context=context))
+        raise exceptions.MyStopIteration(dict(node=stmt, context=context))
     # if inferred is a final node, return it and stop
     inferred = next(stmt.infer(context))
     if inferred is stmt:
         yield inferred
         # Explicit StopIteration to return error information, see comment
         # in raise_if_nothing_inferred.
-        raise StopIteration(dict(node=stmt, context=context))
+        raise exceptions.MyStopIteration(dict(node=stmt, context=context))
     # else, infer recursively, except Uninferable object that should be returned as is
     for inferred in stmt.infer(context):
         if inferred is util.Uninferable:
@@ -61,7 +61,7 @@ def unpack_infer(stmt, context=None):
         else:
             for inf_inf in unpack_infer(inferred, context):
                 yield inf_inf
-    raise StopIteration(dict(node=stmt, context=context))
+    raise exceptions.MyStopIteration(dict(node=stmt, context=context))
 
 
 def are_exclusive(stmt1, stmt2, exceptions=None): # pylint: disable=redefined-outer-name
@@ -579,7 +579,7 @@ class NodeNG(object):
             while line is None:
                 _node = next(_node.get_children())
                 line = _node.lineno
-        except StopIteration:
+        except (exceptions.MyStopIteration, StopIteration):
             _node = self.parent
             while _node and line is None:
                 line = _node.lineno

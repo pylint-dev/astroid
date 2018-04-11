@@ -246,8 +246,9 @@ def _resolve_looppart(parts, asspath, context):
 def for_assigned_stmts(self, node=None, context=None, asspath=None):
     if isinstance(self, nodes.AsyncFor) or getattr(self, 'is_async', False):
         # Skip inferring of async code for now
-        raise StopIteration(dict(node=self, unknown=node,
-                                 assign_path=asspath, context=context))
+        raise exceptions.MyStopIteration(dict(
+            node=self, unknown=node,
+            assign_path=asspath, context=context))
     if asspath is None:
         for lst in self.iter.infer(context):
             if isinstance(lst, (nodes.Tuple, nodes.List)):
@@ -259,8 +260,9 @@ def for_assigned_stmts(self, node=None, context=None, asspath=None):
             yield inferred
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
-    raise StopIteration(dict(node=self, unknown=node,
-                             assign_path=asspath, context=context))
+    raise exceptions.MyStopIteration(dict(
+        node=self, unknown=node,
+        assign_path=asspath, context=context))
 
 nodes.For.assigned_stmts = for_assigned_stmts
 nodes.Comprehension.assigned_stmts = for_assigned_stmts
@@ -359,8 +361,9 @@ def assign_assigned_stmts(self, node=None, context=None, asspath=None):
         yield inferred
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
-    raise StopIteration(dict(node=self, unknown=node,
-                             assign_path=asspath, context=context))
+    raise exceptions.MyStopIteration(dict(
+        node=self, unknown=node,
+        assign_path=asspath, context=context))
 
 
 def assign_annassigned_stmts(self, node=None, context=None, asspath=None):
@@ -414,8 +417,9 @@ def excepthandler_assigned_stmts(self, node=None, context=None, asspath=None):
         yield assigned
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
-    raise StopIteration(dict(node=self, unknown=node,
-                             assign_path=asspath, context=context))
+    raise exceptions.MyStopIteration(dict(
+        node=self, unknown=node,
+        assign_path=asspath, context=context))
 
 
 nodes.ExceptHandler.assigned_stmts = excepthandler_assigned_stmts
@@ -525,8 +529,9 @@ def with_assigned_stmts(self, node=None, context=None, asspath=None):
             yield obj
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
-    raise StopIteration(dict(node=self, unknown=node,
-                             assign_path=asspath, context=context))
+    raise exceptions.MyStopIteration(dict(
+        node=self, unknown=node,
+        assign_path=asspath, context=context))
 
 nodes.With.assigned_stmts = with_assigned_stmts
 

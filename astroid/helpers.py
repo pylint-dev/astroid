@@ -155,7 +155,7 @@ def safe_infer(node, context=None):
         return None # None if there is ambiguity on the inferred node
     except exceptions.InferenceError:
         return None# there is some kind of ambiguity
-    except StopIteration:
+    except (exceptions.MyStopIteration, StopIteration):
         return value
 
 
@@ -258,7 +258,7 @@ def object_len(node, context=None):
     try:
         result_of_len = next(len_call.infer_call_result(node, context))
         # Remove StopIteration catch when #507 is fixed
-    except StopIteration:
+    except (exceptions.MyStopIteration, StopIteration):
         raise exceptions.InferenceError(node=node)
     if (isinstance(result_of_len, nodes.Const) and result_of_len.pytype() == "builtins.int"):
         return result_of_len.value

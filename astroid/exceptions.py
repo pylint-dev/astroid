@@ -205,6 +205,10 @@ class InferenceOverwriteError(AstroidError):
     """
 
 
+class MyStopIteration(Exception):
+    """ py3.7 fix for 'generator raised StopIteration' """
+
+
 # Backwards-compatibility aliases
 OperationError = util.BadOperationMessage
 UnaryOperationError = util.BadUnaryOperationMessage
