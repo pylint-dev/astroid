@@ -39,7 +39,7 @@ def _deque_mock():
         def popleft(self): pass
         def remove(self, value): pass
         def reverse(self): pass
-        def rotate(self, n): pass
+        def rotate(self, n=1): pass
         def __iter__(self): return self
         def __reversed__(self): return self.iterable[::-1]
         def __getitem__(self, index): pass
