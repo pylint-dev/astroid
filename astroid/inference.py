@@ -828,10 +828,7 @@ def instance_getitem(self, index, context=None):
     new_context.callcontext = contextmod.CallContext(args=[index])
     new_context.boundnode = self
 
-    try:
-        method = next(self.igetattr('__getitem__', context=context))
-    except StopIteration:
-        return
+    method = next(self.igetattr('__getitem__', context=context), None)
     if not isinstance(method, bases.BoundMethod):
         raise exceptions.InferenceError(
             'Could not find __getitem__ for {node!r}.',
