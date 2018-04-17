@@ -424,7 +424,7 @@ nodes.ExceptHandler.assigned_stmts = excepthandler_assigned_stmts
 def _infer_context_manager(self, mgr, context):
     try:
         inferred = next(mgr.infer(context=context))
-    except exceptions.InferenceError:
+    except (StopIteration, exceptions.InferenceError):
         return
     if isinstance(inferred, bases.Generator):
         # Check if it is decorated with contextlib.contextmanager.
@@ -432,7 +432,10 @@ def _infer_context_manager(self, mgr, context):
         if not func.decorators:
             return
         for decorator_node in func.decorators.nodes:
-            decorator = next(decorator_node.infer(context))
+            try:
+                decorator = next(decorator_node.infer(context))
+            except StopIteration:
+                return
             if isinstance(decorator, nodes.FunctionDef):
                 if decorator.qname() == _CONTEXTLIB_MGR:
                     break
@@ -446,7 +449,8 @@ def _infer_context_manager(self, mgr, context):
         possible_yield_points = func.nodes_of_class(nodes.Yield)
         # Ignore yields in nested functions
         yield_point = next((node for node in possible_yield_points
-                            if node.scope() == func), None)
+                            if node.scope() == func),
+                           None)
         if yield_point:
             if not yield_point.value:
                 # TODO(cpopa): an empty yield. Should be wrapped to Const.
@@ -460,7 +464,7 @@ def _infer_context_manager(self, mgr, context):
     elif isinstance(inferred, bases.Instance):
         try:
             enter = next(inferred.igetattr('__enter__', context=context))
-        except (exceptions.InferenceError, exceptions.AttributeInferenceError):
+        except (StopIteration, exceptions.InferenceError, exceptions.AttributeInferenceError):
             return
         if not isinstance(enter, bases.BoundMethod):
             return
@@ -496,7 +500,10 @@ def with_assigned_stmts(self, node=None, context=None, asspath=None):
         context: TODO
         asspath: TODO
     """
-    mgr = next(mgr for (mgr, vars) in self.items if vars == node)
+    try:
+        mgr = next(mgr for (mgr, vars) in self.items if vars == node)
+    except StopIteration:
+        return
     if asspath is None:
         for result in _infer_context_manager(self, mgr, context):
             yield result
@@ -561,6 +568,8 @@ def starred_assigned_stmts(self, node=None, context=None, asspath=None):
             context = contextmod.InferenceContext()
         try:
             rhs = next(value.infer(context))
+        except StopIteration:
+            return
         except exceptions.InferenceError:
             yield util.Uninferable
             return
