@@ -1571,7 +1571,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                 yield node_classes.Const(None)
             else:
                 try:
-                    for inferred in returnnode.value.infer(context):
+                    for inferred in returnnode.value.infer(context, context_lookup=context_lookup):
                         yield inferred
                 except exceptions.InferenceError:
                     yield util.Uninferable

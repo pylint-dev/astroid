@@ -243,18 +243,18 @@ def _resolve_looppart(parts, asspath, context):
                     break
 
 @decorators.raise_if_nothing_inferred
-def for_assigned_stmts(self, node=None, context=None, asspath=None):
+def for_assigned_stmts(self, node=None, context=None, asspath=None, context_lookup=None):
     if isinstance(self, nodes.AsyncFor) or getattr(self, 'is_async', False):
         # Skip inferring of async code for now
         raise StopIteration(dict(node=self, unknown=node,
                                  assign_path=asspath, context=context))
     if asspath is None:
-        for lst in self.iter.infer(context):
+        for lst in self.iter.infer(context, context_lookup=context_lookup):
             if isinstance(lst, (nodes.Tuple, nodes.List)):
                 for item in lst.elts:
                     yield item
     else:
-        for inferred in _resolve_looppart(self.iter.infer(context),
+        for inferred in _resolve_looppart(self.iter.infer(context, context_lookup=context_lookup),
                                           asspath, context):
             yield inferred
     # Explicit StopIteration to return error information, see comment
@@ -266,7 +266,7 @@ nodes.For.assigned_stmts = for_assigned_stmts
 nodes.Comprehension.assigned_stmts = for_assigned_stmts
 
 
-def sequence_assigned_stmts(self, node=None, context=None, asspath=None):
+def sequence_assigned_stmts(self, node=None, context=None, asspath=None, context_lookup=None):
     if asspath is None:
         asspath = []
     try:
@@ -277,19 +277,20 @@ def sequence_assigned_stmts(self, node=None, context=None, asspath=None):
             node=self, assign_path=asspath, context=context))
 
     asspath.insert(0, index)
-    return self.parent.assigned_stmts(node=self, context=context, asspath=asspath)
+    return self.parent.assigned_stmts(node=self, context=context,
+                                      asspath=asspath, context_lookup=context_lookup)
 
 nodes.Tuple.assigned_stmts = sequence_assigned_stmts
 nodes.List.assigned_stmts = sequence_assigned_stmts
 
 
-def assend_assigned_stmts(self, node=None, context=None, asspath=None):
-    return self.parent.assigned_stmts(node=self, context=context)
+def assend_assigned_stmts(self, node=None, context=None, asspath=None, context_lookup=None):
+    return self.parent.assigned_stmts(node=self, context=context, context_lookup=context_lookup)
 nodes.AssignName.assigned_stmts = assend_assigned_stmts
 nodes.AssignAttr.assigned_stmts = assend_assigned_stmts
 
 
-def _arguments_infer_argname(self, name, context):
+def _arguments_infer_argname(self, name, context, context_lookup):
     # arguments information may be missing, in which case we can't do anything
     # more
     if not (self.args or self.vararg or self.kwarg):
@@ -310,8 +311,8 @@ def _arguments_infer_argname(self, name, context):
             return
 
     if context and context.callcontext:
-        call_site = arguments.CallSite(context.callcontext)
-        for value in call_site.infer_argument(self.parent, name, context):
+        call_site = arguments.CallSite(context.callcontext, context_lookup)
+        for value in call_site.infer_argument(self.parent, name, context, context_lookup):
             yield value
         return
 
@@ -330,28 +331,31 @@ def _arguments_infer_argname(self, name, context):
     # we can't guess given argument value
     try:
         context = contextmod.copy_context(context)
-        for inferred in self.default_value(name).infer(context):
+        for inferred in self.default_value(name).infer(context, context_lookup=context_lookup):
             yield inferred
         yield util.Uninferable
     except exceptions.NoDefault:
         yield util.Uninferable
 
 
-def arguments_assigned_stmts(self, node=None, context=None, asspath=None):
+def arguments_assigned_stmts(self, node=None, context=None, asspath=None, context_lookup=None):
+    if context_lookup is None:
+        context_lookup = {}
+    context = context_lookup.get(node, context)
     if context.callcontext:
         # reset call context/name
         callcontext = context.callcontext
         context = contextmod.copy_context(context)
         context.callcontext = None
-        args = arguments.CallSite(callcontext)
-        return args.infer_argument(self.parent, node.name, context)
-    return _arguments_infer_argname(self, node.name, context)
+        args = arguments.CallSite(callcontext, context_lookup)
+        return args.infer_argument(self.parent, node.name, context, context_lookup)
+    return _arguments_infer_argname(self, node.name, context, context_lookup=context_lookup)
 
 nodes.Arguments.assigned_stmts = arguments_assigned_stmts
 
 
 @decorators.raise_if_nothing_inferred
-def assign_assigned_stmts(self, node=None, context=None, asspath=None):
+def assign_assigned_stmts(self, node=None, context=None, asspath=None, context_lookup=None):
     if not asspath:
         yield self.value
         return
@@ -363,8 +367,8 @@ def assign_assigned_stmts(self, node=None, context=None, asspath=None):
                              assign_path=asspath, context=context))
 
 
-def assign_annassigned_stmts(self, node=None, context=None, asspath=None):
-    for inferred in assign_assigned_stmts(self, node, context, asspath):
+def assign_annassigned_stmts(self, node=None, context=None, asspath=None, context_lookup=None):
+    for inferred in assign_assigned_stmts(self, node, context, asspath, context_lookup):
         if inferred is None:
             yield util.Uninferable
         else:
@@ -406,7 +410,7 @@ def _resolve_asspart(parts, asspath, context):
 
 
 @decorators.raise_if_nothing_inferred
-def excepthandler_assigned_stmts(self, node=None, context=None, asspath=None):
+def excepthandler_assigned_stmts(self, node=None, context=None, asspath=None, context_lookup=None):
     for assigned in node_classes.unpack_infer(self.type):
         if isinstance(assigned, nodes.ClassDef):
             assigned = objects.ExceptionInstance(assigned)
@@ -471,7 +475,7 @@ def _infer_context_manager(self, mgr, context):
 
 
 @decorators.raise_if_nothing_inferred
-def with_assigned_stmts(self, node=None, context=None, asspath=None):
+def with_assigned_stmts(self, node=None, context=None, asspath=None, context_lookup=None):
     """Infer names and other nodes from a *with* statement.
 
     This enables only inference for name binding in a *with* statement.
@@ -532,7 +536,7 @@ nodes.With.assigned_stmts = with_assigned_stmts
 
 
 @decorators.yes_if_nothing_inferred
-def starred_assigned_stmts(self, node=None, context=None, asspath=None):
+def starred_assigned_stmts(self, node=None, context=None, asspath=None, context_lookup=None):
     """
     Arguments:
         self: nodes.Starred
@@ -560,7 +564,7 @@ def starred_assigned_stmts(self, node=None, context=None, asspath=None):
         if context is None:
             context = contextmod.InferenceContext()
         try:
-            rhs = next(value.infer(context))
+            rhs = next(value.infer(context, context_lookup))
         except exceptions.InferenceError:
             yield util.Uninferable
             return

@@ -35,7 +35,7 @@ class FrozenSet(node_classes._BaseContainer):
     def pytype(self):
         return '%s.frozenset' % BUILTINS
 
-    def _infer(self, context=None):
+    def _infer(self, context=None, context_lookup=None):
         yield self
 
     @decorators.cachedproperty
@@ -67,7 +67,7 @@ class Super(node_classes.NodeNG):
         self._self_class = self_class
         self._scope = scope
 
-    def _infer(self, context=None):
+    def _infer(self, context=None, context_lookup=None):
         yield self
 
     def super_mro(self):

@@ -139,14 +139,14 @@ def object_issubclass(node, class_or_seq, context=None):
     return _object_type_is_subclass(node, class_or_seq, context=context)
 
 
-def safe_infer(node, context=None):
+def safe_infer(node, context=None, context_lookup=None):
     """Return the inferred value for the given node.
 
     Return None if inference failed or if there is some ambiguity (more than
     one node has been inferred).
     """
     try:
-        inferit = node.infer(context=context)
+        inferit = node.infer(context=context, context_lookup=context_lookup)
         value = next(inferit)
     except exceptions.InferenceError:
         return None
