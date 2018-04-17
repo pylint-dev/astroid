@@ -324,12 +324,18 @@ def infer_subscript(self, context=None):
     handle each supported index type accordingly.
     """
 
-    value = next(self.value.infer(context))
+    try:
+        value = next(self.value.infer(context))
+    except StopIteration:
+        return
     if value is util.Uninferable:
         yield util.Uninferable
         return
 
-    index = next(self.slice.infer(context))
+    try:
+        index = next(self.slice.infer(context))
+    except StopIteration:
+        return
     if index is util.Uninferable:
         yield util.Uninferable
         return
