@@ -75,6 +75,11 @@ Change log for the astroid package (used to be astng)
 
      Close #112
 
+   * Add qname method to Super object preventing potential errors in upstream
+     pylint
+
+     Close #533
+
 
 2017-12-15 -- 1.6.0
 

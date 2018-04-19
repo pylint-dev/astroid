@@ -502,6 +502,19 @@ class SuperTests(unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 42)
 
+    def test_super_qname(self):
+        """Make sure a Super object generates a qname
+        equivalent to super.__qname__
+        """
+        # See issue 533
+        code = """
+        class C:
+           def foo(self): return super()
+        C().foo() #@
+        """
+        super_obj = next(builder.extract_node(code).infer())
+        self.assertEqual(super_obj.qname(), "super")
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -118,6 +118,9 @@ class Super(node_classes.NodeNG):
         """Get the name of the MRO pointer."""
         return self.mro_pointer.name
 
+    def qname(self):
+        return "super"
+
     def igetattr(self, name, context=None):
         """Retrieve the inferred values of the given attribute name."""
 
