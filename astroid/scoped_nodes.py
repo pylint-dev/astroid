@@ -2542,7 +2542,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             if not values:
                 # Stop the iteration, because the class
                 # has an empty list of slots.
-                raise StopIteration(values)
+                return values
 
             for elt in values:
                 try:

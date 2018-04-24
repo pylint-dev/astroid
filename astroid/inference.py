@@ -202,7 +202,7 @@ def infer_call(self, context=None):
             continue
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
-    raise StopIteration(dict(node=self, context=context))
+    return dict(node=self, context=context)
 nodes.Call._infer = infer_call
 
 
@@ -292,7 +292,7 @@ def infer_attribute(self, context=None):
             context.boundnode = None
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
-    raise StopIteration(dict(node=self, context=context))
+    return dict(node=self, context=context)
 nodes.Attribute._infer = decorators.path_wrapper(infer_attribute)
 nodes.AssignAttr.infer_lhs = infer_attribute # # won't work with a path wrapper
 
@@ -324,12 +324,18 @@ def infer_subscript(self, context=None):
     handle each supported index type accordingly.
     """
 
-    value = next(self.value.infer(context))
+    try:
+        value = next(self.value.infer(context))
+    except StopIteration:
+        return
     if value is util.Uninferable:
         yield util.Uninferable
         return
 
-    index = next(self.slice.infer(context))
+    try:
+        index = next(self.slice.infer(context))
+    except StopIteration:
+        return
     if index is util.Uninferable:
         yield util.Uninferable
         return
@@ -367,7 +373,7 @@ def infer_subscript(self, context=None):
 
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
-    raise StopIteration(dict(node=self, context=context))
+    return dict(node=self, context=context)
 
 nodes.Subscript._infer = decorators.path_wrapper(infer_subscript)
 nodes.Subscript.infer_lhs = infer_subscript
@@ -425,7 +431,7 @@ def _infer_boolop(self, context=None):
 
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
-    raise StopIteration(dict(node=self, context=context))
+    return dict(node=self, context=context)
 
 nodes.BoolOp._infer = _infer_boolop
 
@@ -506,7 +512,7 @@ def infer_unaryop(self, context=None):
         yield inferred
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
-    raise StopIteration(dict(node=self, context=context))
+    return dict(node=self, context=context)
 
 nodes.UnaryOp._infer_unaryop = _infer_unaryop
 nodes.UnaryOp._infer = infer_unaryop
@@ -822,7 +828,7 @@ def instance_getitem(self, index, context=None):
     new_context.callcontext = contextmod.CallContext(args=[index])
     new_context.boundnode = self
 
-    method = next(self.igetattr('__getitem__', context=context))
+    method = next(self.igetattr('__getitem__', context=context), None)
     if not isinstance(method, bases.BoundMethod):
         raise exceptions.InferenceError(
             'Could not find __getitem__ for {node!r}.',
