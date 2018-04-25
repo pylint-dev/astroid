@@ -313,9 +313,9 @@ class NodeNG(object):
         :rtype: str
         """
         names = {'name', 'attrname'}
-        if names & set(self._other_fields):
+        if all(name not in self._astroid_fields for name in names):
             return getattr(self, 'name', getattr(self, 'attrname', ''))
-        return self.__class__.__name__
+        return ''
 
     def __str__(self):
         rname = self._repr_name()
