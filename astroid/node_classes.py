@@ -312,7 +312,10 @@ class NodeNG(object):
         :returns: The nice name.
         :rtype: str
         """
-        return getattr(self, 'name', getattr(self, 'attrname', ''))
+        names = {'name', 'attrname'}
+        if names & set(self._other_fields):
+            return getattr(self, 'name', getattr(self, 'attrname', ''))
+        return self.__class__.__name__
 
     def __str__(self):
         rname = self._repr_name()
