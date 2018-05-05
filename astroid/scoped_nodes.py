@@ -2694,14 +2694,14 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         return True
 
     def get_children(self):
-        for elt in self.body:
-            yield elt
+        if self.decorators is not None:
+            yield self.decorators
 
         for elt in self.bases:
             yield elt
 
-        if self.decorators is not None:
-            yield self.decorators
+        for elt in self.body:
+            yield elt
 
     def _get_assign_nodes(self):
         for child_node in self.body:

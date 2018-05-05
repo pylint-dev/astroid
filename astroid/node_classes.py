@@ -1539,12 +1539,6 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         yield from self.defaults
         yield from self.kwonlyargs
 
-        if self.varargannotation is not None:
-            yield self.varargannotation
-
-        if self.kwargannotation is not None:
-            yield self.kwargannotation
-
         for elt in self.kw_defaults:
             if elt is not None:
                 yield elt
@@ -1552,6 +1546,12 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         for elt in self.annotations:
             if elt is not None:
                 yield elt
+
+        if self.varargannotation is not None:
+            yield self.varargannotation
+
+        if self.kwargannotation is not None:
+            yield self.kwargannotation
 
         for elt in self.kwonlyargs_annotations:
             if elt is not None:
@@ -3770,11 +3770,11 @@ class Slice(NodeNG):
         if self.lower is not None:
             yield self.lower
 
-        if self.step is not None:
-            yield self.step
-
         if self.upper is not None:
             yield self.upper
+
+        if self.step is not None:
+            yield self.step
 
 
 class Starred(mixins.ParentAssignTypeMixin, NodeNG):
