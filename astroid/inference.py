@@ -327,18 +327,18 @@ def infer_subscript(self, context=None):
     try:
         value = next(self.value.infer(context))
     except StopIteration:
-        return
+        return None
     if value is util.Uninferable:
         yield util.Uninferable
-        return
+        return None
 
     try:
         index = next(self.slice.infer(context))
     except StopIteration:
-        return
+        return None
     if index is util.Uninferable:
         yield util.Uninferable
-        return
+        return None
 
     # Try to deduce the index value.
     index_value = _SUBSCRIPT_SENTINEL
@@ -367,7 +367,7 @@ def infer_subscript(self, context=None):
     # is the same as the original subscripted object.
     if self is assigned or assigned is util.Uninferable:
         yield util.Uninferable
-        return
+        return None
     for inferred in assigned.infer(context):
         yield inferred
 
@@ -398,7 +398,7 @@ def _infer_boolop(self, context=None):
         values = [value.infer(context=context) for value in values]
     except exceptions.InferenceError:
         yield util.Uninferable
-        return
+        return None
 
     for pair in itertools.product(*values):
         if any(item is util.Uninferable for item in pair):

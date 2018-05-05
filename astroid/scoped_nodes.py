@@ -2511,7 +2511,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
     def _islots(self):
         """ Return an iterator with the inferred slots. """
         if '__slots__' not in self.locals:
-            return
+            return None
         for slots in self.igetattr('__slots__'):
             # check if __slots__ is a valid type
             for meth in ITER_METHODS:
@@ -2557,6 +2557,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                         yield inferred
                 except exceptions.InferenceError:
                     continue
+
+        return None
 
     def _slots(self):
         if not self.newstyle:

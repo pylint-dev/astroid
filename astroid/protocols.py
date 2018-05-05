@@ -354,7 +354,7 @@ nodes.Arguments.assigned_stmts = arguments_assigned_stmts
 def assign_assigned_stmts(self, node=None, context=None, asspath=None):
     if not asspath:
         yield self.value
-        return
+        return None
     for inferred in _resolve_asspart(self.value.infer(context), asspath, context):
         yield inferred
     # Explicit StopIteration to return error information, see comment
@@ -503,7 +503,7 @@ def with_assigned_stmts(self, node=None, context=None, asspath=None):
     try:
         mgr = next(mgr for (mgr, vars) in self.items if vars == node)
     except StopIteration:
-        return
+        return None
     if asspath is None:
         for result in _infer_context_manager(self, mgr, context):
             yield result
