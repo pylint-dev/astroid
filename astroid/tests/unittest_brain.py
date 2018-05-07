@@ -871,6 +871,20 @@ class AttrsTest(unittest.TestCase):
         # Prevents https://github.com/PyCQA/pylint/issues/1884
         assert isinstance(attr_node, nodes.Unknown)
 
+    def test_dont_consider_assignments_but_without_attrs(self):
+        code = '''
+        import attr
+
+        class Cls: pass
+        @attr.s
+        class Foo:
+            temp = Cls()
+            temp.prop = 5
+            bar_thing = attr.ib(default=temp)
+        Foo()
+        '''
+        next(astroid.extract_node(code).infer())
+
 
 if __name__ == '__main__':
     unittest.main()

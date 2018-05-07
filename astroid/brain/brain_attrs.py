@@ -40,6 +40,8 @@ def attr_attributes_transform(node):
         if isinstance(cdefbodynode.value, astroid.Call):
             if cdefbodynode.value.func.as_string() != ATTR_IB:
                 continue
+        else:
+            continue
         for target in cdefbodynode.targets:
 
             rhs_node = astroid.Unknown(
