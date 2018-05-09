@@ -150,29 +150,161 @@ def numpy_core_umath_transform():
 def numpy_core_numerictypes_transform():
     return astroid.parse('''
     # different types defined in numerictypes.py
-    uint16 = type('uint16') 
-    uint32 = type('uint32')
-    uint64 = type('uint64')
-    int128 = type('int128')
-    uint128 = type('uint128')
-    float16 = type('float16')
-    float32 = type('float32')
-    float64 = type('float64')
-    float80 = type('float80')
-    float96 = type('float96')
-    float128 = type('float128')
-    float256 = type('float256')
-    complex32 = type('complex32')
-    complex64 = type('complex64')
-    complex128 = type('complex128')
-    complex160 = type('complex160')
-    complex192 = type('complex192')
-    complex256 = type('complex256')
-    complex512 = type('complex512')
-    timedelta64 = type('timedelta64')
-    datetime64 = type('datetime64')
-    unicode_ = type('unicode_')
-    string_ = type('string_')
+    # np_type_common aggregates all public methods
+    # that are common between numpy.uint* and numpy.float*
+    class np_type_common(int):
+        def all(self): pass
+        def any(self): pass
+        def argmax(self): pass
+        def argmin(self): pass
+        def argsort(self): pass
+        def astype(self): pass
+        def base(self): pass
+        def byteswap(self): pass
+        def choose(self): pass
+        def clip(self): pass
+        def compress(self): pass
+        def conj(self): pass
+        def conjugate(self): pass
+        def copy(self): pass
+        def cumprod(self): pass
+        def cumsum(self): pass
+        def data(self): pass
+        def diagonal(self): pass
+        def dtype(self): pass
+        def dump(self): pass
+        def dumps(self): pass
+        def fill(self): pass
+        def flags(self): pass
+        def flat(self): pass
+        def flatten(self): pass
+        def getfield(self): pass
+        def imag(self): pass
+        def item(self): pass
+        def itemset(self): pass
+        def itemsize(self): pass
+        def max(self): pass
+        def mean(self): pass
+        def min(self): pass
+        def nbytes(self): pass
+        def ndim(self): pass
+        def newbyteorder(self): pass
+        def nonzero(self): pass
+        def prod(self): pass
+        def ptp(self): pass
+        def put(self): pass
+        def ravel(self): pass
+        def real(self): pass
+        def repeat(self): pass
+        def reshape(self): pass
+        def resize(self): pass
+        def round(self): pass
+        def searchsorted(self): pass
+        def setfield(self): pass
+        def setflags(self): pass
+        def shape(self): pass
+        def size(self): pass
+        def sort(self): pass
+        def squeeze(self): pass
+        def std(self): pass
+        def strides(self): pass
+        def sum(self): pass
+        def swapaxes(self): pass
+        def take(self): pass
+        def tobytes(self): pass
+        def tofile(self): pass
+        def tolist(self): pass
+        def tostring(self): pass
+        def trace(self): pass
+        def transpose(self): pass
+        def var(self): pass
+        def view(self): pass
+
+    # uint_common contains all the public methods present
+    # inside numpy.uint*
+    class uint_common(np_type_common):
+        def denominator(self): pass
+        def numerator(self): pass
+
+    # float_common contains all the public methods present
+    # inside numpy.float*
+    class float_common(np_type_common):
+        def as_integer_ratio(self): pass
+        def fromhex(self, val): pass
+        def hex(self): pass
+        def is_integer(self): pass
+
+    class uint16(uint_common): pass
+    class uint32(uint_common): pass
+    class uint64(uint_common): pass
+    class uint128(uint_common): pass
+   
+    class float16(float_common): pass
+    class float32(float_common): pass
+    class float64(float_common): pass
+    class float80(float_common): pass
+    class float96(float_common): pass
+    class float128(float_common): pass
+    class float256(float_common): pass
+
+    class complex32(np_type_common): pass
+    class complex64(np_type_common): pass
+    class complex128(np_type_common): pass
+    class complex160(np_type_common): pass
+    class complex192(np_type_common): pass
+    class complex256(np_type_common): pass
+    class complex512(np_type_common): pass
+
+    class int128(uint_common):
+        def bit_length(self): pass
+
+    class timedelta64(uint_common): pass
+    
+    class datetime64(np_type_common): pass
+
+    class string_(np_type_common):
+        def capitalize(self): pass
+        def center(self, width, fillchar=' '): pass
+        def count(self, sub, start=None, end=None): pass
+        def decode(self): pass
+        def encode(self): pass
+        def endswith(self): pass
+        def expandtabs(self): pass
+        def find(self): pass
+        def format(self): pass
+        def index(self): pass
+        def isalnum(self): pass
+        def isalpha(self): pass
+        def isdigit(self): pass
+        def islower(self): pass
+        def isspace(self): pass
+        def istitle(self): pass
+        def isupper(self): pass
+        def join(self): pass
+        def ljust(self): pass
+        def lower(self): pass
+        def lstrip(self): pass
+        def partition(self): pass
+        def replace(self): pass
+        def rfind(self): pass
+        def rindex(self): pass
+        def rjust(self): pass
+        def rpartition(self): pass
+        def rsplit(self): pass
+        def rstrip(self): pass
+        def split(self): pass
+        def splitlines(self): pass
+        def startswith(self): pass
+        def strip(self): pass
+        def swapcase(self): pass
+        def title(self): pass
+        def translate(self): pass
+        def upper(self): pass
+        def zfill(self): pass
+
+    class unicode_(string_):
+        def isdecimal(self): pass
+        def isnumeric(self): pass
     object_ = type('object_')
     ''')
 
