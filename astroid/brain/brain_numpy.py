@@ -266,13 +266,13 @@ def numpy_core_numerictypes_transform():
         def capitalize(self): pass
         def center(self, width, fillchar=' '): pass
         def count(self, sub, start=None, end=None): pass
-        def decode(self): pass
-        def encode(self): pass
-        def endswith(self): pass
-        def expandtabs(self): pass
-        def find(self): pass
-        def format(self): pass
-        def index(self): pass
+        def decode(self, encoding='default', errors='strict'): pass
+        def encode(self, encoding='default', errors='strict'): pass
+        def endswith(self, suffix, start=None, end=None): pass
+        def expandtabs(self, tabsize=8): pass
+        def find(self, sub, start=None, end=None): pass
+        def format(self, *args, **kwargs): pass
+        def index(self, sub, start=None, end=None): pass
         def isalnum(self): pass
         def isalpha(self): pass
         def isdigit(self): pass
@@ -280,27 +280,27 @@ def numpy_core_numerictypes_transform():
         def isspace(self): pass
         def istitle(self): pass
         def isupper(self): pass
-        def join(self): pass
-        def ljust(self): pass
+        def join(self, iterable): pass
+        def ljust(self, width, fillchar=' '): pass
         def lower(self): pass
-        def lstrip(self): pass
-        def partition(self): pass
-        def replace(self): pass
-        def rfind(self): pass
-        def rindex(self): pass
-        def rjust(self): pass
-        def rpartition(self): pass
-        def rsplit(self): pass
-        def rstrip(self): pass
-        def split(self): pass
-        def splitlines(self): pass
-        def startswith(self): pass
-        def strip(self): pass
+        def lstrip(self, chars=None): pass
+        def partition(self, sep): pass
+        def replace(self, old, new, count=None): pass
+        def rfind(self, sub, start=None, end=None): pass
+        def rindex(self, sub, start=None, end=None): pass
+        def rjust(self, width, fillchar=' '): pass
+        def rpartition(self, sep): pass
+        def rsplit(self, sep=None, maxsplit=None): pass
+        def rstrip(self, chars=None): pass
+        def split(self, sep=None, maxsplit=None): pass
+        def splitlines(self, keepends=False): pass
+        def startswith(self, prefix, start=None, end=None): pass
+        def strip(self, chars=None): pass
         def swapcase(self): pass
         def title(self): pass
-        def translate(self): pass
+        def translate(self, table, deletechars=None): pass
         def upper(self): pass
-        def zfill(self): pass
+        def zfill(self, width): pass
 
     class unicode_(string_):
         def isdecimal(self): pass
