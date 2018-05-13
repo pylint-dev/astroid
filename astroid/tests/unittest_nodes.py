@@ -10,11 +10,13 @@
 """tests for specific behaviour of astroid nodes
 """
 import os
+import platform
 import sys
 import textwrap
 import unittest
 import warnings
 
+import pytest
 import six
 
 import astroid
@@ -33,6 +35,10 @@ from astroid.tests import resources
 
 abuilder = builder.AstroidBuilder()
 BUILTINS = six.moves.builtins.__name__
+HAS_TYPED_AST = (
+    platform.python_implementation() != 'CPython'
+    and sys.version_info.minor < 7
+)
 
 
 class AsStringTest(resources.SysPathSetup, unittest.TestCase):
@@ -863,6 +869,62 @@ def test_unknown():
                       type(util.Uninferable))
     assert isinstance(nodes.Unknown().name, str)
     assert isinstance(nodes.Unknown().qname(), str)
+
+
+@pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
+def test_type_comments_with():
+    module = builder.parse('''
+    with a as b: # type: int
+        pass
+    with a as b: # type: ignore
+        pass
+    ''')
+    node = module.body[0]
+    ignored_node = module.body[1]
+    assert isinstance(node.type_annotation, astroid.Name)
+
+    assert ignored_node.type_annotation is None
+
+
+@pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
+def test_type_comments_for():
+    module = builder.parse('''
+    for a, b in [1, 2, 3]: # type: List[int]
+        pass
+    for a, b in [1, 2, 3]: # type: ignore
+        pass
+    ''')
+    node = module.body[0]
+    ignored_node = module.body[1]
+    assert isinstance(node.type_annotation, astroid.Subscript)
+    assert node.type_annotation.as_string() == 'List[int]'
+
+    assert ignored_node.type_annotation is None
+
+
+@pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
+def test_type_coments_assign():
+    module = builder.parse('''
+    a, b = [1, 2, 3] # type: List[int]
+    a, b = [1, 2, 3] # type: ignore
+    ''')
+    node = module.body[0]
+    ignored_node = module.body[1]
+    assert isinstance(node.type_annotation, astroid.Subscript)
+    assert node.type_annotation.as_string() == 'List[int]'
+
+    assert ignored_node.type_annotation is None
+
+
+@pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
+def test_type_comments_invalid_expression():
+    module = builder.parse('''
+    a, b = [1, 2, 3] # type: something completely invalid
+    a, b = [1, 2, 3] # typeee: 2*+4
+    a, b = [1, 2, 3] # type: List[int
+    ''')
+    for node in module.body:
+        assert node.type_annotation is None
 
 
 if __name__ == '__main__':

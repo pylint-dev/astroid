@@ -2,6 +2,12 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 -- 2.0
+--
+   * Switched to using typed_ast for getting access to type comments
+
+     As a side effect of this change, some nodes gained a new `type_annotation` attribute,
+     which, if the type comments were correctly parsed, should contain a node object
+     with the corresponding objects from the type comment.
 
    * typing.X[...] and typing.NewType are inferred as classes instead of instances.
 
