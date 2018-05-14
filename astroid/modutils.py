@@ -465,6 +465,8 @@ def get_module_files(src_directory, blacklist, list_all=False):
     """
     files = []
     for directory, dirnames, filenames in os.walk(src_directory):
+        if directory in blacklist:
+            continue
         _handle_blacklist(blacklist, dirnames, filenames)
         # check for __init__.py
         if not list_all and '__init__.py' not in filenames:

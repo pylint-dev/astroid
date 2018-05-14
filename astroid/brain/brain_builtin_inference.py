@@ -12,7 +12,8 @@ from textwrap import dedent
 
 import six
 from astroid import (MANAGER, UseInferenceDefault, AttributeInferenceError,
-                     inference_tip, InferenceError, NameInferenceError)
+                     inference_tip, InferenceError, NameInferenceError,
+                     AstroidTypeError, MroError)
 from astroid import arguments
 from astroid.builder import AstroidBuilder
 from astroid import helpers
@@ -74,6 +75,11 @@ def _extend_str(class_node, rvalue):
     code = code.format(rvalue=rvalue)
     fake = AstroidBuilder(MANAGER).string_build(code)['whatever']
     for method in fake.mymethods():
+        method.parent = class_node
+        method.lineno = None
+        method.col_offset = None
+        if '__class__' in method.locals:
+            method.locals['__class__'] = [class_node]
         class_node.locals[method.name] = [method]
         method.parent = class_node
 
@@ -108,8 +114,10 @@ def register_builtin_transform(transform, builtin_name):
                 # we set it to be the node we transformed from.
                 result.parent = node
 
-            result.lineno = node.lineno
-            result.col_offset = node.col_offset
+            if result.lineno is None:
+                result.lineno = node.lineno
+            if result.col_offset is None:
+                result.col_offset = node.col_offset
         return iter([result])
 
     MANAGER.register_transform(nodes.Call,
@@ -488,14 +496,149 @@ def infer_slice(node, context=None):
 
 
 def _infer_object__new__decorator(node, context=None):
+    # Instantiate class immediately
+    # since that's what @object.__new__ does
+    return iter((node.instantiate_class(),))
+
+
+def _infer_object__new__decorator_check(node):
+    """Predicate before inference_tip
+
+    Check if the given ClassDef has a @object.__new__ decorator
+    """
     if not node.decorators:
-        raise UseInferenceDefault
+        return False
 
     for decorator in node.decorators.nodes:
         if isinstance(decorator, nodes.Attribute):
             if decorator.as_string() == OBJECT_DUNDER_NEW:
-                return iter((node.instantiate_class(),))
-    raise UseInferenceDefault
+                return True
+    return False
+
+
+def infer_issubclass(callnode, context=None):
+    """Infer issubclass() calls
+
+    :param nodes.Call callnode: a `issubclass` call
+    :param InferenceContext: the context for the inference
+    :rtype nodes.Const: Boolean Const value of the `issubclass` call
+    :raises UseInferenceDefault: If the node cannot be inferred
+    """
+    call = arguments.CallSite.from_call(callnode)
+    if call.keyword_arguments:
+        # issubclass doesn't support keyword arguments
+        raise UseInferenceDefault("TypeError: issubclass() takes no keyword arguments")
+    if len(call.positional_arguments) != 2:
+        raise UseInferenceDefault(
+            "Expected two arguments, got {count}"
+            .format(count=len(call.positional_arguments)))
+    # The left hand argument is the obj to be checked
+    obj_node, class_or_tuple_node = call.positional_arguments
+
+    try:
+        obj_type = next(obj_node.infer(context=context))
+    except InferenceError as exc:
+        raise UseInferenceDefault from exc
+    if not isinstance(obj_type, nodes.ClassDef):
+        raise UseInferenceDefault("TypeError: arg 1 must be class")
+
+    # The right hand argument is the class(es) that the given
+    # object is to be checked against.
+    try:
+        class_container = _class_or_tuple_to_container(
+            class_or_tuple_node, context=context)
+    except InferenceError as exc:
+        raise UseInferenceDefault from exc
+    try:
+        issubclass_bool = helpers.object_issubclass(obj_type, class_container, context)
+    except AstroidTypeError as exc:
+        raise UseInferenceDefault("TypeError: " + str(exc)) from exc
+    except MroError as exc:
+        raise UseInferenceDefault from exc
+    return nodes.Const(issubclass_bool)
+
+
+def infer_isinstance(callnode, context=None):
+    """Infer isinstance calls
+
+    :param nodes.Call callnode: an isinstance call
+    :param InferenceContext: context for call
+        (currently unused but is a common interface for inference)
+    :rtype nodes.Const: Boolean Const value of isinstance call
+
+    :raises UseInferenceDefault: If the node cannot be inferred
+    """
+    call = arguments.CallSite.from_call(callnode)
+    if call.keyword_arguments:
+        # isinstance doesn't support keyword arguments
+        raise UseInferenceDefault("TypeError: isinstance() takes no keyword arguments")
+    if len(call.positional_arguments) != 2:
+        raise UseInferenceDefault(
+            "Expected two arguments, got {count}"
+            .format(count=len(call.positional_arguments)))
+    # The left hand argument is the obj to be checked
+    obj_node, class_or_tuple_node = call.positional_arguments
+    # The right hand argument is the class(es) that the given
+    # obj is to be check is an instance of
+    try:
+        class_container = _class_or_tuple_to_container(
+            class_or_tuple_node, context=context)
+    except InferenceError:
+        raise UseInferenceDefault
+    try:
+        isinstance_bool = helpers.object_isinstance(
+            obj_node, class_container, context)
+    except AstroidTypeError as exc:
+        raise UseInferenceDefault("TypeError: " + str(exc))
+    except MroError as exc:
+        raise UseInferenceDefault from exc
+    if isinstance_bool is util.Uninferable:
+        raise UseInferenceDefault
+    return nodes.Const(isinstance_bool)
+
+
+def _class_or_tuple_to_container(node, context=None):
+    # Move inferences results into container
+    # to simplify later logic
+    # raises InferenceError if any of the inferences fall through
+    node_infer = next(node.infer(context=context))
+    # arg2 MUST be a type or a TUPLE of types
+    # for isinstance
+    if isinstance(node_infer, nodes.Tuple):
+        class_container = [
+            next(node.infer(context=context))
+            for node in node_infer.elts
+        ]
+        class_container = [
+            klass_node for klass_node
+            in class_container if klass_node is not None
+        ]
+    else:
+        class_container = [node_infer]
+    return class_container
+
+
+def infer_len(node, context=None):
+    """Infer length calls
+
+    :param nodes.Call node: len call to infer
+    :param context.InferenceContext: node context
+    :rtype nodes.Const:
+    """
+    call = arguments.CallSite.from_call(node)
+    if call.keyword_arguments:
+        raise UseInferenceDefault(
+            "TypeError: len() must take no keyword arguments")
+    if len(call.positional_arguments) != 1:
+        raise UseInferenceDefault(
+            "TypeError: len() must take exactly one argument "
+            "({len}) given".format(len=len(call.positional_arguments)))
+    [argument_node] = call.positional_arguments
+    try:
+        return nodes.Const(helpers.object_len(argument_node))
+    except (AstroidTypeError, InferenceError) as exc:
+        raise UseInferenceDefault(str(exc)) from exc
+
 
 
 # Builtins inference
@@ -511,9 +654,13 @@ register_builtin_transform(infer_dict, 'dict')
 register_builtin_transform(infer_frozenset, 'frozenset')
 register_builtin_transform(infer_type, 'type')
 register_builtin_transform(infer_slice, 'slice')
+register_builtin_transform(infer_isinstance, 'isinstance')
+register_builtin_transform(infer_issubclass, 'issubclass')
+register_builtin_transform(infer_len, 'len')
 
 # Infer object.__new__ calls
 MANAGER.register_transform(
     nodes.ClassDef,
-    inference_tip(_infer_object__new__decorator)
+    inference_tip(_infer_object__new__decorator),
+    _infer_object__new__decorator_check
 )

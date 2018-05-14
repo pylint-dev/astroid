@@ -15,7 +15,6 @@ import os
 import sys
 from functools import partial
 import unittest
-import warnings
 
 from astroid import builder
 from astroid import nodes
@@ -220,35 +219,22 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
     def test_file_stream_in_memory(self):
         data = '''irrelevant_variable is irrelevant'''
         astroid = builder.parse(data, 'in_memory')
-        with warnings.catch_warnings(record=True):
-            self.assertEqual(astroid.file_stream.read().decode(), data)
+        with astroid.stream() as stream:
+            self.assertEqual(stream.read().decode(), data)
 
     def test_file_stream_physical(self):
         path = resources.find('data/all.py')
         astroid = builder.AstroidBuilder().file_build(path, 'all')
         with open(path, 'rb') as file_io:
-            with warnings.catch_warnings(record=True):
-                self.assertEqual(astroid.file_stream.read(), file_io.read())
+            with astroid.stream() as stream:
+                self.assertEqual(stream.read(), file_io.read())
 
     def test_file_stream_api(self):
         path = resources.find('data/all.py')
         astroid = builder.AstroidBuilder().file_build(path, 'all')
-        if __pkginfo__.numversion >= (1, 6):
-            # file_stream is slated for removal in astroid 1.6.
-            with self.assertRaises(AttributeError):
-                # pylint: disable=pointless-statement
-                astroid.file_stream
-        else:
-            # Until astroid 1.6, Module.file_stream will emit
-            # PendingDeprecationWarning in 1.4, DeprecationWarning
-            # in 1.5 and finally it will be removed in 1.6, leaving
-            # only Module.stream as the recommended way to retrieve
-            # its file stream.
-            with warnings.catch_warnings(record=True) as cm:
-                with test_utils.enable_warning(PendingDeprecationWarning):
-                    self.assertIsNot(astroid.file_stream, astroid.file_stream)
-            self.assertGreater(len(cm), 1)
-            self.assertEqual(cm[0].category, PendingDeprecationWarning)
+        with self.assertRaises(AttributeError):
+            # pylint: disable=pointless-statement,no-member
+            astroid.file_stream
 
     def test_stream_api(self):
         path = resources.find('data/all.py')
@@ -661,7 +647,10 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(len(cls.getattr('__doc__')), 1)
         self.assertIsInstance(cls.getattr('__doc__')[0], nodes.Const)
         self.assertEqual(cls.getattr('__doc__')[0].value, 'hehe')
-        self.assertEqual(len(cls.getattr('__module__')), 1)
+        # YO is an old styled class for Python 2.7
+        # May want to stop locals from referencing namespaced variables in the future
+        module_attr_num = 4 if sys.version_info > (3, 3) else 1
+        self.assertEqual(len(cls.getattr('__module__')), module_attr_num)
         self.assertIsInstance(cls.getattr('__module__')[0], nodes.Const)
         self.assertEqual(cls.getattr('__module__')[0].value, 'data.module')
         self.assertEqual(len(cls.getattr('__dict__')), 1)
@@ -672,7 +661,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             self.assertEqual(len(cls.getattr('__name__')), 1)
             self.assertEqual(len(cls.getattr('__doc__')), 1, (cls, cls.getattr('__doc__')))
             self.assertEqual(cls.getattr('__doc__')[0].value, cls.doc)
-            self.assertEqual(len(cls.getattr('__module__')), 1)
+            self.assertEqual(len(cls.getattr('__module__')), 4)
             self.assertEqual(len(cls.getattr('__dict__')), 1)
             self.assertEqual(len(cls.getattr('__mro__')), 1)
 
@@ -868,8 +857,10 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         '''
         astroid = builder.parse(data, __name__)
         cls = astroid['WebAppObject']
-        self.assertEqual(sorted(cls.locals.keys()),
-                         ['appli', 'config', 'registered', 'schema'])
+        assert_keys = ['__module__', '__qualname__', 'appli', 'config', 'registered', 'schema']
+        if sys.version_info < (3, 3):
+            assert_keys.pop(assert_keys.index('__qualname__'))
+        self.assertEqual(sorted(cls.locals.keys()), assert_keys)
 
     def test_class_getattr(self):
         data = '''
@@ -1489,6 +1480,35 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(cm.exception, MroError)
         self.assertIsInstance(cm.exception, ResolveError)
 
+    def test_mro_with_factories(self):
+        cls = builder.extract_node('''
+        def MixinFactory(cls):
+            mixin_name = '{}Mixin'.format(cls.__name__)
+            mixin_bases = (object,)
+            mixin_attrs = {}
+            mixin = type(mixin_name, mixin_bases, mixin_attrs)
+            return mixin
+        class MixinA(MixinFactory(int)):
+            pass
+        class MixinB(MixinFactory(str)):
+            pass
+        class Base(object):
+            pass
+        class ClassA(MixinA, Base):
+            pass
+        class ClassB(MixinB, ClassA):
+            pass
+        class FinalClass(ClassB):
+            def __init__(self):
+                self.name = 'x'
+        ''')
+        self.assertEqualMro(
+            cls,
+            [
+                "FinalClass", "ClassB", "MixinB", "", "ClassA", "MixinA", "", "Base", "object"
+            ]
+        )
+
     def test_generator_from_infer_call_result_parent(self):
         func = builder.extract_node("""
         import contextlib
@@ -1497,7 +1517,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         def test(): #@
             yield
         """)
-        result = next(func.infer_call_result(func))
+        result = next(func.infer_call_result())
         self.assertIsInstance(result, Generator)
         self.assertEqual(result.parent, func)
 

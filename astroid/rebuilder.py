@@ -14,7 +14,6 @@ import sys
 import _ast
 
 import astroid
-from astroid import astpeephole
 from astroid import nodes
 
 
@@ -71,6 +70,7 @@ REDIRECT = {'arguments': 'Arguments',
            }
 PY3 = sys.version_info >= (3, 0)
 PY34 = sys.version_info >= (3, 4)
+PY37 = sys.version_info >= (3, 7)
 CONTEXTS = {_ast.Load: astroid.Load,
             _ast.Store: astroid.Store,
             _ast.Del: astroid.Del,
@@ -78,8 +78,14 @@ CONTEXTS = {_ast.Load: astroid.Load,
 
 
 def _get_doc(node):
+
     try:
-        if isinstance(node.body[0], _ast.Expr) and isinstance(node.body[0].value, _ast.Str):
+        if PY37 and hasattr(node, 'docstring'):
+            doc = node.docstring
+            return node, doc
+        elif (node.body
+              and isinstance(node.body[0], _ast.Expr)
+              and isinstance(node.body[0].value, _ast.Str)):
             doc = node.body[0].value.s
             node.body = node.body[1:]
             return node, doc
@@ -113,12 +119,12 @@ class TreeRebuilder(object):
         self._import_from_nodes = []
         self._delayed_assattr = []
         self._visit_meths = {}
-        self._peepholer = astpeephole.ASTPeepholeOptimizer()
 
     def visit_module(self, node, modname, modpath, package):
         """visit a Module node by returning a fresh instance of it"""
         node, doc = _get_doc(node)
-        newnode = nodes.Module(name=modname, doc=doc, file=modpath, path=modpath,
+        newnode = nodes.Module(name=modname, doc=doc, file=modpath,
+                               path=[modpath],
                                package=package, parent=None)
         newnode.postinit([self.visit(child, newnode) for child in node.body])
         return newnode
@@ -163,19 +169,12 @@ class TreeRebuilder(object):
                     varargannotation = self.visit(node.vararg.annotation,
                                                   newnode)
                 vararg = vararg.arg
-            elif PY3 and node.varargannotation:
-                varargannotation = self.visit(node.varargannotation,
-                                              newnode)
         if kwarg:
             if PY34:
                 if node.kwarg.annotation:
                     kwargannotation = self.visit(node.kwarg.annotation,
                                                  newnode)
                 kwarg = kwarg.arg
-            elif PY3:
-                if node.kwargannotation:
-                    kwargannotation = self.visit(node.kwargannotation,
-                                                 newnode)
         if PY3:
             kwonlyargs = [self.visit(child, newnode) for child
                           in node.kwonlyargs]
@@ -251,23 +250,6 @@ class TreeRebuilder(object):
 
     def visit_binop(self, node, parent):
         """visit a BinOp node by returning a fresh instance of it"""
-        if isinstance(node.left, _ast.BinOp) and self._manager.optimize_ast:
-            # Optimize BinOp operations in order to remove
-            # redundant recursion. For instance, if the
-            # following code is parsed in order to obtain
-            # its ast, then the rebuilder will fail with an
-            # infinite recursion, the same will happen with the
-            # inference engine as well. There's no need to hold
-            # so many objects for the BinOp if they can be reduced
-            # to something else (also, the optimization
-            # might handle only Const binops, which isn't a big
-            # problem for the correctness of the program).
-            #
-            # ("a" + "b" + # one thousand more + "c")
-            optimized = self._peepholer.optimize_binop(node, parent)
-            if optimized:
-                return optimized
-
         newnode = nodes.BinOp(_BIN_OP_CLASSES[type(node.op)],
                               node.lineno, node.col_offset, parent)
         newnode.postinit(self.visit(node.left, newnode),
@@ -664,6 +646,7 @@ class TreeRebuilder(object):
     def visit_raise(self, node, parent):
         """visit a Raise node by returning a fresh instance of it"""
         newnode = nodes.Raise(node.lineno, node.col_offset, parent)
+        # pylint: disable=too-many-function-args
         newnode.postinit(_visit_or_none(node, 'type', self, newnode),
                          _visit_or_none(node, 'inst', self, newnode),
                          _visit_or_none(node, 'tback', self, newnode))
@@ -843,6 +826,7 @@ class TreeRebuilder3(TreeRebuilder):
             return newnode
         elif node.handlers:
             return self.visit_tryexcept(node, parent)
+        return None
 
     def visit_annassign(self, node, parent):
         """visit an AnnAssign node by returning a fresh instance of it"""

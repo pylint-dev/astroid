@@ -26,7 +26,7 @@ BUILTINS = six.moves.builtins.__name__
 def _get_file_from_object(obj):
     if platform.python_implementation() == 'Jython':
         return obj.__file__.split("$py.class")[0] + ".py"
-    if sys.version_info > (3, 0):
+    if sys.version_info >= (3, 4):
         return obj.__file__
     if not obj.__file__.endswith(".py"):
         return obj.__file__[:-1]
@@ -104,7 +104,7 @@ class AstroidManagerTest(resources.SysPathSetup,
     def test_ast_from_namespace_pkg_resources(self):
         self._test_ast_from_old_namespace_package_protocol('pkg_resources')
 
-    @unittest.skipUnless(sys.version_info[:2] > (3, 3), "Needs PEP 420 namespace protocol")
+    @unittest.skipUnless(sys.version_info[:2] >= (3, 4), "Needs PEP 420 namespace protocol")
     def test_implicit_namespace_package(self):
         data_dir = os.path.dirname(resources.find('data/namespace_pep_420'))
         contribute = os.path.join(data_dir, 'contribute_to_namespace')
@@ -125,7 +125,6 @@ class AstroidManagerTest(resources.SysPathSetup,
     def test_namespace_package_pth_support(self):
         pth = 'foogle_fax-0.12.5-py2.7-nspkg.pth'
         site.addpackage(resources.RESOURCE_PATH, pth, [])
-        # pylint: disable=no-member; can't infer _namespace_packages, created at runtime.
         pkg_resources._namespace_packages['foogle'] = []
 
         try:
@@ -135,6 +134,17 @@ class AstroidManagerTest(resources.SysPathSetup,
             self.assertIsInstance(value, astroid.Const)
             with self.assertRaises(exceptions.AstroidImportError):
                 self.manager.ast_from_module_name('foogle.moogle')
+        finally:
+            del pkg_resources._namespace_packages['foogle']
+            sys.modules.pop('foogle')
+
+    def test_nested_namespace_import(self):
+        pth = 'foogle_fax-0.12.5-py2.7-nspkg.pth'
+        site.addpackage(resources.RESOURCE_PATH, pth, [])
+        pkg_resources._namespace_packages['foogle'] = ['foogle.crank']
+        pkg_resources._namespace_packages['foogle.crank'] = []
+        try:
+            self.manager.ast_from_module_name('foogle.crank')
         finally:
             del pkg_resources._namespace_packages['foogle']
             sys.modules.pop('foogle')
@@ -197,7 +207,6 @@ class AstroidManagerTest(resources.SysPathSetup,
         """check if the unittest filepath is equals to the result of the method"""
         self.assertEqual(
             _get_file_from_object(unittest),
-            # pylint: disable=no-member; can't infer the ModuleSpec
             self.manager.file_from_module_name('unittest', None).location)
 
     def test_file_from_module_name_astro_building_exception(self):

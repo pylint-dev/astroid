@@ -64,6 +64,7 @@ else:
             match = _ENCODING_RGX.match(line)
             if match is not None:
                 return match.group(1)
+        return None
 
     def open_source_file(filename):
         """get data for parsing a file"""

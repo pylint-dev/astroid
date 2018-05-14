@@ -203,7 +203,7 @@ class BaseInstance(Proxy):
             else:
                 yield attr
 
-    def infer_call_result(self, caller, context=None):
+    def infer_call_result(self, caller, context=None, context_lookup=None):
         """infer what a class instance is returning when called"""
         inferred = False
         for node in self._proxied.igetattr('__call__', context):
@@ -302,14 +302,33 @@ class UnboundMethod(Proxy):
             return iter((self.special_attributes.lookup(name), ))
         return self._proxied.igetattr(name, context)
 
-    def infer_call_result(self, caller, context):
+    def infer_call_result(self, caller, context, context_lookup=None):
+        """
+        The context_lookup argument is used to correctly infer
+        arguments to object.__new__(cls) calls inside classmethods
+
+        The boundnode of the regular context with a function called
+        on ``object.__new__`` will be of type ``object``,
+        which is incorrect for the argument in general.
+        If no context is given the ``object.__new__`` call argument will
+        correctly inferred except when inside a call that requires
+        the additonal context (such as a classmethod) of the boundnode
+        to determine which class the method was called from
+        """
+
         # If we're unbound method __new__ of builtin object, the result is an
         # instance of the class given as first argument.
         if (self._proxied.name == '__new__' and
                 self._proxied.parent.frame().qname() == '%s.object' % BUILTINS):
-            infer = caller.args[0].infer() if caller.args else []
+            if caller.args:
+                if context_lookup is None:
+                    context_lookup = {}
+                node_context = context_lookup.get(caller.args[0])
+                infer = caller.args[0].infer(context=node_context)
+            else:
+                infer = []
             return (Instance(x) if x is not util.Uninferable else x for x in infer)
-        return self._proxied.infer_call_result(caller, context)
+        return self._proxied.infer_call_result(caller, context, context_lookup)
 
     def bool_value(self):
         return True
@@ -341,47 +360,47 @@ class BoundMethod(UnboundMethod):
         mcs = next(caller.args[0].infer(context=context))
         if mcs.__class__.__name__ != 'ClassDef':
             # Not a valid first argument.
-            return
+            return None
         if not mcs.is_subtype_of("%s.type" % BUILTINS):
             # Not a valid metaclass.
-            return
+            return None
 
         # Verify the name
         name = next(caller.args[1].infer(context=context))
         if name.__class__.__name__ != 'Const':
             # Not a valid name, needs to be a const.
-            return
+            return None
         if not isinstance(name.value, str):
             # Needs to be a string.
-            return
+            return None
 
         # Verify the bases
         bases = next(caller.args[2].infer(context=context))
         if bases.__class__.__name__ != 'Tuple':
             # Needs to be a tuple.
-            return
+            return None
         inferred_bases = [next(elt.infer(context=context))
                           for elt in bases.elts]
         if any(base.__class__.__name__ != 'ClassDef'
                for base in inferred_bases):
             # All the bases needs to be Classes
-            return
+            return None
 
         # Verify the attributes.
         attrs = next(caller.args[3].infer(context=context))
         if attrs.__class__.__name__ != 'Dict':
             # Needs to be a dictionary.
-            return
+            return None
         cls_locals = collections.defaultdict(list)
         for key, value in attrs.items:
             key = next(key.infer(context=context))
             value = next(value.infer(context=context))
             if key.__class__.__name__ != 'Const':
                 # Something invalid as an attribute.
-                return
+                return None
             if not isinstance(key.value, str):
                 # Not a proper attribute.
-                return
+                return None
             cls_locals[key.value].append(value)
 
         # Build the class from now.
@@ -394,7 +413,7 @@ class BoundMethod(UnboundMethod):
         cls.locals = cls_locals
         return cls
 
-    def infer_call_result(self, caller, context=None):
+    def infer_call_result(self, caller, context=None, context_lookup=None):
         if context is None:
             context = contextmod.InferenceContext()
         context = context.clone()
@@ -412,7 +431,7 @@ class BoundMethod(UnboundMethod):
             if new_cls:
                 return iter((new_cls, ))
 
-        return super(BoundMethod, self).infer_call_result(caller, context)
+        return super(BoundMethod, self).infer_call_result(caller, context, context_lookup)
 
     def bool_value(self):
         return True

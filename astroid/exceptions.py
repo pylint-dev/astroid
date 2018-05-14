@@ -42,7 +42,6 @@ class AstroidBuildingError(AstroidError):
         error: Exception raised during construction.
     """
 
-    # pylint: disable=useless-super-delegation; https://github.com/PyCQA/pylint/issues/1085
     def __init__(self, message='Failed to import module {modname}.', **kws):
         super(AstroidBuildingError, self).__init__(message, **kws)
 
@@ -61,7 +60,6 @@ class TooManyLevelsError(AstroidImportError):
     level = None
     name = None
 
-    # pylint: disable=useless-super-delegation; https://github.com/PyCQA/pylint/issues/1085
     def __init__(self, message='Relative import with too many levels '
                                '({level}) for module {name!r}', **kws):
         super(TooManyLevelsError, self).__init__(message, **kws)
@@ -82,7 +80,6 @@ class NoDefault(AstroidError):
     func = None
     name = None
 
-    # pylint: disable=useless-super-delegation; https://github.com/PyCQA/pylint/issues/1085
     def __init__(self, message='{func!r} has no default for {name!r}.', **kws):
         super(NoDefault, self).__init__(message, **kws)
 
@@ -147,7 +144,6 @@ class InferenceError(ResolveError):
     node = None
     context = None
 
-    # pylint: disable=useless-super-delegation; https://github.com/PyCQA/pylint/issues/1085
     def __init__(self, message='Inference failed for {node!r}.', **kws):
         super(InferenceError, self).__init__(message, **kws)
 
@@ -165,7 +161,6 @@ class NameInferenceError(InferenceError):
     name = None
     scope = None
 
-    # pylint: disable=useless-super-delegation; https://github.com/PyCQA/pylint/issues/1085
     def __init__(self, message='{name!r} not found in {scope!r}.', **kws):
         super(NameInferenceError, self).__init__(message, **kws)
 
@@ -181,7 +176,6 @@ class AttributeInferenceError(ResolveError):
     target = None
     attribute = None
 
-    # pylint: disable=useless-super-delegation; https://github.com/PyCQA/pylint/issues/1085
     def __init__(self, message='{attribute!r} not found on {target!r}.', **kws):
         super(AttributeInferenceError, self).__init__(message, **kws)
 
@@ -202,6 +196,13 @@ class AstroidIndexError(AstroidError):
 
 class AstroidTypeError(AstroidError):
     """Raised when a TypeError would be expected in Python code."""
+
+
+class InferenceOverwriteError(AstroidError):
+    """Raised when an inference tip is overwritten
+
+    Currently only used for debugging.
+    """
 
 
 # Backwards-compatibility aliases

@@ -321,6 +321,7 @@ class InspectBuilder(object):
             else:
                 # create an empty node so that the name is actually defined
                 attach_dummy_node(node, name, member)
+        return None
 
     def imported_member(self, node, member, name):
         """verify this is not an imported class or handle it"""

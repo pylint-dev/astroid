@@ -177,6 +177,30 @@ class ProtocolTests(unittest.TestCase):
             ''')
             module.wildcard_import_names()
 
+    def test_not_passing_uninferable_in_seq_inference(self):
+        class Visitor(object):
+
+            def visit(self, node):
+                for child in node.get_children():
+                    child.accept(self)
+
+            visit_module = visit
+            visit_assign = visit
+            visit_binop = visit
+            visit_list = visit
+            visit_const = visit
+            visit_name = visit
+
+            def visit_assignname(self, node):
+                for _ in node.infer():
+                    pass
+
+        parsed = extract_node("""
+        a = []
+        x = [a*2, a]*2*2
+        """)
+        parsed.accept(Visitor())
+
 
 if __name__ == '__main__':
     unittest.main()

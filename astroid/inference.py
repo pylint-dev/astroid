@@ -89,6 +89,29 @@ def infer_map(self, context=None):
         yield new_seq
 
 
+def _update_with_replacement(lhs_dict, rhs_dict):
+    """Delete nodes that equate to duplicate keys
+
+    Since an astroid node doesn't 'equal' another node with the same value,
+    this function uses the as_string method to make sure duplicate keys
+    don't get through
+
+    Note that both the key and the value are astroid nodes
+
+    Fixes issue with DictUnpack causing duplicte keys
+    in inferred Dict items
+
+    :param dict(nodes.NodeNG, nodes.NodeNG) lhs_dict: Dictionary to 'merge' nodes into
+    :param dict(nodes.NodeNG, nodes.NodeNG) rhs_dict: Dictionary with nodes to pull from
+    :return dict(nodes.NodeNG, nodes.NodeNG): merged dictionary of nodes
+    """
+    combined_dict = itertools.chain(lhs_dict.items(), rhs_dict.items())
+    # Overwrite keys which have the same string values
+    string_map = {key.as_string(): (key, value) for key, value in combined_dict}
+    # Return to dictionary
+    return dict(string_map.values())
+
+
 def _infer_map(node, context):
     """Infer all values based on Dict.items"""
     values = {}
@@ -100,14 +123,15 @@ def _infer_map(node, context):
             if not isinstance(double_starred, nodes.Dict):
                 raise exceptions.InferenceError(node=node,
                                                 context=context)
-            values.update(_infer_map(double_starred, context))
+            unpack_items = _infer_map(double_starred, context)
+            values = _update_with_replacement(values, unpack_items)
         else:
             key = helpers.safe_infer(name, context=context)
             value = helpers.safe_infer(value, context=context)
             if any(elem in (None, util.Uninferable) for elem in (key, value)):
                 raise exceptions.InferenceError(node=node,
                                                 context=context)
-            values[key] = value
+            values = _update_with_replacement(values, {key: value})
     return values
 
 
@@ -131,6 +155,7 @@ def _higher_function_scope(node):
         current = current.parent
     if current and current.parent:
         return current.parent
+    return None
 
 def infer_name(self, context=None):
     """infer a Name: use name lookup rules"""
@@ -162,20 +187,22 @@ def infer_call(self, context=None):
     callcontext.callcontext = contextmod.CallContext(args=self.args,
                                                      keywords=self.keywords)
     callcontext.boundnode = None
+    if context is not None:
+        context_lookup = _populate_context_lookup(self, context.clone())
     for callee in self.func.infer(context):
         if callee is util.Uninferable:
             yield callee
             continue
         try:
             if hasattr(callee, 'infer_call_result'):
-                for inferred in callee.infer_call_result(self, callcontext):
+                for inferred in callee.infer_call_result(self, callcontext, context_lookup):
                     yield inferred
         except exceptions.InferenceError:
             ## XXX log error ?
             continue
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
-    raise StopIteration(dict(node=self, context=context))
+    return dict(node=self, context=context)
 nodes.Call._infer = infer_call
 
 
@@ -265,7 +292,7 @@ def infer_attribute(self, context=None):
             context.boundnode = None
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
-    raise StopIteration(dict(node=self, context=context))
+    return dict(node=self, context=context)
 nodes.Attribute._infer = decorators.path_wrapper(infer_attribute)
 nodes.AssignAttr.infer_lhs = infer_attribute # # won't work with a path wrapper
 
@@ -297,15 +324,21 @@ def infer_subscript(self, context=None):
     handle each supported index type accordingly.
     """
 
-    value = next(self.value.infer(context))
+    try:
+        value = next(self.value.infer(context))
+    except StopIteration:
+        return None
     if value is util.Uninferable:
         yield util.Uninferable
-        return
+        return None
 
-    index = next(self.slice.infer(context))
+    try:
+        index = next(self.slice.infer(context))
+    except StopIteration:
+        return None
     if index is util.Uninferable:
         yield util.Uninferable
-        return
+        return None
 
     # Try to deduce the index value.
     index_value = _SUBSCRIPT_SENTINEL
@@ -334,13 +367,13 @@ def infer_subscript(self, context=None):
     # is the same as the original subscripted object.
     if self is assigned or assigned is util.Uninferable:
         yield util.Uninferable
-        return
+        return None
     for inferred in assigned.infer(context):
         yield inferred
 
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
-    raise StopIteration(dict(node=self, context=context))
+    return dict(node=self, context=context)
 
 nodes.Subscript._infer = decorators.path_wrapper(infer_subscript)
 nodes.Subscript.infer_lhs = infer_subscript
@@ -365,7 +398,7 @@ def _infer_boolop(self, context=None):
         values = [value.infer(context=context) for value in values]
     except exceptions.InferenceError:
         yield util.Uninferable
-        return
+        return None
 
     for pair in itertools.product(*values):
         if any(item is util.Uninferable for item in pair):
@@ -398,7 +431,7 @@ def _infer_boolop(self, context=None):
 
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
-    raise StopIteration(dict(node=self, context=context))
+    return dict(node=self, context=context)
 
 nodes.BoolOp._infer = _infer_boolop
 
@@ -479,7 +512,7 @@ def infer_unaryop(self, context=None):
         yield inferred
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
-    raise StopIteration(dict(node=self, context=context))
+    return dict(node=self, context=context)
 
 nodes.UnaryOp._infer_unaryop = _infer_unaryop
 nodes.UnaryOp._infer = infer_unaryop
@@ -493,6 +526,8 @@ def _is_not_implemented(const):
 def _invoke_binop_inference(instance, opnode, op, other, context, method_name):
     """Invoke binary operation inference on the given instance."""
     methods = dunder_lookup.lookup(instance, method_name)
+    if context is not None:
+        context.boundnode = instance
     method = methods[0]
     inferred = next(method.infer(context=context))
     return instance.infer_binary_op(opnode, op, other, context, inferred)
@@ -712,12 +747,7 @@ def _infer_augassign(self, context=None):
             yield util.Uninferable
             return
 
-        # TODO(cpopa): if we have A() * A(), trying to infer
-        # the rhs with the same context will result in an
-        # inference error, so we create another context for it.
-        # This is a bug which should be fixed in InferenceContext at some point.
         rhs_context = context.clone()
-        rhs_context.path = set()
         for rhs in self.value.infer(context=rhs_context):
             if rhs is util.Uninferable:
                 # Don't know how to process this.
@@ -798,7 +828,7 @@ def instance_getitem(self, index, context=None):
     new_context.callcontext = contextmod.CallContext(args=[index])
     new_context.boundnode = self
 
-    method = next(self.igetattr('__getitem__', context=context))
+    method = next(self.igetattr('__getitem__', context=context), None)
     if not isinstance(method, bases.BoundMethod):
         raise exceptions.InferenceError(
             'Could not find __getitem__ for {node!r}.',
@@ -812,3 +842,20 @@ def instance_getitem(self, index, context=None):
             node=self, index=index, context=context))
 
 bases.Instance.getitem = instance_getitem
+
+
+def _populate_context_lookup(call, context):
+    # Allows context to be saved for later
+    # for inference inside a function
+    context_lookup = {}
+    if context is None:
+        return context_lookup
+    for arg in call.args:
+        if isinstance(arg, nodes.Starred):
+            context_lookup[arg.value] = context
+        else:
+            context_lookup[arg] = context
+    keywords = call.keywords if call.keywords is not None else []
+    for keyword in keywords:
+        context_lookup[keyword.value] = context
+    return context_lookup

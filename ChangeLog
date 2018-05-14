@@ -2,6 +2,105 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 --
+
+   * Module.__path__ is now a list
+
+     It used to be a string containing the path, but it doesn't reflect the situation
+     on Python, where it is actually a list.
+
+   * Fix a bug with namespace package's __path__ attribute.
+
+     Close #528
+
+   * Added brain tips for random.sample
+
+     Part of PyCQA/pylint#811
+
+   * Add brain tip for `issubclass` builtin
+
+     Close #101.
+
+   * Fix submodule imports from six
+
+     Close PyCQA/pylint#1640
+
+   * Fix missing __module__ and __qualname__ from class definition locals
+
+	 Close PYCQA/pylint#1753
+
+   * Fix a crash when __annotations__ access a parent's __init__ that does not have arguments
+
+     Close #473
+
+   * Fix multiple objects sharing the same InferenceContext.path causing uninferable results
+
+     Close #483
+
+   * Fix improper modification of col_offset, lineno upon inference of builtin functions
+
+     Close PyCQA/pylint#1839
+
+   * Subprocess.Popen brain now knows of the args member
+
+     Close PyCQA/pylint#1860
+
+   * add move_to_end method to collections.OrderedDict brain
+
+     Close PyCQA/pylint#1872
+
+   * Include new hashlib classes added in python 3.6
+
+   * Fix RecursionError for augmented assign
+
+     Close #437, #447, #313, PyCQA/pylint#1642, PyCQA/pylint#1805, PyCQA/pylint#1854, PyCQA/pylint#1452
+
+   * Add missing attrs special attribute
+
+	 Close PyCQA/pylint#1884
+
+   * Inference now understands the 'isinstance' builtin
+
+     Close #98
+
+   * Stop duplicate nodes with the same key values
+     from appearing in dictionaries from dictionary unpacking.
+
+     Close PyCQA/pylint#1843
+
+   * Fix ``contextlib.contextmanager`` inference for nested context managers
+
+     Close #1699
+
+   * Implement inference for len builtin
+
+     Close #112
+
+   * Add qname method to Super object preventing potential errors in upstream
+     pylint
+
+     Close #533
+
+
+2017-12-15 -- 1.6.0
+
+   * When verifying duplicates classes in MRO, ignore on-the-fly generated classes
+
+     Close PyCQA/pylint#1706
+
+   * Add brain tip for attrs library to prevent unsupported-assignment-operation false positives
+
+	 Close PYCQA/pylint#1698
+
+   * file_stream was removed, since it was deprecated for three releases
+
+     Instead one should use the .stream() method.
+
+   * Vast improvements to numpy support
+
+   * Add brain tips for curses
+
+     Close PyCQA/pylint#1703
+
    * Add brain tips for UUID.int
 
      Close PyCQA/pylint#961
@@ -39,6 +138,23 @@ Change log for the astroid package (used to be astng)
     * Dunder class at method level is now inferred as the class of the method
 
       Close PyCQA/pylint#1328
+
+    * Stop most inference tip overwrites from happening by using
+		predicates on existing inference_tip transforms.
+
+      Close #472
+
+    * Fix object.__new__(cls) calls in classmethods by using
+        a context which has the proper boundnode for the given
+        argument
+
+        Close #404
+
+    * Fix Pathlib type inference
+
+        Close PyCQA/pylint#224
+        Close PyCQA/pylint#1660
+
 
 2017-06-03 -- 1.5.3
 

@@ -9,7 +9,7 @@
 Various helper utilities.
 """
 
-import six
+import builtins as builtins_mod
 
 from astroid import bases
 from astroid import context as contextmod
@@ -21,7 +21,7 @@ from astroid import scoped_nodes
 from astroid import util
 
 
-BUILTINS = six.moves.builtins.__name__
+BUILTINS = builtins_mod.__name__
 
 
 def _build_proxy_class(cls_name, builtins):
@@ -37,15 +37,9 @@ def _function_type(function, builtins):
         else:
             cls_name = 'function'
     elif isinstance(function, bases.BoundMethod):
-        if six.PY2:
-            cls_name = 'instancemethod'
-        else:
-            cls_name = 'method'
+        cls_name = 'method'
     elif isinstance(function, bases.UnboundMethod):
-        if six.PY2:
-            cls_name = 'instancemethod'
-        else:
-            cls_name = 'function'
+        cls_name = 'function'
     return _build_proxy_class(cls_name, builtins)
 
 
@@ -89,6 +83,62 @@ def object_type(node, context=None):
     return list(types)[0]
 
 
+def _object_type_is_subclass(obj_type, class_or_seq, context=None):
+    if not isinstance(class_or_seq, (tuple, list)):
+        class_seq = (class_or_seq,)
+    else:
+        class_seq = class_or_seq
+
+    if obj_type is util.Uninferable:
+        return util.Uninferable
+
+    # Instances are not types
+    class_seq = [item if not isinstance(item, bases.Instance)
+                 else util.Uninferable for item in class_seq]
+    # strict compatibility with issubclass
+    # issubclass(type, (object, 1)) evaluates to true
+    # issubclass(object, (1, type)) raises TypeError
+    for klass in class_seq:
+        if klass is util.Uninferable:
+            raise exceptions.AstroidTypeError("arg 2 must be a type or tuple of types")
+
+        for obj_subclass in obj_type.mro():
+            if obj_subclass == klass:
+                return True
+    return False
+
+
+def object_isinstance(node, class_or_seq, context=None):
+    """Check if a node 'isinstance' any node in class_or_seq
+
+    :param node: A given node
+    :param class_or_seq: Union[nodes.NodeNG, Sequence[nodes.NodeNG]]
+    :rtype: bool
+
+    :raises AstroidTypeError: if the given ``classes_or_seq`` are not types
+    """
+    obj_type = object_type(node, context)
+    if obj_type is util.Uninferable:
+        return util.Uninferable
+    return _object_type_is_subclass(obj_type, class_or_seq, context=context)
+
+
+def object_issubclass(node, class_or_seq, context=None):
+    """Check if a type is a subclass of any node in class_or_seq
+
+    :param node: A given node
+    :param class_or_seq: Union[Nodes.NodeNG, Sequence[nodes.NodeNG]]
+    :rtype: bool
+
+    :raises AstroidTypeError: if the given ``classes_or_seq`` are not types
+    :raises AstroidError: if the type of the given node cannot be inferred
+        or its type's mro doesn't work
+    """
+    if not isinstance(node, nodes.ClassDef):
+        raise TypeError("{node} needs to be a ClassDef node".format(node=node))
+    return _object_type_is_subclass(node, class_or_seq, context=context)
+
+
 def safe_infer(node, context=None):
     """Return the inferred value for the given node.
 
@@ -99,12 +149,12 @@ def safe_infer(node, context=None):
         inferit = node.infer(context=context)
         value = next(inferit)
     except exceptions.InferenceError:
-        return
+        return None
     try:
         next(inferit)
-        return # None if there is ambiguity on the inferred node
+        return None # None if there is ambiguity on the inferred node
     except exceptions.InferenceError:
-        return # there is some kind of ambiguity
+        return None# there is some kind of ambiguity
     except StopIteration:
         return value
 
@@ -171,3 +221,48 @@ def class_instance_as_index(node):
                     return result
     except exceptions.InferenceError:
         pass
+    return None
+
+
+def object_len(node, context=None):
+    """Infer length of given node object
+
+    :param Union[nodes.ClassDef, nodes.Instance] node:
+    :param node: Node to infer length of
+
+    :raises AstroidTypeError: If an invalid node is returned
+        from __len__ method or no __len__ method exists
+    :raises InferenceError: If the given node cannot be inferred
+        or if multiple nodes are inferred
+    :rtype int: Integer length of node
+    """
+    from astroid.objects import FrozenSet
+    inferred_node = safe_infer(node, context=context)
+    if inferred_node is None or inferred_node is util.Uninferable:
+        raise exceptions.InferenceError(node=node)
+    if (isinstance(inferred_node, nodes.Const) and
+            isinstance(inferred_node.value, (bytes, str))):
+        return len(inferred_node.value)
+    if isinstance(inferred_node, (nodes.List, nodes.Set, nodes.Tuple, FrozenSet)):
+        return len(inferred_node.elts)
+    if isinstance(inferred_node, nodes.Dict):
+        return len(inferred_node.items)
+    try:
+        node_type = object_type(inferred_node, context=context)
+        len_call = next(node_type.igetattr("__len__", context=context))
+    except exceptions.AttributeInferenceError:
+        raise exceptions.AstroidTypeError(
+            "object of type '{}' has no len()"
+            .format(len_call.pytype()))
+
+    try:
+        result_of_len = next(len_call.infer_call_result(node, context))
+        # Remove StopIteration catch when #507 is fixed
+    except StopIteration:
+        raise exceptions.InferenceError(node=node)
+    if (isinstance(result_of_len, nodes.Const) and result_of_len.pytype() == "builtins.int"):
+        return result_of_len.value
+    else:
+        raise exceptions.AstroidTypeError(
+            "'{}' object cannot be interpreted as an integer"
+            .format(result_of_len))

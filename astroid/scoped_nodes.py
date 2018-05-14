@@ -14,12 +14,12 @@ new local scope in the language definition : Module, ClassDef, FunctionDef (and
 Lambda, GeneratorExp, DictComp and SetComp to some extent).
 """
 
+import builtins
 import sys
 import io
 import itertools
 import warnings
-
-import six
+from typing import Optional, List
 
 from astroid import bases
 from astroid import context as contextmod
@@ -33,7 +33,7 @@ from astroid import node_classes
 from astroid import util
 
 
-BUILTINS = six.moves.builtins.__name__
+BUILTINS = builtins.__name__
 ITER_METHODS = ('__iter__', '__getitem__')
 
 
@@ -69,11 +69,12 @@ def _c3_merge(sequences, cls, context):
         for seq in sequences:
             if seq[0] == candidate:
                 del seq[0]
+    return None
 
 
 def _verify_duplicates_mro(sequences, cls, context):
     for sequence in sequences:
-        names = [(node.lineno, node.qname()) for node in sequence]
+        names = [(node.lineno, node.qname()) for node in sequence if node.name]
         if len(names) != len(set(names)):
             raise exceptions.DuplicateBasesError(
                 message='Duplicates found in MROs {mros} for {cls!r}.',
@@ -95,7 +96,7 @@ def builtin_lookup(name):
     return the list of matching statements and the astroid for the builtin
     module
     """
-    builtin_astroid = MANAGER.ast_from_module(six.moves.builtins)
+    builtin_astroid = MANAGER.ast_from_module(builtins)
     if name == '__dict__':
         return builtin_astroid, ()
     try:
@@ -115,14 +116,19 @@ class LocalsDictNodeNG(node_classes.LookupMixIn,
 
     # attributes below are set by the builder module or by raw factories
 
-    # dictionary of locals with name as key and node defining the local as
-    # value
-
     locals = {}
+    """A map of the name of a local variable to the node defining the local.
+
+    :type: dict(str, NodeNG)
+    """
 
     def qname(self):
-        """return the 'qualified' name of the node, eg module.name,
-        module.class.name ...
+        """Get the 'qualified' name of the node.
+
+        For example: module.name, module.class.name ...
+
+        :returns: The qualified name.
+        :rtype: str
         """
         # pylint: disable=no-member; github.com/pycqa/astroid/issues/278
         if self.parent is None:
@@ -130,13 +136,21 @@ class LocalsDictNodeNG(node_classes.LookupMixIn,
         return '%s.%s' % (self.parent.frame().qname(), self.name)
 
     def frame(self):
-        """return the first parent frame node (i.e. Module, FunctionDef or ClassDef)
+        """The first parent frame node.
+
+        A frame node is a :class:`Module`, :class:`FunctionDef`,
+        or :class:`ClassDef`.
+
+        :returns: The first parent frame node.
+        :rtype: Module or FunctionDef or ClassDef
         """
         return self
 
     def scope(self):
-        """return the first node defining a new scope (i.e. Module,
-        FunctionDef, ClassDef, Lambda but also GeneratorExp, DictComp and SetComp)
+        """The first parent node defining a new scope.
+
+        :returns: The first parent scope node.
+        :rtype: Module or FunctionDef or ClassDef or Lambda or GenExpr
         """
         return self
 
@@ -158,11 +172,15 @@ class LocalsDictNodeNG(node_classes.LookupMixIn,
         return builtin_lookup(name) # Module
 
     def set_local(self, name, stmt):
-        """define <name> in locals (<stmt> is the node defining the name)
-        if the node is a Module node (i.e. has globals), add the name to
-        globals
+        """Define that the given name is declared in the given statement node.
 
-        if the name is already defined, ignore it
+        .. seealso:: :meth:`scope`
+
+        :param name: The name that is being defined.
+        :type name: str
+
+        :param stmt: The statement that defines the given name.
+        :type stmt: NodeNG
         """
         #assert not stmt in self.locals.get(name, ()), (self, stmt)
         self.locals.setdefault(name, []).append(stmt)
@@ -179,92 +197,190 @@ class LocalsDictNodeNG(node_classes.LookupMixIn,
         child.parent = self
 
     def add_local_node(self, child_node, name=None):
-        """append a child which should alter locals to the given node"""
+        """Append a child that should alter the locals of this scope node.
+
+        :param child_node: The child node that will alter locals.
+        :type child_node: NodeNG
+
+        :param name: The name of the local that will be altered by
+            the given child node.
+        :type name: str or None
+        """
         if name != '__class__':
             # add __class__ node as a child will cause infinite recursion later!
             self._append_node(child_node)
         self.set_local(name or child_node.name, child_node)
 
     def __getitem__(self, item):
-        """method from the `dict` interface returning the first node
-        associated with the given name in the locals dictionary
+        """The first node the defines the given local.
 
+        :param item: The name of the locally defined object.
         :type item: str
-        :param item: the name of the locally defined object
-        :raises KeyError: if the name is not defined
+
+        :raises KeyError: If the name is not defined.
         """
         return self.locals[item][0]
 
     def __iter__(self):
-        """method from the `dict` interface returning an iterator on
-        `self.keys()`
+        """Iterate over the names of locals defined in this scoped node.
+
+        :returns: The names of the defined locals.
+        :rtype: iterable(str)
         """
         return iter(self.keys())
 
     def keys(self):
-        """method from the `dict` interface returning a tuple containing
-        locally defined names
+        """The names of locals defined in this scoped node.
+
+        :returns: The names of the defined locals.
+        :rtype: list(str)
         """
         return list(self.locals.keys())
 
     def values(self):
-        """method from the `dict` interface returning a tuple containing
-        locally defined nodes which are instance of `FunctionDef` or `ClassDef`
+        """The nodes that define the locals in this scoped node.
+
+        :returns: The nodes that define locals.
+        :rtype: list(NodeNG)
         """
         return [self[key] for key in self.keys()]
 
     def items(self):
-        """method from the `dict` interface returning a list of tuple
-        containing each locally defined name with its associated node,
-        which is an instance of `FunctionDef` or `ClassDef`
+        """Get the names of the locals and the node that defines the local.
+
+        :returns: The names of locals and their asociated node.
+        :rtype: list(tuple(str, NodeNG))
         """
         return list(zip(self.keys(), self.values()))
 
     def __contains__(self, name):
+        """Check if a local is defined in this scope.
+
+        :param name: The name of the local to check for.
+        :type name: str
+
+        :returns: True if this node has a local of the given name,
+            False otherwise.
+        :rtype: bool
+        """
         return name in self.locals
 
 
 class Module(LocalsDictNodeNG):
+    """Class representing an :class:`ast.Module` node.
+
+    >>> node = astroid.extract_node('import astroid')
+    >>> node
+    <Import l.1 at 0x7f23b2e4e5c0>
+    >>> node.parent
+    <Module l.0 at 0x7f23b2e4eda0>
+    """
     _astroid_fields = ('body',)
 
     fromlineno = 0
+    """The first line that this node appears on in the source code.
+
+    :type: int or None
+    """
     lineno = 0
+    """The line that this node appears on in the source code.
+
+    :type: int or None
+    """
 
     # attributes below are set by the builder module or by raw factories
 
-    # the file from which as been extracted the astroid representation. It may
-    # be None if the representation has been built from a built-in module
     file = None
-    # Alternatively, if built from a string/bytes, this can be set
+    """The path to the file that this ast has been extracted from.
+
+    This will be ``None`` when the representation has been built from a
+    built-in module.
+
+    :type: str or None
+    """
     file_bytes = None
-    # encoding of python source file, so we can get unicode out of it (python2
-    # only)
+    """The string/bytes that this ast was built from.
+
+    :type: str or bytes or None
+    """
     file_encoding = None
-    # the module name
+    """The encoding of the source file.
+
+    This is used to get unicode out of a source file.
+    Python 2 only.
+
+    :type: str or None
+    """
     name = None
-    # boolean for astroid built from source (i.e. ast)
+    """The name of the module.
+
+    :type: str or None
+    """
     pure_python = None
-    # boolean for package module
+    """Whether the ast was built from source.
+
+    :type: bool or None
+    """
     package = None
-    # dictionary of globals with name as key and node defining the global
-    # as value
+    """Whether the node represents a package or a module.
+
+    :type: bool or None
+    """
     globals = None
+    """A map of the name of a global variable to the node defining the global.
+
+    :type: dict(str, NodeNG)
+    """
 
     # Future imports
     future_imports = None
-    special_attributes = objectmodel.ModuleModel()
+    """The imports from ``__future__``.
 
-    # names of python special attributes (handled by getattr impl.)
+    :type: set(str) or None
+    """
+    special_attributes = objectmodel.ModuleModel()
+    """The names of special attributes that this module has.
+
+    :type: objectmodel.ModuleModel
+    """
 
     # names of module attributes available through the global scope
-    scope_attrs = set(('__name__', '__doc__', '__file__', '__path__'))
+    scope_attrs = {'__name__', '__doc__', '__file__', '__path__', '__package__'}
+    """The names of module attributes available through the global scope.
+
+    :type: str(str)
+    """
 
     _other_fields = ('name', 'doc', 'file', 'path', 'package',
                      'pure_python', 'future_imports')
     _other_other_fields = ('locals', 'globals')
 
-    def __init__(self, name, doc, file=None, path=None, package=None,
+    def __init__(self, name, doc, file=None,
+                 path: Optional[List[str]] = None,
+                 package=None,
                  parent=None, pure_python=True):
+        """
+        :param name: The name of the module.
+        :type name: str
+
+        :param doc: The module docstring.
+        :type doc: str
+
+        :param file: The path to the file that this ast has been extracted from.
+        :type file: str or None
+
+        :param path:
+        :type path: Optional[List[str]]
+
+        :param package: Whether the node represents a package or a module.
+        :type package: bool or None
+
+        :param parent: The parent node in the syntax tree.
+        :type parent: NodeNG or None
+
+        :param pure_python: Whether the ast was built from source.
+        :type pure_python: bool or None
+        """
         self.name = name
         self.doc = doc
         self.file = file
@@ -273,11 +389,24 @@ class Module(LocalsDictNodeNG):
         self.parent = parent
         self.pure_python = pure_python
         self.locals = self.globals = {}
+        """A map of the name of a local variable to the node defining the local.
+
+        :type: dict(str, NodeNG)
+        """
         self.body = []
+        """The contents of the module.
+
+        :type: list(NodeNG) or None
+        """
         self.future_imports = set()
     # pylint: enable=redefined-builtin
 
     def postinit(self, body=None):
+        """Do some setup after initialisation.
+
+        :param body: The contents of the module.
+        :type body: list(NodeNG) or None
+        """
         self.body = body
 
     def _get_stream(self):
@@ -288,37 +417,44 @@ class Module(LocalsDictNodeNG):
             return stream
         return None
 
-    @property
-    def file_stream(self):
-        warnings.warn("file_stream property is deprecated and "
-                      "it is slated for removal in astroid 1.6."
-                      "Use the new method 'stream' instead.",
-                      PendingDeprecationWarning,
-                      stacklevel=2)
-        return self._get_stream()
-
     def stream(self):
-        """Get a stream to the underlying file or bytes."""
-        return self._get_stream()
+        """Get a stream to the underlying file or bytes.
 
-    def close(self):
-        """Close the underlying file streams."""
-        warnings.warn("close method is deprecated and it is "
-                      "slated for removal in astroid 1.6, along "
-                      "with 'file_stream' property. "
-                      "Its behaviour is replaced by managing each "
-                      "file stream returned by the 'stream' method.",
-                      PendingDeprecationWarning,
-                      stacklevel=2)
+        .. deprecated:: 1.5
+
+        :type: file or io.BytesIO or None
+        """
+        return self._get_stream()
 
     def block_range(self, lineno):
-        """return block line numbers.
+        """Get a range from where this node starts to where this node ends.
 
-        start from the beginning whatever the given lineno
+        :param lineno: Unused.
+        :type lineno: int
+
+        :returns: The range of line numbers that this node belongs to.
+        :rtype: tuple(int, int)
         """
         return self.fromlineno, self.tolineno
 
     def scope_lookup(self, node, name, offset=0):
+        """Lookup where the given variable is assigned.
+
+        :param node: The node to look for assignments up to.
+            Any assignments after the given node are ignored.
+        :type node: NodeNG
+
+        :param name: The name of the variable to find assignments for.
+        :type name: str
+
+        :param offset: The line offset to filter statements up to.
+        :type offset: int
+
+        :returns: This scope node and the list of assignments associated to the
+            given name according to the scope where it has been found (locals,
+            globals or builtin).
+        :rtype: tuple(str, list(NodeNG))
+        """
         if name in self.scope_attrs and name not in self.locals:
             try:
                 return self, self.getattr(name)
@@ -327,9 +463,19 @@ class Module(LocalsDictNodeNG):
         return self._scope_lookup(node, name, offset)
 
     def pytype(self):
+        """Get the name of the type that this node represents.
+
+        :returns: The name of the type.
+        :rtype: str
+        """
         return '%s.module' % BUILTINS
 
     def display_type(self):
+        """A human readable type of this node.
+
+        :returns: The type of this node.
+        :rtype: str
+        """
         return 'Module'
 
     def getattr(self, name, context=None, ignore_locals=False):
@@ -354,7 +500,14 @@ class Module(LocalsDictNodeNG):
                                                  context=context)
 
     def igetattr(self, name, context=None):
-        """inferred getattr"""
+        """Infer the possible values of the given variable.
+
+        :param name: The name of the variable to infer.
+        :type name: str
+
+        :returns: The inferred possible values.
+        :rtype: iterable(NodeNG) or None
+        """
         # set lookup name since this is necessary to infer on import nodes for
         # instance
         context = contextmod.copy_context(context)
@@ -367,40 +520,65 @@ class Module(LocalsDictNodeNG):
                 error.message, target=self, attribute=name, context=context))
 
     def fully_defined(self):
-        """return True if this module has been built from a .py file
-        and so contains a complete representation including the code
+        """Check if this module has been build from a .py file.
+
+        If so, the module contains a complete representation,
+        including the code.
+
+        :returns: True if the module has been built from a .py file.
+        :rtype: bool
         """
         return self.file is not None and self.file.endswith('.py')
 
     def statement(self):
-        """return the first parent node marked as statement node
-        consider a module as a statement...
+        """The first parent node, including self, marked as statement node.
+
+        :returns: The first parent statement.
+        :rtype: NodeNG
         """
         return self
 
     def previous_sibling(self):
-        """module has no sibling"""
+        """The previous sibling statement.
+
+        :returns: The previous sibling statement node.
+        :rtype: NodeNG or None
+        """
         return
 
     def next_sibling(self):
-        """module has no sibling"""
+        """The next sibling statement node.
+
+        :returns: The next sibling statement node.
+        :rtype: NodeNG or None
+        """
         return
 
-    if six.PY2:
-        @decorators_mod.cachedproperty
-        def _absolute_import_activated(self):
-            for stmt in self.locals.get('absolute_import', ()):
-                if isinstance(stmt, node_classes.ImportFrom) and stmt.modname == '__future__':
-                    return True
-            return False
-    else:
-        _absolute_import_activated = True
+    _absolute_import_activated = True
 
     def absolute_import_activated(self):
+        """Whether :pep:`328` absolute import behaviour has been enabled.
+
+        :returns: True if :pep:`328` has been enabled, False otherwise.
+        :rtype: bool
+        """
         return self._absolute_import_activated
 
     def import_module(self, modname, relative_only=False, level=None):
-        """import the given module considering self as context"""
+        """Get the ast for a given module as if imported from this module.
+
+        :param modname: The name of the module to "import".
+        :type modname: str
+
+        :param relative_only: Whether to only consider relative imports.
+        :type relative_only: bool
+
+        :param level: The level of relative import.
+        :type level: int or None
+
+        :returns: The imported module ast.
+        :rtype: NodeNG
+        """
         if relative_only and level is None:
             level = 0
         absmodname = self.relative_to_absolute_name(modname, level)
@@ -415,9 +593,21 @@ class Module(LocalsDictNodeNG):
         return MANAGER.ast_from_module_name(modname)
 
     def relative_to_absolute_name(self, modname, level):
-        """return the absolute module name for a relative import.
+        """Get the absolute module name for a relative import.
 
         The relative import can be implicit or explicit.
+
+        :param modname: The module name to convert.
+        :type modname: str
+
+        :param level: The level of relative import.
+        :type level: int
+
+        :returns: The absolute module name.
+        :rtype: str
+
+        :raises TooManyLevelsError: When the relative import refers to a
+            module too far above this one.
         """
         # XXX this returns non sens when called on an absolute import
         # like 'pylint.checkers.astroid.utils'
@@ -444,11 +634,13 @@ class Module(LocalsDictNodeNG):
         return modname
 
     def wildcard_import_names(self):
-        """return the list of imported names when this module is 'wildcard
-        imported'
+        """The list of imported names when this module is 'wildcard imported'.
 
         It doesn't include the '__builtins__' name which is added by the
         current CPython implementation of wildcard imports.
+
+        :returns: The list of imported names.
+        :rtype: list(str)
         """
         # We separate the different steps of lookup in try/excepts
         # to avoid catching too many Exceptions
@@ -477,7 +669,7 @@ class Module(LocalsDictNodeNG):
             return default
 
         str_const = lambda node: (isinstance(node, node_classes.Const) and
-                                  isinstance(node.value, six.string_types))
+                                  isinstance(node.value, str))
         for node in explicit.elts:
             if str_const(node):
                 inferred.append(node.value)
@@ -491,31 +683,92 @@ class Module(LocalsDictNodeNG):
         return inferred
 
     def public_names(self):
-        """Get the list of the names which are publicly available in this module."""
+        """The list of the names that are publicly available in this module.
+
+        :returns: The list of publc names.
+        :rtype: list(str)
+        """
         return [name for name in self.keys() if not name.startswith('_')]
 
     def bool_value(self):
+        """Determine the boolean value of this node.
+
+        :returns: The boolean value of this node.
+            For a :class:`Module` this is always ``True``.
+        :rtype: bool
+        """
         return True
+
+    def get_children(self):
+        for elt in self.body:
+            yield elt
 
 
 class ComprehensionScope(LocalsDictNodeNG):
+    """Scoping for different types of comprehensions."""
     def frame(self):
+        """The first parent frame node.
+
+        A frame node is a :class:`Module`, :class:`FunctionDef`,
+        or :class:`ClassDef`.
+
+        :returns: The first parent frame node.
+        :rtype: Module or FunctionDef or ClassDef
+        """
         return self.parent.frame()
 
     scope_lookup = LocalsDictNodeNG._scope_lookup
 
 
 class GeneratorExp(ComprehensionScope):
+    """Class representing an :class:`ast.GeneratorExp` node.
+
+    >>> node = astroid.extract_node('(thing for thing in things if thing)')
+    >>> node
+    <GeneratorExp l.1 at 0x7f23b2e4e400>
+    """
     _astroid_fields = ('elt', 'generators')
     _other_other_fields = ('locals',)
     elt = None
+    """The element that forms the output of the expression.
+
+    :type: NodeNG or None
+    """
     generators = None
+    """The generators that are looped through.
+
+    :type: list(Comprehension) or None
+    """
 
     def __init__(self, lineno=None, col_offset=None, parent=None):
+        """
+        :param lineno: The line that this node appears on in the source code.
+        :type lineno: int or None
+
+        :param col_offset: The column that this node appears on in the
+            source code.
+        :type col_offset: int or None
+
+        :param parent: The parent node in the syntax tree.
+        :type parent: NodeNG or None
+        """
         self.locals = {}
+        """A map of the name of a local variable to the node defining the local.
+
+        :type: dict(str, NodeNG)
+        """
+
         super(GeneratorExp, self).__init__(lineno, col_offset, parent)
 
     def postinit(self, elt=None, generators=None):
+        """Do some setup after initialisation.
+
+        :param elt: The element that forms the output of the expression.
+        :type elt: NodeNG or None
+
+        :param generators: The generators that are looped through.
+        :type generators: list(Comprehension) or None
+        """
         self.elt = elt
         if generators is None:
             self.generators = []
@@ -523,21 +776,77 @@ class GeneratorExp(ComprehensionScope):
             self.generators = generators
 
     def bool_value(self):
+        """Determine the boolean value of this node.
+
+        :returns: The boolean value of this node.
+            For a :class:`GeneratorExp` this is always ``True``.
+        :rtype: bool
+        """
         return True
+
+    def get_children(self):
+        yield self.elt
+
+        yield from self.generators
 
 
 class DictComp(ComprehensionScope):
+    """Class representing an :class:`ast.DictComp` node.
+
+    >>> node = astroid.extract_node('{k:v for k, v in things if k > v}')
+    >>> node
+    <DictComp l.1 at 0x7f23b2e41d68>
+    """
     _astroid_fields = ('key', 'value', 'generators')
     _other_other_fields = ('locals',)
     key = None
+    """What produces the keys.
+
+    :type: NodeNG or None
+    """
     value = None
+    """What produces the values.
+
+    :type: NodeNG or None
+    """
     generators = None
+    """The generators that are looped through.
+
+    :type: list(Comprehension) or None
+    """
 
     def __init__(self, lineno=None, col_offset=None, parent=None):
+        """
+        :param lineno: The line that this node appears on in the source code.
+        :type lineno: int or None
+
+        :param col_offset: The column that this node appears on in the
+            source code.
+        :type col_offset: int or None
+
+        :param parent: The parent node in the syntax tree.
+        :type parent: NodeNG or None
+        """
         self.locals = {}
+        """A map of the name of a local variable to the node defining the local.
+
+        :type: dict(str, NodeNG)
+        """
+
         super(DictComp, self).__init__(lineno, col_offset, parent)
 
     def postinit(self, key=None, value=None, generators=None):
+        """Do some setup after initialisation.
+
+        :param key: What produces the keys.
+        :type key: NodeNG or None
+
+        :param value: What produces the values.
+        :type value: NodeNG or None
+
+        :param generators: The generators that are looped through.
+        :type generators: list(Comprehension) or None
+        """
         self.key = key
         self.value = value
         if generators is None:
@@ -546,20 +855,70 @@ class DictComp(ComprehensionScope):
             self.generators = generators
 
     def bool_value(self):
+        """Determine the boolean value of this node.
+
+        :returns: The boolean value of this node.
+            For a :class:`DictComp` this is always :class:`Uninferable`.
+        :rtype: Uninferable
+        """
         return util.Uninferable
+
+    def get_children(self):
+        yield self.key
+        yield self.value
+
+        yield from self.generators
 
 
 class SetComp(ComprehensionScope):
+    """Class representing an :class:`ast.SetComp` node.
+
+    >>> node = astroid.extract_node('{thing for thing in things if thing}')
+    >>> node
+    <SetComp l.1 at 0x7f23b2e41898>
+    """
     _astroid_fields = ('elt', 'generators')
     _other_other_fields = ('locals',)
     elt = None
+    """The element that forms the output of the expression.
+
+    :type: NodeNG or None
+    """
     generators = None
+    """The generators that are looped through.
+
+    :type: list(Comprehension) or None
+    """
 
     def __init__(self, lineno=None, col_offset=None, parent=None):
+        """
+        :param lineno: The line that this node appears on in the source code.
+        :type lineno: int or None
+
+        :param col_offset: The column that this node appears on in the
+            source code.
+        :type col_offset: int or None
+
+        :param parent: The parent node in the syntax tree.
+        :type parent: NodeNG or None
+        """
         self.locals = {}
+        """A map of the name of a local variable to the node defining the local.
+
+        :type: dict(str, NodeNG)
+        """
+
         super(SetComp, self).__init__(lineno, col_offset, parent)
 
     def postinit(self, elt=None, generators=None):
+        """Do some setup after initialisation.
+
+        :param elt: The element that forms the output of the expression.
+        :type elt: NodeNG or None
+
+        :param generators: The generators that are looped through.
+        :type generators: list(Comprehension) or None
+        """
         self.elt = elt
         if generators is None:
             self.generators = []
@@ -567,34 +926,83 @@ class SetComp(ComprehensionScope):
             self.generators = generators
 
     def bool_value(self):
+        """Determine the boolean value of this node.
+
+        :returns: The boolean value of this node.
+            For a :class:`SetComp` this is always :class:`Uninferable`.
+        :rtype: Uninferable
+        """
         return util.Uninferable
+
+    def get_children(self):
+        yield self.elt
+
+        yield from self.generators
 
 
 class _ListComp(node_classes.NodeNG):
-    """class representing a ListComp node"""
+    """Class representing an :class:`ast.ListComp` node.
+
+    >>> node = astroid.extract_node('[thing for thing in things if thing]')
+    >>> node
+    <ListComp l.1 at 0x7f23b2e418d0>
+    """
     _astroid_fields = ('elt', 'generators')
     elt = None
+    """The element that forms the output of the expression.
+
+    :type: NodeNG or None
+    """
     generators = None
+    """The generators that are looped through.
+
+    :type: list(Comprehension) or None
+    """
 
     def postinit(self, elt=None, generators=None):
+        """Do some setup after initialisation.
+
+        :param elt: The element that forms the output of the expression.
+        :type elt: NodeNG or None
+
+        :param generators: The generators that are looped through.
+        :type generators: list(Comprehension) or None
+        """
         self.elt = elt
         self.generators = generators
 
     def bool_value(self):
+        """Determine the boolean value of this node.
+
+        :returns: The boolean value of this node.
+            For a :class:`ListComp` this is always :class:`Uninferable`.
+        :rtype: Uninferable
+        """
         return util.Uninferable
 
+    def get_children(self):
+        yield self.elt
 
-if six.PY3:
-    class ListComp(_ListComp, ComprehensionScope):
-        """class representing a ListComp node"""
-        _other_other_fields = ('locals',)
+        yield from self.generators
 
-        def __init__(self, lineno=None, col_offset=None, parent=None):
-            self.locals = {}
-            super(ListComp, self).__init__(lineno, col_offset, parent)
-else:
-    class ListComp(_ListComp):
-        """class representing a ListComp node"""
+
+class ListComp(_ListComp, ComprehensionScope):
+    """Class representing an :class:`ast.ListComp` node.
+
+    >>> node = astroid.extract_node('[thing for thing in things if thing]')
+    >>> node
+    <ListComp l.1 at 0x7f23b2e418d0>
+    """
+    _other_other_fields = ('locals',)
+
+    def __init__(self, lineno=None, col_offset=None, parent=None):
+        self.locals = {}
+        """A map of the name of a local variable to the node defining it.
+
+        :type: dict(str, NodeNG)
+        """
+
+        super(ListComp, self).__init__(lineno, col_offset, parent)
 
 
 def _infer_decorator_callchain(node):
@@ -602,16 +1010,16 @@ def _infer_decorator_callchain(node):
     static or a classmethod.
     """
     if not isinstance(node, FunctionDef):
-        return
+        return None
     if not node.parent:
-        return
+        return None
     try:
         # TODO: We don't handle multiple inference results right now,
         #       because there's no flow to reason when the return
         #       is what we are looking for, a static or a class method.
         result = next(node.infer_call_result(node.parent))
     except (StopIteration, exceptions.InferenceError):
-        return
+        return None
     if isinstance(result, bases.Instance):
         result = result._proxied
     if isinstance(result, ClassDef):
@@ -619,16 +1027,29 @@ def _infer_decorator_callchain(node):
             return 'classmethod'
         if result.is_subtype_of('%s.staticmethod' % BUILTINS):
             return 'staticmethod'
+    return None
 
 
 class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
+    """Class representing an :class:`ast.Lambda` node.
+
+    >>> node = astroid.extract_node('lambda arg: arg + 1')
+    >>> node
+    <Lambda.<lambda> l.1 at 0x7f23b2e41518>
+    """
     _astroid_fields = ('args', 'body',)
     _other_other_fields = ('locals',)
     name = '<lambda>'
+    is_lambda = True
 
     # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
     @property
     def type(self):
+        """Whether this is a method or function.
+
+        :returns: 'method' if this is a method, 'function' otherwise.
+        :rtype: str
+        """
         # pylint: disable=no-member
         if self.args.args and self.args.args[0].name == 'self':
             if isinstance(self.parent.scope(), ClassDef):
@@ -636,30 +1057,85 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         return 'function'
 
     def __init__(self, lineno=None, col_offset=None, parent=None):
+        """
+        :param lineno: The line that this node appears on in the source code.
+        :type lineno: int or None
+
+        :param col_offset: The column that this node appears on in the
+            source code.
+        :type col_offset: int or None
+
+        :param parent: The parent node in the syntax tree.
+        :type parent: NodeNG or None
+        """
         self.locals = {}
+        """A map of the name of a local variable to the node defining it.
+
+        :type: dict(str, NodeNG)
+        """
+
         self.args = []
+        """The arguments that the function takes.
+
+        :type: Arguments or list
+        """
+
         self.body = []
+        """The contents of the function body.
+
+        :type: list(NodeNG)
+        """
+
         super(Lambda, self).__init__(lineno, col_offset, parent)
 
     def postinit(self, args, body):
+        """Do some setup after initialisation.
+
+        :param args: The arguments that the function takes.
+        :type args: Arguments
+
+        :param body: The contents of the function body.
+        :type body: list(NodeNG)
+        """
         self.args = args
         self.body = body
 
     def pytype(self):
+        """Get the name of the type that this node represents.
+
+        :returns: The name of the type.
+        :rtype: str
+        """
         if 'method' in self.type:
             return '%s.instancemethod' % BUILTINS
         return '%s.function' % BUILTINS
 
     def display_type(self):
+        """A human readable type of this node.
+
+        :returns: The type of this node.
+        :rtype: str
+        """
         if 'method' in self.type:
             return 'Method'
         return 'Function'
 
     def callable(self):
+        """Whether this node defines something that is callable.
+
+        :returns: True if this defines something that is callable,
+            False otherwise.
+            For a :class:`Lambda` this is always ``True``.
+        :rtype: bool
+        """
         return True
 
     def argnames(self):
-        """return a list of argument names"""
+        """Get the names of each of the arguments.
+
+        :returns: The names of the arguments.
+        :rtype: list(str)
+        """
         # pylint: disable=no-member; github.com/pycqa/astroid/issues/291
         # args is in fact redefined later on by postinit. Can't be changed
         # to None due to a strong interaction between Lambda and FunctionDef.
@@ -674,15 +1150,35 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
             names.append(self.args.kwarg)
         return names
 
-    def infer_call_result(self, caller, context=None):
-        """infer what a function is returning when called"""
+    def infer_call_result(self, caller, context=None, context_lookup=None):
+        """Infer what the function returns when called.
+
+        :param caller: Unused
+        :type caller: object
+        """
         # pylint: disable=no-member; github.com/pycqa/astroid/issues/291
         # args is in fact redefined later on by postinit. Can't be changed
         # to None due to a strong interaction between Lambda and FunctionDef.
-
         return self.body.infer(context)
 
     def scope_lookup(self, node, name, offset=0):
+        """Lookup where the given names is assigned.
+
+        :param node: The node to look for assignments up to.
+            Any assignments after the given node are ignored.
+        :type node: NodeNG
+
+        :param name: The name to find assignments for.
+        :type name: str
+
+        :param offset: The line offset to filter statements up to.
+        :type offset: int
+
+        :returns: This scope node and the list of assignments associated to the
+            given name according to the scope where it has been found (locals,
+            globals or builtin).
+        :rtype: tuple(str, list(NodeNG))
+        """
         # pylint: disable=no-member; github.com/pycqa/astroid/issues/291
         # args is in fact redefined later on by postinit. Can't be changed
         # to None due to a strong interaction between Lambda and FunctionDef.
@@ -698,18 +1194,49 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         return frame._scope_lookup(node, name, offset)
 
     def bool_value(self):
+        """Determine the boolean value of this node.
+
+        :returns: The boolean value of this node.
+            For a :class:`Lambda` this is always ``True``.
+        :rtype: bool
+        """
         return True
 
+    def get_children(self):
+        yield self.args
+        yield self.body
 
-class FunctionDef(node_classes.Statement, Lambda):
-    if six.PY3:
-        _astroid_fields = ('decorators', 'args', 'returns', 'body')
-        returns = None
-    else:
-        _astroid_fields = ('decorators', 'args', 'body')
+
+class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
+    """Class representing an :class:`ast.FunctionDef`.
+
+    >>> node = astroid.extract_node('''
+    ... def my_func(arg):
+    ...     return arg + 1
+    ... ''')
+    >>> node
+    <FunctionDef.my_func l.2 at 0x7f23b2e71e10>
+    """
+    _astroid_fields = ('decorators', 'args', 'returns', 'body')
+    _multi_line_block_fields = ('body',)
+    returns = None
     decorators = None
+    """The decorators that are applied to this method or function.
+
+    :type: Decorators or None
+    """
     special_attributes = objectmodel.FunctionModel()
+    """The names of special attributes that this function has.
+
+    :type: objectmodel.FunctionModel
+    """
     is_function = True
+    """Whether this node indicates a function.
+
+    For a :class:`FunctionDef` this is always ``True``.
+
+    :type: bool
+    """
     # attributes below are set by the builder module or by raw factories
     _other_fields = ('name', 'doc')
     _other_other_fields = ('locals', '_type')
@@ -717,8 +1244,35 @@ class FunctionDef(node_classes.Statement, Lambda):
 
     def __init__(self, name=None, doc=None, lineno=None,
                  col_offset=None, parent=None):
+        """
+        :param name: The name of the function.
+        :type name: str or None
+
+        :param doc: The function's docstring.
+        :type doc: str or None
+
+        :param lineno: The line that this node appears on in the source code.
+        :type lineno: int or None
+
+        :param col_offset: The column that this node appears on in the
+            source code.
+        :type col_offset: int or None
+
+        :param parent: The parent node in the syntax tree.
+        :type parent: NodeNG or None
+        """
         self.name = name
+        """The name of the function.
+
+        :type name: str or None
+        """
+
         self.doc = doc
+        """The function's docstring.
+
+        :type doc: str or None
+        """
+
         self.instance_attrs = {}
         super(FunctionDef, self).__init__(lineno, col_offset, parent)
         if parent:
@@ -727,28 +1281,43 @@ class FunctionDef(node_classes.Statement, Lambda):
 
     # pylint: disable=arguments-differ; different than Lambdas
     def postinit(self, args, body, decorators=None, returns=None):
+        """Do some setup after initialisation.
+
+        :param args: The arguments that the function takes.
+        :type args: Arguments or list
+
+        :param body: The contents of the function body.
+        :type body: list(NodeNG)
+
+        :param decorators: The decorators that are applied to this
+            method or function.
+        :type decorators: Decorators or None
+        """
         self.args = args
         self.body = body
         self.decorators = decorators
         self.returns = returns
 
-        if six.PY3 and isinstance(self.parent.frame(), ClassDef):
+        if isinstance(self.parent.frame(), ClassDef):
             self.set_local('__class__', self.parent.frame())
 
     @decorators_mod.cachedproperty
     def extra_decorators(self):
-        """Get the extra decorators that this function can haves
+        """The extra decorators that this function can have.
+
         Additional decorators are considered when they are used as
-        assignments, as in `method = staticmethod(method)`.
+        assignments, as in ``method = staticmethod(method)``.
         The property will return all the callables that are used for
         decoration.
+
+        :type: list(NodeNG)
         """
         frame = self.parent.frame()
         if not isinstance(frame, ClassDef):
             return []
 
         decorators = []
-        for assign in frame.nodes_of_class(node_classes.Assign):
+        for assign in frame._get_assign_nodes():
             if (isinstance(assign.value, node_classes.Call)
                     and isinstance(assign.value.func, node_classes.Name)):
                 for assign_node in assign.targets:
@@ -774,9 +1343,11 @@ class FunctionDef(node_classes.Statement, Lambda):
 
     @decorators_mod.cachedproperty
     def type(self):
-        """Get the function type for this node.
+        """The function type for this node.
 
         Possible values are: method, function, staticmethod, classmethod.
+
+        :type: str
         """
         builtin_descriptors = {'classmethod', 'staticmethod'}
 
@@ -837,6 +1408,10 @@ class FunctionDef(node_classes.Statement, Lambda):
 
     @decorators_mod.cachedproperty
     def fromlineno(self):
+        """The first line that this node appears on in the source code.
+
+        :type: int or None
+        """
         # lineno is the line number of the first decorator, we want the def
         # statement lineno
         lineno = self.lineno
@@ -848,12 +1423,20 @@ class FunctionDef(node_classes.Statement, Lambda):
 
     @decorators_mod.cachedproperty
     def blockstart_tolineno(self):
+        """The line on which the beginning of this block ends.
+
+        :type: int
+        """
         return self.args.tolineno
 
     def block_range(self, lineno):
-        """return block line numbers.
+        """Get a range from the given line number to where this node ends.
 
-        start from the "def" position whatever the given lineno
+        :param lineno: Unused.
+        :type lineno: int
+
+        :returns: The range of line numbers that this node belongs to,
+        :rtype: tuple(int, int)
         """
         return self.fromlineno, self.tolineno
 
@@ -877,14 +1460,22 @@ class FunctionDef(node_classes.Statement, Lambda):
                 error.message, target=self, attribute=name, context=context))
 
     def is_method(self):
-        """return true if the function node should be considered as a method"""
+        """Check if this function node represents a method.
+
+        :returns: True if this is a method, False otherwise.
+        :rtype: bool
+        """
         # check we are defined in a ClassDef, because this is usually expected
         # (e.g. pylint...) when is_method() return True
         return self.type != 'function' and isinstance(self.parent.frame(), ClassDef)
 
     @decorators_mod.cached
     def decoratornames(self):
-        """return a list of decorator qualified names"""
+        """Get the qualified names of each of the decorators on this function.
+
+        :returns: The names of the decorators.
+        :rtype: set(str)
+        """
         result = set()
         decoratornodes = []
         if self.decorators is not None:
@@ -899,16 +1490,24 @@ class FunctionDef(node_classes.Statement, Lambda):
         return result
 
     def is_bound(self):
-        """return true if the function is bound to an Instance or a class"""
+        """Check if the function is bound to an instance or class.
+
+        :returns: True if the function is bound to an instance or class,
+            False otherwise.
+        :rtype: bool
+        """
         return self.type == 'classmethod'
 
     def is_abstract(self, pass_is_abstract=True):
-        """Returns True if the method is abstract.
+        """Check if the method is abstract.
 
-        A method is considered abstract if
-         - the only statement is 'raise NotImplementedError', or
-         - the only statement is 'pass' and pass_is_abstract is True, or
-         - the method is annotated with abc.astractproperty/abc.abstractmethod
+        A method is considered abstract if any of the following is true:
+        * The only statement is 'raise NotImplementedError'
+        * The only statement is 'pass' and pass_is_abstract is True
+        * The method is annotated with abc.astractproperty/abc.abstractmethod
+
+        :returns: True if the method is abstract, False otherwise.
+        :rtype: bool
         """
         if self.decorators:
             for node in self.decorators.nodes:
@@ -930,13 +1529,19 @@ class FunctionDef(node_classes.Statement, Lambda):
             return True
 
     def is_generator(self):
-        """return true if this is a generator function"""
-        yield_nodes = (node_classes.Yield, node_classes.YieldFrom)
-        return next(self.nodes_of_class(yield_nodes,
-                                        skip_klass=(FunctionDef, Lambda)), False)
+        """Check if this is a generator function.
 
-    def infer_call_result(self, caller, context=None):
-        """infer what a function is returning when called"""
+        :returns: True is this is a generator function, False otherwise.
+        :rtype: bool
+        """
+        return next(self._get_yield_nodes_skip_lambdas(), False)
+
+    def infer_call_result(self, caller=None, context=None, context_lookup=None):
+        """Infer what the function returns when called.
+
+        :returns: What the function returns.
+        :rtype: iterable(NodeNG or Uninferable) or None
+        """
         if self.is_generator():
             result = bases.Generator(self)
             yield result
@@ -960,7 +1565,7 @@ class FunctionDef(node_classes.Statement, Lambda):
                 c._metaclass = metaclass
                 yield c
                 return
-        returns = self.nodes_of_class(node_classes.Return, skip_klass=FunctionDef)
+        returns = self._get_return_nodes_skip_functions()
         for returnnode in returns:
             if returnnode.value is None:
                 yield node_classes.Const(None)
@@ -972,11 +1577,43 @@ class FunctionDef(node_classes.Statement, Lambda):
                     yield util.Uninferable
 
     def bool_value(self):
+        """Determine the boolean value of this node.
+
+        :returns: The boolean value of this node.
+            For a :class:`FunctionDef` this is always ``True``.
+        :rtype: bool
+        """
         return True
+
+    def get_children(self):
+        if self.decorators is not None:
+            yield self.decorators
+
+        yield self.args
+
+        if self.returns is not None:
+            yield self.returns
+
+        for elt in self.body:
+            yield elt
 
 
 class AsyncFunctionDef(FunctionDef):
-    """Asynchronous function created with the `async` keyword."""
+    """Class representing an :class:`ast.FunctionDef` node.
+
+    A :class:`AsyncFunctionDef` is an asynchronous function
+    created with the `async` keyword.
+
+    >>> node = astroid.extract_node('''
+    async def func(things):
+        async for thing in things:
+            print(thing)
+    ''')
+    >>> node
+    <AsyncFunctionDef.func l.2 at 0x7f23b2e416d8>
+    >>> node.body[0]
+    <AsyncFor l.3 at 0x7f23b2e417b8>
+    """
 
 
 def _rec_get_names(args, names=None):
@@ -1060,10 +1697,13 @@ def _class_type(klass, ancestors=None):
 
 
 def get_wrapping_class(node):
-    """Obtain the class that *wraps* this node
+    """Get the class that wraps the given node.
 
     We consider that a class wraps a node if the class
     is a parent for the said node.
+
+    :returns: The class that wraps the given node
+    :rtype: ClassDef or None
     """
 
     klass = node.frame()
@@ -1075,9 +1715,18 @@ def get_wrapping_class(node):
     return klass
 
 
-
 class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                node_classes.Statement):
+    """Class representing an :class:`ast.ClassDef` node.
+
+    >>> node = astroid.extract_node('''
+    class Thing:
+        def my_meth(self, arg):
+            return arg + self.offset
+    ''')
+    >>> node
+    <ClassDef.Thing l.2 at 0x7f23b2e9e748>
+    """
 
     # some of the attributes below are set by the builder module or
     # by a raw factories
@@ -1086,33 +1735,126 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
     _astroid_fields = ('decorators', 'bases', 'body') # name
 
     decorators = None
+    """The decorators that are applied to this class.
+
+    :type: Decorators or None
+    """
     special_attributes = objectmodel.ClassModel()
+    """The names of special attributes that this class has.
+
+    :type: objectmodel.ClassModel
+    """
 
     _type = None
     _metaclass_hack = False
     hide = False
     type = property(_class_type,
-                    doc="class'type, possible values are 'class' | "
-                    "'metaclass' | 'exception'")
+                    doc=("The class type for this node.\n\n"
+                         "Possible values are: class, metaclass, exception.\n\n"
+                         ":type: str"))
     _other_fields = ('name', 'doc')
     _other_other_fields = ('locals', '_newstyle')
     _newstyle = None
 
     def __init__(self, name=None, doc=None, lineno=None,
                  col_offset=None, parent=None):
+        """
+        :param name: The name of the class.
+        :type name: str or None
+
+        :param doc: The function's docstring.
+        :type doc: str or None
+
+        :param lineno: The line that this node appears on in the source code.
+        :type lineno: int or None
+
+        :param col_offset: The column that this node appears on in the
+            source code.
+        :type col_offset: int or None
+
+        :param parent: The parent node in the syntax tree.
+        :type parent: NodeNG or None
+        """
         self.instance_attrs = {}
         self.locals = {}
+        """A map of the name of a local variable to the node defining it.
+
+        :type: dict(str, NodeNG)
+        """
+
         self.keywords = []
+        """The keywords given to the class definition.
+
+        This is usually for :pep:`3115` style metaclass declaration.
+
+        :type: list(Keyword) or None
+        """
+
         self.bases = []
+        """What the class inherits from.
+
+        :type: list(NodeNG)
+        """
+
         self.body = []
+        """The contents of the class body.
+
+        :type: list(NodeNG)
+        """
+
         self.name = name
+        """The name of the class.
+
+        :type name: str or None
+        """
+
         self.doc = doc
+        """The class' docstring.
+
+        :type doc: str or None
+        """
+
         super(ClassDef, self).__init__(lineno, col_offset, parent)
         if parent is not None:
             parent.frame().set_local(name, self)
 
+        for local_name, node in self.implicit_locals():
+            self.add_local_node(node, local_name)
+
+    def implicit_locals(self):
+        """Get implicitly defined class definition locals.
+
+        :returns: the the name and Const pair for each local
+        :rtype: tuple(tuple(str, node_classes.Const), ...)
+        """
+        locals_ = (('__module__', self.special_attributes.py__module__),)
+        if sys.version_info >= (3, 3):
+            # __qualname__ is defined in PEP3155
+            locals_ += (("__qualname__", self.special_attributes.py__qualname__),)
+        return locals_
+
     # pylint: disable=redefined-outer-name
     def postinit(self, bases, body, decorators, newstyle=None, metaclass=None, keywords=None):
+        """Do some setup after initialisation.
+
+        :param bases: What the class inherits from.
+        :type bases: list(NodeNG)
+
+        :param body: The contents of the class body.
+        :type body: list(NodeNG)
+
+        :param decorators: The decorators that are applied to this class.
+        :type decorators: Decorators or None
+
+        :param newstyle: Whether this is a new style class or not.
+        :type newstyle: bool or None
+
+        :param metaclass: The metaclass of this class.
+        :type metaclass: NodeNG or None
+
+        :param keywords: The keywords given to the class definition.
+        :type keywords: list(Keyword) or None
+        """
         self.keywords = keywords
         self.bases = bases
         self.body = body
@@ -1142,45 +1884,80 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
     _newstyle = None
     newstyle = property(_newstyle_impl,
-                        doc="boolean indicating if it's a new style class"
-                        "or not")
+                        doc=("Whether this is a new style class or not\n\n"
+                             ":type: bool or None"))
 
     @decorators_mod.cachedproperty
     def blockstart_tolineno(self):
+        """The line on which the beginning of this block ends.
+
+        :type: int
+        """
         if self.bases:
             return self.bases[-1].tolineno
 
         return self.fromlineno
 
     def block_range(self, lineno):
-        """return block line numbers.
+        """Get a range from the given line number to where this node ends.
 
-        start from the "class" position whatever the given lineno
+        :param lineno: Unused.
+        :type lineno: int
+
+        :returns: The range of line numbers that this node belongs to,
+        :rtype: tuple(int, int)
         """
         return self.fromlineno, self.tolineno
 
     def pytype(self):
+        """Get the name of the type that this node represents.
+
+        :returns: The name of the type.
+        :rtype: str
+        """
         if self.newstyle:
             return '%s.type' % BUILTINS
         return '%s.classobj' % BUILTINS
 
     def display_type(self):
+        """A human readable type of this node.
+
+        :returns: The type of this node.
+        :rtype: str
+        """
         return 'Class'
 
     def callable(self):
+        """Whether this node defines something that is callable.
+
+        :returns: True if this defines something that is callable,
+            False otherwise.
+            For a :class:`ClassDef` this is always ``True``.
+        :rtype: bool
+        """
         return True
 
     def is_subtype_of(self, type_name, context=None):
+        """Whether this class is a subtype of the given type.
+
+        :param type_name: The name of the type of check against.
+        :type type_name: str
+
+        :returns: True if this class is a subtype of the given type,
+            False otherwise.
+        :rtype: bool
+        """
         if self.qname() == type_name:
             return True
         for anc in self.ancestors(context=context):
             if anc.qname() == type_name:
                 return True
+        return False
 
     def _infer_type_call(self, caller, context):
         name_node = next(caller.args[0].infer(context))
         if (isinstance(name_node, node_classes.Const) and
-                isinstance(name_node.value, six.string_types)):
+                isinstance(name_node.value, str)):
             name = name_node.value
         else:
             return util.Uninferable
@@ -1206,13 +1983,13 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         if members and isinstance(members, node_classes.Dict):
             for attr, value in members.items:
                 if (isinstance(attr, node_classes.Const) and
-                        isinstance(attr.value, six.string_types)):
+                        isinstance(attr.value, str)):
                     result.locals[attr.value] = [value]
 
         result.parent = caller.parent
         return result
 
-    def infer_call_result(self, caller, context=None):
+    def infer_call_result(self, caller, context=None, context_lookup=None):
         """infer what a class is returning when called"""
         if (self.is_subtype_of('%s.type' % (BUILTINS,), context)
                 and len(caller.args) == 3):
@@ -1222,13 +1999,30 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             yield bases.Instance(self)
 
     def scope_lookup(self, node, name, offset=0):
+        """Lookup where the given name is assigned.
+
+        :param node: The node to look for assignments up to.
+            Any assignments after the given node are ignored.
+        :type node: NodeNG
+
+        :param name: The name to find assignments for.
+        :type name: str
+
+        :param offset: The line offset to filter statements up to.
+        :type offset: int
+
+        :returns: This scope node and the list of assignments associated to the
+            given name according to the scope where it has been found (locals,
+            globals or builtin).
+        :rtype: tuple(str, list(NodeNG))
+        """
         # If the name looks like a builtin name, just try to look
         # into the upper scope of this class. We might have a
         # decorator that it's poorly named after a builtin object
         # inside this class.
         lookup_upper_frame = (
             isinstance(node.parent, node_classes.Decorators) and
-            name in MANAGER.astroid_cache[six.moves.builtins.__name__]
+            name in MANAGER.astroid_cache[builtins.__name__]
         )
         if any(node == base or base.parent_of(node)
                for base in self.bases) or lookup_upper_frame:
@@ -1255,26 +2049,31 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
     @property
     def basenames(self):
-        """Get the list of parent class names, as they appear in the class definition."""
+        """The names of the parent classes
+
+        Names are given in the order they appear in the class definition.
+
+        :type: list(str)
+        """
         return [bnode.as_string() for bnode in self.bases]
 
     def ancestors(self, recurs=True, context=None):
-        """return an iterator on the node base classes in a prefixed
-        depth first order
+        """Iterate over the base classes in prefixed depth first order.
 
-        :param recurs:
-          boolean indicating if it should recurse or return direct
-          ancestors only
+        :param recurs: Whether to recurse or return direct ancestors only.
+        :type recurs: bool
+
+        :returns: The base classes
+        :rtype: iterable(NodeNG)
         """
         # FIXME: should be possible to choose the resolution order
         # FIXME: inference make infinite loops possible here
         yielded = set([self])
         if context is None:
             context = contextmod.InferenceContext()
-        if six.PY3:
-            if not self.bases and self.qname() != 'builtins.object':
-                yield builtin_lookup("object")[1][0]
-                return
+        if not self.bases and self.qname() != 'builtins.object':
+            yield builtin_lookup("object")[1][0]
+            return
 
         for stmt in self.bases:
             with context.restore_path():
@@ -1304,8 +2103,13 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                     continue
 
     def local_attr_ancestors(self, name, context=None):
-        """return an iterator on astroid representation of parent classes
-        which have <name> defined in their locals
+        """Iterate over the parents that define the given name.
+
+        :param name: The name to find definitions for.
+        :type name: str
+
+        :returns: The parents that define the given name.
+        :rtype: iterable(NodeNG)
         """
         if self.newstyle and all(n.newstyle for n in self.ancestors(context)):
             # Look up in the mro if we can. This will result in the
@@ -1323,23 +2127,40 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                 yield astroid
 
     def instance_attr_ancestors(self, name, context=None):
-        """return an iterator on astroid representation of parent classes
-        which have <name> defined in their instance attribute dictionary
+        """Iterate over the parents that define the given name as an attribute.
+
+        :param name: The name to find definitions for.
+        :type name: str
+
+        :returns: The parents that define the given name as
+            an instance attribute.
+        :rtype: iterable(NodeNG)
         """
         for astroid in self.ancestors(context=context):
             if name in astroid.instance_attrs:
                 yield astroid
 
     def has_base(self, node):
+        """Whether this class directly inherits from the given node.
+
+        :param node: The node to check for.
+        :type node: NodeNG
+
+        :returns: True if this class directly inherits from the given node.
+        :rtype: bool
+        """
         return node in self.bases
 
     def local_attr(self, name, context=None):
-        """return the list of assign node associated to name in this class
-        locals or in its parents
+        """Get the list of assign nodes associated to the given name.
 
-        :raises `AttributeInferenceError`:
-          if no attribute with this name has been find in this class or
-          its parent classes
+        Assignments are looked for in both this class and in parents.
+
+        :returns: The list of assignments to the given name.
+        :rtype: list(NodeNG)
+
+        :raises AttributeInferenceError: If no attribute with this name
+            can be found in this class or parent classes.
         """
         result = []
         if name in self.locals:
@@ -1355,12 +2176,15 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                                                  context=context)
 
     def instance_attr(self, name, context=None):
-        """return the astroid nodes associated to name in this class instance
-        attributes dictionary and in its parents
+        """Get the list of nodes associated to the given attribute name.
 
-        :raises `AttributeInferenceError`:
-          if no attribute with this name has been find in this class or
-          its parent classes
+        Assignments are looked for in both this class and in parents.
+
+        :returns: The list of assignments to the given name.
+        :rtype: list(NodeNG)
+
+        :raises AttributeInferenceError: If no attribute with this name
+            can be found in this class or parent classes.
         """
         # Return a copy, so we don't modify self.instance_attrs,
         # which could lead to infinite loop.
@@ -1375,10 +2199,23 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                                                  context=context)
 
     def instantiate_class(self):
-        """return Instance of ClassDef node, else return self"""
+        """Get an :class:`Instance` of the :class:`ClassDef` node.
+
+        :returns: An :class:`Instance` of the :class:`ClassDef` node,
+            or self if this is not possible.
+        :rtype: Instance or ClassDef
+        """
         return bases.Instance(self)
 
     def instanciate_class(self):
+        """A deprecated alias for :meth:`instanciate_class`.
+
+        .. deprecated:: 1.5
+
+        :returns: An :class:`Instance` of the :class:`ClassDef` node,
+            or self if this is not possible.
+        :rtype: Instance or ClassDef
+        """
         warnings.warn('%s.instanciate_class() is deprecated and slated for '
                       'removal in astroid 2.0, use %s.instantiate_class() '
                       'instead.' % (type(self).__name__, type(self).__name__),
@@ -1386,19 +2223,30 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         return self.instantiate_class()
 
     def getattr(self, name, context=None, class_context=True):
-        """Get an attribute from this class, using Python's attribute semantic
+        """Get an attribute from this class, using Python's attribute semantic.
 
-        This method doesn't look in the instance_attrs dictionary
-        since it's done by an Instance proxy at inference time.  It
-        may return a Uninferable object if the attribute has not been actually
-        found but a __getattr__ or __getattribute__ method is defined.
-        If *class_context* is given, then it's considered that the
+        This method doesn't look in the :attr:`instance_attrs` dictionary
+        since it is done by an :class:`Instance` proxy at inference time.
+        It may return an :class:`Uninferable` object if
+        the attribute has not been
+        found, but a ``__getattr__`` or ``__getattribute__`` method is defined.
+        If ``class_context`` is given, then it is considered that the
         attribute is accessed from a class context,
         e.g. ClassDef.attribute, otherwise it might have been accessed
-        from an instance as well.  If *class_context* is used in that
+        from an instance as well. If ``class_context`` is used in that
         case, then a lookup in the implicit metaclass and the explicit
         metaclass will be done.
 
+        :param name: The attribute to look for.
+        :type name: str
+
+        :param class_context: Whether the attribute can be accessed statically.
+        :type class_context: bool
+
+        :returns: The attribute.
+        :rtype: list(NodeNG)
+
+        :raises AttributeInferenceError: If the attribute cannot be inferred.
         """
         values = self.locals.get(name, [])
         if name in self.special_attributes and class_context and not values:
@@ -1465,8 +2313,13 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                 yield bases.BoundMethod(attr, self)
 
     def igetattr(self, name, context=None, class_context=True):
-        """inferred getattr, need special treatment in class to handle
-        descriptors
+        """Infer the possible values of the given variable.
+
+        :param name: The name of the variable to infer.
+        :type name: str
+
+        :returns: The inferred possible values.
+        :rtype: iterable(NodeNG or Uninferable)
         """
         # set lookup name since this is necessary to infer on import nodes for
         # instance
@@ -1495,13 +2348,15 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                     error.message, target=self, attribute=name, context=context))
 
     def has_dynamic_getattr(self, context=None):
-        """
-        Check if the current instance has a custom __getattr__
-        or a custom __getattribute__.
+        """Check if the class has a custom __getattr__ or __getattribute__.
 
         If any such method is found and it is not from
         builtins, nor from an extension module, then the function
         will return True.
+
+        :returns: True if the class has a custom
+            __getattr__ or __getattribute__, False otherwise.
+        :rtype: bool
         """
         def _valid_getattr(node):
             root = node.root()
@@ -1522,6 +2377,12 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         """Return the inference of a subscript.
 
         This is basically looking up the method in the metaclass and calling it.
+
+        :returns: The inferred value of a subscript to this class.
+        :rtype: NodeNG
+
+        :raises AstroidTypeError: If this class does not define a
+            ``__getitem__`` method.
         """
         try:
             methods = dunder_lookup.lookup(self, '__getitem__')
@@ -1547,8 +2408,10 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         return next(method.infer_call_result(self, new_context))
 
     def methods(self):
-        """return an iterator on all methods defined in the class and
-        its ancestors
+        """Iterate over all of the method defined in this class and its parents.
+
+        :returns: The methods defined on the class.
+        :rtype: iterable(FunctionDef)
         """
         done = {}
         for astroid in itertools.chain(iter((self,)), self.ancestors()):
@@ -1559,21 +2422,28 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                 yield meth
 
     def mymethods(self):
-        """return an iterator on all methods defined in the class"""
+        """Iterate over all of the method defined in this class only.
+
+        :returns: The methods defined on the class.
+        :rtype: iterable(FunctionDef)
+        """
         for member in self.values():
             if isinstance(member, FunctionDef):
                 yield member
 
     def implicit_metaclass(self):
-        """Get the implicit metaclass of the current class
+        """Get the implicit metaclass of the current class.
 
         For newstyle classes, this will return an instance of builtins.type.
         For oldstyle classes, it will simply return None, since there's
         no implicit metaclass there.
-        """
 
+        :returns: The metaclass.
+        :rtype: builtins.type or None
+        """
         if self.newstyle:
             return builtin_lookup('type')[1][0]
+        return None
 
     _metaclass = None
     def declared_metaclass(self):
@@ -1584,6 +2454,10 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         in the class definition line (Python 3) or (Python 2) by
         having a ``__metaclass__`` class attribute, or if there are
         no explicit bases but there is a global ``__metaclass__`` variable.
+
+        :returns: The metaclass of this class,
+            or None if one could not be found.
+        :rtype: NodeNG or None
         """
         for base in self.bases:
             try:
@@ -1602,29 +2476,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                             if node is not util.Uninferable)
             except (exceptions.InferenceError, StopIteration):
                 return None
-        if six.PY3:
-            return None
 
-        if '__metaclass__' in self.locals:
-            assignment = self.locals['__metaclass__'][-1]
-        elif self.bases:
-            return None
-        elif '__metaclass__' in self.root().locals:
-            assignments = [ass for ass in self.root().locals['__metaclass__']
-                           if ass.lineno < self.lineno]
-            if not assignments:
-                return None
-            assignment = assignments[-1]
-        else:
-            return None
-
-        try:
-            inferred = next(assignment.infer())
-        except exceptions.InferenceError:
-            return
-        if inferred is util.Uninferable: # don't expose this
-            return None
-        return inferred
+        return None
 
     def _find_metaclass(self, seen=None):
         if seen is None:
@@ -1641,11 +2494,14 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         return klass
 
     def metaclass(self):
-        """Return the metaclass of this class.
+        """Get the metaclass of this class.
 
         If this class does not define explicitly a metaclass,
         then the first defined metaclass in ancestors will be used
         instead.
+
+        :returns: The metaclass of this class.
+        :rtype: NodeNG or None
         """
         return self._find_metaclass()
 
@@ -1655,7 +2511,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
     def _islots(self):
         """ Return an iterator with the inferred slots. """
         if '__slots__' not in self.locals:
-            return
+            return None
         for slots in self.igetattr('__slots__'):
             # check if __slots__ is a valid type
             for meth in ITER_METHODS:
@@ -1686,7 +2542,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             if not values:
                 # Stop the iteration, because the class
                 # has an empty list of slots.
-                raise StopIteration(values)
+                return values
 
             for elt in values:
                 try:
@@ -1694,14 +2550,15 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                         if inferred is util.Uninferable:
                             continue
                         if (not isinstance(inferred, node_classes.Const) or
-                                not isinstance(inferred.value,
-                                               six.string_types)):
+                                not isinstance(inferred.value, str)):
                             continue
                         if not inferred.value:
                             continue
                         yield inferred
                 except exceptions.InferenceError:
                     continue
+
+        return None
 
     def _slots(self):
         if not self.newstyle:
@@ -1723,10 +2580,11 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
     def slots(self):
         """Get all the slots for this node.
 
-        If the class doesn't define any slot, through `__slots__`
-        variable, then this function will return a None.
-        Also, it will return None in the case the slots weren't inferred.
-        Otherwise, it will return a list of slot names.
+        :returns: The names of slots for this class.
+            If the class doesn't define any slot, through the ``__slots__``
+            variable, then this function will return a None.
+            Also, it will return None in the case the slots were not inferred.
+        :rtype: list(str) or None
         """
         def grouped_slots():
             # Not interested in object, since it can't have slots.
@@ -1768,10 +2626,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
         if context is None:
             context = contextmod.InferenceContext()
-        if six.PY3:
-            if not self.bases and self.qname() != 'builtins.object':
-                yield builtin_lookup("object")[1][0]
-                return
+        if not self.bases and self.qname() != 'builtins.object':
+            yield builtin_lookup("object")[1][0]
+            return
 
         for stmt in self.bases:
             try:
@@ -1814,9 +2671,13 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
     def mro(self, context=None):
         """Get the method resolution order, using C3 linearization.
 
-        It returns the list of ancestors sorted by the mro.
-        This will raise `NotImplementedError` for old-style classes, since
-        they don't have the concept of MRO.
+        :returns: The list of ancestors, sorted by the mro.
+        :rtype: list(NodeNG)
+
+        :raises NotImplementedError: If this is an old style class,
+            since they don't have the concept of an MRO.
+        :raises DuplicateBasesError: Duplicate bases in the same class base
+        :raises InconsistentMroError: A class' MRO is inconsistent
         """
 
         if not self.newstyle:
@@ -1826,7 +2687,27 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         return self._compute_mro(context=context)
 
     def bool_value(self):
+        """Determine the boolean value of this node.
+
+        :returns: The boolean value of this node.
+            For a :class:`ClassDef` this is always ``True``.
+        :rtype: bool
+        """
         return True
+
+    def get_children(self):
+        if self.decorators is not None:
+            yield self.decorators
+
+        for elt in self.bases:
+            yield elt
+
+        for elt in self.body:
+            yield elt
+
+    def _get_assign_nodes(self):
+        for child_node in self.body:
+            yield from child_node._get_assign_nodes()
 
 
 # Backwards-compatibility aliases

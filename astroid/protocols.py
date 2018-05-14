@@ -14,8 +14,6 @@ import collections
 import operator as operator_mod
 import sys
 
-import six
-
 from astroid import arguments
 from astroid import bases
 from astroid import context as contextmod
@@ -39,7 +37,7 @@ def _augmented_name(name):
 _CONTEXTLIB_MGR = 'contextlib.contextmanager'
 BIN_OP_METHOD = {'+':  '__add__',
                  '-':  '__sub__',
-                 '/':  '__div__' if six.PY2 else '__truediv__',
+                 '/':  '__truediv__',
                  '//': '__floordiv__',
                  '*':  '__mul__',
                  '**': '__pow__',
@@ -123,7 +121,7 @@ def const_infer_binary_op(self, opnode, operator, other, context, _):
                 yield util.Uninferable
         except TypeError:
             yield not_implemented
-    elif isinstance(self.value, six.string_types) and operator == '%':
+    elif isinstance(self.value, str) and operator == '%':
         # TODO(cpopa): implement string interpolation later on.
         yield util.Uninferable
     else:
@@ -135,7 +133,8 @@ nodes.Const.infer_binary_op = const_infer_binary_op
 def _multiply_seq_by_int(self, opnode, other, context):
     node = self.__class__(parent=opnode)
     elts = []
-    for elt in self.elts:
+    filtered_elts = (elt for elt in self.elts if elt is not util.Uninferable)
+    for elt in filtered_elts:
         infered = helpers.safe_infer(elt, context)
         if infered is None:
             infered = util.Uninferable
@@ -247,8 +246,8 @@ def _resolve_looppart(parts, asspath, context):
 def for_assigned_stmts(self, node=None, context=None, asspath=None):
     if isinstance(self, nodes.AsyncFor) or getattr(self, 'is_async', False):
         # Skip inferring of async code for now
-        raise StopIteration(dict(node=self, unknown=node,
-                                 assign_path=asspath, context=context))
+        return dict(node=self, unknown=node,
+                    assign_path=asspath, context=context)
     if asspath is None:
         for lst in self.iter.infer(context):
             if isinstance(lst, (nodes.Tuple, nodes.List)):
@@ -260,8 +259,8 @@ def for_assigned_stmts(self, node=None, context=None, asspath=None):
             yield inferred
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
-    raise StopIteration(dict(node=self, unknown=node,
-                             assign_path=asspath, context=context))
+    return dict(node=self, unknown=node,
+                assign_path=asspath, context=context)
 
 nodes.For.assigned_stmts = for_assigned_stmts
 nodes.Comprehension.assigned_stmts = for_assigned_stmts
@@ -355,13 +354,13 @@ nodes.Arguments.assigned_stmts = arguments_assigned_stmts
 def assign_assigned_stmts(self, node=None, context=None, asspath=None):
     if not asspath:
         yield self.value
-        return
+        return None
     for inferred in _resolve_asspart(self.value.infer(context), asspath, context):
         yield inferred
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
-    raise StopIteration(dict(node=self, unknown=node,
-                             assign_path=asspath, context=context))
+    return dict(node=self, unknown=node,
+                assign_path=asspath, context=context)
 
 
 def assign_annassigned_stmts(self, node=None, context=None, asspath=None):
@@ -415,8 +414,8 @@ def excepthandler_assigned_stmts(self, node=None, context=None, asspath=None):
         yield assigned
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
-    raise StopIteration(dict(node=self, unknown=node,
-                             assign_path=asspath, context=context))
+    return dict(node=self, unknown=node,
+                assign_path=asspath, context=context)
 
 
 nodes.ExceptHandler.assigned_stmts = excepthandler_assigned_stmts
@@ -425,7 +424,7 @@ nodes.ExceptHandler.assigned_stmts = excepthandler_assigned_stmts
 def _infer_context_manager(self, mgr, context):
     try:
         inferred = next(mgr.infer(context=context))
-    except exceptions.InferenceError:
+    except (StopIteration, exceptions.InferenceError):
         return
     if isinstance(inferred, bases.Generator):
         # Check if it is decorated with contextlib.contextmanager.
@@ -433,7 +432,10 @@ def _infer_context_manager(self, mgr, context):
         if not func.decorators:
             return
         for decorator_node in func.decorators.nodes:
-            decorator = next(decorator_node.infer(context))
+            try:
+                decorator = next(decorator_node.infer(context))
+            except StopIteration:
+                return
             if isinstance(decorator, nodes.FunctionDef):
                 if decorator.qname() == _CONTEXTLIB_MGR:
                     break
@@ -444,7 +446,11 @@ def _infer_context_manager(self, mgr, context):
         # Get the first yield point. If it has multiple yields,
         # then a RuntimeError will be raised.
         # TODO(cpopa): Handle flows.
-        yield_point = next(func.nodes_of_class(nodes.Yield), None)
+        possible_yield_points = func.nodes_of_class(nodes.Yield)
+        # Ignore yields in nested functions
+        yield_point = next((node for node in possible_yield_points
+                            if node.scope() == func),
+                           None)
         if yield_point:
             if not yield_point.value:
                 # TODO(cpopa): an empty yield. Should be wrapped to Const.
@@ -458,7 +464,7 @@ def _infer_context_manager(self, mgr, context):
     elif isinstance(inferred, bases.Instance):
         try:
             enter = next(inferred.igetattr('__enter__', context=context))
-        except (exceptions.InferenceError, exceptions.AttributeInferenceError):
+        except (StopIteration, exceptions.InferenceError, exceptions.AttributeInferenceError):
             return
         if not isinstance(enter, bases.BoundMethod):
             return
@@ -484,6 +490,7 @@ def with_assigned_stmts(self, node=None, context=None, asspath=None):
                 return 42
         with ContextManager() as f:
             pass
+
         # ContextManager().infer() will return ContextManager
         # f.infer() will return 42.
 
@@ -493,7 +500,10 @@ def with_assigned_stmts(self, node=None, context=None, asspath=None):
         context: TODO
         asspath: TODO
     """
-    mgr = next(mgr for (mgr, vars) in self.items if vars == node)
+    try:
+        mgr = next(mgr for (mgr, vars) in self.items if vars == node)
+    except StopIteration:
+        return None
     if asspath is None:
         for result in _infer_context_manager(self, mgr, context):
             yield result
@@ -522,8 +532,8 @@ def with_assigned_stmts(self, node=None, context=None, asspath=None):
             yield obj
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
-    raise StopIteration(dict(node=self, unknown=node,
-                             assign_path=asspath, context=context))
+    return dict(node=self, unknown=node,
+                assign_path=asspath, context=context)
 
 nodes.With.assigned_stmts = with_assigned_stmts
 
@@ -558,6 +568,8 @@ def starred_assigned_stmts(self, node=None, context=None, asspath=None):
             context = contextmod.InferenceContext()
         try:
             rhs = next(value.infer(context))
+        except StopIteration:
+            return
         except exceptions.InferenceError:
             yield util.Uninferable
             return

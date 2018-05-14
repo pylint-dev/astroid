@@ -12,6 +12,7 @@
 # serve to show the default.
 
 import sys, os
+from datetime import datetime
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -25,7 +26,14 @@ sys.path.insert(0, os.path.abspath('../../'))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.doctest', 'sphinx.ext.intersphinx', 'sphinx.ext.todo', 'sphinx.ext.viewcode']
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.doctest',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.todo',
+    'sphinx.ext.viewcode',
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -41,7 +49,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Astroid'
-copyright = u'2003-2016, Logilab'
+current_year = datetime.utcnow().year
+copyright = u'2003-{year}, Logilab, PyCQA and contributors'.format(year=current_year)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -219,3 +228,9 @@ man_pages = [
     ('index', 'astroid', u'Astroid Documentation',
      [u'Logilab, PyCQA and contributors'], 1)
 ]
+
+autodoc_default_flags = ['members', 'undoc-members', 'show-inheritance']
+intersphinx_mapping = {
+    'green_tree_snakes':
+        ('http://greentreesnakes.readthedocs.io/en/latest/', 'ast_objects.inv'),
+}
