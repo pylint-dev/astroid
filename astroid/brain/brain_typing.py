@@ -84,6 +84,57 @@ def looks_like_typing_namedtuple(node):
     return False
 
 
+def looks_like_typing_typevar_or_newtype(node):
+    func = node.func
+    if isinstance(func, nodes.Attribute):
+        return func.attrname in {'TypeVar', 'NewType'}
+    if isinstance(func, nodes.Name):
+        return func.name in {'TypeVar', 'NewType'}
+    return False
+
+
+TYPING_TYPE_TEMPLATE = """
+class Meta:
+    def __getitem__(self, item):
+        return self
+
+class {0}(metaclass=Meta):
+    pass
+"""
+
+
+def infer_typing_typevar_or_newtype(node, context=None):
+    """Infer a typing.TypeVar(...) or typing.NewType(...) call"""
+    try:
+        func = next(node.func.infer())
+    except InferenceError:
+        raise UseInferenceDefault
+
+    if func.qname() not in {'typing.TypeVar',  'typing.NewType'}:
+        raise UseInferenceDefault
+
+    if not node.args:
+        raise UseInferenceDefault
+
+    typename = node.args[0].as_string().strip("'")
+    node = extract_node(TYPING_TYPE_TEMPLATE.format(typename))
+    return node.infer(context=context)
+
+
+def infer_typing_attr(node, context=None):
+    """Infer a typing.X[...] subscript"""
+    try:
+        value = next(node.value.infer())
+    except InferenceError:
+        raise UseInferenceDefault
+
+    if not value.qname().startswith('typing.'):
+        raise UseInferenceDefault
+
+    node = extract_node(TYPING_TYPE_TEMPLATE.format(value.qname().split('.')[-1]))
+    return node.infer(context=context)
+
+
 MANAGER.register_transform(
     nodes.Call,
     inference_tip(infer_typing_namedtuple),
@@ -94,4 +145,13 @@ MANAGER.register_transform(
     nodes.ClassDef,
     inference_tip(infer_typing_namedtuple_class),
     has_namedtuple_base
+)
+MANAGER.register_transform(
+    nodes.Call,
+    inference_tip(infer_typing_typevar_or_newtype),
+    looks_like_typing_typevar_or_newtype
+)
+MANAGER.register_transform(
+    nodes.Subscript,
+    inference_tip(infer_typing_attr)
 )
