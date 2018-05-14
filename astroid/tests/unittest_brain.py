@@ -1030,7 +1030,6 @@ class TestIsinstanceInference:
             _get_result_node('isinstance(something, int)')
 
 
-
 class TestIssubclassBrain:
     """Test issubclass() builtin inference"""
 

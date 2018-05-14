@@ -4212,7 +4212,7 @@ class ArgumentsTest(unittest.TestCase):
         ''')
         for ast_node, value in zip(ast_nodes, expected_values):
             inferred = next(ast_node.infer())
-            self.assertIsInstance(inferred, nodes.Const)
+            self.assertIsInstance(inferred, nodes.Const, inferred)
             self.assertEqual(inferred.value, value)
 
     @test_utils.require_version('3.5')

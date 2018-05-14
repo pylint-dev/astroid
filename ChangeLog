@@ -3,6 +3,8 @@ Change log for the astroid package (used to be astng)
 
 --
 
+   * typing.X[...] and typing.NewType are inferred as classes instead of instances.
+
    * Module.__path__ is now a list
 
      It used to be a string containing the path, but it doesn't reflect the situation

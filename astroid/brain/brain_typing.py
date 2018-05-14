@@ -13,6 +13,9 @@ TYPING_NAMEDTUPLE_BASENAMES = {
     'NamedTuple',
     'typing.NamedTuple'
 }
+TYPING_TYPEVARS = {'TypeVar', 'NewType'}
+TYPING_TYPEVARS_QUALIFIED = {'typing.TypeVar', 'typing.NewType'}
+
 
 
 def infer_typing_namedtuple(node, context=None):
@@ -87,14 +90,14 @@ def looks_like_typing_namedtuple(node):
 def looks_like_typing_typevar_or_newtype(node):
     func = node.func
     if isinstance(func, nodes.Attribute):
-        return func.attrname in {'TypeVar', 'NewType'}
+        return func.attrname in TYPING_TYPEVARS
     if isinstance(func, nodes.Name):
-        return func.name in {'TypeVar', 'NewType'}
+        return func.name in TYPING_TYPEVARS
     return False
 
 
 TYPING_TYPE_TEMPLATE = """
-class Meta:
+class Meta(type):
     def __getitem__(self, item):
         return self
 
@@ -103,16 +106,17 @@ class {0}(metaclass=Meta):
 """
 
 
+# TODO: We need to store the original types of these type variables somewhere
+
 def infer_typing_typevar_or_newtype(node, context=None):
     """Infer a typing.TypeVar(...) or typing.NewType(...) call"""
     try:
-        func = next(node.func.infer())
-    except InferenceError:
-        raise UseInferenceDefault
+        func = next(node.func.infer(context=context))
+    except InferenceError as exc:
+        raise UseInferenceDefault from exc
 
-    if func.qname() not in {'typing.TypeVar',  'typing.NewType'}:
+    if func.qname() not in TYPING_TYPEVARS_QUALIFIED:
         raise UseInferenceDefault
-
     if not node.args:
         raise UseInferenceDefault
 
@@ -125,8 +129,8 @@ def infer_typing_attr(node, context=None):
     """Infer a typing.X[...] subscript"""
     try:
         value = next(node.value.infer())
-    except InferenceError:
-        raise UseInferenceDefault
+    except InferenceError as exc:
+        raise UseInferenceDefault from exc
 
     if not value.qname().startswith('typing.'):
         raise UseInferenceDefault
@@ -153,5 +157,5 @@ MANAGER.register_transform(
 )
 MANAGER.register_transform(
     nodes.Subscript,
-    inference_tip(infer_typing_attr)
+    inference_tip(infer_typing_attr),
 )
