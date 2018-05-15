@@ -300,9 +300,6 @@ def _get_relative_base_path(filename, path_to_check):
     Examples:
         _get_relative_base_path("/a/b/c/d.py", "/a/b") ->  ["c","d"]
         _get_relative_base_path("/a/b/c/d.py", "/dev") ->  None
-
-        Given "/myfile.py" is a symlink of "/a/b/c/d.py":
-        _get_relative_base_path("/myfile.py", "/dev") ->  ["c","d"]
     """
     importable_path = None
     path_to_check = os.path.normcase(path_to_check)

@@ -121,6 +121,17 @@ class ModPathFromFileTest(unittest.TestCase):
             finally:
                 os.remove(linked_file_name)
 
+    def test_import_symlink_both_outside_of_path(self):
+        with tempfile.NamedTemporaryFile() as tmpfile:
+            linked_file_name = os.path.join(tempfile.gettempdir(),
+                                            'symlinked_file.py')
+            try:
+                os.symlink(tmpfile.name, linked_file_name)
+                self.assertRaises(ImportError,
+                                  modutils.modpath_from_file, linked_file_name)
+            finally:
+                os.remove(linked_file_name)
+
 
 class LoadModuleFromPathTest(resources.SysPathSetup, unittest.TestCase):
 
