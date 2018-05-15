@@ -1,6 +1,14 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+2018-05-15 -- 1.6.4
+
+   * Skip non-attrs specific attributes in attr wrapped classes. Close PyCQA/pylint#2055
+
+   * Add brain tip for numpy.sum. Close PyCQA/pylint#1558
+
+   * deque.rotate has a default parameter. Close PyCQA/pylint#2013
+
 2018-04-05 -- 1.6.3
 
    * Fixes nested namespace package import for old-style namespace packages
