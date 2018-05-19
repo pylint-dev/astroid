@@ -16,6 +16,19 @@ from astroid import exceptions
 from astroid import util
 
 
+@wrapt.decorator
+def cached(func, instance, args, kwargs):
+    """Simple decorator to cache result of method calls without args."""
+    cache = getattr(instance, '__cache', None)
+    if cache is None:
+        instance.__cache = cache = {}
+    try:
+        return cache[func]
+    except KeyError:
+        cache[func] = result = func(*args, **kwargs)
+        return result
+
+
 class cachedproperty(object):
     """ Provides a cached property equivalent to the stacking of
     @cached and @property, but more efficient.
