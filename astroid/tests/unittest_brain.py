@@ -717,7 +717,7 @@ class TypingBrain(unittest.TestCase):
                 return '%s' % self.a
             def as_integer(self):
                 return 2 + 3
-        X().as_integer()
+        X().as_integer() #@
         """)
         self.assertEqual(len(klass.getattr('as_string')), 1)
         inferred = next(called.infer())
