@@ -266,6 +266,7 @@ def infer_enum_class(node):
                    for value in values):
                 continue
 
+            targets = []
             stmt = values[0].statement()
             if isinstance(stmt, nodes.Assign):
                 if isinstance(stmt.targets[0], nodes.Tuple):
