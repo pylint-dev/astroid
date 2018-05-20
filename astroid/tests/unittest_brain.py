@@ -261,6 +261,17 @@ class NamedTupleTest(unittest.TestCase):
         self.assertIn('b', inferred.locals)
         self.assertIn('c', inferred.locals)
 
+    def test_namedtuple_bases_are_actually_names_not_nodes(self):
+        node = builder.extract_node("""
+        from collections import namedtuple
+        Tuple = namedtuple("Tuple", field_names="a b c", rename=UNINFERABLE)
+        Tuple #@
+        """)
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, astroid.ClassDef)
+        self.assertIsInstance(inferred.bases[0], astroid.Name)
+        self.assertEqual(inferred.bases[0].name, 'tuple')
+
 
 class DefaultDictTest(unittest.TestCase):
 
@@ -694,6 +705,24 @@ class TypingBrain(unittest.TestCase):
             ['X', 'tuple', 'object'])
         for anc in klass.ancestors():
             self.assertFalse(anc.parent is None)
+
+    def test_namedtuple_can_correcty_access_methods(self):
+        klass, called = builder.extract_node("""
+        from typing import NamedTuple
+
+        class X(NamedTuple): #@
+            a: int
+            b: int
+            def as_string(self):
+                return '%s' % self.a
+            def as_integer(self):
+                return 2 + 3
+        X().as_integer()
+        """)
+        self.assertEqual(len(klass.getattr('as_string')), 1)
+        inferred = next(called.infer())
+        self.assertIsInstance(inferred, astroid.Const)
+        self.assertEqual(inferred.value, 5)
 
     def test_namedtuple_inference(self):
         klass = builder.extract_node("""

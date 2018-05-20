@@ -7,7 +7,6 @@
 """Astroid hooks for the Python standard library."""
 
 import functools
-import sys
 import keyword
 from textwrap import dedent
 
@@ -19,6 +18,12 @@ from astroid import exceptions
 from astroid import nodes
 from astroid.builder import AstroidBuilder, extract_node
 from astroid import util
+
+
+TYPING_NAMEDTUPLE_BASENAMES = {
+    'NamedTuple',
+    'typing.NamedTuple'
+}
 
 
 def _infer_first(node, context):
@@ -122,6 +127,15 @@ def infer_func_form(node, base_type, context=None, enum=False):
     return class_node, name, attributes
 
 
+def _has_namedtuple_base(node):
+    """Predicate for class inference tip
+
+    :type node: ClassDef
+    :rtype: bool
+    """
+    return set(node.basenames) & TYPING_NAMEDTUPLE_BASENAMES
+
+
 def _looks_like(node, name):
     func = node.func
     if isinstance(func, nodes.Attribute):
@@ -130,14 +144,20 @@ def _looks_like(node, name):
         return func.name == name
     return False
 
+
 _looks_like_namedtuple = functools.partial(_looks_like, name='namedtuple')
 _looks_like_enum = functools.partial(_looks_like, name='Enum')
+_looks_like_typing_namedtuple = functools.partial(_looks_like, name='NamedTuple')
 
 
 def infer_named_tuple(node, context=None):
     """Specific inference function for namedtuple Call node"""
-    class_node, name, attributes = infer_func_form(node, nodes.Tuple._proxied,
-                                                   context=context)
+    tuple_base_name = nodes.Name(name='tuple', parent=node.root())
+    class_node, name, attributes = infer_func_form(
+        node,
+        tuple_base_name,
+        context=context,
+    )
     call_site = arguments.CallSite.from_call(node)
     func = next(extract_node('import collections; collections.namedtuple').infer())
     try:
@@ -278,8 +298,77 @@ def infer_enum_class(node):
     return node
 
 
-MANAGER.register_transform(nodes.Call, inference_tip(infer_named_tuple),
-                           _looks_like_namedtuple)
-MANAGER.register_transform(nodes.Call, inference_tip(infer_enum),
-                           _looks_like_enum)
-MANAGER.register_transform(nodes.ClassDef, infer_enum_class)
+def infer_typing_namedtuple_class(class_node, context=None):
+    """Infer a subclass of typing.NamedTuple"""
+    # Check if it has the corresponding bases
+    annassigns_fields = [
+        annassign.target.name for annassign in class_node.body
+        if isinstance(annassign, nodes.AnnAssign)
+    ]
+    code = dedent('''
+    from collections import namedtuple
+    namedtuple({typename!r}, {fields!r})
+    ''').format(
+        typename=class_node.name,
+        fields=",".join(annassigns_fields)
+    )
+    node = extract_node(code)
+    generated_class_node = next(infer_named_tuple(node, context))
+    for method in class_node.mymethods():
+        generated_class_node.locals[method.name] = [method]
+    return iter((generated_class_node, ))
+
+
+def infer_typing_namedtuple(node, context=None):
+    """Infer a typing.NamedTuple(...) call."""
+    # This is essentially a namedtuple with different arguments
+    # so we extract the args and infer a named tuple.
+    try:
+        func = next(node.func.infer())
+    except InferenceError:
+        raise UseInferenceDefault
+
+    if func.qname() != 'typing.NamedTuple':
+        raise UseInferenceDefault
+
+    if len(node.args) != 2:
+        raise UseInferenceDefault
+
+    if not isinstance(node.args[1], (nodes.List, nodes.Tuple)):
+        raise UseInferenceDefault
+
+    names = []
+    for elt in node.args[1].elts:
+        if not isinstance(elt, (nodes.List, nodes.Tuple)):
+            raise UseInferenceDefault
+        if len(elt.elts) != 2:
+            raise UseInferenceDefault
+        names.append(elt.elts[0].as_string())
+
+    typename = node.args[0].as_string()
+    node = extract_node('namedtuple(%(typename)s, (%(fields)s,)) ' %
+        {'typename': typename, 'fields': ",".join(names)})
+    return infer_named_tuple(node, context)
+
+
+MANAGER.register_transform(
+    nodes.Call, inference_tip(infer_named_tuple),
+    _looks_like_namedtuple,
+)
+MANAGER.register_transform(
+    nodes.Call, inference_tip(infer_enum),
+    _looks_like_enum,
+)
+MANAGER.register_transform(
+    nodes.ClassDef, infer_enum_class,
+)
+MANAGER.register_transform(
+    nodes.ClassDef,
+    inference_tip(infer_typing_namedtuple_class),
+    _has_namedtuple_base,
+)
+MANAGER.register_transform(
+    nodes.Call,
+    inference_tip(infer_typing_namedtuple),
+    _looks_like_typing_namedtuple,
+)
