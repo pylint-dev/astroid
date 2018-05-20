@@ -252,7 +252,7 @@ def infer_enum(node, context=None):
 
 def infer_enum_class(node):
     """ Specific inference for enums. """
-    names = set(('Enum', 'IntEnum', 'enum.Enum', 'enum.IntEnum'))
+    names = {'Enum', 'IntEnum', 'enum.Enum', 'enum.IntEnum'}
     for basename in node.basenames:
         # TODO: doesn't handle subclasses yet. This implementation
         # is a hack to support enums.
