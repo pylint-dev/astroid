@@ -1,7 +1,7 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
---
+-- 2.0
 
    * typing.X[...] and typing.NewType are inferred as classes instead of instances.
 
@@ -28,7 +28,7 @@ Change log for the astroid package (used to be astng)
 
    * Fix missing __module__ and __qualname__ from class definition locals
 
-	 Close PYCQA/pylint#1753
+     Close PYCQA/pylint#1753
 
    * Fix a crash when __annotations__ access a parent's __init__ that does not have arguments
 
@@ -58,7 +58,7 @@ Change log for the astroid package (used to be astng)
 
    * Add missing attrs special attribute
 
-	 Close PyCQA/pylint#1884
+     Close PyCQA/pylint#1884
 
    * Inference now understands the 'isinstance' builtin
 
