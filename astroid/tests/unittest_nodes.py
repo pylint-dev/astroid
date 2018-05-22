@@ -438,7 +438,7 @@ class ConstNodeTest(unittest.TestCase):
         self._test('a')
 
     def test_unicode(self):
-        self._test(u'a')
+        self._test('a')
 
 
 class NameNodeTest(unittest.TestCase):

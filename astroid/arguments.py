@@ -162,7 +162,7 @@ class CallSite(object):
         positional = self.positional_arguments[:len(funcnode.args.args)]
         vararg = self.positional_arguments[len(funcnode.args.args):]
         argindex = funcnode.args.find_argname(name)[0]
-        kwonlyargs = set(arg.name for arg in funcnode.args.kwonlyargs)
+        kwonlyargs = {arg.name for arg in funcnode.args.kwonlyargs}
         kwargs = {
             key: value for key, value in self.keyword_arguments.items()
             if key not in kwonlyargs

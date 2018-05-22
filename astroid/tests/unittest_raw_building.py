@@ -81,7 +81,7 @@ class RawBuildingTC(unittest.TestCase):
         for name, _ in inspect.getmembers(builtins, predicate=inspect.isbuiltin):
             if name == 'print':
                 continue
-            node = extract_node('{0} #@'.format(name))
+            node = extract_node('{} #@'.format(name))
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.FunctionDef, name)
             self.assertEqual(inferred.root().name, BUILTINS, name)

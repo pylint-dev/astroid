@@ -2068,7 +2068,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         """
         # FIXME: should be possible to choose the resolution order
         # FIXME: inference make infinite loops possible here
-        yielded = set([self])
+        yielded = {self}
         if context is None:
             context = contextmod.InferenceContext()
         if not self.bases and self.qname() != 'builtins.object':

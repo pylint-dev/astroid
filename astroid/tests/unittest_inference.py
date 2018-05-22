@@ -82,8 +82,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Dict)
 
-        elts = set([(key.value, value.value)
-                    for (key, value) in inferred.items])
+        elts = {(key.value, value.value)
+                for (key, value) in inferred.items}
         self.assertEqual(sorted(elts), sorted(expected.items()))
 
     assertInferTuple = partialmethod(_assertInferElts, nodes.Tuple)
@@ -219,7 +219,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = self.ast['i'].infer()
         const = next(inferred)
         self.assertIsInstance(const, nodes.Const)
-        self.assertEqual(const.value, u"glup")
+        self.assertEqual(const.value, "glup")
         self.assertRaises(StopIteration, partial(next, inferred))
         inferred = self.ast['j'].infer()
         const = next(inferred)
@@ -1275,7 +1275,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             my_smtp = SendMailController().smtp
             my_me = SendMailController().me
             '''
-        decorators = set(['%s.property' % BUILTINS])
+        decorators = {'%s.property' % BUILTINS}
         ast = parse(code, __name__)
         self.assertEqual(ast['SendMailController']['smtp'].decoratornames(),
                          decorators)
@@ -2036,7 +2036,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ' '.count() #@
         """
         ast = extract_node(code, __name__)
-        self.assertInferConst(ast[0], u'')
+        self.assertInferConst(ast[0], '')
         for i in range(1, 16):
             self.assertInferConst(ast[i], '')
         for i in range(16, 19):
@@ -2069,7 +2069,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ast = extract_node(code, __name__)
         self.assertInferConst(ast[0], '')
         for i in range(1, 16):
-            self.assertInferConst(ast[i], u'')
+            self.assertInferConst(ast[i], '')
         for i in range(16, 19):
             self.assertInferConst(ast[i], 0)
 
