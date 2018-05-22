@@ -83,7 +83,7 @@ def _can_assign_attr(node, attrname):
     except NotImplementedError:
         pass
     else:
-        if slots and attrname not in set(slot.value for slot in slots):
+        if slots and attrname not in {slot.value for slot in slots}:
             return False
     return True
 

@@ -488,7 +488,7 @@ class ThreadingBrainTest(unittest.TestCase):
     def _test_lock_object(self, object_name):
         lock_instance = builder.extract_node("""
         import threading
-        threading.{0}()
+        threading.{}()
         """.format(object_name))
         inferred = next(lock_instance.infer())
         self.assert_is_valid_lock(inferred)

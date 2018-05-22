@@ -258,7 +258,7 @@ def test():
         # Test for https://bitbucket.org/logilab/astroid/issues/273/
 
         # In a regular file, "coding: utf-8" would have been used.
-        node = extract_node(u'''
+        node = extract_node('''
         from __future__ import unicode_literals
 
         class MyClass(object):
@@ -266,7 +266,7 @@ def test():
                 "With unicode : %s "
 
         instance = MyClass()
-        ''' % u"\u2019")
+        ''' % "\u2019")
 
         next(node.value.infer()).as_string()
 

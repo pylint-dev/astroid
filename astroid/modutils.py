@@ -49,11 +49,11 @@ try:
     # with the prefix from which the virtualenv was created. This throws
     # off the detection logic for standard library modules, thus the
     # workaround.
-    STD_LIB_DIRS = set([
+    STD_LIB_DIRS = {
         get_python_lib(standard_lib=True, prefix=sys.prefix),
         # Take care of installations where exec_prefix != prefix.
         get_python_lib(standard_lib=True, prefix=sys.exec_prefix),
-        get_python_lib(standard_lib=True)])
+        get_python_lib(standard_lib=True)}
 # get_python_lib(standard_lib=1) is not available on pypy, set STD_LIB_DIR to
 # non-valid path, see https://bugs.pypy.org/issue1164
 except DistutilsPlatformError:
