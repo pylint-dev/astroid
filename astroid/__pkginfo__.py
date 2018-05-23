@@ -6,6 +6,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
 """astroid packaging information"""
+import platform
 
 distname = 'astroid'
 
@@ -19,8 +20,11 @@ install_requires = [
     'lazy_object_proxy',
     'six',
     'wrapt',
-    'typing;python_version<"3.5"'
+    'typing;python_version<"3.5"',
 ]
+
+if platform.python_implementation() == 'CPython':
+    install_requires.append('typed_ast;python_version<"3.7"')
 
 # pylint: disable=redefined-builtin; why license is a builtin anyway?
 license = 'LGPL'

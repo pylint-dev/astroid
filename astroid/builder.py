@@ -16,8 +16,9 @@ import re
 import os
 import sys
 import textwrap
-import _ast
 
+
+from astroid._ast import _parse
 from astroid import bases
 from astroid import exceptions
 from astroid import manager
@@ -35,10 +36,6 @@ _TRANSIENT_FUNCTION = '__'
 # The comment used to select a statement to be extracted
 # when calling extract_node.
 _STATEMENT_SELECTOR = '#@'
-
-
-def _parse(string):
-    return compile(string, "<string>", 'exec', _ast.PyCF_ONLY_AST)
 
 
 if sys.version_info >= (3, 0):

@@ -11,50 +11,11 @@ order to get a single Astroid representation
 """
 
 import sys
-import _ast
 
 import astroid
+from astroid._ast import _parse, _get_parser_module
 from astroid import nodes
 
-
-
-_BIN_OP_CLASSES = {_ast.Add: '+',
-                   _ast.BitAnd: '&',
-                   _ast.BitOr: '|',
-                   _ast.BitXor: '^',
-                   _ast.Div: '/',
-                   _ast.FloorDiv: '//',
-                   _ast.Mod: '%',
-                   _ast.Mult: '*',
-                   _ast.Pow: '**',
-                   _ast.Sub: '-',
-                   _ast.LShift: '<<',
-                   _ast.RShift: '>>',
-                  }
-if sys.version_info >= (3, 5):
-    _BIN_OP_CLASSES[_ast.MatMult] = '@'
-
-_BOOL_OP_CLASSES = {_ast.And: 'and',
-                    _ast.Or: 'or',
-                   }
-
-_UNARY_OP_CLASSES = {_ast.UAdd: '+',
-                     _ast.USub: '-',
-                     _ast.Not: 'not',
-                     _ast.Invert: '~',
-                    }
-
-_CMP_OP_CLASSES = {_ast.Eq: '==',
-                   _ast.Gt: '>',
-                   _ast.GtE: '>=',
-                   _ast.In: 'in',
-                   _ast.Is: 'is',
-                   _ast.IsNot: 'is not',
-                   _ast.Lt: '<',
-                   _ast.LtE: '<=',
-                   _ast.NotEq: '!=',
-                   _ast.NotIn: 'not in',
-                  }
 
 CONST_NAME_TRANSFORMS = {'None':  None,
                          'True':  True,
@@ -71,27 +32,67 @@ REDIRECT = {'arguments': 'Arguments',
 PY3 = sys.version_info >= (3, 0)
 PY34 = sys.version_info >= (3, 4)
 PY37 = sys.version_info >= (3, 7)
-CONTEXTS = {_ast.Load: astroid.Load,
-            _ast.Store: astroid.Store,
-            _ast.Del: astroid.Del,
-            _ast.Param: astroid.Store}
 
 
-def _get_doc(node):
+def _binary_operators_from_module(module):
+    binary_operators = {
+        module.Add: '+',
+        module.BitAnd: '&',
+        module.BitOr: '|',
+        module.BitXor: '^',
+        module.Div: '/',
+        module.FloorDiv: '//',
+        module.Mod: '%',
+        module.Mult: '*',
+        module.Pow: '**',
+        module.Sub: '-',
+        module.LShift: '<<',
+        module.RShift: '>>',
+    }
+    if sys.version_info >= (3, 5):
+        binary_operators[module.MatMult] = '@'
+    return binary_operators
 
-    try:
-        if PY37 and hasattr(node, 'docstring'):
-            doc = node.docstring
-            return node, doc
-        elif (node.body
-              and isinstance(node.body[0], _ast.Expr)
-              and isinstance(node.body[0].value, _ast.Str)):
-            doc = node.body[0].value.s
-            node.body = node.body[1:]
-            return node, doc
-    except IndexError:
-        pass # ast built from scratch
-    return node, None
+
+def _bool_operators_from_module(module):
+    return {
+        module.And: 'and',
+        module.Or: 'or',
+    }
+
+
+def _unary_operators_from_module(module):
+    return {
+        module.UAdd: '+',
+        module.USub: '-',
+        module.Not: 'not',
+        module.Invert: '~',
+    }
+
+
+def _compare_operators_from_module(module):
+    return {
+        module.Eq: '==',
+        module.Gt: '>',
+        module.GtE: '>=',
+        module.In: 'in',
+        module.Is: 'is',
+        module.IsNot: 'is not',
+        module.Lt: '<',
+        module.LtE: '<=',
+        module.NotEq: '!=',
+        module.NotIn: 'not in',
+    }
+
+
+def _contexts_from_module(module):
+    return {
+        module.Load: astroid.Load,
+        module.Store: astroid.Store,
+        module.Del: astroid.Del,
+        module.Param: astroid.Store,
+    }
+
 
 def _visit_or_none(node, attr, visitor, parent, visit='visit',
                    **kws):
@@ -106,23 +107,45 @@ def _visit_or_none(node, attr, visitor, parent, visit='visit',
     return None
 
 
-def _get_context(node):
-    return CONTEXTS.get(type(node.ctx), astroid.Load)
-
-
 class TreeRebuilder(object):
     """Rebuilds the _ast tree to become an Astroid tree"""
 
-    def __init__(self, manager):
+    def __init__(self, manager, parse_python_two: bool = False):
         self._manager = manager
         self._global_names = []
         self._import_from_nodes = []
         self._delayed_assattr = []
         self._visit_meths = {}
 
+        # Configure the right classes for the right module
+        self._parser_module = _get_parser_module(parse_python_two=parse_python_two)
+        self._unary_op_classes = _unary_operators_from_module(self._parser_module)
+        self._cmp_op_classes = _compare_operators_from_module(self._parser_module)
+        self._bool_op_classes = _bool_operators_from_module(self._parser_module)
+        self._bin_op_classes = _binary_operators_from_module(self._parser_module)
+        self._context_classes = _contexts_from_module(self._parser_module)
+
+    def _get_doc(self, node):
+        try:
+            if PY37 and hasattr(node, 'docstring'):
+                doc = node.docstring
+                return node, doc
+            elif (node.body
+                  and isinstance(node.body[0], self._parser_module.Expr)
+                  and isinstance(node.body[0].value, self._parser_module.Str)):
+                doc = node.body[0].value.s
+                node.body = node.body[1:]
+                return node, doc
+        except IndexError:
+            pass  # ast built from scratch
+        return node, None
+
+    def _get_context(self, node):
+        return self._context_classes.get(type(node.ctx), astroid.Load)
+
     def visit_module(self, node, modname, modpath, package):
         """visit a Module node by returning a fresh instance of it"""
-        node, doc = _get_doc(node)
+        node, doc = self._get_doc(node)
         newnode = nodes.Module(name=modname, doc=doc, file=modpath,
                                path=[modpath],
                                package=package, parent=None)
@@ -219,12 +242,32 @@ class TreeRebuilder(object):
         newnode.postinit(self.visit(node.test, newnode), msg)
         return newnode
 
+    def check_type_comment(self, node):
+        type_comment = getattr(node, 'type_comment', None)
+        if not type_comment:
+            return None
+
+        try:
+            type_comment_ast = _parse(type_comment)
+        except SyntaxError:
+            # Invalid type comment, just skip it.
+            return None
+
+        type_object = self.visit(type_comment_ast.body[0], node)
+        if not isinstance(type_object, nodes.Expr):
+            return None
+
+        return type_object.value
+
     def visit_assign(self, node, parent):
         """visit a Assign node by returning a fresh instance of it"""
+        type_annotation = self.check_type_comment(node)
         newnode = nodes.Assign(node.lineno, node.col_offset, parent)
-        newnode.postinit([self.visit(child, newnode)
-                          for child in node.targets],
-                         self.visit(node.value, newnode))
+        newnode.postinit(
+            targets=[self.visit(child, newnode) for child in node.targets],
+            value=self.visit(node.value, newnode),
+            type_annotation=type_annotation,
+        )
         return newnode
 
     def visit_assignname(self, node, parent, node_name=None):
@@ -236,7 +279,7 @@ class TreeRebuilder(object):
 
     def visit_augassign(self, node, parent):
         """visit a AugAssign node by returning a fresh instance of it"""
-        newnode = nodes.AugAssign(_BIN_OP_CLASSES[type(node.op)] + "=",
+        newnode = nodes.AugAssign(self._bin_op_classes[type(node.op)] + "=",
                                   node.lineno, node.col_offset, parent)
         newnode.postinit(self.visit(node.target, newnode),
                          self.visit(node.value, newnode))
@@ -250,7 +293,7 @@ class TreeRebuilder(object):
 
     def visit_binop(self, node, parent):
         """visit a BinOp node by returning a fresh instance of it"""
-        newnode = nodes.BinOp(_BIN_OP_CLASSES[type(node.op)],
+        newnode = nodes.BinOp(self._bin_op_classes[type(node.op)],
                               node.lineno, node.col_offset, parent)
         newnode.postinit(self.visit(node.left, newnode),
                          self.visit(node.right, newnode))
@@ -258,7 +301,7 @@ class TreeRebuilder(object):
 
     def visit_boolop(self, node, parent):
         """visit a BoolOp node by returning a fresh instance of it"""
-        newnode = nodes.BoolOp(_BOOL_OP_CLASSES[type(node.op)],
+        newnode = nodes.BoolOp(self._bool_op_classes[type(node.op)],
                                node.lineno, node.col_offset, parent)
         newnode.postinit([self.visit(child, newnode)
                           for child in node.values])
@@ -305,7 +348,7 @@ class TreeRebuilder(object):
 
     def visit_classdef(self, node, parent, newstyle=None):
         """visit a ClassDef node to become astroid"""
-        node, doc = _get_doc(node)
+        node, doc = self._get_doc(node)
         newnode = nodes.ClassDef(node.name, doc, node.lineno,
                                  node.col_offset, parent)
         metaclass = None
@@ -343,7 +386,7 @@ class TreeRebuilder(object):
         """visit a Compare node by returning a fresh instance of it"""
         newnode = nodes.Compare(node.lineno, node.col_offset, parent)
         newnode.postinit(self.visit(node.left, newnode),
-                         [(_CMP_OP_CLASSES[op.__class__],
+                         [(self._cmp_op_classes[op.__class__],
                            self.visit(expr, newnode))
                           for (op, expr) in zip(node.ops, node.comparators)])
         return newnode
@@ -448,12 +491,14 @@ class TreeRebuilder(object):
     def _visit_for(self, cls, node, parent):
         """visit a For node by returning a fresh instance of it"""
         newnode = cls(node.lineno, node.col_offset, parent)
-        newnode.postinit(self.visit(node.target, newnode),
-                         self.visit(node.iter, newnode),
-                         [self.visit(child, newnode)
-                          for child in node.body],
-                         [self.visit(child, newnode)
-                          for child in node.orelse])
+        type_annotation = self.check_type_comment(node)
+        newnode.postinit(
+            target=self.visit(node.target, newnode),
+            iter=self.visit(node.iter, newnode),
+            body=[self.visit(child, newnode) for child in node.body],
+            orelse=[self.visit(child, newnode) for child in node.orelse],
+            type_annotation=type_annotation,
+        )
         return newnode
 
     def visit_for(self, node, parent):
@@ -472,7 +517,7 @@ class TreeRebuilder(object):
     def _visit_functiondef(self, cls, node, parent):
         """visit an FunctionDef node to become astroid"""
         self._global_names.append({})
-        node, doc = _get_doc(node)
+        node, doc = self._get_doc(node)
         newnode = cls(node.name, doc, node.lineno,
                       node.col_offset, parent)
         if node.decorator_list:
@@ -503,7 +548,7 @@ class TreeRebuilder(object):
 
     def visit_attribute(self, node, parent):
         """visit an Attribute node by returning a fresh instance of it"""
-        context = _get_context(node)
+        context = self._get_context(node)
         if context == astroid.Del:
             # FIXME : maybe we should reintroduce and visit_delattr ?
             # for instance, deactivating assign_ctx
@@ -580,7 +625,7 @@ class TreeRebuilder(object):
 
     def visit_list(self, node, parent):
         """visit a List node by returning a fresh instance of it"""
-        context = _get_context(node)
+        context = self._get_context(node)
         newnode = nodes.List(ctx=context,
                              lineno=node.lineno,
                              col_offset=node.col_offset,
@@ -599,7 +644,7 @@ class TreeRebuilder(object):
 
     def visit_name(self, node, parent):
         """visit a Name node by returning a fresh instance of it"""
-        context = _get_context(node)
+        context = self._get_context(node)
         # True and False can be assigned to something in py2x, so we have to
         # check first the context.
         if context == astroid.Del:
@@ -684,7 +729,7 @@ class TreeRebuilder(object):
 
     def visit_subscript(self, node, parent):
         """visit a Subscript node by returning a fresh instance of it"""
-        context = _get_context(node)
+        context = self._get_context(node)
         newnode = nodes.Subscript(ctx=context,
                                   lineno=node.lineno,
                                   col_offset=node.col_offset,
@@ -715,7 +760,7 @@ class TreeRebuilder(object):
 
     def visit_tuple(self, node, parent):
         """visit a Tuple node by returning a fresh instance of it"""
-        context = _get_context(node)
+        context = self._get_context(node)
         newnode = nodes.Tuple(ctx=context,
                               lineno=node.lineno,
                               col_offset=node.col_offset,
@@ -726,7 +771,7 @@ class TreeRebuilder(object):
 
     def visit_unaryop(self, node, parent):
         """visit a UnaryOp node by returning a fresh instance of it"""
-        newnode = nodes.UnaryOp(_UNARY_OP_CLASSES[node.op.__class__],
+        newnode = nodes.UnaryOp(self._unary_op_classes[node.op.__class__],
                                 node.lineno, node.col_offset, parent)
         newnode.postinit(self.visit(node.operand, newnode))
         return newnode
@@ -748,9 +793,13 @@ class TreeRebuilder(object):
             optional_vars = self.visit(node.optional_vars, newnode)
         else:
             optional_vars = None
-        newnode.postinit([(expr, optional_vars)],
-                         [self.visit(child, newnode)
-                          for child in node.body])
+
+        type_annotation = self.check_type_comment(node)
+        newnode.postinit(
+            items=[(expr, optional_vars)],
+            body=[self.visit(child, newnode) for child in node.body],
+            type_annotation=type_annotation,
+        )
         return newnode
 
     def visit_yield(self, node, parent):
@@ -792,7 +841,6 @@ class TreeRebuilder3(TreeRebuilder):
         return nodes.Nonlocal(node.names, getattr(node, 'lineno', None),
                               getattr(node, 'col_offset', None), parent)
 
-
     def visit_raise(self, node, parent):
         """visit a Raise node by returning a fresh instance of it"""
         newnode = nodes.Raise(node.lineno, node.col_offset, parent)
@@ -803,7 +851,7 @@ class TreeRebuilder3(TreeRebuilder):
 
     def visit_starred(self, node, parent):
         """visit a Starred node and return a new instance of it"""
-        context = _get_context(node)
+        context = self._get_context(node)
         newnode = nodes.Starred(ctx=context, lineno=node.lineno,
                                 col_offset=node.col_offset,
                                 parent=parent)
@@ -848,9 +896,13 @@ class TreeRebuilder3(TreeRebuilder):
             expr = self.visit(child.context_expr, newnode)
             var = _visit_or_none(child, 'optional_vars', self, newnode)
             return expr, var
-        newnode.postinit([visit_child(child) for child in node.items],
-                         [self.visit(child, newnode)
-                          for child in node.body])
+
+        type_annotation = self.check_type_comment(node)
+        newnode.postinit(
+            items=[visit_child(child) for child in node.items],
+            body=[self.visit(child, newnode) for child in node.body],
+            type_annotation=type_annotation,
+        )
         return newnode
 
     def visit_with(self, node, parent):
