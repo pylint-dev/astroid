@@ -35,7 +35,7 @@ from astroid.tests import resources
 abuilder = builder.AstroidBuilder()
 BUILTINS = six.moves.builtins.__name__
 HAS_TYPED_AST = (
-    platform.python_implementation() != 'CPython'
+    platform.python_implementation() == 'CPython'
     and sys.version_info.minor < 7
 )
 
