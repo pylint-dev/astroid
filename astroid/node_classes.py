@@ -4511,14 +4511,3 @@ def const_factory(value):
         node = EmptyNode()
         node.object = value
         return node
-
-
-# Backward-compatibility aliases
-
-Backquote = util.proxy_alias('Backquote', Repr)
-Discard = util.proxy_alias('Discard', Expr)
-AssName = util.proxy_alias('AssName', AssignName)
-AssAttr = util.proxy_alias('AssAttr', AssignAttr)
-Getattr = util.proxy_alias('Getattr', Attribute)
-CallFunc = util.proxy_alias('CallFunc', Call)
-From = util.proxy_alias('From', ImportFrom)

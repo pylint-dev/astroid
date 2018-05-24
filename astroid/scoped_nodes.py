@@ -2708,9 +2708,3 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
     def _get_assign_nodes(self):
         for child_node in self.body:
             yield from child_node._get_assign_nodes()
-
-
-# Backwards-compatibility aliases
-Class = util.proxy_alias('Class', ClassDef)
-Function = util.proxy_alias('Function', FunctionDef)
-GenExpr = util.proxy_alias('GenExpr', GeneratorExp)

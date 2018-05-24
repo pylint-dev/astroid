@@ -14,7 +14,6 @@ import platform
 import sys
 import textwrap
 import unittest
-import warnings
 
 import pytest
 import six
@@ -675,14 +674,14 @@ class AliasesTest(unittest.TestCase):
                 return node
             return None
 
-        self.transformer.register_transform(nodes.From, test_from)
-        self.transformer.register_transform(nodes.Class, test_class)
-        self.transformer.register_transform(nodes.Function, test_function)
-        self.transformer.register_transform(nodes.CallFunc, test_callfunc)
-        self.transformer.register_transform(nodes.AssName, test_assname)
-        self.transformer.register_transform(nodes.AssAttr, test_assattr)
-        self.transformer.register_transform(nodes.Getattr, test_getattr)
-        self.transformer.register_transform(nodes.GenExpr, test_genexpr)
+        self.transformer.register_transform(nodes.ImportFrom, test_from)
+        self.transformer.register_transform(nodes.ClassDef, test_class)
+        self.transformer.register_transform(nodes.FunctionDef, test_function)
+        self.transformer.register_transform(nodes.Call, test_callfunc)
+        self.transformer.register_transform(nodes.AssignName, test_assname)
+        self.transformer.register_transform(nodes.AssignAttr, test_assattr)
+        self.transformer.register_transform(nodes.Attribute, test_getattr)
+        self.transformer.register_transform(nodes.GeneratorExp, test_genexpr)
 
         string = '''
         from __future__ import print_function
@@ -716,58 +715,6 @@ class AliasesTest(unittest.TestCase):
         self.assertIsInstance(module.body[5].value, nodes.Attribute)
         self.assertEqual(module.body[6].value.elt.value, 2)
         self.assertIsInstance(module.body[6].value, nodes.GeneratorExp)
-
-    @unittest.skipIf(six.PY3, "Python 3 doesn't have Repr nodes.")
-    def test_repr(self):
-        def test_backquote(node):
-            node.value.name = 'bar'
-            return node
-
-        self.transformer.register_transform(nodes.Backquote, test_backquote)
-
-        module = self.parse_transform('`foo`')
-
-        self.assertEqual(module.body[0].value.value.name, 'bar')
-        self.assertIsInstance(module.body[0].value, nodes.Repr)
-
-
-class DeprecationWarningsTest(unittest.TestCase):
-    def test_asstype_warnings(self):
-        string = '''
-        class C: pass
-        c = C()
-        with warnings.catch_warnings(record=True) as w:
-            pass
-        '''
-        module = parse(string)
-        filter_stmts_mixin = module.body[0]
-        assign_type_mixin = module.body[1].targets[0]
-        parent_assign_type_mixin = module.body[2]
-
-        with warnings.catch_warnings(record=True) as w:
-            with test_utils.enable_warning(PendingDeprecationWarning):
-                filter_stmts_mixin.ass_type()
-                self.assertIsInstance(w[0].message, PendingDeprecationWarning)
-        with warnings.catch_warnings(record=True) as w:
-            with test_utils.enable_warning(PendingDeprecationWarning):
-                assign_type_mixin.ass_type()
-                self.assertIsInstance(w[0].message, PendingDeprecationWarning)
-        with warnings.catch_warnings(record=True) as w:
-            with test_utils.enable_warning(PendingDeprecationWarning):
-                parent_assign_type_mixin.ass_type()
-                self.assertIsInstance(w[0].message, PendingDeprecationWarning)
-
-    def test_isinstance_warnings(self):
-        msg_format = ("%r is deprecated and slated for removal in astroid "
-                      "2.0, use %r instead")
-        for cls in (nodes.Discard, nodes.Backquote, nodes.AssName,
-                    nodes.AssAttr, nodes.Getattr, nodes.CallFunc, nodes.From):
-            with warnings.catch_warnings(record=True) as w:
-                with test_utils.enable_warning(PendingDeprecationWarning):
-                    isinstance(42, cls)
-            self.assertIsInstance(w[0].message, PendingDeprecationWarning)
-            actual_msg = msg_format % (cls.__class__.__name__, cls.__wrapped__.__name__)
-            self.assertEqual(str(w[0].message), actual_msg)
 
 
 @test_utils.require_version('3.5')
