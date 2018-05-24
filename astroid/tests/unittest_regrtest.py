@@ -131,18 +131,6 @@ multiply(1, 2, 3)
         self.assertEqual(default.name, 'x')
         self.assertEqual(next(default.infer()).value, True)
 
-    @require_version('2.7')
-    def test_with_infer_assignnames(self):
-        builder = AstroidBuilder()
-        data = """
-with open('a.txt') as stream, open('b.txt'):
-    stream.read()
-"""
-        astroid = builder.string_build(data, __name__, __file__)
-        # Used to crash due to the fact that the second
-        # context manager didn't use an assignment name.
-        list(astroid.nodes_of_class(nodes.Call))[-1].inferred()
-
     def test_recursion_regression_issue25(self):
         builder = AstroidBuilder()
         data = """
