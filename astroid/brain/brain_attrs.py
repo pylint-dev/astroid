@@ -32,12 +32,18 @@ def attr_attributes_transform(node):
     """Given that the ClassNode has an attr decorator,
     rewrite class attributes as instance attributes
     """
+    # Astroid can't infer this attribute properly
+    # Prevents https://github.com/PyCQA/pylint/issues/1884
+    node.locals["__attrs_attrs__"] = [astroid.Unknown(parent=node)]
+
     for cdefbodynode in node.body:
         if not isinstance(cdefbodynode, astroid.Assign):
             continue
         if isinstance(cdefbodynode.value, astroid.Call):
             if cdefbodynode.value.func.as_string() != ATTR_IB:
                 continue
+        else:
+            continue
         for target in cdefbodynode.targets:
 
             rhs_node = astroid.Unknown(
@@ -49,6 +55,6 @@ def attr_attributes_transform(node):
 
 
 MANAGER.register_transform(
-    astroid.Class,
+    astroid.ClassDef,
     attr_attributes_transform,
     is_decorated_with_attrs)

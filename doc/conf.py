@@ -12,6 +12,7 @@
 # serve to show the default.
 
 import sys, os
+from datetime import datetime
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -47,8 +48,9 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Astroid'
-copyright = u'2003-2016, Logilab'
+project = 'Astroid'
+current_year = datetime.utcnow().year
+copyright = '2003-{year}, Logilab, PyCQA and contributors'.format(year=current_year)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -190,8 +192,8 @@ htmlhelp_basename = 'Pylintdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'Astroid.tex', u'Astroid Documentation',
-   u'Logilab, PyCQA and contributors', 'manual'),
+  ('index', 'Astroid.tex', 'Astroid Documentation',
+   'Logilab, PyCQA and contributors', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -223,8 +225,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'astroid', u'Astroid Documentation',
-     [u'Logilab, PyCQA and contributors'], 1)
+    ('index', 'astroid', 'Astroid Documentation',
+     ['Logilab, PyCQA and contributors'], 1)
 ]
 
 autodoc_default_flags = ['members', 'undoc-members', 'show-inheritance']

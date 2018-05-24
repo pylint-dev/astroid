@@ -80,7 +80,7 @@ def path_wrapper(func):
         if context is None:
             context = contextmod.InferenceContext()
         if context.push(node):
-            return
+            return None
 
         yielded = set()
         generator = _func(node, context, **kwargs)
@@ -99,9 +99,8 @@ def path_wrapper(func):
             # Explicit StopIteration to return error information, see
             # comment in raise_if_nothing_inferred.
             if error.args:
-                raise StopIteration(error.args[0])
-            else:
-                raise StopIteration
+                return error.args[0]
+            return None
 
     return wrapped
 

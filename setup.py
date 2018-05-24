@@ -24,22 +24,6 @@ with open(pkginfo, 'rb') as fobj:
 with open(os.path.join(astroid_dir, 'README.rst')) as fobj:
     long_description = fobj.read()
 
-class AstroidInstallLib(install_lib.install_lib):
-    def byte_compile(self, files):
-        test_datadir = os.path.join('astroid', 'tests', 'testdata')
-        files = [f for f in files if test_datadir not in f]
-        install_lib.install_lib.byte_compile(self, files)
-
-
-class AstroidEasyInstallLib(easy_install.easy_install):
-    # override this since pip/easy_install attempt to byte compile
-    # test data files, some of them being syntactically wrong by design,
-    # and this scares the end-user
-    def byte_compile(self, files):
-        test_datadir = os.path.join('astroid', 'tests', 'testdata')
-        files = [f for f in files if test_datadir not in f]
-        easy_install.easy_install.byte_compile(self, files)
-
 
 def install():
     return setup(name = distname,
@@ -51,13 +35,13 @@ def install():
                  author = author,
                  author_email = author_email,
                  url = web,
-                 include_package_data = True,
-                 python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*',
+                 python_requires='>=3.4.*',
                  install_requires = install_requires,
                  extras_require=extras_require,
-                 packages = find_packages(),
-                 cmdclass={'install_lib': AstroidInstallLib,
-                           'easy_install': AstroidEasyInstallLib}
+                 packages=find_packages(exclude=['astroid.tests']) + ['astroid.brain'],
+                 setup_requires=['pytest-runner'],
+                 test_suite='test',
+                 tests_require=['pytest'],
                  )
 
 

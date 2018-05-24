@@ -8,8 +8,6 @@
 """This module contains some mixins for the different nodes.
 """
 
-import warnings
-
 from astroid import decorators
 from astroid import exceptions
 
@@ -48,25 +46,11 @@ class FilterStmtsMixin(object):
     def assign_type(self):
         return self
 
-    def ass_type(self):
-        warnings.warn('%s.ass_type() is deprecated and slated for removal '
-                      'in astroid 2.0, use %s.assign_type() instead.'
-                      % (type(self).__name__, type(self).__name__),
-                      PendingDeprecationWarning, stacklevel=2)
-        return self.assign_type()
-
 
 class AssignTypeMixin(object):
 
     def assign_type(self):
         return self
-
-    def ass_type(self):
-        warnings.warn('%s.ass_type() is deprecated and slated for removal '
-                      'in astroid 2.0, use %s.assign_type() instead.'
-                      % (type(self).__name__, type(self).__name__),
-                      PendingDeprecationWarning, stacklevel=2)
-        return self.assign_type()
 
     def _get_filtered_stmts(self, lookup_node, node, _stmts, mystmt):
         """method used in filter_stmts"""
@@ -83,13 +67,6 @@ class ParentAssignTypeMixin(AssignTypeMixin):
 
     def assign_type(self):
         return self.parent.assign_type()
-
-    def ass_type(self):
-        warnings.warn('%s.ass_type() is deprecated and slated for removal '
-                      'in astroid 2.0, use %s.assign_type() instead.'
-                      % (type(self).__name__, type(self).__name__),
-                      PendingDeprecationWarning, stacklevel=2)
-        return self.assign_type()
 
 
 class ImportFromMixin(FilterStmtsMixin):
@@ -131,3 +108,38 @@ class ImportFromMixin(FilterStmtsMixin):
         raise exceptions.AttributeInferenceError(
             'Could not find original name for {attribute} in {target!r}',
             target=self, attribute=asname)
+
+
+class MultiLineBlockMixin:
+    """Mixin for nodes with multi-line blocks, e.g. For and FunctionDef.
+    Note that this does not apply to every node with a `body` field.
+    For instance, an If node has a multi-line body, but the body of an
+    IfExpr is not multi-line, and hence cannot contain Return nodes,
+    Assign nodes, etc.
+    """
+
+    @decorators.cachedproperty
+    def _multi_line_blocks(self):
+        return tuple(
+            getattr(self, field)
+            for field in self._multi_line_block_fields
+        )
+
+    def _get_return_nodes_skip_functions(self):
+        for block in self._multi_line_blocks:
+            for child_node in block:
+                if child_node.is_function:
+                    continue
+                yield from child_node._get_return_nodes_skip_functions()
+
+    def _get_yield_nodes_skip_lambdas(self):
+        for block in self._multi_line_blocks:
+            for child_node in block:
+                if child_node.is_lambda:
+                    continue
+                yield from child_node._get_yield_nodes_skip_lambdas()
+
+    def _get_assign_nodes(self):
+        for block in self._multi_line_blocks:
+            for child_node in block:
+                yield from child_node._get_assign_nodes()

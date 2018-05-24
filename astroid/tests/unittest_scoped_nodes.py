@@ -795,7 +795,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertSetEqual(expected_methods, methods)
         klass2 = self.module2['Specialization']
         methods = {m.name for m in klass2.mymethods()}
-        self.assertSetEqual(set([]), methods)
+        self.assertSetEqual(set(), methods)
         method_locals = klass2.local_attr('method')
         self.assertEqual(len(method_locals), 1)
         self.assertEqual(method_locals[0].name, 'method')
@@ -1317,7 +1317,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         ''')
         cls = module['Third']
         slots = cls.slots()
-        self.assertEqual(sorted(set(slot.value for slot in slots)),
+        self.assertEqual(sorted({slot.value for slot in slots}),
                          ['a', 'b', 'c', 'd', 'e'])
 
     def test_all_ancestors_need_slots(self):
@@ -1517,7 +1517,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         def test(): #@
             yield
         """)
-        result = next(func.infer_call_result(func))
+        result = next(func.infer_call_result())
         self.assertIsInstance(result, Generator)
         self.assertEqual(result.parent, func)
 

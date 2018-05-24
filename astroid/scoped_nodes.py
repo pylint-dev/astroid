@@ -14,12 +14,12 @@ new local scope in the language definition : Module, ClassDef, FunctionDef (and
 Lambda, GeneratorExp, DictComp and SetComp to some extent).
 """
 
+import builtins
 import sys
 import io
 import itertools
 import warnings
-
-import six
+from typing import Optional, List
 
 from astroid import bases
 from astroid import context as contextmod
@@ -33,7 +33,7 @@ from astroid import node_classes
 from astroid import util
 
 
-BUILTINS = six.moves.builtins.__name__
+BUILTINS = builtins.__name__
 ITER_METHODS = ('__iter__', '__getitem__')
 
 
@@ -96,7 +96,7 @@ def builtin_lookup(name):
     return the list of matching statements and the astroid for the builtin
     module
     """
-    builtin_astroid = MANAGER.ast_from_module(six.moves.builtins)
+    builtin_astroid = MANAGER.ast_from_module(builtins)
     if name == '__dict__':
         return builtin_astroid, ()
     try:
@@ -355,7 +355,9 @@ class Module(LocalsDictNodeNG):
                      'pure_python', 'future_imports')
     _other_other_fields = ('locals', 'globals')
 
-    def __init__(self, name, doc, file=None, path=None, package=None,
+    def __init__(self, name, doc, file=None,
+                 path: Optional[List[str]] = None,
+                 package=None,
                  parent=None, pure_python=True):
         """
         :param name: The name of the module.
@@ -368,7 +370,7 @@ class Module(LocalsDictNodeNG):
         :type file: str or None
 
         :param path:
-        :type path: str or None
+        :type path: Optional[List[str]]
 
         :param package: Whether the node represents a package or a module.
         :type package: bool or None
@@ -552,15 +554,7 @@ class Module(LocalsDictNodeNG):
         """
         return
 
-    if six.PY2:
-        @decorators_mod.cachedproperty
-        def _absolute_import_activated(self):
-            for stmt in self.locals.get('absolute_import', ()):
-                if isinstance(stmt, node_classes.ImportFrom) and stmt.modname == '__future__':
-                    return True
-            return False
-    else:
-        _absolute_import_activated = True
+    _absolute_import_activated = True
 
     def absolute_import_activated(self):
         """Whether :pep:`328` absolute import behaviour has been enabled.
@@ -675,7 +669,7 @@ class Module(LocalsDictNodeNG):
             return default
 
         str_const = lambda node: (isinstance(node, node_classes.Const) and
-                                  isinstance(node.value, six.string_types))
+                                  isinstance(node.value, str))
         for node in explicit.elts:
             if str_const(node):
                 inferred.append(node.value)
@@ -704,6 +698,10 @@ class Module(LocalsDictNodeNG):
         :rtype: bool
         """
         return True
+
+    def get_children(self):
+        for elt in self.body:
+            yield elt
 
 
 class ComprehensionScope(LocalsDictNodeNG):
@@ -786,6 +784,11 @@ class GeneratorExp(ComprehensionScope):
         """
         return True
 
+    def get_children(self):
+        yield self.elt
+
+        yield from self.generators
+
 
 class DictComp(ComprehensionScope):
     """Class representing an :class:`ast.DictComp` node.
@@ -860,6 +863,12 @@ class DictComp(ComprehensionScope):
         """
         return util.Uninferable
 
+    def get_children(self):
+        yield self.key
+        yield self.value
+
+        yield from self.generators
+
 
 class SetComp(ComprehensionScope):
     """Class representing an :class:`ast.SetComp` node.
@@ -925,6 +934,11 @@ class SetComp(ComprehensionScope):
         """
         return util.Uninferable
 
+    def get_children(self):
+        yield self.elt
+
+        yield from self.generators
+
 
 class _ListComp(node_classes.NodeNG):
     """Class representing an :class:`ast.ListComp` node.
@@ -966,33 +980,29 @@ class _ListComp(node_classes.NodeNG):
         """
         return util.Uninferable
 
+    def get_children(self):
+        yield self.elt
 
-if six.PY3:
-    class ListComp(_ListComp, ComprehensionScope):
-        """Class representing an :class:`ast.ListComp` node.
+        yield from self.generators
 
-        >>> node = astroid.extract_node('[thing for thing in things if thing]')
-        >>> node
-        <ListComp l.1 at 0x7f23b2e418d0>
+
+class ListComp(_ListComp, ComprehensionScope):
+    """Class representing an :class:`ast.ListComp` node.
+
+    >>> node = astroid.extract_node('[thing for thing in things if thing]')
+    >>> node
+    <ListComp l.1 at 0x7f23b2e418d0>
+    """
+    _other_other_fields = ('locals',)
+
+    def __init__(self, lineno=None, col_offset=None, parent=None):
+        self.locals = {}
+        """A map of the name of a local variable to the node defining it.
+
+        :type: dict(str, NodeNG)
         """
-        _other_other_fields = ('locals',)
 
-        def __init__(self, lineno=None, col_offset=None, parent=None):
-            self.locals = {}
-            """A map of the name of a local variable to the node defining it.
-
-            :type: dict(str, NodeNG)
-            """
-
-            super(ListComp, self).__init__(lineno, col_offset, parent)
-else:
-    class ListComp(_ListComp):
-        """Class representing an :class:`ast.ListComp` node.
-
-        >>> node = astroid.extract_node('[thing for thing in things if thing]')
-        >>> node
-        <ListComp l.1 at 0x7f23b2e418d0>
-        """
+        super(ListComp, self).__init__(lineno, col_offset, parent)
 
 
 def _infer_decorator_callchain(node):
@@ -1030,6 +1040,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
     _astroid_fields = ('args', 'body',)
     _other_other_fields = ('locals',)
     name = '<lambda>'
+    is_lambda = True
 
     # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
     @property
@@ -1139,7 +1150,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
             names.append(self.args.kwarg)
         return names
 
-    def infer_call_result(self, caller, context=None):
+    def infer_call_result(self, caller, context=None, context_lookup=None):
         """Infer what the function returns when called.
 
         :param caller: Unused
@@ -1148,7 +1159,6 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         # pylint: disable=no-member; github.com/pycqa/astroid/issues/291
         # args is in fact redefined later on by postinit. Can't be changed
         # to None due to a strong interaction between Lambda and FunctionDef.
-
         return self.body.infer(context)
 
     def scope_lookup(self, node, name, offset=0):
@@ -1192,8 +1202,12 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         """
         return True
 
+    def get_children(self):
+        yield self.args
+        yield self.body
 
-class FunctionDef(node_classes.Statement, Lambda):
+
+class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     """Class representing an :class:`ast.FunctionDef`.
 
     >>> node = astroid.extract_node('''
@@ -1203,11 +1217,9 @@ class FunctionDef(node_classes.Statement, Lambda):
     >>> node
     <FunctionDef.my_func l.2 at 0x7f23b2e71e10>
     """
-    if six.PY3:
-        _astroid_fields = ('decorators', 'args', 'returns', 'body')
-        returns = None
-    else:
-        _astroid_fields = ('decorators', 'args', 'body')
+    _astroid_fields = ('decorators', 'args', 'returns', 'body')
+    _multi_line_block_fields = ('body',)
+    returns = None
     decorators = None
     """The decorators that are applied to this method or function.
 
@@ -1286,7 +1298,7 @@ class FunctionDef(node_classes.Statement, Lambda):
         self.decorators = decorators
         self.returns = returns
 
-        if six.PY3 and isinstance(self.parent.frame(), ClassDef):
+        if isinstance(self.parent.frame(), ClassDef):
             self.set_local('__class__', self.parent.frame())
 
     @decorators_mod.cachedproperty
@@ -1305,7 +1317,7 @@ class FunctionDef(node_classes.Statement, Lambda):
             return []
 
         decorators = []
-        for assign in frame.nodes_of_class(node_classes.Assign):
+        for assign in frame._get_assign_nodes():
             if (isinstance(assign.value, node_classes.Call)
                     and isinstance(assign.value.func, node_classes.Name)):
                 for assign_node in assign.targets:
@@ -1522,11 +1534,9 @@ class FunctionDef(node_classes.Statement, Lambda):
         :returns: True is this is a generator function, False otherwise.
         :rtype: bool
         """
-        yield_nodes = (node_classes.Yield, node_classes.YieldFrom)
-        return next(self.nodes_of_class(yield_nodes,
-                                        skip_klass=(FunctionDef, Lambda)), False)
+        return next(self._get_yield_nodes_skip_lambdas(), False)
 
-    def infer_call_result(self, caller, context=None):
+    def infer_call_result(self, caller=None, context=None, context_lookup=None):
         """Infer what the function returns when called.
 
         :returns: What the function returns.
@@ -1555,7 +1565,7 @@ class FunctionDef(node_classes.Statement, Lambda):
                 c._metaclass = metaclass
                 yield c
                 return
-        returns = self.nodes_of_class(node_classes.Return, skip_klass=FunctionDef)
+        returns = self._get_return_nodes_skip_functions()
         for returnnode in returns:
             if returnnode.value is None:
                 yield node_classes.Const(None)
@@ -1574,6 +1584,18 @@ class FunctionDef(node_classes.Statement, Lambda):
         :rtype: bool
         """
         return True
+
+    def get_children(self):
+        if self.decorators is not None:
+            yield self.decorators
+
+        yield self.args
+
+        if self.returns is not None:
+            yield self.returns
+
+        for elt in self.body:
+            yield elt
 
 
 class AsyncFunctionDef(FunctionDef):
@@ -1691,7 +1713,6 @@ def get_wrapping_class(node):
         else:
             klass = klass.parent.frame()
     return klass
-
 
 
 class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
@@ -1936,7 +1957,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
     def _infer_type_call(self, caller, context):
         name_node = next(caller.args[0].infer(context))
         if (isinstance(name_node, node_classes.Const) and
-                isinstance(name_node.value, six.string_types)):
+                isinstance(name_node.value, str)):
             name = name_node.value
         else:
             return util.Uninferable
@@ -1962,13 +1983,13 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         if members and isinstance(members, node_classes.Dict):
             for attr, value in members.items:
                 if (isinstance(attr, node_classes.Const) and
-                        isinstance(attr.value, six.string_types)):
+                        isinstance(attr.value, str)):
                     result.locals[attr.value] = [value]
 
         result.parent = caller.parent
         return result
 
-    def infer_call_result(self, caller, context=None):
+    def infer_call_result(self, caller, context=None, context_lookup=None):
         """infer what a class is returning when called"""
         if (self.is_subtype_of('%s.type' % (BUILTINS,), context)
                 and len(caller.args) == 3):
@@ -2001,7 +2022,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         # inside this class.
         lookup_upper_frame = (
             isinstance(node.parent, node_classes.Decorators) and
-            name in MANAGER.astroid_cache[six.moves.builtins.__name__]
+            name in MANAGER.astroid_cache[builtins.__name__]
         )
         if any(node == base or base.parent_of(node)
                for base in self.bases) or lookup_upper_frame:
@@ -2047,13 +2068,12 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         """
         # FIXME: should be possible to choose the resolution order
         # FIXME: inference make infinite loops possible here
-        yielded = set([self])
+        yielded = {self}
         if context is None:
             context = contextmod.InferenceContext()
-        if six.PY3:
-            if not self.bases and self.qname() != 'builtins.object':
-                yield builtin_lookup("object")[1][0]
-                return
+        if not self.bases and self.qname() != 'builtins.object':
+            yield builtin_lookup("object")[1][0]
+            return
 
         for stmt in self.bases:
             with context.restore_path():
@@ -2456,29 +2476,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                             if node is not util.Uninferable)
             except (exceptions.InferenceError, StopIteration):
                 return None
-        if six.PY3:
-            return None
 
-        if '__metaclass__' in self.locals:
-            assignment = self.locals['__metaclass__'][-1]
-        elif self.bases:
-            return None
-        elif '__metaclass__' in self.root().locals:
-            assignments = [ass for ass in self.root().locals['__metaclass__']
-                           if ass.lineno < self.lineno]
-            if not assignments:
-                return None
-            assignment = assignments[-1]
-        else:
-            return None
-
-        try:
-            inferred = next(assignment.infer())
-        except exceptions.InferenceError:
-            return None
-        if inferred is util.Uninferable: # don't expose this
-            return None
-        return inferred
+        return None
 
     def _find_metaclass(self, seen=None):
         if seen is None:
@@ -2512,7 +2511,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
     def _islots(self):
         """ Return an iterator with the inferred slots. """
         if '__slots__' not in self.locals:
-            return
+            return None
         for slots in self.igetattr('__slots__'):
             # check if __slots__ is a valid type
             for meth in ITER_METHODS:
@@ -2543,7 +2542,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             if not values:
                 # Stop the iteration, because the class
                 # has an empty list of slots.
-                raise StopIteration(values)
+                return values
 
             for elt in values:
                 try:
@@ -2551,14 +2550,15 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                         if inferred is util.Uninferable:
                             continue
                         if (not isinstance(inferred, node_classes.Const) or
-                                not isinstance(inferred.value,
-                                               six.string_types)):
+                                not isinstance(inferred.value, str)):
                             continue
                         if not inferred.value:
                             continue
                         yield inferred
                 except exceptions.InferenceError:
                     continue
+
+        return None
 
     def _slots(self):
         if not self.newstyle:
@@ -2626,10 +2626,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
         if context is None:
             context = contextmod.InferenceContext()
-        if six.PY3:
-            if not self.bases and self.qname() != 'builtins.object':
-                yield builtin_lookup("object")[1][0]
-                return
+        if not self.bases and self.qname() != 'builtins.object':
+            yield builtin_lookup("object")[1][0]
+            return
 
         for stmt in self.bases:
             try:
@@ -2677,6 +2676,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
         :raises NotImplementedError: If this is an old style class,
             since they don't have the concept of an MRO.
+        :raises DuplicateBasesError: Duplicate bases in the same class base
+        :raises InconsistentMroError: A class' MRO is inconsistent
         """
 
         if not self.newstyle:
@@ -2694,8 +2695,16 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         """
         return True
 
+    def get_children(self):
+        if self.decorators is not None:
+            yield self.decorators
 
-# Backwards-compatibility aliases
-Class = util.proxy_alias('Class', ClassDef)
-Function = util.proxy_alias('Function', FunctionDef)
-GenExpr = util.proxy_alias('GenExpr', GeneratorExp)
+        for elt in self.bases:
+            yield elt
+
+        for elt in self.body:
+            yield elt
+
+    def _get_assign_nodes(self):
+        for child_node in self.body:
+            yield from child_node._get_assign_nodes()

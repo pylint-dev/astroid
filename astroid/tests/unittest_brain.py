@@ -9,6 +9,8 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
 """Tests for basic functionality in astroid.brain."""
+import queue
+
 try:
     import multiprocessing # pylint: disable=unused-import
     HAS_MULTIPROCESSING = True
@@ -39,19 +41,14 @@ try:
 except ImportError:
     HAS_DATEUTIL = False
 
-try:
-    import pytest
-    HAS_PYTEST = True
-except ImportError:
-    HAS_PYTEST = False
+import pytest
+HAS_PYTEST = True
 
 try:
     import attr as attr_module # pylint: disable=unused-import
     HAS_ATTR = True
 except ImportError:
     HAS_ATTR = False
-
-import six
 
 from astroid import MANAGER
 from astroid import bases
@@ -63,21 +60,31 @@ import astroid
 
 
 class HashlibTest(unittest.TestCase):
+    def _assert_hashlib_class(self, class_obj):
+        self.assertIn('update', class_obj)
+        self.assertIn('digest', class_obj)
+        self.assertIn('hexdigest', class_obj)
+        self.assertIn('block_size', class_obj)
+        self.assertIn('digest_size', class_obj)
+        self.assertEqual(len(class_obj['__init__'].args.args), 2)
+        self.assertEqual(len(class_obj['__init__'].args.defaults), 1)
+        self.assertEqual(len(class_obj['update'].args.args), 2)
+        self.assertEqual(len(class_obj['digest'].args.args), 1)
+        self.assertEqual(len(class_obj['hexdigest'].args.args), 1)
+
     def test_hashlib(self):
         """Tests that brain extensions for hashlib work."""
         hashlib_module = MANAGER.ast_from_module_name('hashlib')
         for class_name in ['md5', 'sha1']:
             class_obj = hashlib_module[class_name]
-            self.assertIn('update', class_obj)
-            self.assertIn('digest', class_obj)
-            self.assertIn('hexdigest', class_obj)
-            self.assertIn('block_size', class_obj)
-            self.assertIn('digest_size', class_obj)
-            self.assertEqual(len(class_obj['__init__'].args.args), 2)
-            self.assertEqual(len(class_obj['__init__'].args.defaults), 1)
-            self.assertEqual(len(class_obj['update'].args.args), 2)
-            self.assertEqual(len(class_obj['digest'].args.args), 1)
-            self.assertEqual(len(class_obj['hexdigest'].args.args), 1)
+            self._assert_hashlib_class(class_obj)
+
+    @test_utils.require_version(minver='3.6')
+    def test_hashlib_py36(self):
+        hashlib_module = MANAGER.ast_from_module_name('hashlib')
+        for class_name in ['sha3_224', 'sha3_512', 'shake_128']:
+            class_obj = hashlib_module[class_name]
+            self._assert_hashlib_class(class_obj)
 
 
 class CollectionsDequeTests(unittest.TestCase):
@@ -254,6 +261,17 @@ class NamedTupleTest(unittest.TestCase):
         self.assertIn('b', inferred.locals)
         self.assertIn('c', inferred.locals)
 
+    def test_namedtuple_bases_are_actually_names_not_nodes(self):
+        node = builder.extract_node("""
+        from collections import namedtuple
+        Tuple = namedtuple("Tuple", field_names="a b c", rename=UNINFERABLE)
+        Tuple #@
+        """)
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, astroid.ClassDef)
+        self.assertIsInstance(inferred.bases[0], astroid.Name)
+        self.assertEqual(inferred.bases[0].name, 'tuple')
+
 
 class DefaultDictTest(unittest.TestCase):
 
@@ -315,65 +333,35 @@ class SixBrainTest(unittest.TestCase):
         ''')
         http_client = next(ast_nodes[0].infer())
         self.assertIsInstance(http_client, nodes.Module)
-        self.assertEqual(http_client.name,
-                         'http.client' if six.PY3 else 'httplib')
+        self.assertEqual(http_client.name, 'http.client')
 
         urllib_parse = next(ast_nodes[1].infer())
-        if six.PY3:
-            self.assertIsInstance(urllib_parse, nodes.Module)
-            self.assertEqual(urllib_parse.name, 'urllib.parse')
-        else:
-            # On Python 2, this is a fake module, the same behaviour
-            # being mimicked in brain's tip for six.moves.
-            self.assertIsInstance(urllib_parse, astroid.Instance)
+        self.assertIsInstance(urllib_parse, nodes.Module)
+        self.assertEqual(urllib_parse.name, 'urllib.parse')
         urljoin = next(urllib_parse.igetattr('urljoin'))
         urlencode = next(urllib_parse.igetattr('urlencode'))
-        if six.PY2:
-            # In reality it's a function, but our implementations
-            # transforms it into a method.
-            self.assertIsInstance(urljoin, astroid.BoundMethod)
-            self.assertEqual(urljoin.qname(), 'urlparse.urljoin')
-            self.assertIsInstance(urlencode, astroid.BoundMethod)
-            self.assertEqual(urlencode.qname(), 'urllib.urlencode')
-        else:
-            self.assertIsInstance(urljoin, nodes.FunctionDef)
-            self.assertEqual(urljoin.qname(), 'urllib.parse.urljoin')
-            self.assertIsInstance(urlencode, nodes.FunctionDef)
-            self.assertEqual(urlencode.qname(), 'urllib.parse.urlencode')
+        self.assertIsInstance(urljoin, nodes.FunctionDef)
+        self.assertEqual(urljoin.qname(), 'urllib.parse.urljoin')
+        self.assertIsInstance(urlencode, nodes.FunctionDef)
+        self.assertEqual(urlencode.qname(), 'urllib.parse.urlencode')
 
         urllib_error = next(ast_nodes[2].infer())
-        if six.PY3:
-            self.assertIsInstance(urllib_error, nodes.Module)
-            self.assertEqual(urllib_error.name, 'urllib.error')
-        else:
-            # On Python 2, this is a fake module, the same behaviour
-            # being mimicked in brain's tip for six.moves.
-            self.assertIsInstance(urllib_error, astroid.Instance)
+        self.assertIsInstance(urllib_error, nodes.Module)
+        self.assertEqual(urllib_error.name, 'urllib.error')
         urlerror = next(urllib_error.igetattr('URLError'))
         self.assertIsInstance(urlerror, nodes.ClassDef)
         content_too_short = next(urllib_error.igetattr('ContentTooShortError'))
         self.assertIsInstance(content_too_short, nodes.ClassDef)
 
         urllib_request = next(ast_nodes[3].infer())
-        if six.PY3:
-            self.assertIsInstance(urllib_request, nodes.Module)
-            self.assertEqual(urllib_request.name, 'urllib.request')
-        else:
-            self.assertIsInstance(urllib_request, astroid.Instance)
+        self.assertIsInstance(urllib_request, nodes.Module)
+        self.assertEqual(urllib_request.name, 'urllib.request')
         urlopen = next(urllib_request.igetattr('urlopen'))
         urlretrieve = next(urllib_request.igetattr('urlretrieve'))
-        if six.PY2:
-            # In reality it's a function, but our implementations
-            # transforms it into a method.
-            self.assertIsInstance(urlopen, astroid.BoundMethod)
-            self.assertEqual(urlopen.qname(), 'urllib2.urlopen')
-            self.assertIsInstance(urlretrieve, astroid.BoundMethod)
-            self.assertEqual(urlretrieve.qname(), 'urllib.urlretrieve')
-        else:
-            self.assertIsInstance(urlopen, nodes.FunctionDef)
-            self.assertEqual(urlopen.qname(), 'urllib.request.urlopen')
-            self.assertIsInstance(urlretrieve, nodes.FunctionDef)
-            self.assertEqual(urlretrieve.qname(), 'urllib.request.urlretrieve')
+        self.assertIsInstance(urlopen, nodes.FunctionDef)
+        self.assertEqual(urlopen.qname(), 'urllib.request.urlopen')
+        self.assertIsInstance(urlretrieve, nodes.FunctionDef)
+        self.assertEqual(urlretrieve.qname(), 'urllib.request.urlretrieve')
 
     def test_from_imports(self):
         ast_node = builder.extract_node('''
@@ -382,14 +370,9 @@ class SixBrainTest(unittest.TestCase):
         ''')
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
-        if six.PY3:
-            qname = 'http.client.HTTPSConnection'
-        else:
-            qname = 'httplib.HTTPSConnection'
+        qname = 'http.client.HTTPSConnection'
         self.assertEqual(inferred.qname(), qname)
 
-    @unittest.skipIf(six.PY2,
-                     "The python 2 six brain uses dummy classes")
     def test_from_submodule_imports(self):
         """Make sure ulrlib submodules can be imported from
 
@@ -452,16 +435,15 @@ class MultiprocessingBrainTest(unittest.TestCase):
         array = manager.Array()
         namespace = manager.Namespace()
         """)
-        queue = next(module['queue'].infer())
-        self.assertEqual(queue.qname(),
-                         "{}.Queue".format(six.moves.queue.__name__))
+        ast_queue = next(module['queue'].infer())
+        self.assertEqual(ast_queue.qname(), "{}.Queue".format(queue.__name__))
 
         joinable_queue = next(module['joinable_queue'].infer())
         self.assertEqual(joinable_queue.qname(),
-                         "{}.Queue".format(six.moves.queue.__name__))
+                         "{}.Queue".format(queue.__name__))
 
         event = next(module['event'].infer())
-        event_name = "threading.{}".format("Event" if six.PY3 else "_Event")
+        event_name = "threading.Event"
         self.assertEqual(event.qname(), event_name)
 
         rlock = next(module['rlock'].infer())
@@ -469,8 +451,7 @@ class MultiprocessingBrainTest(unittest.TestCase):
         self.assertEqual(rlock.qname(), rlock_name)
 
         bounded_semaphore = next(module['bounded_semaphore'].infer())
-        semaphore_name = "threading.{}".format(
-            "BoundedSemaphore" if six.PY3 else "_BoundedSemaphore")
+        semaphore_name = "threading.BoundedSemaphore"
         self.assertEqual(bounded_semaphore.qname(), semaphore_name)
 
         pool = next(module['pool'].infer())
@@ -507,7 +488,7 @@ class ThreadingBrainTest(unittest.TestCase):
     def _test_lock_object(self, object_name):
         lock_instance = builder.extract_node("""
         import threading
-        threading.{0}()
+        threading.{}()
         """.format(object_name))
         inferred = next(lock_instance.infer())
         self.assert_is_valid_lock(inferred)
@@ -691,7 +672,7 @@ def streams_are_fine():
 
 class IOBrainTest(unittest.TestCase):
     @unittest.skipUnless(
-        six.PY3 and streams_are_fine(),
+        streams_are_fine(),
         "Needs Python 3 io model / doesn't work with plain pytest."
         "use pytest -s for this test to work")
     def test_sys_streams(self):
@@ -724,6 +705,24 @@ class TypingBrain(unittest.TestCase):
             ['X', 'tuple', 'object'])
         for anc in klass.ancestors():
             self.assertFalse(anc.parent is None)
+
+    def test_namedtuple_can_correcty_access_methods(self):
+        klass, called = builder.extract_node("""
+        from typing import NamedTuple
+
+        class X(NamedTuple): #@
+            a: int
+            b: int
+            def as_string(self):
+                return '%s' % self.a
+            def as_integer(self):
+                return 2 + 3
+        X().as_integer() #@
+        """)
+        self.assertEqual(len(klass.getattr('as_string')), 1)
+        inferred = next(called.infer())
+        self.assertIsInstance(inferred, astroid.Const)
+        self.assertEqual(inferred.value, 5)
 
     def test_namedtuple_inference(self):
         klass = builder.extract_node("""
@@ -796,6 +795,20 @@ class TypingBrain(unittest.TestCase):
         ''')
         inferred = next(result.infer())
         self.assertIsInstance(inferred, astroid.Instance)
+
+    def test_typing_types(self):
+        ast_nodes = builder.extract_node("""
+        from typing import TypeVar, Iterable, Tuple, NewType, Dict, Union
+        TypeVar('MyTypeVar', int, float, complex) #@
+        Iterable[Tuple[MyTypeVar, MyTypeVar]] #@
+        TypeVar('AnyStr', str, bytes) #@
+        NewType('UserId', str) #@
+        Dict[str, str] #@
+        Union[int, str] #@
+        """)
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, nodes.ClassDef)
 
 
 class ReBrainTest(unittest.TestCase):
@@ -878,6 +891,36 @@ class AttrsTest(unittest.TestCase):
             should_be_unknown = next(module.getattr(name)[0].infer()).getattr('d')[0]
             self.assertIsInstance(should_be_unknown, astroid.Unknown)
 
+    def test_special_attributes(self):
+        """Make sure special attrs attributes exist"""
+
+        code = """
+        import attr
+
+        @attr.s
+        class Foo:
+            pass
+        Foo()
+        """
+        foo_inst = next(astroid.extract_node(code).infer())
+        [attr_node] = foo_inst.getattr("__attrs_attrs__")
+        # Prevents https://github.com/PyCQA/pylint/issues/1884
+        assert isinstance(attr_node, nodes.Unknown)
+
+    def test_dont_consider_assignments_but_without_attrs(self):
+        code = '''
+        import attr
+
+        class Cls: pass
+        @attr.s
+        class Foo:
+            temp = Cls()
+            temp.prop = 5
+            bar_thing = attr.ib(default=temp)
+        Foo()
+        '''
+        next(astroid.extract_node(code).infer())
+
 
 class RandomSampleTest(unittest.TestCase):
 
@@ -909,6 +952,350 @@ class SubprocessTest(unittest.TestCase):
         """)
         [inst] = name.inferred()
         self.assertIsInstance(next(inst.igetattr("args")), nodes.List)
+
+
+class TestIsinstanceInference:
+    """Test isinstance builtin inference"""
+
+    def test_type_type(self):
+        assert _get_result("isinstance(type, type)") == "True"
+
+    def test_object_type(self):
+        assert _get_result("isinstance(object, type)") == "True"
+
+    def test_type_object(self):
+        assert _get_result("isinstance(type, object)") == "True"
+
+    def test_isinstance_int_true(self):
+        """Make sure isinstance can check builtin int types"""
+        assert _get_result("isinstance(1, int)") == "True"
+
+    def test_isinstance_int_false(self):
+        assert _get_result("isinstance('a', int)") == "False"
+
+    def test_isinstance_object_true(self):
+        assert _get_result("""
+        class Bar(object):
+            pass
+        isinstance(Bar(), object)
+        """) == "True"
+
+    def test_isinstance_object_true3(self):
+        assert _get_result("""
+        class Bar(object):
+            pass
+        isinstance(Bar(), Bar)
+        """) == "True"
+
+    def test_isinstance_class_false(self):
+        assert _get_result("""
+        class Foo(object):
+            pass
+        class Bar(object):
+            pass
+        isinstance(Bar(), Foo)
+        """) == "False"
+
+    def test_isinstance_type_false(self):
+        assert _get_result("""
+        class Bar(object):
+            pass
+        isinstance(Bar(), type)
+        """) == "False"
+
+    def test_isinstance_str_true(self):
+        """Make sure isinstance can check bultin str types"""
+        assert _get_result("isinstance('a', str)") == "True"
+
+    def test_isinstance_str_false(self):
+        assert _get_result("isinstance(1, str)") == "False"
+
+    def test_isinstance_tuple_argument(self):
+        """obj just has to be an instance of ANY class/type on the right"""
+        assert _get_result("isinstance(1, (str, int))") == "True"
+
+    def test_isinstance_type_false2(self):
+        assert _get_result("""
+        isinstance(1, type)
+        """) == "False"
+
+    def test_isinstance_object_true2(self):
+        assert _get_result("""
+        class Bar(type):
+            pass
+        mainbar = Bar("Bar", tuple(), {})
+        isinstance(mainbar, object)
+        """) == "True"
+
+    def test_isinstance_type_true(self):
+        assert _get_result("""
+        class Bar(type):
+            pass
+        mainbar = Bar("Bar", tuple(), {})
+        isinstance(mainbar, type)
+        """) == "True"
+
+    def test_isinstance_edge_case(self):
+        """isinstance allows bad type short-circuting"""
+        assert _get_result("isinstance(1, (int, 1))") == "True"
+
+    def test_uninferable_bad_type(self):
+        """The second argument must be a class or a tuple of classes"""
+        with pytest.raises(astroid.InferenceError):
+            _get_result_node("isinstance(int, 1)")
+
+    def test_uninferable_keywords(self):
+        """isinstance does not allow keywords"""
+        with pytest.raises(astroid.InferenceError):
+            _get_result_node("isinstance(1, class_or_tuple=int)")
+
+    def test_too_many_args(self):
+        """isinstance must have two arguments"""
+        with pytest.raises(astroid.InferenceError):
+            _get_result_node("isinstance(1, int, str)")
+
+    def test_first_param_is_uninferable(self):
+        with pytest.raises(astroid.InferenceError):
+            _get_result_node('isinstance(something, int)')
+
+
+class TestIssubclassBrain:
+    """Test issubclass() builtin inference"""
+
+    def test_type_type(self):
+        assert _get_result("issubclass(type, type)") == "True"
+
+    def test_object_type(self):
+        assert _get_result("issubclass(object, type)") == "False"
+
+    def test_type_object(self):
+        assert _get_result("issubclass(type, object)") == "True"
+
+    def test_issubclass_same_class(self):
+        assert _get_result("issubclass(int, int)") == "True"
+
+    def test_issubclass_not_the_same_class(self):
+        assert _get_result("issubclass(str, int)") == "False"
+
+    def test_issubclass_object_true(self):
+        assert _get_result("""
+        class Bar(object):
+            pass
+        issubclass(Bar, object)
+        """) == "True"
+
+    def test_issubclass_same_user_defined_class(self):
+        assert _get_result("""
+        class Bar(object):
+            pass
+        issubclass(Bar, Bar)
+        """) == "True"
+
+    def test_issubclass_different_user_defined_classes(self):
+        assert _get_result("""
+        class Foo(object):
+            pass
+        class Bar(object):
+            pass
+        issubclass(Bar, Foo)
+        """) == "False"
+
+    def test_issubclass_type_false(self):
+        assert _get_result("""
+        class Bar(object):
+            pass
+        issubclass(Bar, type)
+        """) == "False"
+
+    def test_isinstance_tuple_argument(self):
+        """obj just has to be a subclass of ANY class/type on the right"""
+        assert _get_result("issubclass(int, (str, int))") == "True"
+
+    def test_isinstance_object_true2(self):
+        assert _get_result("""
+        class Bar(type):
+            pass
+        issubclass(Bar, object)
+        """) == "True"
+
+    def test_issubclass_short_circuit(self):
+        """issubclasss allows bad type short-circuting"""
+        assert _get_result("issubclass(int, (int, 1))") == "True"
+
+    def test_uninferable_bad_type(self):
+        """The second argument must be a class or a tuple of classes"""
+        # Should I subclass
+        with pytest.raises(astroid.InferenceError):
+            _get_result_node("issubclass(int, 1)")
+
+    def test_uninferable_keywords(self):
+        """issubclass does not allow keywords"""
+        with pytest.raises(astroid.InferenceError):
+            _get_result_node("issubclass(int, class_or_tuple=int)")
+
+    def test_too_many_args(self):
+        """issubclass must have two arguments"""
+        with pytest.raises(astroid.InferenceError):
+            _get_result_node("issubclass(int, int, str)")
+
+
+def _get_result_node(code):
+    node = next(astroid.extract_node(code).infer())
+    return node
+
+
+def _get_result(code):
+    return _get_result_node(code).as_string()
+
+
+class TestLenBuiltinInference:
+    def test_len_list(self):
+        # Uses .elts
+        node = astroid.extract_node("""
+        len(['a','b','c'])
+        """)
+        node = next(node.infer())
+        assert node.as_string() == '3'
+        assert isinstance(node, nodes.Const)
+
+    def test_len_tuple(self):
+        node = astroid.extract_node("""
+        len(('a','b','c'))
+        """)
+        node = next(node.infer())
+        assert node.as_string() == '3'
+
+    def test_len_var(self):
+        # Make sure argument is inferred
+        node = astroid.extract_node("""
+        a = [1,2,'a','b','c']
+        len(a)
+        """)
+        node = next(node.infer())
+        assert node.as_string() == '5'
+
+    def test_len_dict(self):
+        # Uses .items
+        node = astroid.extract_node("""
+        a = {'a': 1, 'b': 2}
+        len(a)
+        """)
+        node = next(node.infer())
+        assert node.as_string() == '2'
+
+    def test_len_set(self):
+        node = astroid.extract_node("""
+        len({'a'})
+        """)
+        inferred_node = next(node.infer())
+        assert inferred_node.as_string() == '1'
+
+    def test_len_object(self):
+        """Test len with objects that implement the len protocol"""
+        node = astroid.extract_node("""
+        class A:
+            def __len__(self):
+                return 57
+        len(A())
+        """)
+        inferred_node = next(node.infer())
+        assert inferred_node.as_string() == '57'
+
+    def test_len_class_with_metaclass(self):
+        """Make sure proper len method is located"""
+        cls_node, inst_node = astroid.extract_node("""
+        class F2(type):
+            def __new__(cls, name, bases, attrs):
+                return super().__new__(cls, name, bases, {})
+            def __len__(self):
+                return 57
+        class F(metaclass=F2):
+            def __len__(self):
+                return 4
+        len(F) #@
+        len(F()) #@
+        """)
+        assert next(cls_node.infer()).as_string() == '57'
+        assert next(inst_node.infer()).as_string() == '4'
+
+    def test_len_object_failure(self):
+        """If taking the length of a class, do not use an instance method"""
+        node = astroid.extract_node("""
+        class F:
+            def __len__(self):
+                return 57
+        len(F)
+        """)
+        with pytest.raises(astroid.InferenceError):
+            next(node.infer())
+
+    def test_len_string(self):
+        node = astroid.extract_node("""
+        len("uwu")
+        """)
+        assert next(node.infer()).as_string() == "3"
+
+    def test_len_generator_failure(self):
+        node = astroid.extract_node("""
+        def gen():
+            yield 'a'
+            yield 'b'
+        len(gen())
+        """)
+        with pytest.raises(astroid.InferenceError):
+            next(node.infer())
+
+    def test_len_failure_missing_variable(self):
+        node = astroid.extract_node("""
+        len(a)
+        """)
+        with pytest.raises(astroid.InferenceError):
+            next(node.infer())
+
+    def test_len_bytes(self):
+        node = astroid.extract_node("""
+        len(b'uwu')
+        """)
+        assert next(node.infer()).as_string() == '3'
+
+
+    @pytest.mark.xfail(reason="Can't retrieve subclassed type value ")
+    def test_int_subclass_result(self):
+        """I am unable to figure out the value of an
+        object which subclasses int"""
+        node = astroid.extract_node("""
+        class IntSubclass(int):
+            pass
+
+        class F:
+            def __len__(self):
+                return IntSubclass(5)
+        len(F())
+        """)
+        assert next(node.infer()).as_string() == '5'
+
+    @pytest.mark.xfail(reason="Can't use list special astroid fields")
+    def test_int_subclass_argument(self):
+        """I am unable to access the length of a object which
+        subclasses list"""
+        node = astroid.extract_node("""
+        class ListSubclass(list):
+            pass
+        len(ListSubclass([1,2,3,4,4]))
+        """)
+        assert next(node.infer()).as_string() == '5'
+
+    def test_len_builtin_inference_attribute_error_str(self):
+        """Make sure len builtin doesn't raise an AttributeError
+        on instances of str or bytes
+
+        See https://github.com/PyCQA/pylint/issues/1942
+        """
+        code = 'len(str("F"))'
+        try:
+            next(astroid.extract_node(code).infer())
+        except astroid.InferenceError:
+            pass
 
 
 if __name__ == '__main__':

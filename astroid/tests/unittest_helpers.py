@@ -6,9 +6,7 @@
 
 
 import unittest
-
-import six
-from six.moves import builtins
+import builtins
 
 from astroid import builder
 from astroid import exceptions
@@ -93,10 +91,10 @@ class TestHelpers(unittest.TestCase):
         self.assert_classes_equal(instance_type, cls)
 
         expected_method_types = [
-            (ast_nodes[3], 'instancemethod' if six.PY2 else 'function'),
-            (ast_nodes[4], 'instancemethod' if six.PY2 else 'method'),
-            (ast_nodes[5], 'instancemethod' if six.PY2 else 'method'),
-            (ast_nodes[6], 'instancemethod' if six.PY2 else 'method'),
+            (ast_nodes[3], 'function'),
+            (ast_nodes[4], 'method'),
+            (ast_nodes[5], 'method'),
+            (ast_nodes[6], 'method'),
             (ast_nodes[7], 'function'),
             (ast_nodes[8], 'function'),
             (ast_nodes[9], 'generator'),

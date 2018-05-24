@@ -17,8 +17,6 @@ from functools import partial
 import unittest
 import warnings
 
-import six
-
 from astroid import InferenceError, builder, nodes
 from astroid.builder import parse, extract_node
 from astroid.inference import infer_end as inference_infer_end
@@ -84,8 +82,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Dict)
 
-        elts = set([(key.value, value.value)
-                    for (key, value) in inferred.items])
+        elts = {(key.value, value.value)
+                for (key, value) in inferred.items}
         self.assertEqual(sorted(elts), sorted(expected.items()))
 
     assertInferTuple = partialmethod(_assertInferElts, nodes.Tuple)
@@ -221,7 +219,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = self.ast['i'].infer()
         const = next(inferred)
         self.assertIsInstance(const, nodes.Const)
-        self.assertEqual(const.value, u"glup")
+        self.assertEqual(const.value, "glup")
         self.assertRaises(StopIteration, partial(next, inferred))
         inferred = self.ast['j'].infer()
         const = next(inferred)
@@ -732,10 +730,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         node = extract_node('''b'a'[0]''')
         inferred = next(node.infer())
         self.assertIsInstance(inferred, nodes.Const)
-        if six.PY2:
-            self.assertEqual(inferred.value, 'a')
-        else:
-            self.assertEqual(inferred.value, 97)
+        self.assertEqual(inferred.value, 97)
 
     def test_simple_tuple(self):
         module = parse("""
@@ -858,6 +853,56 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred[0], Instance)
         self.assertEqual(inferred[0]._proxied.name, 'Sub')
 
+
+    def test_factory_methods_cls_call(self):
+        ast = extract_node("""
+        class C:
+            @classmethod
+            def factory(cls):
+                return cls()
+
+        class D(C):
+            pass
+
+        C.factory() #@
+        D.factory() #@
+        """, 'module')
+        should_be_C = list(ast[0].infer())
+        should_be_D = list(ast[1].infer())
+        self.assertEqual(1, len(should_be_C))
+        self.assertEqual(1, len(should_be_D))
+        self.assertEqual('module.C', should_be_C[0].qname())
+        self.assertEqual('module.D', should_be_D[0].qname())
+
+
+    def test_factory_methods_object_new_call(self):
+        ast = extract_node("""
+        class C:
+            @classmethod
+            def factory(cls):
+                return object.__new__(cls)
+
+        class D(C):
+            pass
+
+        C.factory() #@
+        D.factory() #@
+        """, 'module')
+        should_be_C = list(ast[0].infer())
+        should_be_D = list(ast[1].infer())
+        self.assertEqual(1, len(should_be_C))
+        self.assertEqual(1, len(should_be_D))
+        self.assertEqual('module.C', should_be_C[0].qname())
+        self.assertEqual('module.D', should_be_D[0].qname())
+
+    def test_factory_methods_inside_binary_operation(self):
+        node = extract_node("""
+        from pathlib import Path
+        h = Path("/home")
+        u = h / "user"
+        u #@
+        """)
+        assert next(node.infer()).qname() == 'pathlib.Path'
 
     def test_import_as(self):
         code = '''
@@ -1230,7 +1275,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             my_smtp = SendMailController().smtp
             my_me = SendMailController().me
             '''
-        decorators = set(['%s.property' % BUILTINS])
+        decorators = {'%s.property' % BUILTINS}
         ast = parse(code, __name__)
         self.assertEqual(ast['SendMailController']['smtp'].decoratornames(),
                          decorators)
@@ -1930,6 +1975,30 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             node = extract_node(code)
             self.assertInferDict(node, expected_value)
 
+    @test_utils.require_version('3.5')
+    def test_dict_inference_unpack_repeated_key(self):
+        """Make sure astroid does not infer repeated keys in a dictionary
+
+        Regression test for https://github.com/PyCQA/pylint/issues/1843
+        """
+        code = """
+        base = {'data': 0}
+        new = {**base, 'data': 1} #@
+        new2 = {'data': 1, **base} #@ # Make sure overwrite works
+        a = 'd' + 'ata'
+        b3 = {**base, a: 3} #@  Make sure keys are properly inferred
+        b4 = {a: 3, **base} #@
+        """
+        ast = extract_node(code)
+        final_values = (
+            "{'data': 1}",
+            "{'data': 0}",
+            "{'data': 3}",
+            "{'data': 0}",
+        )
+        for node, final_value in zip(ast, final_values):
+            assert node.targets[0].inferred()[0].as_string() == final_value
+
     def test_dict_invalid_args(self):
         invalid_values = [
             'dict(*1)',
@@ -1967,7 +2036,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ' '.count() #@
         """
         ast = extract_node(code, __name__)
-        self.assertInferConst(ast[0], u'')
+        self.assertInferConst(ast[0], '')
         for i in range(1, 16):
             self.assertInferConst(ast[i], '')
         for i in range(16, 19):
@@ -2000,7 +2069,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ast = extract_node(code, __name__)
         self.assertInferConst(ast[0], '')
         for i in range(1, 16):
-            self.assertInferConst(ast[i], u'')
+            self.assertInferConst(ast[i], '')
         for i in range(16, 19):
             self.assertInferConst(ast[i], 0)
 
@@ -2198,6 +2267,36 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertRaises(InferenceError, next, module['no_decorators'].infer())
         self.assertRaises(InferenceError, next, module['other_decorators'].infer())
         self.assertRaises(InferenceError, next, module['no_yield'].infer())
+
+    def test_nested_contextmanager(self):
+        """Make sure contextmanager works with nested functions
+
+        Previously contextmanager would retrieve
+        the first yield instead of the yield in the
+        proper scope
+
+        Fixes https://github.com/PyCQA/pylint/issues/1746
+        """
+        code = """
+        from contextlib import contextmanager
+
+        @contextmanager
+        def outer():
+            @contextmanager
+            def inner():
+                yield 2
+            yield inner
+
+        with outer() as ctx:
+            ctx #@
+            with ctx() as val:
+                val #@
+        """
+        context_node, value_node = extract_node(code)
+        value = next(value_node.infer())
+        context = next(context_node.infer())
+        assert isinstance(context, nodes.FunctionDef)
+        assert isinstance(value, nodes.Const)
 
     def test_unary_op_leaks_stop_iteration(self):
         node = extract_node('+[] #@')
@@ -4113,7 +4212,7 @@ class ArgumentsTest(unittest.TestCase):
         ''')
         for ast_node, value in zip(ast_nodes, expected_values):
             inferred = next(ast_node.infer())
-            self.assertIsInstance(inferred, nodes.Const)
+            self.assertIsInstance(inferred, nodes.Const, inferred)
             self.assertEqual(inferred.value, value)
 
     @test_utils.require_version('3.5')
@@ -4327,6 +4426,25 @@ class ObjectDunderNewTest(unittest.TestCase):
         ''')
         inferred = next(node.infer())
         self.assertIsInstance(inferred, Instance)
+
+
+def test_augassign_recursion():
+    """Make sure inference doesn't throw a RecursionError
+
+    Regression test for augmented assign dropping context.path
+    causing recursion errors
+
+    """
+    # infinitely recurses in python
+    code = """
+    def rec():
+        a = 0
+        a += rec()
+        return a
+    rec()
+    """
+    cls_node = extract_node(code)
+    assert next(cls_node.infer()) is util.Uninferable
 
 
 if __name__ == '__main__':
