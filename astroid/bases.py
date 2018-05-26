@@ -170,10 +170,13 @@ class BaseInstance(Proxy):
             for stmt in _infer_stmts(self._wrap_attr(get_attr, context),
                                      context, frame=self):
                 yield stmt
-        except exceptions.AttributeInferenceError:
+        except exceptions.AttributeInferenceError as error:
             try:
                 # fallback to class.igetattr since it has some logic to handle
                 # descriptors
+                # But only if the _proxied is the Class.
+                if self._proxied.__class__.__name__ != 'ClassDef':
+                    util.reraise(exceptions.InferenceError(**vars(error)))
                 attrs = self._proxied.igetattr(name, context, class_context=False)
                 for stmt in self._wrap_attr(attrs, context):
                     yield stmt
