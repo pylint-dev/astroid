@@ -14,7 +14,7 @@ leads to an inferred FrozenSet:
     Call(func=Name('frozenset'), args=Tuple(...))
 """
 
-import six
+import builtins
 
 from astroid import bases
 from astroid import decorators
@@ -25,7 +25,7 @@ from astroid import scoped_nodes
 from astroid import util
 
 
-BUILTINS = six.moves.builtins.__name__
+BUILTINS = builtins.__name__
 objectmodel = util.lazy_import('interpreter.objectmodel')
 
 

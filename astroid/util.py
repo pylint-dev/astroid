@@ -27,6 +27,7 @@ def lazy_import(module_name):
 def reraise(exception):
     '''Reraises an exception with the traceback from the current exception
     block.'''
+
     six.reraise(type(exception), exception, sys.exc_info()[2])
 
 

@@ -15,8 +15,6 @@ import os
 import sys
 import zipimport
 
-import six
-
 from astroid import exceptions
 from astroid.interpreter._import import spec
 from astroid import modutils
@@ -193,8 +191,7 @@ class AstroidManager(object):
                 traceback = sys.exc_info()[2]
             self._mod_file_cache[(modname, contextfile)] = value
         if isinstance(value, exceptions.AstroidBuildingError):
-            six.reraise(exceptions.AstroidBuildingError,
-                        value, traceback)
+            raise exceptions.AstroidBuildingError from value
         return value
 
     def ast_from_module(self, module, modname=None):

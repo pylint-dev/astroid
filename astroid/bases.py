@@ -10,21 +10,23 @@
 inference utils.
 """
 
+import builtins
 import collections
 import sys
 
-import six
+
 
 from astroid import context as contextmod
 from astroid import exceptions
 from astroid import util
 
 objectmodel = util.lazy_import('interpreter.objectmodel')
-BUILTINS = six.moves.builtins.__name__
+BUILTINS = builtins.__name__
 manager = util.lazy_import('manager')
 MANAGER = manager.AstroidManager()
 
 if sys.version_info >= (3, 0):
+    # TODO: check if needs special treatment
     BUILTINS = 'builtins'
     BOOL_SPECIAL_METHOD = '__bool__'
 else:

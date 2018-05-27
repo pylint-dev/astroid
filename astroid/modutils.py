@@ -30,8 +30,6 @@ from distutils.errors import DistutilsPlatformError
 # weird path manipulations in order to get to the
 # real distutils module.
 
-import six
-
 from .interpreter._import import spec
 from .interpreter._import import util
 
@@ -323,7 +321,7 @@ def modpath_from_file_with_callback(filename, extrapath=None, is_package_cb=None
     filename = os.path.expanduser(_path_from_filename(filename))
 
     if extrapath is not None:
-        for path_ in six.moves.map(_canonicalize_path, extrapath):
+        for path_ in map(_canonicalize_path, extrapath):
             path = os.path.abspath(path_)
             if not path:
                 continue
@@ -333,7 +331,7 @@ def modpath_from_file_with_callback(filename, extrapath=None, is_package_cb=None
             if is_package_cb(path, submodpath[:-1]):
                 return extrapath[path_].split('.') + submodpath
 
-    for path in six.moves.map(_canonicalize_path, sys.path):
+    for path in map(_canonicalize_path, sys.path):
         path = _cache_normalize_path(path)
         if not path:
             continue

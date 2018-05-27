@@ -5,8 +5,6 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
 
-import six
-
 from astroid import bases
 from astroid import context as contextmod
 from astroid import exceptions
@@ -94,7 +92,7 @@ class CallSite(object):
                     if not isinstance(dict_key, nodes.Const):
                         values[name] = util.Uninferable
                         continue
-                    if not isinstance(dict_key.value, six.string_types):
+                    if not isinstance(dict_key.value, str):
                         values[name] = util.Uninferable
                         continue
                     if dict_key.value in values:
