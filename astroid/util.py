@@ -24,13 +24,6 @@ def lazy_import(module_name):
         lambda: importlib.import_module('.' + module_name, 'astroid'))
 
 
-def reraise(exception):
-    '''Reraises an exception with the traceback from the current exception
-    block.'''
-
-    six.reraise(type(exception), exception, sys.exc_info()[2])
-
-
 @object.__new__
 class Uninferable(object):
     """Special inference object, which is returned when inference fails."""

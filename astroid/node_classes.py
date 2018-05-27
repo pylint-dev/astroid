@@ -182,18 +182,16 @@ def _container_getitem(instance, elts, index, context=None):
             return new_cls
         elif isinstance(index, Const):
             return elts[index.value]
-    except IndexError:
-        util.reraise(exceptions.AstroidIndexError(
+    except IndexError as exc:
+        raise exceptions.AstroidIndexError(
             message='Index {index!s} out of range',
-            node=instance, index=index, context=context))
+            node=instance, index=index, context=context) from exc
     except TypeError as exc:
-        util.reraise(exceptions.AstroidTypeError(
-            message='Type error {error!r}', error=exc,
-            node=instance, index=index, context=context))
+        raise exceptions.AstroidTypeError(
+            message='Type error {error!r}',
+            node=instance, index=index, context=context) from exc
 
-    raise exceptions.AstroidTypeError(
-        'Could not use %s as subscript index' % index
-    )
+    raise exceptions.AstroidTypeError('Could not use %s as subscript index' % index)
 
 
 class NodeNG(object):
@@ -2362,13 +2360,13 @@ class Const(NodeNG, bases.Instance):
             if isinstance(self.value, (str, bytes)):
                 return Const(self.value[index_value])
         except IndexError as exc:
-            util.reraise(exceptions.AstroidIndexError(
-                message='Index {index!r} out of range', error=exc,
-                node=self, index=index, context=context))
+            raise exceptions.AstroidIndexError(
+                message='Index {index!r} out of range',
+                node=self, index=index, context=context) from exc
         except TypeError as exc:
-            util.reraise(exceptions.AstroidTypeError(
-                message='Type error {error!r}', error=exc,
-                node=self, index=index, context=context))
+            raise exceptions.AstroidTypeError(
+                message='Type error {error!r}',
+                node=self, index=index, context=context) from exc
 
         raise exceptions.AstroidTypeError(
             '%r (value=%s)' % (self, self.value)

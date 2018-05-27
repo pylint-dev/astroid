@@ -14,8 +14,6 @@ import builtins
 import collections
 import sys
 
-
-
 from astroid import context as contextmod
 from astroid import exceptions
 from astroid import util
@@ -135,7 +133,7 @@ class BaseInstance(Proxy):
     def getattr(self, name, context=None, lookupclass=True):
         try:
             values = self._proxied.instance_attr(name, context)
-        except exceptions.AttributeInferenceError:
+        except exceptions.AttributeInferenceError as exc:
             if self.special_attributes and name in self.special_attributes:
                 return [self.special_attributes.lookup(name)]
 
@@ -145,9 +143,11 @@ class BaseInstance(Proxy):
                 return self._proxied.getattr(name, context,
                                              class_context=False)
 
-            util.reraise(exceptions.AttributeInferenceError(target=self,
-                                                            attribute=name,
-                                                            context=context))
+            raise exceptions.AttributeInferenceError(
+                target=self,
+                attribute=name,
+                context=context,
+            ) from exc
         # since we've no context information, return matching class members as
         # well
         if lookupclass:
@@ -178,12 +178,12 @@ class BaseInstance(Proxy):
                 # descriptors
                 # But only if the _proxied is the Class.
                 if self._proxied.__class__.__name__ != 'ClassDef':
-                    util.reraise(exceptions.InferenceError(**vars(error)))
+                    raise exceptions.InferenceError(**vars(error)) from error
                 attrs = self._proxied.igetattr(name, context, class_context=False)
                 for stmt in self._wrap_attr(attrs, context):
                     yield stmt
             except exceptions.AttributeInferenceError as error:
-                util.reraise(exceptions.InferenceError(**vars(error)))
+                raise exceptions.InferenceError(**vars(error)) from error
 
     def _wrap_attr(self, attrs, context=None):
         """wrap bound methods of attrs in a InstanceMethod proxies"""

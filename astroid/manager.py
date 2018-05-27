@@ -19,7 +19,6 @@ from astroid import exceptions
 from astroid.interpreter._import import spec
 from astroid import modutils
 from astroid import transforms
-from astroid import util
 
 
 def safe_repr(obj):
@@ -123,9 +122,9 @@ class AstroidManager(object):
                 try:
                     module = modutils.load_module_from_name(modname)
                 except Exception as ex: # pylint: disable=broad-except
-                    util.reraise(exceptions.AstroidImportError(
+                    raise exceptions.AstroidImportError(
                         'Loading {modname} failed with:\n{error}',
-                        modname=modname, path=found_spec.location, error=ex))
+                        modname=modname, path=found_spec.location) from ex
                 return self.ast_from_module(module, modname)
 
             elif found_spec.type == spec.ModuleType.PY_COMPILED:
@@ -214,10 +213,10 @@ class AstroidManager(object):
         if modname is None:
             try:
                 modname = klass.__module__
-            except AttributeError:
-                util.reraise(exceptions.AstroidBuildingError(
+            except AttributeError as exc:
+                raise exceptions.AstroidBuildingError(
                     'Unable to get module for class {class_name}.',
-                    cls=klass, class_repr=safe_repr(klass), modname=modname))
+                    cls=klass, class_repr=safe_repr(klass), modname=modname) from exc
         modastroid = self.ast_from_module_name(modname)
         return modastroid.getattr(klass.__name__)[0] # XXX
 
@@ -229,24 +228,24 @@ class AstroidManager(object):
             klass = obj
         try:
             modname = klass.__module__
-        except AttributeError:
-            util.reraise(exceptions.AstroidBuildingError(
+        except AttributeError as exc:
+            raise exceptions.AstroidBuildingError(
                 'Unable to get module for {class_repr}.',
-                cls=klass, class_repr=safe_repr(klass)))
-        except Exception as ex: # pylint: disable=broad-except
-            util.reraise(exceptions.AstroidImportError(
+                cls=klass, class_repr=safe_repr(klass)) from exc
+        except Exception as exc: # pylint: disable=broad-except
+            raise exceptions.AstroidImportError(
                 'Unexpected error while retrieving module for {class_repr}:\n'
-                '{error}', cls=klass, class_repr=safe_repr(klass), error=ex))
+                '{error}', cls=klass, class_repr=safe_repr(klass)) from exc
         try:
             name = klass.__name__
-        except AttributeError:
-            util.reraise(exceptions.AstroidBuildingError(
+        except AttributeError as exc:
+            raise exceptions.AstroidBuildingError(
                 'Unable to get name for {class_repr}:\n',
-                cls=klass, class_repr=safe_repr(klass)))
-        except Exception as ex: # pylint: disable=broad-except
-            util.reraise(exceptions.AstroidImportError(
+                cls=klass, class_repr=safe_repr(klass)) from exc
+        except Exception as exc: # pylint: disable=broad-except
+            raise exceptions.AstroidImportError(
                 'Unexpected error while retrieving name for {class_repr}:\n'
-                '{error}', cls=klass, class_repr=safe_repr(klass), error=ex))
+                '{error}', cls=klass, class_repr=safe_repr(klass)) from exc
         # take care, on living object __module__ is regularly wrong :(
         modastroid = self.ast_from_module_name(modname)
         if klass is obj:

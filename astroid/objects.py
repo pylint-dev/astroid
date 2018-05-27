@@ -133,16 +133,16 @@ class Super(node_classes.NodeNG):
         # Don't let invalid MROs or invalid super calls
         # leak out as is from this function.
         except exceptions.SuperError as exc:
-            util.reraise(exceptions.AttributeInferenceError(
+            raise exceptions.AttributeInferenceError(
                 ('Lookup for {name} on {target!r} because super call {super!r} '
                  'is invalid.'),
-                target=self, attribute=name, context=context, super_=exc.super_))
+                target=self, attribute=name, context=context, super_=exc.super_) from exc
         except exceptions.MroError as exc:
-            util.reraise(exceptions.AttributeInferenceError(
+            raise exceptions.AttributeInferenceError(
                 ('Lookup for {name} on {target!r} failed because {cls!r} has an '
                  'invalid MRO.'),
                 target=self, attribute=name, context=context, mros=exc.mros,
-                cls=exc.cls))
+                cls=exc.cls) from exc
         found = False
         for cls in mro:
             if name not in cls.locals:

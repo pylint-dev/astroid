@@ -126,18 +126,18 @@ class AstroidBuilder(raw_building.InspectBuilder):
         try:
             stream, encoding, data = open_source_file(path)
         except IOError as exc:
-            util.reraise(exceptions.AstroidBuildingError(
+            raise exceptions.AstroidBuildingError(
                 'Unable to load file {path}:\n{error}',
-                modname=modname, path=path, error=exc))
+                modname=modname, path=path) from exc
         except (SyntaxError, LookupError) as exc:
-            util.reraise(exceptions.AstroidSyntaxError(
+            raise exceptions.AstroidSyntaxError(
                 'Python 3 encoding specification error or unknown encoding:\n'
-                '{error}', modname=modname, path=path, error=exc))
-        except UnicodeError:  # wrong encoding
+                '{error}', modname=modname, path=path) from exc
+        except UnicodeError as exc:  # wrong encoding
             # detect_encoding returns utf-8 if no encoding specified
-            util.reraise(exceptions.AstroidBuildingError(
+            raise exceptions.AstroidBuildingError(
                 'Wrong or no encoding specified for {filename}.',
-                filename=path))
+                filename=path) from exc
         with stream:
             # get module name if necessary
             if modname is None:
@@ -179,9 +179,9 @@ class AstroidBuilder(raw_building.InspectBuilder):
         try:
             node = _parse(data + '\n')
         except (TypeError, ValueError, SyntaxError) as exc:
-            util.reraise(exceptions.AstroidSyntaxError(
+            raise exceptions.AstroidSyntaxError(
                 'Parsing Python code failed:\n{error}',
-                source=data, modname=modname, path=path, error=exc))
+                source=data, modname=modname, path=path) from exc
         if path is not None:
             node_file = os.path.abspath(path)
         else:

@@ -12,7 +12,6 @@ import sys
 import warnings
 
 from astroid import nodes
-from astroid import util
 
 
 def require_version(minver=None, maxver=None):
@@ -23,8 +22,8 @@ def require_version(minver=None, maxver=None):
         string = string or default
         try:
             return tuple(int(v) for v in string.split('.'))
-        except ValueError:
-            util.reraise(ValueError('%s is not a correct version : should be X.Y[.Z].' % string))
+        except ValueError as exc:
+            raise ValueError(f'{string} is not a correct version : should be X.Y[.Z].') from exc
 
     def check_require_version(f):
         current = sys.version_info[:3]

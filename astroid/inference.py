@@ -219,8 +219,11 @@ def infer_import(self, context=None, asname=True):
         else:
             yield self.do_import_module(name)
     except exceptions.AstroidBuildingError as exc:
-        util.reraise(exceptions.InferenceError(node=self, error=exc,
-                                               context=context))
+        raise exceptions.InferenceError(
+            node=self,
+            context=context,
+        ) from exc
+
 
 nodes.Import._infer = infer_import
 
@@ -244,8 +247,10 @@ def infer_import_from(self, context=None, asname=True):
     try:
         module = self.do_import_module()
     except exceptions.AstroidBuildingError as exc:
-        util.reraise(exceptions.InferenceError(node=self, error=exc,
-                                               context=context))
+        raise exceptions.InferenceError(
+            node=self,
+            context=context,
+        ) from exc
 
     try:
         context = contextmod.copy_context(context)
@@ -253,8 +258,12 @@ def infer_import_from(self, context=None, asname=True):
         stmts = module.getattr(name, ignore_locals=module is self.root())
         return bases._infer_stmts(stmts, context)
     except exceptions.AttributeInferenceError as error:
-        util.reraise(exceptions.InferenceError(
-            error.message, target=self, attribute=name, context=context))
+        raise exceptions.InferenceError(
+            error.message,
+            target=self,
+            attribute=name,
+            context=context,
+        ) from error
 nodes.ImportFrom._infer = infer_import_from
 
 
@@ -305,9 +314,12 @@ def infer_global(self, context=None):
         return bases._infer_stmts(self.root().getattr(context.lookupname),
                                   context)
     except exceptions.AttributeInferenceError as error:
-        util.reraise(exceptions.InferenceError(
-            error.message, target=self, attribute=context.lookupname,
-            context=context))
+        raise exceptions.InferenceError(
+            error.message,
+            target=self,
+            attribute=context.lookupname,
+            context=context,
+        ) from error
 nodes.Global._infer = infer_global
 
 
@@ -360,8 +372,7 @@ def infer_subscript(self, context=None):
             exceptions.AstroidIndexError,
             exceptions.AttributeInferenceError,
             AttributeError) as exc:
-        util.reraise(exceptions.InferenceError(node=self, error=exc,
-                                               context=context))
+        raise exceptions.InferenceError(node=self, context=context) from exc
 
     # Prevent inferring if the inferred subscript
     # is the same as the original subscripted object.
@@ -836,10 +847,12 @@ def instance_getitem(self, index, context=None):
 
     try:
         return next(method.infer_call_result(self, new_context))
-    except StopIteration:
-        util.reraise(exceptions.InferenceError(
+    except StopIteration as exc:
+        raise exceptions.InferenceError(
             message='Inference for {node!r}[{index!s}] failed.',
-            node=self, index=index, context=context))
+            node=self,
+            index=index,
+            context=context) from exc
 
 bases.Instance.getitem = instance_getitem
 
