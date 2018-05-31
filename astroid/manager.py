@@ -190,7 +190,7 @@ class AstroidManager(object):
                 traceback = sys.exc_info()[2]
             self._mod_file_cache[(modname, contextfile)] = value
         if isinstance(value, exceptions.AstroidBuildingError):
-            raise exceptions.AstroidBuildingError from value
+            raise value
         return value
 
     def ast_from_module(self, module, modname=None):
