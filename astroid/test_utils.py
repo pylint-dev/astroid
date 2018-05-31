@@ -23,7 +23,9 @@ def require_version(minver=None, maxver=None):
         try:
             return tuple(int(v) for v in string.split('.'))
         except ValueError as exc:
-            raise ValueError(f'{string} is not a correct version : should be X.Y[.Z].') from exc
+            raise ValueError(
+                '{string} is not a correct version : should be X.Y[.Z].'.format(string=string)
+            ) from exc
 
     def check_require_version(f):
         current = sys.version_info[:3]
