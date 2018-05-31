@@ -12,7 +12,6 @@ from various source and using a cache of built modules)
 """
 
 import os
-import sys
 import zipimport
 
 from astroid import exceptions
