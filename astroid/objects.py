@@ -40,8 +40,8 @@ class FrozenSet(node_classes._BaseContainer):
 
     @decorators.cachedproperty
     def _proxied(self): # pylint: disable=method-hidden
-        builtins = MANAGER.astroid_cache[BUILTINS]
-        return builtins.getattr('frozenset')[0]
+        ast_builtins = MANAGER.astroid_cache[BUILTINS]
+        return ast_builtins.getattr('frozenset')[0]
 
 
 class Super(node_classes.NodeNG):
@@ -104,8 +104,8 @@ class Super(node_classes.NodeNG):
 
     @decorators.cachedproperty
     def _proxied(self):
-        builtins = MANAGER.astroid_cache[BUILTINS]
-        return builtins.getattr('super')[0]
+        ast_builtins = MANAGER.astroid_cache[BUILTINS]
+        return ast_builtins.getattr('super')[0]
 
     def pytype(self):
         return '%s.super' % BUILTINS

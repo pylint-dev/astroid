@@ -121,7 +121,7 @@ class AstroidManager(object):
                     return self._build_stub_module(modname)
                 try:
                     module = modutils.load_module_from_name(modname)
-                except Exception as ex: # pylint: disable=broad-except
+                except Exception as ex:
                     raise exceptions.AstroidImportError(
                         'Loading {modname} failed with:\n{error}',
                         modname=modname, path=found_spec.location) from ex
@@ -177,17 +177,14 @@ class AstroidManager(object):
     def file_from_module_name(self, modname, contextfile):
         try:
             value = self._mod_file_cache[(modname, contextfile)]
-            traceback = sys.exc_info()[2]
         except KeyError:
             try:
                 value = modutils.file_info_from_modpath(
                     modname.split('.'), context_file=contextfile)
-                traceback = sys.exc_info()[2]
             except ImportError as ex:
                 value = exceptions.AstroidImportError(
                     'Failed to import module {modname} with error:\n{error}.',
                     modname=modname, error=ex)
-                traceback = sys.exc_info()[2]
             self._mod_file_cache[(modname, contextfile)] = value
         if isinstance(value, exceptions.AstroidBuildingError):
             raise value
@@ -232,7 +229,7 @@ class AstroidManager(object):
             raise exceptions.AstroidBuildingError(
                 'Unable to get module for {class_repr}.',
                 cls=klass, class_repr=safe_repr(klass)) from exc
-        except Exception as exc: # pylint: disable=broad-except
+        except Exception as exc:
             raise exceptions.AstroidImportError(
                 'Unexpected error while retrieving module for {class_repr}:\n'
                 '{error}', cls=klass, class_repr=safe_repr(klass)) from exc
@@ -242,7 +239,7 @@ class AstroidManager(object):
             raise exceptions.AstroidBuildingError(
                 'Unable to get name for {class_repr}:\n',
                 cls=klass, class_repr=safe_repr(klass)) from exc
-        except Exception as exc: # pylint: disable=broad-except
+        except Exception as exc:
             raise exceptions.AstroidImportError(
                 'Unexpected error while retrieving name for {class_repr}:\n'
                 '{error}', cls=klass, class_repr=safe_repr(klass)) from exc
