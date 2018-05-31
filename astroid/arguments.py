@@ -12,7 +12,6 @@ from astroid import nodes
 from astroid import util
 
 
-
 class CallSite(object):
     """Class for understanding arguments passed into a call site
 

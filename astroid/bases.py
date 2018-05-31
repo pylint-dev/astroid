@@ -169,9 +169,7 @@ class BaseInstance(Proxy):
 
             # XXX frame should be self._proxied, or not ?
             get_attr = self.getattr(name, context, lookupclass=False)
-            for stmt in _infer_stmts(self._wrap_attr(get_attr, context),
-                                     context, frame=self):
-                yield stmt
+            yield from _infer_stmts(self._wrap_attr(get_attr, context), context, frame=self)
         except exceptions.AttributeInferenceError as error:
             try:
                 # fallback to class.igetattr since it has some logic to handle
@@ -180,8 +178,7 @@ class BaseInstance(Proxy):
                 if self._proxied.__class__.__name__ != 'ClassDef':
                     raise exceptions.InferenceError(**vars(error)) from error
                 attrs = self._proxied.igetattr(name, context, class_context=False)
-                for stmt in self._wrap_attr(attrs, context):
-                    yield stmt
+                yield from self._wrap_attr(attrs, context)
             except exceptions.AttributeInferenceError as error:
                 raise exceptions.InferenceError(**vars(error)) from error
 

@@ -17,7 +17,6 @@ import os
 import sys
 import textwrap
 
-
 from astroid._ast import _parse
 from astroid import bases
 from astroid import exceptions
@@ -313,8 +312,7 @@ def _extract_expressions(node):
         yield real_expr
     else:
         for child in node.get_children():
-            for result in _extract_expressions(child):
-                yield result
+            yield from _extract_expressions(child)
 
 
 def _find_statement_by_line(node, line):
@@ -420,8 +418,7 @@ def extract_node(code, module_name=''):
     tree = parse(code, module_name=module_name)
     extracted = []
     if requested_lines:
-        for line in requested_lines:
-            extracted.append(_find_statement_by_line(tree, line))
+        extracted = [_find_statement_by_line(tree, line) for line in requested_lines]
 
     # Modifies the tree.
     extracted.extend(_extract_expressions(tree))
