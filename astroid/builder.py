@@ -127,11 +127,11 @@ class AstroidBuilder(raw_building.InspectBuilder):
         except IOError as exc:
             raise exceptions.AstroidBuildingError(
                 'Unable to load file {path}:\n{error}',
-                modname=modname, path=path) from exc
+                modname=modname, path=path, error=exc) from exc
         except (SyntaxError, LookupError) as exc:
             raise exceptions.AstroidSyntaxError(
                 'Python 3 encoding specification error or unknown encoding:\n'
-                '{error}', modname=modname, path=path) from exc
+                '{error}', modname=modname, path=path, error=exc) from exc
         except UnicodeError as exc:  # wrong encoding
             # detect_encoding returns utf-8 if no encoding specified
             raise exceptions.AstroidBuildingError(
@@ -180,7 +180,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         except (TypeError, ValueError, SyntaxError) as exc:
             raise exceptions.AstroidSyntaxError(
                 'Parsing Python code failed:\n{error}',
-                source=data, modname=modname, path=path) from exc
+                source=data, modname=modname, path=path, error=exc) from exc
         if path is not None:
             node_file = os.path.abspath(path)
         else:
