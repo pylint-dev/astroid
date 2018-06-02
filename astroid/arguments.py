@@ -5,14 +5,11 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
 
-import six
-
 from astroid import bases
 from astroid import context as contextmod
 from astroid import exceptions
 from astroid import nodes
 from astroid import util
-
 
 
 class CallSite(object):
@@ -94,7 +91,7 @@ class CallSite(object):
                     if not isinstance(dict_key, nodes.Const):
                         values[name] = util.Uninferable
                         continue
-                    if not isinstance(dict_key.value, six.string_types):
+                    if not isinstance(dict_key.value, str):
                         values[name] = util.Uninferable
                         continue
                     if dict_key.value in values:
@@ -162,7 +159,7 @@ class CallSite(object):
         positional = self.positional_arguments[:len(funcnode.args.args)]
         vararg = self.positional_arguments[len(funcnode.args.args):]
         argindex = funcnode.args.find_argname(name)[0]
-        kwonlyargs = set(arg.name for arg in funcnode.args.kwonlyargs)
+        kwonlyargs = {arg.name for arg in funcnode.args.kwonlyargs}
         kwargs = {
             key: value for key, value in self.keyword_arguments.items()
             if key not in kwonlyargs

@@ -26,8 +26,6 @@ from astroid.node_classes import (
     const_factory,
     AsyncFor, Await, AsyncWith,
     FormattedValue, JoinedStr,
-    # Backwards-compatibility aliases
-    Backquote, Discard, AssName, AssAttr, Getattr, CallFunc, From,
     # Node not present in the builtin ast module.
     DictUnpack,
     Unknown,
@@ -36,8 +34,6 @@ from astroid.scoped_nodes import (
     Module, GeneratorExp, Lambda, DictComp,
     ListComp, SetComp, FunctionDef, ClassDef,
     AsyncFunctionDef,
-    # Backwards-compatibility aliases
-    Class, Function, GenExpr,
 )
 
 

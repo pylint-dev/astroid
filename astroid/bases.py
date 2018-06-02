@@ -10,21 +10,21 @@
 inference utils.
 """
 
+import builtins
 import collections
 import sys
-
-import six
 
 from astroid import context as contextmod
 from astroid import exceptions
 from astroid import util
 
 objectmodel = util.lazy_import('interpreter.objectmodel')
-BUILTINS = six.moves.builtins.__name__
+BUILTINS = builtins.__name__
 manager = util.lazy_import('manager')
 MANAGER = manager.AstroidManager()
 
 if sys.version_info >= (3, 0):
+    # TODO: check if needs special treatment
     BUILTINS = 'builtins'
     BOOL_SPECIAL_METHOD = '__bool__'
 else:
@@ -133,7 +133,7 @@ class BaseInstance(Proxy):
     def getattr(self, name, context=None, lookupclass=True):
         try:
             values = self._proxied.instance_attr(name, context)
-        except exceptions.AttributeInferenceError:
+        except exceptions.AttributeInferenceError as exc:
             if self.special_attributes and name in self.special_attributes:
                 return [self.special_attributes.lookup(name)]
 
@@ -143,9 +143,11 @@ class BaseInstance(Proxy):
                 return self._proxied.getattr(name, context,
                                              class_context=False)
 
-            util.reraise(exceptions.AttributeInferenceError(target=self,
-                                                            attribute=name,
-                                                            context=context))
+            raise exceptions.AttributeInferenceError(
+                target=self,
+                attribute=name,
+                context=context,
+            ) from exc
         # since we've no context information, return matching class members as
         # well
         if lookupclass:
@@ -167,18 +169,18 @@ class BaseInstance(Proxy):
 
             # XXX frame should be self._proxied, or not ?
             get_attr = self.getattr(name, context, lookupclass=False)
-            for stmt in _infer_stmts(self._wrap_attr(get_attr, context),
-                                     context, frame=self):
-                yield stmt
-        except exceptions.AttributeInferenceError:
+            yield from _infer_stmts(self._wrap_attr(get_attr, context), context, frame=self)
+        except exceptions.AttributeInferenceError as error:
             try:
                 # fallback to class.igetattr since it has some logic to handle
                 # descriptors
+                # But only if the _proxied is the Class.
+                if self._proxied.__class__.__name__ != 'ClassDef':
+                    raise exceptions.InferenceError(**vars(error)) from error
                 attrs = self._proxied.igetattr(name, context, class_context=False)
-                for stmt in self._wrap_attr(attrs, context):
-                    yield stmt
+                yield from self._wrap_attr(attrs, context)
             except exceptions.AttributeInferenceError as error:
-                util.reraise(exceptions.InferenceError(**vars(error)))
+                raise exceptions.InferenceError(**vars(error)) from error
 
     def _wrap_attr(self, attrs, context=None):
         """wrap bound methods of attrs in a InstanceMethod proxies"""

@@ -14,7 +14,7 @@ leads to an inferred FrozenSet:
     Call(func=Name('frozenset'), args=Tuple(...))
 """
 
-import six
+import builtins
 
 from astroid import bases
 from astroid import decorators
@@ -25,7 +25,7 @@ from astroid import scoped_nodes
 from astroid import util
 
 
-BUILTINS = six.moves.builtins.__name__
+BUILTINS = builtins.__name__
 objectmodel = util.lazy_import('interpreter.objectmodel')
 
 
@@ -40,8 +40,8 @@ class FrozenSet(node_classes._BaseContainer):
 
     @decorators.cachedproperty
     def _proxied(self): # pylint: disable=method-hidden
-        builtins = MANAGER.astroid_cache[BUILTINS]
-        return builtins.getattr('frozenset')[0]
+        ast_builtins = MANAGER.astroid_cache[BUILTINS]
+        return ast_builtins.getattr('frozenset')[0]
 
 
 class Super(node_classes.NodeNG):
@@ -104,8 +104,8 @@ class Super(node_classes.NodeNG):
 
     @decorators.cachedproperty
     def _proxied(self):
-        builtins = MANAGER.astroid_cache[BUILTINS]
-        return builtins.getattr('super')[0]
+        ast_builtins = MANAGER.astroid_cache[BUILTINS]
+        return ast_builtins.getattr('super')[0]
 
     def pytype(self):
         return '%s.super' % BUILTINS
@@ -133,16 +133,16 @@ class Super(node_classes.NodeNG):
         # Don't let invalid MROs or invalid super calls
         # leak out as is from this function.
         except exceptions.SuperError as exc:
-            util.reraise(exceptions.AttributeInferenceError(
+            raise exceptions.AttributeInferenceError(
                 ('Lookup for {name} on {target!r} because super call {super!r} '
                  'is invalid.'),
-                target=self, attribute=name, context=context, super_=exc.super_))
+                target=self, attribute=name, context=context, super_=exc.super_) from exc
         except exceptions.MroError as exc:
-            util.reraise(exceptions.AttributeInferenceError(
+            raise exceptions.AttributeInferenceError(
                 ('Lookup for {name} on {target!r} failed because {cls!r} has an '
                  'invalid MRO.'),
                 target=self, attribute=name, context=context, mros=exc.mros,
-                cls=exc.cls))
+                cls=exc.cls) from exc
         found = False
         for cls in mro:
             if name not in cls.locals:

@@ -10,13 +10,12 @@
 (build_* functions) or from living object (object_build_* functions)
 """
 
+import builtins
 import inspect
 import logging
 import os
 import sys
 import types
-
-import six
 
 from astroid import bases
 from astroid import manager
@@ -26,9 +25,10 @@ from astroid import nodes
 
 MANAGER = manager.AstroidManager()
 # the keys of CONST_CLS eg python builtin types
+
 _CONSTANTS = tuple(node_classes.CONST_CLS)
 _JYTHON = os.name == 'java'
-_BUILTINS = vars(six.moves.builtins)
+_BUILTINS = vars(builtins)
 _LOG = logging.getLogger(__name__)
 
 
@@ -221,7 +221,7 @@ def _base_class_object_build(node, member, basenames, name=None, localname=None)
 def _build_from_function(node, name, member, module):
     # verify this is not an imported function
     try:
-        code = six.get_function_code(member)
+        code = member.__code__
     except AttributeError:
         # Some implementations don't provide the code object,
         # such as Jython.
@@ -285,7 +285,7 @@ class InspectBuilder(object):
                 attach_dummy_node(node, name)
                 continue
             if inspect.ismethod(member):
-                member = six.get_method_function(member)
+                member = member.__func__
             if inspect.isfunction(member):
                 _build_from_function(node, name, member, self._module)
             elif inspect.isbuiltin(member):
@@ -340,7 +340,7 @@ class InspectBuilder(object):
                 # Python 2.5.1 (r251:54863, Sep  1 2010, 22:03:14)
                 # >>> print object.__new__.__module__
                 # None
-                modname = six.moves.builtins.__name__
+                modname = builtins.__name__
             else:
                 attach_dummy_node(node, name, member)
                 return True
@@ -372,7 +372,6 @@ def _astroid_bootstrapping(astroid_builtin=None):
     # this boot strapping is necessary since we need the Const nodes to
     # inspect_build builtins, and then we can proxy Const
     if astroid_builtin is None:
-        from six.moves import builtins
         astroid_builtin = Astroid_BUILDER.inspect_build(builtins)
 
     # pylint: disable=redefined-outer-name
@@ -400,11 +399,11 @@ def _set_proxied(const):
 nodes.Const._proxied = property(_set_proxied)
 
 _GeneratorType = nodes.ClassDef(types.GeneratorType.__name__, types.GeneratorType.__doc__)
-_GeneratorType.parent = MANAGER.astroid_cache[six.moves.builtins.__name__]
+_GeneratorType.parent = MANAGER.astroid_cache[builtins.__name__]
 bases.Generator._proxied = _GeneratorType
 Astroid_BUILDER.object_build(bases.Generator._proxied, types.GeneratorType)
 
-_builtins = MANAGER.astroid_cache[six.moves.builtins.__name__]
+_builtins = MANAGER.astroid_cache[builtins.__name__]
 BUILTIN_TYPES = (types.GetSetDescriptorType, types.GeneratorType,
                  types.MemberDescriptorType, type(None), type(NotImplemented),
                  types.FunctionType, types.MethodType,
@@ -412,6 +411,6 @@ BUILTIN_TYPES = (types.GetSetDescriptorType, types.GeneratorType,
 for _type in BUILTIN_TYPES:
     if _type.__name__ not in _builtins:
         cls = nodes.ClassDef(_type.__name__, _type.__doc__)
-        cls.parent = MANAGER.astroid_cache[six.moves.builtins.__name__]
+        cls.parent = MANAGER.astroid_cache[builtins.__name__]
         Astroid_BUILDER.object_build(cls, _type)
         _builtins[_type.__name__] = cls

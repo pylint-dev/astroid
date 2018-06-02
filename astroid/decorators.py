@@ -48,9 +48,8 @@ class cachedproperty(object):
     def __init__(self, wrapped):
         try:
             wrapped.__name__
-        except AttributeError:
-            util.reraise(TypeError('%s must have a __name__ attribute'
-                                   % wrapped))
+        except AttributeError as exc:
+            raise TypeError('%s must have a __name__ attribute' % wrapped) from exc
         self.wrapped = wrapped
 
     @property

@@ -16,8 +16,8 @@ import re
 import os
 import sys
 import textwrap
-import _ast
 
+from astroid._ast import _parse
 from astroid import bases
 from astroid import exceptions
 from astroid import manager
@@ -35,10 +35,6 @@ _TRANSIENT_FUNCTION = '__'
 # The comment used to select a statement to be extracted
 # when calling extract_node.
 _STATEMENT_SELECTOR = '#@'
-
-
-def _parse(string):
-    return compile(string, "<string>", 'exec', _ast.PyCF_ONLY_AST)
 
 
 if sys.version_info >= (3, 0):
@@ -83,7 +79,7 @@ def _can_assign_attr(node, attrname):
     except NotImplementedError:
         pass
     else:
-        if slots and attrname not in set(slot.value for slot in slots):
+        if slots and attrname not in {slot.value for slot in slots}:
             return False
     return True
 
@@ -129,18 +125,18 @@ class AstroidBuilder(raw_building.InspectBuilder):
         try:
             stream, encoding, data = open_source_file(path)
         except IOError as exc:
-            util.reraise(exceptions.AstroidBuildingError(
+            raise exceptions.AstroidBuildingError(
                 'Unable to load file {path}:\n{error}',
-                modname=modname, path=path, error=exc))
+                modname=modname, path=path, error=exc) from exc
         except (SyntaxError, LookupError) as exc:
-            util.reraise(exceptions.AstroidSyntaxError(
+            raise exceptions.AstroidSyntaxError(
                 'Python 3 encoding specification error or unknown encoding:\n'
-                '{error}', modname=modname, path=path, error=exc))
-        except UnicodeError:  # wrong encoding
+                '{error}', modname=modname, path=path, error=exc) from exc
+        except UnicodeError as exc:  # wrong encoding
             # detect_encoding returns utf-8 if no encoding specified
-            util.reraise(exceptions.AstroidBuildingError(
+            raise exceptions.AstroidBuildingError(
                 'Wrong or no encoding specified for {filename}.',
-                filename=path))
+                filename=path) from exc
         with stream:
             # get module name if necessary
             if modname is None:
@@ -182,9 +178,9 @@ class AstroidBuilder(raw_building.InspectBuilder):
         try:
             node = _parse(data + '\n')
         except (TypeError, ValueError, SyntaxError) as exc:
-            util.reraise(exceptions.AstroidSyntaxError(
+            raise exceptions.AstroidSyntaxError(
                 'Parsing Python code failed:\n{error}',
-                source=data, modname=modname, path=path, error=exc))
+                source=data, modname=modname, path=path, error=exc) from exc
         if path is not None:
             node_file = os.path.abspath(path)
         else:
@@ -316,8 +312,7 @@ def _extract_expressions(node):
         yield real_expr
     else:
         for child in node.get_children():
-            for result in _extract_expressions(child):
-                yield result
+            yield from _extract_expressions(child)
 
 
 def _find_statement_by_line(node, line):
@@ -423,8 +418,7 @@ def extract_node(code, module_name=''):
     tree = parse(code, module_name=module_name)
     extracted = []
     if requested_lines:
-        for line in requested_lines:
-            extracted.append(_find_statement_by_line(tree, line))
+        extracted = [_find_statement_by_line(tree, line) for line in requested_lines]
 
     # Modifies the tree.
     extracted.extend(_extract_expressions(tree))

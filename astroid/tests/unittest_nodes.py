@@ -10,11 +10,12 @@
 """tests for specific behaviour of astroid nodes
 """
 import os
+import platform
 import sys
 import textwrap
 import unittest
-import warnings
 
+import pytest
 import six
 
 import astroid
@@ -33,6 +34,10 @@ from astroid.tests import resources
 
 abuilder = builder.AstroidBuilder()
 BUILTINS = six.moves.builtins.__name__
+HAS_TYPED_AST = (
+    platform.python_implementation() == 'CPython'
+    and sys.version_info.minor < 7
+)
 
 
 class AsStringTest(resources.SysPathSetup, unittest.TestCase):
@@ -438,7 +443,7 @@ class ConstNodeTest(unittest.TestCase):
         self._test('a')
 
     def test_unicode(self):
-        self._test(u'a')
+        self._test('a')
 
 
 class NameNodeTest(unittest.TestCase):
@@ -669,14 +674,14 @@ class AliasesTest(unittest.TestCase):
                 return node
             return None
 
-        self.transformer.register_transform(nodes.From, test_from)
-        self.transformer.register_transform(nodes.Class, test_class)
-        self.transformer.register_transform(nodes.Function, test_function)
-        self.transformer.register_transform(nodes.CallFunc, test_callfunc)
-        self.transformer.register_transform(nodes.AssName, test_assname)
-        self.transformer.register_transform(nodes.AssAttr, test_assattr)
-        self.transformer.register_transform(nodes.Getattr, test_getattr)
-        self.transformer.register_transform(nodes.GenExpr, test_genexpr)
+        self.transformer.register_transform(nodes.ImportFrom, test_from)
+        self.transformer.register_transform(nodes.ClassDef, test_class)
+        self.transformer.register_transform(nodes.FunctionDef, test_function)
+        self.transformer.register_transform(nodes.Call, test_callfunc)
+        self.transformer.register_transform(nodes.AssignName, test_assname)
+        self.transformer.register_transform(nodes.AssignAttr, test_assattr)
+        self.transformer.register_transform(nodes.Attribute, test_getattr)
+        self.transformer.register_transform(nodes.GeneratorExp, test_genexpr)
 
         string = '''
         from __future__ import print_function
@@ -710,58 +715,6 @@ class AliasesTest(unittest.TestCase):
         self.assertIsInstance(module.body[5].value, nodes.Attribute)
         self.assertEqual(module.body[6].value.elt.value, 2)
         self.assertIsInstance(module.body[6].value, nodes.GeneratorExp)
-
-    @unittest.skipIf(six.PY3, "Python 3 doesn't have Repr nodes.")
-    def test_repr(self):
-        def test_backquote(node):
-            node.value.name = 'bar'
-            return node
-
-        self.transformer.register_transform(nodes.Backquote, test_backquote)
-
-        module = self.parse_transform('`foo`')
-
-        self.assertEqual(module.body[0].value.value.name, 'bar')
-        self.assertIsInstance(module.body[0].value, nodes.Repr)
-
-
-class DeprecationWarningsTest(unittest.TestCase):
-    def test_asstype_warnings(self):
-        string = '''
-        class C: pass
-        c = C()
-        with warnings.catch_warnings(record=True) as w:
-            pass
-        '''
-        module = parse(string)
-        filter_stmts_mixin = module.body[0]
-        assign_type_mixin = module.body[1].targets[0]
-        parent_assign_type_mixin = module.body[2]
-
-        with warnings.catch_warnings(record=True) as w:
-            with test_utils.enable_warning(PendingDeprecationWarning):
-                filter_stmts_mixin.ass_type()
-                self.assertIsInstance(w[0].message, PendingDeprecationWarning)
-        with warnings.catch_warnings(record=True) as w:
-            with test_utils.enable_warning(PendingDeprecationWarning):
-                assign_type_mixin.ass_type()
-                self.assertIsInstance(w[0].message, PendingDeprecationWarning)
-        with warnings.catch_warnings(record=True) as w:
-            with test_utils.enable_warning(PendingDeprecationWarning):
-                parent_assign_type_mixin.ass_type()
-                self.assertIsInstance(w[0].message, PendingDeprecationWarning)
-
-    def test_isinstance_warnings(self):
-        msg_format = ("%r is deprecated and slated for removal in astroid "
-                      "2.0, use %r instead")
-        for cls in (nodes.Discard, nodes.Backquote, nodes.AssName,
-                    nodes.AssAttr, nodes.Getattr, nodes.CallFunc, nodes.From):
-            with warnings.catch_warnings(record=True) as w:
-                with test_utils.enable_warning(PendingDeprecationWarning):
-                    isinstance(42, cls)
-            self.assertIsInstance(w[0].message, PendingDeprecationWarning)
-            actual_msg = msg_format % (cls.__class__.__name__, cls.__wrapped__.__name__)
-            self.assertEqual(str(w[0].message), actual_msg)
 
 
 @test_utils.require_version('3.5')
@@ -863,6 +816,62 @@ def test_unknown():
                       type(util.Uninferable))
     assert isinstance(nodes.Unknown().name, str)
     assert isinstance(nodes.Unknown().qname(), str)
+
+
+@pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
+def test_type_comments_with():
+    module = builder.parse('''
+    with a as b: # type: int
+        pass
+    with a as b: # type: ignore
+        pass
+    ''')
+    node = module.body[0]
+    ignored_node = module.body[1]
+    assert isinstance(node.type_annotation, astroid.Name)
+
+    assert ignored_node.type_annotation is None
+
+
+@pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
+def test_type_comments_for():
+    module = builder.parse('''
+    for a, b in [1, 2, 3]: # type: List[int]
+        pass
+    for a, b in [1, 2, 3]: # type: ignore
+        pass
+    ''')
+    node = module.body[0]
+    ignored_node = module.body[1]
+    assert isinstance(node.type_annotation, astroid.Subscript)
+    assert node.type_annotation.as_string() == 'List[int]'
+
+    assert ignored_node.type_annotation is None
+
+
+@pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
+def test_type_coments_assign():
+    module = builder.parse('''
+    a, b = [1, 2, 3] # type: List[int]
+    a, b = [1, 2, 3] # type: ignore
+    ''')
+    node = module.body[0]
+    ignored_node = module.body[1]
+    assert isinstance(node.type_annotation, astroid.Subscript)
+    assert node.type_annotation.as_string() == 'List[int]'
+
+    assert ignored_node.type_annotation is None
+
+
+@pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
+def test_type_comments_invalid_expression():
+    module = builder.parse('''
+    a, b = [1, 2, 3] # type: something completely invalid
+    a, b = [1, 2, 3] # typeee: 2*+4
+    a, b = [1, 2, 3] # type: List[int
+    ''')
+    for node in module.body:
+        assert node.type_annotation is None
 
 
 if __name__ == '__main__':

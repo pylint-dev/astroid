@@ -55,6 +55,6 @@ def attr_attributes_transform(node):
 
 
 MANAGER.register_transform(
-    astroid.Class,
+    astroid.ClassDef,
     attr_attributes_transform,
     is_decorated_with_attrs)

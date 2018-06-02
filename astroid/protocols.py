@@ -271,10 +271,10 @@ def sequence_assigned_stmts(self, node=None, context=None, asspath=None):
         asspath = []
     try:
         index = self.elts.index(node)
-    except ValueError:
-        util.reraise(exceptions.InferenceError(
+    except ValueError as exc:
+        raise exceptions.InferenceError(
             'Tried to retrieve a node {node!r} which does not exist',
-            node=self, assign_path=asspath, context=context))
+            node=self, assign_path=asspath, context=context) from exc
 
     asspath.insert(0, index)
     return self.parent.assigned_stmts(node=self, context=context, asspath=asspath)
@@ -519,16 +519,16 @@ def with_assigned_stmts(self, node=None, context=None, asspath=None):
                         context=context)
                 try:
                     obj = obj.elts[index]
-                except IndexError:
-                    util.reraise(exceptions.InferenceError(
+                except IndexError as exc:
+                    raise exceptions.InferenceError(
                         'Tried to infer a nonexistent target with index {index} '
                         'in {node!r}.', node=self, targets=node,
-                        assign_path=asspath, context=context))
-                except TypeError:
-                    util.reraise(exceptions.InferenceError(
+                        assign_path=asspath, context=context) from exc
+                except TypeError as exc:
+                    raise exceptions.InferenceError(
                         'Tried to unpack an non-iterable value '
                         'in {node!r}.', node=self, targets=node,
-                        assign_path=asspath, context=context))
+                        assign_path=asspath, context=context) from exc
             yield obj
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.

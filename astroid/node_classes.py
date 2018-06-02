@@ -182,18 +182,16 @@ def _container_getitem(instance, elts, index, context=None):
             return new_cls
         elif isinstance(index, Const):
             return elts[index.value]
-    except IndexError:
-        util.reraise(exceptions.AstroidIndexError(
+    except IndexError as exc:
+        raise exceptions.AstroidIndexError(
             message='Index {index!s} out of range',
-            node=instance, index=index, context=context))
+            node=instance, index=index, context=context) from exc
     except TypeError as exc:
-        util.reraise(exceptions.AstroidTypeError(
-            message='Type error {error!r}', error=exc,
-            node=instance, index=index, context=context))
+        raise exceptions.AstroidTypeError(
+            message='Type error {error!r}',
+            node=instance, index=index, context=context) from exc
 
-    raise exceptions.AstroidTypeError(
-        'Could not use %s as subscript index' % index
-    )
+    raise exceptions.AstroidTypeError('Could not use %s as subscript index' % index)
 
 
 class NodeNG(object):
@@ -1699,6 +1697,7 @@ class Assign(mixins.AssignTypeMixin, Statement):
     <Assign l.1 at 0x7effe1db8550>
     """
     _astroid_fields = ('targets', 'value',)
+    _other_other_fields = ('type_annotation',)
     targets = None
     """What is being assigned to.
 
@@ -1709,8 +1708,13 @@ class Assign(mixins.AssignTypeMixin, Statement):
 
     :type: NodeNG or None
     """
+    type_annotation = None
+    """If present, this will contain the type annotation passed by a type comment
 
-    def postinit(self, targets=None, value=None):
+    :type: NodeNG or None
+    """
+
+    def postinit(self, targets=None, value=None, type_annotation=None):
         """Do some setup after initialisation.
 
         :param targets: What is being assigned to.
@@ -1721,6 +1725,7 @@ class Assign(mixins.AssignTypeMixin, Statement):
         """
         self.targets = targets
         self.value = value
+        self.type_annotation = type_annotation
 
     def get_children(self):
         yield from self.targets
@@ -2355,13 +2360,13 @@ class Const(NodeNG, bases.Instance):
             if isinstance(self.value, (str, bytes)):
                 return Const(self.value[index_value])
         except IndexError as exc:
-            util.reraise(exceptions.AstroidIndexError(
-                message='Index {index!r} out of range', error=exc,
-                node=self, index=index, context=context))
+            raise exceptions.AstroidIndexError(
+                message='Index {index!r} out of range',
+                node=self, index=index, context=context) from exc
         except TypeError as exc:
-            util.reraise(exceptions.AstroidTypeError(
-                message='Type error {error!r}', error=exc,
-                node=self, index=index, context=context))
+            raise exceptions.AstroidTypeError(
+                message='Type error {error!r}',
+                node=self, index=index, context=context) from exc
 
         raise exceptions.AstroidTypeError(
             '%r (value=%s)' % (self, self.value)
@@ -2912,6 +2917,7 @@ class For(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn,
     <For l.1 at 0x7f23b2e8cf28>
     """
     _astroid_fields = ('target', 'iter', 'body', 'orelse',)
+    _other_other_fields = ('type_annotation',)
     _multi_line_block_fields = ('body', 'orelse')
     target = None
     """What the loop assigns to.
@@ -2933,9 +2939,14 @@ class For(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn,
 
     :type: list(NodeNG) or None
     """
+    type_annotation = None
+    """If present, this will contain the type annotation passed by a type comment
+
+    :type: NodeNG or None
+    """
 
     # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
-    def postinit(self, target=None, iter=None, body=None, orelse=None):
+    def postinit(self, target=None, iter=None, body=None, orelse=None, type_annotation=None):
         """Do some setup after initialisation.
 
         :param target: What the loop assigns to.
@@ -2954,6 +2965,7 @@ class For(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn,
         self.iter = iter
         self.body = body
         self.orelse = orelse
+        self.type_annotation = type_annotation
 
     optional_assign = True
     """Whether this node optionally assigns a variable.
@@ -4231,7 +4243,8 @@ class With(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn,
     >>> node
     <With l.2 at 0x7f23b2e4e710>
     """
-    _astroid_fields = ('items', 'body')
+    _astroid_fields = ('items', 'body',)
+    _other_other_fields = ('type_annotation',)
     _multi_line_block_fields = ('body',)
     items = None
     """The pairs of context managers and the names they are assigned to.
@@ -4243,8 +4256,13 @@ class With(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn,
 
     :type: list(NodeNG) or None
     """
+    type_annotation = None
+    """If present, this will contain the type annotation passed by a type comment
 
-    def postinit(self, items=None, body=None):
+    :type: NodeNG or None
+    """
+
+    def postinit(self, items=None, body=None, type_annotation=None):
         """Do some setup after initialisation.
 
         :param items: The pairs of context managers and the names
@@ -4256,6 +4274,7 @@ class With(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn,
         """
         self.items = items
         self.body = body
+        self.type_annotation = type_annotation
 
     @decorators.cachedproperty
     def blockstart_tolineno(self):
@@ -4490,14 +4509,3 @@ def const_factory(value):
         node = EmptyNode()
         node.object = value
         return node
-
-
-# Backward-compatibility aliases
-
-Backquote = util.proxy_alias('Backquote', Repr)
-Discard = util.proxy_alias('Discard', Expr)
-AssName = util.proxy_alias('AssName', AssignName)
-AssAttr = util.proxy_alias('AssAttr', AssignAttr)
-Getattr = util.proxy_alias('Getattr', Attribute)
-CallFunc = util.proxy_alias('CallFunc', Call)
-From = util.proxy_alias('From', ImportFrom)

@@ -261,6 +261,17 @@ class NamedTupleTest(unittest.TestCase):
         self.assertIn('b', inferred.locals)
         self.assertIn('c', inferred.locals)
 
+    def test_namedtuple_bases_are_actually_names_not_nodes(self):
+        node = builder.extract_node("""
+        from collections import namedtuple
+        Tuple = namedtuple("Tuple", field_names="a b c", rename=UNINFERABLE)
+        Tuple #@
+        """)
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, astroid.ClassDef)
+        self.assertIsInstance(inferred.bases[0], astroid.Name)
+        self.assertEqual(inferred.bases[0].name, 'tuple')
+
 
 class DefaultDictTest(unittest.TestCase):
 
@@ -477,7 +488,7 @@ class ThreadingBrainTest(unittest.TestCase):
     def _test_lock_object(self, object_name):
         lock_instance = builder.extract_node("""
         import threading
-        threading.{0}()
+        threading.{}()
         """.format(object_name))
         inferred = next(lock_instance.infer())
         self.assert_is_valid_lock(inferred)
@@ -695,6 +706,24 @@ class TypingBrain(unittest.TestCase):
         for anc in klass.ancestors():
             self.assertFalse(anc.parent is None)
 
+    def test_namedtuple_can_correcty_access_methods(self):
+        klass, called = builder.extract_node("""
+        from typing import NamedTuple
+
+        class X(NamedTuple): #@
+            a: int
+            b: int
+            def as_string(self):
+                return '%s' % self.a
+            def as_integer(self):
+                return 2 + 3
+        X().as_integer() #@
+        """)
+        self.assertEqual(len(klass.getattr('as_string')), 1)
+        inferred = next(called.infer())
+        self.assertIsInstance(inferred, astroid.Const)
+        self.assertEqual(inferred.value, 5)
+
     def test_namedtuple_inference(self):
         klass = builder.extract_node("""
         from typing import NamedTuple
@@ -766,6 +795,20 @@ class TypingBrain(unittest.TestCase):
         ''')
         inferred = next(result.infer())
         self.assertIsInstance(inferred, astroid.Instance)
+
+    def test_typing_types(self):
+        ast_nodes = builder.extract_node("""
+        from typing import TypeVar, Iterable, Tuple, NewType, Dict, Union
+        TypeVar('MyTypeVar', int, float, complex) #@
+        Iterable[Tuple[MyTypeVar, MyTypeVar]] #@
+        TypeVar('AnyStr', str, bytes) #@
+        NewType('UserId', str) #@
+        Dict[str, str] #@
+        Union[int, str] #@
+        """)
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            self.assertIsInstance(inferred, nodes.ClassDef)
 
 
 class ReBrainTest(unittest.TestCase):
@@ -1016,7 +1059,6 @@ class TestIsinstanceInference:
             _get_result_node('isinstance(something, int)')
 
 
-
 class TestIssubclassBrain:
     """Test issubclass() builtin inference"""
 
@@ -1254,6 +1296,7 @@ class TestLenBuiltinInference:
             next(astroid.extract_node(code).infer())
         except astroid.InferenceError:
             pass
+
 
 if __name__ == '__main__':
     unittest.main()

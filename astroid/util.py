@@ -4,12 +4,10 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
-import sys
 import warnings
 
 import importlib
 import lazy_object_proxy
-import six
 
 
 def lazy_descriptor(obj):
@@ -22,12 +20,6 @@ def lazy_descriptor(obj):
 def lazy_import(module_name):
     return lazy_object_proxy.Proxy(
         lambda: importlib.import_module('.' + module_name, 'astroid'))
-
-
-def reraise(exception):
-    '''Reraises an exception with the traceback from the current exception
-    block.'''
-    six.reraise(type(exception), exception, sys.exc_info()[2])
 
 
 @object.__new__

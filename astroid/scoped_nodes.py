@@ -489,10 +489,12 @@ class Module(LocalsDictNodeNG):
         elif self.package:
             try:
                 result = [self.import_module(name, relative_only=True)]
-            except (exceptions.AstroidBuildingError, SyntaxError):
-                util.reraise(exceptions.AttributeInferenceError(target=self,
-                                                                attribute=name,
-                                                                context=context))
+            except (exceptions.AstroidBuildingError, SyntaxError) as exc:
+                raise exceptions.AttributeInferenceError(
+                    target=self,
+                    attribute=name,
+                    context=context,
+                ) from exc
         result = [n for n in result if not isinstance(n, node_classes.DelName)]
         if result:
             return result
@@ -516,8 +518,12 @@ class Module(LocalsDictNodeNG):
             return bases._infer_stmts(self.getattr(name, context),
                                       context, frame=self)
         except exceptions.AttributeInferenceError as error:
-            util.reraise(exceptions.InferenceError(
-                error.message, target=self, attribute=name, context=context))
+            raise exceptions.InferenceError(
+                error.message,
+                target=self,
+                attribute=name,
+                context=context,
+            ) from error
 
     def fully_defined(self):
         """Check if this module has been build from a .py file.
@@ -1456,8 +1462,12 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             return bases._infer_stmts(self.getattr(name, context),
                                       context, frame=self)
         except exceptions.AttributeInferenceError as error:
-            util.reraise(exceptions.InferenceError(
-                error.message, target=self, attribute=name, context=context))
+            raise exceptions.InferenceError(
+                error.message,
+                target=self,
+                attribute=name,
+                context=context,
+            ) from error
 
     def is_method(self):
         """Check if this function node represents a method.
@@ -2068,7 +2078,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         """
         # FIXME: should be possible to choose the resolution order
         # FIXME: inference make infinite loops possible here
-        yielded = set([self])
+        yielded = {self}
         if context is None:
             context = contextmod.InferenceContext()
         if not self.bases and self.qname() != 'builtins.object':
@@ -2344,8 +2354,12 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                 # class handle some dynamic attributes, return a Uninferable object
                 yield util.Uninferable
             else:
-                util.reraise(exceptions.InferenceError(
-                    error.message, target=self, attribute=name, context=context))
+                raise exceptions.InferenceError(
+                    error.message,
+                    target=self,
+                    attribute=name,
+                    context=context,
+                )
 
     def has_dynamic_getattr(self, context=None):
         """Check if the class has a custom __getattr__ or __getattribute__.
@@ -2387,12 +2401,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         try:
             methods = dunder_lookup.lookup(self, '__getitem__')
         except exceptions.AttributeInferenceError as exc:
-            util.reraise(
-                exceptions.AstroidTypeError(
-                    node=self, error=exc,
-                    context=context
-                )
-            )
+            raise exceptions.AstroidTypeError(node=self, context=context) from exc
 
         method = methods[0]
 
@@ -2708,9 +2717,3 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
     def _get_assign_nodes(self):
         for child_node in self.body:
             yield from child_node._get_assign_nodes()
-
-
-# Backwards-compatibility aliases
-Class = util.proxy_alias('Class', ClassDef)
-Function = util.proxy_alias('Function', FunctionDef)
-GenExpr = util.proxy_alias('GenExpr', GeneratorExp)
