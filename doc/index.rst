@@ -9,7 +9,7 @@
    http://sphinx-doc.org/ext/autodoc.html
 
 
-Welcome to Astroid's documentation!
+Welcome to astroid's documentation!
 ===================================
 
 Contents:
