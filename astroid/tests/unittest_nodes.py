@@ -874,5 +874,54 @@ def test_type_comments_invalid_expression():
         assert node.type_annotation is None
 
 
+@pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
+def test_type_comments_invalid_function_comments():
+    module = builder.parse('''
+    def func():
+        # type: something completely invalid
+        pass
+    def func1():
+        # typeee: 2*+4
+        pass
+    def func2():
+        # type: List[int
+        pass
+    ''')
+    for node in module.body:
+        assert node.type_comment_returns is None
+        assert node.type_comment_args is None
+
+
+@pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
+def test_type_comments_function():
+    module = builder.parse('''
+    def func():
+        # type: (int) -> str
+        pass
+    def func1():
+        # type: (int, int, int) -> (str, str)
+        pass
+    def func2():
+        # type: (int, int, str, List[int]) -> List[int]
+        pass
+    ''')
+    expected_annotations = [
+        (["int"], astroid.Name, "str"),
+        (["int", "int", "int"], astroid.Tuple, "(str, str)"),
+        (["int", "int", "str", "List[int]"], astroid.Subscript, "List[int]"),
+    ]
+    for node, (
+            expected_args,
+            expected_returns_type,
+            expected_returns_string
+            ) in zip(module.body, expected_annotations):
+        assert node.type_comment_returns is not None
+        assert node.type_comment_args is not None
+        for expected_arg, actual_arg in zip(expected_args, node.type_comment_args):
+            assert actual_arg.as_string() == expected_arg
+        assert isinstance(node.type_comment_returns, expected_returns_type)
+        assert node.type_comment_returns.as_string() == expected_returns_string
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -1243,9 +1243,26 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
 
     :type: bool
     """
+    type_annotation = None
+    """If present, this will contain the type annotation passed by a type comment
+
+    :type: NodeNG or None
+    """
+    type_comment_args = None
+    """
+    If present, this will contain the type annotation for arguments
+    passed by a type comment
+    """
+    type_comment_returns = None
+    """If present, this will contain the return type annotation, passed by a type comment"""
     # attributes below are set by the builder module or by raw factories
     _other_fields = ('name', 'doc')
-    _other_other_fields = ('locals', '_type')
+    _other_other_fields = (
+        'locals',
+        '_type',
+        'type_comment_returns',
+        'type_comment_args',
+    )
     _type = None
 
     def __init__(self, name=None, doc=None, lineno=None,
@@ -1286,7 +1303,11 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             frame.set_local(name, self)
 
     # pylint: disable=arguments-differ; different than Lambdas
-    def postinit(self, args, body, decorators=None, returns=None):
+    def postinit(self, args, body,
+                 decorators=None,
+                 returns=None,
+                 type_comment_returns=None,
+                 type_comment_args=None):
         """Do some setup after initialisation.
 
         :param args: The arguments that the function takes.
@@ -1298,11 +1319,17 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :param decorators: The decorators that are applied to this
             method or function.
         :type decorators: Decorators or None
+        :params type_comment_returns:
+            The return type annotation passed via a type comment.
+        :params type_comment_args:
+            The args type annotation passed via a type comment.
         """
         self.args = args
         self.body = body
         self.decorators = decorators
         self.returns = returns
+        self.type_comment_returns = type_comment_returns
+        self.type_comment_args = type_comment_args
 
         if isinstance(self.parent.frame(), ClassDef):
             self.set_local('__class__', self.parent.frame())
