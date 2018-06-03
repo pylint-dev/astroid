@@ -32,8 +32,6 @@ Main modules are:
 
 import os
 import sys
-import re
-from operator import attrgetter
 
 import enum
 
@@ -73,29 +71,6 @@ MANAGER = AstroidManager()
 del AstroidManager
 
 # transform utilities (filters and decorator)
-
-class AsStringRegexpPredicate(object):
-    """ClassDef to be used as predicate that may be given to `register_transform`
-
-    First argument is a regular expression that will be searched against the `as_string`
-    representation of the node onto which it's applied.
-
-    If specified, the second argument is an `attrgetter` expression that will be
-    applied on the node first to get the actual node on which `as_string` should
-    be called.
-
-    WARNING: This can be fairly slow, as it has to convert every AST node back
-    to Python code; you should consider examining the AST directly instead.
-    """
-    def __init__(self, regexp, expression=None):
-        self.regexp = re.compile(regexp)
-        self.expression = expression
-
-    def __call__(self, node):
-        if self.expression is not None:
-            node = attrgetter(self.expression)(node)
-        # pylint: disable=no-member; github.com/pycqa/astroid/126
-        return self.regexp.search(node.as_string())
 
 def inference_tip(infer_function, raise_on_overwrite=False):
     """Given an instance specific inference function, return a function to be

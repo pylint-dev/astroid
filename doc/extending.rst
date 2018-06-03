@@ -15,11 +15,6 @@ subdirectory, which are taken from the `pylint-brain`_ project.
 Transformation functions are registered using the `register_transform` method of
 the Astroid manager:
 
-
-To add filtering based on the `as_string` representation of the node
-in addition to the type, the :class:`astroid.AsStringRegexpPredicate`
-predicate object can be used.
-
 Last but not least, the :func:`inference_tip` function is there to register
 a custom inference function.
 

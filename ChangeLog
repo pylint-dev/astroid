@@ -2,7 +2,11 @@ Change log for the astroid package (used to be astng)
 =====================================================
 
 -- 2.0
---
+
+   * AsStringRegexpPredicate has been removed.
+
+     Use transform predicates instead of it.
+
    * Switched to using typed_ast for getting access to type comments
 
      As a side effect of this change, some nodes gained a new `type_annotation` attribute,
