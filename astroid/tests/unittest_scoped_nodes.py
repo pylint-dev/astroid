@@ -31,7 +31,6 @@ from astroid.bases import (
     BUILTINS, Instance,
     BoundMethod, UnboundMethod, Generator
 )
-from astroid import __pkginfo__
 from astroid import test_utils
 from astroid.tests import resources
 

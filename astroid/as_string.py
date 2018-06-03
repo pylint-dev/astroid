@@ -15,8 +15,6 @@
 """
 import sys
 
-import six
-
 
 # pylint: disable=unused-argument
 
@@ -243,12 +241,10 @@ class AsStringVisitor(object):
         """return an astroid.Function node as string"""
         decorate = node.decorators.accept(self) if node.decorators else ''
         docs = '\n%s"""%s"""' % (self.indent, node.doc) if node.doc else ''
-        return_annotation = ''
-        if six.PY3 and node.returns:
+        trailer = ':'
+        if node.returns:
             return_annotation = '->' + node.returns.as_string()
             trailer = return_annotation + ":"
-        else:
-            trailer = ":"
         def_format = "\n%sdef %s(%s)%s%s\n%s"
         return def_format % (decorate, node.name,
                              node.args.accept(self),
