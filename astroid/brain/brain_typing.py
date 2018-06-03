@@ -1,12 +1,15 @@
 # Copyright (c) 2016 David Euresti <david@dropbox.com>
 
 """Astroid hooks for typing.py support."""
-import textwrap
 
 from astroid import (
-    MANAGER, UseInferenceDefault, extract_node, inference_tip,
-    nodes, InferenceError)
-from astroid.nodes import List, Tuple
+    MANAGER,
+    UseInferenceDefault,
+    extract_node,
+    inference_tip,
+    nodes,
+    InferenceError,
+)
 
 
 TYPING_NAMEDTUPLE_BASENAMES = {
@@ -15,20 +18,14 @@ TYPING_NAMEDTUPLE_BASENAMES = {
 }
 TYPING_TYPEVARS = {'TypeVar', 'NewType'}
 TYPING_TYPEVARS_QUALIFIED = {'typing.TypeVar', 'typing.NewType'}
+TYPING_TYPE_TEMPLATE = """
+class Meta(type):
+    def __getitem__(self, item):
+        return self
 
-
-
-
-
-
-def has_namedtuple_base(node):
-    """Predicate for class inference tip
-
-    :type node: ClassDef
-    :rtype: bool
-    """
-    return set(node.basenames) & TYPING_NAMEDTUPLE_BASENAMES
-
+class {0}(metaclass=Meta):
+    pass
+"""
 
 
 def looks_like_typing_typevar_or_newtype(node):
@@ -38,16 +35,6 @@ def looks_like_typing_typevar_or_newtype(node):
     if isinstance(func, nodes.Name):
         return func.name in TYPING_TYPEVARS
     return False
-
-
-TYPING_TYPE_TEMPLATE = """
-class Meta(type):
-    def __getitem__(self, item):
-        return self
-
-class {0}(metaclass=Meta):
-    pass
-"""
 
 
 def infer_typing_typevar_or_newtype(node, context=None):
