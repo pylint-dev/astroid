@@ -22,7 +22,7 @@ def _looks_like_signal(node, signal_name='pyqtSignal'):
     return False
 
 
-def transform_pyqt_signal(node):    
+def transform_pyqt_signal(node):
     module = parse('''
     class pyqtSignal(object):
         def connect(self, slot, type=None, no_receiver_check=False):
@@ -38,6 +38,22 @@ def transform_pyqt_signal(node):
     node.instance_attrs['connect'] = signal_cls['connect']
 
 
+def transform_pyside_signal(node):
+    module = parse('''
+    class NotPySideSignal(object):
+        def connect(self, receiver, type=None):
+            pass
+        def disconnect(self, receiver):
+            pass
+        def emit(self, *args):
+            pass
+    ''')
+    signal_cls = module['NotPySideSignal']
+    node.instance_attrs['connect'] = signal_cls['connect']
+    node.instance_attrs['disconnect'] = signal_cls['disconnect']
+    node.instance_attrs['emit'] = signal_cls['emit']
+
+
 def pyqt4_qtcore_transform():
     return AstroidBuilder(MANAGER).string_build('''
 
@@ -51,3 +67,5 @@ class QObject(object):
 register_module_extender(MANAGER, 'PyQt4.QtCore', pyqt4_qtcore_transform)
 MANAGER.register_transform(nodes.FunctionDef, transform_pyqt_signal,
                            _looks_like_signal)
+MANAGER.register_transform(nodes.ClassDef, transform_pyside_signal,
+                           lambda node: node.qname() == 'PySide.QtCore.Signal')
