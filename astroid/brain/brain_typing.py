@@ -1,6 +1,7 @@
 # Copyright (c) 2016 David Euresti <david@dropbox.com>
 
 """Astroid hooks for typing.py support."""
+import typing
 
 from astroid import (
     MANAGER,
@@ -26,6 +27,7 @@ class Meta(type):
 class {0}(metaclass=Meta):
     pass
 """
+TYPING_MEMBERS = set(typing.__all__)
 
 
 def looks_like_typing_typevar_or_newtype(node):
@@ -54,6 +56,17 @@ def infer_typing_typevar_or_newtype(node, context=None):
     return node.infer(context=context)
 
 
+def _looks_like_typing_subscript(node):
+    """Try to figure out if a Subscript node *might* be a typing-related subscript"""
+    if isinstance(node, nodes.Name):
+        return node.name in TYPING_MEMBERS
+    elif isinstance(node, nodes.Attribute):
+        return node.attrname in TYPING_MEMBERS
+    elif isinstance(node, nodes.Subscript):
+        return _looks_like_typing_subscript(node.value)
+    return False
+
+
 def infer_typing_attr(node, context=None):
     """Infer a typing.X[...] subscript"""
     try:
@@ -76,4 +89,5 @@ MANAGER.register_transform(
 MANAGER.register_transform(
     nodes.Subscript,
     inference_tip(infer_typing_attr),
+    _looks_like_typing_subscript,
 )
