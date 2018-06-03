@@ -62,3 +62,7 @@ Exceptions
 .. autofunction:: parse
 
 .. autofunction:: unpack_infer
+
+.. autofunction:: register_module_extender
+
+.. autofunction:: inference_tip
