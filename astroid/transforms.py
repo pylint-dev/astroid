@@ -36,6 +36,9 @@ class TransformVisitor(object):
                 # expected to be a replacement for the node
                 if ret is not None:
                     node = ret
+                if ret.__class__ != cls:
+                    # Can no longer apply the rest of the transforms.
+                    break
         return node
 
     def _visit(self, node):
