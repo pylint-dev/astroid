@@ -1,11 +1,7 @@
 .. _inference:
 
-===================================
-  Inference on the AST in astroid
-===================================
-
-Introduction
-============
+Inference Introduction
+======================
 
 What/where is 'inference' ?
 ---------------------------

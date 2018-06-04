@@ -1,5 +1,5 @@
-:mod:`astroid.nodes`
-====================
+Nodes
+=====
 
 .. automodule:: astroid.nodes
 

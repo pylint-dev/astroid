@@ -1,5 +1,5 @@
-:mod:`astroid.exceptions`
-=========================
+Exceptions
+==========
 
 .. automodule:: astroid.exceptions
 
