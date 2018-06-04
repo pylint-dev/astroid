@@ -30,10 +30,12 @@ Main modules are:
 * builder contains the class responsible to build astroid trees
 """
 
+import enum
+import itertools
 import os
 import sys
 
-import enum
+import wrapt
 
 
 _Context = enum.Enum('Context', 'Load Store Del')
@@ -72,6 +74,21 @@ del AstroidManager
 
 # transform utilities (filters and decorator)
 
+
+@wrapt.decorator
+def _inference_tip_cached(func, instance, args, kwargs, _cache={}):
+    """Cache decorator used for inference tips"""
+    node = args[0]
+    try:
+        return iter(_cache[func, node])
+    except KeyError:
+        result = func(*args, **kwargs)
+        # Need to keep an iterator around
+        original, copy = itertools.tee(result)
+        _cache[func, node] = list(copy)
+        return original
+
+
 def inference_tip(infer_function, raise_on_overwrite=False):
     """Given an instance specific inference function, return a function to be
     given to MANAGER.register_transform to set this inference function.
@@ -103,7 +120,7 @@ def inference_tip(infer_function, raise_on_overwrite=False):
                 .format(existing_inference=infer_function,
                         new_inference=node._explicit_inference,
                         node=node))
-        node._explicit_inference = infer_function
+        node._explicit_inference = _inference_tip_cached(infer_function)
         return node
     return transform
 
