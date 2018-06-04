@@ -23,6 +23,8 @@ Contents:
 
    api/index
 
+   whatsnew
+
 
 Indices and tables
 ==================
