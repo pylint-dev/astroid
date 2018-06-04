@@ -4,7 +4,7 @@ Extending astroid syntax tree
 Sometimes astroid will miss some potentially important information
 you may wish it supported instead, for instance with the libraries that rely
 on dynamic features of the language. In some other cases, you may
-want to customize the way inference works, for instance to explain *astroid*
+want to customize the way inference works, for instance to explain **astroid**
 that calls to `collections.namedtuple` are returning a class with some known
 attributes.
 
@@ -14,11 +14,11 @@ Modifications in the AST are possible in a couple of ways.
 AST transforms
 ^^^^^^^^^^^^^^
 
-*astroid* has support for AST transformations, which given a node,
+**astroid** has support for AST transformations, which given a node,
 should return either the same node but modified, or a completely new node.
 
 The transform functions needs to be registered with the underlying manager,
-that is, a class that *astroid* uses internally for all things configuration
+that is, a class that **astroid** uses internally for all things configuration
 related. You can access the manager using `astroid.MANAGER`.
 
 The transform functions need to receive three parameters, with the third one
@@ -168,7 +168,7 @@ AST inference tip transforms
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Another interesting transform you can do with the AST is to provide the
-so called ``inference tip``. *astroid* can be used as more than an AST library,
+so called ``inference tip``. **astroid** can be used as more than an AST library,
 it also offers some basic support of inference, it can infer what names might
 mean in a given context, it can be used to solve attributes in a highly complex
 class hierarchy, etc. We call this mechanism generally ``inference`` throughout the
@@ -194,7 +194,7 @@ and it is supposed to return an iterator::
         _looks_like_my_custom_call,
     )
 
-This transform is now going to be triggered whenever *astroid* figures out
+This transform is now going to be triggered whenever **astroid** figures out
 a node for which the transform pattern should apply.
 
 
