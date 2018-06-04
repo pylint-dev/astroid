@@ -75,6 +75,7 @@ del AstroidManager
 # transform utilities (filters and decorator)
 
 
+# pylint: disable=dangerous-default-value
 @wrapt.decorator
 def _inference_tip_cached(func, instance, args, kwargs, _cache={}):
     """Cache decorator used for inference tips"""
@@ -87,6 +88,7 @@ def _inference_tip_cached(func, instance, args, kwargs, _cache={}):
         original, copy = itertools.tee(result)
         _cache[func, node] = list(copy)
         return original
+# pylint: enable=dangerous-default-value
 
 
 def inference_tip(infer_function, raise_on_overwrite=False):
@@ -120,6 +122,7 @@ def inference_tip(infer_function, raise_on_overwrite=False):
                 .format(existing_inference=infer_function,
                         new_inference=node._explicit_inference,
                         node=node))
+        # pylint: disable=no-value-for-parameter
         node._explicit_inference = _inference_tip_cached(infer_function)
         return node
     return transform

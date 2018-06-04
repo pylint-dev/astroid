@@ -914,7 +914,7 @@ def test_type_comments_function():
             expected_args,
             expected_returns_type,
             expected_returns_string
-            ) in zip(module.body, expected_annotations):
+        ) in zip(module.body, expected_annotations):
         assert node.type_comment_returns is not None
         assert node.type_comment_args is not None
         for expected_arg, actual_arg in zip(expected_args, node.type_comment_args):
