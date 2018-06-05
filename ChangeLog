@@ -7,6 +7,9 @@ What's New in astroid 2.0?
 
 Release Date: Unknown
 
+   * Subclasses of *property* are now interpreted as properties
+
+     Close PyCQA/pylint#1601
 
    * AsStringRegexpPredicate has been removed.
 
