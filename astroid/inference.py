@@ -496,6 +496,8 @@ def _invoke_binop_inference(instance, opnode, op, other, context, method_name):
     methods = dunder_lookup.lookup(instance, method_name)
     method = methods[0]
     inferred = next(method.infer(context=context))
+    if inferred is util.Uninferable:
+        raise exceptions.InferenceError
     return instance.infer_binary_op(opnode, op, other, context, inferred)
 
 
