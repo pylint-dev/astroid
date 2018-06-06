@@ -268,7 +268,8 @@ class NumpyBrainCoreNumericTypesTest(SubTestWrapper):
         """
         Test that all uint + timedelta64 types have specified methods
         """
-        np_type_common_methods = ['all', 'any', 'argmax', 'argmin',
+        np_type_common_methods = [
+            'all', 'any', 'argmax', 'argmin',
             'argsort', 'astype', 'base', 'byteswap', 'choose', 'clip',
             'compress', 'conj', 'conjugate', 'copy', 'cumprod', 'cumsum',
             'data', 'diagonal', 'dtype', 'dump', 'dumps', 'fill', 'flags',
@@ -285,18 +286,21 @@ class NumpyBrainCoreNumericTypesTest(SubTestWrapper):
         for uint_type in ('uint16', 'uint32', 'uint64', 'int128', 'uint128',
                           'timedelta64'):
             inferred = self._inferred_numpy_attribute(uint_type)
-            self.assertTrue(set(np_type_common_methods) <= set([m.name for m in inferred.methods()]))
-            self.assertTrue(set(uint_common_methods) <= set([m.name for m in inferred.methods()]))
+            self.assertTrue(set(np_type_common_methods) <=
+                            set([m.name for m in inferred.methods()]))
+            self.assertTrue(set(uint_common_methods) <=
+                            set([m.name for m in inferred.methods()]))
 
         # Specific check for int128
-        int128_type = self._inferred_numpy_attribute('int128')
+        inferred = self._inferred_numpy_attribute('int128')
         self.assertTrue('bit_length' in [m.name for m in inferred.methods()])
 
     def test_float_types_have_methods(self):
         """
         Test that all float types have specified methods
         """
-        np_type_common_methods = ['all', 'any', 'argmax', 'argmin',
+        np_type_common_methods = [
+            'all', 'any', 'argmax', 'argmin',
             'argsort', 'astype', 'base', 'byteswap', 'choose', 'clip',
             'compress', 'conj', 'conjugate', 'copy', 'cumprod', 'cumsum',
             'data', 'diagonal', 'dtype', 'dump', 'dumps', 'fill', 'flags',
@@ -314,14 +318,17 @@ class NumpyBrainCoreNumericTypesTest(SubTestWrapper):
         for float_type in ('float16', 'float32', 'float64', 'float80',
                            'float96', 'float128', 'float256'):
             inferred = self._inferred_numpy_attribute(float_type)
-            self.assertTrue(set(np_type_common_methods) <= set([m.name for m in inferred.methods()]))
-            self.assertTrue(set(float_common_methods) <= set([m.name for m in inferred.methods()]))
+            self.assertTrue(set(np_type_common_methods) <=
+                            set([m.name for m in inferred.methods()]))
+            self.assertTrue(set(float_common_methods) <=
+                            set([m.name for m in inferred.methods()]))
 
     def test_complex_types_have_methods(self):
         """
         Test that all complex + datetime64 types have specified methods
         """
-        np_type_common_methods = ['all', 'any', 'argmax', 'argmin',
+        np_type_common_methods = [
+            'all', 'any', 'argmax', 'argmin',
             'argsort', 'astype', 'base', 'byteswap', 'choose', 'clip',
             'compress', 'conj', 'conjugate', 'copy', 'cumprod', 'cumsum',
             'data', 'diagonal', 'dtype', 'dump', 'dumps', 'fill', 'flags',
@@ -337,13 +344,15 @@ class NumpyBrainCoreNumericTypesTest(SubTestWrapper):
                              'complex160', 'complex192', 'complex256',
                              'complex512', 'datetime64'):
             inferred = self._inferred_numpy_attribute(complex_type)
-            self.assertTrue(set(np_type_common_methods) <= set([m.name for m in inferred.methods()]))
+            self.assertTrue(set(np_type_common_methods) <=
+                            set([m.name for m in inferred.methods()]))
 
-    def test_complex_types_have_methods(self):
+    def test_string_types_have_methods(self):
         """
         Test that all complex + datetime64 types have specified methods
         """
-        np_type_common_methods = ['all', 'any', 'argmax', 'argmin',
+        np_type_common_methods = [
+            'all', 'any', 'argmax', 'argmin',
             'argsort', 'astype', 'base', 'byteswap', 'choose', 'clip',
             'compress', 'conj', 'conjugate', 'copy', 'cumprod', 'cumsum',
             'data', 'diagonal', 'dtype', 'dump', 'dumps', 'fill', 'flags',
@@ -368,8 +377,10 @@ class NumpyBrainCoreNumericTypesTest(SubTestWrapper):
 
         for np_str_types in ('string_', 'unicode_'):
             inferred = self._inferred_numpy_attribute(np_str_types)
-            self.assertTrue(set(np_type_common_methods) <= set([m.name for m in inferred.methods()]))
-            self.assertTrue(set(np_string_common_methods) <= set([m.name for m in inferred.methods()]))
+            self.assertTrue(set(np_type_common_methods) <=
+                            set([m.name for m in inferred.methods()]))
+            self.assertTrue(set(np_string_common_methods) <=
+                            set([m.name for m in inferred.methods()]))
 
         # Specific check for unicode_
         inferred = self._inferred_numpy_attribute('unicode_')
