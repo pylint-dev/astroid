@@ -264,6 +264,117 @@ class NumpyBrainCoreNumericTypesTest(SubTestWrapper):
                 inferred = self._inferred_numpy_attribute(typ)
                 self.assertIsInstance(inferred, nodes.ClassDef)
 
+    def test_uint_types_have_methods(self):
+        """
+        Test that all uint + timedelta64 types have specified methods
+        """
+        np_type_common_methods = ['all', 'any', 'argmax', 'argmin',
+            'argsort', 'astype', 'base', 'byteswap', 'choose', 'clip',
+            'compress', 'conj', 'conjugate', 'copy', 'cumprod', 'cumsum',
+            'data', 'diagonal', 'dtype', 'dump', 'dumps', 'fill', 'flags',
+            'flat', 'flatten', 'getfield', 'imag', 'item', 'itemset',
+            'itemsize', 'max', 'mean', 'min', 'nbytes', 'ndim', 'newbyteorder',
+            'nonzero', 'prod', 'ptp', 'put', 'ravel', 'real', 'repeat',
+            'reshape', 'resize', 'round', 'searchsorted', 'setfield',
+            'setflags', 'shape', 'size', 'sort', 'squeeze', 'std', 'strides',
+            'sum', 'swapaxes', 'take', 'tobytes', 'tofile', 'tolist',
+            'tostring', 'trace', 'transpose', 'var', 'view']
+
+        uint_common_methods = ['denominator', 'numerator']
+
+        for uint_type in ('uint16', 'uint32', 'uint64', 'int128', 'uint128',
+                          'timedelta64'):
+            inferred = self._inferred_numpy_attribute(uint_type)
+            self.assertTrue(set(np_type_common_methods) <= set([m.name for m in inferred.methods()]))
+            self.assertTrue(set(uint_common_methods) <= set([m.name for m in inferred.methods()]))
+
+        # Specific check for int128
+        int128_type = self._inferred_numpy_attribute('int128')
+        self.assertTrue('bit_length' in [m.name for m in inferred.methods()])
+
+    def test_float_types_have_methods(self):
+        """
+        Test that all float types have specified methods
+        """
+        np_type_common_methods = ['all', 'any', 'argmax', 'argmin',
+            'argsort', 'astype', 'base', 'byteswap', 'choose', 'clip',
+            'compress', 'conj', 'conjugate', 'copy', 'cumprod', 'cumsum',
+            'data', 'diagonal', 'dtype', 'dump', 'dumps', 'fill', 'flags',
+            'flat', 'flatten', 'getfield', 'imag', 'item', 'itemset',
+            'itemsize', 'max', 'mean', 'min', 'nbytes', 'ndim', 'newbyteorder',
+            'nonzero', 'prod', 'ptp', 'put', 'ravel', 'real', 'repeat',
+            'reshape', 'resize', 'round', 'searchsorted', 'setfield',
+            'setflags', 'shape', 'size', 'sort', 'squeeze', 'std', 'strides',
+            'sum', 'swapaxes', 'take', 'tobytes', 'tofile', 'tolist',
+            'tostring', 'trace', 'transpose', 'var', 'view']
+
+        float_common_methods = ['as_integer_ratio', 'fromhex',
+                                'hex', 'is_integer']
+
+        for float_type in ('float16', 'float32', 'float64', 'float80',
+                           'float96', 'float128', 'float256'):
+            inferred = self._inferred_numpy_attribute(float_type)
+            self.assertTrue(set(np_type_common_methods) <= set([m.name for m in inferred.methods()]))
+            self.assertTrue(set(float_common_methods) <= set([m.name for m in inferred.methods()]))
+
+    def test_complex_types_have_methods(self):
+        """
+        Test that all complex + datetime64 types have specified methods
+        """
+        np_type_common_methods = ['all', 'any', 'argmax', 'argmin',
+            'argsort', 'astype', 'base', 'byteswap', 'choose', 'clip',
+            'compress', 'conj', 'conjugate', 'copy', 'cumprod', 'cumsum',
+            'data', 'diagonal', 'dtype', 'dump', 'dumps', 'fill', 'flags',
+            'flat', 'flatten', 'getfield', 'imag', 'item', 'itemset',
+            'itemsize', 'max', 'mean', 'min', 'nbytes', 'ndim', 'newbyteorder',
+            'nonzero', 'prod', 'ptp', 'put', 'ravel', 'real', 'repeat',
+            'reshape', 'resize', 'round', 'searchsorted', 'setfield',
+            'setflags', 'shape', 'size', 'sort', 'squeeze', 'std', 'strides',
+            'sum', 'swapaxes', 'take', 'tobytes', 'tofile', 'tolist',
+            'tostring', 'trace', 'transpose', 'var', 'view']
+
+        for complex_type in ('complex32', 'complex64', 'complex128',
+                             'complex160', 'complex192', 'complex256',
+                             'complex512', 'datetime64'):
+            inferred = self._inferred_numpy_attribute(complex_type)
+            self.assertTrue(set(np_type_common_methods) <= set([m.name for m in inferred.methods()]))
+
+    def test_complex_types_have_methods(self):
+        """
+        Test that all complex + datetime64 types have specified methods
+        """
+        np_type_common_methods = ['all', 'any', 'argmax', 'argmin',
+            'argsort', 'astype', 'base', 'byteswap', 'choose', 'clip',
+            'compress', 'conj', 'conjugate', 'copy', 'cumprod', 'cumsum',
+            'data', 'diagonal', 'dtype', 'dump', 'dumps', 'fill', 'flags',
+            'flat', 'flatten', 'getfield', 'imag', 'item', 'itemset',
+            'itemsize', 'max', 'mean', 'min', 'nbytes', 'ndim', 'newbyteorder',
+            'nonzero', 'prod', 'ptp', 'put', 'ravel', 'real', 'repeat',
+            'reshape', 'resize', 'round', 'searchsorted', 'setfield',
+            'setflags', 'shape', 'size', 'sort', 'squeeze', 'std', 'strides',
+            'sum', 'swapaxes', 'take', 'tobytes', 'tofile', 'tolist',
+            'tostring', 'trace', 'transpose', 'var', 'view']
+
+        np_string_common_methods = ['capitalize', 'center', 'count', 'decode',
+                                    'encode', 'endswith', 'expandtabs', 'find',
+                                    'format', 'index', 'isalnum', 'isalpha',
+                                    'isdigit', 'islower', 'isspace', 'istitle',
+                                    'isupper', 'join', 'ljust', 'lower',
+                                    'lstrip', 'partition', 'replace', 'rfind',
+                                    'rindex', 'rjust', 'rpartition', 'rsplit',
+                                    'rstrip', 'split', 'splitlines',
+                                    'startswith', 'strip', 'swapcase', 'title',
+                                    'translate', 'upper', 'zfill']
+
+        for np_str_types in ('string_', 'unicode_'):
+            inferred = self._inferred_numpy_attribute(np_str_types)
+            self.assertTrue(set(np_type_common_methods) <= set([m.name for m in inferred.methods()]))
+            self.assertTrue(set(np_string_common_methods) <= set([m.name for m in inferred.methods()]))
+
+        # Specific check for unicode_
+        inferred = self._inferred_numpy_attribute('unicode_')
+        self.assertTrue('isdecimal' in [m.name for m in inferred.methods()])
+        self.assertTrue('isnumeric' in [m.name for m in inferred.methods()])
 
 if __name__ == '__main__':
     unittest.main()

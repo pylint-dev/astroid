@@ -305,6 +305,7 @@ def numpy_core_numerictypes_transform():
     class unicode_(string_):
         def isdecimal(self): pass
         def isnumeric(self): pass
+
     object_ = type('object_')
     ''')
 
