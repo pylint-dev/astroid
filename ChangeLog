@@ -1,6 +1,22 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+2018-06-06 -- 1.6.5
+
+  *  Don't propagate Uninferable objects when inferring BinOps
+
+     Close PyCQA/pylint#2059
+
+  *  Protect against passing lookup_class to non-class proxied objects
+
+     In some cases the _proxied object points to another Instance, not to the
+     Class of an Instance node (usually this happens with enum and with our
+     hardcoded inference support for this library). Instead of getting a TypeError,
+     we check before if the _proxied matches what we expect.
+
+     Found by #2080
+
+
 2018-05-15 -- 1.6.4
 
    * Skip non-attrs specific attributes in attr wrapped classes. Close PyCQA/pylint#2055

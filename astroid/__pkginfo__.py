@@ -16,7 +16,7 @@ distname = 'astroid'
 
 modname = 'astroid'
 
-version = '1.6.4'
+version = '1.6.5'
 numversion = tuple(map(int, version.split('.')))
 
 extras_require = {}
