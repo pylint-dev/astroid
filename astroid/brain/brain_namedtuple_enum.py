@@ -24,6 +24,7 @@ TYPING_NAMEDTUPLE_BASENAMES = {
     'NamedTuple',
     'typing.NamedTuple'
 }
+ENUM_BASE_NAMES = {'Enum', 'IntEnum', 'enum.Enum', 'enum.IntEnum'}
 
 
 def _infer_first(node, context):
@@ -252,11 +253,10 @@ def infer_enum(node, context=None):
 
 def infer_enum_class(node):
     """ Specific inference for enums. """
-    names = {'Enum', 'IntEnum', 'enum.Enum', 'enum.IntEnum'}
     for basename in node.basenames:
         # TODO: doesn't handle subclasses yet. This implementation
         # is a hack to support enums.
-        if basename not in names:
+        if basename not in ENUM_BASE_NAMES:
             continue
         if node.root().name == 'enum':
             # Skip if the class is directly from enum module.
@@ -362,6 +362,8 @@ MANAGER.register_transform(
 )
 MANAGER.register_transform(
     nodes.ClassDef, infer_enum_class,
+    predicate=lambda cls: any(basename for basename in cls.basenames
+                              if basename in ENUM_BASE_NAMES)
 )
 MANAGER.register_transform(
     nodes.ClassDef,

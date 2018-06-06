@@ -808,7 +808,7 @@ class TypingBrain(unittest.TestCase):
         """)
         for node in ast_nodes:
             inferred = next(node.infer())
-            self.assertIsInstance(inferred, nodes.ClassDef)
+            self.assertIsInstance(inferred, nodes.ClassDef, node.as_string())
 
 
 class ReBrainTest(unittest.TestCase):

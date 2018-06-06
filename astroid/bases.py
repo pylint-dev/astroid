@@ -19,6 +19,7 @@ from astroid import exceptions
 from astroid import util
 
 objectmodel = util.lazy_import('interpreter.objectmodel')
+helpers = util.lazy_import('helpers')
 BUILTINS = builtins.__name__
 manager = util.lazy_import('manager')
 MANAGER = manager.AstroidManager()
@@ -51,7 +52,23 @@ def _is_property(meth):
         return True
     stripped = {name.split(".")[-1] for name in meth.decoratornames()
                 if name is not util.Uninferable}
-    return any(name in stripped for name in POSSIBLE_PROPERTIES)
+    if any(name in stripped for name in POSSIBLE_PROPERTIES):
+        return True
+
+    # Lookup for subclasses of *property*
+    if not meth.decorators:
+        return False
+    for decorator in meth.decorators.nodes or ():
+        inferred = helpers.safe_infer(decorator)
+        if inferred is None or inferred is util.Uninferable:
+            continue
+        if inferred.__class__.__name__ == 'ClassDef':
+            for base_class in inferred.bases:
+                module, stmts = base_class.lookup(base_class.name)
+                if module.name == BUILTINS and base_class.name == 'property':
+                    return True
+
+    return False
 
 
 class Proxy(object):

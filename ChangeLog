@@ -1,8 +1,20 @@
-Change log for the astroid package (used to be astng)
-=====================================================
+===================
+astroid's ChangeLog
+===================
 
--- 2.0
---
+What's New in astroid 2.0?
+==========================
+
+Release Date: Unknown
+
+   * Subclasses of *property* are now interpreted as properties
+
+     Close PyCQA/pylint#1601
+
+   * AsStringRegexpPredicate has been removed.
+
+     Use transform predicates instead of it.
+
    * Switched to using typed_ast for getting access to type comments
 
      As a side effect of this change, some nodes gained a new `type_annotation` attribute,
@@ -89,7 +101,12 @@ Change log for the astroid package (used to be astng)
      Close #533
 
 
-2017-12-15 -- 1.6.0
+
+What's New in astroid 1.6.0?
+============================
+
+Release Date: 2017-12-15
+
 
    * When verifying duplicates classes in MRO, ignore on-the-fly generated classes
 
@@ -164,7 +181,12 @@ Change log for the astroid package (used to be astng)
         Close PyCQA/pylint#1660
 
 
-2017-06-03 -- 1.5.3
+
+What's New in astroid 1.5.3?
+============================
+
+Release Date: 2017-06-03
+
 
     * enum34 dependency is forced to be at least version 1.1.3. Fixes spurious
     bug related to enum classes being falsy in boolean context, which caused
@@ -180,14 +202,24 @@ Change log for the astroid package (used to be astng)
     * Lock objects from ``threading`` module are now correctly recognised
       as context managers.
 
-2017-04-17 -- 1.5.2
+
+What's New in astroid 1.5.2?
+============================
+
+Release Date: 2017-04-17
+
 
    * Basic support for the class form of typing.NamedTuple
 
    * mro() can be computed for classes with old style classes in the hierarchy
 
 
-2017-04-13 -- 1.5.0
+
+What's New in astroid 1.5.0?
+============================
+
+Release Date: 2017-04-13
+
 
     * Arguments node gained a new attribute, ``kwonlyargs_annotations``
 
@@ -375,7 +407,12 @@ Change log for the astroid package (used to be astng)
 
       Fixes #399. See PEP530 for details.
 
-2015-11-29 -- 1.4.1
+
+What's New in astroid 1.4.1?
+============================
+
+Release Date: 2015-11-29
+
 
     * Add support for handling Uninferable nodes when calling as_string
 
@@ -388,7 +425,12 @@ Change log for the astroid package (used to be astng)
       Closes issue #270.
 
 
-2015-11-29 -- 1.4.0 
+
+What's New in astroid 1.4.0?
+============================
+
+Release Date: 2015-11-29
+ 
 
     * Class.getattr('__mro__') returns the actual MRO. Closes issue #128.
 
@@ -717,7 +759,12 @@ Change log for the astroid package (used to be astng)
      
 
 
-2015-03-14 -- 1.3.6
+
+What's New in astroid 1.3.6?
+============================
+
+Release Date: 2015-03-14
+
 
     * Class.slots raises NotImplementedError for old style classes.
       Closes issue #67.
@@ -729,7 +776,12 @@ Change log for the astroid package (used to be astng)
       in the resulting AST. Closes issue #82.
 
 
-2015-03-11 -- 1.3.5
+
+What's New in astroid 1.3.5?
+============================
+
+Release Date: 2015-03-11
+
 
     * Add the ability to optimize small ast subtrees,
       with the first use in the optimization of multiple
@@ -758,12 +810,22 @@ Change log for the astroid package (used to be astng)
       Closes issue #36.
            
 
-2015-01-17 -- 1.3.4
+
+What's New in astroid 1.3.4?
+============================
+
+Release Date: 2015-01-17
+
 
     * Get the first element from the method list when obtaining
       the functions from nose.tools.trivial. Closes Pylint issue #448.
 
-2015-01-16 -- 1.3.3
+
+What's New in astroid 1.3.3?
+============================
+
+Release Date: 2015-01-16
+
 
     * Restore file_stream to a property, but deprecate it in favour of
       the newly added method Module.stream. By using a method instead of a
@@ -797,7 +859,12 @@ Change log for the astroid package (used to be astng)
     * Add inference tips for nose.tools.
 
 
-2014-11-22 -- 1.3.2
+
+What's New in astroid 1.3.2?
+============================
+
+Release Date: 2014-11-22
+
 
     * Fixed a crash with invalid subscript index.
  
@@ -807,11 +874,21 @@ Change log for the astroid package (used to be astng)
     * Allow more fine-grained control over C extension loading
       in the manager.
 
-2014-11-21 -- 1.3.1
+
+What's New in astroid 1.3.1?
+============================
+
+Release Date: 2014-11-21
+
    
     * Fixed a crash issue with the pytest brain module.
 
-2014-11-20 -- 1.3.0
+
+What's New in astroid 1.3.0?
+============================
+
+Release Date: 2014-11-20
+
 
     * Fix a maximum recursion error occurred during the inference,
       where statements with the same name weren't filtered properly.
@@ -858,7 +935,12 @@ Change log for the astroid package (used to be astng)
       `setup.py develop` now works correctly.
 
 
-2014-08-24 -- 1.2.1
+
+What's New in astroid 1.2.1?
+============================
+
+Release Date: 2014-08-24
+
 
     * Fix a crash occurred when inferring decorator call chain.
       Closes issue #42.
@@ -887,7 +969,12 @@ Change log for the astroid package (used to be astng)
     * Don't crash when trying to infer unbound object.__new__ call.
       Closes issue #11.
 
-2014-07-25  --  1.2.0
+
+What's New in astroid 1.2.0?
+============================
+
+Release Date: 2014-07-25
+
 
     * Function nodes can detect decorator call chain and see if they are
       decorated with builtin descriptors (`classmethod` and `staticmethod`).
@@ -920,7 +1007,12 @@ Change log for the astroid package (used to be astng)
 
     * Add support in pylint-brain for understanding enum classes.
 
-2014-04-30  --  1.1.1
+
+What's New in astroid 1.1.1?
+============================
+
+Release Date: 2014-04-30
+
     * `Class.metaclass()` looks in ancestors when the current class
       does not define explicitly a metaclass.
 
@@ -928,7 +1020,12 @@ Change log for the astroid package (used to be astng)
       known, and only return cached modules if both name and filepath
       match. Fixes pylint Bitbucket issue #136.
 
-2014-04-18  --  1.1.0
+
+What's New in astroid 1.1.0?
+============================
+
+Release Date: 2014-04-18
+
     * All class nodes are marked as new style classes for Py3k.
 
     * Add a `metaclass` function to `Class` nodes to
@@ -952,7 +1049,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2013-10-18  --  1.0.1
+
+What's New in astroid 1.0.1?
+============================
+
+Release Date: 2013-10-18
+
     * fix py3k/windows installation issue (issue #4)
 
     * fix bug with namedtuple inference (issue #3)
@@ -964,7 +1066,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2013-07-29  --  1.0.0
+
+What's New in astroid 1.0.0?
+=============================
+
+Release Date: 2013-07-29
+
     * Fix some omissions in py2stdlib's version of hashlib and
       add a small test for it.
 
@@ -987,7 +1094,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2013-04-16  --  0.24.3
+
+What's New in astroid 0.24.3?
+=============================
+
+Release Date: 2013-04-16
+
     * #124360 [py3.3]: Don't crash on 'yield from' nodes
 
     * #123062 [pylint-brain]: Use correct names for keywords for urlparse
@@ -1007,7 +1119,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2013-02-27  --  0.24.2
+
+What's New in astroid 0.24.2?
+=============================
+
+Release Date: 2013-02-27
+
     * pylint-brain: more subprocess.Popen faking (see #46273)
 
     * #109562 [jython]: java modules have no __doc__, causing crash
@@ -1018,7 +1135,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2012-10-05  --  0.24.1
+
+What's New in astroid 0.24.1?
+=============================
+
+Release Date: 2012-10-05
+
     * #106191: fix __future__ absolute import w/ From node
 
     * #50395: fix function fromlineno when some decorator is splited on
@@ -1034,7 +1156,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2012-07-18  --  0.24.0
+
+What's New in astroid 0.24.0?
+=============================
+
+Release Date: 2012-07-18
+
     * include pylint brain extension, describing some stuff not properly understood until then.
       (#100013, #53049, #23986, #72355)
 
@@ -1044,7 +1171,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2011-12-08  --  0.23.1
+
+What's New in astroid 0.23.1?
+=============================
+
+Release Date: 2011-12-08
+
     * #62295: avoid "OSError: Too many open files" by moving
       .file_stream as a Module property opening the file only when needed
 
@@ -1054,7 +1186,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2011-10-07  --  0.23.0
+
+What's New in astroid 0.23.0?
+=============================
+
+Release Date: 2011-10-07
+
     * #77187: ancestor() only returns the first class when inheriting
       from two classes coming from the same module
 
@@ -1076,7 +1213,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2011-07-18  --  0.22.0
+
+What's New in astroid 0.22.0?
+=============================
+
+Release Date: 2011-07-18
+
     * added column offset information on nodes (patch by fawce)
 
     * #70497: Crash on AttributeError: 'NoneType' object has no attribute '_infer_name'
@@ -1092,7 +1234,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2011-01-11  --  0.21.1
+
+What's New in astroid 0.21.1?
+=============================
+
+Release Date: 2011-01-11
+
     * python3: handle file encoding; fix a lot of tests
 
     * fix #52006: "True" and "False" can be assigned as variable in Python2x
@@ -1111,7 +1258,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2010-11-15  --  0.21.0
+
+What's New in astroid 0.21.0?
+=============================
+
+Release Date: 2010-11-15
+
     * python3.x: first python3.x release
 
     * fix #37105: Crash on AttributeError: 'NoneType' object has no attribute '_infer_name'
@@ -1120,7 +1272,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2010-10-27  --  0.20.4
+
+What's New in astroid 0.20.4?
+=============================
+
+Release Date: 2010-10-27
+
     * fix #37868 #37665 #33638 #37909: import problems with absolute_import_activated
 
     * fix #8969: false positive when importing from zip-safe eggs
@@ -1133,7 +1290,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2010-09-28  --  0.20.3
+
+What's New in astroid 0.20.3?
+=============================
+
+Release Date: 2010-09-28
+
     * restored python 2.3 compatibility
 
     * fix #45959: AttributeError: 'NoneType' object has no attribute 'frame', due
@@ -1142,7 +1304,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2010-09-10  --  0.20.2
+
+What's New in astroid 0.20.2?
+=============================
+
+Release Date: 2010-09-10
+
     * fix astng building bug: we've to set module.package flag at the node
       creation time otherwise we'll miss this information when inferring relative
       import during the build process (this should fix for instance some problems
@@ -1156,7 +1323,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2010-05-11  --  0.20.1
+
+What's New in astroid 0.20.1?
+=============================
+
+Release Date: 2010-05-11
+
     * fix licensing to LGPL
 
     * add ALL_NODES_CLASSES constant to nodes module
@@ -1168,7 +1340,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2010-03-22  --  0.20.0
+
+What's New in astroid 0.20.0?
+=============================
+
+Release Date: 2010-03-22
+
     * fix #20464: raises ?TypeError: '_Yes' object is not iterable? on list inference
 
     * fix #19882: pylint hangs
@@ -1198,12 +1375,22 @@ Change log for the astroid package (used to be astng)
 
 
 
-2009-12-18  --  0.19.3
+
+What's New in astroid 0.19.3?
+=============================
+
+Release Date: 2009-12-18
+
     * fix name error making 0.19.2 almost useless
 
 
 
-2009-12-18  --  0.19.2
+
+What's New in astroid 0.19.2?
+=============================
+
+Release Date: 2009-12-18
+
     * fix #18773: inference bug on class member (due to bad handling of instance
       / class nodes "bounded" to method calls)
 
@@ -1220,7 +1407,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2009-08-27  --  0.19.1
+
+What's New in astroid 0.19.1?
+=============================
+
+Release Date: 2009-08-27
+
     * fix #8771: crash on yield expression
 
     * fix #10024: line numbering bug with try/except/finally
@@ -1233,7 +1425,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2009-03-25  --  0.19.0
+
+What's New in astroid 0.19.0?
+=============================
+
+Release Date: 2009-03-25
+
     * fixed python 2.6 issue (tests ok w/ 2.4, 2.5, 2.6. Anyone using 2.2 / 2.3
       to tell us if it works?)
 
@@ -1243,7 +1440,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2009-03-19  --  0.18.0
+
+What's New in astroid 0.18.0?
+=============================
+
+Release Date: 2009-03-19
+
     * major api / tree structure changes to make it works with compiler *and*
       python >= 2.5 _ast module
 
@@ -1251,7 +1453,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2008-11-19  --  0.17.4
+
+What's New in astroid 0.17.4?
+=============================
+
+Release Date: 2008-11-19
+
     * fix #6015: filter statements bug triggering W0631 false positive in pylint
 
     * fix #5571: Function.is_method() should return False on module level
@@ -1261,7 +1468,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2008-09-10  --  0.17.3
+
+What's New in astroid 0.17.3?
+=============================
+
+Release Date: 2008-09-10
+
     * fix #5889: astng crash on certain pyreverse projects
 
     * fix bug w/ loop assignment in .lookup
@@ -1271,7 +1483,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2008-01-14  --  0.17.2
+
+What's New in astroid 0.17.2?
+=============================
+
+Release Date: 2008-01-14
+
     * "with" statement support, patch provided by Brian Hawthorne
 
     * fixed recursion arguments in nodes_of_class method as notified by
@@ -1282,7 +1499,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2007-06-07  --  0.17.1
+
+What's New in astroid 0.17.1?
+=============================
+
+Release Date: 2007-06-07
+
     * fix #3651: crash when callable as default arg
 
     * fix #3670: subscription inference crash in some cases
@@ -1302,7 +1524,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2007-02-22  --  0.17.0
+
+What's New in astroid 0.17.0?
+=============================
+
+Release Date: 2007-02-22
+
     * api change to be able to infer using a context (used to infer function call
       result only for now)
 
@@ -1323,13 +1550,23 @@ Change log for the astroid package (used to be astng)
 
 
 
-2006-11-23  --  0.16.3
+
+What's New in astroid 0.16.3?
+=============================
+
+Release Date: 2006-11-23
+
     * enhance inference for the subscription notation (motivated by a patch from Amaury)
       and for unary sub/add
 
 
 
-2006-11-15  --  0.16.2
+
+What's New in astroid 0.16.2?
+=============================
+
+Release Date: 2006-11-15
+
     * grrr, fixed python 2.3 incompatibility introduced by generator expression
       scope handling
 
@@ -1340,7 +1577,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2006-09-25  --  0.16.1
+
+What's New in astroid 0.16.1?
+=============================
+
+Release Date: 2006-09-25
+
     * python 2.5 support, patch provided by Marien Zwart
 
     * fix [Class|Module].block_range method (this fixes pylint's inline
@@ -1357,7 +1599,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2006-04-19  --  0.16.0
+
+What's New in astroid 0.16.0?
+=============================
+
+Release Date: 2006-04-19
+
     * fix living object building to consider classes such as property as
       a class instead of a data descriptor
 
@@ -1368,14 +1615,24 @@ Change log for the astroid package (used to be astng)
 
 
 
-2006-03-10  --  0.15.1
+
+What's New in astroid 0.15.1?
+=============================
+
+Release Date: 2006-03-10
+
     * fix avoiding to load everything from living objects... Thanks Amaury!
 
     * fix a possible NameError in Instance.infer_call_result
 
 
 
-2006-03-06  --  0.15.0
+
+What's New in astroid 0.15.0?
+=============================
+
+Release Date: 2006-03-06
+
     * fix possible infinite recursion on global statements (close #10342)
       and in various other cases...
 
@@ -1404,7 +1661,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2006-01-10  --  0.14.0
+
+What's New in astroid 0.14.0?
+=============================
+
+Release Date: 2006-01-10
+
     * some major inference improvements and refactoring ! The drawback is
       the introduction of some non backward compatible change in the API
       but it's imho much cleaner and powerful now :)
@@ -1439,7 +1701,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2005-11-07  --  0.13.1
+
+What's New in astroid 0.13.1?
+=============================
+
+Release Date: 2005-11-07
+
     * fix bug on building from living module the same object in
       encountered more than once time (e.g. builtins.object) (close #10069)
 
@@ -1464,7 +1731,12 @@ Change log for the astroid package (used to be astng)
 
 
 
-2005-10-21  --  0.13.0
+
+What's New in astroid 0.13.0?
+=============================
+
+Release Date: 2005-10-21
+
     * .locals  and .globals on scoped node handle now a list of references
        to each assignment statements instead of a single reference to the
        first assignment statement.

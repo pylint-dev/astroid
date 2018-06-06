@@ -4447,5 +4447,22 @@ def test_augassign_recursion():
     assert next(cls_node.infer()) is util.Uninferable
 
 
+def test_infer_custom_inherit_from_property():
+    node = extract_node('''
+    class custom_property(property):
+        pass
+
+    class MyClass(object):
+        @custom_property
+        def my_prop(self):
+            return 1
+
+    MyClass().my_prop
+    ''')
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value == 1
+
+
 if __name__ == '__main__':
     unittest.main()

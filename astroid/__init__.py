@@ -30,12 +30,12 @@ Main modules are:
 * builder contains the class responsible to build astroid trees
 """
 
+import enum
+import itertools
 import os
 import sys
-import re
-from operator import attrgetter
 
-import enum
+import wrapt
 
 
 _Context = enum.Enum('Context', 'Load Store Del')
@@ -74,28 +74,22 @@ del AstroidManager
 
 # transform utilities (filters and decorator)
 
-class AsStringRegexpPredicate(object):
-    """ClassDef to be used as predicate that may be given to `register_transform`
 
-    First argument is a regular expression that will be searched against the `as_string`
-    representation of the node onto which it's applied.
+# pylint: disable=dangerous-default-value
+@wrapt.decorator
+def _inference_tip_cached(func, instance, args, kwargs, _cache={}):
+    """Cache decorator used for inference tips"""
+    node = args[0]
+    try:
+        return iter(_cache[func, node])
+    except KeyError:
+        result = func(*args, **kwargs)
+        # Need to keep an iterator around
+        original, copy = itertools.tee(result)
+        _cache[func, node] = list(copy)
+        return original
+# pylint: enable=dangerous-default-value
 
-    If specified, the second argument is an `attrgetter` expression that will be
-    applied on the node first to get the actual node on which `as_string` should
-    be called.
-
-    WARNING: This can be fairly slow, as it has to convert every AST node back
-    to Python code; you should consider examining the AST directly instead.
-    """
-    def __init__(self, regexp, expression=None):
-        self.regexp = re.compile(regexp)
-        self.expression = expression
-
-    def __call__(self, node):
-        if self.expression is not None:
-            node = attrgetter(self.expression)(node)
-        # pylint: disable=no-member; github.com/pycqa/astroid/126
-        return self.regexp.search(node.as_string())
 
 def inference_tip(infer_function, raise_on_overwrite=False):
     """Given an instance specific inference function, return a function to be
@@ -128,7 +122,8 @@ def inference_tip(infer_function, raise_on_overwrite=False):
                 .format(existing_inference=infer_function,
                         new_inference=node._explicit_inference,
                         node=node))
-        node._explicit_inference = infer_function
+        # pylint: disable=no-value-for-parameter
+        node._explicit_inference = _inference_tip_cached(infer_function)
         return node
     return transform
 

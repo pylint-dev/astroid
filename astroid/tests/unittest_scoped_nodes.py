@@ -31,7 +31,6 @@ from astroid.bases import (
     BUILTINS, Instance,
     BoundMethod, UnboundMethod, Generator
 )
-from astroid import __pkginfo__
 from astroid import test_utils
 from astroid.tests import resources
 
@@ -1188,7 +1187,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         inferred = next(klass.infer())
         metaclass = inferred.metaclass()
         self.assertIsInstance(metaclass, scoped_nodes.ClassDef)
-        self.assertEqual(metaclass.qname(), 'abc.ABCMeta')
+        self.assertIn(metaclass.qname(), ('abc.ABCMeta', '_py_abc.ABCMeta'))
 
     def test_using_invalid_six_add_metaclass_call(self):
         klass = builder.extract_node('''

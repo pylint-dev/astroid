@@ -121,11 +121,10 @@ class InconsistentMroError(MroError):
 
 
 class SuperError(ResolveError):
-
-    """Error raised when there is a problem with a super call.
+    """Error raised when there is a problem with a *super* call.
 
     Standard attributes:
-        super_: The Super instance that raised the exception.
+        *super_*: The Super instance that raised the exception.
         context: InferenceContext object.
     """
     super_ = None

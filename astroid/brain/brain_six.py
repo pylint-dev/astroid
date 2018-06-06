@@ -146,6 +146,18 @@ def _six_fail_hook(modname):
     return module
 
 
+def _looks_like_decorated_with_six_add_metaclass(node):
+    if not node.decorators:
+        return False
+
+    for decorator in node.decorators.nodes:
+        if not isinstance(decorator, nodes.Call):
+            continue
+        if decorator.func.as_string() == SIX_ADD_METACLASS:
+            return True
+    return False
+
+
 def transform_six_add_metaclass(node):
     """Check if the given class node is decorated with *six.add_metaclass*
 
@@ -172,4 +184,8 @@ register_module_extender(MANAGER, 'six', six_moves_transform)
 register_module_extender(MANAGER, 'requests.packages.urllib3.packages.six',
                          six_moves_transform)
 MANAGER.register_failed_import_hook(_six_fail_hook)
-MANAGER.register_transform(nodes.ClassDef, transform_six_add_metaclass)
+MANAGER.register_transform(
+    nodes.ClassDef,
+    transform_six_add_metaclass,
+    _looks_like_decorated_with_six_add_metaclass,
+)

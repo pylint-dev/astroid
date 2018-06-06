@@ -1,12 +1,16 @@
 # Copyright (c) 2016 David Euresti <david@dropbox.com>
 
 """Astroid hooks for typing.py support."""
-import textwrap
+import typing
 
 from astroid import (
-    MANAGER, UseInferenceDefault, extract_node, inference_tip,
-    nodes, InferenceError)
-from astroid.nodes import List, Tuple
+    MANAGER,
+    UseInferenceDefault,
+    extract_node,
+    inference_tip,
+    nodes,
+    InferenceError,
+)
 
 
 TYPING_NAMEDTUPLE_BASENAMES = {
@@ -15,20 +19,15 @@ TYPING_NAMEDTUPLE_BASENAMES = {
 }
 TYPING_TYPEVARS = {'TypeVar', 'NewType'}
 TYPING_TYPEVARS_QUALIFIED = {'typing.TypeVar', 'typing.NewType'}
+TYPING_TYPE_TEMPLATE = """
+class Meta(type):
+    def __getitem__(self, item):
+        return self
 
-
-
-
-
-
-def has_namedtuple_base(node):
-    """Predicate for class inference tip
-
-    :type node: ClassDef
-    :rtype: bool
-    """
-    return set(node.basenames) & TYPING_NAMEDTUPLE_BASENAMES
-
+class {0}(metaclass=Meta):
+    pass
+"""
+TYPING_MEMBERS = set(typing.__all__)
 
 
 def looks_like_typing_typevar_or_newtype(node):
@@ -38,16 +37,6 @@ def looks_like_typing_typevar_or_newtype(node):
     if isinstance(func, nodes.Name):
         return func.name in TYPING_TYPEVARS
     return False
-
-
-TYPING_TYPE_TEMPLATE = """
-class Meta(type):
-    def __getitem__(self, item):
-        return self
-
-class {0}(metaclass=Meta):
-    pass
-"""
 
 
 def infer_typing_typevar_or_newtype(node, context=None):
@@ -65,6 +54,17 @@ def infer_typing_typevar_or_newtype(node, context=None):
     typename = node.args[0].as_string().strip("'")
     node = extract_node(TYPING_TYPE_TEMPLATE.format(typename))
     return node.infer(context=context)
+
+
+def _looks_like_typing_subscript(node):
+    """Try to figure out if a Subscript node *might* be a typing-related subscript"""
+    if isinstance(node, nodes.Name):
+        return node.name in TYPING_MEMBERS
+    elif isinstance(node, nodes.Attribute):
+        return node.attrname in TYPING_MEMBERS
+    elif isinstance(node, nodes.Subscript):
+        return _looks_like_typing_subscript(node.value)
+    return False
 
 
 def infer_typing_attr(node, context=None):
@@ -89,4 +89,5 @@ MANAGER.register_transform(
 MANAGER.register_transform(
     nodes.Subscript,
     inference_tip(infer_typing_attr),
+    _looks_like_typing_subscript,
 )

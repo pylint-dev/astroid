@@ -5,7 +5,6 @@
 
 
 import collections
-import warnings
 
 
 class TransformVisitor(object):
@@ -30,18 +29,16 @@ class TransformVisitor(object):
             return node
 
         transforms = self.transforms[cls]
-        orig_node = node  # copy the reference
         for transform_func, predicate in transforms:
             if predicate is None or predicate(node):
                 ret = transform_func(node)
                 # if the transformation function returns something, it's
                 # expected to be a replacement for the node
                 if ret is not None:
-                    if node is not orig_node:
-                        # node has already be modified by some previous
-                        # transformation, warn about it
-                        warnings.warn('node %s substituted multiple times' % node)
                     node = ret
+                if ret.__class__ != cls:
+                    # Can no longer apply the rest of the transforms.
+                    break
         return node
 
     def _visit(self, node):

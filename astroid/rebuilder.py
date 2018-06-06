@@ -13,7 +13,7 @@ order to get a single Astroid representation
 import sys
 
 import astroid
-from astroid._ast import _parse, _get_parser_module
+from astroid._ast import _parse, _get_parser_module, parse_function_type_comment
 from astroid import nodes
 
 
@@ -258,6 +258,24 @@ class TreeRebuilder(object):
             return None
 
         return type_object.value
+
+    def check_function_type_comment(self, node):
+        type_comment = getattr(node, 'type_comment', None)
+        if not type_comment:
+            return None
+
+        try:
+            type_comment_ast = parse_function_type_comment(type_comment)
+        except SyntaxError:
+            # Invalid type comment, just skip it.
+            return None
+
+        returns = None
+        argtypes = [self.visit(elem, node) for elem in (type_comment_ast.argtypes or [])]
+        if type_comment_ast.returns:
+            returns = self.visit(type_comment_ast.returns, node)
+
+        return returns, argtypes
 
     def visit_assign(self, node, parent):
         """visit a Assign node by returning a fresh instance of it"""
@@ -528,10 +546,19 @@ class TreeRebuilder(object):
             returns = self.visit(node.returns, newnode)
         else:
             returns = None
-        newnode.postinit(self.visit(node.args, newnode),
-                         [self.visit(child, newnode)
-                          for child in node.body],
-                         decorators, returns)
+
+        type_comment_args = type_comment_returns = None
+        type_comment_annotation = self.check_function_type_comment(node)
+        if type_comment_annotation:
+            type_comment_returns, type_comment_args = type_comment_annotation
+        newnode.postinit(
+            args=self.visit(node.args, newnode),
+            body=[self.visit(child, newnode) for child in node.body],
+            decorators=decorators,
+            returns=returns,
+            type_comment_returns=type_comment_returns,
+            type_comment_args=type_comment_args,
+        )
         self._global_names.pop()
         return newnode
 

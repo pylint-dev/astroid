@@ -12,10 +12,9 @@ The builder is not thread safe and can't be used to parse different sources
 at the same time.
 """
 
-import re
 import os
-import sys
 import textwrap
+from tokenize import detect_encoding
 
 from astroid._ast import _parse
 from astroid import bases
@@ -36,41 +35,15 @@ _TRANSIENT_FUNCTION = '__'
 # when calling extract_node.
 _STATEMENT_SELECTOR = '#@'
 
-
-if sys.version_info >= (3, 0):
-    from tokenize import detect_encoding
-
-    def open_source_file(filename):
-        with open(filename, 'rb') as byte_stream:
-            encoding = detect_encoding(byte_stream.readline)[0]
-        stream = open(filename, 'r', newline=None, encoding=encoding)
-        data = stream.read()
-        return stream, encoding, data
-
-else:
-    _ENCODING_RGX = re.compile(r"\s*#+.*coding[:=]\s*([-\w.]+)")
-
-    def _guess_encoding(string):
-        """get encoding from a python file as string or return None if not found"""
-        # check for UTF-8 byte-order mark
-        if string.startswith('\xef\xbb\xbf'):
-            return 'UTF-8'
-        for line in string.split('\n', 2)[:2]:
-            # check for encoding declaration
-            match = _ENCODING_RGX.match(line)
-            if match is not None:
-                return match.group(1)
-        return None
-
-    def open_source_file(filename):
-        """get data for parsing a file"""
-        stream = open(filename, 'U')
-        data = stream.read()
-        encoding = _guess_encoding(data)
-        return stream, encoding, data
-
-
 MANAGER = manager.AstroidManager()
+
+
+def open_source_file(filename):
+    with open(filename, 'rb') as byte_stream:
+        encoding = detect_encoding(byte_stream.readline)[0]
+    stream = open(filename, 'r', newline=None, encoding=encoding)
+    data = stream.read()
+    return stream, encoding, data
 
 
 def _can_assign_attr(node, attrname):
