@@ -297,6 +297,11 @@ class FunctionModel(ObjectModel):
                 context = contextmod.copy_context(context)
                 cls = next(caller.args[0].infer(context=context))
 
+                if cls is astroid.Uninferable:
+                    raise exceptions.InferenceError(
+                        "Invalid class inferred",
+                        target=self, context=context)
+
                 # Rebuild the original value, but with the parent set as the
                 # class where it will be bound.
                 new_func = func.__class__(name=func.name, doc=func.doc,
