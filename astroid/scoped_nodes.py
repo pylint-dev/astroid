@@ -420,8 +420,6 @@ class Module(LocalsDictNodeNG):
     def stream(self):
         """Get a stream to the underlying file or bytes.
 
-        .. deprecated:: 1.5
-
         :type: file or io.BytesIO or None
         """
         return self._get_stream()
