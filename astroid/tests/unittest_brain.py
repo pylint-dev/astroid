@@ -1298,5 +1298,23 @@ class TestLenBuiltinInference:
             pass
 
 
+def test_infer_str():
+    nodes = astroid.extract_node('''
+    str(s) #@
+    str('a') #@
+    str(some_object()) #@
+    ''')
+    for node in nodes:
+        inferred = next(node.infer())
+        assert isinstance(inferred, astroid.Const)
+
+    node = astroid.extract_node('''
+    str(s='') #@
+    ''')
+    inferred = next(node.infer())
+    assert isinstance(inferred, astroid.Instance)
+    assert inferred.qname() == 'builtins.str'
+
+
 if __name__ == '__main__':
     unittest.main()

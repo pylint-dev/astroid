@@ -623,7 +623,7 @@ def infer_len(node, context=None):
 
     :param nodes.Call node: len call to infer
     :param context.InferenceContext: node context
-    :rtype nodes.Const:
+    :rtype nodes.Const: a Const node with the inferred length, if possible
     """
     call = arguments.CallSite.from_call(node)
     if call.keyword_arguments:
@@ -639,6 +639,22 @@ def infer_len(node, context=None):
     except (AstroidTypeError, InferenceError) as exc:
         raise UseInferenceDefault(str(exc)) from exc
 
+
+def infer_str(node, context=None):
+    """Infer str() calls
+
+    :param nodes.Call node: str() call to infer
+    :param context.InferenceContext: node context
+    :rtype nodes.Const: a Const containing an empty string
+    """
+    call = arguments.CallSite.from_call(node)
+    if call.keyword_arguments:
+        raise UseInferenceDefault(
+            "TypeError: str() must take no keyword arguments")
+    try:
+        return nodes.Const('')
+    except (AstroidTypeError, InferenceError) as exc:
+        raise UseInferenceDefault(str(exc)) from exc
 
 
 # Builtins inference
@@ -657,6 +673,7 @@ register_builtin_transform(infer_slice, 'slice')
 register_builtin_transform(infer_isinstance, 'isinstance')
 register_builtin_transform(infer_issubclass, 'issubclass')
 register_builtin_transform(infer_len, 'len')
+register_builtin_transform(infer_str, 'str')
 
 # Infer object.__new__ calls
 MANAGER.register_transform(

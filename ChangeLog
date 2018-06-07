@@ -7,6 +7,10 @@ What's New in astroid 2.0?
 
 Release Date: Unknown
 
+   * `str()` builtin is inferred as returning strings.
+
+     Close #148
+
    * DescriptorBoundMethod has the correct number of arguments defined.
 
    * Improvement of the numpy numeric types definition.
