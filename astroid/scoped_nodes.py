@@ -1048,6 +1048,9 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
     name = '<lambda>'
     is_lambda = True
 
+    def implicit_parameters(self):
+        return 0
+
     # function's type, 'function' | 'method' | 'staticmethod' | 'classmethod'
     @property
     def type(self):
@@ -1857,6 +1860,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
         for local_name, node in self.implicit_locals():
             self.add_local_node(node, local_name)
+
+    def implicit_parameters(self):
+        return 1
 
     def implicit_locals(self):
         """Get implicitly defined class definition locals.

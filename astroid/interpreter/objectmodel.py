@@ -288,6 +288,12 @@ class FunctionModel(ObjectModel):
 
         class DescriptorBoundMethod(bases.BoundMethod):
             """Bound method which knows how to understand calling descriptor binding."""
+
+            def implicit_parameters(self):
+                # Different than BoundMethod since the signature
+                # is different.
+                return 0
+
             def infer_call_result(self, caller, context=None, context_lookup=None):
                 if len(caller.args) != 2:
                     raise exceptions.InferenceError(

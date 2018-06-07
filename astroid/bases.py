@@ -308,6 +308,9 @@ class UnboundMethod(Proxy):
                                          self._proxied.name,
                                          frame.qname(), id(self))
 
+    def implicit_parameters(self):
+        return 0
+
     def is_bound(self):
         return False
 
@@ -362,6 +365,9 @@ class BoundMethod(UnboundMethod):
     def __init__(self, proxy, bound):
         UnboundMethod.__init__(self, proxy)
         self.bound = bound
+
+    def implicit_parameters(self):
+        return 1
 
     def is_bound(self):
         return True
