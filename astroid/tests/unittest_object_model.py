@@ -304,6 +304,17 @@ class FunctionModelTest(unittest.TestCase):
         self.assertIsInstance(result, astroid.Const)
         self.assertEqual(result.value, 42)
 
+    def test___get__has_extra_params_defined(self):
+        node = builder.extract_node('''
+        def test(self): return 42
+        test.__get__
+        ''')
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, astroid.BoundMethod)
+        args = inferred.args.args
+        self.assertEqual(len(args), 2)
+        self.assertEqual([arg.name for arg in args], ['self', 'type'])
+
     @unittest.expectedFailure
     def test_descriptor_not_inferrring_self(self):
         # We can't infer __get__(X, Y)() when the bounded function

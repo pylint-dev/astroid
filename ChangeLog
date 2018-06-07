@@ -7,7 +7,9 @@ What's New in astroid 2.0?
 
 Release Date: Unknown
 
-   * Improvment of the numpy numeric types definition.
+   * DescriptorBoundMethod has the correct number of arguments defined.
+
+   * Improvement of the numpy numeric types definition.
 
      Close PyCQA/pylint#1971
 

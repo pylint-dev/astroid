@@ -315,6 +315,31 @@ class FunctionModel(ObjectModel):
                 proxy = bases.UnboundMethod(new_func)
                 yield bases.BoundMethod(proxy=proxy, bound=cls)
 
+            @property
+            def args(self):
+                """Overwrite the underlying args to match those of the underlying func
+
+                Usually the underlying *func* is a function/method, as in:
+
+                    def test(self):
+                        pass
+
+                This has only the *self* parameter but when we access test.__get__
+                we get a new object which has two parameters, *self* and *type*.
+                """
+                nonlocal func
+                params = func.args.args.copy()
+                params.append(astroid.AssignName(name='type'))
+                arguments = astroid.Arguments(parent=func.args.parent,)
+                arguments.postinit(
+                    args=params,
+                    defaults=[],
+                    kwonlyargs=[],
+                    kw_defaults=[],
+                    annotations=[],
+                )
+                return arguments
+
         return DescriptorBoundMethod(proxy=self._instance, bound=self._instance)
 
     # These are here just for completion.
