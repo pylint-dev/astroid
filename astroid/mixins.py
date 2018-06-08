@@ -143,3 +143,9 @@ class MultiLineBlockMixin:
         for block in self._multi_line_blocks:
             for child_node in block:
                 yield from child_node._get_assign_nodes()
+
+
+class NoChildrenMixin:
+    """Mixin for nodes with no children, e.g. Pass."""
+    def get_children(self):
+        yield from ()
