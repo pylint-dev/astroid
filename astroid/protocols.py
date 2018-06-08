@@ -236,9 +236,7 @@ def _resolve_looppart(parts, asspath, context):
                 # we are not yet on the last part of the path
                 # search on each possibly inferred value
                 try:
-                    for inferred in _resolve_looppart(assigned.infer(context),
-                                                      asspath, context):
-                        yield inferred
+                    yield from _resolve_looppart(assigned.infer(context), asspath, context)
                 except exceptions.InferenceError:
                     break
 
@@ -251,12 +249,9 @@ def for_assigned_stmts(self, node=None, context=None, asspath=None):
     if asspath is None:
         for lst in self.iter.infer(context):
             if isinstance(lst, (nodes.Tuple, nodes.List)):
-                for item in lst.elts:
-                    yield item
+                yield from lst.elts
     else:
-        for inferred in _resolve_looppart(self.iter.infer(context),
-                                          asspath, context):
-            yield inferred
+        yield from _resolve_looppart(self.iter.infer(context), asspath, context)
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
     return dict(node=self, unknown=node,
@@ -330,8 +325,7 @@ def _arguments_infer_argname(self, name, context):
     # we can't guess given argument value
     try:
         context = contextmod.copy_context(context)
-        for inferred in self.default_value(name).infer(context):
-            yield inferred
+        yield from self.default_value(name).infer(context)
         yield util.Uninferable
     except exceptions.NoDefault:
         yield util.Uninferable
@@ -355,8 +349,8 @@ def assign_assigned_stmts(self, node=None, context=None, asspath=None):
     if not asspath:
         yield self.value
         return None
-    for inferred in _resolve_asspart(self.value.infer(context), asspath, context):
-        yield inferred
+    yield from _resolve_asspart(self.value.infer(context), asspath, context)
+
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
     return dict(node=self, unknown=node,
@@ -398,9 +392,7 @@ def _resolve_asspart(parts, asspath, context):
                 # we are not yet on the last part of the path search on each
                 # possibly inferred value
                 try:
-                    for inferred in _resolve_asspart(assigned.infer(context),
-                                                     asspath, context):
-                        yield inferred
+                    yield from _resolve_asspart(assigned.infer(context), asspath, context)
                 except exceptions.InferenceError:
                     return
 
@@ -459,8 +451,7 @@ def _infer_context_manager(self, mgr, context):
                 const.lineno = yield_point.lineno
                 yield const
             else:
-                for inferred in yield_point.value.infer(context=context):
-                    yield inferred
+                yield from yield_point.value.infer(context=context)
     elif isinstance(inferred, bases.Instance):
         try:
             enter = next(inferred.igetattr('__enter__', context=context))

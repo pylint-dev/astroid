@@ -204,8 +204,7 @@ class BaseInstance(Proxy):
         for attr in attrs:
             if isinstance(attr, UnboundMethod):
                 if _is_property(attr):
-                    for inferred in attr.infer_call_result(self, context):
-                        yield inferred
+                    yield from attr.infer_call_result(self, context)
                 else:
                     yield BoundMethod(attr, self)
             elif hasattr(attr, 'name') and attr.name == '<lambda>':

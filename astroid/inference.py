@@ -195,8 +195,7 @@ def infer_call(self, context=None):
             continue
         try:
             if hasattr(callee, 'infer_call_result'):
-                for inferred in callee.infer_call_result(self, callcontext, context_lookup):
-                    yield inferred
+                yield from callee.infer_call_result(self, callcontext, context_lookup)
         except exceptions.InferenceError:
             ## XXX log error ?
             continue
@@ -291,8 +290,7 @@ def infer_attribute(self, context=None):
 
         try:
             context.boundnode = owner
-            for obj in owner.igetattr(self.attrname, context):
-                yield obj
+            yield from owner.igetattr(self.attrname, context)
             context.boundnode = None
         except (exceptions.AttributeInferenceError, exceptions.InferenceError):
             context.boundnode = None
@@ -379,8 +377,7 @@ def infer_subscript(self, context=None):
     if self is assigned or assigned is util.Uninferable:
         yield util.Uninferable
         return None
-    for inferred in assigned.infer(context):
-        yield inferred
+    yield from assigned.infer(context)
 
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
@@ -518,9 +515,8 @@ def _infer_unaryop(self, context=None):
 @decorators.path_wrapper
 def infer_unaryop(self, context=None):
     """Infer what an UnaryOp should return when evaluated."""
-    for inferred in _filter_operation_errors(self, _infer_unaryop, context,
-                                             util.BadUnaryOperationMessage):
-        yield inferred
+    yield from _filter_operation_errors(self, _infer_unaryop, context,
+                                        util.BadUnaryOperationMessage)
     # Explicit StopIteration to return error information, see comment
     # in raise_if_nothing_inferred.
     return dict(node=self, context=context)
@@ -732,9 +728,8 @@ def _infer_binop(self, context):
                 return
 
             try:
-                for result in _infer_binary_operation(lhs, rhs, self,
-                                                      context, _get_binop_flow):
-                    yield result
+                yield from _infer_binary_operation(
+                    lhs, rhs, self, context, _get_binop_flow)
             except exceptions._NonDeducibleTypeHierarchy:
                 yield util.Uninferable
 
@@ -768,8 +763,7 @@ def _infer_augassign(self, context=None):
                 return
 
             try:
-                for result in _infer_binary_operation(lhs, rhs, self, context, _get_aug_flow):
-                    yield result
+                yield from _infer_binary_operation(lhs, rhs, self, context, _get_aug_flow)
             except exceptions._NonDeducibleTypeHierarchy:
                 yield util.Uninferable
 
@@ -816,9 +810,7 @@ def infer_empty_node(self, context=None):
         yield util.Uninferable
     else:
         try:
-            for inferred in MANAGER.infer_ast_from_something(self.object,
-                                                             context=context):
-                yield inferred
+            yield from MANAGER.infer_ast_from_something(self.object, context=context)
         except exceptions.AstroidError:
             yield util.Uninferable
 nodes.EmptyNode._infer = infer_empty_node
