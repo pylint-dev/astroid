@@ -704,8 +704,7 @@ class Module(LocalsDictNodeNG):
         return True
 
     def get_children(self):
-        for elt in self.body:
-            yield elt
+        yield from self.body
 
 
 class ComprehensionScope(LocalsDictNodeNG):
@@ -1609,8 +1608,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                 yield node_classes.Const(None)
             else:
                 try:
-                    for inferred in returnnode.value.infer(context):
-                        yield inferred
+                    yield from returnnode.value.infer(context)
                 except exceptions.InferenceError:
                     yield util.Uninferable
 
@@ -1632,8 +1630,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         if self.returns is not None:
             yield self.returns
 
-        for elt in self.body:
-            yield elt
+        yield from self.body
 
 
 class AsyncFunctionDef(FunctionDef):
@@ -2337,8 +2334,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
 
             if bases._is_property(attr):
                 # TODO(cpopa): don't use a private API.
-                for inferred in attr.infer_call_result(self, context):
-                    yield inferred
+                yield from attr.infer_call_result(self, context)
                 continue
             if attr.type == 'classmethod':
                 # If the method is a classmethod, then it will
@@ -2634,8 +2630,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                 except NotImplementedError:
                     continue
                 if cls_slots is not None:
-                    for slot in cls_slots:
-                        yield slot
+                    yield from cls_slots
                 else:
                     yield None
 
@@ -2682,8 +2677,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             if not baseobj.hide:
                 yield baseobj
             else:
-                for base in baseobj.bases:
-                    yield base
+                yield from baseobj.bases
 
     def _compute_mro(self, context=None):
         inferred_bases = list(self._inferred_bases(context=context))
@@ -2739,11 +2733,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         if self.decorators is not None:
             yield self.decorators
 
-        for elt in self.bases:
-            yield elt
-
-        for elt in self.body:
-            yield elt
+        yield from self.bases
+        yield from self.body
 
     def _get_assign_nodes(self):
         for child_node in self.body:
