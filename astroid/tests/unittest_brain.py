@@ -1299,12 +1299,12 @@ class TestLenBuiltinInference:
 
 
 def test_infer_str():
-    nodes = astroid.extract_node('''
+    ast_nodes = astroid.extract_node('''
     str(s) #@
     str('a') #@
     str(some_object()) #@
     ''')
-    for node in nodes:
+    for node in ast_nodes:
         inferred = next(node.infer())
         assert isinstance(inferred, astroid.Const)
 
