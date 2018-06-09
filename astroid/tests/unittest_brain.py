@@ -1316,5 +1316,27 @@ def test_infer_str():
     assert inferred.qname() == 'builtins.str'
 
 
+def test_infer_int():
+    nodes = astroid.extract_node('''
+    int(0) #@
+    int('1') #@
+    ''')
+    for node in nodes:
+        inferred = next(node.infer())
+        assert isinstance(inferred, astroid.Const)
+
+    nodes = astroid.extract_node('''
+    int(s='') #@
+    int('2.5') #@
+    int('something else') #@
+    int(unknown) #@
+    int(b'a') #@
+    ''')
+    for node in nodes:
+        inferred = next(node.infer())
+        assert isinstance(inferred, astroid.Instance)
+        assert inferred.qname() == 'builtins.int'
+
+
 if __name__ == '__main__':
     unittest.main()
