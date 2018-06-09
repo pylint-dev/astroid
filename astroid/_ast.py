@@ -1,4 +1,5 @@
 import ast
+import sys
 from collections import namedtuple
 from typing import Optional
 
@@ -16,6 +17,10 @@ FunctionType = namedtuple('FunctionType', ['argtypes', 'returns'])
 def _get_parser_module(parse_python_two: bool = False):
     if parse_python_two:
         parser_module = _ast_py2
+    elif sys.version_info[:2] >= (3, 7):
+        # The typed_ast module doesn't support the full 3.7 syntax yet.
+        # Remove once typed_ast is updated.
+        parser_module = ast
     else:
         parser_module = _ast_py3
     return parser_module or ast
