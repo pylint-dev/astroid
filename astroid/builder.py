@@ -389,6 +389,9 @@ def extract_node(code, module_name=''):
             requested_lines.append(idx + 1)
 
     tree = parse(code, module_name=module_name)
+    if not tree.body:
+        raise ValueError('Empty tree, cannot extract from it')
+
     extracted = []
     if requested_lines:
         extracted = [_find_statement_by_line(tree, line) for line in requested_lines]
