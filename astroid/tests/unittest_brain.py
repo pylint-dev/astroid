@@ -1317,22 +1317,22 @@ def test_infer_str():
 
 
 def test_infer_int():
-    nodes = astroid.extract_node('''
+    ast_nodes = astroid.extract_node('''
     int(0) #@
     int('1') #@
     ''')
-    for node in nodes:
+    for node in ast_nodes:
         inferred = next(node.infer())
         assert isinstance(inferred, astroid.Const)
 
-    nodes = astroid.extract_node('''
+    ast_nodes = astroid.extract_node('''
     int(s='') #@
     int('2.5') #@
     int('something else') #@
     int(unknown) #@
     int(b'a') #@
     ''')
-    for node in nodes:
+    for node in ast_nodes:
         inferred = next(node.infer())
         assert isinstance(inferred, astroid.Instance)
         assert inferred.qname() == 'builtins.int'
