@@ -7,6 +7,10 @@ What's New in astroid 2.0?
 
 Release Date: Unknown
 
+   * Inference support for `dict.fromkeys`
+
+     Close #110
+
    * `int()` builtin is inferred as returning integers.
 
      Close #150

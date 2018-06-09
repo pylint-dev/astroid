@@ -1338,5 +1338,78 @@ def test_infer_int():
         assert inferred.qname() == 'builtins.int'
 
 
+def test_infer_dict_from_keys():
+    bad_nodes = astroid.extract_node('''
+    dict.fromkeys() #@
+    dict.fromkeys(1, 2, 3) #@
+    dict.fromkeys(a=1) #@
+    ''')
+    for node in bad_nodes:
+        with pytest.raises(astroid.InferenceError):
+            next(node.infer())
+
+    # Test uninferable values
+    good_nodes = astroid.extract_node('''
+    from unknown import Unknown
+    dict.fromkeys(some_value) #@
+    dict.fromkeys(some_other_value) #@
+    dict.fromkeys([Unknown(), Unknown()]) #@
+    dict.fromkeys([Unknown(), Unknown()]) #@
+    ''')
+    for node in good_nodes:
+        inferred = next(node.infer())
+        assert isinstance(inferred, astroid.Dict)
+        assert inferred.items == []
+
+    # Test inferrable values
+
+    # from a dictionary's keys
+    from_dict = astroid.extract_node('''
+    dict.fromkeys({'a':2, 'b': 3, 'c': 3}) #@
+    ''')
+    inferred = next(from_dict.infer())
+    assert isinstance(inferred, astroid.Dict)
+    itered = inferred.itered()
+    assert all(isinstance(elem, astroid.Const) for elem in itered)
+    actual_values = [elem.value for elem in itered]
+    assert sorted(actual_values) == ['a', 'b', 'c']
+
+    # from a string
+    from_string = astroid.extract_node('''
+    dict.fromkeys('abc')
+    ''')
+    inferred = next(from_string.infer())
+    assert isinstance(inferred, astroid.Dict)
+    itered = inferred.itered()
+    assert all(isinstance(elem, astroid.Const) for elem in itered)
+    actual_values = [elem.value for elem in itered]
+    assert sorted(actual_values) == ['a', 'b', 'c']
+
+    # from bytes
+    from_bytes = astroid.extract_node('''
+    dict.fromkeys(b'abc')
+    ''')
+    inferred = next(from_bytes.infer())
+    assert isinstance(inferred, astroid.Dict)
+    itered = inferred.itered()
+    assert all(isinstance(elem, astroid.Const) for elem in itered)
+    actual_values = [elem.value for elem in itered]
+    assert sorted(actual_values) == [97, 98, 99]
+
+    # From list/set/tuple
+    from_others = astroid.extract_node('''
+    dict.fromkeys(('a', 'b', 'c')) #@
+    dict.fromkeys(['a', 'b', 'c']) #@
+    dict.fromkeys({'a', 'b', 'c'}) #@
+    ''')
+    for node in from_others:
+        inferred = next(node.infer())
+        assert isinstance(inferred, astroid.Dict)
+        itered = inferred.itered()
+        assert all(isinstance(elem, astroid.Const) for elem in itered)
+        actual_values = [elem.value for elem in itered]
+        assert sorted(actual_values) == ['a', 'b', 'c']
+
+
 if __name__ == '__main__':
     unittest.main()
