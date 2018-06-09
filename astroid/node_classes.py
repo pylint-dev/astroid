@@ -2564,7 +2564,7 @@ class Dict(NodeNG, bases.Instance):
     def postinit(self, items):
         """Do some setup after initialisation.
 
-        :param items: The ley-value pairs contained in the dictionary.
+        :param items: The key-value pairs contained in the dictionary.
         :type items: list(tuple(NodeNG, NodeNG))
         """
         self.items = items
