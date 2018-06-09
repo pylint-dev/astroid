@@ -2624,7 +2624,7 @@ class Dict(NodeNG, bases.Instance):
         :returns: The keys of this node.
         :rtype: iterable(NodeNG)
         """
-        return self.items[::2]
+        return [key for (key, _) in self.items]
 
     def getitem(self, index, context=None):
         """Get an item from this node.
