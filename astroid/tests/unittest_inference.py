@@ -17,6 +17,8 @@ from functools import partial
 import unittest
 import warnings
 
+import pytest
+
 from astroid import InferenceError, builder, nodes
 from astroid.builder import parse, extract_node
 from astroid.inference import infer_end as inference_infer_end
@@ -4462,6 +4464,17 @@ def test_infer_custom_inherit_from_property():
     inferred = next(node.infer())
     assert isinstance(inferred, nodes.Const)
     assert inferred.value == 1
+
+
+def test_cannot_infer_call_result_for_builtin_methods():
+    node = extract_node("""
+    a = "fast"
+    a
+    """)
+    inferred = next(node.infer())
+    lenmeth = next(inferred.igetattr("__len__"))
+    with pytest.raises(InferenceError):
+        next(lenmeth.infer_call_result(None, None))
 
 
 if __name__ == '__main__':

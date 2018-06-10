@@ -1603,7 +1603,12 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                 yield c
                 return
         returns = self._get_return_nodes_skip_functions()
-        for returnnode in returns:
+
+        first_return = next(returns, None)
+        if not first_return:
+            raise exceptions.InferenceError('Empty return iterator')
+
+        for returnnode in itertools.chain((first_return,), returns):
             if returnnode.value is None:
                 yield node_classes.Const(None)
             else:
