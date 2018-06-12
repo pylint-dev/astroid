@@ -1594,13 +1594,17 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                 self.args.vararg is not None):
             metaclass = next(caller.args[0].infer(context))
             if isinstance(metaclass, ClassDef):
-                c = ClassDef('temporary_class', None)
-                c.hide = True
-                c.parent = self
-                class_bases = [next(b.infer(context)) for b in caller.args[1:]]
-                c.bases = [base for base in class_bases if base != util.Uninferable]
-                c._metaclass = metaclass
-                yield c
+                class_bases = [next(arg.infer(context)) for arg in caller.args[1:]]
+                new_class = ClassDef(name='temporary_class')
+                new_class.hide = True
+                new_class.parent = self
+                new_class.postinit(
+                    bases=[base for base in class_bases if base != util.Uninferable],
+                    body=[],
+                    decorators=[],
+                    metaclass=metaclass,
+                )
+                yield new_class
                 return
         returns = self._get_return_nodes_skip_functions()
 
