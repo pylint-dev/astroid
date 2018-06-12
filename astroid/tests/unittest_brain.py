@@ -937,8 +937,6 @@ class RandomSampleTest(unittest.TestCase):
 
 class SubprocessTest(unittest.TestCase):
     """Test subprocess brain"""
-    # TODO Add more tests so that we can some day
-    # Remove this brain when all the tests work without the brain
     @unittest.skipIf(sys.version_info < (3, 3),
                      reason="Python 2.7 subprocess doesnt have args")
     def test_subprocess_args(self):

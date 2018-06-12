@@ -842,7 +842,6 @@ class TreeRebuilder3(TreeRebuilder):
 
     def visit_arg(self, node, parent):
         """visit a arg node by returning a fresh AssName instance"""
-        # TODO(cpopa): introduce an Arg node instead of using AssignName.
         return self.visit_assignname(node, parent, node.arg)
 
     def visit_nameconstant(self, node, parent):

@@ -72,7 +72,6 @@ def path_wrapper(func):
     Used to stop inference if the node has already been looked
     at for a given `InferenceContext` to prevent infinite recursion
     """
-    # TODO: switch this to wrapt after the monkey-patching is fixed (ceridwen)
     @functools.wraps(func)
     def wrapped(node, context=None, _func=func, **kwargs):
         """wrapper function handling context"""
@@ -116,23 +115,10 @@ def yes_if_nothing_inferred(func, instance, args, kwargs):
 
 @wrapt.decorator
 def raise_if_nothing_inferred(func, instance, args, kwargs):
-    '''All generators wrapped with raise_if_nothing_inferred *must*
+    """All generators wrapped with raise_if_nothing_inferred *must*
     explicitly raise StopIteration with information to create an
     appropriate structured InferenceError.
-
-    '''
-    # TODO: Explicitly raising StopIteration in a generator will cause
-    # a RuntimeError in Python >=3.7, as per
-    # http://legacy.python.org/dev/peps/pep-0479/ .  Before 3.7 is
-    # released, this code will need to use one of four possible
-    # solutions: a decorator that restores the current behavior as
-    # described in
-    # http://legacy.python.org/dev/peps/pep-0479/#sub-proposal-decorator-to-explicitly-request-current-behaviour
-    # , dynamic imports or exec to generate different code for
-    # different versions, drop support for all Python versions <3.3,
-    # or refactoring to change how these decorators work.  In any
-    # event, after dropping support for Python <3.3 this code should
-    # be refactored to use `yield from`.
+    """
     inferred = False
     try:
         generator = func(*args, **kwargs)

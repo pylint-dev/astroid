@@ -1017,9 +1017,6 @@ def _infer_decorator_callchain(node):
     if not node.parent:
         return None
     try:
-        # TODO: We don't handle multiple inference results right now,
-        #       because there's no flow to reason when the return
-        #       is what we are looking for, a static or a class method.
         result = next(node.infer_call_result(node.parent))
     except (StopIteration, exceptions.InferenceError):
         return None
@@ -2342,7 +2339,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                 continue
 
             if bases._is_property(attr):
-                # TODO(cpopa): don't use a private API.
                 yield from attr.infer_call_result(self, context)
                 continue
             if attr.type == 'classmethod':
@@ -2654,8 +2650,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         return sorted(slots, key=lambda item: item.value)
 
     def _inferred_bases(self, context=None):
-        # TODO(cpopa): really similar with .ancestors,
-        # but the difference is when one base is inferred,
+        # Similar with .ancestors, but the difference is when one base is inferred,
         # only the first object is wanted. That's because
         # we aren't interested in superclasses, as in the following
         # example:

@@ -52,7 +52,6 @@ def infer_random_sample(node, context=None):
     if inferred_sequence in (None, astroid.Uninferable):
         raise astroid.UseInferenceDefault
 
-    # TODO: might need to support more cases
     if not isinstance(inferred_sequence, ACCEPTED_ITERABLES_FOR_SAMPLE):
         raise astroid.UseInferenceDefault
 

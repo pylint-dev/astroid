@@ -87,7 +87,6 @@ def infer_func_form(node, base_type, context=None, enum=False):
             else:
                 # Enums supports either iterator of (name, value) pairs
                 # or mappings.
-                # TODO: support only list, tuples and mappings.
                 if hasattr(names, 'items') and isinstance(names.items, list):
                     attributes = [_infer_first(const[0], context).value
                                   for const in names.items

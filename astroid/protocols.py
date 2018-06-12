@@ -310,7 +310,6 @@ def _arguments_infer_argname(self, name, context):
             yield value
         return
 
-    # TODO: just provide the type here, no need to have an empty Dict.
     if name == self.vararg:
         vararg = nodes.const_factory(())
         vararg.parent = self
@@ -437,7 +436,7 @@ def _infer_context_manager(self, mgr, context):
 
         # Get the first yield point. If it has multiple yields,
         # then a RuntimeError will be raised.
-        # TODO(cpopa): Handle flows.
+
         possible_yield_points = func.nodes_of_class(nodes.Yield)
         # Ignore yields in nested functions
         yield_point = next((node for node in possible_yield_points
@@ -445,7 +444,6 @@ def _infer_context_manager(self, mgr, context):
                            None)
         if yield_point:
             if not yield_point.value:
-                # TODO(cpopa): an empty yield. Should be wrapped to Const.
                 const = nodes.Const(None)
                 const.parent = yield_point
                 const.lineno = yield_point.lineno

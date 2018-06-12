@@ -133,7 +133,7 @@ class CallSite(object):
         Arguments:
             funcnode: The function being called.
             name: The name of the argument whose value is being inferred.
-            context: TODO
+            context: Inference context object
         """
         if name in self.duplicated_keywords:
             raise exceptions.InferenceError('The arguments passed to {func!r} '

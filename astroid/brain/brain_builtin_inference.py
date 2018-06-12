@@ -36,9 +36,6 @@ OBJECT_DUNDER_NEW = 'object.__new__'
 
 def _extend_str(class_node, rvalue):
     """function to extend builtin str/unicode class"""
-    # TODO(cpopa): this approach will make astroid to believe
-    # that some arguments can be passed by keyword, but
-    # unfortunately, strings and bytes don't accept keyword arguments.
     code = dedent('''
     class whatever(object):
         def join(self, iterable):
@@ -171,10 +168,7 @@ def _generic_transform(arg, klass, iterables, build_elts):
     if isinstance(arg, klass):
         return arg
     elif isinstance(arg, iterables):
-        if not all(isinstance(elt, nodes.Const)
-                   for elt in arg.elts):
-            # TODO(cpopa): Don't support heterogenous elements.
-            # Not yet, though.
+        if not all(isinstance(elt, nodes.Const) for elt in arg.elts):
             raise UseInferenceDefault()
         elts = [elt.value for elt in arg.elts]
     elif isinstance(arg, nodes.Dict):
@@ -340,7 +334,6 @@ def infer_super(node, context=None):
         else:
             mro_type = cls.instantiate_class()
     else:
-        # TODO(cpopa): support flow control (multiple inference values).
         try:
             mro_pointer = next(node.args[0].infer(context=context))
         except InferenceError:
@@ -368,7 +361,6 @@ def _infer_getattr_args(node, context):
         raise UseInferenceDefault
 
     try:
-        # TODO(cpopa): follow all the values of the first argument?
         obj = next(node.args[0].infer(context=context))
         attr = next(node.args[1].infer(context=context))
     except InferenceError:
