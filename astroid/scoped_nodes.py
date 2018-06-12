@@ -18,7 +18,6 @@ import builtins
 import sys
 import io
 import itertools
-import warnings
 from typing import Optional, List
 
 from astroid import bases
@@ -2250,21 +2249,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         :rtype: Instance or ClassDef
         """
         return bases.Instance(self)
-
-    def instanciate_class(self):
-        """A deprecated alias for :meth:`instanciate_class`.
-
-        .. deprecated:: 1.5
-
-        :returns: An :class:`Instance` of the :class:`ClassDef` node,
-            or self if this is not possible.
-        :rtype: Instance or ClassDef
-        """
-        warnings.warn('%s.instanciate_class() is deprecated and slated for '
-                      'removal in astroid 2.0, use %s.instantiate_class() '
-                      'instead.' % (type(self).__name__, type(self).__name__),
-                      PendingDeprecationWarning, stacklevel=2)
-        return self.instantiate_class()
 
     def getattr(self, name, context=None, class_context=True):
         """Get an attribute from this class, using Python's attribute semantic.

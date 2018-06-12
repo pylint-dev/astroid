@@ -15,7 +15,6 @@ import os
 import sys
 from functools import partial
 import unittest
-import warnings
 
 import pytest
 
@@ -367,21 +366,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         a_inferred = a.inferred()
         self.assertEqual(a_inferred[0].value, 1)
         self.assertEqual(len(a_inferred), 1)
-
-    def test_infered_warning(self):
-        code = '''
-            def f(f=1):
-                return f
-
-            a = f()
-        '''
-        ast = parse(code, __name__)
-        a = ast['a']
-
-        with warnings.catch_warnings(record=True) as w:
-            with test_utils.enable_warning(PendingDeprecationWarning):
-                a.infered()
-            self.assertIsInstance(w[0].message, PendingDeprecationWarning)
 
     def test_exc_ancestors(self):
         code = '''

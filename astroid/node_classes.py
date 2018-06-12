@@ -15,7 +15,6 @@ import abc
 import builtins as builtins_mod
 import itertools
 import pprint
-import warnings
 from functools import lru_cache
 from functools import singledispatch as _singledispatch
 
@@ -672,20 +671,6 @@ class NodeNG(object):
         :rtype: list
         """
         return list(self.infer())
-
-    def infered(self):
-        """A deprecated alias of :meth:`inferred`.
-
-        .. deprecated:: 1.5
-
-        :returns: The inferred values.
-        :rtype: list
-        """
-        warnings.warn('%s.infered() is deprecated and slated for removal '
-                      'in astroid 2.0, use %s.inferred() instead.'
-                      % (type(self).__name__, type(self).__name__),
-                      PendingDeprecationWarning, stacklevel=2)
-        return self.inferred()
 
     def instantiate_class(self):
         """Instantiate a instance of the defined class.
@@ -2249,20 +2234,6 @@ class Comprehension(NodeNG):
         :rtype: NodeNG
         """
         return self
-
-    def ass_type(self):
-        """A deprecated alias of :meth:`assign_type`.
-
-        .. deprecated:: 1.5
-
-        :returns: The assignment type.
-        :rtype: NodeNG
-        """
-        warnings.warn('%s.ass_type() is deprecated and slated for removal'
-                      'in astroid 2.0, use %s.assign_type() instead.'
-                      % (type(self).__name__, type(self).__name__),
-                      PendingDeprecationWarning, stacklevel=2)
-        return self.assign_type()
 
     def _get_filtered_stmts(self, lookup_node, node, stmts, mystmt):
         """method used in filter_stmts"""
