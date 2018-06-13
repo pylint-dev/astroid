@@ -1409,5 +1409,54 @@ def test_infer_dict_from_keys():
         assert sorted(actual_values) == ['a', 'b', 'c']
 
 
+class TestFunctoolsPartial:
+
+    def test_invalid_functools_partial_calls(self):
+        ast_nodes = astroid.extract_node('''
+        from functools import partial
+        from unknown import Unknown
+
+        def test(a, b, c):
+            return a + b + c
+
+        partial() #@
+        partial(test) #@
+        partial(func=test) #@
+        partial(some_func, a=1) #@
+        partial(Unknown, a=1) #@
+        partial(2, a=1) #@
+        partial(test, unknown=1) #@
+        ''')
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            assert isinstance(inferred, astroid.Instance)
+            assert inferred.qname() == 'functools.partial'
+
+    def test_inferred_partial_function_calls(self):
+        ast_nodes = astroid.extract_node('''
+        from functools import partial
+        def test(a, b):
+            return a + b
+        partial(test, 1)(3) #@
+        partial(test, b=4)(3) #@
+        partial(test, b=4)(a=3) #@
+        def other_test(a, b, *, c=1):
+            return (a + b) * c
+
+        partial(other_test, 1, 2)() #@
+        partial(other_test, 1, 2)(c=4) #@
+        partial(other_test, c=4)(1, 3) #@
+        partial(other_test, 4, c=4)(4) #@
+        partial(other_test, 4, c=4)(b=5) #@
+        ''')
+        expected_values = [
+            4, 7, 7, 3, 12, 16, 32, 36,
+        ]
+        for node, expected_value in zip(ast_nodes, expected_values):
+            inferred = next(node.infer())
+            assert isinstance(inferred, astroid.Const)
+            assert inferred.value == expected_value
+
+
 if __name__ == '__main__':
     unittest.main()
