@@ -99,13 +99,16 @@ def _functools_partial_inference(node, context=None):
             filled_args = call.positional_arguments[1:]
             filled_keywords = call.keyword_arguments
 
-            current_passed_keywords = {keyword for (keyword, _) in context.callcontext.keywords}
-            for keyword, value in filled_keywords.items():
-                if keyword not in current_passed_keywords:
-                    context.callcontext.keywords.append((keyword, value))
+            if context:
+                current_passed_keywords = {
+                    keyword for (keyword, _) in context.callcontext.keywords
+                }
+                for keyword, value in filled_keywords.items():
+                    if keyword not in current_passed_keywords:
+                        context.callcontext.keywords.append((keyword, value))
 
-            call_context_args = context.callcontext.args or []
-            context.callcontext.args = filled_args + call_context_args
+                call_context_args = context.callcontext.args or []
+                context.callcontext.args = filled_args + call_context_args
 
             return super().infer_call_result(
                 caller=caller,
