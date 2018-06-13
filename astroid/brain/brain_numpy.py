@@ -226,57 +226,23 @@ def numpy_core_numerictypes_transform():
         def denominator(self): pass
         def numerator(self): pass
 
-    # float_common contains all the public methods present
-    # inside numpy.float*
-    class float_common(np_type_common):
-        def as_integer_ratio(self): pass
-        def fromhex(self, val): pass
-        def hex(self): pass
-        def is_integer(self): pass
-
-    class uint16(uint_common): pass
-    class uint32(uint_common): pass
-    class uint64(uint_common): pass
-    class uint128(uint_common): pass
-   
-    class float16(float_common): pass
-    class float32(float_common): pass
-    class float64(float_common): pass
-    class float80(float_common): pass
-    class float96(float_common): pass
-    class float128(float_common): pass
-    class float256(float_common): pass
-
-    class complex32(np_type_common): pass
-    class complex64(np_type_common): pass
-    class complex128(np_type_common): pass
-    class complex160(np_type_common): pass
-    class complex192(np_type_common): pass
-    class complex256(np_type_common): pass
-    class complex512(np_type_common): pass
-
-    class int128(uint_common):
-        def bit_length(self): pass
-
-    class timedelta64(uint_common): pass
-    
-    class datetime64(np_type_common): pass
-
-    class string_(np_type_common):
+    class np_string_common(np_type_common):
         def capitalize(self): pass
         def center(self, width, fillchar=' '): pass
         def count(self, sub, start=None, end=None): pass
-        def decode(self, encoding='default', errors='strict'): pass
-        def encode(self, encoding='default', errors='strict'): pass
         def endswith(self, suffix, start=None, end=None): pass
         def expandtabs(self, tabsize=8): pass
         def find(self, sub, start=None, end=None): pass
         def format(self, *args, **kwargs): pass
+        def format_map(self, mapping): pass
         def index(self, sub, start=None, end=None): pass
         def isalnum(self): pass
         def isalpha(self): pass
         def isdigit(self): pass
+        def isidentifier(self): pass
         def islower(self): pass
+        def isnumeric(self): pass
+        def isprintable(self): pass
         def isspace(self): pass
         def istitle(self): pass
         def isupper(self): pass
@@ -284,6 +250,7 @@ def numpy_core_numerictypes_transform():
         def ljust(self, width, fillchar=' '): pass
         def lower(self): pass
         def lstrip(self, chars=None): pass
+        def maketrans(self, x, y=None, z=None): pass
         def partition(self, sep): pass
         def replace(self, old, new, count=None): pass
         def rfind(self, sub, start=None, end=None): pass
@@ -302,11 +269,104 @@ def numpy_core_numerictypes_transform():
         def upper(self): pass
         def zfill(self, width): pass
 
-    class unicode_(string_):
+    class complex32(np_type_common): pass
+    class complex64(np_type_common): pass
+    class complex128(np_type_common): pass
+    class complex160(np_type_common): pass
+    class complex192(np_type_common): pass
+    class complex256(np_type_common): pass
+    class complex512(np_type_common): pass
+    class complex_(np_type_common): pass
+    class complexfloating(np_type_common): pass
+    class bool_(np_type_common): pass
+    class datetime64(np_type_common): pass
+    class character(np_type_common): pass
+    class flexible(np_type_common): pass
+
+    class uint8(uint_common): pass
+    class uint16(uint_common): pass
+    class uint32(uint_common): pass
+    class uint64(uint_common): pass
+    class uint128(uint_common): pass
+    class int8(uint_common): pass
+    class int16(uint_common): pass
+    class int32(uint_common): pass
+    class int64(uint_common): pass
+    class int128(uint_common):
+        def bit_length(self): pass
+    class timedelta64(uint_common): pass
+    class signedinteger(uint_common): pass
+    class unsignedinteger(uint_common): pass
+   
+    class float16(np_type_common): pass
+    class float32(np_type_common): pass
+    class float64(np_type_common):
+        def as_integer_ratio(self): pass
+        def fromhex(self, val): pass
+        def hex(self): pass
+        def is_integer(self): pass
+    class float80(np_type_common): pass
+    class float96(np_type_common): pass
+    class float128(np_type_common): pass
+    class float256(np_type_common): pass
+    class floating(np_type_common): pass
+    class inexact(np_type_common): pass
+    class void(np_type_common): pass
+
+    class str_(np_string_common):
+        def casefold(self): pass
+        def encode(self, encoding='default', errors='strict'): pass
+        def format(self, *args, **kwargs): pass
+        def format_map(self, mapping): pass
         def isdecimal(self): pass
+        def isidentifier(self): pass
         def isnumeric(self): pass
+        def isprintable(self): pass
+
+    class bytes_(np_string_common):
+        def decode(self, encoding='default', errors='strict'): pass
+        def fromhex(self, string): pass
+        def hex(self): pass
 
     object_ = type('object_')
+
+    unicode_ = str_
+    unicode = str_
+
+    string_ = bytes_
+    bytes0 = bytes_
+
+    bool8 = bool_
+    byte = int8
+    cdouble = complex128
+    cfloat = complex128
+    clongdouble = complex192
+    clongfloat = complex192
+    csingle = complex64
+    double = float64
+    float_ = float64
+    half = float16
+    int0 = int32
+    int_ = int32
+    intc = int32
+    longcomplex = complex192
+    longdouble = float96
+    longfloat = float96
+    object0 = object_
+    short = int16
+    signedinteger = signedinteger
+    single = float32
+    singlecomplex = complex64
+    str0 = str_
+    ubyte = uint8
+    uint = uint32
+    uint0 = uint32
+    uintc = uint32
+    uintp = uint32
+    ulonglong = uint64
+    unsignedinteger = unsignedinteger
+    ushort = uint16
+    void0 = void
     ''')
 
 

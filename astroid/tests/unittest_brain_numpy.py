@@ -247,7 +247,15 @@ class NumpyBrainCoreNumericTypesTest(SubTestWrapper):
                  'float16', 'float32', 'float64', 'float80', 'float96',
                  'float128', 'float256', 'complex32', 'complex64', 'complex128',
                  'complex160', 'complex192', 'complex256', 'complex512',
-                 'timedelta64', 'datetime64', 'unicode_', 'string_', 'object_']
+                 'timedelta64', 'datetime64', 'unicode_', 'str_', 'object_',
+                 'bool_', 'bool8', 'byte', 'int8', 'bytes0', 'bytes_',
+                 'cdouble', 'cfloat', 'character', 'clongdouble', 
+                 'clongfloat', 'complexfloating', 'csingle', 'double', 
+                 'flexible', 'floating', 'half', 'inexact', 'int0',
+                 'longcomplex', 'longdouble', 'longfloat', 'object0',
+                 'short', 'signedinteger', 'single', 'singlecomplex',
+                 'str0', 'ubyte', 'uint', 'uint0', 'uintc', 'uintp',
+                 'ulonglong', 'unsignedinteger', 'ushort', 'void0']
 
     def _inferred_numpy_attribute(self, attrib):
         node = builder.extract_node("""
@@ -312,7 +320,7 @@ class NumpyBrainCoreNumericTypesTest(SubTestWrapper):
             'sum', 'swapaxes', 'take', 'tobytes', 'tofile', 'tolist',
             'tostring', 'trace', 'transpose', 'var', 'view']
 
-        float_common_methods = ['as_integer_ratio', 'fromhex',
+        float_64_methods = ['as_integer_ratio', 'fromhex',
                                 'hex', 'is_integer']
 
         for float_type in ('float16', 'float32', 'float64', 'float80',
@@ -320,7 +328,10 @@ class NumpyBrainCoreNumericTypesTest(SubTestWrapper):
             inferred = self._inferred_numpy_attribute(float_type)
             self.assertTrue(set(np_type_common_methods) <=
                             set([m.name for m in inferred.methods()]))
-            self.assertTrue(set(float_common_methods) <=
+
+        for float_type in ('float64',):
+            inferred = self._inferred_numpy_attribute(float_type)
+            self.assertTrue(set(float_64_methods) <=
                             set([m.name for m in inferred.methods()]))
 
     def test_complex_types_have_methods(self):
@@ -364,28 +375,28 @@ class NumpyBrainCoreNumericTypesTest(SubTestWrapper):
             'sum', 'swapaxes', 'take', 'tobytes', 'tofile', 'tolist',
             'tostring', 'trace', 'transpose', 'var', 'view']
 
-        np_string_common_methods = ['capitalize', 'center', 'count', 'decode',
+        np_string_common_methods = ['capitalize', 'center', 'casefold', 'count',
                                     'encode', 'endswith', 'expandtabs', 'find',
-                                    'format', 'index', 'isalnum', 'isalpha',
-                                    'isdigit', 'islower', 'isspace', 'istitle',
+                                    'format', 'format_map', 'index', 'isalnum',
+                                    'isalpha',
+                                    'isdigit', 'isidentifier', 'islower',
+                                    'isnumeric', 'isprintable',
+                                    'isspace', 
+                                    'istitle', 
                                     'isupper', 'join', 'ljust', 'lower',
-                                    'lstrip', 'partition', 'replace', 'rfind',
+                                    'lstrip', 'maketrans', 'partition',
+                                    'replace', 'rfind',
                                     'rindex', 'rjust', 'rpartition', 'rsplit',
                                     'rstrip', 'split', 'splitlines',
                                     'startswith', 'strip', 'swapcase', 'title',
                                     'translate', 'upper', 'zfill']
 
-        for np_str_types in ('string_', 'unicode_'):
+        for np_str_types in ('str_', 'unicode_'):
             inferred = self._inferred_numpy_attribute(np_str_types)
             self.assertTrue(set(np_type_common_methods) <=
                             set([m.name for m in inferred.methods()]))
             self.assertTrue(set(np_string_common_methods) <=
                             set([m.name for m in inferred.methods()]))
-
-        # Specific check for unicode_
-        inferred = self._inferred_numpy_attribute('unicode_')
-        self.assertTrue('isdecimal' in [m.name for m in inferred.methods()])
-        self.assertTrue('isnumeric' in [m.name for m in inferred.methods()])
 
 if __name__ == '__main__':
     unittest.main()
