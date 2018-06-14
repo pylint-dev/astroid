@@ -40,6 +40,7 @@ if sys.version_info[0] == 2:
     import BaseHTTPServer
     import CGIHTTPServer
     import SimpleHTTPServer
+    import cPickle
 
     from StringIO import StringIO
     from cStringIO import StringIO as cStringIO
