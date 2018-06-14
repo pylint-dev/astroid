@@ -7,6 +7,10 @@ What's New in astroid 2.0?
 
 Release Date: Unknown
 
+   * Support unpacking for dicts in assignments
+
+     Close #268
+
    * Add support for inferring functools.partial
 
      Close #125

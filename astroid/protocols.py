@@ -373,7 +373,15 @@ def _resolve_asspart(parts, asspath, context):
     asspath = asspath[:]
     index = asspath.pop(0)
     for part in parts:
-        if hasattr(part, 'getitem'):
+        assigned = None
+        if isinstance(part, nodes.Dict):
+            # A dictionary in an iterating context
+            try:
+                assigned, _ = part.items[index]
+            except KeyError:
+                return
+
+        elif hasattr(part, 'getitem'):
             index_node = nodes.Const(index)
             try:
                 assigned = part.getitem(index_node, context)
@@ -381,19 +389,23 @@ def _resolve_asspart(parts, asspath, context):
             # unexpected exception ?
             except (exceptions.AstroidTypeError, exceptions.AstroidIndexError):
                 return
-            if not asspath:
-                # we achieved to resolved the assignment path, don't infer the
-                # last part
-                yield assigned
-            elif assigned is util.Uninferable:
+
+        if not assigned:
+            return
+
+        if not asspath:
+            # we achieved to resolved the assignment path, don't infer the
+            # last part
+            yield assigned
+        elif assigned is util.Uninferable:
+            return
+        else:
+            # we are not yet on the last part of the path search on each
+            # possibly inferred value
+            try:
+                yield from _resolve_asspart(assigned.infer(context), asspath, context)
+            except exceptions.InferenceError:
                 return
-            else:
-                # we are not yet on the last part of the path search on each
-                # possibly inferred value
-                try:
-                    yield from _resolve_asspart(assigned.infer(context), asspath, context)
-                except exceptions.InferenceError:
-                    return
 
 
 @decorators.raise_if_nothing_inferred

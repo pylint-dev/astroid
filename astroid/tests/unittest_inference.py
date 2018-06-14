@@ -4461,5 +4461,19 @@ def test_cannot_infer_call_result_for_builtin_methods():
         next(lenmeth.infer_call_result(None, None))
 
 
+def test_unpack_dicts_in_assignment():
+    ast_nodes = extract_node('''
+    a, b = {1:2, 2:3}
+    a #@
+    b #@
+    ''')
+    first_inferred = next(ast_nodes[0].infer())
+    second_inferred = next(ast_nodes[1].infer())
+    assert isinstance(first_inferred, nodes.Const)
+    assert first_inferred.value == 1
+    assert isinstance(second_inferred, nodes.Const)
+    assert second_inferred.value == 2
+
+
 if __name__ == '__main__':
     unittest.main()
