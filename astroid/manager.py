@@ -74,7 +74,7 @@ class AstroidManager(object):
         if source:
             from astroid.builder import AstroidBuilder
             return AstroidBuilder(self).file_build(filepath, modname)
-        elif fallback and modname:
+        if fallback and modname:
             return self.ast_from_module_name(modname)
         raise exceptions.AstroidBuildingError(
             'Unable to build an AST for {path}.', path=filepath)

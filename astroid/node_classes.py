@@ -179,7 +179,7 @@ def _container_getitem(instance, elts, index, context=None):
             new_cls.elts = elts[index_slice]
             new_cls.parent = instance.parent
             return new_cls
-        elif isinstance(index, Const):
+        if isinstance(index, Const):
             return elts[index.value]
     except IndexError as exc:
         raise exceptions.AstroidIndexError(
@@ -654,7 +654,7 @@ class NodeNG(object):
 
     def _infer_name(self, frame, name):
         # overridden for ImportFrom, Import, Global, TryExcept and Arguments
-        return None
+        pass
 
     def _infer(self, context=None):
         """we don't know how to resolve a statement by default"""
@@ -743,6 +743,7 @@ class NodeNG(object):
         :returns: The string representation of the AST.
         :rtype: str
         """
+        # pylint: disable=too-many-statements
         @_singledispatch
         def _repr_tree(node, result, done, cur_indent='', depth=1):
             """Outputs a representation of a non-tuple/list, non-node that's
@@ -795,8 +796,8 @@ class NodeNG(object):
                 result.append(indent + '<Recursion on %s with id=%s' %
                               (type(node).__name__, id(node)))
                 return False
-            else:
-                done.add(node)
+            done.add(node)
+
             if max_depth and depth > max_depth:
                 result.append('...')
                 return False
@@ -2763,9 +2764,8 @@ class ExceptHandler(mixins.MultiLineBlockMixin,
         """
         if self.name:
             return self.name.tolineno
-        elif self.type:
+        if self.type:
             return self.type.tolineno
-
         return self.lineno
 
     def catch(self, exceptions): # pylint: disable=redefined-outer-name

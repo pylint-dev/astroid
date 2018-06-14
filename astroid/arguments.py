@@ -227,7 +227,7 @@ class CallSite(object):
             kwarg.postinit([(nodes.const_factory(key), value)
                             for key, value in kwargs.items()])
             return iter((kwarg, ))
-        elif funcnode.args.vararg == name:
+        if funcnode.args.vararg == name:
             # It wants all the args that were passed into
             # the call site.
             if self.has_invalid_arguments():

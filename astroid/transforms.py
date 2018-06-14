@@ -52,7 +52,7 @@ class TransformVisitor(object):
     def _visit_generic(self, node):
         if isinstance(node, list):
             return [self._visit_generic(child) for child in node]
-        elif isinstance(node, tuple):
+        if isinstance(node, tuple):
             return tuple(self._visit_generic(child) for child in node)
 
         return self._visit(node)

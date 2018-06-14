@@ -547,7 +547,6 @@ class Module(LocalsDictNodeNG):
         :returns: The previous sibling statement node.
         :rtype: NodeNG or None
         """
-        return
 
     def next_sibling(self):
         """The next sibling statement node.
@@ -555,7 +554,6 @@ class Module(LocalsDictNodeNG):
         :returns: The next sibling statement node.
         :rtype: NodeNG or None
         """
-        return
 
     _absolute_import_activated = True
 
@@ -1389,10 +1387,10 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         if isinstance(frame, ClassDef):
             if self.name == '__new__':
                 return 'classmethod'
-            elif sys.version_info >= (3, 6) and self.name == '__init_subclass__':
+            if sys.version_info >= (3, 6) and self.name == '__init_subclass__':
                 return 'classmethod'
-            else:
-                type_name = 'method'
+
+            type_name = 'method'
 
         if not self.decorators:
             return type_name
@@ -1429,7 +1427,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                             continue
                         if ancestor.is_subtype_of('%s.classmethod' % BUILTINS):
                             return 'classmethod'
-                        elif ancestor.is_subtype_of('%s.staticmethod' % BUILTINS):
+                        if ancestor.is_subtype_of('%s.staticmethod' % BUILTINS):
                             return 'staticmethod'
             except exceptions.InferenceError:
                 pass

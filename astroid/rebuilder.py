@@ -130,9 +130,9 @@ class TreeRebuilder(object):
             if PY37 and hasattr(node, 'docstring'):
                 doc = node.docstring
                 return node, doc
-            elif (node.body
-                  and isinstance(node.body[0], self._parser_module.Expr)
-                  and isinstance(node.body[0].value, self._parser_module.Str)):
+            if (node.body
+                    and isinstance(node.body[0], self._parser_module.Expr)
+                    and isinstance(node.body[0].value, self._parser_module.Str)):
                 doc = node.body[0].value.s
                 node.body = node.body[1:]
                 return node, doc

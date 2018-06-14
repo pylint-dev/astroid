@@ -257,8 +257,8 @@ class AstroidManagerTest(resources.SysPathSetup,
         def hook(modname):
             if modname == 'foo.bar':
                 return unittest
-            else:
-                raise exceptions.AstroidBuildingError()
+
+            raise exceptions.AstroidBuildingError()
 
         with self.assertRaises(exceptions.AstroidBuildingError):
             self.manager.ast_from_module_name('foo.bar')
