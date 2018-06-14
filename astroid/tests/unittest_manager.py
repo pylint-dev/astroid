@@ -125,7 +125,7 @@ class AstroidManagerTest(resources.SysPathSetup,
     def test_namespace_package_pth_support(self):
         pth = 'foogle_fax-0.12.5-py2.7-nspkg.pth'
         site.addpackage(resources.RESOURCE_PATH, pth, [])
-        pkg_resources._namespace_packages['foogle'] = []  # pylint: disable=no-member
+        pkg_resources._namespace_packages['foogle'] = []
 
         try:
             module = self.manager.ast_from_module_name('foogle.fax')
@@ -135,18 +135,18 @@ class AstroidManagerTest(resources.SysPathSetup,
             with self.assertRaises(exceptions.AstroidImportError):
                 self.manager.ast_from_module_name('foogle.moogle')
         finally:
-            del pkg_resources._namespace_packages['foogle'] # pylint: disable=no-member
+            del pkg_resources._namespace_packages['foogle']
             sys.modules.pop('foogle')
 
     def test_nested_namespace_import(self):
         pth = 'foogle_fax-0.12.5-py2.7-nspkg.pth'
         site.addpackage(resources.RESOURCE_PATH, pth, [])
-        pkg_resources._namespace_packages['foogle'] = ['foogle.crank'] # pylint: disable=no-member
-        pkg_resources._namespace_packages['foogle.crank'] = [] # pylint: disable=no-member
+        pkg_resources._namespace_packages['foogle'] = ['foogle.crank']
+        pkg_resources._namespace_packages['foogle.crank'] = []
         try:
             self.manager.ast_from_module_name('foogle.crank')
         finally:
-            del pkg_resources._namespace_packages['foogle'] # pylint: disable=no-member
+            del pkg_resources._namespace_packages['foogle']
             sys.modules.pop('foogle')
 
     def test_namespace_and_file_mismatch(self):
@@ -155,12 +155,12 @@ class AstroidManagerTest(resources.SysPathSetup,
         self.assertEqual(ast.name, 'unittest')
         pth = 'foogle_fax-0.12.5-py2.7-nspkg.pth'
         site.addpackage(resources.RESOURCE_PATH, pth, [])
-        pkg_resources._namespace_packages['foogle'] = [] # pylint: disable=no-member
+        pkg_resources._namespace_packages['foogle'] = []
         try:
             with self.assertRaises(exceptions.AstroidImportError):
                 self.manager.ast_from_module_name('unittest.foogle.fax')
         finally:
-            del pkg_resources._namespace_packages['foogle'] # pylint: disable=no-member
+            del pkg_resources._namespace_packages['foogle']
             sys.modules.pop('foogle')
 
     def _test_ast_from_zip(self, archive):
@@ -207,7 +207,6 @@ class AstroidManagerTest(resources.SysPathSetup,
         """check if the unittest filepath is equals to the result of the method"""
         self.assertEqual(
             _get_file_from_object(unittest),
-            # pylint: disable=no-member; can't infer the ModuleSpec
             self.manager.file_from_module_name('unittest', None).location)
 
     def test_file_from_module_name_astro_building_exception(self):
