@@ -243,16 +243,15 @@ class NumpyBrainCoreNumericTypesTest(SubTestWrapper):
     """
     Test of all the missing types defined in numerictypes module.
     """
-    all_types = ['uint16', 'uint32', 'uint64', 'int128', 'uint128',
-                 'float16', 'float32', 'float64', 'float80', 'float96',
-                 'float128', 'float256', 'complex32', 'complex64', 'complex128',
-                 'complex160', 'complex192', 'complex256', 'complex512',
-                 'timedelta64', 'datetime64', 'unicode_', 'str_', 'object_',
-                 'bool_', 'bool8', 'byte', 'int8', 'bytes0', 'bytes_',
-                 'cdouble', 'cfloat', 'character', 'clongdouble', 
-                 'clongfloat', 'complexfloating', 'csingle', 'double', 
+    all_types = ['uint16', 'uint32', 'uint64',
+                 'float16', 'float32', 'float64', 'float96',
+                 'complex64', 'complex128',
+                 'complex192', 'timedelta64', 'datetime64', 'unicode_',
+                 'str_', 'bool_', 'bool8', 'byte', 'int8', 'bytes0', 'bytes_',
+                 'cdouble', 'cfloat', 'character', 'clongdouble',
+                 'clongfloat', 'complexfloating', 'csingle', 'double',
                  'flexible', 'floating', 'half', 'inexact', 'int0',
-                 'longcomplex', 'longdouble', 'longfloat', 'object0',
+                 'longcomplex', 'longdouble', 'longfloat',
                  'short', 'signedinteger', 'single', 'singlecomplex',
                  'str0', 'ubyte', 'uint', 'uint0', 'uintc', 'uintp',
                  'ulonglong', 'unsignedinteger', 'ushort', 'void0']
@@ -272,131 +271,64 @@ class NumpyBrainCoreNumericTypesTest(SubTestWrapper):
                 inferred = self._inferred_numpy_attribute(typ)
                 self.assertIsInstance(inferred, nodes.ClassDef)
 
-    def test_uint_types_have_methods(self):
+    def test_generic_types_have_methods(self):
         """
-        Test that all uint + timedelta64 types have specified methods
+        Test that all generic derived types have specified methods
         """
-        np_type_common_methods = [
-            'all', 'any', 'argmax', 'argmin',
-            'argsort', 'astype', 'base', 'byteswap', 'choose', 'clip',
-            'compress', 'conj', 'conjugate', 'copy', 'cumprod', 'cumsum',
-            'data', 'diagonal', 'dtype', 'dump', 'dumps', 'fill', 'flags',
-            'flat', 'flatten', 'getfield', 'imag', 'item', 'itemset',
-            'itemsize', 'max', 'mean', 'min', 'nbytes', 'ndim', 'newbyteorder',
-            'nonzero', 'prod', 'ptp', 'put', 'ravel', 'real', 'repeat',
-            'reshape', 'resize', 'round', 'searchsorted', 'setfield',
-            'setflags', 'shape', 'size', 'sort', 'squeeze', 'std', 'strides',
-            'sum', 'swapaxes', 'take', 'tobytes', 'tofile', 'tolist',
-            'tostring', 'trace', 'transpose', 'var', 'view']
+        generic_methods = ['all', 'any', 'argmax', 'argmin', 'argsort',
+                           'astype', 'base', 'byteswap', 'choose',
+                           'clip', 'compress', 'conj', 'conjugate',
+                           'copy', 'cumprod', 'cumsum', 'data',
+                           'diagonal', 'dtype', 'dump', 'dumps', 'fill',
+                           'flags', 'flat', 'flatten', 'getfield',
+                           'imag', 'item', 'itemset', 'itemsize', 'max',
+                           'mean', 'min', 'nbytes', 'ndim',
+                           'newbyteorder', 'nonzero', 'prod', 'ptp',
+                           'put', 'ravel', 'real', 'repeat', 'reshape',
+                           'resize', 'round', 'searchsorted',
+                           'setfield', 'setflags', 'shape', 'size',
+                           'sort', 'squeeze', 'std', 'strides', 'sum',
+                           'swapaxes', 'take', 'tobytes', 'tofile',
+                           'tolist', 'tostring', 'trace', 'transpose',
+                           'var', 'view']
 
-        uint_common_methods = ['denominator', 'numerator']
+        for type_ in ('bool_', 'bytes_', 'character', 'complex128',
+                      'complex192', 'complex64', 'complexfloating',
+                      'datetime64', 'flexible', 'float16', 'float32',
+                      'float64', 'float96', 'floating', 'generic', 'inexact',
+                      'int16', 'int32', 'int32', 'int64', 'int8', 'integer',
+                      'number', 'signedinteger', 'str_',
+                      'timedelta64', 'uint16', 'uint32', 'uint32', 'uint64',
+                      'uint8', 'unsignedinteger', 'void'):
+            with self.subTest(typ=type_):
+                inferred = self._inferred_numpy_attribute(type_)
+                for meth in generic_methods:
+                    with self.subTest(meth=meth):
+                        self.assertTrue(meth in set(
+                            [m.name for m in inferred.methods()]))
 
-        for uint_type in ('uint16', 'uint32', 'uint64', 'int128', 'uint128',
-                          'timedelta64'):
-            inferred = self._inferred_numpy_attribute(uint_type)
-            self.assertTrue(set(np_type_common_methods) <=
-                            set([m.name for m in inferred.methods()]))
-            self.assertTrue(set(uint_common_methods) <=
-                            set([m.name for m in inferred.methods()]))
-
-        # Specific check for int128
-        inferred = self._inferred_numpy_attribute('int128')
-        self.assertTrue('bit_length' in [m.name for m in inferred.methods()])
-
-    def test_float_types_have_methods(self):
+    def test_generic_types_have_attributes(self):
         """
-        Test that all float types have specified methods
+        Test that all generic derived types have specified attributes
         """
-        np_type_common_methods = [
-            'all', 'any', 'argmax', 'argmin',
-            'argsort', 'astype', 'base', 'byteswap', 'choose', 'clip',
-            'compress', 'conj', 'conjugate', 'copy', 'cumprod', 'cumsum',
-            'data', 'diagonal', 'dtype', 'dump', 'dumps', 'fill', 'flags',
-            'flat', 'flatten', 'getfield', 'imag', 'item', 'itemset',
-            'itemsize', 'max', 'mean', 'min', 'nbytes', 'ndim', 'newbyteorder',
-            'nonzero', 'prod', 'ptp', 'put', 'ravel', 'real', 'repeat',
-            'reshape', 'resize', 'round', 'searchsorted', 'setfield',
-            'setflags', 'shape', 'size', 'sort', 'squeeze', 'std', 'strides',
-            'sum', 'swapaxes', 'take', 'tobytes', 'tofile', 'tolist',
-            'tostring', 'trace', 'transpose', 'var', 'view']
+        generic_attr = ['base', 'data', 'dtype', 'flags', 'flat', 'imag',
+                        'itemsize', 'nbytes', 'ndim', 'real', 'size',
+                        'strides']
 
-        float_64_methods = ['as_integer_ratio', 'fromhex',
-                                'hex', 'is_integer']
+        for type_ in ('bool_', 'bytes_', 'character', 'complex128',
+                      'complex192', 'complex64', 'complexfloating',
+                      'datetime64', 'flexible', 'float16', 'float32',
+                      'float64', 'float96', 'floating', 'generic', 'inexact',
+                      'int16', 'int32', 'int32', 'int64', 'int8', 'integer',
+                      'number', 'signedinteger', 'str_',
+                      'timedelta64', 'uint16', 'uint32', 'uint32', 'uint64',
+                      'uint8', 'unsignedinteger', 'void'):
+            with self.subTest(typ=type_):
+                inferred = self._inferred_numpy_attribute(type_)
+                for attr in generic_attr:
+                    with self.subTest(attr=attr):
+                        self.assertNotEqual(len(inferred.getattr(attr)), 0)
 
-        for float_type in ('float16', 'float32', 'float64', 'float80',
-                           'float96', 'float128', 'float256'):
-            inferred = self._inferred_numpy_attribute(float_type)
-            self.assertTrue(set(np_type_common_methods) <=
-                            set([m.name for m in inferred.methods()]))
-
-        for float_type in ('float64',):
-            inferred = self._inferred_numpy_attribute(float_type)
-            self.assertTrue(set(float_64_methods) <=
-                            set([m.name for m in inferred.methods()]))
-
-    def test_complex_types_have_methods(self):
-        """
-        Test that all complex + datetime64 types have specified methods
-        """
-        np_type_common_methods = [
-            'all', 'any', 'argmax', 'argmin',
-            'argsort', 'astype', 'base', 'byteswap', 'choose', 'clip',
-            'compress', 'conj', 'conjugate', 'copy', 'cumprod', 'cumsum',
-            'data', 'diagonal', 'dtype', 'dump', 'dumps', 'fill', 'flags',
-            'flat', 'flatten', 'getfield', 'imag', 'item', 'itemset',
-            'itemsize', 'max', 'mean', 'min', 'nbytes', 'ndim', 'newbyteorder',
-            'nonzero', 'prod', 'ptp', 'put', 'ravel', 'real', 'repeat',
-            'reshape', 'resize', 'round', 'searchsorted', 'setfield',
-            'setflags', 'shape', 'size', 'sort', 'squeeze', 'std', 'strides',
-            'sum', 'swapaxes', 'take', 'tobytes', 'tofile', 'tolist',
-            'tostring', 'trace', 'transpose', 'var', 'view']
-
-        for complex_type in ('complex32', 'complex64', 'complex128',
-                             'complex160', 'complex192', 'complex256',
-                             'complex512', 'datetime64'):
-            inferred = self._inferred_numpy_attribute(complex_type)
-            self.assertTrue(set(np_type_common_methods) <=
-                            set([m.name for m in inferred.methods()]))
-
-    def test_string_types_have_methods(self):
-        """
-        Test that all complex + datetime64 types have specified methods
-        """
-        np_type_common_methods = [
-            'all', 'any', 'argmax', 'argmin',
-            'argsort', 'astype', 'base', 'byteswap', 'choose', 'clip',
-            'compress', 'conj', 'conjugate', 'copy', 'cumprod', 'cumsum',
-            'data', 'diagonal', 'dtype', 'dump', 'dumps', 'fill', 'flags',
-            'flat', 'flatten', 'getfield', 'imag', 'item', 'itemset',
-            'itemsize', 'max', 'mean', 'min', 'nbytes', 'ndim', 'newbyteorder',
-            'nonzero', 'prod', 'ptp', 'put', 'ravel', 'real', 'repeat',
-            'reshape', 'resize', 'round', 'searchsorted', 'setfield',
-            'setflags', 'shape', 'size', 'sort', 'squeeze', 'std', 'strides',
-            'sum', 'swapaxes', 'take', 'tobytes', 'tofile', 'tolist',
-            'tostring', 'trace', 'transpose', 'var', 'view']
-
-        np_string_common_methods = ['capitalize', 'center', 'casefold', 'count',
-                                    'encode', 'endswith', 'expandtabs', 'find',
-                                    'format', 'format_map', 'index', 'isalnum',
-                                    'isalpha',
-                                    'isdigit', 'isidentifier', 'islower',
-                                    'isnumeric', 'isprintable',
-                                    'isspace', 
-                                    'istitle', 
-                                    'isupper', 'join', 'ljust', 'lower',
-                                    'lstrip', 'maketrans', 'partition',
-                                    'replace', 'rfind',
-                                    'rindex', 'rjust', 'rpartition', 'rsplit',
-                                    'rstrip', 'split', 'splitlines',
-                                    'startswith', 'strip', 'swapcase', 'title',
-                                    'translate', 'upper', 'zfill']
-
-        for np_str_types in ('str_', 'unicode_'):
-            inferred = self._inferred_numpy_attribute(np_str_types)
-            self.assertTrue(set(np_type_common_methods) <=
-                            set([m.name for m in inferred.methods()]))
-            self.assertTrue(set(np_string_common_methods) <=
-                            set([m.name for m in inferred.methods()]))
 
 if __name__ == '__main__':
     unittest.main()
