@@ -260,9 +260,8 @@ def object_len(node, context=None):
         # Remove StopIteration catch when #507 is fixed
     except StopIteration:
         raise exceptions.InferenceError(node=node)
-    if (isinstance(result_of_len, nodes.Const) and result_of_len.pytype() == "builtins.int"):
+    if isinstance(result_of_len, nodes.Const) and result_of_len.pytype() == "builtins.int":
         return result_of_len.value
-    else:
-        raise exceptions.AstroidTypeError(
-            "'{}' object cannot be interpreted as an integer"
-            .format(result_of_len))
+    raise exceptions.AstroidTypeError(
+        "'{}' object cannot be interpreted as an integer"
+        .format(result_of_len))

@@ -9,6 +9,7 @@
 """tests for the astroid builder and rebuilder module"""
 
 import builtins
+import collections
 import os
 import sys
 import unittest
@@ -700,6 +701,12 @@ class ModuleBuildTest(resources.SysPathSetup, FileBuildTest):
             self.skipTest('Unable to load data.module')
         else:
             self.module = abuilder.module_build(data.module, 'data.module')
+
+
+def test_module_build_dunder_file():
+    """Test that module_build() can work with modules that have the *__file__* attribute"""
+    module = builder.AstroidBuilder().module_build(collections)
+    assert module.path[0] == collections.__file__
 
 
 if __name__ == '__main__':

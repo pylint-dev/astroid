@@ -7,6 +7,26 @@ What's New in astroid 2.0?
 
 Release Date: Unknown
 
+   * Added inference support for starred nodes in for loops
+
+     Close #146
+
+   * Support unpacking for dicts in assignments
+
+     Close #268
+
+   * Add support for inferring functools.partial
+
+     Close #125
+
+   * Inference support for `dict.fromkeys`
+
+     Close #110
+
+   * `int()` builtin is inferred as returning integers.
+
+     Close #150
+
    * `str()` builtin is inferred as returning strings.
 
      Close #148

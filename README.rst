@@ -37,11 +37,12 @@ Installation
 
 Extract the tarball, jump into the created directory and run::
 
-	python setup.py install
+	pip install .
 
-For installation options, see::
 
-	python setup.py install --help
+If you want to do an editable installation, you can run::
+
+    pip install -e .
 
 
 If you have any questions, please mail the code-quality@python.org

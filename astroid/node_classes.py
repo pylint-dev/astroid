@@ -15,7 +15,6 @@ import abc
 import builtins as builtins_mod
 import itertools
 import pprint
-import warnings
 from functools import lru_cache
 from functools import singledispatch as _singledispatch
 
@@ -180,7 +179,7 @@ def _container_getitem(instance, elts, index, context=None):
             new_cls.elts = elts[index_slice]
             new_cls.parent = instance.parent
             return new_cls
-        elif isinstance(index, Const):
+        if isinstance(index, Const):
             return elts[index.value]
     except IndexError as exc:
         raise exceptions.AstroidIndexError(
@@ -655,7 +654,7 @@ class NodeNG(object):
 
     def _infer_name(self, frame, name):
         # overridden for ImportFrom, Import, Global, TryExcept and Arguments
-        return None
+        pass
 
     def _infer(self, context=None):
         """we don't know how to resolve a statement by default"""
@@ -672,20 +671,6 @@ class NodeNG(object):
         :rtype: list
         """
         return list(self.infer())
-
-    def infered(self):
-        """A deprecated alias of :meth:`inferred`.
-
-        .. deprecated:: 1.5
-
-        :returns: The inferred values.
-        :rtype: list
-        """
-        warnings.warn('%s.infered() is deprecated and slated for removal '
-                      'in astroid 2.0, use %s.inferred() instead.'
-                      % (type(self).__name__, type(self).__name__),
-                      PendingDeprecationWarning, stacklevel=2)
-        return self.inferred()
 
     def instantiate_class(self):
         """Instantiate a instance of the defined class.
@@ -758,6 +743,7 @@ class NodeNG(object):
         :returns: The string representation of the AST.
         :rtype: str
         """
+        # pylint: disable=too-many-statements
         @_singledispatch
         def _repr_tree(node, result, done, cur_indent='', depth=1):
             """Outputs a representation of a non-tuple/list, non-node that's
@@ -810,8 +796,8 @@ class NodeNG(object):
                 result.append(indent + '<Recursion on %s with id=%s' %
                               (type(node).__name__, id(node)))
                 return False
-            else:
-                done.add(node)
+            done.add(node)
+
             if max_depth and depth > max_depth:
                 result.append('...')
                 return False
@@ -2250,20 +2236,6 @@ class Comprehension(NodeNG):
         """
         return self
 
-    def ass_type(self):
-        """A deprecated alias of :meth:`assign_type`.
-
-        .. deprecated:: 1.5
-
-        :returns: The assignment type.
-        :rtype: NodeNG
-        """
-        warnings.warn('%s.ass_type() is deprecated and slated for removal'
-                      'in astroid 2.0, use %s.assign_type() instead.'
-                      % (type(self).__name__, type(self).__name__),
-                      PendingDeprecationWarning, stacklevel=2)
-        return self.assign_type()
-
     def _get_filtered_stmts(self, lookup_node, node, stmts, mystmt):
         """method used in filter_stmts"""
         if self is mystmt:
@@ -2564,7 +2536,7 @@ class Dict(NodeNG, bases.Instance):
     def postinit(self, items):
         """Do some setup after initialisation.
 
-        :param items: The ley-value pairs contained in the dictionary.
+        :param items: The key-value pairs contained in the dictionary.
         :type items: list(tuple(NodeNG, NodeNG))
         """
         self.items = items
@@ -2624,7 +2596,7 @@ class Dict(NodeNG, bases.Instance):
         :returns: The keys of this node.
         :rtype: iterable(NodeNG)
         """
-        return self.items[::2]
+        return [key for (key, _) in self.items]
 
     def getitem(self, index, context=None):
         """Get an item from this node.
@@ -2792,9 +2764,8 @@ class ExceptHandler(mixins.MultiLineBlockMixin,
         """
         if self.name:
             return self.name.tolineno
-        elif self.type:
+        if self.type:
             return self.type.tolineno
-
         return self.lineno
 
     def catch(self, exceptions): # pylint: disable=redefined-outer-name

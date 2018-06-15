@@ -48,9 +48,9 @@ def lookup(node, name):
                          astroid.Dict,
                          astroid.Set)):
         return _builtin_lookup(node, name)
-    elif isinstance(node, astroid.Instance):
+    if isinstance(node, astroid.Instance):
         return _lookup_in_mro(node, name)
-    elif isinstance(node, astroid.ClassDef):
+    if isinstance(node, astroid.ClassDef):
         return _class_lookup(node, name)
 
     raise exceptions.AttributeInferenceError(

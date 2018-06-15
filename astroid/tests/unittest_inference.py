@@ -15,7 +15,8 @@ import os
 import sys
 from functools import partial
 import unittest
-import warnings
+
+import pytest
 
 from astroid import InferenceError, builder, nodes
 from astroid.builder import parse, extract_node
@@ -365,21 +366,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         a_inferred = a.inferred()
         self.assertEqual(a_inferred[0].value, 1)
         self.assertEqual(len(a_inferred), 1)
-
-    def test_infered_warning(self):
-        code = '''
-            def f(f=1):
-                return f
-
-            a = f()
-        '''
-        ast = parse(code, __name__)
-        a = ast['a']
-
-        with warnings.catch_warnings(record=True) as w:
-            with test_utils.enable_warning(PendingDeprecationWarning):
-                a.infered()
-            self.assertIsInstance(w[0].message, PendingDeprecationWarning)
 
     def test_exc_ancestors(self):
         code = '''
@@ -1121,7 +1107,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         # (__name__ == '__main__') and through pytest (__name__ ==
         # 'unittest_inference')
         self.assertEqual(value, ['Instance of %s.myarray' % __name__,
-                                 'Instance of %s.int' % BUILTINS])
+                                 'Const.int(value=5)'])
 
     def test_nonregr_lambda_arg(self):
         code = '''
@@ -4462,6 +4448,100 @@ def test_infer_custom_inherit_from_property():
     inferred = next(node.infer())
     assert isinstance(inferred, nodes.Const)
     assert inferred.value == 1
+
+
+def test_cannot_infer_call_result_for_builtin_methods():
+    node = extract_node("""
+    a = "fast"
+    a
+    """)
+    inferred = next(node.infer())
+    lenmeth = next(inferred.igetattr("__len__"))
+    with pytest.raises(InferenceError):
+        next(lenmeth.infer_call_result(None, None))
+
+
+def test_unpack_dicts_in_assignment():
+    ast_nodes = extract_node('''
+    a, b = {1:2, 2:3}
+    a #@
+    b #@
+    ''')
+    first_inferred = next(ast_nodes[0].infer())
+    second_inferred = next(ast_nodes[1].infer())
+    assert isinstance(first_inferred, nodes.Const)
+    assert first_inferred.value == 1
+    assert isinstance(second_inferred, nodes.Const)
+    assert second_inferred.value == 2
+
+
+def test_slice_inference_in_for_loops():
+    node = extract_node('''
+    for a, (c, *b) in [(1, (2, 3, 4)), (4, (5, 6))]:
+       b #@
+    ''')
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.List)
+    assert inferred.as_string() == '[3, 4]'
+
+    node = extract_node('''
+    for a, *b in [(1, 2, 3, 4)]:
+       b #@
+    ''')
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.List)
+    assert inferred.as_string() == '[2, 3, 4]'
+
+    node = extract_node('''
+    for a, *b in [(1,)]:
+       b #@
+    ''')
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.List)
+    assert inferred.as_string() == '[]'
+
+
+def test_slice_inference_in_for_loops_not_working():
+    ast_nodes = extract_node('''
+    from unknown import Unknown
+    for a, *b in something:
+        b #@
+    for a, *b in Unknown:
+        b #@
+    for a, *b in (1):
+        b #@
+    ''')
+    for node in ast_nodes:
+        inferred = next(node.infer())
+        assert inferred == util.Uninferable
+
+
+def test_unpacking_starred_and_dicts_in_assignment():
+    node = extract_node('''
+    a, *b = {1:2, 2:3, 3:4}
+    b
+    ''')
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.List)
+    assert inferred.as_string() == '[2, 3]'
+
+    node = extract_node('''
+    a, *b = {1:2}
+    b
+    ''')
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.List)
+    assert inferred.as_string() == '[]'
+
+
+def test_unpacking_starred_empty_list_in_assignment():
+    node = extract_node('''
+    a, *b, c = [1, 2]
+    b #@
+    ''')
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.List)
+    assert inferred.as_string() == '[]'
 
 
 if __name__ == '__main__':

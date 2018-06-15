@@ -130,9 +130,9 @@ class TreeRebuilder(object):
             if PY37 and hasattr(node, 'docstring'):
                 doc = node.docstring
                 return node, doc
-            elif (node.body
-                  and isinstance(node.body[0], self._parser_module.Expr)
-                  and isinstance(node.body[0].value, self._parser_module.Str)):
+            if (node.body
+                    and isinstance(node.body[0], self._parser_module.Expr)
+                    and isinstance(node.body[0].value, self._parser_module.Str)):
                 doc = node.body[0].value.s
                 node.body = node.body[1:]
                 return node, doc
@@ -842,7 +842,6 @@ class TreeRebuilder3(TreeRebuilder):
 
     def visit_arg(self, node, parent):
         """visit a arg node by returning a fresh AssName instance"""
-        # TODO(cpopa): introduce an Arg node instead of using AssignName.
         return self.visit_assignname(node, parent, node.arg)
 
     def visit_nameconstant(self, node, parent):

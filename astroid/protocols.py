@@ -14,6 +14,7 @@ import collections
 import operator as operator_mod
 import sys
 
+from astroid import Store
 from astroid import arguments
 from astroid import bases
 from astroid import context as contextmod
@@ -310,7 +311,6 @@ def _arguments_infer_argname(self, name, context):
             yield value
         return
 
-    # TODO: just provide the type here, no need to have an empty Dict.
     if name == self.vararg:
         vararg = nodes.const_factory(())
         vararg.parent = self
@@ -374,7 +374,15 @@ def _resolve_asspart(parts, asspath, context):
     asspath = asspath[:]
     index = asspath.pop(0)
     for part in parts:
-        if hasattr(part, 'getitem'):
+        assigned = None
+        if isinstance(part, nodes.Dict):
+            # A dictionary in an iterating context
+            try:
+                assigned, _ = part.items[index]
+            except IndexError:
+                return
+
+        elif hasattr(part, 'getitem'):
             index_node = nodes.Const(index)
             try:
                 assigned = part.getitem(index_node, context)
@@ -382,19 +390,23 @@ def _resolve_asspart(parts, asspath, context):
             # unexpected exception ?
             except (exceptions.AstroidTypeError, exceptions.AstroidIndexError):
                 return
-            if not asspath:
-                # we achieved to resolved the assignment path, don't infer the
-                # last part
-                yield assigned
-            elif assigned is util.Uninferable:
+
+        if not assigned:
+            return
+
+        if not asspath:
+            # we achieved to resolved the assignment path, don't infer the
+            # last part
+            yield assigned
+        elif assigned is util.Uninferable:
+            return
+        else:
+            # we are not yet on the last part of the path search on each
+            # possibly inferred value
+            try:
+                yield from _resolve_asspart(assigned.infer(context), asspath, context)
+            except exceptions.InferenceError:
                 return
-            else:
-                # we are not yet on the last part of the path search on each
-                # possibly inferred value
-                try:
-                    yield from _resolve_asspart(assigned.infer(context), asspath, context)
-                except exceptions.InferenceError:
-                    return
 
 
 @decorators.raise_if_nothing_inferred
@@ -437,7 +449,7 @@ def _infer_context_manager(self, mgr, context):
 
         # Get the first yield point. If it has multiple yields,
         # then a RuntimeError will be raised.
-        # TODO(cpopa): Handle flows.
+
         possible_yield_points = func.nodes_of_class(nodes.Yield)
         # Ignore yields in nested functions
         yield_point = next((node for node in possible_yield_points
@@ -445,7 +457,6 @@ def _infer_context_manager(self, mgr, context):
                            None)
         if yield_point:
             if not yield_point.value:
-                # TODO(cpopa): an empty yield. Should be wrapped to Const.
                 const = nodes.Const(None)
                 const.parent = yield_point
                 const.lineno = yield_point.lineno
@@ -538,6 +549,18 @@ def starred_assigned_stmts(self, node=None, context=None, asspath=None):
         context: TODO
         asspath: TODO
     """
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+    def _determine_starred_iteration_lookups(starred, target, lookups):
+        # Determine the lookups for the rhs of the iteration
+        itered = target.itered()
+        for index, element in enumerate(itered):
+            if isinstance(element, nodes.Starred) and element.value.name == starred.value.name:
+                lookups.append((index, len(itered)))
+                break
+            if isinstance(element, nodes.Tuple):
+                lookups.append((index, len(element.itered())))
+                _determine_starred_iteration_lookups(starred, element, lookups)
+
     stmt = self.statement()
     if not isinstance(stmt, (nodes.Assign, nodes.For)):
         raise exceptions.InferenceError('Statement {stmt!r} enclosing {node!r} '
@@ -545,37 +568,33 @@ def starred_assigned_stmts(self, node=None, context=None, asspath=None):
                                         node=self, stmt=stmt, unknown=node,
                                         context=context)
 
+    if context is None:
+        context = contextmod.InferenceContext()
+
     if isinstance(stmt, nodes.Assign):
         value = stmt.value
         lhs = stmt.targets[0]
 
-        if sum(1 for node in lhs.nodes_of_class(nodes.Starred)) > 1:
+        if sum(1 for _ in lhs.nodes_of_class(nodes.Starred)) > 1:
             raise exceptions.InferenceError('Too many starred arguments in the '
                                             ' assignment targets {lhs!r}.',
                                             node=self, targets=lhs,
                                             unknown=node, context=context)
 
-        if context is None:
-            context = contextmod.InferenceContext()
         try:
             rhs = next(value.infer(context))
-        except StopIteration:
-            return
         except exceptions.InferenceError:
             yield util.Uninferable
             return
-        if rhs is util.Uninferable or not hasattr(rhs, 'elts'):
-            # Not interested in inferred values without elts.
+        if rhs is util.Uninferable or not hasattr(rhs, 'itered'):
             yield util.Uninferable
             return
 
-        elts = collections.deque(rhs.elts[:])
-        if len(lhs.elts) > len(rhs.elts):
-            raise exceptions.InferenceError('More targets, {targets!r}, than '
-                                            'values to unpack, {values!r}.',
-                                            node=self, targets=lhs,
-                                            values=rhs, unknown=node,
-                                            context=context)
+        try:
+            elts = collections.deque(rhs.itered())
+        except TypeError:
+            yield util.Uninferable
+            return
 
         # Unpack iteratively the values from the rhs of the assignment,
         # until the find the starred node. What will remain will
@@ -586,18 +605,111 @@ def starred_assigned_stmts(self, node=None, context=None, asspath=None):
 
         for index, left_node in enumerate(lhs.elts):
             if not isinstance(left_node, nodes.Starred):
+                if not elts:
+                    break
                 elts.popleft()
                 continue
             lhs_elts = collections.deque(reversed(lhs.elts[index:]))
             for right_node in lhs_elts:
                 if not isinstance(right_node, nodes.Starred):
+                    if not elts:
+                        break
                     elts.pop()
                     continue
                 # We're done
-                packed = nodes.List()
-                packed.elts = elts
-                packed.parent = self
+                packed = nodes.List(
+                    ctx=Store,
+                    parent=self,
+                    lineno=lhs.lineno,
+                    col_offset=lhs.col_offset,
+                )
+                packed.postinit(elts=elts)
                 yield packed
                 break
+
+    if isinstance(stmt, nodes.For):
+        try:
+            inferred_iterable = next(stmt.iter.infer(context=context))
+        except exceptions.InferenceError:
+            yield util.Uninferable
+            return
+        if inferred_iterable is util.Uninferable or not hasattr(inferred_iterable, 'itered'):
+            yield util.Uninferable
+            return
+        try:
+            itered = inferred_iterable.itered()
+        except TypeError:
+            yield util.Uninferable
+            return
+
+        target = stmt.target
+
+        if not isinstance(target, nodes.Tuple):
+            raise exceptions.InferenceError(
+                'Could not make sense of this, the target must be a tuple',
+                context=context,
+            )
+
+        lookups = []
+        _determine_starred_iteration_lookups(self, target, lookups)
+        if not lookups:
+            raise exceptions.InferenceError(
+                'Could not make sense of this, needs at least a lookup',
+                context=context,
+            )
+
+        # Make the last lookup a slice, since that what we want for a Starred node
+        last_element_index, last_element_length = lookups[-1]
+        is_starred_last = last_element_index == (last_element_length - 1)
+
+        lookup_slice = slice(
+            last_element_index,
+            None if is_starred_last else (last_element_length - last_element_index)
+        )
+        lookups[-1] = lookup_slice
+
+        for element in itered:
+
+            # We probably want to infer the potential values *for each* element in an
+            # iterable, but we can't infer a list of all values, when only a list of
+            # step values are expected:
+            #
+            # for a, *b in [...]:
+            #   b
+            #
+            # *b* should now point to just the elements at that particular iteration step,
+            # which astroid can't know about.
+
+            found_element = None
+            for lookup in lookups:
+                if not hasattr(element, 'itered'):
+                    break
+                if not isinstance(lookup, slice):
+                    # Grab just the index, not the whole length
+                    lookup = lookup[0]
+                try:
+                    itered_inner_element = element.itered()
+                    element = itered_inner_element[lookup]
+                except IndexError:
+                    break
+                except TypeError:
+                    # Most likely the itered() call failed, cannot make sense of this
+                    yield util.Uninferable
+                    return
+                else:
+                    found_element = element
+
+            unpacked = nodes.List(
+                ctx=Store,
+                parent=self,
+                lineno=self.lineno,
+                col_offset=self.col_offset,
+            )
+            unpacked.postinit(elts=found_element or [])
+            yield unpacked
+            return
+
+        yield util.Uninferable
+
 
 nodes.Starred.assigned_stmts = starred_assigned_stmts

@@ -133,7 +133,7 @@ class CallSite(object):
         Arguments:
             funcnode: The function being called.
             name: The name of the argument whose value is being inferred.
-            context: TODO
+            context: Inference context object
         """
         if name in self.duplicated_keywords:
             raise exceptions.InferenceError('The arguments passed to {func!r} '
@@ -227,7 +227,7 @@ class CallSite(object):
             kwarg.postinit([(nodes.const_factory(key), value)
                             for key, value in kwargs.items()])
             return iter((kwarg, ))
-        elif funcnode.args.vararg == name:
+        if funcnode.args.vararg == name:
             # It wants all the args that were passed into
             # the call site.
             if self.has_invalid_arguments():

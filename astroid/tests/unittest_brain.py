@@ -624,6 +624,23 @@ class EnumBrainTest(unittest.TestCase):
         self.assertIsInstance(instance, astroid.Const)
         self.assertIsInstance(instance.value, str)
 
+    def test_infer_enum_value_as_the_right_type(self):
+        string_value, int_value = builder.extract_node('''
+        from enum import Enum
+        class A(Enum):
+            a = 'a'
+            b = 1
+        A.a.value #@
+        A.b.value #@
+        ''')
+        inferred_string = string_value.inferred()
+        assert any(isinstance(elem, astroid.Const) and elem.value == 'a'
+                   for elem in inferred_string)
+
+        inferred_int = int_value.inferred()
+        assert any(isinstance(elem, astroid.Const) and elem.value == 1
+                   for elem in inferred_int)
+
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
 class DateutilBrainTest(unittest.TestCase):
@@ -937,8 +954,6 @@ class RandomSampleTest(unittest.TestCase):
 
 class SubprocessTest(unittest.TestCase):
     """Test subprocess brain"""
-    # TODO Add more tests so that we can some day
-    # Remove this brain when all the tests work without the brain
     @unittest.skipIf(sys.version_info < (3, 3),
                      reason="Python 2.7 subprocess doesnt have args")
     def test_subprocess_args(self):
@@ -1314,6 +1329,150 @@ def test_infer_str():
     inferred = next(node.infer())
     assert isinstance(inferred, astroid.Instance)
     assert inferred.qname() == 'builtins.str'
+
+
+def test_infer_int():
+    ast_nodes = astroid.extract_node('''
+    int(0) #@
+    int('1') #@
+    ''')
+    for node in ast_nodes:
+        inferred = next(node.infer())
+        assert isinstance(inferred, astroid.Const)
+
+    ast_nodes = astroid.extract_node('''
+    int(s='') #@
+    int('2.5') #@
+    int('something else') #@
+    int(unknown) #@
+    int(b'a') #@
+    ''')
+    for node in ast_nodes:
+        inferred = next(node.infer())
+        assert isinstance(inferred, astroid.Instance)
+        assert inferred.qname() == 'builtins.int'
+
+
+def test_infer_dict_from_keys():
+    bad_nodes = astroid.extract_node('''
+    dict.fromkeys() #@
+    dict.fromkeys(1, 2, 3) #@
+    dict.fromkeys(a=1) #@
+    ''')
+    for node in bad_nodes:
+        with pytest.raises(astroid.InferenceError):
+            next(node.infer())
+
+    # Test uninferable values
+    good_nodes = astroid.extract_node('''
+    from unknown import Unknown
+    dict.fromkeys(some_value) #@
+    dict.fromkeys(some_other_value) #@
+    dict.fromkeys([Unknown(), Unknown()]) #@
+    dict.fromkeys([Unknown(), Unknown()]) #@
+    ''')
+    for node in good_nodes:
+        inferred = next(node.infer())
+        assert isinstance(inferred, astroid.Dict)
+        assert inferred.items == []
+
+    # Test inferrable values
+
+    # from a dictionary's keys
+    from_dict = astroid.extract_node('''
+    dict.fromkeys({'a':2, 'b': 3, 'c': 3}) #@
+    ''')
+    inferred = next(from_dict.infer())
+    assert isinstance(inferred, astroid.Dict)
+    itered = inferred.itered()
+    assert all(isinstance(elem, astroid.Const) for elem in itered)
+    actual_values = [elem.value for elem in itered]
+    assert sorted(actual_values) == ['a', 'b', 'c']
+
+    # from a string
+    from_string = astroid.extract_node('''
+    dict.fromkeys('abc')
+    ''')
+    inferred = next(from_string.infer())
+    assert isinstance(inferred, astroid.Dict)
+    itered = inferred.itered()
+    assert all(isinstance(elem, astroid.Const) for elem in itered)
+    actual_values = [elem.value for elem in itered]
+    assert sorted(actual_values) == ['a', 'b', 'c']
+
+    # from bytes
+    from_bytes = astroid.extract_node('''
+    dict.fromkeys(b'abc')
+    ''')
+    inferred = next(from_bytes.infer())
+    assert isinstance(inferred, astroid.Dict)
+    itered = inferred.itered()
+    assert all(isinstance(elem, astroid.Const) for elem in itered)
+    actual_values = [elem.value for elem in itered]
+    assert sorted(actual_values) == [97, 98, 99]
+
+    # From list/set/tuple
+    from_others = astroid.extract_node('''
+    dict.fromkeys(('a', 'b', 'c')) #@
+    dict.fromkeys(['a', 'b', 'c']) #@
+    dict.fromkeys({'a', 'b', 'c'}) #@
+    ''')
+    for node in from_others:
+        inferred = next(node.infer())
+        assert isinstance(inferred, astroid.Dict)
+        itered = inferred.itered()
+        assert all(isinstance(elem, astroid.Const) for elem in itered)
+        actual_values = [elem.value for elem in itered]
+        assert sorted(actual_values) == ['a', 'b', 'c']
+
+
+class TestFunctoolsPartial:
+
+    def test_invalid_functools_partial_calls(self):
+        ast_nodes = astroid.extract_node('''
+        from functools import partial
+        from unknown import Unknown
+
+        def test(a, b, c):
+            return a + b + c
+
+        partial() #@
+        partial(test) #@
+        partial(func=test) #@
+        partial(some_func, a=1) #@
+        partial(Unknown, a=1) #@
+        partial(2, a=1) #@
+        partial(test, unknown=1) #@
+        ''')
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            assert isinstance(inferred, (astroid.FunctionDef, astroid.Instance))
+            assert inferred.qname() in ('functools.partial', 'functools.partial.newfunc')
+
+    def test_inferred_partial_function_calls(self):
+        ast_nodes = astroid.extract_node('''
+        from functools import partial
+        def test(a, b):
+            return a + b
+        partial(test, 1)(3) #@
+        partial(test, b=4)(3) #@
+        partial(test, b=4)(a=3) #@
+        def other_test(a, b, *, c=1):
+            return (a + b) * c
+
+        partial(other_test, 1, 2)() #@
+        partial(other_test, 1, 2)(c=4) #@
+        partial(other_test, c=4)(1, 3) #@
+        partial(other_test, 4, c=4)(4) #@
+        partial(other_test, 4, c=4)(b=5) #@
+        ''')
+        expected_values = [
+            4, 7, 7, 3, 12, 16, 32, 36,
+        ]
+        for node, expected_value in zip(ast_nodes, expected_values):
+            inferred = next(node.infer())
+            assert isinstance(inferred, astroid.Const)
+            assert inferred.value == expected_value
 
 
 if __name__ == '__main__':

@@ -11,9 +11,17 @@ import sys
 from textwrap import dedent
 
 import six
-from astroid import (MANAGER, UseInferenceDefault, AttributeInferenceError,
-                     inference_tip, InferenceError, NameInferenceError,
-                     AstroidTypeError, MroError)
+from astroid import (
+    MANAGER,
+    Instance,
+    UseInferenceDefault,
+    AttributeInferenceError,
+    inference_tip,
+    InferenceError,
+    NameInferenceError,
+    AstroidTypeError,
+    MroError,
+)
 from astroid import arguments
 from astroid.builder import AstroidBuilder
 from astroid import helpers
@@ -28,9 +36,6 @@ OBJECT_DUNDER_NEW = 'object.__new__'
 
 def _extend_str(class_node, rvalue):
     """function to extend builtin str/unicode class"""
-    # TODO(cpopa): this approach will make astroid to believe
-    # that some arguments can be passed by keyword, but
-    # unfortunately, strings and bytes don't accept keyword arguments.
     code = dedent('''
     class whatever(object):
         def join(self, iterable):
@@ -99,6 +104,16 @@ else:
                      'unicode': partial(_extend_str, rvalue="u''")})
 
 
+def _builtin_filter_predicate(node, builtin_name):
+    if isinstance(node.func, nodes.Name) and node.func.name == builtin_name:
+        return True
+    if isinstance(node.func, nodes.Attribute):
+        return (node.func.attrname == 'fromkeys'
+                and isinstance(node.func.expr, nodes.Name)
+                and node.func.expr.name == 'dict')
+    return False
+
+
 def register_builtin_transform(transform, builtin_name):
     """Register a new transform function for the given *builtin_name*.
 
@@ -120,10 +135,11 @@ def register_builtin_transform(transform, builtin_name):
                 result.col_offset = node.col_offset
         return iter([result])
 
-    MANAGER.register_transform(nodes.Call,
-                               inference_tip(_transform_wrapper),
-                               lambda n: (isinstance(n.func, nodes.Name) and
-                                          n.func.name == builtin_name))
+    MANAGER.register_transform(
+        nodes.Call,
+        inference_tip(_transform_wrapper),
+        partial(_builtin_filter_predicate, builtin_name=builtin_name),
+    )
 
 
 def _generic_inference(node, context, node_type, transform):
@@ -152,10 +168,7 @@ def _generic_transform(arg, klass, iterables, build_elts):
     if isinstance(arg, klass):
         return arg
     elif isinstance(arg, iterables):
-        if not all(isinstance(elt, nodes.Const)
-                   for elt in arg.elts):
-            # TODO(cpopa): Don't support heterogenous elements.
-            # Not yet, though.
+        if not all(isinstance(elt, nodes.Const) for elt in arg.elts):
             raise UseInferenceDefault()
         elts = [elt.value for elt in arg.elts]
     elif isinstance(arg, nodes.Dict):
@@ -321,7 +334,6 @@ def infer_super(node, context=None):
         else:
             mro_type = cls.instantiate_class()
     else:
-        # TODO(cpopa): support flow control (multiple inference values).
         try:
             mro_pointer = next(node.args[0].infer(context=context))
         except InferenceError:
@@ -349,7 +361,6 @@ def _infer_getattr_args(node, context):
         raise UseInferenceDefault
 
     try:
-        # TODO(cpopa): follow all the values of the first argument?
         obj = next(node.args[0].infer(context=context))
         attr = next(node.args[1].infer(context=context))
     except InferenceError:
@@ -628,11 +639,13 @@ def infer_len(node, context=None):
     call = arguments.CallSite.from_call(node)
     if call.keyword_arguments:
         raise UseInferenceDefault(
-            "TypeError: len() must take no keyword arguments")
+            "TypeError: len() must take no keyword arguments"
+        )
     if len(call.positional_arguments) != 1:
         raise UseInferenceDefault(
             "TypeError: len() must take exactly one argument "
-            "({len}) given".format(len=len(call.positional_arguments)))
+            "({len}) given".format(len=len(call.positional_arguments))
+        )
     [argument_node] = call.positional_arguments
     try:
         return nodes.Const(helpers.object_len(argument_node))
@@ -657,6 +670,107 @@ def infer_str(node, context=None):
         raise UseInferenceDefault(str(exc)) from exc
 
 
+def infer_int(node, context=None):
+    """Infer int() calls
+
+    :param nodes.Call node: int() call to infer
+    :param context.InferenceContext: node context
+    :rtype nodes.Const: a Const containing the integer value of the int() call
+    """
+    call = arguments.CallSite.from_call(node)
+    if call.keyword_arguments:
+        raise UseInferenceDefault(
+            "TypeError: int() must take no keyword arguments"
+        )
+
+    if call.positional_arguments:
+        try:
+            first_value = next(call.positional_arguments[0].infer(context=context))
+        except InferenceError as exc:
+            raise UseInferenceDefault(str(exc)) from exc
+
+        if first_value is util.Uninferable:
+            raise UseInferenceDefault
+
+        if isinstance(first_value, nodes.Const) and isinstance(first_value.value, (int, str)):
+            try:
+                actual_value = int(first_value.value)
+            except ValueError:
+                return nodes.Const(0)
+            return nodes.Const(actual_value)
+
+    return nodes.Const(0)
+
+
+def infer_dict_fromkeys(node, context=None):
+    """Infer dict.fromkeys
+
+    :param nodes.Call node: dict.fromkeys() call to infer
+    :param context.InferenceContext: node context
+    :rtype nodes.Dict:
+        a Dictionary containing the values that astroid was able to infer.
+        In case the inference failed for any reason, an empty dictionary
+        will be inferred instead.
+    """
+
+    def _build_dict_with_elements(elements):
+        new_node = nodes.Dict(col_offset=node.col_offset,
+                              lineno=node.lineno,
+                              parent=node.parent)
+        new_node.postinit(elements)
+        return new_node
+
+    call = arguments.CallSite.from_call(node)
+    if call.keyword_arguments:
+        raise UseInferenceDefault(
+            "TypeError: int() must take no keyword arguments"
+        )
+    if len(call.positional_arguments) not in {1, 2}:
+        raise UseInferenceDefault("TypeError: Needs between 1 and 2 positional arguments")
+
+    default = nodes.Const(None)
+    values = call.positional_arguments[0]
+    try:
+        inferred_values = next(values.infer(context=context))
+    except InferenceError:
+        return _build_dict_with_elements([])
+    if inferred_values is util.Uninferable:
+        return _build_dict_with_elements([])
+
+    # Limit to a couple of potential values, as this can become pretty complicated
+    accepted_iterable_elements = (
+        nodes.Const,
+    )
+    if isinstance(inferred_values, (nodes.List, nodes.Set, nodes.Tuple)):
+        elements = inferred_values.elts
+        for element in elements:
+            if not isinstance(element, accepted_iterable_elements):
+                # Fallback to an empty dict
+                return _build_dict_with_elements([])
+
+        elements_with_value = [(element, default) for element in elements]
+        return _build_dict_with_elements(elements_with_value)
+
+    elif (isinstance(inferred_values, nodes.Const)
+              and isinstance(inferred_values.value, (str, bytes))):
+        elements = [
+            (nodes.Const(element), default) for element in inferred_values.value
+        ]
+        return _build_dict_with_elements(elements)
+    elif isinstance(inferred_values, nodes.Dict):
+        keys = inferred_values.itered()
+        for key in keys:
+            if not isinstance(key, accepted_iterable_elements):
+                # Fallback to an empty dict
+                return _build_dict_with_elements([])
+
+        elements_with_value = [(element, default) for element in keys]
+        return _build_dict_with_elements(elements_with_value)
+
+    # Fallback to an empty dictionary
+    return _build_dict_with_elements([])
+
+
 # Builtins inference
 register_builtin_transform(infer_bool, 'bool')
 register_builtin_transform(infer_super, 'super')
@@ -674,6 +788,9 @@ register_builtin_transform(infer_isinstance, 'isinstance')
 register_builtin_transform(infer_issubclass, 'issubclass')
 register_builtin_transform(infer_len, 'len')
 register_builtin_transform(infer_str, 'str')
+register_builtin_transform(infer_int, 'int')
+register_builtin_transform(infer_dict_fromkeys, 'dict.fromkeys')
+
 
 # Infer object.__new__ calls
 MANAGER.register_transform(

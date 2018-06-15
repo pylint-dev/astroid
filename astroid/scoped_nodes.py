@@ -18,7 +18,6 @@ import builtins
 import sys
 import io
 import itertools
-import warnings
 from typing import Optional, List
 
 from astroid import bases
@@ -548,7 +547,6 @@ class Module(LocalsDictNodeNG):
         :returns: The previous sibling statement node.
         :rtype: NodeNG or None
         """
-        return
 
     def next_sibling(self):
         """The next sibling statement node.
@@ -556,7 +554,6 @@ class Module(LocalsDictNodeNG):
         :returns: The next sibling statement node.
         :rtype: NodeNG or None
         """
-        return
 
     _absolute_import_activated = True
 
@@ -1017,9 +1014,6 @@ def _infer_decorator_callchain(node):
     if not node.parent:
         return None
     try:
-        # TODO: We don't handle multiple inference results right now,
-        #       because there's no flow to reason when the return
-        #       is what we are looking for, a static or a class method.
         result = next(node.infer_call_result(node.parent))
     except (StopIteration, exceptions.InferenceError):
         return None
@@ -1393,10 +1387,10 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         if isinstance(frame, ClassDef):
             if self.name == '__new__':
                 return 'classmethod'
-            elif sys.version_info >= (3, 6) and self.name == '__init_subclass__':
+            if sys.version_info >= (3, 6) and self.name == '__init_subclass__':
                 return 'classmethod'
-            else:
-                type_name = 'method'
+
+            type_name = 'method'
 
         if not self.decorators:
             return type_name
@@ -1433,7 +1427,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                             continue
                         if ancestor.is_subtype_of('%s.classmethod' % BUILTINS):
                             return 'classmethod'
-                        elif ancestor.is_subtype_of('%s.staticmethod' % BUILTINS):
+                        if ancestor.is_subtype_of('%s.staticmethod' % BUILTINS):
                             return 'staticmethod'
             except exceptions.InferenceError:
                 pass
@@ -1594,16 +1588,25 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                 self.args.vararg is not None):
             metaclass = next(caller.args[0].infer(context))
             if isinstance(metaclass, ClassDef):
-                c = ClassDef('temporary_class', None)
-                c.hide = True
-                c.parent = self
-                class_bases = [next(b.infer(context)) for b in caller.args[1:]]
-                c.bases = [base for base in class_bases if base != util.Uninferable]
-                c._metaclass = metaclass
-                yield c
+                class_bases = [next(arg.infer(context)) for arg in caller.args[1:]]
+                new_class = ClassDef(name='temporary_class')
+                new_class.hide = True
+                new_class.parent = self
+                new_class.postinit(
+                    bases=[base for base in class_bases if base != util.Uninferable],
+                    body=[],
+                    decorators=[],
+                    metaclass=metaclass,
+                )
+                yield new_class
                 return
         returns = self._get_return_nodes_skip_functions()
-        for returnnode in returns:
+
+        first_return = next(returns, None)
+        if not first_return:
+            raise exceptions.InferenceError('Empty return iterator')
+
+        for returnnode in itertools.chain((first_return,), returns):
             if returnnode.value is None:
                 yield node_classes.Const(None)
             else:
@@ -2245,21 +2248,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         """
         return bases.Instance(self)
 
-    def instanciate_class(self):
-        """A deprecated alias for :meth:`instanciate_class`.
-
-        .. deprecated:: 1.5
-
-        :returns: An :class:`Instance` of the :class:`ClassDef` node,
-            or self if this is not possible.
-        :rtype: Instance or ClassDef
-        """
-        warnings.warn('%s.instanciate_class() is deprecated and slated for '
-                      'removal in astroid 2.0, use %s.instantiate_class() '
-                      'instead.' % (type(self).__name__, type(self).__name__),
-                      PendingDeprecationWarning, stacklevel=2)
-        return self.instantiate_class()
-
     def getattr(self, name, context=None, class_context=True):
         """Get an attribute from this class, using Python's attribute semantic.
 
@@ -2333,7 +2321,6 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                 continue
 
             if bases._is_property(attr):
-                # TODO(cpopa): don't use a private API.
                 yield from attr.infer_call_result(self, context)
                 continue
             if attr.type == 'classmethod':
@@ -2645,8 +2632,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         return sorted(slots, key=lambda item: item.value)
 
     def _inferred_bases(self, context=None):
-        # TODO(cpopa): really similar with .ancestors,
-        # but the difference is when one base is inferred,
+        # Similar with .ancestors, but the difference is when one base is inferred,
         # only the first object is wanted. That's because
         # we aren't interested in superclasses, as in the following
         # example:
