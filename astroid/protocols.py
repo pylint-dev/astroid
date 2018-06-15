@@ -378,7 +378,7 @@ def _resolve_asspart(parts, asspath, context):
             # A dictionary in an iterating context
             try:
                 assigned, _ = part.items[index]
-            except KeyError:
+            except IndexError:
                 return
 
         elif hasattr(part, 'getitem'):
