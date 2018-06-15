@@ -275,19 +275,29 @@ def infer_enum_class(node):
             elif isinstance(stmt, nodes.AnnAssign):
                 targets = [stmt.target]
 
+            inferred_return_value = None
+            if isinstance(stmt.value, nodes.Const):
+                if isinstance(stmt.value.value, str):
+                    inferred_return_value = '"{}"'.format(stmt.value.value)
+                else:
+                    inferred_return_value = stmt.value.value
+
             new_targets = []
             for target in targets:
                 # Replace all the assignments with our mocked class.
                 classdef = dedent('''
-                class %(name)s(%(types)s):
+                class {name}({types}):
                     @property
                     def value(self):
-                        # Not the best return.
-                        return None
+                        return {return_value}
                     @property
                     def name(self):
-                        return %(name)r
-                ''' % {'name': target.name, 'types': ', '.join(node.basenames)})
+                        return {name}
+                '''.format(
+                    name=target.name,
+                    types=', '.join(node.basenames),
+                    return_value=inferred_return_value,
+                ))
                 fake = AstroidBuilder(MANAGER).string_build(classdef)[target.name]
                 fake.parent = target.parent
                 for method in node.mymethods():

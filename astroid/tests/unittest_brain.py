@@ -624,6 +624,23 @@ class EnumBrainTest(unittest.TestCase):
         self.assertIsInstance(instance, astroid.Const)
         self.assertIsInstance(instance.value, str)
 
+    def test_infer_enum_value_as_the_right_type(self):
+        string_value, int_value = builder.extract_node('''
+        from enum import Enum
+        class A(Enum):
+            a = 'a'
+            b = 1
+        A.a.value #@
+        A.b.value #@
+        ''')
+        inferred_string = string_value.inferred()
+        assert any(isinstance(elem, astroid.Const) and elem.value == 'a'
+                   for elem in inferred_string)
+
+        inferred_int = int_value.inferred()
+        assert any(isinstance(elem, astroid.Const) and elem.value == 1
+                   for elem in inferred_int)
+
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
 class DateutilBrainTest(unittest.TestCase):
