@@ -14,6 +14,7 @@ import collections
 import operator as operator_mod
 import sys
 
+from astroid import Store
 from astroid import arguments
 from astroid import bases
 from astroid import context as contextmod
@@ -604,10 +605,15 @@ def starred_assigned_stmts(self, node=None, context=None, asspath=None):
                     elts.pop()
                     continue
                 # We're done
-                packed = nodes.List()
-                packed.elts = elts
-                packed.parent = self
+                packed = nodes.List(
+                    ctx=Store,
+                    parent=self,
+                    lineno=lhs.lineno,
+                    col_offset=lhs.col_offset,
+                )
+                packed.postinit(elts=elts)
                 yield packed
                 break
+
 
 nodes.Starred.assigned_stmts = starred_assigned_stmts
