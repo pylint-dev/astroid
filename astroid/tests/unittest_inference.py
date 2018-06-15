@@ -4516,5 +4516,33 @@ def test_slice_inference_in_for_loops_not_working():
         assert inferred == util.Uninferable
 
 
+def test_unpacking_starred_and_dicts_in_assignment():
+    node = extract_node('''
+    a, *b = {1:2, 2:3, 3:4}
+    b
+    ''')
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.List)
+    assert inferred.as_string() == '[2, 3]'
+
+    node = extract_node('''
+    a, *b = {1:2}
+    b
+    ''')
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.List)
+    assert inferred.as_string() == '[]'
+
+
+def test_unpacking_starred_empty_list_in_assignment():
+    node = extract_node('''
+    a, *b, c = [1, 2]
+    b #@
+    ''')
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.List)
+    assert inferred.as_string() == '[]'
+
+
 if __name__ == '__main__':
     unittest.main()

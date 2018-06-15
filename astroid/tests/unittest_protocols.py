@@ -124,8 +124,6 @@ class ProtocolTests(unittest.TestCase):
     def test_assign_stmts_starred_fails(self):
         # Too many starred
         self._helper_starred_inference_error("a, *b, *c = (1, 2, 3) #@")
-        # Too many lhs values
-        self._helper_starred_inference_error("a, *b, c = (1, 2) #@")
         # This could be solved properly, but it complicates needlessly the
         # code for assigned_stmts, without offering real benefit.
         self._helper_starred_inference_error(

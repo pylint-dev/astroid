@@ -586,18 +586,15 @@ def starred_assigned_stmts(self, node=None, context=None, asspath=None):
         except exceptions.InferenceError:
             yield util.Uninferable
             return
-        if rhs is util.Uninferable or not hasattr(rhs, 'elts'):
-            # Not interested in inferred values without elts.
+        if rhs is util.Uninferable or not hasattr(rhs, 'itered'):
             yield util.Uninferable
             return
 
-        elts = collections.deque(rhs.elts[:])
-        if len(lhs.elts) > len(rhs.elts):
-            raise exceptions.InferenceError('More targets, {targets!r}, than '
-                                            'values to unpack, {values!r}.',
-                                            node=self, targets=lhs,
-                                            values=rhs, unknown=node,
-                                            context=context)
+        try:
+            elts = collections.deque(rhs.itered())
+        except TypeError:
+            yield util.Uninferable
+            return
 
         # Unpack iteratively the values from the rhs of the assignment,
         # until the find the starred node. What will remain will
@@ -608,11 +605,15 @@ def starred_assigned_stmts(self, node=None, context=None, asspath=None):
 
         for index, left_node in enumerate(lhs.elts):
             if not isinstance(left_node, nodes.Starred):
+                if not elts:
+                    break
                 elts.popleft()
                 continue
             lhs_elts = collections.deque(reversed(lhs.elts[index:]))
             for right_node in lhs_elts:
                 if not isinstance(right_node, nodes.Starred):
+                    if not elts:
+                        break
                     elts.pop()
                     continue
                 # We're done
