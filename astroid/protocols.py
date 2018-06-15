@@ -549,7 +549,7 @@ def starred_assigned_stmts(self, node=None, context=None, asspath=None):
         context: TODO
         asspath: TODO
     """
-
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def _determine_starred_iteration_lookups(starred, target, lookups):
         # Determine the lookups for the rhs of the iteration
         itered = target.itered()
