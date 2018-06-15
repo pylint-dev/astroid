@@ -7,6 +7,12 @@ What's New in astroid 2.0?
 
 Release Date: Unknown
 
+   * Reworking of the numpy brain dealing with numerictypes
+     (use of inspect module to determine the class hierarchy of
+      numpy.core.numerictypes module)
+
+     Close PyCQA/pylint#2140
+
    * Added inference support for starred nodes in for loops
 
      Close #146
