@@ -151,7 +151,7 @@ def numpy_core_numerictypes_transform():
     return astroid.parse('''
     # different types defined in numerictypes.py
     class generic(object):
-        def __init__(self):
+        def __init__(self, value):
             self.T = None
             self.base = None
             self.data = None
@@ -235,7 +235,7 @@ def numpy_core_numerictypes_transform():
 
 
     class dtype(object):
-        def __init__(self):
+        def __init__(self, obj, align=False, copy=False):
             self.alignment = None
             self.base = None
             self.byteorder = None
@@ -262,7 +262,8 @@ def numpy_core_numerictypes_transform():
 
 
     class ndarray(object):
-        def __init__(self):
+        def __init__(self, shape, dtype=float, buffer=None, offset=0,
+                     strides=None, order=None):
             self.T = None
             self.base = None
             self.ctypes = None
@@ -338,7 +339,7 @@ def numpy_core_numerictypes_transform():
 
 
     class busdaycalendar(object):
-        def __init__(self):
+        def __init__(self, weekmask='1111100', holidays=None):
             self.holidays = None
             self.weekmask = None
 
@@ -349,7 +350,7 @@ def numpy_core_numerictypes_transform():
    
 
     class void(flexible):
-        def __init__(self):
+        def __init__(self, *args, **kwargs):
             self.base = None
             self.dtype = None
             self.flags = None
@@ -361,7 +362,7 @@ def numpy_core_numerictypes_transform():
 
 
     class integer(number):
-        def __init__(self):
+        def __init__(self, value):
            self.denominator = None
            self.numerator = None
 
@@ -392,7 +393,6 @@ def numpy_core_numerictypes_transform():
 
     class float64(floating, float):
         def fromhex(self, string): pass 
-
 
         
     class uint64(unsignedinteger): pass
