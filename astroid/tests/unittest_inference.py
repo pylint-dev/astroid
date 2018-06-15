@@ -4475,5 +4475,46 @@ def test_unpack_dicts_in_assignment():
     assert second_inferred.value == 2
 
 
+def test_slice_inference_in_for_loops():
+    node = extract_node('''
+    for a, (c, *b) in [(1, (2, 3, 4)), (4, (5, 6))]:
+       b #@
+    ''')
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.List)
+    assert inferred.as_string() == '[3, 4]'
+
+    node = extract_node('''
+    for a, *b in [(1, 2, 3, 4)]:
+       b #@
+    ''')
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.List)
+    assert inferred.as_string() == '[2, 3, 4]'
+
+    node = extract_node('''
+    for a, *b in [(1,)]:
+       b #@
+    ''')
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.List)
+    assert inferred.as_string() == '[]'
+
+
+def test_slice_inference_in_for_loops_not_working():
+    ast_nodes = extract_node('''
+    from unknown import Unknown
+    for a, *b in something:
+        b #@
+    for a, *b in Unknown:
+        b #@
+    for a, *b in (1):
+        b #@
+    ''')
+    for node in ast_nodes:
+        inferred = next(node.infer())
+        assert inferred == util.Uninferable
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -7,6 +7,10 @@ What's New in astroid 2.0?
 
 Release Date: Unknown
 
+   * Added inference support for starred nodes in for loops
+
+     Close #146
+
    * Support unpacking for dicts in assignments
 
      Close #268

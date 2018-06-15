@@ -67,7 +67,8 @@ class ProtocolTests(unittest.TestCase):
 
         for1_starred = next(assign_stmts.nodes_of_class(Starred))
         assigned = next(for1_starred.assigned_stmts())
-        self.assertEqual(assigned, util.Uninferable)
+        assert isinstance(assigned, astroid.List)
+        assert assigned.as_string() == '[1, 2]'
 
     def _get_starred_stmts(self, code):
         assign_stmt = extract_node("{} #@".format(code))
