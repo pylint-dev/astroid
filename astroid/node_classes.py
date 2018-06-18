@@ -1068,7 +1068,7 @@ class LookupMixIn(object):
         for node in stmts:
             stmt = node.statement()
             # line filtering is on and we have reached our location, break
-            if mylineno > 0 and stmt.fromlineno > mylineno:
+            if stmt.fromlineno > mylineno > 0:
                 break
             assert hasattr(node, 'assign_type'), (node, node.scope(),
                                                   node.scope().locals)
