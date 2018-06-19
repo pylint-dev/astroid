@@ -1070,6 +1070,11 @@ class LookupMixIn(object):
             # line filtering is on and we have reached our location, break
             if stmt.fromlineno > mylineno > 0:
                 break
+            # Ignore decorators with the same name as the
+            # decorated function
+            # Fixes issue #375
+            if mystmt is stmt and is_from_decorator(self):
+                continue
             assert hasattr(node, 'assign_type'), (node, node.scope(),
                                                   node.scope().locals)
             assign_type = node.assign_type()
@@ -4434,3 +4439,13 @@ def const_factory(value):
         node = EmptyNode()
         node.object = value
         return node
+
+
+def is_from_decorator(node):
+    """Return True if the given node is the child of a decorator"""
+    parent = node.parent
+    while parent is not None:
+        if isinstance(parent, Decorators):
+            return True
+        parent = parent.parent
+    return False
