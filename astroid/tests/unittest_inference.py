@@ -4544,5 +4544,27 @@ def test_unpacking_starred_empty_list_in_assignment():
     assert inferred.as_string() == '[]'
 
 
+def test_regression_infinite_loop_decorator():
+    """Make sure decorators with the same names
+    as a decorated method do not cause an infinite loop
+
+    See https://github.com/PyCQA/astroid/issues/375
+    """
+    code = """
+    from functools import lru_cache
+
+    class Foo():
+        @lru_cache()
+        def lru_cache(self, value):
+            print('Computing {}'.format(value))
+            return value
+    Foo().lru_cache(1)
+    """
+    node = extract_node(code)
+    [result] = node.inferred()
+    assert result.value == 1
+
+
+
 if __name__ == '__main__':
     unittest.main()
