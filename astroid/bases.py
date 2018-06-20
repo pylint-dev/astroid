@@ -43,7 +43,7 @@ PROPERTIES = {BUILTINS + '.property', 'abc.abstractproperty'}
 POSSIBLE_PROPERTIES = {"cached_property", "cachedproperty",
                        "lazyproperty", "lazy_property", "reify",
                        "lazyattribute", "lazy_attribute",
-                       "LazyProperty", "lazy"}
+                       "LazyProperty", "lazy", "cache_readonly"}
 
 
 def _is_property(meth):
