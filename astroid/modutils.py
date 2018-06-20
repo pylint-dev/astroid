@@ -476,7 +476,7 @@ def get_module_part(dotted_name, context_file=None):
     return dotted_name
 
 
-def get_module_files(src_directory, blacklist, list_all=False):
+def get_module_files(src_directory, blacklist, lint_all=False, list_all=False):
     """given a package directory return a list of all available python
     module's files in the package and its subpackages
 
@@ -503,7 +503,7 @@ def get_module_files(src_directory, blacklist, list_all=False):
             continue
         _handle_blacklist(blacklist, dirnames, filenames)
         # check for __init__.py
-        if not list_all and '__init__.py' not in filenames:
+        if not list_all and not lint_all:
             dirnames[:] = ()
             continue
         for filename in filenames:
