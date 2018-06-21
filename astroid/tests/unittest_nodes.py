@@ -14,6 +14,7 @@ import platform
 import sys
 import textwrap
 import unittest
+import copy
 
 import pytest
 import six
@@ -444,6 +445,13 @@ class ConstNodeTest(unittest.TestCase):
 
     def test_unicode(self):
         self._test('a')
+
+    def test_copy(self):
+        """
+        Make sure copying a Const object doesn't result in infinite recursion
+        """
+        const = copy.copy(nodes.Const(1))
+        assert const.value == 1
 
 
 class NameNodeTest(unittest.TestCase):
