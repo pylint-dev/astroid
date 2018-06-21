@@ -283,6 +283,8 @@ class NodeNG:
         :returns: The inferred values.
         :rtype: iterable
         """
+        if context is not None:
+            context = context.extra_context.get(self, context)
         if self._explicit_inference is not None:
             # explicit_inference is not bound, give it self explicitly
             try:

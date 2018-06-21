@@ -18,7 +18,7 @@ class InferenceContext:
     Account for already visited nodes to infinite stop infinite recursion
     """
 
-    __slots__ = ('path', 'lookupname', 'callcontext', 'boundnode', 'inferred')
+    __slots__ = ('path', 'lookupname', 'callcontext', 'boundnode', 'inferred', 'extra_context')
 
     def __init__(self, path=None, inferred=None):
         self.path = path or set()
@@ -61,6 +61,13 @@ class InferenceContext:
         Currently the key is ``(node, lookupname, callcontext, boundnode)``
         and the value is tuple of the inferred results
         """
+        self.extra_context = {}
+        """
+        :type: dict(NodeNG, Context)
+
+        Context that needs to be passed down through call stacks
+        for call arguments
+        """
 
     def push(self, node):
         """Push node into inference path
@@ -87,6 +94,7 @@ class InferenceContext:
         clone = InferenceContext(copy.copy(self.path), inferred=self.inferred)
         clone.callcontext = self.callcontext
         clone.boundnode = self.boundnode
+        clone.extra_context = copy.copy(self.extra_context)
         return clone
 
     def cache_generator(self, key, generator):

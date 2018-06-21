@@ -33,7 +33,7 @@ class LruWrappedModel(objectmodel.FunctionModel):
         _CacheInfo(0, 0, 0, 0)
         ''')
         class CacheInfoBoundMethod(BoundMethod):
-            def infer_call_result(self, caller, context=None, context_lookup=None):
+            def infer_call_result(self, caller, context=None):
                 yield helpers.safe_infer(cache_info)
 
         return CacheInfoBoundMethod(proxy=self._instance, bound=self._instance)
@@ -94,7 +94,7 @@ def _functools_partial_inference(node, context=None):
         filled_positionals = len(call.positional_arguments[1:])
         filled_keywords = list(call.keyword_arguments)
 
-        def infer_call_result(self, caller=None, context=None, context_lookup=None):
+        def infer_call_result(self, caller=None, context=None):
             nonlocal call
             filled_args = call.positional_arguments[1:]
             filled_keywords = call.keyword_arguments
@@ -113,7 +113,6 @@ def _functools_partial_inference(node, context=None):
             return super().infer_call_result(
                 caller=caller,
                 context=context,
-                context_lookup=context_lookup,
             )
 
     partial_function = PartialFunction(

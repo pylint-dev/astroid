@@ -186,9 +186,10 @@ def infer_call(self, context=None):
     callcontext.callcontext = contextmod.CallContext(args=self.args,
                                                      keywords=self.keywords)
     callcontext.boundnode = None
-    context_lookup = None
+    extra_context = {}
     if context is not None:
-        context_lookup = _populate_context_lookup(self, context.clone())
+        extra_context = _populate_context_lookup(self, context.clone())
+        callcontext.extra_context = extra_context
     for callee in self.func.infer(context):
         if callee is util.Uninferable:
             yield callee
@@ -198,7 +199,6 @@ def infer_call(self, context=None):
                 yield from callee.infer_call_result(
                     caller=self,
                     context=callcontext,
-                    context_lookup=context_lookup,
                 )
         except exceptions.InferenceError:
             ## XXX log error ?

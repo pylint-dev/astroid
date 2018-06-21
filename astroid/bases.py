@@ -226,7 +226,7 @@ class BaseInstance(Proxy):
             else:
                 yield attr
 
-    def infer_call_result(self, caller, context=None, context_lookup=None):
+    def infer_call_result(self, caller, context=None):
         """infer what a class instance is returning when called"""
         context = contextmod.bind_context_to_node(context, self)
         inferred = False
@@ -328,11 +328,8 @@ class UnboundMethod(Proxy):
             return iter((self.special_attributes.lookup(name), ))
         return self._proxied.igetattr(name, context)
 
-    def infer_call_result(self, caller, context, context_lookup=None):
+    def infer_call_result(self, caller, context):
         """
-        The context_lookup argument is used to correctly infer
-        arguments to object.__new__(cls) calls inside classmethods
-
         The boundnode of the regular context with a function called
         on ``object.__new__`` will be of type ``object``,
         which is incorrect for the argument in general.
@@ -347,14 +344,12 @@ class UnboundMethod(Proxy):
         if (self._proxied.name == '__new__' and
                 self._proxied.parent.frame().qname() == '%s.object' % BUILTINS):
             if caller.args:
-                if context_lookup is None:
-                    context_lookup = {}
-                node_context = context_lookup.get(caller.args[0])
+                node_context = context.extra_context.get(caller.args[0])
                 infer = caller.args[0].infer(context=node_context)
             else:
                 infer = []
             return (Instance(x) if x is not util.Uninferable else x for x in infer)
-        return self._proxied.infer_call_result(caller, context, context_lookup)
+        return self._proxied.infer_call_result(caller, context)
 
     def bool_value(self):
         return True
@@ -442,7 +437,7 @@ class BoundMethod(UnboundMethod):
         cls.locals = cls_locals
         return cls
 
-    def infer_call_result(self, caller, context=None, context_lookup=None):
+    def infer_call_result(self, caller, context=None):
         context = contextmod.bind_context_to_node(context, self.bound)
         if (self.bound.__class__.__name__ == 'ClassDef'
                 and self.bound.name == 'type'
@@ -456,7 +451,7 @@ class BoundMethod(UnboundMethod):
             if new_cls:
                 return iter((new_cls, ))
 
-        return super(BoundMethod, self).infer_call_result(caller, context, context_lookup)
+        return super(BoundMethod, self).infer_call_result(caller, context)
 
     def bool_value(self):
         return True
