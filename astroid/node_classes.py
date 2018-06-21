@@ -2300,6 +2300,17 @@ class Const(mixins.NoChildrenMixin, NodeNG, bases.Instance):
 
         super(Const, self).__init__(lineno, col_offset, parent)
 
+    def __getattr__(self, name):
+        # This is needed because of Proxy's __getattr__ method.
+        # Calling object.__new__ on this class without calling
+        # __init__ would result in an infinite loop otherwise
+        # since __getattr__ is called when an attribute doesn't
+        # exist and self._proxied indirectly calls self.value
+        # and Proxy __getattr__ calls self.value
+        if name == "value":
+            raise AttributeError
+        return super().__getattr__(name)
+
     def getitem(self, index, context=None):
         """Get an item from this node if subscriptable.
 

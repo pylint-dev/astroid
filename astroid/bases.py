@@ -71,7 +71,13 @@ def _is_property(meth):
 
 
 class Proxy(object):
-    """a simple proxy object"""
+    """a simple proxy object
+
+    Note:
+
+    Subclasses of this object will need a custom __getattr__
+    if new instance attributes are created. See the Const class
+    """
 
     _proxied = None # proxied object may be set by class or by instance
 
