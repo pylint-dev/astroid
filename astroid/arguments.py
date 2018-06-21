@@ -22,7 +22,10 @@ class CallSite:
     and the argument name.
     """
 
-    def __init__(self, callcontext):
+    def __init__(self, callcontext, argument_context_map=None):
+        if argument_context_map is None:
+            argument_context_map = {}
+        self.argument_context_map = argument_context_map
         args = callcontext.args
         keywords = callcontext.keywords
         self.duplicated_keywords = set()
@@ -68,6 +71,7 @@ class CallSite:
     def _unpack_keywords(self, keywords):
         values = {}
         context = contextmod.InferenceContext()
+        context.extra_context = self.argument_context_map
         for name, value in keywords:
             if name is None:
                 # Then it's an unpacking operation (**)
@@ -104,10 +108,10 @@ class CallSite:
                 values[name] = value
         return values
 
-    @staticmethod
-    def _unpack_args(args):
+    def _unpack_args(self, args):
         values = []
         context = contextmod.InferenceContext()
+        context.extra_context = self.argument_context_map
         for arg in args:
             if isinstance(arg, nodes.Starred):
                 try:

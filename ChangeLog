@@ -216,6 +216,8 @@ Release Date: 2017-12-15
 
       Close PyCQA/pylint#1530
 
+    * Fix inference for nested calls
+
     * Dunder class at method level is now inferred as the class of the method
 
       Close PyCQA/pylint#1328
