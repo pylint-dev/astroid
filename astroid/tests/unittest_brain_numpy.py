@@ -287,9 +287,9 @@ class NumpyBrainCoreNumericTypesTest(SubTestWrapper):
                           'timedelta64'):
             inferred = self._inferred_numpy_attribute(uint_type)
             self.assertTrue(set(np_type_common_methods) <=
-                            set([m.name for m in inferred.methods()]))
+                            set(m.name for m in inferred.methods()))
             self.assertTrue(set(uint_common_methods) <=
-                            set([m.name for m in inferred.methods()]))
+                            set(m.name for m in inferred.methods()))
 
         # Specific check for int128
         inferred = self._inferred_numpy_attribute('int128')
@@ -319,9 +319,9 @@ class NumpyBrainCoreNumericTypesTest(SubTestWrapper):
                            'float96', 'float128', 'float256'):
             inferred = self._inferred_numpy_attribute(float_type)
             self.assertTrue(set(np_type_common_methods) <=
-                            set([m.name for m in inferred.methods()]))
+                            set(m.name for m in inferred.methods()))
             self.assertTrue(set(float_common_methods) <=
-                            set([m.name for m in inferred.methods()]))
+                            set(m.name for m in inferred.methods()))
 
     def test_complex_types_have_methods(self):
         """
@@ -345,7 +345,7 @@ class NumpyBrainCoreNumericTypesTest(SubTestWrapper):
                              'complex512', 'datetime64'):
             inferred = self._inferred_numpy_attribute(complex_type)
             self.assertTrue(set(np_type_common_methods) <=
-                            set([m.name for m in inferred.methods()]))
+                            set(m.name for m in inferred.methods()))
 
     def test_string_types_have_methods(self):
         """
@@ -378,9 +378,9 @@ class NumpyBrainCoreNumericTypesTest(SubTestWrapper):
         for np_str_types in ('string_', 'unicode_'):
             inferred = self._inferred_numpy_attribute(np_str_types)
             self.assertTrue(set(np_type_common_methods) <=
-                            set([m.name for m in inferred.methods()]))
+                            set(m.name for m in inferred.methods()))
             self.assertTrue(set(np_string_common_methods) <=
-                            set([m.name for m in inferred.methods()]))
+                            set(m.name for m in inferred.methods()))
 
         # Specific check for unicode_
         inferred = self._inferred_numpy_attribute('unicode_')
