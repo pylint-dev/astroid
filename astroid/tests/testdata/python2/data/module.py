@@ -23,7 +23,8 @@ def global_access(key, val):
 
 
 class YO:
-    """hehe"""
+    """hehe
+    haha"""
     a = 1
     
     def __init__(self):
@@ -45,7 +46,8 @@ class YOUPI(YO):
         self.member = None
     
     def method(self):
-        """method test"""
+        """method
+        test"""
         global MY_DICT
         try:
             MY_DICT = {}
@@ -53,9 +55,8 @@ class YOUPI(YO):
             autre = [a for (a, b) in MY_DICT if b]
             if b in autre:
                 return b
-            else:
-                if a in autre:
-                    return a
+            elif a in autre:
+                return a
             global_access(local, val=autre)
         finally:
             return local
@@ -81,9 +82,9 @@ def four_args(a, b, c, d):
     else:
         b += -2
     if c:
-        d = ((a) and (b)) or (c)
+        d = a and (b or c)
     else:
-        c = ((a) and (b)) or (d)
+        c = a and b or d
     map(lambda x, y: (y, x), a)
 redirect = four_args
 

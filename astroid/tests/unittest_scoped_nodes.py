@@ -645,7 +645,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(cls.getattr('__name__')[0].value, 'YO')
         self.assertEqual(len(cls.getattr('__doc__')), 1)
         self.assertIsInstance(cls.getattr('__doc__')[0], nodes.Const)
-        self.assertEqual(cls.getattr('__doc__')[0].value, 'hehe')
+        self.assertEqual(cls.getattr('__doc__')[0].value, 'hehe\n    haha')
         # YO is an old styled class for Python 2.7
         # May want to stop locals from referencing namespaced variables in the future
         module_attr_num = 4 if sys.version_info > (3, 3) else 1

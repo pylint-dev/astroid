@@ -605,7 +605,7 @@ class FileBuildTest(unittest.TestCase):
         module = self.module
         klass = module['YO']
         self.assertEqual(klass.name, 'YO')
-        self.assertEqual(klass.doc, 'hehe')
+        self.assertEqual(klass.doc, 'hehe\n    haha')
         self.assertEqual(klass.fromlineno, 25)
         self.assertTrue(klass.parent)
         self.assertEqual(klass.frame(), klass)
@@ -656,8 +656,8 @@ class FileBuildTest(unittest.TestCase):
         method = klass2['method']
         self.assertEqual(method.name, 'method')
         self.assertEqual([n.name for n in method.args.args], ['self'])
-        self.assertEqual(method.doc, 'method test')
-        self.assertEqual(method.fromlineno, 47)
+        self.assertEqual(method.doc, 'method\n        test')
+        self.assertEqual(method.fromlineno, 48)
         self.assertEqual(method.type, 'method')
         # class method
         method = klass2['class_method']
