@@ -15,8 +15,32 @@
 """
 import sys
 
+from astroid import node_classes
 
 # pylint: disable=unused-argument
+
+OP_PRECEDENCE = {
+    op: precedence
+    for precedence, ops in enumerate([
+        ['Lambda'],  # lambda x: x + 1
+        ['IfExp'],  # 1 if True else 2
+        ['or'],
+        ['and'],
+        ['not'],
+        ['Compare'],  # in, not in, is, is not, <, <=, >, >=, !=, ==
+        ['|'],
+        ['^'],
+        ['&'],
+        ['<<', '>>'],
+        ['+', '-'],
+        ['*', '@', '/', '//', '%'],
+        ['UnaryOp'],  # +, -, ~
+        ['**'],
+        ['Await'],
+    ]) for op in ops
+}
+
+DOC_NEWLINE = '\0'
 
 
 class AsStringVisitor:
@@ -27,13 +51,70 @@ class AsStringVisitor:
 
     def __call__(self, node):
         """Makes this visitor behave as a simple function"""
-        return node.accept(self)
+        return node.accept(self).replace(DOC_NEWLINE, '\n')
 
-    def _stmt_list(self, stmts):
+    def _docs_dedent(self, doc):
+        """Stop newlines in docs being indented by self._stmt_list"""
+        return '\n%s"""%s"""' % (self.indent, doc.replace('\n', DOC_NEWLINE))
+
+    def _stmt_list(self, stmts, indent=True):
         """return a list of nodes to string"""
-        stmts = '\n'.join([nstr for nstr in [n.accept(self) for n in stmts] if nstr])
-        return self.indent + stmts.replace('\n', '\n'+self.indent)
+        stmts = '\n'.join(
+            [nstr for nstr in [n.accept(self) for n in stmts] if nstr])
+        if indent:
+            return self.indent + stmts.replace('\n', '\n' + self.indent)
 
+        return stmts
+
+    def _precedence_parens(self, node, child, is_left=True):
+        """Wrap child in parens only if required to keep same semantics"""
+        if self._should_wrap(node, child, is_left):
+            return '(%s)' % child.accept(self)
+
+        return child.accept(self)
+
+    def _should_wrap(self, node, child, is_left):
+        """Wrap child if:
+            - it has lower precedence
+            - same precedence with position opposite to associativity direction
+        """
+        node_precedence = self._node_op_precedence(node)
+        child_precedence = self._node_op_precedence(child)
+
+        if node_precedence > child_precedence:
+            # 3 * (4 + 5)
+            return True
+
+        if (node_precedence == child_precedence and
+                is_left != self._node_op_left_associative(node)):
+            # 3 - (4 - 5)
+            # (2**3)**4
+            return True
+
+        return False
+
+    def _node_op_precedence(self, node):
+        if (isinstance(node, (node_classes.BinOp, node_classes.BoolOp))
+                or isinstance(node, node_classes.UnaryOp) and node.op == 'not'):
+            # Look up precedence using the operator
+            return OP_PRECEDENCE[node.op]
+
+        # Look up rest by class name or default to highest precedence
+        return OP_PRECEDENCE.get(
+            node.__class__.__name__, len(OP_PRECEDENCE))
+
+    def _node_op_left_associative(self, node):
+        if isinstance(node, node_classes.BinOp) and node.op == '**':
+            # 2**3**4 == 2**(3**4)
+            return False
+
+        if isinstance(node, node_classes.IfExp):
+            # `1 if True else 2 if False else 3` is parsed as
+            # `1 if True else (2 if False else 3)`
+            return False
+
+        # Everything else is left associative
+        return True
 
     ## visit_<node> methods ###########################################
 
@@ -80,12 +161,17 @@ class AsStringVisitor:
 
     def visit_binop(self, node):
         """return an astroid.BinOp node as string"""
-        return '(%s) %s (%s)' % (node.left.accept(self), node.op, node.right.accept(self))
+        left = self._precedence_parens(node, node.left)
+        right = self._precedence_parens(node, node.right, is_left=False)
+        if node.op == '**':
+            return '%s%s%s' % (left, node.op, right)
+
+        return '%s %s %s' % (left, node.op, right)
 
     def visit_boolop(self, node):
         """return an astroid.BoolOp node as string"""
-        return (' %s ' % node.op).join(['(%s)' % n.accept(self)
-                                        for n in node.values])
+        values = ['%s' % self._precedence_parens(node, n) for n in node.values]
+        return (' %s ' % node.op).join(values)
 
     def visit_break(self, node):
         """return an astroid.Break node as string"""
@@ -93,7 +179,7 @@ class AsStringVisitor:
 
     def visit_call(self, node):
         """return an astroid.Call node as string"""
-        expr_str = node.func.accept(self)
+        expr_str = self._precedence_parens(node, node.func)
         args = [arg.accept(self) for arg in node.args]
         if node.keywords:
             keywords = [kwarg.accept(self) for kwarg in node.keywords]
@@ -118,15 +204,17 @@ class AsStringVisitor:
                     bases = '(metaclass=%s)' % metaclass.name
             else:
                 bases = '(%s)' % bases if bases else ''
-        docs = '\n%s"""%s"""' % (self.indent, node.doc) if node.doc else ''
+        docs = self._docs_dedent(node.doc) if node.doc else ''
         return '\n\n%sclass %s%s:%s\n%s\n' % (decorate, node.name, bases, docs,
                                               self._stmt_list(node.body))
 
     def visit_compare(self, node):
         """return an astroid.Compare node as string"""
-        rhs_str = ' '.join(['%s %s' % (op, expr.accept(self))
-                            for op, expr in node.ops])
-        return '%s %s' % (node.left.accept(self), rhs_str)
+        rhs_str = ' '.join([
+            '%s %s' % (op, self._precedence_parens(node, expr, is_left=False))
+            for op, expr in node.ops
+        ])
+        return '%s %s' % (self._precedence_parens(node, node.left), rhs_str)
 
     def visit_comprehension(self, node):
         """return an astroid.Comprehension node as string"""
@@ -240,7 +328,7 @@ class AsStringVisitor:
     def visit_functiondef(self, node):
         """return an astroid.Function node as string"""
         decorate = node.decorators.accept(self) if node.decorators else ''
-        docs = '\n%s"""%s"""' % (self.indent, node.doc) if node.doc else ''
+        docs = self._docs_dedent(node.doc) if node.doc else ''
         trailer = ':'
         if node.returns:
             return_annotation = '->' + node.returns.as_string()
@@ -258,7 +346,7 @@ class AsStringVisitor:
 
     def visit_attribute(self, node):
         """return an astroid.Getattr node as string"""
-        return '%s.%s' % (node.expr.accept(self), node.attrname)
+        return '%s.%s' % (self._precedence_parens(node, node.expr), node.attrname)
 
     def visit_global(self, node):
         """return an astroid.Global node as string"""
@@ -266,16 +354,22 @@ class AsStringVisitor:
 
     def visit_if(self, node):
         """return an astroid.If node as string"""
-        ifs = ['if %s:\n%s' % (node.test.accept(self), self._stmt_list(node.body))]
-        if node.orelse:# XXX use elif ???
+        ifs = [
+            'if %s:\n%s' % (node.test.accept(self), self._stmt_list(node.body))
+        ]
+        if (len(node.orelse) == 1
+                and isinstance(node.orelse[0], node_classes.If)):
+            ifs.append('el%s' % self._stmt_list(node.orelse, indent=False))
+        elif node.orelse:
             ifs.append('else:\n%s' % self._stmt_list(node.orelse))
         return '\n'.join(ifs)
 
     def visit_ifexp(self, node):
         """return an astroid.IfExp node as string"""
-        return '%s if %s else %s' % (node.body.accept(self),
-                                     node.test.accept(self),
-                                     node.orelse.accept(self))
+        return '%s if %s else %s' % (
+            self._precedence_parens(node, node.body, is_left=True),
+            self._precedence_parens(node, node.test, is_left=True),
+            self._precedence_parens(node, node.orelse, is_left=False))
 
     def visit_import(self, node):
         """return an astroid.Import node as string"""
@@ -289,8 +383,12 @@ class AsStringVisitor:
 
     def visit_lambda(self, node):
         """return an astroid.Lambda node as string"""
-        return 'lambda %s: %s' % (node.args.accept(self),
-                                  node.body.accept(self))
+        args = node.args.accept(self)
+        body = node.body.accept(self)
+        if args:
+            return 'lambda %s: %s' % (args, body)
+
+        return 'lambda: %s' % body
 
     def visit_list(self, node):
         """return an astroid.List node as string"""
@@ -338,6 +436,11 @@ class AsStringVisitor:
 
     def visit_return(self, node):
         """return an astroid.Return node as string"""
+        if (isinstance(node.value, node_classes.Tuple)
+                and len(node.value.elts) > 1):
+            elts = [child.accept(self) for child in node.value.elts]
+            return 'return %s' % ', '.join(elts)
+
         if node.value:
             return 'return %s' % node.value.accept(self)
 
@@ -359,15 +462,16 @@ class AsStringVisitor:
     def visit_slice(self, node):
         """return a astroid.Slice node as string"""
         lower = node.lower.accept(self) if node.lower else ''
-        upper = node.upper.accept(self) if node.upper else''
+        upper = node.upper.accept(self) if node.upper else ''
         step = node.step.accept(self) if node.step else ''
         if step:
             return '%s:%s:%s' % (lower, upper, step)
-        return  '%s:%s' % (lower, upper)
+        return '%s:%s' % (lower, upper)
 
     def visit_subscript(self, node):
         """return an astroid.Subscript node as string"""
-        return '%s[%s]' % (node.value.accept(self), node.slice.accept(self))
+        return '%s[%s]' % (self._precedence_parens(node, node.value),
+                           node.slice.accept(self))
 
     def visit_tryexcept(self, node):
         """return an astroid.TryExcept node as string"""
@@ -395,7 +499,7 @@ class AsStringVisitor:
             operator = 'not '
         else:
             operator = node.op
-        return '%s%s' % (operator, node.operand.accept(self))
+        return '%s%s' % (operator, self._precedence_parens(node, node.operand))
 
     def visit_while(self, node):
         """return an astroid.While node as string"""
@@ -407,8 +511,8 @@ class AsStringVisitor:
 
     def visit_with(self, node): # 'with' without 'as' is possible
         """return an astroid.With node as string"""
-        items = ', '.join(('(%s)' % expr.accept(self)) +
-                          (vars and ' as (%s)' % (vars.accept(self)) or '')
+        items = ', '.join(('%s' % expr.accept(self)) +
+                          (vars and ' as %s' % (vars.accept(self)) or '')
                           for expr, vars in node.items)
         return 'with %s:\n%s' % (items, self._stmt_list(node.body))
 

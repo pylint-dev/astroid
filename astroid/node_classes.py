@@ -18,7 +18,6 @@ import pprint
 from functools import lru_cache
 from functools import singledispatch as _singledispatch
 
-from astroid import as_string
 from astroid import bases
 from astroid import context as contextmod
 from astroid import decorators
@@ -711,6 +710,7 @@ class NodeNG:
         :returns: The source code.
         :rtype: str
         """
+        from astroid import as_string  # Avoid cyclic imports
         return as_string.to_code(self)
 
     def repr_tree(self, ids=False, include_linenos=False,

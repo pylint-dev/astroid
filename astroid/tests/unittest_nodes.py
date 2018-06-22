@@ -69,7 +69,7 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         binop = node.body[0].value
         inferred = next(binop.infer())
         self.assertEqual(inferred.as_string(), '[Uninferable]')
-        self.assertEqual(binop.as_string(), '([arg]) * (1)')
+        self.assertEqual(binop.as_string(), '[arg] * 1')
 
     def test_frozenset_as_string(self):
         ast_nodes = builder.extract_node('''
@@ -173,6 +173,26 @@ if all[1] == bord[0:]:
     pass\n\n"""
         ast = abuilder.string_build(code)
         self.assertEqual(ast.as_string(), code)
+
+    def test_operator_precedence(self):
+        with open(resources.find('data/operator_precedence.py')) as f:
+            for code in f.readlines():
+                self.check_as_string_ast_equality(code)
+
+    @staticmethod
+    def check_as_string_ast_equality(code):
+        """
+        Check that as_string produces source code with exactly the same
+        semantics as the source it was originally parsed from
+        """
+        pre = builder.parse(code)
+        post = builder.parse(pre.as_string())
+
+        pre_repr = pre.repr_tree()
+        post_repr = post.repr_tree()
+
+        assert pre_repr == post_repr
+        assert pre.as_string().strip() == code.strip()
 
 
 class _NodeTest(unittest.TestCase):
@@ -751,13 +771,16 @@ class Python35AsyncTest(unittest.TestCase):
         code = textwrap.dedent('''
         async def function():
             await 42
+            await x[0]
+            (await x)[0]
+            await (x + y)[0]
         ''')
         self._test_await_async_as_string(code)
 
     def test_asyncwith_as_string(self):
         code = textwrap.dedent('''
         async def function():
-            async with (42):
+            async with 42:
                 pass
         ''')
         self._test_await_async_as_string(code)
