@@ -304,8 +304,7 @@ class NumpyBrainCoreNumericTypesTest(SubTestWrapper):
                 inferred = self._inferred_numpy_attribute(type_)
                 for meth in generic_methods:
                     with self.subTest(meth=meth):
-                        self.assertTrue(meth in set(
-                            [m.name for m in inferred.methods()]))
+                        self.assertTrue(meth in {m.name for m in inferred.methods()})
 
     def test_generic_types_have_attributes(self):
         """
