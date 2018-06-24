@@ -136,6 +136,11 @@ Release Date: Unknown
 
      Close #533
 
+   * Stop astroid from getting stuck in an infinite loop if a function shares
+   its name with its decorator
+
+     Close #375
+
 
 
 What's New in astroid 1.6.0?

@@ -1068,8 +1068,13 @@ class LookupMixIn(object):
         for node in stmts:
             stmt = node.statement()
             # line filtering is on and we have reached our location, break
-            if mylineno > 0 and stmt.fromlineno > mylineno:
+            if stmt.fromlineno > mylineno > 0:
                 break
+            # Ignore decorators with the same name as the
+            # decorated function
+            # Fixes issue #375
+            if mystmt is stmt and is_from_decorator(self):
+                continue
             assert hasattr(node, 'assign_type'), (node, node.scope(),
                                                   node.scope().locals)
             assign_type = node.assign_type()
@@ -2294,6 +2299,17 @@ class Const(mixins.NoChildrenMixin, NodeNG, bases.Instance):
         """
 
         super(Const, self).__init__(lineno, col_offset, parent)
+
+    def __getattr__(self, name):
+        # This is needed because of Proxy's __getattr__ method.
+        # Calling object.__new__ on this class without calling
+        # __init__ would result in an infinite loop otherwise
+        # since __getattr__ is called when an attribute doesn't
+        # exist and self._proxied indirectly calls self.value
+        # and Proxy __getattr__ calls self.value
+        if name == "value":
+            raise AttributeError
+        return super().__getattr__(name)
 
     def getitem(self, index, context=None):
         """Get an item from this node if subscriptable.
@@ -4434,3 +4450,13 @@ def const_factory(value):
         node = EmptyNode()
         node.object = value
         return node
+
+
+def is_from_decorator(node):
+    """Return True if the given node is the child of a decorator"""
+    parent = node.parent
+    while parent is not None:
+        if isinstance(parent, Decorators):
+            return True
+        parent = parent.parent
+    return False

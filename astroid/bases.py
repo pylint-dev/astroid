@@ -43,7 +43,7 @@ PROPERTIES = {BUILTINS + '.property', 'abc.abstractproperty'}
 POSSIBLE_PROPERTIES = {"cached_property", "cachedproperty",
                        "lazyproperty", "lazy_property", "reify",
                        "lazyattribute", "lazy_attribute",
-                       "LazyProperty", "lazy"}
+                       "LazyProperty", "lazy", "cache_readonly"}
 
 
 def _is_property(meth):
@@ -71,7 +71,13 @@ def _is_property(meth):
 
 
 class Proxy(object):
-    """a simple proxy object"""
+    """a simple proxy object
+
+    Note:
+
+    Subclasses of this object will need a custom __getattr__
+    if new instance attributes are created. See the Const class
+    """
 
     _proxied = None # proxied object may be set by class or by instance
 
