@@ -12,7 +12,7 @@ from astroid import decorators
 from astroid import exceptions
 
 
-class BlockRangeMixIn(object):
+class BlockRangeMixIn:
     """override block range """
 
     @decorators.cachedproperty
@@ -32,7 +32,7 @@ class BlockRangeMixIn(object):
         return lineno, last or self.tolineno
 
 
-class FilterStmtsMixin(object):
+class FilterStmtsMixin:
     """Mixin for statement filtering and assignment type"""
 
     def _get_filtered_stmts(self, _, node, _stmts, mystmt):
@@ -47,7 +47,7 @@ class FilterStmtsMixin(object):
         return self
 
 
-class AssignTypeMixin(object):
+class AssignTypeMixin:
 
     def assign_type(self):
         return self

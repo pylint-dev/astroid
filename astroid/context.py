@@ -11,7 +11,7 @@ import copy
 import pprint
 
 
-class InferenceContext(object):
+class InferenceContext:
     """Provide context for inference
 
     Store already inferred nodes to save time
@@ -113,7 +113,7 @@ class InferenceContext(object):
         return '%s(%s)' % (type(self).__name__, ',\n    '.join(state))
 
 
-class CallContext(object):
+class CallContext:
     """Holds information for a call site."""
 
     __slots__ = ('args', 'keywords')

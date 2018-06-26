@@ -49,7 +49,7 @@ def _dunder_dict(instance, attributes):
     return obj
 
 
-class ObjectModel(object):
+class ObjectModel:
 
     def __init__(self):
         self._instance = None

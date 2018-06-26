@@ -107,7 +107,7 @@ def _visit_or_none(node, attr, visitor, parent, visit='visit',
     return None
 
 
-class TreeRebuilder(object):
+class TreeRebuilder:
     """Rebuilds the _ast tree to become an Astroid tree"""
 
     def __init__(self, manager, parse_python_two: bool = False):

@@ -236,7 +236,7 @@ def _build_from_function(node, name, member, module):
         object_build_function(node, member, name)
 
 
-class InspectBuilder(object):
+class InspectBuilder:
     """class for building nodes from living object
 
     this is actually a really minimal representation, including only Module,

@@ -7,7 +7,7 @@
 import collections
 
 
-class TransformVisitor(object):
+class TransformVisitor:
     """A visitor for handling transforms.
 
     The standard approach of using it is to call

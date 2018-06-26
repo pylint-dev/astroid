@@ -27,7 +27,7 @@ def build_file(path, modname=None):
     return builder.AstroidBuilder().file_build(find(path), modname)
 
 
-class SysPathSetup(object):
+class SysPathSetup:
     def setUp(self):
         sys.path.insert(0, find(''))
 
@@ -39,7 +39,7 @@ class SysPathSetup(object):
                 del sys.path_importer_cache[key]
 
 
-class AstroidCacheSetupMixin(object):
+class AstroidCacheSetupMixin:
     """Mixin for handling the astroid cache problems.
 
     When clearing the astroid cache, some tests fails due to

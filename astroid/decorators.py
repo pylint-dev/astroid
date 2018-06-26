@@ -29,7 +29,7 @@ def cached(func, instance, args, kwargs):
         return result
 
 
-class cachedproperty(object):
+class cachedproperty:
     """ Provides a cached property equivalent to the stacking of
     @cached and @property, but more efficient.
 
