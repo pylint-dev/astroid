@@ -303,12 +303,6 @@ class TreeRebuilder(object):
                          self.visit(node.value, newnode))
         return newnode
 
-    def visit_repr(self, node, parent):
-        """visit a Backquote node by returning a fresh instance of it"""
-        newnode = nodes.Repr(node.lineno, node.col_offset, parent)
-        newnode.postinit(self.visit(node.value, newnode))
-        return newnode
-
     def visit_binop(self, node, parent):
         """visit a BinOp node by returning a fresh instance of it"""
         newnode = nodes.BinOp(self._bin_op_classes[type(node.op)],
@@ -489,14 +483,6 @@ class TreeRebuilder(object):
                          _visit_or_none(node, 'name', self, newnode),
                          [self.visit(child, newnode)
                           for child in node.body])
-        return newnode
-
-    def visit_exec(self, node, parent):
-        """visit an Exec node by returning a fresh instance of it"""
-        newnode = nodes.Exec(node.lineno, node.col_offset, parent)
-        newnode.postinit(self.visit(node.body, newnode),
-                         _visit_or_none(node, 'globals', self, newnode),
-                         _visit_or_none(node, 'locals', self, newnode))
         return newnode
 
     def visit_extslice(self, node, parent):
@@ -706,14 +692,6 @@ class TreeRebuilder(object):
     def visit_pass(self, node, parent):
         """visit a Pass node by returning a fresh instance of it"""
         return nodes.Pass(node.lineno, node.col_offset, parent)
-
-    def visit_print(self, node, parent):
-        """visit a Print node by returning a fresh instance of it"""
-        newnode = nodes.Print(node.nl, node.lineno, node.col_offset, parent)
-        newnode.postinit(_visit_or_none(node, 'dest', self, newnode),
-                         [self.visit(child, newnode)
-                          for child in node.values])
-        return newnode
 
     def visit_raise(self, node, parent):
         """visit a Raise node by returning a fresh instance of it"""
