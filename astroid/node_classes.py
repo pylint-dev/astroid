@@ -3860,7 +3860,7 @@ class TryExcept(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
     <TryExcept l.2 at 0x7f23b2e9d908>
     """
     _astroid_fields = ('body', 'handlers', 'orelse',)
-    _multi_line_block_fields = ('body', 'orelse')
+    _multi_line_block_fields = ('body', 'handlers', 'orelse')
     body = None
     """The contents of the block to catch exceptions from.
 
