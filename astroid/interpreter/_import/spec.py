@@ -55,7 +55,7 @@ class ModuleSpec(_ModuleSpec):
                                    submodule_search_locations=submodule_search_locations)
 
 
-class Finder(object):
+class Finder:
     """A finder is a class which knows how to find a particular module."""
 
     def __init__(self, path=None):

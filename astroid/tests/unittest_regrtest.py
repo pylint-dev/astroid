@@ -321,8 +321,9 @@ def test():
         self.assertEqual(len(node.inferred()), 1)
 
 
-class Whatever(object):
+class Whatever:
     a = property(lambda x: x, lambda x: x)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -23,7 +23,7 @@ def lazy_import(module_name):
 
 
 @object.__new__
-class Uninferable(object):
+class Uninferable:
     """Special inference object, which is returned when inference fails."""
     def __repr__(self):
         return 'Uninferable'
@@ -50,7 +50,7 @@ class Uninferable(object):
         func = getattr(visitor, "visit_uninferable")
         return func(self)
 
-class BadOperationMessage(object):
+class BadOperationMessage:
     """Object which describes a TypeError occurred somewhere in the inference chain
 
     This is not an exception, but a container object which holds the types and

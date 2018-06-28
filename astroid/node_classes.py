@@ -193,7 +193,7 @@ def _container_getitem(instance, elts, index, context=None):
     raise exceptions.AstroidTypeError('Could not use %s as subscript index' % index)
 
 
-class NodeNG(object):
+class NodeNG:
     """ A node of the new Abstract Syntax Tree (AST).
 
     This is the base class for all Astroid node classes.
@@ -975,7 +975,7 @@ class _BaseContainer(mixins.ParentAssignTypeMixin,
         yield from self.elts
 
 
-class LookupMixIn(object):
+class LookupMixIn:
     """Mixin to look up a name in the right scope."""
 
     @lru_cache(maxsize=None)

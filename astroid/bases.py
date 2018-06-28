@@ -70,7 +70,7 @@ def _is_property(meth):
     return False
 
 
-class Proxy(object):
+class Proxy:
     """a simple proxy object
 
     Note:

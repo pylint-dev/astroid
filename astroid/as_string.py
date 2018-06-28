@@ -19,7 +19,7 @@ import sys
 # pylint: disable=unused-argument
 
 
-class AsStringVisitor(object):
+class AsStringVisitor:
     """Visitor to render an Astroid node as a valid python code string"""
 
     def __init__(self, indent):

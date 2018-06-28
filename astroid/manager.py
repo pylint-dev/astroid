@@ -27,7 +27,7 @@ def safe_repr(obj):
         return '???'
 
 
-class AstroidManager(object):
+class AstroidManager:
     """the astroid manager, responsible to build astroid from files
      or modules.
 
