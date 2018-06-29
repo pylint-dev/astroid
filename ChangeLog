@@ -141,6 +141,10 @@ Release Date: Unknown
 
      Close #375
 
+   * Fix issue with inherited __call__ improperly inferencing self
+
+     Close #PyCQA/pylint#2199
+
 
 
 What's New in astroid 1.6.0?

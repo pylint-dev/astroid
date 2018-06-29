@@ -4565,6 +4565,26 @@ def test_regression_infinite_loop_decorator():
     assert result.value == 1
 
 
+def test_call_on_instance_with_inherited_dunder_call_method():
+    """Stop inherited __call__ method from incorrectly returning wrong class
+
+    See https://github.com/PyCQA/pylint/issues/2199
+    """
+    node = extract_node("""
+    class Base:
+        def __call__(self):
+            return self
+
+    class Sub(Base):
+        pass
+    obj = Sub()
+    val = obj()
+    val #@
+    """)
+    [val] = node.inferred()
+    assert isinstance(val, Instance)
+    assert val.name == "Sub"
+
 
 if __name__ == '__main__':
     unittest.main()

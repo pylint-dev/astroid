@@ -228,6 +228,11 @@ class BaseInstance(Proxy):
 
     def infer_call_result(self, caller, context=None, context_lookup=None):
         """infer what a class instance is returning when called"""
+        if context is None:
+            context = contextmod.InferenceContext()
+        else:
+            context = context.clone()
+        context.boundnode = self
         inferred = False
         for node in self._proxied.igetattr('__call__', context):
             if node is util.Uninferable or not node.callable():
