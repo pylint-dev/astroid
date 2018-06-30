@@ -2036,7 +2036,27 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                 and len(caller.args) == 3):
             result = self._infer_type_call(caller, context)
             yield result
+            return
+
+        dunder_call = None
+        try:
+            metaclass = self.metaclass(context=context)
+            if metaclass is not None:
+                dunder_call = next(metaclass.igetattr("__call__", context))
+        except exceptions.AttributeInferenceError:
+            pass
+        if (dunder_call is not None and
+                dunder_call.qname() != "builtins.type.__call__"):
+            if context is not None:
+                context = context.clone()
+            else:
+                context = contextmod.InferenceContext()
+            context.boundnode = self
+            yield from dunder_call.infer_call_result(
+                caller, context, context_lookup)
         else:
+            # Call type.__call__ if not set metaclass
+            # (since type is the default metaclass)
             yield bases.Instance(self)
 
     def scope_lookup(self, node, name, offset=0):
@@ -2469,7 +2489,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         return None
 
     _metaclass = None
-    def declared_metaclass(self):
+    def declared_metaclass(self, context=None):
         """Return the explicit declared metaclass for the current class.
 
         An explicit declared metaclass is defined
@@ -2484,7 +2504,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         """
         for base in self.bases:
             try:
-                for baseobj in base.infer():
+                for baseobj in base.infer(context=context):
                     if isinstance(baseobj, ClassDef) and baseobj.hide:
                         self._metaclass = baseobj._metaclass
                         self._metaclass_hack = True
@@ -2495,28 +2515,28 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         if self._metaclass:
             # Expects this from Py3k TreeRebuilder
             try:
-                return next(node for node in self._metaclass.infer()
+                return next(node for node in self._metaclass.infer(context=context)
                             if node is not util.Uninferable)
             except (exceptions.InferenceError, StopIteration):
                 return None
 
         return None
 
-    def _find_metaclass(self, seen=None):
+    def _find_metaclass(self, seen=None, context=None):
         if seen is None:
             seen = set()
         seen.add(self)
 
-        klass = self.declared_metaclass()
+        klass = self.declared_metaclass(context=context)
         if klass is None:
-            for parent in self.ancestors():
+            for parent in self.ancestors(context=context):
                 if parent not in seen:
                     klass = parent._find_metaclass(seen)
                     if klass is not None:
                         break
         return klass
 
-    def metaclass(self):
+    def metaclass(self, context=None):
         """Get the metaclass of this class.
 
         If this class does not define explicitly a metaclass,
@@ -2526,7 +2546,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         :returns: The metaclass of this class.
         :rtype: NodeNG or None
         """
-        return self._find_metaclass()
+        return self._find_metaclass(context=context)
 
     def has_metaclass_hack(self):
         return self._metaclass_hack

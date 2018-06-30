@@ -3562,6 +3562,36 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
 
+    def test_metaclass_custom_dunder_call(self):
+        """The Metaclass __call__ should take precedence
+        over the default metaclass type call (initialization)
+
+        See https://github.com/PyCQA/pylint/issues/2159
+        """
+        val = extract_node("""
+        class _Meta(type):
+            def __call__(cls):
+                return 1
+        class Clazz(metaclass=_Meta):
+            def __call__(self):
+                return 5.5
+
+        Clazz() #@
+        """).inferred()[0].value
+        assert val == 1
+
+    def test_metaclass_custom_dunder_call_boundnode(self):
+        """The boundnode should be the calling class"""
+        cls = extract_node("""
+        class _Meta(type):
+            def __call__(cls):
+                return cls
+        class Clazz(metaclass=_Meta):
+            pass
+        Clazz() #@
+        """).inferred()[0]
+        assert isinstance(cls, nodes.ClassDef) and cls.name == "Clazz"
+
     def test_delayed_attributes_without_slots(self):
         ast_node = extract_node('''
         class A(object):

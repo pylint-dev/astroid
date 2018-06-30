@@ -145,6 +145,9 @@ Release Date: Unknown
 
      Close #PyCQA/pylint#2199
 
+   * Fix __call__ precedence for classes with custom metaclasses
+
+     Close PyCQA/pylint#2159
 
 
 What's New in astroid 1.6.0?
