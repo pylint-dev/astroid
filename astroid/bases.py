@@ -228,11 +228,7 @@ class BaseInstance(Proxy):
 
     def infer_call_result(self, caller, context=None, context_lookup=None):
         """infer what a class instance is returning when called"""
-        if context is None:
-            context = contextmod.InferenceContext()
-        else:
-            context = context.clone()
-        context.boundnode = self
+        context = contextmod.bind_context_to_node(context, self)
         inferred = False
         for node in self._proxied.igetattr('__call__', context):
             if node is util.Uninferable or not node.callable():
@@ -447,11 +443,7 @@ class BoundMethod(UnboundMethod):
         return cls
 
     def infer_call_result(self, caller, context=None, context_lookup=None):
-        if context is None:
-            context = contextmod.InferenceContext()
-        context = context.clone()
-        context.boundnode = self.bound
-
+        context = contextmod.bind_context_to_node(context, self.bound)
         if (self.bound.__class__.__name__ == 'ClassDef'
                 and self.bound.name == 'type'
                 and self.name == '__new__'
