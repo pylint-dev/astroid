@@ -136,3 +136,28 @@ def copy_context(context):
         return context.clone()
 
     return InferenceContext()
+
+
+def bind_context_to_node(context, node):
+    """Give a context a boundnode
+    to retrieve the correct function name or attribute value
+    with from further inference.
+
+    Do not use an existing context since the boundnode could then
+    be incorrectly propagated higher up in the call stack.
+
+    :param context: Context to use
+    :type context: Optional(context)
+
+    :param node: Node to do name lookups from
+    :type node NodeNG:
+
+    :returns: A new context
+    :rtype: InferenceContext
+    """
+    if context is not None:
+        context = context.clone()
+    else:
+        context = InferenceContext()
+    context.boundnode = node
+    return context

@@ -2047,11 +2047,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
             pass
         if (dunder_call is not None and
                 dunder_call.qname() != "builtins.type.__call__"):
-            if context is not None:
-                context = context.clone()
-            else:
-                context = contextmod.InferenceContext()
-            context.boundnode = self
+            context = contextmod.bind_context_to_node(context, self)
             yield from dunder_call.infer_call_result(
                 caller, context, context_lookup)
         else:
@@ -2440,13 +2436,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         method = methods[0]
 
         # Create a new callcontext for providing index as an argument.
-        if context:
-            new_context = context.clone()
-        else:
-            new_context = contextmod.InferenceContext()
-
+        new_context = contextmod.bind_context_to_node(context, self)
         new_context.callcontext = contextmod.CallContext(args=[index])
-        new_context.boundnode = self
 
         return next(method.infer_call_result(self, new_context))
 

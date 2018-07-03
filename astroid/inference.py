@@ -537,8 +537,7 @@ def _is_not_implemented(const):
 def _invoke_binop_inference(instance, opnode, op, other, context, method_name):
     """Invoke binary operation inference on the given instance."""
     methods = dunder_lookup.lookup(instance, method_name)
-    if context is not None:
-        context.boundnode = instance
+    context = contextmod.bind_context_to_node(context, instance)
     method = methods[0]
     inferred = next(method.infer(context=context))
     if inferred is util.Uninferable:
@@ -824,14 +823,12 @@ nodes.Index._infer = infer_index
 # will be solved.
 def instance_getitem(self, index, context=None):
     # Rewrap index to Const for this case
-    if context:
-        new_context = context.clone()
-    else:
-        context = new_context = contextmod.InferenceContext()
+    new_context = contextmod.bind_context_to_node(context, self)
+    if not context:
+        context = new_context
 
     # Create a new callcontext for providing index as an argument.
     new_context.callcontext = contextmod.CallContext(args=[index])
-    new_context.boundnode = self
 
     method = next(self.igetattr('__getitem__', context=context), None)
     if not isinstance(method, bases.BoundMethod):
