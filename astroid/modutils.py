@@ -23,6 +23,7 @@ import imp
 import os
 import platform
 import sys
+import itertools
 from distutils.sysconfig import get_python_lib # pylint: disable=import-error
 # pylint: disable=import-error, no-name-in-module
 from distutils.errors import DistutilsPlatformError
@@ -320,7 +321,8 @@ def modpath_from_file_with_callback(filename, extrapath=None, is_package_cb=None
     filename = os.path.expanduser(_path_from_filename(filename))
 
     if extrapath is not None:
-        for path_ in map(_canonicalize_path, extrapath):
+        for path_ in itertools.chain(map(_canonicalize_path, extrapath),
+                                     extrapath):
             path = os.path.abspath(path_)
             if not path:
                 continue
@@ -330,7 +332,7 @@ def modpath_from_file_with_callback(filename, extrapath=None, is_package_cb=None
             if is_package_cb(path, submodpath[:-1]):
                 return extrapath[path_].split('.') + submodpath
 
-    for path in map(_canonicalize_path, sys.path):
+    for path in itertools.chain(map(_canonicalize_path, sys.path), sys.path):
         path = _cache_normalize_path(path)
         if not path:
             continue
