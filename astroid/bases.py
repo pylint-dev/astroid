@@ -376,8 +376,7 @@ class BoundMethod(UnboundMethod):
 
         In order for such call to be valid, the metaclass needs to be
         a subtype of ``type``, the name needs to be a string, the bases
-        needs to be a tuple of classes and the attributes a dictionary
-        of strings to values.
+        needs to be a tuple of classes
         """
         from astroid import node_classes
         # Verify the metaclass
@@ -419,13 +418,10 @@ class BoundMethod(UnboundMethod):
         for key, value in attrs.items:
             key = next(key.infer(context=context))
             value = next(value.infer(context=context))
-            if key.__class__.__name__ != 'Const':
-                # Something invalid as an attribute.
-                return None
-            if not isinstance(key.value, str):
-                # Not a proper attribute.
-                return None
-            cls_locals[key.value].append(value)
+            # Ignore non string keys
+            if (key.__class__.__name__ == 'Const' and
+                    isinstance(key.value, str)):
+                cls_locals[key.value].append(value)
 
         # Build the class from now.
         cls = mcs.__class__(name=name.value, lineno=caller.lineno,
