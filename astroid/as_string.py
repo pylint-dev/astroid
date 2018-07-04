@@ -15,30 +15,8 @@
 """
 import sys
 
-from astroid import node_classes
 
 # pylint: disable=unused-argument
-
-OP_PRECEDENCE = {
-    op: precedence
-    for precedence, ops in enumerate([
-        ['Lambda'],  # lambda x: x + 1
-        ['IfExp'],  # 1 if True else 2
-        ['or'],
-        ['and'],
-        ['not'],
-        ['Compare'],  # in, not in, is, is not, <, <=, >, >=, !=, ==
-        ['|'],
-        ['^'],
-        ['&'],
-        ['<<', '>>'],
-        ['+', '-'],
-        ['*', '@', '/', '//', '%'],
-        ['UnaryOp'],  # +, -, ~
-        ['**'],
-        ['Await'],
-    ]) for op in ops
-}
 
 DOC_NEWLINE = '\0'
 
@@ -78,43 +56,21 @@ class AsStringVisitor:
             - it has lower precedence
             - same precedence with position opposite to associativity direction
         """
-        node_precedence = self._node_op_precedence(node)
-        child_precedence = self._node_op_precedence(child)
+        node_precedence = node.op_precedence()
+        child_precedence = child.op_precedence()
 
         if node_precedence > child_precedence:
             # 3 * (4 + 5)
             return True
 
         if (node_precedence == child_precedence and
-                is_left != self._node_op_left_associative(node)):
+                is_left != node.op_left_associative()):
             # 3 - (4 - 5)
             # (2**3)**4
             return True
 
         return False
 
-    def _node_op_precedence(self, node):
-        if (isinstance(node, (node_classes.BinOp, node_classes.BoolOp))
-                or isinstance(node, node_classes.UnaryOp) and node.op == 'not'):
-            # Look up precedence using the operator
-            return OP_PRECEDENCE[node.op]
-
-        # Look up rest by class name or default to highest precedence
-        return OP_PRECEDENCE.get(
-            node.__class__.__name__, len(OP_PRECEDENCE))
-
-    def _node_op_left_associative(self, node):
-        if isinstance(node, node_classes.BinOp) and node.op == '**':
-            # 2**3**4 == 2**(3**4)
-            return False
-
-        if isinstance(node, node_classes.IfExp):
-            # `1 if True else 2 if False else 3` is parsed as
-            # `1 if True else (2 if False else 3)`
-            return False
-
-        # Everything else is left associative
-        return True
 
     ## visit_<node> methods ###########################################
 
@@ -354,11 +310,8 @@ class AsStringVisitor:
 
     def visit_if(self, node):
         """return an astroid.If node as string"""
-        ifs = [
-            'if %s:\n%s' % (node.test.accept(self), self._stmt_list(node.body))
-        ]
-        if (len(node.orelse) == 1
-                and isinstance(node.orelse[0], node_classes.If)):
+        ifs = ['if %s:\n%s' % (node.test.accept(self), self._stmt_list(node.body))]
+        if node.has_elif_block():
             ifs.append('el%s' % self._stmt_list(node.orelse, indent=False))
         elif node.orelse:
             ifs.append('else:\n%s' % self._stmt_list(node.orelse))
@@ -436,8 +389,7 @@ class AsStringVisitor:
 
     def visit_return(self, node):
         """return an astroid.Return node as string"""
-        if (isinstance(node.value, node_classes.Tuple)
-                and len(node.value.elts) > 1):
+        if node.is_tuple_return() and len(node.value.elts) > 1:
             elts = [child.accept(self) for child in node.value.elts]
             return 'return %s' % ', '.join(elts)
 

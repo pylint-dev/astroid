@@ -18,6 +18,7 @@ import pprint
 from functools import lru_cache
 from functools import singledispatch as _singledispatch
 
+from astroid import as_string
 from astroid import bases
 from astroid import context as contextmod
 from astroid import decorators
@@ -190,6 +191,28 @@ def _container_getitem(instance, elts, index, context=None):
             node=instance, index=index, context=context) from exc
 
     raise exceptions.AstroidTypeError('Could not use %s as subscript index' % index)
+
+
+OP_PRECEDENCE = {
+    op: precedence
+    for precedence, ops in enumerate([
+        ['Lambda'],  # lambda x: x + 1
+        ['IfExp'],  # 1 if True else 2
+        ['or'],
+        ['and'],
+        ['not'],
+        ['Compare'],  # in, not in, is, is not, <, <=, >, >=, !=, ==
+        ['|'],
+        ['^'],
+        ['&'],
+        ['<<', '>>'],
+        ['+', '-'],
+        ['*', '@', '/', '//', '%'],
+        ['UnaryOp'],  # +, -, ~
+        ['**'],
+        ['Await'],
+    ]) for op in ops
+}
 
 
 class NodeNG:
@@ -710,7 +733,6 @@ class NodeNG:
         :returns: The source code.
         :rtype: str
         """
-        from astroid import as_string  # Avoid cyclic imports
         return as_string.to_code(self)
 
     def repr_tree(self, ids=False, include_linenos=False,
@@ -859,6 +881,15 @@ class NodeNG:
         :rtype: bool or Uninferable
         """
         return util.Uninferable
+
+    def op_precedence(self):
+        # Look up by class name or default to highest precedence
+        return OP_PRECEDENCE.get(
+            self.__class__.__name__, len(OP_PRECEDENCE))
+
+    def op_left_associative(self):
+        # Everything is left associative except `**` and IfExp
+        return True
 
 
 class Statement(NodeNG):
@@ -1972,6 +2003,13 @@ class BinOp(NodeNG):
         yield self.left
         yield self.right
 
+    def op_precedence(self):
+        return OP_PRECEDENCE[self.op]
+
+    def op_left_associative(self):
+        # 2**3**4 == 2**(3**4)
+        return self.op != '**'
+
 
 class BoolOp(NodeNG):
     """Class representing an :class:`ast.BoolOp` node.
@@ -2023,6 +2061,9 @@ class BoolOp(NodeNG):
 
     def get_children(self):
         yield from self.values
+
+    def op_precedence(self):
+        return OP_PRECEDENCE[self.op]
 
 
 class Break(mixins.NoChildrenMixin, Statement):
@@ -3219,6 +3260,8 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         yield from self.body
         yield from self.orelse
 
+    def has_elif_block(self):
+        return len(self.orelse) == 1 and isinstance(self.orelse[0], If)
 
 class IfExp(NodeNG):
     """Class representing an :class:`ast.IfExp` node.
@@ -3264,6 +3307,11 @@ class IfExp(NodeNG):
         yield self.test
         yield self.body
         yield self.orelse
+
+    def op_left_associative(self):
+        # `1 if True else 2 if False else 3` is parsed as
+        # `1 if True else (2 if False else 3)`
+        return False
 
 
 class Import(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
@@ -3617,6 +3665,9 @@ class Return(Statement):
     def get_children(self):
         if self.value is not None:
             yield self.value
+
+    def is_tuple_return(self):
+        return isinstance(self.value, Tuple)
 
     def _get_return_nodes_skip_functions(self):
         yield self
@@ -4104,6 +4155,12 @@ class UnaryOp(NodeNG):
 
     def get_children(self):
         yield self.operand
+
+    def op_precedence(self):
+        if self.op == 'not':
+            return OP_PRECEDENCE[self.op]
+
+        return super().op_precedence()
 
 
 class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
