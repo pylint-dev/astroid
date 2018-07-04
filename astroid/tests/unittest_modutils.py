@@ -16,6 +16,7 @@ import sys
 import unittest
 from xml import etree
 import tempfile
+import shutil
 
 import astroid
 from astroid.interpreter._import import spec
@@ -131,6 +132,37 @@ class ModPathFromFileTest(unittest.TestCase):
                                   modutils.modpath_from_file, linked_file_name)
             finally:
                 os.remove(linked_file_name)
+
+    def test_load_from_module_symlink_on_symlinked_paths_in_syspath(self):
+        # constants
+        tmp = tempfile.gettempdir()
+        deployment_path = os.path.join(tmp, 'deployment')
+        path_to_include = os.path.join(tmp, 'path_to_include')
+        real_secret_path = os.path.join(tmp, 'secret.py')
+        symlink_secret_path = os.path.join(path_to_include, 'secret.py')
+
+        # setup double symlink
+        # /tmp/deployment
+        # /tmp/path_to_include (symlink to /tmp/deployment)
+        # /tmp/secret.py
+        # /tmp/deployment/secret.py (points to /tmp/secret.py)
+        os.mkdir(deployment_path)
+        self.addCleanup(shutil.rmtree, deployment_path)
+        os.symlink(deployment_path, path_to_include)
+        self.addCleanup(os.remove, path_to_include)
+        with open(real_secret_path, "w"):
+            pass
+        os.symlink(real_secret_path, symlink_secret_path)
+        self.addCleanup(os.remove, real_secret_path)
+
+        # add the symlinked path to sys.path
+        sys.path.append(path_to_include)
+        self.addCleanup(sys.path.pop)
+
+        # this should be equivalent to: import secret
+        self.assertEqual(
+            modutils.modpath_from_file(symlink_secret_path),
+            ['secret'])
 
 
 class LoadModuleFromPathTest(resources.SysPathSetup, unittest.TestCase):
