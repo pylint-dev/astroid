@@ -3309,6 +3309,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(attributes[0], nodes.Const)
         self.assertEqual(attributes[0].value, 1)
 
+
+    @pytest.mark.xfail(reason="These calls should be uninferable because they are invalid calls")
     def test_type__new__not_enough_arguments(self):
         ast_nodes = extract_node('''
         type.__new__(1) #@
@@ -3317,8 +3319,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         type.__new__(1, 2, 3, 4, 5) #@
         ''')
         for node in ast_nodes:
-            inferred = next(node.infer())
-            self.assertIsInstance(inferred, Instance)
+            with pytest.raises(InferenceError):
+                next(node.infer())
 
     def test_type__new__invalid_mcs_argument(self):
         ast_nodes = extract_node('''
@@ -3327,8 +3329,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         type.__new__(Class, 2, 3, 4) #@
         ''')
         for node in ast_nodes:
-            inferred = next(node.infer())
-            self.assertIsInstance(inferred, Instance)
+            with pytest.raises(InferenceError):
+                next(node.infer())
 
     def test_type__new__invalid_name(self):
         ast_nodes = extract_node('''
@@ -3338,8 +3340,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         type.__new__(Class, [], 1, 2) #@
         ''')
         for node in ast_nodes:
-            inferred = next(node.infer())
-            self.assertIsInstance(inferred, Instance)
+            with pytest.raises(InferenceError):
+                next(node.infer())
 
     def test_type__new__invalid_bases(self):
         ast_nodes = extract_node('''
@@ -3350,20 +3352,27 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         type.__new__(type, 'a', (object, 1), 2) #@
         ''')
         for node in ast_nodes:
-            inferred = next(node.infer())
-            self.assertIsInstance(inferred, Instance)
+            with pytest.raises(InferenceError):
+                next(node.infer())
 
     def test_type__new__invalid_attrs(self):
-        ast_nodes = extract_node('''
+        type_error_nodes = extract_node('''
         type.__new__(type, 'a', (), ()) #@
         type.__new__(type, 'a', (), object) #@
         type.__new__(type, 'a', (), 1) #@
-        type.__new__(type, 'a', (), {object: 1}) #@
-        type.__new__(type, 'a', (), {1:2, "a":5}) #@
+        ''')
+        for node in type_error_nodes:
+            with pytest.raises(InferenceError):
+                next(node.infer())
+
+        # Ignore invalid keys
+        ast_nodes = extract_node('''
+            type.__new__(type, 'a', (), {object: 1}) #@
+            type.__new__(type, 'a', (), {1:2, "a":5}) #@
         ''')
         for node in ast_nodes:
             inferred = next(node.infer())
-            self.assertIsInstance(inferred, Instance)
+            self.assertIsInstance(inferred, nodes.ClassDef)
 
     def test_type__new__metaclass_lookup(self):
         ast_node = extract_node('''
