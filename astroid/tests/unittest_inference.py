@@ -11,7 +11,7 @@
 """tests for the astroid inference capabilities
 """
 # pylint: disable=too-many-lines
-import os
+import platform
 import sys
 from functools import partial
 import unittest
@@ -782,12 +782,10 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         node = extract_node(code, __name__).func
         inferred = list(node.infer())
         self.assertEqual(len(inferred), 1)
-        if hasattr(sys, 'pypy_version_info'):
-            self.assertIsInstance(inferred[0], nodes.ClassDef)
-            self.assertEqual(inferred[0].name, 'file')
-        else:
-            self.assertIsInstance(inferred[0], nodes.FunctionDef)
-            self.assertEqual(inferred[0].name, 'open')
+        self.assertIsInstance(inferred[0], nodes.FunctionDef)
+        self.assertEqual(inferred[0].name, 'open')
+    if platform.python_implementation() == 'PyPy':
+        test_builtin_open = unittest.expectedFailure(test_builtin_open)
 
     def test_callfunc_context_func(self):
         code = '''
