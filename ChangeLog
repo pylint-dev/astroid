@@ -6,6 +6,8 @@ What's New in astroid 2.0?
 ==========================
 
 Release Date: Unknown
+   
+   * String representation of nodes takes in account precedence and associativity rules of operators.
 
    * Reworking of the numpy brain dealing with numerictypes
      (use of inspect module to determine the class hierarchy of

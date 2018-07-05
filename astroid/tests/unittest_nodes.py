@@ -176,7 +176,7 @@ if all[1] == bord[0:]:
 
     def test_operator_precedence(self):
         with open(resources.find('data/operator_precedence.py')) as f:
-            for code in f.readlines():
+            for code in f:
                 self.check_as_string_ast_equality(code)
 
     @staticmethod
