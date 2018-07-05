@@ -7,6 +7,12 @@ What's New in astroid 2.0?
 
 Release Date: Unknown
 
+   * Fix loading files with `modutils.load_from_module` when
+     the path that contains it in `sys.path` is a symlink and
+     the file is contained in a symlinked folder.
+
+     Close #583
+
    * Reworking of the numpy brain dealing with numerictypes
      (use of inspect module to determine the class hierarchy of
       numpy.core.numerictypes module)
