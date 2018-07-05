@@ -27,7 +27,6 @@ MANAGER = manager.AstroidManager()
 # the keys of CONST_CLS eg python builtin types
 
 _CONSTANTS = tuple(node_classes.CONST_CLS)
-_JYTHON = os.name == 'java'
 _BUILTINS = vars(builtins)
 _LOG = logging.getLogger(__name__)
 
@@ -335,8 +334,7 @@ class InspectBuilder:
                            'astroid from living object')
             modname = None
         if modname is None:
-            if (name in ('__new__', '__subclasshook__')
-                    or (name in _BUILTINS and _JYTHON)):
+            if name in ('__new__', '__subclasshook__'):
                 # Python 2.5.1 (r251:54863, Sep  1 2010, 22:03:14)
                 # >>> print object.__new__.__module__
                 # None

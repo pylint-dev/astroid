@@ -789,9 +789,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             self.assertIsInstance(inferred[0], nodes.FunctionDef)
             self.assertEqual(inferred[0].name, 'open')
 
-    if os.name == 'java':
-        test_builtin_open = unittest.expectedFailure(test_builtin_open)
-
     def test_callfunc_context_func(self):
         code = '''
             def mirror(arg=None):

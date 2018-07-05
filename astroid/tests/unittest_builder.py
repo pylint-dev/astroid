@@ -431,11 +431,6 @@ class BuilderTest(unittest.TestCase):
         with self.assertRaises(exceptions.InferenceError):
             next(astroid['global_no_effect'].ilookup('CSTE2'))
 
-    @unittest.skipIf(os.name == 'java',
-                     'This test is skipped on Jython, because the '
-                     'socket object is patched later on with the '
-                     'methods we are looking for. Since we do not '
-                     'understand setattr in for loops yet, we skip this')
     def test_socket_build(self):
         import socket
         astroid = self.builder.module_build(socket)

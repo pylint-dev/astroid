@@ -4,21 +4,15 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
-import inspect
-import os
 import platform
 import unittest
 
-from six.moves import builtins
-
-from astroid.builder import AstroidBuilder, extract_node
+from astroid.builder import AstroidBuilder
 from astroid.raw_building import (
     attach_dummy_node, build_module,
     build_class, build_function, build_from_import
 )
 from astroid import test_utils
-from astroid import nodes
-from astroid.bases import BUILTINS
 
 
 class RawBuildingTC(unittest.TestCase):
@@ -77,17 +71,6 @@ class RawBuildingTC(unittest.TestCase):
         module = builder.inspect_build(_io)
         buffered_reader = module.getattr('BufferedReader')[0]
         self.assertEqual(buffered_reader.root().name, 'io')
-
-    @unittest.skipUnless(os.name == 'java', 'Requires Jython')
-    def test_open_is_inferred_correctly(self):
-        # Lot of Jython builtins don't have a __module__ attribute.
-        for name, _ in inspect.getmembers(builtins, predicate=inspect.isbuiltin):
-            if name == 'print':
-                continue
-            node = extract_node('{} #@'.format(name))
-            inferred = next(node.infer())
-            self.assertIsInstance(inferred, nodes.FunctionDef, name)
-            self.assertEqual(inferred.root().name, BUILTINS, name)
 
 
 if __name__ == '__main__':
