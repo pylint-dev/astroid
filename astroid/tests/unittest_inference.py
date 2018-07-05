@@ -15,6 +15,7 @@ import platform
 import sys
 from functools import partial
 import unittest
+from unittest.mock import patch
 
 import pytest
 
@@ -4654,6 +4655,35 @@ class TestInferencePropagation:
         f(**{'f': 1}) #@
         """
         assert next(extract_node(code).infer()).as_string() == "{'f': 1}"
+
+
+def test_limit_inference_result_amount():
+    """Test setting limit inference result amount"""
+    code = """
+    args = []
+
+    if True:
+        args += ['a']
+
+    if True:
+        args += ['b']
+
+    if True:
+        args += ['c']
+
+    if True:
+        args += ['d']
+
+    args #@
+    """
+    result = extract_node(code).inferred()
+    assert len(result) == 16
+    with patch('astroid.node_classes.MANAGER.max_inferable', 4):
+        result_limited = extract_node(code).inferred()
+    # Can't guarentee exact size
+    assert len(result_limited) < 16
+    # Will not always be at the end
+    assert util.Uninferable in result_limited
 
 
 if __name__ == '__main__':

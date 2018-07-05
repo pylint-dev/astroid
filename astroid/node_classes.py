@@ -323,7 +323,9 @@ class NodeNG:
         if key in context.inferred:
             return iter(context.inferred[key])
 
-        return context.cache_generator(key, self._infer(context, **kwargs))
+        gen = context.cache_generator(
+            key, self._infer(context, **kwargs))
+        return util.limit_inference(gen, MANAGER.max_inferable)
 
     def _repr_name(self):
         """Get a name for nice representation.
