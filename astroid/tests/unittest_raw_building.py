@@ -6,6 +6,7 @@
 
 import inspect
 import os
+import platform
 import unittest
 
 from six.moves import builtins
@@ -61,6 +62,8 @@ class RawBuildingTC(unittest.TestCase):
         node = build_from_import('astroid', names)
         self.assertEqual(len(names), len(node.names))
 
+    @unittest.skipIf(platform.python_implementation() == 'PyPy',
+                     'Only affects CPython')
     @test_utils.require_version(minver='3.0')
     def test_io_is__io(self):
         # _io module calls itself io. This leads
