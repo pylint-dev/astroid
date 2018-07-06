@@ -342,6 +342,26 @@ class FunctionModelTest(unittest.TestCase):
             with self.assertRaises(exceptions.InferenceError):
                 next(node.infer())
 
+    def test_descriptor_error_regression(self):
+        """Make sure the following code does
+        node cause an exception"""
+        node = builder.extract_node('''
+        class MyClass:
+            text = "MyText"
+
+            def mymethod1(self):
+                return self.text
+
+            def mymethod2(self):
+                return self.mymethod1.__get__(self, MyClass)
+
+
+        cl = MyClass().mymethod2()()
+        cl #@
+        ''')
+        [const] = node.inferred()
+        assert const.value == "MyText"
+
     def test_function_model(self):
         ast_nodes = builder.extract_node('''
         def func(a=1, b=2):
