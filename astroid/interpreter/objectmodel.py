@@ -308,6 +308,12 @@ class FunctionModel(ObjectModel):
                         "Invalid class inferred",
                         target=self, context=context)
 
+                # For some reason func is a Node that the below
+                # code is not expecting
+                if isinstance(func, bases.BoundMethod):
+                    yield func
+                    return
+
                 # Rebuild the original value, but with the parent set as the
                 # class where it will be bound.
                 new_func = func.__class__(name=func.name, doc=func.doc,
