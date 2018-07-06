@@ -52,8 +52,7 @@ class AstroidManager:
             # Export these APIs for convenience
             self.register_transform = self._transform.register_transform
             self.unregister_transform = self._transform.unregister_transform
-            self.max_inferable = int(
-                os.environ.get("ASTROID_MAX_INFERABLE", 100))
+            self.max_inferable_values = 100
 
     def visit_transforms(self, node):
         """Visit the transforms and apply them to the given *node*."""

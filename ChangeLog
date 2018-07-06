@@ -160,8 +160,9 @@ Release Date: Unknown
    * Limit the maximum amount of interable result in an NodeNG.infer() call to
     100 by default for performance issues with variables with large amounts of
     possible values.
-    The max inferable value can be tuned by setting the ASTROID_MAX_INFERABLE environment
-    variable at start up.
+
+    The max inferable value can be tuned by setting the `max_inferable_values` flag on
+    astroid.MANAGER.
 
 
 What's New in astroid 1.6.0?

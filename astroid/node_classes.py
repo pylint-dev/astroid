@@ -325,7 +325,7 @@ class NodeNG:
 
         gen = context.cache_generator(
             key, self._infer(context, **kwargs))
-        return util.limit_inference(gen, MANAGER.max_inferable)
+        return util.limit_inference(gen, MANAGER.max_inferable_values)
 
     def _repr_name(self):
         """Get a name for nice representation.
