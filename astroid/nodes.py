@@ -11,7 +11,7 @@
 .. seealso::
     :doc:`ast documentation <green_tree_snakes:nodes>`
 
-All nodes inherit from :class:`~astroid.node_classes.NodeNG`.
+All nodes inherit from :class:`~astroid.nodeng.NodeNG`.
 """
 # pylint: disable=unused-import,redefined-builtin
 

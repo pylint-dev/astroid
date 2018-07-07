@@ -30,6 +30,7 @@ from astroid import manager
 from astroid import mixins
 from astroid import node_classes
 from astroid import util
+from .nodeng import NodeNG
 
 
 BUILTINS = builtins.__name__
@@ -107,7 +108,7 @@ def builtin_lookup(name):
 
 # TODO move this Mixin to mixins.py; problem: 'FunctionDef' in _scope_lookup
 class LocalsDictNodeNG(node_classes.LookupMixIn,
-                       node_classes.NodeNG):
+                       NodeNG):
     """ this class provides locals handling common to Module, FunctionDef
     and ClassDef nodes, including a dict like interface for direct access
     to locals information
@@ -940,7 +941,7 @@ class SetComp(ComprehensionScope):
         yield from self.generators
 
 
-class _ListComp(node_classes.NodeNG):
+class _ListComp(NodeNG):
     """Class representing an :class:`ast.ListComp` node.
 
     >>> node = astroid.extract_node('[thing for thing in things if thing]')

@@ -23,6 +23,7 @@ from astroid import MANAGER
 from astroid import node_classes
 from astroid import scoped_nodes
 from astroid import util
+from .nodeng import NodeNG
 
 
 BUILTINS = builtins.__name__
@@ -44,7 +45,7 @@ class FrozenSet(node_classes._BaseContainer):
         return ast_builtins.getattr('frozenset')[0]
 
 
-class Super(node_classes.NodeNG):
+class Super(NodeNG):
     """Proxy class over a super call.
 
     This class offers almost the same behaviour as Python's super,
@@ -205,19 +206,19 @@ class DictInstance(bases.Instance):
 # disambiguate between the types of Python 2 dict's method returns
 # and Python 3 (where they return set like objects).
 class DictItems(bases.Proxy):
-    __str__ = node_classes.NodeNG.__str__
-    __repr__ = node_classes.NodeNG.__repr__
+    __str__ = NodeNG.__str__
+    __repr__ = NodeNG.__repr__
 
 
 class DictKeys(bases.Proxy):
-    __str__ = node_classes.NodeNG.__str__
-    __repr__ = node_classes.NodeNG.__repr__
+    __str__ = NodeNG.__str__
+    __repr__ = NodeNG.__repr__
 
 
 class DictValues(bases.Proxy):
-    __str__ = node_classes.NodeNG.__str__
-    __repr__ = node_classes.NodeNG.__repr__
+    __str__ = NodeNG.__str__
+    __repr__ = NodeNG.__repr__
 
 # TODO: Hack to solve the circular import problem between node_classes and objects
 # This is not needed in 2.0, which has a cleaner design overall
-node_classes.Dict.__bases__ = (node_classes.NodeNG, DictInstance)
+node_classes.Dict.__bases__ = (NodeNG, DictInstance)
