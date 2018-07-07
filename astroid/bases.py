@@ -345,7 +345,7 @@ class UnboundMethod(Proxy):
                 self._proxied.parent.frame().qname() == '%s.object' % BUILTINS):
             # XXX Avoid issue with type.__new__ inference.
             # https://github.com/PyCQA/astroid/issues/581
-            if caller.args and len(caller.args) != 4:
+            if caller.args and len(caller.args) == 1:
                 node_context = context.extra_context.get(caller.args[0])
                 infer = caller.args[0].infer(context=node_context)
             else:

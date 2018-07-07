@@ -3306,13 +3306,11 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(attributes[0].value, 1)
 
 
-    @pytest.mark.xfail(reason="These calls should be uninferable because they are invalid calls")
     def test_type__new__not_enough_arguments(self):
         ast_nodes = extract_node('''
-        type.__new__(1) #@
-        type.__new__(1, 2) #@
-        type.__new__(1, 2, 3) #@
-        type.__new__(1, 2, 3, 4, 5) #@
+        type.__new__(type, 'foo') #@
+        type.__new__(type, 'foo', ()) #@
+        type.__new__(type, 'foo', (), {}, ()) #@
         ''')
         for node in ast_nodes:
             with pytest.raises(InferenceError):
