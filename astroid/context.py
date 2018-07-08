@@ -94,7 +94,7 @@ class InferenceContext:
         clone = InferenceContext(copy.copy(self.path), inferred=self.inferred)
         clone.callcontext = self.callcontext
         clone.boundnode = self.boundnode
-        clone.extra_context = copy.copy(self.extra_context)
+        clone.extra_context = self.extra_context
         return clone
 
     def cache_generator(self, key, generator):
