@@ -3404,7 +3404,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ''')
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, nodes.ClassDef)
-        titles = [title.value for title in inferred.igetattr('title')]
+        titles = [title.value for attr in inferred.getattr('title')
+                  for title in attr.inferred()]
         self.assertEqual(titles, ['Catch 22', 'Ubik', 'Grimus'])
 
     @unittest.expectedFailure
@@ -4682,6 +4683,33 @@ def test_limit_inference_result_amount():
     assert len(result_limited) < 16
     # Will not always be at the end
     assert util.Uninferable in result_limited
+
+
+def test_attribute_inference_should_not_access_base_classes():
+    """attributes of classes should mask ancestor attribues"""
+    code = """
+    type.__new__ #@
+    """
+    res = extract_node(code).inferred()
+    assert len(res) == 1
+    assert res[0].parent.name == "type"
+
+
+def test_attribute_mro_object_inference():
+    """
+    Inference should only infer results from the first available method
+    """
+    inferred = extract_node("""
+    class A:
+        def foo(self):
+            return 1
+    class B(A):
+        def foo(self):
+            return 2
+    B().foo() #@
+    """).inferred()
+    assert len(inferred) == 1
+    assert inferred[0].value == 2
 
 
 if __name__ == '__main__':

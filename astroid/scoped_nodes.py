@@ -2366,8 +2366,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         context = contextmod.copy_context(context)
         context.lookupname = name
         try:
-            attrs = self.getattr(name, context, class_context=class_context)
-            for inferred in bases._infer_stmts(attrs, context, frame=self):
+            attr = self.getattr(name, context, class_context=class_context)[0]
+            for inferred in bases._infer_stmts([attr], context, frame=self):
                 # yield Uninferable object instead of descriptors when necessary
                 if (not isinstance(inferred, node_classes.Const)
                         and isinstance(inferred, bases.Instance)):

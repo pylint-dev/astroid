@@ -343,9 +343,7 @@ class UnboundMethod(Proxy):
         # instance of the class given as first argument.
         if (self._proxied.name == '__new__' and
                 self._proxied.parent.frame().qname() == '%s.object' % BUILTINS):
-            # XXX Avoid issue with type.__new__ inference.
-            # https://github.com/PyCQA/astroid/issues/581
-            if caller.args and len(caller.args) == 1:
+            if caller.args:
                 node_context = context.extra_context.get(caller.args[0])
                 infer = caller.args[0].infer(context=node_context)
             else:
@@ -440,10 +438,7 @@ class BoundMethod(UnboundMethod):
         if (self.bound.__class__.__name__ == 'ClassDef'
                 and self.bound.name == 'type'
                 and self.name == '__new__'
-                and len(caller.args) == 4
-                # TODO(cpopa): this check shouldn't be needed.
-                and self._proxied.parent.frame().qname() == '%s.object' % BUILTINS):
-
+                and len(caller.args) == 4):
             # Check if we have an ``type.__new__(mcs, name, bases, attrs)`` call.
             new_cls = self._infer_type_new_call(caller, context)
             if new_cls:
