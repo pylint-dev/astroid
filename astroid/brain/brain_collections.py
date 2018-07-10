@@ -25,21 +25,21 @@ def _deque_mock():
     class deque(object):
         maxlen = 0
         def __init__(self, iterable=None, maxlen=None):
-            self.iterable = iterable
+            self.iterable = iterable or []
         def append(self, x): pass
         def appendleft(self, x): pass
         def clear(self): pass
         def count(self, x): return 0
         def extend(self, iterable): pass
         def extendleft(self, iterable): pass
-        def pop(self): pass
-        def popleft(self): pass
+        def pop(self): return self.iterable[0]
+        def popleft(self): return self.iterable[0]
         def remove(self, value): pass
-        def reverse(self): pass
-        def rotate(self, n=1): pass
+        def reverse(self): return reversed(self.iterable)
+        def rotate(self, n=1): return self
         def __iter__(self): return self
         def __reversed__(self): return self.iterable[::-1]
-        def __getitem__(self, index): pass
+        def __getitem__(self, index): return self.iterable[index]
         def __setitem__(self, index, value): pass
         def __delitem__(self, index): pass
         def __bool__(self): return bool(self.iterable)
