@@ -5,7 +5,7 @@ astroid's ChangeLog
 What's New in astroid 2.0?
 ==========================
 
-Release Date: Unknown
+Release Date: 2018-07-15
    
    * String representation of nodes takes in account precedence and associativity rules of operators.
 

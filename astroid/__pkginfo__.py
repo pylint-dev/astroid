@@ -11,7 +11,7 @@ distname = 'astroid'
 
 modname = 'astroid'
 
-version = '2.0.0.dev4'
+version = '2.0'
 numversion = tuple(int(elem) for elem in version.split('.') if elem.isdigit())
 
 extras_require = {}
@@ -41,6 +41,7 @@ classifiers = ["Topic :: Software Development :: Libraries :: Python Modules",
                "Programming Language :: Python :: 3.4",
                "Programming Language :: Python :: 3.5",
                "Programming Language :: Python :: 3.6",
+               "Programming Language :: Python :: 3.7",
                "Programming Language :: Python :: Implementation :: CPython",
                "Programming Language :: Python :: Implementation :: PyPy",
               ]
