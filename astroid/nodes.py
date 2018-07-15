@@ -1,7 +1,12 @@
 # Copyright (c) 2006-2011, 2013 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2014-2016 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2010 Daniel Harding <dharding@gmail.com>
+# Copyright (c) 2014-2018 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2014 Google, Inc.
-# Copyright (c) 2015-2016 Cara Vinson <ceridwenv@gmail.com>
+# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
+# Copyright (c) 2016 Jared Garst <jgarst@users.noreply.github.com>
+# Copyright (c) 2017 Ashley Whetter <ashley@awhetter.co.uk>
+# Copyright (c) 2017 rr- <rr-@sakuya.pl>
+# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER

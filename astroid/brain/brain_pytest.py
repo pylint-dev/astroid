@@ -1,5 +1,8 @@
 # Copyright (c) 2014-2016 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2016 Cara Vinson <ceridwenv@gmail.com>
+# Copyright (c) 2014 Jeff Quast <contact@jeffquast.com>
+# Copyright (c) 2014 Google, Inc.
+# Copyright (c) 2016 Florian Bruhin <me@the-compiler.org>
+# Copyright (c) 2016 Ceridwen <ceridwenv@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER

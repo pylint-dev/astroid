@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2014-2016 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2014 Google, Inc.
+# Copyright (c) 2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2015 Florian Bruhin <me@the-compiler.org>
 # Copyright (c) 2015 Radosław Ganczarek <radoslaw@ganczarek.in>
+# Copyright (c) 2016 Ceridwen <ceridwenv@gmail.com>
+# Copyright (c) 2018 Mario Corchero <mcorcherojim@bloomberg.net>
+# Copyright (c) 2018 Mario Corchero <mariocj89@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER

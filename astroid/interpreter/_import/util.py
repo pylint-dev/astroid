@@ -1,4 +1,4 @@
-# Copyright (c) 2016 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2016, 2018 Claudiu Popa <pcmanticore@gmail.com>
 
 try:
     import pkg_resources

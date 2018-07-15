@@ -1,8 +1,22 @@
+# -*- coding: utf-8 -*-
 # Copyright (c) 2006-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
+# Copyright (c) 2010 Daniel Harding <dharding@gmail.com>
 # Copyright (c) 2011, 2013-2015 Google, Inc.
-# Copyright (c) 2013-2016 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2015-2016 Cara Vinson <ceridwenv@gmail.com>
+# Copyright (c) 2013-2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2013 Phil Schaf <flying-sheep@web.de>
+# Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
+# Copyright (c) 2015-2016 Florian Bruhin <me@the-compiler.org>
+# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2015 Rene Zhang <rz99@cornell.edu>
+# Copyright (c) 2015 Philip Lorenz <philip@bithub.de>
+# Copyright (c) 2016-2017 Derek Gustafson <degustaf@gmail.com>
+# Copyright (c) 2017-2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
+# Copyright (c) 2017-2018 Ashley Whetter <ashley@awhetter.co.uk>
+# Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
+# Copyright (c) 2017 David Euresti <david@dropbox.com>
+# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
+# Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
+# Copyright (c) 2018 HoverHell <hoverhell@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER

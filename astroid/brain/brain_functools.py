@@ -1,4 +1,5 @@
-# Copyright (c) 2016 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2016, 2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 
 """Astroid hooks for understanding functools library module."""
 from itertools import chain

@@ -1,4 +1,9 @@
-# Copyright (c) 2015-2016 Claudiu Popa <pcmanticore@gmail.com>
+# -*- coding: utf-8 -*-
+# Copyright (c) 2015-2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
+# Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
+# Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
+# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER

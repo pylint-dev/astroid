@@ -1,4 +1,8 @@
-# Copyright (c) 2016 David Euresti <david@dropbox.com>
+# -*- coding: utf-8 -*-
+# Copyright (c) 2017-2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
+# Copyright (c) 2017 David Euresti <github@euresti.com>
+# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 
 """Astroid hooks for typing.py support."""
 import typing

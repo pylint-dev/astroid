@@ -1,4 +1,10 @@
-# Copyright (c) 2016 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2016-2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
+# Copyright (c) 2017 Chris Philip <chrisp533@gmail.com>
+# Copyright (c) 2017 Hugo <hugovk@users.noreply.github.com>
+# Copyright (c) 2017 ioanatia <ioanatia@users.noreply.github.com>
+# Copyright (c) 2017 Calen Pennington <cale@edx.org>
+# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 
 import abc
 import collections
