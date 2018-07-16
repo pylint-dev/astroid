@@ -399,7 +399,7 @@ class NodeNG:
     def get_children(self):
         """Get the child nodes below this node.
 
-        :returns: The children.
+        :returns: The children in order they appear in the source code.
         :rtype: iterable(NodeNG)
         """
         for field in self._astroid_fields:
@@ -1562,28 +1562,16 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         return None, None
 
     def get_children(self):
-        yield from self.args or ()
-
-        yield from self.defaults
-        yield from self.kwonlyargs
-
-        for elt in self.kw_defaults:
-            if elt is not None:
-                yield elt
-
-        for elt in self.annotations:
-            if elt is not None:
-                yield elt
+        yield from _yield_args(self.args, self.defaults, self.annotations)
 
         if self.varargannotation is not None:
             yield self.varargannotation
 
+        yield from _yield_args(
+            self.kwonlyargs, self.kw_defaults, self.kwonlyargs_annotations)
+
         if self.kwargannotation is not None:
             yield self.kwargannotation
-
-        for elt in self.kwonlyargs_annotations:
-            if elt is not None:
-                yield elt
 
 
 def _find_arg(argname, args, rec=False):
@@ -1620,6 +1608,22 @@ def _format_args(args, defaults=None, annotations=None):
                 if defaults[i-default_offset] is not None:
                     values[-1] += '=' + defaults[i-default_offset].as_string()
     return ', '.join(values)
+
+
+def _yield_args(args, defaults, annotations):
+    default_offset = len(args) - len(defaults)
+
+    packed = itertools.zip_longest(args, annotations)
+    for i, (arg, annotation) in enumerate(packed):
+        yield arg
+
+        if annotation is not None:
+            yield annotation
+
+        if i >= default_offset:
+            default = defaults[i-default_offset]
+            if default is not None:
+                yield default
 
 
 class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
@@ -3289,7 +3293,7 @@ class IfExp(NodeNG):
     >>> node
     <IfExp l.1 at 0x7f23b2e9dbe0>
     """
-    _astroid_fields = ('test', 'body', 'orelse')
+    _astroid_fields = ('body', 'test', 'orelse')
     test = None
     """The condition that the statement tests.
 
@@ -3323,8 +3327,8 @@ class IfExp(NodeNG):
         self.orelse = orelse
 
     def get_children(self):
-        yield self.test
         yield self.body
+        yield self.test
         yield self.orelse
 
     def op_left_associative(self):
