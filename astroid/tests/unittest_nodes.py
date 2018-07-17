@@ -18,7 +18,6 @@
 """tests for specific behaviour of astroid nodes
 """
 import os
-import platform
 import sys
 import textwrap
 import unittest
@@ -43,10 +42,11 @@ from astroid.tests import resources
 
 abuilder = builder.AstroidBuilder()
 BUILTINS = six.moves.builtins.__name__
-HAS_TYPED_AST = (
-    platform.python_implementation() == 'CPython'
-    and sys.version_info.minor < 7
-)
+try:
+    import typed_ast
+    HAS_TYPED_AST = True
+except ImportError:
+    HAS_TYPED_AST = False
 
 
 class AsStringTest(resources.SysPathSetup, unittest.TestCase):
