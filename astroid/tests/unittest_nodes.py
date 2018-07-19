@@ -43,7 +43,7 @@ from astroid.tests import resources
 abuilder = builder.AstroidBuilder()
 BUILTINS = six.moves.builtins.__name__
 try:
-    import typed_ast
+    import typed_ast  # pylint: disable=unused-import
     HAS_TYPED_AST = True
 except ImportError:
     HAS_TYPED_AST = False
