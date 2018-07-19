@@ -83,7 +83,7 @@ def path_wrapper(func):
         if context is None:
             context = contextmod.InferenceContext()
         if context.push(node):
-            return None
+            raise exceptions.InferenceError(node=node)
 
         yielded = set()
         generator = _func(node, context, **kwargs)

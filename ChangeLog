@@ -7,6 +7,10 @@ What's New in astroid 2.0.2?
 
 Release Date: |TBA|
 
+   * Stop repeat inference attempt causing a RuntimeError in Python3.7
+
+     Close PyCQA/pylint#2317
+
 
 What's New in astroid 2.0.1?
 ============================

@@ -1213,6 +1213,37 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         call.inferred()
         self.assertEqual(cdef.col_offset, orig_offset)
 
+    def test_no_runtime_error_in_repeat_inference(self):
+        """ Stop repeat inference attempt causing a RuntimeError in Python3.7
+
+        See https://github.com/PyCQA/pylint/issues/2317
+        """
+        code = """
+
+        class ContextMixin:
+            def get_context_data(self, **kwargs):
+                return kwargs
+
+        class DVM(ContextMixin):
+            def get_context_data(self, **kwargs):
+                ctx = super().get_context_data(**kwargs)
+                return ctx
+
+
+        class IFDVM(DVM):
+            def get_context_data(self, **kwargs):
+                ctx = super().get_context_data(**kwargs)
+                ctx['bar'] = 'foo'
+                ctx #@
+                return ctx
+        """
+        node = extract_node(code)
+        result = node.inferred()
+        assert len(result) == 2
+        assert isinstance(result[0], nodes.Dict)
+        assert result[1] is util.Uninferable
+
+
     def test_python25_no_relative_import(self):
         ast = resources.build_file('data/package/absimport.py')
         self.assertTrue(ast.absolute_import_activated(), True)
