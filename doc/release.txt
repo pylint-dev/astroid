@@ -22,6 +22,7 @@ Release Process
 6. Run
    
    $ git clean -fd && find . -name '*.pyc' -delete
+   $ rm dist/*
    $ python setup.py sdist --formats=gztar bdist_wheel
    $ twine upload dist/*
 
