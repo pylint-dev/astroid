@@ -15,7 +15,7 @@ as functions, classes, modules etc have, such as __doc__, __class__,
 __module__ etc, being used when doing attribute lookups over nodes.
 
 For instance, inferring `obj.__class__` will first trigger an inference
-of the `obj` variable. If it was succesfully inferred, then an attribute
+of the `obj` variable. If it was successfully inferred, then an attribute
 `__class__ will be looked for in the inferred object. This is the part
 where the data model occurs. The model is attached to those nodes
 and the lookup mechanism will try to see if attributes such as

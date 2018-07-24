@@ -518,7 +518,7 @@ def _infer_object__new__decorator(node, context=None):
 def _infer_object__new__decorator_check(node):
     """Predicate before inference_tip
 
-    Check if the given ClassDef has a @object.__new__ decorator
+    Check if the given ClassDef has an @object.__new__ decorator
     """
     if not node.decorators:
         return False
@@ -533,7 +533,7 @@ def _infer_object__new__decorator_check(node):
 def infer_issubclass(callnode, context=None):
     """Infer issubclass() calls
 
-    :param nodes.Call callnode: a `issubclass` call
+    :param nodes.Call callnode: an `issubclass` call
     :param InferenceContext: the context for the inference
     :rtype nodes.Const: Boolean Const value of the `issubclass` call
     :raises UseInferenceDefault: If the node cannot be inferred

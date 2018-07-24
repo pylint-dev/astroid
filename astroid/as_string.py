@@ -407,7 +407,7 @@ class AsStringVisitor:
         return 'return'
 
     def visit_index(self, node):
-        """return a astroid.Index node as string"""
+        """return an astroid.Index node as string"""
         return node.value.accept(self)
 
     def visit_set(self, node):
@@ -420,7 +420,7 @@ class AsStringVisitor:
                             ' '.join([n.accept(self) for n in node.generators]))
 
     def visit_slice(self, node):
-        """return a astroid.Slice node as string"""
+        """return an astroid.Slice node as string"""
         lower = node.lower.accept(self) if node.lower else ''
         upper = node.upper.accept(self) if node.upper else ''
         step = node.step.accept(self) if node.step else ''

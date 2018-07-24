@@ -355,7 +355,7 @@ class BuilderTest(unittest.TestCase):
             MANAGER.unregister_transform(nodes.Module, transform_time)
 
     def test_package_name(self):
-        """test base properties and method of a astroid module"""
+        """test base properties and method of an astroid module"""
         datap = resources.build_file('data/__init__.py', 'data')
         self.assertEqual(datap.name, 'data')
         self.assertEqual(datap.package, 1)
@@ -559,7 +559,7 @@ class FileBuildTest(unittest.TestCase):
         self.module = resources.build_file('data/module.py', 'data.module')
 
     def test_module_base_props(self):
-        """test base properties and method of a astroid module"""
+        """test base properties and method of an astroid module"""
         module = self.module
         self.assertEqual(module.name, 'data.module')
         self.assertEqual(module.doc, "test module for astroid\n")
@@ -575,7 +575,7 @@ class FileBuildTest(unittest.TestCase):
         self.assertEqual(module.statement(), module)
 
     def test_module_locals(self):
-        """test the 'locals' dictionary of a astroid module"""
+        """test the 'locals' dictionary of an astroid module"""
         module = self.module
         _locals = module.locals
         self.assertIs(_locals, module.globals)
@@ -587,7 +587,7 @@ class FileBuildTest(unittest.TestCase):
         self.assertEqual(keys, sorted(should))
 
     def test_function_base_props(self):
-        """test base properties and method of a astroid function"""
+        """test base properties and method of an astroid function"""
         module = self.module
         function = module['global_access']
         self.assertEqual(function.name, 'global_access')
@@ -601,14 +601,14 @@ class FileBuildTest(unittest.TestCase):
         self.assertEqual(function.type, 'function')
 
     def test_function_locals(self):
-        """test the 'locals' dictionary of a astroid function"""
+        """test the 'locals' dictionary of an astroid function"""
         _locals = self.module['global_access'].locals
         self.assertEqual(len(_locals), 4)
         keys = sorted(_locals.keys())
         self.assertEqual(keys, ['i', 'key', 'local', 'val'])
 
     def test_class_base_props(self):
-        """test base properties and method of a astroid class"""
+        """test base properties and method of an astroid class"""
         module = self.module
         klass = module['YO']
         self.assertEqual(klass.name, 'YO')
@@ -622,7 +622,7 @@ class FileBuildTest(unittest.TestCase):
         self.assertTrue(klass.newstyle)
 
     def test_class_locals(self):
-        """test the 'locals' dictionary of a astroid class"""
+        """test the 'locals' dictionary of an astroid class"""
         module = self.module
         klass1 = module['YO']
         locals1 = klass1.locals
@@ -657,7 +657,7 @@ class FileBuildTest(unittest.TestCase):
         self.assertEqual(klass2.basenames, ['YO'])
 
     def test_method_base_props(self):
-        """test base properties and method of a astroid method"""
+        """test base properties and method of an astroid method"""
         klass2 = self.module['YOUPI']
         # "normal" method
         method = klass2['method']
@@ -676,7 +676,7 @@ class FileBuildTest(unittest.TestCase):
         self.assertEqual(method.type, 'staticmethod')
 
     def test_method_locals(self):
-        """test the 'locals' dictionary of a astroid method"""
+        """test the 'locals' dictionary of an astroid method"""
         method = self.module['YOUPI']['method']
         _locals = method.locals
         keys = sorted(_locals)

@@ -216,7 +216,7 @@ class AstroidManagerTest(resources.SysPathSetup,
             self.manager.file_from_module_name('unittest', None).location)
 
     def test_file_from_module_name_astro_building_exception(self):
-        """check if the method launch a exception with a wrong module name"""
+        """check if the method raises an exception with a wrong module name"""
         self.assertRaises(exceptions.AstroidBuildingError,
                           self.manager.file_from_module_name, 'unhandledModule', None)
 

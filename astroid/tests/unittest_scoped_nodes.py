@@ -1570,7 +1570,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         ''')
         self.assertEqual(len(cls.getattr('mro')), 1)
 
-    def test_metaclass_lookup_inferrence_errors(self):
+    def test_metaclass_lookup_inference_errors(self):
         module = builder.parse('''
         import six
 

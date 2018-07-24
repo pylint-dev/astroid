@@ -595,7 +595,7 @@ def _bin_op(instance, opnode, op, other, context, reverse=False):
 def _get_binop_contexts(context, left, right):
     """Get contexts for binary operations.
 
-    This will return two inferrence contexts, the first one
+    This will return two inference contexts, the first one
     for x.__op__(y), the other one for y.__rop__(x), where
     only the arguments are inversed.
     """
@@ -723,7 +723,7 @@ def _infer_binary_operation(left, right, binary_opnode, context, flow_factory):
 
 
 def _infer_binop(self, context):
-    """Binary operation inferrence logic."""
+    """Binary operation inference logic."""
     if context is None:
         context = contextmod.InferenceContext()
     left = self.left
