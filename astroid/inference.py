@@ -189,6 +189,7 @@ def infer_name(self, context=None):
     context.lookupname = self.name
     return bases._infer_stmts(stmts, context, frame)
 
+# pylint: disable=no-value-for-parameter
 nodes.Name._infer = decorators.raise_if_nothing_inferred(
     decorators.path_wrapper(infer_name)
 )
