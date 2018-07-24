@@ -76,6 +76,8 @@ def _infer_sequence_helper(node, context=None):
     return values
 
 
+@decorators.raise_if_nothing_inferred
+@decorators.path_wrapper
 def infer_sequence(self, context=None):
     if not any(isinstance(e, nodes.Starred) for e in self.elts):
         yield self
@@ -186,7 +188,10 @@ def infer_name(self, context=None):
     context = context.clone()
     context.lookupname = self.name
     return bases._infer_stmts(stmts, context, frame)
-nodes.Name._infer = decorators.path_wrapper(infer_name)
+
+nodes.Name._infer = decorators.raise_if_nothing_inferred(
+    decorators.path_wrapper(infer_name)
+)
 nodes.AssignName.infer_lhs = infer_name # won't work with a path wrapper
 
 
@@ -221,6 +226,7 @@ def infer_call(self, context=None):
 nodes.Call._infer = infer_call
 
 
+@decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
 def infer_import(self, context=None, asname=True):
     """infer an Import node: return the imported module/object"""
@@ -250,6 +256,7 @@ def infer_name_module(self, name):
 nodes.Import.infer_name_module = infer_name_module
 
 
+@decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
 def infer_import_from(self, context=None, asname=True):
     """infer a ImportFrom node: return the imported module/object"""
@@ -320,6 +327,7 @@ nodes.Attribute._infer = decorators.path_wrapper(infer_attribute)
 nodes.AssignAttr.infer_lhs = infer_attribute # # won't work with a path wrapper
 
 
+@decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
 def infer_global(self, context=None):
     if context.lookupname is None:
@@ -779,6 +787,7 @@ def _infer_augassign(self, context=None):
                 yield util.Uninferable
 
 
+@decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
 def infer_augassign(self, context=None):
     return _filter_operation_errors(self, _infer_augassign, context,
@@ -790,6 +799,8 @@ nodes.AugAssign._infer = infer_augassign
 # End of binary operation inference.
 
 
+@decorators.raise_if_nothing_inferred
+@decorators.path_wrapper
 def infer_arguments(self, context=None):
     name = context.lookupname
     if name is None:
@@ -798,6 +809,7 @@ def infer_arguments(self, context=None):
 nodes.Arguments._infer = infer_arguments
 
 
+@decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
 def infer_assign(self, context=None):
     """infer a AssignName/AssignAttr: need to inspect the RHS part of the
@@ -815,6 +827,7 @@ nodes.AssignAttr._infer = infer_assign
 
 # no infer method on DelName and DelAttr (expected InferenceError)
 
+@decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
 def infer_empty_node(self, context=None):
     if not self.has_underlying_object():
@@ -827,6 +840,8 @@ def infer_empty_node(self, context=None):
 nodes.EmptyNode._infer = infer_empty_node
 
 
+@decorators.raise_if_nothing_inferred
+@decorators.path_wrapper
 def infer_index(self, context=None):
     return self.value.infer(context)
 nodes.Index._infer = infer_index
