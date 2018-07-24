@@ -57,17 +57,7 @@ nodes.Const._infer = infer_end
 nodes.Slice._infer = infer_end
 
 
-def infer_seq(self, context=None):
-    if not any(isinstance(e, nodes.Starred) for e in self.elts):
-        yield self
-    else:
-        values = _infer_seq(self, context)
-        new_seq = type(self)(self.lineno, self.col_offset, self.parent)
-        new_seq.postinit(values)
-        yield new_seq
-
-
-def _infer_seq(node, context=None):
+def _infer_sequence_helper(node, context=None):
     """Infer all values based on _BaseContainer.elts"""
     values = []
 
@@ -80,15 +70,25 @@ def _infer_seq(node, context=None):
             if not hasattr(starred, 'elts'):
                 raise exceptions.InferenceError(node=node,
                                                 context=context)
-            values.extend(_infer_seq(starred))
+            values.extend(_infer_sequence_helper(starred))
         else:
             values.append(elt)
     return values
 
 
-nodes.List._infer = infer_seq
-nodes.Tuple._infer = infer_seq
-nodes.Set._infer = infer_seq
+def infer_sequence(self, context=None):
+    if not any(isinstance(e, nodes.Starred) for e in self.elts):
+        yield self
+    else:
+        values = _infer_sequence_helper(self, context)
+        new_seq = type(self)(self.lineno, self.col_offset, self.parent)
+        new_seq.postinit(values)
+        yield new_seq
+
+
+nodes.List._infer = infer_sequence
+nodes.Tuple._infer = infer_sequence
+nodes.Set._infer = infer_sequence
 
 
 def infer_map(self, context=None):
