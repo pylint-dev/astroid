@@ -42,7 +42,7 @@ author_email = 'code-quality@python.org'
 mailinglist = "mailto://%s" % author_email
 web = 'https://github.com/PyCQA/astroid'
 
-description = "A abstract syntax tree for Python with inference support."
+description = "An abstract syntax tree for Python with inference support."
 
 classifiers = ["Topic :: Software Development :: Libraries :: Python Modules",
                "Topic :: Software Development :: Quality Assurance",

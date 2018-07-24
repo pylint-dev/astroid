@@ -181,7 +181,7 @@ class TreeRebuilder:
             node.parent.set_local(node.name, node)
 
     def visit_arguments(self, node, parent):
-        """visit a Arguments node by returning a fresh instance of it"""
+        """visit an Arguments node by returning a fresh instance of it"""
         vararg, kwarg = node.vararg, node.kwarg
         if PY34:
             newnode = nodes.Arguments(vararg.arg if vararg else None,
@@ -432,7 +432,7 @@ class TreeRebuilder:
     def visit_decorators(self, node, parent):
         """visit a Decorators node by returning a fresh instance of it"""
         # /!\ node is actually a _ast.FunctionDef node while
-        # parent is a astroid.nodes.FunctionDef node
+        # parent is an astroid.nodes.FunctionDef node
         newnode = nodes.Decorators(node.lineno, node.col_offset, parent)
         newnode.postinit([self.visit(child, newnode)
                           for child in node.decorator_list])
@@ -851,7 +851,7 @@ class TreeRebuilder3(TreeRebuilder):
     """extend and overwrite TreeRebuilder for python3k"""
 
     def visit_arg(self, node, parent):
-        """visit a arg node by returning a fresh AssName instance"""
+        """visit an arg node by returning a fresh AssName instance"""
         return self.visit_assignname(node, parent, node.arg)
 
     def visit_nameconstant(self, node, parent):

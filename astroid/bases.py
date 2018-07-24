@@ -343,7 +343,7 @@ class UnboundMethod(Proxy):
         which is incorrect for the argument in general.
         If no context is given the ``object.__new__`` call argument will
         correctly inferred except when inside a call that requires
-        the additonal context (such as a classmethod) of the boundnode
+        the additional context (such as a classmethod) of the boundnode
         to determine which class the method was called from
         """
 
@@ -447,7 +447,7 @@ class BoundMethod(UnboundMethod):
                 and self.bound.name == 'type'
                 and self.name == '__new__'
                 and len(caller.args) == 4):
-            # Check if we have an ``type.__new__(mcs, name, bases, attrs)`` call.
+            # Check if we have a ``type.__new__(mcs, name, bases, attrs)`` call.
             new_cls = self._infer_type_new_call(caller, context)
             if new_cls:
                 return iter((new_cls, ))

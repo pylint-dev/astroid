@@ -146,10 +146,10 @@ def _multiply_seq_by_int(self, opnode, other, context):
     elts = []
     filtered_elts = (elt for elt in self.elts if elt is not util.Uninferable)
     for elt in filtered_elts:
-        infered = helpers.safe_infer(elt, context)
-        if infered is None:
-            infered = util.Uninferable
-        elts.append(infered)
+        inferred = helpers.safe_infer(elt, context)
+        if inferred is None:
+            inferred = util.Uninferable
+        elts.append(inferred)
     node.elts = elts * other.value
     return node
 
@@ -539,7 +539,7 @@ def with_assigned_stmts(self, node=None, context=None, asspath=None):
                         assign_path=asspath, context=context) from exc
                 except TypeError as exc:
                     raise exceptions.InferenceError(
-                        'Tried to unpack an non-iterable value '
+                        'Tried to unpack a non-iterable value '
                         'in {node!r}.', node=self, targets=node,
                         assign_path=asspath, context=context) from exc
             yield obj

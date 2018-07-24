@@ -525,7 +525,7 @@ def get_module_files(src_directory, blacklist, list_all=False):
 
 def get_source_file(filename, include_no_ext=False):
     """given a python module's file name return the matching source file
-    name (the filename will be returned identically if it's a already an
+    name (the filename will be returned identically if it's already an
     absolute path to a python source file...)
 
     :type filename: str

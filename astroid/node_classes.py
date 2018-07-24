@@ -714,7 +714,7 @@ class NodeNG:
         return list(self.infer())
 
     def instantiate_class(self):
-        """Instantiate a instance of the defined class.
+        """Instantiate an instance of the defined class.
 
         .. note::
 
@@ -1239,7 +1239,7 @@ class AssignName(mixins.NoChildrenMixin, LookupMixIn,
 
 class DelName(mixins.NoChildrenMixin, LookupMixIn,
               mixins.ParentAssignTypeMixin, NodeNG):
-    """Variation of :class:`ast.Delete` represention deletion of a name.
+    """Variation of :class:`ast.Delete` representing deletion of a name.
 
     A :class:`DelName` is the name of something that is deleted.
 
@@ -3517,7 +3517,7 @@ class Nonlocal(mixins.NoChildrenMixin, Statement):
 
     def __init__(self, names, lineno=None, col_offset=None, parent=None):
         """
-        :param names: The names being decalred as not local.
+        :param names: The names being declared as not local.
         :type names: list(str)
 
         :param lineno: The line that this node appears on in the source code.

@@ -177,7 +177,7 @@ def infer_named_tuple(node, context=None):
         rename = False
 
     if rename:
-        attributes = _get_renamed_namedtuple_atributes(attributes)
+        attributes = _get_renamed_namedtuple_attributes(attributes)
 
     replace_args = ', '.join(
         '{arg}=None'.format(arg=arg)
@@ -216,7 +216,7 @@ class %(name)s(tuple):
     return iter([class_node])
 
 
-def _get_renamed_namedtuple_atributes(field_names):
+def _get_renamed_namedtuple_attributes(field_names):
     names = list(field_names)
     seen = set()
     for i, name in enumerate(field_names):

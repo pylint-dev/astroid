@@ -261,7 +261,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn,
     def items(self):
         """Get the names of the locals and the node that defines the local.
 
-        :returns: The names of locals and their asociated node.
+        :returns: The names of locals and their associated node.
         :rtype: list(tuple(str, NodeNG))
         """
         return list(zip(self.keys(), self.values()))
@@ -1718,7 +1718,7 @@ def _class_type(klass, ancestors=None):
     """return a ClassDef node type to differ metaclass and exception
     from 'regular' classes
     """
-    # XXX we have to store ancestors in case we have a ancestor loop
+    # XXX we have to store ancestors in case we have an ancestor loop
     if klass._type is not None:
         return klass._type
     if _is_metaclass(klass):

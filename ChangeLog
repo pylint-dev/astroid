@@ -591,7 +591,7 @@ Release Date: 2015-11-29
       will not work with the new approach, because .mro() only
       retrieves the first value inferred from a base.
 
-    * Expose a implicit_metaclass() method in Class. This will return
+    * Expose an implicit_metaclass() method in Class. This will return
       a builtins.type instance for newstyle classes. 
 
     * Add two new exceptions for handling MRO error cases. DuplicateBasesError
@@ -801,7 +801,7 @@ Release Date: 2015-11-29
 
       Closes issue #137.
 
-    * Add proper grammatical names for `infered` and `ass_type` methods,
+    * Add proper grammatical names for `inferred` and `ass_type` methods,
       namely `inferred` and `assign_type`.
 
       The old methods will raise PendingDeprecationWarning, being slated

@@ -94,7 +94,7 @@ def attach_import_node(node, modname, membername):
 
 
 def build_module(name, doc=None):
-    """create and initialize a astroid Module node"""
+    """create and initialize an astroid Module node"""
     node = nodes.Module(name, doc, pure_python=False)
     node.package = False
     node.parent = None
@@ -102,7 +102,7 @@ def build_module(name, doc=None):
 
 
 def build_class(name, basenames=(), doc=None):
-    """create and initialize a astroid ClassDef node"""
+    """create and initialize an astroid ClassDef node"""
     node = nodes.ClassDef(name, doc)
     for base in basenames:
         basenode = nodes.Name()
@@ -113,7 +113,7 @@ def build_class(name, basenames=(), doc=None):
 
 
 def build_function(name, args=None, defaults=None, doc=None):
-    """create and initialize a astroid FunctionDef node"""
+    """create and initialize an astroid FunctionDef node"""
     args, defaults = args or [], defaults or []
     # first argument is now a list of decorators
     func = nodes.FunctionDef(name, doc)

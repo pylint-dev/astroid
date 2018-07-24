@@ -734,7 +734,7 @@ class TypingBrain(unittest.TestCase):
         for anc in klass.ancestors():
             self.assertFalse(anc.parent is None)
 
-    def test_namedtuple_can_correcty_access_methods(self):
+    def test_namedtuple_can_correctly_access_methods(self):
         klass, called = builder.extract_node("""
         from typing import NamedTuple
 
@@ -1302,7 +1302,7 @@ class TestLenBuiltinInference:
 
     @pytest.mark.xfail(reason="Can't use list special astroid fields")
     def test_int_subclass_argument(self):
-        """I am unable to access the length of a object which
+        """I am unable to access the length of an object which
         subclasses list"""
         node = astroid.extract_node("""
         class ListSubclass(list):
