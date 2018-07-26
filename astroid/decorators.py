@@ -99,8 +99,6 @@ def path_wrapper(func):
                     yield res
                     yielded.add(ares)
         except StopIteration as error:
-            # Explicit StopIteration to return error information, see
-            # comment in raise_if_nothing_inferred.
             if error.args:
                 return error.args[0]
             return None
@@ -120,10 +118,6 @@ def yes_if_nothing_inferred(func, instance, args, kwargs):
 
 @wrapt.decorator
 def raise_if_nothing_inferred(func, instance, args, kwargs):
-    """All generators wrapped with raise_if_nothing_inferred *must*
-    explicitly raise StopIteration with information to create an
-    appropriate structured InferenceError.
-    """
     inferred = False
     try:
         generator = func(*args, **kwargs)

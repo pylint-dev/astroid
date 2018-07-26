@@ -263,8 +263,6 @@ def for_assigned_stmts(self, node=None, context=None, asspath=None):
                 yield from lst.elts
     else:
         yield from _resolve_looppart(self.iter.infer(context), asspath, context)
-    # Explicit StopIteration to return error information, see comment
-    # in raise_if_nothing_inferred.
     return dict(node=self, unknown=node,
                 assign_path=asspath, context=context)
 
@@ -362,8 +360,6 @@ def assign_assigned_stmts(self, node=None, context=None, asspath=None):
         return None
     yield from _resolve_asspart(self.value.infer(context), asspath, context)
 
-    # Explicit StopIteration to return error information, see comment
-    # in raise_if_nothing_inferred.
     return dict(node=self, unknown=node,
                 assign_path=asspath, context=context)
 
@@ -427,8 +423,6 @@ def excepthandler_assigned_stmts(self, node=None, context=None, asspath=None):
             assigned = objects.ExceptionInstance(assigned)
 
         yield assigned
-    # Explicit StopIteration to return error information, see comment
-    # in raise_if_nothing_inferred.
     return dict(node=self, unknown=node,
                 assign_path=asspath, context=context)
 
@@ -543,8 +537,6 @@ def with_assigned_stmts(self, node=None, context=None, asspath=None):
                         'in {node!r}.', node=self, targets=node,
                         assign_path=asspath, context=context) from exc
             yield obj
-    # Explicit StopIteration to return error information, see comment
-    # in raise_if_nothing_inferred.
     return dict(node=self, unknown=node,
                 assign_path=asspath, context=context)
 

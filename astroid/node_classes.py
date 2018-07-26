@@ -58,15 +58,11 @@ def unpack_infer(stmt, context=None):
                 yield elt
                 continue
             yield from unpack_infer(elt, context)
-        # Explicit StopIteration to return error information, see comment
-        # in raise_if_nothing_inferred.
         return dict(node=stmt, context=context)
     # if inferred is a final node, return it and stop
     inferred = next(stmt.infer(context))
     if inferred is stmt:
         yield inferred
-        # Explicit StopIteration to return error information, see comment
-        # in raise_if_nothing_inferred.
         return dict(node=stmt, context=context)
     # else, infer recursively, except Uninferable object that should be returned as is
     for inferred in stmt.infer(context):

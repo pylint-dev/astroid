@@ -221,8 +221,6 @@ def infer_call(self, context=None):
         except exceptions.InferenceError:
             ## XXX log error ?
             continue
-    # Explicit StopIteration to return error information, see comment
-    # in raise_if_nothing_inferred.
     return dict(node=self, context=context)
 nodes.Call._infer = infer_call
 
@@ -321,8 +319,6 @@ def infer_attribute(self, context=None):
         except AttributeError:
             # XXX method / function
             context.boundnode = None
-    # Explicit StopIteration to return error information, see comment
-    # in raise_if_nothing_inferred.
     return dict(node=self, context=context)
 nodes.Attribute._infer = decorators.path_wrapper(infer_attribute)
 nodes.AssignAttr.infer_lhs = infer_attribute # # won't work with a path wrapper
@@ -404,8 +400,6 @@ def infer_subscript(self, context=None):
         return None
     yield from assigned.infer(context)
 
-    # Explicit StopIteration to return error information, see comment
-    # in raise_if_nothing_inferred.
     return dict(node=self, context=context)
 
 nodes.Subscript._infer = decorators.path_wrapper(infer_subscript)
@@ -462,8 +456,6 @@ def _infer_boolop(self, context=None):
         else:
             yield value
 
-    # Explicit StopIteration to return error information, see comment
-    # in raise_if_nothing_inferred.
     return dict(node=self, context=context)
 
 nodes.BoolOp._infer = _infer_boolop
@@ -542,8 +534,6 @@ def infer_unaryop(self, context=None):
     """Infer what an UnaryOp should return when evaluated."""
     yield from _filter_operation_errors(self, _infer_unaryop, context,
                                         util.BadUnaryOperationMessage)
-    # Explicit StopIteration to return error information, see comment
-    # in raise_if_nothing_inferred.
     return dict(node=self, context=context)
 
 nodes.UnaryOp._infer_unaryop = _infer_unaryop
