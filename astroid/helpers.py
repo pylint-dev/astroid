@@ -256,11 +256,7 @@ def object_len(node, context=None):
             "object of type '{}' has no len()"
             .format(len_call.pytype()))
 
-    try:
-        result_of_len = next(len_call.infer_call_result(node, context))
-        # Remove StopIteration catch when #507 is fixed
-    except StopIteration:
-        raise exceptions.InferenceError(node=node)
+    result_of_len = next(len_call.infer_call_result(node, context))
     if isinstance(result_of_len, nodes.Const) and result_of_len.pytype() == "builtins.int":
         return result_of_len.value
     raise exceptions.AstroidTypeError(

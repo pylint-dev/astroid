@@ -167,8 +167,10 @@ class Super(node_classes.NodeNG):
                     yield inferred
                 elif bases._is_property(inferred):
                     # TODO: support other descriptors as well.
-                    for value in inferred.infer_call_result(self, context):
-                        yield value
+                    try:
+                        yield from inferred.infer_call_result(self, context)
+                    except exceptions.InferenceError:
+                        yield util.Uninferable
                 else:
                     yield bases.BoundMethod(inferred, cls)
 

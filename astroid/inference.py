@@ -219,7 +219,6 @@ def infer_call(self, context=None):
                     context=callcontext,
                 )
         except exceptions.InferenceError:
-            ## XXX log error ?
             continue
     return dict(node=self, context=context)
 nodes.Call._infer = infer_call

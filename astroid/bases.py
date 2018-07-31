@@ -143,12 +143,15 @@ def _infer_method_result_truth(instance, method_name, context):
     if meth and hasattr(meth, 'infer_call_result'):
         if not meth.callable():
             return util.Uninferable
-        for value in meth.infer_call_result(instance, context=context):
-            if value is util.Uninferable:
-                return value
+        try:
+            for value in meth.infer_call_result(instance, context=context):
+                if value is util.Uninferable:
+                    return value
 
-            inferred = next(value.infer(context=context))
-            return inferred.bool_value()
+                inferred = next(value.infer(context=context))
+                return inferred.bool_value()
+        except exceptions.InferenceError:
+            pass
     return util.Uninferable
 
 
