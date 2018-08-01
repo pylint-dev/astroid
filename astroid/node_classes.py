@@ -2440,6 +2440,9 @@ class Const(mixins.NoChildrenMixin, NodeNG, bases.Instance):
         """
         return bool(self.value)
 
+    def infer(self, context=None, **kwargs):
+        yield self
+
 
 class Continue(mixins.NoChildrenMixin, Statement):
     """Class representing an :class:`ast.Continue` node.
