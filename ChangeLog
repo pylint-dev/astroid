@@ -5,11 +5,22 @@ astroid's ChangeLog
 What's New in astroid 2.0.2?
 ============================
 
-Release Date: |TBA|
+Release Date: 2018-08-01
 
    * Stop repeat inference attempt causing a RuntimeError in Python3.7
 
      Close PyCQA/pylint#2317
+
+   *  infer_call_result can raise InferenceError so make sure to handle that for the call sites
+      where it is used
+
+     infer_call_result started recently to raise InferenceError for objects for which it
+     could not find any returns. Previously it was silently raising a StopIteration,
+     which was especially leaking when calling builtin methods.
+     Since it is after all an inference method, it is expected that it
+     could raise an InferenceError rather than returning nothing.
+
+     Close PyCQA/pylint#2350
 
 
 What's New in astroid 2.0.1?
