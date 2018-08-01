@@ -588,6 +588,9 @@ def _get_binop_contexts(context, left, right):
     for x.__op__(y), the other one for y.__rop__(x), where
     only the arguments are inversed.
     """
+    if context is None:
+        context = contextmod.InferenceContext()
+
     # The order is important, since the first one should be
     # left.__op__(right).
     for arg in (right, left):
@@ -714,15 +717,16 @@ def _infer_binary_operation(left, right, binary_opnode, context, flow_factory):
 def _infer_binop(self, context):
     """Binary operation inference logic."""
     if context is None:
-        context = contextmod.InferenceContext()
+        lhs_context = rhs_context = None
+    else:
+        # we use two separate contexts for evaluating lhs and rhs
+        # because evaluating lhs may leave some undesired entries in
+        # context.path which may not let us infer right value of rhs
+        lhs_context = context.clone()
+        rhs_context = context.clone()
+
     left = self.left
     right = self.right
-
-    # we use two separate contexts for evaluating lhs and rhs because
-    # 1. evaluating lhs may leave some undesired entries in context.path
-    #    which may not let us infer right value of rhs
-    lhs_context = context.clone()
-    rhs_context = context.clone()
 
     for lhs in left.infer(context=lhs_context):
         if lhs is util.Uninferable:
