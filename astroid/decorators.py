@@ -108,27 +108,31 @@ def path_wrapper(func):
 
 @wrapt.decorator
 def yes_if_nothing_inferred(func, instance, args, kwargs):
-    inferred = False
-    for node in func(*args, **kwargs):
-        inferred = True
-        yield node
-    if not inferred:
+    generator = func(*args, **kwargs)
+
+    try:
+        yield next(generator)
+    except StopIteration:
+        # generator is empty
         yield util.Uninferable
+        return
+
+    yield from generator
 
 
 @wrapt.decorator
 def raise_if_nothing_inferred(func, instance, args, kwargs):
-    inferred = False
+    generator = func(*args, **kwargs)
+
     try:
-        generator = func(*args, **kwargs)
-        while True:
-            yield next(generator)
-            inferred = True
+        yield next(generator)
     except StopIteration as error:
-        if not inferred:
-            if error.args:
-                # pylint: disable=not-a-mapping
-                raise exceptions.InferenceError(**error.args[0])
-            else:
-                raise exceptions.InferenceError(
-                    'StopIteration raised without any error information.')
+        # generator is empty
+        if error.args:
+            # pylint: disable=not-a-mapping
+            raise exceptions.InferenceError(**error.args[0])
+        else:
+            raise exceptions.InferenceError(
+                'StopIteration raised without any error information.')
+
+    yield from generator
