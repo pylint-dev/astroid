@@ -527,7 +527,7 @@ class Module(LocalsDictNodeNG):
         context.lookupname = name
         try:
             return bases._infer_stmts(self.getattr(name, context),
-                                      context, frame=self)
+                                      context, frame=self, copy=False)
         except exceptions.AttributeInferenceError as error:
             raise exceptions.InferenceError(
                 error.message,
@@ -2381,7 +2381,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         context.lookupname = name
         try:
             attr = self.getattr(name, context, class_context=class_context)[0]
-            for inferred in bases._infer_stmts([attr], context, frame=self):
+            for inferred in bases._infer_stmts([attr], context, frame=self, copy=False):
                 # yield Uninferable object instead of descriptors when necessary
                 if (not isinstance(inferred, node_classes.Const)
                         and isinstance(inferred, bases.Instance)):

@@ -187,7 +187,7 @@ def infer_name(self, context=None):
                                                 context=context)
     context = context.clone()
     context.lookupname = self.name
-    return bases._infer_stmts(stmts, context, frame)
+    return bases._infer_stmts(stmts, context, frame, copy=False)
 
 # pylint: disable=no-value-for-parameter
 nodes.Name._infer = decorators.raise_if_nothing_inferred(
@@ -276,7 +276,7 @@ def infer_import_from(self, context=None, asname=True):
         context = contextmod.copy_context(context)
         context.lookupname = name
         stmts = module.getattr(name, ignore_locals=module is self.root())
-        return bases._infer_stmts(stmts, context)
+        return bases._infer_stmts(stmts, context, copy=False)
     except exceptions.AttributeInferenceError as error:
         raise exceptions.InferenceError(
             error.message,

@@ -104,13 +104,14 @@ class Proxy:
         yield self
 
 
-def _infer_stmts(stmts, context, frame=None):
+def _infer_stmts(stmts, context, frame=None, copy=True):
     """Return an iterator on statements inferred by each statement in *stmts*."""
     stmt = None
     inferred = False
     if context is not None:
         name = context.lookupname
-        context = context.clone()
+        if copy:
+            context = context.clone()
     else:
         name = None
         context = contextmod.InferenceContext()
@@ -195,6 +196,9 @@ class BaseInstance(Proxy):
         """inferred getattr"""
         if not context:
             context = contextmod.InferenceContext()
+            copy = False
+        else:
+            copy = True
         try:
             # avoid recursively inferring the same attr on the same class
             if context.push((self._proxied, name)):
@@ -202,7 +206,8 @@ class BaseInstance(Proxy):
 
             # XXX frame should be self._proxied, or not ?
             get_attr = self.getattr(name, context, lookupclass=False)
-            yield from _infer_stmts(self._wrap_attr(get_attr, context), context, frame=self)
+            yield from _infer_stmts(
+                self._wrap_attr(get_attr, context), context, frame=self, copy=copy)
         except exceptions.AttributeInferenceError as error:
             try:
                 # fallback to class.igetattr since it has some logic to handle

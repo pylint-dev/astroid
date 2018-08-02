@@ -1054,7 +1054,7 @@ class LookupMixIn:
         """
         frame, stmts = self.lookup(name)
         context = contextmod.InferenceContext()
-        return bases._infer_stmts(stmts, context, frame)
+        return bases._infer_stmts(stmts, context, frame, copy=False)
 
     def _filter_stmts(self, stmts, frame, offset):
         """Filter the given list of statements to remove ignorable statements.
