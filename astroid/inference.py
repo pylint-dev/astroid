@@ -427,16 +427,22 @@ def _infer_boolop(self, context=None):
         return None
 
     for pair in itertools.product(*values):
-        if any(item is util.Uninferable for item in pair):
-            # Can't infer the final result, just yield Uninferable.
-            yield util.Uninferable
-            continue
+        bool_values = []
 
-        bool_values = [item.bool_value() for item in pair]
-        if any(item is util.Uninferable for item in bool_values):
-            # Can't infer the final result, just yield Uninferable.
-            yield util.Uninferable
-            continue
+        for item in pair:
+            if item is util.Uninferable:
+                # Can't infer the final result, just yield Uninferable.
+                yield util.Uninferable
+                break
+
+            bool_value = item.bool_value()
+
+            if bool_value is util.Uninferable:
+                # Can't infer the final result, just yield Uninferable.
+                yield util.Uninferable
+                break
+
+            bool_values.append(bool_value)
 
         # Since the boolean operations are short circuited operations,
         # this code yields the first value for which the predicate is True
