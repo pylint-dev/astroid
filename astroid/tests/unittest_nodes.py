@@ -963,5 +963,53 @@ def test_type_comments_function():
         assert node.type_comment_returns.as_string() == expected_returns_string
 
 
+def test_get_children_order():
+    class OrderVisitor:
+        def __init__(self):
+            for node_class in nodes.ALL_NODE_CLASSES:
+                visit_name = 'visit_' + node_class.__name__.lower()
+                self.__dict__[visit_name] = self.visit
+
+            self.position = (0, 0)
+
+        def visit(self, node):
+            if (isinstance(node, node_classes.BinOp)
+                    and (isinstance(node.left, node_classes.BinOp)
+                         or isinstance(node.right, node_classes.BinOp))):
+                # The outer BinOp in nested BinOps has incorrect col_offset
+                # at the col_offset of the operator
+                return
+
+            if isinstance(node, node_classes.ExceptHandler):
+                # Exception handler name node has incorrect col_offset of 0
+                return
+
+            # All other node classes have correct positions so check they
+            # are yielded in position order
+            for child in node.get_children():
+                if child.lineno is not None:
+                    position = (child.lineno, child.col_offset)
+                    assert self.position <= position, child
+                    self.position = position
+
+                child.accept(self)
+
+    ast = builder.parse('''
+    def func(a: bool, b=1, *c: str, d: str, e=2, **kwargs: int):
+        return b if a else e
+
+    a = 1 + 2 + 3
+
+    try:
+      func()
+    except Exception as e:
+      pass
+    ''')
+    ast.accept(OrderVisitor())
+
+    for module in ['data/module.py', 'data/module2.py']:
+        resources.build_file(module).accept(OrderVisitor())
+
+
 if __name__ == '__main__':
     unittest.main()
