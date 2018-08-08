@@ -2,6 +2,13 @@
 astroid's ChangeLog
 ===================
 
+What's New in astroid 2.0.3?
+============================
+
+Release Date: 2018-08-08
+
+   * The environment markers for PyPy were invalid.
+
 What's New in astroid 2.0.2?
 ============================
 
