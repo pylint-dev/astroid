@@ -1763,6 +1763,9 @@ class Assign(mixins.AssignTypeMixin, Statement):
 
         yield from self.value._get_assign_nodes()
 
+    def _get_yield_nodes_skip_lambdas(self):
+        yield from self.value._get_yield_nodes_skip_lambdas()
+
 
 class AnnAssign(mixins.AssignTypeMixin, Statement):
     """Class representing an :class:`ast.AnnAssign` node.

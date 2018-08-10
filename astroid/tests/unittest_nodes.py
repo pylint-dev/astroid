@@ -963,5 +963,21 @@ def test_type_comments_function():
         assert node.type_comment_returns.as_string() == expected_returns_string
 
 
+def test_is_generator_for_yield_assignments():
+    node = astroid.extract_node('''
+    class A:
+        def test(self):
+            a = yield
+            while True:
+                print(a)
+                yield a
+    a = A()
+    a.test
+    ''')
+    inferred = next(node.infer())
+    assert isinstance(inferred, astroid.BoundMethod)
+    assert bool(inferred.is_generator())
+
+
 if __name__ == '__main__':
     unittest.main()
