@@ -2,6 +2,15 @@
 astroid's ChangeLog
 ===================
 
+What's New in astroid 2.1.0?
+============================
+Release Date: TBA
+
+   * Add support for `argparse.Namespace`
+
+     Close PyCQA/pylint#2413
+
+
 What's New in astroid 2.0.4?
 ============================
 Release Date: 2018-08-10
