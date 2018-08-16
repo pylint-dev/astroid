@@ -2182,16 +2182,13 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
         :returns: The parents that define the given name.
         :rtype: iterable(NodeNG)
         """
-        if self.newstyle and all(n.newstyle for n in self.ancestors(context)):
-            # Look up in the mro if we can. This will result in the
-            # attribute being looked up just as Python does it.
-            try:
-                ancestors = self.mro(context)[1:]
-            except exceptions.MroError:
-                # Fallback to use ancestors, we can't determine
-                # a sane MRO.
-                ancestors = self.ancestors(context=context)
-        else:
+        # Look up in the mro if we can. This will result in the
+        # attribute being looked up just as Python does it.
+        try:
+            ancestors = self.mro(context)[1:]
+        except exceptions.MroError:
+            # Fallback to use ancestors, we can't determine
+            # a sane MRO.
             ancestors = self.ancestors(context=context)
         for astroid in ancestors:
             if name in astroid:
