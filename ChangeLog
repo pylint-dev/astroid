@@ -10,6 +10,8 @@ Release Date: TBA
 
      Close PyCQA/pylint#2413
 
+   * `async` functions are now inferred as `AsyncGenerator` when inferring their call result.
+
 
 What's New in astroid 2.0.4?
 ============================

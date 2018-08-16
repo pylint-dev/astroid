@@ -1588,7 +1588,11 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :rtype: iterable(NodeNG or Uninferable) or None
         """
         if self.is_generator():
-            result = bases.Generator(self)
+            if isinstance(self, AsyncFunctionDef):
+                generator_cls = bases.AsyncGenerator
+            else:
+                generator_cls = bases.Generator
+            result = generator_cls(self)
             yield result
             return
         # This is really a gigantic hack to work around metaclass generators

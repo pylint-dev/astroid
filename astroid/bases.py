@@ -491,3 +491,19 @@ class Generator(BaseInstance):
 
     def __str__(self):
         return 'Generator(%s)' % (self._proxied.name)
+
+
+class AsyncGenerator(Generator):
+    """Special node representing an async generator"""
+
+    def pytype(self):
+        return '%s.async_generator' % BUILTINS
+
+    def display_type(self):
+        return 'AsyncGenerator'
+
+    def __repr__(self):
+        return '<AsyncGenerator(%s) l.%s at 0x%s>' % (self._proxied.name, self.lineno, id(self))
+
+    def __str__(self):
+        return 'AsyncGenerator(%s)' % (self._proxied.name)

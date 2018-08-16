@@ -560,6 +560,26 @@ class GeneratorModel(FunctionModel):
                                   parent=self._instance)
 
 
+class AsyncGeneratorModel(GeneratorModel):
+
+    def __new__(cls, *args, **kwargs):
+        # Append the values from the AGeneratorType unto this object.
+        ret = super().__new__(cls, *args, **kwargs)
+        astroid_builtins = astroid.MANAGER.astroid_cache[builtins.__name__]
+        generator = astroid_builtins.get('async_generator')
+        if generator is None:
+            # Make it backward compatible.
+            generator = astroid_builtins.get('generator')
+
+        for name, values in generator.locals.items():
+            method = values[0]
+            patched = lambda cls, meth=method: meth
+
+            setattr(type(ret), 'py' + name, property(patched))
+
+        return ret
+
+
 class InstanceModel(ObjectModel):
 
     @property

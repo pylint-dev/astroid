@@ -406,6 +406,19 @@ _GeneratorType.parent = MANAGER.astroid_cache[builtins.__name__]
 bases.Generator._proxied = _GeneratorType
 Astroid_BUILDER.object_build(bases.Generator._proxied, types.GeneratorType)
 
+if hasattr(types, 'AsyncGeneratorType'):
+    _AsyncGeneratorType = nodes.ClassDef(
+        types.AsyncGeneratorType.__name__,
+        types.AsyncGeneratorType.__doc__
+    )
+    _AsyncGeneratorType.parent = MANAGER.astroid_cache[builtins.__name__]
+    bases.AsyncGenerator._proxied = _AsyncGeneratorType
+    Astroid_BUILDER.object_build(
+        bases.AsyncGenerator._proxied,
+        types.AsyncGeneratorType
+    )
+
+
 _builtins = MANAGER.astroid_cache[builtins.__name__]
 BUILTIN_TYPES = (types.GetSetDescriptorType, types.GeneratorType,
                  types.MemberDescriptorType, type(None), type(NotImplemented),
