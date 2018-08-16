@@ -15,6 +15,7 @@ import os
 from setuptools import setup, find_packages
 from setuptools.command import easy_install
 from setuptools.command import install_lib
+from Cython.Build import cythonize
 
 
 real_path = os.path.realpath(__file__)
@@ -45,6 +46,7 @@ def install():
                  setup_requires=['pytest-runner'],
                  test_suite='test',
                  tests_require=['pytest'],
+                 ext_modules=cythonize(["astroid/*.pyx", "astroid/interpreter/*.pyx", "astroid/interpreter/_import/*.pyx", "astroid/brain/*.pyx"])
                  )
 
 

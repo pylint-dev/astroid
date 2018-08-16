@@ -539,9 +539,9 @@ nodes.UnaryOp._infer_unaryop = _infer_unaryop
 nodes.UnaryOp._infer = infer_unaryop
 
 
-def _is_not_implemented(const):
+def _is_not_implemented(const_node):
     """Check if the given const node is NotImplemented."""
-    return isinstance(const, nodes.Const) and const.value is NotImplemented
+    return isinstance(const_node, nodes.Const) and const_node.value is NotImplemented
 
 
 def _invoke_binop_inference(instance, opnode, op, other, context, method_name):

@@ -286,7 +286,6 @@ def sequence_assigned_stmts(self, node=None, context=None, asspath=None):
 nodes.Tuple.assigned_stmts = sequence_assigned_stmts
 nodes.List.assigned_stmts = sequence_assigned_stmts
 
-
 def assend_assigned_stmts(self, node=None, context=None, asspath=None):
     return self.parent.assigned_stmts(node=self, context=context)
 nodes.AssignName.assigned_stmts = assend_assigned_stmts

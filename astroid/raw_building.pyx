@@ -73,6 +73,8 @@ def attach_dummy_node(node, name, runtime_object=_marker):
     enode.object = runtime_object
     _attach_local_node(node, enode, name)
 
+cimport cython
+@cython.binding(True)
 def _has_underlying_object(self):
     return self.object is not None and self.object is not _marker
 
@@ -397,8 +399,8 @@ def _astroid_bootstrapping(astroid_builtin=None):
 _astroid_bootstrapping()
 
 # TODO : find a nicer way to handle this situation;
-def _set_proxied(const):
-    return _CONST_PROXY[const.value.__class__]
+def _set_proxied(const_node):
+    return _CONST_PROXY[const_node.value.__class__]
 nodes.Const._proxied = property(_set_proxied)
 
 _GeneratorType = nodes.ClassDef(types.GeneratorType.__name__, types.GeneratorType.__doc__)
