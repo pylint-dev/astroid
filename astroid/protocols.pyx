@@ -23,6 +23,7 @@ where it makes sense.
 import collections
 import operator as operator_mod
 import sys
+cimport cython
 
 from astroid import Store
 from astroid import arguments
@@ -118,6 +119,7 @@ for _KEY, _IMPL in list(BIN_OP_IMPL.items()):
 
 
 @decorators.yes_if_nothing_inferred
+@cython.binding(True)
 def const_infer_binary_op(self, opnode, operator, other, context, _):
     not_implemented = nodes.Const(NotImplemented)
     if isinstance(other, nodes.Const):
@@ -141,6 +143,7 @@ def const_infer_binary_op(self, opnode, operator, other, context, _):
 nodes.Const.infer_binary_op = const_infer_binary_op
 
 
+@cython.binding(True)
 def _multiply_seq_by_int(self, opnode, other, context):
     node = self.__class__(parent=opnode)
     elts = []
@@ -167,6 +170,7 @@ def _filter_uninferable_nodes(elts, context):
 
 
 @decorators.yes_if_nothing_inferred
+@cython.binding(True)
 def tl_infer_binary_op(self, opnode, operator, other, context, method):
     not_implemented = nodes.Const(NotImplemented)
     if isinstance(other, self.__class__) and operator == '+':
@@ -195,6 +199,7 @@ nodes.List.infer_binary_op = tl_infer_binary_op
 
 
 @decorators.yes_if_nothing_inferred
+@cython.binding(True)
 def instance_class_infer_binary_op(self, opnode, operator, other, context, method):
     return method.infer_call_result(self, context)
 
@@ -252,6 +257,7 @@ def _resolve_looppart(parts, asspath, context):
                     break
 
 @decorators.raise_if_nothing_inferred
+@cython.binding(True)
 def for_assigned_stmts(self, node=None, context=None, asspath=None):
     if isinstance(self, nodes.AsyncFor) or getattr(self, 'is_async', False):
         # Skip inferring of async code for now
@@ -270,6 +276,7 @@ nodes.For.assigned_stmts = for_assigned_stmts
 nodes.Comprehension.assigned_stmts = for_assigned_stmts
 
 
+@cython.binding(True)
 def sequence_assigned_stmts(self, node=None, context=None, asspath=None):
     if asspath is None:
         asspath = []
@@ -286,12 +293,14 @@ def sequence_assigned_stmts(self, node=None, context=None, asspath=None):
 nodes.Tuple.assigned_stmts = sequence_assigned_stmts
 nodes.List.assigned_stmts = sequence_assigned_stmts
 
+@cython.binding(True)
 def assend_assigned_stmts(self, node=None, context=None, asspath=None):
     return self.parent.assigned_stmts(node=self, context=context)
 nodes.AssignName.assigned_stmts = assend_assigned_stmts
 nodes.AssignAttr.assigned_stmts = assend_assigned_stmts
 
 
+@cython.binding(True)
 def _arguments_infer_argname(self, name, context):
     # arguments information may be missing, in which case we can't do anything
     # more
@@ -339,6 +348,7 @@ def _arguments_infer_argname(self, name, context):
         yield util.Uninferable
 
 
+@cython.binding(True)
 def arguments_assigned_stmts(self, node=None, context=None, asspath=None):
     if context.callcontext:
         # reset call context/name
@@ -353,6 +363,7 @@ nodes.Arguments.assigned_stmts = arguments_assigned_stmts
 
 
 @decorators.raise_if_nothing_inferred
+@cython.binding(True)
 def assign_assigned_stmts(self, node=None, context=None, asspath=None):
     if not asspath:
         yield self.value
@@ -363,6 +374,7 @@ def assign_assigned_stmts(self, node=None, context=None, asspath=None):
                 assign_path=asspath, context=context)
 
 
+@cython.binding(True)
 def assign_annassigned_stmts(self, node=None, context=None, asspath=None):
     for inferred in assign_assigned_stmts(self, node, context, asspath):
         if inferred is None:
@@ -416,6 +428,7 @@ def _resolve_asspart(parts, asspath, context):
 
 
 @decorators.raise_if_nothing_inferred
+@cython.binding(True)
 def excepthandler_assigned_stmts(self, node=None, context=None, asspath=None):
     for assigned in node_classes.unpack_infer(self.type):
         if isinstance(assigned, nodes.ClassDef):
@@ -429,6 +442,7 @@ def excepthandler_assigned_stmts(self, node=None, context=None, asspath=None):
 nodes.ExceptHandler.assigned_stmts = excepthandler_assigned_stmts
 
 
+@cython.binding(True)
 def _infer_context_manager(self, mgr, context):
     try:
         inferred = next(mgr.infer(context=context))
@@ -480,6 +494,7 @@ def _infer_context_manager(self, mgr, context):
 
 
 @decorators.raise_if_nothing_inferred
+@cython.binding(True)
 def with_assigned_stmts(self, node=None, context=None, asspath=None):
     """Infer names and other nodes from a *with* statement.
 
@@ -542,6 +557,7 @@ nodes.With.assigned_stmts = with_assigned_stmts
 
 
 @decorators.yes_if_nothing_inferred
+@cython.binding(True)
 def starred_assigned_stmts(self, node=None, context=None, asspath=None):
     """
     Arguments:

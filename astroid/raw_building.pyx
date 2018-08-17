@@ -23,6 +23,7 @@ import logging
 import os
 import sys
 import types
+cimport cython
 
 from astroid import bases
 from astroid import manager
@@ -73,7 +74,6 @@ def attach_dummy_node(node, name, runtime_object=_marker):
     enode.object = runtime_object
     _attach_local_node(node, enode, name)
 
-cimport cython
 @cython.binding(True)
 def _has_underlying_object(self):
     return self.object is not None and self.object is not _marker

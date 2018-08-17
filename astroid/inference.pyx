@@ -35,6 +35,7 @@ from astroid import nodes
 from astroid.interpreter import dunder_lookup
 from astroid import protocols
 from astroid import util
+cimport cython
 
 
 MANAGER = manager.AstroidManager()
@@ -42,7 +43,7 @@ MANAGER = manager.AstroidManager()
 
 # .infer method ###############################################################
 
-
+@cython.binding(True)
 def infer_end(self, context=None):
     """inference's end for node such as Module, ClassDef, FunctionDef,
     Const...
@@ -78,6 +79,7 @@ def _infer_sequence_helper(node, context=None):
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
+@cython.binding(True)
 def infer_sequence(self, context=None):
     if not any(isinstance(e, nodes.Starred) for e in self.elts):
         yield self
@@ -93,6 +95,7 @@ nodes.Tuple._infer = infer_sequence
 nodes.Set._infer = infer_sequence
 
 
+@cython.binding(True)
 def infer_map(self, context=None):
     if not any(isinstance(k, nodes.DictUnpack) for k, _ in self.items):
         yield self
@@ -171,6 +174,7 @@ def _higher_function_scope(node):
         return current.parent
     return None
 
+@cython.binding(True)
 def infer_name(self, context=None):
     """infer a Name: use name lookup rules"""
     frame, stmts = self.lookup(self.name)
@@ -190,14 +194,13 @@ def infer_name(self, context=None):
     return bases._infer_stmts(stmts, context, frame)
 
 # pylint: disable=no-value-for-parameter
-nodes.Name._infer = decorators.raise_if_nothing_inferred(
-    decorators.path_wrapper(infer_name)
-)
+nodes.Name._infer = decorators.raise_if_nothing_inferred(decorators.path_wrapper(infer_name))
 nodes.AssignName.infer_lhs = infer_name # won't work with a path wrapper
 
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
+@cython.binding(True)
 def infer_call(self, context=None):
     """infer a Call node by trying to guess what the function returns"""
     callcontext = context.clone()
@@ -226,6 +229,7 @@ nodes.Call._infer = infer_call
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
+@cython.binding(True)
 def infer_import(self, context=None, asname=True):
     """infer an Import node: return the imported module/object"""
     name = context.lookupname
@@ -247,6 +251,7 @@ def infer_import(self, context=None, asname=True):
 nodes.Import._infer = infer_import
 
 
+@cython.binding(True)
 def infer_name_module(self, name):
     context = contextmod.InferenceContext()
     context.lookupname = name
@@ -256,6 +261,7 @@ nodes.Import.infer_name_module = infer_name_module
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
+@cython.binding(True)
 def infer_import_from(self, context=None, asname=True):
     """infer a ImportFrom node: return the imported module/object"""
     name = context.lookupname
@@ -288,6 +294,7 @@ nodes.ImportFrom._infer = infer_import_from
 
 
 @decorators.raise_if_nothing_inferred
+@cython.binding(True)
 def infer_attribute(self, context=None):
     """infer an Attribute node by using getattr on the associated object"""
     for owner in self.expr.infer(context):
@@ -325,6 +332,7 @@ nodes.AssignAttr.infer_lhs = infer_attribute # # won't work with a path wrapper
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
+@cython.binding(True)
 def infer_global(self, context=None):
     if context.lookupname is None:
         raise exceptions.InferenceError(node=self, context=context)
@@ -345,6 +353,7 @@ _SUBSCRIPT_SENTINEL = object()
 
 
 @decorators.raise_if_nothing_inferred
+@cython.binding(True)
 def infer_subscript(self, context=None):
     """Inference for subscripts
 
@@ -407,6 +416,7 @@ nodes.Subscript.infer_lhs = infer_subscript
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
+@cython.binding(True)
 def _infer_boolop(self, context=None):
     """Infer a boolean operation (and / or / not).
 
@@ -462,6 +472,7 @@ nodes.BoolOp._infer = _infer_boolop
 
 # UnaryOp, BinOp and AugAssign inferences
 
+@cython.binding(True)
 def _filter_operation_errors(self, infer_callable, context, error):
     for result in infer_callable(self, context):
         if isinstance(result, error):
@@ -473,6 +484,7 @@ def _filter_operation_errors(self, infer_callable, context, error):
             yield result
 
 
+@cython.binding(True)
 def _infer_unaryop(self, context=None):
     """Infer what an UnaryOp should return when evaluated."""
     for operand in self.operand.infer(context):
@@ -529,6 +541,7 @@ def _infer_unaryop(self, context=None):
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
+@cython.binding(True)
 def infer_unaryop(self, context=None):
     """Infer what an UnaryOp should return when evaluated."""
     yield from _filter_operation_errors(self, _infer_unaryop, context,
@@ -711,6 +724,7 @@ def _infer_binary_operation(left, right, binary_opnode, context, flow_factory):
     yield util.BadBinaryOperationMessage(left_type, binary_opnode.op, right_type)
 
 
+@cython.binding(True)
 def _infer_binop(self, context):
     """Binary operation inference logic."""
     if context is None:
@@ -745,6 +759,7 @@ def _infer_binop(self, context):
 
 @decorators.yes_if_nothing_inferred
 @decorators.path_wrapper
+@cython.binding(True)
 def infer_binop(self, context=None):
     return _filter_operation_errors(self, _infer_binop, context,
                                     util.BadBinaryOperationMessage)
@@ -753,6 +768,7 @@ nodes.BinOp._infer_binop = _infer_binop
 nodes.BinOp._infer = infer_binop
 
 
+@cython.binding(True)
 def _infer_augassign(self, context=None):
     """Inference logic for augmented binary operations."""
     if context is None:
@@ -779,6 +795,7 @@ def _infer_augassign(self, context=None):
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
+@cython.binding(True)
 def infer_augassign(self, context=None):
     return _filter_operation_errors(self, _infer_augassign, context,
                                     util.BadBinaryOperationMessage)
@@ -791,6 +808,7 @@ nodes.AugAssign._infer = infer_augassign
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
+@cython.binding(True)
 def infer_arguments(self, context=None):
     name = context.lookupname
     if name is None:
@@ -801,6 +819,7 @@ nodes.Arguments._infer = infer_arguments
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
+@cython.binding(True)
 def infer_assign(self, context=None):
     """infer a AssignName/AssignAttr: need to inspect the RHS part of the
     assign node
@@ -819,6 +838,7 @@ nodes.AssignAttr._infer = infer_assign
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
+@cython.binding(True)
 def infer_empty_node(self, context=None):
     if not self.has_underlying_object():
         yield util.Uninferable
@@ -832,12 +852,14 @@ nodes.EmptyNode._infer = infer_empty_node
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
+@cython.binding(True)
 def infer_index(self, context=None):
     return self.value.infer(context)
 nodes.Index._infer = infer_index
 
 # TODO: move directly into bases.Instance when the dependency hell
 # will be solved.
+@cython.binding(True)
 def instance_getitem(self, index, context=None):
     # Rewrap index to Const for this case
     new_context = contextmod.bind_context_to_node(context, self)
