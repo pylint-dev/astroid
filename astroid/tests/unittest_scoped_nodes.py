@@ -1799,5 +1799,18 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual([x.arg for x in cls.keywords], ['foo', 'bar'])
 
 
+def test_metaclass_cannot_infer_call_yields_an_instance():
+    node = builder.extract_node('''
+    from undefined import Undefined
+    class Meta(type):
+        __call__ = Undefined
+    class A(metaclass=Meta):
+        pass
+    A()
+    ''')
+    inferred = next(node.infer())
+    assert isinstance(inferred, Instance)
+
+
 if __name__ == '__main__':
     unittest.main()

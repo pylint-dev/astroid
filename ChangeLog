@@ -12,6 +12,10 @@ Release Date: TBA
 
    * `async` functions are now inferred as `AsyncGenerator` when inferring their call result.
 
+   * Filter out ``Uninferable`` when inferring the call result result of a class with an uninferable ``__call__`` method.
+
+     Close PyCQA/pylint#2434
+
 
 What's New in astroid 2.0.4?
 ============================

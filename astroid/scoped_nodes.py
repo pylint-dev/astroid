@@ -2063,11 +2063,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG,
                 dunder_call = next(metaclass.igetattr("__call__", context))
         except exceptions.AttributeInferenceError:
             pass
-        if (dunder_call is not None and
-                dunder_call.qname() != "builtins.type.__call__"):
+        if dunder_call and dunder_call.qname() != "builtins.type.__call__":
             context = contextmod.bind_context_to_node(context, self)
-            yield from dunder_call.infer_call_result(
-                caller, context)
+            yield from dunder_call.infer_call_result(caller, context)
         else:
             # Call type.__call__ if not set metaclass
             # (since type is the default metaclass)
