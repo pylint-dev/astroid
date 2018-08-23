@@ -407,6 +407,7 @@ bases.Generator._proxied = _GeneratorType
 Astroid_BUILDER.object_build(bases.Generator._proxied, types.GeneratorType)
 
 if hasattr(types, 'AsyncGeneratorType'):
+    # pylint: disable=no-member; AsyncGeneratorType
     _AsyncGeneratorType = nodes.ClassDef(
         types.AsyncGeneratorType.__name__,
         types.AsyncGeneratorType.__doc__
@@ -417,6 +418,7 @@ if hasattr(types, 'AsyncGeneratorType'):
         bases.AsyncGenerator._proxied,
         types.AsyncGeneratorType
     )
+   # pylint: enable=no-member
 
 
 _builtins = MANAGER.astroid_cache[builtins.__name__]
