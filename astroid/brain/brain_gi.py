@@ -110,10 +110,13 @@ def _gi_build_stub(parent):
         ret += "\n\n"
     if classes:
         ret += "# %s classes\n\n" % parent.__name__
-    for name in sorted(classes):
-        ret += "class %s(object):\n" % name
+    for name, obj in sorted(classes.items()):
+        base = "object"
+        if issubclass(obj, Exception):
+            base = "Exception"
+        ret += "class %s(%s):\n" % (name, base)
 
-        classret = _gi_build_stub(classes[name])
+        classret = _gi_build_stub(obj)
         if not classret:
             classret = "pass\n"
 
