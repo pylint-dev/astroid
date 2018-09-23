@@ -1014,5 +1014,19 @@ class AsyncGeneratorTest:
         assert inferred.display_type() == 'Generator'
 
 
+@pytest.mark.skipunless(sys.version_info[:2] >= (3, 6), "needs f-string support")
+def test_f_string_correct_line_numbering():
+    """Test that we generate correct line numbers for f-strings which come like this from the Python parser"""
+    node = astroid.extract_node('''
+    def func_foo(arg_bar, arg_foo):
+        dict_foo = {}
+
+        f'{arg_bar.attr_bar}' #@
+    ''')
+    assert node.lineno == 5
+    assert node.last_child().lineno == 5
+    assert node.last_child().last_child().lineno == 5
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -6,6 +6,16 @@ What's New in astroid 2.1.0?
 ============================
 Release Date: TBA
 
+   * Correct line numbering for f-strings for complex embedded expressions
+
+     When a f-string contained a complex expression, such as an attribute access,
+     we weren't cloning all the subtree of the f-string expression for attaching the correct
+     line number. This problem is coming from the builtin AST parser which gives for the f-string
+     and for its underlying elements the line number 1, but this is causing all sorts of bugs and
+     problems in pylint, which expects correct line numbering.
+
+     Close PyCQA/pylint#2449
+
    * Add support for `argparse.Namespace`
 
      Close PyCQA/pylint#2413
