@@ -1259,31 +1259,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(inferred.name, 'string')
         self.assertIn('ascii_letters', inferred.locals)
 
-    def test_mechanize_open(self):
-        try:
-            import mechanize  # pylint: disable=unused-variable
-        except ImportError:
-            self.skipTest('require mechanize installed')
-        data = '''
-            from mechanize import Browser
-            print(Browser)
-            b = Browser()
-        '''
-        ast = parse(data, __name__)
-        browser = next(test_utils.get_name_node(ast, 'Browser').infer())
-        self.assertIsInstance(browser, nodes.ClassDef)
-        bopen = list(browser.igetattr('open'))
-        self.skipTest('the commit said: "huum, see that later"')
-        self.assertEqual(len(bopen), 1)
-        self.assertIsInstance(bopen[0], nodes.FunctionDef)
-        self.assertTrue(bopen[0].callable())
-        b = next(test_utils.get_name_node(ast, 'b').infer())
-        self.assertIsInstance(b, Instance)
-        bopen = list(b.igetattr('open'))
-        self.assertEqual(len(bopen), 1)
-        self.assertIsInstance(bopen[0], BoundMethod)
-        self.assertTrue(bopen[0].callable())
-
     def test_property(self):
         code = '''
             from smtplib import SMTP
