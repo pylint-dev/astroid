@@ -86,27 +86,6 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin,
         builder._module = sys.modules[__name__]
         builder.object_build(build_module('module_name', ''), Whatever)
 
-
-    def test_new_style_class_detection(self):
-        try:
-            import pygtk # pylint: disable=unused-variable
-        except ImportError:
-            self.skipTest('test skipped: pygtk is not available')
-        # XXX may fail on some pygtk version, because objects in
-        # gobject._gobject have __module__ set to gobject :(
-        builder = AstroidBuilder()
-        data = """
-import pygtk
-pygtk.require("2.6")
-import gobject
-
-class A(gobject.GObject):
-    pass
-"""
-        astroid = builder.string_build(data, __name__, __file__)
-        a = astroid['A']
-        self.assertTrue(a.newstyle)
-
     def test_numpy_crash(self):
         """test don't crash on numpy"""
         #a crash occurred somewhere in the past, and an

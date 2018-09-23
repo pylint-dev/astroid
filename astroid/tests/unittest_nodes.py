@@ -1014,9 +1014,9 @@ class AsyncGeneratorTest:
         assert inferred.display_type() == 'Generator'
 
 
-@pytest.mark.skipunless(sys.version_info[:2] >= (3, 6), "needs f-string support")
+@pytest.mark.skipif(sys.version_info[:2] < (3, 6), "needs f-string support")
 def test_f_string_correct_line_numbering():
-    """Test that we generate correct line numbers for f-strings which come like this from the Python parser"""
+    """Test that we generate correct line numbers for f-strings"""
     node = astroid.extract_node('''
     def func_foo(arg_bar, arg_foo):
         dict_foo = {}
