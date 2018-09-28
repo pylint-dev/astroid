@@ -6,6 +6,10 @@ What's New in astroid 2.1.0?
 ============================
 Release Date: TBA
 
+   * Pass parameters by keyword name when inferring sequences.
+
+     Close PyCQA/pylint#2526
+
    * Correct line numbering for f-strings for complex embedded expressions
 
      When a f-string contained a complex expression, such as an attribute access,

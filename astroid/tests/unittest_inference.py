@@ -4730,5 +4730,16 @@ def test_attribute_mro_object_inference():
     assert inferred[0].value == 2
 
 
+def test_inferred_sequence_unpacking_works():
+    inferred = next(extract_node("""
+    def test(*args):
+        return (1, *args)
+    test(2) #@
+    """).infer())
+    assert isinstance(inferred, nodes.Tuple)
+    assert len(inferred.elts) == 2
+    assert [value.value for value in inferred.elts] == [1, 2]
+
+
 if __name__ == '__main__':
     unittest.main()

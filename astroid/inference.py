@@ -83,8 +83,9 @@ def infer_sequence(self, context=None):
         yield self
     else:
         values = _infer_sequence_helper(self, context)
-        new_seq = type(self)(self.lineno, self.col_offset, self.parent)
+        new_seq = type(self)(lineno=self.lineno, col_offset=self.col_offset, parent=self.parent)
         new_seq.postinit(values)
+
         yield new_seq
 
 
