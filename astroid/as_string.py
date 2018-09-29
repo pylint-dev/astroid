@@ -188,6 +188,8 @@ class AsStringVisitor:
 
     def visit_const(self, node):
         """return an astroid.Const node as string"""
+        if node.value is Ellipsis:
+            return '...'
         return repr(node.value)
 
     def visit_continue(self, node):
@@ -273,7 +275,7 @@ class AsStringVisitor:
 
     def visit_extslice(self, node):
         """return an astroid.ExtSlice node as string"""
-        return ','.join([dim.accept(self) for dim in node.dims])
+        return ', '.join([dim.accept(self) for dim in node.dims])
 
     def visit_for(self, node):
         """return an astroid.For node as string"""
@@ -430,8 +432,15 @@ class AsStringVisitor:
 
     def visit_subscript(self, node):
         """return an astroid.Subscript node as string"""
-        return '%s[%s]' % (self._precedence_parens(node, node.value),
-                           node.slice.accept(self))
+        idx = node.slice
+        if idx.__class__.__name__.lower() == 'index':
+            idx = idx.value
+        idxstr = idx.accept(self)
+        if idx.__class__.__name__.lower() == 'tuple' and idx.elts:
+            # Remove parenthesis in tuple and extended slice.
+            # a[(::1, 1:)] is not valid syntax.
+            idxstr = idxstr[1:-1]
+        return '%s[%s]' % (self._precedence_parens(node, node.value), idxstr)
 
     def visit_tryexcept(self, node):
         """return an astroid.TryExcept node as string"""

@@ -479,6 +479,7 @@ class TreeRebuilder:
         newnode.postinit(self.visit(node.value, newnode))
         return newnode
 
+    # Not used in Python 3.8+.
     def visit_ellipsis(self, node, parent):
         """visit an Ellipsis node by returning a fresh instance of it"""
         return nodes.Ellipsis(getattr(node, 'lineno', None),
@@ -509,6 +510,7 @@ class TreeRebuilder:
                          _visit_or_none(node, 'locals', self, newnode))
         return newnode
 
+    # Not used in Python 3.8+.
     def visit_extslice(self, node, parent):
         """visit an ExtSlice node by returning a fresh instance of it"""
         newnode = nodes.ExtSlice(parent=parent)
@@ -641,6 +643,7 @@ class TreeRebuilder:
             parent.set_local(name.split('.')[0], newnode)
         return newnode
 
+    # Not used in Python 3.8+.
     def visit_index(self, node, parent):
         """visit a Index node by returning a fresh instance of it"""
         newnode = nodes.Index(parent=parent)
@@ -702,12 +705,19 @@ class TreeRebuilder:
             self._save_assignment(newnode)
         return newnode
 
+    def visit_constant(self, node, parent):
+        """visit a Constant node by returning a fresh instance of Const"""
+        return nodes.Const(node.value, getattr(node, 'lineno', None),
+                           getattr(node, 'col_offset', None), parent)
+
+    # Not used in Python 3.8+.
     def visit_str(self, node, parent):
         """visit a String/Bytes node by returning a fresh instance of Const"""
         return nodes.Const(node.s, getattr(node, 'lineno', None),
                            getattr(node, 'col_offset', None), parent)
     visit_bytes = visit_str
 
+    # Not used in Python 3.8+.
     def visit_num(self, node, parent):
         """visit a Num node by returning a fresh instance of Const"""
         return nodes.Const(node.n, getattr(node, 'lineno', None),
@@ -854,6 +864,7 @@ class TreeRebuilder3(TreeRebuilder):
         """visit an arg node by returning a fresh AssName instance"""
         return self.visit_assignname(node, parent, node.arg)
 
+    # Not used in Python 3.8+.
     def visit_nameconstant(self, node, parent):
         # in Python 3.4 we have NameConstant for True / False / None
         return nodes.Const(node.value, getattr(node, 'lineno', None),
