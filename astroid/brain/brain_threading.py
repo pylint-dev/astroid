@@ -4,14 +4,13 @@
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
-
 import astroid
 
 
 def _thread_transform():
     return astroid.parse('''
     class lock(object):
-        def acquire(self, blocking=True):
+        def acquire(self, blocking=True, timeout=-1):
             pass
         def release(self):
             pass

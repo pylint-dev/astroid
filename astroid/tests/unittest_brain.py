@@ -488,7 +488,18 @@ class MultiprocessingBrainTest(unittest.TestCase):
 
 class ThreadingBrainTest(unittest.TestCase):
     def test_lock(self):
-        self._test_lock_object('Lock')
+        lock_instance = builder.extract_node("""
+        import threading
+        threading.Lock()
+        """)
+        inferred = next(lock_instance.infer())
+        self.assert_is_valid_lock(inferred)
+
+        acquire_method = inferred.getattr('acquire')[0]
+        parameters = [
+            param.name for param in acquire_method.args.args[1:]
+        ]
+        assert parameters == ['blocking', 'timeout']
 
     def test_rlock(self):
         self._test_lock_object('RLock')
