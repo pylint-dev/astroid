@@ -34,6 +34,8 @@ Release Date: TBA
 
      Close PyCQA/pylint#2434
 
+   * Make compatible with AST changes in Python 3.8.
+
 
 What's New in astroid 2.0.4?
 ============================
