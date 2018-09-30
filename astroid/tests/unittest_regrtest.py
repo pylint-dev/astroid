@@ -91,7 +91,7 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin,
         #a crash occurred somewhere in the past, and an
         # InferenceError instead of a crash was better, but now we even infer!
         try:
-            import numpy # pylint: disable=unused-variable
+            import numpy # pylint: disable=unused-import
         except ImportError:
             self.skipTest('test skipped: numpy is not available')
         builder = AstroidBuilder()
