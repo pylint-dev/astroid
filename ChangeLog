@@ -36,6 +36,10 @@ Release Date: TBA
 
    * Make compatible with AST changes in Python 3.8.
 
+   * Subscript inference (e.g. "`a[i]`") now pays attention to multiple inferred values for value
+     (e.g. "`a`") and slice (e.g. "`i`")
+
+     Close #614
 
 What's New in astroid 2.0.4?
 ============================

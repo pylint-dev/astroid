@@ -747,6 +747,40 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 97)
 
+    def test_subscript_multi_value(self):
+        code = """
+            def do_thing_with_subscript(magic_flag):
+                src = [3, 2, 1]
+                if magic_flag:
+                    src = [1, 2, 3]
+                something = src[0]
+                return something
+        """
+        ast = parse(code, __name__)
+        values = [
+            i.value for i in test_utils.get_name_node(ast, "something", -1).infer()
+        ]
+        self.assertEqual(list(sorted(values)), [1, 3])
+
+    def test_subscript_multi_slice(self):
+        code = """
+            def zero_or_one(magic_flag):
+                if magic_flag:
+                    return 1
+                return 0
+
+            def do_thing_with_subscript(magic_flag):
+                src = [3, 2, 1]
+                index = zero_or_one(magic_flag)
+                something = src[index]
+                return something
+        """
+        ast = parse(code, __name__)
+        values = [
+            i.value for i in test_utils.get_name_node(ast, "something", -1).infer()
+        ]
+        self.assertEqual(list(sorted(values)), [2, 3])
+
     def test_simple_tuple(self):
         module = parse(
             """
