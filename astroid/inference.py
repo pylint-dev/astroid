@@ -354,54 +354,51 @@ def infer_subscript(self, context=None):
     handle each supported index type accordingly.
     """
 
-    try:
-        value = next(self.value.infer(context))
-    except StopIteration:
-        return None
-    if value is util.Uninferable:
-        yield util.Uninferable
-        return None
+    found_one = False
+    for value in self.value.infer(context):
+        if value is util.Uninferable:
+            yield util.Uninferable
+            return None
+        for index in self.slice.infer(context):
+            if index is util.Uninferable:
+                yield util.Uninferable
+                return None
 
-    try:
-        index = next(self.slice.infer(context))
-    except StopIteration:
-        return None
-    if index is util.Uninferable:
-        yield util.Uninferable
-        return None
+            # Try to deduce the index value.
+            index_value = _SUBSCRIPT_SENTINEL
+            if value.__class__ == bases.Instance:
+                index_value = index
+            else:
+                if index.__class__ == bases.Instance:
+                    instance_as_index = helpers.class_instance_as_index(index)
+                    if instance_as_index:
+                        index_value = instance_as_index
+                else:
+                    index_value = index
+            if index_value is _SUBSCRIPT_SENTINEL:
+                raise exceptions.InferenceError(node=self, context=context)
 
-    # Try to deduce the index value.
-    index_value = _SUBSCRIPT_SENTINEL
-    if value.__class__ == bases.Instance:
-        index_value = index
-    else:
-        if index.__class__ == bases.Instance:
-            instance_as_index = helpers.class_instance_as_index(index)
-            if instance_as_index:
-                index_value = instance_as_index
-        else:
-            index_value = index
-    if index_value is _SUBSCRIPT_SENTINEL:
-        raise exceptions.InferenceError(node=self, context=context)
+            try:
+                assigned = value.getitem(index_value, context)
+            except (
+                exceptions.AstroidTypeError,
+                exceptions.AstroidIndexError,
+                exceptions.AttributeInferenceError,
+                AttributeError,
+            ) as exc:
+                raise exceptions.InferenceError(node=self, context=context) from exc
 
-    try:
-        assigned = value.getitem(index_value, context)
-    except (
-        exceptions.AstroidTypeError,
-        exceptions.AstroidIndexError,
-        exceptions.AttributeInferenceError,
-        AttributeError,
-    ) as exc:
-        raise exceptions.InferenceError(node=self, context=context) from exc
+            # Prevent inferring if the inferred subscript
+            # is the same as the original subscripted object.
+            if self is assigned or assigned is util.Uninferable:
+                yield util.Uninferable
+                return None
+            yield from assigned.infer(context)
+            found_one = True
 
-    # Prevent inferring if the inferred subscript
-    # is the same as the original subscripted object.
-    if self is assigned or assigned is util.Uninferable:
-        yield util.Uninferable
-        return None
-    yield from assigned.infer(context)
-
-    return dict(node=self, context=context)
+    if found_one:
+        return dict(node=self, context=context)
+    return None
 
 
 nodes.Subscript._infer = decorators.path_wrapper(infer_subscript)
