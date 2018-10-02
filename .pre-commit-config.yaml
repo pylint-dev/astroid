@@ -1,0 +1,13 @@
+repos:
+-   repo: https://github.com/ambv/black
+    rev: 18.6b4
+    hooks:
+    - id: black
+      args: [--safe, --quiet]
+      exclude: tests/testdata
+      python_version: python3.6
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v1.2.3
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
