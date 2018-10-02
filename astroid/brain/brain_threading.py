@@ -8,7 +8,8 @@ import astroid
 
 
 def _thread_transform():
-    return astroid.parse('''
+    return astroid.parse(
+        """
     class lock(object):
         def acquire(self, blocking=True, timeout=-1):
             pass
@@ -21,7 +22,8 @@ def _thread_transform():
 
     def Lock():
         return lock()
-    ''')
+    """
+    )
 
 
-astroid.register_module_extender(astroid.MANAGER, 'threading', _thread_transform)
+astroid.register_module_extender(astroid.MANAGER, "threading", _thread_transform)

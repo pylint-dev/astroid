@@ -14,7 +14,7 @@ PY36 = sys.version_info >= (3, 6)
 
 def _hashlib_transform():
     signature = "value=''"
-    template = '''
+    template = """
     class %(name)s(object):
       def __init__(self, %(signature)s): pass
       def digest(self):
@@ -33,31 +33,30 @@ def _hashlib_transform():
       @property
       def digest_size(self):
         return 1
-    '''
+    """
     algorithms_with_signature = dict.fromkeys(
-        ['md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512'],
-        signature,
+        ["md5", "sha1", "sha224", "sha256", "sha384", "sha512"], signature
     )
     if PY36:
         blake_signature = "value='', digest_size=None"
         new_algorithms = dict.fromkeys(
-            ['sha3_224', 'sha3_256', 'sha3_384', 'sha3_512', 'shake_128', 'shake_256'],
-            signature
+            ["sha3_224", "sha3_256", "sha3_384", "sha3_512", "shake_128", "shake_256"],
+            signature,
         )
         algorithms_with_signature.update(new_algorithms)
-        algorithms_with_signature.update({
-            'blake2b': blake_signature,
-            'blake2s': blake_signature,
-        })
+        algorithms_with_signature.update(
+            {"blake2b": blake_signature, "blake2s": blake_signature}
+        )
     classes = "".join(
-        template % {
-            'name': hashfunc,
-            'digest': 'b""' if six.PY3 else '""',
-            'signature': signature
+        template
+        % {
+            "name": hashfunc,
+            "digest": 'b""' if six.PY3 else '""',
+            "signature": signature,
         }
         for hashfunc, signature in algorithms_with_signature.items()
     )
     return astroid.parse(classes)
 
 
-astroid.register_module_extender(astroid.MANAGER, 'hashlib', _hashlib_transform)
+astroid.register_module_extender(astroid.MANAGER, "hashlib", _hashlib_transform)

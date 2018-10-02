@@ -27,7 +27,8 @@ from astroid.builder import AstroidBuilder
 
 _inspected_modules = {}
 
-_identifier_re = r'^[A-Za-z_]\w*$'
+_identifier_re = r"^[A-Za-z_]\w*$"
+
 
 def _gi_build_stub(parent):
     """
@@ -53,16 +54,16 @@ def _gi_build_stub(parent):
 
         if inspect.isclass(obj):
             classes[name] = obj
-        elif (inspect.isfunction(obj) or
-              inspect.isbuiltin(obj)):
+        elif inspect.isfunction(obj) or inspect.isbuiltin(obj):
             functions[name] = obj
-        elif (inspect.ismethod(obj) or
-              inspect.ismethoddescriptor(obj)):
+        elif inspect.ismethod(obj) or inspect.ismethoddescriptor(obj):
             methods[name] = obj
-        elif (str(obj).startswith("<flags") or
-              str(obj).startswith("<enum ") or
-              str(obj).startswith("<GType ") or
-              inspect.isdatadescriptor(obj)):
+        elif (
+            str(obj).startswith("<flags")
+            or str(obj).startswith("<enum ")
+            or str(obj).startswith("<GType ")
+            or inspect.isdatadescriptor(obj)
+        ):
             constants[name] = 0
         elif isinstance(obj, (int, str)):
             constants[name] = obj
@@ -126,9 +127,10 @@ def _gi_build_stub(parent):
 
     return ret
 
+
 def _import_gi_module(modname):
     # we only consider gi.repository submodules
-    if not modname.startswith('gi.repository.'):
+    if not modname.startswith("gi.repository."):
         raise AstroidBuildingError(modname=modname)
     # build astroid representation unless we already tried so
     if modname not in _inspected_modules:
@@ -139,13 +141,13 @@ def _import_gi_module(modname):
         # in pygobject that we need to cope with. However at
         # least as of pygobject3-3.13.91 the _glib module doesn't
         # exist anymore, so if treat these modules as optional.
-        if modname == 'gi.repository.GLib':
-            optional_modnames.append('gi._glib')
-        elif modname == 'gi.repository.GObject':
-            optional_modnames.append('gi._gobject')
+        if modname == "gi.repository.GLib":
+            optional_modnames.append("gi._glib")
+        elif modname == "gi.repository.GObject":
+            optional_modnames.append("gi._gobject")
 
         try:
-            modcode = ''
+            modcode = ""
             for m in itertools.chain(modnames, optional_modnames):
                 try:
                     with warnings.catch_warnings():
@@ -153,6 +155,7 @@ def _import_gi_module(modname):
                         # warnings, so ignore them.
                         try:
                             from gi import PyGIDeprecationWarning, PyGIWarning
+
                             warnings.simplefilter("ignore", PyGIDeprecationWarning)
                             warnings.simplefilter("ignore", PyGIWarning)
                         except Exception:
@@ -174,6 +177,7 @@ def _import_gi_module(modname):
         raise AstroidBuildingError(modname=modname)
     return astng
 
+
 def _looks_like_require_version(node):
     # Return whether this looks like a call to gi.require_version(<name>, <version>)
     # Only accept function calls with two constant arguments
@@ -185,27 +189,32 @@ def _looks_like_require_version(node):
 
     func = node.func
     if isinstance(func, nodes.Attribute):
-        if func.attrname != 'require_version':
+        if func.attrname != "require_version":
             return False
-        if isinstance(func.expr, nodes.Name) and func.expr.name == 'gi':
+        if isinstance(func.expr, nodes.Name) and func.expr.name == "gi":
             return True
 
         return False
 
     if isinstance(func, nodes.Name):
-        return func.name == 'require_version'
+        return func.name == "require_version"
 
     return False
+
 
 def _register_require_version(node):
     # Load the gi.require_version locally
     try:
         import gi
+
         gi.require_version(node.args[0].value, node.args[1].value)
     except Exception:
         pass
 
     return node
 
+
 MANAGER.register_failed_import_hook(_import_gi_module)
-MANAGER.register_transform(nodes.Call, _register_require_version, _looks_like_require_version)
+MANAGER.register_transform(
+    nodes.Call, _register_require_version, _looks_like_require_version
+)

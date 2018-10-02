@@ -13,25 +13,29 @@ PY34 = sys.version_info >= (3, 4)
 
 
 def _multiprocessing_transform():
-    module = astroid.parse('''
+    module = astroid.parse(
+        """
     from multiprocessing.managers import SyncManager
     def Manager():
         return SyncManager()
-    ''')
+    """
+    )
     if not PY34:
         return module
 
     # On Python 3.4, multiprocessing uses a getattr lookup inside contexts,
     # in order to get the attributes they need. Since it's extremely
     # dynamic, we use this approach to fake it.
-    node = astroid.parse('''
+    node = astroid.parse(
+        """
     from multiprocessing.context import DefaultContext, BaseContext
     default = DefaultContext()
     base = BaseContext()
-    ''')
+    """
+    )
     try:
-        context = next(node['default'].infer())
-        base = next(node['base'].infer())
+        context = next(node["default"].infer())
+        base = next(node["base"].infer())
     except exceptions.InferenceError:
         return module
 
@@ -50,7 +54,8 @@ def _multiprocessing_transform():
 
 
 def _multiprocessing_managers_transform():
-    return astroid.parse('''
+    return astroid.parse(
+        """
     import array
     import threading
     import multiprocessing.pool as pool
@@ -90,15 +95,18 @@ def _multiprocessing_managers_transform():
         Namespace = Namespace
         __enter__ = lambda self: self
         __exit__ = lambda *args: args
-        
+
         def start(self, initializer=None, initargs=None):
             pass
         def shutdown(self):
             pass
-    ''')
+    """
+    )
 
 
-astroid.register_module_extender(astroid.MANAGER, 'multiprocessing.managers',
-                                 _multiprocessing_managers_transform)
-astroid.register_module_extender(astroid.MANAGER, 'multiprocessing',
-                                 _multiprocessing_transform)
+astroid.register_module_extender(
+    astroid.MANAGER, "multiprocessing.managers", _multiprocessing_managers_transform
+)
+astroid.register_module_extender(
+    astroid.MANAGER, "multiprocessing", _multiprocessing_transform
+)

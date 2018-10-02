@@ -29,8 +29,8 @@ from astroid import transforms
 def safe_repr(obj):
     try:
         return repr(obj)
-    except Exception: # pylint: disable=broad-except
-        return '???'
+    except Exception:  # pylint: disable=broad-except
+        return "???"
 
 
 class AstroidManager:
@@ -40,7 +40,7 @@ class AstroidManager:
     Use the Borg pattern.
     """
 
-    name = 'astroid loader'
+    name = "astroid loader"
     brain = {}
 
     def __init__(self):
@@ -73,25 +73,32 @@ class AstroidManager:
             pass
         if modname is None:
             try:
-                modname = '.'.join(modutils.modpath_from_file(filepath))
+                modname = ".".join(modutils.modpath_from_file(filepath))
             except ImportError:
                 modname = filepath
-        if modname in self.astroid_cache and self.astroid_cache[modname].file == filepath:
+        if (
+            modname in self.astroid_cache
+            and self.astroid_cache[modname].file == filepath
+        ):
             return self.astroid_cache[modname]
         if source:
             from astroid.builder import AstroidBuilder
+
             return AstroidBuilder(self).file_build(filepath, modname)
         if fallback and modname:
             return self.ast_from_module_name(modname)
         raise exceptions.AstroidBuildingError(
-            'Unable to build an AST for {path}.', path=filepath)
+            "Unable to build an AST for {path}.", path=filepath
+        )
 
     def _build_stub_module(self, modname):
         from astroid.builder import AstroidBuilder
-        return AstroidBuilder(self).string_build('', modname)
+
+        return AstroidBuilder(self).string_build("", modname)
 
     def _build_namespace_module(self, modname, path):
         from astroid.builder import build_namespace_package_module
+
         return build_namespace_package_module(modname, path)
 
     def _can_load_extension(self, modname):
@@ -99,16 +106,17 @@ class AstroidManager:
             return True
         if modutils.is_standard_module(modname):
             return True
-        parts = modname.split('.')
+        parts = modname.split(".")
         return any(
-            '.'.join(parts[:x]) in self.extension_package_whitelist
-            for x in range(1, len(parts) + 1))
+            ".".join(parts[:x]) in self.extension_package_whitelist
+            for x in range(1, len(parts) + 1)
+        )
 
     def ast_from_module_name(self, modname, context_file=None):
         """given a module name, return the astroid object"""
         if modname in self.astroid_cache:
             return self.astroid_cache[modname]
-        if modname == '__main__':
+        if modname == "__main__":
             return self._build_stub_module(modname)
         old_cwd = os.getcwd()
         if context_file:
@@ -120,32 +128,41 @@ class AstroidManager:
                 if module is not None:
                     return module
 
-            elif found_spec.type in (spec.ModuleType.C_BUILTIN,
-                                     spec.ModuleType.C_EXTENSION):
-                if (found_spec.type == spec.ModuleType.C_EXTENSION
-                        and not self._can_load_extension(modname)):
+            elif found_spec.type in (
+                spec.ModuleType.C_BUILTIN,
+                spec.ModuleType.C_EXTENSION,
+            ):
+                if (
+                    found_spec.type == spec.ModuleType.C_EXTENSION
+                    and not self._can_load_extension(modname)
+                ):
                     return self._build_stub_module(modname)
                 try:
                     module = modutils.load_module_from_name(modname)
                 except Exception as ex:
                     raise exceptions.AstroidImportError(
-                        'Loading {modname} failed with:\n{error}',
-                        modname=modname, path=found_spec.location) from ex
+                        "Loading {modname} failed with:\n{error}",
+                        modname=modname,
+                        path=found_spec.location,
+                    ) from ex
                 return self.ast_from_module(module, modname)
 
             elif found_spec.type == spec.ModuleType.PY_COMPILED:
                 raise exceptions.AstroidImportError(
                     "Unable to load compiled module {modname}.",
-                    modname=modname, path=found_spec.location)
+                    modname=modname,
+                    path=found_spec.location,
+                )
 
             elif found_spec.type == spec.ModuleType.PY_NAMESPACE:
-                return self._build_namespace_module(modname,
-                                                    found_spec.submodule_search_locations)
+                return self._build_namespace_module(
+                    modname, found_spec.submodule_search_locations
+                )
 
             if found_spec.location is None:
                 raise exceptions.AstroidImportError(
-                    "Can't find a file for module {modname}.",
-                    modname=modname)
+                    "Can't find a file for module {modname}.", modname=modname
+                )
 
             return self.ast_from_file(found_spec.location, modname, fallback=False)
         except exceptions.AstroidBuildingError as e:
@@ -162,21 +179,23 @@ class AstroidManager:
         if zipimport is None:
             return None
         from astroid.builder import AstroidBuilder
+
         builder = AstroidBuilder(self)
-        for ext in ('.zip', '.egg'):
+        for ext in (".zip", ".egg"):
             try:
                 eggpath, resource = filepath.rsplit(ext + os.path.sep, 1)
             except ValueError:
                 continue
             try:
                 importer = zipimport.zipimporter(eggpath + ext)
-                zmodname = resource.replace(os.path.sep, '.')
+                zmodname = resource.replace(os.path.sep, ".")
                 if importer.is_package(resource):
-                    zmodname = zmodname + '.__init__'
-                module = builder.string_build(importer.get_source(resource),
-                                              zmodname, filepath)
+                    zmodname = zmodname + ".__init__"
+                module = builder.string_build(
+                    importer.get_source(resource), zmodname, filepath
+                )
                 return module
-            except Exception: # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except
                 continue
         return None
 
@@ -186,11 +205,14 @@ class AstroidManager:
         except KeyError:
             try:
                 value = modutils.file_info_from_modpath(
-                    modname.split('.'), context_file=contextfile)
+                    modname.split("."), context_file=contextfile
+                )
             except ImportError as ex:
                 value = exceptions.AstroidImportError(
-                    'Failed to import module {modname} with error:\n{error}.',
-                    modname=modname, error=ex)
+                    "Failed to import module {modname} with error:\n{error}.",
+                    modname=modname,
+                    error=ex,
+                )
             self._mod_file_cache[(modname, contextfile)] = value
         if isinstance(value, exceptions.AstroidBuildingError):
             raise value
@@ -209,6 +231,7 @@ class AstroidManager:
         except AttributeError:
             pass
         from astroid.builder import AstroidBuilder
+
         return AstroidBuilder(self).module_build(module, modname)
 
     def ast_from_class(self, klass, modname=None):
@@ -218,14 +241,17 @@ class AstroidManager:
                 modname = klass.__module__
             except AttributeError as exc:
                 raise exceptions.AstroidBuildingError(
-                    'Unable to get module for class {class_name}.',
-                    cls=klass, class_repr=safe_repr(klass), modname=modname) from exc
+                    "Unable to get module for class {class_name}.",
+                    cls=klass,
+                    class_repr=safe_repr(klass),
+                    modname=modname,
+                ) from exc
         modastroid = self.ast_from_module_name(modname)
-        return modastroid.getattr(klass.__name__)[0] # XXX
+        return modastroid.getattr(klass.__name__)[0]  # XXX
 
     def infer_ast_from_something(self, obj, context=None):
         """infer astroid for the given class"""
-        if hasattr(obj, '__class__') and not isinstance(obj, type):
+        if hasattr(obj, "__class__") and not isinstance(obj, type):
             klass = obj.__class__
         else:
             klass = obj
@@ -233,22 +259,31 @@ class AstroidManager:
             modname = klass.__module__
         except AttributeError as exc:
             raise exceptions.AstroidBuildingError(
-                'Unable to get module for {class_repr}.',
-                cls=klass, class_repr=safe_repr(klass)) from exc
+                "Unable to get module for {class_repr}.",
+                cls=klass,
+                class_repr=safe_repr(klass),
+            ) from exc
         except Exception as exc:
             raise exceptions.AstroidImportError(
-                'Unexpected error while retrieving module for {class_repr}:\n'
-                '{error}', cls=klass, class_repr=safe_repr(klass)) from exc
+                "Unexpected error while retrieving module for {class_repr}:\n"
+                "{error}",
+                cls=klass,
+                class_repr=safe_repr(klass),
+            ) from exc
         try:
             name = klass.__name__
         except AttributeError as exc:
             raise exceptions.AstroidBuildingError(
-                'Unable to get name for {class_repr}:\n',
-                cls=klass, class_repr=safe_repr(klass)) from exc
+                "Unable to get name for {class_repr}:\n",
+                cls=klass,
+                class_repr=safe_repr(klass),
+            ) from exc
         except Exception as exc:
             raise exceptions.AstroidImportError(
-                'Unexpected error while retrieving name for {class_repr}:\n'
-                '{error}', cls=klass, class_repr=safe_repr(klass)) from exc
+                "Unexpected error while retrieving name for {class_repr}:\n" "{error}",
+                cls=klass,
+                class_repr=safe_repr(klass),
+            ) from exc
         # take care, on living object __module__ is regularly wrong :(
         modastroid = self.ast_from_module_name(modname)
         if klass is obj:
@@ -280,5 +315,5 @@ class AstroidManager:
         # unittest_lookup.LookupTC.test_builtin_lookup fail depending on the
         # test order
         import astroid.raw_building
-        astroid.raw_building._astroid_bootstrapping(
-            astroid_builtin=astroid_builtin)
+
+        astroid.raw_building._astroid_bootstrapping(astroid_builtin=astroid_builtin)

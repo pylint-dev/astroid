@@ -35,19 +35,19 @@ from astroid import util
 # The name of the transient function that is used to
 # wrap expressions to be extracted when calling
 # extract_node.
-_TRANSIENT_FUNCTION = '__'
+_TRANSIENT_FUNCTION = "__"
 
 # The comment used to select a statement to be extracted
 # when calling extract_node.
-_STATEMENT_SELECTOR = '#@'
+_STATEMENT_SELECTOR = "#@"
 
 MANAGER = manager.AstroidManager()
 
 
 def open_source_file(filename):
-    with open(filename, 'rb') as byte_stream:
+    with open(filename, "rb") as byte_stream:
         encoding = detect_encoding(byte_stream.readline)[0]
-    stream = open(filename, 'r', newline=None, encoding=encoding)
+    stream = open(filename, "r", newline=None, encoding=encoding)
     data = stream.read()
     return stream, encoding, data
 
@@ -72,6 +72,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
     applied after the tree was built from source or from a live object,
     by default being True.
     """
+
     # pylint: disable=redefined-outer-name
     def __init__(self, manager=None, apply_transforms=True):
         super(AstroidBuilder, self).__init__()
@@ -81,11 +82,11 @@ class AstroidBuilder(raw_building.InspectBuilder):
     def module_build(self, module, modname=None):
         """Build an astroid from a living module instance."""
         node = None
-        path = getattr(module, '__file__', None)
+        path = getattr(module, "__file__", None)
         if path is not None:
             path_, ext = os.path.splitext(modutils._path_from_filename(path))
-            if ext in ('.py', '.pyc', '.pyo') and os.path.exists(path_ + '.py'):
-                node = self.file_build(path_ + '.py', modname)
+            if ext in (".py", ".pyc", ".pyo") and os.path.exists(path_ + ".py"):
+                node = self.file_build(path_ + ".py", modname)
         if node is None:
             # this is a built-in module
             # get a partial representation by introspection
@@ -105,33 +106,40 @@ class AstroidBuilder(raw_building.InspectBuilder):
             stream, encoding, data = open_source_file(path)
         except IOError as exc:
             raise exceptions.AstroidBuildingError(
-                'Unable to load file {path}:\n{error}',
-                modname=modname, path=path, error=exc) from exc
+                "Unable to load file {path}:\n{error}",
+                modname=modname,
+                path=path,
+                error=exc,
+            ) from exc
         except (SyntaxError, LookupError) as exc:
             raise exceptions.AstroidSyntaxError(
-                'Python 3 encoding specification error or unknown encoding:\n'
-                '{error}', modname=modname, path=path, error=exc) from exc
+                "Python 3 encoding specification error or unknown encoding:\n"
+                "{error}",
+                modname=modname,
+                path=path,
+                error=exc,
+            ) from exc
         except UnicodeError as exc:  # wrong encoding
             # detect_encoding returns utf-8 if no encoding specified
             raise exceptions.AstroidBuildingError(
-                'Wrong or no encoding specified for {filename}.',
-                filename=path) from exc
+                "Wrong or no encoding specified for {filename}.", filename=path
+            ) from exc
         with stream:
             # get module name if necessary
             if modname is None:
                 try:
-                    modname = '.'.join(modutils.modpath_from_file(path))
+                    modname = ".".join(modutils.modpath_from_file(path))
                 except ImportError:
                     modname = os.path.splitext(os.path.basename(path))[0]
             # build astroid representation
             module = self._data_build(data, modname, path)
             return self._post_build(module, encoding)
 
-    def string_build(self, data, modname='', path=None):
+    def string_build(self, data, modname="", path=None):
         """Build astroid from source code string."""
         module = self._data_build(data, modname, path)
-        module.file_bytes = data.encode('utf-8')
-        return self._post_build(module, 'utf-8')
+        module.file_bytes = data.encode("utf-8")
+        return self._post_build(module, "utf-8")
 
     def _post_build(self, module, encoding):
         """Handles encoding and delayed nodes after a module has been built"""
@@ -139,7 +147,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         self._manager.cache_module(module)
         # post tree building steps after we stored the module in the cache:
         for from_node in module._import_from_nodes:
-            if from_node.modname == '__future__':
+            if from_node.modname == "__future__":
                 for symbol, _ in from_node.names:
                     module.future_imports.add(symbol)
             self.add_from_names_to_locals(from_node)
@@ -155,20 +163,27 @@ class AstroidBuilder(raw_building.InspectBuilder):
     def _data_build(self, data, modname, path):
         """Build tree node from data and add some informations"""
         try:
-            node = _parse(data + '\n')
+            node = _parse(data + "\n")
         except (TypeError, ValueError, SyntaxError) as exc:
             raise exceptions.AstroidSyntaxError(
-                'Parsing Python code failed:\n{error}',
-                source=data, modname=modname, path=path, error=exc) from exc
+                "Parsing Python code failed:\n{error}",
+                source=data,
+                modname=modname,
+                path=path,
+                error=exc,
+            ) from exc
         if path is not None:
             node_file = os.path.abspath(path)
         else:
-            node_file = '<?>'
-        if modname.endswith('.__init__'):
+            node_file = "<?>"
+        if modname.endswith(".__init__"):
             modname = modname[:-9]
             package = True
         else:
-            package = path is not None and os.path.splitext(os.path.basename(path))[0] == '__init__'
+            package = (
+                path is not None
+                and os.path.splitext(os.path.basename(path))[0] == "__init__"
+            )
         builder = rebuilder.TreeRebuilder(self._manager)
         module = builder.visit_module(node, modname, node_file, package)
         module._import_from_nodes = builder._import_from_nodes
@@ -181,11 +196,12 @@ class AstroidBuilder(raw_building.InspectBuilder):
         Resort the locals if coming from a delayed node
         """
         _key_func = lambda node: node.fromlineno
+
         def sort_locals(my_list):
             my_list.sort(key=_key_func)
 
         for (name, asname) in node.names:
-            if name == '*':
+            if name == "*":
                 try:
                     imported = node.do_import_module()
                 except exceptions.AstroidBuildingError:
@@ -228,8 +244,11 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 if node in values:
                     continue
                 # get assign in __init__ first XXX useful ?
-                if (frame.name == '__init__' and values and
-                        values[0].frame().name != '__init__'):
+                if (
+                    frame.name == "__init__"
+                    and values
+                    and values[0].frame().name != "__init__"
+                ):
                     values.insert(0, node)
                 else:
                     values.append(node)
@@ -238,10 +257,10 @@ class AstroidBuilder(raw_building.InspectBuilder):
 
 
 def build_namespace_package_module(name, path):
-    return nodes.Module(name, doc='', path=path, package=True)
+    return nodes.Module(name, doc="", path=path, package=True)
 
 
-def parse(code, module_name='', path=None, apply_transforms=True):
+def parse(code, module_name="", path=None, apply_transforms=True):
     """Parses a source string in order to obtain an astroid AST from it
 
     :param str code: The code for the module.
@@ -252,8 +271,7 @@ def parse(code, module_name='', path=None, apply_transforms=True):
         don't want the default transforms to be applied.
     """
     code = textwrap.dedent(code)
-    builder = AstroidBuilder(manager=MANAGER,
-                             apply_transforms=apply_transforms)
+    builder = AstroidBuilder(manager=MANAGER, apply_transforms=apply_transforms)
     return builder.string_build(code, modname=module_name, path=path)
 
 
@@ -270,9 +288,11 @@ def _extract_expressions(node):
     :yields: The sequence of wrapped expressions on the modified tree
     expression can be found.
     """
-    if (isinstance(node, nodes.Call)
-            and isinstance(node.func, nodes.Name)
-            and node.func.name == _TRANSIENT_FUNCTION):
+    if (
+        isinstance(node, nodes.Call)
+        and isinstance(node.func, nodes.Name)
+        and node.func.name == _TRANSIENT_FUNCTION
+    ):
         real_expr = node.args[0]
         real_expr.parent = node.parent
         # Search for node in all _astng_fields (the fields checked when
@@ -329,7 +349,7 @@ def _find_statement_by_line(node, line):
     return None
 
 
-def extract_node(code, module_name=''):
+def extract_node(code, module_name=""):
     """Parses some Python code as a module and extracts a designated AST node.
 
     Statements:
@@ -383,6 +403,7 @@ def extract_node(code, module_name=''):
     :returns: The designated node from the parse tree, or a list of nodes.
     :rtype: astroid.bases.NodeNG, or a list of nodes.
     """
+
     def _extract(node):
         if isinstance(node, nodes.Expr):
             return node.value
@@ -396,7 +417,7 @@ def extract_node(code, module_name=''):
 
     tree = parse(code, module_name=module_name)
     if not tree.body:
-        raise ValueError('Empty tree, cannot extract from it')
+        raise ValueError("Empty tree, cannot extract from it")
 
     extracted = []
     if requested_lines:

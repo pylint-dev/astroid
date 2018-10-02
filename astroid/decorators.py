@@ -24,7 +24,7 @@ from astroid import util
 @wrapt.decorator
 def cached(func, instance, args, kwargs):
     """Simple decorator to cache result of method calls without args."""
-    cache = getattr(instance, '__cache', None)
+    cache = getattr(instance, "__cache", None)
     if cache is None:
         instance.__cache = cache = {}
     try:
@@ -48,20 +48,22 @@ class cachedproperty:
     .. _pyramid: http://pypi.python.org/pypi/pyramid
     .. _mercurial: http://pypi.python.org/pypi/Mercurial
     """
-    __slots__ = ('wrapped',)
+
+    __slots__ = ("wrapped",)
 
     def __init__(self, wrapped):
         try:
             wrapped.__name__
         except AttributeError as exc:
-            raise TypeError('%s must have a __name__ attribute' % wrapped) from exc
+            raise TypeError("%s must have a __name__ attribute" % wrapped) from exc
         self.wrapped = wrapped
 
     @property
     def __doc__(self):
-        doc = getattr(self.wrapped, '__doc__', None)
-        return ('<wrapped by the cachedproperty decorator>%s'
-                % ('\n%s' % doc if doc else ''))
+        doc = getattr(self.wrapped, "__doc__", None)
+        return "<wrapped by the cachedproperty decorator>%s" % (
+            "\n%s" % doc if doc else ""
+        )
 
     def __get__(self, inst, objtype=None):
         if inst is None:
@@ -77,6 +79,7 @@ def path_wrapper(func):
     Used to stop inference if the node has already been looked
     at for a given `InferenceContext` to prevent infinite recursion
     """
+
     @functools.wraps(func)
     def wrapped(node, context=None, _func=func, **kwargs):
         """wrapper function handling context"""
@@ -91,7 +94,7 @@ def path_wrapper(func):
             while True:
                 res = next(generator)
                 # unproxy only true instance, not const, tuple, dict...
-                if res.__class__.__name__ == 'Instance':
+                if res.__class__.__name__ == "Instance":
                     ares = res._proxied
                 else:
                     ares = res
@@ -131,4 +134,5 @@ def raise_if_nothing_inferred(func, instance, args, kwargs):
                 raise exceptions.InferenceError(**error.args[0])
             else:
                 raise exceptions.InferenceError(
-                    'StopIteration raised without any error information.')
+                    "StopIteration raised without any error information."
+                )

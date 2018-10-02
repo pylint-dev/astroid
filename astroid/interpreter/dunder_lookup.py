@@ -22,15 +22,11 @@ def _lookup_in_mro(node, name):
     attrs = node.locals.get(name, [])
 
     nodes = itertools.chain.from_iterable(
-        ancestor.locals.get(name, [])
-        for ancestor in node.ancestors(recurs=True)
+        ancestor.locals.get(name, []) for ancestor in node.ancestors(recurs=True)
     )
     values = list(itertools.chain(attrs, nodes))
     if not values:
-        raise exceptions.AttributeInferenceError(
-            attribute=name,
-            target=node
-        )
+        raise exceptions.AttributeInferenceError(attribute=name, target=node)
 
     return values
 
@@ -42,30 +38,22 @@ def lookup(node, name):
     will be returned. Otherwise, `astroid.AttributeInferenceError`
     is going to be raised.
     """
-    if isinstance(node, (astroid.List,
-                         astroid.Tuple,
-                         astroid.Const,
-                         astroid.Dict,
-                         astroid.Set)):
+    if isinstance(
+        node, (astroid.List, astroid.Tuple, astroid.Const, astroid.Dict, astroid.Set)
+    ):
         return _builtin_lookup(node, name)
     if isinstance(node, astroid.Instance):
         return _lookup_in_mro(node, name)
     if isinstance(node, astroid.ClassDef):
         return _class_lookup(node, name)
 
-    raise exceptions.AttributeInferenceError(
-        attribute=name,
-        target=node
-    )
+    raise exceptions.AttributeInferenceError(attribute=name, target=node)
 
 
 def _class_lookup(node, name):
     metaclass = node.metaclass()
     if metaclass is None:
-        raise exceptions.AttributeInferenceError(
-            attribute=name,
-            target=node
-        )
+        raise exceptions.AttributeInferenceError(attribute=name, target=node)
 
     return _lookup_in_mro(metaclass, name)
 
@@ -73,9 +61,6 @@ def _class_lookup(node, name):
 def _builtin_lookup(node, name):
     values = node.locals.get(name, [])
     if not values:
-        raise exceptions.AttributeInferenceError(
-            attribute=name,
-            target=node
-        )
+        raise exceptions.AttributeInferenceError(attribute=name, target=node)
 
     return values

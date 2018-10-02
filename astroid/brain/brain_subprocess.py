@@ -20,8 +20,8 @@ PY33 = sys.version_info >= (3, 3)
 
 def _subprocess_transform():
     if six.PY3:
-        communicate = (bytes('string', 'ascii'), bytes('string', 'ascii'))
-        communicate_signature = 'def communicate(self, input=None, timeout=None)'
+        communicate = (bytes("string", "ascii"), bytes("string", "ascii"))
+        communicate_signature = "def communicate(self, input=None, timeout=None)"
         if PY36:
             init = """
             def __init__(self, args, bufsize=0, executable=None,
@@ -44,8 +44,8 @@ def _subprocess_transform():
                 pass
             """
     else:
-        communicate = ('string', 'string')
-        communicate_signature = 'def communicate(self, input=None)'
+        communicate = ("string", "string")
+        communicate_signature = "def communicate(self, input=None)"
         init = """
         def __init__(self, args, bufsize=0, executable=None,
                      stdin=None, stdout=None, stderr=None,
@@ -55,20 +55,21 @@ def _subprocess_transform():
             pass
         """
     if PY34:
-        wait_signature = 'def wait(self, timeout=None)'
+        wait_signature = "def wait(self, timeout=None)"
     else:
-        wait_signature = 'def wait(self)'
+        wait_signature = "def wait(self)"
     if six.PY3:
-        ctx_manager = '''
+        ctx_manager = """
         def __enter__(self): return self
         def __exit__(self, *args): pass
-        '''
+        """
     else:
-        ctx_manager = ''
+        ctx_manager = ""
     py3_args = ""
     if PY33:
         py3_args = "args = []"
-    code = textwrap.dedent('''
+    code = textwrap.dedent(
+        """
     class Popen(object):
         returncode = pid = 0
         stdin = stdout = stderr = file()
@@ -87,17 +88,20 @@ def _subprocess_transform():
         def kill(self):
             pass
         %(ctx_manager)s
-       ''' % {'communicate': communicate,
-              'communicate_signature': communicate_signature,
-              'wait_signature': wait_signature,
-              'ctx_manager': ctx_manager,
-              'py3_args': py3_args,
-              })
+       """
+        % {
+            "communicate": communicate,
+            "communicate_signature": communicate_signature,
+            "wait_signature": wait_signature,
+            "ctx_manager": ctx_manager,
+            "py3_args": py3_args,
+        }
+    )
 
     init_lines = textwrap.dedent(init).splitlines()
-    indented_init = '\n'.join([' ' * 4 + line for line in init_lines])
+    indented_init = "\n".join([" " * 4 + line for line in init_lines])
     code += indented_init
     return astroid.parse(code)
 
 
-astroid.register_module_extender(astroid.MANAGER, 'subprocess', _subprocess_transform)
+astroid.register_module_extender(astroid.MANAGER, "subprocess", _subprocess_transform)

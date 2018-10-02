@@ -20,7 +20,14 @@ class InferenceContext:
     Account for already visited nodes to infinite stop infinite recursion
     """
 
-    __slots__ = ('path', 'lookupname', 'callcontext', 'boundnode', 'inferred', 'extra_context')
+    __slots__ = (
+        "path",
+        "lookupname",
+        "callcontext",
+        "boundnode",
+        "inferred",
+        "extra_context",
+    )
 
     def __init__(self, path=None, inferred=None):
         self.path = path or set()
@@ -117,16 +124,18 @@ class InferenceContext:
         self.path = path
 
     def __str__(self):
-        state = ('%s=%s' % (field, pprint.pformat(getattr(self, field),
-                                                  width=80 - len(field)))
-                 for field in self.__slots__)
-        return '%s(%s)' % (type(self).__name__, ',\n    '.join(state))
+        state = (
+            "%s=%s"
+            % (field, pprint.pformat(getattr(self, field), width=80 - len(field)))
+            for field in self.__slots__
+        )
+        return "%s(%s)" % (type(self).__name__, ",\n    ".join(state))
 
 
 class CallContext:
     """Holds information for a call site."""
 
-    __slots__ = ('args', 'keywords')
+    __slots__ = ("args", "keywords")
 
     def __init__(self, args, keywords=None):
         """

@@ -13,16 +13,18 @@ import pkg_resources
 
 from astroid import builder
 from astroid import MANAGER
-from astroid.bases import  BUILTINS
+from astroid.bases import BUILTINS
 from astroid import tests
 
 
-DATA_DIR = os.path.join('testdata', 'python{}'.format(sys.version_info[0]))
-RESOURCE_PATH = os.path.join(tests.__path__[0], DATA_DIR, 'data')
+DATA_DIR = os.path.join("testdata", "python{}".format(sys.version_info[0]))
+RESOURCE_PATH = os.path.join(tests.__path__[0], DATA_DIR, "data")
+
 
 def find(name):
     return pkg_resources.resource_filename(
-        'astroid.tests', os.path.normpath(os.path.join(DATA_DIR, name)))
+        "astroid.tests", os.path.normpath(os.path.join(DATA_DIR, name))
+    )
 
 
 def build_file(path, modname=None):
@@ -31,11 +33,11 @@ def build_file(path, modname=None):
 
 class SysPathSetup:
     def setUp(self):
-        sys.path.insert(0, find(''))
+        sys.path.insert(0, find(""))
 
     def tearDown(self):
         del sys.path[0]
-        datadir = find('')
+        datadir = find("")
         for key in list(sys.path_importer_cache):
             if key.startswith(datadir):
                 del sys.path_importer_cache[key]

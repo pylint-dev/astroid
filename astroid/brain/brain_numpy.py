@@ -12,7 +12,8 @@ import astroid
 
 
 def numpy_random_mtrand_transform():
-    return astroid.parse('''
+    return astroid.parse(
+        """
     def beta(a, b, size=None): pass
     def binomial(n, p, size=None): pass
     def bytes(length): pass
@@ -60,13 +61,17 @@ def numpy_random_mtrand_transform():
     def wald(mean, scale, size=None): pass
     def weibull(a, size=None): pass
     def zipf(a, size=None): pass
-    ''')
+    """
+    )
 
 
 def numpy_core_umath_transform():
-    ufunc_optional_keyword_arguments = ("""out=None, where=True, casting='same_kind', order='K', """
-                                        """dtype=None, subok=True""")
-    return astroid.parse('''
+    ufunc_optional_keyword_arguments = (
+        """out=None, where=True, casting='same_kind', order='K', """
+        """dtype=None, subok=True"""
+    )
+    return astroid.parse(
+        """
     # Constants
     e = 2.718281828459045
     euler_gamma = 0.5772156649015329
@@ -114,7 +119,7 @@ def numpy_core_umath_transform():
     def tan(x, {opt_args:s}): pass
     def tanh(x, {opt_args:s}): pass
     def trunc(x, {opt_args:s}): pass
-    
+
     # Two args functions with optional kwargs
     def bitwise_and(x1, x2, {opt_args:s}): pass
     def bitwise_or(x1, x2, {opt_args:s}): pass
@@ -146,11 +151,15 @@ def numpy_core_umath_transform():
     def right_shift(x1, x2, {opt_args:s}): pass
     def subtract(x1, x2, {opt_args:s}): pass
     def true_divide(x1, x2, {opt_args:s}): pass
-    '''.format(opt_args=ufunc_optional_keyword_arguments))
+    """.format(
+            opt_args=ufunc_optional_keyword_arguments
+        )
+    )
 
 
 def numpy_core_numerictypes_transform():
-    return astroid.parse('''
+    return astroid.parse(
+        """
     # different types defined in numerictypes.py
     class generic(object):
         def __init__(self, value):
@@ -349,7 +358,7 @@ def numpy_core_numerictypes_transform():
     class bool_(generic): pass
     class number(generic): pass
     class datetime64(generic): pass
-   
+
 
     class void(flexible):
         def __init__(self, *args, **kwargs):
@@ -375,7 +384,7 @@ def numpy_core_numerictypes_transform():
     class str_(str, character):
         def maketrans(self, x, y=None, z=None): pass
 
-    
+
     class bytes_(bytes, character):
         def fromhex(self, string): pass
         def maketrans(self, frm, to): pass
@@ -394,9 +403,9 @@ def numpy_core_numerictypes_transform():
 
 
     class float64(floating, float):
-        def fromhex(self, string): pass 
+        def fromhex(self, string): pass
 
-        
+
     class uint64(unsignedinteger): pass
     class complex64(complexfloating): pass
     class int16(signedinteger): pass
@@ -453,20 +462,27 @@ def numpy_core_numerictypes_transform():
     unicode_ = str_
     ushort = uint16
     void0 = void
-    ''')
+    """
+    )
 
 
 def numpy_funcs():
-    return astroid.parse('''
+    return astroid.parse(
+        """
     import builtins
     def sum(a, axis=None, dtype=None, out=None, keepdims=None):
         return builtins.sum(a)
-    ''')
+    """
+    )
 
 
-astroid.register_module_extender(astroid.MANAGER, 'numpy.core.umath', numpy_core_umath_transform)
-astroid.register_module_extender(astroid.MANAGER, 'numpy.random.mtrand',
-                                 numpy_random_mtrand_transform)
-astroid.register_module_extender(astroid.MANAGER, 'numpy.core.numerictypes',
-                                 numpy_core_numerictypes_transform)
-astroid.register_module_extender(astroid.MANAGER, 'numpy', numpy_funcs)
+astroid.register_module_extender(
+    astroid.MANAGER, "numpy.core.umath", numpy_core_umath_transform
+)
+astroid.register_module_extender(
+    astroid.MANAGER, "numpy.random.mtrand", numpy_random_mtrand_transform
+)
+astroid.register_module_extender(
+    astroid.MANAGER, "numpy.core.numerictypes", numpy_core_numerictypes_transform
+)
+astroid.register_module_extender(astroid.MANAGER, "numpy", numpy_funcs)

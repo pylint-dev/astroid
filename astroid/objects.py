@@ -29,22 +29,22 @@ from astroid import util
 
 
 BUILTINS = builtins.__name__
-objectmodel = util.lazy_import('interpreter.objectmodel')
+objectmodel = util.lazy_import("interpreter.objectmodel")
 
 
 class FrozenSet(node_classes._BaseContainer):
     """class representing a FrozenSet composite node"""
 
     def pytype(self):
-        return '%s.frozenset' % BUILTINS
+        return "%s.frozenset" % BUILTINS
 
     def _infer(self, context=None):
         yield self
 
     @decorators.cachedproperty
-    def _proxied(self): # pylint: disable=method-hidden
+    def _proxied(self):  # pylint: disable=method-hidden
         ast_builtins = MANAGER.astroid_cache[BUILTINS]
-        return ast_builtins.getattr('frozenset')[0]
+        return ast_builtins.getattr("frozenset")[0]
 
 
 class Super(node_classes.NodeNG):
@@ -59,6 +59,7 @@ class Super(node_classes.NodeNG):
     *self_class* is the class where the super call is, while
     *scope* is the function where the super call is.
     """
+
     # pylint: disable=unnecessary-lambda
     special_attributes = util.lazy_descriptor(lambda: objectmodel.SuperModel())
 
@@ -78,43 +79,49 @@ class Super(node_classes.NodeNG):
         if not isinstance(self.mro_pointer, scoped_nodes.ClassDef):
             raise exceptions.SuperError(
                 "The first argument to super must be a subtype of "
-                "type, not {mro_pointer}.", super_=self)
+                "type, not {mro_pointer}.",
+                super_=self,
+            )
 
         if isinstance(self.type, scoped_nodes.ClassDef):
             # `super(type, type)`, most likely in a class method.
             self._class_based = True
             mro_type = self.type
         else:
-            mro_type = getattr(self.type, '_proxied', None)
+            mro_type = getattr(self.type, "_proxied", None)
             if not isinstance(mro_type, (bases.Instance, scoped_nodes.ClassDef)):
                 raise exceptions.SuperError(
                     "The second argument to super must be an "
                     "instance or subtype of type, not {type}.",
-                    super_=self)
+                    super_=self,
+                )
 
         if not mro_type.newstyle:
-            raise exceptions.SuperError("Unable to call super on old-style classes.", super_=self)
+            raise exceptions.SuperError(
+                "Unable to call super on old-style classes.", super_=self
+            )
 
         mro = mro_type.mro()
         if self.mro_pointer not in mro:
             raise exceptions.SuperError(
                 "The second argument to super must be an "
                 "instance or subtype of type, not {type}.",
-                super_=self)
+                super_=self,
+            )
 
         index = mro.index(self.mro_pointer)
-        return mro[index + 1:]
+        return mro[index + 1 :]
 
     @decorators.cachedproperty
     def _proxied(self):
         ast_builtins = MANAGER.astroid_cache[BUILTINS]
-        return ast_builtins.getattr('super')[0]
+        return ast_builtins.getattr("super")[0]
 
     def pytype(self):
-        return '%s.super' % BUILTINS
+        return "%s.super" % BUILTINS
 
     def display_type(self):
-        return 'Super of'
+        return "Super of"
 
     @property
     def name(self):
@@ -137,15 +144,27 @@ class Super(node_classes.NodeNG):
         # leak out as is from this function.
         except exceptions.SuperError as exc:
             raise exceptions.AttributeInferenceError(
-                ('Lookup for {name} on {target!r} because super call {super!r} '
-                 'is invalid.'),
-                target=self, attribute=name, context=context, super_=exc.super_) from exc
+                (
+                    "Lookup for {name} on {target!r} because super call {super!r} "
+                    "is invalid."
+                ),
+                target=self,
+                attribute=name,
+                context=context,
+                super_=exc.super_,
+            ) from exc
         except exceptions.MroError as exc:
             raise exceptions.AttributeInferenceError(
-                ('Lookup for {name} on {target!r} failed because {cls!r} has an '
-                 'invalid MRO.'),
-                target=self, attribute=name, context=context, mros=exc.mros,
-                cls=exc.cls) from exc
+                (
+                    "Lookup for {name} on {target!r} failed because {cls!r} has an "
+                    "invalid MRO."
+                ),
+                target=self,
+                attribute=name,
+                context=context,
+                mros=exc.mros,
+                cls=exc.cls,
+            ) from exc
         found = False
         for cls in mro:
             if name not in cls.locals:
@@ -159,11 +178,11 @@ class Super(node_classes.NodeNG):
 
                 # We can obtain different descriptors from a super depending
                 # on what we are accessing and where the super call is.
-                if inferred.type == 'classmethod':
+                if inferred.type == "classmethod":
                     yield bases.BoundMethod(inferred, cls)
-                elif self._scope.type == 'classmethod' and inferred.type == 'method':
+                elif self._scope.type == "classmethod" and inferred.type == "method":
                     yield inferred
-                elif self._class_based or inferred.type == 'staticmethod':
+                elif self._class_based or inferred.type == "staticmethod":
                     yield inferred
                 elif bases._is_property(inferred):
                     # TODO: support other descriptors as well.
@@ -175,9 +194,9 @@ class Super(node_classes.NodeNG):
                     yield bases.BoundMethod(inferred, cls)
 
         if not found:
-            raise exceptions.AttributeInferenceError(target=self,
-                                                     attribute=name,
-                                                     context=context)
+            raise exceptions.AttributeInferenceError(
+                target=self, attribute=name, context=context
+            )
 
     def getattr(self, name, context=None):
         return list(self.igetattr(name, context=context))
@@ -192,7 +211,9 @@ class ExceptionInstance(bases.Instance):
     """
 
     # pylint: disable=unnecessary-lambda
-    special_attributes = util.lazy_descriptor(lambda: objectmodel.ExceptionInstanceModel())
+    special_attributes = util.lazy_descriptor(
+        lambda: objectmodel.ExceptionInstanceModel()
+    )
 
 
 class DictInstance(bases.Instance):
@@ -222,6 +243,7 @@ class DictKeys(bases.Proxy):
 class DictValues(bases.Proxy):
     __str__ = node_classes.NodeNG.__str__
     __repr__ = node_classes.NodeNG.__repr__
+
 
 # TODO: Hack to solve the circular import problem between node_classes and objects
 # This is not needed in 2.0, which has a cleaner design overall

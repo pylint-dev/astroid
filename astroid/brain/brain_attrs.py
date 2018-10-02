@@ -11,11 +11,12 @@ import astroid
 from astroid import MANAGER
 
 
-ATTR_IB = 'attr.ib'
+ATTR_IB = "attr.ib"
 
 
 def is_decorated_with_attrs(
-        node, decorator_names=('attr.s', 'attr.attrs', 'attr.attributes')):
+    node, decorator_names=("attr.s", "attr.attrs", "attr.attributes")
+):
     """Return True if a decorated node has
     an attr decorator applied."""
     if not node.decorators:
@@ -49,12 +50,11 @@ def attr_attributes_transform(node):
             rhs_node = astroid.Unknown(
                 lineno=cdefbodynode.lineno,
                 col_offset=cdefbodynode.col_offset,
-                parent=cdefbodynode
+                parent=cdefbodynode,
             )
             node.locals[target.name] = [rhs_node]
 
 
 MANAGER.register_transform(
-    astroid.ClassDef,
-    attr_attributes_transform,
-    is_decorated_with_attrs)
+    astroid.ClassDef, attr_attributes_transform, is_decorated_with_attrs
+)

@@ -11,7 +11,7 @@ except ImportError:
     pass
 
 
-FunctionType = namedtuple('FunctionType', ['argtypes', 'returns'])
+FunctionType = namedtuple("FunctionType", ["argtypes", "returns"])
 
 
 def _get_parser_module(parse_python_two: bool = False):
@@ -26,8 +26,7 @@ def _get_parser_module(parse_python_two: bool = False):
     return parser_module or ast
 
 
-def _parse(string: str,
-           parse_python_two: bool = False):
+def _parse(string: str, parse_python_two: bool = False):
     return _get_parser_module(parse_python_two=parse_python_two).parse(string)
 
 
@@ -37,7 +36,4 @@ def parse_function_type_comment(type_comment: str) -> Optional[FunctionType]:
         return None
 
     func_type = _ast_py3.parse(type_comment, "<type_comment>", "func_type")
-    return FunctionType(
-        argtypes=func_type.argtypes,
-        returns=func_type.returns,
-    )
+    return FunctionType(argtypes=func_type.argtypes, returns=func_type.returns)
