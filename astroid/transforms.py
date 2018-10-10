@@ -7,6 +7,7 @@
 
 
 import collections
+from functools import lru_cache
 
 
 class TransformVisitor:
@@ -18,9 +19,12 @@ class TransformVisitor:
     transforms for each encountered node.
     """
 
+    TRANSFORM_MAX_CACHE_SIZE = 10000
+
     def __init__(self):
         self.transforms = collections.defaultdict(list)
 
+    @lru_cache(maxsize=TRANSFORM_MAX_CACHE_SIZE)
     def _transform(self, node):
         """Call matching transforms for the given node if any and return the
         transformed node.
@@ -45,10 +49,11 @@ class TransformVisitor:
 
     def _visit(self, node):
         if hasattr(node, "_astroid_fields"):
-            for field in node._astroid_fields:
-                value = getattr(node, field)
+            for name in node._astroid_fields:
+                value = getattr(node, name)
                 visited = self._visit_generic(value)
-                setattr(node, field, visited)
+                if visited != value:
+                    setattr(node, name, visited)
         return self._transform(node)
 
     def _visit_generic(self, node):
@@ -56,6 +61,8 @@ class TransformVisitor:
             return [self._visit_generic(child) for child in node]
         if isinstance(node, tuple):
             return tuple(self._visit_generic(child) for child in node)
+        if not node or isinstance(node, str):
+            return node
 
         return self._visit(node)
 
