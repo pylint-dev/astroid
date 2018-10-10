@@ -233,13 +233,12 @@ def _resolve_looppart(parts, assign_path, context):
     for part in parts:
         if part is util.Uninferable:
             continue
-        # XXX handle __iter__ and log potentially detected errors
         if not hasattr(part, "itered"):
             continue
         try:
             itered = part.itered()
         except TypeError:
-            continue  # XXX log error
+            continue
         for stmt in itered:
             index_node = nodes.Const(index)
             try:
@@ -418,8 +417,6 @@ def _resolve_assignment_parts(parts, assign_path, context):
             index_node = nodes.Const(index)
             try:
                 assigned = part.getitem(index_node, context)
-            # XXX raise a specific exception to avoid potential hiding of
-            # unexpected exception ?
             except (exceptions.AstroidTypeError, exceptions.AstroidIndexError):
                 return
 
@@ -541,8 +538,7 @@ def with_assigned_stmts(self, node=None, context=None, assign_path=None):
     except StopIteration:
         return None
     if assign_path is None:
-        for result in _infer_context_manager(self, mgr, context):
-            yield result
+        yield from _infer_context_manager(self, mgr, context)
     else:
         for result in _infer_context_manager(self, mgr, context):
             # Walk the assign_path and get the item at the final index.
