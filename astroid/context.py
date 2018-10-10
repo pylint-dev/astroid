@@ -8,8 +8,6 @@
 
 """Various context related utilities, including inference and call contexts."""
 
-import contextlib
-import copy
 import pprint
 from typing import Optional
 
@@ -101,7 +99,7 @@ class InferenceContext:
         starts with the same context but diverge as each side is inferred
         so the InferenceContext will need be cloned"""
         # XXX copy lookupname/callcontext ?
-        clone = InferenceContext(copy.copy(self.path), inferred=self.inferred)
+        clone = InferenceContext(set(self.path), inferred=self.inferred)
         clone.callcontext = self.callcontext
         clone.boundnode = self.boundnode
         clone.extra_context = self.extra_context
@@ -117,12 +115,6 @@ class InferenceContext:
             yield result
 
         self.inferred[key] = tuple(results)
-
-    @contextlib.contextmanager
-    def restore_path(self):
-        path = set(self.path)
-        yield
-        self.path = path
 
     def __str__(self):
         state = (
