@@ -2795,6 +2795,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         yield from self.bases
         yield from self.body
 
+    @decorators_mod.cached
     def _get_assign_nodes(self):
-        for child_node in self.body:
-            yield from child_node._get_assign_nodes()
+        children_assign_nodes = (
+            child_node._get_assign_nodes() for child_node in self.body
+        )
+        return list(itertools.chain.from_iterable(children_assign_nodes))

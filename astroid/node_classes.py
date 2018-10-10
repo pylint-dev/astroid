@@ -707,8 +707,9 @@ class NodeNG:
                 continue
             yield from child_node.nodes_of_class(klass, skip_klass)
 
+    @decorators.cached
     def _get_assign_nodes(self):
-        yield from ()
+        return []
 
     def _get_name_nodes(self):
         for child_node in self.get_children():
@@ -1827,10 +1828,9 @@ class Assign(mixins.AssignTypeMixin, Statement):
 
         yield self.value
 
+    @decorators.cached
     def _get_assign_nodes(self):
-        yield self
-
-        yield from self.value._get_assign_nodes()
+        return [self] + list(self.value._get_assign_nodes())
 
     def _get_yield_nodes_skip_lambdas(self):
         yield from self.value._get_yield_nodes_skip_lambdas()

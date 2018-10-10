@@ -12,6 +12,7 @@
 
 """This module contains some mixins for the different nodes.
 """
+import itertools
 
 from astroid import decorators
 from astroid import exceptions
@@ -142,10 +143,14 @@ class MultiLineBlockMixin:
                     continue
                 yield from child_node._get_yield_nodes_skip_lambdas()
 
+    @decorators.cached
     def _get_assign_nodes(self):
-        for block in self._multi_line_blocks:
-            for child_node in block:
-                yield from child_node._get_assign_nodes()
+        children_assign_nodes = (
+            child_node._get_assign_nodes()
+            for block in self._multi_line_blocks
+            for child_node in block
+        )
+        return list(itertools.chain.from_iterable(children_assign_nodes))
 
 
 class NoChildrenMixin:
