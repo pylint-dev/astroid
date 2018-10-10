@@ -149,7 +149,7 @@ def _looks_like_lru_cache(node):
             continue
 
         func = helpers.safe_infer(decorator.func)
-        if func in (None, astroid.Uninferable):
+        if not func:
             continue
 
         if isinstance(func, astroid.FunctionDef) and func.qname() == LRU_CACHE:

@@ -66,7 +66,7 @@ def _infer_sequence_helper(node, context=None):
     for elt in node.elts:
         if isinstance(elt, nodes.Starred):
             starred = helpers.safe_infer(elt.value, context)
-            if starred in (None, util.Uninferable):
+            if not starred:
                 raise exceptions.InferenceError(node=node, context=context)
             if not hasattr(starred, "elts"):
                 raise exceptions.InferenceError(node=node, context=context)
@@ -135,7 +135,7 @@ def _infer_map(node, context):
     for name, value in node.items:
         if isinstance(name, nodes.DictUnpack):
             double_starred = helpers.safe_infer(value, context)
-            if double_starred in (None, util.Uninferable):
+            if not double_starred:
                 raise exceptions.InferenceError
             if not isinstance(double_starred, nodes.Dict):
                 raise exceptions.InferenceError(node=node, context=context)
@@ -144,7 +144,7 @@ def _infer_map(node, context):
         else:
             key = helpers.safe_infer(name, context=context)
             value = helpers.safe_infer(value, context=context)
-            if any(elem in (None, util.Uninferable) for elem in (key, value)):
+            if any(not elem for elem in (key, value)):
                 raise exceptions.InferenceError(node=node, context=context)
             values = _update_with_replacement(values, {key: value})
     return values

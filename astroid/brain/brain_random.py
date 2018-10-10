@@ -35,7 +35,7 @@ def infer_random_sample(node, context=None):
         raise astroid.UseInferenceDefault
 
     inferred_sequence = helpers.safe_infer(node.args[0], context=context)
-    if inferred_sequence in (None, astroid.Uninferable):
+    if not inferred_sequence:
         raise astroid.UseInferenceDefault
 
     if not isinstance(inferred_sequence, ACCEPTED_ITERABLES_FOR_SAMPLE):
