@@ -45,7 +45,7 @@ class AsStringVisitor:
 
     def _stmt_list(self, stmts, indent=True):
         """return a list of nodes to string"""
-        stmts = "\n".join([nstr for nstr in [n.accept(self) for n in stmts] if nstr])
+        stmts = "\n".join(nstr for nstr in [n.accept(self) for n in stmts] if nstr)
         if indent:
             return self.indent + stmts.replace("\n", "\n" + self.indent)
 
@@ -102,7 +102,7 @@ class AsStringVisitor:
 
     def visit_assign(self, node):
         """return an astroid.Assign node as string"""
-        lhs = " = ".join([n.accept(self) for n in node.targets])
+        lhs = " = ".join(n.accept(self) for n in node.targets)
         return "%s = %s" % (lhs, node.value.accept(self))
 
     def visit_augassign(self, node):
@@ -155,7 +155,7 @@ class AsStringVisitor:
     def visit_classdef(self, node):
         """return an astroid.ClassDef node as string"""
         decorate = node.decorators.accept(self) if node.decorators else ""
-        bases = ", ".join([n.accept(self) for n in node.bases])
+        bases = ", ".join(n.accept(self) for n in node.bases)
         if sys.version_info[0] == 2:
             bases = "(%s)" % bases if bases else ""
         else:
@@ -188,7 +188,7 @@ class AsStringVisitor:
 
     def visit_comprehension(self, node):
         """return an astroid.Comprehension node as string"""
-        ifs = "".join([" if %s" % n.accept(self) for n in node.ifs])
+        ifs = "".join(" if %s" % n.accept(self) for n in node.ifs)
         return "for %s in %s%s" % (
             node.target.accept(self),
             node.iter.accept(self),
@@ -207,7 +207,7 @@ class AsStringVisitor:
 
     def visit_delete(self, node):  # XXX check if correct
         """return an astroid.Delete node as string"""
-        return "del %s" % ", ".join([child.accept(self) for child in node.targets])
+        return "del %s" % ", ".join(child.accept(self) for child in node.targets)
 
     def visit_delattr(self, node):
         """return an astroid.DelAttr node as string"""
@@ -219,7 +219,7 @@ class AsStringVisitor:
 
     def visit_decorators(self, node):
         """return an astroid.Decorators node as string"""
-        return "@%s\n" % "\n@".join([item.accept(self) for item in node.nodes])
+        return "@%s\n" % "\n@".join(item.accept(self) for item in node.nodes)
 
     def visit_dict(self, node):
         """return an astroid.Dict node as string"""
@@ -243,7 +243,7 @@ class AsStringVisitor:
         return "{%s: %s %s}" % (
             node.key.accept(self),
             node.value.accept(self),
-            " ".join([n.accept(self) for n in node.generators]),
+            " ".join(n.accept(self) for n in node.generators),
         )
 
     def visit_expr(self, node):
@@ -289,7 +289,7 @@ class AsStringVisitor:
 
     def visit_extslice(self, node):
         """return an astroid.ExtSlice node as string"""
-        return ", ".join([dim.accept(self) for dim in node.dims])
+        return ", ".join(dim.accept(self) for dim in node.dims)
 
     def visit_for(self, node):
         """return an astroid.For node as string"""
@@ -331,7 +331,7 @@ class AsStringVisitor:
         """return an astroid.GeneratorExp node as string"""
         return "(%s %s)" % (
             node.elt.accept(self),
-            " ".join([n.accept(self) for n in node.generators]),
+            " ".join(n.accept(self) for n in node.generators),
         )
 
     def visit_attribute(self, node):
@@ -380,19 +380,19 @@ class AsStringVisitor:
 
     def visit_list(self, node):
         """return an astroid.List node as string"""
-        return "[%s]" % ", ".join([child.accept(self) for child in node.elts])
+        return "[%s]" % ", ".join(child.accept(self) for child in node.elts)
 
     def visit_listcomp(self, node):
         """return an astroid.ListComp node as string"""
         return "[%s %s]" % (
             node.elt.accept(self),
-            " ".join([n.accept(self) for n in node.generators]),
+            " ".join(n.accept(self) for n in node.generators),
         )
 
     def visit_module(self, node):
         """return an astroid.Module node as string"""
         docs = '"""%s"""\n\n' % node.doc if node.doc else ""
-        return docs + "\n".join([n.accept(self) for n in node.body]) + "\n\n"
+        return docs + "\n".join(n.accept(self) for n in node.body) + "\n\n"
 
     def visit_name(self, node):
         """return an astroid.Name node as string"""
@@ -404,7 +404,7 @@ class AsStringVisitor:
 
     def visit_print(self, node):
         """return an astroid.Print node as string"""
-        nodes = ", ".join([n.accept(self) for n in node.values])
+        nodes = ", ".join(n.accept(self) for n in node.values)
         if not node.nl:
             nodes = "%s," % nodes
         if node.dest:
@@ -442,13 +442,13 @@ class AsStringVisitor:
 
     def visit_set(self, node):
         """return an astroid.Set node as string"""
-        return "{%s}" % ", ".join([child.accept(self) for child in node.elts])
+        return "{%s}" % ", ".join(child.accept(self) for child in node.elts)
 
     def visit_setcomp(self, node):
         """return an astroid.SetComp node as string"""
         return "{%s %s}" % (
             node.elt.accept(self),
-            " ".join([n.accept(self) for n in node.generators]),
+            " ".join(n.accept(self) for n in node.generators),
         )
 
     def visit_slice(self, node):
@@ -492,7 +492,7 @@ class AsStringVisitor:
         """return an astroid.Tuple node as string"""
         if len(node.elts) == 1:
             return "(%s, )" % node.elts[0].accept(self)
-        return "(%s)" % ", ".join([child.accept(self) for child in node.elts])
+        return "(%s)" % ", ".join(child.accept(self) for child in node.elts)
 
     def visit_unaryop(self, node):
         """return an astroid.UnaryOp node as string"""

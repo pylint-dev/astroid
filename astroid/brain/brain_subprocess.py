@@ -99,7 +99,7 @@ def _subprocess_transform():
     )
 
     init_lines = textwrap.dedent(init).splitlines()
-    indented_init = "\n".join([" " * 4 + line for line in init_lines])
+    indented_init = "\n".join(" " * 4 + line for line in init_lines)
     code += indented_init
     return astroid.parse(code)
 
