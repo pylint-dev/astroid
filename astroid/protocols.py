@@ -337,8 +337,7 @@ def _arguments_infer_argname(self, name, context):
 
     if context and context.callcontext:
         call_site = arguments.CallSite(context.callcontext, context.extra_context)
-        for value in call_site.infer_argument(self.parent, name, context):
-            yield value
+        yield from call_site.infer_argument(self.parent, name, context)
         return
 
     if name == self.vararg:

@@ -735,8 +735,7 @@ def _infer_binary_operation(left, right, binary_opnode, context, flow_factory):
                 yield util.Uninferable
                 return
 
-            for result in results:
-                yield result
+            yield from results
             return
     # The operation doesn't seem to be supported so let the caller know about it
     yield util.BadBinaryOperationMessage(left_type, binary_opnode.op, right_type)
