@@ -24,6 +24,8 @@ import collections
 import operator as operator_mod
 import sys
 
+import itertools
+
 from astroid import Store
 from astroid import arguments
 from astroid import bases
@@ -174,9 +176,12 @@ def tl_infer_binary_op(self, opnode, operator, other, context, method):
     not_implemented = nodes.Const(NotImplemented)
     if isinstance(other, self.__class__) and operator == "+":
         node = self.__class__(parent=opnode)
-        elts = list(_filter_uninferable_nodes(self.elts, context))
-        elts += list(_filter_uninferable_nodes(other.elts, context))
-        node.elts = elts
+        node.elts = list(
+            itertools.chain(
+                _filter_uninferable_nodes(self.elts, context),
+                _filter_uninferable_nodes(other.elts, context),
+            )
+        )
         yield node
     elif isinstance(other, nodes.Const) and operator == "*":
         if not isinstance(other.value, int):
