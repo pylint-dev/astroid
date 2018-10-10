@@ -857,9 +857,6 @@ nodes.AssignName._infer = infer_assign
 nodes.AssignAttr._infer = infer_assign
 
 
-# no infer method on DelName and DelAttr (expected InferenceError)
-
-
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
 def infer_empty_node(self, context=None):
