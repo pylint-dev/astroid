@@ -187,7 +187,7 @@ def infer_name(self, context=None):
             raise exceptions.NameInferenceError(
                 name=self.name, scope=self.scope(), context=context
             )
-    context = context.clone()
+    context = contextmod.copy_context(context)
     context.lookupname = self.name
     return bases._infer_stmts(stmts, context, frame)
 
@@ -203,7 +203,7 @@ nodes.AssignName.infer_lhs = infer_name  # won't work with a path wrapper
 @decorators.path_wrapper
 def infer_call(self, context=None):
     """infer a Call node by trying to guess what the function returns"""
-    callcontext = context.clone()
+    callcontext = contextmod.copy_context(context)
     callcontext.callcontext = contextmod.CallContext(
         args=self.args, keywords=self.keywords
     )
@@ -745,16 +745,15 @@ def _infer_binary_operation(left, right, binary_opnode, context, flow_factory):
 
 def _infer_binop(self, context):
     """Binary operation inference logic."""
-    if context is None:
-        context = contextmod.InferenceContext()
     left = self.left
     right = self.right
 
     # we use two separate contexts for evaluating lhs and rhs because
     # 1. evaluating lhs may leave some undesired entries in context.path
     #    which may not let us infer right value of rhs
-    lhs_context = context.clone()
-    rhs_context = context.clone()
+    context = context or contextmod.InferenceContext()
+    lhs_context = contextmod.copy_context(context)
+    rhs_context = contextmod.copy_context(context)
 
     for lhs in left.infer(context=lhs_context):
         if lhs is util.Uninferable:

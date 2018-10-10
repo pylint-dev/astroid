@@ -117,7 +117,6 @@ class Proxy:
 
 def _infer_stmts(stmts, context, frame=None):
     """Return an iterator on statements inferred by each statement in *stmts*."""
-    stmt = None
     inferred = False
     if context is not None:
         name = context.lookupname

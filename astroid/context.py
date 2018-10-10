@@ -11,6 +11,7 @@
 import contextlib
 import copy
 import pprint
+from typing import Optional
 
 
 class InferenceContext:
@@ -150,7 +151,8 @@ class CallContext:
         self.keywords = keywords
 
 
-def copy_context(context):
+def copy_context(context: Optional[InferenceContext]) -> InferenceContext:
+    """Clone a context if given, or return a fresh contexxt"""
     if context is not None:
         return context.clone()
 
@@ -174,9 +176,6 @@ def bind_context_to_node(context, node):
     :returns: A new context
     :rtype: InferenceContext
     """
-    if context is not None:
-        context = context.clone()
-    else:
-        context = InferenceContext()
+    context = copy_context(context)
     context.boundnode = node
     return context
