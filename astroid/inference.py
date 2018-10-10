@@ -791,25 +791,26 @@ def _infer_augassign(self, context=None):
     if context is None:
         context = contextmod.InferenceContext()
 
-    for lhs in self.target.infer_lhs(context=context):
-        if lhs is util.Uninferable:
+    rhs_context = context.clone()
+
+    lhs_iter = self.target.infer_lhs(context=context)
+    rhs_iter = self.value.infer(context=rhs_context)
+    for lhs, rhs in itertools.product(lhs_iter, rhs_iter):
+        if any(value is util.Uninferable for value in (rhs, lhs)):
             # Don't know how to process this.
             yield util.Uninferable
             return
 
-        rhs_context = context.clone()
-        for rhs in self.value.infer(context=rhs_context):
-            if rhs is util.Uninferable:
-                # Don't know how to process this.
-                yield util.Uninferable
-                return
-
-            try:
-                yield from _infer_binary_operation(
-                    lhs, rhs, self, context, _get_aug_flow
-                )
-            except exceptions._NonDeducibleTypeHierarchy:
-                yield util.Uninferable
+        try:
+            yield from _infer_binary_operation(
+                left=lhs,
+                right=rhs,
+                binary_opnode=self,
+                context=context,
+                flow_factory=_get_aug_flow,
+            )
+        except exceptions._NonDeducibleTypeHierarchy:
+            yield util.Uninferable
 
 
 @decorators.raise_if_nothing_inferred
