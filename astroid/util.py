@@ -162,7 +162,3 @@ def limit_inference(iterator, size):
     if has_more is not False:
         yield Uninferable
         return
-
-
-# Backwards-compatibility aliases
-YES = Uninferable

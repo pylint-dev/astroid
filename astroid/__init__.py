@@ -71,7 +71,7 @@ from astroid.bases import BaseInstance, Instance, BoundMethod, UnboundMethod
 from astroid.node_classes import are_exclusive, unpack_infer
 from astroid.scoped_nodes import builtin_lookup
 from astroid.builder import parse, extract_node
-from astroid.util import Uninferable, YES
+from astroid.util import Uninferable
 
 # make a manager instance (borg) accessible from astroid package
 from astroid.manager import AstroidManager
