@@ -208,10 +208,9 @@ def infer_call(self, context=None):
         args=self.args, keywords=self.keywords
     )
     callcontext.boundnode = None
-    extra_context = {}
     if context is not None:
-        extra_context = _populate_context_lookup(self, context.clone())
-        callcontext.extra_context = extra_context
+        callcontext.extra_context = _populate_context_lookup(self, context.clone())
+
     for callee in self.func.infer(context):
         if callee is util.Uninferable:
             yield callee
