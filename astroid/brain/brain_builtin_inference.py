@@ -10,7 +10,6 @@
 """Astroid hooks for various builtins."""
 
 from functools import partial
-import sys
 from textwrap import dedent
 
 import six
@@ -94,7 +93,7 @@ def _extend_str(class_node, rvalue):
         method.parent = class_node
 
 
-def extend_builtins(class_transforms):
+def _extend_builtins(class_transforms):
     from astroid.bases import BUILTINS
 
     builtin_ast = MANAGER.astroid_cache[BUILTINS]
@@ -102,20 +101,12 @@ def extend_builtins(class_transforms):
         transform(builtin_ast[class_name])
 
 
-if sys.version_info > (3, 0):
-    extend_builtins(
-        {
-            "bytes": partial(_extend_str, rvalue="b''"),
-            "str": partial(_extend_str, rvalue="''"),
-        }
-    )
-else:
-    extend_builtins(
-        {
-            "str": partial(_extend_str, rvalue="''"),
-            "unicode": partial(_extend_str, rvalue="u''"),
-        }
-    )
+_extend_builtins(
+    {
+        "bytes": partial(_extend_str, rvalue="b''"),
+        "str": partial(_extend_str, rvalue="''"),
+    }
+)
 
 
 def _builtin_filter_predicate(node, builtin_name):
