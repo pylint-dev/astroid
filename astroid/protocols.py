@@ -529,8 +529,10 @@ def with_assigned_stmts(self, node=None, context=None, assign_path=None):
     Arguments:
         self: nodes.With
         node: The target of the assignment, `as (a, b)` in `with foo as (a, b)`.
-        context: TODO
-        assign_path: TODO
+        context: Inference context used for caching already inferred objects
+        assign_path:
+            A list of indices, where each index specifies what item to fetch from
+            the inference results.
     """
     try:
         mgr = next(mgr for (mgr, vars) in self.items if vars == node)
@@ -582,9 +584,11 @@ def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
     """
     Arguments:
         self: nodes.Starred
-        node: TODO
-        context: TODO
-        assign_path: TODO
+        node: a node related to the current underlying Node.
+        context: Inference context used for caching already inferred objects
+        assign_path:
+            A list of indices, where each index specifies what item to fetch from
+            the inference results.
     """
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     def _determine_starred_iteration_lookups(starred, target, lookups):
