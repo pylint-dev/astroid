@@ -752,25 +752,18 @@ def _infer_binop(self, context):
     context = context or contextmod.InferenceContext()
     lhs_context = contextmod.copy_context(context)
     rhs_context = contextmod.copy_context(context)
-
-    for lhs in left.infer(context=lhs_context):
-        if lhs is util.Uninferable:
+    lhs_iter = left.infer(context=lhs_context)
+    rhs_iter = right.infer(context=rhs_context)
+    for lhs, rhs in itertools.product(lhs_iter, rhs_iter):
+        if any(value is util.Uninferable for value in (rhs, lhs)):
             # Don't know how to process this.
             yield util.Uninferable
             return
 
-        for rhs in right.infer(context=rhs_context):
-            if rhs is util.Uninferable:
-                # Don't know how to process this.
-                yield util.Uninferable
-                return
-
-            try:
-                yield from _infer_binary_operation(
-                    lhs, rhs, self, context, _get_binop_flow
-                )
-            except exceptions._NonDeducibleTypeHierarchy:
-                yield util.Uninferable
+        try:
+            yield from _infer_binary_operation(lhs, rhs, self, context, _get_binop_flow)
+        except exceptions._NonDeducibleTypeHierarchy:
+            yield util.Uninferable
 
 
 @decorators.yes_if_nothing_inferred
