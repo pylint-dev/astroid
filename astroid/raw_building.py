@@ -54,16 +54,14 @@ def _attach_local_node(parent, node, name):
     parent.add_local_node(node)
 
 
-def _add_dunder_class(func, member, parent=None):
+def _add_dunder_class(func, member):
     """Add a __class__ member to the given func node, if we can determine it."""
     python_cls = member.__class__
     cls_name = getattr(python_cls, "__name__", None)
     if not cls_name:
         return
     cls_bases = [ancestor.__name__ for ancestor in python_cls.__bases__]
-    ast_klass = build_class(
-        name=cls_name, basenames=cls_bases, doc=python_cls.__doc__, parent=parent
-    )
+    ast_klass = build_class(cls_name, cls_bases, python_cls.__doc__)
     func.instance_attrs["__class__"] = [ast_klass]
 
 
@@ -110,9 +108,9 @@ def build_module(name, doc=None):
     return node
 
 
-def build_class(name, basenames=(), parent=None, doc=None):
+def build_class(name, basenames=(), doc=None):
     """create and initialize an astroid ClassDef node"""
-    node = nodes.ClassDef(name=name, doc=doc, parent=parent)
+    node = nodes.ClassDef(name, doc)
     for base in basenames:
         basenode = nodes.Name()
         basenode.name = base
@@ -121,12 +119,12 @@ def build_class(name, basenames=(), parent=None, doc=None):
     return node
 
 
-def build_function(name, parent=None, args=None, defaults=None, doc=None):
+def build_function(name, args=None, defaults=None, doc=None):
     """create and initialize an astroid FunctionDef node"""
     args, defaults = args or [], defaults or []
     # first argument is now a list of decorators
-    func = nodes.FunctionDef(name, doc, parent=parent)
-    func.args = argsnode = nodes.Arguments(parent=func)
+    func = nodes.FunctionDef(name, doc)
+    func.args = argsnode = nodes.Arguments()
     argsnode.args = []
     for arg in args:
         argsnode.args.append(nodes.Name())
@@ -136,6 +134,9 @@ def build_function(name, parent=None, args=None, defaults=None, doc=None):
     for default in defaults:
         argsnode.defaults.append(nodes.const_factory(default))
         argsnode.defaults[-1].parent = argsnode
+    argsnode.kwarg = None
+    argsnode.vararg = None
+    argsnode.parent = func
     if args:
         register_arguments(func)
     return func
@@ -180,11 +181,7 @@ def object_build_function(node, member, localname):
     if varkw is not None:
         args.append(varkw)
     func = build_function(
-        name=getattr(member, "__name__", None) or localname,
-        parent=node,
-        args=args,
-        defaults=defaults,
-        doc=member.__doc__,
+        getattr(member, "__name__", None) or localname, args, defaults, member.__doc__
     )
     node.add_local_node(func, localname)
 
@@ -198,15 +195,13 @@ def object_build_methoddescriptor(node, member, localname):
     """create astroid for a living method descriptor object"""
     # FIXME get arguments ?
     func = build_function(
-        name=getattr(member, "__name__", None) or localname,
-        parent=node,
-        doc=member.__doc__,
+        getattr(member, "__name__", None) or localname, doc=member.__doc__
     )
     # set node's arguments to None to notice that we have no information, not
     # and empty argument list
     func.args.args = None
     node.add_local_node(func, localname)
-    _add_dunder_class(func, member, parent=node)
+    _add_dunder_class(func, member)
 
 
 def _base_class_object_build(node, member, basenames, name=None, localname=None):
@@ -214,10 +209,9 @@ def _base_class_object_build(node, member, basenames, name=None, localname=None)
     (e.g. ancestors)
     """
     klass = build_class(
-        name=name or getattr(member, "__name__", None) or localname,
-        basenames=basenames,
-        doc=member.__doc__,
-        parent=node,
+        name or getattr(member, "__name__", None) or localname,
+        basenames,
+        member.__doc__,
     )
     klass._newstyle = isinstance(member, type)
     node.add_local_node(klass, localname)
@@ -401,9 +395,11 @@ def _astroid_bootstrapping(astroid_builtin=None):
     # pylint: disable=redefined-outer-name
     for cls, node_cls in node_classes.CONST_CLS.items():
         if cls is type(None):
-            proxy = build_class("NoneType", parent=astroid_builtin)
+            proxy = build_class("NoneType")
+            proxy.parent = astroid_builtin
         elif cls is type(NotImplemented):
-            proxy = build_class("NotImplementedType", parent=astroid_builtin)
+            proxy = build_class("NotImplementedType")
+            proxy.parent = astroid_builtin
         else:
             proxy = astroid_builtin.getattr(cls.__name__)[0]
         if cls in (dict, list, set, tuple):
@@ -422,20 +418,18 @@ def _set_proxied(const):
 nodes.Const._proxied = property(_set_proxied)
 
 _GeneratorType = nodes.ClassDef(
-    name=types.GeneratorType.__name__,
-    doc=types.GeneratorType.__doc__,
-    parent=MANAGER.astroid_cache[builtins.__name__],
+    types.GeneratorType.__name__, types.GeneratorType.__doc__
 )
+_GeneratorType.parent = MANAGER.astroid_cache[builtins.__name__]
 bases.Generator._proxied = _GeneratorType
 Astroid_BUILDER.object_build(bases.Generator._proxied, types.GeneratorType)
 
 if hasattr(types, "AsyncGeneratorType"):
     # pylint: disable=no-member; AsyncGeneratorType
     _AsyncGeneratorType = nodes.ClassDef(
-        name=types.AsyncGeneratorType.__name__,
-        doc=types.AsyncGeneratorType.__doc__,
-        parent=MANAGER.astroid_cache[builtins.__name__],
+        types.AsyncGeneratorType.__name__, types.AsyncGeneratorType.__doc__
     )
+    _AsyncGeneratorType.parent = MANAGER.astroid_cache[builtins.__name__]
     bases.AsyncGenerator._proxied = _AsyncGeneratorType
     Astroid_BUILDER.object_build(
         bases.AsyncGenerator._proxied, types.AsyncGeneratorType
@@ -458,10 +452,7 @@ BUILTIN_TYPES = (
 )
 for _type in BUILTIN_TYPES:
     if _type.__name__ not in _builtins:
-        cls = nodes.ClassDef(
-            name=_type.__name__,
-            doc=_type.__doc__,
-            parent=MANAGER.astroid_cache[builtins.__name__],
-        )
+        cls = nodes.ClassDef(_type.__name__, _type.__doc__)
+        cls.parent = MANAGER.astroid_cache[builtins.__name__]
         Astroid_BUILDER.object_build(cls, _type)
         _builtins[_type.__name__] = cls
