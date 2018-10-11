@@ -2202,15 +2202,16 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                             continue
                         yielded.add(baseobj)
                         yield baseobj
-                    if recurs:
-                        for grandpa in baseobj.ancestors(recurs=True, context=context):
-                            if grandpa is self:
-                                # This class is the ancestor of itself.
-                                break
-                            if grandpa in yielded:
-                                continue
-                            yielded.add(grandpa)
-                            yield grandpa
+                    if not recurs:
+                        continue
+                    for grandpa in baseobj.ancestors(recurs=True, context=context):
+                        if grandpa is self:
+                            # This class is the ancestor of itself.
+                            break
+                        if grandpa in yielded:
+                            continue
+                        yielded.add(grandpa)
+                        yield grandpa
             except exceptions.InferenceError:
                 continue
 
