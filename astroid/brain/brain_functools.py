@@ -2,6 +2,7 @@
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 
 """Astroid hooks for understanding functools library module."""
+from functools import partial
 from itertools import chain
 
 import astroid
@@ -143,30 +144,27 @@ def _looks_like_lru_cache(node):
     """Check if the given function node is decorated with lru_cache."""
     if not node.decorators:
         return False
-
     for decorator in node.decorators.nodes:
         if not isinstance(decorator, astroid.Call):
             continue
-
-        func = helpers.safe_infer(decorator.func)
-        if not func:
-            continue
-
-        if isinstance(func, astroid.FunctionDef) and func.qname() == LRU_CACHE:
+        if _looks_like_functools_member(decorator, "lru_cache"):
             return True
     return False
 
 
-def _looks_like_functools_partial(node):
+def _looks_like_functools_member(node, member):
     """Check if the given Call node is a functools.partial call"""
     if isinstance(node.func, astroid.Name):
-        return node.func.name == "partial"
+        return node.func.name == member
     elif isinstance(node.func, astroid.Attribute):
         return (
-            node.func.attrname == "partial"
+            node.func.attrname == member
             and isinstance(node.func.expr, astroid.Name)
             and node.func.expr.name == "functools"
         )
+
+
+_looks_like_partial = partial(_looks_like_functools_member, member="partial")
 
 
 MANAGER.register_transform(
@@ -177,5 +175,5 @@ MANAGER.register_transform(
 MANAGER.register_transform(
     astroid.Call,
     astroid.inference_tip(_functools_partial_inference),
-    _looks_like_functools_partial,
+    _looks_like_partial,
 )
