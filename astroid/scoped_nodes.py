@@ -1639,9 +1639,8 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             metaclass = next(caller.args[0].infer(context))
             if isinstance(metaclass, ClassDef):
                 class_bases = [next(arg.infer(context)) for arg in caller.args[1:]]
-                new_class = ClassDef(name="temporary_class")
+                new_class = ClassDef(name="temporary_class", parent=self)
                 new_class.hide = True
-                new_class.parent = self
                 new_class.postinit(
                     bases=[base for base in class_bases if base != util.Uninferable],
                     body=[],
