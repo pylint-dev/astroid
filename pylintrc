@@ -83,12 +83,6 @@ evaluation=10.0 - ((float(5 * error + warning + refactor + convention) / stateme
 # all. Valid levels: HIGH, INFERENCE, INFERENCE_FAILURE, UNDEFINED
 confidence=
 
-# Enable the message, report, category or checker with the given id(s). You can
-
-# either give multiple identifier separated by comma (,) or put this option
-
-# multiple time. See also the "--disable" option for examples.
-enable=useless-suppression
 
 # Disable the message, report, category or checker with the given id(s). You
 
