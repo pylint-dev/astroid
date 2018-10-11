@@ -332,7 +332,7 @@ def _arguments_infer_argname(self, name, context):
             yield cls
             return
         if functype == "method":
-            yield bases.Instance(self.parent.parent.frame())
+            yield bases.Instance(cls)
             return
 
     if context and context.callcontext:
