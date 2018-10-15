@@ -105,7 +105,7 @@ class HashlibTest(unittest.TestCase):
             self._assert_hashlib_class(class_obj)
         for class_name in ["blake2b", "blake2s"]:
             class_obj = hashlib_module[class_name]
-            self.assertEqual(len(class_obj["__init__"].args.args), 3)
+            self.assertEqual(len(class_obj["__init__"].args.args), 2)
 
 
 class CollectionsDequeTests(unittest.TestCase):
