@@ -38,14 +38,19 @@ def _hashlib_transform():
         ["md5", "sha1", "sha224", "sha256", "sha384", "sha512"], signature
     )
     if PY36:
-        blake_signature = "value='', digest_size=None"
+        blake2b_signature = "data=b'', *, digest_size=64, key=b'', salt=b'', \
+                person=b'', fanout=1, depth=1, leaf_size=0, node_offset=0, \
+                node_depth=0, inner_size=0, last_node=False"
+        blake2s_signature = "data=b'', *, digest_size=32, key=b'', salt=b'', \
+                person=b'', fanout=1, depth=1, leaf_size=0, node_offset=0, \
+                node_depth=0, inner_size=0, last_node=False"
         new_algorithms = dict.fromkeys(
             ["sha3_224", "sha3_256", "sha3_384", "sha3_512", "shake_128", "shake_256"],
             signature,
         )
         algorithms_with_signature.update(new_algorithms)
         algorithms_with_signature.update(
-            {"blake2b": blake_signature, "blake2s": blake_signature}
+            {"blake2b": blake2b_signature, "blake2s": blake2s_signature}
         )
     classes = "".join(
         template
