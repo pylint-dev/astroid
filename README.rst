@@ -53,6 +53,11 @@ mailing list for support. See
 http://mail.python.org/mailman/listinfo/code-quality for subscription
 information and archives.
 
+Documentation
+-------------
+http://astroid.readthedocs.io/en/latest/
+
+
 Python Versions
 ---------------
 
