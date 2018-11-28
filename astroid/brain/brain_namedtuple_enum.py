@@ -246,6 +246,11 @@ def infer_enum(node, context=None):
                 name = ''
                 value = 0
             return [EnumAttribute()]
+        def __reversed__(self):
+            class EnumAttribute(object):
+                name = ''
+                value = 0
+            return (EnumAttribute, )
         def __next__(self):
             return next(iter(self))
         def __getitem__(self, attr):
