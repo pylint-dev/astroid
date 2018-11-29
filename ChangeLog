@@ -2,6 +2,15 @@
 astroid's ChangeLog
 ===================
 
+What's New in astroid 2.2.0?
+============================
+Release Date: TBA
+
+* Added special support for `enum.IntFlag`
+
+  Close PyCQA/pylint#2534
+
+
 What's New in astroid 2.1.0?
 ============================
 Release Date: 2018-11-25

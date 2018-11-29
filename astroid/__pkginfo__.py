@@ -21,7 +21,7 @@ distname = "astroid"
 
 modname = "astroid"
 
-version = "2.1.0"
+version = "2.2.0"
 numversion = tuple(int(elem) for elem in version.split(".") if elem.isdigit())
 
 extras_require = {}

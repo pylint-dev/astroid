@@ -30,7 +30,14 @@ from astroid import util
 
 
 TYPING_NAMEDTUPLE_BASENAMES = {"NamedTuple", "typing.NamedTuple"}
-ENUM_BASE_NAMES = {"Enum", "IntEnum", "enum.Enum", "enum.IntEnum"}
+ENUM_BASE_NAMES = {
+    "Enum",
+    "IntEnum",
+    "enum.Enum",
+    "enum.IntEnum",
+    "IntFlag",
+    "enum.IntFlag",
+}
 
 
 def _infer_first(node, context):
@@ -270,6 +277,24 @@ def infer_enum(node, context=None):
     return iter([class_node.instantiate_class()])
 
 
+INT_FLAG_ADDITION_METHODS = """
+    def __or__(self, other):
+        return {name}(self.value | other.value)
+    def __and__(self, other):
+        return {name}(self.value & other.value)
+    def __xor__(self, other):
+        return {name}(self.value ^ other.value)
+    def __add__(self, other):
+        return {name}(self.value + other.value)
+    def __div__(self, other):
+        return {name}(self.value / other.value)
+    def __invert__(self):
+        return {name}(~self.value)
+    def __mul__(self, other):
+        return {name}(self.value * other.value)
+"""
+
+
 def infer_enum_class(node):
     """ Specific inference for enums. """
     for basename in node.basenames:
@@ -319,6 +344,13 @@ def infer_enum_class(node):
                         return_value=inferred_return_value,
                     )
                 )
+                if "IntFlag" in basename:
+                    # Alright, we need to add some additional methods.
+                    # Unfortunately we still can't infer the resulting objects as
+                    # Enum members, but once we'll be able to do that, the following
+                    # should result in some nice symbolic execution
+                    classdef += INT_FLAG_ADDITION_METHODS.format(name=target.name)
+
                 fake = AstroidBuilder(MANAGER).string_build(classdef)[target.name]
                 fake.parent = target.parent
                 for method in node.mymethods():
