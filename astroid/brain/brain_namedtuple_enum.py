@@ -312,7 +312,7 @@ def infer_enum_class(node):
                         return {return_value}
                     @property
                     def name(self):
-                        return {name}
+                        return "{name}"
                 """.format(
                         name=target.name,
                         types=", ".join(node.basenames),
