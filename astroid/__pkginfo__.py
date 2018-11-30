@@ -30,7 +30,7 @@ install_requires = [
     "six",
     "wrapt",
     'typing;python_version<"3.5"',
-    'typed_ast;python_version<"3.7" and implementation_name== "cpython"',
+    'typed-ast<=1.1.0;python_version<"3.7" and implementation_name== "cpython"',
 ]
 
 # pylint: disable=redefined-builtin; why license is a builtin anyway?
