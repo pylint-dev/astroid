@@ -12,6 +12,7 @@ from astroid import extract_node
 from astroid import helpers
 from astroid.interpreter import objectmodel
 from astroid import MANAGER
+from astroid import objects
 
 
 LRU_CACHE = "functools.lru_cache"
@@ -98,31 +99,8 @@ def _functools_partial_inference(node, context=None):
             "wrapped function received unknown parameters"
         )
 
-    # Return a wrapped() object that can be used further for inference
-    class PartialFunction(astroid.FunctionDef):
-
-        filled_positionals = len(call.positional_arguments[1:])
-        filled_keywords = list(call.keyword_arguments)
-
-        def infer_call_result(self, caller=None, context=None):
-            nonlocal call
-            filled_args = call.positional_arguments[1:]
-            filled_keywords = call.keyword_arguments
-
-            if context:
-                current_passed_keywords = {
-                    keyword for (keyword, _) in context.callcontext.keywords
-                }
-                for keyword, value in filled_keywords.items():
-                    if keyword not in current_passed_keywords:
-                        context.callcontext.keywords.append((keyword, value))
-
-                call_context_args = context.callcontext.args or []
-                context.callcontext.args = filled_args + call_context_args
-
-            return super().infer_call_result(caller=caller, context=context)
-
-    partial_function = PartialFunction(
+    partial_function = objects.PartialFunction(
+        call,
         name=inferred_wrapped_function.name,
         doc=inferred_wrapped_function.doc,
         lineno=inferred_wrapped_function.lineno,

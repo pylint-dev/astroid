@@ -248,6 +248,35 @@ class DictValues(bases.Proxy):
     __repr__ = node_classes.NodeNG.__repr__
 
 
+class PartialFunction(scoped_nodes.FunctionDef):
+    """A class representing partial function obtained via functools.partial"""
+
+    def __init__(
+        self, call, name=None, doc=None, lineno=None, col_offset=None, parent=None
+    ):
+        super().__init__(name, doc, lineno, col_offset, parent)
+        self.filled_positionals = len(call.positional_arguments[1:])
+        self.filled_args = call.positional_arguments[1:]
+        self.filled_keywords = call.keyword_arguments
+
+    def infer_call_result(self, caller=None, context=None):
+        if context:
+            current_passed_keywords = {
+                keyword for (keyword, _) in context.callcontext.keywords
+            }
+            for keyword, value in self.filled_keywords.items():
+                if keyword not in current_passed_keywords:
+                    context.callcontext.keywords.append((keyword, value))
+
+            call_context_args = context.callcontext.args or []
+            context.callcontext.args = self.filled_args + call_context_args
+
+        return super().infer_call_result(caller=caller, context=context)
+
+    def qname(self):
+        return self.__class__.__name__
+
+
 # TODO: Hack to solve the circular import problem between node_classes and objects
 # This is not needed in 2.0, which has a cleaner design overall
 node_classes.Dict.__bases__ = (node_classes.NodeNG, DictInstance)
