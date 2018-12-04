@@ -6,6 +6,10 @@ What's New in astroid 2.2.0?
 ============================
 Release Date: TBA
 
+* Fix a bug where an Attribute used as a base class was triggering a crash
+
+  Close #626
+
 * Added special support for `enum.IntFlag`
 
   Close PyCQA/pylint#2534
