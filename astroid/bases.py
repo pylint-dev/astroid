@@ -82,6 +82,8 @@ def _is_property(meth):
             continue
         if inferred.__class__.__name__ == "ClassDef":
             for base_class in inferred.bases:
+                if base_class.__class__.__name__ != "Name":
+                    continue
                 module, _ = base_class.lookup(base_class.name)
                 if module.name == BUILTINS and base_class.name == "property":
                     return True
