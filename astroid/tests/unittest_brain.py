@@ -1030,6 +1030,7 @@ class AttrsTest(unittest.TestCase):
         module = astroid.parse(
             """
         import attr
+        from attr import attrs, attrib
 
         @attr.s
         class Foo:
@@ -1045,10 +1046,24 @@ class AttrsTest(unittest.TestCase):
 
         g = Bar()
         g.d['answer'] = 42
+
+        @attrs
+        class Bah:
+            d = attrib(attr.Factory(dict))
+
+        h = Bah()
+        h.d['answer'] = 42
+
+        @attr.attrs
+        class Bai:
+            d = attr.attrib(attr.Factory(dict))
+
+        i = Bai()
+        i.d['answer'] = 42
         """
         )
 
-        for name in ("f", "g"):
+        for name in ("f", "g", "h", "i"):
             should_be_unknown = next(module.getattr(name)[0].infer()).getattr("d")[0]
             self.assertIsInstance(should_be_unknown, astroid.Unknown)
 
