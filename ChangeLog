@@ -14,6 +14,10 @@ Release Date: TBA
 
   Close PyCQA/pylint#2534
 
+* Extend detection of data classes defined with attr
+
+  Close #628
+
 
 What's New in astroid 2.1.0?
 ============================
