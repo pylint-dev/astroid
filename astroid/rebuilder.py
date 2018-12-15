@@ -982,7 +982,7 @@ class TreeRebuilder3(TreeRebuilder):
                 body = [self.visit(child, newnode) for child in node.body]
             newnode.postinit(body, [self.visit(n, newnode) for n in node.finalbody])
             return newnode
-        elif node.handlers:
+        if node.handlers:
             return self.visit_tryexcept(node, parent)
         return None
 
