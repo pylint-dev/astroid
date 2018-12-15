@@ -1697,7 +1697,7 @@ def test_infer_dict_from_keys():
         assert sorted(actual_values) == ["a", "b", "c"]
 
 
-class TestFunctoolsPartial:
+class TestFunctoolsPartial(unittest.TestCase):
     def test_invalid_functools_partial_calls(self):
         ast_nodes = astroid.extract_node(
             """
@@ -1741,13 +1741,15 @@ class TestFunctoolsPartial:
         partial(other_test, c=4)(1, 3) #@
         partial(other_test, 4, c=4)(4) #@
         partial(other_test, 4, c=4)(b=5) #@
+        test(1, 2) #@
+        partial(other_test, 1, 2)(c=3) #@
         """
         )
-        expected_values = [4, 7, 7, 3, 12, 16, 32, 36]
+        expected_values = [4, 7, 7, 3, 12, 16, 32, 36, 3, 9]
         for node, expected_value in zip(ast_nodes, expected_values):
             inferred = next(node.infer())
-            assert isinstance(inferred, astroid.Const)
-            assert inferred.value == expected_value
+            self.assertIsInstance(inferred, astroid.Const)
+            self.assertEqual(inferred.value, expected_value)
 
 
 if __name__ == "__main__":
