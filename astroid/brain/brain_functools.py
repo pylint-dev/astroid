@@ -61,7 +61,6 @@ def _transform_lru_cache(node, context=None):
 
 
 def _functools_partial_inference(node, context=None):
-    # import ipdb; ipdb.set_trace()
     call = arguments.CallSite.from_call(node)
     number_of_positional = len(call.positional_arguments)
     if number_of_positional < 1:
