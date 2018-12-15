@@ -1115,8 +1115,6 @@ class LookupMixIn:
         :returns: The filtered statements.
         :rtype: list(NodeNG)
         """
-        # if self.name == 'root_function' and self.lineno == 16:
-        #     import ipdb; ipdb.set_trace()
         # if offset == -1, my actual frame is not the inner frame but its parent
         #
         # class A(B): pass
@@ -1218,9 +1216,10 @@ class LookupMixIn:
                 # necessarily be done if the loop has no iteration, so we don't
                 # want to clear previous assignments if any (hence the test on
                 # optional_assign)
-                if not (optional_assign or are_exclusive(_stmts[pindex], node)) and node.name != _stmts[pindex].name:
-                    del _stmt_parents[pindex]
-                    del _stmts[pindex]
+                if not (optional_assign or are_exclusive(_stmts[pindex], node)):
+                    if not hasattr(node, 'is_partial_function') or node.name != _stmts[pindex].name:
+                        del _stmt_parents[pindex]
+                        del _stmts[pindex]
             if isinstance(node, AssignName):
                 if not optional_assign and stmt.parent is mystmt.parent:
                     _stmts = []

@@ -104,6 +104,7 @@ def _functools_partial_inference(node, context=None):
 
         filled_positionals = len(call.positional_arguments[1:])
         filled_keywords = list(call.keyword_arguments)
+        is_partial_function = True
 
         def infer_call_result(self, caller=None, context=None):
             nonlocal call
