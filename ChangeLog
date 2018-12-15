@@ -6,6 +6,11 @@ What's New in astroid 2.2.0?
 ============================
 Release Date: TBA
 
+* Fix a bug where a call to a function that has been previously called via 
+  functools.partial was wrongly inferred
+
+  Close PyCQA/pylint#2588
+
 * Fix a bug where an Attribute used as a base class was triggering a crash
 
   Close #626
