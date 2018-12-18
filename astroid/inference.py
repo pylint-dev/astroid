@@ -77,6 +77,7 @@ def _infer_sequence_helper(node, context=None):
 
 
 @decorators.raise_if_nothing_inferred
+# @decorators.path_wrapper
 def infer_sequence(self, context=None):
     if not any(isinstance(e, nodes.Starred) for e in self.elts):
         yield self
@@ -186,15 +187,13 @@ def infer_name(self, context=None):
             raise exceptions.NameInferenceError(
                 name=self.name, scope=self.scope(), context=context
             )
-    context = contextmod.copy_context(context)
+    context = contextmod.copy_context(context, branch_path=False)
     context.lookupname = self.name
     return bases._infer_stmts(stmts, context, frame)
 
 
 # pylint: disable=no-value-for-parameter
-nodes.Name._infer = decorators.raise_if_nothing_inferred(
-    decorators.path_wrapper(infer_name)
-)
+nodes.Name._infer = decorators.raise_if_nothing_inferred(infer_name)
 nodes.AssignName.infer_lhs = infer_name  # won't work with a path wrapper
 
 
@@ -202,7 +201,7 @@ nodes.AssignName.infer_lhs = infer_name  # won't work with a path wrapper
 @decorators.path_wrapper
 def infer_call(self, context=None):
     """infer a Call node by trying to guess what the function returns"""
-    callcontext = contextmod.copy_context(context)
+    callcontext = contextmod.copy_context(context, branch_path=False)
     callcontext.callcontext = contextmod.CallContext(
         args=self.args, keywords=self.keywords
     )
@@ -261,7 +260,7 @@ def infer_import_from(self, context=None, asname=True):
         raise exceptions.InferenceError(node=self, context=context) from exc
 
     try:
-        context = contextmod.copy_context(context)
+        context = contextmod.copy_context(context, branch_path=False)
         context.lookupname = name
         stmts = module.getattr(name, ignore_locals=module is self.root())
         return bases._infer_stmts(stmts, context)
@@ -503,7 +502,7 @@ def _infer_unaryop(self, context=None):
                     if inferred is util.Uninferable or not inferred.callable():
                         continue
 
-                    context = contextmod.copy_context(context)
+                    context = contextmod.copy_context(context, branch_path=False)
                     context.callcontext = contextmod.CallContext(args=[operand])
                     call_results = inferred.infer_call_result(self, context=context)
                     result = next(call_results, None)
@@ -541,7 +540,7 @@ def _is_not_implemented(const):
 def _invoke_binop_inference(instance, opnode, op, other, context, method_name):
     """Invoke binary operation inference on the given instance."""
     methods = dunder_lookup.lookup(instance, method_name)
-    context = contextmod.bind_context_to_node(context, instance)
+    context = contextmod.bind_context_to_node(context, instance, branch_path=False)
     method = methods[0]
     inferred = next(method.infer(context=context))
     if inferred is util.Uninferable:
@@ -593,7 +592,7 @@ def _get_binop_contexts(context, left, right):
     # The order is important, since the first one should be
     # left.__op__(right).
     for arg in (right, left):
-        new_context = context.clone()
+        new_context = context.clone(branch_path=False)
         new_context.callcontext = contextmod.CallContext(args=[arg])
         new_context.boundnode = None
         yield new_context
@@ -737,8 +736,8 @@ def _infer_binop(self, context):
     # 1. evaluating lhs may leave some undesired entries in context.path
     #    which may not let us infer right value of rhs
     context = context or contextmod.InferenceContext()
-    lhs_context = contextmod.copy_context(context)
-    rhs_context = contextmod.copy_context(context)
+    lhs_context = contextmod.copy_context(context, branch_path=False)
+    rhs_context = contextmod.copy_context(context, branch_path=False)
     lhs_iter = left.infer(context=lhs_context)
     rhs_iter = right.infer(context=rhs_context)
     for lhs, rhs in itertools.product(lhs_iter, rhs_iter):
@@ -770,7 +769,7 @@ def _infer_augassign(self, context=None):
     if context is None:
         context = contextmod.InferenceContext()
 
-    rhs_context = context.clone()
+    rhs_context = context.clone(branch_path=False)
 
     lhs_iter = self.target.infer_lhs(context=context)
     rhs_iter = self.value.infer(context=rhs_context)
@@ -861,7 +860,7 @@ nodes.Index._infer = infer_index
 # will be solved.
 def instance_getitem(self, index, context=None):
     # Rewrap index to Const for this case
-    new_context = contextmod.bind_context_to_node(context, self)
+    new_context = contextmod.bind_context_to_node(context, self, branch_path=False)
     if not context:
         context = new_context
 

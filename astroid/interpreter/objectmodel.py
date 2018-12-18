@@ -302,7 +302,7 @@ class FunctionModel(ObjectModel):
                         context=context,
                     )
 
-                context = contextmod.copy_context(context)
+                context = contextmod.copy_context(context, branch_path=False)
                 cls = next(caller.args[0].infer(context=context))
 
                 if cls is astroid.Uninferable:
