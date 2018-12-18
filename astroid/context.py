@@ -7,7 +7,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
 """Various context related utilities, including inference and call contexts."""
-
+import copy
 import pprint
 from typing import Optional
 
@@ -92,14 +92,25 @@ class InferenceContext:
         self.path.add((node, name))
         return False
 
-    def clone(self):
+    def clone(self, branch_path=True):
         """Clone inference path
 
         For example, each side of a binary operation (BinOp)
         starts with the same context but diverge as each side is inferred
-        so the InferenceContext will need be cloned"""
+        so the InferenceContext will need be cloned
+
+        :param branch_path:
+            If given, the underlying inference path will branch out,
+            which means that modifications brought to it will not reflect
+            in the original context.
+        :returns:
+            A new instance of :class:`InferenceContext`
+        """
         # XXX copy lookupname/callcontext ?
-        clone = InferenceContext(self.path, inferred=self.inferred)
+        if branch_path:
+            clone = InferenceContext(copy.copy(self.path), inferred=self.inferred)
+        else:
+            clone = InferenceContext(self.path, inferred=self.inferred)
         clone.callcontext = self.callcontext
         clone.boundnode = self.boundnode
         clone.extra_context = self.extra_context
@@ -143,15 +154,22 @@ class CallContext:
         self.keywords = keywords
 
 
-def copy_context(context: Optional[InferenceContext]) -> InferenceContext:
-    """Clone a context if given, or return a fresh contexxt"""
+def copy_context(
+    context: Optional[InferenceContext], branch_path=True
+) -> InferenceContext:
+    """Clone a context if given, or return a fresh context
+
+    :param context: The inference context or `None`
+    :param branch_path: If the path should branch out or not.
+    :returns: A cloned or a new inference context
+    """
     if context is not None:
-        return context.clone()
+        return context.clone(branch_path=branch_path)
 
     return InferenceContext()
 
 
-def bind_context_to_node(context, node):
+def bind_context_to_node(context, node, branch_path=True):
     """Give a context a boundnode
     to retrieve the correct function name or attribute value
     with from further inference.
@@ -163,11 +181,13 @@ def bind_context_to_node(context, node):
     :type context: Optional(context)
 
     :param node: Node to do name lookups from
-    :type node NodeNG:
+    :type node: NodeNG
+
+    :param branch_path: If the path will branch out or not
 
     :returns: A new context
     :rtype: InferenceContext
     """
-    context = copy_context(context)
+    context = copy_context(context, branch_path=branch_path)
     context.boundnode = node
     return context

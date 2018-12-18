@@ -90,21 +90,15 @@ def path_wrapper(func):
 
         yielded = set()
         generator = _func(node, context, **kwargs)
-        try:
-            while True:
-                res = next(generator)
-                # unproxy only true instance, not const, tuple, dict...
-                if res.__class__.__name__ == "Instance":
-                    ares = res._proxied
-                else:
-                    ares = res
-                if ares not in yielded:
-                    yield res
-                    yielded.add(ares)
-        except StopIteration as error:
-            if error.args:
-                return error.args[0]
-            return None
+        for res in generator:
+            # unproxy only true instance, not const, tuple, dict...
+            if res.__class__.__name__ == "Instance":
+                ares = res._proxied
+            else:
+                ares = res
+            if ares not in yielded:
+                yield res
+                yielded.add(ares)
 
     return wrapped
 
@@ -121,18 +115,16 @@ def yes_if_nothing_inferred(func, instance, args, kwargs):
 
 @wrapt.decorator
 def raise_if_nothing_inferred(func, instance, args, kwargs):
-    inferred = False
     try:
         generator = func(*args, **kwargs)
-        while True:
-            yield next(generator)
-            inferred = True
+        yield next(generator)
     except StopIteration as error:
-        if not inferred:
-            if error.args:
-                # pylint: disable=not-a-mapping
-                raise exceptions.InferenceError(**error.args[0])
-            else:
-                raise exceptions.InferenceError(
-                    "StopIteration raised without any error information."
-                )
+        if error.args:
+            # pylint: disable=not-a-mapping
+            raise exceptions.InferenceError(**error.args[0])
+        else:
+            raise exceptions.InferenceError(
+                "StopIteration raised without any error information."
+            )
+    else:
+        yield from generator

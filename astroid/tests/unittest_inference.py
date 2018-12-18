@@ -1718,7 +1718,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         """
         ast = extract_node(code, __name__)
         expr = ast.func.expr
-        self.assertRaises(InferenceError, next, expr.infer())
+        self.assertIs(next(expr.infer()), util.Uninferable)
 
     def test_tuple_builtin_inference(self):
         code = """

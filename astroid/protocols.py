@@ -353,7 +353,7 @@ def _arguments_infer_argname(self, name, context):
     # if there is a default value, yield it. And then yield Uninferable to reflect
     # we can't guess given argument value
     try:
-        context = contextmod.copy_context(context)
+        context = contextmod.copy_context(context, branch_path=False)
         yield from self.default_value(name).infer(context)
         yield util.Uninferable
     except exceptions.NoDefault:
@@ -364,7 +364,7 @@ def arguments_assigned_stmts(self, node=None, context=None, assign_path=None):
     if context.callcontext:
         # reset call context/name
         callcontext = context.callcontext
-        context = contextmod.copy_context(context)
+        context = contextmod.copy_context(context, branch_path=False)
         context.callcontext = None
         args = arguments.CallSite(callcontext)
         return args.infer_argument(self.parent, node.name, context)
