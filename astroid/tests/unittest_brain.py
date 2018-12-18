@@ -965,6 +965,17 @@ class TypingBrain(unittest.TestCase):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.ClassDef, node.as_string())
 
+    def test_has_dunder_args(self):
+        ast_node = builder.extract_node(
+            """
+        from typing import Union
+        NumericTypes = Union[int, float]
+        NumericTypes.__args__ #@
+        """
+        )
+        inferred = next(ast_node.infer())
+        assert isinstance(inferred, nodes.Tuple)
+
 
 class ReBrainTest(unittest.TestCase):
     def test_regex_flags(self):
