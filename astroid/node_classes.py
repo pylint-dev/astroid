@@ -590,9 +590,9 @@ class NodeNG:
         mylineno = self.fromlineno
         nearest = None, 0
         for node in nodes:
-            assert node.root() is myroot, (
-                "nodes %s and %s are not from the same module" % (self, node)
-            )
+            assert (
+                node.root() is myroot
+            ), "nodes %s and %s are not from the same module" % (self, node)
             lineno = node.fromlineno
             if node.fromlineno > mylineno:
                 break
@@ -1217,7 +1217,14 @@ class LookupMixIn:
                 # want to clear previous assignments if any (hence the test on
                 # optional_assign)
                 if not (optional_assign or are_exclusive(_stmts[pindex], node)):
-                    if not hasattr(node, 'is_partial_function') or node.name != _stmts[pindex].name:
+                    if (
+                        # In case of partial function node, if the statement is different
+                        # from the origin function then it can be deleted otherwise it should
+                        # remain to be able to correctly infer the call to origin function.
+                        not node.is_function or
+                        node.qname() != "PartialFunction"
+                        or node.name != _stmts[pindex].name
+                    ):
                         del _stmt_parents[pindex]
                         del _stmts[pindex]
             if isinstance(node, AssignName):
