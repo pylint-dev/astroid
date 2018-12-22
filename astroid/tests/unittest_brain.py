@@ -1708,7 +1708,7 @@ def test_infer_dict_from_keys():
         assert sorted(actual_values) == ["a", "b", "c"]
 
 
-class TestFunctoolsPartial():
+class TestFunctoolsPartial:
     def test_invalid_functools_partial_calls(self):
         ast_nodes = astroid.extract_node(
             """

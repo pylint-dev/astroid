@@ -99,7 +99,8 @@ def _functools_partial_inference(node, context=None):
             "wrapped function received unknown parameters"
         )
 
-    partial_function = objects.PartialFunction(call,
+    partial_function = objects.PartialFunction(
+        call,
         name=inferred_wrapped_function.name,
         doc=inferred_wrapped_function.doc,
         lineno=inferred_wrapped_function.lineno,

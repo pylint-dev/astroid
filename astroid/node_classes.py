@@ -1221,8 +1221,8 @@ class LookupMixIn:
                         # In case of partial function node, if the statement is different
                         # from the origin function then it can be deleted otherwise it should
                         # remain to be able to correctly infer the call to origin function.
-                        not node.is_function or
-                        node.qname() != "PartialFunction"
+                        not node.is_function
+                        or node.qname() != "PartialFunction"
                         or node.name != _stmts[pindex].name
                     ):
                         del _stmt_parents[pindex]

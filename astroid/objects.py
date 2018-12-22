@@ -248,7 +248,9 @@ class DictValues(bases.Proxy):
 class PartialFunction(scoped_nodes.FunctionDef):
     """A class representing partial function obtained via functools.partial"""
 
-    def __init__(self, call, name=None, doc=None, lineno=None, col_offset=None, parent=None):
+    def __init__(
+        self, call, name=None, doc=None, lineno=None, col_offset=None, parent=None
+    ):
         super().__init__(name, doc, lineno, col_offset, parent)
         self.filled_positionals = len(call.positional_arguments[1:])
         self.filled_args = call.positional_arguments[1:]
@@ -267,9 +269,10 @@ class PartialFunction(scoped_nodes.FunctionDef):
             context.callcontext.args = self.filled_args + call_context_args
 
         return super().infer_call_result(caller=caller, context=context)
-    
+
     def qname(self):
         return self.__class__.__name__
+
 
 # TODO: Hack to solve the circular import problem between node_classes and objects
 # This is not needed in 2.0, which has a cleaner design overall
