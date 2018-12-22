@@ -1754,9 +1754,10 @@ class TestFunctoolsPartial:
         partial(other_test, 4, c=4)(b=5) #@
         test(1, 2) #@
         partial(other_test, 1, 2)(c=3) #@
+        partial(test, b=4)(a=3) #@
         """
         )
-        expected_values = [4, 7, 7, 3, 12, 16, 32, 36, 3, 9]
+        expected_values = [4, 7, 7, 3, 12, 16, 32, 36, 3, 9, 7]
         for node, expected_value in zip(ast_nodes, expected_values):
             inferred = next(node.infer())
             assert isinstance(inferred, astroid.Const)
