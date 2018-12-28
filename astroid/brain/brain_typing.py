@@ -75,7 +75,7 @@ def _looks_like_typing_subscript(node):
 def infer_typing_attr(node, context=None):
     """Infer a typing.X[...] subscript"""
     try:
-        value = next(node.value.infer())
+        value = next(node.value.infer(context=context))
     except InferenceError as exc:
         raise UseInferenceDefault from exc
 
