@@ -168,7 +168,11 @@ def infer_named_tuple(node, context=None):
         node, tuple_base_name, context=context
     )
     call_site = arguments.CallSite.from_call(node)
-    func = next(extract_node("import collections; collections.namedtuple").infer())
+    func = next(
+        extract_node("import collections; collections.namedtuple").infer(
+            context=context
+        )
+    )
     try:
         rename = next(call_site.infer_argument(func, "rename", context)).bool_value()
     except InferenceError:
@@ -387,7 +391,7 @@ def infer_typing_namedtuple(node, context=None):
     # This is essentially a namedtuple with different arguments
     # so we extract the args and infer a named tuple.
     try:
-        func = next(node.func.infer())
+        func = next(node.func.infer(context=context))
     except InferenceError:
         raise UseInferenceDefault
 
