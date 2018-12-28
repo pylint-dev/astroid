@@ -20,7 +20,7 @@ from astroid import nodes
 from astroid import raw_building
 from astroid import scoped_nodes
 from astroid import util
-
+from astroid.context import copy_context
 
 BUILTINS = builtins_mod.__name__
 
@@ -205,14 +205,14 @@ def is_supertype(type1, type2):
     return _type_check(type1, type2)
 
 
-def class_instance_as_index(node):
+def class_instance_as_index(node, context=None):
     """Get the value as an index for the given instance.
 
     If an instance provides an __index__ method, then it can
     be used in some scenarios where an integer is expected,
     for instance when multiplying or subscripting a list.
     """
-    context = contextmod.InferenceContext()
+    context = copy_context(context, branch_path=False)
     context.callcontext = contextmod.CallContext(args=[node])
 
     try:

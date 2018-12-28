@@ -368,7 +368,9 @@ def infer_subscript(self, context=None):
                 index_value = index
             else:
                 if index.__class__ == bases.Instance:
-                    instance_as_index = helpers.class_instance_as_index(index)
+                    instance_as_index = helpers.class_instance_as_index(
+                        index, context=context
+                    )
                     if instance_as_index:
                         index_value = instance_as_index
                 else:
