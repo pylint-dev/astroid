@@ -24,6 +24,7 @@ from tokenize import detect_encoding
 
 from astroid._ast import _parse
 from astroid import bases
+from astroid import context
 from astroid import exceptions
 from astroid import manager
 from astroid import modutils
@@ -151,9 +152,11 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 for symbol, _ in from_node.names:
                     module.future_imports.add(symbol)
             self.add_from_names_to_locals(from_node)
+
         # handle delayed assattr nodes
+        context_obj = context.InferenceContext()
         for delayed in module._delayed_assattr:
-            self.delayed_assattr(delayed)
+            self.delayed_assattr(delayed, context_obj)
 
         # Visit the transforms
         if self._apply_transforms:
@@ -213,14 +216,14 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 node.parent.set_local(asname or name, node)
                 sort_locals(node.parent.scope().locals[asname or name])
 
-    def delayed_assattr(self, node):
+    def delayed_assattr(self, node, context):
         """Visit a AssAttr node
 
         This adds name to locals and handle members definition.
         """
         try:
             frame = node.frame()
-            for inferred in node.expr.infer():
+            for inferred in node.expr.infer(context=context):
                 if inferred is util.Uninferable:
                     continue
                 try:
