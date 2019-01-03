@@ -77,7 +77,6 @@ def _infer_sequence_helper(node, context=None):
 
 
 @decorators.raise_if_nothing_inferred
-@decorators.path_wrapper
 def infer_sequence(self, context=None):
     if not any(isinstance(e, nodes.Starred) for e in self.elts):
         yield self
@@ -817,7 +816,6 @@ nodes.AugAssign._infer = infer_augassign
 
 
 @decorators.raise_if_nothing_inferred
-@decorators.path_wrapper
 def infer_arguments(self, context=None):
     name = context.lookupname
     if name is None:
@@ -862,7 +860,6 @@ nodes.EmptyNode._infer = infer_empty_node
 
 
 @decorators.raise_if_nothing_inferred
-@decorators.path_wrapper
 def infer_index(self, context=None):
     return self.value.infer(context)
 

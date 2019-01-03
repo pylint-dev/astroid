@@ -168,10 +168,13 @@ class ModPathFromFileTest(unittest.TestCase):
         # /tmp/path_to_include (symlink to /tmp/deployment)
         # /tmp/secret.py
         # /tmp/deployment/secret.py (points to /tmp/secret.py)
-        os.mkdir(deployment_path)
-        self.addCleanup(shutil.rmtree, deployment_path)
-        os.symlink(deployment_path, path_to_include)
-        self.addCleanup(os.remove, path_to_include)
+        try:
+            os.mkdir(deployment_path)
+            self.addCleanup(shutil.rmtree, deployment_path)
+            os.symlink(deployment_path, path_to_include)
+            self.addCleanup(os.remove, path_to_include)
+        except OSError:
+            pass
         with open(real_secret_path, "w"):
             pass
         os.symlink(real_secret_path, symlink_secret_path)
