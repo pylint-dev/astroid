@@ -590,9 +590,9 @@ class NodeNG:
         mylineno = self.fromlineno
         nearest = None, 0
         for node in nodes:
-            assert (
-                node.root() is myroot
-            ), "nodes %s and %s are not from the same module" % (self, node)
+            assert node.root() is myroot, (
+                "nodes %s and %s are not from the same module" % (self, node)
+            )
             lineno = node.fromlineno
             if node.fromlineno > mylineno:
                 break
