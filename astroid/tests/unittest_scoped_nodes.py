@@ -1976,6 +1976,23 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(len(cls.keywords), 2)
         self.assertEqual([x.arg for x in cls.keywords], ["foo", "bar"])
 
+    def test_kite_graph(self):
+        data = """
+        A = type('A', (object,), {})
+
+        class B1(A): pass
+
+        class B2(A): pass
+
+        class C(B1, B2): pass
+
+        class D(C):
+            def update(self):
+                self.hello = 'hello'
+        """
+        m = builder.parse(data)
+
+
 
 def test_metaclass_cannot_infer_call_yields_an_instance():
     node = builder.extract_node(

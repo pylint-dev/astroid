@@ -6,17 +6,21 @@ What's New in astroid 2.3.0?
 ============================
 Release Date: TBA
 
+* Fix a bug where defining a class using type() could cause a DuplicateBasesError.
+
+  Close #644
+
 * Numpy brain support is improved.
 
-  Numpy's fundamental type ``numpy.ndarray`` has its own brain : ``brain_numpy_ndarray`` and 
+  Numpy's fundamental type ``numpy.ndarray`` has its own brain : ``brain_numpy_ndarray`` and
   each numpy module that necessitates brain action has now its own numpy brain :
-  
-    - ``numpy.core.numeric`` 
-    - ``numpy.core.function_base`` 
-    - ``numpy.core.multiarray`` 
-    - ``numpy.core.numeric`` 
-    - ``numpy.core.numerictypes`` 
-    - ``numpy.core.umath`` 
+
+    - ``numpy.core.numeric``
+    - ``numpy.core.function_base``
+    - ``numpy.core.multiarray``
+    - ``numpy.core.numeric``
+    - ``numpy.core.numerictypes``
+    - ``numpy.core.umath``
     - ``numpy.random.mtrand``
 
   Close PyCQA/pylint#2865

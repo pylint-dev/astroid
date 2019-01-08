@@ -90,16 +90,25 @@ def _c3_merge(sequences, cls, context):
     return None
 
 
-def _verify_duplicates_mro(sequences, cls, context):
+def clean_duplicates_mro(sequences, cls, context):
     for sequence in sequences:
-        names = [(node.lineno, node.qname()) for node in sequence if node.name]
-        if len(names) != len(set(names)):
+        names = [
+            (node.lineno, node.qname()) if node.name else None
+            for node in sequence
+        ]
+        last_index = dict(map(reversed, enumerate(names)))
+        if names and names[0] is not None and last_index[names[0]] != 0:
             raise exceptions.DuplicateBasesError(
                 message="Duplicates found in MROs {mros} for {cls!r}.",
                 mros=sequences,
                 cls=cls,
                 context=context,
             )
+        yield [
+            node
+            for i, (node, name) in enumerate(zip(sequence, names))
+            if name is None or last_index[name] == i
+        ]
 
 
 def function_to_method(n, klass):
@@ -2783,7 +2792,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                 bases_mro.append(ancestors)
 
         unmerged_mro = [[self]] + bases_mro + [inferred_bases]
-        _verify_duplicates_mro(unmerged_mro, self, context)
+        unmerged_mro = list(
+            clean_duplicates_mro(unmerged_mro, self, context)
+        )
         return _c3_merge(unmerged_mro, self, context)
 
     def mro(self, context=None) -> List["ClassDef"]:
