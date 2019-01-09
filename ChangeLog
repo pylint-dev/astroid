@@ -21,6 +21,11 @@ Release Date: TBA
 
   Close #628
 
+* Fix a bug where defining a class using type() could cause a
+DuplicateBasesError.
+
+  Close #644
+
 
 What's New in astroid 2.1.0?
 ============================
