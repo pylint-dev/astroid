@@ -322,7 +322,7 @@ def infer_enum_class(node):
             inferred_return_value = None
             if isinstance(stmt.value, nodes.Const):
                 if isinstance(stmt.value.value, str):
-                    inferred_return_value = '"{}"'.format(stmt.value.value)
+                    inferred_return_value = repr(stmt.value.value)
                 else:
                     inferred_return_value = stmt.value.value
 

@@ -7,6 +7,10 @@ What's New in astroid 2.2.0?
 Release Date: TBA
 
 
+* Prevent crashing when processing ``enums`` with mixed single and double quotes.
+
+  Close PyCQA/pylint#2676
+
 * ``typing`` types have the `__args__` property. Close PyCQA/pylint#2419
 
 * Fix a bug where an Attribute used as a base class was triggering a crash
