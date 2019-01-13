@@ -245,15 +245,6 @@ def infer_import(self, context=None, asname=True):
 nodes.Import._infer = infer_import
 
 
-def infer_name_module(self, name):
-    context = contextmod.InferenceContext()
-    context.lookupname = name
-    return self.infer(context, asname=False)
-
-
-nodes.Import.infer_name_module = infer_name_module
-
-
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
 def infer_import_from(self, context=None, asname=True):
