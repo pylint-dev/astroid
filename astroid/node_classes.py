@@ -4166,8 +4166,7 @@ class TryFinally(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         if (
             isinstance(child, TryExcept)
             and child.fromlineno == self.fromlineno
-            and lineno > self.fromlineno
-            and lineno <= child.tolineno
+            and child.tolineno >= lineno > self.fromlineno
         ):
             return child.block_range(lineno)
         return self._elsed_block_range(lineno, self.finalbody)
