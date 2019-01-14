@@ -49,7 +49,7 @@ MANAGER = manager.AstroidManager()
 
 
 @decorators.raise_if_nothing_inferred
-def unpack_infer(stmt, context=None):
+def unpack_infer(stmt, context=contextmod.global_context):
     """recursively generate nodes inferred by the given statement.
     If the inferred value is a list or a tuple, recurse on the elements
     """
@@ -155,7 +155,7 @@ def are_exclusive(
 _SLICE_SENTINEL = object()
 
 
-def _slice_value(index, context=None):
+def _slice_value(index, context=contextmod.global_context):
     """Get the value of the given slice index."""
 
     if isinstance(index, Const):
@@ -182,7 +182,7 @@ def _slice_value(index, context=None):
     return _SLICE_SENTINEL
 
 
-def _infer_slice(node, context=None):
+def _infer_slice(node, context=contextmod.global_context):
     lower = _slice_value(node.lower, context)
     upper = _slice_value(node.upper, context)
     step = _slice_value(node.step, context)
@@ -197,7 +197,7 @@ def _infer_slice(node, context=None):
     )
 
 
-def _container_getitem(instance, elts, index, context=None):
+def _container_getitem(instance, elts, index, context=contextmod.global_context):
     """Get a slice or an item, using the given *index*, for the given sequence."""
     try:
         if isinstance(index, Slice):
@@ -326,7 +326,7 @@ class NodeNG:
         self.col_offset = col_offset
         self.parent = parent
 
-    def infer(self, context=None, **kwargs):
+    def infer(self, context=contextmod.global_context, **kwargs):
         """Get a generator of the inferred values.
 
         This is the main entry point to the inference system.
@@ -725,7 +725,7 @@ class NodeNG:
         # overridden for ImportFrom, Import, Global, TryExcept and Arguments
         pass
 
-    def _infer(self, context=None):
+    def _infer(self, context=contextmod.global_context):
         """we don't know how to resolve a statement by default"""
         # this method is overridden by most concrete classes
         raise exceptions.InferenceError(
@@ -1093,7 +1093,7 @@ class LookupMixIn:
         :rtype: iterable
         """
         frame, stmts = self.lookup(name)
-        context = contextmod.InferenceContext()
+        context = contextmod.global_context
         return bases._infer_stmts(stmts, context, frame)
 
     def _filter_stmts(self, stmts, frame, offset):
@@ -1960,10 +1960,10 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
         self.value = value
 
     # This is set by inference.py
-    def _infer_augassign(self, context=None):
+    def _infer_augassign(self, context=contextmod.global_context):
         raise NotImplementedError
 
-    def type_errors(self, context=None):
+    def type_errors(self, context=contextmod.global_context):
         """Get a list of type errors which can occur during inference.
 
         Each TypeError is represented by a :class:`BadBinaryOperationMessage` ,
@@ -2073,10 +2073,10 @@ class BinOp(NodeNG):
         self.right = right
 
     # This is set by inference.py
-    def _infer_binop(self, context=None):
+    def _infer_binop(self, context=contextmod.global_context):
         raise NotImplementedError
 
-    def type_errors(self, context=None):
+    def type_errors(self, context=contextmod.global_context):
         """Get a list of type errors which can occur during inference.
 
         Each TypeError is represented by a :class:`BadBinaryOperationMessage`,
@@ -2454,7 +2454,7 @@ class Const(mixins.NoChildrenMixin, NodeNG, bases.Instance):
             raise AttributeError
         return super().__getattr__(name)
 
-    def getitem(self, index, context=None):
+    def getitem(self, index, context=contextmod.global_context):
         """Get an item from this node if subscriptable.
 
         :param index: The node to use as a subscript index.
@@ -2763,7 +2763,7 @@ class Dict(NodeNG, bases.Instance):
         """
         return [key for (key, _) in self.items]
 
-    def getitem(self, index, context=None):
+    def getitem(self, index, context=contextmod.global_context):
         """Get an item from this node.
 
         :param index: The node to use as a subscript index.
@@ -3600,7 +3600,7 @@ class List(_BaseContainer):
         """
         return "%s.list" % BUILTINS
 
-    def getitem(self, index, context=None):
+    def getitem(self, index, context=contextmod.global_context):
         """Get an item from this node.
 
         :param index: The node to use as a subscript index.
@@ -3885,7 +3885,7 @@ class Slice(NodeNG):
         """
         return "%s.slice" % BUILTINS
 
-    def igetattr(self, attrname, context=None):
+    def igetattr(self, attrname, context=contextmod.global_context):
         """Infer the possible values of the given attribute on the slice.
 
         :param attrname: The name of the attribute to infer.
@@ -3903,7 +3903,7 @@ class Slice(NodeNG):
         else:
             yield from self.getattr(attrname, context=context)
 
-    def getattr(self, attrname, context=None):
+    def getattr(self, attrname, context=contextmod.global_context):
         return self._proxied.getattr(attrname, context)
 
     def get_children(self):
@@ -4217,7 +4217,7 @@ class Tuple(_BaseContainer):
         """
         return "%s.tuple" % BUILTINS
 
-    def getitem(self, index, context=None):
+    def getitem(self, index, context=contextmod.global_context):
         """Get an item from this node.
 
         :param index: The node to use as a subscript index.
@@ -4274,10 +4274,10 @@ class UnaryOp(NodeNG):
         self.operand = operand
 
     # This is set by inference.py
-    def _infer_unaryop(self, context=None):
+    def _infer_unaryop(self, context=contextmod.global_context):
         raise NotImplementedError
 
-    def type_errors(self, context=None):
+    def type_errors(self, context=contextmod.global_context):
         """Get a list of type errors which can occur during inference.
 
         Each TypeError is represented by a :class:`BadBinaryOperationMessage`,
@@ -4589,7 +4589,7 @@ class Unknown(mixins.AssignTypeMixin, NodeNG):
     def qname(self):
         return "Unknown"
 
-    def infer(self, context=None, **kwargs):
+    def infer(self, context=contextmod.global_context, **kwargs):
         """Inference on an Unknown node immediately terminates."""
         yield util.Uninferable
 

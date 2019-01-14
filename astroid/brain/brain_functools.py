@@ -7,6 +7,7 @@ from itertools import chain
 
 import astroid
 from astroid import arguments
+from astroid import context as contextmod
 from astroid import BoundMethod
 from astroid import extract_node
 from astroid import helpers
@@ -60,7 +61,7 @@ def _transform_lru_cache(node, context=None):
     return
 
 
-def _functools_partial_inference(node, context=None):
+def _functools_partial_inference(node, context=contextmod.global_context):
     call = arguments.CallSite.from_call(node)
     number_of_positional = len(call.positional_arguments)
     if number_of_positional < 1:
@@ -106,6 +107,7 @@ def _functools_partial_inference(node, context=None):
 
         def infer_call_result(self, caller=None, context=None):
             nonlocal call
+            context = contextmod.copy_context(context, branch_path=False)
             filled_args = call.positional_arguments[1:]
             filled_keywords = call.keyword_arguments
 

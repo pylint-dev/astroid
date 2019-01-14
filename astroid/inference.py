@@ -43,7 +43,7 @@ MANAGER = manager.AstroidManager()
 # .infer method ###############################################################
 
 
-def infer_end(self, context=None):
+def infer_end(self, context=contextmod.global_context):
     """inference's end for node such as Module, ClassDef, FunctionDef,
     Const...
 
@@ -59,7 +59,7 @@ nodes.Const._infer = infer_end
 nodes.Slice._infer = infer_end
 
 
-def _infer_sequence_helper(node, context=None):
+def _infer_sequence_helper(node, context=contextmod.global_context):
     """Infer all values based on _BaseContainer.elts"""
     values = []
 
@@ -77,8 +77,8 @@ def _infer_sequence_helper(node, context=None):
 
 
 @decorators.raise_if_nothing_inferred
-# @decorators.path_wrapper
-def infer_sequence(self, context=None):
+@decorators.path_wrapper
+def infer_sequence(self, context=contextmod.global_context):
     if not any(isinstance(e, nodes.Starred) for e in self.elts):
         yield self
     else:
@@ -94,16 +94,6 @@ def infer_sequence(self, context=None):
 nodes.List._infer = infer_sequence
 nodes.Tuple._infer = infer_sequence
 nodes.Set._infer = infer_sequence
-
-
-def infer_map(self, context=None):
-    if not any(isinstance(k, nodes.DictUnpack) for k, _ in self.items):
-        yield self
-    else:
-        items = _infer_map(self, context)
-        new_seq = type(self)(self.lineno, self.col_offset, self.parent)
-        new_seq.postinit(list(items.items()))
-        yield new_seq
 
 
 def _update_with_replacement(lhs_dict, rhs_dict):
@@ -150,6 +140,18 @@ def _infer_map(node, context):
     return values
 
 
+@decorators.raise_if_nothing_inferred
+@decorators.path_wrapper
+def infer_map(self, context=None):
+    if not any(isinstance(k, nodes.DictUnpack) for k, _ in self.items):
+        yield self
+    else:
+        items = _infer_map(self, context)
+        new_seq = type(self)(self.lineno, self.col_offset, self.parent)
+        new_seq.postinit(list(items.items()))
+        yield new_seq
+
+
 nodes.Dict._infer = infer_map
 
 
@@ -173,7 +175,9 @@ def _higher_function_scope(node):
     return None
 
 
-def infer_name(self, context=None):
+@decorators.raise_if_nothing_inferred
+@decorators.path_wrapper
+def infer_name(self, context=contextmod.global_context):
     """infer a Name: use name lookup rules"""
     frame, stmts = self.lookup(self.name)
     if not stmts:
@@ -192,14 +196,13 @@ def infer_name(self, context=None):
     return bases._infer_stmts(stmts, context, frame)
 
 
-# pylint: disable=no-value-for-parameter
-nodes.Name._infer = decorators.raise_if_nothing_inferred(infer_name)
-nodes.AssignName.infer_lhs = infer_name  # won't work with a path wrapper
+nodes.Name._infer = infer_name
+nodes.AssignName.infer_lhs = infer_name
 
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_call(self, context=None):
+def infer_call(self, context=contextmod.global_context):
     """infer a Call node by trying to guess what the function returns"""
     callcontext = contextmod.copy_context(context, branch_path=False)
     callcontext.callcontext = contextmod.CallContext(
@@ -226,7 +229,7 @@ nodes.Call._infer = infer_call
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_import(self, context=None, asname=True):
+def infer_import(self, context=contextmod.global_context, asname=True):
     """infer an Import node: return the imported module/object"""
     name = context.lookupname
     if name is None:
@@ -246,7 +249,7 @@ nodes.Import._infer = infer_import
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_import_from(self, context=None, asname=True):
+def infer_import_from(self, context=contextmod.global_context, asname=True):
     """infer a ImportFrom node: return the imported module/object"""
     name = context.lookupname
     if name is None:
@@ -274,7 +277,8 @@ nodes.ImportFrom._infer = infer_import_from
 
 
 @decorators.raise_if_nothing_inferred
-def infer_attribute(self, context=None):
+@decorators.path_wrapper
+def infer_attribute(self, context=contextmod.global_context):
     """infer an Attribute node by using getattr on the associated object"""
     for owner in self.expr.infer(context):
         if owner is util.Uninferable:
@@ -298,25 +302,28 @@ def infer_attribute(self, context=None):
                     # Can't determine anything useful.
                     pass
 
+        context = contextmod.copy_context(context, branch_path=False)
+        context.boundnode = owner
         try:
-            context.boundnode = owner
             yield from owner.igetattr(self.attrname, context)
-            context.boundnode = None
-        except (exceptions.AttributeInferenceError, exceptions.InferenceError):
-            context.boundnode = None
-        except AttributeError:
-            # XXX method / function
-            context.boundnode = None
+        except exceptions.AttributeInferenceError as error:
+            raise exceptions.InferenceError(
+                error.message,
+                target=self,
+                attribute=context.lookupname,
+                context=context,
+            ) from error
+
     return dict(node=self, context=context)
 
 
-nodes.Attribute._infer = decorators.path_wrapper(infer_attribute)
-nodes.AssignAttr.infer_lhs = infer_attribute  # # won't work with a path wrapper
+nodes.Attribute._infer = infer_attribute
+nodes.AssignAttr.infer_lhs = infer_attribute
 
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_global(self, context=None):
+def infer_global(self, context=contextmod.global_context):
     if context.lookupname is None:
         raise exceptions.InferenceError(node=self, context=context)
     try:
@@ -334,7 +341,8 @@ _SUBSCRIPT_SENTINEL = object()
 
 
 @decorators.raise_if_nothing_inferred
-def infer_subscript(self, context=None):
+@decorators.path_wrapper
+def infer_subscript(self, context=contextmod.global_context):
     """Inference for subscripts
 
     We're understanding if the index is a Const
@@ -392,13 +400,13 @@ def infer_subscript(self, context=None):
     return None
 
 
-nodes.Subscript._infer = decorators.path_wrapper(infer_subscript)
+nodes.Subscript._infer = infer_subscript
 nodes.Subscript.infer_lhs = infer_subscript
 
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def _infer_boolop(self, context=None):
+def _infer_boolop(self, context=contextmod.global_context):
     """Infer a boolean operation (and / or / not).
 
     The function will calculate the boolean operation
@@ -466,7 +474,7 @@ def _filter_operation_errors(self, infer_callable, context, error):
             yield result
 
 
-def _infer_unaryop(self, context=None):
+def _infer_unaryop(self, context=contextmod.global_context):
     """Infer what an UnaryOp should return when evaluated."""
     for operand in self.operand.infer(context):
         try:
@@ -522,7 +530,7 @@ def _infer_unaryop(self, context=None):
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_unaryop(self, context=None):
+def infer_unaryop(self, context=contextmod.global_context):
     """Infer what an UnaryOp should return when evaluated."""
     yield from _filter_operation_errors(
         self, _infer_unaryop, context, util.BadUnaryOperationMessage
@@ -737,9 +745,8 @@ def _infer_binop(self, context):
     # we use two separate contexts for evaluating lhs and rhs because
     # 1. evaluating lhs may leave some undesired entries in context.path
     #    which may not let us infer right value of rhs
-    context = context or contextmod.InferenceContext()
-    lhs_context = contextmod.copy_context(context, branch_path=False)
-    rhs_context = contextmod.copy_context(context, branch_path=False)
+    lhs_context = contextmod.copy_context(context, branch_path=True)
+    rhs_context = contextmod.copy_context(context, branch_path=True)
     lhs_iter = left.infer(context=lhs_context)
     rhs_iter = right.infer(context=rhs_context)
     for lhs, rhs in itertools.product(lhs_iter, rhs_iter):
@@ -756,7 +763,7 @@ def _infer_binop(self, context):
 
 @decorators.yes_if_nothing_inferred
 @decorators.path_wrapper
-def infer_binop(self, context=None):
+def infer_binop(self, context=contextmod.global_context):
     return _filter_operation_errors(
         self, _infer_binop, context, util.BadBinaryOperationMessage
     )
@@ -766,10 +773,10 @@ nodes.BinOp._infer_binop = _infer_binop
 nodes.BinOp._infer = infer_binop
 
 
-def _infer_augassign(self, context=None):
+def _infer_augassign(self, context=contextmod.global_context):
     """Inference logic for augmented binary operations."""
     if context is None:
-        context = contextmod.InferenceContext()
+        context = contextmod.global_context
 
     rhs_context = context.clone(branch_path=False)
 
@@ -795,7 +802,7 @@ def _infer_augassign(self, context=None):
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_augassign(self, context=None):
+def infer_augassign(self, context=contextmod.global_context):
     return _filter_operation_errors(
         self, _infer_augassign, context, util.BadBinaryOperationMessage
     )
@@ -808,7 +815,8 @@ nodes.AugAssign._infer = infer_augassign
 
 
 @decorators.raise_if_nothing_inferred
-def infer_arguments(self, context=None):
+@decorators.path_wrapper
+def infer_arguments(self, context=contextmod.global_context):
     name = context.lookupname
     if name is None:
         raise exceptions.InferenceError(node=self, context=context)
@@ -820,7 +828,7 @@ nodes.Arguments._infer = infer_arguments
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_assign(self, context=None):
+def infer_assign(self, context=contextmod.global_context):
     """infer a AssignName/AssignAttr: need to inspect the RHS part of the
     assign node
     """
@@ -838,7 +846,7 @@ nodes.AssignAttr._infer = infer_assign
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
-def infer_empty_node(self, context=None):
+def infer_empty_node(self, context=contextmod.global_context):
     if not self.has_underlying_object():
         yield util.Uninferable
     else:
@@ -852,7 +860,8 @@ nodes.EmptyNode._infer = infer_empty_node
 
 
 @decorators.raise_if_nothing_inferred
-def infer_index(self, context=None):
+@decorators.path_wrapper
+def infer_index(self, context=contextmod.global_context):
     return self.value.infer(context)
 
 
@@ -860,7 +869,7 @@ nodes.Index._infer = infer_index
 
 # TODO: move directly into bases.Instance when the dependency hell
 # will be solved.
-def instance_getitem(self, index, context=None):
+def instance_getitem(self, index, context=contextmod.global_context):
     # Rewrap index to Const for this case
     new_context = contextmod.bind_context_to_node(context, self, branch_path=False)
     if not context:

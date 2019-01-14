@@ -166,7 +166,7 @@ def copy_context(
     if context is not None:
         return context.clone(branch_path=branch_path)
 
-    return InferenceContext()
+    return global_context
 
 
 def bind_context_to_node(context, node, branch_path=True):
@@ -191,3 +191,6 @@ def bind_context_to_node(context, node, branch_path=True):
     context = copy_context(context, branch_path=branch_path)
     context.boundnode = node
     return context
+
+
+global_context = InferenceContext()

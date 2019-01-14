@@ -36,6 +36,7 @@ from typing import Optional, List
 
 from astroid import bases
 from astroid import context as contextmod
+from astroid.context import global_context
 from astroid import exceptions
 from astroid import decorators as decorators_mod
 from astroid.interpreter import objectmodel
@@ -511,7 +512,7 @@ class Module(LocalsDictNodeNG):
         """
         return "Module"
 
-    def getattr(self, name, context=None, ignore_locals=False):
+    def getattr(self, name, context=contextmod.global_context, ignore_locals=False):
         result = []
         name_in_locals = name in self.locals
 
@@ -533,7 +534,7 @@ class Module(LocalsDictNodeNG):
             target=self, attribute=name, context=context
         )
 
-    def igetattr(self, name, context=None):
+    def igetattr(self, name, context=contextmod.global_context):
         """Infer the possible values of the given variable.
 
         :param name: The name of the variable to infer.
@@ -1188,7 +1189,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
             names.append(self.args.kwarg)
         return names
 
-    def infer_call_result(self, caller, context=None):
+    def infer_call_result(self, caller, context=contextmod.global_context):
         """Infer what the function returns when called.
 
         :param caller: Unused
@@ -1513,7 +1514,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         """
         return self.fromlineno, self.tolineno
 
-    def getattr(self, name, context=None):
+    def getattr(self, name, context=contextmod.global_context):
         """this method doesn't look in the instance_attrs dictionary since it's
         done by an Instance proxy at inference time.
         """
@@ -1523,7 +1524,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             return [self.special_attributes.lookup(name)]
         raise exceptions.AttributeInferenceError(target=self, attribute=name)
 
-    def igetattr(self, name, context=None):
+    def igetattr(self, name, context=contextmod.global_context):
         """Inferred getattr, which returns an iterator of inferred statements."""
         try:
             return bases._infer_stmts(self.getattr(name, context), context, frame=self)
@@ -1585,9 +1586,10 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         if self.decorators:
             for node in self.decorators.nodes:
                 try:
-                    inferred = next(node.infer())
+                    inferred = next(node.infer(context=global_context))
                 except exceptions.InferenceError:
                     continue
+
                 if inferred and inferred.qname() in (
                     "abc.abstractproperty",
                     "abc.abstractmethod",
@@ -1611,7 +1613,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         """
         return next(self._get_yield_nodes_skip_lambdas(), False)
 
-    def infer_call_result(self, caller=None, context=None):
+    def infer_call_result(self, caller=None, context=contextmod.global_context):
         """Infer what the function returns when called.
 
         :returns: What the function returns.
@@ -1959,9 +1961,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         if metaclass is not None:
             self._metaclass = metaclass
 
-    def _newstyle_impl(self, context=None):
+    def _newstyle_impl(self, context=contextmod.global_context):
         if context is None:
-            context = contextmod.InferenceContext()
+            context = contextmod.global_context
         if self._newstyle is not None:
             return self._newstyle
         for base in self.ancestors(recurs=False, context=context):
@@ -2033,7 +2035,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """
         return True
 
-    def is_subtype_of(self, type_name, context=None):
+    def is_subtype_of(self, type_name, context=contextmod.global_context):
         """Whether this class is a subtype of the given type.
 
         :param type_name: The name of the type of check against.
@@ -2085,7 +2087,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         result.parent = caller.parent
         return result
 
-    def infer_call_result(self, caller, context=None):
+    def infer_call_result(self, caller, context=contextmod.global_context):
         """infer what a class is returning when called"""
         if (
             self.is_subtype_of("%s.type" % (BUILTINS,), context)
@@ -2171,7 +2173,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """
         return [bnode.as_string() for bnode in self.bases]
 
-    def ancestors(self, recurs=True, context=None):
+    def ancestors(self, recurs=True, context=contextmod.global_context):
         """Iterate over the base classes in prefixed depth first order.
 
         :param recurs: Whether to recurse or return direct ancestors only.
@@ -2184,7 +2186,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         # FIXME: inference make infinite loops possible here
         yielded = {self}
         if context is None:
-            context = contextmod.InferenceContext()
+            context = contextmod.global_context
         if not self.bases and self.qname() != "builtins.object":
             yield builtin_lookup("object")[1][0]
             return
@@ -2215,7 +2217,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             except exceptions.InferenceError:
                 continue
 
-    def local_attr_ancestors(self, name, context=None):
+    def local_attr_ancestors(self, name, context=contextmod.global_context):
         """Iterate over the parents that define the given name.
 
         :param name: The name to find definitions for.
@@ -2236,7 +2238,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             if name in astroid:
                 yield astroid
 
-    def instance_attr_ancestors(self, name, context=None):
+    def instance_attr_ancestors(self, name, context=contextmod.global_context):
         """Iterate over the parents that define the given name as an attribute.
 
         :param name: The name to find definitions for.
@@ -2261,7 +2263,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """
         return node in self.bases
 
-    def local_attr(self, name, context=None):
+    def local_attr(self, name, context=contextmod.global_context):
         """Get the list of assign nodes associated to the given name.
 
         Assignments are looked for in both this class and in parents.
@@ -2286,7 +2288,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             target=self, attribute=name, context=context
         )
 
-    def instance_attr(self, name, context=None):
+    def instance_attr(self, name, context=contextmod.global_context):
         """Get the list of nodes associated to the given attribute name.
 
         Assignments are looked for in both this class and in parents.
@@ -2319,7 +2321,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """
         return bases.Instance(self)
 
-    def getattr(self, name, context=None, class_context=True):
+    def getattr(self, name, context=contextmod.global_context, class_context=True):
         """Get an attribute from this class, using Python's attribute semantic.
 
         This method doesn't look in the :attr:`instance_attrs` dictionary
@@ -2406,7 +2408,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             else:
                 yield bases.BoundMethod(attr, self)
 
-    def igetattr(self, name, context=None, class_context=True):
+    def igetattr(self, name, context=contextmod.global_context, class_context=True):
         """Infer the possible values of the given variable.
 
         :param name: The name of the variable to infer.
@@ -2443,7 +2445,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                     error.message, target=self, attribute=name, context=context
                 )
 
-    def has_dynamic_getattr(self, context=None):
+    def has_dynamic_getattr(self, context=contextmod.global_context):
         """Check if the class has a custom __getattr__ or __getattribute__.
 
         If any such method is found and it is not from
@@ -2470,7 +2472,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                 pass
         return False
 
-    def getitem(self, index, context=None):
+    def getitem(self, index, context=contextmod.global_context):
         """Return the inference of a subscript.
 
         This is basically looking up the method in the metaclass and calling it.
@@ -2537,7 +2539,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
     _metaclass = None
 
-    def declared_metaclass(self, context=None):
+    def declared_metaclass(self, context=contextmod.global_context):
         """Return the explicit declared metaclass for the current class.
 
         An explicit declared metaclass is defined
@@ -2573,7 +2575,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         return None
 
-    def _find_metaclass(self, seen=None, context=None):
+    def _find_metaclass(self, seen=None, context=contextmod.global_context):
         if seen is None:
             seen = set()
         seen.add(self)
@@ -2587,7 +2589,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                         break
         return klass
 
-    def metaclass(self, context=None):
+    def metaclass(self, context=contextmod.global_context):
         """Get the metaclass of this class.
 
         If this class does not define explicitly a metaclass,
@@ -2706,7 +2708,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         return sorted(slots, key=lambda item: item.value)
 
-    def _inferred_bases(self, context=None):
+    def _inferred_bases(self, context=contextmod.global_context):
         # Similar with .ancestors, but the difference is when one base is inferred,
         # only the first object is wanted. That's because
         # we aren't interested in superclasses, as in the following
@@ -2721,7 +2723,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         # only in SomeClass.
 
         if context is None:
-            context = contextmod.InferenceContext()
+            context = contextmod.global_context
         if not self.bases and self.qname() != "builtins.object":
             yield builtin_lookup("object")[1][0]
             return
@@ -2740,7 +2742,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             else:
                 yield from baseobj.bases
 
-    def _compute_mro(self, context=None):
+    def _compute_mro(self, context=contextmod.global_context):
         inferred_bases = list(self._inferred_bases(context=context))
         bases_mro = []
         for base in inferred_bases:
@@ -2763,7 +2765,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         _verify_duplicates_mro(unmerged_mro, self, context)
         return _c3_merge(unmerged_mro, self, context)
 
-    def mro(self, context=None):
+    def mro(self, context=contextmod.global_context):
         """Get the method resolution order, using C3 linearization.
 
         :returns: The list of ancestors, sorted by the mro.

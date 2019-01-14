@@ -153,14 +153,14 @@ class AstroidBuilder(raw_building.InspectBuilder):
                     module.future_imports.add(symbol)
             self.add_from_names_to_locals(from_node)
 
-        # handle delayed assattr nodes
-        context_obj = context.InferenceContext()
-        for delayed in module._delayed_assattr:
-            self.delayed_assattr(delayed, context_obj)
-
         # Visit the transforms
         if self._apply_transforms:
             module = self._manager.visit_transforms(module)
+
+        # handle delayed assattr nodes
+        for delayed in module._delayed_assattr:
+            self.delayed_assattr(delayed, context.global_context)
+
         return module
 
     def _data_build(self, data, modname, path):

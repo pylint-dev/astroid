@@ -113,7 +113,7 @@ class Proxy:
             return self.__dict__[name]
         return getattr(self._proxied, name)
 
-    def infer(self, context=None):
+    def infer(self, context=contextmod.global_context):
         yield self
 
 
@@ -125,7 +125,7 @@ def _infer_stmts(stmts, context, frame=None):
         context = context.clone(branch_path=False)
     else:
         name = None
-        context = contextmod.InferenceContext()
+        context = contextmod.global_context
 
     for stmt in stmts:
         if stmt is util.Uninferable:
@@ -178,7 +178,7 @@ class BaseInstance(Proxy):
     def display_type(self):
         return "Instance of"
 
-    def getattr(self, name, context=None, lookupclass=True):
+    def getattr(self, name, context=contextmod.global_context, lookupclass=True):
         try:
             values = self._proxied.instance_attr(name, context)
         except exceptions.AttributeInferenceError as exc:
@@ -230,7 +230,7 @@ class BaseInstance(Proxy):
             except exceptions.AttributeInferenceError as error:
                 raise exceptions.InferenceError(**vars(error)) from error
 
-    def _wrap_attr(self, attrs, context=None):
+    def _wrap_attr(self, attrs, context=contextmod.global_context):
         """wrap bound methods of attrs in a InstanceMethod proxies"""
         for attr in attrs:
             if isinstance(attr, UnboundMethod):
@@ -252,9 +252,9 @@ class BaseInstance(Proxy):
             else:
                 yield attr
 
-    def infer_call_result(self, caller, context=None):
+    def infer_call_result(self, caller, context=contextmod.global_context):
         """infer what a class instance is returning when called"""
-        context = contextmod.bind_context_to_node(context, self, False)
+        context = contextmod.bind_context_to_node(context, self, branch_path=False)
         inferred = False
         for node in self._proxied.igetattr("__call__", context):
             if node is util.Uninferable or not node.callable():
@@ -308,7 +308,7 @@ class Instance(BaseInstance):
              nonzero. If a class defines neither __len__() nor __bool__(),
              all its instances are considered true.
         """
-        context = contextmod.InferenceContext()
+        context = contextmod.global_context
         context.callcontext = contextmod.CallContext(args=[])
         context.boundnode = self
 
@@ -323,7 +323,7 @@ class Instance(BaseInstance):
         return result
 
     # This is set in inference.py.
-    def getitem(self, index, context=None):
+    def getitem(self, index, context=contextmod.global_context):
         pass
 
 
@@ -348,12 +348,12 @@ class UnboundMethod(Proxy):
     def is_bound(self):
         return False
 
-    def getattr(self, name, context=None):
+    def getattr(self, name, context=contextmod.global_context):
         if name in self.special_attributes:
             return [self.special_attributes.lookup(name)]
         return self._proxied.getattr(name, context)
 
-    def igetattr(self, name, context=None):
+    def igetattr(self, name, context=contextmod.global_context):
         if name in self.special_attributes:
             return iter((self.special_attributes.lookup(name),))
         return self._proxied.igetattr(name, context)
@@ -472,8 +472,10 @@ class BoundMethod(UnboundMethod):
         cls.locals = cls_locals
         return cls
 
-    def infer_call_result(self, caller, context=None):
-        context = contextmod.bind_context_to_node(context, self.bound, False)
+    def infer_call_result(self, caller, context=contextmod.global_context):
+        context = contextmod.bind_context_to_node(
+            context, self.bound, branch_path=False
+        )
         if (
             self.bound.__class__.__name__ == "ClassDef"
             and self.bound.name == "type"

@@ -72,7 +72,7 @@ class CallSite:
 
     def _unpack_keywords(self, keywords):
         values = {}
-        context = contextmod.InferenceContext()
+        context = contextmod.global_context
         context.extra_context = self.argument_context_map
         for name, value in keywords:
             if name is None:
@@ -112,7 +112,7 @@ class CallSite:
 
     def _unpack_args(self, args):
         values = []
-        context = contextmod.InferenceContext()
+        context = contextmod.global_context
         context.extra_context = self.argument_context_map
         for arg in args:
             if isinstance(arg, nodes.Starred):

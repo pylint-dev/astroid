@@ -44,10 +44,10 @@ def _function_type(function, builtins):
     return _build_proxy_class(cls_name, builtins)
 
 
-def _object_type(node, context=None):
+def _object_type(node, context=contextmod.global_context):
     astroid_manager = manager.AstroidManager()
     builtins = astroid_manager.astroid_cache[BUILTINS]
-    context = context or contextmod.InferenceContext()
+    context = context or contextmod.global_context
 
     for inferred in node.infer(context=context):
         if isinstance(inferred, scoped_nodes.ClassDef):
@@ -65,7 +65,7 @@ def _object_type(node, context=None):
             yield inferred._proxied
 
 
-def object_type(node, context=None):
+def object_type(node, context=contextmod.global_context):
     """Obtain the type of the given node
 
     This is used to implement the ``type`` builtin, which means that it's
@@ -84,7 +84,7 @@ def object_type(node, context=None):
     return list(types)[0]
 
 
-def _object_type_is_subclass(obj_type, class_or_seq, context=None):
+def _object_type_is_subclass(obj_type, class_or_seq, context=contextmod.global_context):
     if not isinstance(class_or_seq, (tuple, list)):
         class_seq = (class_or_seq,)
     else:
@@ -111,7 +111,7 @@ def _object_type_is_subclass(obj_type, class_or_seq, context=None):
     return False
 
 
-def object_isinstance(node, class_or_seq, context=None):
+def object_isinstance(node, class_or_seq, context=contextmod.global_context):
     """Check if a node 'isinstance' any node in class_or_seq
 
     :param node: A given node
@@ -126,7 +126,7 @@ def object_isinstance(node, class_or_seq, context=None):
     return _object_type_is_subclass(obj_type, class_or_seq, context=context)
 
 
-def object_issubclass(node, class_or_seq, context=None):
+def object_issubclass(node, class_or_seq, context=contextmod.global_context):
     """Check if a type is a subclass of any node in class_or_seq
 
     :param node: A given node
@@ -142,7 +142,7 @@ def object_issubclass(node, class_or_seq, context=None):
     return _object_type_is_subclass(node, class_or_seq, context=context)
 
 
-def safe_infer(node, context=None):
+def safe_infer(node, context=contextmod.global_context):
     """Return the inferred value for the given node.
 
     Return None if inference failed or if there is some ambiguity (more than
@@ -162,7 +162,7 @@ def safe_infer(node, context=None):
         return value
 
 
-def has_known_bases(klass, context=None):
+def has_known_bases(klass, context=contextmod.global_context):
     """Return true if all base classes of a class could be inferred."""
     try:
         return klass._all_bases_known
@@ -205,7 +205,7 @@ def is_supertype(type1, type2):
     return _type_check(type1, type2)
 
 
-def class_instance_as_index(node, context=None):
+def class_instance_as_index(node, context=contextmod.global_context):
     """Get the value as an index for the given instance.
 
     If an instance provides an __index__ method, then it can
@@ -228,7 +228,7 @@ def class_instance_as_index(node, context=None):
     return None
 
 
-def object_len(node, context=None):
+def object_len(node, context=contextmod.global_context):
     """Infer length of given node object
 
     :param Union[nodes.ClassDef, nodes.Instance] node:

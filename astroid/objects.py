@@ -20,6 +20,7 @@ leads to an inferred FrozenSet:
 import builtins
 
 from astroid import bases
+from astroid import context as contextmod
 from astroid import decorators
 from astroid import exceptions
 from astroid import MANAGER
@@ -38,7 +39,7 @@ class FrozenSet(node_classes._BaseContainer):
     def pytype(self):
         return "%s.frozenset" % BUILTINS
 
-    def _infer(self, context=None):
+    def _infer(self, context=contextmod.global_context):
         yield self
 
     @decorators.cachedproperty
@@ -71,7 +72,7 @@ class Super(node_classes.NodeNG):
         self._self_class = self_class
         self._scope = scope
 
-    def _infer(self, context=None):
+    def _infer(self, context=contextmod.global_context):
         yield self
 
     def super_mro(self):
@@ -131,7 +132,7 @@ class Super(node_classes.NodeNG):
     def qname(self):
         return "super"
 
-    def igetattr(self, name, context=None):
+    def igetattr(self, name, context=contextmod.global_context):
         """Retrieve the inferred values of the given attribute name."""
 
         if name in self.special_attributes:
@@ -198,7 +199,7 @@ class Super(node_classes.NodeNG):
                 target=self, attribute=name, context=context
             )
 
-    def getattr(self, name, context=None):
+    def getattr(self, name, context=contextmod.global_context):
         return list(self.igetattr(name, context=context))
 
 
