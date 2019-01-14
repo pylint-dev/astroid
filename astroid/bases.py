@@ -204,20 +204,22 @@ class BaseInstance(Proxy):
                 pass
         return values
 
-    def igetattr(self, name, context=None):
+    def igetattr(self, name, context=contextmod.global_context):
         """inferred getattr"""
         if not context:
-            context = contextmod.InferenceContext()
+            context = contextmod.global_context
         try:
             # avoid recursively inferring the same attr on the same class
-            if context.push((self._proxied, name)):
+            if context.push((self._proxied, name)).is_recursing():
                 return
 
             # XXX frame should be self._proxied, or not ?
             get_attr = self.getattr(name, context, lookupclass=False)
-            yield from _infer_stmts(
+            for inferred in _infer_stmts(
                 self._wrap_attr(get_attr, context), context, frame=self
-            )
+            ):
+                yield inferred
+
         except exceptions.AttributeInferenceError as error:
             try:
                 # fallback to class.igetattr since it has some logic to handle

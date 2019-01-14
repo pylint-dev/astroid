@@ -84,21 +84,21 @@ def path_wrapper(func):
     def wrapped(node, context=None, _func=func, **kwargs):
         """wrapper function handling context"""
         if context is None:
-            context = contextmod.InferenceContext()
-        if context.push(node):
+            context = contextmod.global_context
+
+        execution = context.push(node)
+        if execution.is_recursing():
             return None
 
-        yielded = set()
-        generator = _func(node, context, **kwargs)
-        for res in generator:
-            # unproxy only true instance, not const, tuple, dict...
-            if res.__class__.__name__ == "Instance":
-                ares = res._proxied
-            else:
-                ares = res
-            if ares not in yielded:
+        execution.increment()
+        inferred = execution.inferred
+        if inferred:
+            yield from list(inferred)
+        else:
+            generator = _func(node, context, **kwargs)
+            for res in generator:
                 yield res
-                yielded.add(ares)
+                inferred.add(res)
 
     return wrapped
 
