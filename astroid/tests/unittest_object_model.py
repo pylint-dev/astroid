@@ -18,12 +18,12 @@ from astroid import exceptions
 from astroid import MANAGER
 from astroid import test_utils
 from astroid import objects
-
+from astroid.tests.resources import TestCase
 
 BUILTINS = MANAGER.astroid_cache[builtins.__name__]
 
 
-class InstanceModelTest(unittest.TestCase):
+class InstanceModelTest(TestCase):
     def test_instance_special_model(self):
         ast_nodes = builder.extract_node(
             """
@@ -75,7 +75,7 @@ class InstanceModelTest(unittest.TestCase):
         self.assertEqual(inferred.elts, [])
 
 
-class BoundMethodModelTest(unittest.TestCase):
+class BoundMethodModelTest(TestCase):
     def test_bound_method_model(self):
         ast_nodes = builder.extract_node(
             """
@@ -96,7 +96,7 @@ class BoundMethodModelTest(unittest.TestCase):
         self.assertEqual(self_.name, "A")
 
 
-class UnboundMethodModelTest(unittest.TestCase):
+class UnboundMethodModelTest(TestCase):
     def test_unbound_method_model(self):
         ast_nodes = builder.extract_node(
             """
@@ -131,7 +131,7 @@ class UnboundMethodModelTest(unittest.TestCase):
         self.assertIsNone(next(ast_nodes[5].infer()).value)
 
 
-class ClassModelTest(unittest.TestCase):
+class ClassModelTest(TestCase):
     def test_priority_to_local_defined_values(self):
         ast_node = builder.extract_node(
             """
@@ -246,7 +246,7 @@ class ClassModelTest(unittest.TestCase):
         self.assertEqual([cls.name for cls in subclasses.elts], ["B", "C"])
 
 
-class ModuleModelTest(unittest.TestCase):
+class ModuleModelTest(TestCase):
     def test_priority_to_local_defined_values(self):
         ast_node = astroid.parse(
             """
@@ -312,7 +312,7 @@ class ModuleModelTest(unittest.TestCase):
         self.assertIsInstance(dict_, astroid.Dict)
 
 
-class FunctionModelTest(unittest.TestCase):
+class FunctionModelTest(TestCase):
     def test_partial_descriptor_support(self):
         bound, result = builder.extract_node(
             """
@@ -528,7 +528,7 @@ class FunctionModelTest(unittest.TestCase):
             self.assertIs(next(node.infer()), astroid.Uninferable)
 
 
-class GeneratorModelTest(unittest.TestCase):
+class GeneratorModelTest(TestCase):
     def test_model(self):
         ast_nodes = builder.extract_node(
             """
@@ -563,7 +563,7 @@ class GeneratorModelTest(unittest.TestCase):
         self.assertIsInstance(send, astroid.BoundMethod)
 
 
-class ExceptionModelTest(unittest.TestCase):
+class ExceptionModelTest(TestCase):
     def test_model_py3(self):
         ast_nodes = builder.extract_node(
             """
@@ -586,7 +586,7 @@ class ExceptionModelTest(unittest.TestCase):
             next(ast_nodes[2].infer())
 
 
-class DictObjectModelTest(unittest.TestCase):
+class DictObjectModelTest(TestCase):
     def test__class__(self):
         ast_node = builder.extract_node("{}.__class__")
         inferred = next(ast_node.infer())
@@ -623,7 +623,7 @@ class DictObjectModelTest(unittest.TestCase):
         self.assertIsInstance(items, objects.DictItems)
 
 
-class LruCacheModelTest(unittest.TestCase):
+class LruCacheModelTest(TestCase):
     def test_lru_cache(self):
         ast_nodes = builder.extract_node(
             """

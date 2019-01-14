@@ -19,9 +19,10 @@ from astroid.node_classes import Assign, Expr, YieldFrom, Name, Const
 from astroid.builder import AstroidBuilder, extract_node
 from astroid.scoped_nodes import ClassDef, FunctionDef
 from astroid.test_utils import require_version
+from astroid.tests.resources import TestCase
 
 
-class Python3TC(unittest.TestCase):
+class Python3TC(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.builder = AstroidBuilder()

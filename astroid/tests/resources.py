@@ -8,6 +8,7 @@
 
 import os
 import sys
+import unittest
 
 import pkg_resources
 
@@ -15,7 +16,7 @@ from astroid import builder
 from astroid import MANAGER
 from astroid.bases import BUILTINS
 from astroid import tests
-
+from astroid.context import global_context
 
 DATA_DIR = os.path.join("testdata", "python{}".format(sys.version_info[0]))
 RESOURCE_PATH = os.path.join(tests.__path__[0], DATA_DIR, "data")
@@ -65,3 +66,9 @@ class AstroidCacheSetupMixin:
     def tearDownClass(cls):
         if cls._builtins:
             MANAGER.astroid_cache[BUILTINS] = cls._builtins
+
+
+class TestCase(unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+        global_context.clear()

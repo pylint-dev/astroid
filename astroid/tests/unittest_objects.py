@@ -14,9 +14,10 @@ from astroid import exceptions
 from astroid import nodes
 from astroid import objects
 from astroid import test_utils
+from astroid.tests.resources import TestCase
 
 
-class ObjectsTest(unittest.TestCase):
+class ObjectsTest(TestCase):
     def test_frozenset(self):
         node = builder.extract_node(
             """
@@ -38,7 +39,7 @@ class ObjectsTest(unittest.TestCase):
         self.assertIsInstance(proxied, nodes.ClassDef)
 
 
-class SuperTests(unittest.TestCase):
+class SuperTests(TestCase):
     def test_inferring_super_outside_methods(self):
         ast_nodes = builder.extract_node(
             """

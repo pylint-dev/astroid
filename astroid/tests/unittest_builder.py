@@ -28,12 +28,13 @@ from astroid import nodes
 from astroid import test_utils
 from astroid import util
 from astroid.tests import resources
+from astroid.tests.resources import TestCase
 
 MANAGER = manager.AstroidManager()
 BUILTINS = builtins.__name__
 
 
-class FromToLineNoTest(unittest.TestCase):
+class FromToLineNoTest(TestCase):
     def setUp(self):
         self.astroid = resources.build_file("data/format.py")
 
@@ -265,7 +266,7 @@ class FromToLineNoTest(unittest.TestCase):
         self.assertEqual(with_.blockstart_tolineno, 3)
 
 
-class BuilderTest(unittest.TestCase):
+class BuilderTest(TestCase):
     def setUp(self):
         self.builder = builder.AstroidBuilder()
 
@@ -580,7 +581,7 @@ class BuilderTest(unittest.TestCase):
         self.assertEqual(inferred.value, NotImplemented)
 
 
-class FileBuildTest(unittest.TestCase):
+class FileBuildTest(TestCase):
     def setUp(self):
         self.module = resources.build_file("data/module.py", "data.module")
 

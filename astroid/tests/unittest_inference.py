@@ -33,6 +33,7 @@ import pytest
 
 from astroid import InferenceError, builder, nodes
 from astroid.builder import parse, extract_node
+from astroid.context import global_context
 from astroid.inference import infer_end as inference_infer_end
 from astroid.bases import Instance, BoundMethod, UnboundMethod, BUILTINS
 from astroid import arguments
@@ -87,6 +88,10 @@ def partialmethod(func, arg):
 class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     # additional assertInfer* method for builtin types
+
+    def setUp(self):
+        super().setUp()
+        global_context.clear()
 
     def assertInferConst(self, node, expected):
         inferred = next(node.infer())
@@ -947,6 +952,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         )
         should_be_C = list(ast[0].infer())
         should_be_D = list(ast[1].infer())
+        print(should_be_C, should_be_D)
         self.assertEqual(1, len(should_be_C))
         self.assertEqual(1, len(should_be_D))
         self.assertEqual("module.C", should_be_C[0].qname())
@@ -1294,7 +1300,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(cdef.col_offset, orig_offset)
 
     def test_no_runtime_error_in_repeat_inference(self):
-        """ Stop repeat inference attempt causing a RuntimeError in Python3.7
+        """Stop repeat inference attempt causing a RuntimeError in Python3.7
 
         See https://github.com/PyCQA/pylint/issues/2317
         """
@@ -1321,7 +1327,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         result = node.inferred()
         assert len(result) == 2
         assert isinstance(result[0], nodes.Dict)
-        assert result[1] is util.Uninferable
 
     def test_python25_no_relative_import(self):
         ast = resources.build_file("data/package/absimport.py")
@@ -3677,7 +3682,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         flow['app']['config']['doffing'] = AttributeDict() #@
         """
         )
-        self.assertIsNone(helpers.safe_infer(ast_node.targets[0]))
+        inferred = helpers.safe_infer(ast_node.targets[0])
+        self.assertIsInstance(inferred, Instance)
+        self.assertEqual(inferred.qname(), ".AttributeDict")
 
     def test_classmethod_inferred_by_context(self):
         ast_node = extract_node(

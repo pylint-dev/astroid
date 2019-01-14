@@ -15,9 +15,10 @@ from astroid import manager
 from astroid import raw_building
 from astroid import test_utils
 from astroid import util
+from astroid.tests.resources import TestCase
 
 
-class TestHelpers(unittest.TestCase):
+class TestHelpers(TestCase):
     def setUp(self):
         builtins_name = builtins.__name__
         astroid_manager = manager.AstroidManager()

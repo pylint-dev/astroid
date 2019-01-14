@@ -14,9 +14,10 @@ from astroid import InferenceError
 from astroid import nodes
 from astroid import node_classes
 from astroid import util as astroid_util
+from astroid.tests.resources import TestCase
 
 
-class InferenceUtil(unittest.TestCase):
+class InferenceUtil(TestCase):
     def test_not_exclusive(self):
         module = builder.parse(
             """

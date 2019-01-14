@@ -38,7 +38,7 @@ from astroid import util
 from astroid import test_utils
 from astroid import transforms
 from astroid.tests import resources
-
+from astroid.tests.resources import TestCase
 
 abuilder = builder.AstroidBuilder()
 BUILTINS = six.moves.builtins.__name__
@@ -50,7 +50,7 @@ except ImportError:
     HAS_TYPED_AST = False
 
 
-class AsStringTest(resources.SysPathSetup, unittest.TestCase):
+class AsStringTest(resources.SysPathSetup, TestCase):
     def test_tuple_as_string(self):
         def build(string):
             return abuilder.string_build(string).body[0].value
@@ -219,7 +219,7 @@ if all[1] == bord[0:]:
         assert pre.as_string().strip() == code.strip()
 
 
-class _NodeTest(unittest.TestCase):
+class _NodeTest(TestCase):
     """test transformation of If Node"""
 
     CODE = None
@@ -355,7 +355,7 @@ class TryExcept2xNodeTest(_NodeTest):
         self.assertIsInstance(handler.name, nodes.Tuple)
 
 
-class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
+class ImportNodeTest(resources.SysPathSetup, TestCase):
     def setUp(self):
         super(ImportNodeTest, self).setUp()
         self.module = resources.build_file("data/module.py", "data.module")
@@ -456,13 +456,13 @@ from ..cave import wine\n\n"""
         self.assertIn("sys", module.locals)
 
 
-class CmpNodeTest(unittest.TestCase):
+class CmpNodeTest(TestCase):
     def test_as_string(self):
         ast = abuilder.string_build("a == 2").body[0]
         self.assertEqual(ast.as_string(), "a == 2")
 
 
-class ConstNodeTest(unittest.TestCase):
+class ConstNodeTest(TestCase):
     def _test(self, value):
         node = nodes.const_factory(value)
         # pylint: disable=no-member; Infers two potential values
@@ -501,7 +501,7 @@ class ConstNodeTest(unittest.TestCase):
         assert const.value == 1
 
 
-class NameNodeTest(unittest.TestCase):
+class NameNodeTest(TestCase):
     def test_assign_to_True(self):
         """test that True and False assignments don't crash"""
         code = """
@@ -523,7 +523,7 @@ class NameNodeTest(unittest.TestCase):
             self.assertEqual(del_true.name, "True")
 
 
-class AnnAssignNodeTest(unittest.TestCase):
+class AnnAssignNodeTest(TestCase):
     @test_utils.require_version(minver="3.6")
     def test_primitive(self):
         code = textwrap.dedent(
@@ -578,7 +578,7 @@ class AnnAssignNodeTest(unittest.TestCase):
         self.assertEqual(ast.as_string().strip(), code.strip())
 
 
-class ArgumentsNodeTC(unittest.TestCase):
+class ArgumentsNodeTC(TestCase):
     def test_linenumbering(self):
         ast = builder.parse(
             """
@@ -613,7 +613,7 @@ class ArgumentsNodeTC(unittest.TestCase):
         self.assertTrue(args.is_argument("x"))
 
 
-class UnboundMethodNodeTest(unittest.TestCase):
+class UnboundMethodNodeTest(TestCase):
     def test_no_super_getattr(self):
         # This is a test for issue
         # https://bitbucket.org/logilab/astroid/issue/91, which tests
@@ -635,7 +635,7 @@ class UnboundMethodNodeTest(unittest.TestCase):
         self.assertEqual(name.value, "test")
 
 
-class BoundMethodNodeTest(unittest.TestCase):
+class BoundMethodNodeTest(TestCase):
     def test_is_property(self):
         ast = builder.parse(
             """
@@ -699,7 +699,7 @@ class BoundMethodNodeTest(unittest.TestCase):
         self.assertIsInstance(inferred, bases.BoundMethod)
 
 
-class AliasesTest(unittest.TestCase):
+class AliasesTest(TestCase):
     def setUp(self):
         self.transformer = transforms.TransformVisitor()
 
@@ -795,7 +795,7 @@ class AliasesTest(unittest.TestCase):
 
 
 @test_utils.require_version("3.5")
-class Python35AsyncTest(unittest.TestCase):
+class Python35AsyncTest(TestCase):
     def test_async_await_keywords(self):
         async_def, async_for, async_with, await_node = builder.extract_node(
             """
@@ -849,7 +849,7 @@ class Python35AsyncTest(unittest.TestCase):
         self._test_await_async_as_string(code)
 
 
-class ContextTest(unittest.TestCase):
+class ContextTest(TestCase):
     def test_subscript_load(self):
         node = builder.extract_node("f[1]")
         self.assertIs(node.ctx, astroid.Load)

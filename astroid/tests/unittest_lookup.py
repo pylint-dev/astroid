@@ -19,9 +19,10 @@ from astroid import nodes
 from astroid import scoped_nodes
 from astroid import util
 from astroid.tests import resources
+from astroid.tests.resources import TestCase
 
 
-class LookupTest(resources.SysPathSetup, unittest.TestCase):
+class LookupTest(resources.SysPathSetup, TestCase):
     def setUp(self):
         super(LookupTest, self).setUp()
         self.module = resources.build_file("data/module.py", "data.module")

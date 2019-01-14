@@ -20,9 +20,10 @@ from astroid.raw_building import (
     build_from_import,
 )
 from astroid import test_utils
+from astroid.tests.resources import TestCase
 
 
-class RawBuildingTC(unittest.TestCase):
+class RawBuildingTC(TestCase):
     def test_attach_dummy_node(self):
         node = build_module("MyModule")
         attach_dummy_node(node, "DummyNode")

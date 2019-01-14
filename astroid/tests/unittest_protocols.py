@@ -19,6 +19,7 @@ from astroid import InferenceError
 from astroid import nodes
 from astroid import util
 from astroid.node_classes import AssignName, Const, Name, Starred
+from astroid.tests.resources import TestCase
 
 
 @contextlib.contextmanager
@@ -30,7 +31,7 @@ def _add_transform(manager, node, transform, predicate=None):
         manager.unregister_transform(node, transform, predicate)
 
 
-class ProtocolTests(unittest.TestCase):
+class ProtocolTests(TestCase):
     def assertConstNodesEqual(self, nodes_list_expected, nodes_list_got):
         self.assertEqual(len(nodes_list_expected), len(nodes_list_got))
         for node in nodes_list_got:

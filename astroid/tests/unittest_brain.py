@@ -21,6 +21,9 @@
 
 """Tests for basic functionality in astroid.brain."""
 import queue
+import unittest
+
+from astroid.tests.resources import TestCase
 
 try:
     import multiprocessing  # pylint: disable=unused-import
@@ -29,7 +32,6 @@ try:
 except ImportError:
     HAS_MULTIPROCESSING = False
 import sys
-import unittest
 
 try:
     import enum  # pylint: disable=unused-import
@@ -77,7 +79,7 @@ from astroid import test_utils
 import astroid
 
 
-class HashlibTest(unittest.TestCase):
+class HashlibTest(TestCase):
     def _assert_hashlib_class(self, class_obj):
         self.assertIn("update", class_obj)
         self.assertIn("digest", class_obj)
@@ -108,7 +110,7 @@ class HashlibTest(unittest.TestCase):
             self.assertEqual(len(class_obj["__init__"].args.args), 2)
 
 
-class CollectionsDequeTests(unittest.TestCase):
+class CollectionsDequeTests(TestCase):
     def _inferred_queue_instance(self):
         node = builder.extract_node(
             """
@@ -131,7 +133,7 @@ class CollectionsDequeTests(unittest.TestCase):
         self.assertIn("index", inferred.locals)
 
 
-class OrderedDictTest(unittest.TestCase):
+class OrderedDictTest(TestCase):
     def _inferred_ordered_dict_instance(self):
         node = builder.extract_node(
             """
@@ -148,7 +150,7 @@ class OrderedDictTest(unittest.TestCase):
         self.assertIn("move_to_end", inferred.locals)
 
 
-class NamedTupleTest(unittest.TestCase):
+class NamedTupleTest(TestCase):
     def test_namedtuple_base(self):
         klass = builder.extract_node(
             """
@@ -322,7 +324,7 @@ class NamedTupleTest(unittest.TestCase):
         self.assertEqual(inferred.bases[0].name, "tuple")
 
 
-class DefaultDictTest(unittest.TestCase):
+class DefaultDictTest(TestCase):
     def test_1(self):
         node = builder.extract_node(
             """
@@ -336,7 +338,7 @@ class DefaultDictTest(unittest.TestCase):
         self.assertIs(util.Uninferable, inferred)
 
 
-class ModuleExtenderTest(unittest.TestCase):
+class ModuleExtenderTest(TestCase):
     def testExtensionModules(self):
         transformer = MANAGER._transform
         for extender, _ in transformer.transforms[nodes.Module]:
@@ -345,7 +347,7 @@ class ModuleExtenderTest(unittest.TestCase):
 
 
 @unittest.skipUnless(HAS_NOSE, "This test requires nose library.")
-class NoseBrainTest(unittest.TestCase):
+class NoseBrainTest(TestCase):
     def test_nose_tools(self):
         methods = builder.extract_node(
             """
@@ -369,7 +371,7 @@ class NoseBrainTest(unittest.TestCase):
         self.assertEqual(assert_equals.qname(), "unittest.case.TestCase.assertEqual")
 
 
-class SixBrainTest(unittest.TestCase):
+class SixBrainTest(TestCase):
     def test_attribute_access(self):
         ast_nodes = builder.extract_node(
             """
@@ -445,7 +447,7 @@ class SixBrainTest(unittest.TestCase):
     "on some platforms it is missing "
     "(Jython for instance)",
 )
-class MultiprocessingBrainTest(unittest.TestCase):
+class MultiprocessingBrainTest(TestCase):
     def test_multiprocessing_module_attributes(self):
         # Test that module attributes are working,
         # especially on Python 3.4+, where they are obtained
@@ -530,7 +532,7 @@ class MultiprocessingBrainTest(unittest.TestCase):
         self.assertTrue(manager.getattr("shutdown"))
 
 
-class ThreadingBrainTest(unittest.TestCase):
+class ThreadingBrainTest(TestCase):
     def test_lock(self):
         lock_instance = builder.extract_node(
             """
@@ -579,7 +581,7 @@ class ThreadingBrainTest(unittest.TestCase):
     "older Python versions may be available through the enum34 "
     "compatibility module.",
 )
-class EnumBrainTest(unittest.TestCase):
+class EnumBrainTest(TestCase):
     def test_simple_enum(self):
         module = builder.parse(
             """
@@ -766,7 +768,7 @@ class EnumBrainTest(unittest.TestCase):
 
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
-class DateutilBrainTest(unittest.TestCase):
+class DateutilBrainTest(TestCase):
     def test_parser(self):
         module = builder.parse(
             """
@@ -779,7 +781,7 @@ class DateutilBrainTest(unittest.TestCase):
 
 
 @unittest.skipUnless(HAS_PYTEST, "This test requires the pytest library.")
-class PytestBrainTest(unittest.TestCase):
+class PytestBrainTest(TestCase):
     def test_pytest(self):
         ast_node = builder.extract_node(
             """
@@ -826,7 +828,7 @@ def streams_are_fine():
     return True
 
 
-class IOBrainTest(unittest.TestCase):
+class IOBrainTest(TestCase):
     @unittest.skipUnless(
         streams_are_fine(),
         "Needs Python 3 io model / doesn't work with plain pytest."
@@ -852,7 +854,7 @@ class IOBrainTest(unittest.TestCase):
 
 
 @test_utils.require_version("3.6")
-class TypingBrain(unittest.TestCase):
+class TypingBrain(TestCase):
     def test_namedtuple_base(self):
         klass = builder.extract_node(
             """
@@ -1001,7 +1003,7 @@ class TypingBrain(unittest.TestCase):
         assert isinstance(inferred, nodes.Tuple)
 
 
-class ReBrainTest(unittest.TestCase):
+class ReBrainTest(TestCase):
     def test_regex_flags(self):
         import re
 
@@ -1013,7 +1015,7 @@ class ReBrainTest(unittest.TestCase):
 
 
 @test_utils.require_version("3.6")
-class BrainFStrings(unittest.TestCase):
+class BrainFStrings(TestCase):
     def test_no_crash_on_const_reconstruction(self):
         node = builder.extract_node(
             """
@@ -1031,7 +1033,7 @@ class BrainFStrings(unittest.TestCase):
 
 
 @test_utils.require_version("3.6")
-class BrainNamedtupleAnnAssignTest(unittest.TestCase):
+class BrainNamedtupleAnnAssignTest(TestCase):
     def test_no_crash_on_ann_assign_in_namedtuple(self):
         node = builder.extract_node(
             """
@@ -1046,7 +1048,7 @@ class BrainNamedtupleAnnAssignTest(unittest.TestCase):
         self.assertIsInstance(inferred, nodes.ClassDef)
 
 
-class BrainUUIDTest(unittest.TestCase):
+class BrainUUIDTest(TestCase):
     def test_uuid_has_int_member(self):
         node = builder.extract_node(
             """
@@ -1060,7 +1062,7 @@ class BrainUUIDTest(unittest.TestCase):
 
 
 @unittest.skipUnless(HAS_ATTR, "These tests require the attr library")
-class AttrsTest(unittest.TestCase):
+class AttrsTest(TestCase):
     def test_attr_transform(self):
         module = astroid.parse(
             """
@@ -1133,7 +1135,7 @@ class AttrsTest(unittest.TestCase):
         next(astroid.extract_node(code).infer())
 
 
-class RandomSampleTest(unittest.TestCase):
+class RandomSampleTest(TestCase):
     def test_inferred_successfully(self):
         node = astroid.extract_node(
             """
@@ -1147,7 +1149,7 @@ class RandomSampleTest(unittest.TestCase):
         self.assertEqual(elems, [1, 2])
 
 
-class SubprocessTest(unittest.TestCase):
+class SubprocessTest(TestCase):
     """Test subprocess brain"""
 
     @unittest.skipIf(

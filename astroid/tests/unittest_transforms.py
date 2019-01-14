@@ -17,6 +17,7 @@ from astroid import builder
 from astroid import nodes
 from astroid import parse
 from astroid import transforms
+from astroid.tests.resources import TestCase
 
 
 @contextlib.contextmanager
@@ -28,7 +29,7 @@ def add_transform(manager, node, transform, predicate=None):
         manager.unregister_transform(node, transform, predicate)
 
 
-class TestTransforms(unittest.TestCase):
+class TestTransforms(TestCase):
     def setUp(self):
         self.transformer = transforms.TransformVisitor()
 

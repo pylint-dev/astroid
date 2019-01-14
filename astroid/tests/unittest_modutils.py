@@ -26,13 +26,14 @@ import astroid
 from astroid.interpreter._import import spec
 from astroid import modutils
 from astroid.tests import resources
+from astroid.tests.resources import TestCase
 
 
 def _get_file_from_object(obj):
     return modutils._path_from_filename(obj.__file__)
 
 
-class ModuleFileTest(unittest.TestCase):
+class ModuleFileTest(TestCase):
     package = "mypypa"
 
     def tearDown(self):
@@ -61,7 +62,7 @@ class ModuleFileTest(unittest.TestCase):
         )
 
 
-class LoadModuleFromNameTest(unittest.TestCase):
+class LoadModuleFromNameTest(TestCase):
     """ load a python module from it's name """
 
     def test_knownValues_load_module_from_name_1(self):
@@ -76,7 +77,7 @@ class LoadModuleFromNameTest(unittest.TestCase):
         )
 
 
-class GetModulePartTest(unittest.TestCase):
+class GetModulePartTest(TestCase):
     """given a dotted name return the module part of the name"""
 
     def test_knownValues_get_module_part_1(self):
@@ -111,7 +112,7 @@ class GetModulePartTest(unittest.TestCase):
         )
 
 
-class ModPathFromFileTest(unittest.TestCase):
+class ModPathFromFileTest(TestCase):
     """ given an absolute file path return the python module's path as a list """
 
     def test_knownValues_modpath_from_file_1(self):
@@ -188,7 +189,7 @@ class ModPathFromFileTest(unittest.TestCase):
         self.assertEqual(modutils.modpath_from_file(symlink_secret_path), ["secret"])
 
 
-class LoadModuleFromPathTest(resources.SysPathSetup, unittest.TestCase):
+class LoadModuleFromPathTest(resources.SysPathSetup, TestCase):
     def test_do_not_load_twice(self):
         modutils.load_module_from_modpath(["data", "lmfp", "foo"])
         modutils.load_module_from_modpath(["data", "lmfp"])
@@ -197,7 +198,7 @@ class LoadModuleFromPathTest(resources.SysPathSetup, unittest.TestCase):
         del sys.just_once
 
 
-class FileFromModPathTest(resources.SysPathSetup, unittest.TestCase):
+class FileFromModPathTest(resources.SysPathSetup, TestCase):
     """given a mod path (i.e. splited module / package name), return the
     corresponding file, giving priority to source file over precompiled file
     if it exists"""
@@ -226,7 +227,7 @@ class FileFromModPathTest(resources.SysPathSetup, unittest.TestCase):
         modutils.file_from_modpath(["data", "unicode_package", "core"])
 
 
-class GetSourceFileTest(unittest.TestCase):
+class GetSourceFileTest(TestCase):
     def test(self):
         filename = _get_file_from_object(os.path)
         self.assertEqual(
@@ -237,7 +238,7 @@ class GetSourceFileTest(unittest.TestCase):
         self.assertRaises(modutils.NoSourceFile, modutils.get_source_file, "whatever")
 
 
-class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
+class StandardLibModuleTest(resources.SysPathSetup, TestCase):
     """
     return true if the module may be considered as a module from the standard
     library
@@ -296,7 +297,7 @@ class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
         self.assertFalse(modutils.is_standard_module("xml.whatever", etree.__path__))
 
 
-class IsRelativeTest(unittest.TestCase):
+class IsRelativeTest(TestCase):
     def test_knownValues_is_relative_1(self):
         self.assertTrue(modutils.is_relative("utils", email.__path__[0]))
 
@@ -304,7 +305,7 @@ class IsRelativeTest(unittest.TestCase):
         self.assertFalse(modutils.is_relative("astroid", astroid.__path__[0]))
 
 
-class GetModuleFilesTest(unittest.TestCase):
+class GetModuleFilesTest(TestCase):
     def test_get_module_files_1(self):
         package = resources.find("data/find_test")
         modules = set(modutils.get_module_files(package, []))

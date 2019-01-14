@@ -44,6 +44,7 @@ from astroid.exceptions import (
 from astroid.bases import BUILTINS, Instance, BoundMethod, UnboundMethod, Generator
 from astroid import test_utils
 from astroid.tests import resources
+from astroid.tests.resources import TestCase
 
 
 def _test_dict_interface(self, node, test_attr):
@@ -64,7 +65,7 @@ class ModuleLoader(resources.SysPathSetup):
         self.pack = resources.build_file("data/__init__.py", "data")
 
 
-class ModuleNodeTest(ModuleLoader, unittest.TestCase):
+class ModuleNodeTest(ModuleLoader, TestCase):
     def test_special_attributes(self):
         self.assertEqual(len(self.module.getattr("__name__")), 1)
         self.assertIsInstance(self.module.getattr("__name__")[0], nodes.Const)
@@ -266,7 +267,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
                 self.assertEqual(stream.read(), file_io.read())
 
 
-class FunctionNodeTest(ModuleLoader, unittest.TestCase):
+class FunctionNodeTest(ModuleLoader, TestCase):
     def test_special_attributes(self):
         func = self.module2["make_class"]
         self.assertEqual(len(func.getattr("__name__")), 1)
@@ -668,7 +669,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(inferred.name, "MyClass")
 
 
-class ClassNodeTest(ModuleLoader, unittest.TestCase):
+class ClassNodeTest(ModuleLoader, TestCase):
     def test_dict_interface(self):
         _test_dict_interface(self, self.module["YOUPI"], "method")
 

@@ -24,9 +24,10 @@ from astroid.manager import AstroidManager
 from astroid.test_utils import require_version
 from astroid.tests import resources
 from astroid import transforms
+from astroid.tests.resources import TestCase
 
 
-class NonRegressionTests(resources.AstroidCacheSetupMixin, unittest.TestCase):
+class NonRegressionTests(resources.AstroidCacheSetupMixin, TestCase):
     def setUp(self):
         sys.path.insert(0, resources.find("data"))
         MANAGER.always_load_extensions = True
