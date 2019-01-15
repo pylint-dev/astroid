@@ -111,7 +111,7 @@ def _functools_partial_inference(node, context=contextmod.global_context):
             filled_args = call.positional_arguments[1:]
             filled_keywords = call.keyword_arguments
 
-            if context:
+            if context and context.callcontext:
                 current_passed_keywords = {
                     keyword for (keyword, _) in context.callcontext.keywords
                 }
