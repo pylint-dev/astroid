@@ -6,11 +6,10 @@ stages:
 
 jobs:
   include:
-    #- stage: prechecks
-    #  python: 3.6
-    #  env: TOXENV=pylint
     - stage: prechecks
       python: 3.6
+      env: TOXENV=pylint
+    - python: 3.6
       env: TOXENV=formatting
     - stage: tests
       python: 3.4
