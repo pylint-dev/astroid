@@ -251,6 +251,7 @@ nodes.Import._infer = infer_import
 @decorators.path_wrapper
 def infer_import_from(self, context=contextmod.global_context, asname=True):
     """infer a ImportFrom node: return the imported module/object"""
+    context = context or contextmod.global_context
     name = context.lookupname
     if name is None:
         raise exceptions.InferenceError(node=self, context=context)
@@ -265,7 +266,9 @@ def infer_import_from(self, context=contextmod.global_context, asname=True):
     try:
         context = contextmod.copy_context(context, branch_path=False)
         context.lookupname = name
-        stmts = module.getattr(name, ignore_locals=module is self.root())
+        stmts = module.getattr(
+            name, ignore_locals=module is self.root(), context=context
+        )
         return bases._infer_stmts(stmts, context)
     except exceptions.AttributeInferenceError as error:
         raise exceptions.InferenceError(

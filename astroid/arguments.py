@@ -204,7 +204,7 @@ class CallSite:
                     # `cls.metaclass_method`. In this case, the
                     # first argument is always the class.
                     method_scope = funcnode.parent.scope()
-                    if method_scope is boundnode.metaclass():
+                    if method_scope is boundnode.metaclass(context=context):
                         return iter((boundnode,))
 
                 if funcnode.type == "method":
