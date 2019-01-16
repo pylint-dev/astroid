@@ -1785,5 +1785,16 @@ class TestFunctoolsPartial:
             assert inferred.value == expected_value
 
 
+def test_http_client_brain():
+    node = astroid.extract_node(
+        """
+    from http.client import OK
+    OK
+    """
+    )
+    inferred = next(node.infer())
+    assert isinstance(inferred, astroid.Instance)
+
+
 if __name__ == "__main__":
     unittest.main()
