@@ -740,6 +740,30 @@ class EnumBrainTest(unittest.TestCase):
             isinstance(elem, astroid.Const) and elem.value == 1 for elem in inferred_int
         )
 
+    def test_mingled_single_and_double_quotes_does_not_crash(self):
+        node = builder.extract_node(
+            """
+        from enum import Enum
+        class A(Enum):
+            a = 'x"y"'
+        A.a.value #@
+        """
+        )
+        inferred_string = next(node.infer())
+        assert inferred_string.value == 'x"y"'
+
+    def test_special_characters_does_not_crash(self):
+        node = builder.extract_node(
+            """
+        import enum
+        class Example(enum.Enum):
+            NULL = '\\N{NULL}'
+        Example.NULL.value
+        """
+        )
+        inferred_string = next(node.infer())
+        assert inferred_string.value == "\N{NULL}"
+
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
 class DateutilBrainTest(unittest.TestCase):
@@ -965,6 +989,17 @@ class TypingBrain(unittest.TestCase):
             inferred = next(node.infer())
             self.assertIsInstance(inferred, nodes.ClassDef, node.as_string())
 
+    def test_has_dunder_args(self):
+        ast_node = builder.extract_node(
+            """
+        from typing import Union
+        NumericTypes = Union[int, float]
+        NumericTypes.__args__ #@
+        """
+        )
+        inferred = next(ast_node.infer())
+        assert isinstance(inferred, nodes.Tuple)
+
 
 class ReBrainTest(unittest.TestCase):
     def test_regex_flags(self):
@@ -1030,6 +1065,7 @@ class AttrsTest(unittest.TestCase):
         module = astroid.parse(
             """
         import attr
+        from attr import attrs, attrib
 
         @attr.s
         class Foo:
@@ -1045,10 +1081,24 @@ class AttrsTest(unittest.TestCase):
 
         g = Bar()
         g.d['answer'] = 42
+
+        @attrs
+        class Bah:
+            d = attrib(attr.Factory(dict))
+
+        h = Bah()
+        h.d['answer'] = 42
+
+        @attr.attrs
+        class Bai:
+            d = attr.attrib(attr.Factory(dict))
+
+        i = Bai()
+        i.d['answer'] = 42
         """
         )
 
-        for name in ("f", "g"):
+        for name in ("f", "g", "h", "i"):
             should_be_unknown = next(module.getattr(name)[0].infer()).getattr("d")[0]
             self.assertIsInstance(should_be_unknown, astroid.Unknown)
 
@@ -1733,6 +1783,17 @@ class TestFunctoolsPartial:
             inferred = next(node.infer())
             assert isinstance(inferred, astroid.Const)
             assert inferred.value == expected_value
+
+
+def test_http_client_brain():
+    node = astroid.extract_node(
+        """
+    from http.client import OK
+    OK
+    """
+    )
+    inferred = next(node.infer())
+    assert isinstance(inferred, astroid.Instance)
 
 
 if __name__ == "__main__":

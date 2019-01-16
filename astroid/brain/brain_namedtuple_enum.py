@@ -30,7 +30,14 @@ from astroid import util
 
 
 TYPING_NAMEDTUPLE_BASENAMES = {"NamedTuple", "typing.NamedTuple"}
-ENUM_BASE_NAMES = {"Enum", "IntEnum", "enum.Enum", "enum.IntEnum"}
+ENUM_BASE_NAMES = {
+    "Enum",
+    "IntEnum",
+    "enum.Enum",
+    "enum.IntEnum",
+    "IntFlag",
+    "enum.IntFlag",
+}
 
 
 def _infer_first(node, context):
@@ -246,6 +253,11 @@ def infer_enum(node, context=None):
                 name = ''
                 value = 0
             return [EnumAttribute()]
+        def __reversed__(self):
+            class EnumAttribute(object):
+                name = ''
+                value = 0
+            return (EnumAttribute, )
         def __next__(self):
             return next(iter(self))
         def __getitem__(self, attr):
@@ -263,6 +275,24 @@ def infer_enum(node, context=None):
     )
     class_node = infer_func_form(node, enum_meta, context=context, enum=True)[0]
     return iter([class_node.instantiate_class()])
+
+
+INT_FLAG_ADDITION_METHODS = """
+    def __or__(self, other):
+        return {name}(self.value | other.value)
+    def __and__(self, other):
+        return {name}(self.value & other.value)
+    def __xor__(self, other):
+        return {name}(self.value ^ other.value)
+    def __add__(self, other):
+        return {name}(self.value + other.value)
+    def __div__(self, other):
+        return {name}(self.value / other.value)
+    def __invert__(self):
+        return {name}(~self.value)
+    def __mul__(self, other):
+        return {name}(self.value * other.value)
+"""
 
 
 def infer_enum_class(node):
@@ -292,7 +322,7 @@ def infer_enum_class(node):
             inferred_return_value = None
             if isinstance(stmt.value, nodes.Const):
                 if isinstance(stmt.value.value, str):
-                    inferred_return_value = '"{}"'.format(stmt.value.value)
+                    inferred_return_value = repr(stmt.value.value)
                 else:
                     inferred_return_value = stmt.value.value
 
@@ -307,13 +337,20 @@ def infer_enum_class(node):
                         return {return_value}
                     @property
                     def name(self):
-                        return {name}
+                        return "{name}"
                 """.format(
                         name=target.name,
                         types=", ".join(node.basenames),
                         return_value=inferred_return_value,
                     )
                 )
+                if "IntFlag" in basename:
+                    # Alright, we need to add some additional methods.
+                    # Unfortunately we still can't infer the resulting objects as
+                    # Enum members, but once we'll be able to do that, the following
+                    # should result in some nice symbolic execution
+                    classdef += INT_FLAG_ADDITION_METHODS.format(name=target.name)
+
                 fake = AstroidBuilder(MANAGER).string_build(classdef)[target.name]
                 fake.parent = target.parent
                 for method in node.mymethods():

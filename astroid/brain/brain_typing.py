@@ -25,6 +25,10 @@ class Meta(type):
     def __getitem__(self, item):
         return self
 
+    @property
+    def __args__(self):
+        return ()
+
 class {0}(metaclass=Meta):
     pass
 """

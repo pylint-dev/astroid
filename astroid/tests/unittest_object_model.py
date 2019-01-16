@@ -10,6 +10,8 @@ import builtins
 import unittest
 import xml
 
+import pytest
+
 import astroid
 from astroid import builder
 from astroid import exceptions
@@ -372,6 +374,7 @@ class FunctionModelTest(unittest.TestCase):
             with self.assertRaises(exceptions.InferenceError):
                 next(node.infer())
 
+    @pytest.mark.xfail(reason="Relying on path copy")
     def test_descriptor_error_regression(self):
         """Make sure the following code does
         node cause an exception"""
