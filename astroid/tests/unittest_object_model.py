@@ -585,6 +585,18 @@ class ExceptionModelTest(unittest.TestCase):
         with self.assertRaises(exceptions.InferenceError):
             next(ast_nodes[2].infer())
 
+    def test_syntax_error(self):
+        ast_node = builder.extract_node(
+            """
+        try:
+            x[42]
+        except SyntaxError as err:
+           err.text #@
+        """
+        )
+        inferred = next(ast_node.infer())
+        assert isinstance(inferred, astroid.Const)
+
 
 class DictObjectModelTest(unittest.TestCase):
     def test__class__(self):

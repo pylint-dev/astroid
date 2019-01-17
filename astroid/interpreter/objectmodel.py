@@ -601,6 +601,9 @@ class InstanceModel(ObjectModel):
         return _dunder_dict(self._instance, self._instance.instance_attrs)
 
 
+# Exception instances
+
+
 class ExceptionInstanceModel(InstanceModel):
     @property
     def pyargs(self):
@@ -614,6 +617,15 @@ class ExceptionInstanceModel(InstanceModel):
         builtins_ast_module = astroid.MANAGER.astroid_cache[builtins.__name__]
         traceback_type = builtins_ast_module[types.TracebackType.__name__]
         return traceback_type.instantiate_class()
+
+
+class SyntaxErrorInstanceModel(ExceptionInstanceModel):
+    @property
+    def pytext(self):
+        return node_classes.Const("")
+
+
+BUILTIN_EXCEPTIONS = {"builtins.SyntaxError": SyntaxErrorInstanceModel}
 
 
 class DictModel(ObjectModel):

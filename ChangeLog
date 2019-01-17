@@ -7,6 +7,8 @@ What's New in astroid 2.2.0?
 Release Date: TBA
 
 
+* Add a registry for builtin exception models. Close PyCQA/pylint#1432
+
 * Add brain tips for `http.client`. Close PyCQA/pylint#2687
 
 * Prevent crashing when processing ``enums`` with mixed single and double quotes.

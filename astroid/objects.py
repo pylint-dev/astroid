@@ -210,10 +210,13 @@ class ExceptionInstance(bases.Instance):
     the case of .args.
     """
 
-    # pylint: disable=unnecessary-lambda
-    special_attributes = util.lazy_descriptor(
-        lambda: objectmodel.ExceptionInstanceModel()
-    )
+    @decorators.cachedproperty
+    def special_attributes(self):
+        qname = self.qname()
+        instance = objectmodel.BUILTIN_EXCEPTIONS.get(
+            qname, objectmodel.ExceptionInstanceModel
+        )
+        return instance()
 
 
 class DictInstance(bases.Instance):
