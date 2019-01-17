@@ -7,7 +7,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
 """Various context related utilities, including inference and call contexts."""
-
+import contextlib
 import pprint
 from typing import Optional
 
@@ -115,6 +115,12 @@ class InferenceContext:
             yield result
 
         self.inferred[key] = tuple(results)
+
+    @contextlib.contextmanager
+    def restore_path(self):
+        path = set(self.path)
+        yield
+        self.path = path
 
     def __str__(self):
         state = (

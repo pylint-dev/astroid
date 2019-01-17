@@ -2190,30 +2190,31 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             return
 
         for stmt in self.bases:
-            try:
-                for baseobj in stmt.infer(context):
-                    if not isinstance(baseobj, ClassDef):
-                        if isinstance(baseobj, bases.Instance):
-                            baseobj = baseobj._proxied
-                        else:
+            with context.restore_path():
+                try:
+                    for baseobj in stmt.infer(context):
+                        if not isinstance(baseobj, ClassDef):
+                            if isinstance(baseobj, bases.Instance):
+                                baseobj = baseobj._proxied
+                            else:
+                                continue
+                        if not baseobj.hide:
+                            if baseobj in yielded:
+                                continue
+                            yielded.add(baseobj)
+                            yield baseobj
+                        if not recurs:
                             continue
-                    if not baseobj.hide:
-                        if baseobj in yielded:
-                            continue
-                        yielded.add(baseobj)
-                        yield baseobj
-                    if not recurs:
-                        continue
-                    for grandpa in baseobj.ancestors(recurs=True, context=context):
-                        if grandpa is self:
-                            # This class is the ancestor of itself.
-                            break
-                        if grandpa in yielded:
-                            continue
-                        yielded.add(grandpa)
-                        yield grandpa
-            except exceptions.InferenceError:
-                continue
+                        for grandpa in baseobj.ancestors(recurs=True, context=context):
+                            if grandpa is self:
+                                # This class is the ancestor of itself.
+                                break
+                            if grandpa in yielded:
+                                continue
+                            yielded.add(grandpa)
+                            yield grandpa
+                except exceptions.InferenceError:
+                    continue
 
     def local_attr_ancestors(self, name, context=None):
         """Iterate over the parents that define the given name.
