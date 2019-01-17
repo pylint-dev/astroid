@@ -1785,6 +1785,9 @@ class TestFunctoolsPartial:
             assert inferred.value == expected_value
 
 
+@pytest.mark.skipunless(
+    sys.version_info[:2] > (3, 4), reason="Not a problem on Python 3.4"
+)
 def test_http_client_brain():
     node = astroid.extract_node(
         """
