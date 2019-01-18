@@ -274,7 +274,6 @@ def infer_import_from(self, context=None, asname=True):
 nodes.ImportFrom._infer = infer_import_from
 
 
-@decorators.raise_if_nothing_inferred
 def infer_attribute(self, context=None):
     """infer an Attribute node by using getattr on the associated object"""
     for owner in self.expr.infer(context):
@@ -311,8 +310,11 @@ def infer_attribute(self, context=None):
     return dict(node=self, context=context)
 
 
-nodes.Attribute._infer = decorators.path_wrapper(infer_attribute)
-nodes.AssignAttr.infer_lhs = infer_attribute  # # won't work with a path wrapper
+nodes.Attribute._infer = decorators.raise_if_nothing_inferred(
+    decorators.path_wrapper(infer_attribute)
+)
+# won't work with a path wrapper
+nodes.AssignAttr.infer_lhs = decorators.raise_if_nothing_inferred(infer_attribute)
 
 
 @decorators.raise_if_nothing_inferred
