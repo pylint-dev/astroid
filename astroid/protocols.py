@@ -453,15 +453,15 @@ nodes.ExceptHandler.assigned_stmts = excepthandler_assigned_stmts
 
 
 def _infer_context_manager(self, mgr, context):
-    try:
-        inferred = next(mgr.infer(context=context))
-    except exceptions.InferenceError:
-        return
+    inferred = next(mgr.infer(context=context))
     if isinstance(inferred, bases.Generator):
         # Check if it is decorated with contextlib.contextmanager.
         func = inferred.parent
         if not func.decorators:
-            return
+            raise exceptions.InferenceError(
+                "No decorators found on inferred generator %s", node=func
+            )
+
         for decorator_node in func.decorators.nodes:
             decorator = next(decorator_node.infer(context))
             if isinstance(decorator, nodes.FunctionDef):
@@ -469,7 +469,7 @@ def _infer_context_manager(self, mgr, context):
                     break
         else:
             # It doesn't interest us.
-            return
+            raise exceptions.InferenceError(node=func)
 
         # Get the first yield point. If it has multiple yields,
         # then a RuntimeError will be raised.
@@ -491,12 +491,14 @@ def _infer_context_manager(self, mgr, context):
         try:
             enter = next(inferred.igetattr("__enter__", context=context))
         except (exceptions.InferenceError, exceptions.AttributeInferenceError):
-            return
+            raise exceptions.InferenceError(node=inferred)
         if not isinstance(enter, bases.BoundMethod):
-            return
+            raise exceptions.InferenceError(node=enter)
         if not context.callcontext:
             context.callcontext = contextmod.CallContext(args=[inferred])
         yield from enter.infer_call_result(self, context)
+    else:
+        raise exceptions.InferenceError(node=mgr)
 
 
 @decorators.raise_if_nothing_inferred
