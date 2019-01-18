@@ -874,15 +874,7 @@ def instance_getitem(self, index, context=None):
             "Could not find __getitem__ for {node!r}.", node=self, context=context
         )
 
-    try:
-        return next(method.infer_call_result(self, new_context))
-    except StopIteration as exc:
-        raise exceptions.InferenceError(
-            message="Inference for {node!r}[{index!s}] failed.",
-            node=self,
-            index=index,
-            context=context,
-        ) from exc
+    return next(method.infer_call_result(self, new_context))
 
 
 bases.Instance.getitem = instance_getitem

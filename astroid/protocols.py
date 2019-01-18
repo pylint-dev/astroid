@@ -455,7 +455,7 @@ nodes.ExceptHandler.assigned_stmts = excepthandler_assigned_stmts
 def _infer_context_manager(self, mgr, context):
     try:
         inferred = next(mgr.infer(context=context))
-    except (StopIteration, exceptions.InferenceError):
+    except exceptions.InferenceError:
         return
     if isinstance(inferred, bases.Generator):
         # Check if it is decorated with contextlib.contextmanager.
@@ -463,10 +463,7 @@ def _infer_context_manager(self, mgr, context):
         if not func.decorators:
             return
         for decorator_node in func.decorators.nodes:
-            try:
-                decorator = next(decorator_node.infer(context))
-            except StopIteration:
-                return
+            decorator = next(decorator_node.infer(context))
             if isinstance(decorator, nodes.FunctionDef):
                 if decorator.qname() == _CONTEXTLIB_MGR:
                     break
@@ -493,11 +490,7 @@ def _infer_context_manager(self, mgr, context):
     elif isinstance(inferred, bases.Instance):
         try:
             enter = next(inferred.igetattr("__enter__", context=context))
-        except (
-            StopIteration,
-            exceptions.InferenceError,
-            exceptions.AttributeInferenceError,
-        ):
+        except (exceptions.InferenceError, exceptions.AttributeInferenceError):
             return
         if not isinstance(enter, bases.BoundMethod):
             return
