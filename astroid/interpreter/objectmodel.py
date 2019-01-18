@@ -623,7 +623,49 @@ class SyntaxErrorInstanceModel(ExceptionInstanceModel):
         return node_classes.Const("")
 
 
-BUILTIN_EXCEPTIONS = {"builtins.SyntaxError": SyntaxErrorInstanceModel}
+class OSErrorInstanceModel(ExceptionInstanceModel):
+    @property
+    def attr_filename(self):
+        return node_classes.Const("")
+
+    @property
+    def attr_errno(self):
+        return node_classes.Const(0)
+
+    attr_filename2 = attr_filename
+
+
+class ImportErrorInstanceModel(ExceptionInstanceModel):
+    @property
+    def attr_name(self):
+        return node_classes.Const("")
+
+    @property
+    def attr_path(self):
+        return node_classes.Const("")
+
+
+BUILTIN_EXCEPTIONS = {
+    "builtins.SyntaxError": SyntaxErrorInstanceModel,
+    "builtins.ImportError": ImportErrorInstanceModel,
+    # These are all similar to OSError in terms of attributes
+    "builtins.OSError": OSErrorInstanceModel,
+    "builtins.BlockingIOError": OSErrorInstanceModel,
+    "builtins.BrokenPipeError": OSErrorInstanceModel,
+    "builtins.ChildProcessError": OSErrorInstanceModel,
+    "builtins.ConnectionAbortedError": OSErrorInstanceModel,
+    "builtins.ConnectionError": OSErrorInstanceModel,
+    "builtins.ConnectionRefusedError": OSErrorInstanceModel,
+    "builtins.ConnectionResetError": OSErrorInstanceModel,
+    "builtins.FileExistsError": OSErrorInstanceModel,
+    "builtins.FileNotFoundError": OSErrorInstanceModel,
+    "builtins.InterruptedError": OSErrorInstanceModel,
+    "builtins.IsADirectoryError": OSErrorInstanceModel,
+    "builtins.NotADirectoryError": OSErrorInstanceModel,
+    "builtins.PermissionError": OSErrorInstanceModel,
+    "builtins.ProcessLookupError": OSErrorInstanceModel,
+    "builtins.TimeoutError": OSErrorInstanceModel,
+}
 
 
 class DictModel(ObjectModel):

@@ -564,7 +564,7 @@ class GeneratorModelTest(unittest.TestCase):
 
 
 class ExceptionModelTest(unittest.TestCase):
-    def test_model_py3(self):
+    def test_valueerror_py3(self):
         ast_nodes = builder.extract_node(
             """
         try:
@@ -596,6 +596,38 @@ class ExceptionModelTest(unittest.TestCase):
         )
         inferred = next(ast_node.infer())
         assert isinstance(inferred, astroid.Const)
+
+    def test_oserror(self):
+        ast_nodes = builder.extract_node(
+            """
+        try:
+            raise OSError("a")
+        except OSError as err:
+           err.filename #@
+           err.filename2 #@
+           err.errno #@
+        """
+        )
+        expected_values = ["", "", 0]
+        for node, value in zip(ast_nodes, expected_values):
+            inferred = next(node.infer())
+            assert isinstance(inferred, astroid.Const)
+            assert inferred.value == value
+
+    def test_import_error(self):
+        ast_nodes = builder.extract_node(
+            """
+        try:
+            raise ImportError("a")
+        except ImportError as err:
+           err.name #@
+           err.path #@
+        """
+        )
+        for node in ast_nodes:
+            inferred = next(node.infer())
+            assert isinstance(inferred, astroid.Const)
+            assert inferred.value == ""
 
 
 class DictObjectModelTest(unittest.TestCase):

@@ -7,6 +7,8 @@ What's New in astroid 2.2.0?
 Release Date: TBA
 
 
+* Added more builtin exceptions attributes. Close #580
+
 * Add a registry for builtin exception models. Close PyCQA/pylint#1432
 
 * Add brain tips for `http.client`. Close PyCQA/pylint#2687
