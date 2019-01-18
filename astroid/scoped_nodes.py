@@ -1920,10 +1920,10 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :returns: the the name and Const pair for each local
         :rtype: tuple(tuple(str, node_classes.Const), ...)
         """
-        locals_ = (("__module__", self.special_attributes.py__module__),)
+        locals_ = (("__module__", self.special_attributes.attr___module__),)
         if sys.version_info >= (3, 3):
             # __qualname__ is defined in PEP3155
-            locals_ += (("__qualname__", self.special_attributes.py__qualname__),)
+            locals_ += (("__qualname__", self.special_attributes.attr___qualname__),)
         return locals_
 
     # pylint: disable=redefined-outer-name
