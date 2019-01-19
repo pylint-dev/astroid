@@ -25,7 +25,6 @@ attribute. Thus the model can be viewed as a special part of the lookup
 mechanism.
 """
 
-import builtins
 import itertools
 import pprint
 import os
@@ -119,7 +118,7 @@ class ObjectModel:
 
 class ModuleModel(ObjectModel):
     def _builtins(self):
-        builtins_ast_module = astroid.MANAGER.astroid_cache[builtins.__name__]
+        builtins_ast_module = astroid.MANAGER.builtins_module
         return builtins_ast_module.special_attributes.lookup("__dict__")
 
     @property
@@ -540,7 +539,7 @@ class GeneratorModel(FunctionModel):
     def __new__(cls, *args, **kwargs):
         # Append the values from the GeneratorType unto this object.
         ret = super(GeneratorModel, cls).__new__(cls, *args, **kwargs)
-        generator = astroid.MANAGER.astroid_cache[builtins.__name__]["generator"]
+        generator = astroid.MANAGER.builtins_module["generator"]
         for name, values in generator.locals.items():
             method = values[0]
             patched = lambda cls, meth=method: meth
@@ -566,7 +565,7 @@ class AsyncGeneratorModel(GeneratorModel):
     def __new__(cls, *args, **kwargs):
         # Append the values from the AGeneratorType unto this object.
         ret = super().__new__(cls, *args, **kwargs)
-        astroid_builtins = astroid.MANAGER.astroid_cache[builtins.__name__]
+        astroid_builtins = astroid.MANAGER.builtins_module
         generator = astroid_builtins.get("async_generator")
         if generator is None:
             # Make it backward compatible.
@@ -612,7 +611,7 @@ class ExceptionInstanceModel(InstanceModel):
 
     @property
     def attr___traceback__(self):
-        builtins_ast_module = astroid.MANAGER.astroid_cache[builtins.__name__]
+        builtins_ast_module = astroid.MANAGER.builtins_module
         traceback_type = builtins_ast_module[types.TracebackType.__name__]
         return traceback_type.instantiate_class()
 

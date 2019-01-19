@@ -3874,7 +3874,7 @@ class Slice(NodeNG):
 
     @decorators.cachedproperty
     def _proxied(self):
-        builtins = MANAGER.astroid_cache[BUILTINS]
+        builtins = MANAGER.builtins_module
         return builtins.getattr("slice")[0]
 
     def pytype(self):

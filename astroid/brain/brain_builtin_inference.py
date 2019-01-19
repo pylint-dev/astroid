@@ -94,9 +94,7 @@ def _extend_str(class_node, rvalue):
 
 
 def _extend_builtins(class_transforms):
-    from astroid.bases import BUILTINS
-
-    builtin_ast = MANAGER.astroid_cache[BUILTINS]
+    builtin_ast = MANAGER.builtins_module
     for class_name, transform in class_transforms.items():
         transform(builtin_ast[class_name])
 

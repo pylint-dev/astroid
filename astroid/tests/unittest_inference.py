@@ -31,10 +31,10 @@ from unittest.mock import patch
 
 import pytest
 
-from astroid import InferenceError, builder, nodes
+from astroid import InferenceError, builder, nodes, MANAGER
 from astroid.builder import parse, extract_node
 from astroid.inference import infer_end as inference_infer_end
-from astroid.bases import Instance, BoundMethod, UnboundMethod, BUILTINS
+from astroid.bases import Instance, BoundMethod, UnboundMethod, BUILTINS, Generator
 from astroid import arguments
 from astroid import decorators as decoratorsmod
 from astroid import exceptions
@@ -5070,6 +5070,24 @@ def test_inferred_sequence_unpacking_works():
     assert isinstance(inferred, nodes.Tuple)
     assert len(inferred.elts) == 2
     assert [value.value for value in inferred.elts] == [1, 2]
+
+
+def test_separate_cache_object():
+    code = extract_node(
+        """
+    def loop_gen():
+        for y in test_gen():
+            yield y
+
+    def test_gen():
+        yield "yield"
+        return
+    test_gen()
+    """
+    )
+    MANAGER.clear_cache()
+    inferred = next(code.infer())
+    assert isinstance(inferred, Generator)
 
 
 if __name__ == "__main__":

@@ -46,7 +46,7 @@ def _function_type(function, builtins):
 
 def _object_type(node, context=None):
     astroid_manager = manager.AstroidManager()
-    builtins = astroid_manager.astroid_cache[BUILTINS]
+    builtins = astroid_manager.builtins_module
     context = context or contextmod.InferenceContext()
 
     for inferred in node.infer(context=context):

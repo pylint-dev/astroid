@@ -60,6 +60,10 @@ class AstroidManager:
             self.unregister_transform = self._transform.unregister_transform
             self.max_inferable_values = 100
 
+    @property
+    def builtins_module(self):
+        return self.astroid_cache["builtins"]
+
     def visit_transforms(self, node):
         """Visit the transforms and apply them to the given *node*."""
         return self._transform.visit(node)

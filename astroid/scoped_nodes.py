@@ -2134,7 +2134,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         # inside this class.
         lookup_upper_frame = (
             isinstance(node.parent, node_classes.Decorators)
-            and name in MANAGER.astroid_cache[builtins.__name__]
+            and name in MANAGER.builtins_module
         )
         if (
             any(node == base or base.parent_of(node) for base in self.bases)
