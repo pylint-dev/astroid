@@ -2764,21 +2764,14 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         _verify_duplicates_mro(unmerged_mro, self, context)
         return _c3_merge(unmerged_mro, self, context)
 
-    def mro(self, context=None):
+    def mro(self, context=None) -> List["ClassDef"]:
         """Get the method resolution order, using C3 linearization.
 
         :returns: The list of ancestors, sorted by the mro.
         :rtype: list(NodeNG)
-
-        :raises NotImplementedError: If this is an old style class,
-            since they don't have the concept of an MRO.
         :raises DuplicateBasesError: Duplicate bases in the same class base
         :raises InconsistentMroError: A class' MRO is inconsistent
         """
-
-        if not self.newstyle:
-            raise NotImplementedError("Could not obtain mro for old-style classes.")
-
         return self._compute_mro(context=context)
 
     def bool_value(self):
