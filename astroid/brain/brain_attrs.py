@@ -4,7 +4,7 @@
 Astroid hook for the attrs library
 
 Without this hook pylint reports unsupported-assignment-operation
-for atrrs classes
+for attrs classes
 """
 
 import astroid
