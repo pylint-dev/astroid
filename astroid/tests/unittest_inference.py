@@ -31,7 +31,7 @@ from unittest.mock import patch
 
 import pytest
 
-from astroid import InferenceError, builder, nodes
+from astroid import InferenceError, builder, nodes, Slice
 from astroid.builder import parse, extract_node
 from astroid.inference import infer_end as inference_infer_end
 from astroid.bases import Instance, BoundMethod, UnboundMethod, BUILTINS
@@ -5070,6 +5070,24 @@ def test_inferred_sequence_unpacking_works():
     assert isinstance(inferred, nodes.Tuple)
     assert len(inferred.elts) == 2
     assert [value.value for value in inferred.elts] == [1, 2]
+
+
+def test_recursion_error_inferring_slice():
+    node = extract_node(
+        """
+    class MyClass:
+        def __init__(self):
+            self._slice = slice(0, 10)
+
+        def incr(self):
+            self._slice = slice(0, self._slice.stop + 1)
+
+        def test(self):
+            self._slice #@
+    """
+    )
+    inferred = next(node.infer())
+    assert isinstance(inferred, Slice)
 
 
 if __name__ == "__main__":
