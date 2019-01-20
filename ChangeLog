@@ -7,6 +7,22 @@ What's New in astroid 2.2.0?
 Release Date: TBA
 
 
+* Remove the restriction that "old style classes" cannot have a MRO.
+
+  This does not make sense any longer given that we run against Python 3
+  code.
+  Close PyCQA/pylint#2701
+
+* Added more builtin exceptions attributes. Close #580
+
+* Add a registry for builtin exception models. Close PyCQA/pylint#1432
+
+* Add brain tips for `http.client`. Close PyCQA/pylint#2687
+
+* Prevent crashing when processing ``enums`` with mixed single and double quotes.
+
+  Close PyCQA/pylint#2676
+
 * ``typing`` types have the `__args__` property. Close PyCQA/pylint#2419
 
 * Fix a bug where an Attribute used as a base class was triggering a crash
@@ -20,6 +36,8 @@ Release Date: TBA
 * Extend detection of data classes defined with attr
 
   Close #628
+
+* Fix typo in description for brain_attrs
 
 
 What's New in astroid 2.1.0?

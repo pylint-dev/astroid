@@ -25,7 +25,6 @@ attribute. Thus the model can be viewed as a special part of the lookup
 mechanism.
 """
 
-import builtins
 import itertools
 import pprint
 import os
@@ -36,6 +35,9 @@ import astroid
 from astroid import context as contextmod
 from astroid import exceptions
 from astroid import node_classes
+
+
+IMPL_PREFIX = "attr_"
 
 
 def _dunder_dict(instance, attributes):
@@ -98,7 +100,9 @@ class ObjectModel:
     @lru_cache(maxsize=None)
     def attributes(self):
         """Get the attributes which are exported by this object model."""
-        return [obj[2:] for obj in dir(self) if obj.startswith("py")]
+        return [
+            obj[len(IMPL_PREFIX) :] for obj in dir(self) if obj.startswith(IMPL_PREFIX)
+        ]
 
     def lookup(self, name):
         """Look up the given *name* in the current model
@@ -108,26 +112,21 @@ class ObjectModel:
         """
 
         if name in self.attributes():
-            return getattr(self, "py" + name)
+            return getattr(self, IMPL_PREFIX + name)
         raise exceptions.AttributeInferenceError(target=self._instance, attribute=name)
 
 
 class ModuleModel(ObjectModel):
     def _builtins(self):
-        builtins_ast_module = astroid.MANAGER.astroid_cache[builtins.__name__]
+        builtins_ast_module = astroid.MANAGER.builtins_module
         return builtins_ast_module.special_attributes.lookup("__dict__")
 
     @property
-    def pybuiltins(self):
+    def attr_builtins(self):
         return self._builtins()
 
-    # __path__ is a standard attribute on *packages* not
-    # non-package modules.  The only mention of it in the
-    # official 2.7 documentation I can find is in the
-    # tutorial.
-
     @property
-    def py__path__(self):
+    def attr___path__(self):
         if not self._instance.package:
             raise exceptions.AttributeInferenceError(
                 target=self._instance, attribute="__path__"
@@ -149,25 +148,23 @@ class ModuleModel(ObjectModel):
         return container
 
     @property
-    def py__name__(self):
+    def attr___name__(self):
         return node_classes.Const(value=self._instance.name, parent=self._instance)
 
     @property
-    def py__doc__(self):
+    def attr___doc__(self):
         return node_classes.Const(value=self._instance.doc, parent=self._instance)
 
     @property
-    def py__file__(self):
+    def attr___file__(self):
         return node_classes.Const(value=self._instance.file, parent=self._instance)
 
     @property
-    def py__dict__(self):
+    def attr___dict__(self):
         return _dunder_dict(self._instance, self._instance.globals)
 
-    # __package__ isn't mentioned anywhere outside a PEP:
-    # https://www.python.org/dev/peps/pep-0366/
     @property
-    def py__package__(self):
+    def attr___package__(self):
         if not self._instance.package:
             value = ""
         else:
@@ -180,36 +177,36 @@ class ModuleModel(ObjectModel):
     # https://docs.python.org/3/reference/import.html#import-related-module-attributes
 
     @property
-    def py__spec__(self):
+    def attr___spec__(self):
         # No handling for now.
         return node_classes.Unknown()
 
     @property
-    def py__loader__(self):
+    def attr___loader__(self):
         # No handling for now.
         return node_classes.Unknown()
 
     @property
-    def py__cached__(self):
+    def attr___cached__(self):
         # No handling for now.
         return node_classes.Unknown()
 
 
 class FunctionModel(ObjectModel):
     @property
-    def py__name__(self):
+    def attr___name__(self):
         return node_classes.Const(value=self._instance.name, parent=self._instance)
 
     @property
-    def py__doc__(self):
+    def attr___doc__(self):
         return node_classes.Const(value=self._instance.doc, parent=self._instance)
 
     @property
-    def py__qualname__(self):
+    def attr___qualname__(self):
         return node_classes.Const(value=self._instance.qname(), parent=self._instance)
 
     @property
-    def py__defaults__(self):
+    def attr___defaults__(self):
         func = self._instance
         if not func.args.defaults:
             return node_classes.Const(value=None, parent=func)
@@ -219,7 +216,7 @@ class FunctionModel(ObjectModel):
         return defaults_obj
 
     @property
-    def py__annotations__(self):
+    def attr___annotations__(self):
         obj = node_classes.Dict(parent=self._instance)
 
         if not self._instance.returns:
@@ -252,13 +249,13 @@ class FunctionModel(ObjectModel):
         return obj
 
     @property
-    def py__dict__(self):
+    def attr___dict__(self):
         return node_classes.Dict(parent=self._instance)
 
-    py__globals__ = py__dict__
+    attr___globals__ = attr___dict__
 
     @property
-    def py__kwdefaults__(self):
+    def attr___kwdefaults__(self):
         def _default_args(args, parent):
             for arg in args.kwonlyargs:
                 try:
@@ -277,11 +274,11 @@ class FunctionModel(ObjectModel):
         return obj
 
     @property
-    def py__module__(self):
+    def attr___module__(self):
         return node_classes.Const(self._instance.root().qname())
 
     @property
-    def py__get__(self):
+    def attr___get__(self):
         from astroid import bases
 
         func = self._instance
@@ -361,51 +358,51 @@ class FunctionModel(ObjectModel):
 
     # These are here just for completion.
     @property
-    def py__ne__(self):
+    def attr___ne__(self):
         return node_classes.Unknown()
 
-    py__subclasshook__ = py__ne__
-    py__str__ = py__ne__
-    py__sizeof__ = py__ne__
-    py__setattr__ = py__ne__
-    py__repr__ = py__ne__
-    py__reduce__ = py__ne__
-    py__reduce_ex__ = py__ne__
-    py__new__ = py__ne__
-    py__lt__ = py__ne__
-    py__eq__ = py__ne__
-    py__gt__ = py__ne__
-    py__format__ = py__ne__
-    py__delattr__ = py__ne__
-    py__getattribute__ = py__ne__
-    py__hash__ = py__ne__
-    py__init__ = py__ne__
-    py__dir__ = py__ne__
-    py__call__ = py__ne__
-    py__class__ = py__ne__
-    py__closure__ = py__ne__
-    py__code__ = py__ne__
+    attr___subclasshook__ = attr___ne__
+    attr___str__ = attr___ne__
+    attr___sizeof__ = attr___ne__
+    attr___setattr___ = attr___ne__
+    attr___repr__ = attr___ne__
+    attr___reduce__ = attr___ne__
+    attr___reduce_ex__ = attr___ne__
+    attr___new__ = attr___ne__
+    attr___lt__ = attr___ne__
+    attr___eq__ = attr___ne__
+    attr___gt__ = attr___ne__
+    attr___format__ = attr___ne__
+    attr___delattr___ = attr___ne__
+    attr___getattribute__ = attr___ne__
+    attr___hash__ = attr___ne__
+    attr___init__ = attr___ne__
+    attr___dir__ = attr___ne__
+    attr___call__ = attr___ne__
+    attr___class__ = attr___ne__
+    attr___closure__ = attr___ne__
+    attr___code__ = attr___ne__
 
 
 class ClassModel(ObjectModel):
     @property
-    def py__module__(self):
+    def attr___module__(self):
         return node_classes.Const(self._instance.root().qname())
 
     @property
-    def py__name__(self):
+    def attr___name__(self):
         return node_classes.Const(self._instance.name)
 
     @property
-    def py__qualname__(self):
+    def attr___qualname__(self):
         return node_classes.Const(self._instance.qname())
 
     @property
-    def py__doc__(self):
+    def attr___doc__(self):
         return node_classes.Const(self._instance.doc)
 
     @property
-    def py__mro__(self):
+    def attr___mro__(self):
         if not self._instance.newstyle:
             raise exceptions.AttributeInferenceError(
                 target=self._instance, attribute="__mro__"
@@ -417,7 +414,7 @@ class ClassModel(ObjectModel):
         return obj
 
     @property
-    def pymro(self):
+    def attr_mro(self):
         if not self._instance.newstyle:
             raise exceptions.AttributeInferenceError(
                 target=self._instance, attribute="mro"
@@ -431,14 +428,14 @@ class ClassModel(ObjectModel):
         # The method we're returning is capable of inferring the underlying MRO though.
         class MroBoundMethod(bases.BoundMethod):
             def infer_call_result(self, caller, context=None):
-                yield other_self.py__mro__
+                yield other_self.attr___mro__
 
         implicit_metaclass = self._instance.implicit_metaclass()
         mro_method = implicit_metaclass.locals["mro"][0]
         return MroBoundMethod(proxy=mro_method, bound=implicit_metaclass)
 
     @property
-    def py__bases__(self):
+    def attr___bases__(self):
         obj = node_classes.Tuple()
         context = contextmod.InferenceContext()
         elts = list(self._instance._inferred_bases(context))
@@ -446,13 +443,13 @@ class ClassModel(ObjectModel):
         return obj
 
     @property
-    def py__class__(self):
+    def attr___class__(self):
         from astroid import helpers
 
         return helpers.object_type(self._instance)
 
     @property
-    def py__subclasses__(self):
+    def attr___subclasses__(self):
         """Get the subclasses of the underlying class
 
         This looks only in the current module for retrieving the subclasses,
@@ -486,55 +483,55 @@ class ClassModel(ObjectModel):
         return SubclassesBoundMethod(proxy=subclasses_method, bound=implicit_metaclass)
 
     @property
-    def py__dict__(self):
+    def attr___dict__(self):
         return node_classes.Dict(parent=self._instance)
 
 
 class SuperModel(ObjectModel):
     @property
-    def py__thisclass__(self):
+    def attr___thisclass__(self):
         return self._instance.mro_pointer
 
     @property
-    def py__self_class__(self):
+    def attr___self_class__(self):
         return self._instance._self_class
 
     @property
-    def py__self__(self):
+    def attr___self__(self):
         return self._instance.type
 
     @property
-    def py__class__(self):
+    def attr___class__(self):
         return self._instance._proxied
 
 
 class UnboundMethodModel(ObjectModel):
     @property
-    def py__class__(self):
+    def attr___class__(self):
         from astroid import helpers
 
         return helpers.object_type(self._instance)
 
     @property
-    def py__func__(self):
+    def attr___func__(self):
         return self._instance._proxied
 
     @property
-    def py__self__(self):
+    def attr___self__(self):
         return node_classes.Const(value=None, parent=self._instance)
 
-    pyim_func = py__func__
-    pyim_class = py__class__
-    pyim_self = py__self__
+    attr_im_func = attr___func__
+    attr_im_class = attr___class__
+    attr_im_self = attr___self__
 
 
 class BoundMethodModel(FunctionModel):
     @property
-    def py__func__(self):
+    def attr___func__(self):
         return self._instance._proxied._proxied
 
     @property
-    def py__self__(self):
+    def attr___self__(self):
         return self._instance.bound
 
 
@@ -542,23 +539,23 @@ class GeneratorModel(FunctionModel):
     def __new__(cls, *args, **kwargs):
         # Append the values from the GeneratorType unto this object.
         ret = super(GeneratorModel, cls).__new__(cls, *args, **kwargs)
-        generator = astroid.MANAGER.astroid_cache[builtins.__name__]["generator"]
+        generator = astroid.MANAGER.builtins_module["generator"]
         for name, values in generator.locals.items():
             method = values[0]
             patched = lambda cls, meth=method: meth
 
-            setattr(type(ret), "py" + name, property(patched))
+            setattr(type(ret), IMPL_PREFIX + name, property(patched))
 
         return ret
 
     @property
-    def py__name__(self):
+    def attr___name__(self):
         return node_classes.Const(
             value=self._instance.parent.name, parent=self._instance
         )
 
     @property
-    def py__doc__(self):
+    def attr___doc__(self):
         return node_classes.Const(
             value=self._instance.parent.doc, parent=self._instance
         )
@@ -568,7 +565,7 @@ class AsyncGeneratorModel(GeneratorModel):
     def __new__(cls, *args, **kwargs):
         # Append the values from the AGeneratorType unto this object.
         ret = super().__new__(cls, *args, **kwargs)
-        astroid_builtins = astroid.MANAGER.astroid_cache[builtins.__name__]
+        astroid_builtins = astroid.MANAGER.builtins_module
         generator = astroid_builtins.get("async_generator")
         if generator is None:
             # Make it backward compatible.
@@ -578,47 +575,101 @@ class AsyncGeneratorModel(GeneratorModel):
             method = values[0]
             patched = lambda cls, meth=method: meth
 
-            setattr(type(ret), "py" + name, property(patched))
+            setattr(type(ret), IMPL_PREFIX + name, property(patched))
 
         return ret
 
 
 class InstanceModel(ObjectModel):
     @property
-    def py__class__(self):
+    def attr___class__(self):
         return self._instance._proxied
 
     @property
-    def py__module__(self):
+    def attr___module__(self):
         return node_classes.Const(self._instance.root().qname())
 
     @property
-    def py__doc__(self):
+    def attr___doc__(self):
         return node_classes.Const(self._instance.doc)
 
     @property
-    def py__dict__(self):
+    def attr___dict__(self):
         return _dunder_dict(self._instance, self._instance.instance_attrs)
+
+
+# Exception instances
 
 
 class ExceptionInstanceModel(InstanceModel):
     @property
-    def pyargs(self):
+    def attr_args(self):
         message = node_classes.Const("")
         args = node_classes.Tuple(parent=self._instance)
         args.postinit((message,))
         return args
 
     @property
-    def py__traceback__(self):
-        builtins_ast_module = astroid.MANAGER.astroid_cache[builtins.__name__]
+    def attr___traceback__(self):
+        builtins_ast_module = astroid.MANAGER.builtins_module
         traceback_type = builtins_ast_module[types.TracebackType.__name__]
         return traceback_type.instantiate_class()
 
 
+class SyntaxErrorInstanceModel(ExceptionInstanceModel):
+    @property
+    def attr_text(self):
+        return node_classes.Const("")
+
+
+class OSErrorInstanceModel(ExceptionInstanceModel):
+    @property
+    def attr_filename(self):
+        return node_classes.Const("")
+
+    @property
+    def attr_errno(self):
+        return node_classes.Const(0)
+
+    attr_filename2 = attr_filename
+
+
+class ImportErrorInstanceModel(ExceptionInstanceModel):
+    @property
+    def attr_name(self):
+        return node_classes.Const("")
+
+    @property
+    def attr_path(self):
+        return node_classes.Const("")
+
+
+BUILTIN_EXCEPTIONS = {
+    "builtins.SyntaxError": SyntaxErrorInstanceModel,
+    "builtins.ImportError": ImportErrorInstanceModel,
+    # These are all similar to OSError in terms of attributes
+    "builtins.OSError": OSErrorInstanceModel,
+    "builtins.BlockingIOError": OSErrorInstanceModel,
+    "builtins.BrokenPipeError": OSErrorInstanceModel,
+    "builtins.ChildProcessError": OSErrorInstanceModel,
+    "builtins.ConnectionAbortedError": OSErrorInstanceModel,
+    "builtins.ConnectionError": OSErrorInstanceModel,
+    "builtins.ConnectionRefusedError": OSErrorInstanceModel,
+    "builtins.ConnectionResetError": OSErrorInstanceModel,
+    "builtins.FileExistsError": OSErrorInstanceModel,
+    "builtins.FileNotFoundError": OSErrorInstanceModel,
+    "builtins.InterruptedError": OSErrorInstanceModel,
+    "builtins.IsADirectoryError": OSErrorInstanceModel,
+    "builtins.NotADirectoryError": OSErrorInstanceModel,
+    "builtins.PermissionError": OSErrorInstanceModel,
+    "builtins.ProcessLookupError": OSErrorInstanceModel,
+    "builtins.TimeoutError": OSErrorInstanceModel,
+}
+
+
 class DictModel(ObjectModel):
     @property
-    def py__class__(self):
+    def attr___class__(self):
         return self._instance._proxied
 
     def _generic_dict_attribute(self, obj, name):
@@ -632,7 +683,7 @@ class DictModel(ObjectModel):
         return DictMethodBoundMethod(proxy=meth, bound=self._instance)
 
     @property
-    def pyitems(self):
+    def attr_items(self):
         elems = []
         obj = node_classes.List(parent=self._instance)
         for key, value in self._instance.items:
@@ -648,7 +699,7 @@ class DictModel(ObjectModel):
         return self._generic_dict_attribute(obj, "items")
 
     @property
-    def pykeys(self):
+    def attr_keys(self):
         keys = [key for (key, _) in self._instance.items]
         obj = node_classes.List(parent=self._instance)
         obj.postinit(elts=keys)
@@ -660,7 +711,7 @@ class DictModel(ObjectModel):
         return self._generic_dict_attribute(obj, "keys")
 
     @property
-    def pyvalues(self):
+    def attr_values(self):
 
         values = [value for (_, value) in self._instance.items]
         obj = node_classes.List(parent=self._instance)

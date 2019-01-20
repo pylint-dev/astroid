@@ -19,6 +19,7 @@ import unittest
 
 import pkg_resources
 import six
+import time
 
 import astroid
 from astroid import exceptions
@@ -45,7 +46,6 @@ class AstroidManagerTest(
     def setUp(self):
         super(AstroidManagerTest, self).setUp()
         self.manager = manager.AstroidManager()
-        self.manager.clear_cache(self._builtins)  # take care of borg
 
     def test_ast_from_file(self):
         filepath = unittest.__file__
@@ -235,8 +235,6 @@ class AstroidManagerTest(
     def test_ast_from_module(self):
         ast = self.manager.ast_from_module(unittest)
         self.assertEqual(ast.pure_python, True)
-        import time
-
         ast = self.manager.ast_from_module(time)
         self.assertEqual(ast.pure_python, False)
 

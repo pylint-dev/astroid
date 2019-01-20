@@ -33,10 +33,6 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin, unittest.TestCase):
         MANAGER.astroid_cache[BUILTINS] = self._builtins
 
     def tearDown(self):
-        # Since we may have created a brainless manager, leading
-        # to a new cache builtin module and proxy classes in the constants,
-        # clear out the global manager cache.
-        MANAGER.clear_cache(self._builtins)
         MANAGER.always_load_extensions = False
         sys.path.pop(0)
         sys.path_importer_cache.pop(resources.find("data"), None)

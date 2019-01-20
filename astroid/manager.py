@@ -60,6 +60,10 @@ class AstroidManager:
             self.unregister_transform = self._transform.unregister_transform
             self.max_inferable_values = 100
 
+    @property
+    def builtins_module(self):
+        return self.astroid_cache["builtins"]
+
     def visit_transforms(self, node):
         """Visit the transforms and apply them to the given *node*."""
         return self._transform.visit(node)
@@ -307,13 +311,17 @@ class AstroidManager:
         """Cache a module if no module with the same name is known yet."""
         self.astroid_cache.setdefault(module.name, module)
 
-    def clear_cache(self, astroid_builtin=None):
-        # XXX clear transforms
-        self.astroid_cache.clear()
-        # force bootstrap again, else we may ends up with cache inconsistency
-        # between the manager and CONST_PROXY, making
-        # unittest_lookup.LookupTC.test_builtin_lookup fail depending on the
-        # test order
+    def bootstrap(self):
+        """Bootstrap the required AST modules needed for the manager to work
+
+        The bootstrap usually involves building the AST for the builtins
+        module, which is required by the rest of astroid to work correctly.
+        """
         import astroid.raw_building
 
-        astroid.raw_building._astroid_bootstrapping(astroid_builtin=astroid_builtin)
+        astroid.raw_building._astroid_bootstrapping()
+
+    def clear_cache(self):
+        """Clear the underlying cache. Also bootstraps the builtins module."""
+        self.astroid_cache.clear()
+        self.bootstrap()
