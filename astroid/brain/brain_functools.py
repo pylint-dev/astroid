@@ -26,11 +26,11 @@ class LruWrappedModel(objectmodel.FunctionModel):
     """
 
     @property
-    def py__wrapped__(self):
+    def attr___wrapped__(self):
         return self._instance
 
     @property
-    def pycache_info(self):
+    def attr_cache_info(self):
         cache_info = extract_node(
             """
         from functools import _CacheInfo
@@ -45,7 +45,7 @@ class LruWrappedModel(objectmodel.FunctionModel):
         return CacheInfoBoundMethod(proxy=self._instance, bound=self._instance)
 
     @property
-    def pycache_clear(self):
+    def attr_cache_clear(self):
         node = extract_node("""def cache_clear(self): pass""")
         return BoundMethod(proxy=node, bound=self._instance.parent.scope())
 

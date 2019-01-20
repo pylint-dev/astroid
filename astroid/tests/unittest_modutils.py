@@ -300,9 +300,6 @@ class IsRelativeTest(unittest.TestCase):
     def test_knownValues_is_relative_1(self):
         self.assertTrue(modutils.is_relative("utils", email.__path__[0]))
 
-    def test_knownValues_is_relative_2(self):
-        self.assertTrue(modutils.is_relative("ElementPath", etree.ElementTree.__file__))
-
     def test_knownValues_is_relative_3(self):
         self.assertFalse(modutils.is_relative("astroid", astroid.__path__[0]))
 

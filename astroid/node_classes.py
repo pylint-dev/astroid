@@ -3882,7 +3882,7 @@ class Slice(NodeNG):
 
     @decorators.cachedproperty
     def _proxied(self):
-        builtins = MANAGER.astroid_cache[BUILTINS]
+        builtins = MANAGER.builtins_module
         return builtins.getattr("slice")[0]
 
     def pytype(self):
@@ -4174,8 +4174,7 @@ class TryFinally(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         if (
             isinstance(child, TryExcept)
             and child.fromlineno == self.fromlineno
-            and lineno > self.fromlineno
-            and lineno <= child.tolineno
+            and child.tolineno >= lineno > self.fromlineno
         ):
             return child.block_range(lineno)
         return self._elsed_block_range(lineno, self.finalbody)

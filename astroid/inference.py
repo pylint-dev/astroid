@@ -245,15 +245,6 @@ def infer_import(self, context=None, asname=True):
 nodes.Import._infer = infer_import
 
 
-def infer_name_module(self, name):
-    context = contextmod.InferenceContext()
-    context.lookupname = name
-    return self.infer(context, asname=False)
-
-
-nodes.Import.infer_name_module = infer_name_module
-
-
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
 def infer_import_from(self, context=None, asname=True):
@@ -283,7 +274,6 @@ def infer_import_from(self, context=None, asname=True):
 nodes.ImportFrom._infer = infer_import_from
 
 
-@decorators.raise_if_nothing_inferred
 def infer_attribute(self, context=None):
     """infer an Attribute node by using getattr on the associated object"""
     for owner in self.expr.infer(context):
@@ -320,8 +310,11 @@ def infer_attribute(self, context=None):
     return dict(node=self, context=context)
 
 
-nodes.Attribute._infer = decorators.path_wrapper(infer_attribute)
-nodes.AssignAttr.infer_lhs = infer_attribute  # # won't work with a path wrapper
+nodes.Attribute._infer = decorators.raise_if_nothing_inferred(
+    decorators.path_wrapper(infer_attribute)
+)
+# won't work with a path wrapper
+nodes.AssignAttr.infer_lhs = decorators.raise_if_nothing_inferred(infer_attribute)
 
 
 @decorators.raise_if_nothing_inferred
@@ -883,15 +876,7 @@ def instance_getitem(self, index, context=None):
             "Could not find __getitem__ for {node!r}.", node=self, context=context
         )
 
-    try:
-        return next(method.infer_call_result(self, new_context))
-    except StopIteration as exc:
-        raise exceptions.InferenceError(
-            message="Inference for {node!r}[{index!s}] failed.",
-            node=self,
-            index=index,
-            context=context,
-        ) from exc
+    return next(method.infer_call_result(self, new_context))
 
 
 bases.Instance.getitem = instance_getitem

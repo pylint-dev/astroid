@@ -1920,10 +1920,10 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :returns: the the name and Const pair for each local
         :rtype: tuple(tuple(str, node_classes.Const), ...)
         """
-        locals_ = (("__module__", self.special_attributes.py__module__),)
+        locals_ = (("__module__", self.special_attributes.attr___module__),)
         if sys.version_info >= (3, 3):
             # __qualname__ is defined in PEP3155
-            locals_ += (("__qualname__", self.special_attributes.py__qualname__),)
+            locals_ += (("__qualname__", self.special_attributes.attr___qualname__),)
         return locals_
 
     # pylint: disable=redefined-outer-name
@@ -2134,7 +2134,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         # inside this class.
         lookup_upper_frame = (
             isinstance(node.parent, node_classes.Decorators)
-            and name in MANAGER.astroid_cache[builtins.__name__]
+            and name in MANAGER.builtins_module
         )
         if (
             any(node == base or base.parent_of(node) for base in self.bases)
@@ -2190,30 +2190,31 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             return
 
         for stmt in self.bases:
-            try:
-                for baseobj in stmt.infer(context):
-                    if not isinstance(baseobj, ClassDef):
-                        if isinstance(baseobj, bases.Instance):
-                            baseobj = baseobj._proxied
-                        else:
+            with context.restore_path():
+                try:
+                    for baseobj in stmt.infer(context):
+                        if not isinstance(baseobj, ClassDef):
+                            if isinstance(baseobj, bases.Instance):
+                                baseobj = baseobj._proxied
+                            else:
+                                continue
+                        if not baseobj.hide:
+                            if baseobj in yielded:
+                                continue
+                            yielded.add(baseobj)
+                            yield baseobj
+                        if not recurs:
                             continue
-                    if not baseobj.hide:
-                        if baseobj in yielded:
-                            continue
-                        yielded.add(baseobj)
-                        yield baseobj
-                    if not recurs:
-                        continue
-                    for grandpa in baseobj.ancestors(recurs=True, context=context):
-                        if grandpa is self:
-                            # This class is the ancestor of itself.
-                            break
-                        if grandpa in yielded:
-                            continue
-                        yielded.add(grandpa)
-                        yield grandpa
-            except exceptions.InferenceError:
-                continue
+                        for grandpa in baseobj.ancestors(recurs=True, context=context):
+                            if grandpa is self:
+                                # This class is the ancestor of itself.
+                                break
+                            if grandpa in yielded:
+                                continue
+                            yielded.add(grandpa)
+                            yield grandpa
+                except exceptions.InferenceError:
+                    continue
 
     def local_attr_ancestors(self, name, context=None):
         """Iterate over the parents that define the given name.
@@ -2763,21 +2764,14 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         _verify_duplicates_mro(unmerged_mro, self, context)
         return _c3_merge(unmerged_mro, self, context)
 
-    def mro(self, context=None):
+    def mro(self, context=None) -> List["ClassDef"]:
         """Get the method resolution order, using C3 linearization.
 
         :returns: The list of ancestors, sorted by the mro.
         :rtype: list(NodeNG)
-
-        :raises NotImplementedError: If this is an old style class,
-            since they don't have the concept of an MRO.
         :raises DuplicateBasesError: Duplicate bases in the same class base
         :raises InconsistentMroError: A class' MRO is inconsistent
         """
-
-        if not self.newstyle:
-            raise NotImplementedError("Could not obtain mro for old-style classes.")
-
         return self._compute_mro(context=context)
 
     def bool_value(self):
