@@ -37,6 +37,8 @@ Release Date: TBA
 
   Close #628
 
+* Fix typo in description for brain_attrs
+
 
 What's New in astroid 2.1.0?
 ============================
