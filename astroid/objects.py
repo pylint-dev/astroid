@@ -43,7 +43,7 @@ class FrozenSet(node_classes._BaseContainer):
 
     @decorators.cachedproperty
     def _proxied(self):  # pylint: disable=method-hidden
-        ast_builtins = MANAGER.astroid_cache[BUILTINS]
+        ast_builtins = MANAGER.builtins_module
         return ast_builtins.getattr("frozenset")[0]
 
 
@@ -114,7 +114,7 @@ class Super(node_classes.NodeNG):
 
     @decorators.cachedproperty
     def _proxied(self):
-        ast_builtins = MANAGER.astroid_cache[BUILTINS]
+        ast_builtins = MANAGER.builtins_module
         return ast_builtins.getattr("super")[0]
 
     def pytype(self):
@@ -210,10 +210,13 @@ class ExceptionInstance(bases.Instance):
     the case of .args.
     """
 
-    # pylint: disable=unnecessary-lambda
-    special_attributes = util.lazy_descriptor(
-        lambda: objectmodel.ExceptionInstanceModel()
-    )
+    @decorators.cachedproperty
+    def special_attributes(self):
+        qname = self.qname()
+        instance = objectmodel.BUILTIN_EXCEPTIONS.get(
+            qname, objectmodel.ExceptionInstanceModel
+        )
+        return instance()
 
 
 class DictInstance(bases.Instance):

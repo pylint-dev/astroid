@@ -740,6 +740,30 @@ class EnumBrainTest(unittest.TestCase):
             isinstance(elem, astroid.Const) and elem.value == 1 for elem in inferred_int
         )
 
+    def test_mingled_single_and_double_quotes_does_not_crash(self):
+        node = builder.extract_node(
+            """
+        from enum import Enum
+        class A(Enum):
+            a = 'x"y"'
+        A.a.value #@
+        """
+        )
+        inferred_string = next(node.infer())
+        assert inferred_string.value == 'x"y"'
+
+    def test_special_characters_does_not_crash(self):
+        node = builder.extract_node(
+            """
+        import enum
+        class Example(enum.Enum):
+            NULL = '\\N{NULL}'
+        Example.NULL.value
+        """
+        )
+        inferred_string = next(node.infer())
+        assert inferred_string.value == "\N{NULL}"
+
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
 class DateutilBrainTest(unittest.TestCase):
@@ -1759,6 +1783,20 @@ class TestFunctoolsPartial:
             inferred = next(node.infer())
             assert isinstance(inferred, astroid.Const)
             assert inferred.value == expected_value
+
+
+@pytest.mark.skipif(
+    sys.version_info[:2] == (3, 4), reason="Not a problem on Python 3.4"
+)
+def test_http_client_brain():
+    node = astroid.extract_node(
+        """
+    from http.client import OK
+    OK
+    """
+    )
+    inferred = next(node.infer())
+    assert isinstance(inferred, astroid.Instance)
 
 
 if __name__ == "__main__":

@@ -261,8 +261,6 @@ class InspectBuilder:
     FunctionDef and ClassDef nodes and some others as guessed.
     """
 
-    # astroid from living objects ###############################################
-
     def __init__(self):
         self._done = {}
         self._module = None
@@ -380,17 +378,20 @@ class InspectBuilder:
 
 
 ### astroid bootstrapping ######################################################
-Astroid_BUILDER = InspectBuilder()
 
 _CONST_PROXY = {}
 
+# TODO : find a nicer way to handle this situation;
+def _set_proxied(const):
+    return _CONST_PROXY[const.value.__class__]
 
-def _astroid_bootstrapping(astroid_builtin=None):
-    """astroid boot strapping the builtins module"""
+
+def _astroid_bootstrapping():
+    """astroid bootstrapping the builtins module"""
     # this boot strapping is necessary since we need the Const nodes to
     # inspect_build builtins, and then we can proxy Const
-    if astroid_builtin is None:
-        astroid_builtin = Astroid_BUILDER.inspect_build(builtins)
+    builder = InspectBuilder()
+    astroid_builtin = builder.inspect_build(builtins)
 
     # pylint: disable=redefined-outer-name
     for cls, node_cls in node_classes.CONST_CLS.items():
@@ -407,52 +408,42 @@ def _astroid_bootstrapping(astroid_builtin=None):
         else:
             _CONST_PROXY[cls] = proxy
 
+    # Set the builtin module as parent for some builtins.
+    nodes.Const._proxied = property(_set_proxied)
+
+    _GeneratorType = nodes.ClassDef(
+        types.GeneratorType.__name__, types.GeneratorType.__doc__
+    )
+    _GeneratorType.parent = astroid_builtin
+    bases.Generator._proxied = _GeneratorType
+    builder.object_build(bases.Generator._proxied, types.GeneratorType)
+
+    if hasattr(types, "AsyncGeneratorType"):
+        # pylint: disable=no-member; AsyncGeneratorType
+        _AsyncGeneratorType = nodes.ClassDef(
+            types.AsyncGeneratorType.__name__, types.AsyncGeneratorType.__doc__
+        )
+        _AsyncGeneratorType.parent = astroid_builtin
+        bases.AsyncGenerator._proxied = _AsyncGeneratorType
+        builder.object_build(bases.AsyncGenerator._proxied, types.AsyncGeneratorType)
+    builtin_types = (
+        types.GetSetDescriptorType,
+        types.GeneratorType,
+        types.MemberDescriptorType,
+        type(None),
+        type(NotImplemented),
+        types.FunctionType,
+        types.MethodType,
+        types.BuiltinFunctionType,
+        types.ModuleType,
+        types.TracebackType,
+    )
+    for _type in builtin_types:
+        if _type.__name__ not in astroid_builtin:
+            cls = nodes.ClassDef(_type.__name__, _type.__doc__)
+            cls.parent = astroid_builtin
+            builder.object_build(cls, _type)
+            astroid_builtin[_type.__name__] = cls
+
 
 _astroid_bootstrapping()
-
-# TODO : find a nicer way to handle this situation;
-def _set_proxied(const):
-    return _CONST_PROXY[const.value.__class__]
-
-
-nodes.Const._proxied = property(_set_proxied)
-
-_GeneratorType = nodes.ClassDef(
-    types.GeneratorType.__name__, types.GeneratorType.__doc__
-)
-_GeneratorType.parent = MANAGER.astroid_cache[builtins.__name__]
-bases.Generator._proxied = _GeneratorType
-Astroid_BUILDER.object_build(bases.Generator._proxied, types.GeneratorType)
-
-if hasattr(types, "AsyncGeneratorType"):
-    # pylint: disable=no-member; AsyncGeneratorType
-    _AsyncGeneratorType = nodes.ClassDef(
-        types.AsyncGeneratorType.__name__, types.AsyncGeneratorType.__doc__
-    )
-    _AsyncGeneratorType.parent = MANAGER.astroid_cache[builtins.__name__]
-    bases.AsyncGenerator._proxied = _AsyncGeneratorType
-    Astroid_BUILDER.object_build(
-        bases.AsyncGenerator._proxied, types.AsyncGeneratorType
-    )
-# pylint: enable=no-member
-
-
-_builtins = MANAGER.astroid_cache[builtins.__name__]
-BUILTIN_TYPES = (
-    types.GetSetDescriptorType,
-    types.GeneratorType,
-    types.MemberDescriptorType,
-    type(None),
-    type(NotImplemented),
-    types.FunctionType,
-    types.MethodType,
-    types.BuiltinFunctionType,
-    types.ModuleType,
-    types.TracebackType,
-)
-for _type in BUILTIN_TYPES:
-    if _type.__name__ not in _builtins:
-        cls = nodes.ClassDef(_type.__name__, _type.__doc__)
-        cls.parent = MANAGER.astroid_cache[builtins.__name__]
-        Astroid_BUILDER.object_build(cls, _type)
-        _builtins[_type.__name__] = cls

@@ -8,8 +8,8 @@ To ease our work reviewing your PR, do make sure to mark the complete the follow
 
 ## Steps
 
-- [ ] Add a ChangeLog entry describing what your PR does
-- [ ] Write a good description on what the PR does
+- [ ] For new features or bug fixes, add a ChangeLog entry describing what your PR does.
+- [ ] Write a good description on what the PR does.
 
 ## Description
 
@@ -25,9 +25,9 @@ To ease our work reviewing your PR, do make sure to mark the complete the follow
 
 ## Related Issue
 
-<!-- 
+<!--
 If this PR fixes a particular issue, use the following to automatically close that issue
 once this PR gets merged:
 
-Closes #XXX 
+Closes #XXX
 -->

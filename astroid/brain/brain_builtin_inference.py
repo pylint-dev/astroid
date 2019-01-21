@@ -94,9 +94,7 @@ def _extend_str(class_node, rvalue):
 
 
 def _extend_builtins(class_transforms):
-    from astroid.bases import BUILTINS
-
-    builtin_ast = MANAGER.astroid_cache[BUILTINS]
+    builtin_ast = MANAGER.builtins_module
     for class_name, transform in class_transforms.items():
         transform(builtin_ast[class_name])
 
@@ -510,7 +508,7 @@ def infer_slice(node, context=None):
     if not 0 < len(args) <= 3:
         raise UseInferenceDefault
 
-    args = list(map(helpers.safe_infer, args))
+    infer_func = partial(helpers.safe_infer, context=context)
     for arg in args:
         if not arg or arg is util.Uninferable:
             raise UseInferenceDefault
