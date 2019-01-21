@@ -10,6 +10,10 @@ Release Date: TBA
 
   Close PyCQA/pylint#2588
 
+* Fix a recursion error caused by inferring the ``slice`` builtin.
+
+  Close PyCQA/pylint#2667
+
 * Remove the restriction that "old style classes" cannot have a MRO.
 
   This does not make sense any longer given that we run against Python 3
