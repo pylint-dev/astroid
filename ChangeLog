@@ -6,6 +6,10 @@ What's New in astroid 2.2.0?
 ============================
 Release Date: TBA
 
+* ``brain_numpy`` returns an undefined type for ``numpy`` methods to avoid ``assignment-from-no-return``
+
+  Close PyCQA/pylint#2694
+
 * Fix a bug where a call to a function that has been previously called via
   functools.partial was wrongly inferred
 
