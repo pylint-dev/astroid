@@ -244,10 +244,9 @@ class BaseInstance(Proxy):
                 # Unfortunately, we can't do an isinstance check here,
                 # because of the circular dependency between astroid.bases
                 # and astroid.scoped_nodes.
-                if attr.statement().scope() == self._proxied:
-                    if attr.args.args and attr.args.args[0].name == "self":
-                        yield BoundMethod(attr, self)
-                        continue
+                if attr.args.args and attr.args.args[0].name == "self":
+                    yield BoundMethod(attr, self)
+                    continue
                 yield attr
             else:
                 yield attr
