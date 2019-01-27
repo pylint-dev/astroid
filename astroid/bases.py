@@ -239,11 +239,6 @@ class BaseInstance(Proxy):
                 else:
                     yield BoundMethod(attr, self)
             elif hasattr(attr, "name") and attr.name == "<lambda>":
-                # This is a lambda function defined at class level,
-                # since its scope is the underlying _proxied class.
-                # Unfortunately, we can't do an isinstance check here,
-                # because of the circular dependency between astroid.bases
-                # and astroid.scoped_nodes.
                 if attr.args.args and attr.args.args[0].name == "self":
                     yield BoundMethod(attr, self)
                     continue
