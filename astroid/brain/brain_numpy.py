@@ -354,10 +354,10 @@ def numpy_core_numerictypes_transform():
             self.holidays = None
             self.weekmask = None
 
-    class flexible(generic): return any
-    class bool_(generic): return any
-    class number(generic): return any
-    class datetime64(generic): return any
+    class flexible(generic): pass
+    class bool_(generic): pass
+    class number(generic): pass
+    class datetime64(generic): pass
 
 
     class void(flexible):
@@ -369,7 +369,7 @@ def numpy_core_numerictypes_transform():
         def setfield(self): return any
 
 
-    class character(flexible): return any
+    class character(flexible): pass
 
 
     class integer(number):
@@ -378,7 +378,7 @@ def numpy_core_numerictypes_transform():
            self.numerator = None
 
 
-    class inexact(number): return any
+    class inexact(number): pass
 
 
     class str_(str, character):
@@ -390,38 +390,38 @@ def numpy_core_numerictypes_transform():
         def maketrans(self, frm, to): return any
 
 
-    class signedinteger(integer): return any
+    class signedinteger(integer): pass
 
 
-    class unsignedinteger(integer): return any
+    class unsignedinteger(integer): pass
 
 
-    class complexfloating(inexact): return any
+    class complexfloating(inexact): pass
 
 
-    class floating(inexact): return any
+    class floating(inexact): pass
 
 
     class float64(floating, float):
         def fromhex(self, string): return any
 
 
-    class uint64(unsignedinteger): return any
-    class complex64(complexfloating): return any
-    class int16(signedinteger): return any
-    class float96(floating): return any
-    class int8(signedinteger): return any
-    class uint32(unsignedinteger): return any
-    class uint8(unsignedinteger): return any
-    class _typedict(dict): return any
-    class complex192(complexfloating): return any
-    class timedelta64(signedinteger): return any
-    class int32(signedinteger): return any
-    class uint16(unsignedinteger): return any
-    class float32(floating): return any
-    class complex128(complexfloating, complex): return any
-    class float16(floating): return any
-    class int64(signedinteger): return any
+    class uint64(unsignedinteger): pass
+    class complex64(complexfloating): pass
+    class int16(signedinteger): pass
+    class float96(floating): pass
+    class int8(signedinteger): pass
+    class uint32(unsignedinteger): pass
+    class uint8(unsignedinteger): pass
+    class _typedict(dict): pass
+    class complex192(complexfloating): pass
+    class timedelta64(signedinteger): pass
+    class int32(signedinteger): pass
+    class uint16(unsignedinteger): pass
+    class float32(floating): pass
+    class complex128(complexfloating, complex): pass
+    class float16(floating): pass
+    class int64(signedinteger): pass
 
     buffer_type = memoryview
     bool8 = bool_
