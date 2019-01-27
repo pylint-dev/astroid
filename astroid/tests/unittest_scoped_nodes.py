@@ -1853,6 +1853,25 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         not_method = next(instance.igetattr("not_method"))
         self.assertIsInstance(not_method, scoped_nodes.Lambda)
 
+    def test_instance_bound_method_lambdas_2(self):
+        ast_nodes = builder.extract_node(
+            """
+        class Test(object): #@
+            lam = lambda self: self
+            not_method = lambda xargs: xargs
+        Test() #@
+        """
+        )
+        cls = next(ast_nodes[0].infer())
+        self.assertIsInstance(next(cls.igetattr("lam")), scoped_nodes.Lambda)
+        self.assertIsInstance(next(cls.igetattr("not_method")), scoped_nodes.Lambda)
+
+        instance = next(ast_nodes[1].infer())
+        lam = next(instance.igetattr("lam"))
+        self.assertIsInstance(lam, BoundMethod)
+        not_method = next(instance.igetattr("not_method"))
+        self.assertIsInstance(not_method, scoped_nodes.Lambda)
+
     def test_class_extra_decorators_frame_is_not_class(self):
         ast_node = builder.extract_node(
             """
