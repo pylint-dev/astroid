@@ -6,6 +6,10 @@ What's New in astroid 2.2.0?
 ============================
 Release Date: TBA
 
+* Fix a bug where a method, which is a lambda built from a function, is not inferred as ``BoundMethod``
+
+  Close PyCQA/pylint#2594
+
 * ``brain_numpy`` returns an undefined type for ``numpy`` methods to avoid ``assignment-from-no-return``
 
   Close PyCQA/pylint#2694
