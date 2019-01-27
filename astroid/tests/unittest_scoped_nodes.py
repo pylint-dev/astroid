@@ -1859,7 +1859,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         a factory is well infered as a bound method (bug pylint 2594)
         """
         ast_nodes = builder.extract_node(
-        """
+            """
         def lambda_factory(): 
             return lambda self: print("Hello world")
 
