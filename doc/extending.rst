@@ -115,20 +115,20 @@ Now, with this knowledge, let's see how our transform might look::
             lineno=node.lineno,
             col_offset=node.col_offset,
             parent=node.parent,
-         )
-         formatted_value_node = astroid.FormattedValue(
+        )
+        formatted_value_node = astroid.FormattedValue(
             lineno=node.lineno,
             col_offset=node.col_offset,
             parent=node.parent,
-         )
-         new_node.postinit(value=node.args[0])
+        )
+        formatted_value_node.postinit(value=node.args[0])
 
-         # Need to extract the part of the string that doesn't
-         # have the formatting placeholders
-         string = extract_string_without_placeholder(node.func.expr)
+        # Removes the {} since it will be represented as
+        # formatted_value_node
+        string = astroid.Const(node.func.expr.value.replace('{}', ''))
 
-         f_string_node.postinit(values=[string, f_string_node])
-         return new_node
+        f_string_node.postinit(values=[string, formatted_value_node])
+        return f_string_node
 
     astroid.MANAGER.register_transform(
         astroid.Call,
