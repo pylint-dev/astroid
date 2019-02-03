@@ -8,6 +8,7 @@
 
 """Astroid hooks for numpy."""
 
+import functools
 import astroid
 
 
@@ -270,6 +271,7 @@ def numpy_core_numerictypes_transform():
             self.type = None
 
         def newbyteorder(self, new_order='S'): return any
+        def __neg__(self): return any
 
 
     class ndarray(object):
@@ -291,6 +293,9 @@ def numpy_core_numerictypes_transform():
             self.size = None
             self.strides = None
 
+        def __neg__(self): return any
+        def __inv__(self): return any
+        def __invert__(self): return any
         def all(self): return any
         def any(self): return any
         def argmax(self): return any
@@ -356,7 +361,8 @@ def numpy_core_numerictypes_transform():
 
     class flexible(generic): pass
     class bool_(generic): pass
-    class number(generic): pass
+    class number(generic):
+        def __neg__(self): return any
     class datetime64(generic): pass
 
 
@@ -475,6 +481,53 @@ def numpy_funcs():
     """
     )
 
+def numpy_linspace_infer_call_result(node):
+    current_infer_call_result = node.infer_call_result
+    def infer_call_result_ghost(caller=None, context=None):
+        unfiltered_infer_call_result = current_infer_call_result(caller, context)
+        return (x for x in unfiltered_infer_call_result if not isinstance(x, (astroid.List, astroid.Tuple)))
+    return infer_call_result_ghost
+
+def numpy_array_infer_call_result(node):
+    current_infer_call_result = node.infer_call_result
+    def infer_call_result_ghost(caller=None, context=None):
+        unfiltered_infer_call_result = current_infer_call_result(caller, context)
+        return (x for x in unfiltered_infer_call_result if not isinstance(x, (astroid.List, astroid.Tuple)))
+    return infer_call_result_ghost
+
+def _looks_like_numpy_function(func_name, numpy_module_name, node):
+    """
+    Return True if the current node correspond to the function inside
+    the numpy module in parameters
+
+    :param node: the current node
+    :type node: FunctionDef
+    :param func_name: name of the function
+    :type func_name: str
+    :param numpy_module_name: name of the numpy module
+    :type numpy_module_name: str
+    :return: True if the current node correspond to the function looked for
+    :rtype: bool
+    """
+    return node.name == func_name and node.parent.name == numpy_module_name
+
+def _transform_linspace_func(node, context=None):
+    node.infer_call_result = numpy_linspace_infer_call_result(node)
+    return
+
+def _transform_array_func(node, context=None):
+    node.infer_call_result = numpy_array_infer_call_result(node)
+    return
+
+astroid.MANAGER.register_transform(
+    astroid.FunctionDef, _transform_linspace_func, functools.partial(_looks_like_numpy_function,
+                                                                     "linspace", "numpy.core.function_base")
+)
+
+astroid.MANAGER.register_transform(
+    astroid.FunctionDef, _transform_linspace_func, functools.partial(_looks_like_numpy_function,
+                                                                     "array", "numpy.core.records")
+)
 
 astroid.register_module_extender(
     astroid.MANAGER, "numpy.core.umath", numpy_core_umath_transform
