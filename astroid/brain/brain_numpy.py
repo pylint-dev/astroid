@@ -481,19 +481,6 @@ def numpy_funcs():
     """
     )
 
-def numpy_linspace_infer_call_result(node):
-    current_infer_call_result = node.infer_call_result
-    def infer_call_result_ghost(caller=None, context=None):
-        unfiltered_infer_call_result = current_infer_call_result(caller, context)
-        return (x for x in unfiltered_infer_call_result if not isinstance(x, (astroid.List, astroid.Tuple)))
-    return infer_call_result_ghost
-
-def numpy_array_infer_call_result(node):
-    current_infer_call_result = node.infer_call_result
-    def infer_call_result_ghost(caller=None, context=None):
-        unfiltered_infer_call_result = current_infer_call_result(caller, context)
-        return (x for x in unfiltered_infer_call_result if not isinstance(x, (astroid.List, astroid.Tuple)))
-    return infer_call_result_ghost
 
 def _looks_like_numpy_function(func_name, numpy_module_name, node):
     """
@@ -511,21 +498,42 @@ def _looks_like_numpy_function(func_name, numpy_module_name, node):
     """
     return node.name == func_name and node.parent.name == numpy_module_name
 
-def _transform_linspace_func(node, context=None):
-    node.infer_call_result = numpy_linspace_infer_call_result(node)
+
+def numpy_function_infer_call_result(node):
+    """
+    A wrapper around infer_call_result method bounded to the node.
+
+    :param node: the node which infer_call_result should be filtered
+    :type node: FunctionDef
+    :return: a function that filter the results of the call to node.infer_call_result
+    :rtype: function
+    """
+    # Put the origin infer_call_result method into the closure
+    origin_infer_call_result = node.infer_call_result
+
+    def infer_call_result_wrapper(caller=None, context=None):
+        """
+        Call the origin infer_call_result method bounded to the node instance and
+        filter the results to remove List and Tuple instances
+        """
+        unfiltered_infer_call_result = origin_infer_call_result(caller, context)
+        return (x for x in unfiltered_infer_call_result if not isinstance(x, (astroid.List, astroid.Tuple)))
+
+    return infer_call_result_wrapper
+
+
+def _replace_numpy_function_infer_call_result(node, context=None):
+    node.infer_call_result = numpy_function_infer_call_result(node)
     return
 
-def _transform_array_func(node, context=None):
-    node.infer_call_result = numpy_array_infer_call_result(node)
-    return
 
 astroid.MANAGER.register_transform(
-    astroid.FunctionDef, _transform_linspace_func, functools.partial(_looks_like_numpy_function,
+    astroid.FunctionDef, _replace_numpy_function_infer_call_result, functools.partial(_looks_like_numpy_function,
                                                                      "linspace", "numpy.core.function_base")
 )
 
 astroid.MANAGER.register_transform(
-    astroid.FunctionDef, _transform_linspace_func, functools.partial(_looks_like_numpy_function,
+    astroid.FunctionDef, _replace_numpy_function_infer_call_result, functools.partial(_looks_like_numpy_function,
                                                                      "array", "numpy.core.records")
 )
 
