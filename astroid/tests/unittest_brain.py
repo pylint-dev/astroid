@@ -764,6 +764,25 @@ class EnumBrainTest(unittest.TestCase):
         inferred_string = next(node.infer())
         assert inferred_string.value == "\N{NULL}"
 
+    def test_dont_crash_on_for_loops_in_body(self):
+        node = builder.extract_node(
+            """
+
+        class Commands(IntEnum):
+            _ignore_ = 'Commands index'
+            _init_ = 'value string'
+
+            BEL = 0x07, 'Bell'
+            Commands = vars()
+            for index in range(4):
+                Commands[f'DC{index + 1}'] = 0x11 + index, f'Device Control {index + 1}'
+
+        Commands
+        """
+        )
+        inferred = next(node.infer())
+        assert isinstance(inferred, astroid.ClassDef)
+
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
 class DateutilBrainTest(unittest.TestCase):

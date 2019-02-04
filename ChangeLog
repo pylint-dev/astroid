@@ -6,6 +6,11 @@ What's New in astroid 2.2.0?
 ============================
 Release Date: TBA
 
+
+* Fix a crash in the ``enum`` brain tip caused by non-assign members in class definitions.
+
+  Close PyCQA/pylint#2719
+
 * ``brain_numpy`` returns an undefined type for ``numpy`` methods to avoid ``assignment-from-no-return``
 
   Close PyCQA/pylint#2694
