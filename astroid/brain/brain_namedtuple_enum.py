@@ -320,11 +320,14 @@ def infer_enum_class(node):
                 targets = [stmt.target]
 
             inferred_return_value = None
-            if isinstance(stmt, nodes.Assign) and isinstance(stmt.value, nodes.Const):
-                if isinstance(stmt.value.value, str):
-                    inferred_return_value = repr(stmt.value.value)
+            if isinstance(stmt, nodes.Assign):
+                if isinstance(stmt.value, nodes.Const):
+                    if isinstance(stmt.value.value, str):
+                        inferred_return_value = repr(stmt.value.value)
+                    else:
+                        inferred_return_value = stmt.value.value
                 else:
-                    inferred_return_value = stmt.value.value
+                    inferred_return_value = stmt.value.as_string()
 
             new_targets = []
             for target in targets:

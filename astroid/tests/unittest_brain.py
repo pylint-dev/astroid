@@ -783,6 +783,25 @@ class EnumBrainTest(unittest.TestCase):
         inferred = next(node.infer())
         assert isinstance(inferred, astroid.ClassDef)
 
+    def test_enum_tuple_list_values(self):
+        tuple_node, list_node = builder.extract_node(
+            """
+        import enum
+
+        class MyEnum(enum.Enum):
+            a = (1, 2)
+            b = [2, 4]
+        MyEnum.a.value #@
+        MyEnum.b.value #@
+        """
+        )
+        inferred_tuple_node = next(tuple_node.infer())
+        inferred_list_node = next(list_node.infer())
+        assert isinstance(inferred_tuple_node, astroid.Tuple)
+        assert isinstance(inferred_list_node, astroid.List)
+        assert inferred_tuple_node.as_string() == "(1, 2)"
+        assert inferred_list_node.as_string() == "[2, 4]"
+
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
 class DateutilBrainTest(unittest.TestCase):

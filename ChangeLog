@@ -7,6 +7,10 @@ What's New in astroid 2.2.0?
 Release Date: TBA
 
 
+* Support non-const nodes as values of Enum attributes.
+
+  Close #612
+
 * Fix a crash in the ``enum`` brain tip caused by non-assign members in class definitions.
 
   Close PyCQA/pylint#2719
