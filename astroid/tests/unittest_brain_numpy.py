@@ -624,13 +624,16 @@ class NumpyBrainFunctionReturningArrayTest(SubTestWrapper):
     """
     Test that calls to numpy functions returning arrays are correctly inferred
     """
+
     def _inferred_numpy_func_call(self, func_name, *func_args):
         node = builder.extract_node(
             """
         import numpy as np
         func = np.{:s}
         func({:s})
-        """.format(func_name, ",".join(func_args))
+        """.format(
+                func_name, ",".join(func_args)
+            )
         )
         return node.infer()
 

@@ -508,7 +508,7 @@ def numpy_function_infer_call_result(node):
     :return: a function that filter the results of the call to node.infer_call_result
     :rtype: function
     """
-    # Put the origin infer_call_result method into the closure
+    #  Put the origin infer_call_result method into the closure
     origin_infer_call_result = node.infer_call_result
 
     def infer_call_result_wrapper(caller=None, context=None):
@@ -517,7 +517,11 @@ def numpy_function_infer_call_result(node):
         filter the results to remove List and Tuple instances
         """
         unfiltered_infer_call_result = origin_infer_call_result(caller, context)
-        return (x for x in unfiltered_infer_call_result if not isinstance(x, (astroid.List, astroid.Tuple)))
+        return (
+            x
+            for x in unfiltered_infer_call_result
+            if not isinstance(x, (astroid.List, astroid.Tuple))
+        )
 
     return infer_call_result_wrapper
 
@@ -528,13 +532,17 @@ def _replace_numpy_function_infer_call_result(node, context=None):
 
 
 astroid.MANAGER.register_transform(
-    astroid.FunctionDef, _replace_numpy_function_infer_call_result, functools.partial(_looks_like_numpy_function,
-                                                                     "linspace", "numpy.core.function_base")
+    astroid.FunctionDef,
+    _replace_numpy_function_infer_call_result,
+    functools.partial(
+        _looks_like_numpy_function, "linspace", "numpy.core.function_base"
+    ),
 )
 
 astroid.MANAGER.register_transform(
-    astroid.FunctionDef, _replace_numpy_function_infer_call_result, functools.partial(_looks_like_numpy_function,
-                                                                     "array", "numpy.core.records")
+    astroid.FunctionDef,
+    _replace_numpy_function_infer_call_result,
+    functools.partial(_looks_like_numpy_function, "array", "numpy.core.records"),
 )
 
 astroid.register_module_extender(
