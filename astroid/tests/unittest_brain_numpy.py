@@ -17,6 +17,7 @@ except ImportError:
 
 from astroid import builder
 from astroid import nodes
+from astroid import node_classes
 
 
 class SubTestWrapper(unittest.TestCase):
@@ -572,6 +573,76 @@ class NumpyBrainCoreNumericTypesTest(SubTestWrapper):
                 for attr in generic_attr:
                     with self.subTest(attr=attr):
                         self.assertNotEqual(len(inferred.getattr(attr)), 0)
+
+    def test_number_types_have_unary_operators(self):
+        """
+        Test that number types have unary operators
+        """
+        unary_ops = ("__neg__",)
+
+        for type_ in (
+            "float64",
+            "float96",
+            "floating",
+            "int16",
+            "int32",
+            "int32",
+            "int64",
+            "int8",
+            "integer",
+            "number",
+            "signedinteger",
+            "uint16",
+            "uint32",
+            "uint32",
+            "uint64",
+            "uint8",
+            "unsignedinteger",
+        ):
+            with self.subTest(typ=type_):
+                inferred = self._inferred_numpy_attribute(type_)
+                for attr in unary_ops:
+                    with self.subTest(attr=attr):
+                        self.assertNotEqual(len(inferred.getattr(attr)), 0)
+
+    def test_array_types_have_unary_operators(self):
+        """
+        Test that array types have unary operators
+        """
+        unary_ops = ("__neg__", "__inv__", "__invert__")
+
+        for type_ in ("ndarray",):
+            with self.subTest(typ=type_):
+                inferred = self._inferred_numpy_attribute(type_)
+                for attr in unary_ops:
+                    with self.subTest(attr=attr):
+                        self.assertNotEqual(len(inferred.getattr(attr)), 0)
+
+
+@unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
+class NumpyBrainFunctionReturningArrayTest(SubTestWrapper):
+    """
+    Test that calls to numpy functions returning arrays are correctly inferred
+    """
+    def _inferred_numpy_func_call(self, func_name):
+        node = builder.extract_node(
+            """
+        import numpy as np
+        func = np.{:s}
+        func([1, 2])
+        """.format(func_name)
+        )
+        return node.infer()
+
+    def test_numpy_function_calls_not_inferred_as_list_tuple(self):
+        """
+        Test that some calls to numpy functions are not inferred as list nor tuple
+        """
+        for func_ in ("array",):
+            with self.subTest(typ=func_):
+                inferred = [res for res in self._inferred_numpy_func_call(func_)]
+                self.assertNotIn(node_classes.List, inferred)
+                self.assertNotIn(node_classes.Tuple, inferred)
 
 
 if __name__ == "__main__":
