@@ -7,6 +7,10 @@ What's New in astroid 2.2.0?
 Release Date: TBA
 
 
+* Add a proper ``strerror`` inference to the ``OSError`` exceptions.
+
+  Close PyCQA/pylint#2553
+
 * Support non-const nodes as values of Enum attributes.
 
   Close #612

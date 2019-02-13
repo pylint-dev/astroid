@@ -1840,5 +1840,20 @@ def test_http_client_brain():
     assert isinstance(inferred, astroid.Instance)
 
 
+def test_oserror_model():
+    node = astroid.extract_node(
+        """
+    try:
+        1/0
+    except OSError as exc:
+        exc #@
+    """
+    )
+    inferred = next(node.infer())
+    strerror = next(inferred.igetattr("strerror"))
+    assert isinstance(strerror, astroid.Const)
+    assert strerror.value == ""
+
+
 if __name__ == "__main__":
     unittest.main()
