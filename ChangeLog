@@ -7,6 +7,8 @@ What's New in astroid 2.2.0?
 Release Date: TBA
 
 
+* Fix a crash with ``typing.NamedTuple`` and empty fields. Close PyCQA/pylint#2745
+
 * Add a proper ``strerror`` inference to the ``OSError`` exceptions.
 
   Close PyCQA/pylint#2553
