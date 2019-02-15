@@ -270,6 +270,7 @@ def numpy_core_numerictypes_transform():
             self.type = None
 
         def newbyteorder(self, new_order='S'): return any
+        def __neg__(self): return any
 
 
     class ndarray(object):
@@ -291,6 +292,9 @@ def numpy_core_numerictypes_transform():
             self.size = None
             self.strides = None
 
+        def __neg__(self): return any
+        def __inv__(self): return any
+        def __invert__(self): return any
         def all(self): return any
         def any(self): return any
         def argmax(self): return any
@@ -356,7 +360,8 @@ def numpy_core_numerictypes_transform():
 
     class flexible(generic): pass
     class bool_(generic): pass
-    class number(generic): pass
+    class number(generic):
+        def __neg__(self): return any
     class datetime64(generic): pass
 
 
