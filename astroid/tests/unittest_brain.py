@@ -1038,6 +1038,19 @@ class TypingBrain(unittest.TestCase):
         inferred = next(ast_node.infer())
         assert isinstance(inferred, nodes.Tuple)
 
+    def test_typing_namedtuple_dont_crash_on_no_fields(self):
+        node = builder.extract_node(
+            """
+        from typing import NamedTuple
+
+        Bar = NamedTuple("bar", [])
+
+        Bar()
+        """
+        )
+        inferred = next(node.infer())
+        self.assertIsInstance(inferred, astroid.Instance)
+
 
 class ReBrainTest(unittest.TestCase):
     def test_regex_flags(self):
@@ -1838,6 +1851,21 @@ def test_http_client_brain():
     )
     inferred = next(node.infer())
     assert isinstance(inferred, astroid.Instance)
+
+
+def test_oserror_model():
+    node = astroid.extract_node(
+        """
+    try:
+        1/0
+    except OSError as exc:
+        exc #@
+    """
+    )
+    inferred = next(node.infer())
+    strerror = next(inferred.igetattr("strerror"))
+    assert isinstance(strerror, astroid.Const)
+    assert strerror.value == ""
 
 
 if __name__ == "__main__":

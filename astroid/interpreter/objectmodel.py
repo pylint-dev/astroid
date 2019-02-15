@@ -631,6 +631,10 @@ class OSErrorInstanceModel(ExceptionInstanceModel):
     def attr_errno(self):
         return node_classes.Const(0)
 
+    @property
+    def attr_strerror(self):
+        return node_classes.Const("")
+
     attr_filename2 = attr_filename
 
 
