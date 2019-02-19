@@ -6,6 +6,8 @@ What's New in astroid 2.2.0?
 ============================
 Release Date: TBA
 
+* ``typed_ast`` gets installed for Python 3.7, meaning type comments can now work on 3.7.
+
 * Fix a bug concerning inference of unary operators on numpy types.
 
   Close PyCQA/pylint#2436 (first part)
