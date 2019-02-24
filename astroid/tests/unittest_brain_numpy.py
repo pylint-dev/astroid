@@ -17,6 +17,7 @@ except ImportError:
 
 from astroid import builder
 from astroid import nodes
+from astroid import node_classes
 
 
 class SubTestWrapper(unittest.TestCase):
@@ -616,6 +617,43 @@ class NumpyBrainCoreNumericTypesTest(SubTestWrapper):
                 for attr in unary_ops:
                     with self.subTest(attr=attr):
                         self.assertNotEqual(len(inferred.getattr(attr)), 0)
+
+
+@unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
+class NumpyBrainFunctionReturningArrayTest(SubTestWrapper):
+    """
+    Test that calls to numpy functions returning arrays are correctly inferred
+    """
+
+    def _inferred_numpy_func_call(self, func_name, *func_args):
+        node = builder.extract_node(
+            """
+        import numpy as np
+        func = np.{:s}
+        func({:s})
+        """.format(
+                func_name, ",".join(func_args)
+            )
+        )
+        return node.infer()
+
+    def test_numpy_function_calls_not_inferred_as_list(self):
+        """
+        Test that some calls to numpy functions are not inferred as list nor tuple
+        """
+        for func_ in (("array", "[1, 2]"),):
+            with self.subTest(typ=func_):
+                for inferred in self._inferred_numpy_func_call(*func_):
+                    self.assertFalse(isinstance(inferred, node_classes.List))
+
+    def test_numpy_function_calls_not_inferred_as_tuple(self):
+        """
+        Test that some calls to numpy functions are not inferred as list nor tuple
+        """
+        for func_ in (("array", "(1, 2)"), ("linspace", "1, 100")):
+            with self.subTest(typ=func_):
+                for inferred in self._inferred_numpy_func_call(*func_):
+                    self.assertFalse(isinstance(inferred, node_classes.Tuple))
 
 
 if __name__ == "__main__":
