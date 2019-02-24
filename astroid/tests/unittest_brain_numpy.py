@@ -573,6 +573,50 @@ class NumpyBrainCoreNumericTypesTest(SubTestWrapper):
                     with self.subTest(attr=attr):
                         self.assertNotEqual(len(inferred.getattr(attr)), 0)
 
+    def test_number_types_have_unary_operators(self):
+        """
+        Test that number types have unary operators
+        """
+        unary_ops = ("__neg__",)
+
+        for type_ in (
+            "float64",
+            "float96",
+            "floating",
+            "int16",
+            "int32",
+            "int32",
+            "int64",
+            "int8",
+            "integer",
+            "number",
+            "signedinteger",
+            "uint16",
+            "uint32",
+            "uint32",
+            "uint64",
+            "uint8",
+            "unsignedinteger",
+        ):
+            with self.subTest(typ=type_):
+                inferred = self._inferred_numpy_attribute(type_)
+                for attr in unary_ops:
+                    with self.subTest(attr=attr):
+                        self.assertNotEqual(len(inferred.getattr(attr)), 0)
+
+    def test_array_types_have_unary_operators(self):
+        """
+        Test that array types have unary operators
+        """
+        unary_ops = ("__neg__", "__inv__", "__invert__")
+
+        for type_ in ("ndarray",):
+            with self.subTest(typ=type_):
+                inferred = self._inferred_numpy_attribute(type_)
+                for attr in unary_ops:
+                    with self.subTest(attr=attr):
+                        self.assertNotEqual(len(inferred.getattr(attr)), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

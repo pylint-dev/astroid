@@ -10,6 +10,26 @@ Release Date: TBA
 
   Close PyCQA/pylint#2594
 
+* ``typed_ast`` gets installed for Python 3.7, meaning type comments can now work on 3.7.
+
+* Fix a bug concerning inference of unary operators on numpy types.
+
+  Close PyCQA/pylint#2436 (first part)
+
+* Fix a crash with ``typing.NamedTuple`` and empty fields. Close PyCQA/pylint#2745
+
+* Add a proper ``strerror`` inference to the ``OSError`` exceptions.
+
+  Close PyCQA/pylint#2553
+
+* Support non-const nodes as values of Enum attributes.
+
+  Close #612
+
+* Fix a crash in the ``enum`` brain tip caused by non-assign members in class definitions.
+
+  Close PyCQA/pylint#2719
+
 * ``brain_numpy`` returns an undefined type for ``numpy`` methods to avoid ``assignment-from-no-return``
 
   Close PyCQA/pylint#2694
