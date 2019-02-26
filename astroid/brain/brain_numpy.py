@@ -43,7 +43,7 @@ def numpy_random_mtrand_transform():
     def poisson(lam=1.0, size=None): return any
     def power(a, size=None): return any
     def rand(*args): return any
-    def randint(low, high=None, size=None, dtype='l'): pass
+    def randint(low, high=None, size=None, dtype='l'): return any
     def randn(*args): return any
     def random_integers(low, high=None, size=None): return any
     def random_sample(size=None): return any
@@ -471,6 +471,23 @@ def numpy_core_numerictypes_transform():
     """
     )
 
+def numpy_core_numeric_transform():
+    return astroid.parse(
+        """
+    # different functions defined in numeric.py
+    import numpy
+    def zeros_like(a, dtype=None, order='K', subok=True): return numpy.ndarray((0, 0))
+        """
+        )
+
+def numpy_core_function_base_transform():
+    return astroid.parse(
+        """
+    # different functions defined in numeric.py
+    import numpy
+    def linspace(start, stop, num=50, endpoint=True, retstep=False, dtype=None, axis=0): return numpy.ndarray((0, 0))
+        """
+        )
 
 def numpy_funcs():
     return astroid.parse(
@@ -551,18 +568,6 @@ astroid.MANAGER.register_transform(
     functools.partial(_looks_like_numpy_function, "zeros_like", "numpy.core.numeric"),
 )
 
-astroid.MANAGER.register_transform(
-    astroid.FunctionDef,
-    _replace_numpy_function_infer_call_result,
-    functools.partial(_looks_like_numpy_function, "full_like", "numpy.core.numeric"),
-)
-
-astroid.MANAGER.register_transform(
-    astroid.FunctionDef,
-    _replace_numpy_function_infer_call_result,
-    functools.partial(_looks_like_numpy_function, "ones_like", "numpy.core.numeric"),
-)
-
 astroid.register_module_extender(
     astroid.MANAGER, "numpy.core.umath", numpy_core_umath_transform
 )
@@ -571,5 +576,11 @@ astroid.register_module_extender(
 )
 astroid.register_module_extender(
     astroid.MANAGER, "numpy.core.numerictypes", numpy_core_numerictypes_transform
+)
+astroid.register_module_extender(
+    astroid.MANAGER, "numpy.core.numeric", numpy_core_numeric_transform
+)
+astroid.register_module_extender(
+    astroid.MANAGER, "numpy.core.function_base", numpy_core_function_base_transform
 )
 astroid.register_module_extender(astroid.MANAGER, "numpy", numpy_funcs)
