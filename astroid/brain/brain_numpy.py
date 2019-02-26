@@ -43,7 +43,8 @@ def numpy_random_mtrand_transform():
     def poisson(lam=1.0, size=None): return any
     def power(a, size=None): return any
     def rand(*args): return any
-    def randint(low, high=None, size=None, dtype='l'): return any
+    def randint(low, high=None, size=None, dtype='l'): pass
+    def zeros_like(a, dtype=None, order='K', subok=True): pass
     def randn(*args): return any
     def random_integers(low, high=None, size=None): return any
     def random_sample(size=None): return any
@@ -543,6 +544,12 @@ astroid.MANAGER.register_transform(
     astroid.FunctionDef,
     _replace_numpy_function_infer_call_result,
     functools.partial(_looks_like_numpy_function, "array", "numpy.core.records"),
+)
+
+astroid.MANAGER.register_transform(
+    astroid.FunctionDef,
+    _replace_numpy_function_infer_call_result,
+    functools.partial(_looks_like_numpy_function, "zeros_like", "numpy.core.numeric"),
 )
 
 astroid.register_module_extender(
