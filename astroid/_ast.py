@@ -1,6 +1,8 @@
 import ast
 from collections import namedtuple
+from functools import partial
 from typing import Optional
+import sys
 
 _ast_py2 = _ast_py3 = None
 try:
@@ -22,7 +24,11 @@ def _get_parser_module(parse_python_two: bool = False):
 
 
 def _parse(string: str, parse_python_two: bool = False):
-    return _get_parser_module(parse_python_two=parse_python_two).parse(string)
+    parse_module = _get_parser_module(parse_python_two=parse_python_two)
+    parse_func = parse_module.parse
+    if _ast_py3 and not parse_python_two:
+        parse_func = partial(parse_func, feature_version=sys.version_info.minor)
+    return parse_func(string)
 
 
 def parse_function_type_comment(type_comment: str) -> Optional[FunctionType]:
