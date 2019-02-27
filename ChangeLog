@@ -6,7 +6,7 @@ What's New in astroid 2.2.0?
 ============================
 Release Date: TBA
 
-<<<<<<< HEAD
+
 * Fix a bug concerning inference of calls to numpy function that should not return Tuple or List
 instances.
 
