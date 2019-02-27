@@ -4,13 +4,12 @@ astroid's ChangeLog
 
 What's New in astroid 2.2.0?
 ============================
-Release Date: TBA
+Release Date: 2019-02-27
 
 
-* Fix a bug concerning inference of calls to numpy function that should not return Tuple or List
-instances.
+* Fix a bug concerning inference of calls to numpy function that should not return Tuple or List instances.
 
-  Close PyCQA/pylint#2436
+ Close PyCQA/pylint#2436
 
 * ``typed_ast`` gets installed for Python 3.7, meaning type comments can now work on 3.7.
 
