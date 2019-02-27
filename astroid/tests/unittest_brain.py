@@ -764,6 +764,7 @@ class EnumBrainTest(unittest.TestCase):
         inferred_string = next(node.infer())
         assert inferred_string.value == "\N{NULL}"
 
+    @test_utils.require_version(minver="3.6")
     def test_dont_crash_on_for_loops_in_body(self):
         node = builder.extract_node(
             """
