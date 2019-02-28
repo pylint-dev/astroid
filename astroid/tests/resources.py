@@ -58,10 +58,10 @@ class AstroidCacheSetupMixin:
     """
 
     @classmethod
-    def setUpClass(cls):
+    def setup_class(cls):
         cls._builtins = MANAGER.astroid_cache.get(BUILTINS)
 
     @classmethod
-    def tearDownClass(cls):
+    def teardown_class(cls):
         if cls._builtins:
             MANAGER.astroid_cache[BUILTINS] = cls._builtins

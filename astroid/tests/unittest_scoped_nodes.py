@@ -1853,6 +1853,29 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         not_method = next(instance.igetattr("not_method"))
         self.assertIsInstance(not_method, scoped_nodes.Lambda)
 
+    def test_instance_bound_method_lambdas_2(self):
+        """
+        Test the fact that a method which is a lambda built from 
+        a factory is well infered as a bound method (bug pylint 2594)
+        """
+        ast_nodes = builder.extract_node(
+            """
+        def lambda_factory(): 
+            return lambda self: print("Hello world")
+
+        class MyClass(object): #@
+            f2 = lambda_factory()
+
+        MyClass() #@
+        """
+        )
+        cls = next(ast_nodes[0].infer())
+        self.assertIsInstance(next(cls.igetattr("f2")), scoped_nodes.Lambda)
+
+        instance = next(ast_nodes[1].infer())
+        f2 = next(instance.igetattr("f2"))
+        self.assertIsInstance(f2, BoundMethod)
+
     def test_class_extra_decorators_frame_is_not_class(self):
         ast_node = builder.extract_node(
             """

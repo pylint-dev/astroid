@@ -30,7 +30,6 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin, unittest.TestCase):
     def setUp(self):
         sys.path.insert(0, resources.find("data"))
         MANAGER.always_load_extensions = True
-        MANAGER.astroid_cache[BUILTINS] = self._builtins
 
     def tearDown(self):
         MANAGER.always_load_extensions = False
@@ -46,7 +45,6 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin, unittest.TestCase):
         manager.astroid_cache = {}
         manager._mod_file_cache = {}
         manager._transform = transforms.TransformVisitor()
-        manager.clear_cache()  # trigger proper bootstraping
         return manager
 
     def test_module_path(self):
