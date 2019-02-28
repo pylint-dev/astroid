@@ -4,7 +4,12 @@ astroid's ChangeLog
 
 What's New in astroid 2.2.0?
 ============================
-Release Date: TBA
+Release Date: 2019-02-27
+
+
+* Fix a bug concerning inference of calls to numpy function that should not return Tuple or List instances.
+
+ Close PyCQA/pylint#2436
 
 * Fix a bug where a method, which is a lambda built from a function, is not inferred as ``BoundMethod``
 

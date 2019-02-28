@@ -8,6 +8,7 @@
 
 """Astroid hooks for numpy."""
 
+import functools
 import astroid
 
 
@@ -480,6 +481,69 @@ def numpy_funcs():
     """
     )
 
+
+def _looks_like_numpy_function(func_name, numpy_module_name, node):
+    """
+    Return True if the current node correspond to the function inside
+    the numpy module in parameters
+
+    :param node: the current node
+    :type node: FunctionDef
+    :param func_name: name of the function
+    :type func_name: str
+    :param numpy_module_name: name of the numpy module
+    :type numpy_module_name: str
+    :return: True if the current node correspond to the function looked for
+    :rtype: bool
+    """
+    return node.name == func_name and node.parent.name == numpy_module_name
+
+
+def numpy_function_infer_call_result(node):
+    """
+    A wrapper around infer_call_result method bounded to the node.
+
+    :param node: the node which infer_call_result should be filtered
+    :type node: FunctionDef
+    :return: a function that filter the results of the call to node.infer_call_result
+    :rtype: function
+    """
+    #  Put the origin infer_call_result method into the closure
+    origin_infer_call_result = node.infer_call_result
+
+    def infer_call_result_wrapper(caller=None, context=None):
+        """
+        Call the origin infer_call_result method bounded to the node instance and
+        filter the results to remove List and Tuple instances
+        """
+        unfiltered_infer_call_result = origin_infer_call_result(caller, context)
+        return (
+            x
+            for x in unfiltered_infer_call_result
+            if not isinstance(x, (astroid.List, astroid.Tuple))
+        )
+
+    return infer_call_result_wrapper
+
+
+def _replace_numpy_function_infer_call_result(node, context=None):
+    node.infer_call_result = numpy_function_infer_call_result(node)
+    return
+
+
+astroid.MANAGER.register_transform(
+    astroid.FunctionDef,
+    _replace_numpy_function_infer_call_result,
+    functools.partial(
+        _looks_like_numpy_function, "linspace", "numpy.core.function_base"
+    ),
+)
+
+astroid.MANAGER.register_transform(
+    astroid.FunctionDef,
+    _replace_numpy_function_infer_call_result,
+    functools.partial(_looks_like_numpy_function, "array", "numpy.core.records"),
+)
 
 astroid.register_module_extender(
     astroid.MANAGER, "numpy.core.umath", numpy_core_umath_transform
