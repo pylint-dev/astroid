@@ -629,6 +629,20 @@ class ExceptionModelTest(unittest.TestCase):
             assert isinstance(inferred, astroid.Const)
             assert inferred.value == ""
 
+    def test_exception_instance_correctly_instantiated(self):
+        ast_node = builder.extract_node(
+            """
+        try:
+            raise ImportError("a")
+        except ImportError as err:
+           err #@
+        """
+        )
+        inferred = next(ast_node.infer())
+        assert isinstance(inferred, astroid.Instance)
+        cls = next(inferred.igetattr("__class__"))
+        assert isinstance(cls, astroid.ClassDef)
+
 
 class DictObjectModelTest(unittest.TestCase):
     def test__class__(self):

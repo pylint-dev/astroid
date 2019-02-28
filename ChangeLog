@@ -10,6 +10,11 @@ Release Date: TBA
 
  Close PyCQA/pylint#2770
 
+* Correctly instantiate exception instances when inferring their attributes with objectmodel
+
+ Close PyCQA/pylint#2776
+
+
 What's New in astroid 2.2.0?
 ============================
 Release Date: 2019-02-27

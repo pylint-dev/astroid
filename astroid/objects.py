@@ -216,7 +216,7 @@ class ExceptionInstance(bases.Instance):
         instance = objectmodel.BUILTIN_EXCEPTIONS.get(
             qname, objectmodel.ExceptionInstanceModel
         )
-        return instance()
+        return instance()(self)
 
 
 class DictInstance(bases.Instance):
