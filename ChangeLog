@@ -2,6 +2,12 @@
 astroid's ChangeLog
 ===================
 
+What's New in astroid 2.2.2?
+============================
+Release Date: 2019-03-02
+
+* Generated proper environment markers for installing typed-ast.
+
 What's New in astroid 2.2.1?
 ============================
 Release Date: 2019-03-02
