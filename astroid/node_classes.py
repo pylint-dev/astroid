@@ -1096,6 +1096,16 @@ class LookupMixIn:
         context = contextmod.InferenceContext()
         return bases._infer_stmts(stmts, context, frame)
 
+    def _get_filtered_node_statements(self, nodes):
+        statements = {node: node.statement() for node in nodes}
+        # Next we check if we have ExceptHandlers that are parent
+        # of the underlying variable, in which case the last one survives
+        if all(isinstance(stmt, ExceptHandler) for stmt in statements.values()):
+            statements = {
+                node: stmt for node, stmt in statements.items() if stmt.parent_of(self)
+            }
+        return statements
+
     def _filter_stmts(self, stmts, frame, offset):
         """Filter the given list of statements to remove ignorable statements.
 
@@ -1149,10 +1159,12 @@ class LookupMixIn:
         else:
             # disabling lineno filtering
             mylineno = 0
+
         _stmts = []
         _stmt_parents = []
-        for node in stmts:
-            stmt = node.statement()
+        statements = self._get_filtered_node_statements(stmts)
+
+        for node, stmt in statements.items():
             # line filtering is on and we have reached our location, break
             if stmt.fromlineno > mylineno > 0:
                 break

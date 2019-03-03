@@ -5090,5 +5090,64 @@ def test_recursion_error_inferring_slice():
     assert isinstance(inferred, Slice)
 
 
+def test_exception_lookup_last_except_handler_wins():
+    node = extract_node(
+        """
+    try:
+        1/0
+    except ValueError as exc:
+        pass
+    try:
+        1/0
+    except OSError as exc:
+        exc #@
+    """
+    )
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    inferred_exc = inferred[0]
+    assert isinstance(inferred_exc, Instance)
+    assert inferred_exc.name == "OSError"
+
+    # Check that two except handlers on the same TryExcept works the same as separate
+    # TryExcepts
+    node = extract_node(
+        """
+    try:
+        1/0
+    except ZeroDivisionError as exc:
+        pass
+    except ValueError as exc:
+        exc #@
+    """
+    )
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    inferred_exc = inferred[0]
+    assert isinstance(inferred_exc, Instance)
+    assert inferred_exc.name == "ValueError"
+
+
+def test_exception_lookup_name_bound_in_except_handler():
+    node = extract_node(
+        """
+    try:
+        1/0
+    except ValueError:
+        name = 1
+    try:
+        1/0
+    except OSError:
+        name = 2
+        name #@
+    """
+    )
+    inferred = node.inferred()
+    assert len(inferred) == 1
+    inferred_exc = inferred[0]
+    assert isinstance(inferred_exc, nodes.Const)
+    assert inferred_exc.value == 2
+
+
 if __name__ == "__main__":
     unittest.main()

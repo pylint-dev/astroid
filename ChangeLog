@@ -42,6 +42,10 @@ Release Date: 2019-03-02
  Close PyCQA/pylint#2776
 
 
+* The last except handler wins when inferring variables bound in an except handler.
+
+  Close PyCQA/pylint#2777
+
 What's New in astroid 2.2.0?
 ============================
 Release Date: 2019-02-27
