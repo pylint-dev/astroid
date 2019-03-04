@@ -1097,13 +1097,15 @@ class LookupMixIn:
         return bases._infer_stmts(stmts, context, frame)
 
     def _get_filtered_node_statements(self, nodes):
-        statements = {node: node.statement() for node in nodes}
+        statements = [(node, node.statement()) for node in nodes]
         # Next we check if we have ExceptHandlers that are parent
         # of the underlying variable, in which case the last one survives
-        if all(isinstance(stmt, ExceptHandler) for stmt in statements.values()):
-            statements = {
-                node: stmt for node, stmt in statements.items() if stmt.parent_of(self)
-            }
+        if len(statements) > 1 and all(
+            isinstance(stmt, ExceptHandler) for _, stmt in statements
+        ):
+            statements = [
+                (node, stmt) for node, stmt in statements if stmt.parent_of(self)
+            ]
         return statements
 
     def _filter_stmts(self, stmts, frame, offset):
@@ -1164,7 +1166,7 @@ class LookupMixIn:
         _stmt_parents = []
         statements = self._get_filtered_node_statements(stmts)
 
-        for node, stmt in statements.items():
+        for node, stmt in statements:
             # line filtering is on and we have reached our location, break
             if stmt.fromlineno > mylineno > 0:
                 break
