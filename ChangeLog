@@ -2,6 +2,21 @@
 astroid's ChangeLog
 ===================
 
+What's New in astroid 2.2.3?
+============================
+Release Date: 2019-03-03
+
+* Replace `any` with `uninferable` when returning values from `numpy` transform
+
+  Turns out that this was conflicting with the `any` builtin, while the original
+  intention was to return a value that cannot be inferred, until we have support
+  for types.
+
+  This should fix a couple of false positives on pylint's side where the return
+  value of numpy functions was considered to be itself a function.
+
+  Close PyCQA/pylint#2784
+
 What's New in astroid 2.2.2?
 ============================
 Release Date: 2019-03-02
