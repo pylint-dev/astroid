@@ -143,8 +143,8 @@ def _infer_stmts(stmts, context, frame=None):
             continue
         context.lookupname = stmt._infer_name(frame, name)
         try:
-            for inferred in stmt.infer(context=context):
-                yield inferred
+            for inf in stmt.infer(context=context):
+                yield inf
                 inferred = True
         except NameInferenceError:
             continue
