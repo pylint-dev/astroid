@@ -2,6 +2,12 @@
 astroid's ChangeLog
 ===================
 
+What's New in astroid 2.2.4?
+============================
+Release Date: 2019-03-05
+
+* Latest `typed_ast` gets installed for all CPython versions.
+
 What's New in astroid 2.2.3?
 ============================
 Release Date: 2019-03-03
