@@ -24,6 +24,10 @@ jobs:
       env: TOXENV=py37
       dist: xenial
       sudo: true
+    - python: 3.8-dev
+      env: TOXENV=py38
+      dist: xenial
+      sudo: true
 
 before_install:
   - python --version
