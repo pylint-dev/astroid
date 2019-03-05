@@ -10,6 +10,12 @@ Release Date: TBA
 
   Close PyCQA/pylint#2777
 
+
+* ``threading.Lock.locked()`` is properly recognized as a member of ``threading.Lock``
+
+  Close PyCQA/pylint#2791
+
+
 What's New in astroid 2.2.0?
 ============================
 Release Date: 2019-02-27

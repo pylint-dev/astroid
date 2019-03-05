@@ -19,6 +19,8 @@ def _thread_transform():
             return True
         def __exit__(self, *args):
             pass
+        def locked(self):
+            return False
 
     def Lock():
         return lock()
