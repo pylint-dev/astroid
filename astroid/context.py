@@ -105,17 +105,6 @@ class InferenceContext:
         clone.extra_context = self.extra_context
         return clone
 
-    def cache_generator(self, key, generator):
-        """Cache result of generator into dictionary
-
-        Used to cache inference results"""
-        results = []
-        for result in generator:
-            results.append(result)
-            yield result
-
-        self.inferred[key] = tuple(results)
-
     @contextlib.contextmanager
     def restore_path(self):
         path = set(self.path)
