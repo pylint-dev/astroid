@@ -15,7 +15,6 @@ from textwrap import dedent
 import six
 from astroid import (
     MANAGER,
-    Instance,
     UseInferenceDefault,
     AttributeInferenceError,
     inference_tip,
