@@ -15,53 +15,53 @@ import astroid
 def numpy_random_mtrand_transform():
     return astroid.parse(
         """
-    def beta(a, b, size=None): return any
-    def binomial(n, p, size=None): return any
-    def bytes(length): return any
-    def chisquare(df, size=None): return any
-    def choice(a, size=None, replace=True, p=None): return any
-    def dirichlet(alpha, size=None): return any
-    def exponential(scale=1.0, size=None): return any
-    def f(dfnum, dfden, size=None): return any
-    def gamma(shape, scale=1.0, size=None): return any
-    def geometric(p, size=None): return any
-    def get_state(): return any
-    def gumbel(loc=0.0, scale=1.0, size=None): return any
-    def hypergeometric(ngood, nbad, nsample, size=None): return any
-    def laplace(loc=0.0, scale=1.0, size=None): return any
-    def logistic(loc=0.0, scale=1.0, size=None): return any
-    def lognormal(mean=0.0, sigma=1.0, size=None): return any
-    def logseries(p, size=None): return any
-    def multinomial(n, pvals, size=None): return any
-    def multivariate_normal(mean, cov, size=None): return any
-    def negative_binomial(n, p, size=None): return any
-    def noncentral_chisquare(df, nonc, size=None): return any
-    def noncentral_f(dfnum, dfden, nonc, size=None): return any
-    def normal(loc=0.0, scale=1.0, size=None): return any
-    def pareto(a, size=None): return any
-    def permutation(x): return any
-    def poisson(lam=1.0, size=None): return any
-    def power(a, size=None): return any
-    def rand(*args): return any
-    def randint(low, high=None, size=None, dtype='l'): return any
-    def randn(*args): return any
-    def random_integers(low, high=None, size=None): return any
-    def random_sample(size=None): return any
-    def rayleigh(scale=1.0, size=None): return any
-    def seed(seed=None): return any
-    def set_state(state): return any
-    def shuffle(x): return any
-    def standard_cauchy(size=None): return any
-    def standard_exponential(size=None): return any
-    def standard_gamma(shape, size=None): return any
-    def standard_normal(size=None): return any
-    def standard_t(df, size=None): return any
-    def triangular(left, mode, right, size=None): return any
-    def uniform(low=0.0, high=1.0, size=None): return any
-    def vonmises(mu, kappa, size=None): return any
-    def wald(mean, scale, size=None): return any
-    def weibull(a, size=None): return any
-    def zipf(a, size=None): return any
+    def beta(a, b, size=None): return uninferable
+    def binomial(n, p, size=None): return uninferable
+    def bytes(length): return uninferable
+    def chisquare(df, size=None): return uninferable
+    def choice(a, size=None, replace=True, p=None): return uninferable
+    def dirichlet(alpha, size=None): return uninferable
+    def exponential(scale=1.0, size=None): return uninferable
+    def f(dfnum, dfden, size=None): return uninferable
+    def gamma(shape, scale=1.0, size=None): return uninferable
+    def geometric(p, size=None): return uninferable
+    def get_state(): return uninferable
+    def gumbel(loc=0.0, scale=1.0, size=None): return uninferable
+    def hypergeometric(ngood, nbad, nsample, size=None): return uninferable
+    def laplace(loc=0.0, scale=1.0, size=None): return uninferable
+    def logistic(loc=0.0, scale=1.0, size=None): return uninferable
+    def lognormal(mean=0.0, sigma=1.0, size=None): return uninferable
+    def logseries(p, size=None): return uninferable
+    def multinomial(n, pvals, size=None): return uninferable
+    def multivariate_normal(mean, cov, size=None): return uninferable
+    def negative_binomial(n, p, size=None): return uninferable
+    def noncentral_chisquare(df, nonc, size=None): return uninferable
+    def noncentral_f(dfnum, dfden, nonc, size=None): return uninferable
+    def normal(loc=0.0, scale=1.0, size=None): return uninferable
+    def pareto(a, size=None): return uninferable
+    def permutation(x): return uninferable
+    def poisson(lam=1.0, size=None): return uninferable
+    def power(a, size=None): return uninferable
+    def rand(*args): return uninferable
+    def randint(low, high=None, size=None, dtype='l'): return uninferable
+    def randn(*args): return uninferable
+    def random_integers(low, high=None, size=None): return uninferable
+    def random_sample(size=None): return uninferable
+    def rayleigh(scale=1.0, size=None): return uninferable
+    def seed(seed=None): return uninferable
+    def set_state(state): return uninferable
+    def shuffle(x): return uninferable
+    def standard_cauchy(size=None): return uninferable
+    def standard_exponential(size=None): return uninferable
+    def standard_gamma(shape, size=None): return uninferable
+    def standard_normal(size=None): return uninferable
+    def standard_t(df, size=None): return uninferable
+    def triangular(left, mode, right, size=None): return uninferable
+    def uniform(low=0.0, high=1.0, size=None): return uninferable
+    def vonmises(mu, kappa, size=None): return uninferable
+    def wald(mean, scale, size=None): return uninferable
+    def weibull(a, size=None): return uninferable
+    def zipf(a, size=None): return uninferable
     """
     )
 
@@ -78,80 +78,80 @@ def numpy_core_umath_transform():
     euler_gamma = 0.5772156649015329
 
     # No arg functions
-    def geterrobj(): return any
+    def geterrobj(): return uninferable
 
     # One arg functions
-    def seterrobj(errobj): return any
+    def seterrobj(errobj): return uninferable
 
     # One arg functions with optional kwargs
-    def arccos(x, {opt_args:s}): return any
-    def arccosh(x, {opt_args:s}): return any
-    def arcsin(x, {opt_args:s}): return any
-    def arcsinh(x, {opt_args:s}): return any
-    def arctan(x, {opt_args:s}): return any
-    def arctanh(x, {opt_args:s}): return any
-    def cbrt(x, {opt_args:s}): return any
-    def conj(x, {opt_args:s}): return any
-    def conjugate(x, {opt_args:s}): return any
-    def cosh(x, {opt_args:s}): return any
-    def deg2rad(x, {opt_args:s}): return any
-    def degrees(x, {opt_args:s}): return any
-    def exp2(x, {opt_args:s}): return any
-    def expm1(x, {opt_args:s}): return any
-    def fabs(x, {opt_args:s}): return any
-    def frexp(x, {opt_args:s}): return any
-    def isfinite(x, {opt_args:s}): return any
-    def isinf(x, {opt_args:s}): return any
-    def log(x, {opt_args:s}): return any
-    def log1p(x, {opt_args:s}): return any
-    def log2(x, {opt_args:s}): return any
-    def logical_not(x, {opt_args:s}): return any
-    def modf(x, {opt_args:s}): return any
-    def negative(x, {opt_args:s}): return any
-    def rad2deg(x, {opt_args:s}): return any
-    def radians(x, {opt_args:s}): return any
-    def reciprocal(x, {opt_args:s}): return any
-    def rint(x, {opt_args:s}): return any
-    def sign(x, {opt_args:s}): return any
-    def signbit(x, {opt_args:s}): return any
-    def sinh(x, {opt_args:s}): return any
-    def spacing(x, {opt_args:s}): return any
-    def square(x, {opt_args:s}): return any
-    def tan(x, {opt_args:s}): return any
-    def tanh(x, {opt_args:s}): return any
-    def trunc(x, {opt_args:s}): return any
+    def arccos(x, {opt_args:s}): return uninferable
+    def arccosh(x, {opt_args:s}): return uninferable
+    def arcsin(x, {opt_args:s}): return uninferable
+    def arcsinh(x, {opt_args:s}): return uninferable
+    def arctan(x, {opt_args:s}): return uninferable
+    def arctanh(x, {opt_args:s}): return uninferable
+    def cbrt(x, {opt_args:s}): return uninferable
+    def conj(x, {opt_args:s}): return uninferable
+    def conjugate(x, {opt_args:s}): return uninferable
+    def cosh(x, {opt_args:s}): return uninferable
+    def deg2rad(x, {opt_args:s}): return uninferable
+    def degrees(x, {opt_args:s}): return uninferable
+    def exp2(x, {opt_args:s}): return uninferable
+    def expm1(x, {opt_args:s}): return uninferable
+    def fabs(x, {opt_args:s}): return uninferable
+    def frexp(x, {opt_args:s}): return uninferable
+    def isfinite(x, {opt_args:s}): return uninferable
+    def isinf(x, {opt_args:s}): return uninferable
+    def log(x, {opt_args:s}): return uninferable
+    def log1p(x, {opt_args:s}): return uninferable
+    def log2(x, {opt_args:s}): return uninferable
+    def logical_not(x, {opt_args:s}): return uninferable
+    def modf(x, {opt_args:s}): return uninferable
+    def negative(x, {opt_args:s}): return uninferable
+    def rad2deg(x, {opt_args:s}): return uninferable
+    def radians(x, {opt_args:s}): return uninferable
+    def reciprocal(x, {opt_args:s}): return uninferable
+    def rint(x, {opt_args:s}): return uninferable
+    def sign(x, {opt_args:s}): return uninferable
+    def signbit(x, {opt_args:s}): return uninferable
+    def sinh(x, {opt_args:s}): return uninferable
+    def spacing(x, {opt_args:s}): return uninferable
+    def square(x, {opt_args:s}): return uninferable
+    def tan(x, {opt_args:s}): return uninferable
+    def tanh(x, {opt_args:s}): return uninferable
+    def trunc(x, {opt_args:s}): return uninferable
 
     # Two args functions with optional kwargs
-    def bitwise_and(x1, x2, {opt_args:s}): return any
-    def bitwise_or(x1, x2, {opt_args:s}): return any
-    def bitwise_xor(x1, x2, {opt_args:s}): return any
-    def copysign(x1, x2, {opt_args:s}): return any
-    def divide(x1, x2, {opt_args:s}): return any
-    def equal(x1, x2, {opt_args:s}): return any
-    def float_power(x1, x2, {opt_args:s}): return any
-    def floor_divide(x1, x2, {opt_args:s}): return any
-    def fmax(x1, x2, {opt_args:s}): return any
-    def fmin(x1, x2, {opt_args:s}): return any
-    def fmod(x1, x2, {opt_args:s}): return any
-    def greater(x1, x2, {opt_args:s}): return any
-    def hypot(x1, x2, {opt_args:s}): return any
-    def ldexp(x1, x2, {opt_args:s}): return any
-    def left_shift(x1, x2, {opt_args:s}): return any
-    def less(x1, x2, {opt_args:s}): return any
-    def logaddexp(x1, x2, {opt_args:s}): return any
-    def logaddexp2(x1, x2, {opt_args:s}): return any
-    def logical_and(x1, x2, {opt_args:s}): return any
-    def logical_or(x1, x2, {opt_args:s}): return any
-    def logical_xor(x1, x2, {opt_args:s}): return any
-    def maximum(x1, x2, {opt_args:s}): return any
-    def minimum(x1, x2, {opt_args:s}): return any
-    def nextafter(x1, x2, {opt_args:s}): return any
-    def not_equal(x1, x2, {opt_args:s}): return any
-    def power(x1, x2, {opt_args:s}): return any
-    def remainder(x1, x2, {opt_args:s}): return any
-    def right_shift(x1, x2, {opt_args:s}): return any
-    def subtract(x1, x2, {opt_args:s}): return any
-    def true_divide(x1, x2, {opt_args:s}): return any
+    def bitwise_and(x1, x2, {opt_args:s}): return uninferable
+    def bitwise_or(x1, x2, {opt_args:s}): return uninferable
+    def bitwise_xor(x1, x2, {opt_args:s}): return uninferable
+    def copysign(x1, x2, {opt_args:s}): return uninferable
+    def divide(x1, x2, {opt_args:s}): return uninferable
+    def equal(x1, x2, {opt_args:s}): return uninferable
+    def float_power(x1, x2, {opt_args:s}): return uninferable
+    def floor_divide(x1, x2, {opt_args:s}): return uninferable
+    def fmax(x1, x2, {opt_args:s}): return uninferable
+    def fmin(x1, x2, {opt_args:s}): return uninferable
+    def fmod(x1, x2, {opt_args:s}): return uninferable
+    def greater(x1, x2, {opt_args:s}): return uninferable
+    def hypot(x1, x2, {opt_args:s}): return uninferable
+    def ldexp(x1, x2, {opt_args:s}): return uninferable
+    def left_shift(x1, x2, {opt_args:s}): return uninferable
+    def less(x1, x2, {opt_args:s}): return uninferable
+    def logaddexp(x1, x2, {opt_args:s}): return uninferable
+    def logaddexp2(x1, x2, {opt_args:s}): return uninferable
+    def logical_and(x1, x2, {opt_args:s}): return uninferable
+    def logical_or(x1, x2, {opt_args:s}): return uninferable
+    def logical_xor(x1, x2, {opt_args:s}): return uninferable
+    def maximum(x1, x2, {opt_args:s}): return uninferable
+    def minimum(x1, x2, {opt_args:s}): return uninferable
+    def nextafter(x1, x2, {opt_args:s}): return uninferable
+    def not_equal(x1, x2, {opt_args:s}): return uninferable
+    def power(x1, x2, {opt_args:s}): return uninferable
+    def remainder(x1, x2, {opt_args:s}): return uninferable
+    def right_shift(x1, x2, {opt_args:s}): return uninferable
+    def subtract(x1, x2, {opt_args:s}): return uninferable
+    def true_divide(x1, x2, {opt_args:s}): return uninferable
     """.format(
             opt_args=ufunc_optional_keyword_arguments
         )
@@ -178,72 +178,72 @@ def numpy_core_numerictypes_transform():
             self.size = None
             self.strides = None
 
-        def all(self): return any
-        def any(self): return any
-        def argmax(self): return any
-        def argmin(self): return any
-        def argsort(self): return any
-        def astype(self): return any
-        def base(self): return any
-        def byteswap(self): return any
-        def choose(self): return any
-        def clip(self): return any
-        def compress(self): return any
-        def conj(self): return any
-        def conjugate(self): return any
-        def copy(self): return any
-        def cumprod(self): return any
-        def cumsum(self): return any
-        def data(self): return any
-        def diagonal(self): return any
-        def dtype(self): return any
-        def dump(self): return any
-        def dumps(self): return any
-        def fill(self): return any
-        def flags(self): return any
-        def flat(self): return any
-        def flatten(self): return any
-        def getfield(self): return any
-        def imag(self): return any
-        def item(self): return any
-        def itemset(self): return any
-        def itemsize(self): return any
-        def max(self): return any
-        def mean(self): return any
-        def min(self): return any
-        def nbytes(self): return any
-        def ndim(self): return any
-        def newbyteorder(self): return any
-        def nonzero(self): return any
-        def prod(self): return any
-        def ptp(self): return any
-        def put(self): return any
-        def ravel(self): return any
-        def real(self): return any
-        def repeat(self): return any
-        def reshape(self): return any
-        def resize(self): return any
-        def round(self): return any
-        def searchsorted(self): return any
-        def setfield(self): return any
-        def setflags(self): return any
-        def shape(self): return any
-        def size(self): return any
-        def sort(self): return any
-        def squeeze(self): return any
-        def std(self): return any
-        def strides(self): return any
-        def sum(self): return any
-        def swapaxes(self): return any
-        def take(self): return any
-        def tobytes(self): return any
-        def tofile(self): return any
-        def tolist(self): return any
-        def tostring(self): return any
-        def trace(self): return any
-        def transpose(self): return any
-        def var(self): return any
-        def view(self): return any
+        def all(self): return uninferable
+        def any(self): return uninferable
+        def argmax(self): return uninferable
+        def argmin(self): return uninferable
+        def argsort(self): return uninferable
+        def astype(self): return uninferable
+        def base(self): return uninferable
+        def byteswap(self): return uninferable
+        def choose(self): return uninferable
+        def clip(self): return uninferable
+        def compress(self): return uninferable
+        def conj(self): return uninferable
+        def conjugate(self): return uninferable
+        def copy(self): return uninferable
+        def cumprod(self): return uninferable
+        def cumsum(self): return uninferable
+        def data(self): return uninferable
+        def diagonal(self): return uninferable
+        def dtype(self): return uninferable
+        def dump(self): return uninferable
+        def dumps(self): return uninferable
+        def fill(self): return uninferable
+        def flags(self): return uninferable
+        def flat(self): return uninferable
+        def flatten(self): return uninferable
+        def getfield(self): return uninferable
+        def imag(self): return uninferable
+        def item(self): return uninferable
+        def itemset(self): return uninferable
+        def itemsize(self): return uninferable
+        def max(self): return uninferable
+        def mean(self): return uninferable
+        def min(self): return uninferable
+        def nbytes(self): return uninferable
+        def ndim(self): return uninferable
+        def newbyteorder(self): return uninferable
+        def nonzero(self): return uninferable
+        def prod(self): return uninferable
+        def ptp(self): return uninferable
+        def put(self): return uninferable
+        def ravel(self): return uninferable
+        def real(self): return uninferable
+        def repeat(self): return uninferable
+        def reshape(self): return uninferable
+        def resize(self): return uninferable
+        def round(self): return uninferable
+        def searchsorted(self): return uninferable
+        def setfield(self): return uninferable
+        def setflags(self): return uninferable
+        def shape(self): return uninferable
+        def size(self): return uninferable
+        def sort(self): return uninferable
+        def squeeze(self): return uninferable
+        def std(self): return uninferable
+        def strides(self): return uninferable
+        def sum(self): return uninferable
+        def swapaxes(self): return uninferable
+        def take(self): return uninferable
+        def tobytes(self): return uninferable
+        def tofile(self): return uninferable
+        def tolist(self): return uninferable
+        def tostring(self): return uninferable
+        def trace(self): return uninferable
+        def transpose(self): return uninferable
+        def var(self): return uninferable
+        def view(self): return uninferable
 
 
     class dtype(object):
@@ -270,8 +270,8 @@ def numpy_core_numerictypes_transform():
             self.subdtype = None
             self.type = None
 
-        def newbyteorder(self, new_order='S'): return any
-        def __neg__(self): return any
+        def newbyteorder(self, new_order='S'): return uninferable
+        def __neg__(self): return uninferable
 
 
     class ndarray(object):
@@ -293,65 +293,65 @@ def numpy_core_numerictypes_transform():
             self.size = None
             self.strides = None
 
-        def __neg__(self): return any
-        def __inv__(self): return any
-        def __invert__(self): return any
-        def all(self): return any
-        def any(self): return any
-        def argmax(self): return any
-        def argmin(self): return any
-        def argpartition(self): return any
-        def argsort(self): return any
-        def astype(self): return any
-        def byteswap(self): return any
-        def choose(self): return any
-        def clip(self): return any
-        def compress(self): return any
-        def conj(self): return any
-        def conjugate(self): return any
-        def copy(self): return any
-        def cumprod(self): return any
-        def cumsum(self): return any
-        def diagonal(self): return any
-        def dot(self): return any
-        def dump(self): return any
-        def dumps(self): return any
-        def fill(self): return any
-        def flatten(self): return any
-        def getfield(self): return any
-        def item(self): return any
-        def itemset(self): return any
-        def max(self): return any
-        def mean(self): return any
-        def min(self): return any
-        def newbyteorder(self): return any
-        def nonzero(self): return any
-        def partition(self): return any
-        def prod(self): return any
-        def ptp(self): return any
-        def put(self): return any
-        def ravel(self): return any
-        def repeat(self): return any
-        def reshape(self): return any
-        def resize(self): return any
-        def round(self): return any
-        def searchsorted(self): return any
-        def setfield(self): return any
-        def setflags(self): return any
-        def sort(self): return any
-        def squeeze(self): return any
-        def std(self): return any
-        def sum(self): return any
-        def swapaxes(self): return any
-        def take(self): return any
-        def tobytes(self): return any
-        def tofile(self): return any
-        def tolist(self): return any
-        def tostring(self): return any
-        def trace(self): return any
-        def transpose(self): return any
-        def var(self): return any
-        def view(self): return any
+        def __neg__(self): return uninferable
+        def __inv__(self): return uninferable
+        def __invert__(self): return uninferable
+        def all(self): return uninferable
+        def any(self): return uninferable
+        def argmax(self): return uninferable
+        def argmin(self): return uninferable
+        def argpartition(self): return uninferable
+        def argsort(self): return uninferable
+        def astype(self): return uninferable
+        def byteswap(self): return uninferable
+        def choose(self): return uninferable
+        def clip(self): return uninferable
+        def compress(self): return uninferable
+        def conj(self): return uninferable
+        def conjugate(self): return uninferable
+        def copy(self): return uninferable
+        def cumprod(self): return uninferable
+        def cumsum(self): return uninferable
+        def diagonal(self): return uninferable
+        def dot(self): return uninferable
+        def dump(self): return uninferable
+        def dumps(self): return uninferable
+        def fill(self): return uninferable
+        def flatten(self): return uninferable
+        def getfield(self): return uninferable
+        def item(self): return uninferable
+        def itemset(self): return uninferable
+        def max(self): return uninferable
+        def mean(self): return uninferable
+        def min(self): return uninferable
+        def newbyteorder(self): return uninferable
+        def nonzero(self): return uninferable
+        def partition(self): return uninferable
+        def prod(self): return uninferable
+        def ptp(self): return uninferable
+        def put(self): return uninferable
+        def ravel(self): return uninferable
+        def repeat(self): return uninferable
+        def reshape(self): return uninferable
+        def resize(self): return uninferable
+        def round(self): return uninferable
+        def searchsorted(self): return uninferable
+        def setfield(self): return uninferable
+        def setflags(self): return uninferable
+        def sort(self): return uninferable
+        def squeeze(self): return uninferable
+        def std(self): return uninferable
+        def sum(self): return uninferable
+        def swapaxes(self): return uninferable
+        def take(self): return uninferable
+        def tobytes(self): return uninferable
+        def tofile(self): return uninferable
+        def tolist(self): return uninferable
+        def tostring(self): return uninferable
+        def trace(self): return uninferable
+        def transpose(self): return uninferable
+        def var(self): return uninferable
+        def view(self): return uninferable
 
 
     class busdaycalendar(object):
@@ -362,7 +362,7 @@ def numpy_core_numerictypes_transform():
     class flexible(generic): pass
     class bool_(generic): pass
     class number(generic):
-        def __neg__(self): return any
+        def __neg__(self): return uninferable
     class datetime64(generic): pass
 
 
@@ -371,8 +371,8 @@ def numpy_core_numerictypes_transform():
             self.base = None
             self.dtype = None
             self.flags = None
-        def getfield(self): return any
-        def setfield(self): return any
+        def getfield(self): return uninferable
+        def setfield(self): return uninferable
 
 
     class character(flexible): pass
@@ -388,12 +388,12 @@ def numpy_core_numerictypes_transform():
 
 
     class str_(str, character):
-        def maketrans(self, x, y=None, z=None): return any
+        def maketrans(self, x, y=None, z=None): return uninferable
 
 
     class bytes_(bytes, character):
-        def fromhex(self, string): return any
-        def maketrans(self, frm, to): return any
+        def fromhex(self, string): return uninferable
+        def maketrans(self, frm, to): return uninferable
 
 
     class signedinteger(integer): pass
@@ -409,7 +409,7 @@ def numpy_core_numerictypes_transform():
 
 
     class float64(floating, float):
-        def fromhex(self, string): return any
+        def fromhex(self, string): return uninferable
 
 
     class uint64(unsignedinteger): pass

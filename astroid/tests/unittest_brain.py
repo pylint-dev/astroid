@@ -545,6 +545,8 @@ class ThreadingBrainTest(unittest.TestCase):
         parameters = [param.name for param in acquire_method.args.args[1:]]
         assert parameters == ["blocking", "timeout"]
 
+        assert inferred.getattr("locked")
+
     def test_rlock(self):
         self._test_lock_object("RLock")
 

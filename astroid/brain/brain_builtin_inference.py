@@ -15,7 +15,6 @@ from textwrap import dedent
 import six
 from astroid import (
     MANAGER,
-    Instance,
     UseInferenceDefault,
     AttributeInferenceError,
     inference_tip,
@@ -509,6 +508,7 @@ def infer_slice(node, context=None):
         raise UseInferenceDefault
 
     infer_func = partial(helpers.safe_infer, context=context)
+    args = [infer_func(arg) for arg in args]
     for arg in args:
         if not arg or arg is util.Uninferable:
             raise UseInferenceDefault

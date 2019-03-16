@@ -224,7 +224,7 @@ def _base_class_object_build(node, member, basenames, name=None, localname=None)
             instdict = member().__dict__
         else:
             raise TypeError
-    except:  # pylint: disable=bare-except
+    except Exception:
         pass
     else:
         for item_name, obj in instdict.items():
@@ -347,7 +347,7 @@ class InspectBuilder:
         # (see http://www.logilab.org/ticket/57299 for instance)
         try:
             modname = getattr(member, "__module__", None)
-        except:  # pylint: disable=bare-except
+        except Exception:
             _LOG.exception(
                 "unexpected error while building " "astroid from living object"
             )

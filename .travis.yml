@@ -24,6 +24,10 @@ jobs:
       env: TOXENV=py37
       dist: xenial
       sudo: true
+    - python: 3.8-dev
+      env: TOXENV=py38
+      dist: xenial
+      sudo: true
 
 before_install:
   - python --version
@@ -51,3 +55,12 @@ notifications:
   email:
     on_success: always
     on_failure: always
+deploy:
+  provider: pypi
+  user: Claudiu.Popa
+  password:
+    secure: "YQ8Elo1/1Ep+FPb/O+Ex9RS/ADKCvNQ2FDMQI9qF/YUrk0o0ehn0jzg+FARNvyWpNJo2aSCn7GCc3F3WaDkQu0KCeA4xjLD49t6YhoJ7zcn+gXiQP7DJq+dl8ZQueKLioV/mKZx05K6G6/sN9VlR2GA5jFgX2Arf+iYvJmh2rysmBg9gkU1E2a9zlG9uRGRL5Q/EPy1lvTweT8BHJirOAx/hnxDVMdgWvlXOB+DHhaMnmmiFxXnLyHF6PPfCbK9yHoqbznN3vTa3KXX6I4fLE7nEN6T5OnwYWACK2ws26FEEzowfvROtfetFQLwAhXF1EPtSV+18oAEiAoppv+laNjrKqCqo72Gx8wpqWBqesYNiti9nNb0YW56C4sEMdHRJXP9SWKETQ7gn55B4MFcANhrjj8HAUcmA+N0WJEVhSdUqsmYKTF1p8YkjYfAzvX+pMkNiIkXThwJiFexv+QH7SlgmvmiKGPtrwDGNJMzFa7VLJh3brkfzfkc2tHkzZ4KqXzOLs4qwIkK4JSRP2UKrGsWaggNCqwle97LYv5vazwWWGL3Br7/5vBA6fjDQxJnFNQIQp+OGpSMHmPfltMGaqx62RePshnDoSgoSF1vPRc0VSOAJauhIwaZdTBQ9GjKR17rSY4Kd1ftHuMUBFpDJyWL6CW9jwTFXVWoJ7g6+9RU="
+  on:
+    tags: true
+    condition: "$TOXENV = py36"
+  distributions: sdist bdist_wheel

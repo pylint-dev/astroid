@@ -21,7 +21,7 @@ distname = "astroid"
 
 modname = "astroid"
 
-version = "2.2.0"
+version = "2.3.0"
 numversion = tuple(int(elem) for elem in version.split(".") if elem.isdigit())
 
 extras_require = {}
@@ -30,8 +30,7 @@ install_requires = [
     "six",
     "wrapt",
     'typing;python_version<"3.5"',
-    'typed-ast>=1.3.0;python_version>="3.7" and implementation_name== "cpython"',
-    'typed-ast<1.3.0;python_version<"3.7" and implementation_name== "cpython"',
+    'typed-ast>=1.3.0;implementation_name== "cpython"',
 ]
 
 # pylint: disable=redefined-builtin; why license is a builtin anyway?
