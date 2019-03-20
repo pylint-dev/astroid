@@ -19,7 +19,6 @@
 
 import builtins
 import inspect
-import logging
 import os
 import sys
 import types
@@ -35,7 +34,6 @@ MANAGER = manager.AstroidManager()
 
 _CONSTANTS = tuple(node_classes.CONST_CLS)
 _BUILTINS = vars(builtins)
-_LOG = logging.getLogger(__name__)
 
 
 def _io_discrepancy(member):
@@ -224,7 +222,7 @@ def _base_class_object_build(node, member, basenames, name=None, localname=None)
             instdict = member().__dict__
         else:
             raise TypeError
-    except Exception:
+    except TypeError:
         pass
     else:
         for item_name, obj in instdict.items():
@@ -347,10 +345,7 @@ class InspectBuilder:
         # (see http://www.logilab.org/ticket/57299 for instance)
         try:
             modname = getattr(member, "__module__", None)
-        except Exception:
-            _LOG.exception(
-                "unexpected error while building " "astroid from living object"
-            )
+        except TypeError:
             modname = None
         if modname is None:
             if name in ("__new__", "__subclasshook__"):
