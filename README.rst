@@ -20,6 +20,7 @@ Astroid
 
 .. |tideliftlogo| image:: doc/media/Tidelift_Logos_RGB_Tidelift_Shorthand_On-White.png
    :width: 75
+   :height: 60
    :alt: Tidelift
 
 .. list-table::
