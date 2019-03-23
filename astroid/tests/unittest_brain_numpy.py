@@ -645,7 +645,7 @@ class NumpyBrainFunctionReturningArrayTest(SubTestWrapper):
         """
         Test that some calls to numpy functions are inferred as numpy.ndarray
         """
-        licit_array_types = ('numpy.core.numerictypes.ndarray', 'numpy.core.records.recarray')
+        licit_array_types = ('.ndarray', 'numpy.core.records.recarray')
         for func_ in self.numpy_functions:
             with self.subTest(typ=func_):
                 self.assertTrue(any(isinstance(inferred, bases.Instance) and inferred.pytype() in licit_array_types
