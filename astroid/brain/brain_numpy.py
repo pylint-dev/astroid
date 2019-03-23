@@ -43,7 +43,9 @@ def numpy_random_mtrand_transform():
     def poisson(lam=1.0, size=None): return uninferable
     def power(a, size=None): return uninferable
     def rand(*args): return uninferable
-    def randint(low, high=None, size=None, dtype='l'): return uninferable
+    def randint(low, high=None, size=None, dtype='l'): 
+        import numpy
+        return numpy.ndarray((1,1))
     def randn(*args): return uninferable
     def random_integers(low, high=None, size=None): return uninferable
     def random_sample(size=None): return uninferable
@@ -273,87 +275,6 @@ def numpy_core_numerictypes_transform():
         def newbyteorder(self, new_order='S'): return uninferable
         def __neg__(self): return uninferable
 
-
-    class ndarray(object):
-        def __init__(self, shape, dtype=float, buffer=None, offset=0,
-                     strides=None, order=None):
-            self.T = None
-            self.base = None
-            self.ctypes = None
-            self.data = None
-            self.dtype = None
-            self.flags = None
-            self.flat = None
-            self.imag = None
-            self.itemsize = None
-            self.nbytes = None
-            self.ndim = None
-            self.real = None
-            self.shape = None
-            self.size = None
-            self.strides = None
-
-        def __neg__(self): return uninferable
-        def __inv__(self): return uninferable
-        def __invert__(self): return uninferable
-        def all(self): return uninferable
-        def any(self): return uninferable
-        def argmax(self): return uninferable
-        def argmin(self): return uninferable
-        def argpartition(self): return uninferable
-        def argsort(self): return uninferable
-        def astype(self): return uninferable
-        def byteswap(self): return uninferable
-        def choose(self): return uninferable
-        def clip(self): return uninferable
-        def compress(self): return uninferable
-        def conj(self): return uninferable
-        def conjugate(self): return uninferable
-        def copy(self): return uninferable
-        def cumprod(self): return uninferable
-        def cumsum(self): return uninferable
-        def diagonal(self): return uninferable
-        def dot(self): return uninferable
-        def dump(self): return uninferable
-        def dumps(self): return uninferable
-        def fill(self): return uninferable
-        def flatten(self): return uninferable
-        def getfield(self): return uninferable
-        def item(self): return uninferable
-        def itemset(self): return uninferable
-        def max(self): return uninferable
-        def mean(self): return uninferable
-        def min(self): return uninferable
-        def newbyteorder(self): return uninferable
-        def nonzero(self): return uninferable
-        def partition(self): return uninferable
-        def prod(self): return uninferable
-        def ptp(self): return uninferable
-        def put(self): return uninferable
-        def ravel(self): return uninferable
-        def repeat(self): return uninferable
-        def reshape(self): return uninferable
-        def resize(self): return uninferable
-        def round(self): return uninferable
-        def searchsorted(self): return uninferable
-        def setfield(self): return uninferable
-        def setflags(self): return uninferable
-        def sort(self): return uninferable
-        def squeeze(self): return uninferable
-        def std(self): return uninferable
-        def sum(self): return uninferable
-        def swapaxes(self): return uninferable
-        def take(self): return uninferable
-        def tobytes(self): return uninferable
-        def tofile(self): return uninferable
-        def tolist(self): return uninferable
-        def tostring(self): return uninferable
-        def trace(self): return uninferable
-        def transpose(self): return uninferable
-        def var(self): return uninferable
-        def view(self): return uninferable
-
-
     class busdaycalendar(object):
         def __init__(self, weekmask='1111100', holidays=None):
             self.holidays = None
@@ -547,25 +468,105 @@ def _replace_numpy_function_infer_call_result(node, context=None):
     node.infer_call_result = numpy_function_infer_call_result(node)
     return
 
-
-astroid.MANAGER.register_transform(
-    astroid.FunctionDef,
-    _replace_numpy_function_infer_call_result,
-    functools.partial(
-        _looks_like_numpy_function, "linspace", "numpy.core.function_base"
-    ),
-)
-
 astroid.MANAGER.register_transform(
     astroid.FunctionDef,
     _replace_numpy_function_infer_call_result,
     functools.partial(_looks_like_numpy_function, "array", "numpy.core.records"),
 )
 
+def infer_numpy_ndarray(node, context=None):
+    ndarray = """
+    class ndarray(object):
+        def __init__(self, shape, dtype=float, buffer=None, offset=0,
+                     strides=None, order=None):
+            self.T = None
+            self.base = None
+            self.ctypes = None
+            self.data = None
+            self.dtype = None
+            self.flags = None
+            self.flat = None
+            self.imag = None
+            self.itemsize = None
+            self.nbytes = None
+            self.ndim = None
+            self.real = None
+            self.shape = None
+            self.size = None
+            self.strides = None
+
+        def __neg__(self): return uninferable
+        def __inv__(self): return uninferable
+        def __invert__(self): return uninferable
+        def all(self): return uninferable
+        def any(self): return uninferable
+        def argmax(self): return uninferable
+        def argmin(self): return uninferable
+        def argpartition(self): return uninferable
+        def argsort(self): return uninferable
+        def astype(self): return uninferable
+        def byteswap(self): return uninferable
+        def choose(self): return uninferable
+        def clip(self): return uninferable
+        def compress(self): return uninferable
+        def conj(self): return uninferable
+        def conjugate(self): return uninferable
+        def copy(self): return uninferable
+        def cumprod(self): return uninferable
+        def cumsum(self): return uninferable
+        def diagonal(self): return uninferable
+        def dot(self): return uninferable
+        def dump(self): return uninferable
+        def dumps(self): return uninferable
+        def fill(self): return uninferable
+        def flatten(self): return uninferable
+        def getfield(self): return uninferable
+        def item(self): return uninferable
+        def itemset(self): return uninferable
+        def max(self): return uninferable
+        def mean(self): return uninferable
+        def min(self): return uninferable
+        def newbyteorder(self): return uninferable
+        def nonzero(self): return uninferable
+        def partition(self): return uninferable
+        def prod(self): return uninferable
+        def ptp(self): return uninferable
+        def put(self): return uninferable
+        def ravel(self): return uninferable
+        def repeat(self): return uninferable
+        def reshape(self): return uninferable
+        def resize(self): return uninferable
+        def round(self): return uninferable
+        def searchsorted(self): return uninferable
+        def setfield(self): return uninferable
+        def setflags(self): return uninferable
+        def sort(self): return uninferable
+        def squeeze(self): return uninferable
+        def std(self): return uninferable
+        def sum(self): return uninferable
+        def swapaxes(self): return uninferable
+        def take(self): return uninferable
+        def tobytes(self): return uninferable
+        def tofile(self): return uninferable
+        def tolist(self): return uninferable
+        def tostring(self): return uninferable
+        def trace(self): return uninferable
+        def transpose(self): return uninferable
+        def var(self): return uninferable
+        def view(self): return uninferable
+    """
+    node = astroid.extract_node(ndarray)
+    return node.infer(context=context)
+
+def _looks_like_numpy_ndarray(node):
+    if isinstance(node, astroid.Attribute) and node.attrname == 'ndarray':
+        return True
+    return False
+
 astroid.MANAGER.register_transform(
-    astroid.FunctionDef,
-    _replace_numpy_function_infer_call_result,
-    functools.partial(_looks_like_numpy_function, "zeros_like", "numpy.core.numeric"),
+    astroid.Attribute,
+    astroid.inference_tip(infer_numpy_ndarray),
+    _looks_like_numpy_ndarray
 )
 
 astroid.register_module_extender(
