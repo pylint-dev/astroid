@@ -679,10 +679,7 @@ def _is_python_file(filename):
 
     .pyc and .pyo are ignored
     """
-    for ext in (".py", ".so", ".pyd", ".pyw"):
-        if filename.endswith(ext):
-            return True
-    return False
+    return filename.endswith((".py", ".so", ".pyd", ".pyw"))
 
 
 def _has_init(directory):
