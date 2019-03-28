@@ -1040,7 +1040,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_binary_op_float_div(self):
         ast = builder.string_build("a = 1 / 2.", __name__, __file__)
-        self._test_const_inferred(ast["a"], 1 / 2.)
+        self._test_const_inferred(ast["a"], 1 / 2.0)
 
     def test_binary_op_str_mul(self):
         ast = builder.string_build('a = "*" * 40', __name__, __file__)
@@ -5147,6 +5147,21 @@ def test_exception_lookup_name_bound_in_except_handler():
     inferred_exc = inferred[0]
     assert isinstance(inferred_exc, nodes.Const)
     assert inferred_exc.value == 2
+
+
+def test_builtin_inference_list_of_exceptions():
+    node = extract_node(
+        """
+    tuple([ValueError, TypeError])
+    """
+    )
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.Tuple)
+    assert len(inferred.elts) == 2
+    assert isinstance(inferred.elts[0], nodes.ClassDef)
+    assert inferred.elts[0].name == "ValueError"
+    assert isinstance(inferred.elts[1], nodes.ClassDef)
+    assert inferred.elts[1].name == "TypeError"
 
 
 if __name__ == "__main__":

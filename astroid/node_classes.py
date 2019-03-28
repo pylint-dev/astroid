@@ -48,6 +48,10 @@ BUILTINS = builtins_mod.__name__
 MANAGER = manager.AstroidManager()
 
 
+def _is_const(value):
+    return isinstance(value, tuple(CONST_CLS))
+
+
 @decorators.raise_if_nothing_inferred
 def unpack_infer(stmt, context=None):
     """recursively generate nodes inferred by the given statement.
@@ -1017,7 +1021,7 @@ class _BaseContainer(
         self.elts = elts
 
     @classmethod
-    def from_constants(cls, elts=None):
+    def from_elements(cls, elts=None):
         """Create a node of this type from the given list of elements.
 
         :param elts: The list of elements that the node should contain.
@@ -1030,7 +1034,7 @@ class _BaseContainer(
         if elts is None:
             node.elts = []
         else:
-            node.elts = [const_factory(e) for e in elts]
+            node.elts = [const_factory(e) if _is_const(e) else e for e in elts]
         return node
 
     def itered(self):
@@ -2728,7 +2732,7 @@ class Dict(NodeNG, bases.Instance):
         self.items = items
 
     @classmethod
-    def from_constants(cls, items=None):
+    def from_elements(cls, items=None):
         """Create a :class:`Dict` of constants from a live dictionary.
 
         :param items: The items to store in the node.
@@ -2742,7 +2746,10 @@ class Dict(NodeNG, bases.Instance):
             node.items = []
         else:
             node.items = [
-                (const_factory(k), const_factory(v)) for k, v in items.items()
+                (const_factory(k), const_factory(v) if _is_const(v) else v)
+                for k, v in items.items()
+                # The keys need to be constants
+                if _is_const(k)
             ]
         return node
 
