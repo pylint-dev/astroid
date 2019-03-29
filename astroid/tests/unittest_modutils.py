@@ -200,7 +200,7 @@ class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_custom_path(self):
         datadir = resources.find('')
-        if datadir.startswith(modutils.EXT_LIB_DIR):
+        if any(datadir.startswith(p) for p in modutils.EXT_LIB_DIRS):
             self.skipTest('known breakage of is_standard_module on installed package')
 
         self.assertTrue(modutils.is_standard_module('data.module', (datadir,)))
