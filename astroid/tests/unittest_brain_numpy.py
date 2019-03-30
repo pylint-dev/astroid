@@ -627,7 +627,11 @@ class NumpyBrainFunctionReturningArrayTest(SubTestWrapper):
     """
     numpy_functions = (("array", "[1, 2]"),
                        ("linspace", "1, 100"),
-                       ('zeros_like', "[1, 2]"))
+                       ('zeros_like', "[1, 2]"),
+                       ('full_like', "[1, 2]", '4'),
+                       ('empty_like', "[1, 2]"),
+                       ('ones_like', "[1, 2]"),
+                       )
 
     def _inferred_numpy_func_call(self, func_name, *func_args):
         node = builder.extract_node(

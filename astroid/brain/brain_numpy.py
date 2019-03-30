@@ -398,6 +398,8 @@ def numpy_core_numeric_transform():
     # different functions defined in numeric.py
     import numpy
     def zeros_like(a, dtype=None, order='K', subok=True): return numpy.ndarray((0, 0))
+    def empty_like(a, dtype=None, order='K', subok=True): return numpy.ndarray((0, 0))
+    def ones_like(a, dtype=None, order='K', subok=True): return numpy.ndarray((0, 0))
         """
         )
 
@@ -498,6 +500,8 @@ def infer_numpy_ndarray(node, context=None):
         def __neg__(self): return uninferable
         def __inv__(self): return uninferable
         def __invert__(self): return uninferable
+        def __getitem__(self, key): return uninferable
+        def __setitem__(self, key, value): return uninferable
         def all(self): return uninferable
         def any(self): return uninferable
         def argmax(self): return uninferable
@@ -522,7 +526,7 @@ def infer_numpy_ndarray(node, context=None):
         def flatten(self): return uninferable
         def getfield(self): return uninferable
         def item(self): return uninferable
-        def itemset(self): return uninferable
+        def itemset(self, *args): return None
         def max(self): return uninferable
         def mean(self): return uninferable
         def min(self): return uninferable
