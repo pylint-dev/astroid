@@ -147,7 +147,7 @@ def register_builtin_transform(transform, builtin_name):
     )
 
 
-def _generic_inference(node, context, node_type, transform):
+def _container_generic_inference(node, context, node_type, transform):
     args = node.args
     if not args:
         return node_type()
@@ -169,14 +169,17 @@ def _generic_inference(node, context, node_type, transform):
     return transformed
 
 
-def _generic_transform(arg, klass, iterables, build_elts):
+def _container_generic_transform(arg, klass, iterables, build_elts):
     if isinstance(arg, klass):
         return arg
     elif isinstance(arg, iterables):
-        if not all(isinstance(elt, nodes.Const) for elt in arg.elts):
-            raise UseInferenceDefault()
-        elts = [elt.value for elt in arg.elts]
+        if all(isinstance(elt, nodes.Const) for elt in arg.elts):
+            elts = [elt.value for elt in arg.elts]
+        else:
+            # TODO: Does not handle deduplication for sets.
+            elts = filter(None, map(helpers.safe_infer, arg.elts))
     elif isinstance(arg, nodes.Dict):
+        # Dicts need to have consts as strings already.
         if not all(isinstance(elt[0], nodes.Const) for elt in arg.items):
             raise UseInferenceDefault()
         elts = [item[0].value for item in arg.items]
@@ -186,20 +189,25 @@ def _generic_transform(arg, klass, iterables, build_elts):
         elts = arg.value
     else:
         return
-    return klass.from_constants(elts=build_elts(elts))
+    return klass.from_elements(elts=build_elts(elts))
 
 
-def _infer_builtin(node, context, klass=None, iterables=None, build_elts=None):
+def _infer_builtin_container(
+    node, context, klass=None, iterables=None, build_elts=None
+):
     transform_func = partial(
-        _generic_transform, klass=klass, iterables=iterables, build_elts=build_elts
+        _container_generic_transform,
+        klass=klass,
+        iterables=iterables,
+        build_elts=build_elts,
     )
 
-    return _generic_inference(node, context, klass, transform_func)
+    return _container_generic_inference(node, context, klass, transform_func)
 
 
 # pylint: disable=invalid-name
 infer_tuple = partial(
-    _infer_builtin,
+    _infer_builtin_container,
     klass=nodes.Tuple,
     iterables=(
         nodes.List,
@@ -213,7 +221,7 @@ infer_tuple = partial(
 )
 
 infer_list = partial(
-    _infer_builtin,
+    _infer_builtin_container,
     klass=nodes.List,
     iterables=(
         nodes.Tuple,
@@ -227,14 +235,14 @@ infer_list = partial(
 )
 
 infer_set = partial(
-    _infer_builtin,
+    _infer_builtin_container,
     klass=nodes.Set,
     iterables=(nodes.List, nodes.Tuple, objects.FrozenSet, objects.DictKeys),
     build_elts=set,
 )
 
 infer_frozenset = partial(
-    _infer_builtin,
+    _infer_builtin_container,
     klass=objects.FrozenSet,
     iterables=(nodes.List, nodes.Tuple, nodes.Set, objects.FrozenSet, objects.DictKeys),
     build_elts=frozenset,

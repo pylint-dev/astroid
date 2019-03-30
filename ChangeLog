@@ -6,6 +6,15 @@ What's New in astroid 2.3.0?
 ============================
 Release Date: TBA
 
+* Improved builtin inference for ``tuple``, ``set``, ``frozenset``, ``list`` and ``dict``
+
+  We were properly inferring these callables *only* if they had consts as
+  values, but that is not the case most of the time. Instead we try to infer
+  the values that their arguments can be and use them instead of assuming
+  Const nodes all the time.
+
+  Close PyCQA/pylint#2841
+
 * The last except handler wins when inferring variables bound in an except handler.
 
   Close PyCQA/pylint#2777

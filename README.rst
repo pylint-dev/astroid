@@ -18,6 +18,23 @@ Astroid
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/ambv/black
 
+.. |tideliftlogo| image:: doc/media/Tidelift_Logos_RGB_Tidelift_Shorthand_On-White_small.png
+   :width: 75
+   :height: 60
+   :alt: Tidelift
+
+.. list-table::
+   :widths: 10 100
+
+   * - |tideliftlogo|
+     - Professional support for astroid is available as part of the `Tidelift
+       Subscription`_.  Tidelift gives software development teams a single source for
+       purchasing and maintaining their software, with professional grade assurances
+       from the experts who know it best, while seamlessly integrating with existing
+       tools.
+
+.. _Tidelift Subscription: https://tidelift.com/subscription/pkg/pypi-astroid?utm_source=pypi-astroid&utm_medium=referral&utm_campaign=readme
+
 
 
 What's this?
