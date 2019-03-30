@@ -679,7 +679,7 @@ def infer_len(node, context=None):
         )
     [argument_node] = call.positional_arguments
     try:
-        return nodes.Const(helpers.object_len(argument_node))
+        return nodes.Const(helpers.object_len(argument_node, context=context))
     except (AstroidTypeError, InferenceError) as exc:
         raise UseInferenceDefault(str(exc)) from exc
 
