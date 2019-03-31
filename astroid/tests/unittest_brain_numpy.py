@@ -19,6 +19,7 @@ from astroid import builder
 from astroid import nodes
 from astroid import node_classes
 from astroid import bases
+from astroid import util
 
 
 class SubTestWrapper(unittest.TestCase):
@@ -631,6 +632,14 @@ class NumpyBrainFunctionReturningArrayTest(SubTestWrapper):
                        ('full_like', "[1, 2]", '4'),
                        ('empty_like', "[1, 2]"),
                        ('ones_like', "[1, 2]"),
+                       ('logical_or', "[1, 2]", "[1, 2]"),
+                       ('logical_xor', "[1, 2]", "[1, 2]"),
+                       ('logical_and', "[1, 2]", "[1, 2]"),
+                       ('dot', "[1, 2]", "[1, 2]"),
+                       ('vdot', "[1, 2]", "[1, 2]"),
+                       ('concatenate', "([1, 2], [1, 2])"),
+                       ('inner', "[1, 2]", "[1, 2]"),
+                       ('where', '[True, False]', "[1, 2]", "[2, 1]")
                        )
 
     def _inferred_numpy_func_call(self, func_name, *func_args):
@@ -653,25 +662,35 @@ class NumpyBrainFunctionReturningArrayTest(SubTestWrapper):
         for func_ in self.numpy_functions:
             with self.subTest(typ=func_):
                 self.assertTrue(any(isinstance(inferred, bases.Instance) and inferred.pytype() in licit_array_types
-                                    for inferred in self._inferred_numpy_func_call(*func_)))
+                                    for inferred in self._inferred_numpy_func_call(*func_)),
+                                msg="subTest is : {:s}".format(func_[0]))
 
     def test_numpy_function_calls_not_inferred_as_list(self):
         """
-        Test that some calls to numpy functions are not inferred as list nor tuple
+        Test that some calls to numpy functions are not inferred as list
         """
         for func_ in self.numpy_functions:
             with self.subTest(typ=func_):
                 for inferred in self._inferred_numpy_func_call(*func_):
-                    self.assertFalse(isinstance(inferred, node_classes.List))
+                    self.assertFalse(isinstance(inferred, node_classes.List), msg="subTest is : {:s}".format(func_[0]))
 
     def test_numpy_function_calls_not_inferred_as_tuple(self):
         """
-        Test that some calls to numpy functions are not inferred as list nor tuple
+        Test that some calls to numpy functions are not inferred as tuple
         """
         for func_ in self.numpy_functions:
             with self.subTest(typ=func_):
                 for inferred in self._inferred_numpy_func_call(*func_):
-                    self.assertFalse(isinstance(inferred, node_classes.Tuple))
+                    self.assertFalse(isinstance(inferred, node_classes.Tuple), msg="subTest is : {:s}".format(func_[0]))
+
+    def test_numpy_function_calls_not_inferred_as_uninferable(self):
+        """
+        Test that some calls to numpy functions are not inferred as uninferable
+        """
+        for func_ in self.numpy_functions:
+            with self.subTest(typ=func_):
+                for inferred in self._inferred_numpy_func_call(*func_):
+                    self.assertNotEqual(inferred, util.Uninferable, msg="subTest is : {:s}".format(func_[0]))
 
 
 if __name__ == "__main__":

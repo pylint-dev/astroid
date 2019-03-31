@@ -142,9 +142,9 @@ def numpy_core_umath_transform():
     def less(x1, x2, {opt_args:s}): return uninferable
     def logaddexp(x1, x2, {opt_args:s}): return uninferable
     def logaddexp2(x1, x2, {opt_args:s}): return uninferable
-    def logical_and(x1, x2, {opt_args:s}): return uninferable
-    def logical_or(x1, x2, {opt_args:s}): return uninferable
-    def logical_xor(x1, x2, {opt_args:s}): return uninferable
+    def logical_and(x1, x2, {opt_args:s}): return numpy.ndarray([0, 0])
+    def logical_or(x1, x2, {opt_args:s}): return numpy.ndarray([0, 0])
+    def logical_xor(x1, x2, {opt_args:s}): return numpy.ndarray([0, 0])
     def maximum(x1, x2, {opt_args:s}): return uninferable
     def minimum(x1, x2, {opt_args:s}): return uninferable
     def nextafter(x1, x2, {opt_args:s}): return uninferable
@@ -392,26 +392,6 @@ def numpy_core_numerictypes_transform():
     """
     )
 
-def numpy_core_numeric_transform():
-    return astroid.parse(
-        """
-    # different functions defined in numeric.py
-    import numpy
-    def zeros_like(a, dtype=None, order='K', subok=True): return numpy.ndarray((0, 0))
-    def empty_like(a, dtype=None, order='K', subok=True): return numpy.ndarray((0, 0))
-    def ones_like(a, dtype=None, order='K', subok=True): return numpy.ndarray((0, 0))
-        """
-        )
-
-def numpy_core_function_base_transform():
-    return astroid.parse(
-        """
-    # different functions defined in numeric.py
-    import numpy
-    def linspace(start, stop, num=50, endpoint=True, retstep=False, dtype=None, axis=0): return numpy.ndarray((0, 0))
-        """
-        )
-
 def numpy_funcs():
     return astroid.parse(
         """
@@ -563,9 +543,7 @@ def infer_numpy_ndarray(node, context=None):
     return node.infer(context=context)
 
 def _looks_like_numpy_ndarray(node):
-    if isinstance(node, astroid.Attribute) and node.attrname == 'ndarray':
-        return True
-    return False
+    return isinstance(node, astroid.Attribute) and node.attrname == 'ndarray'
 
 astroid.MANAGER.register_transform(
     astroid.Attribute,
@@ -581,11 +559,5 @@ astroid.register_module_extender(
 )
 astroid.register_module_extender(
     astroid.MANAGER, "numpy.core.numerictypes", numpy_core_numerictypes_transform
-)
-astroid.register_module_extender(
-    astroid.MANAGER, "numpy.core.numeric", numpy_core_numeric_transform
-)
-astroid.register_module_extender(
-    astroid.MANAGER, "numpy.core.function_base", numpy_core_function_base_transform
 )
 astroid.register_module_extender(astroid.MANAGER, "numpy", numpy_funcs)
