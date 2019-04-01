@@ -1652,6 +1652,26 @@ class TestLenBuiltinInference:
         except astroid.InferenceError:
             pass
 
+    def test_len_builtin_inference_recursion_error_self_referential_attribute(self):
+        """Make sure len calls do not trigger
+        recursion errors for self referential assignment
+
+        See https://github.com/PyCQA/pylint/issues/2734
+        """
+        code = """
+        class Data:
+            def __init__(self):
+                self.shape = []
+
+        data = Data()
+        data.shape = len(data.shape)
+        data.shape #@
+        """
+        try:
+            astroid.extract_node(code).inferred()
+        except RecursionError:
+            pytest.fail("Inference call should not trigger a recursion error")
+
 
 def test_infer_str():
     ast_nodes = astroid.extract_node(
