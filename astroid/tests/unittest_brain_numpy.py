@@ -667,33 +667,5 @@ class NumpyBrainFunctionReturningArrayTest(SubTestWrapper):
                 self.assertTrue(inferred_values[-1].pytype() in licit_array_types,
                                 msg="Illicit type for {:s} ({})".format(func_[0], inferred_values[-1].pytype()))
 
-    def test_numpy_function_calls_not_inferred_as_list(self):
-        """
-        Test that some calls to numpy functions are not inferred as list
-        """
-        for func_ in self.numpy_functions:
-            with self.subTest(typ=func_):
-                for inferred in self._inferred_numpy_func_call(*func_):
-                    self.assertFalse(isinstance(inferred, node_classes.List), msg="subTest is : {:s}".format(func_[0]))
-
-    def test_numpy_function_calls_not_inferred_as_tuple(self):
-        """
-        Test that some calls to numpy functions are not inferred as tuple
-        """
-        for func_ in self.numpy_functions:
-            with self.subTest(typ=func_):
-                for inferred in self._inferred_numpy_func_call(*func_):
-                    self.assertFalse(isinstance(inferred, node_classes.Tuple), msg="subTest is : {:s}".format(func_[0]))
-
-    def test_numpy_function_calls_not_inferred_as_uninferable(self):
-        """
-        Test that some calls to numpy functions are not inferred as uninferable
-        """
-        for func_ in self.numpy_functions:
-            with self.subTest(typ=func_):
-                for inferred in self._inferred_numpy_func_call(*func_):
-                    self.assertNotEqual(inferred, util.Uninferable, msg="subTest is : {:s}".format(func_[0]))
-
-
 if __name__ == "__main__":
     unittest.main()
