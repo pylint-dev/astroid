@@ -661,9 +661,11 @@ class NumpyBrainFunctionReturningArrayTest(SubTestWrapper):
         licit_array_types = ('.ndarray', 'numpy.core.records.recarray')
         for func_ in self.numpy_functions:
             with self.subTest(typ=func_):
-                self.assertTrue(any(isinstance(inferred, bases.Instance) and inferred.pytype() in licit_array_types
-                                    for inferred in self._inferred_numpy_func_call(*func_)),
-                                msg="subTest is : {:s}".format(func_[0]))
+                inferred_values = list(self._inferred_numpy_func_call(*func_))
+                self.assertTrue(len(inferred_values) == 1,
+                                msg="Too much inferred value for {:s}".format(func_[0]))
+                self.assertTrue(inferred_values[-1].pytype() in licit_array_types,
+                                msg="Illicit type for {:s} ({})".format(func_[0], inferred_values[-1].pytype()))
 
     def test_numpy_function_calls_not_inferred_as_list(self):
         """
