@@ -639,7 +639,8 @@ class NumpyBrainFunctionReturningArrayTest(SubTestWrapper):
                        ('vdot', "[1, 2]", "[1, 2]"),
                        ('concatenate', "([1, 2], [1, 2])"),
                        ('inner', "[1, 2]", "[1, 2]"),
-                       ('where', '[True, False]', "[1, 2]", "[2, 1]")
+                       ('where', '[True, False]', "[1, 2]", "[2, 1]"),
+                       ('sum', '[[1, 2], [2, 1]]', "axis=0")
                        )
 
     def _inferred_numpy_func_call(self, func_name, *func_args):

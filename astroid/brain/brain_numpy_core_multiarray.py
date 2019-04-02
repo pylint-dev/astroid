@@ -19,6 +19,9 @@ def numpy_core_multiarray_transform():
 
     def vdot(a, b):
         return numpy.ndarray([0, 0])
+
+    def array(object, dtype=None, copy=True, order='K', subok=False, ndmin=0):
+        return numpy.ndarray([0, 0])
         """
     )
 
