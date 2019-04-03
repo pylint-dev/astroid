@@ -6,6 +6,11 @@ What's New in astroid 2.3.0?
 ============================
 Release Date: TBA
 
+* Variable annotations can no longer be retrieved with `ClassDef.getattr`
+
+  Unless they have an attached value, class variable annotations can no longer
+  be retrieved with `ClassDef.getattr.`
+
 * Improved builtin inference for ``tuple``, ``set``, ``frozenset``, ``list`` and ``dict``
 
   We were properly inferring these callables *only* if they had consts as

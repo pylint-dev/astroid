@@ -2367,6 +2367,15 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             raise exceptions.AttributeInferenceError(
                 target=self, attribute=name, context=context
             )
+
+        # Look for AnnAssigns, which are not attributes in the purest sense.
+        for value in values:
+            if isinstance(value, node_classes.AssignName):
+                stmt = value.statement()
+                if isinstance(stmt, node_classes.AnnAssign) and stmt.value is None:
+                    raise exceptions.AttributeInferenceError(
+                        target=self, attribute=name, context=context
+                    )
         return values
 
     def _metaclass_lookup_attribute(self, name, context):
