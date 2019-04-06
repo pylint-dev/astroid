@@ -112,7 +112,7 @@ def infer_numpy_ndarray(node, context=None):
         def newbyteorder(self, new_order='S'): return np.ndarray([0, 0])
         def nonzero(self): return (1,)
         def partition(self, kth, axis=-1, kind='introselect', order=None): return None
-        def prod(self, axis=None, dtype, out=None, keepdims=False): return np.ndarray([0, 0])
+        def prod(self, axis=None, dtype=None, out=None, keepdims=False): return np.ndarray([0, 0])
         def ptp(self, axis=None, out=None): return np.ndarray([0, 0])
         def put(self, indices, values, mode='raise'): return None
         def ravel(self, order='C'): return np.ndarray([0, 0])
