@@ -5164,5 +5164,29 @@ def test_builtin_inference_list_of_exceptions():
     assert inferred.elts[1].name == "TypeError"
 
 
+@test_utils.require_version(minver="3.6")
+def test_cannot_getattr_ann_assigns():
+    node = extract_node(
+        """
+    class Cls:
+        ann: int
+    """
+    )
+    inferred = next(node.infer())
+    with pytest.raises(exceptions.AttributeInferenceError):
+        inferred.getattr("ann")
+
+    # But if it had a value, then it would be okay.
+    node = extract_node(
+        """
+    class Cls:
+        ann: int = 0
+    """
+    )
+    inferred = next(node.infer())
+    values = inferred.getattr("ann")
+    assert len(values) == 1
+
+
 if __name__ == "__main__":
     unittest.main()
