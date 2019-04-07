@@ -19,9 +19,6 @@ def numpy_core_multiarray_transform():
 
     def vdot(a, b):
         return numpy.ndarray([0, 0])
-
-    def array(object, dtype=None, copy=True, order='K', subok=False, ndmin=0):
-        return numpy.ndarray([0, 0])
         """
     )
 
@@ -39,6 +36,15 @@ def infer_numpy_core_multiarray_array(node, context=None):
     return node.infer(context=context)
 
 
+def infer_numpy_core_multiarray_concatenate(node, context=None):
+    src = """
+    def concatenate(arrays, axis=None, out=None):
+        return numpy.ndarray((0, 0))
+    """
+    node = astroid.extract_node(src)
+    return node.infer(context=context)
+
+
 def infer_numpy_core_multiarray_dot(node, context=None):
     src = """
     def dot(a, b, out=None):
@@ -51,15 +57,6 @@ def infer_numpy_core_multiarray_dot(node, context=None):
 def infer_numpy_core_multiarray_empty_like(node, context=None):
     src = """
     def empty_like(a, dtype=None, order='K', subok=True):
-        return numpy.ndarray((0, 0))
-    """
-    node = astroid.extract_node(src)
-    return node.infer(context=context)
-
-
-def infer_numpy_core_multiarray_concatenate(node, context=None):
-    src = """
-    def concatenate(arrays, axis=None, out=None):
         return numpy.ndarray((0, 0))
     """
     node = astroid.extract_node(src)
