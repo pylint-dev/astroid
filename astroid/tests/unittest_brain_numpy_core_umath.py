@@ -94,7 +94,6 @@ class NumpyBrainCoreUmathTest(SubTestWrapper):
         "copysign",
         "divide",
         "equal",
-        "float_power",
         "floor_divide",
         "fmax",
         "fmin",
