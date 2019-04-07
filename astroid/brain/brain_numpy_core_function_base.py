@@ -9,7 +9,6 @@
 import functools
 import astroid
 
-
 def infer_numpy_core_function_base_linspace(node, context=None):
     src = """
     def linspace(start, stop, num=50, endpoint=True, retstep=False, dtype=None, axis=0):
@@ -18,6 +17,21 @@ def infer_numpy_core_function_base_linspace(node, context=None):
     node = astroid.extract_node(src)
     return node.infer(context=context)
 
+def infer_numpy_core_function_base_logspace(node, context=None):
+    src = """
+    def logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None, axis=0):
+        return numpy.ndarray([0, 0])
+    """
+    node = astroid.extract_node(src)
+    return node.infer(context=context)
+
+def infer_numpy_core_function_base_geomspace(node, context=None):
+    src = """
+    def geomspace(start, stop, num=50, endpoint=True, dtype=None, axis=0):
+        return numpy.ndarray([0, 0])
+    """
+    node = astroid.extract_node(src)
+    return node.infer(context=context)
 
 def looks_like_numpy_core_function_base_member(member_name, node):
     return (isinstance(node, astroid.Attribute)
@@ -29,4 +43,16 @@ astroid.MANAGER.register_transform(
     astroid.Attribute,
     astroid.inference_tip(infer_numpy_core_function_base_linspace),
     functools.partial(looks_like_numpy_core_function_base_member, "linspace")
+)
+
+astroid.MANAGER.register_transform(
+    astroid.Attribute,
+    astroid.inference_tip(infer_numpy_core_function_base_logspace),
+    functools.partial(looks_like_numpy_core_function_base_member, "logspace")
+)
+
+astroid.MANAGER.register_transform(
+    astroid.Attribute,
+    astroid.inference_tip(infer_numpy_core_function_base_geomspace),
+    functools.partial(looks_like_numpy_core_function_base_member, "geomspace")
 )
