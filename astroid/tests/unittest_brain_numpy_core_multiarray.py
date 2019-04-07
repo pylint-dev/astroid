@@ -1,7 +1,5 @@
 # -*- encoding=utf-8 -*-
 # Copyright (c) 2017-2018 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2017 Claudiu Popa <pcmanticore@gmail.com>
-# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -41,12 +39,18 @@ def subTestMock(msg=None):
 
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
-class NumpyBrainFunctionReturningArrayTest(SubTestWrapper):
+class BrainNumpyCoreMultiarrayTest(SubTestWrapper):
     """
-    Test that calls to numpy functions returning arrays are correctly inferred
+    Test the numpy core numeric brain module
     """
     numpy_functions = (
-                       ('sum', '[[1, 2], [2, 1]]', "axis=0"),
+                       ('array', "[1, 2]"),
+                       ('inner', "[1, 2]", "[1, 2]"),
+                       ('vdot', "[1, 2]", "[1, 2]"),
+                       ('concatenate', "([1, 2], [1, 2])"),
+                       ('dot', "[1, 2]", "[1, 2]"),
+                       ('empty_like', "[1, 2]"),
+                       ('where', '[True, False]', "[1, 2]", "[2, 1]"),
                        )
 
     def _inferred_numpy_func_call(self, func_name, *func_args):
@@ -63,9 +67,9 @@ class NumpyBrainFunctionReturningArrayTest(SubTestWrapper):
 
     def test_numpy_function_calls_inferred_as_ndarray(self):
         """
-        Test that some calls to numpy functions are inferred as numpy.ndarray
+        Test that calls to numpy functions are inferred as numpy.ndarray
         """
-        licit_array_types = ('.ndarray', 'numpy.core.records.recarray')
+        licit_array_types = ('.ndarray',)
         for func_ in self.numpy_functions:
             with self.subTest(typ=func_):
                 inferred_values = list(self._inferred_numpy_func_call(*func_))
@@ -73,6 +77,7 @@ class NumpyBrainFunctionReturningArrayTest(SubTestWrapper):
                                 msg="Too much inferred value for {:s}".format(func_[0]))
                 self.assertTrue(inferred_values[-1].pytype() in licit_array_types,
                                 msg="Illicit type for {:s} ({})".format(func_[0], inferred_values[-1].pytype()))
+
 
 if __name__ == "__main__":
     unittest.main()
