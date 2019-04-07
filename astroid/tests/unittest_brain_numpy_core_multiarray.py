@@ -41,7 +41,7 @@ def subTestMock(msg=None):
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
 class BrainNumpyCoreMultiarrayTest(SubTestWrapper):
     """
-    Test the numpy core numeric brain module
+    Test the numpy core multiarray brain module
     """
     numpy_functions = (
                        ('array', "[1, 2]"),

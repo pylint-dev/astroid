@@ -4,7 +4,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
 
-"""Astroid hooks for numpy.core.umath module."""
+"""Astroid hooks for numpy.core.fromnumeric module."""
 
 import astroid
 
