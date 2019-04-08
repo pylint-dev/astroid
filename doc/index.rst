@@ -24,11 +24,13 @@ Python constructs, as seen in the following example::
    def func(first, second):
        return first + second
 
-   func(first, second)
+   arg_1 = 2
+   arg_2 = 3
+   func(arg_1, arg_2)
    ''')
    >>> module.body[-1]
    <Expr l.3 at 0x10ab46f28>
-   >>> inferred = next(a.body[-1].value.infer())
+   >>> inferred = next(module.body[-1].value.infer())
    >>> inferred
    <Const.int l.None at 0x10ab00588>
    >>> inferred.value
