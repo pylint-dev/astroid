@@ -494,8 +494,6 @@ def _infer_context_manager(self, mgr, context):
             raise exceptions.InferenceError(node=inferred)
         if not isinstance(enter, bases.BoundMethod):
             raise exceptions.InferenceError(node=enter)
-        if not context.callcontext:
-            context.callcontext = contextmod.CallContext(args=[inferred])
         yield from enter.infer_call_result(self, context)
     else:
         raise exceptions.InferenceError(node=mgr)

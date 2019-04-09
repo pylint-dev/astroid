@@ -6,6 +6,10 @@ What's New in astroid 2.3.0?
 ============================
 Release Date: TBA
 
+* Drop a superfluous and wrong callcontext when inferring the result of a context manager
+
+  Close PyCQA/pylint#2859
+
 * ``igetattr`` raises ``InferenceError`` on re-inference of the same object
 
   This prevents ``StopIteration`` from leaking when we encounter the same
