@@ -211,7 +211,11 @@ class BaseInstance(Proxy):
         try:
             # avoid recursively inferring the same attr on the same class
             if context.push((self._proxied, name)):
-                return
+                raise exceptions.InferenceError(
+                    message="Cannot infer the same attribute again",
+                    node=self,
+                    context=context,
+                )
 
             # XXX frame should be self._proxied, or not ?
             get_attr = self.getattr(name, context, lookupclass=False)

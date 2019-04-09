@@ -5188,5 +5188,30 @@ def test_cannot_getattr_ann_assigns():
     assert len(values) == 1
 
 
+def test_prevent_recursion_error_in_igetattr_and_context_manager_inference():
+    code = """
+    class DummyContext(object):
+        def method(self, msg): # pylint: disable=C0103
+            pass
+        def __enter__(self):
+            pass
+        def __exit__(self, ex_type, ex_value, ex_tb):
+            return True
+
+    class CallMeMaybe(object):
+        def __call__(self):
+            while False:
+                with DummyContext() as con:
+                    f_method = con.method
+                break
+
+            with DummyContext() as con:
+                con #@
+                f_method = con.method
+    """
+    node = extract_node(code)
+    assert next(node.infer()) is util.Uninferable
+
+
 if __name__ == "__main__":
     unittest.main()
