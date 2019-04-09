@@ -106,7 +106,7 @@ if os.name == 'posix':
         # https://github.com/PyCQA/pylint/issues/712#issuecomment-163178753
         STD_LIB_DIRS.add(_posix_path('lib64'))
 
-EXT_LIB_DIR = get_python_lib()
+EXT_LIB_DIRS = {get_python_lib(), get_python_lib(True)}
 IS_JYTHON = platform.python_implementation() == 'Jython'
 BUILTIN_MODULES = dict.fromkeys(sys.builtin_module_names, True)
 
@@ -542,8 +542,9 @@ def is_standard_module(modname, std_path=None):
         # we assume there are no namespaces in stdlib
         return not util.is_namespace(modname)
     filename = _normalize_path(filename)
-    if filename.startswith(_cache_normalize_path(EXT_LIB_DIR)):
-        return False
+    for path in EXT_LIB_DIRS:
+        if filename.startswith(_cache_normalize_path(path)):
+            return False
     if std_path is None:
         std_path = STD_LIB_DIRS
     for path in std_path:
