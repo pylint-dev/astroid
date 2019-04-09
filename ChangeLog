@@ -1,6 +1,23 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+2019-04-09 -- 1.6.6
+
+* Add cPickle to the list of available imports for six.moves in Python2
+
+* make is_standard_module() properly classify extensions (#659) (#661)
+
+  Extensions can be installed in either a platform independent or specific
+  location[1]. The search is updated to include both paths. Previously, an
+  extension in the platform specific location would be misclassified because
+  only the independent location was considered and the platform specific location
+  shared a prefix with the standard lib.
+
+  [1] http://docs.python.org/3/distutils/apiref.html#distutils.sysconfig.get_python_lib
+
+  Fixes Issue: #658
+  Co-authored-by: Matt Story <s.matt.story@gmail.com>
+
 2018-06-06 -- 1.6.5
 
   *  Don't propagate Uninferable objects when inferring BinOps
