@@ -14,6 +14,8 @@ import functools
 import sys
 import warnings
 
+import pytest
+
 from astroid import nodes
 
 
@@ -41,13 +43,13 @@ def require_version(minver=None, maxver=None):
         str_version = ".".join(str(v) for v in sys.version_info)
 
         @functools.wraps(f)
-        def new_f(self, *args, **kwargs):
+        def new_f(*args, **kwargs):
             if minver is not None:
-                self.skipTest(
+                pytest.skip(
                     "Needs Python > %s. Current version is %s." % (minver, str_version)
                 )
             elif maxver is not None:
-                self.skipTest(
+                pytest.skip(
                     "Needs Python <= %s. Current version is %s." % (maxver, str_version)
                 )
 

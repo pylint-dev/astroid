@@ -6,6 +6,21 @@ What's New in astroid 2.3.0?
 ============================
 Release Date: TBA
 
+* Drop a superfluous and wrong callcontext when inferring the result of a context manager
+
+  Close PyCQA/pylint#2859
+
+* ``igetattr`` raises ``InferenceError`` on re-inference of the same object
+
+  This prevents ``StopIteration`` from leaking when we encounter the same
+  object in the current context, which could result in various ``RuntimeErrors``
+  leaking in other parts of the inference.
+  Until we get a global context per inference, the solution is sort of a hack,
+  as with the suggested global context improvement, we could theoretically
+  reuse the same inference object.
+
+  Close #663
+
 * Variable annotations can no longer be retrieved with `ClassDef.getattr`
 
   Unless they have an attached value, class variable annotations can no longer

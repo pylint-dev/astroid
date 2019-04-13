@@ -5188,5 +5188,63 @@ def test_cannot_getattr_ann_assigns():
     assert len(values) == 1
 
 
+def test_prevent_recursion_error_in_igetattr_and_context_manager_inference():
+    code = """
+    class DummyContext(object):
+        def method(self, msg): # pylint: disable=C0103
+            pass
+        def __enter__(self):
+            pass
+        def __exit__(self, ex_type, ex_value, ex_tb):
+            return True
+
+    class CallMeMaybe(object):
+        def __call__(self):
+            while False:
+                with DummyContext() as con:
+                    f_method = con.method
+                break
+
+            with DummyContext() as con:
+                con #@
+                f_method = con.method
+    """
+    node = extract_node(code)
+    assert next(node.infer()) is util.Uninferable
+
+
+def test_infer_context_manager_with_unknown_args():
+    code = """
+    class client_log(object):
+        def __init__(self, client):
+            self.client = client
+        def __enter__(self):
+            return self.client
+        def __exit__(self, exc_type, exc_value, traceback):
+            pass
+
+    with client_log(None) as c:
+        c #@
+    """
+    node = extract_node(code)
+    assert next(node.infer()) is util.Uninferable
+
+    # But if we know the argument, then it is easy
+    code = """
+    class client_log(object):
+        def __init__(self, client=24):
+            self.client = client
+        def __enter__(self):
+            return self.client
+        def __exit__(self, exc_type, exc_value, traceback):
+            pass
+
+    with client_log(None) as c:
+        c #@
+    """
+    node = extract_node(code)
+    assert isinstance(next(node.infer()), nodes.Const)
+
+
 if __name__ == "__main__":
     unittest.main()
