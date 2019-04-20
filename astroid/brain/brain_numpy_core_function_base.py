@@ -8,51 +8,25 @@
 
 import functools
 import astroid
-
-def infer_numpy_core_function_base_linspace(node, context=None):
-    src = """
-    def linspace(start, stop, num=50, endpoint=True, retstep=False, dtype=None, axis=0):
-        return numpy.ndarray([0, 0])
-    """
-    node = astroid.extract_node(src)
-    return node.infer(context=context)
-
-def infer_numpy_core_function_base_logspace(node, context=None):
-    src = """
-    def logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None, axis=0):
-        return numpy.ndarray([0, 0])
-    """
-    node = astroid.extract_node(src)
-    return node.infer(context=context)
-
-def infer_numpy_core_function_base_geomspace(node, context=None):
-    src = """
-    def geomspace(start, stop, num=50, endpoint=True, dtype=None, axis=0):
-        return numpy.ndarray([0, 0])
-    """
-    node = astroid.extract_node(src)
-    return node.infer(context=context)
-
-def looks_like_numpy_core_function_base_member(member_name, node):
-    return (isinstance(node, astroid.Attribute)
-            and node.attrname == member_name
-            and node.expr.inferred()[-1].name == 'numpy')
+from brain_numpy_utils import looks_like_numpy_member, infer_numpy_member
 
 
-astroid.MANAGER.register_transform(
-    astroid.Attribute,
-    astroid.inference_tip(infer_numpy_core_function_base_linspace),
-    functools.partial(looks_like_numpy_core_function_base_member, "linspace")
-)
+METHODS_TO_BE_INFERRED = {
+    "linspace": 
+        """def linspace(start, stop, num=50, endpoint=True, retstep=False, dtype=None, axis=0):
+            return numpy.ndarray([0, 0])""",
+    "logspace":
+        """def logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None, axis=0):
+            return numpy.ndarray([0, 0])""",
+    "geomspace":
+        """def geomspace(start, stop, num=50, endpoint=True, dtype=None, axis=0):
+            return numpy.ndarray([0, 0])"""
+}
 
-astroid.MANAGER.register_transform(
-    astroid.Attribute,
-    astroid.inference_tip(infer_numpy_core_function_base_logspace),
-    functools.partial(looks_like_numpy_core_function_base_member, "logspace")
-)
-
-astroid.MANAGER.register_transform(
-    astroid.Attribute,
-    astroid.inference_tip(infer_numpy_core_function_base_geomspace),
-    functools.partial(looks_like_numpy_core_function_base_member, "geomspace")
-)
+for func_name, func_src in METHODS_TO_BE_INFERRED.items():
+    inference_function = functools.partial(infer_numpy_member, func_src)
+    astroid.MANAGER.register_transform(
+        astroid.Attribute,
+        astroid.inference_tip(inference_function),
+        functools.partial(looks_like_numpy_member, func_name)
+    )

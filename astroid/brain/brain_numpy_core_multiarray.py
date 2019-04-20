@@ -8,6 +8,7 @@
 
 import functools
 import astroid
+from brain_numpy_utils import looks_like_numpy_member, infer_numpy_member
 
 
 def numpy_core_multiarray_transform():
@@ -28,18 +29,7 @@ astroid.register_module_extender(
 )
 
 
-def infer_numpy_core_multiarray_member(src, node, context=None):
-    node = astroid.extract_node(src)
-    return node.infer(context=context)
-
-
-def looks_like_numpy_core_multiarray_member(member_name, node):
-    return (isinstance(node, astroid.Attribute)
-            and node.attrname == member_name
-            and node.expr.inferred()[-1].name == 'numpy')
-
-
-RETURNING_NDARRAY_METHODS = {
+METHODS_TO_BE_INFERRED = {
     "array":
         """def array(object, dtype=None, copy=True, order='K', subok=False, ndmin=0):
             return numpy.ndarray([0, 0])""",
@@ -63,10 +53,10 @@ RETURNING_NDARRAY_METHODS = {
             return numpy.ndarray([0, 0])"""
 }
 
-for method_name, function_src in RETURNING_NDARRAY_METHODS.items():
-    inference_function = functools.partial(infer_numpy_core_multiarray_member, function_src)
+for method_name, function_src in METHODS_TO_BE_INFERRED.items():
+    inference_function = functools.partial(infer_numpy_member, function_src)
     astroid.MANAGER.register_transform(
         astroid.Attribute,
         astroid.inference_tip(inference_function),
-        functools.partial(looks_like_numpy_core_multiarray_member, method_name)
+        functools.partial(looks_like_numpy_member, method_name)
     )
