@@ -13,3 +13,6 @@ astroid.egg-info/
 .cache/
 .eggs/
 .pytest_cache/
+.python-version
+.vscode/
+
