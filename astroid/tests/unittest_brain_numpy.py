@@ -45,19 +45,54 @@ class NumpyBrainFunctionReturningArrayTest(SubTestWrapper):
     """
     Test that calls to numpy functions returning arrays are correctly inferred
     """
-    numpy_functions = (
-                       ('sum', '[[1, 2], [2, 1]]', "axis=0"),
-                       )
+    ndarray_returning_ndarray_methods = (
+        "__abs__",
+        "__add__",
+        "__and__",
+        "__array__",
+        "__array_wrap__",
+        "__copy__",
+        "__deepcopy__",
+        "__eq__",
+        "__floordiv__",
+        "__ge__",
+        "__gt__",
+        "__iadd__",
+        "__iand__",
+        "__ifloordiv__",
+        "__ilshift__",
+        "__imod__",
+        "__imul__",
+        "__invert__",
+        "__ior__",
+        "__ipow__",
+        "__irshift__",
+        "__isub__",
+        "__itruediv__",
+        "__ixor__",
+        "__le__",
+        "__lshift__",
+        "__lt__",
+        "__matmul__",
+        "__mod__",
+        "__mul__",
+        "__ne__",
+        "__neg__",
+        "__or__",
+        "__pos__",
+        "__pow__",
+        "__rshift__",
+        "__sub__",
+        "__truediv__",
+        "__xor__")
 
-    def _inferred_numpy_func_call(self, func_name, *func_args):
+    def _inferred_ndarray_method_call(self, func_name):
         node = builder.extract_node(
             """
         import numpy as np
-        func = np.{:s}
-        func({:s})
-        """.format(
-                func_name, ",".join(func_args)
-            )
+        test_array = np.ndarray((2, 2))
+        test_array.{:s}()
+        """.format(func_name)
         )
         return node.infer()
 
@@ -65,14 +100,14 @@ class NumpyBrainFunctionReturningArrayTest(SubTestWrapper):
         """
         Test that some calls to numpy functions are inferred as numpy.ndarray
         """
-        licit_array_types = ('.ndarray', 'numpy.core.records.recarray')
-        for func_ in self.numpy_functions:
+        licit_array_types = ('.ndarray')
+        for func_ in self.ndarray_returning_ndarray_methods:
             with self.subTest(typ=func_):
-                inferred_values = list(self._inferred_numpy_func_call(*func_))
+                inferred_values = list(self._inferred_ndarray_method_call(func_))
                 self.assertTrue(len(inferred_values) == 1,
-                                msg="Too much inferred value for {:s}".format(func_[0]))
+                                msg="Too much inferred value for {:s}".format(func_))
                 self.assertTrue(inferred_values[-1].pytype() in licit_array_types,
-                                msg="Illicit type for {:s} ({})".format(func_[0], inferred_values[-1].pytype()))
+                                msg="Illicit type for {:s} ({})".format(func_, inferred_values[-1].pytype()))
 
 if __name__ == "__main__":
     unittest.main()
