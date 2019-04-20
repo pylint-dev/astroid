@@ -41,7 +41,7 @@ def subTestMock(msg=None):
 
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
-class NumpyBrainFunctionReturningArrayTest(SubTestWrapper):
+class NumpyBrainNdarrayTest(SubTestWrapper):
     """
     Test that calls to numpy functions returning arrays are correctly inferred
     """

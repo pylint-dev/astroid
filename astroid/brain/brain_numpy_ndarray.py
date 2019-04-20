@@ -6,7 +6,7 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
 
-"""Astroid hooks for numpy."""
+"""Astroid hooks for numpy ndarray class."""
 
 import functools
 import astroid
