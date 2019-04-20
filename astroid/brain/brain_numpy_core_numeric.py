@@ -6,6 +6,7 @@
 
 """Astroid hooks for numpy.core.numeric module."""
 
+import functools
 import astroid
 
 
@@ -22,4 +23,24 @@ def numpy_core_numeric_transform():
 
 astroid.register_module_extender(
     astroid.MANAGER, "numpy.core.numeric", numpy_core_numeric_transform
+)
+
+def infer_numpy_core_numeric_ones(node, context=None):
+    src = """
+    def ones(shape, dtype=None, order='C'):
+        return numpy.ndarray([0, 0])
+    """
+    node = astroid.extract_node(src)
+    return node.infer(context=context)
+
+def looks_like_numpy_core_numeric_member(member_name, node):
+    return (isinstance(node, astroid.Attribute)
+            and node.attrname == member_name
+            and node.expr.inferred()[-1].name == 'numpy')
+
+
+astroid.MANAGER.register_transform(
+    astroid.Attribute,
+    astroid.inference_tip(infer_numpy_core_numeric_ones),
+    functools.partial(looks_like_numpy_core_numeric_member, "ones")
 )

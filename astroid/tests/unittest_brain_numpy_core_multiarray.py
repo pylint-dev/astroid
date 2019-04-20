@@ -52,6 +52,7 @@ class BrainNumpyCoreMultiarrayTest(SubTestWrapper):
                        ('empty_like', "[1, 2]"),
                        ('where', '[True, False]', "[1, 2]", "[2, 1]"),
                        ('empty', "[1, 2]"),
+                       ('zeros', "[1, 2]"),
                        )
 
     def _inferred_numpy_func_call(self, func_name, *func_args):

@@ -80,6 +80,14 @@ def infer_numpy_core_multiarray_empty(node, context=None):
     return node.infer(context=context)
 
 
+def infer_numpy_core_multiarray_empty(node, context=None):
+    src = """
+    def zeros(shape, dtype=float, order='C'):
+        return numpy.ndarray([0, 0])
+    """
+    node = astroid.extract_node(src)
+    return node.infer(context=context)
+
 def looks_like_numpy_core_multiarray_member(member_name, node):
     return (isinstance(node, astroid.Attribute)
             and node.attrname == member_name
@@ -120,5 +128,11 @@ astroid.MANAGER.register_transform(
     astroid.Attribute,
     astroid.inference_tip(infer_numpy_core_multiarray_empty),
     functools.partial(looks_like_numpy_core_multiarray_member, "empty")
+)
+
+astroid.MANAGER.register_transform(
+    astroid.Attribute,
+    astroid.inference_tip(infer_numpy_core_multiarray_empty),
+    functools.partial(looks_like_numpy_core_multiarray_member, "zeros")
 )
 

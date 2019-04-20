@@ -47,6 +47,7 @@ class BrainNumpyCoreNumericTest(SubTestWrapper):
                        ('zeros_like', "[1, 2]"),
                        ('full_like', "[1, 2]", '4'),
                        ('ones_like', "[1, 2]"),
+                       ('ones', "[1, 2]"),
                        )
 
     def _inferred_numpy_func_call(self, func_name, *func_args):
