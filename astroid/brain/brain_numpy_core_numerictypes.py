@@ -134,7 +134,8 @@ def numpy_core_numerictypes_transform():
     class bool_(generic): pass
     class number(generic):
         def __neg__(self): return uninferable
-    class datetime64(generic): pass
+    class datetime64(generic):
+        def __init__(self, nb, unit=None): pass
 
 
     class void(flexible):
@@ -192,7 +193,8 @@ def numpy_core_numerictypes_transform():
     class uint8(unsignedinteger): pass
     class _typedict(dict): pass
     class complex192(complexfloating): pass
-    class timedelta64(signedinteger): pass
+    class timedelta64(signedinteger):
+        def __init__(self, nb, unit=None): pass
     class int32(signedinteger): pass
     class uint16(unsignedinteger): pass
     class float32(floating): pass

@@ -6,6 +6,18 @@ What's New in astroid 2.3.0?
 ============================
 Release Date: TBA
 
+* Numpy brain support is improved.
+  Numpy's fondamental type ``numpy.ndarray`` has its own brain : ``brain_numpy_ndarray`` and 
+  each numpy module that necessitates brain action has now its own numpy brain :
+  
+    - ``numpy.core.numeric`` 
+    - ``numpy.core.function_base`` 
+    - ``numpy.core.multiarray`` 
+    - ``numpy.core.numeric`` 
+    - ``numpy.core.numerictypes`` 
+    - ``numpy.core.umath`` 
+    - ``numpy.random.mtrand``
+
 * Drop a superfluous and wrong callcontext when inferring the result of a context manager
 
   Close PyCQA/pylint#2859
