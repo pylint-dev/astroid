@@ -36,9 +36,9 @@ def infer_numpy_ndarray(node, context=None):
         def __abs__(self): return numpy.ndarray([0, 0])
         def __add__(self, value): return numpy.ndarray([0, 0]) 
         def __and__(self, value): return numpy.ndarray([0, 0]) 
-        def __array__(dtype=None): return numpy.ndarray([0, 0]) 
-        def __array_wrap__(obj): return numpy.ndarray([0, 0]) 
-        def __contains__(self, key): return uninferable
+        def __array__(self, dtype=None): return numpy.ndarray([0, 0]) 
+        def __array_wrap__(self, obj): return numpy.ndarray([0, 0]) 
+        def __contains__(self, key): return True
         def __copy__(self): return numpy.ndarray([0, 0])
         def __deepcopy__(self, memo): return numpy.ndarray([0, 0])
         def __divmod__(self, value): return (numpy.ndarray([0, 0]), numpy.ndarray([0, 0]))
