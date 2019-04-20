@@ -27,66 +27,11 @@ astroid.register_module_extender(
     astroid.MANAGER, "numpy.core.multiarray", numpy_core_multiarray_transform
 )
 
-def infer_numpy_core_multiarray_array(node, context=None):
-    src = """
-    def array(object, dtype=None, copy=True, order='K', subok=False, ndmin=0):
-        return numpy.ndarray([0, 0])
-    """
+
+def infer_numpy_core_multiarray_member(src, node, context=None):
     node = astroid.extract_node(src)
     return node.infer(context=context)
 
-
-def infer_numpy_core_multiarray_concatenate(node, context=None):
-    src = """
-    def concatenate(arrays, axis=None, out=None):
-        return numpy.ndarray((0, 0))
-    """
-    node = astroid.extract_node(src)
-    return node.infer(context=context)
-
-
-def infer_numpy_core_multiarray_dot(node, context=None):
-    src = """
-    def dot(a, b, out=None):
-        return numpy.ndarray([0, 0])
-    """
-    node = astroid.extract_node(src)
-    return node.infer(context=context)
-
-
-def infer_numpy_core_multiarray_empty_like(node, context=None):
-    src = """
-    def empty_like(a, dtype=None, order='K', subok=True):
-        return numpy.ndarray((0, 0))
-    """
-    node = astroid.extract_node(src)
-    return node.infer(context=context)
-
-
-def infer_numpy_core_multiarray_where(node, context=None):
-    src = """
-    def where(condition, x=None, y=None):
-        return numpy.ndarray([0, 0])
-    """
-    node = astroid.extract_node(src)
-    return node.infer(context=context)
-
-def infer_numpy_core_multiarray_empty(node, context=None):
-    src = """
-    def empty(shape, dtype=float, order='C'):
-        return numpy.ndarray([0, 0])
-    """
-    node = astroid.extract_node(src)
-    return node.infer(context=context)
-
-
-def infer_numpy_core_multiarray_empty(node, context=None):
-    src = """
-    def zeros(shape, dtype=float, order='C'):
-        return numpy.ndarray([0, 0])
-    """
-    node = astroid.extract_node(src)
-    return node.infer(context=context)
 
 def looks_like_numpy_core_multiarray_member(member_name, node):
     return (isinstance(node, astroid.Attribute)
@@ -94,45 +39,34 @@ def looks_like_numpy_core_multiarray_member(member_name, node):
             and node.expr.inferred()[-1].name == 'numpy')
 
 
-astroid.MANAGER.register_transform(
-    astroid.Attribute,
-    astroid.inference_tip(infer_numpy_core_multiarray_array),
-    functools.partial(looks_like_numpy_core_multiarray_member, "array")
-)
+RETURNING_NDARRAY_METHODS = {
+    "array":
+        """def array(object, dtype=None, copy=True, order='K', subok=False, ndmin=0):
+            return numpy.ndarray([0, 0])""",
+    "dot":
+        """def dot(a, b, out=None):
+            return numpy.ndarray([0, 0])""",
+    "empty_like": 
+        """def empty_like(a, dtype=None, order='K', subok=True):
+            return numpy.ndarray((0, 0))""",
+    "concatenate": 
+        """def concatenate(arrays, axis=None, out=None):
+            return numpy.ndarray((0, 0))""",
+    "where":
+        """def where(condition, x=None, y=None):
+            return numpy.ndarray([0, 0])""",
+    "empty":
+        """def empty(shape, dtype=float, order='C'):
+            return numpy.ndarray([0, 0])""",
+    "zeros":
+        """def zeros(shape, dtype=float, order='C'):
+            return numpy.ndarray([0, 0])"""
+}
 
-astroid.MANAGER.register_transform(
-    astroid.Attribute,
-    astroid.inference_tip(infer_numpy_core_multiarray_dot),
-    functools.partial(looks_like_numpy_core_multiarray_member, "dot")
-)
-
-astroid.MANAGER.register_transform(
-    astroid.Attribute,
-    astroid.inference_tip(infer_numpy_core_multiarray_empty_like),
-    functools.partial(looks_like_numpy_core_multiarray_member, "empty_like")
-)
-
-astroid.MANAGER.register_transform(
-    astroid.Attribute,
-    astroid.inference_tip(infer_numpy_core_multiarray_concatenate),
-    functools.partial(looks_like_numpy_core_multiarray_member, "concatenate")
-)
-
-astroid.MANAGER.register_transform(
-    astroid.Attribute,
-    astroid.inference_tip(infer_numpy_core_multiarray_where),
-    functools.partial(looks_like_numpy_core_multiarray_member, "where")
-)
-
-astroid.MANAGER.register_transform(
-    astroid.Attribute,
-    astroid.inference_tip(infer_numpy_core_multiarray_empty),
-    functools.partial(looks_like_numpy_core_multiarray_member, "empty")
-)
-
-astroid.MANAGER.register_transform(
-    astroid.Attribute,
-    astroid.inference_tip(infer_numpy_core_multiarray_empty),
-    functools.partial(looks_like_numpy_core_multiarray_member, "zeros")
-)
-
+for method_name, function_src in RETURNING_NDARRAY_METHODS.items():
+    inference_function = functools.partial(infer_numpy_core_multiarray_member, function_src)
+    astroid.MANAGER.register_transform(
+        astroid.Attribute,
+        astroid.inference_tip(inference_function),
+        functools.partial(looks_like_numpy_core_multiarray_member, method_name)
+    )
