@@ -30,27 +30,20 @@ astroid.register_module_extender(
 
 
 METHODS_TO_BE_INFERRED = {
-    "array":
-        """def array(object, dtype=None, copy=True, order='K', subok=False, ndmin=0):
+    "array": """def array(object, dtype=None, copy=True, order='K', subok=False, ndmin=0):
             return numpy.ndarray([0, 0])""",
-    "dot":
-        """def dot(a, b, out=None):
+    "dot": """def dot(a, b, out=None):
             return numpy.ndarray([0, 0])""",
-    "empty_like": 
-        """def empty_like(a, dtype=None, order='K', subok=True):
+    "empty_like": """def empty_like(a, dtype=None, order='K', subok=True):
             return numpy.ndarray((0, 0))""",
-    "concatenate": 
-        """def concatenate(arrays, axis=None, out=None):
+    "concatenate": """def concatenate(arrays, axis=None, out=None):
             return numpy.ndarray((0, 0))""",
-    "where":
-        """def where(condition, x=None, y=None):
+    "where": """def where(condition, x=None, y=None):
             return numpy.ndarray([0, 0])""",
-    "empty":
-        """def empty(shape, dtype=float, order='C'):
+    "empty": """def empty(shape, dtype=float, order='C'):
             return numpy.ndarray([0, 0])""",
-    "zeros":
-        """def zeros(shape, dtype=float, order='C'):
-            return numpy.ndarray([0, 0])"""
+    "zeros": """def zeros(shape, dtype=float, order='C'):
+            return numpy.ndarray([0, 0])""",
 }
 
 for method_name, function_src in METHODS_TO_BE_INFERRED.items():
@@ -58,5 +51,5 @@ for method_name, function_src in METHODS_TO_BE_INFERRED.items():
     astroid.MANAGER.register_transform(
         astroid.Attribute,
         astroid.inference_tip(inference_function),
-        functools.partial(looks_like_numpy_member, method_name)
+        functools.partial(looks_like_numpy_member, method_name),
     )

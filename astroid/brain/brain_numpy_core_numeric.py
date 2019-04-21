@@ -20,7 +20,8 @@ def numpy_core_numeric_transform():
     def ones_like(a, dtype=None, order='K', subok=True): return numpy.ndarray((0, 0))
     def full_like(a, fill_value, dtype=None, order='K', subok=True): return numpy.ndarray((0, 0))
         """
-        )
+    )
+
 
 astroid.register_module_extender(
     astroid.MANAGER, "numpy.core.numeric", numpy_core_numeric_transform
@@ -28,8 +29,7 @@ astroid.register_module_extender(
 
 
 METHODS_TO_BE_INFERRED = {
-    "ones":
-        """def ones(shape, dtype=None, order='C'):
+    "ones": """def ones(shape, dtype=None, order='C'):
             return numpy.ndarray([0, 0])"""
 }
 
@@ -39,5 +39,5 @@ for method_name, function_src in METHODS_TO_BE_INFERRED.items():
     astroid.MANAGER.register_transform(
         astroid.Attribute,
         astroid.inference_tip(inference_function),
-        functools.partial(looks_like_numpy_member, method_name)
+        functools.partial(looks_like_numpy_member, method_name),
     )

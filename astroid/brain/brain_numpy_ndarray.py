@@ -141,11 +141,13 @@ def infer_numpy_ndarray(node, context=None):
     node = astroid.extract_node(ndarray)
     return node.infer(context=context)
 
+
 def _looks_like_numpy_ndarray(node):
-    return isinstance(node, astroid.Attribute) and node.attrname == 'ndarray'
+    return isinstance(node, astroid.Attribute) and node.attrname == "ndarray"
+
 
 astroid.MANAGER.register_transform(
     astroid.Attribute,
     astroid.inference_tip(infer_numpy_ndarray),
-    _looks_like_numpy_ndarray
+    _looks_like_numpy_ndarray,
 )

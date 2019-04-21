@@ -43,17 +43,18 @@ class BrainNumpyCoreMultiarrayTest(SubTestWrapper):
     """
     Test the numpy core multiarray brain module
     """
+
     numpy_functions = (
-                       ('array', "[1, 2]"),
-                       ('inner', "[1, 2]", "[1, 2]"),
-                       ('vdot', "[1, 2]", "[1, 2]"),
-                       ('concatenate', "([1, 2], [1, 2])"),
-                       ('dot', "[1, 2]", "[1, 2]"),
-                       ('empty_like', "[1, 2]"),
-                       ('where', '[True, False]', "[1, 2]", "[2, 1]"),
-                       ('empty', "[1, 2]"),
-                       ('zeros', "[1, 2]"),
-                       )
+        ("array", "[1, 2]"),
+        ("inner", "[1, 2]", "[1, 2]"),
+        ("vdot", "[1, 2]", "[1, 2]"),
+        ("concatenate", "([1, 2], [1, 2])"),
+        ("dot", "[1, 2]", "[1, 2]"),
+        ("empty_like", "[1, 2]"),
+        ("where", "[True, False]", "[1, 2]", "[2, 1]"),
+        ("empty", "[1, 2]"),
+        ("zeros", "[1, 2]"),
+    )
 
     def _inferred_numpy_func_call(self, func_name, *func_args):
         node = builder.extract_node(
@@ -71,14 +72,20 @@ class BrainNumpyCoreMultiarrayTest(SubTestWrapper):
         """
         Test that calls to numpy functions are inferred as numpy.ndarray
         """
-        licit_array_types = ('.ndarray',)
+        licit_array_types = (".ndarray",)
         for func_ in self.numpy_functions:
             with self.subTest(typ=func_):
                 inferred_values = list(self._inferred_numpy_func_call(*func_))
-                self.assertTrue(len(inferred_values) == 1,
-                                msg="Too much inferred value for {:s}".format(func_[0]))
-                self.assertTrue(inferred_values[-1].pytype() in licit_array_types,
-                                msg="Illicit type for {:s} ({})".format(func_[0], inferred_values[-1].pytype()))
+                self.assertTrue(
+                    len(inferred_values) == 1,
+                    msg="Too much inferred value for {:s}".format(func_[0]),
+                )
+                self.assertTrue(
+                    inferred_values[-1].pytype() in licit_array_types,
+                    msg="Illicit type for {:s} ({})".format(
+                        func_[0], inferred_values[-1].pytype()
+                    ),
+                )
 
 
 if __name__ == "__main__":

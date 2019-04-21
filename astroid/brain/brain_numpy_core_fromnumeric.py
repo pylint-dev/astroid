@@ -8,12 +8,14 @@
 
 import astroid
 
+
 def numpy_core_fromnumeric_transform():
     return astroid.parse(
-    """
+        """
     def sum(a, axis=None, dtype=None, out=None, keepdims=None, initial=None):
         return numpy.ndarray([0, 0])
-    """)
+    """
+    )
 
 
 astroid.register_module_extender(

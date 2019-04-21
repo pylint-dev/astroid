@@ -229,7 +229,9 @@ class NumpyBrainCoreUmathTest(SubTestWrapper):
         import numpy as np
         func = np.{:s}
         func()
-        """.format(func_name)
+        """.format(
+                func_name
+            )
         )
         return node.infer()
 
@@ -237,18 +239,26 @@ class NumpyBrainCoreUmathTest(SubTestWrapper):
         """
         Test that functions which should return a ndarray do return it
         """
-        ndarray_returning_func = [f 
+        ndarray_returning_func = [
+            f
             for f in self.all_ufunc
-            if f not in ('geterrobj', 'seterrobj', 'frexp', 'modf')
-            ]
-        licit_array_types = ('.ndarray',)
+            if f not in ("geterrobj", "seterrobj", "frexp", "modf")
+        ]
+        licit_array_types = (".ndarray",)
         for func_ in ndarray_returning_func:
             with self.subTest(typ=func_):
                 inferred_values = list(self._inferred_numpy_func_call(func_))
-                self.assertTrue(len(inferred_values) == 1,
-                                msg="Too much inferred value for {:s}".format(func_))
-                self.assertTrue(inferred_values[-1].pytype() in licit_array_types,
-                                msg="Illicit type for {:s} ({})".format(func_, inferred_values[-1].pytype()))
+                self.assertTrue(
+                    len(inferred_values) == 1,
+                    msg="Too much inferred value for {:s}".format(func_),
+                )
+                self.assertTrue(
+                    inferred_values[-1].pytype() in licit_array_types,
+                    msg="Illicit type for {:s} ({})".format(
+                        func_, inferred_values[-1].pytype()
+                    ),
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

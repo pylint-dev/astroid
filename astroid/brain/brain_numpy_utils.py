@@ -16,6 +16,8 @@ def infer_numpy_member(src, node, context=None):
 
 
 def looks_like_numpy_member(member_name, node):
-    return (isinstance(node, astroid.Attribute)
-            and node.attrname == member_name
-            and node.expr.inferred()[-1].name == 'numpy')
+    return (
+        isinstance(node, astroid.Attribute)
+        and node.attrname == member_name
+        and node.expr.inferred()[-1].name == "numpy"
+    )

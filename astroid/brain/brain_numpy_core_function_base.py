@@ -12,15 +12,12 @@ from brain_numpy_utils import looks_like_numpy_member, infer_numpy_member
 
 
 METHODS_TO_BE_INFERRED = {
-    "linspace": 
-        """def linspace(start, stop, num=50, endpoint=True, retstep=False, dtype=None, axis=0):
+    "linspace": """def linspace(start, stop, num=50, endpoint=True, retstep=False, dtype=None, axis=0):
             return numpy.ndarray([0, 0])""",
-    "logspace":
-        """def logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None, axis=0):
+    "logspace": """def logspace(start, stop, num=50, endpoint=True, base=10.0, dtype=None, axis=0):
             return numpy.ndarray([0, 0])""",
-    "geomspace":
-        """def geomspace(start, stop, num=50, endpoint=True, dtype=None, axis=0):
-            return numpy.ndarray([0, 0])"""
+    "geomspace": """def geomspace(start, stop, num=50, endpoint=True, dtype=None, axis=0):
+            return numpy.ndarray([0, 0])""",
 }
 
 for func_name, func_src in METHODS_TO_BE_INFERRED.items():
@@ -28,5 +25,5 @@ for func_name, func_src in METHODS_TO_BE_INFERRED.items():
     astroid.MANAGER.register_transform(
         astroid.Attribute,
         astroid.inference_tip(inference_function),
-        functools.partial(looks_like_numpy_member, func_name)
+        functools.partial(looks_like_numpy_member, func_name),
     )

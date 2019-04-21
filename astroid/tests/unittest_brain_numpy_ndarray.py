@@ -45,6 +45,7 @@ class NumpyBrainNdarrayTest(SubTestWrapper):
     """
     Test that calls to numpy functions returning arrays are correctly inferred
     """
+
     ndarray_returning_ndarray_methods = (
         "__abs__",
         "__add__",
@@ -124,7 +125,8 @@ class NumpyBrainNdarrayTest(SubTestWrapper):
         "trace",
         "transpose",
         "var",
-        "view")
+        "view",
+    )
 
     def _inferred_ndarray_method_call(self, func_name):
         node = builder.extract_node(
@@ -132,7 +134,9 @@ class NumpyBrainNdarrayTest(SubTestWrapper):
         import numpy as np
         test_array = np.ndarray((2, 2))
         test_array.{:s}()
-        """.format(func_name)
+        """.format(
+                func_name
+            )
         )
         return node.infer()
 
@@ -140,14 +144,21 @@ class NumpyBrainNdarrayTest(SubTestWrapper):
         """
         Test that some calls to numpy functions are inferred as numpy.ndarray
         """
-        licit_array_types = ('.ndarray')
+        licit_array_types = ".ndarray"
         for func_ in self.ndarray_returning_ndarray_methods:
             with self.subTest(typ=func_):
                 inferred_values = list(self._inferred_ndarray_method_call(func_))
-                self.assertTrue(len(inferred_values) == 1,
-                                msg="Too much inferred value for {:s}".format(func_))
-                self.assertTrue(inferred_values[-1].pytype() in licit_array_types,
-                                msg="Illicit type for {:s} ({})".format(func_, inferred_values[-1].pytype()))
+                self.assertTrue(
+                    len(inferred_values) == 1,
+                    msg="Too much inferred value for {:s}".format(func_),
+                )
+                self.assertTrue(
+                    inferred_values[-1].pytype() in licit_array_types,
+                    msg="Illicit type for {:s} ({})".format(
+                        func_, inferred_values[-1].pytype()
+                    ),
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

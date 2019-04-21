@@ -8,6 +8,7 @@
 
 import astroid
 
+
 def numpy_core_umath_transform():
     ufunc_optional_keyword_arguments = (
         """out=None, where=True, casting='same_kind', order='K', """

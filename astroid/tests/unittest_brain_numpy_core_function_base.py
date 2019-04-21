@@ -43,11 +43,12 @@ class BrainNumpyCoreFunctionBaseTest(SubTestWrapper):
     """
     Test the numpy core numeric brain module
     """
+
     numpy_functions = (
-                       ("linspace", "1, 100"),
-                       ("logspace", "1, 100"),
-                       ("geomspace", "1, 100"),
-                       )
+        ("linspace", "1, 100"),
+        ("logspace", "1, 100"),
+        ("geomspace", "1, 100"),
+    )
 
     def _inferred_numpy_func_call(self, func_name, *func_args):
         node = builder.extract_node(
@@ -65,14 +66,20 @@ class BrainNumpyCoreFunctionBaseTest(SubTestWrapper):
         """
         Test that calls to numpy functions are inferred as numpy.ndarray
         """
-        licit_array_types = ('.ndarray',)
+        licit_array_types = (".ndarray",)
         for func_ in self.numpy_functions:
             with self.subTest(typ=func_):
                 inferred_values = list(self._inferred_numpy_func_call(*func_))
-                self.assertTrue(len(inferred_values) == 1,
-                                msg="Too much inferred value for {:s}".format(func_[0]))
-                self.assertTrue(inferred_values[-1].pytype() in licit_array_types,
-                                msg="Illicit type for {:s} ({})".format(func_[0], inferred_values[-1].pytype()))
+                self.assertTrue(
+                    len(inferred_values) == 1,
+                    msg="Too much inferred value for {:s}".format(func_[0]),
+                )
+                self.assertTrue(
+                    inferred_values[-1].pytype() in licit_array_types,
+                    msg="Illicit type for {:s} ({})".format(
+                        func_[0], inferred_values[-1].pytype()
+                    ),
+                )
 
 
 if __name__ == "__main__":
