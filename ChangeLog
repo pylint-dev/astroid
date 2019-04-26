@@ -18,6 +18,12 @@ Release Date: TBA
     - ``numpy.core.umath`` 
     - ``numpy.random.mtrand``
 
+  Close PyCQA/pylint2865
+  Close PyCQA/pylint2747
+  Close PyCQA/pylint2721
+  Close PyCQA/pylint2326
+  Close PyCQA/pylint2021
+
 * Drop a superfluous and wrong callcontext when inferring the result of a context manager
 
   Close PyCQA/pylint#2859
