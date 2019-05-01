@@ -51,6 +51,10 @@ Release Date: TBA
   Close PyCQA/pylint#2734
   Close PyCQA/pylint#2740
 
+* Can access per argument type comments through new ``Arguments.type_comment_args`` attribute.
+
+  Close #665
+
 
 What's New in astroid 2.2.0?
 ============================
