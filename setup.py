@@ -46,7 +46,7 @@ def install():
                  setup_requires=['pytest-runner'],
                  test_suite='test',
                  tests_require=['pytest'],
-                 ext_modules=cythonize(["astroid/*.pyx", "astroid/interpreter/*.pyx", "astroid/interpreter/_import/*.pyx", "astroid/brain/*.pyx"])
+                 ext_modules=cythonize(["astroid/*.pyx", "astroid/interpreter/*.pyx", "astroid/interpreter/_import/*.pyx", "astroid/brain/*.pyx"], compiler_directives={'language_level': '3'})
                  )
 
 
