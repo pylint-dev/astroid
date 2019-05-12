@@ -7,10 +7,9 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
 """Various context related utilities, including inference and call contexts."""
-
 import contextlib
-import copy
 import pprint
+from typing import Optional
 
 
 class InferenceContext:
@@ -20,7 +19,14 @@ class InferenceContext:
     Account for already visited nodes to infinite stop infinite recursion
     """
 
-    __slots__ = ('path', 'lookupname', 'callcontext', 'boundnode', 'inferred', 'extra_context')
+    __slots__ = (
+        "path",
+        "lookupname",
+        "callcontext",
+        "boundnode",
+        "inferred",
+        "extra_context",
+    )
 
     def __init__(self, path=None, inferred=None):
         self.path = path or set()
@@ -93,7 +99,7 @@ class InferenceContext:
         starts with the same context but diverge as each side is inferred
         so the InferenceContext will need be cloned"""
         # XXX copy lookupname/callcontext ?
-        clone = InferenceContext(copy.copy(self.path), inferred=self.inferred)
+        clone = InferenceContext(self.path, inferred=self.inferred)
         clone.callcontext = self.callcontext
         clone.boundnode = self.boundnode
         clone.extra_context = self.extra_context
@@ -117,16 +123,18 @@ class InferenceContext:
         self.path = path
 
     def __str__(self):
-        state = ('%s=%s' % (field, pprint.pformat(getattr(self, field),
-                                                  width=80 - len(field)))
-                 for field in self.__slots__)
-        return '%s(%s)' % (type(self).__name__, ',\n    '.join(state))
+        state = (
+            "%s=%s"
+            % (field, pprint.pformat(getattr(self, field), width=80 - len(field)))
+            for field in self.__slots__
+        )
+        return "%s(%s)" % (type(self).__name__, ",\n    ".join(state))
 
 
 class CallContext:
     """Holds information for a call site."""
 
-    __slots__ = ('args', 'keywords')
+    __slots__ = ("args", "keywords")
 
     def __init__(self, args, keywords=None):
         """
@@ -141,7 +149,8 @@ class CallContext:
         self.keywords = keywords
 
 
-def copy_context(context):
+def copy_context(context: Optional[InferenceContext]) -> InferenceContext:
+    """Clone a context if given, or return a fresh contexxt"""
     if context is not None:
         return context.clone()
 
@@ -165,9 +174,6 @@ def bind_context_to_node(context, node):
     :returns: A new context
     :rtype: InferenceContext
     """
-    if context is not None:
-        context = context.clone()
-    else:
-        context = InferenceContext()
+    context = copy_context(context)
     context.boundnode = node
     return context

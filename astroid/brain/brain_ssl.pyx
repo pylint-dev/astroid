@@ -13,7 +13,8 @@ from astroid import parse
 
 
 def ssl_transform():
-    return parse('''
+    return parse(
+        """
     from _ssl import OPENSSL_VERSION_NUMBER, OPENSSL_VERSION_INFO, OPENSSL_VERSION
     from _ssl import _SSLContext, MemoryBIO
     from _ssl import (
@@ -65,7 +66,9 @@ def ssl_transform():
     from _ssl import HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN
     from _ssl import _OPENSSL_API_VERSION
     from _ssl import PROTOCOL_SSLv23, PROTOCOL_TLSv1, PROTOCOL_TLSv1_1, PROTOCOL_TLSv1_2
-    ''')
+    from _ssl import PROTOCOL_TLS, PROTOCOL_TLS_CLIENT, PROTOCOL_TLS_SERVER
+    """
+    )
 
 
-register_module_extender(MANAGER, 'ssl', ssl_transform)
+register_module_extender(MANAGER, "ssl", ssl_transform)

@@ -12,11 +12,9 @@ from astroid import nodes
 
 def _patch_uuid_class(node):
     # The .int member is patched using __dict__
-    node.locals['int'] = [nodes.Const(0, parent=node)]
+    node.locals["int"] = [nodes.Const(0, parent=node)]
 
 
 MANAGER.register_transform(
-    nodes.ClassDef,
-    _patch_uuid_class,
-    lambda node: node.qname() == 'uuid.UUID'
+    nodes.ClassDef, _patch_uuid_class, lambda node: node.qname() == "uuid.UUID"
 )

@@ -17,16 +17,17 @@ from astroid import (
 )
 
 
-TYPING_NAMEDTUPLE_BASENAMES = {
-    'NamedTuple',
-    'typing.NamedTuple'
-}
-TYPING_TYPEVARS = {'TypeVar', 'NewType'}
-TYPING_TYPEVARS_QUALIFIED = {'typing.TypeVar', 'typing.NewType'}
+TYPING_NAMEDTUPLE_BASENAMES = {"NamedTuple", "typing.NamedTuple"}
+TYPING_TYPEVARS = {"TypeVar", "NewType"}
+TYPING_TYPEVARS_QUALIFIED = {"typing.TypeVar", "typing.NewType"}
 TYPING_TYPE_TEMPLATE = """
 class Meta(type):
     def __getitem__(self, item):
         return self
+
+    @property
+    def __args__(self):
+        return ()
 
 class {0}(metaclass=Meta):
     pass
@@ -78,20 +79,18 @@ def infer_typing_attr(node, context=None):
     except InferenceError as exc:
         raise UseInferenceDefault from exc
 
-    if not value.qname().startswith('typing.'):
+    if not value.qname().startswith("typing."):
         raise UseInferenceDefault
 
-    node = extract_node(TYPING_TYPE_TEMPLATE.format(value.qname().split('.')[-1]))
+    node = extract_node(TYPING_TYPE_TEMPLATE.format(value.qname().split(".")[-1]))
     return node.infer(context=context)
 
 
 MANAGER.register_transform(
     nodes.Call,
     inference_tip(infer_typing_typevar_or_newtype),
-    looks_like_typing_typevar_or_newtype
+    looks_like_typing_typevar_or_newtype,
 )
 MANAGER.register_transform(
-    nodes.Subscript,
-    inference_tip(infer_typing_attr),
-    _looks_like_typing_subscript,
+    nodes.Subscript, inference_tip(infer_typing_attr), _looks_like_typing_subscript
 )

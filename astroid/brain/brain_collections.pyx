@@ -15,17 +15,21 @@ PY35 = sys.version_info >= (3, 5)
 
 
 def _collections_transform():
-    return astroid.parse('''
+    return astroid.parse(
+        """
     class defaultdict(dict):
         default_factory = None
         def __missing__(self, key): pass
         def __getitem__(self, key): return default_factory
 
-    ''' + _deque_mock() + _ordered_dict_mock())
+    """
+        + _deque_mock()
+        + _ordered_dict_mock()
+    )
 
 
 def _deque_mock():
-    base_deque_class = '''
+    base_deque_class = """
     class deque(object):
         maxlen = 0
         def __init__(self, iterable=None, maxlen=None):
@@ -50,9 +54,9 @@ def _deque_mock():
         def __nonzero__(self): return bool(self.iterable)
         def __contains__(self, o): return o in self.iterable
         def __len__(self): return len(self.iterable)
-        def __copy__(self): return deque(self.iterable)'''
+        def __copy__(self): return deque(self.iterable)"""
     if PY35:
-        base_deque_class += '''
+        base_deque_class += """
         def copy(self): return deque(self.iterable)
         def index(self, x, start=0, end=0): return 0
         def insert(self, x, i): pass
@@ -60,19 +64,19 @@ def _deque_mock():
         def __iadd__(self, other): pass
         def __mul__(self, other): pass
         def __imul__(self, other): pass
-        def __rmul__(self, other): pass'''
+        def __rmul__(self, other): pass"""
     return base_deque_class
 
 
 def _ordered_dict_mock():
-    base_ordered_dict_class = '''
+    base_ordered_dict_class = """
     class OrderedDict(dict):
         def __reversed__(self): return self[::-1]
-    '''
+    """
     if PY34:
-        base_ordered_dict_class += '''
-        def move_to_end(self, key, last=False): pass'''
+        base_ordered_dict_class += """
+        def move_to_end(self, key, last=False): pass"""
     return base_ordered_dict_class
 
-astroid.register_module_extender(astroid.MANAGER, 'collections', _collections_transform)
 
+astroid.register_module_extender(astroid.MANAGER, "collections", _collections_transform)

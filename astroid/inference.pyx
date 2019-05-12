@@ -50,6 +50,8 @@ def infer_end(self, context=None):
 
     """
     yield self
+
+
 nodes.Module._infer = infer_end
 nodes.ClassDef._infer = infer_end
 nodes.FunctionDef._infer = infer_end
@@ -65,12 +67,10 @@ def _infer_sequence_helper(node, context=None):
     for elt in node.elts:
         if isinstance(elt, nodes.Starred):
             starred = helpers.safe_infer(elt.value, context)
-            if starred in (None, util.Uninferable):
-                raise exceptions.InferenceError(node=node,
-                                                context=context)
-            if not hasattr(starred, 'elts'):
-                raise exceptions.InferenceError(node=node,
-                                                context=context)
+            if not starred:
+                raise exceptions.InferenceError(node=node, context=context)
+            if not hasattr(starred, "elts"):
+                raise exceptions.InferenceError(node=node, context=context)
             values.extend(_infer_sequence_helper(starred))
         else:
             values.append(elt)
@@ -78,15 +78,17 @@ def _infer_sequence_helper(node, context=None):
 
 
 @decorators.raise_if_nothing_inferred
-@decorators.path_wrapper
 @cython.binding(True)
 def infer_sequence(self, context=None):
     if not any(isinstance(e, nodes.Starred) for e in self.elts):
         yield self
     else:
         values = _infer_sequence_helper(self, context)
-        new_seq = type(self)(self.lineno, self.col_offset, self.parent)
+        new_seq = type(self)(
+            lineno=self.lineno, col_offset=self.col_offset, parent=self.parent
+        )
         new_seq.postinit(values)
+
         yield new_seq
 
 
@@ -135,19 +137,17 @@ def _infer_map(node, context):
     for name, value in node.items:
         if isinstance(name, nodes.DictUnpack):
             double_starred = helpers.safe_infer(value, context)
-            if double_starred in (None, util.Uninferable):
+            if not double_starred:
                 raise exceptions.InferenceError
             if not isinstance(double_starred, nodes.Dict):
-                raise exceptions.InferenceError(node=node,
-                                                context=context)
+                raise exceptions.InferenceError(node=node, context=context)
             unpack_items = _infer_map(double_starred, context)
             values = _update_with_replacement(values, unpack_items)
         else:
             key = helpers.safe_infer(name, context=context)
             value = helpers.safe_infer(value, context=context)
-            if any(elem in (None, util.Uninferable) for elem in (key, value)):
-                raise exceptions.InferenceError(node=node,
-                                                context=context)
+            if any(not elem for elem in (key, value)):
+                raise exceptions.InferenceError(node=node, context=context)
             values = _update_with_replacement(values, {key: value})
     return values
 
@@ -186,16 +186,19 @@ def infer_name(self, context=None):
             _, stmts = parent_function.lookup(self.name)
 
         if not stmts:
-            raise exceptions.NameInferenceError(name=self.name,
-                                                scope=self.scope(),
-                                                context=context)
-    context = context.clone()
+            raise exceptions.NameInferenceError(
+                name=self.name, scope=self.scope(), context=context
+            )
+    context = contextmod.copy_context(context)
     context.lookupname = self.name
     return bases._infer_stmts(stmts, context, frame)
 
+
 # pylint: disable=no-value-for-parameter
-nodes.Name._infer = decorators.raise_if_nothing_inferred(decorators.path_wrapper(infer_name))
-nodes.AssignName.infer_lhs = infer_name # won't work with a path wrapper
+nodes.Name._infer = decorators.raise_if_nothing_inferred(
+    decorators.path_wrapper(infer_name)
+)
+nodes.AssignName.infer_lhs = infer_name  # won't work with a path wrapper
 
 
 @decorators.raise_if_nothing_inferred
@@ -203,27 +206,26 @@ nodes.AssignName.infer_lhs = infer_name # won't work with a path wrapper
 @cython.binding(True)
 def infer_call(self, context=None):
     """infer a Call node by trying to guess what the function returns"""
-    callcontext = context.clone()
-    callcontext.callcontext = contextmod.CallContext(args=self.args,
-                                                     keywords=self.keywords)
+    callcontext = contextmod.copy_context(context)
+    callcontext.callcontext = contextmod.CallContext(
+        args=self.args, keywords=self.keywords
+    )
     callcontext.boundnode = None
-    extra_context = {}
     if context is not None:
-        extra_context = _populate_context_lookup(self, context.clone())
-        callcontext.extra_context = extra_context
+        callcontext.extra_context = _populate_context_lookup(self, context.clone())
+
     for callee in self.func.infer(context):
         if callee is util.Uninferable:
             yield callee
             continue
         try:
-            if hasattr(callee, 'infer_call_result'):
-                yield from callee.infer_call_result(
-                    caller=self,
-                    context=callcontext,
-                )
+            if hasattr(callee, "infer_call_result"):
+                yield from callee.infer_call_result(caller=self, context=callcontext)
         except exceptions.InferenceError:
             continue
     return dict(node=self, context=context)
+
+
 nodes.Call._infer = infer_call
 
 
@@ -242,21 +244,10 @@ def infer_import(self, context=None, asname=True):
         else:
             yield self.do_import_module(name)
     except exceptions.AstroidBuildingError as exc:
-        raise exceptions.InferenceError(
-            node=self,
-            context=context,
-        ) from exc
+        raise exceptions.InferenceError(node=self, context=context) from exc
 
 
 nodes.Import._infer = infer_import
-
-
-@cython.binding(True)
-def infer_name_module(self, name):
-    context = contextmod.InferenceContext()
-    context.lookupname = name
-    return self.infer(context, asname=False)
-nodes.Import.infer_name_module = infer_name_module
 
 
 @decorators.raise_if_nothing_inferred
@@ -273,10 +264,7 @@ def infer_import_from(self, context=None, asname=True):
     try:
         module = self.do_import_module()
     except exceptions.AstroidBuildingError as exc:
-        raise exceptions.InferenceError(
-            node=self,
-            context=context,
-        ) from exc
+        raise exceptions.InferenceError(node=self, context=context) from exc
 
     try:
         context = contextmod.copy_context(context)
@@ -285,16 +273,14 @@ def infer_import_from(self, context=None, asname=True):
         return bases._infer_stmts(stmts, context)
     except exceptions.AttributeInferenceError as error:
         raise exceptions.InferenceError(
-            error.message,
-            target=self,
-            attribute=name,
-            context=context,
+            error.message, target=self, attribute=name, context=context
         ) from error
+
+
 nodes.ImportFrom._infer = infer_import_from
 
 
 @decorators.raise_if_nothing_inferred
-@cython.binding(True)
 def infer_attribute(self, context=None):
     """infer an Attribute node by using getattr on the associated object"""
     for owner in self.expr.infer(context):
@@ -306,11 +292,14 @@ def infer_attribute(self, context=None):
             # This handles the situation where the attribute is accessed through a subclass
             # of a base class and the attribute is defined at the base class's level,
             # by taking in consideration a redefinition in the subclass.
-            if (isinstance(owner, bases.Instance)
-                    and isinstance(context.boundnode, bases.Instance)):
+            if isinstance(owner, bases.Instance) and isinstance(
+                context.boundnode, bases.Instance
+            ):
                 try:
-                    if helpers.is_subtype(helpers.object_type(context.boundnode),
-                                          helpers.object_type(owner)):
+                    if helpers.is_subtype(
+                        helpers.object_type(context.boundnode),
+                        helpers.object_type(owner),
+                    ):
                         owner = context.boundnode
                 except exceptions._NonDeducibleTypeHierarchy:
                     # Can't determine anything useful.
@@ -326,8 +315,13 @@ def infer_attribute(self, context=None):
             # XXX method / function
             context.boundnode = None
     return dict(node=self, context=context)
-nodes.Attribute._infer = decorators.path_wrapper(infer_attribute)
-nodes.AssignAttr.infer_lhs = infer_attribute # # won't work with a path wrapper
+
+
+nodes.Attribute._infer = decorators.raise_if_nothing_inferred(
+    decorators.path_wrapper(infer_attribute)
+)
+# won't work with a path wrapper
+nodes.AssignAttr.infer_lhs = decorators.raise_if_nothing_inferred(infer_attribute)
 
 
 @decorators.raise_if_nothing_inferred
@@ -337,15 +331,13 @@ def infer_global(self, context=None):
     if context.lookupname is None:
         raise exceptions.InferenceError(node=self, context=context)
     try:
-        return bases._infer_stmts(self.root().getattr(context.lookupname),
-                                  context)
+        return bases._infer_stmts(self.root().getattr(context.lookupname), context)
     except exceptions.AttributeInferenceError as error:
         raise exceptions.InferenceError(
-            error.message,
-            target=self,
-            attribute=context.lookupname,
-            context=context,
+            error.message, target=self, attribute=context.lookupname, context=context
         ) from error
+
+
 nodes.Global._infer = infer_global
 
 
@@ -363,52 +355,52 @@ def infer_subscript(self, context=None):
     handle each supported index type accordingly.
     """
 
-    try:
-        value = next(self.value.infer(context))
-    except StopIteration:
-        return None
-    if value is util.Uninferable:
-        yield util.Uninferable
-        return None
+    found_one = False
+    for value in self.value.infer(context):
+        if value is util.Uninferable:
+            yield util.Uninferable
+            return None
+        for index in self.slice.infer(context):
+            if index is util.Uninferable:
+                yield util.Uninferable
+                return None
 
-    try:
-        index = next(self.slice.infer(context))
-    except StopIteration:
-        return None
-    if index is util.Uninferable:
-        yield util.Uninferable
-        return None
+            # Try to deduce the index value.
+            index_value = _SUBSCRIPT_SENTINEL
+            if value.__class__ == bases.Instance:
+                index_value = index
+            else:
+                if index.__class__ == bases.Instance:
+                    instance_as_index = helpers.class_instance_as_index(index)
+                    if instance_as_index:
+                        index_value = instance_as_index
+                else:
+                    index_value = index
+            if index_value is _SUBSCRIPT_SENTINEL:
+                raise exceptions.InferenceError(node=self, context=context)
 
-    # Try to deduce the index value.
-    index_value = _SUBSCRIPT_SENTINEL
-    if value.__class__ == bases.Instance:
-        index_value = index
-    else:
-        if index.__class__ == bases.Instance:
-            instance_as_index = helpers.class_instance_as_index(index)
-            if instance_as_index:
-                index_value = instance_as_index
-        else:
-            index_value = index
-    if index_value is _SUBSCRIPT_SENTINEL:
-        raise exceptions.InferenceError(node=self, context=context)
+            try:
+                assigned = value.getitem(index_value, context)
+            except (
+                exceptions.AstroidTypeError,
+                exceptions.AstroidIndexError,
+                exceptions.AttributeInferenceError,
+                AttributeError,
+            ) as exc:
+                raise exceptions.InferenceError(node=self, context=context) from exc
 
-    try:
-        assigned = value.getitem(index_value, context)
-    except (exceptions.AstroidTypeError,
-            exceptions.AstroidIndexError,
-            exceptions.AttributeInferenceError,
-            AttributeError) as exc:
-        raise exceptions.InferenceError(node=self, context=context) from exc
+            # Prevent inferring if the inferred subscript
+            # is the same as the original subscripted object.
+            if self is assigned or assigned is util.Uninferable:
+                yield util.Uninferable
+                return None
+            yield from assigned.infer(context)
+            found_one = True
 
-    # Prevent inferring if the inferred subscript
-    # is the same as the original subscripted object.
-    if self is assigned or assigned is util.Uninferable:
-        yield util.Uninferable
-        return None
-    yield from assigned.infer(context)
+    if found_one:
+        return dict(node=self, context=context)
+    return None
 
-    return dict(node=self, context=context)
 
 nodes.Subscript._infer = decorators.path_wrapper(infer_subscript)
 nodes.Subscript.infer_lhs = infer_subscript
@@ -425,7 +417,7 @@ def _infer_boolop(self, context=None):
     node.
     """
     values = self.values
-    if self.op == 'or':
+    if self.op == "or":
         predicate = operator.truth
     else:
         predicate = operator.not_
@@ -466,6 +458,7 @@ def _infer_boolop(self, context=None):
             yield value
 
     return dict(node=self, context=context)
+
 
 nodes.BoolOp._infer = _infer_boolop
 
@@ -544,9 +537,11 @@ def _infer_unaryop(self, context=None):
 @cython.binding(True)
 def infer_unaryop(self, context=None):
     """Infer what an UnaryOp should return when evaluated."""
-    yield from _filter_operation_errors(self, _infer_unaryop, context,
-                                        util.BadUnaryOperationMessage)
+    yield from _filter_operation_errors(
+        self, _infer_unaryop, context, util.BadUnaryOperationMessage
+    )
     return dict(node=self, context=context)
+
 
 nodes.UnaryOp._infer_unaryop = _infer_unaryop
 nodes.UnaryOp._infer = infer_unaryop
@@ -571,11 +566,15 @@ def _invoke_binop_inference(instance, opnode, op, other, context, method_name):
 def _aug_op(instance, opnode, op, other, context, reverse=False):
     """Get an inference callable for an augmented binary operation."""
     method_name = protocols.AUGMENTED_OP_METHOD[op]
-    return functools.partial(_invoke_binop_inference,
-                             instance=instance,
-                             op=op, opnode=opnode, other=other,
-                             context=context,
-                             method_name=method_name)
+    return functools.partial(
+        _invoke_binop_inference,
+        instance=instance,
+        op=op,
+        opnode=opnode,
+        other=other,
+        context=context,
+        method_name=method_name,
+    )
 
 
 def _bin_op(instance, opnode, op, other, context, reverse=False):
@@ -587,11 +586,15 @@ def _bin_op(instance, opnode, op, other, context, reverse=False):
         method_name = protocols.REFLECTED_BIN_OP_METHOD[op]
     else:
         method_name = protocols.BIN_OP_METHOD[op]
-    return functools.partial(_invoke_binop_inference,
-                             instance=instance,
-                             op=op, opnode=opnode, other=other,
-                             context=context,
-                             method_name=method_name)
+    return functools.partial(
+        _invoke_binop_inference,
+        instance=instance,
+        op=op,
+        opnode=opnode,
+        other=other,
+        context=context,
+        method_name=method_name,
+    )
 
 
 def _get_binop_contexts(context, left, right):
@@ -615,8 +618,9 @@ def _same_type(type1, type2):
     return type1.qname() == type2.qname()
 
 
-def _get_binop_flow(left, left_type, binary_opnode, right, right_type,
-                    context, reverse_context):
+def _get_binop_flow(
+    left, left_type, binary_opnode, right, right_type, context, reverse_context
+):
     """Get the flow for binary operations.
 
     The rules are a bit messy:
@@ -637,16 +641,21 @@ def _get_binop_flow(left, left_type, binary_opnode, right, right_type,
     elif helpers.is_subtype(left_type, right_type):
         methods = [_bin_op(left, binary_opnode, op, right, context)]
     elif helpers.is_supertype(left_type, right_type):
-        methods = [_bin_op(right, binary_opnode, op, left, reverse_context, reverse=True),
-                   _bin_op(left, binary_opnode, op, right, context)]
+        methods = [
+            _bin_op(right, binary_opnode, op, left, reverse_context, reverse=True),
+            _bin_op(left, binary_opnode, op, right, context),
+        ]
     else:
-        methods = [_bin_op(left, binary_opnode, op, right, context),
-                   _bin_op(right, binary_opnode, op, left, reverse_context, reverse=True)]
+        methods = [
+            _bin_op(left, binary_opnode, op, right, context),
+            _bin_op(right, binary_opnode, op, left, reverse_context, reverse=True),
+        ]
     return methods
 
 
-def _get_aug_flow(left, left_type, aug_opnode, right, right_type,
-                  context, reverse_context):
+def _get_aug_flow(
+    left, left_type, aug_opnode, right, right_type, context, reverse_context
+):
     """Get the flow for augmented binary operations.
 
     The rules are a bit messy:
@@ -665,19 +674,27 @@ def _get_aug_flow(left, left_type, aug_opnode, right, right_type,
     bin_op = aug_opnode.op.strip("=")
     aug_op = aug_opnode.op
     if _same_type(left_type, right_type):
-        methods = [_aug_op(left, aug_opnode, aug_op, right, context),
-                   _bin_op(left, aug_opnode, bin_op, right, context)]
+        methods = [
+            _aug_op(left, aug_opnode, aug_op, right, context),
+            _bin_op(left, aug_opnode, bin_op, right, context),
+        ]
     elif helpers.is_subtype(left_type, right_type):
-        methods = [_aug_op(left, aug_opnode, aug_op, right, context),
-                   _bin_op(left, aug_opnode, bin_op, right, context)]
+        methods = [
+            _aug_op(left, aug_opnode, aug_op, right, context),
+            _bin_op(left, aug_opnode, bin_op, right, context),
+        ]
     elif helpers.is_supertype(left_type, right_type):
-        methods = [_aug_op(left, aug_opnode, aug_op, right, context),
-                   _bin_op(right, aug_opnode, bin_op, left, reverse_context, reverse=True),
-                   _bin_op(left, aug_opnode, bin_op, right, context)]
+        methods = [
+            _aug_op(left, aug_opnode, aug_op, right, context),
+            _bin_op(right, aug_opnode, bin_op, left, reverse_context, reverse=True),
+            _bin_op(left, aug_opnode, bin_op, right, context),
+        ]
     else:
-        methods = [_aug_op(left, aug_opnode, aug_op, right, context),
-                   _bin_op(left, aug_opnode, bin_op, right, context),
-                   _bin_op(right, aug_opnode, bin_op, left, reverse_context, reverse=True)]
+        methods = [
+            _aug_op(left, aug_opnode, aug_op, right, context),
+            _bin_op(left, aug_opnode, bin_op, right, context),
+            _bin_op(right, aug_opnode, bin_op, left, reverse_context, reverse=True),
+        ]
     return methods
 
 
@@ -691,8 +708,9 @@ def _infer_binary_operation(left, right, binary_opnode, context, flow_factory):
     context, reverse_context = _get_binop_contexts(context, left, right)
     left_type = helpers.object_type(left)
     right_type = helpers.object_type(right)
-    methods = flow_factory(left, left_type, binary_opnode, right, right_type,
-                           context, reverse_context)
+    methods = flow_factory(
+        left, left_type, binary_opnode, right, right_type, context, reverse_context
+    )
     for method in methods:
         try:
             results = list(method())
@@ -710,15 +728,15 @@ def _infer_binary_operation(left, right, binary_opnode, context, flow_factory):
 
             if all(map(_is_not_implemented, results)):
                 continue
-            not_implemented = sum(1 for result in results
-                                  if _is_not_implemented(result))
+            not_implemented = sum(
+                1 for result in results if _is_not_implemented(result)
+            )
             if not_implemented and not_implemented != len(results):
                 # Can't infer yet what this is.
                 yield util.Uninferable
                 return
 
-            for result in results:
-                yield result
+            yield from results
             return
     # The operation doesn't seem to be supported so let the caller know about it
     yield util.BadBinaryOperationMessage(left_type, binary_opnode.op, right_type)
@@ -727,42 +745,37 @@ def _infer_binary_operation(left, right, binary_opnode, context, flow_factory):
 @cython.binding(True)
 def _infer_binop(self, context):
     """Binary operation inference logic."""
-    if context is None:
-        context = contextmod.InferenceContext()
     left = self.left
     right = self.right
 
     # we use two separate contexts for evaluating lhs and rhs because
     # 1. evaluating lhs may leave some undesired entries in context.path
     #    which may not let us infer right value of rhs
-    lhs_context = context.clone()
-    rhs_context = context.clone()
-
-    for lhs in left.infer(context=lhs_context):
-        if lhs is util.Uninferable:
+    context = context or contextmod.InferenceContext()
+    lhs_context = contextmod.copy_context(context)
+    rhs_context = contextmod.copy_context(context)
+    lhs_iter = left.infer(context=lhs_context)
+    rhs_iter = right.infer(context=rhs_context)
+    for lhs, rhs in itertools.product(lhs_iter, rhs_iter):
+        if any(value is util.Uninferable for value in (rhs, lhs)):
             # Don't know how to process this.
             yield util.Uninferable
             return
 
-        for rhs in right.infer(context=rhs_context):
-            if rhs is util.Uninferable:
-                # Don't know how to process this.
-                yield util.Uninferable
-                return
-
-            try:
-                yield from _infer_binary_operation(
-                    lhs, rhs, self, context, _get_binop_flow)
-            except exceptions._NonDeducibleTypeHierarchy:
-                yield util.Uninferable
+        try:
+            yield from _infer_binary_operation(lhs, rhs, self, context, _get_binop_flow)
+        except exceptions._NonDeducibleTypeHierarchy:
+            yield util.Uninferable
 
 
 @decorators.yes_if_nothing_inferred
 @decorators.path_wrapper
 @cython.binding(True)
 def infer_binop(self, context=None):
-    return _filter_operation_errors(self, _infer_binop, context,
-                                    util.BadBinaryOperationMessage)
+    return _filter_operation_errors(
+        self, _infer_binop, context, util.BadBinaryOperationMessage
+    )
+
 
 nodes.BinOp._infer_binop = _infer_binop
 nodes.BinOp._infer = infer_binop
@@ -774,31 +787,36 @@ def _infer_augassign(self, context=None):
     if context is None:
         context = contextmod.InferenceContext()
 
-    for lhs in self.target.infer_lhs(context=context):
-        if lhs is util.Uninferable:
+    rhs_context = context.clone()
+
+    lhs_iter = self.target.infer_lhs(context=context)
+    rhs_iter = self.value.infer(context=rhs_context)
+    for lhs, rhs in itertools.product(lhs_iter, rhs_iter):
+        if any(value is util.Uninferable for value in (rhs, lhs)):
             # Don't know how to process this.
             yield util.Uninferable
             return
 
-        rhs_context = context.clone()
-        for rhs in self.value.infer(context=rhs_context):
-            if rhs is util.Uninferable:
-                # Don't know how to process this.
-                yield util.Uninferable
-                return
-
-            try:
-                yield from _infer_binary_operation(lhs, rhs, self, context, _get_aug_flow)
-            except exceptions._NonDeducibleTypeHierarchy:
-                yield util.Uninferable
+        try:
+            yield from _infer_binary_operation(
+                left=lhs,
+                right=rhs,
+                binary_opnode=self,
+                context=context,
+                flow_factory=_get_aug_flow,
+            )
+        except exceptions._NonDeducibleTypeHierarchy:
+            yield util.Uninferable
 
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
 @cython.binding(True)
 def infer_augassign(self, context=None):
-    return _filter_operation_errors(self, _infer_augassign, context,
-                                    util.BadBinaryOperationMessage)
+    return _filter_operation_errors(
+        self, _infer_augassign, context, util.BadBinaryOperationMessage
+    )
+
 
 nodes.AugAssign._infer_augassign = _infer_augassign
 nodes.AugAssign._infer = infer_augassign
@@ -807,13 +825,14 @@ nodes.AugAssign._infer = infer_augassign
 
 
 @decorators.raise_if_nothing_inferred
-@decorators.path_wrapper
 @cython.binding(True)
 def infer_arguments(self, context=None):
     name = context.lookupname
     if name is None:
         raise exceptions.InferenceError(node=self, context=context)
     return protocols._arguments_infer_argname(self, name, context)
+
+
 nodes.Arguments._infer = infer_arguments
 
 
@@ -830,11 +849,11 @@ def infer_assign(self, context=None):
 
     stmts = list(self.assigned_stmts(context=context))
     return bases._infer_stmts(stmts, context)
+
+
 nodes.AssignName._infer = infer_assign
 nodes.AssignAttr._infer = infer_assign
 
-
-# no infer method on DelName and DelAttr (expected InferenceError)
 
 @decorators.raise_if_nothing_inferred
 @decorators.path_wrapper
@@ -847,14 +866,17 @@ def infer_empty_node(self, context=None):
             yield from MANAGER.infer_ast_from_something(self.object, context=context)
         except exceptions.AstroidError:
             yield util.Uninferable
+
+
 nodes.EmptyNode._infer = infer_empty_node
 
 
 @decorators.raise_if_nothing_inferred
-@decorators.path_wrapper
 @cython.binding(True)
 def infer_index(self, context=None):
     return self.value.infer(context)
+
+
 nodes.Index._infer = infer_index
 
 # TODO: move directly into bases.Instance when the dependency hell
@@ -869,20 +891,14 @@ def instance_getitem(self, index, context=None):
     # Create a new callcontext for providing index as an argument.
     new_context.callcontext = contextmod.CallContext(args=[index])
 
-    method = next(self.igetattr('__getitem__', context=context), None)
+    method = next(self.igetattr("__getitem__", context=context), None)
     if not isinstance(method, bases.BoundMethod):
         raise exceptions.InferenceError(
-            'Could not find __getitem__ for {node!r}.',
-            node=self, context=context)
+            "Could not find __getitem__ for {node!r}.", node=self, context=context
+        )
 
-    try:
-        return next(method.infer_call_result(self, new_context))
-    except StopIteration as exc:
-        raise exceptions.InferenceError(
-            message='Inference for {node!r}[{index!s}] failed.',
-            node=self,
-            index=index,
-            context=context) from exc
+    return next(method.infer_call_result(self, new_context))
+
 
 bases.Instance.getitem = instance_getitem
 

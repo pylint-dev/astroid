@@ -13,7 +13,8 @@ from astroid import MANAGER
 
 
 def pkg_resources_transform():
-    return parse('''
+    return parse(
+        """
 def require(*requirements):
     return pkg_resources.working_set.require(*requirements)
 
@@ -67,6 +68,8 @@ def get_distribution(dist):
     return Distribution(dist)
 
 _namespace_packages = {}
-''')
+"""
+    )
 
-register_module_extender(MANAGER, 'pkg_resources', pkg_resources_transform)
+
+register_module_extender(MANAGER, "pkg_resources", pkg_resources_transform)

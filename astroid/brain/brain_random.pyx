@@ -7,33 +7,19 @@ from astroid import helpers
 from astroid import MANAGER
 
 
-ACCEPTED_ITERABLES_FOR_SAMPLE = (
-    astroid.List,
-    astroid.Set,
-    astroid.Tuple,
-)
+ACCEPTED_ITERABLES_FOR_SAMPLE = (astroid.List, astroid.Set, astroid.Tuple)
 
 
 def _clone_node_with_lineno(node, parent, lineno):
     cls = node.__class__
     other_fields = node._other_fields
     _astroid_fields = node._astroid_fields
-    init_params = {
-        'lineno': lineno,
-        'col_offset': node.col_offset,
-        'parent': parent
-    }
-    postinit_params = {
-        param: getattr(node, param)
-        for param in _astroid_fields
-    }
+    init_params = {"lineno": lineno, "col_offset": node.col_offset, "parent": parent}
+    postinit_params = {param: getattr(node, param) for param in _astroid_fields}
     if other_fields:
-        init_params.update({
-            param: getattr(node, param)
-            for param in other_fields
-        })
+        init_params.update({param: getattr(node, param) for param in other_fields})
     new_node = cls(**init_params)
-    if hasattr(node, 'postinit') and _astroid_fields:
+    if hasattr(node, "postinit") and _astroid_fields:
         new_node.postinit(**postinit_params)
     return new_node
 
@@ -49,7 +35,7 @@ def infer_random_sample(node, context=None):
         raise astroid.UseInferenceDefault
 
     inferred_sequence = helpers.safe_infer(node.args[0], context=context)
-    if inferred_sequence in (None, astroid.Uninferable):
+    if not inferred_sequence:
         raise astroid.UseInferenceDefault
 
     if not isinstance(inferred_sequence, ACCEPTED_ITERABLES_FOR_SAMPLE):
@@ -65,33 +51,25 @@ def infer_random_sample(node, context=None):
         raise astroid.UseInferenceDefault
 
     new_node = astroid.List(
-        lineno=node.lineno,
-        col_offset=node.col_offset,
-        parent=node.scope(),
+        lineno=node.lineno, col_offset=node.col_offset, parent=node.scope()
     )
     new_elts = [
-        _clone_node_with_lineno(
-            elt,
-            parent=new_node,
-            lineno=new_node.lineno
-        )
+        _clone_node_with_lineno(elt, parent=new_node, lineno=new_node.lineno)
         for elt in elts
     ]
     new_node.postinit(new_elts)
-    return iter((new_node, ))
+    return iter((new_node,))
 
 
 def _looks_like_random_sample(node):
     func = node.func
     if isinstance(func, astroid.Attribute):
-        return func.attrname == 'sample'
+        return func.attrname == "sample"
     if isinstance(func, astroid.Name):
-        return func.name == 'sample'
+        return func.name == "sample"
     return False
 
 
 MANAGER.register_transform(
-    astroid.Call,
-    astroid.inference_tip(infer_random_sample),
-    _looks_like_random_sample,
+    astroid.Call, astroid.inference_tip(infer_random_sample), _looks_like_random_sample
 )

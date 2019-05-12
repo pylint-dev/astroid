@@ -12,6 +12,7 @@
 
 """This module contains some mixins for the different nodes.
 """
+import itertools
 
 from astroid import decorators
 from astroid import exceptions
@@ -53,7 +54,6 @@ class FilterStmtsMixin:
 
 
 class AssignTypeMixin:
-
     def assign_type(self):
         return self
 
@@ -69,7 +69,6 @@ class AssignTypeMixin:
 
 
 class ParentAssignTypeMixin(AssignTypeMixin):
-
     def assign_type(self):
         return self.parent.assign_type()
 
@@ -88,7 +87,7 @@ class ImportFromMixin(FilterStmtsMixin):
         # on relative imports
         # XXX: no more needed ?
         mymodule = self.root()
-        level = getattr(self, 'level', None) # Import as no level
+        level = getattr(self, "level", None)  # Import as no level
         if modname is None:
             modname = self.modname
         # XXX we should investigate deeper if we really want to check
@@ -97,22 +96,25 @@ class ImportFromMixin(FilterStmtsMixin):
             # FIXME: we used to raise InferenceError here, but why ?
             return mymodule
 
-        return mymodule.import_module(modname, level=level,
-                                      relative_only=level and level >= 1)
+        return mymodule.import_module(
+            modname, level=level, relative_only=level and level >= 1
+        )
 
     def real_name(self, asname):
         """get name from 'as' name"""
         for name, _asname in self.names:
-            if name == '*':
+            if name == "*":
                 return asname
             if not _asname:
-                name = name.split('.', 1)[0]
+                name = name.split(".", 1)[0]
                 _asname = name
             if asname == _asname:
                 return name
         raise exceptions.AttributeInferenceError(
-            'Could not find original name for {attribute} in {target!r}',
-            target=self, attribute=asname)
+            "Could not find original name for {attribute} in {target!r}",
+            target=self,
+            attribute=asname,
+        )
 
 
 class MultiLineBlockMixin:
@@ -125,10 +127,7 @@ class MultiLineBlockMixin:
 
     @decorators.cachedproperty
     def _multi_line_blocks(self):
-        return tuple(
-            getattr(self, field)
-            for field in self._multi_line_block_fields
-        )
+        return tuple(getattr(self, field) for field in self._multi_line_block_fields)
 
     def _get_return_nodes_skip_functions(self):
         for block in self._multi_line_blocks:
@@ -144,13 +143,18 @@ class MultiLineBlockMixin:
                     continue
                 yield from child_node._get_yield_nodes_skip_lambdas()
 
+    @decorators.cached
     def _get_assign_nodes(self):
-        for block in self._multi_line_blocks:
-            for child_node in block:
-                yield from child_node._get_assign_nodes()
+        children_assign_nodes = (
+            child_node._get_assign_nodes()
+            for block in self._multi_line_blocks
+            for child_node in block
+        )
+        return list(itertools.chain.from_iterable(children_assign_nodes))
 
 
 class NoChildrenMixin:
     """Mixin for nodes with no children, e.g. Pass."""
+
     def get_children(self):
         yield from ()

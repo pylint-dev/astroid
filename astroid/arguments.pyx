@@ -36,19 +36,18 @@ class CallSite:
         self._unpacked_kwargs = self._unpack_keywords(keywords)
 
         self.positional_arguments = [
-            arg for arg in self._unpacked_args
-            if arg is not util.Uninferable
+            arg for arg in self._unpacked_args if arg is not util.Uninferable
         ]
         self.keyword_arguments = {
-            key: value for key, value in self._unpacked_kwargs.items()
+            key: value
+            for key, value in self._unpacked_kwargs.items()
             if value is not util.Uninferable
         }
 
     @classmethod
     def from_call(cls, call_node):
         """Get a CallSite object from the given Call node."""
-        callcontext = contextmod.CallContext(call_node.args,
-                                             call_node.keywords)
+        callcontext = contextmod.CallContext(call_node.args, call_node.keywords)
         return cls(callcontext)
 
     def has_invalid_arguments(self):
@@ -126,7 +125,7 @@ class CallSite:
                 if inferred is util.Uninferable:
                     values.append(util.Uninferable)
                     continue
-                if not hasattr(inferred, 'elts'):
+                if not hasattr(inferred, "elts"):
                     values.append(util.Uninferable)
                     continue
                 values.extend(inferred.elts)
@@ -143,10 +142,13 @@ class CallSite:
             context: Inference context object
         """
         if name in self.duplicated_keywords:
-            raise exceptions.InferenceError('The arguments passed to {func!r} '
-                                            ' have duplicate keywords.',
-                                            call_site=self, func=funcnode,
-                                            arg=name, context=context)
+            raise exceptions.InferenceError(
+                "The arguments passed to {func!r} " " have duplicate keywords.",
+                call_site=self,
+                func=funcnode,
+                arg=name,
+                context=context,
+            )
 
         # Look into the keywords first, maybe it's already there.
         try:
@@ -157,18 +159,23 @@ class CallSite:
         # Too many arguments given and no variable arguments.
         if len(self.positional_arguments) > len(funcnode.args.args):
             if not funcnode.args.vararg:
-                raise exceptions.InferenceError('Too many positional arguments '
-                                                'passed to {func!r} that does '
-                                                'not have *args.',
-                                                call_site=self, func=funcnode,
-                                                arg=name, context=context)
+                raise exceptions.InferenceError(
+                    "Too many positional arguments "
+                    "passed to {func!r} that does "
+                    "not have *args.",
+                    call_site=self,
+                    func=funcnode,
+                    arg=name,
+                    context=context,
+                )
 
-        positional = self.positional_arguments[:len(funcnode.args.args)]
-        vararg = self.positional_arguments[len(funcnode.args.args):]
+        positional = self.positional_arguments[: len(funcnode.args.args)]
+        vararg = self.positional_arguments[len(funcnode.args.args) :]
         argindex = funcnode.args.find_argname(name)[0]
         kwonlyargs = {arg.name for arg in funcnode.args.kwonlyargs}
         kwargs = {
-            key: value for key, value in self.keyword_arguments.items()
+            key: value
+            for key, value in self.keyword_arguments.items()
             if key not in kwonlyargs
         }
         # If there are too few positionals compared to
@@ -184,7 +191,7 @@ class CallSite:
 
         if argindex is not None:
             # 2. first argument of instance/class method
-            if argindex == 0 and funcnode.type in ('method', 'classmethod'):
+            if argindex == 0 and funcnode.type in ("method", "classmethod"):
                 if context.boundnode is not None:
                     boundnode = context.boundnode
                 else:
@@ -198,18 +205,18 @@ class CallSite:
                     # first argument is always the class.
                     method_scope = funcnode.parent.scope()
                     if method_scope is boundnode.metaclass():
-                        return iter((boundnode, ))
+                        return iter((boundnode,))
 
-                if funcnode.type == 'method':
+                if funcnode.type == "method":
                     if not isinstance(boundnode, bases.Instance):
                         boundnode = bases.Instance(boundnode)
                     return iter((boundnode,))
-                if funcnode.type == 'classmethod':
+                if funcnode.type == "classmethod":
                     return iter((boundnode,))
             # if we have a method, extract one position
             # from the index, so we'll take in account
             # the extra parameter represented by `self` or `cls`
-            if funcnode.type in ('method', 'classmethod'):
+            if funcnode.type in ("method", "classmethod"):
                 argindex -= 1
             # 2. search arg index
             try:
@@ -227,13 +234,20 @@ class CallSite:
                     "{keyword_arguments!r}.",
                     keyword_arguments=self.keyword_arguments,
                     unpacked_kwargs=self._unpacked_kwargs,
-                    call_site=self, func=funcnode, arg=name, context=context)
-            kwarg = nodes.Dict(lineno=funcnode.args.lineno,
-                               col_offset=funcnode.args.col_offset,
-                               parent=funcnode.args)
-            kwarg.postinit([(nodes.const_factory(key), value)
-                            for key, value in kwargs.items()])
-            return iter((kwarg, ))
+                    call_site=self,
+                    func=funcnode,
+                    arg=name,
+                    context=context,
+                )
+            kwarg = nodes.Dict(
+                lineno=funcnode.args.lineno,
+                col_offset=funcnode.args.col_offset,
+                parent=funcnode.args,
+            )
+            kwarg.postinit(
+                [(nodes.const_factory(key), value) for key, value in kwargs.items()]
+            )
+            return iter((kwarg,))
         if funcnode.args.vararg == name:
             # It wants all the args that were passed into
             # the call site.
@@ -244,18 +258,28 @@ class CallSite:
                     "correspond to {positional_arguments!r}.",
                     positional_arguments=self.positional_arguments,
                     unpacked_args=self._unpacked_args,
-                    call_site=self, func=funcnode, arg=name, context=context)
-            args = nodes.Tuple(lineno=funcnode.args.lineno,
-                               col_offset=funcnode.args.col_offset,
-                               parent=funcnode.args)
+                    call_site=self,
+                    func=funcnode,
+                    arg=name,
+                    context=context,
+                )
+            args = nodes.Tuple(
+                lineno=funcnode.args.lineno,
+                col_offset=funcnode.args.col_offset,
+                parent=funcnode.args,
+            )
             args.postinit(vararg)
-            return iter((args, ))
+            return iter((args,))
 
         # Check if it's a default parameter.
         try:
             return funcnode.args.default_value(name).infer(context)
         except exceptions.NoDefault:
             pass
-        raise exceptions.InferenceError('No value found for argument {name} to '
-                                        '{func!r}', call_site=self,
-                                        func=funcnode, arg=name, context=context)
+        raise exceptions.InferenceError(
+            "No value found for argument {name} to " "{func!r}",
+            call_site=self,
+            func=funcnode,
+            arg=name,
+            context=context,
+        )

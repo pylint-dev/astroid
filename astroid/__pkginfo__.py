@@ -17,41 +17,41 @@
 
 """astroid packaging information"""
 
-distname = 'astroid'
+distname = "astroid"
 
-modname = 'astroid'
+modname = "astroid"
 
-version = '2.0.4'
-numversion = tuple(int(elem) for elem in version.split('.') if elem.isdigit())
+version = "2.3.0"
+numversion = tuple(int(elem) for elem in version.split(".") if elem.isdigit())
 
 extras_require = {}
 install_requires = [
-    'lazy_object_proxy',
-    'six',
-    'wrapt',
+    "lazy_object_proxy",
+    "six",
+    "wrapt",
     'typing;python_version<"3.5"',
-    'typed_ast;python_version<"3.7" and implementation_name== "cpython"'
-
+    'typed-ast>=1.3.0;implementation_name== "cpython"',
 ]
 
 # pylint: disable=redefined-builtin; why license is a builtin anyway?
-license = 'LGPL'
+license = "LGPL"
 
-author = 'Python Code Quality Authority'
-author_email = 'code-quality@python.org'
+author = "Python Code Quality Authority"
+author_email = "code-quality@python.org"
 mailinglist = "mailto://%s" % author_email
-web = 'https://github.com/PyCQA/astroid'
+web = "https://github.com/PyCQA/astroid"
 
 description = "An abstract syntax tree for Python with inference support."
 
-classifiers = ["Topic :: Software Development :: Libraries :: Python Modules",
-               "Topic :: Software Development :: Quality Assurance",
-               "Programming Language :: Python",
-               "Programming Language :: Python :: 3",
-               "Programming Language :: Python :: 3.4",
-               "Programming Language :: Python :: 3.5",
-               "Programming Language :: Python :: 3.6",
-               "Programming Language :: Python :: 3.7",
-               "Programming Language :: Python :: Implementation :: CPython",
-               "Programming Language :: Python :: Implementation :: PyPy",
-              ]
+classifiers = [
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Quality Assurance",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.4",
+    "Programming Language :: Python :: 3.5",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]

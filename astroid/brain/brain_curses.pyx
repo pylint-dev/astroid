@@ -4,7 +4,8 @@ import astroid
 
 
 def _curses_transform():
-    return astroid.parse('''
+    return astroid.parse(
+        """
     A_ALTCHARSET = 1
     A_BLINK = 1
     A_BOLD = 1
@@ -171,7 +172,8 @@ def _curses_transform():
     COLOR_RED = 1
     COLOR_WHITE = 1
     COLOR_YELLOW = 1
-        ''')
+        """
+    )
 
 
-astroid.register_module_extender(astroid.MANAGER, 'curses', _curses_transform)
+astroid.register_module_extender(astroid.MANAGER, "curses", _curses_transform)

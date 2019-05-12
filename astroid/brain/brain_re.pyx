@@ -10,7 +10,8 @@ if PY36:
     # where every entry will be exposed via updating globals()
 
     def _re_transform():
-        return astroid.parse('''
+        return astroid.parse(
+            """
         import sre_compile
         ASCII = sre_compile.SRE_FLAG_ASCII
         IGNORECASE = sre_compile.SRE_FLAG_IGNORECASE
@@ -29,6 +30,7 @@ if PY36:
         TEMPLATE = sre_compile.SRE_FLAG_TEMPLATE
         T = TEMPLATE
         DEBUG = sre_compile.SRE_FLAG_DEBUG
-        ''')
+        """
+        )
 
-    astroid.register_module_extender(astroid.MANAGER, 're', _re_transform)
+    astroid.register_module_extender(astroid.MANAGER, "re", _re_transform)

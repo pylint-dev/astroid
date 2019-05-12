@@ -14,7 +14,8 @@ from astroid.builder import AstroidBuilder
 
 
 def pytest_transform():
-    return AstroidBuilder(MANAGER).string_build('''
+    return AstroidBuilder(MANAGER).string_build(
+        """
 
 try:
     import _pytest.mark
@@ -79,7 +80,9 @@ except ImportError:
         yield_fixture = _pytest.python.yield_fixture
     except ImportError:
         pass
-''')
+"""
+    )
 
-register_module_extender(MANAGER, 'pytest', pytest_transform)
-register_module_extender(MANAGER, 'py.test', pytest_transform)
+
+register_module_extender(MANAGER, "pytest", pytest_transform)
+register_module_extender(MANAGER, "py.test", pytest_transform)

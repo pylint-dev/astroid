@@ -4,18 +4,18 @@
 Astroid hook for the attrs library
 
 Without this hook pylint reports unsupported-assignment-operation
-for atrrs classes
+for attrs classes
 """
 
 import astroid
 from astroid import MANAGER
 
 
-ATTR_IB = 'attr.ib'
+ATTRIB_NAMES = frozenset(("attr.ib", "attrib", "attr.attrib"))
+ATTRS_NAMES = frozenset(("attr.s", "attrs", "attr.attrs", "attr.attributes"))
 
 
-def is_decorated_with_attrs(
-        node, decorator_names=('attr.s', 'attr.attrs', 'attr.attributes')):
+def is_decorated_with_attrs(node, decorator_names=ATTRS_NAMES):
     """Return True if a decorated node has
     an attr decorator applied."""
     if not node.decorators:
@@ -40,7 +40,7 @@ def attr_attributes_transform(node):
         if not isinstance(cdefbodynode, astroid.Assign):
             continue
         if isinstance(cdefbodynode.value, astroid.Call):
-            if cdefbodynode.value.func.as_string() != ATTR_IB:
+            if cdefbodynode.value.func.as_string() not in ATTRIB_NAMES:
                 continue
         else:
             continue
@@ -49,12 +49,11 @@ def attr_attributes_transform(node):
             rhs_node = astroid.Unknown(
                 lineno=cdefbodynode.lineno,
                 col_offset=cdefbodynode.col_offset,
-                parent=cdefbodynode
+                parent=cdefbodynode,
             )
             node.locals[target.name] = [rhs_node]
 
 
 MANAGER.register_transform(
-    astroid.ClassDef,
-    attr_attributes_transform,
-    is_decorated_with_attrs)
+    astroid.ClassDef, attr_attributes_transform, is_decorated_with_attrs
+)

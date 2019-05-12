@@ -1,7 +1,8 @@
 import ast
-import sys
 from collections import namedtuple
+from functools import partial
 from typing import Optional
+import sys
 
 _ast_py2 = _ast_py3 = None
 try:
@@ -11,24 +12,23 @@ except ImportError:
     pass
 
 
-FunctionType = namedtuple('FunctionType', ['argtypes', 'returns'])
+FunctionType = namedtuple("FunctionType", ["argtypes", "returns"])
 
 
 def _get_parser_module(parse_python_two: bool = False):
     if parse_python_two:
         parser_module = _ast_py2
-    elif sys.version_info[:2] >= (3, 7):
-        # The typed_ast module doesn't support the full 3.7 syntax yet.
-        # Remove once typed_ast is updated.
-        parser_module = ast
     else:
         parser_module = _ast_py3
     return parser_module or ast
 
 
-def _parse(string: str,
-           parse_python_two: bool = False):
-    return _get_parser_module(parse_python_two=parse_python_two).parse(string)
+def _parse(string: str, parse_python_two: bool = False):
+    parse_module = _get_parser_module(parse_python_two=parse_python_two)
+    parse_func = parse_module.parse
+    if _ast_py3 and not parse_python_two:
+        parse_func = partial(parse_func, feature_version=sys.version_info.minor)
+    return parse_func(string)
 
 
 def parse_function_type_comment(type_comment: str) -> Optional[FunctionType]:
@@ -37,7 +37,4 @@ def parse_function_type_comment(type_comment: str) -> Optional[FunctionType]:
         return None
 
     func_type = _ast_py3.parse(type_comment, "<type_comment>", "func_type")
-    return FunctionType(
-        argtypes=func_type.argtypes,
-        returns=func_type.returns,
-    )
+    return FunctionType(argtypes=func_type.argtypes, returns=func_type.returns)

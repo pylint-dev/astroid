@@ -2,6 +2,7 @@
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 
 """Astroid hooks for understanding functools library module."""
+from functools import partial
 from itertools import chain
 
 import astroid
@@ -11,9 +12,10 @@ from astroid import extract_node
 from astroid import helpers
 from astroid.interpreter import objectmodel
 from astroid import MANAGER
+from astroid import objects
 
 
-LRU_CACHE = 'functools.lru_cache'
+LRU_CACHE = "functools.lru_cache"
 
 
 class LruWrappedModel(objectmodel.FunctionModel):
@@ -24,15 +26,18 @@ class LruWrappedModel(objectmodel.FunctionModel):
     """
 
     @property
-    def py__wrapped__(self):
+    def attr___wrapped__(self):
         return self._instance
 
     @property
-    def pycache_info(self):
-        cache_info = extract_node('''
+    def attr_cache_info(self):
+        cache_info = extract_node(
+            """
         from functools import _CacheInfo
         _CacheInfo(0, 0, 0, 0)
-        ''')
+        """
+        )
+
         class CacheInfoBoundMethod(BoundMethod):
             def infer_call_result(self, caller, context=None):
                 yield helpers.safe_infer(cache_info)
@@ -40,8 +45,8 @@ class LruWrappedModel(objectmodel.FunctionModel):
         return CacheInfoBoundMethod(proxy=self._instance, bound=self._instance)
 
     @property
-    def pycache_clear(self):
-        node = extract_node('''def cache_clear(self): pass''')
+    def attr_cache_clear(self):
+        node = extract_node("""def cache_clear(self): pass""")
         return BoundMethod(proxy=node, bound=self._instance.parent.scope())
 
 
@@ -60,10 +65,12 @@ def _functools_partial_inference(node, context=None):
     call = arguments.CallSite.from_call(node)
     number_of_positional = len(call.positional_arguments)
     if number_of_positional < 1:
-        raise astroid.UseInferenceDefault('functools.partial takes at least one argument')
+        raise astroid.UseInferenceDefault(
+            "functools.partial takes at least one argument"
+        )
     if number_of_positional == 1 and not call.keyword_arguments:
         raise astroid.UseInferenceDefault(
-            'functools.partial needs at least to have some filled arguments'
+            "functools.partial needs at least to have some filled arguments"
         )
 
     partial_function = call.positional_arguments[0]
@@ -72,51 +79,28 @@ def _functools_partial_inference(node, context=None):
     except astroid.InferenceError as exc:
         raise astroid.UseInferenceDefault from exc
     if inferred_wrapped_function is astroid.Uninferable:
-        raise astroid.UseInferenceDefault('Cannot infer the wrapped function')
+        raise astroid.UseInferenceDefault("Cannot infer the wrapped function")
     if not isinstance(inferred_wrapped_function, astroid.FunctionDef):
-        raise astroid.UseInferenceDefault('The wrapped function is not a function')
+        raise astroid.UseInferenceDefault("The wrapped function is not a function")
 
     # Determine if the passed keywords into the callsite are supported
     # by the wrapped function.
     function_parameters = chain(
         inferred_wrapped_function.args.args or (),
-        inferred_wrapped_function.args.kwonlyargs or ()
+        inferred_wrapped_function.args.kwonlyargs or (),
     )
     parameter_names = set(
-        param.name for param in function_parameters
+        param.name
+        for param in function_parameters
         if isinstance(param, astroid.AssignName)
     )
     if set(call.keyword_arguments) - parameter_names:
-        raise astroid.UseInferenceDefault('wrapped function received unknown parameters')
+        raise astroid.UseInferenceDefault(
+            "wrapped function received unknown parameters"
+        )
 
-    # Return a wrapped() object that can be used further for inference
-    class PartialFunction(astroid.FunctionDef):
-
-        filled_positionals = len(call.positional_arguments[1:])
-        filled_keywords = list(call.keyword_arguments)
-
-        def infer_call_result(self, caller=None, context=None):
-            nonlocal call
-            filled_args = call.positional_arguments[1:]
-            filled_keywords = call.keyword_arguments
-
-            if context:
-                current_passed_keywords = {
-                    keyword for (keyword, _) in context.callcontext.keywords
-                }
-                for keyword, value in filled_keywords.items():
-                    if keyword not in current_passed_keywords:
-                        context.callcontext.keywords.append((keyword, value))
-
-                call_context_args = context.callcontext.args or []
-                context.callcontext.args = filled_args + call_context_args
-
-            return super().infer_call_result(
-                caller=caller,
-                context=context,
-            )
-
-    partial_function = PartialFunction(
+    partial_function = objects.PartialFunction(
+        call,
         name=inferred_wrapped_function.name,
         doc=inferred_wrapped_function.doc,
         lineno=inferred_wrapped_function.lineno,
@@ -138,39 +122,36 @@ def _looks_like_lru_cache(node):
     """Check if the given function node is decorated with lru_cache."""
     if not node.decorators:
         return False
-
     for decorator in node.decorators.nodes:
         if not isinstance(decorator, astroid.Call):
             continue
-
-        func = helpers.safe_infer(decorator.func)
-        if func in (None, astroid.Uninferable):
-            continue
-
-        if isinstance(func, astroid.FunctionDef) and func.qname() == LRU_CACHE:
+        if _looks_like_functools_member(decorator, "lru_cache"):
             return True
     return False
 
 
-def _looks_like_functools_partial(node):
+def _looks_like_functools_member(node, member):
     """Check if the given Call node is a functools.partial call"""
     if isinstance(node.func, astroid.Name):
-        return node.func.name == 'partial'
+        return node.func.name == member
     elif isinstance(node.func, astroid.Attribute):
-        return (node.func.attrname == 'partial'
-                and isinstance(node.func.expr, astroid.Name)
-                and node.func.expr.name == 'functools')
+        return (
+            node.func.attrname == member
+            and isinstance(node.func.expr, astroid.Name)
+            and node.func.expr.name == "functools"
+        )
+
+
+_looks_like_partial = partial(_looks_like_functools_member, member="partial")
 
 
 MANAGER.register_transform(
-    astroid.FunctionDef,
-    _transform_lru_cache,
-    _looks_like_lru_cache,
+    astroid.FunctionDef, _transform_lru_cache, _looks_like_lru_cache
 )
 
 
 MANAGER.register_transform(
     astroid.Call,
     astroid.inference_tip(_functools_partial_inference),
-    _looks_like_functools_partial,
+    _looks_like_partial,
 )
