@@ -31,6 +31,7 @@ install_requires = [
     "wrapt",
     'typing;python_version<"3.5"',
     'typed-ast>=1.3.0;implementation_name== "cpython"',
+    'Cython'
 ]
 
 # pylint: disable=redefined-builtin; why license is a builtin anyway?
