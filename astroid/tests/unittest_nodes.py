@@ -1023,6 +1023,45 @@ def test_type_comments_function():
         assert node.type_comment_returns.as_string() == expected_returns_string
 
 
+@pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
+def test_type_comments_arguments():
+    module = builder.parse(
+        """
+    def func(
+        a,  # type: int
+    ):
+        # type: (...) -> str
+        pass
+    def func1(
+        a,  # type: int
+        b,  # type: int
+        c,  # type: int
+    ):
+        # type: (...) -> (str, str)
+        pass
+    def func2(
+        a,  # type: int
+        b,  # type: int
+        c,  # type: str
+        d,  # type: List[int]
+    ):
+        # type: (...) -> List[int]
+        pass
+    """
+    )
+    expected_annotations = [
+        ["int"],
+        ["int", "int", "int"],
+        ["int", "int", "str", "List[int]"],
+    ]
+    for node, expected_args in zip(module.body, expected_annotations):
+        assert len(node.type_comment_args) == 1
+        assert isinstance(node.type_comment_args[0], astroid.Ellipsis)
+        assert len(node.args.type_comment_args) == len(expected_args)
+        for expected_arg, actual_arg in zip(expected_args, node.args.type_comment_args):
+            assert actual_arg.as_string() == expected_arg
+
+
 def test_is_generator_for_yield_assignments():
     node = astroid.extract_node(
         """
