@@ -1006,6 +1006,7 @@ class TypingBrain(unittest.TestCase):
         from typing import NamedTuple
 
         class Example(NamedTuple):
+            CLASS_ATTR = "class_attr"
             mything: int
 
         Example(mything=1)
@@ -1013,6 +1014,11 @@ class TypingBrain(unittest.TestCase):
         )
         inferred = next(result.infer())
         self.assertIsInstance(inferred, astroid.Instance)
+
+        class_attr = inferred.getattr("CLASS_ATTR")[0]
+        self.assertIsInstance(class_attr, astroid.AssignName)
+        const = next(class_attr.infer())
+        self.assertEqual(const.value, "class_attr")
 
     def test_typing_types(self):
         ast_nodes = builder.extract_node(
