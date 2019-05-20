@@ -55,6 +55,10 @@ Release Date: TBA
 
   Close #665
 
+* Fix being unable to access class attributes on a NamedTuple.
+
+  Close PyCQA/pylint#1628
+
 
 What's New in astroid 2.2.0?
 ============================

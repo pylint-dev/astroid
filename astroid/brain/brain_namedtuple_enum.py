@@ -381,6 +381,15 @@ def infer_typing_namedtuple_class(class_node, context=None):
     generated_class_node = next(infer_named_tuple(node, context))
     for method in class_node.mymethods():
         generated_class_node.locals[method.name] = [method]
+
+    for assign in class_node.body:
+        if not isinstance(assign, nodes.Assign):
+            continue
+
+        for target in assign.targets:
+            attr = target.name
+            generated_class_node.locals[attr] = class_node.locals[attr]
+
     return iter((generated_class_node,))
 
 
