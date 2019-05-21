@@ -6,6 +6,12 @@ What's New in astroid 2.3.0?
 ============================
 Release Date: TBA
 
+* Instances of exceptions are inferred as such when inferring in non-exception context
+
+  This allows special inference support for exception attributes such as `.args`.
+
+  Close PyCQA/pylint#2333
+
 * Drop a superfluous and wrong callcontext when inferring the result of a context manager
 
   Close PyCQA/pylint#2859

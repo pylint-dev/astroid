@@ -5246,5 +5246,19 @@ def test_infer_context_manager_with_unknown_args():
     assert isinstance(next(node.infer()), nodes.Const)
 
 
+def test_subclass_of_exception():
+    code = """
+    class Error(Exception):
+        pass
+
+    a = Error()
+    a
+    """
+    inferred = next(extract_node(code).infer())
+    assert isinstance(inferred, Instance)
+    args = next(inferred.igetattr("args"))
+    assert isinstance(args, nodes.Tuple)
+
+
 if __name__ == "__main__":
     unittest.main()
