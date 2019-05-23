@@ -8,6 +8,7 @@
 
 import abc
 import collections
+import distutils
 import enum
 import imp
 import os
@@ -145,6 +146,12 @@ class ImpFinder(Finder):
                 for p in sys.path
                 if os.path.isdir(os.path.join(p, *processed))
             ]
+        # We already import distutils elsewhere in astroid,
+        # so if it is the same module, we can use it directly.
+        elif spec.name == "distutils" and spec.location in distutils.__path__:
+            # distutils is patched inside virtualenvs to pick up submodules
+            # from the original Python, not from the virtualenv itself.
+            path = list(distutils.__path__)
         else:
             path = [spec.location]
         return path

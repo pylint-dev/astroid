@@ -65,6 +65,9 @@ Release Date: TBA
 
   Close PyCQA/pylint#1628
 
+* Fixed being unable to find distutils submodules by name when in a virtualenv.
+
+  Close PyCQA/pylint#73
 
 What's New in astroid 2.2.0?
 ============================
