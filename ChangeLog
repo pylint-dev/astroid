@@ -7,6 +7,7 @@ What's New in astroid 2.3.0?
 Release Date: TBA
 
 * Numpy brain support is improved.
+
   Numpy's fondamental type ``numpy.ndarray`` has its own brain : ``brain_numpy_ndarray`` and 
   each numpy module that necessitates brain action has now its own numpy brain :
   
@@ -17,6 +18,12 @@ Release Date: TBA
     - ``numpy.core.numerictypes`` 
     - ``numpy.core.umath`` 
     - ``numpy.random.mtrand``
+
+  Close PyCQA/pylint#2865
+  Close PyCQA/pylint#2747
+  Close PyCQA/pylint#2721
+  Close PyCQA/pylint#2326
+  Close PyCQA/pylint#2021
 
 * Instances of exceptions are inferred as such when inferring in non-exception context
 
