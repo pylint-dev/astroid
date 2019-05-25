@@ -4,7 +4,6 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 import unittest
-import contextlib
 
 try:
     import numpy  # pylint: disable=unused-import
@@ -16,30 +15,8 @@ except ImportError:
 from astroid import builder
 
 
-class SubTestWrapper(unittest.TestCase):
-    """
-    A class for supporting all unittest version wether or not subTest is available
-    """
-
-    def subTest(self, msg=None, **params):
-        try:
-            # For python versions above 3.5 this should be ok
-            return super(SubTestWrapper, self).subTest(msg, **params)
-        except AttributeError:
-            #  For python versions below 3.5
-            return subTestMock(msg)
-
-
-@contextlib.contextmanager
-def subTestMock(msg=None):
-    """
-    A mock for subTest which do nothing
-    """
-    yield msg
-
-
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
-class BrainNumpyCoreFunctionBaseTest(SubTestWrapper):
+class BrainNumpyCoreFunctionBaseTest(unittest.TestCase):
     """
     Test the numpy core numeric brain module
     """
