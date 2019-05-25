@@ -1425,6 +1425,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         "varargannotation",
         "kwargannotation",
         "kwonlyargs_annotations",
+        "type_comment_args",
     )
     varargannotation = None
     """The type annotation for the variable length arguments.
@@ -1499,6 +1500,15 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         :type: list(NodeNG)
         """
 
+        self.type_comment_args = []
+        """The type annotation, passed by a type comment, of each argument.
+
+        If an argument does not have a type comment,
+        the value for that argument will be None.
+
+        :type: list(NodeNG or None)
+        """
+
     def postinit(
         self,
         args,
@@ -1509,6 +1519,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         kwonlyargs_annotations=None,
         varargannotation=None,
         kwargannotation=None,
+        type_comment_args=None,
     ):
         """Do some setup after initialisation.
 
@@ -1543,6 +1554,10 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         :param kwargannotation: The type annotation for the variable length
             keyword arguments.
         :type kwargannotation: NodeNG
+
+        :param type_comment_args: The type annotation,
+            passed by a type comment, of each argument.
+        :type type_comment_args: list(NodeNG or None)
         """
         self.args = args
         self.defaults = defaults
@@ -1552,6 +1567,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         self.kwonlyargs_annotations = kwonlyargs_annotations
         self.varargannotation = varargannotation
         self.kwargannotation = kwargannotation
+        self.type_comment_args = type_comment_args
 
     def _infer_name(self, frame, name):
         if self.parent is frame:

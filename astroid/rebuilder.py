@@ -220,6 +220,7 @@ class TreeRebuilder:
             kw_defaults = []
             annotations = []
             kwonlyargs_annotations = []
+        type_comment_args = [self.check_type_comment(child) for child in node.args]
 
         newnode.postinit(
             args=args,
@@ -230,6 +231,7 @@ class TreeRebuilder:
             kwonlyargs_annotations=kwonlyargs_annotations,
             varargannotation=varargannotation,
             kwargannotation=kwargannotation,
+            type_comment_args=type_comment_args,
         )
         # save argument names in locals:
         if vararg:

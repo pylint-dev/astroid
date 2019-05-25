@@ -48,6 +48,8 @@ from astroid import util
 
 BUILTINS = builtins.__name__
 ITER_METHODS = ("__iter__", "__getitem__")
+EXCEPTION_BASE_CLASSES = frozenset({"Exception", "BaseException"})
+objects = util.lazy_import("objects")
 
 
 def _c3_merge(sequences, cls, context):
@@ -2102,13 +2104,18 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                 dunder_call = next(metaclass.igetattr("__call__", context))
         except exceptions.AttributeInferenceError:
             pass
+
         if dunder_call and dunder_call.qname() != "builtins.type.__call__":
+            # Call type.__call__ if not set metaclass
+            # (since type is the default metaclass)
             context = contextmod.bind_context_to_node(context, self)
             yield from dunder_call.infer_call_result(caller, context)
         else:
-            # Call type.__call__ if not set metaclass
-            # (since type is the default metaclass)
-            yield bases.Instance(self)
+            if any(cls.name in EXCEPTION_BASE_CLASSES for cls in self.mro()):
+                # Subclasses of exceptions can be exception instances
+                yield objects.ExceptionInstance(self)
+            else:
+                yield bases.Instance(self)
 
     def scope_lookup(self, node, name, offset=0):
         """Lookup where the given name is assigned.
