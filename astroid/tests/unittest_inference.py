@@ -5260,5 +5260,34 @@ def test_subclass_of_exception():
     assert isinstance(args, nodes.Tuple)
 
 
+def test_ifexp_inference():
+    code = """
+    def truth_branch():
+        return 1 if True else 2
+
+    def false_branch():
+        return 1 if False else 2
+
+    def both_branches():
+        return 1 if unknown() else 2
+
+    truth_branch() #@
+    false_branch() #@
+    both_branches() #@
+    """
+    ast_nodes = extract_node(code)
+    first = next(ast_nodes[0].infer())
+    assert isinstance(first, nodes.Const)
+    assert first.value == 1
+
+    second = next(ast_nodes[1].infer())
+    assert isinstance(second, nodes.Const)
+    assert second.value == 2
+
+    third = list(ast_nodes[2].infer())
+    assert isinstance(third, list)
+    assert [third[0].value, third[1].value] == [1, 2]
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -6,6 +6,8 @@ What's New in astroid 2.3.0?
 ============================
 Release Date: TBA
 
+* Added support for inferring `IfExp` nodes.
+
 * Instances of exceptions are inferred as such when inferring in non-exception context
 
   This allows special inference support for exception attributes such as `.args`.

@@ -897,3 +897,32 @@ def _populate_context_lookup(call, context):
     for keyword in keywords:
         context_lookup[keyword.value] = context
     return context_lookup
+
+
+@decorators.raise_if_nothing_inferred
+def infer_ifexp(self, context=None):
+    """Support IfExp inference
+
+    If we can't infer the truthiness of the condition, we default
+    to inferring both branches. Otherwise, we infer either branch
+    depending on the condition.
+    """
+    both_branches = False
+    try:
+        test = next(self.test.infer(context=context))
+    except exceptions.InferenceError:
+        both_branches = True
+    else:
+        if test is not util.Uninferable:
+            if test.bool_value():
+                yield from self.body.infer(context=context)
+            else:
+                yield from self.orelse.infer(context=context)
+        else:
+            both_branches = True
+    if both_branches:
+        yield from self.body.infer(context=context)
+        yield from self.orelse.infer(context=context)
+
+
+nodes.IfExp._infer = infer_ifexp
