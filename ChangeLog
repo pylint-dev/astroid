@@ -6,6 +6,10 @@ What's New in astroid 2.3.0?
 ============================
 Release Date: TBA
 
+* Add support for Python 3.8's `NamedExpr` nodes, which is part of assignment expressions.
+
+  Close #674
+
 * Added support for inferring `IfExp` nodes.
 
 * Instances of exceptions are inferred as such when inferring in non-exception context

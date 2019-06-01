@@ -611,6 +611,12 @@ class AsStringVisitor3(AsStringVisitor):
             super(AsStringVisitor3, self).visit_comprehension(node),
         )
 
+    def visit_namedexpr(self, node):
+        """Return an assignment expression node as string"""
+        target = node.target.accept(self)
+        value = node.value.accept(self)
+        return "%s := %s" % (target, value)
+
 
 def _import_string(names):
     """return a list of (name, asname) formatted as a string"""

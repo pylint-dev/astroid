@@ -4623,6 +4623,31 @@ class JoinedStr(NodeNG):
         yield from self.values
 
 
+class NamedExpr(mixins.AssignTypeMixin, NodeNG):
+    """Represents the assignment from the assignment expression
+
+    >>> module = astroid.parse('if a := 1: pass')
+    >>> module.body[0].test
+    <NamedExpr l.1 at 0x7f23b2e4ed30>
+    """
+
+    _astroid_fields = ("target", "value")
+    target = None
+    """The assignment target
+
+    :type: Name
+    """
+    value = None
+    """The value that gets assigned in the expression
+
+    :type: NodeNG
+    """
+
+    def postinit(self, target, value):
+        self.target = target
+        self.value = value
+
+
 class Unknown(mixins.AssignTypeMixin, NodeNG):
     """This node represents a node in a constructed AST where
     introspection is not possible.  At the moment, it's only used in

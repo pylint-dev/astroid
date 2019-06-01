@@ -1134,5 +1134,30 @@ def test_f_string_correct_line_numbering():
     assert node.last_child().last_child().lineno == 5
 
 
+@pytest.mark.skipif(
+    sys.version_info[:2] < (3, 8), reason="needs assignment expressions"
+)
+def test_assignment_expression():
+    code = """
+    if __(a := 1):
+        pass
+    if __(b := test):
+        pass
+    """
+    first, second = astroid.extract_node(code)
+
+    assert isinstance(first.target, nodes.AssignName)
+    assert first.target.name == "a"
+    assert isinstance(first.value, nodes.Const)
+    assert first.value.value == 1
+    assert first.as_string() == "a := 1"
+
+    assert isinstance(second.target, nodes.AssignName)
+    assert second.target.name == "b"
+    assert isinstance(second.value, nodes.Name)
+    assert second.value.name == "test"
+    assert second.as_string() == "b := test"
+
+
 if __name__ == "__main__":
     unittest.main()

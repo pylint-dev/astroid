@@ -1063,6 +1063,13 @@ class TreeRebuilder3(TreeRebuilder):
         )
         return newnode
 
+    def visit_namedexpr(self, node, parent):
+        newnode = nodes.NamedExpr(node.lineno, node.col_offset, parent)
+        newnode.postinit(
+            self.visit(node.target, newnode), self.visit(node.value, newnode)
+        )
+        return newnode
+
 
 if sys.version_info >= (3, 0):
     TreeRebuilder = TreeRebuilder3
