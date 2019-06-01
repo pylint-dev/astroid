@@ -31,8 +31,8 @@ import abc
 import builtins as builtins_mod
 import itertools
 import pprint
-from functools import lru_cache
-from functools import singledispatch as _singledispatch
+import sys
+from functools import lru_cache, singledispatch as _singledispatch
 
 from astroid import as_string
 from astroid import bases
@@ -46,6 +46,7 @@ from astroid import util
 
 BUILTINS = builtins_mod.__name__
 MANAGER = manager.AstroidManager()
+PY38 = sys.version_info[:2] >= (3, 8)
 
 
 def _is_const(value):
@@ -4649,6 +4650,8 @@ CONST_CLS = {
     type(None): Const,
     type(NotImplemented): Const,
 }
+if PY38:
+    CONST_CLS[type(...)] = Const
 
 
 def _update_const_classes():
