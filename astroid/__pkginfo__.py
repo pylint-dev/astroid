@@ -17,10 +17,6 @@
 
 """astroid packaging information"""
 
-distname = "astroid"
-
-modname = "astroid"
-
 version = "2.3.0"
 numversion = tuple(int(elem) for elem in version.split(".") if elem.isdigit())
 
