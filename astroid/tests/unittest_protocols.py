@@ -12,6 +12,9 @@
 import contextlib
 import unittest
 
+import pytest
+import sys
+
 import astroid
 from astroid import extract_node
 from astroid.test_utils import require_version
@@ -213,6 +216,9 @@ class ProtocolTests(unittest.TestCase):
         parsed.accept(Visitor())
 
 
+@pytest.mark.skipif(
+    sys.version_info[:2] < (3, 8), reason="needs assignment expressions"
+)
 def test_named_expr_inference():
     code = """
     if (a := 2) == 2:
