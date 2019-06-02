@@ -268,7 +268,7 @@ def test_named_expr_inference():
     assert isinstance(node.elts[0], nodes.Const)
     assert node.elts[0].value == 24
 
-    node = next(ast_nodes[4].infer())
+    node = next(ast_nodes[5].infer())
     assert isinstance(node, nodes.Const)
     assert node.value == 1
 
