@@ -1855,12 +1855,12 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
     def test_instance_bound_method_lambdas_2(self):
         """
-        Test the fact that a method which is a lambda built from 
+        Test the fact that a method which is a lambda built from
         a factory is well infered as a bound method (bug pylint 2594)
         """
         ast_nodes = builder.extract_node(
             """
-        def lambda_factory(): 
+        def lambda_factory():
             return lambda self: print("Hello world")
 
         class MyClass(object): #@
@@ -1990,8 +1990,8 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             def update(self):
                 self.hello = 'hello'
         """
-        m = builder.parse(data)
-
+        # Should not crash
+        builder.parse(data)
 
 
 def test_metaclass_cannot_infer_call_yields_an_instance():

@@ -93,8 +93,7 @@ def _c3_merge(sequences, cls, context):
 def clean_duplicates_mro(sequences, cls, context):
     for sequence in sequences:
         names = [
-            (node.lineno, node.qname()) if node.name else None
-            for node in sequence
+            (node.lineno, node.qname()) if node.name else None for node in sequence
         ]
         last_index = dict(map(reversed, enumerate(names)))
         if names and names[0] is not None and last_index[names[0]] != 0:
@@ -2792,9 +2791,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                 bases_mro.append(ancestors)
 
         unmerged_mro = [[self]] + bases_mro + [inferred_bases]
-        unmerged_mro = list(
-            clean_duplicates_mro(unmerged_mro, self, context)
-        )
+        unmerged_mro = list(clean_duplicates_mro(unmerged_mro, self, context))
         return _c3_merge(unmerged_mro, self, context)
 
     def mro(self, context=None) -> List["ClassDef"]:
