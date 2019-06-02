@@ -6,6 +6,25 @@ What's New in astroid 2.3.0?
 ============================
 Release Date: TBA
 
+* Numpy brain support is improved.
+
+  Numpy's fundamental type ``numpy.ndarray`` has its own brain : ``brain_numpy_ndarray`` and 
+  each numpy module that necessitates brain action has now its own numpy brain :
+  
+    - ``numpy.core.numeric`` 
+    - ``numpy.core.function_base`` 
+    - ``numpy.core.multiarray`` 
+    - ``numpy.core.numeric`` 
+    - ``numpy.core.numerictypes`` 
+    - ``numpy.core.umath`` 
+    - ``numpy.random.mtrand``
+
+  Close PyCQA/pylint#2865
+  Close PyCQA/pylint#2747
+  Close PyCQA/pylint#2721
+  Close PyCQA/pylint#2326
+  Close PyCQA/pylint#2021
+
 * Add support for Python 3.8's `NamedExpr` nodes, which is part of assignment expressions.
 
   Close #674
