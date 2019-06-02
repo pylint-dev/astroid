@@ -40,6 +40,7 @@ REDIRECT = {
 PY3 = sys.version_info >= (3, 0)
 PY34 = sys.version_info >= (3, 4)
 PY37 = sys.version_info >= (3, 7)
+PY38 = sys.version_info >= (3, 8)
 
 
 def _binary_operators_from_module(module):
@@ -580,7 +581,20 @@ class TreeRebuilder:
         """visit an FunctionDef node to become astroid"""
         self._global_names.append({})
         node, doc = self._get_doc(node)
-        newnode = cls(node.name, doc, node.lineno, node.col_offset, parent)
+
+        lineno = node.lineno
+        if PY38:
+            # Python 3.8 sets the line number of a decorated function
+            # to be the actual line number of the function, but the
+            # previous versions expected the decorator's line number instead.
+            # We reset the function's line number to that of the
+            # first decorator to maintain backward compatibility.
+            # It's not ideal but this discrepancy was baked into
+            # the framework for *years*.
+            if node.decorator_list:
+                lineno = node.decorator_list[0].lineno
+
+        newnode = cls(node.name, doc, lineno, node.col_offset, parent)
         if node.decorator_list:
             decorators = self.visit_decorators(node, newnode)
         else:
