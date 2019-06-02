@@ -31,6 +31,7 @@ from astroid.tests import resources
 
 MANAGER = manager.AstroidManager()
 BUILTINS = builtins.__name__
+PY38 = sys.version_info[:2] >= (3, 8)
 
 
 class FromToLineNoTest(unittest.TestCase):
@@ -59,7 +60,7 @@ class FromToLineNoTest(unittest.TestCase):
         if hasattr(sys, "pypy_version_info"):
             lineno = 4
         else:
-            lineno = 5  # no way for this one in CPython (is 4 actually)
+            lineno = 5 if not PY38 else 4
         self.assertEqual(strarg.fromlineno, lineno)
         self.assertEqual(strarg.tolineno, lineno)
         namearg = callfunc.args[1]
@@ -127,13 +128,6 @@ class FromToLineNoTest(unittest.TestCase):
         self.assertEqual(function.tolineno, 5)
         self.assertEqual(function.decorators.fromlineno, 2)
         self.assertEqual(function.decorators.tolineno, 2)
-        if sys.version_info < (3, 0):
-            self.assertEqual(function.blockstart_tolineno, 4)
-        else:
-            self.skipTest(
-                "FIXME  http://bugs.python.org/issue10445 "
-                "(no line number on function args)"
-            )
 
     def test_class_lineno(self):
         stmts = self.astroid.body
