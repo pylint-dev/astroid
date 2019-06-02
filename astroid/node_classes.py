@@ -31,8 +31,8 @@ import abc
 import builtins as builtins_mod
 import itertools
 import pprint
-from functools import lru_cache
-from functools import singledispatch as _singledispatch
+import sys
+from functools import lru_cache, singledispatch as _singledispatch
 
 from astroid import as_string
 from astroid import bases
@@ -46,6 +46,7 @@ from astroid import util
 
 BUILTINS = builtins_mod.__name__
 MANAGER = manager.AstroidManager()
+PY38 = sys.version_info[:2] >= (3, 8)
 
 
 def _is_const(value):
@@ -1198,6 +1199,10 @@ class LookupMixIn:
                 # assignment
                 _stmts = [node]
                 _stmt_parents = [stmt.parent]
+                continue
+
+            if isinstance(assign_type, NamedExpr):
+                _stmts = [node]
                 continue
 
             # XXX comment various branches below!!!
@@ -4622,6 +4627,31 @@ class JoinedStr(NodeNG):
         yield from self.values
 
 
+class NamedExpr(mixins.AssignTypeMixin, NodeNG):
+    """Represents the assignment from the assignment expression
+
+    >>> module = astroid.parse('if a := 1: pass')
+    >>> module.body[0].test
+    <NamedExpr l.1 at 0x7f23b2e4ed30>
+    """
+
+    _astroid_fields = ("target", "value")
+    target = None
+    """The assignment target
+
+    :type: Name
+    """
+    value = None
+    """The value that gets assigned in the expression
+
+    :type: NodeNG
+    """
+
+    def postinit(self, target, value):
+        self.target = target
+        self.value = value
+
+
 class Unknown(mixins.AssignTypeMixin, NodeNG):
     """This node represents a node in a constructed AST where
     introspection is not possible.  At the moment, it's only used in
@@ -4649,6 +4679,8 @@ CONST_CLS = {
     type(None): Const,
     type(NotImplemented): Const,
 }
+if PY38:
+    CONST_CLS[type(...)] = Const
 
 
 def _update_const_classes():

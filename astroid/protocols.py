@@ -572,6 +572,23 @@ def with_assigned_stmts(self, node=None, context=None, assign_path=None):
 nodes.With.assigned_stmts = with_assigned_stmts
 
 
+@decorators.raise_if_nothing_inferred
+def named_expr_assigned_stmts(self, node, context=None, assign_path=None):
+    """Infer names and other nodes from an assignment expression"""
+    if self.target == node:
+        yield from self.value.infer(context=context)
+    else:
+        raise exceptions.InferenceError(
+            "Cannot infer NamedExpr node {node!r}",
+            node=self,
+            assign_path=assign_path,
+            context=context,
+        )
+
+
+nodes.NamedExpr.assigned_stmts = named_expr_assigned_stmts
+
+
 @decorators.yes_if_nothing_inferred
 def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
     """

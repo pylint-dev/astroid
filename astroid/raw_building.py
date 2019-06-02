@@ -34,6 +34,9 @@ MANAGER = manager.AstroidManager()
 
 _CONSTANTS = tuple(node_classes.CONST_CLS)
 _BUILTINS = vars(builtins)
+TYPE_NONE = type(None)
+TYPE_NOTIMPLEMENTED = type(NotImplemented)
+TYPE_ELLIPSIS = type(...)
 
 
 def _io_discrepancy(member):
@@ -390,11 +393,14 @@ def _astroid_bootstrapping():
 
     # pylint: disable=redefined-outer-name
     for cls, node_cls in node_classes.CONST_CLS.items():
-        if cls is type(None):
+        if cls is TYPE_NONE:
             proxy = build_class("NoneType")
             proxy.parent = astroid_builtin
-        elif cls is type(NotImplemented):
+        elif cls is TYPE_NOTIMPLEMENTED:
             proxy = build_class("NotImplementedType")
+            proxy.parent = astroid_builtin
+        elif cls is TYPE_ELLIPSIS:
+            proxy = build_class("Ellipsis")
             proxy.parent = astroid_builtin
         else:
             proxy = astroid_builtin.getattr(cls.__name__)[0]
@@ -425,8 +431,8 @@ def _astroid_bootstrapping():
         types.GetSetDescriptorType,
         types.GeneratorType,
         types.MemberDescriptorType,
-        type(None),
-        type(NotImplemented),
+        TYPE_NONE,
+        TYPE_NOTIMPLEMENTED,
         types.FunctionType,
         types.MethodType,
         types.BuiltinFunctionType,
