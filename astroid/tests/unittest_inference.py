@@ -5289,5 +5289,19 @@ def test_ifexp_inference():
     assert [third[0].value, third[1].value] == [1, 2]
 
 
+def test_assert_last_function_returns_none_on_inference():
+    code = """
+    def check_equal(a, b):
+        res = do_something_with_these(a, b)
+        assert a == b == res
+
+    check_equal(a, b)
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value is None
+
+
 if __name__ == "__main__":
     unittest.main()

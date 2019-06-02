@@ -25,6 +25,10 @@ Release Date: TBA
   Close PyCQA/pylint#2326
   Close PyCQA/pylint#2021
 
+* ``assert`` only functions are properly inferred as returning ``None``
+
+  Close #668
+
 * Add support for Python 3.8's `NamedExpr` nodes, which is part of assignment expressions.
 
   Close #674

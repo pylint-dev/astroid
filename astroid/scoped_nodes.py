@@ -1656,7 +1656,13 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
 
         first_return = next(returns, None)
         if not first_return:
-            raise exceptions.InferenceError("Empty return iterator")
+            if self.body and isinstance(self.body[-1], node_classes.Assert):
+                yield node_classes.Const(None)
+                return
+
+            raise exceptions.InferenceError(
+                "The function does not have any return statements"
+            )
 
         for returnnode in itertools.chain((first_return,), returns):
             if returnnode.value is None:
