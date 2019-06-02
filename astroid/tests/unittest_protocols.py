@@ -213,5 +213,59 @@ class ProtocolTests(unittest.TestCase):
         parsed.accept(Visitor())
 
 
+def test_named_expr_inference():
+    code = """
+    if (a := 2) == 2:
+        a #@
+
+
+    # Test a function call
+    def test():
+        return 24
+
+    if (a := test()):
+        a #@
+
+    # Normal assignments in sequences
+    { (a:= 4) } #@
+    [ (a:= 5) ] #@
+
+    # Something more complicated
+    def test(value=(p := 24)): return p
+    [ y:= test()] #@
+
+    # Priority assignment
+    (x := 1, 2)
+    x #@
+    """
+    ast_nodes = extract_node(code)
+    node = next(ast_nodes[0].infer())
+    assert isinstance(node, nodes.Const)
+    assert node.value == 2
+
+    node = next(ast_nodes[1].infer())
+    assert isinstance(node, nodes.Const)
+    assert node.value == 24
+
+    node = next(ast_nodes[2].infer())
+    assert isinstance(node, nodes.Set)
+    assert isinstance(node.elts[0], nodes.Const)
+    assert node.elts[0].value == 4
+
+    node = next(ast_nodes[3].infer())
+    assert isinstance(node, nodes.List)
+    assert isinstance(node.elts[0], nodes.Const)
+    assert node.elts[0].value == 5
+
+    node = next(ast_nodes[4].infer())
+    assert isinstance(node, nodes.List)
+    assert isinstance(node.elts[0], nodes.Const)
+    assert node.elts[0].value == 24
+
+    node = next(ast_nodes[4].infer())
+    assert isinstance(node, nodes.Const)
+    assert node.value == 1
+
+
 if __name__ == "__main__":
     unittest.main()

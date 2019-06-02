@@ -71,6 +71,11 @@ def _infer_sequence_helper(node, context=None):
             if not hasattr(starred, "elts"):
                 raise exceptions.InferenceError(node=node, context=context)
             values.extend(_infer_sequence_helper(starred))
+        elif isinstance(elt, nodes.NamedExpr):
+            value = helpers.safe_infer(elt.value, context)
+            if not value:
+                raise exceptions.InferenceError(node=node, context=context)
+            values.append(value)
         else:
             values.append(elt)
     return values
@@ -78,9 +83,10 @@ def _infer_sequence_helper(node, context=None):
 
 @decorators.raise_if_nothing_inferred
 def infer_sequence(self, context=None):
-    if not any(isinstance(e, nodes.Starred) for e in self.elts):
-        yield self
-    else:
+    has_starred_named_expr = any(
+        isinstance(e, (nodes.Starred, nodes.NamedExpr)) for e in self.elts
+    )
+    if has_starred_named_expr:
         values = _infer_sequence_helper(self, context)
         new_seq = type(self)(
             lineno=self.lineno, col_offset=self.col_offset, parent=self.parent
@@ -88,6 +94,8 @@ def infer_sequence(self, context=None):
         new_seq.postinit(values)
 
         yield new_seq
+    else:
+        yield self
 
 
 nodes.List._infer = infer_sequence

@@ -1201,6 +1201,10 @@ class LookupMixIn:
                 _stmt_parents = [stmt.parent]
                 continue
 
+            if isinstance(assign_type, NamedExpr):
+                _stmts = [node]
+                continue
+
             # XXX comment various branches below!!!
             try:
                 pindex = _stmt_parents.index(stmt.parent)
