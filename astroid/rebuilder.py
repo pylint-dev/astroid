@@ -460,7 +460,12 @@ class TreeRebuilder:
         """visit a Decorators node by returning a fresh instance of it"""
         # /!\ node is actually a _ast.FunctionDef node while
         # parent is an astroid.nodes.FunctionDef node
-        newnode = nodes.Decorators(node.lineno, node.col_offset, parent)
+        if PY38:
+            # Set the line number of the first decorator for Python 3.8+.
+            lineno = node.decorator_list[0].lineno
+        else:
+            lineno = node.lineno
+        newnode = nodes.Decorators(lineno, node.col_offset, parent)
         newnode.postinit([self.visit(child, newnode) for child in node.decorator_list])
         return newnode
 
@@ -583,7 +588,7 @@ class TreeRebuilder:
         node, doc = self._get_doc(node)
 
         lineno = node.lineno
-        if PY38:
+        if PY38 and node.decorator_list:
             # Python 3.8 sets the line number of a decorated function
             # to be the actual line number of the function, but the
             # previous versions expected the decorator's line number instead.
@@ -591,8 +596,7 @@ class TreeRebuilder:
             # first decorator to maintain backward compatibility.
             # It's not ideal but this discrepancy was baked into
             # the framework for *years*.
-            if node.decorator_list:
-                lineno = node.decorator_list[0].lineno
+            lineno = node.decorator_list[0].lineno
 
         newnode = cls(node.name, doc, lineno, node.col_offset, parent)
         if node.decorator_list:
