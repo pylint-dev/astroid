@@ -11,9 +11,6 @@ jobs:
       env: TOXENV=pylint
     - python: 3.6
       env: TOXENV=formatting
-    - stage: tests
-      python: 3.4
-      env: TOXENV=py34
     - python: 3.5
       env: TOXENV=py35
     - python: pypy3.5-5.8.0

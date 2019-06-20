@@ -39,7 +39,7 @@ def install():
         author=author,
         author_email=author_email,
         url=web,
-        python_requires=">=3.4.*",
+        python_requires=">=3.5.*",
         install_requires=install_requires,
         extras_require=extras_require,
         packages=find_packages(exclude=["astroid.tests"]) + ["astroid.brain"],

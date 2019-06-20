@@ -10,6 +10,8 @@ Release Date: TBA
 
   Close #644
 
+* Dropped support for Python 3.4.
+
 * Numpy brain support is improved.
 
   Numpy's fundamental type ``numpy.ndarray`` has its own brain : ``brain_numpy_ndarray`` and
