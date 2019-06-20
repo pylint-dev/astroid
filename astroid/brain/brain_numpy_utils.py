@@ -51,5 +51,6 @@ def looks_like_numpy_member(
     return (
         isinstance(node, astroid.Attribute)
         and node.attrname == member_name
+        and isinstance(node.expr, astroid.Name)
         and _is_a_numpy_module(node.expr)
     )
