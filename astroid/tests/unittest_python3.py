@@ -279,12 +279,12 @@ class Python3TC(unittest.TestCase):
     def test_annotation_as_string(self):
         code1 = dedent(
             """
-        def test(a, b:int=4, c=2, f:'lala'=4)->2:
+        def test(a, b: int = 4, c=2, f: 'lala' = 4) -> 2:
             pass"""
         )
         code2 = dedent(
             """
-        def test(a:typing.Generic[T], c:typing.Any=24)->typing.Iterable:
+        def test(a: typing.Generic[T], c: typing.Any = 24) -> typing.Iterable:
             pass"""
         )
         for code in (code1, code2):

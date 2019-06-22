@@ -312,7 +312,7 @@ class AsStringVisitor:
         docs = self._docs_dedent(node.doc) if node.doc else ""
         trailer = ":"
         if node.returns:
-            return_annotation = "->" + node.returns.as_string()
+            return_annotation = " -> " + node.returns.as_string()
             trailer = return_annotation + ":"
         def_format = "\n%sdef %s(%s)%s%s\n%s"
         return def_format % (

@@ -1722,13 +1722,15 @@ def _format_args(args, defaults=None, annotations=None):
             values.append("(%s)" % _format_args(arg.elts))
         else:
             argname = arg.name
+            default_sep = "="
             if annotation is not None:
-                argname += ":" + annotation.as_string()
+                argname += ": " + annotation.as_string()
+                default_sep = " = "
             values.append(argname)
 
             if defaults is not None and i >= default_offset:
                 if defaults[i - default_offset] is not None:
-                    values[-1] += "=" + defaults[i - default_offset].as_string()
+                    values[-1] += default_sep + defaults[i - default_offset].as_string()
     return ", ".join(values)
 
 
