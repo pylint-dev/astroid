@@ -351,7 +351,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
             .args
         )
         formatted = node.format_args()
-        self.assertEqual(formatted, "a:int, *, b:dict")
+        self.assertEqual(formatted, "a: int, *, b: dict")
 
     def test_is_generator(self):
         self.assertTrue(self.module2["generator"].is_generator())

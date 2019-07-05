@@ -6,6 +6,8 @@ What's New in astroid 2.3.0?
 ============================
 Release Date: TBA
 
+* Annotated AST follows PEP8 coding style when converted to string.
+
 * Fix a bug where defining a class using type() could cause a DuplicateBasesError.
 
   Close #644
