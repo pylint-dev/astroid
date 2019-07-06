@@ -1159,5 +1159,16 @@ def test_assignment_expression():
     assert second.as_string() == "b := test"
 
 
+def test_get_doc():
+    node = astroid.extract_node(
+        """
+    def func():
+        "Docstring"
+        return 1
+    """
+    )
+    assert node.doc == "Docstring"
+
+
 if __name__ == "__main__":
     unittest.main()
