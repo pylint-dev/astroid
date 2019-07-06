@@ -1169,6 +1169,15 @@ def test_get_doc():
     )
     assert node.doc == "Docstring"
 
+    node = astroid.extract_node(
+        """
+    def func():
+        ...
+        return 1
+    """
+    )
+    assert node.doc is None
+
 
 if __name__ == "__main__":
     unittest.main()

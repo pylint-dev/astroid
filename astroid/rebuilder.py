@@ -130,18 +130,16 @@ class TreeRebuilder:
             if PY37 and hasattr(node, "docstring"):
                 doc = node.docstring
                 return node, doc
-            if (
-                node.body
-                and isinstance(node.body[0], self._parser_module.Expr)
-                and isinstance(
-                    node.body[0].value,
-                    self._parser_module.Constant if PY38 else self._parser_module.Str,
-                )
-            ):
-                value = node.body[0].value
-                doc = value.value if PY38 else value.s
-                node.body = node.body[1:]
-                return node, doc
+            if node.body and isinstance(node.body[0], self._parser_module.Expr):
+
+                first_value = node.body[0].value
+                if isinstance(first_value, self._parser_module.Str) or (
+                    isinstance(first_value, self._parser_module.Constant)
+                    and isinstance(first_value.value, str)
+                ):
+                    doc = first_value.value if PY38 else first_value.s
+                    node.body = node.body[1:]
+                    return node, doc
         except IndexError:
             pass  # ast built from scratch
         return node, None
