@@ -133,8 +133,10 @@ class TreeRebuilder:
             if (
                 node.body
                 and isinstance(node.body[0], self._parser_module.Expr)
-                and isinstance(node.body[0].value,
-                               self._parser_module.Constant if PY38 else self._parser_module.Str)
+                and isinstance(
+                    node.body[0].value,
+                    self._parser_module.Constant if PY38 else self._parser_module.Str,
+                )
             ):
                 value = node.body[0].value
                 doc = value.value if PY38 else value.s
