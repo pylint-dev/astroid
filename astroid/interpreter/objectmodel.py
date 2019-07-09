@@ -228,6 +228,7 @@ class FunctionModel(ObjectModel):
         pair_annotations = itertools.chain(
             zip(args.args or [], args.annotations),
             zip(args.kwonlyargs, args.kwonlyargs_annotations),
+            zip(args.posonlyargs or [], args.posonlyargs_annotations),
         )
 
         annotations = {

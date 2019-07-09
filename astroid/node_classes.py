@@ -1506,6 +1506,12 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         :type: list(NodeNG)
         """
 
+        self.posonlyargs_annotations = []
+        """The type annotations of arguments that can only be passed positionally.
+
+        :type: list(NodeNG)
+        """
+
         self.kwonlyargs_annotations = []
         """The type annotations of arguments that cannot be passed positionally.
 
@@ -1530,6 +1536,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         annotations,
         posonlyargs=None,
         kwonlyargs_annotations=None,
+        posonlyargs_annotations=None,
         varargannotation=None,
         kwargannotation=None,
         type_comment_args=None,
@@ -1564,6 +1571,11 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
             Python 3.
         :type kwonlyargs_annotations: list(NodeNG)
 
+        :param posonlyargs_annotations: The type annotations of arguments that
+            can only be passed positionally. This should always be passed in
+            Python 3.
+        :type posonlyargs_annotations: list(NodeNG)
+
         :param varargannotation: The type annotation for the variable length
             arguments.
         :type varargannotation: NodeNG
@@ -1583,6 +1595,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         self.kw_defaults = kw_defaults
         self.annotations = annotations
         self.kwonlyargs_annotations = kwonlyargs_annotations
+        self.posonlyargs_annotations = posonlyargs_annotations
         self.varargannotation = varargannotation
         self.kwargannotation = kwargannotation
         self.type_comment_args = type_comment_args

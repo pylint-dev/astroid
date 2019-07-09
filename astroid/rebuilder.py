@@ -225,8 +225,14 @@ class TreeRebuilder:
             kw_defaults = []
             annotations = []
             kwonlyargs_annotations = []
+
+        posonlyargs_annotations = []
         if PY38:
             posonlyargs = [self.visit(child, newnode) for child in node.posonlyargs]
+            posonlyargs_annotations = [
+                self.visit(arg.annotation, newnode) if arg.annotation else None
+                for arg in node.posonlyargs
+            ]
         type_comment_args = [self.check_type_comment(child) for child in node.args]
 
         newnode.postinit(
@@ -237,6 +243,7 @@ class TreeRebuilder:
             kw_defaults=kw_defaults,
             annotations=annotations,
             kwonlyargs_annotations=kwonlyargs_annotations,
+            posonlyargs_annotations=posonlyargs_annotations,
             varargannotation=varargannotation,
             kwargannotation=kwargannotation,
             type_comment_args=type_comment_args,
