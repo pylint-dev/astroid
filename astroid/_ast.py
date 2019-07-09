@@ -12,6 +12,12 @@ except ImportError:
     pass
 
 
+PY38 = sys.version_info[:2] >= (3, 8)
+if PY38:
+    # On Python 3.8, typed_ast was merged back into `ast`
+    _ast_py3 = ast
+
+
 FunctionType = namedtuple("FunctionType", ["argtypes", "returns"])
 
 
