@@ -293,7 +293,7 @@ class FunctionModel(ObjectModel):
                 return 0
 
             def infer_call_result(self, caller, context=None):
-                if len(caller.args) != 2:
+                if len(caller.args) > 2 or len(caller.args) < 1:
                     raise exceptions.InferenceError(
                         "Invalid arguments for descriptor binding",
                         target=self,
@@ -343,11 +343,15 @@ class FunctionModel(ObjectModel):
                 we get a new object which has two parameters, *self* and *type*.
                 """
                 nonlocal func
-                params = func.args.args.copy()
-                params.append(astroid.AssignName(name="type"))
+                positional_or_keyword_params = func.args.args.copy()
+                positional_or_keyword_params.append(astroid.AssignName(name="type"))
+
+                positional_only_params = func.args.posonlyargs.copy()
+
                 arguments = astroid.Arguments(parent=func.args.parent)
                 arguments.postinit(
-                    args=params,
+                    args=positional_or_keyword_params,
+                    posonlyargs=positional_only_params,
                     defaults=[],
                     kwonlyargs=[],
                     kw_defaults=[],

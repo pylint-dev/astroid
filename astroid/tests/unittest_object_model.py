@@ -13,7 +13,7 @@ import xml
 import pytest
 
 import astroid
-from astroid import builder
+from astroid import builder, util
 from astroid import exceptions
 from astroid import MANAGER
 from astroid import test_utils
@@ -343,6 +343,17 @@ class FunctionModelTest(unittest.TestCase):
         self.assertEqual(len(args), 2)
         self.assertEqual([arg.name for arg in args], ["self", "type"])
 
+    @test_utils.require_version(minver="3.8")
+    def test__get__and_positional_only_args(self):
+        node = builder.extract_node(
+            """
+        def test(self, a, b, /, c): return a + b + c
+        test.__get__(test)(1, 2, 3)
+        """
+        )
+        inferred = next(node.infer())
+        assert inferred is util.Uninferable
+
     @unittest.expectedFailure
     def test_descriptor_not_inferrring_self(self):
         # We can't infer __get__(X, Y)() when the bounded function
@@ -366,7 +377,6 @@ class FunctionModelTest(unittest.TestCase):
         class A: pass
         def test(self): return 42
         test.__get__()() #@
-        test.__get__(1)() #@
         test.__get__(2, 3, 4) #@
         """
         )
