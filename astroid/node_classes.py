@@ -1425,6 +1425,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         "args",
         "defaults",
         "kwonlyargs",
+        "posonlyargs",
         "kw_defaults",
         "annotations",
         "varargannotation",
@@ -1487,6 +1488,12 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         :type: list(AssignName)
         """
 
+        self.posonlyargs = []
+        """The arguments that can only be passed positionally.
+
+        :type: list(AssignName)
+        """
+
         self.kw_defaults = []
         """The default values for keyword arguments that cannot be passed positionally.
 
@@ -1521,6 +1528,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         kwonlyargs,
         kw_defaults,
         annotations,
+        posonlyargs=None,
         kwonlyargs_annotations=None,
         varargannotation=None,
         kwargannotation=None,
@@ -1536,6 +1544,10 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         :type defaults: list(NodeNG)
 
         :param kwonlyargs: The keyword arguments that cannot be passed
+            positionally.
+        :type kwonlyargs: list(AssignName)
+
+        :param posonlyargs: The arguments that can only be passed
             positionally.
         :type kwonlyargs: list(AssignName)
 
@@ -1567,6 +1579,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         self.args = args
         self.defaults = defaults
         self.kwonlyargs = kwonlyargs
+        self.posonlyargs = posonlyargs
         self.kw_defaults = kw_defaults
         self.annotations = annotations
         self.kwonlyargs_annotations = kwonlyargs_annotations
@@ -1595,10 +1608,28 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         :rtype: str
         """
         result = []
+        positional_only_defaults = []
+        positional_or_keyword_defaults = self.defaults
+        if self.defaults and self.args:
+            if len(self.defaults) > len(self.args):
+                # We have defaults that spread from positional only
+                # to positional or keyword parameters.
+                # In that case, all the positional or keyword parameters
+                # have a default
+                positional_or_keyword_defaults = self.defaults[-len(self.args) :]
+                positional_only_defaults = self.defaults[
+                    : len(self.defaults) - len(self.args)
+                ]
+
+        if self.posonlyargs:
+            result.append(_format_args(self.posonlyargs, positional_only_defaults))
+            result.append("/")
         if self.args:
             result.append(
                 _format_args(
-                    self.args, self.defaults, getattr(self, "annotations", None)
+                    self.args,
+                    positional_or_keyword_defaults,
+                    getattr(self, "annotations", None),
                 )
             )
         if self.vararg:

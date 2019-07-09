@@ -23,9 +23,11 @@ function)
 """
 import os
 import sys
+import textwrap
 from functools import partial
 import unittest
 
+import pytest
 from astroid import builder
 from astroid import nodes
 from astroid import scoped_nodes
@@ -2007,6 +2009,47 @@ def test_metaclass_cannot_infer_call_yields_an_instance():
     )
     inferred = next(node.infer())
     assert isinstance(inferred, Instance)
+
+
+@pytest.mark.parametrize(
+    "func",
+    [
+        textwrap.dedent(
+            """
+    def func(a, b, /, d, e):
+        pass
+    """
+        ),
+        textwrap.dedent(
+            """
+    def func(a, b=None, /, d=None, e=None):
+        pass
+    """
+        ),
+        textwrap.dedent(
+            """
+    def func(a, other, other, b=None, /, d=None, e=None):
+        pass
+    """
+        ),
+        textwrap.dedent(
+            """
+    def func(a, other, other, b=None, /, d=None, e=None, **kwargs):
+        pass
+    """
+        ),
+        textwrap.dedent(
+            """
+    def name(p1, p2, /, p_or_kw, *, kw):
+        pass
+    """
+        ),
+    ],
+)
+@test_utils.require_version("3.8")
+def test_posonlyargs_python_38(func):
+    ast_node = builder.extract_node(func)
+    assert ast_node.as_string().strip() == func.strip()
 
 
 if __name__ == "__main__":

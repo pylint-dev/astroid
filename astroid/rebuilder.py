@@ -193,6 +193,7 @@ class TreeRebuilder:
         defaults = [self.visit(child, newnode) for child in node.defaults]
         varargannotation = None
         kwargannotation = None
+        posonlyargs = []
         # change added in 82732 (7c5c678e4164), vararg and kwarg
         # are instances of `_ast.arg`, not strings
         if vararg:
@@ -224,12 +225,15 @@ class TreeRebuilder:
             kw_defaults = []
             annotations = []
             kwonlyargs_annotations = []
+        if PY38:
+            posonlyargs = [self.visit(child, newnode) for child in node.posonlyargs]
         type_comment_args = [self.check_type_comment(child) for child in node.args]
 
         newnode.postinit(
             args=args,
             defaults=defaults,
             kwonlyargs=kwonlyargs,
+            posonlyargs=posonlyargs,
             kw_defaults=kw_defaults,
             annotations=annotations,
             kwonlyargs_annotations=kwonlyargs_annotations,
