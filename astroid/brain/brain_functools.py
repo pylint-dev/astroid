@@ -87,6 +87,7 @@ def _functools_partial_inference(node, context=None):
     # by the wrapped function.
     function_parameters = chain(
         inferred_wrapped_function.args.args or (),
+        inferred_wrapped_function.args.posonlyargs or (),
         inferred_wrapped_function.args.kwonlyargs or (),
     )
     parameter_names = set(
