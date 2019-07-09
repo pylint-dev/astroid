@@ -2052,5 +2052,21 @@ def test_posonlyargs_python_38(func):
     assert ast_node.as_string().strip() == func.strip()
 
 
+@test_utils.require_version("3.8")
+def test_posonlyargs_default_value():
+    ast_node = builder.extract_node(
+        """
+    def func(a, b=1, /, c=2): pass
+    """
+    )
+    last_param = ast_node.args.default_value("c")
+    assert isinstance(last_param, nodes.Const)
+    assert last_param.value == 2
+
+    first_param = ast_node.args.default_value("b")
+    assert isinstance(first_param, nodes.Const)
+    assert first_param.value == 1
+
+
 if __name__ == "__main__":
     unittest.main()
