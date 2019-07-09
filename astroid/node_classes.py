@@ -1527,6 +1527,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         :type: list(NodeNG or None)
         """
 
+    # pylint: disable=too-many-arguments
     def postinit(
         self,
         args,
@@ -1599,6 +1600,8 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         self.varargannotation = varargannotation
         self.kwargannotation = kwargannotation
         self.type_comment_args = type_comment_args
+
+    # pylint: disable=too-many-arguments
 
     def _infer_name(self, frame, name):
         if self.parent is frame:
