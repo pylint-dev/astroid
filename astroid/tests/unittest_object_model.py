@@ -527,6 +527,22 @@ class FunctionModelTest(unittest.TestCase):
         for node in ast_nodes[5:]:
             self.assertIs(next(node.infer()), astroid.Uninferable)
 
+    @test_utils.require_version(minver="3.8")
+    def test_annotation_positional_only(self):
+        ast_node = builder.extract_node(
+            """
+        def test(a: 1, b: 2, /, c: 3): pass
+        test.__annotations__ #@
+        """
+        )
+        annotations = next(ast_node.infer())
+        self.assertIsInstance(annotations, astroid.Dict)
+
+        self.assertIsInstance(annotations.getitem(astroid.Const("a")), astroid.Const)
+        self.assertEqual(annotations.getitem(astroid.Const("a")).value, 1)
+        self.assertEqual(annotations.getitem(astroid.Const("b")).value, 2)
+        self.assertEqual(annotations.getitem(astroid.Const("c")).value, 3)
+
 
 class GeneratorModelTest(unittest.TestCase):
     def test_model(self):
