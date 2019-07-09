@@ -1668,14 +1668,15 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         :raises NoDefault: If there is no default value defined for the
             given argument.
         """
-        i = _find_arg(argname, self.args)[0]
-        if i is not None:
-            idx = i - (len(self.args) - len(self.defaults))
+        args = list(itertools.chain((self.posonlyargs or ()), self.args or ()))
+        index = _find_arg(argname, args)[0]
+        if index is not None:
+            idx = index - (len(args) - len(self.defaults))
             if idx >= 0:
                 return self.defaults[idx]
-        i = _find_arg(argname, self.kwonlyargs)[0]
-        if i is not None and self.kw_defaults[i] is not None:
-            return self.kw_defaults[i]
+        index = _find_arg(argname, self.kwonlyargs)[0]
+        if index is not None and self.kw_defaults[index] is not None:
+            return self.kw_defaults[index]
         raise exceptions.NoDefault(func=self.parent, name=argname)
 
     def is_argument(self, name):
@@ -1693,9 +1694,9 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         if name == self.kwarg:
             return True
         return (
-            self.find_argname(name, True)[1] is not None
+            self.find_argname(name, rec=True)[1] is not None
             or self.kwonlyargs
-            and _find_arg(name, self.kwonlyargs, True)[1] is not None
+            and _find_arg(name, self.kwonlyargs, rec=True)[1] is not None
         )
 
     def find_argname(self, argname, rec=False):
@@ -1711,11 +1712,15 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         :returns: The index and node for the argument.
         :rtype: tuple(str or None, AssignName or None)
         """
-        if self.args:  # self.args may be None in some cases (builtin function)
-            return _find_arg(argname, self.args, rec)
+        if (
+            self.args or self.posonlyargs
+        ):  # self.args may be None in some cases (builtin function)
+            arguments = itertools.chain(self.posonlyargs or (), self.args or ())
+            return _find_arg(argname, arguments, rec)
         return None, None
 
     def get_children(self):
+        yield from self.posonlyargs or ()
         yield from self.args or ()
 
         yield from self.defaults

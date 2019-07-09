@@ -617,6 +617,21 @@ class ArgumentsNodeTC(unittest.TestCase):
         args = ast["func"].args
         self.assertTrue(args.is_argument("x"))
 
+    @test_utils.require_version(minver="3.8")
+    def test_positional_only(self):
+        ast = builder.parse(
+            """
+            def func(x, /, y):
+                pass
+        """
+        )
+        args = ast["func"].args
+        self.assertTrue(args.is_argument("x"))
+        self.assertTrue(args.is_argument("y"))
+        index, node = args.find_argname("x")
+        self.assertEqual(index, 0)
+        self.assertIsNotNone(node)
+
 
 class UnboundMethodNodeTest(unittest.TestCase):
     def test_no_super_getattr(self):
