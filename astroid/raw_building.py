@@ -120,17 +120,22 @@ def build_class(name, basenames=(), doc=None):
     return node
 
 
-def build_function(name, args=None, defaults=None, doc=None):
+def build_function(name, args=None, posonlyargs=None, defaults=None, doc=None):
     """create and initialize an astroid FunctionDef node"""
-    args, defaults = args or [], defaults or []
+    args, defaults, posonlyargs = args or [], defaults or [], posonlyargs or []
     # first argument is now a list of decorators
     func = nodes.FunctionDef(name, doc)
     func.args = argsnode = nodes.Arguments()
     argsnode.args = []
+    argsnode.posonlyargs = []
     for arg in args:
         argsnode.args.append(nodes.Name())
         argsnode.args[-1].name = arg
         argsnode.args[-1].parent = argsnode
+    for arg in posonlyargs:
+        argsnode.posonlyargs.append(nodes.Name())
+        argsnode.posonlyargs[-1].name = arg
+        argsnode.posonlyargs[-1].parent = argsnode
     argsnode.defaults = []
     for default in defaults:
         argsnode.defaults.append(nodes.const_factory(default))
@@ -175,14 +180,27 @@ def object_build_class(node, member, localname):
 
 def object_build_function(node, member, localname):
     """create astroid for a living function object"""
-    # pylint: disable=deprecated-method; completely removed in 2.0
-    args, varargs, varkw, defaults = inspect.getargspec(member)
-    if varargs is not None:
-        args.append(varargs)
-    if varkw is not None:
-        args.append(varkw)
+    signature = inspect.signature(member)
+    args = []
+    defaults = []
+    posonlyargs = []
+    for param_name, param in signature.parameters.items():
+        if param.kind == inspect.Parameter.POSITIONAL_ONLY:
+            posonlyargs.append(param_name)
+        elif param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
+            args.append(param_name)
+        elif param.kind == inspect.Parameter.VAR_POSITIONAL:
+            args.append(param_name)
+        elif param.kind == inspect.Parameter.VAR_KEYWORD:
+            args.append(param_name)
+        if param.default is not inspect._empty:
+            defaults.append(param.default)
     func = build_function(
-        getattr(member, "__name__", None) or localname, args, defaults, member.__doc__
+        getattr(member, "__name__", None) or localname,
+        args,
+        posonlyargs,
+        defaults,
+        member.__doc__,
     )
     node.add_local_node(func, localname)
 

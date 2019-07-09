@@ -54,8 +54,12 @@ class RawBuildingTC(unittest.TestCase):
 
     def test_build_function_defaults(self):
         defaults = ["defaults1", "defaults2"]
-        node = build_function("MyFunction", None, defaults)
+        node = build_function(name="MyFunction", args=None, defaults=defaults)
         self.assertEqual(2, len(node.args.defaults))
+
+    def test_build_function_posonlyargs(self):
+        node = build_function(name="MyFunction", posonlyargs=["a", "b"])
+        self.assertEqual(2, len(node.args.posonlyargs))
 
     def test_build_from_import(self):
         names = ["exceptions, inference, inspector"]
