@@ -1194,6 +1194,7 @@ def test_get_doc():
     assert node.doc is None
 
 
+@test_utils.require_version(minver="3.8")
 def test_parse_fstring_debug_mode():
     node = astroid.extract_node('f"{3=}"')
     assert isinstance(node, nodes.JoinedStr)
