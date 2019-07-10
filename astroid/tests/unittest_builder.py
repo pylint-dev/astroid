@@ -718,8 +718,8 @@ class FileBuildTest(unittest.TestCase):
             self.assertEqual(len(_locals), 5)
             self.assertEqual(keys, ["a", "autre", "b", "local", "self"])
         else:  # ListComp variables are no more accessible outside
-            self.assertEqual(len(_locals), 4)
-            self.assertEqual(keys, ["__class__", "autre", "local", "self"])
+            self.assertEqual(len(_locals), 3)
+            self.assertEqual(keys, ["autre", "local", "self"])
 
     def test_unknown_encoding(self):
         with self.assertRaises(exceptions.AstroidSyntaxError):

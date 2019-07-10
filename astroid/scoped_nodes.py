@@ -1377,9 +1377,6 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         self.type_comment_returns = type_comment_returns
         self.type_comment_args = type_comment_args
 
-        if isinstance(self.parent.frame(), ClassDef):
-            self.set_local("__class__", self.parent.frame())
-
     @decorators_mod.cachedproperty
     def extra_decorators(self):
         """The extra decorators that this function can have.
@@ -1700,6 +1697,18 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             yield self.returns
 
         yield from self.body
+
+    def scope_lookup(self, node, name, offset=0):
+        """Lookup where the given name is assigned."""
+        if name == "__class__":
+            # __class__ is an implicit closure reference created by the compiler
+            # if any methods in a class body refer to either __class__ or super.
+            # In our case, we want to be able to look it up in the current scope
+            # when `__class__` is being used.
+            frame = self.parent.frame()
+            if isinstance(frame, ClassDef):
+                return self, [frame]
+        return super().scope_lookup(node, name, offset)
 
 
 class AsyncFunctionDef(FunctionDef):
