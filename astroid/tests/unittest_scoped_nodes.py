@@ -2044,6 +2044,12 @@ def test_metaclass_cannot_infer_call_yields_an_instance():
         pass
     """
         ),
+        textwrap.dedent(
+            """
+    def __init__(self, other=(), /, **kw):
+        pass
+    """
+        ),
     ],
 )
 @test_utils.require_version("3.8")

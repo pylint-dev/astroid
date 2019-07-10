@@ -1626,16 +1626,10 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         result = []
         positional_only_defaults = []
         positional_or_keyword_defaults = self.defaults
-        if self.defaults and self.args:
-            if len(self.defaults) > len(self.args):
-                # We have defaults that spread from positional only
-                # to positional or keyword parameters.
-                # In that case, all the positional or keyword parameters
-                # have a default
-                positional_or_keyword_defaults = self.defaults[-len(self.args) :]
-                positional_only_defaults = self.defaults[
-                    : len(self.defaults) - len(self.args)
-                ]
+        if self.defaults:
+            args = self.args or []
+            positional_or_keyword_defaults = self.defaults[-len(args) :]
+            positional_only_defaults = self.defaults[: len(self.defaults) - len(args)]
 
         if self.posonlyargs:
             result.append(_format_args(self.posonlyargs, positional_only_defaults))
