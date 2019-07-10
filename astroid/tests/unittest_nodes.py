@@ -42,12 +42,14 @@ from astroid.tests import resources
 
 abuilder = builder.AstroidBuilder()
 BUILTINS = six.moves.builtins.__name__
+PY38 = sys.version_info[:2] >= (3, 8)
 try:
     import typed_ast  # pylint: disable=unused-import
 
     HAS_TYPED_AST = True
 except ImportError:
-    HAS_TYPED_AST = False
+    # typed_ast merged in `ast` in Python 3.8
+    HAS_TYPED_AST = PY38
 
 
 class AsStringTest(resources.SysPathSetup, unittest.TestCase):
@@ -1071,7 +1073,11 @@ def test_type_comments_arguments():
     ]
     for node, expected_args in zip(module.body, expected_annotations):
         assert len(node.type_comment_args) == 1
-        assert isinstance(node.type_comment_args[0], astroid.Ellipsis)
+        if PY38:
+            assert isinstance(node.type_comment_args[0], astroid.Const)
+            assert node.type_comment_args[0].value == Ellipsis
+        else:
+            assert isinstance(node.type_comment_args[0], astroid.Ellipsis)
         assert len(node.args.type_comment_args) == len(expected_args)
         for expected_arg, actual_arg in zip(expected_args, node.args.type_comment_args):
             assert actual_arg.as_string() == expected_arg
