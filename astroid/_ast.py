@@ -32,8 +32,11 @@ def _get_parser_module(parse_python_two: bool = False):
 def _parse(string: str, parse_python_two: bool = False):
     parse_module = _get_parser_module(parse_python_two=parse_python_two)
     parse_func = parse_module.parse
-    if _ast_py3 and not parse_python_two:
-        parse_func = partial(parse_func, feature_version=sys.version_info.minor)
+    if _ast_py3:
+        if PY38:
+            parse_func = partial(parse_func, type_comments=True)
+        if not parse_python_two:
+            parse_func = partial(parse_func, feature_version=sys.version_info.minor)
     return parse_func(string)
 
 
