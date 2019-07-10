@@ -1194,5 +1194,11 @@ def test_get_doc():
     assert node.doc is None
 
 
+def test_parse_fstring_debug_mode():
+    node = astroid.extract_node('f"{3=}"')
+    assert isinstance(node, nodes.JoinedStr)
+    assert node.as_string() == "f'3={3}'"
+
+
 if __name__ == "__main__":
     unittest.main()
