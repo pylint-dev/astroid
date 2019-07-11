@@ -26,6 +26,9 @@ from astroid import modutils
 from astroid import transforms
 
 
+ZIP_IMPORT_EXTS = (".zip", ".egg", ".whl")
+
+
 def safe_repr(obj):
     try:
         return repr(obj)
@@ -185,7 +188,7 @@ class AstroidManager:
         from astroid.builder import AstroidBuilder
 
         builder = AstroidBuilder(self)
-        for ext in (".zip", ".egg"):
+        for ext in ZIP_IMPORT_EXTS:
             try:
                 eggpath, resource = filepath.rsplit(ext + os.path.sep, 1)
             except ValueError:
