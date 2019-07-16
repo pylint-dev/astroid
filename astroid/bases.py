@@ -228,7 +228,7 @@ class BaseInstance(Proxy):
                 # descriptors
                 # But only if the _proxied is the Class.
                 if self._proxied.__class__.__name__ != "ClassDef":
-                    raise exceptions.InferenceError(**vars(error)) from error
+                    raise
                 attrs = self._proxied.igetattr(name, context, class_context=False)
                 yield from self._wrap_attr(attrs, context)
             except exceptions.AttributeInferenceError as error:
