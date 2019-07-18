@@ -520,8 +520,10 @@ class MultiprocessingBrainTest(unittest.TestCase):
             obj = next(module[attr].infer())
             self.assertEqual(obj.qname(), "{}.{}".format(bases.BUILTINS, attr))
 
-        array = next(module["array"].infer())
-        self.assertEqual(array.qname(), "array.array")
+        # pypy's implementation of array.__spec__ return None. This causes problems for this inference.
+        if not hasattr(sys, "pypy_version_info"):
+            array = next(module["array"].infer())
+            self.assertEqual(array.qname(), "array.array")
 
         manager = next(module["manager"].infer())
         # Verify that we have these attributes

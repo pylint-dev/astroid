@@ -28,6 +28,7 @@
 :var BUILTIN_MODULES: dictionary with builtin module names has key
 """
 import imp
+import importlib.util
 import os
 import platform
 import sys
@@ -426,7 +427,9 @@ def file_info_from_modpath(modpath, path=None, context_file=None):
     elif modpath == ["os", "path"]:
         # FIXME: currently ignoring search_path...
         return spec.ModuleSpec(
-            name="os.path", location=os.path.__file__, module_type=imp.PY_SOURCE
+            name="os.path",
+            location=os.path.__file__,
+            module_type=spec.ModuleType.PY_SOURCE,
         )
     return _spec_from_modpath(modpath, path, context)
 
@@ -622,15 +625,21 @@ def is_relative(modname, from_file):
         from_file = os.path.dirname(from_file)
     if from_file in sys.path:
         return False
-    try:
-        stream, _, _ = imp.find_module(modname.split(".")[0], [from_file])
+    name = os.path.basename(from_file)
+    file_path = os.path.dirname(from_file)
+    parent_spec = importlib.util.find_spec(name, from_file)
+    while parent_spec is None and len(file_path) > 0:
+        name = os.path.basename(file_path) + "." + name
+        file_path = os.path.dirname(file_path)
+        parent_spec = importlib.util.find_spec(name, from_file)
 
-        # Close the stream to avoid ResourceWarnings.
-        if stream:
-            stream.close()
-        return True
-    except ImportError:
+    if parent_spec is None:
         return False
+
+    submodule_spec = importlib.util.find_spec(
+        name + "." + modname.split(".")[0], parent_spec.submodule_search_locations
+    )
+    return submodule_spec is not None
 
 
 # internal only functions #####################################################

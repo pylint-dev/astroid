@@ -10,17 +10,13 @@ import abc
 import collections
 import distutils
 import enum
-import imp
 import os
 import sys
 import zipimport
 
-try:
-    import importlib.machinery
+import importlib.machinery
 
-    _HAS_MACHINERY = True
-except ImportError:
-    _HAS_MACHINERY = False
+_HAS_MACHINERY = True
 
 try:
     from functools import lru_cache
@@ -35,22 +31,6 @@ ModuleType = enum.Enum(
     "PY_CODERESOURCE PY_COMPILED PY_FROZEN PY_RESOURCE "
     "PY_SOURCE PY_ZIPMODULE PY_NAMESPACE",
 )
-_ImpTypes = {
-    imp.C_BUILTIN: ModuleType.C_BUILTIN,
-    imp.C_EXTENSION: ModuleType.C_EXTENSION,
-    imp.PKG_DIRECTORY: ModuleType.PKG_DIRECTORY,
-    imp.PY_COMPILED: ModuleType.PY_COMPILED,
-    imp.PY_FROZEN: ModuleType.PY_FROZEN,
-    imp.PY_SOURCE: ModuleType.PY_SOURCE,
-}
-if hasattr(imp, "PY_RESOURCE"):
-    _ImpTypes[imp.PY_RESOURCE] = ModuleType.PY_RESOURCE
-if hasattr(imp, "PY_CODERESOURCE"):
-    _ImpTypes[imp.PY_CODERESOURCE] = ModuleType.PY_CODERESOURCE
-
-
-def _imp_type_to_module_type(imp_type):
-    return _ImpTypes[imp_type]
 
 
 _ModuleSpec = collections.namedtuple(
@@ -116,22 +96,61 @@ class ImpFinder(Finder):
     """A finder based on the imp module."""
 
     def find_module(self, modname, module_parts, processed, submodule_path):
+        if not isinstance(modname, str):
+            raise TypeError("'modname' must be a str, not {}".format(type(modname)))
         if submodule_path is not None:
             submodule_path = list(submodule_path)
-        try:
-            stream, mp_filename, mp_desc = imp.find_module(modname, submodule_path)
-        except ImportError:
-            return None
+        else:
+            try:
+                loader = importlib.util.find_spec(modname)
+                if loader:
+                    if loader.loader is importlib.machinery.BuiltinImporter:
+                        return ModuleSpec(
+                            name=modname,
+                            location=None,
+                            module_type=ModuleType.C_BUILTIN,
+                        )
+                    if loader.loader is importlib.machinery.FrozenImporter:
+                        return ModuleSpec(
+                            name=modname,
+                            location=None,
+                            module_type=ModuleType.PY_FROZEN,
+                        )
+            except ValueError:
+                pass
+            submodule_path = sys.path
 
-        # Close resources.
-        if stream:
-            stream.close()
-
-        return ModuleSpec(
-            name=modname,
-            location=mp_filename,
-            module_type=_imp_type_to_module_type(mp_desc[2]),
+        suffixes = (
+            [
+                (s, ModuleType.C_EXTENSION)
+                for s in importlib.machinery.EXTENSION_SUFFIXES
+            ]
+            + [(s, ModuleType.PY_SOURCE) for s in importlib.machinery.SOURCE_SUFFIXES]
+            + [
+                (s, ModuleType.PY_COMPILED)
+                for s in importlib.machinery.BYTECODE_SUFFIXES
+            ]
         )
+
+        for entry in submodule_path:
+            package_directory = os.path.join(entry, modname)
+            for suffix in [".py", importlib.machinery.BYTECODE_SUFFIXES[0]]:
+                package_file_name = "__init__" + suffix
+                file_path = os.path.join(package_directory, package_file_name)
+                if os.path.isfile(file_path):
+                    return ModuleSpec(
+                        name=modname,
+                        location=package_directory,
+                        module_type=ModuleType.PKG_DIRECTORY,
+                    )
+            for suffix, type_ in suffixes:
+                file_name = modname + suffix
+                file_path = os.path.join(entry, file_name)
+                if os.path.isfile(file_path):
+                    return ModuleSpec(
+                        name=modname, location=file_path, module_type=type_
+                    )
+        return None
 
     def contribute_to_path(self, spec, processed):
         if spec.location is None:

@@ -302,6 +302,23 @@ class IsRelativeTest(unittest.TestCase):
     def test_knownValues_is_relative_3(self):
         self.assertFalse(modutils.is_relative("astroid", astroid.__path__[0]))
 
+    def test_deep_relative(self):
+        self.assertTrue(modutils.is_relative("ElementTree", xml.etree.__path__[0]))
+
+    def test_deep_relative2(self):
+        self.assertFalse(modutils.is_relative("ElementTree", xml.__path__[0]))
+
+    def test_deep_relative3(self):
+        self.assertTrue(modutils.is_relative("etree.ElementTree", xml.__path__[0]))
+
+    def test_deep_relative4(self):
+        self.assertTrue(modutils.is_relative("etree.gibberish", xml.__path__[0]))
+
+    def test_is_relative_bad_path(self):
+        self.assertFalse(
+            modutils.is_relative("ElementTree", os.path.join(xml.__path__[0], "ftree"))
+        )
+
 
 class GetModuleFilesTest(unittest.TestCase):
     def test_get_module_files_1(self):

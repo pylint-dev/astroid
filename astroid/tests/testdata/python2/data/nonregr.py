@@ -16,9 +16,7 @@ def toto(value):
         print(v.get('yo'))
 
 
-import imp
-fp, mpath, desc = imp.find_module('optparse',a)
-s_opt = imp.load_module('std_optparse', fp, mpath, desc)
+import optparse as s_opt
 
 class OptionParser(s_opt.OptionParser):
 
