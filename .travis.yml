@@ -13,7 +13,7 @@ jobs:
       env: TOXENV=formatting
     - python: 3.5
       env: TOXENV=py35
-    - python: pypy3.5-5.8.0
+    - python: pypy3.5
       env: TOXENV=pypy
     - python: 3.6
       env: TOXENV=py36
