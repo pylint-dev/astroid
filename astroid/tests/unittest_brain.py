@@ -1897,5 +1897,21 @@ def test_oserror_model():
     assert strerror.value == ""
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 7), reason="Dynamic module attributes since Python 3.7"
+)
+def test_crypt_brain():
+    module = MANAGER.ast_from_module_name("crypt")
+    dynamic_attrs = [
+        "METHOD_SHA512",
+        "METHOD_SHA256",
+        "METHOD_BLOWFISH",
+        "METHOD_MD5",
+        "METHOD_CRYPT",
+    ]
+    for attr in dynamic_attrs:
+        assert attr in module
+
+
 if __name__ == "__main__":
     unittest.main()
