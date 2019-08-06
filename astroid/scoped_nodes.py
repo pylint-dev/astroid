@@ -1421,7 +1421,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         return decorators
 
     @decorators_mod.cachedproperty
-    def type(self):
+    def type(self):  # pylint: disable=invalid-overridden-method
         """The function type for this node.
 
         Possible values are: method, function, staticmethod, classmethod.
