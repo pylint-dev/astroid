@@ -695,7 +695,7 @@ class NodeNG:
             subclasses of :attr:`klass`.
         :type skip_klass: builtins.type or tuple(builtins.type)
 
-        :returns: The node of the given type.
+        :returns: The node of the given types.
         :rtype: iterable(NodeNG)
         """
         if isinstance(self, klass):
