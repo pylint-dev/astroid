@@ -689,11 +689,11 @@ class NodeNG:
         """Get the nodes (including this one or below) of the given types.
 
         :param klass: The types of node to search for.
-        :type klass: builtins.type or tuple(builtin.type)
+        :type klass: builtins.type or tuple(builtins.type)
 
         :param skip_klass: The types of node to ignore. This is useful to ignore
             subclasses of :attr:`klass`.
-        :type skip_klass: builtins.type or tuple(builtin.type)
+        :type skip_klass: builtins.type or tuple(builtins.type)
 
         :returns: The node of the given type.
         :rtype: iterable(NodeNG)
