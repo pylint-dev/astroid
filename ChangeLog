@@ -6,6 +6,8 @@ What's New in astroid 2.3.0?
 ============================
 Release Date: TBA
 
+* Updated `NodeNG.nodes_of_class` documentation to match actual usage.
+
 * Allow importing wheel files. Close #541
 
 * Annotated AST follows PEP8 coding style when converted to string.
