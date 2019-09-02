@@ -6,6 +6,8 @@ What's New in astroid 2.3.0?
 ============================
 Release Date: TBA
 
+* Fixed NodeNG.nearest since it was not returning nodes that have a greater line number.
+
 * Allow importing wheel files. Close #541
 
 * Annotated AST follows PEP8 coding style when converted to string.
