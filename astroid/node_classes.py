@@ -599,8 +599,9 @@ class NodeNG:
                 "nodes %s and %s are not from the same module" % (self, node)
             )
             lineno = node.fromlineno
-            if node.fromlineno > mylineno:
-                break
+            if lineno > mylineno:
+                if nearest[1] > 0 and lineno-mylineno >= mylineno-nearest[1]:
+                    break
             if lineno > nearest[1]:
                 nearest = node, lineno
         # FIXME: raise an exception if nearest is None ?
