@@ -686,16 +686,16 @@ class NodeNG:
         self.parent.set_local(name, stmt)
 
     def nodes_of_class(self, klass, skip_klass=None):
-        """Get the nodes (including this one or below) of the given type.
+        """Get the nodes (including this one or below) of the given types.
 
-        :param klass: The type of node to search for.
-        :type klass: builtins.type
+        :param klass: The types of node to search for.
+        :type klass: builtins.type or tuple(builtins.type)
 
-        :param skip_klass: A type of node to ignore. This is useful to ignore
+        :param skip_klass: The types of node to ignore. This is useful to ignore
             subclasses of :attr:`klass`.
-        :type skip_klass: builtins.type
+        :type skip_klass: builtins.type or tuple(builtins.type)
 
-        :returns: The node of the given type.
+        :returns: The node of the given types.
         :rtype: iterable(NodeNG)
         """
         if isinstance(self, klass):
