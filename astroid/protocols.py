@@ -114,11 +114,8 @@ BIN_OP_IMPL = {
     "^": lambda a, b: a ^ b,
     "<<": lambda a, b: a << b,
     ">>": lambda a, b: a >> b,
+    "@": operator_mod.matmul,
 }
-if sys.version_info >= (3, 5):
-    # MatMult is available since Python 3.5+.
-    BIN_OP_IMPL["@"] = operator_mod.matmul
-
 for _KEY, _IMPL in list(BIN_OP_IMPL.items()):
     BIN_OP_IMPL[_KEY + "="] = _IMPL
 

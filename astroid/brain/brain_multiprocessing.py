@@ -9,9 +9,6 @@ import astroid
 from astroid import exceptions
 
 
-PY34 = sys.version_info >= (3, 4)
-
-
 def _multiprocessing_transform():
     module = astroid.parse(
         """
@@ -20,10 +17,7 @@ def _multiprocessing_transform():
         return SyncManager()
     """
     )
-    if not PY34:
-        return module
-
-    # On Python 3.4, multiprocessing uses a getattr lookup inside contexts,
+    # Multiprocessing uses a getattr lookup inside contexts,
     # in order to get the attributes they need. Since it's extremely
     # dynamic, we use this approach to fake it.
     node = astroid.parse(

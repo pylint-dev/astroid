@@ -254,12 +254,8 @@ class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
         self.assertTrue(modutils.is_standard_module("datetime"))
 
     def test_builtins(self):
-        if sys.version_info < (3, 0):
-            self.assertTrue(modutils.is_standard_module("__builtin__"))
-            self.assertFalse(modutils.is_standard_module("builtins"))
-        else:
-            self.assertFalse(modutils.is_standard_module("__builtin__"))
-            self.assertTrue(modutils.is_standard_module("builtins"))
+        self.assertFalse(modutils.is_standard_module("__builtin__"))
+        self.assertTrue(modutils.is_standard_module("builtins"))
 
     def test_builtin(self):
         self.assertTrue(modutils.is_standard_module("sys"))
@@ -275,10 +271,8 @@ class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
         self.assertTrue(modutils.is_standard_module("hashlib"))
         self.assertTrue(modutils.is_standard_module("pickle"))
         self.assertTrue(modutils.is_standard_module("email"))
-        self.assertEqual(modutils.is_standard_module("io"), sys.version_info >= (2, 6))
-        self.assertEqual(
-            modutils.is_standard_module("StringIO"), sys.version_info < (3, 0)
-        )
+        self.assertTrue(modutils.is_standard_module("io"))
+        self.assertFalse(modutils.is_standard_module("StringIO"))
         self.assertTrue(modutils.is_standard_module("unicodedata"))
 
     def test_custom_path(self):

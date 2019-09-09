@@ -137,10 +137,6 @@ def _canonicalize_path(path):
 
 def _path_from_filename(filename, is_jython=IS_JYTHON):
     if not is_jython:
-        if sys.version_info > (3, 0):
-            return filename
-        if filename.endswith(".pyc"):
-            return filename[:-1]
         return filename
     head, has_pyclass, _ = filename.partition("$py.class")
     if has_pyclass:

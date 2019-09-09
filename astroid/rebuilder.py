@@ -37,8 +37,6 @@ REDIRECT = {
     "excepthandler": "ExceptHandler",
     "keyword": "Keyword",
 }
-PY3 = sys.version_info >= (3, 0)
-PY34 = sys.version_info >= (3, 4)
 PY37 = sys.version_info >= (3, 7)
 PY38 = sys.version_info >= (3, 8)
 
@@ -51,6 +49,7 @@ def _binary_operators_from_module(module):
         module.BitXor: "^",
         module.Div: "/",
         module.FloorDiv: "//",
+        module.MatMult: "@",
         module.Mod: "%",
         module.Mult: "*",
         module.Pow: "**",
@@ -58,8 +57,6 @@ def _binary_operators_from_module(module):
         module.LShift: "<<",
         module.RShift: ">>",
     }
-    if sys.version_info >= (3, 5):
-        binary_operators[module.MatMult] = "@"
     return binary_operators
 
 
@@ -183,12 +180,9 @@ class TreeRebuilder:
     def visit_arguments(self, node, parent):
         """visit an Arguments node by returning a fresh instance of it"""
         vararg, kwarg = node.vararg, node.kwarg
-        if PY34:
-            newnode = nodes.Arguments(
-                vararg.arg if vararg else None, kwarg.arg if kwarg else None, parent
-            )
-        else:
-            newnode = nodes.Arguments(vararg, kwarg, parent)
+        newnode = nodes.Arguments(
+            vararg.arg if vararg else None, kwarg.arg if kwarg else None, parent
+        )
         args = [self.visit(child, newnode) for child in node.args]
         defaults = [self.visit(child, newnode) for child in node.defaults]
         varargannotation = None
@@ -197,34 +191,25 @@ class TreeRebuilder:
         # change added in 82732 (7c5c678e4164), vararg and kwarg
         # are instances of `_ast.arg`, not strings
         if vararg:
-            if PY34:
-                if node.vararg.annotation:
-                    varargannotation = self.visit(node.vararg.annotation, newnode)
-                vararg = vararg.arg
+            if node.vararg.annotation:
+                varargannotation = self.visit(node.vararg.annotation, newnode)
+            vararg = vararg.arg
         if kwarg:
-            if PY34:
-                if node.kwarg.annotation:
-                    kwargannotation = self.visit(node.kwarg.annotation, newnode)
-                kwarg = kwarg.arg
-        if PY3:
-            kwonlyargs = [self.visit(child, newnode) for child in node.kwonlyargs]
-            kw_defaults = [
-                self.visit(child, newnode) if child else None
-                for child in node.kw_defaults
-            ]
-            annotations = [
-                self.visit(arg.annotation, newnode) if arg.annotation else None
-                for arg in node.args
-            ]
-            kwonlyargs_annotations = [
-                self.visit(arg.annotation, newnode) if arg.annotation else None
-                for arg in node.kwonlyargs
-            ]
-        else:
-            kwonlyargs = []
-            kw_defaults = []
-            annotations = []
-            kwonlyargs_annotations = []
+            if node.kwarg.annotation:
+                kwargannotation = self.visit(node.kwarg.annotation, newnode)
+            kwarg = kwarg.arg
+        kwonlyargs = [self.visit(child, newnode) for child in node.kwonlyargs]
+        kw_defaults = [
+            self.visit(child, newnode) if child else None for child in node.kw_defaults
+        ]
+        annotations = [
+            self.visit(arg.annotation, newnode) if arg.annotation else None
+            for arg in node.args
+        ]
+        kwonlyargs_annotations = [
+            self.visit(arg.annotation, newnode) if arg.annotation else None
+            for arg in node.kwonlyargs
+        ]
 
         posonlyargs_annotations = []
         if PY38:
@@ -407,11 +392,10 @@ class TreeRebuilder:
         node, doc = self._get_doc(node)
         newnode = nodes.ClassDef(node.name, doc, node.lineno, node.col_offset, parent)
         metaclass = None
-        if PY3:
-            for keyword in node.keywords:
-                if keyword.arg == "metaclass":
-                    metaclass = self.visit(keyword, newnode).value
-                    break
+        for keyword in node.keywords:
+            if keyword.arg == "metaclass":
+                metaclass = self.visit(keyword, newnode).value
+                break
         if node.decorator_list:
             decorators = self.visit_decorators(node, newnode)
         else:
@@ -426,9 +410,7 @@ class TreeRebuilder:
                 self.visit(kwd, newnode)
                 for kwd in node.keywords
                 if kwd.arg != "metaclass"
-            ]
-            if PY3
-            else [],
+            ],
         )
         return newnode
 
@@ -617,7 +599,7 @@ class TreeRebuilder:
             decorators = self.visit_decorators(node, newnode)
         else:
             decorators = None
-        if PY3 and node.returns:
+        if node.returns:
             returns = self.visit(node.returns, newnode)
         else:
             returns = None
@@ -1103,5 +1085,4 @@ class TreeRebuilder3(TreeRebuilder):
         return newnode
 
 
-if sys.version_info >= (3, 0):
-    TreeRebuilder = TreeRebuilder3
+TreeRebuilder = TreeRebuilder3

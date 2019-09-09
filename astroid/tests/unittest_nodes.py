@@ -517,17 +517,8 @@ class NameNodeTest(unittest.TestCase):
                 pass
             del True
         """
-        if sys.version_info >= (3, 0):
-            with self.assertRaises(exceptions.AstroidBuildingError):
-                builder.parse(code)
-        else:
-            ast = builder.parse(code)
-            assign_true = ast["True"]
-            self.assertIsInstance(assign_true, nodes.AssignName)
-            self.assertEqual(assign_true.name, "True")
-            del_true = ast.body[2].targets[0]
-            self.assertIsInstance(del_true, nodes.DelName)
-            self.assertEqual(del_true.name, "True")
+        with self.assertRaises(exceptions.AstroidBuildingError):
+            builder.parse(code)
 
 
 class AnnAssignNodeTest(unittest.TestCase):
@@ -600,13 +591,10 @@ class ArgumentsNodeTC(unittest.TestCase):
         self.assertEqual(xlambda.args.fromlineno, 4)
         self.assertEqual(xlambda.args.tolineno, 4)
         self.assertFalse(xlambda.args.is_statement)
-        if sys.version_info < (3, 0):
-            self.assertEqual(ast["func"].args.tolineno, 3)
-        else:
-            self.skipTest(
-                "FIXME  http://bugs.python.org/issue10445 "
-                "(no line number on function args)"
-            )
+        self.skipTest(
+            "FIXME  http://bugs.python.org/issue10445 "
+            "(no line number on function args)"
+        )
 
     @test_utils.require_version(minver="3.0")
     def test_kwoargs(self):

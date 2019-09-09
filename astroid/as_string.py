@@ -629,8 +629,7 @@ def _import_string(names):
     return ", ".join(_names)
 
 
-if sys.version_info >= (3, 0):
-    AsStringVisitor = AsStringVisitor3
+AsStringVisitor = AsStringVisitor3
 
 # This sets the default indent to 4 spaces.
 to_code = AsStringVisitor("    ")
