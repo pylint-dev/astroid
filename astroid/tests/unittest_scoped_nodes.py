@@ -314,18 +314,6 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         first = l_sibling.root().body[0]
         self.assertIsNone(first.previous_sibling())
 
-    def test_nested_args(self):
-        if sys.version_info >= (3, 0):
-            self.skipTest("nested args has been removed in py3.x")
-        code = """
-            def nested_args(a, (b, c, d)):
-                "nested arguments test"
-        """
-        tree = builder.parse(code)
-        func = tree["nested_args"]
-        self.assertEqual(sorted(func.locals), ["a", "b", "c", "d"])
-        self.assertEqual(func.args.format_args(), "a, (b, c, d)")
-
     def test_four_args(self):
         func = self.module["four_args"]
         local = sorted(func.keys())
@@ -446,10 +434,7 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertFalse(astroid["sfunction"].is_method())
 
     def test_argnames(self):
-        if sys.version_info < (3, 0):
-            code = "def f(a, (b, c), *args, **kwargs): pass"
-        else:
-            code = "def f(a, b, c, *args, **kwargs): pass"
+        code = "def f(a, b, c, *args, **kwargs): pass"
         astroid = builder.parse(code, __name__)
         self.assertEqual(astroid["f"].argnames(), ["a", "b", "c", "args", "kwargs"])
 
@@ -685,7 +670,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(cls.getattr("__doc__")[0].value, "hehe\n    haha")
         # YO is an old styled class for Python 2.7
         # May want to stop locals from referencing namespaced variables in the future
-        module_attr_num = 4 if sys.version_info > (3, 3) else 1
+        module_attr_num = 4
         self.assertEqual(len(cls.getattr("__module__")), module_attr_num)
         self.assertIsInstance(cls.getattr("__module__")[0], nodes.Const)
         self.assertEqual(cls.getattr("__module__")[0].value, "data.module")
@@ -780,13 +765,10 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         anc_klass = next(it)
         self.assertIsInstance(anc_klass, nodes.ClassDef)
         self.assertEqual(anc_klass.name, "A")
-        if sys.version_info[0] == 2:
-            self.assertRaises(StopIteration, partial(next, it))
-        else:
-            anc_klass = next(it)
-            self.assertIsInstance(anc_klass, nodes.ClassDef)
-            self.assertEqual(anc_klass.name, "object")
-            self.assertRaises(StopIteration, partial(next, it))
+        anc_klass = next(it)
+        self.assertIsInstance(anc_klass, nodes.ClassDef)
+        self.assertEqual(anc_klass.name, "object")
+        self.assertRaises(StopIteration, partial(next, it))
 
         it = klass2.local_attr_ancestors("method")
         self.assertRaises(StopIteration, partial(next, it))
@@ -859,15 +841,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
     #    self.assertIsInstance(value, nodes.Const)
     #    self.assertEqual(value.value, 1)
 
-    @unittest.skipIf(sys.version_info[0] >= 3, "Python 2 class semantics required.")
     def test_ancestors(self):
-        klass = self.module["YOUPI"]
-        self.assertEqual(["YO"], [a.name for a in klass.ancestors()])
-        klass = self.module2["Specialization"]
-        self.assertEqual(["YOUPI", "YO"], [a.name for a in klass.ancestors()])
-
-    @unittest.skipIf(sys.version_info[0] < 3, "Python 3 class semantics required.")
-    def test_ancestors_py3(self):
         klass = self.module["YOUPI"]
         self.assertEqual(["YO", "object"], [a.name for a in klass.ancestors()])
         klass = self.module2["Specialization"]
@@ -912,8 +886,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             "registered",
             "schema",
         ]
-        if sys.version_info < (3, 3):
-            assert_keys.pop(assert_keys.index("__qualname__"))
         self.assertEqual(sorted(cls.locals.keys()), assert_keys)
 
     def test_class_getattr(self):

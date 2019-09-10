@@ -8,78 +8,54 @@
 import sys
 import textwrap
 
-import six
-
 import astroid
 
 
 PY37 = sys.version_info >= (3, 7)
 PY36 = sys.version_info >= (3, 6)
-PY34 = sys.version_info >= (3, 4)
-PY33 = sys.version_info >= (3, 3)
 
 
 def _subprocess_transform():
-    if six.PY3:
-        communicate = (bytes("string", "ascii"), bytes("string", "ascii"))
-        communicate_signature = "def communicate(self, input=None, timeout=None)"
-        if PY37:
-            init = """
-            def __init__(self, args, bufsize=0, executable=None,
-                         stdin=None, stdout=None, stderr=None,
-                         preexec_fn=None, close_fds=False, shell=False,
-                         cwd=None, env=None, universal_newlines=False,
-                         startupinfo=None, creationflags=0, restore_signals=True,
-                         start_new_session=False, pass_fds=(), *,
-                         encoding=None, errors=None, text=None):
-                pass
-            """
-        elif PY36:
-            init = """
-            def __init__(self, args, bufsize=0, executable=None,
-                         stdin=None, stdout=None, stderr=None,
-                         preexec_fn=None, close_fds=False, shell=False,
-                         cwd=None, env=None, universal_newlines=False,
-                         startupinfo=None, creationflags=0, restore_signals=True,
-                         start_new_session=False, pass_fds=(), *,
-                         encoding=None, errors=None):
-                pass
-            """
-        else:
-            init = """
-            def __init__(self, args, bufsize=0, executable=None,
-                         stdin=None, stdout=None, stderr=None,
-                         preexec_fn=None, close_fds=False, shell=False,
-                         cwd=None, env=None, universal_newlines=False,
-                         startupinfo=None, creationflags=0, restore_signals=True,
-                         start_new_session=False, pass_fds=()):
-                pass
-            """
-    else:
-        communicate = ("string", "string")
-        communicate_signature = "def communicate(self, input=None)"
+    communicate = (bytes("string", "ascii"), bytes("string", "ascii"))
+    communicate_signature = "def communicate(self, input=None, timeout=None)"
+    if PY37:
         init = """
         def __init__(self, args, bufsize=0, executable=None,
                      stdin=None, stdout=None, stderr=None,
                      preexec_fn=None, close_fds=False, shell=False,
                      cwd=None, env=None, universal_newlines=False,
-                     startupinfo=None, creationflags=0):
+                     startupinfo=None, creationflags=0, restore_signals=True,
+                     start_new_session=False, pass_fds=(), *,
+                     encoding=None, errors=None, text=None):
             pass
         """
-    if PY34:
-        wait_signature = "def wait(self, timeout=None)"
-    else:
-        wait_signature = "def wait(self)"
-    if six.PY3:
-        ctx_manager = """
-        def __enter__(self): return self
-        def __exit__(self, *args): pass
+    elif PY36:
+        init = """
+        def __init__(self, args, bufsize=0, executable=None,
+                     stdin=None, stdout=None, stderr=None,
+                     preexec_fn=None, close_fds=False, shell=False,
+                     cwd=None, env=None, universal_newlines=False,
+                     startupinfo=None, creationflags=0, restore_signals=True,
+                     start_new_session=False, pass_fds=(), *,
+                     encoding=None, errors=None):
+            pass
         """
     else:
-        ctx_manager = ""
-    py3_args = ""
-    if PY33:
-        py3_args = "args = []"
+        init = """
+        def __init__(self, args, bufsize=0, executable=None,
+                     stdin=None, stdout=None, stderr=None,
+                     preexec_fn=None, close_fds=False, shell=False,
+                     cwd=None, env=None, universal_newlines=False,
+                     startupinfo=None, creationflags=0, restore_signals=True,
+                     start_new_session=False, pass_fds=()):
+            pass
+        """
+    wait_signature = "def wait(self, timeout=None)"
+    ctx_manager = """
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+    """
+    py3_args = "args = []"
     code = textwrap.dedent(
         """
     class Popen(object):

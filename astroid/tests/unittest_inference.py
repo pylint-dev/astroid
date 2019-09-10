@@ -51,12 +51,8 @@ def get_node_of_class(start_from, klass):
 
 builder = builder.AstroidBuilder()
 
-if sys.version_info < (3, 0):
-    EXC_MODULE = "exceptions"
-    BOOL_SPECIAL_METHOD = "__nonzero__"
-else:
-    EXC_MODULE = BUILTINS
-    BOOL_SPECIAL_METHOD = "__bool__"
+EXC_MODULE = BUILTINS
+BOOL_SPECIAL_METHOD = "__bool__"
 
 
 class InferenceUtilsTest(unittest.TestCase):
@@ -391,18 +387,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         nie = error.inferred()[0]
         self.assertIsInstance(nie, nodes.ClassDef)
         nie_ancestors = [c.name for c in nie.ancestors()]
-        if sys.version_info < (3, 0):
-            expected = [
-                "RuntimeError",
-                "StandardError",
-                "Exception",
-                "BaseException",
-                "object",
-            ]
-            self.assertEqual(nie_ancestors, expected)
-        else:
-            expected = ["RuntimeError", "Exception", "BaseException", "object"]
-            self.assertEqual(nie_ancestors, expected)
+        expected = ["RuntimeError", "Exception", "BaseException", "object"]
+        self.assertEqual(nie_ancestors, expected)
 
     def test_except_inference(self):
         code = """

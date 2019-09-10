@@ -457,10 +457,7 @@ class MultiprocessingBrainTest(unittest.TestCase):
         )
         module = module.do_import_module("multiprocessing")
         cpu_count = next(module.igetattr("cpu_count"))
-        if sys.version_info < (3, 4):
-            self.assertIsInstance(cpu_count, nodes.FunctionDef)
-        else:
-            self.assertIsInstance(cpu_count, astroid.BoundMethod)
+        self.assertIsInstance(cpu_count, astroid.BoundMethod)
 
     def test_module_name(self):
         module = builder.extract_node(
@@ -1210,9 +1207,6 @@ class RandomSampleTest(unittest.TestCase):
 class SubprocessTest(unittest.TestCase):
     """Test subprocess brain"""
 
-    @unittest.skipIf(
-        sys.version_info < (3, 3), reason="Python 2.7 subprocess doesnt have args"
-    )
     def test_subprocess_args(self):
         """Make sure the args attribute exists for Popen
 
@@ -1868,9 +1862,6 @@ class TestFunctoolsPartial:
             assert inferred.value == expected_value
 
 
-@pytest.mark.skipif(
-    sys.version_info[:2] == (3, 4), reason="Not a problem on Python 3.4"
-)
 def test_http_client_brain():
     node = astroid.extract_node(
         """

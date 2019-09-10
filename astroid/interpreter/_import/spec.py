@@ -228,7 +228,7 @@ class PathSpecFinder(Finder):
 
 
 _SPEC_FINDERS = (ImpFinder, ZipFinder)
-if _HAS_MACHINERY and sys.version_info[:2] >= (3, 4):
+if _HAS_MACHINERY:
     _SPEC_FINDERS += (PathSpecFinder,)
 _SPEC_FINDERS += (ExplicitNamespacePackageFinder,)
 

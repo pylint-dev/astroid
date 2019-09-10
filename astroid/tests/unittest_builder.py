@@ -104,13 +104,10 @@ class FromToLineNoTest(unittest.TestCase):
         self.assertIsInstance(return_, nodes.Return)
         self.assertEqual(return_.fromlineno, 18)
         self.assertEqual(return_.tolineno, 18)
-        if sys.version_info < (3, 0):
-            self.assertEqual(function.blockstart_tolineno, 17)
-        else:
-            self.skipTest(
-                "FIXME  http://bugs.python.org/issue10445 "
-                "(no line number on function args)"
-            )
+        self.skipTest(
+            "FIXME  http://bugs.python.org/issue10445 "
+            "(no line number on function args)"
+        )
 
     def test_decorated_function_lineno(self):
         astroid = builder.parse(
@@ -657,8 +654,6 @@ class FileBuildTest(unittest.TestCase):
         locals1 = klass1.locals
         keys = sorted(locals1.keys())
         assert_keys = ["__init__", "__module__", "__qualname__", "a"]
-        if sys.version_info < (3, 3):
-            assert_keys.pop(assert_keys.index("__qualname__"))
         self.assertEqual(keys, assert_keys)
         klass2 = module["YOUPI"]
         locals2 = klass2.locals
@@ -672,8 +667,6 @@ class FileBuildTest(unittest.TestCase):
             "method",
             "static_method",
         ]
-        if sys.version_info < (3, 3):
-            assert_keys.pop(assert_keys.index("__qualname__"))
         self.assertEqual(sorted(keys), assert_keys)
 
     def test_class_instance_attrs(self):
@@ -714,12 +707,9 @@ class FileBuildTest(unittest.TestCase):
         method = self.module["YOUPI"]["method"]
         _locals = method.locals
         keys = sorted(_locals)
-        if sys.version_info < (3, 0):
-            self.assertEqual(len(_locals), 5)
-            self.assertEqual(keys, ["a", "autre", "b", "local", "self"])
-        else:  # ListComp variables are no more accessible outside
-            self.assertEqual(len(_locals), 3)
-            self.assertEqual(keys, ["autre", "local", "self"])
+        # ListComp variables are not accessible outside
+        self.assertEqual(len(_locals), 3)
+        self.assertEqual(keys, ["autre", "local", "self"])
 
     def test_unknown_encoding(self):
         with self.assertRaises(exceptions.AstroidSyntaxError):

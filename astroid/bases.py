@@ -20,7 +20,6 @@ inference utils.
 
 import builtins
 import collections
-import sys
 
 from astroid import context as contextmod
 from astroid import exceptions
@@ -32,13 +31,10 @@ BUILTINS = builtins.__name__
 manager = util.lazy_import("manager")
 MANAGER = manager.AstroidManager()
 
-if sys.version_info >= (3, 0):
-    # TODO: check if needs special treatment
-    BUILTINS = "builtins"
-    BOOL_SPECIAL_METHOD = "__bool__"
-else:
-    BUILTINS = "__builtin__"
-    BOOL_SPECIAL_METHOD = "__nonzero__"
+# TODO: check if needs special treatment
+BUILTINS = "builtins"
+BOOL_SPECIAL_METHOD = "__bool__"
+
 PROPERTIES = {BUILTINS + ".property", "abc.abstractproperty"}
 # List of possible property names. We use this list in order
 # to see if a method is a property or not. This should be

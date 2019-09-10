@@ -44,14 +44,9 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         # a & b
         a = next(astroid.nodes_of_class(nodes.Name))
         self.assertEqual(a.lineno, 2)
-        if sys.version_info < (3, 0):
-            self.assertEqual(len(astroid.lookup("b")[1]), 1)
-            self.assertEqual(len(astroid.lookup("a")[1]), 1)
-            b = astroid.locals["b"][1]
-        else:
-            self.assertEqual(len(astroid.lookup("b")[1]), 1)
-            self.assertEqual(len(astroid.lookup("a")[1]), 1)
-            b = astroid.locals["b"][0]
+        self.assertEqual(len(astroid.lookup("b")[1]), 1)
+        self.assertEqual(len(astroid.lookup("a")[1]), 1)
+        b = astroid.locals["b"][0]
         stmts = a.lookup("a")[1]
         self.assertEqual(len(stmts), 1)
         self.assertEqual(b.lineno, 6)
@@ -172,10 +167,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         """
         )
         var = astroid.body[1].value
-        if sys.version_info < (3, 0):
-            self.assertEqual(var.inferred(), [util.Uninferable])
-        else:
-            self.assertRaises(exceptions.NameInferenceError, var.inferred)
+        self.assertRaises(exceptions.NameInferenceError, var.inferred)
 
     def test_dict_comps(self):
         astroid = builder.parse(
@@ -234,10 +226,7 @@ class LookupTest(resources.SysPathSetup, unittest.TestCase):
         )
         next_node = tree.body[2].value.func
         gener = next_node.expr.inferred()[0]
-        if sys.version_info < (3, 0):
-            self.assertIsInstance(gener.getattr("next")[0], nodes.FunctionDef)
-        else:
-            self.assertIsInstance(gener.getattr("__next__")[0], nodes.FunctionDef)
+        self.assertIsInstance(gener.getattr("__next__")[0], nodes.FunctionDef)
         self.assertIsInstance(gener.getattr("send")[0], nodes.FunctionDef)
         self.assertIsInstance(gener.getattr("throw")[0], nodes.FunctionDef)
         self.assertIsInstance(gener.getattr("close")[0], nodes.FunctionDef)

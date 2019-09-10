@@ -33,10 +33,6 @@ BUILTINS = six.moves.builtins.__name__
 def _get_file_from_object(obj):
     if platform.python_implementation() == "Jython":
         return obj.__file__.split("$py.class")[0] + ".py"
-    if sys.version_info >= (3, 4):
-        return obj.__file__
-    if not obj.__file__.endswith(".py"):
-        return obj.__file__[:-1]
     return obj.__file__
 
 
@@ -114,9 +110,6 @@ class AstroidManagerTest(
     def test_ast_from_namespace_pkg_resources(self):
         self._test_ast_from_old_namespace_package_protocol("pkg_resources")
 
-    @unittest.skipUnless(
-        sys.version_info[:2] >= (3, 4), "Needs PEP 420 namespace protocol"
-    )
     def test_implicit_namespace_package(self):
         data_dir = os.path.dirname(resources.find("data/namespace_pep_420"))
         contribute = os.path.join(data_dir, "contribute_to_namespace")
