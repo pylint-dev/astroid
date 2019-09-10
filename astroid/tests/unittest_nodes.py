@@ -1200,21 +1200,6 @@ def test_get_doc():
     assert node.doc is None
 
 
-def test_node_nearest():
-    src = """
-    print(before)
-    print(random)
-    print(middle)
-    print(after)
-    """
-    mod = astroid.parse(src)
-    before, random, middle, after = mod.body
-    assert before.nearest((middle, after)) is middle
-    assert middle.nearest((random, after)) is random
-    assert middle.nearest((before, after)) is after
-    assert random.nearest((before, after)) is before
-
-
 @test_utils.require_version(minver="3.8")
 def test_parse_fstring_debug_mode():
     node = astroid.extract_node('f"{3=}"')
