@@ -6,6 +6,10 @@ What's New in astroid 2.3.0?
 ============================
 Release Date: TBA
 
+* Remove NodeNG.nearest method because of lack of usage in astroid and pylint.
+
+  Close #691
+
 * Allow importing wheel files. Close #541
 
 * Annotated AST follows PEP8 coding style when converted to string.
