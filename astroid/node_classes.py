@@ -579,34 +579,6 @@ class NodeNG:
         """
         return self.parent.previous_sibling()
 
-    def nearest(self, nodes):
-        """Get the node closest to this one from the given list of nodes.
-
-        :param nodes: The list of nodes to search. All of these nodes must
-            belong to the same module as this one. The list should be
-            sorted by the line number of the nodes, smallest first.
-        :type nodes: iterable(NodeNG)
-
-        :returns: The node closest to this one in the source code,
-            or None if one could not be found.
-        :rtype: NodeNG or None
-        """
-        myroot = self.root()
-        mylineno = self.fromlineno
-        nearest = None, 0
-        for node in nodes:
-            assert node.root() is myroot, (
-                "nodes %s and %s are not from the same module" % (self, node)
-            )
-            lineno = node.fromlineno
-            if lineno > mylineno:
-                if nearest[1] > 0 and lineno-mylineno >= mylineno-nearest[1]:
-                    break
-            if lineno > nearest[1]:
-                nearest = node, lineno
-        # FIXME: raise an exception if nearest is None ?
-        return nearest[0]
-
     # these are lazy because they're relatively expensive to compute for every
     # single node, and they rarely get looked at
 

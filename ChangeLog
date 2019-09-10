@@ -6,7 +6,7 @@ What's New in astroid 2.3.0?
 ============================
 Release Date: TBA
 
-* Fixed NodeNG.nearest since it was not returning nodes that have a greater line number.
+* Remove NodeNG.nearest method because of lack of usage in astroid and pylint.
 
   Close #691
 
