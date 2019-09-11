@@ -24,7 +24,6 @@
 """
 # pylint: disable=too-many-lines
 import platform
-import sys
 from functools import partial
 import unittest
 from unittest.mock import patch

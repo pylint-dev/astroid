@@ -197,7 +197,7 @@ def _type_check(type1, type2):
 
 def is_subtype(type1, type2):
     """Check if *type1* is a subtype of *type2*."""
-    return _type_check(type2, type1)
+    return _type_check(type1=type2, type2=type1)
 
 
 def is_supertype(type1, type2):

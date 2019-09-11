@@ -10,14 +10,12 @@
 """tests for the astroid variable lookup capabilities
 """
 import functools
-import sys
 import unittest
 
 from astroid import builder
 from astroid import exceptions
 from astroid import nodes
 from astroid import scoped_nodes
-from astroid import util
 from astroid.tests import resources
 
 

@@ -22,7 +22,6 @@ where it makes sense.
 
 import collections
 import operator as operator_mod
-import sys
 
 import itertools
 

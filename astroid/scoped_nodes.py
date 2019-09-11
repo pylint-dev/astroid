@@ -1755,8 +1755,8 @@ def _is_metaclass(klass, seen=None):
                 baseobj_name = baseobj.qname()
                 if baseobj_name in seen:
                     continue
-                else:
-                    seen.add(baseobj_name)
+
+                seen.add(baseobj_name)
                 if isinstance(baseobj, bases.Instance):
                     # not abstract
                     return False

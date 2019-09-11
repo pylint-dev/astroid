@@ -21,8 +21,6 @@
 * :func:`dump` function return an internal representation of nodes found
   in the tree, useful for debugging or understanding the tree structure
 """
-import sys
-
 
 # pylint: disable=unused-argument
 
