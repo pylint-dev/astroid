@@ -1221,6 +1221,18 @@ class SubprocessTest(unittest.TestCase):
         [inst] = name.inferred()
         self.assertIsInstance(next(inst.igetattr("args")), nodes.List)
 
+    def test_subprcess_check_output(self):
+        code = """
+        import subprocess
+
+        subprocess.check_output(['echo', 'hello']);
+        """
+        node = astroid.extract_node(code)
+        inferred = next(node.infer())
+        # Can be either str or bytes
+        assert isinstance(inferred, astroid.Const)
+        assert isinstance(inferred.value, (str, bytes))
+
 
 class TestIsinstanceInference:
     """Test isinstance builtin inference"""

@@ -58,6 +58,18 @@ def _subprocess_transform():
     py3_args = "args = []"
     code = textwrap.dedent(
         """
+    def check_output(
+        args, *,
+        stdin=None,
+        stderr=None,
+        shell=False,
+        universal_newlines=False,
+        timeout=None
+    ):
+
+        if universal_newlines:
+            return ""
+        return b""
     class Popen(object):
         returncode = pid = 0
         stdin = stdout = stderr = file()

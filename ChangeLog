@@ -6,6 +6,10 @@ What's New in astroid 2.3.0?
 ============================
 Release Date: TBA
 
+* Add a brain tip for ``subprocess.check_output``
+
+  Close #689
+
 * Remove NodeNG.nearest method because of lack of usage in astroid and pylint.
 
   Close #691
