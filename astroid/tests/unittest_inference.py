@@ -29,6 +29,7 @@ import unittest
 from unittest.mock import patch
 
 import pytest
+import sys
 
 from astroid import InferenceError, builder, nodes, Slice
 from astroid.builder import parse, extract_node
@@ -937,6 +938,10 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual("module.C", should_be_C[0].qname())
         self.assertEqual("module.D", should_be_D[0].qname())
 
+    @pytest.mark.skipif(
+        sys.version_info >= (3, 8),
+        reason="pathlib.Path cannot be inferred on Python 3.8",
+    )
     def test_factory_methods_inside_binary_operation(self):
         node = extract_node(
             """
