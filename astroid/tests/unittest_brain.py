@@ -1885,6 +1885,19 @@ def test_http_client_brain():
     assert isinstance(inferred, astroid.Instance)
 
 
+@pytest.mark.skipif(sys.version_info < (3, 7), reason="Needs 3.7+")
+def test_http_status_brain():
+    node = astroid.extract_node(
+        """
+    import http
+    http.HTTPStatus.CONTINUE.phrase
+    """
+    )
+    inferred = next(node.infer())
+    # Cannot infer the exact value but the field is there.
+    assert inferred is util.Uninferable
+
+
 def test_oserror_model():
     node = astroid.extract_node(
         """
