@@ -1187,6 +1187,19 @@ class AttrsTest(unittest.TestCase):
         """
         next(astroid.extract_node(code).infer())
 
+    @test_utils.require_version(minver="3.6")
+    def test_attrs_with_annotation(self):
+        code = """
+        import attr
+
+        @attr.s
+        class Foo:
+            bar: int = attr.ib(default=5)
+        Foo()
+        """
+        should_be_unknown = next(astroid.extract_node(code).infer()).getattr("bar")[0]
+        self.assertIsInstance(should_be_unknown, astroid.Unknown)
+
 
 class RandomSampleTest(unittest.TestCase):
     def test_inferred_successfully(self):
