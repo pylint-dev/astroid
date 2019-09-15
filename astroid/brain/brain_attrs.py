@@ -37,14 +37,19 @@ def attr_attributes_transform(node):
     node.locals["__attrs_attrs__"] = [astroid.Unknown(parent=node)]
 
     for cdefbodynode in node.body:
-        if not isinstance(cdefbodynode, astroid.Assign):
+        if not isinstance(cdefbodynode, (astroid.Assign, astroid.AnnAssign)):
             continue
         if isinstance(cdefbodynode.value, astroid.Call):
             if cdefbodynode.value.func.as_string() not in ATTRIB_NAMES:
                 continue
         else:
             continue
-        for target in cdefbodynode.targets:
+        targets = (
+            cdefbodynode.targets
+            if hasattr(cdefbodynode, "targets")
+            else [cdefbodynode.target]
+        )
+        for target in targets:
 
             rhs_node = astroid.Unknown(
                 lineno=cdefbodynode.lineno,
@@ -52,6 +57,7 @@ def attr_attributes_transform(node):
                 parent=cdefbodynode,
             )
             node.locals[target.name] = [rhs_node]
+            node.instance_attrs[target.name] = [rhs_node]
 
 
 MANAGER.register_transform(

@@ -16,6 +16,10 @@ Release Date: TBA
   attributes, but rather virtual ones, thus an operation such as `getattr()`
   does not make sense for them.
 
+* Update attr brain to partly understand annotated attributes
+
+  Close #656
+
 
 What's New in astroid 2.3.0?
 ============================
