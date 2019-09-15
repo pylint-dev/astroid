@@ -1159,6 +1159,20 @@ class AttrsTest(unittest.TestCase):
             should_be_unknown = next(module.getattr(name)[0].infer()).getattr("d")[0]
             self.assertIsInstance(should_be_unknown, astroid.Unknown)
 
+    def test_dont_consider_assignments_but_without_attrs(self):
+        code = """
+        import attr
+
+        class Cls: pass
+        @attr.s
+        class Foo:
+            temp = Cls()
+            temp.prop = 5
+            bar_thing = attr.ib(default=temp)
+        Foo()
+        """
+        next(astroid.extract_node(code).infer())
+
     def test_special_attributes(self):
         """Make sure special attrs attributes exist"""
 
@@ -1175,19 +1189,17 @@ class AttrsTest(unittest.TestCase):
         # Prevents https://github.com/PyCQA/pylint/issues/1884
         assert isinstance(attr_node, nodes.Unknown)
 
-    def test_dont_consider_assignments_but_without_attrs(self):
+    def test_attrs_with_annotation(self):
         code = """
         import attr
 
-        class Cls: pass
         @attr.s
         class Foo:
-            temp = Cls()
-            temp.prop = 5
-            bar_thing = attr.ib(default=temp)
+            bar: int = attr.ib(default=5)
         Foo()
         """
-        next(astroid.extract_node(code).infer())
+        should_be_unknown = next(astroid.extract_node(code).infer()).getattr("bar")[0]
+        self.assertIsInstance(should_be_unknown, astroid.Unknown)
 
 
 class RandomSampleTest(unittest.TestCase):
