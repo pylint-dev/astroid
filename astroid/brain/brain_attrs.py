@@ -44,7 +44,11 @@ def attr_attributes_transform(node):
                 continue
         else:
             continue
-        targets = cdefbodynode.targets if hasattr(cdefbodynode, "targets") else [cdefbodynode.target]
+        targets = (
+            cdefbodynode.targets
+            if hasattr(cdefbodynode, "targets")
+            else [cdefbodynode.target]
+        )
         for target in targets:
 
             rhs_node = astroid.Unknown(

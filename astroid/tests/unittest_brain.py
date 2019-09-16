@@ -1189,6 +1189,7 @@ class AttrsTest(unittest.TestCase):
         # Prevents https://github.com/PyCQA/pylint/issues/1884
         assert isinstance(attr_node, nodes.Unknown)
 
+    @test_utils.require_version(minver="3.6")
     def test_attrs_with_annotation(self):
         code = """
         import attr
