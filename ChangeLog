@@ -116,6 +116,10 @@ Release Date: TBA
 
   Close PyCQA/pylint#73
 
+* Update attr brain to partly understand annotated attributes
+
+  Close #656
+
 What's New in astroid 2.2.0?
 ============================
 Release Date: 2019-02-27
