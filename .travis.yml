@@ -1,63 +1,61 @@
 language: python
-
 stages:
-  - prechecks
-  - tests
-
+- prechecks
+- tests
 jobs:
   include:
-    - stage: prechecks
-      python: 3.6
-      env: TOXENV=pylint
-    - python: 3.6
-      env: TOXENV=formatting
-    - python: 3.5
-      env: TOXENV=py35
-    - python: pypy3.5
-      env: TOXENV=pypy
-    - python: 3.6
-      env: TOXENV=py36
-    - python: 3.7
-      env: TOXENV=py37
-      dist: xenial
-      sudo: true
-    - python: 3.8-dev
-      env: TOXENV=py38
-      dist: xenial
-      sudo: true
-
+  - stage: prechecks
+    python: 3.6
+    env: TOXENV=pylint
+  - python: 3.6
+    env: TOXENV=formatting
+  - python: 3.5
+    env: TOXENV=py35
+  - python: pypy3.5
+    env: TOXENV=pypy
+  - python: 3.6
+    env: TOXENV=py36
+  - python: 3.7
+    env: TOXENV=py37
+    dist: xenial
+    sudo: true
+  - python: 3.8-dev
+    env: TOXENV=py38
+    dist: xenial
+    sudo: true
 before_install:
-  - python --version
-  - uname -a
-  - lsb_release -a
+- python --version
+- uname -a
+- lsb_release -a
 install:
-  - python -m pip install pip -U
-  - python -m pip install tox coverage coveralls
-  - python -m virtualenv --version
-  - python -m easy_install --version
-  - python -m pip --version
-  - python -m tox --version
+- python -m pip install pip -U
+- python -m pip install tox coverage coveralls
+- python -m virtualenv --version
+- python -m easy_install --version
+- python -m pip --version
+- python -m tox --version
 script:
-    # Test install with current version of setuptools
-  - python -m pip install .
-    # Run the tests with newest version of setuptools
-  - python -m pip install -U setuptools
-  - python -m tox -e coverage-erase,$TOXENV
+- python -m pip install .
+- python -m pip install -U setuptools
+- python -m tox -e coverage-erase,$TOXENV
 after_success:
-  - tox -e coveralls
+- tox -e coveralls
 after_failure:
-  - more .tox/log/* | cat
-  - more .tox/*/log/* | cat
+- more .tox/log/* | cat
+- more .tox/*/log/* | cat
 notifications:
   email:
     on_success: always
     on_failure: always
 deploy:
   provider: pypi
-  user: Claudiu.Popa
+  user: __token__
   password:
-    secure: "YQ8Elo1/1Ep+FPb/O+Ex9RS/ADKCvNQ2FDMQI9qF/YUrk0o0ehn0jzg+FARNvyWpNJo2aSCn7GCc3F3WaDkQu0KCeA4xjLD49t6YhoJ7zcn+gXiQP7DJq+dl8ZQueKLioV/mKZx05K6G6/sN9VlR2GA5jFgX2Arf+iYvJmh2rysmBg9gkU1E2a9zlG9uRGRL5Q/EPy1lvTweT8BHJirOAx/hnxDVMdgWvlXOB+DHhaMnmmiFxXnLyHF6PPfCbK9yHoqbznN3vTa3KXX6I4fLE7nEN6T5OnwYWACK2ws26FEEzowfvROtfetFQLwAhXF1EPtSV+18oAEiAoppv+laNjrKqCqo72Gx8wpqWBqesYNiti9nNb0YW56C4sEMdHRJXP9SWKETQ7gn55B4MFcANhrjj8HAUcmA+N0WJEVhSdUqsmYKTF1p8YkjYfAzvX+pMkNiIkXThwJiFexv+QH7SlgmvmiKGPtrwDGNJMzFa7VLJh3brkfzfkc2tHkzZ4KqXzOLs4qwIkK4JSRP2UKrGsWaggNCqwle97LYv5vazwWWGL3Br7/5vBA6fjDQxJnFNQIQp+OGpSMHmPfltMGaqx62RePshnDoSgoSF1vPRc0VSOAJauhIwaZdTBQ9GjKR17rSY4Kd1ftHuMUBFpDJyWL6CW9jwTFXVWoJ7g6+9RU="
+    secure: YQ8Elo1/1Ep+FPb/O+Ex9RS/ADKCvNQ2FDMQI9qF/YUrk0o0ehn0jzg+FARNvyWpNJo2aSCn7GCc3F3WaDkQu0KCeA4xjLD49t6YhoJ7zcn+gXiQP7DJq+dl8ZQueKLioV/mKZx05K6G6/sN9VlR2GA5jFgX2Arf+iYvJmh2rysmBg9gkU1E2a9zlG9uRGRL5Q/EPy1lvTweT8BHJirOAx/hnxDVMdgWvlXOB+DHhaMnmmiFxXnLyHF6PPfCbK9yHoqbznN3vTa3KXX6I4fLE7nEN6T5OnwYWACK2ws26FEEzowfvROtfetFQLwAhXF1EPtSV+18oAEiAoppv+laNjrKqCqo72Gx8wpqWBqesYNiti9nNb0YW56C4sEMdHRJXP9SWKETQ7gn55B4MFcANhrjj8HAUcmA+N0WJEVhSdUqsmYKTF1p8YkjYfAzvX+pMkNiIkXThwJiFexv+QH7SlgmvmiKGPtrwDGNJMzFa7VLJh3brkfzfkc2tHkzZ4KqXzOLs4qwIkK4JSRP2UKrGsWaggNCqwle97LYv5vazwWWGL3Br7/5vBA6fjDQxJnFNQIQp+OGpSMHmPfltMGaqx62RePshnDoSgoSF1vPRc0VSOAJauhIwaZdTBQ9GjKR17rSY4Kd1ftHuMUBFpDJyWL6CW9jwTFXVWoJ7g6+9RU=
   on:
     tags: true
     condition: "$TOXENV = py36"
   distributions: sdist bdist_wheel
+env:
+  global:
+    secure: E3x+HWG+D66+lJUyBFJQNlMSMNAu1ptdIuxszdN4Zi5M7Ek5vBi0MpKibfYFpaLFpgkxYRtwCL0dupspOL3FOhBHgNx3CV+rOfPqQY4pRKpN+ZPRyANCjmiHkrDHEVmNwtzZs6rm0riacJiGUmnvJH74yZf37s8NxKkq41WfaiO1ULfP0UDikyzE7GMBqllWTb0RCpRyxm8pXbcT6sWNRJmq+raycUBx+2OxkX6WQ277tLPc2ZjlptRV1NzXTVqsnpw7lINSz+j7PPLY5vaeCJoKamyNojDdCrMWx8uXfi6KwtB3g9oxgiE/M1wMFEntRlCy0Xg9CJA5vXi4TGM47WVQOvy7KN55MMobCVe9vJiodIjhWXqyXKXmEKDuJsgo2TnHRO/ddgCTgJ196ZRjCavePSwR9qvIEEuykDMtZtSt/JNF2wN/K0yeeWcp5iOdTVW+8EdYTrJ/pG5koStnh7AmNb8e8Yak1QrIyiDJ3LNNRf9dXYjGQ52yziCDWNioLzwrXudjCifi03QlQT3yucoBhZKhgMN7SMRzvkWEvJTyzor4F811+Mu1fHd9TfqkjGu31n7sG+FcgoNUDX7GqL/fculvmJbWp8JthQzV5TxQpg7Qv6Esy++jphxmjbnJmqJbk6ntyMJfyuVXS0n499Wu5vg3wj1nuPNsj0Tzd4Y=
