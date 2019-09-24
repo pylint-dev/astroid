@@ -21,6 +21,7 @@
 """tests for specific behaviour of astroid scoped nodes (i.e. module, class and
 function)
 """
+import datetime
 import os
 import sys
 import textwrap
@@ -1786,8 +1787,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
 
         # Test that objects analyzed through the live introspection
         # aren't considered to have dynamic getattr implemented.
-        import datetime
-
         astroid_builder = builder.AstroidBuilder()
         module = astroid_builder.module_build(datetime)
         self.assertFalse(module["timedelta"].has_dynamic_getattr())

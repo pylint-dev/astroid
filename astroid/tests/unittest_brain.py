@@ -20,7 +20,9 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
 """Tests for basic functionality in astroid.brain."""
+import io
 import queue
+import re
 
 try:
     import multiprocessing  # pylint: disable=unused-import
@@ -856,8 +858,6 @@ def streams_are_fine():
 
     PY3 only
     """
-    import io
-
     for stream in (sys.stdout, sys.stderr, sys.stdin):
         if not isinstance(stream, io.IOBase):
             return False
@@ -1060,8 +1060,6 @@ class TypingBrain(unittest.TestCase):
 
 class ReBrainTest(unittest.TestCase):
     def test_regex_flags(self):
-        import re
-
         names = [name for name in dir(re) if name.isupper()]
         re_ast = MANAGER.ast_from_module_name("re")
         for name in names:

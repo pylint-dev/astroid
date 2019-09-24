@@ -11,6 +11,7 @@
 import platform
 import unittest
 
+import _io
 from astroid.builder import AstroidBuilder
 from astroid.raw_building import (
     attach_dummy_node,
@@ -74,8 +75,6 @@ class RawBuildingTC(unittest.TestCase):
         # what io.BufferedReader is. The code that handles this
         # is in astroid.raw_building.imported_member, which verifies
         # the true name of the module.
-        import _io
-
         builder = AstroidBuilder()
         module = builder.inspect_build(_io)
         buffered_reader = module.getattr("BufferedReader")[0]

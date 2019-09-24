@@ -320,9 +320,9 @@ class AstroidManager:
         The bootstrap usually involves building the AST for the builtins
         module, which is required by the rest of astroid to work correctly.
         """
-        import astroid.raw_building
+        from astroid import raw_building  # pylint: disable=import-outside-toplevel
 
-        astroid.raw_building._astroid_bootstrapping()
+        raw_building._astroid_bootstrapping()
 
     def clear_cache(self):
         """Clear the underlying cache. Also bootstraps the builtins module."""

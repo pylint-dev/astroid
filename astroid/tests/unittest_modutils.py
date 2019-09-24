@@ -19,7 +19,9 @@ import email
 import os
 import sys
 import unittest
+import xml
 from xml import etree
+from xml.etree import ElementTree
 import tempfile
 import shutil
 
@@ -120,8 +122,6 @@ class ModPathFromFileTest(unittest.TestCase):
     """ given an absolute file path return the python module's path as a list """
 
     def test_knownValues_modpath_from_file_1(self):
-        from xml.etree import ElementTree
-
         self.assertEqual(
             modutils.modpath_from_file(ElementTree.__file__),
             ["xml", "etree", "ElementTree"],
@@ -324,9 +324,6 @@ class GetModuleFilesTest(unittest.TestCase):
         self.assertEqual(modules, [os.path.join(non_package, "file.py")])
 
     def test_load_module_set_attribute(self):
-        import xml.etree.ElementTree
-        import xml
-
         del xml.etree.ElementTree
         del sys.modules["xml.etree.ElementTree"]
         m = modutils.load_module_from_modpath(["xml", "etree", "ElementTree"])

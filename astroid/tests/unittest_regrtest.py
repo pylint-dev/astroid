@@ -25,6 +25,13 @@ from astroid.test_utils import require_version
 from astroid.tests import resources
 from astroid import transforms
 
+try:
+    import numpy  # pylint: disable=unused-import
+except ImportError:
+    HAS_NUMPY = False
+else:
+    HAS_NUMPY = True
+
 
 class NonRegressionTests(resources.AstroidCacheSetupMixin, unittest.TestCase):
     def setUp(self):
@@ -76,14 +83,11 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin, unittest.TestCase):
         builder._module = sys.modules[__name__]
         builder.object_build(build_module("module_name", ""), Whatever)
 
+    @unittest.skipIf(not HAS_NUMPY, "Needs numpy")
     def test_numpy_crash(self):
         """test don't crash on numpy"""
         # a crash occurred somewhere in the past, and an
         # InferenceError instead of a crash was better, but now we even infer!
-        try:
-            import numpy  # pylint: disable=unused-import
-        except ImportError:
-            self.skipTest("test skipped: numpy is not available")
         builder = AstroidBuilder()
         data = """
 from numpy import multiply

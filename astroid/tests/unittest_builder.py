@@ -18,6 +18,7 @@
 import builtins
 import collections
 import os
+import socket
 import sys
 import unittest
 
@@ -319,20 +320,6 @@ class BuilderTest(unittest.TestCase):
     def test_inspect_build3(self):
         self.builder.inspect_build(unittest)
 
-    @test_utils.require_version(maxver="3.0")
-    def test_inspect_build_instance(self):
-        """test astroid tree build from a living object"""
-        import exceptions as builtin_exceptions
-
-        builtin_ast = self.builder.inspect_build(builtin_exceptions)
-        fclass = builtin_ast["OSError"]
-        # things like OSError.strerror are now (2.5) data descriptors on the
-        # class instead of entries in the __dict__ of an instance
-        container = fclass
-        self.assertIn("errno", container)
-        self.assertIn("strerror", container)
-        self.assertIn("filename", container)
-
     def test_inspect_build_type_object(self):
         builtin_ast = MANAGER.ast_from_module_name(BUILTINS)
 
@@ -449,8 +436,6 @@ class BuilderTest(unittest.TestCase):
             next(astroid["global_no_effect"].ilookup("CSTE2"))
 
     def test_socket_build(self):
-        import socket
-
         astroid = self.builder.module_build(socket)
         # XXX just check the first one. Actually 3 objects are inferred (look at
         # the socket module) but the last one as those attributes dynamically
@@ -714,19 +699,6 @@ class FileBuildTest(unittest.TestCase):
     def test_unknown_encoding(self):
         with self.assertRaises(exceptions.AstroidSyntaxError):
             resources.build_file("data/invalid_encoding.py")
-
-
-class ModuleBuildTest(resources.SysPathSetup, FileBuildTest):
-    def setUp(self):
-        super(ModuleBuildTest, self).setUp()
-        abuilder = builder.AstroidBuilder()
-        try:
-            import data.module
-        except ImportError:
-            # Make pylint happy.
-            self.skipTest("Unable to load data.module")
-        else:
-            self.module = abuilder.module_build(data.module, "data.module")
 
 
 def test_module_build_dunder_file():
