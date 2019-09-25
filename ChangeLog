@@ -6,6 +6,10 @@ What's New in astroid 2.4.0?
 ============================
 Release Date: TBA
 
+* Don't ignore special methods when inspecting gi classes
+
+  Close #728
+
 * Added transform for ``scipy.gaussian``
 
 * Added a brain for ``responses``

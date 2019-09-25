@@ -29,6 +29,36 @@ _inspected_modules = {}
 
 _identifier_re = r"^[A-Za-z_]\w*$"
 
+_special_methods = frozenset(
+    {
+        "__lt__",
+        "__le__",
+        "__eq__",
+        "__ne__",
+        "__ge__",
+        "__gt__",
+        "__iter__",
+        "__getitem__",
+        "__setitem__",
+        "__delitem__",
+        "__len__",
+        "__bool__",
+        "__nonzero__",
+        "__next__",
+        "__str__",
+        "__len__",
+        "__contains__",
+        "__enter__",
+        "__exit__",
+        "__repr__",
+        "__getattr__",
+        "__setattr__",
+        "__delattr__",
+        "__del__",
+        "__hash__",
+    }
+)
+
 
 def _gi_build_stub(parent):
     """
@@ -40,7 +70,7 @@ def _gi_build_stub(parent):
     constants = {}
     methods = {}
     for name in dir(parent):
-        if name.startswith("__"):
+        if name.startswith("__") and name not in _special_methods:
             continue
 
         # Check if this is a valid name in python
