@@ -1927,5 +1927,38 @@ def test_crypt_brain():
         assert attr in module
 
 
+@pytest.mark.skipif(sys.version_info < (3, 7), reason="Dataclasses were added in 3.7")
+def test_dataclasses():
+    code = """
+    import dataclasses
+    from dataclasses import dataclass
+
+    @dataclass
+    class InventoryItem:
+        name: str
+        quantity_on_hand: int = 0
+
+    @dataclasses.dataclass
+    class Other:
+        name: str
+    """
+
+    module = astroid.parse(code)
+    first = module["InventoryItem"]
+    second = module["Other"]
+
+    name = first.getattr("name")
+    assert len(name) == 1
+    assert isinstance(name[0], astroid.Unknown)
+
+    quantity_on_hand = first.getattr("quantity_on_hand")
+    assert len(quantity_on_hand) == 1
+    assert isinstance(quantity_on_hand[0], astroid.Unknown)
+
+    name = second.getattr("name")
+    assert len(name) == 1
+    assert isinstance(name[0], astroid.Unknown)
+
+
 if __name__ == "__main__":
     unittest.main()
