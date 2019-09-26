@@ -2,6 +2,21 @@
 astroid's ChangeLog
 ===================
 
+What's New in astroid 2.3.1?
+============================
+Release Date: TBA
+
+* A transform for the builtin `dataclasses` module was added.
+
+  This should address various `dataclasses` issues that were surfaced
+  even more after the release of pylint 2.4.0.
+  In the previous versions of `astroid`, annotated assign nodes were
+  allowed to be retrieved via `getattr()` but that no longer happens
+  with the latest `astroid` release, as those attribute are not actual
+  attributes, but rather virtual ones, thus an operation such as `getattr()`
+  does not make sense for them.
+
+
 What's New in astroid 2.3.0?
 ============================
 Release Date: 2019-09-24
