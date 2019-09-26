@@ -25,7 +25,6 @@ install_requires = [
     "lazy_object_proxy",
     "six",
     "wrapt",
-    'typing;python_version<"3.5"',
     'typed-ast<1.3.0;implementation_name== "cpython" and python_version<"3.7"',
     'typed-ast>=1.3.0;implementation_name== "cpython" and python_version>="3.7" and python_version<"3.8"',
 ]
