@@ -78,5 +78,5 @@ MANAGER.register_transform(nodes.FunctionDef, transform_pyqt_signal, _looks_like
 MANAGER.register_transform(
     nodes.ClassDef,
     transform_pyside_signal,
-    lambda node: node.qname() == "PySide.QtCore.Signal",
+    lambda node: node.qname() in ("PySide.QtCore.Signal", "PySide2.QtCore.Signal"),
 )
