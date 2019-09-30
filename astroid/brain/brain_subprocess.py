@@ -67,7 +67,8 @@ def _subprocess_transform():
         encoding=None,
         errors=None,
         universal_newlines=False,
-        timeout=None
+        timeout=None,
+        env=None
     ):
 
         if universal_newlines:
