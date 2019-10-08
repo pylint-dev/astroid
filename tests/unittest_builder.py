@@ -28,7 +28,7 @@ from astroid import manager
 from astroid import nodes
 from astroid import test_utils
 from astroid import util
-from astroid.tests import resources
+from . import resources
 
 MANAGER = manager.AstroidManager()
 BUILTINS = builtins.__name__

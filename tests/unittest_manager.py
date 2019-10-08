@@ -24,7 +24,7 @@ import time
 import astroid
 from astroid import exceptions
 from astroid import manager
-from astroid.tests import resources
+from . import resources
 
 
 BUILTINS = six.moves.builtins.__name__

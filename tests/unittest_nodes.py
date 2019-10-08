@@ -37,7 +37,7 @@ from astroid import parse
 from astroid import util
 from astroid import test_utils
 from astroid import transforms
-from astroid.tests import resources
+from . import resources
 
 
 abuilder = builder.AstroidBuilder()

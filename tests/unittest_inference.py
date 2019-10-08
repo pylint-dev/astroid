@@ -42,7 +42,7 @@ from astroid import helpers
 from astroid import objects
 from astroid import test_utils
 from astroid import util
-from astroid.tests import resources
+from . import resources
 
 
 def get_node_of_class(start_from, klass):

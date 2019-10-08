@@ -16,7 +16,7 @@ from astroid import builder
 from astroid import exceptions
 from astroid import nodes
 from astroid import scoped_nodes
-from astroid.tests import resources
+from . import resources
 
 
 class LookupTest(resources.SysPathSetup, unittest.TestCase):
