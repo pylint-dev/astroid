@@ -218,7 +218,9 @@ class TreeRebuilder:
                 self.visit(arg.annotation, newnode) if arg.annotation else None
                 for arg in node.posonlyargs
             ]
-        type_comment_args = [self.check_type_comment(child) for child in node.args]
+        type_comment_args = [
+            self.check_type_comment(child, parent=newnode) for child in node.args
+        ]
 
         newnode.postinit(
             args=args,
@@ -250,7 +252,7 @@ class TreeRebuilder:
         newnode.postinit(self.visit(node.test, newnode), msg)
         return newnode
 
-    def check_type_comment(self, node):
+    def check_type_comment(self, node, parent):
         type_comment = getattr(node, "type_comment", None)
         if not type_comment:
             return None
@@ -261,7 +263,7 @@ class TreeRebuilder:
             # Invalid type comment, just skip it.
             return None
 
-        type_object = self.visit(type_comment_ast.body[0], node)
+        type_object = self.visit(type_comment_ast.body[0], parent=parent)
         if not isinstance(type_object, nodes.Expr):
             return None
 
@@ -289,8 +291,8 @@ class TreeRebuilder:
 
     def visit_assign(self, node, parent):
         """visit a Assign node by returning a fresh instance of it"""
-        type_annotation = self.check_type_comment(node)
         newnode = nodes.Assign(node.lineno, node.col_offset, parent)
+        type_annotation = self.check_type_comment(node, parent=newnode)
         newnode.postinit(
             targets=[self.visit(child, newnode) for child in node.targets],
             value=self.visit(node.value, newnode),
@@ -550,7 +552,7 @@ class TreeRebuilder:
     def _visit_for(self, cls, node, parent):
         """visit a For node by returning a fresh instance of it"""
         newnode = cls(node.lineno, node.col_offset, parent)
-        type_annotation = self.check_type_comment(node)
+        type_annotation = self.check_type_comment(node, parent=newnode)
         newnode.postinit(
             target=self.visit(node.target, newnode),
             iter=self.visit(node.iter, newnode),
@@ -912,7 +914,7 @@ class TreeRebuilder:
         else:
             optional_vars = None
 
-        type_annotation = self.check_type_comment(node)
+        type_annotation = self.check_type_comment(node, parent=newnode)
         newnode.postinit(
             items=[(expr, optional_vars)],
             body=[self.visit(child, newnode) for child in node.body],
@@ -1026,7 +1028,7 @@ class TreeRebuilder3(TreeRebuilder):
             var = _visit_or_none(child, "optional_vars", self, newnode)
             return expr, var
 
-        type_annotation = self.check_type_comment(node)
+        type_annotation = self.check_type_comment(node, parent=newnode)
         newnode.postinit(
             items=[visit_child(child) for child in node.items],
             body=[self.visit(child, newnode) for child in node.body],

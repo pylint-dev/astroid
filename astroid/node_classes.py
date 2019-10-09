@@ -496,7 +496,9 @@ class NodeNG:
         :returns: The first parent scope node.
         :rtype: Module or FunctionDef or ClassDef or Lambda or GenExpr
         """
-        return self.parent.scope()
+        if self.parent:
+            return self.parent.scope()
+        return None
 
     def root(self):
         """Return the root node of the syntax tree.
