@@ -17,7 +17,7 @@
 
 """astroid packaging information"""
 
-version = "2.3.1"
+version = "2.4.0"
 numversion = tuple(int(elem) for elem in version.split(".") if elem.isdigit())
 
 extras_require = {}
