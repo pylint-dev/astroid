@@ -2,6 +2,18 @@
 astroid's ChangeLog
 ===================
 
+What's New in astroid 2.3.2?
+============================
+Release Date: TBA
+
+* All type comments have as parent the corresponding `astroid` node
+
+  Until now they had as parent the builtin `ast` node which meant
+  we were operating with primitive objects instead of our own.
+
+  Close PyCQA/pylint#3174
+
+
 What's New in astroid 2.3.1?
 ============================
 Release Date: 2019-09-30

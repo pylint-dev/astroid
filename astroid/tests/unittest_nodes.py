@@ -1195,5 +1195,26 @@ def test_parse_fstring_debug_mode():
     assert node.as_string() == "f'3={3}'"
 
 
+@pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
+def test_parse_type_comments_with_proper_parent():
+    code = """
+    class D: #@
+        @staticmethod
+        def g(
+                x  # type: np.array
+        ):
+            pass
+    """
+    node = astroid.extract_node(code)
+    func = node.getattr("g")[0]
+    type_comments = func.args.type_comment_args
+    assert len(type_comments) == 1
+
+    type_comment = type_comments[0]
+    assert isinstance(type_comment, astroid.Attribute)
+    assert isinstance(type_comment.parent, astroid.Expr)
+    assert isinstance(type_comment.parent.parent, astroid.Arguments)
+
+
 if __name__ == "__main__":
     unittest.main()
