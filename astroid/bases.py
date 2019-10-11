@@ -404,6 +404,7 @@ class BoundMethod(UnboundMethod):
         a subtype of ``type``, the name needs to be a string, the bases
         needs to be a tuple of classes
         """
+        # pylint: disable=import-outside-toplevel; circular import
         from astroid import node_classes
 
         # Verify the metaclass

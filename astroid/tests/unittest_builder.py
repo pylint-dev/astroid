@@ -302,21 +302,6 @@ class BuilderTest(unittest.TestCase):
         self.assertTrue(time_ast)
         self.assertEqual(time_ast["time"].args.defaults, [])
 
-    if os.name == "java":
-        test_inspect_build1 = unittest.expectedFailure(test_inspect_build1)
-
-    def test_inspect_build2(self):
-        """test astroid tree build from a living object"""
-        try:
-            from mx import DateTime
-        except ImportError:
-            self.skipTest("test skipped: mxDateTime is not available")
-        else:
-            dt_ast = self.builder.inspect_build(DateTime)
-            dt_ast.getattr("DateTime")
-            # this one is failing since DateTimeType.__module__ = 'builtins' !
-            # dt_ast.getattr('DateTimeType')
-
     def test_inspect_build3(self):
         self.builder.inspect_build(unittest)
 

@@ -89,6 +89,7 @@ class AstroidManager:
         ):
             return self.astroid_cache[modname]
         if source:
+            # pylint: disable=import-outside-toplevel; circular import
             from astroid.builder import AstroidBuilder
 
             return AstroidBuilder(self).file_build(filepath, modname)
@@ -99,11 +100,13 @@ class AstroidManager:
         )
 
     def _build_stub_module(self, modname):
+        # pylint: disable=import-outside-toplevel; circular import
         from astroid.builder import AstroidBuilder
 
         return AstroidBuilder(self).string_build("", modname)
 
     def _build_namespace_module(self, modname, path):
+        # pylint: disable=import-outside-toplevel; circular import
         from astroid.builder import build_namespace_package_module
 
         return build_namespace_package_module(modname, path)
@@ -185,6 +188,8 @@ class AstroidManager:
     def zip_import_data(self, filepath):
         if zipimport is None:
             return None
+
+        # pylint: disable=import-outside-toplevel; circular import
         from astroid.builder import AstroidBuilder
 
         builder = AstroidBuilder(self)
@@ -237,6 +242,8 @@ class AstroidManager:
                 return self.ast_from_file(filepath, modname)
         except AttributeError:
             pass
+
+        # pylint: disable=import-outside-toplevel; circular import
         from astroid.builder import AstroidBuilder
 
         return AstroidBuilder(self).module_build(module, modname)
