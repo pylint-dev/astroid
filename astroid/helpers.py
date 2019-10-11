@@ -240,6 +240,7 @@ def object_len(node, context=None):
         or if multiple nodes are inferred
     :rtype int: Integer length of node
     """
+    # pylint: disable=import-outside-toplevel; circular import
     from astroid.objects import FrozenSet
 
     inferred_node = safe_infer(node, context=context)

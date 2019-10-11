@@ -280,6 +280,7 @@ class FunctionModel(ObjectModel):
 
     @property
     def attr___get__(self):
+        # pylint: disable=import-outside-toplevel; circular import
         from astroid import bases
 
         func = self._instance
@@ -425,6 +426,7 @@ class ClassModel(ObjectModel):
                 target=self._instance, attribute="mro"
             )
 
+        # pylint: disable=import-outside-toplevel; circular import
         from astroid import bases
 
         other_self = self
@@ -449,6 +451,7 @@ class ClassModel(ObjectModel):
 
     @property
     def attr___class__(self):
+        # pylint: disable=import-outside-toplevel; circular import
         from astroid import helpers
 
         return helpers.object_type(self._instance)
@@ -460,6 +463,7 @@ class ClassModel(ObjectModel):
         This looks only in the current module for retrieving the subclasses,
         thus it might miss a couple of them.
         """
+        # pylint: disable=import-outside-toplevel; circular import
         from astroid import bases
         from astroid import scoped_nodes
 
@@ -513,6 +517,7 @@ class SuperModel(ObjectModel):
 class UnboundMethodModel(ObjectModel):
     @property
     def attr___class__(self):
+        # pylint: disable=import-outside-toplevel; circular import
         from astroid import helpers
 
         return helpers.object_type(self._instance)
@@ -701,10 +706,10 @@ class DictModel(ObjectModel):
             elems.append(elem)
         obj.postinit(elts=elems)
 
+        # pylint: disable=import-outside-toplevel; circular import
         from astroid import objects
 
         obj = objects.DictItems(obj)
-
         return self._generic_dict_attribute(obj, "items")
 
     @property
@@ -713,10 +718,10 @@ class DictModel(ObjectModel):
         obj = node_classes.List(parent=self._instance)
         obj.postinit(elts=keys)
 
+        # pylint: disable=import-outside-toplevel; circular import
         from astroid import objects
 
         obj = objects.DictKeys(obj)
-
         return self._generic_dict_attribute(obj, "keys")
 
     @property
@@ -726,8 +731,8 @@ class DictModel(ObjectModel):
         obj = node_classes.List(parent=self._instance)
         obj.postinit(values)
 
+        # pylint: disable=import-outside-toplevel; circular import
         from astroid import objects
 
         obj = objects.DictValues(obj)
-
         return self._generic_dict_attribute(obj, "values")
