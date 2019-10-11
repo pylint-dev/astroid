@@ -6,6 +6,7 @@ What's New in astroid 2.4.0?
 ============================
 Release Date: TBA
 
+* Added transform for ``scipy.gaussian``
 
 What's New in astroid 2.3.2?
 ============================
