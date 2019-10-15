@@ -22,8 +22,8 @@ from astroid import exceptions
 from astroid.raw_building import build_module
 from astroid.manager import AstroidManager
 from astroid.test_utils import require_version
-from astroid.tests import resources
 from astroid import transforms
+from . import resources
 
 try:
     import numpy  # pylint: disable=unused-import

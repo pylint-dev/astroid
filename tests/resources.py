@@ -9,22 +9,17 @@
 import os
 import sys
 
-import pkg_resources
-
 from astroid import builder
 from astroid import MANAGER
 from astroid.bases import BUILTINS
-from astroid import tests
 
 
 DATA_DIR = os.path.join("testdata", "python{}".format(sys.version_info[0]))
-RESOURCE_PATH = os.path.join(tests.__path__[0], DATA_DIR, "data")
+RESOURCE_PATH = os.path.join(os.path.dirname(__file__), DATA_DIR, "data")
 
 
 def find(name):
-    return pkg_resources.resource_filename(
-        "astroid.tests", os.path.normpath(os.path.join(DATA_DIR, name))
-    )
+    return os.path.normpath(os.path.join(os.path.dirname(__file__), DATA_DIR, name))
 
 
 def build_file(path, modname=None):

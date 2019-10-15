@@ -28,7 +28,7 @@ import shutil
 import astroid
 from astroid.interpreter._import import spec
 from astroid import modutils
-from astroid.tests import resources
+from . import resources
 
 
 def _get_file_from_object(obj):

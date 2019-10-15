@@ -46,7 +46,7 @@ from astroid.exceptions import (
 )
 from astroid.bases import BUILTINS, Instance, BoundMethod, UnboundMethod, Generator
 from astroid import test_utils
-from astroid.tests import resources
+from . import resources
 
 
 def _test_dict_interface(self, node, test_attr):

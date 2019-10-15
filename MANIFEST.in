@@ -3,5 +3,5 @@ include README.rst
 include COPYING
 include COPYING.LESSER
 include pytest.ini
-recursive-include astroid/tests *.py *.zip *.egg *.pth
+recursive-include tests *.py *.zip *.egg *.pth
 recursive-include astroid/brain *.py
