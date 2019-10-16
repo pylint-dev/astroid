@@ -1829,7 +1829,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
     def test_instance_bound_method_lambdas_2(self):
         """
         Test the fact that a method which is a lambda built from
-        a factory is well infered as a bound method (bug pylint 2594)
+        a factory is well inferred as a bound method (bug pylint 2594)
         """
         ast_nodes = builder.extract_node(
             """
