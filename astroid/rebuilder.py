@@ -16,7 +16,7 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
-"""this module contains utilities for rebuilding a _ast tree in
+"""this module contains utilities for rebuilding an _ast tree in
 order to get a single Astroid representation
 """
 
@@ -456,7 +456,7 @@ class TreeRebuilder:
 
     def visit_decorators(self, node, parent):
         """visit a Decorators node by returning a fresh instance of it"""
-        # /!\ node is actually a _ast.FunctionDef node while
+        # /!\ node is actually an _ast.FunctionDef node while
         # parent is an astroid.nodes.FunctionDef node
         if PY38:
             # Set the line number of the first decorator for Python 3.8+.
