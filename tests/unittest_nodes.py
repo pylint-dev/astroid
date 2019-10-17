@@ -220,6 +220,32 @@ if all[1] == bord[0:]:
         assert pre_repr == post_repr
         assert pre.as_string().strip() == code.strip()
 
+    def test_class_def(self):
+        code = """
+import abc
+
+
+class A:
+    pass
+
+
+
+class B(metaclass=A, x=1):
+    pass
+
+
+
+class C(B):
+    pass
+
+
+
+class D(metaclass=abc.ABCMeta):
+    pass
+"""
+        ast = abuilder.string_build(code)
+        self.assertEqual(ast.as_string().strip(), code.strip())
+
 
 class _NodeTest(unittest.TestCase):
     """test transformation of If Node"""
