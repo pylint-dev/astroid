@@ -153,20 +153,16 @@ class AsStringVisitor:
     def visit_classdef(self, node):
         """return an astroid.ClassDef node as string"""
         decorate = node.decorators.accept(self) if node.decorators else ""
-        bases = ", ".join(n.accept(self) for n in node.bases)
-        metaclass = node.metaclass()
-        if metaclass and not node.has_metaclass_hack():
-            if bases:
-                bases = "(%s, metaclass=%s)" % (bases, metaclass.name)
-            else:
-                bases = "(metaclass=%s)" % metaclass.name
-        else:
-            bases = "(%s)" % bases if bases else ""
+        args = [n.accept(self) for n in node.bases]
+        if node._metaclass and not node.has_metaclass_hack():
+            args.append("metaclass=" + node._metaclass.accept(self))
+        args += [n.accept(self) for n in node.keywords]
+        args = "(%s)" % ", ".join(args) if args else ""
         docs = self._docs_dedent(node.doc) if node.doc else ""
         return "\n\n%sclass %s%s:%s\n%s\n" % (
             decorate,
             node.name,
-            bases,
+            args,
             docs,
             self._stmt_list(node.body),
         )
