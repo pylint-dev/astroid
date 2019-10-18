@@ -14,6 +14,16 @@ Release Date: TBA
   Close PyCQA/pylint#3174
 
 
+* Pass an inference context to `metaclass()` when inferring an object type
+
+  This should prevent a bunch of recursion errors happening in pylint.
+  Also refactor the inference of `IfExp` nodes to use separate contexts
+  for each potential branch.
+
+  Close PyCQA/pylint#3152
+  Close PyCQA/pylint#3159
+
+
 What's New in astroid 2.3.1?
 ============================
 Release Date: 2019-09-30

@@ -916,21 +916,28 @@ def infer_ifexp(self, context=None):
     depending on the condition.
     """
     both_branches = False
+    # We use two separate contexts for evaluating lhs and rhs because
+    # evaluating lhs may leave some undesired entries in context.path
+    # which may not let us infer right value of rhs.
+
+    context = context or contextmod.InferenceContext()
+    lhs_context = contextmod.copy_context(context)
+    rhs_context = contextmod.copy_context(context)
     try:
-        test = next(self.test.infer(context=context))
+        test = next(self.test.infer(context=context.clone()))
     except exceptions.InferenceError:
         both_branches = True
     else:
         if test is not util.Uninferable:
             if test.bool_value():
-                yield from self.body.infer(context=context)
+                yield from self.body.infer(context=lhs_context)
             else:
-                yield from self.orelse.infer(context=context)
+                yield from self.orelse.infer(context=rhs_context)
         else:
             both_branches = True
     if both_branches:
-        yield from self.body.infer(context=context)
-        yield from self.orelse.infer(context=context)
+        yield from self.body.infer(context=lhs_context)
+        yield from self.orelse.infer(context=rhs_context)
 
 
 nodes.IfExp._infer = infer_ifexp
