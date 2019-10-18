@@ -52,7 +52,7 @@ def _object_type(node, context=None):
     for inferred in node.infer(context=context):
         if isinstance(inferred, scoped_nodes.ClassDef):
             if inferred.newstyle:
-                metaclass = inferred.metaclass()
+                metaclass = inferred.metaclass(context=context)
                 if metaclass:
                     yield metaclass
                     continue
