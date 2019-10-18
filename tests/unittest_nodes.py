@@ -200,6 +200,14 @@ if all[1] == bord[0:]:
         ast = abuilder.string_build(code)
         self.assertEqual(ast.as_string(), code)
 
+    def test_int_attribute(self):
+        code = """
+x = (-3).real
+y = (3).imag
+        """
+        ast = abuilder.string_build(code)
+        self.assertEqual(ast.as_string().strip(), code.strip())
+
     def test_operator_precedence(self):
         with open(resources.find("data/operator_precedence.py")) as f:
             for code in f:
