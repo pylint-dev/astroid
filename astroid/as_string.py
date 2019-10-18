@@ -337,7 +337,7 @@ class AsStringVisitor:
     def visit_attribute(self, node):
         """return an astroid.Getattr node as string"""
         left = self._precedence_parens(node, node.expr)
-        if left.isdigit():  # TODO
+        if left.isdigit():
             left = "(%s)" % left
         return "%s.%s" % (left, node.attrname)
 
