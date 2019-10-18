@@ -300,23 +300,32 @@ class AsStringVisitor:
             _import_string(node.names),
         )
 
-    def visit_functiondef(self, node):
-        """return an astroid.Function node as string"""
+    def handle_functiondef(self, node, keyword):
+        """return a (possibly async) function definition node as string"""
         decorate = node.decorators.accept(self) if node.decorators else ""
         docs = self._docs_dedent(node.doc) if node.doc else ""
         trailer = ":"
         if node.returns:
             return_annotation = " -> " + node.returns.as_string()
             trailer = return_annotation + ":"
-        def_format = "\n%sdef %s(%s)%s%s\n%s"
+        def_format = "\n%s%s %s(%s)%s%s\n%s"
         return def_format % (
             decorate,
+            keyword,
             node.name,
             node.args.accept(self),
             trailer,
             docs,
             self._stmt_list(node.body),
         )
+
+    def visit_functiondef(self, node):
+        """return an astroid.FunctionDef node as string"""
+        return self.handle_functiondef(node, "def")
+
+    def visit_asyncfunctiondef(self, node):
+        """return an astroid.AsyncFunction node as string"""
+        return self.handle_functiondef(node, "async def")
 
     def visit_generatorexp(self, node):
         """return an astroid.GeneratorExp node as string"""
@@ -572,10 +581,6 @@ class AsStringVisitor3(AsStringVisitor):
             return expr
 
         return "(%s)" % (expr,)
-
-    def visit_asyncfunctiondef(self, node):
-        function = super(AsStringVisitor3, self).visit_functiondef(node)
-        return "async " + function.strip()
 
     def visit_await(self, node):
         return "await %s" % node.value.accept(self)
