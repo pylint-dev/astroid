@@ -884,6 +884,17 @@ class Python35AsyncTest(unittest.TestCase):
         )
         self._test_await_async_as_string(code)
 
+    def test_decorated_async_def_as_string(self):
+        code = textwrap.dedent(
+            """
+        @decorator
+        async def function():
+            async for i in range(10):
+                await 42
+        """
+        )
+        self._test_await_async_as_string(code)
+
 
 class ContextTest(unittest.TestCase):
     def test_subscript_load(self):
