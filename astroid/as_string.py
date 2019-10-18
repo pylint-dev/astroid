@@ -593,14 +593,11 @@ class AsStringVisitor3(AsStringVisitor):
             # But strip the quotes off the ends
             # (they will always be one character: ' or ")
             repr(value.value)[1:-1]
-
             # Literal braces must be doubled to escape them
-            .replace('{', '{{').replace('}', '}}')
-
+            .replace("{", "{{").replace("}", "}}")
             # Each value in values is either a string literal (Const)
             # or a FormattedValue
-            if type(value).__name__ == "Const"
-            else value.accept(self)
+            if type(value).__name__ == "Const" else value.accept(self)
             for value in node.values
         )
 
@@ -611,7 +608,7 @@ class AsStringVisitor3(AsStringVisitor):
             if quote not in string:
                 break
 
-        return 'f' + quote + string + quote
+        return "f" + quote + string + quote
 
     def visit_formattedvalue(self, node):
         result = node.value.accept(self)
