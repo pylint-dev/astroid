@@ -1233,7 +1233,7 @@ def test_get_doc():
 def test_parse_fstring_debug_mode():
     node = astroid.extract_node('f"{3=}"')
     assert isinstance(node, nodes.JoinedStr)
-    assert node.as_string() == "f'3={3}'"
+    assert node.as_string() == "f'3={3!r}'"
 
 
 @pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
