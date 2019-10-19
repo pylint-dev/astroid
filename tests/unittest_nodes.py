@@ -254,6 +254,21 @@ class D(metaclass=abc.ABCMeta):
         ast = abuilder.string_build(code)
         self.assertEqual(ast.as_string().strip(), code.strip())
 
+    @pytest.mark.skipif(sys.version_info[:2] < (3, 6), reason="needs f-string support")
+    def test_f_strings(self):
+        code = r'''
+a = f"{'a'}"
+b = f'{{b}}'
+c = f""" "{'c'}" """
+d = f'{d!r} {d!s} {d!a}'
+e = f'{e:.3}'
+f = f'{f:{x}.{y}}'
+n = f'\n'
+everything = f""" " \' \r \t \\ {{ }} {'x' + x!r:a} {["'"]!s:{a}}"""
+'''
+        ast = abuilder.string_build(code)
+        self.assertEqual(ast.as_string().strip(), code.strip())
+
 
 class _NodeTest(unittest.TestCase):
     """test transformation of If Node"""
@@ -1237,7 +1252,7 @@ def test_get_doc():
 def test_parse_fstring_debug_mode():
     node = astroid.extract_node('f"{3=}"')
     assert isinstance(node, nodes.JoinedStr)
-    assert node.as_string() == "f'3={3}'"
+    assert node.as_string() == "f'3={3!r}'"
 
 
 @pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")

@@ -595,16 +595,39 @@ class AsStringVisitor3(AsStringVisitor):
         return "async %s" % self.visit_for(node)
 
     def visit_joinedstr(self, node):
-        # Special treatment for constants,
-        # as we want to join literals not reprs
         string = "".join(
-            value.value if type(value).__name__ == "Const" else value.accept(self)
+            # Use repr on the string literal parts
+            # to get proper escapes, e.g. \n, \\, \"
+            # But strip the quotes off the ends
+            # (they will always be one character: ' or ")
+            repr(value.value)[1:-1]
+            # Literal braces must be doubled to escape them
+            .replace("{", "{{").replace("}", "}}")
+            # Each value in values is either a string literal (Const)
+            # or a FormattedValue
+            if type(value).__name__ == "Const" else value.accept(self)
             for value in node.values
         )
-        return "f'%s'" % string
+
+        # Try to find surrounding quotes that don't appear at all in the string.
+        # Because the formatted values inside {} can't contain backslash (\)
+        # using a triple quote is sometimes necessary
+        for quote in ["'", '"', '"""', "'''"]:
+            if quote not in string:
+                break
+
+        return "f" + quote + string + quote
 
     def visit_formattedvalue(self, node):
-        return "{%s}" % node.value.accept(self)
+        result = node.value.accept(self)
+        if node.conversion and node.conversion >= 0:
+            # e.g. if node.conversion == 114: result += "!r"
+            result += "!" + chr(node.conversion)
+        if node.format_spec:
+            # The format spec is itself a JoinedString, i.e. an f-string
+            # We strip the f and quotes of the ends
+            result += ":" + node.format_spec.accept(self)[2:-1]
+        return "{%s}" % result
 
     def visit_comprehension(self, node):
         """return an astroid.Comprehension node as string"""
