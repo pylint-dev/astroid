@@ -56,24 +56,46 @@ def _subprocess_transform():
         def __exit__(self, *args): pass
     """
     py3_args = "args = []"
+
+    if PY37:
+        check_output_signature = """
+        check_output(
+            args, *,
+            stdin=None,
+            stderr=None,
+            shell=False,
+            cwd=None,
+            encoding=None,
+            errors=None,
+            universal_newlines=False,
+            timeout=None,
+            env=None,
+            text=None
+        ):
+        """.strip()
+    else:
+        check_output_signature = """
+        check_output(
+            args, *,
+            stdin=None,
+            stderr=None,
+            shell=False,
+            cwd=None,
+            encoding=None,
+            errors=None,
+            universal_newlines=False,
+            timeout=None,
+            env=None
+        ):
+        """.strip()
+
     code = textwrap.dedent(
         """
-    def check_output(
-        args, *,
-        stdin=None,
-        stderr=None,
-        shell=False,
-        cwd=None,
-        encoding=None,
-        errors=None,
-        universal_newlines=False,
-        timeout=None,
-        env=None
-    ):
-
+    def %(check_output_signature)s
         if universal_newlines:
             return ""
         return b""
+
     class Popen(object):
         returncode = pid = 0
         stdin = stdout = stderr = file()
@@ -94,6 +116,7 @@ def _subprocess_transform():
         %(ctx_manager)s
        """
         % {
+            "check_output_signature": check_output_signature,
             "communicate": communicate,
             "communicate_signature": communicate_signature,
             "wait_signature": wait_signature,
