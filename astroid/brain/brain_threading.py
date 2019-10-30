@@ -12,7 +12,7 @@ def _thread_transform():
         """
     class lock(object):
         def acquire(self, blocking=True, timeout=-1):
-            pass
+            return False
         def release(self):
             pass
         def __enter__(self):
