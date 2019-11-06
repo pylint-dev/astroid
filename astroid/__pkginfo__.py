@@ -23,7 +23,7 @@ numversion = tuple(int(elem) for elem in version.split(".") if elem.isdigit())
 extras_require = {}
 install_requires = [
     "lazy_object_proxy==1.4.*",
-    "six==1.13",
+    "six~=1.13",
     "wrapt==1.11.*",
     'typed-ast>=1.4.0,<1.5;implementation_name== "cpython" and python_version<"3.8"',
 ]
