@@ -70,4 +70,4 @@ def responses_funcs():
     )
 
 
-astroid.register_module_extender(astroid.MANAGER, 'responses', responses_funcs)
+astroid.register_module_extender(astroid.MANAGER, "responses", responses_funcs)
