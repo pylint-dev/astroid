@@ -12,6 +12,7 @@
 # pylint: disable=W0404,W0622,W0613
 """Setup script for astroid."""
 import os
+import sys
 from setuptools import find_packages, setup
 from setuptools.command import easy_install  # pylint: disable=unused-import
 from setuptools.command import install_lib  # pylint: disable=unused-import
@@ -26,6 +27,9 @@ with open(pkginfo, "rb") as fobj:
 with open(os.path.join(astroid_dir, "README.rst")) as fobj:
     long_description = fobj.read()
 
+
+needs_pytest = set(['pytest', 'test', 'ptr']).intersection(sys.argv)
+pytest_runner = ['pytest-runner'] if needs_pytest else []
 
 def install():
     return setup(
@@ -42,7 +46,7 @@ def install():
         install_requires=install_requires,
         extras_require=extras_require,
         packages=find_packages() + ["astroid.brain"],
-        setup_requires=["pytest-runner"],
+        setup_requires=pytest_runner,
         test_suite="test",
         tests_require=["pytest"],
     )
