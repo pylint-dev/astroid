@@ -5319,5 +5319,24 @@ def test_posonlyargs_inference():
     assert inferred.type == "method"
 
 
+def test_infer_args_unpacking_of_self():
+    code = """
+    class A:
+        def __init__(*args, **kwargs):
+            self, *args = args
+            self.data = {1: 2}
+            self #@
+    A().data #@
+    """
+    self, data = extract_node(code)
+    inferred_self = next(self.infer())
+    assert isinstance(inferred_self, Instance)
+    assert inferred_self.name == "A"
+
+    inferred_data = next(data.infer())
+    assert isinstance(inferred_data, nodes.Dict)
+    assert inferred_data.as_string() == "{1: 2}"
+
+
 if __name__ == "__main__":
     unittest.main()

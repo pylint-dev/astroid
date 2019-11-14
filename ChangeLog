@@ -12,6 +12,16 @@ Release Date: TBA
 
 * Allow inferring positional only arguments.
 
+* Infer args unpacking of ``self``
+
+  Certain stdlib modules use ``*args`` to encapsulate
+  the ``self`` parameter, which results in uninferable
+  instances given we rely on the presence of the ``self``
+  argument to figure out the instance where we should be
+  setting attributes.
+
+  Close PyCQA/pylint#3216
+
 
 What's New in astroid 2.3.2?
 ============================

@@ -339,6 +339,9 @@ def _arguments_infer_argname(self, name, context):
     if name == self.vararg:
         vararg = nodes.const_factory(())
         vararg.parent = self
+        if not self.arguments and self.parent.name == "__init__":
+            cls = self.parent.parent.scope()
+            vararg.elts = [bases.Instance(cls)]
         yield vararg
         return
     if name == self.kwarg:
