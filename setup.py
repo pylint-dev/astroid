@@ -9,13 +9,12 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
-# pylint: disable=W0404,W0622,W0704,W0613
+# pylint: disable=W0404,W0622,W0613
 """Setup script for astroid."""
 import os
-from setuptools import setup, find_packages
-from setuptools.command import easy_install
-from setuptools.command import install_lib
-
+from setuptools import find_packages, setup
+from setuptools.command import easy_install  # pylint: disable=unused-import
+from setuptools.command import install_lib  # pylint: disable=unused-import
 
 real_path = os.path.realpath(__file__)
 astroid_dir = os.path.dirname(real_path)
