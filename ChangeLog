@@ -22,6 +22,12 @@ Release Date: TBA
 
   Close PyCQA/pylint#3216
 
+* Clean up setup.py
+
+  Make pytest-runner a requirement only if running tests, similar to what was
+  done with McCabe.
+
+  Clean up the setup.py file, resolving a handful of minor warnings with it.
 
 What's New in astroid 2.3.2?
 ============================
