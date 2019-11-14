@@ -314,11 +314,11 @@ nodes.AssignAttr.assigned_stmts = assend_assigned_stmts
 def _arguments_infer_argname(self, name, context):
     # arguments information may be missing, in which case we can't do anything
     # more
-    if not (self.args or self.vararg or self.kwarg):
+    if not (self.arguments or self.vararg or self.kwarg):
         yield util.Uninferable
         return
     # first argument of instance/class method
-    if self.args and getattr(self.args[0], "name", None) == name:
+    if self.arguments and getattr(self.arguments[0], "name", None) == name:
         functype = self.parent.type
         cls = self.parent.parent.scope()
         is_metaclass = isinstance(cls, nodes.ClassDef) and cls.type == "metaclass"

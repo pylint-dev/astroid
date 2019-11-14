@@ -1592,6 +1592,11 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         lineno = super(Arguments, self).fromlineno
         return max(lineno, self.parent.fromlineno or 0)
 
+    @decorators.cachedproperty
+    def arguments(self):
+        """Get all the arguments for this node, including positional only and positional and keyword"""
+        return list(itertools.chain((self.posonlyargs or ()), self.args or ()))
+
     def format_args(self):
         """Get the arguments formatted as string.
 
@@ -1640,7 +1645,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         :raises NoDefault: If there is no default value defined for the
             given argument.
         """
-        args = list(itertools.chain((self.posonlyargs or ()), self.args or ()))
+        args = self.arguments
         index = _find_arg(argname, args)[0]
         if index is not None:
             idx = index - (len(args) - len(self.defaults))
@@ -1684,11 +1689,8 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         :returns: The index and node for the argument.
         :rtype: tuple(str or None, AssignName or None)
         """
-        if (
-            self.args or self.posonlyargs
-        ):  # self.args may be None in some cases (builtin function)
-            arguments = itertools.chain(self.posonlyargs or (), self.args or ())
-            return _find_arg(argname, arguments, rec)
+        if self.arguments:
+            return _find_arg(argname, self.arguments, rec)
         return None, None
 
     def get_children(self):

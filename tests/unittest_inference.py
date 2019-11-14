@@ -5293,5 +5293,31 @@ def test_assert_last_function_returns_none_on_inference():
     assert inferred.value is None
 
 
+@test_utils.require_version(minver="3.8")
+def test_posonlyargs_inference():
+    code = """
+    class A:
+        method = lambda self, b, /, c: b + c
+
+        def __init__(self, other=(), /, **kw):
+            self #@
+    A() #@
+    A().method #@
+
+    """
+    self_node, instance, lambda_method = extract_node(code)
+    inferred = next(self_node.infer())
+    assert isinstance(inferred, Instance)
+    assert inferred.name == "A"
+
+    inferred = next(instance.infer())
+    assert isinstance(inferred, Instance)
+    assert inferred.name == "A"
+
+    inferred = next(lambda_method.infer())
+    assert isinstance(inferred, BoundMethod)
+    assert inferred.type == "method"
+
+
 if __name__ == "__main__":
     unittest.main()

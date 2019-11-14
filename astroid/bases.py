@@ -239,7 +239,7 @@ class BaseInstance(Proxy):
                 else:
                     yield BoundMethod(attr, self)
             elif hasattr(attr, "name") and attr.name == "<lambda>":
-                if attr.args.args and attr.args.args[0].name == "self":
+                if attr.args.arguments and attr.args.arguments[0].name == "self":
                     yield BoundMethod(attr, self)
                     continue
                 yield attr

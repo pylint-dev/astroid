@@ -1099,7 +1099,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         :rtype: str
         """
         # pylint: disable=no-member
-        if self.args.args and self.args.args[0].name == "self":
+        if self.args.arguments and self.args.arguments[0].name == "self":
             if isinstance(self.parent.scope(), ClassDef):
                 return "method"
         return "function"
@@ -1188,8 +1188,8 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         # args is in fact redefined later on by postinit. Can't be changed
         # to None due to a strong interaction between Lambda and FunctionDef.
 
-        if self.args.args:  # maybe None with builtin functions
-            names = _rec_get_names(self.args.args)
+        if self.args.arguments:  # maybe None with builtin functions
+            names = _rec_get_names(self.args.arguments)
         else:
             names = []
         if self.args.vararg:
