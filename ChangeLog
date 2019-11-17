@@ -12,6 +12,17 @@ Release Date: TBA
 
 * Allow inferring positional only arguments.
 
+* Add support for inferring exception instances in all contexts
+
+  We were able to infer exception instances as ``ExceptionInstance``
+  only for a handful of cases, but not all. ``ExceptionInstance`` has
+  support for better inference of `.args` and other exception related
+  attributes that normal instances do not have.
+  This additional support should remove certain false positives related
+  to ``.args`` and other exception attributes in ``pylint``.
+
+  Close PyCQA/pylint#2333
+
 * Add more supported parameters to ``subprocess.check_output``
 
   Close #722

@@ -5236,14 +5236,24 @@ def test_infer_context_manager_with_unknown_args():
     assert isinstance(next(node.infer()), nodes.Const)
 
 
-def test_subclass_of_exception():
-    code = """
-    class Error(Exception):
-        pass
+@pytest.mark.parametrize(
+    "code",
+    [
+        """
+        class Error(Exception):
+            pass
 
-    a = Error()
-    a
-    """
+        a = Error()
+        a #@
+        """,
+        """
+        class Error(Exception):
+            def method(self):
+                 self #@
+        """,
+    ],
+)
+def test_subclass_of_exception(code):
     inferred = next(extract_node(code).infer())
     assert isinstance(inferred, Instance)
     args = next(inferred.igetattr("args"))

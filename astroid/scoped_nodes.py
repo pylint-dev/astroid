@@ -2133,11 +2133,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             context = contextmod.bind_context_to_node(context, self)
             yield from dunder_call.infer_call_result(caller, context)
         else:
-            if any(cls.name in EXCEPTION_BASE_CLASSES for cls in self.mro()):
-                # Subclasses of exceptions can be exception instances
-                yield objects.ExceptionInstance(self)
-            else:
-                yield bases.Instance(self)
+            yield self.instantiate_class()
 
     def scope_lookup(self, node, name, offset=0):
         """Lookup where the given name is assigned.
@@ -2347,6 +2343,12 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             or self if this is not possible.
         :rtype: Instance or ClassDef
         """
+        try:
+            if any(cls.name in EXCEPTION_BASE_CLASSES for cls in self.mro()):
+                # Subclasses of exceptions can be exception instances
+                return objects.ExceptionInstance(self)
+        except exceptions.MroError:
+            pass
         return bases.Instance(self)
 
     def getattr(self, name, context=None, class_context=True):

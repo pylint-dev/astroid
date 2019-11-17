@@ -328,7 +328,7 @@ def _arguments_infer_argname(self, name, context):
             yield cls
             return
         if functype == "method":
-            yield bases.Instance(cls)
+            yield cls.instantiate_class()
             return
 
     if context and context.callcontext:
@@ -341,7 +341,7 @@ def _arguments_infer_argname(self, name, context):
         vararg.parent = self
         if not self.arguments and self.parent.name == "__init__":
             cls = self.parent.parent.scope()
-            vararg.elts = [bases.Instance(cls)]
+            vararg.elts = [cls.instantiate_class()]
         yield vararg
         return
     if name == self.kwarg:

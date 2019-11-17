@@ -209,7 +209,7 @@ class CallSite:
 
                 if funcnode.type == "method":
                     if not isinstance(boundnode, bases.Instance):
-                        boundnode = bases.Instance(boundnode)
+                        boundnode = boundnode.instantiate_class()
                     return iter((boundnode,))
                 if funcnode.type == "classmethod":
                     return iter((boundnode,))
