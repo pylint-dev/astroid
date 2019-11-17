@@ -32,6 +32,8 @@ from astroid import rebuilder
 from astroid import nodes
 from astroid import util
 
+objects = util.lazy_import("objects")
+
 # The name of the transient function that is used to
 # wrap expressions to be extracted when calling
 # extract_node.
@@ -224,14 +226,15 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 if inferred is util.Uninferable:
                     continue
                 try:
-                    if inferred.__class__ is bases.Instance:
+                    cls = inferred.__class__
+                    if cls is bases.Instance or cls is objects.ExceptionInstance:
                         inferred = inferred._proxied
                         iattrs = inferred.instance_attrs
                         if not _can_assign_attr(inferred, node.attrname):
                             continue
                     elif isinstance(inferred, bases.Instance):
-                        # Const, Tuple, ... we may be wrong, may be not, but
-                        # anyway we don't want to pollute builtin's namespace
+                        # Const, Tuple or other containers that inherit from
+                        # `Instance`
                         continue
                     elif inferred.is_function:
                         iattrs = inferred.instance_attrs

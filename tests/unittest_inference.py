@@ -42,6 +42,8 @@ from astroid import helpers
 from astroid import objects
 from astroid import test_utils
 from astroid import util
+from astroid.objects import ExceptionInstance
+
 from . import resources
 
 
@@ -5346,6 +5348,26 @@ def test_infer_args_unpacking_of_self():
     inferred_data = next(data.infer())
     assert isinstance(inferred_data, nodes.Dict)
     assert inferred_data.as_string() == "{1: 2}"
+
+
+def test_infer_exception_instance_attributes():
+    code = """
+    class UnsupportedFormatCharacter(Exception):
+        def __init__(self, index):
+            Exception.__init__(self, index)
+            self.index = index
+
+    try:
+       1/0
+    except UnsupportedFormatCharacter as exc:
+       exc #@
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert isinstance(inferred, ExceptionInstance)
+    index = inferred.getattr("index")
+    assert len(index) == 1
+    assert isinstance(index[0], nodes.AssignAttr)
 
 
 if __name__ == "__main__":
