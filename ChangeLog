@@ -12,6 +12,10 @@ Release Date: TBA
 
 * Allow inferring positional only arguments.
 
+* Add more supported parameters to ``subprocess.check_output``
+
+  Close #722
+
 * Infer args unpacking of ``self``
 
   Certain stdlib modules use ``*args`` to encapsulate

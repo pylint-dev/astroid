@@ -70,7 +70,11 @@ def _subprocess_transform():
             universal_newlines=False,
             timeout=None,
             env=None,
-            text=None
+            text=None,
+            restore_signals=True,
+            preexec_fn=None,
+            pass_fds=(),
+            start_new_session=False
         ):
         """.strip()
     else:
@@ -85,7 +89,11 @@ def _subprocess_transform():
             errors=None,
             universal_newlines=False,
             timeout=None,
-            env=None
+            env=None,
+            restore_signals=True,
+            preexec_fn=None,
+            pass_fds=(),
+            start_new_session=False
         ):
         """.strip()
 
