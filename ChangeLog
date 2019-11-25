@@ -12,6 +12,17 @@ Release Date: TBA
 
 * Allow inferring positional only arguments.
 
+* Scope the inference to the current bound node when inferring instances of classes
+
+  When inferring instances of classes from arguments, such as ``self``
+  in a bound method, we could use as a hint the context's ``boundnode``,
+  which indicates the instance from which the inference originated.
+  As an example, a subclass that uses a parent's method which returns
+  ``self``, will override the ``self`` to point to it instead of pointing
+  to the parent class.
+
+  Close PyCQA/pylint#3157
+
 * Add support for inferring exception instances in all contexts
 
   We were able to infer exception instances as ``ExceptionInstance``

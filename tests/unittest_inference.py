@@ -5370,5 +5370,57 @@ def test_infer_exception_instance_attributes():
     assert isinstance(index[0], nodes.AssignAttr)
 
 
+@pytest.mark.parametrize(
+    "code,instance_name",
+    [
+        (
+            """
+        class A:
+            def __enter__(self):
+                return self
+            def __exit__(self, err_type, err, traceback):
+                return
+        class B(A):
+            pass
+        with B() as b:
+            b #@
+        """,
+            "B",
+        ),
+        (
+            """
+    class A:
+        def __enter__(self):
+            return A()
+        def __exit__(self, err_type, err, traceback):
+            return
+    class B(A):
+            pass
+    with B() as b:
+        b #@
+    """,
+            "A",
+        ),
+        (
+            """
+        class A:
+            def test(self):
+                return A()
+        class B(A):
+            def test(self):
+                return A.test(self)
+        B().test()
+        """,
+            "A",
+        ),
+    ],
+)
+def test_inference_is_limited_to_the_boundnode(code, instance_name):
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert isinstance(inferred, Instance)
+    assert inferred.name == instance_name
+
+
 if __name__ == "__main__":
     unittest.main()
