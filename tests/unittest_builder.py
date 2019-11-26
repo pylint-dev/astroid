@@ -22,6 +22,7 @@ import socket
 import sys
 import unittest
 
+import pytest
 from astroid import builder
 from astroid import exceptions
 from astroid import manager
@@ -692,6 +693,13 @@ def test_module_build_dunder_file():
     assert module.path[0] == collections.__file__
 
 
+@pytest.mark.skipif(
+    sys.version_info[:2] >= (3, 8),
+    reason=(
+        "The builtin ast module does not fail with a specific error "
+        "for syntax error caused by invalid type comments."
+    ),
+)
 def test_parse_module_with_invalid_type_comments_does_not_crash():
     node = builder.parse(
         """
