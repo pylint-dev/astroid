@@ -21,7 +21,10 @@ if PY38:
 FunctionType = namedtuple("FunctionType", ["argtypes", "returns"])
 
 
-def _get_parser_module(parse_python_two: bool = False):
+def _get_parser_module(parse_python_two=False, type_comments_support=True):
+    if not type_comments_support:
+        return ast
+
     if parse_python_two:
         parser_module = _ast_py2
     else:
@@ -29,12 +32,14 @@ def _get_parser_module(parse_python_two: bool = False):
     return parser_module or ast
 
 
-def _parse(string: str, parse_python_two: bool = False):
-    parse_module = _get_parser_module(parse_python_two=parse_python_two)
+def _parse(string: str, parse_python_two=False, type_comments=True):
+    parse_module = _get_parser_module(
+        parse_python_two=parse_python_two, type_comments_support=type_comments
+    )
     parse_func = parse_module.parse
-    if _ast_py3:
+    if parse_module is _ast_py3:
         if PY38:
-            parse_func = partial(parse_func, type_comments=True)
+            parse_func = partial(parse_func, type_comments=type_comments)
         if not parse_python_two:
             parse_func = partial(parse_func, feature_version=sys.version_info.minor)
     return parse_func(string)

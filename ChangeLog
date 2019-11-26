@@ -12,6 +12,14 @@ Release Date: TBA
 
 * Allow inferring positional only arguments.
 
+* Retry parsing a module that has invalid type comments
+
+  It is possible for a module to use comments that might be interpreted
+  as type comments by the `ast` library. We do not want to completely crash on those
+  invalid type comments.
+
+  Close #708
+
 * Scope the inference to the current bound node when inferring instances of classes
 
   When inferring instances of classes from arguments, such as ``self``

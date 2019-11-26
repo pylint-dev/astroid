@@ -165,7 +165,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
     def _data_build(self, data, modname, path):
         """Build tree node from data and add some informations"""
         try:
-            node = _parse(data + "\n")
+            node = _parse_string(data)
         except (TypeError, ValueError, SyntaxError) as exc:
             raise exceptions.AstroidSyntaxError(
                 "Parsing Python code failed:\n{error}",
@@ -436,3 +436,19 @@ def extract_node(code, module_name=""):
     if len(extracted) == 1:
         return extracted[0]
     return extracted
+
+
+MISPLACED_TYPE_ANNOTATION_ERROR = "misplaced type annotation"
+
+
+def _parse_string(data, type_comments=True):
+    try:
+        node = _parse(data + "\n", type_comments=type_comments)
+    except SyntaxError as exc:
+        # If the type annotations are misplaced for some reason, we do not want
+        # to fail the entire parsing of the file, so we need to retry the parsing without
+        # type comment support.
+        if exc.args[0] != MISPLACED_TYPE_ANNOTATION_ERROR or not type_comments:
+            raise
+        node = _parse(data + "\n", type_comments=False)
+    return node

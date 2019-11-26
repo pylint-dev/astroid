@@ -692,5 +692,30 @@ def test_module_build_dunder_file():
     assert module.path[0] == collections.__file__
 
 
+def test_parse_module_with_invalid_type_comments_does_not_crash():
+    node = builder.parse(
+        """
+    # op {
+    #   name: "AssignAddVariableOp"
+    #   input_arg {
+    #     name: "resource"
+    #     type: DT_RESOURCE
+    #   }
+    #   input_arg {
+    #     name: "value"
+    #     type_attr: "dtype"
+    #   }
+    #   attr {
+    #     name: "dtype"
+    #     type: "type"
+    #   }
+    #   is_stateful: true
+    # }
+    a, b = 2
+    """
+    )
+    assert isinstance(node, nodes.Module)
+
+
 if __name__ == "__main__":
     unittest.main()
