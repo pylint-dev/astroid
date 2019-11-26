@@ -128,8 +128,8 @@ class AstroidManager:
             return self.astroid_cache[modname]
         if modname == "__main__":
             return self._build_stub_module(modname)
-        old_cwd = os.getcwd()
         if context_file:
+            old_cwd = os.getcwd()
             os.chdir(os.path.dirname(context_file))
         try:
             found_spec = self.file_from_module_name(modname, context_file)
@@ -183,7 +183,8 @@ class AstroidManager:
                     pass
             raise e
         finally:
-            os.chdir(old_cwd)
+            if context_file:
+                os.chdir(old_cwd)
 
     def zip_import_data(self, filepath):
         if zipimport is None:
