@@ -464,7 +464,7 @@ def _infer_context_manager(self, mgr, context):
             )
 
         for decorator_node in func.decorators.nodes:
-            decorator = next(decorator_node.infer(context))
+            decorator = next(decorator_node.infer(context=context))
             if isinstance(decorator, nodes.FunctionDef):
                 if decorator.qname() == _CONTEXTLIB_MGR:
                     break

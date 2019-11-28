@@ -8,6 +8,8 @@ Release Date: TBA
 
 * Added transform for ``scipy.gaussian``
 
+* Add suport for inferring properties.
+
 * Added a brain for ``responses``
 
 * Allow inferring positional only arguments.

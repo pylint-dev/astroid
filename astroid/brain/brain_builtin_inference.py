@@ -478,6 +478,35 @@ def infer_callable(node, context=None):
     return nodes.Const(inferred.callable())
 
 
+def infer_property(node, context=None):
+    """Understand `property` class
+
+    This only infers the output of `property`
+    call, not the arguments themselves.
+    """
+    if len(node.args) < 1:
+        # Invalid property call.
+        raise UseInferenceDefault
+
+    getter = node.args[0]
+    try:
+        inferred = next(getter.infer(context=context))
+    except InferenceError:
+        raise UseInferenceDefault
+
+    if not isinstance(inferred, (nodes.FunctionDef, nodes.Lambda)):
+        raise UseInferenceDefault
+
+    return objects.Property(
+        function=inferred,
+        name=inferred.name,
+        doc=getattr(inferred, "doc", None),
+        lineno=node.lineno,
+        parent=node,
+        col_offset=node.col_offset,
+    )
+
+
 def infer_bool(node, context=None):
     """Understand bool calls."""
     if len(node.args) > 1:
@@ -804,6 +833,7 @@ def infer_dict_fromkeys(node, context=None):
 register_builtin_transform(infer_bool, "bool")
 register_builtin_transform(infer_super, "super")
 register_builtin_transform(infer_callable, "callable")
+register_builtin_transform(infer_property, "property")
 register_builtin_transform(infer_getattr, "getattr")
 register_builtin_transform(infer_hasattr, "hasattr")
 register_builtin_transform(infer_tuple, "tuple")

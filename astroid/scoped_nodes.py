@@ -114,6 +114,8 @@ def function_to_method(n, klass):
     if isinstance(n, FunctionDef):
         if n.type == "classmethod":
             return bases.BoundMethod(n, klass)
+        if n.type == "property":
+            return n
         if n.type != "staticmethod":
             return bases.UnboundMethod(n)
     return n
@@ -1550,9 +1552,11 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         return self.type != "function" and isinstance(self.parent.frame(), ClassDef)
 
     @decorators_mod.cached
-    def decoratornames(self):
+    def decoratornames(self, context=None):
         """Get the qualified names of each of the decorators on this function.
 
+        :param context:
+            An inference context that can be passed to inference functions
         :returns: The names of the decorators.
         :rtype: set(str)
         """
@@ -1563,7 +1567,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         decoratornodes += self.extra_decorators
         for decnode in decoratornodes:
             try:
-                for infnode in decnode.infer():
+                for infnode in decnode.infer(context=context):
                     result.add(infnode.qname())
             except exceptions.InferenceError:
                 continue
@@ -2431,8 +2435,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                 yield attr
                 continue
 
-            if bases._is_property(attr):
-                yield from attr.infer_call_result(self, context)
+            if isinstance(attr, objects.Property):
+                yield attr
                 continue
             if attr.type == "classmethod":
                 # If the method is a classmethod, then it will
@@ -2460,6 +2464,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         # instance
         context = contextmod.copy_context(context)
         context.lookupname = name
+
+        metaclass = self.declared_metaclass(context=context)
         try:
             attr = self.getattr(name, context, class_context=class_context)[0]
             for inferred in bases._infer_stmts([attr], context, frame=self):
@@ -2473,6 +2479,24 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                         yield inferred
                     else:
                         yield util.Uninferable
+                elif isinstance(inferred, objects.Property):
+                    function = inferred.function
+                    if not class_context:
+                        # Through an instance so we can solve the property
+                        yield from function.infer_call_result(
+                            caller=self, context=context
+                        )
+                    else:
+                        # If we have a metaclass, we're accessing this attribute through
+                        # the class itself, which means we can solve the property
+                        if metaclass:
+                            # Resolve a property as long as it is not accessed through
+                            # the class itself.
+                            yield from function.infer_call_result(
+                                caller=self, context=context
+                            )
+                        else:
+                            yield inferred
                 else:
                     yield function_to_method(inferred, self)
         except exceptions.AttributeInferenceError as error:

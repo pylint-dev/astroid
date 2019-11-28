@@ -184,6 +184,9 @@ class Super(node_classes.NodeNG):
                     yield inferred
                 elif self._class_based or inferred.type == "staticmethod":
                     yield inferred
+                elif isinstance(inferred, Property):
+                    function = inferred.function
+                    yield from function.infer_call_result(caller=self, context=context)
                 elif bases._is_property(inferred):
                     # TODO: support other descriptors as well.
                     try:
@@ -280,3 +283,26 @@ class PartialFunction(scoped_nodes.FunctionDef):
 # TODO: Hack to solve the circular import problem between node_classes and objects
 # This is not needed in 2.0, which has a cleaner design overall
 node_classes.Dict.__bases__ = (node_classes.NodeNG, DictInstance)
+
+
+class Property(scoped_nodes.FunctionDef):
+    """Class representing a Python property"""
+
+    def __init__(
+        self, function, name=None, doc=None, lineno=None, col_offset=None, parent=None
+    ):
+        super().__init__(name, doc, lineno, col_offset, parent)
+        self.function = function
+
+    # pylint: disable=unnecessary-lambda
+    special_attributes = util.lazy_descriptor(lambda: objectmodel.PropertyModel())
+    type = "property"
+
+    def pytype(self):
+        return "%s.property" % BUILTINS
+
+    def infer_call_result(self, caller=None, context=None):
+        raise exceptions.InferenceError("Properties are not callable")
+
+    def infer(self, context=None, **kwargs):
+        return iter((self,))

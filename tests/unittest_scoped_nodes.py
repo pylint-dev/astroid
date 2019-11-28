@@ -29,7 +29,7 @@ from functools import partial
 import unittest
 
 import pytest
-from astroid import builder
+from astroid import builder, objects
 from astroid import nodes
 from astroid import scoped_nodes
 from astroid import util
@@ -1730,7 +1730,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         #   from the class that uses the metaclass, the value
         #   of the property
         property_meta = next(module["Metaclass"].igetattr("meta_property"))
-        self.assertIsInstance(property_meta, UnboundMethod)
+        self.assertIsInstance(property_meta, objects.Property)
         wrapping = scoped_nodes.get_wrapping_class(property_meta)
         self.assertEqual(wrapping, module["Metaclass"])
 
