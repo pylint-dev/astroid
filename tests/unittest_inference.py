@@ -5422,5 +5422,67 @@ def test_inference_is_limited_to_the_boundnode(code, instance_name):
     assert inferred.name == instance_name
 
 
+def test_property_inference():
+    code = """
+    class A:
+        @property
+        def test(self):
+            return 42
+
+    A.test #@
+    A().test #@
+    A.test.fget(A) #@
+    A.test.setter #@
+    A.test.getter #@
+    A.test.deleter #@
+    """
+    prop, prop_result, prop_fget_result, prop_setter, prop_getter, prop_deleter = extract_node(
+        code
+    )
+
+    inferred = next(prop.infer())
+    assert isinstance(inferred, objects.Property)
+    assert inferred.pytype() == "builtins.property"
+    assert inferred.type == "property"
+
+    inferred = next(prop_result.infer())
+    print(prop_result.as_string())
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value == 42
+
+    inferred = next(prop_fget_result.infer())
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value == 42
+
+    for prop_func in prop_setter, prop_getter, prop_deleter:
+        inferred = next(prop_func.infer())
+        assert isinstance(inferred, nodes.FunctionDef)
+
+
+def test_property_callable_inference():
+    code = """
+    class A:
+        def func(self):
+            return 42
+        p = property(func)
+    A().p
+    """
+    property_call = extract_node(code)
+    inferred = next(property_call.infer())
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value == 42
+
+    # Try with lambda as well
+    code = """
+    class A:
+        p = property(lambda self: 42)
+    A().p
+    """
+    property_call = extract_node(code)
+    inferred = next(property_call.infer())
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value == 42
+
+
 if __name__ == "__main__":
     unittest.main()

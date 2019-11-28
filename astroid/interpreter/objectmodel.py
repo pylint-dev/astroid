@@ -735,3 +735,48 @@ class DictModel(ObjectModel):
 
         obj = objects.DictValues(obj)
         return self._generic_dict_attribute(obj, "values")
+
+
+class PropertyModel(ObjectModel):
+    """Model for a builtin property"""
+
+    # pylint: disable=import-outside-toplevel
+    @property
+    def attr_fget(self):
+        from astroid.scoped_nodes import FunctionDef
+
+        func = self._instance
+
+        class PropertyFuncAccessor(FunctionDef):
+            def infer_call_result(self, caller=None, context=None):
+                nonlocal func
+                if caller and len(caller.args) != 1:
+                    raise exceptions.InferenceError(
+                        "fget() needs a single argument", target=self, context=context
+                    )
+
+                yield from func.function.infer_call_result(
+                    caller=caller, context=context
+                )
+
+        return PropertyFuncAccessor(name="fget", parent=self._instance)
+
+    @property
+    def attr_setter(self):
+        from astroid.scoped_nodes import FunctionDef
+
+        return FunctionDef(name="setter", parent=self._instance)
+
+    @property
+    def attr_deleter(self):
+        from astroid.scoped_nodes import FunctionDef
+
+        return FunctionDef(name="deleter", parent=self._instance)
+
+    @property
+    def attr_getter(self):
+        from astroid.scoped_nodes import FunctionDef
+
+        return FunctionDef(name="getter", parent=self._instance)
+
+    # pylint: enable=import-outside-toplevel

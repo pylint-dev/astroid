@@ -273,7 +273,7 @@ def test():
         """
         )
         inferred = next(node.infer())
-        self.assertEqual(inferred.decoratornames(), set())
+        self.assertEqual(inferred.decoratornames(), {".Parent.foo.getter"})
 
     def test_ssl_protocol(self):
         node = extract_node(

@@ -38,22 +38,24 @@ from astroid import util
 
 
 MANAGER = manager.AstroidManager()
+# Prevents circular imports
+objects = util.lazy_import("objects")
 
 
 # .infer method ###############################################################
 
 
 def infer_end(self, context=None):
-    """inference's end for node such as Module, ClassDef, FunctionDef,
-    Const...
+    """Inference's end for nodes that yield themselves on inference
 
+    These are objects for which inference does not have any semantic,
+    such as Module or Consts.
     """
     yield self
 
 
 nodes.Module._infer = infer_end
 nodes.ClassDef._infer = infer_end
-nodes.FunctionDef._infer = infer_end
 nodes.Lambda._infer = infer_end
 nodes.Const._infer = infer_end
 nodes.Slice._infer = infer_end
@@ -309,11 +311,13 @@ def infer_attribute(self, context=None):
         try:
             context.boundnode = owner
             yield from owner.igetattr(self.attrname, context)
-            context.boundnode = None
-        except (exceptions.AttributeInferenceError, exceptions.InferenceError):
-            context.boundnode = None
-        except AttributeError:
-            # XXX method / function
+        except (
+            exceptions.AttributeInferenceError,
+            exceptions.InferenceError,
+            AttributeError,
+        ):
+            pass
+        finally:
             context.boundnode = None
     return dict(node=self, context=context)
 
@@ -941,3 +945,22 @@ def infer_ifexp(self, context=None):
 
 
 nodes.IfExp._infer = infer_ifexp
+
+
+def infer_functiondef(self, context=None):
+    if not self.decorators or not bases._is_property(self):
+        yield self
+        return
+
+    prop_func = objects.Property(
+        function=self,
+        name=self.name,
+        doc=self.doc,
+        lineno=self.lineno,
+        parent=self.parent,
+        col_offset=self.col_offset,
+    )
+    yield prop_func
+
+
+nodes.FunctionDef._infer = infer_functiondef

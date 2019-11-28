@@ -58,13 +58,12 @@ POSSIBLE_PROPERTIES = {
 }
 
 
-def _is_property(meth):
-    if PROPERTIES.intersection(meth.decoratornames()):
+def _is_property(meth, context=None):
+    decoratornames = meth.decoratornames(context=context)
+    if PROPERTIES.intersection(decoratornames):
         return True
     stripped = {
-        name.split(".")[-1]
-        for name in meth.decoratornames()
-        if name is not util.Uninferable
+        name.split(".")[-1] for name in decoratornames if name is not util.Uninferable
     }
     if any(name in stripped for name in POSSIBLE_PROPERTIES):
         return True
@@ -73,7 +72,7 @@ def _is_property(meth):
     if not meth.decorators:
         return False
     for decorator in meth.decorators.nodes or ():
-        inferred = helpers.safe_infer(decorator)
+        inferred = helpers.safe_infer(decorator, context=context)
         if inferred is None or inferred is util.Uninferable:
             continue
         if inferred.__class__.__name__ == "ClassDef":
