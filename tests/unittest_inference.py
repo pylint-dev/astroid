@@ -4928,6 +4928,24 @@ def test_regression_infinite_loop_decorator():
     assert result.value == 1
 
 
+def test_stop_iteration_in_int():
+    """Handle StopIteration error in infer_int."""
+    code = """
+    def f(lst):
+        if lst[0]:
+            return f(lst)
+        else:
+            args = lst[:1]
+            return int(args[0])
+
+    f([])
+    """
+    [first_result, second_result] = extract_node(code).inferred()
+    assert first_result is util.Uninferable
+    assert isinstance(second_result, Instance)
+    assert second_result.name == "int"
+
+
 def test_call_on_instance_with_inherited_dunder_call_method():
     """Stop inherited __call__ method from incorrectly returning wrong class
 
