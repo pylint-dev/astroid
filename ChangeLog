@@ -69,6 +69,10 @@ Release Date: TBA
 
   Clean up the setup.py file, resolving a handful of minor warnings with it.
 
+* Handle StopIteration error in infer_int.
+
+  Close PyCQA/pylint#3274
+
 What's New in astroid 2.3.2?
 ============================
 Release Date: TBA

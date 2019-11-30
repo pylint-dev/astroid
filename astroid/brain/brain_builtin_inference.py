@@ -743,7 +743,7 @@ def infer_int(node, context=None):
     if call.positional_arguments:
         try:
             first_value = next(call.positional_arguments[0].infer(context=context))
-        except InferenceError as exc:
+        except (InferenceError, StopIteration) as exc:
             raise UseInferenceDefault(str(exc)) from exc
 
         if first_value is util.Uninferable:
