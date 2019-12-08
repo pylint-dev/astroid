@@ -52,6 +52,10 @@ def numpy_core_umath_transform():
         def __call__(self, x, {opt_args:s}):
             return numpy.ndarray([0, 0])
 
+    class FakeUfuncOneArgBis(FakeUfunc):
+        def __call__(self, x, {opt_args:s}):
+            return numpy.ndarray([0, 0]), numpy.ndarray([0, 0])
+
     class FakeUfuncTwoArgs(FakeUfunc):
         def __call__(self, x1, x2, {opt_args:s}):
             return numpy.ndarray([0, 0])
@@ -75,18 +79,14 @@ def numpy_core_umath_transform():
     #exp2 = FakeUfuncOneArg()
     expm1 = FakeUfuncOneArg()
     fabs = FakeUfuncOneArg()
-    #frexp = FakeUfuncOneArg()
-    # frexp.__call__(self, x, {opt_args:s}):
-    #         return (numpy.ndarray([0, 0]), numpy.ndarray([0, 0]))
+    frexp = FakeUfuncOneArgBis()
     #isfinite = FakeUfuncOneArg()
     #isinf = FakeUfuncOneArg()
     log = FakeUfuncOneArg()
     log1p = FakeUfuncOneArg()
     log2 = FakeUfuncOneArg()
     logical_not = FakeUfuncOneArg()
-    # modf = FakeUfuncOneArg()
-    # modf.__call__(self, x, {opt_args:s}):
-    #         return (numpy.ndarray([0, 0]), numpy.ndarray([0, 0]))
+    modf = FakeUfuncOneArgBis()
     negative = FakeUfuncOneArg()
     rad2deg = FakeUfuncOneArg()
     reciprocal = FakeUfuncOneArg()
