@@ -14,6 +14,7 @@ except ImportError:
 
 from astroid import builder
 from astroid import nodes, bases
+from astroid import util
 
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
@@ -34,12 +35,12 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
         "conjugate",
         "cosh",
         "deg2rad",
-        #"exp2",
+        "exp2",
         "expm1",
         "fabs",
         "frexp",
-        #"isfinite",
-        #"isinf",
+        "isfinite",
+        "isinf",
         "log",
         "log1p",
         "log2",
@@ -62,7 +63,7 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
         "bitwise_and",
         "bitwise_or",
         "bitwise_xor",
-        #"copysign",
+        "copysign",
         "divide",
         "equal",
         "floor_divide",
@@ -82,11 +83,11 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
         "maximum",
         "minimum",
         "nextafter",
-        #"not_equal",
+        "not_equal",
         "power",
         "remainder",
         "right_shift",
-        #"subtract",
+        "subtract",
         "true_divide",
     )
 
@@ -197,16 +198,15 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
             for f in self.all_ufunc
             if f not in ("frexp", "modf")
         ]
-        licit_array_types = (".ndarray",)
         for func_ in ndarray_returning_func:
             with self.subTest(typ=func_):
                 inferred_values = list(self._inferred_numpy_func_call(func_))
                 self.assertTrue(
-                    len(inferred_values) == 1,
-                    msg="Too much inferred values ({}) for {:s}".format(inferred_values, func_),
+                    len(inferred_values) == 1 or len(inferred_values) == 2 and inferred_values[-1].pytype() is util.Uninferable,
+                    msg="Too much inferred values ({}) for {:s}".format(inferred_values[-1].pytype(), func_),
                 )
                 self.assertTrue(
-                    inferred_values[-1].pytype() in licit_array_types,
+                    inferred_values[0].pytype() == '.ndarray',
                     msg="Illicit type for {:s} ({})".format(
                         func_, inferred_values[-1].pytype()
                     ),
