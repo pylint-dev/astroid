@@ -22,10 +22,6 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
     Test of all members of numpy.core.umath module
     """
 
-    no_arg_ufunc = ("geterrobj",)
-
-    one_arg_ufunc_spec = ("seterrobj",)
-
     one_arg_ufunc = (
         "arccos",
         "arccosh",
@@ -88,15 +84,15 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
         "maximum",
         "minimum",
         "nextafter",
-        "not_equal",
+        #"not_equal",
         "power",
         "remainder",
         "right_shift",
-        "subtract",
+        #"subtract",
         "true_divide",
     )
 
-    all_ufunc = no_arg_ufunc + one_arg_ufunc_spec + one_arg_ufunc + two_args_ufunc
+    all_ufunc = one_arg_ufunc + two_args_ufunc
 
     constants = ("e", "euler_gamma")
 
@@ -219,7 +215,7 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
         ndarray_returning_func = [
             f
             for f in self.all_ufunc
-            if f not in ("geterrobj", "seterrobj", "frexp", "modf")
+            if f not in ("frexp", "modf")
         ]
         licit_array_types = (".ndarray",)
         for func_ in ndarray_returning_func:
