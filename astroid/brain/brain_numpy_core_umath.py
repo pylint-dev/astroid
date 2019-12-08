@@ -16,84 +16,120 @@ def numpy_core_umath_transform():
     )
     return astroid.parse(
         """
+    class FakeUfunc:
+        def __init__(self):
+            self.__doc__ = str()
+            self.__name__ = str()
+            self.nin = 0
+            self.nout = 0
+            self.nargs = 0
+            self.ntypes = 0
+            self.types = None
+            self.identity = None
+            self.signature = None
+
+        @classmethod
+        def reduce(cls, a, axis=None, dtype=None, out=None):
+            return numpy.ndarray([0, 0])
+
+        @classmethod
+        def accumulate(cls, array, axis=None, dtype=None, out=None):
+            return numpy.ndarray([0, 0])
+
+        @classmethod
+        def reduceat(cls, a, indices, axis=None, dtype=None, out=None):
+            return numpy.ndarray([0, 0])
+
+        @classmethod
+        def outer(cls, A, B, **kwargs):
+            return numpy.ndarray([0, 0])
+
+        @classmethod
+        def at(cls, a, indices, b=None):
+            return numpy.ndarray([0, 0])
+
+    class FakeUfuncOneArg(FakeUfunc):
+        def __call__(self, x, {opt_args:s}):
+            return numpy.ndarray([0, 0])
+
+    class FakeUfuncTwoArgs(FakeUfunc):
+        def __call__(self, x1, x2, {opt_args:s}):
+            return numpy.ndarray([0, 0])
+
     # Constants
     e = 2.718281828459045
     euler_gamma = 0.5772156649015329
 
-    # No arg functions
-    def geterrobj(): return []
-
-    # One arg functions
-    def seterrobj(errobj): return None
-
     # One arg functions with optional kwargs
-    def arccos(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def arccosh(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def arcsin(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def arcsinh(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def arctan(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def arctanh(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def cbrt(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def conj(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def conjugate(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def cosh(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def deg2rad(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def degrees(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def exp2(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def expm1(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def fabs(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def frexp(x, {opt_args:s}): return (numpy.ndarray((0, 0)), numpy.ndarray((0, 0)))
-    def isfinite(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def isinf(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def log(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def log1p(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def log2(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def logical_not(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def modf(x, {opt_args:s}): return (numpy.ndarray((0, 0)), numpy.ndarray((0, 0)))
-    def negative(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def rad2deg(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def radians(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def reciprocal(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def rint(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def sign(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def signbit(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def sinh(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def spacing(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def square(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def tan(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def tanh(x, {opt_args:s}): return numpy.ndarray((0, 0))
-    def trunc(x, {opt_args:s}): return numpy.ndarray((0, 0))
+    arccos = FakeUfuncOneArg()
+    arccosh = FakeUfuncOneArg()
+    arcsin = FakeUfuncOneArg()
+    arcsinh = FakeUfuncOneArg()
+    arctan = FakeUfuncOneArg()
+    arctanh = FakeUfuncOneArg()
+    cbrt = FakeUfuncOneArg()
+    conj = FakeUfuncOneArg()
+    conjugate = FakeUfuncOneArg()
+    cosh = FakeUfuncOneArg()
+    deg2rad = FakeUfuncOneArg()
+    #exp2 = FakeUfuncOneArg()
+    expm1 = FakeUfuncOneArg()
+    fabs = FakeUfuncOneArg()
+    #frexp = FakeUfuncOneArg()
+    # frexp.__call__(self, x, {opt_args:s}):
+    #         return (numpy.ndarray([0, 0]), numpy.ndarray([0, 0]))
+    #isfinite = FakeUfuncOneArg()
+    #isinf = FakeUfuncOneArg()
+    log = FakeUfuncOneArg()
+    log1p = FakeUfuncOneArg()
+    log2 = FakeUfuncOneArg()
+    logical_not = FakeUfuncOneArg()
+    # modf = FakeUfuncOneArg()
+    # modf.__call__(self, x, {opt_args:s}):
+    #         return (numpy.ndarray([0, 0]), numpy.ndarray([0, 0]))
+    negative = FakeUfuncOneArg()
+    rad2deg = FakeUfuncOneArg()
+    reciprocal = FakeUfuncOneArg()
+    rint = FakeUfuncOneArg()
+    sign = FakeUfuncOneArg()
+    signbit = FakeUfuncOneArg()
+    sinh = FakeUfuncOneArg()
+    spacing = FakeUfuncOneArg()
+    square = FakeUfuncOneArg()
+    tan = FakeUfuncOneArg()
+    tanh = FakeUfuncOneArg()
+    trunc = FakeUfuncOneArg()
 
     # Two args functions with optional kwargs
-    def bitwise_and(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def bitwise_or(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def bitwise_xor(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def copysign(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def divide(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def equal(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def floor_divide(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def fmax(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def fmin(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def fmod(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def greater(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def hypot(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def ldexp(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def left_shift(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def less(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def logaddexp(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def logaddexp2(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def logical_and(x1, x2, {opt_args:s}): return numpy.ndarray([0, 0])
-    def logical_or(x1, x2, {opt_args:s}): return numpy.ndarray([0, 0])
-    def logical_xor(x1, x2, {opt_args:s}): return numpy.ndarray([0, 0])
-    def maximum(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def minimum(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def nextafter(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def not_equal(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def power(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def remainder(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def right_shift(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def subtract(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
-    def true_divide(x1, x2, {opt_args:s}): return numpy.ndarray((0, 0))
+    bitwise_and = FakeUfuncTwoArgs()
+    bitwise_or = FakeUfuncTwoArgs()
+    bitwise_xor = FakeUfuncTwoArgs()
+    #copysign = FakeUfuncTwoArg()
+    divide = FakeUfuncTwoArgs()
+    equal = FakeUfuncTwoArgs()
+    floor_divide = FakeUfuncTwoArgs()
+    fmax = FakeUfuncTwoArgs()
+    fmin = FakeUfuncTwoArgs()
+    fmod = FakeUfuncTwoArgs()
+    greater = FakeUfuncTwoArgs()
+    hypot = FakeUfuncTwoArgs()
+    ldexp = FakeUfuncTwoArgs()
+    left_shift = FakeUfuncTwoArgs()
+    less = FakeUfuncTwoArgs()
+    logaddexp = FakeUfuncTwoArgs()
+    logaddexp2 = FakeUfuncTwoArgs()
+    logical_and = FakeUfuncTwoArgs()
+    logical_or = FakeUfuncTwoArgs()
+    logical_xor = FakeUfuncTwoArgs()
+    maximum = FakeUfuncTwoArgs()
+    minimum = FakeUfuncTwoArgs()
+    nextafter = FakeUfuncTwoArgs()
+    #not_equal = FakeUfuncTwoArgs()
+    power = FakeUfuncTwoArgs()
+    remainder = FakeUfuncTwoArgs()
+    right_shift = FakeUfuncTwoArgs()
+    #subtract = FakeUfuncTwoArgs()
+    true_divide = FakeUfuncTwoArgs()
     """.format(
             opt_args=ufunc_optional_keyword_arguments
         )
