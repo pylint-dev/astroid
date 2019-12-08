@@ -37,14 +37,14 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
         #"exp2",
         "expm1",
         "fabs",
-        #"frexp",
+        "frexp",
         #"isfinite",
         #"isinf",
         "log",
         "log1p",
         "log2",
         "logical_not",
-        # "modf",
+        "modf",
         "negative",
         "rad2deg",
         "reciprocal",
@@ -211,6 +211,37 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
                         func_, inferred_values[-1].pytype()
                     ),
                 )
+
+    def test_numpy_core_umath_functions_return_type_tuple(self):
+        """
+        Test that functions which should return a pair of ndarray do return it
+        """
+        ndarray_returning_func = ("frexp", "modf")
+        
+        for func_ in ndarray_returning_func:
+            with self.subTest(typ=func_):
+                inferred_values = list(self._inferred_numpy_func_call(func_))
+                self.assertTrue(
+                    len(inferred_values) == 1,
+                    msg="Too much inferred values ({}) for {:s}".format(inferred_values, func_),
+                )
+                self.assertTrue(
+                    inferred_values[-1].pytype() == "builtins.tuple",
+                    msg="Illicit type for {:s} ({})".format(
+                        func_, inferred_values[-1].pytype()
+                    ),
+                )
+                self.assertTrue(
+                    len(inferred_values[0].elts) == 2,
+                    msg="{} should return a pair of values. That's not the case.".format(func_)
+                )
+                for array in inferred_values[-1].elts:
+                    effective_infer = [m.pytype() for m in array.inferred()]
+                    self.assertTrue(
+                        ".ndarray" in effective_infer,
+                        msg = ('Each item in the return of {} '
+                               'should be inferred as a ndarray and not as {}'.format(func_, effective_infer))
+                    )
 
 
 if __name__ == "__main__":
