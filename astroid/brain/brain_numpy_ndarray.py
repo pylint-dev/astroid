@@ -29,7 +29,7 @@ def infer_numpy_ndarray(node, context=None):
             self.nbytes = None
             self.ndim = None
             self.real = None
-            self.shape = None
+            self.shape = numpy.ndarray([0, 0])
             self.size = None
             self.strides = None
 
