@@ -131,7 +131,7 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
         for func in self.all_ufunc:
             with self.subTest(func=func):
                 inferred = self._inferred_numpy_attribute(func)
-                self.assertIsInstance(inferred, (nodes.FunctionDef, bases.Instance))
+                self.assertIsInstance(inferred, bases.Instance)
 
     def test_numpy_core_umath_functions_one_arg(self):
         """
