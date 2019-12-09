@@ -6,6 +6,16 @@ What's New in astroid 2.4.0?
 ============================
 Release Date: TBA
 
+* All the ``numpy ufunc`` functions derived now from a common class that
+  implements the specific ``reduce``, ``accumulate``, ``reduceat``,
+	``outer`` and ``at`` methods.
+
+  Close #2885
+
+* The ``shape`` attribute of a ``numpy ndarray`` is now a ``ndarray``
+
+  Close #3139
+
 * Don't ignore special methods when inspecting gi classes
 
   Close #728
