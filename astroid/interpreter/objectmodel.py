@@ -759,7 +759,9 @@ class PropertyModel(ObjectModel):
                     caller=caller, context=context
                 )
 
-        return PropertyFuncAccessor(name="fget", parent=self._instance)
+        property = PropertyFuncAccessor(name="fget", parent=self._instance)
+        property.postinit(args=func.args, body=func.body)
+        return property
 
     @property
     def attr_setter(self):
