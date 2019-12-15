@@ -1276,5 +1276,14 @@ def test_parse_type_comments_with_proper_parent():
     assert isinstance(type_comment.parent.parent, astroid.Arguments)
 
 
+def test_const_itered():
+    code = 'a = "string"'
+    node = astroid.extract_node(code).value
+    assert isinstance(node, astroid.Const)
+    itered = node.itered()
+    assert len(itered) == 6
+    assert [elem.value for elem in itered] == list("string")
+
+
 if __name__ == "__main__":
     unittest.main()

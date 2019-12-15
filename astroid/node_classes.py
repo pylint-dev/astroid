@@ -2576,13 +2576,13 @@ class Const(mixins.NoChildrenMixin, NodeNG, bases.Instance):
         """An iterator over the elements this node contains.
 
         :returns: The contents of this node.
-        :rtype: iterable(str)
+        :rtype: iterable(Const)
 
         :raises TypeError: If this node does not represent something that is iterable.
         """
         if isinstance(self.value, str):
-            return self.value
-        raise TypeError()
+            return [const_factory(elem) for elem in self.value]
+        raise TypeError("Cannot iterate over type {!r}".format(type(self.value)))
 
     def pytype(self):
         """Get the name of the type that this node represents.

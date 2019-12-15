@@ -677,7 +677,9 @@ def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
                         break
                     elts.pop()
                     continue
-                # We're done
+
+                # We're done unpacking.
+                elts = list(elts)
                 packed = nodes.List(
                     ctx=Store, parent=self, lineno=lhs.lineno, col_offset=lhs.col_offset
                 )

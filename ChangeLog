@@ -12,6 +12,10 @@ Release Date: TBA
 
   Close PyCQA/pylint#2885
 
+* ``nodes.Const.itered`` returns a list of ``Const`` nodes, not strings
+
+  Close PyCQA/pylint#3306
+
 * The ``shape`` attribute of a ``numpy ndarray`` is now a ``ndarray``
 
   Close PyCQA/pylint#3139
