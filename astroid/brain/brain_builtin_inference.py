@@ -154,7 +154,7 @@ def _container_generic_inference(node, context, node_type, transform):
     if len(node.args) > 1:
         raise UseInferenceDefault()
 
-    arg, = args
+    (arg,) = args
     transformed = transform(arg)
     if not transformed:
         try:
@@ -169,7 +169,7 @@ def _container_generic_inference(node, context, node_type, transform):
     return transformed
 
 
-def _container_generic_transform(arg, klass, iterables, build_elts):
+def _container_generic_transform(arg, context, klass, iterables, build_elts):
     if isinstance(arg, klass):
         return arg
     elif isinstance(arg, iterables):
@@ -177,7 +177,9 @@ def _container_generic_transform(arg, klass, iterables, build_elts):
             elts = [elt.value for elt in arg.elts]
         else:
             # TODO: Does not handle deduplication for sets.
-            elts = filter(None, map(helpers.safe_infer, arg.elts))
+            elts = filter(
+                None, map(partial(helpers.safe_infer, context=context), arg.elts)
+            )
     elif isinstance(arg, nodes.Dict):
         # Dicts need to have consts as strings already.
         if not all(isinstance(elt[0], nodes.Const) for elt in arg.items):
@@ -197,6 +199,7 @@ def _infer_builtin_container(
 ):
     transform_func = partial(
         _container_generic_transform,
+        context=context,
         klass=klass,
         iterables=iterables,
         build_elts=build_elts,
