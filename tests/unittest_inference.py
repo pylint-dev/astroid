@@ -5502,5 +5502,19 @@ def test_property_callable_inference():
     assert inferred.value == 42
 
 
+def test_recursion_error_inferring_builtin_containers():
+    node = extract_node(
+        """
+    class Foo:
+        a = "foo"
+    inst = Foo()
+
+    b = tuple([inst.a]) #@
+    inst.a = b
+    """
+    )
+    helpers.safe_infer(node.targets[0])
+
+
 if __name__ == "__main__":
     unittest.main()
