@@ -6,6 +6,10 @@ What's New in astroid 2.4.0?
 ============================
 Release Date: TBA
 
+* Added some functions of the ``numpy.core.multiarray`` module
+
+  Close PyCQA/pylint#3208
+
 * All the ``numpy ufunc`` functions derived now from a common class that
   implements the specific ``reduce``, ``accumulate``, ``reduceat``,
 	``outer`` and ``at`` methods.
