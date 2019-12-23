@@ -372,13 +372,13 @@ def infer_subscript(self, context=None):
             index_value = _SUBSCRIPT_SENTINEL
             if value.__class__ == bases.Instance:
                 index_value = index
+            elif index.__class__ == bases.Instance:
+                instance_as_index = helpers.class_instance_as_index(index)
+                if instance_as_index:
+                    index_value = instance_as_index
             else:
-                if index.__class__ == bases.Instance:
-                    instance_as_index = helpers.class_instance_as_index(index)
-                    if instance_as_index:
-                        index_value = instance_as_index
-                else:
-                    index_value = index
+                index_value = index
+
             if index_value is _SUBSCRIPT_SENTINEL:
                 raise exceptions.InferenceError(node=self, context=context)
 
