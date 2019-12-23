@@ -2486,17 +2486,16 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                         yield from function.infer_call_result(
                             caller=self, context=context
                         )
+                    # If we have a metaclass, we're accessing this attribute through
+                    # the class itself, which means we can solve the property
+                    elif metaclass:
+                        # Resolve a property as long as it is not accessed through
+                        # the class itself.
+                        yield from function.infer_call_result(
+                            caller=self, context=context
+                        )
                     else:
-                        # If we have a metaclass, we're accessing this attribute through
-                        # the class itself, which means we can solve the property
-                        if metaclass:
-                            # Resolve a property as long as it is not accessed through
-                            # the class itself.
-                            yield from function.infer_call_result(
-                                caller=self, context=context
-                            )
-                        else:
-                            yield inferred
+                        yield inferred
                 else:
                     yield function_to_method(inferred, self)
         except exceptions.AttributeInferenceError as error:
