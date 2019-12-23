@@ -50,6 +50,7 @@ Del = _Context.Del
 del _Context
 
 
+# pylint: disable=wrong-import-order,wrong-import-position
 from .__pkginfo__ import version as __version__
 
 # WARNING: internal imports order matters !
