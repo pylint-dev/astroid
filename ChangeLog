@@ -6,6 +6,20 @@ What's New in astroid 2.4.0?
 ============================
 Release Date: TBA
 
+* All the ``numpy ufunc`` functions derived now from a common class that
+  implements the specific ``reduce``, ``accumulate``, ``reduceat``,
+	``outer`` and ``at`` methods.
+
+  Close PyCQA/pylint#2885
+
+* ``nodes.Const.itered`` returns a list of ``Const`` nodes, not strings
+
+  Close PyCQA/pylint#3306
+
+* The ``shape`` attribute of a ``numpy ndarray`` is now a ``ndarray``
+
+  Close PyCQA/pylint#3139
+
 * Don't ignore special methods when inspecting gi classes
 
   Close #728
@@ -68,6 +82,10 @@ Release Date: TBA
   done with McCabe.
 
   Clean up the setup.py file, resolving a handful of minor warnings with it.
+
+* Handle StopIteration error in infer_int.
+
+  Close PyCQA/pylint#3274
 
 What's New in astroid 2.3.2?
 ============================

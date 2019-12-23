@@ -960,6 +960,7 @@ def infer_functiondef(self, context=None):
         parent=self.parent,
         col_offset=self.col_offset,
     )
+    prop_func.postinit(body=[], args=self.args)
     yield prop_func
 
 

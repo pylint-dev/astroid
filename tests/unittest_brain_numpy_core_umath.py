@@ -13,7 +13,8 @@ except ImportError:
     HAS_NUMPY = False
 
 from astroid import builder
-from astroid import nodes
+from astroid import nodes, bases
+from astroid import util
 
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
@@ -21,10 +22,6 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
     """
     Test of all members of numpy.core.umath module
     """
-
-    no_arg_ufunc = ("geterrobj",)
-
-    one_arg_ufunc_spec = ("seterrobj",)
 
     one_arg_ufunc = (
         "arccos",
@@ -38,7 +35,6 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
         "conjugate",
         "cosh",
         "deg2rad",
-        "degrees",
         "exp2",
         "expm1",
         "fabs",
@@ -52,7 +48,6 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
         "modf",
         "negative",
         "rad2deg",
-        "radians",
         "reciprocal",
         "rint",
         "sign",
@@ -96,7 +91,7 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
         "true_divide",
     )
 
-    all_ufunc = no_arg_ufunc + one_arg_ufunc_spec + one_arg_ufunc + two_args_ufunc
+    all_ufunc = one_arg_ufunc + two_args_ufunc
 
     constants = ("e", "euler_gamma")
 
@@ -137,42 +132,35 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
         for func in self.all_ufunc:
             with self.subTest(func=func):
                 inferred = self._inferred_numpy_attribute(func)
-                self.assertIsInstance(inferred, nodes.FunctionDef)
-
-    def test_numpy_core_umath_functions_no_arg(self):
-        """
-        Test that functions with no arguments have really no arguments.
-        """
-        for func in self.no_arg_ufunc:
-            with self.subTest(func=func):
-                inferred = self._inferred_numpy_attribute(func)
-                self.assertFalse(inferred.argnames())
-
-    def test_numpy_core_umath_functions_one_arg_spec(self):
-        """
-        Test the arguments names of functions.
-        """
-        exact_arg_names = ["errobj"]
-        for func in self.one_arg_ufunc_spec:
-            with self.subTest(func=func):
-                inferred = self._inferred_numpy_attribute(func)
-                self.assertEqual(inferred.argnames(), exact_arg_names)
+                self.assertIsInstance(inferred, bases.Instance)
 
     def test_numpy_core_umath_functions_one_arg(self):
         """
         Test the arguments names of functions.
         """
-        exact_arg_names = ["x", "out", "where", "casting", "order", "dtype", "subok"]
+        exact_arg_names = [
+            "self",
+            "x",
+            "out",
+            "where",
+            "casting",
+            "order",
+            "dtype",
+            "subok",
+        ]
         for func in self.one_arg_ufunc:
             with self.subTest(func=func):
                 inferred = self._inferred_numpy_attribute(func)
-                self.assertEqual(inferred.argnames(), exact_arg_names)
+                self.assertEqual(
+                    inferred.getattr("__call__")[0].argnames(), exact_arg_names
+                )
 
     def test_numpy_core_umath_functions_two_args(self):
         """
         Test the arguments names of functions.
         """
         exact_arg_names = [
+            "self",
             "x1",
             "x2",
             "out",
@@ -185,7 +173,9 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
         for func in self.two_args_ufunc:
             with self.subTest(func=func):
                 inferred = self._inferred_numpy_attribute(func)
-                self.assertEqual(inferred.argnames(), exact_arg_names)
+                self.assertEqual(
+                    inferred.getattr("__call__")[0].argnames(), exact_arg_names
+                )
 
     def test_numpy_core_umath_functions_kwargs_default_values(self):
         """
@@ -196,7 +186,8 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
             with self.subTest(func=func):
                 inferred = self._inferred_numpy_attribute(func)
                 default_args_values = [
-                    default.value for default in inferred.args.defaults
+                    default.value
+                    for default in inferred.getattr("__call__")[0].args.defaults
                 ]
                 self.assertEqual(default_args_values, exact_kwargs_default_values)
 
@@ -217,24 +208,64 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
         Test that functions which should return a ndarray do return it
         """
         ndarray_returning_func = [
-            f
-            for f in self.all_ufunc
-            if f not in ("geterrobj", "seterrobj", "frexp", "modf")
+            f for f in self.all_ufunc if f not in ("frexp", "modf")
         ]
-        licit_array_types = (".ndarray",)
+        for func_ in ndarray_returning_func:
+            with self.subTest(typ=func_):
+                inferred_values = list(self._inferred_numpy_func_call(func_))
+                self.assertTrue(
+                    len(inferred_values) == 1
+                    or len(inferred_values) == 2
+                    and inferred_values[-1].pytype() is util.Uninferable,
+                    msg="Too much inferred values ({}) for {:s}".format(
+                        inferred_values[-1].pytype(), func_
+                    ),
+                )
+                self.assertTrue(
+                    inferred_values[0].pytype() == ".ndarray",
+                    msg="Illicit type for {:s} ({})".format(
+                        func_, inferred_values[-1].pytype()
+                    ),
+                )
+
+    def test_numpy_core_umath_functions_return_type_tuple(self):
+        """
+        Test that functions which should return a pair of ndarray do return it
+        """
+        ndarray_returning_func = ("frexp", "modf")
+
         for func_ in ndarray_returning_func:
             with self.subTest(typ=func_):
                 inferred_values = list(self._inferred_numpy_func_call(func_))
                 self.assertTrue(
                     len(inferred_values) == 1,
-                    msg="Too much inferred value for {:s}".format(func_),
+                    msg="Too much inferred values ({}) for {:s}".format(
+                        inferred_values, func_
+                    ),
                 )
                 self.assertTrue(
-                    inferred_values[-1].pytype() in licit_array_types,
+                    inferred_values[-1].pytype() == "builtins.tuple",
                     msg="Illicit type for {:s} ({})".format(
                         func_, inferred_values[-1].pytype()
                     ),
                 )
+                self.assertTrue(
+                    len(inferred_values[0].elts) == 2,
+                    msg="{} should return a pair of values. That's not the case.".format(
+                        func_
+                    ),
+                )
+                for array in inferred_values[-1].elts:
+                    effective_infer = [m.pytype() for m in array.inferred()]
+                    self.assertTrue(
+                        ".ndarray" in effective_infer,
+                        msg=(
+                            "Each item in the return of {} "
+                            "should be inferred as a ndarray and not as {}".format(
+                                func_, effective_infer
+                            )
+                        ),
+                    )
 
 
 if __name__ == "__main__":

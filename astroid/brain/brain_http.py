@@ -18,6 +18,16 @@ def _http_transform():
 
     class HTTPStatus:
 
+        @property
+        def phrase(self):
+            return ""
+        @property
+        def value(self):
+            return 0
+        @property
+        def description(self):
+            return ""
+
         # informational
         CONTINUE = _HTTPStatus(100, 'Continue', 'Request received, please continue')
         SWITCHING_PROTOCOLS = _HTTPStatus(101, 'Switching Protocols',
