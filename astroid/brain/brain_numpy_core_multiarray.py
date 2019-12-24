@@ -42,6 +42,38 @@ METHODS_TO_BE_INFERRED = {
             return numpy.ndarray([0, 0])""",
     "empty": """def empty(shape, dtype=float, order='C'):
             return numpy.ndarray([0, 0])""",
+    "bincount": """def bincount(x, weights=None, minlength=0):
+            return numpy.ndarray([0, 0])""",
+    "busday_count": """def busday_count(begindates, enddates, weekmask='1111100', holidays=[], busdaycal=None, out=None):
+            return numpy.ndarray([0, 0])""",
+    "busday_offset": """def busday_offset(dates, offsets, roll='raise', weekmask='1111100', holidays=None, busdaycal=None, out=None):
+            return numpy.ndarray([0, 0])""",
+    "can_cast": """def can_cast(from_, to, casting='safe'):
+            return True""",
+    "copyto": """def copyto(dst, src, casting='same_kind', where=True):
+            return None""",
+    "datetime_as_string": """def datetime_as_string(arr, unit=None, timezone='naive', casting='same_kind'):
+            return numpy.ndarray([0, 0])""",
+    "is_busday": """def is_busday(dates, weekmask='1111100', holidays=None, busdaycal=None, out=None):
+            return numpy.ndarray([0, 0])""",
+    "lexsort": """def lexsort(keys, axis=-1):
+            return numpy.ndarray([0, 0])""",
+    "may_share_memory": """def may_share_memory(a, b, max_work=None):
+            return True""",
+    # Not yet available because dtype is not yet present in those brains
+    #     "min_scalar_type": """def min_scalar_type(a):
+    #             return numpy.dtype('int16')""",
+    "packbits": """def packbits(a, axis=None, bitorder='big'):
+            return numpy.ndarray([0, 0])""",
+    # Not yet available because dtype is not yet present in those brains
+    #     "result_type": """def result_type(*arrays_and_dtypes):
+    #             return numpy.dtype('int16')""",
+    "shares_memory": """def shares_memory(a, b, max_work=None):
+            return True""",
+    "unpackbits": """def unpackbits(a, axis=None, count=None, bitorder='big'):
+            return numpy.ndarray([0, 0])""",
+    "unravel_index": """def unravel_index(indices, shape, order='C'):
+            return (numpy.ndarray([0, 0]),)""",
     "zeros": """def zeros(shape, dtype=float, order='C'):
             return numpy.ndarray([0, 0])""",
 }
