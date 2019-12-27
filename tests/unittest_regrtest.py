@@ -15,7 +15,7 @@ import sys
 import unittest
 import textwrap
 
-from astroid import MANAGER, Instance, nodes
+from astroid import MANAGER, Instance, nodes, util
 from astroid.bases import BUILTINS
 from astroid.builder import AstroidBuilder, extract_node
 from astroid import exceptions
@@ -92,12 +92,13 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin, unittest.TestCase):
         data = """
 from numpy import multiply
 
-multiply(1, 2, 3)
+multiply([1, 2], [3, 4])
 """
         astroid = builder.string_build(data, __name__, __file__)
         callfunc = astroid.body[1].value.func
         inferred = callfunc.inferred()
-        self.assertEqual(len(inferred), 1)
+        self.assertEqual(len(inferred), 2)
+        self.assertTrue(inferred[-1].pytype() is util.Uninferable)
 
     @require_version("3.0")
     def test_nameconstant(self):
