@@ -42,15 +42,18 @@ class BrainNumpyCoreFromNumericTest(unittest.TestCase):
         licit_array_types = set([".ndarray", Uninferable])
         for func_ in self.numpy_functions:
             with self.subTest(typ=func_):
-                inferred_values = set([v.pytype() for v in self._inferred_numpy_func_call(*func_)])
+                inferred_values = set(
+                    [v.pytype() for v in self._inferred_numpy_func_call(*func_)]
+                )
                 self.assertTrue(
                     len(inferred_values) == 2,
-                    msg="Too much inferred values {} for {:s}".format(inferred_values, func_[1]),
+                    msg="Too much inferred values {} for {:s}".format(
+                        inferred_values, func_[1]
+                    ),
                 )
                 self.assertTrue(
                     inferred_values == licit_array_types,
-                    msg="Illicit type for {:s} ({})".format(
-                        func_[0], inferred_values),
+                    msg="Illicit type for {:s} ({})".format(func_[0], inferred_values),
                 )
 
 
