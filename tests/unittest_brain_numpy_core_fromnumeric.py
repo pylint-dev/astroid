@@ -12,7 +12,7 @@ try:
 except ImportError:
     HAS_NUMPY = False
 
-from astroid import builder
+from astroid import builder, Uninferable
 
 
 @unittest.skipUnless(HAS_NUMPY, "This test requires the numpy library.")
@@ -39,19 +39,18 @@ class BrainNumpyCoreFromNumericTest(unittest.TestCase):
         """
         Test that calls to numpy functions are inferred as numpy.ndarray
         """
-        licit_array_types = (".ndarray",)
+        licit_array_types = set([".ndarray", Uninferable])
         for func_ in self.numpy_functions:
             with self.subTest(typ=func_):
-                inferred_values = list(self._inferred_numpy_func_call(*func_))
+                inferred_values = set([v.pytype() for v in self._inferred_numpy_func_call(*func_)])
                 self.assertTrue(
-                    len(inferred_values) == 1,
-                    msg="Too much inferred value for {:s}".format(func_[0]),
+                    len(inferred_values) == 2,
+                    msg="Too much inferred values {} for {:s}".format(inferred_values, func_[1]),
                 )
                 self.assertTrue(
-                    inferred_values[-1].pytype() in licit_array_types,
+                    inferred_values == licit_array_types,
                     msg="Illicit type for {:s} ({})".format(
-                        func_[0], inferred_values[-1].pytype()
-                    ),
+                        func_[0], inferred_values),
                 )
 
 
