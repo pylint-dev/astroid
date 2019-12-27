@@ -6,18 +6,22 @@
 
 """Astroid hooks for numpy.core.fromnumeric module."""
 
+import functools
 import astroid
+from brain_numpy_utils import infer_numpy_member
 
 
-def numpy_core_fromnumeric_transform():
-    return astroid.parse(
-        """
-    def sum(a, axis=None, dtype=None, out=None, keepdims=None, initial=None):
-        return numpy.ndarray([0, 0])
-    """
-    )
+def looks_like_out_name_in_numpy_sum(member_name: str, node: astroid.node_classes.NodeNG) -> bool:
+    if (isinstance(node, astroid.Name)
+        and node.name == "out"
+        and node.frame().name == "sum"
+        and node.frame().parent.name.startswith('numpy')):
+        return True
+    return False
 
-
-astroid.register_module_extender(
-    astroid.MANAGER, "numpy.core.fromnumeric", numpy_core_fromnumeric_transform
+inference_function = functools.partial(infer_numpy_member, "out = np.ndarray([0, 0])")
+astroid.MANAGER.register_transform(
+    astroid.Name,
+    astroid.inference_tip(inference_function),
+    functools.partial(looks_like_out_name_in_numpy_sum, "out"),
 )
