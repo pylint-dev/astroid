@@ -107,6 +107,7 @@ def numpy_core_umath_transform():
     copysign = FakeUfuncTwoArgs()
     divide = FakeUfuncTwoArgs()
     equal = FakeUfuncTwoArgs()
+    float_power = FakeUfuncTwoArgs()
     floor_divide = FakeUfuncTwoArgs()
     fmax = FakeUfuncTwoArgs()
     fmin = FakeUfuncTwoArgs()

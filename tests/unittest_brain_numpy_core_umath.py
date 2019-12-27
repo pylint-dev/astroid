@@ -66,6 +66,7 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
         "copysign",
         "divide",
         "equal",
+        "float_power",
         "floor_divide",
         "fmax",
         "fmin",
