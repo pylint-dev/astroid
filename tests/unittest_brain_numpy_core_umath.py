@@ -60,6 +60,7 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
     )
 
     two_args_ufunc = (
+        "add",
         "bitwise_and",
         "bitwise_or",
         "bitwise_xor",
@@ -82,6 +83,7 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
         "logical_xor",
         "maximum",
         "minimum",
+        "multiply",
         "nextafter",
         "not_equal",
         "power",
