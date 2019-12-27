@@ -11,6 +11,9 @@ import astroid
 from brain_numpy_utils import looks_like_numpy_member, infer_numpy_member
 
 
+# TODO: In fact there is obviously a less intrusive way to correctly infer those functions.
+#       They are all defined in a .py file thus there is no need to redefine them here.
+#       See what is done in brain_numpy_core_fromnumeric module
 METHODS_TO_BE_INFERRED = {
     "linspace": """def linspace(start, stop, num=50, endpoint=True, retstep=False, dtype=None, axis=0):
             return numpy.ndarray([0, 0])""",
