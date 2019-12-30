@@ -92,7 +92,7 @@ class NonRegressionTests(resources.AstroidCacheSetupMixin, unittest.TestCase):
         data = """
 from numpy import multiply
 
-multiply(1, 2, 3)
+multiply([1, 2], [3, 4])
 """
         astroid = builder.string_build(data, __name__, __file__)
         callfunc = astroid.body[1].value.func
