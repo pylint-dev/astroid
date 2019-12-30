@@ -28,8 +28,10 @@ class InferenceContext:
         "extra_context",
     )
 
+    maximum_path_visit = 3
+
     def __init__(self, path=None, inferred=None):
-        self.path = path or set()
+        self.path = path or dict()
         """
         :type: set(tuple(NodeNG, optional(str)))
 
@@ -86,10 +88,10 @@ class InferenceContext:
         Allows one to see if the given node has already
         been looked at for this inference context"""
         name = self.lookupname
-        if (node, name) in self.path:
+        if self.path.get((node, name), 0) >= self.maximum_path_visit:
             return True
 
-        self.path.add((node, name))
+        self.path[(node, name)] = self.path.setdefault((node, name), 0) + 1
         return False
 
     def clone(self):
@@ -118,7 +120,7 @@ class InferenceContext:
 
     @contextlib.contextmanager
     def restore_path(self):
-        path = set(self.path)
+        path = dict(self.path)
         yield
         self.path = path
 
