@@ -11,6 +11,10 @@ Release Date: TBA
 
   Close #669
 
+* Added some functions to the ``brain_numpy_core_umath`` module
+
+  Close PyCQA/pylint#3319
+
 * Added some functions of the ``numpy.core.multiarray`` module
 
   Close PyCQA/pylint#3208
