@@ -216,11 +216,9 @@ class NumpyBrainCoreUmathTest(unittest.TestCase):
             with self.subTest(typ=func_):
                 inferred_values = list(self._inferred_numpy_func_call(func_))
                 self.assertTrue(
-                    len(inferred_values) == 1
-                    or len(inferred_values) == 2
-                    and inferred_values[-1].pytype() is util.Uninferable,
+                    len(inferred_values) == 1,
                     msg="Too much inferred values ({}) for {:s}".format(
-                        inferred_values[-1].pytype(), func_
+                        inferred_values, func_
                     ),
                 )
                 self.assertTrue(
