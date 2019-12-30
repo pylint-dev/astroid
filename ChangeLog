@@ -6,6 +6,10 @@ What's New in astroid 2.4.0?
 ============================
 Release Date: TBA
 
+* Added some functions to the ``brain_numpy_core_umath`` module
+
+  Close PyCQA/pylint#3319
+
 * Added some functions of the ``numpy.core.multiarray`` module
 
   Close PyCQA/pylint#3208
