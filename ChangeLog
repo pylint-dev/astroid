@@ -6,6 +6,11 @@ What's New in astroid 2.4.0?
 ============================
 Release Date: TBA
 
+* The ``context.path`` is now a ``dict`` and the ``context.push`` method
+  returns ``True`` if the node has been visited a certain amount of times.
+
+  Close #669
+
 * Added some functions of the ``numpy.core.multiarray`` module
 
   Close PyCQA/pylint#3208
