@@ -85,3 +85,8 @@ for method_name, function_src in METHODS_TO_BE_INFERRED.items():
         astroid.inference_tip(inference_function),
         functools.partial(looks_like_numpy_member, method_name),
     )
+    astroid.MANAGER.register_transform(
+        astroid.Name,
+        astroid.inference_tip(inference_function),
+        functools.partial(looks_like_numpy_member, method_name),
+    )
