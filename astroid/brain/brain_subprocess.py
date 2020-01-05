@@ -74,6 +74,7 @@ def _subprocess_transform():
             restore_signals=True,
             preexec_fn=None,
             pass_fds=(),
+            input=None,
             start_new_session=False
         ):
         """.strip()
@@ -93,6 +94,7 @@ def _subprocess_transform():
             restore_signals=True,
             preexec_fn=None,
             pass_fds=(),
+            input=None,
             start_new_session=False
         ):
         """.strip()
