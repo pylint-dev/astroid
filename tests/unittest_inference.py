@@ -5516,5 +5516,23 @@ def test_recursion_error_inferring_builtin_containers():
     helpers.safe_infer(node.targets[0])
 
 
+def test_inferaugassign_picking_parent_instead_of_stmt():
+    code = """
+    from collections import namedtuple
+    SomeClass = namedtuple('SomeClass', ['name'])
+    items = [SomeClass(name='some name')]
+
+    some_str = ''
+    some_str += ', '.join(__(item) for item in items)
+    """
+    # item needs to be inferrd as `SomeClass` but it was inferred
+    # as a string because the entire `AugAssign` node was inferred
+    # as a string.
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert isinstance(inferred, Instance)
+    assert inferred.name == "SomeClass"
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -837,9 +837,8 @@ def infer_assign(self, context=None):
     """infer a AssignName/AssignAttr: need to inspect the RHS part of the
     assign node
     """
-    stmt = self.statement()
-    if isinstance(stmt, nodes.AugAssign):
-        return stmt.infer(context)
+    if isinstance(self.parent, nodes.AugAssign):
+        return self.parent.infer(context)
 
     stmts = list(self.assigned_stmts(context=context))
     return bases._infer_stmts(stmts, context)
