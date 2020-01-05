@@ -1,6 +1,13 @@
 Change log for the astroid package (used to be astng)
 =====================================================
 
+2020-01-06 -- 1.6.7
+
+   * Add qname method to Super object preventing potential errors in upstream
+     pylint (cherry-pick from 2.x)
+
+     Close #533
+     
 2019-04-09 -- 1.6.6
 
 * Add cPickle to the list of available imports for six.moves in Python2
