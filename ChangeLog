@@ -6,10 +6,15 @@ What's New in astroid 2.4.0?
 ============================
 Release Date: TBA
 
+
 * Added a call to ``register_transform`` for all functions of the ``brain_numpy_core_multiarray``
   module in case the current node is an instance of ``astroid.Name``
 
   Close #666
+
+* Added some functions to the ``brain_numpy_core_umath`` module
+
+  Close PyCQA/pylint#3319
 
 * Added some functions of the ``numpy.core.multiarray`` module
 
