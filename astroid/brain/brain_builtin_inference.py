@@ -176,10 +176,7 @@ def _container_generic_transform(arg, context, klass, iterables, build_elts):
         if all(isinstance(elt, nodes.Const) for elt in arg.elts):
             elts = [elt.value for elt in arg.elts]
         else:
-            # TODO: Does not handle deduplication for sets.
-            elts = filter(
-                None, map(partial(helpers.safe_infer, context=context), arg.elts)
-            )
+            raise UseInferenceDefault()
     elif isinstance(arg, nodes.Dict):
         # Dicts need to have consts as strings already.
         if not all(isinstance(elt[0], nodes.Const) for elt in arg.items):
