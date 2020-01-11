@@ -1131,6 +1131,47 @@ def test_type_comments_arguments():
             assert actual_arg.as_string() == expected_arg
 
 
+@pytest.mark.skipif(
+    not PY38, reason="needs to be able to parse positional only arguments"
+)
+def test_type_comments_posonly_arguments():
+    module = builder.parse(
+        """
+    def f_arg_comment(
+        a,  # type: int
+        b,  # type: int
+        /,
+        c,  # type: Optional[int]
+        d,  # type: Optional[int]
+        *,
+        e,  # type: float
+        f,  # type: float
+    ):
+        # type: (...) -> None
+        pass
+    """
+    )
+    expected_annotations = [
+        [["int", "int"], ["Optional[int]", "Optional[int]"], ["float", "float"]]
+    ]
+    for node, expected_types in zip(module.body, expected_annotations):
+        assert len(node.type_comment_args) == 1
+        if PY38:
+            assert isinstance(node.type_comment_args[0], astroid.Const)
+            assert node.type_comment_args[0].value == Ellipsis
+        else:
+            assert isinstance(node.type_comment_args[0], astroid.Ellipsis)
+        type_comments = [
+            node.args.type_comment_posonlyargs,
+            node.args.type_comment_args,
+            node.args.type_comment_kwonlyargs,
+        ]
+        for expected_args, actual_args in zip(expected_types, type_comments):
+            assert len(expected_args) == len(actual_args)
+            for expected_arg, actual_arg in zip(expected_args, actual_args):
+                assert actual_arg.as_string() == expected_arg
+
+
 def test_is_generator_for_yield_assignments():
     node = astroid.extract_node(
         """

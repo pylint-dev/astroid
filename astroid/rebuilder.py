@@ -221,6 +221,14 @@ class TreeRebuilder:
         type_comment_args = [
             self.check_type_comment(child, parent=newnode) for child in node.args
         ]
+        type_comment_kwonlyargs = [
+            self.check_type_comment(child, parent=newnode) for child in node.kwonlyargs
+        ]
+        if PY38:
+            type_comment_posonlyargs = [
+                self.check_type_comment(child, parent=newnode)
+                for child in node.posonlyargs
+            ]
 
         newnode.postinit(
             args=args,
@@ -234,6 +242,8 @@ class TreeRebuilder:
             varargannotation=varargannotation,
             kwargannotation=kwargannotation,
             type_comment_args=type_comment_args,
+            type_comment_kwonlyargs=type_comment_kwonlyargs,
+            type_comment_posonlyargs=type_comment_posonlyargs,
         )
         # save argument names in locals:
         if vararg:

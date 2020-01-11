@@ -106,6 +106,12 @@ Release Date: TBA
 
   Close PyCQA/pylint#3274
 
+* Can access per argument type comments for positional only and keyword only arguments.
+
+  The comments are accessed through through the new
+  ``Arguments.type_comment_posonlyargs`` and
+  ``Arguments.type_comment_kwonlyargs`` attributes respectively.
+
 What's New in astroid 2.3.2?
 ============================
 Release Date: TBA

@@ -1407,6 +1407,8 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         "kwargannotation",
         "kwonlyargs_annotations",
         "type_comment_args",
+        "type_comment_kwonlyargs",
+        "type_comment_posonlyargs",
     )
     varargannotation = None
     """The type annotation for the variable length arguments.
@@ -1502,6 +1504,24 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         :type: list(NodeNG or None)
         """
 
+        self.type_comment_kwonlyargs = []
+        """The type annotation, passed by a type comment, of each keyword only argument.
+
+        If an argument does not have a type comment,
+        the value for that argument will be None.
+
+        :type: list(NodeNG or None)
+        """
+
+        self.type_comment_posonlyargs = []
+        """The type annotation, passed by a type comment, of each positional argument.
+
+        If an argument does not have a type comment,
+        the value for that argument will be None.
+
+        :type: list(NodeNG or None)
+        """
+
     # pylint: disable=too-many-arguments
     def postinit(
         self,
@@ -1516,6 +1536,8 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         varargannotation=None,
         kwargannotation=None,
         type_comment_args=None,
+        type_comment_kwonlyargs=None,
+        type_comment_posonlyargs=None,
     ):
         """Do some setup after initialisation.
 
@@ -1563,6 +1585,14 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         :param type_comment_args: The type annotation,
             passed by a type comment, of each argument.
         :type type_comment_args: list(NodeNG or None)
+
+        :param type_comment_args: The type annotation,
+            passed by a type comment, of each keyword only argument.
+        :type type_comment_args: list(NodeNG or None)
+
+        :param type_comment_args: The type annotation,
+            passed by a type comment, of each positional argument.
+        :type type_comment_args: list(NodeNG or None)
         """
         self.args = args
         self.defaults = defaults
@@ -1575,6 +1605,8 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         self.varargannotation = varargannotation
         self.kwargannotation = kwargannotation
         self.type_comment_args = type_comment_args
+        self.type_comment_kwonlyargs = type_comment_kwonlyargs
+        self.type_comment_posonlyargs = type_comment_posonlyargs
 
     # pylint: disable=too-many-arguments
 
