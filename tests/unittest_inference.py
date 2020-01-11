@@ -5159,21 +5159,6 @@ def test_exception_lookup_name_bound_in_except_handler():
     assert inferred_exc.value == 2
 
 
-def test_builtin_inference_list_of_exceptions():
-    node = extract_node(
-        """
-    tuple([ValueError, TypeError])
-    """
-    )
-    inferred = next(node.infer())
-    assert isinstance(inferred, nodes.Tuple)
-    assert len(inferred.elts) == 2
-    assert isinstance(inferred.elts[0], nodes.ClassDef)
-    assert inferred.elts[0].name == "ValueError"
-    assert isinstance(inferred.elts[1], nodes.ClassDef)
-    assert inferred.elts[1].name == "TypeError"
-
-
 @test_utils.require_version(minver="3.6")
 def test_cannot_getattr_ann_assigns():
     node = extract_node(
