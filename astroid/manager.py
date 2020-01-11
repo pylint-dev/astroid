@@ -168,6 +168,8 @@ class AstroidManager:
                 return self._build_namespace_module(
                     modname, found_spec.submodule_search_locations
                 )
+            elif found_spec.type == spec.ModuleType.PY_FROZEN:
+                return self._build_stub_module(modname)
 
             if found_spec.location is None:
                 raise exceptions.AstroidImportError(
