@@ -1395,7 +1395,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
     #  - we expose 'annotation', a list with annotations for
     #    for each normal argument. If an argument doesn't have an
     #    annotation, its value will be None.
-
+    # pylint: disable=too-many-instance-attributes
     _astroid_fields = (
         "args",
         "defaults",

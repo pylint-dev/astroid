@@ -224,6 +224,7 @@ class TreeRebuilder:
         type_comment_kwonlyargs = [
             self.check_type_comment(child, parent=newnode) for child in node.kwonlyargs
         ]
+        type_comment_posonlyargs = []
         if PY38:
             type_comment_posonlyargs = [
                 self.check_type_comment(child, parent=newnode)
