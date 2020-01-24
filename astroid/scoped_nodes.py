@@ -251,7 +251,10 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
 
         :raises KeyError: If the name is not defined.
         """
-        return self.locals[item][0]
+        try:
+            return self.locals[item][0]
+        except IndexError:
+            return None
 
     def __iter__(self):
         """Iterate over the names of locals defined in this scoped node.
