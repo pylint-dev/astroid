@@ -35,7 +35,7 @@ def numpy_core_numerictypes_transform():
         def argmax(self): return uninferable
         def argmin(self): return uninferable
         def argsort(self): return uninferable
-        def astype(self): return uninferable
+        def astype(self, dtype, order='K', casting='unsafe', subok=True, copy=True): return np.ndarray([0, 0])
         def base(self): return uninferable
         def byteswap(self): return uninferable
         def choose(self): return uninferable
