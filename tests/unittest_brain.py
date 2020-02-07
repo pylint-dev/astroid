@@ -1150,10 +1150,24 @@ class AttrsTest(unittest.TestCase):
 
         i = Bai()
         i.d['answer'] = 42
+
+        @attr.dataclass
+        class Bax:
+            d: dict
+
+        x = Bax()
+        x.d['answer'] = 42
+
+        @attr.dataclass(frozen=True)
+        class Bay:
+            d: dict
+
+        y = Bay()
+        y.d['answer'] = 42
         """
         )
 
-        for name in ("f", "g", "h", "i"):
+        for name in ("f", "g", "h", "i", "x", "y"):
             should_be_unknown = next(module.getattr(name)[0].infer()).getattr("d")[0]
             self.assertIsInstance(should_be_unknown, astroid.Unknown)
 
