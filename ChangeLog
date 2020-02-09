@@ -7,6 +7,10 @@ What's New in astroid 2.4.0?
 Release Date: TBA
 
 
+* Numpy ``ndarray`` attributes ``imag`` and ``real`` are now inferred as ``ndarray``.
+
+  Close PyCQA/pylint#3322
+
 * Added a call to ``register_transform`` for all functions of the ``brain_numpy_core_multiarray``
   module in case the current node is an instance of ``astroid.Name``
 
