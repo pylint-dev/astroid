@@ -6,6 +6,9 @@ What's New in astroid 2.4.0?
 ============================
 Release Date: TBA
 
+* Numpy `datetime64.astype` return value is inferred as a `ndarray`.
+
+  Close PyCQA/pylint#3332
 
 * Skip non ``Assign`` and ``AnnAssign`` nodes from enum reinterpretation
 
