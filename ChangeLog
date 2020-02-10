@@ -7,6 +7,10 @@ What's New in astroid 2.4.0?
 Release Date: TBA
 
 
+* Skip non ``Assign`` and ``AnnAssign`` nodes from enum reinterpretation
+
+  Closes PyCQA/pylint#3365
+
 * Numpy ``ndarray`` attributes ``imag`` and ``real`` are now inferred as ``ndarray``.
 
   Close PyCQA/pylint#3322
