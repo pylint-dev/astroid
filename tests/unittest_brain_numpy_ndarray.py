@@ -117,6 +117,18 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
         )
         return node.infer()
 
+    def _inferred_ndarray_attribute(self, attr_name):
+        node = builder.extract_node(
+            """
+        import numpy as np
+        test_array = np.ndarray((2, 2))
+        test_array.{:s}
+        """.format(
+                attr_name
+            )
+        )
+        return node.infer()
+
     def test_numpy_function_calls_inferred_as_ndarray(self):
         """
         Test that some calls to numpy functions are inferred as numpy.ndarray
@@ -133,6 +145,25 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
                     inferred_values[-1].pytype() in licit_array_types,
                     msg="Illicit type for {:s} ({})".format(
                         func_, inferred_values[-1].pytype()
+                    ),
+                )
+
+    def test_numpy_ndarray_attribute_inferred_as_ndarray(self):
+        """
+        Test that some numpy ndarray attributes are inferred as numpy.ndarray
+        """
+        licit_array_types = ".ndarray"
+        for attr_ in ("real", "imag"):
+            with self.subTest(typ=attr_):
+                inferred_values = list(self._inferred_ndarray_attribute(attr_))
+                self.assertTrue(
+                    len(inferred_values) == 1,
+                    msg="Too much inferred value for {:s}".format(attr_),
+                )
+                self.assertTrue(
+                    inferred_values[-1].pytype() in licit_array_types,
+                    msg="Illicit type for {:s} ({})".format(
+                        attr_, inferred_values[-1].pytype()
                     ),
                 )
 
