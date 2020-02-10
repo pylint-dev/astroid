@@ -11,6 +11,10 @@ import astroid
 
 
 def numpy_core_numerictypes_transform():
+    # TODO: Uniformize the generic API with the ndarray one.
+    #       According to numpy doc the generic object should expose
+    #       the same API than ndarray. This has been done here partially
+    #       through the astype method.
     return astroid.parse(
         """
     # different types defined in numerictypes.py
@@ -35,7 +39,7 @@ def numpy_core_numerictypes_transform():
         def argmax(self): return uninferable
         def argmin(self): return uninferable
         def argsort(self): return uninferable
-        def astype(self): return uninferable
+        def astype(self, dtype, order='K', casting='unsafe', subok=True, copy=True): return np.ndarray([0, 0])
         def base(self): return uninferable
         def byteswap(self): return uninferable
         def choose(self): return uninferable
