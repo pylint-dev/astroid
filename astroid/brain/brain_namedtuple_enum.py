@@ -317,6 +317,8 @@ def infer_enum_class(node):
                     targets = stmt.targets
             elif isinstance(stmt, nodes.AnnAssign):
                 targets = [stmt.target]
+            else:
+                continue
 
             inferred_return_value = None
             if isinstance(stmt, nodes.Assign):

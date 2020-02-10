@@ -622,6 +622,21 @@ class EnumBrainTest(unittest.TestCase):
         test = next(enumeration.igetattr("test"))
         self.assertEqual(test.value, 42)
 
+    def test_ignores_with_nodes_from_body_of_enum(self):
+        code = """
+        import enum
+
+        class Error(enum.Enum):
+            Foo = "foo"
+            Bar = "bar"
+            with "error" as err:
+                pass
+        """
+        node = builder.extract_node(code)
+        inferred = next(node.infer())
+        assert "err" in inferred.locals
+        assert len(inferred.locals["err"]) == 1
+
     def test_enum_multiple_base_classes(self):
         module = builder.parse(
             """
