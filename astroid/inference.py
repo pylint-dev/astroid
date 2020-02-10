@@ -307,6 +307,8 @@ def infer_attribute(self, context=None):
                 except exceptions._NonDeducibleTypeHierarchy:
                     # Can't determine anything useful.
                     pass
+        elif not context:
+            context = contextmod.InferenceContext()
 
         try:
             context.boundnode = owner
