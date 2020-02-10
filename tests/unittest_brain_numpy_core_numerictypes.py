@@ -314,7 +314,6 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
                     with self.subTest(attr=attr):
                         self.assertNotEqual(len(inferred.getattr(attr)), 0)
 
-
     def test_datetime_astype_return(self):
         """
         Test that the return of astype method of the datetime object
@@ -328,7 +327,8 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
         import datetime
         test_array = np.datetime64(1, 'us')
         test_array.astype(datetime.datetime)
-        """)
+        """
+        )
         licit_array_types = ".ndarray"
         inferred_values = list(node.infer())
         self.assertTrue(
@@ -339,7 +339,7 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
             inferred_values[-1].pytype() in licit_array_types,
             msg="Illicit type for {:s} ({})".format(
                 "datetime64.astype", inferred_values[-1].pytype()
-            )
+            ),
         )
 
 
