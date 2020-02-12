@@ -9,7 +9,7 @@ Release Date: TBA
 * Expose a ast_from_string method in AstroidManager, which will accept
   source code as a string and return the corresponding astroid object
 
-	Closes PyCQA/astroid#725
+  Closes PyCQA/astroid#725
 
 * Numpy `datetime64.astype` return value is inferred as a `ndarray`.
 
