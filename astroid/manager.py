@@ -101,6 +101,7 @@ class AstroidManager:
 
     def ast_from_string(self, data, modname, filepath):
         """ Given some source code as a string, return its corresponding astroid object"""
+        # pylint: disable=import-outside-toplevel; circular import
         from astroid.builder import AstroidBuilder
 
         return AstroidBuilder(self).string_build(data, modname, filepath)
