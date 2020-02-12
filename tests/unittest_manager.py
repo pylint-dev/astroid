@@ -67,6 +67,17 @@ class AstroidManagerTest(
             exceptions.AstroidBuildingError, self.manager.ast_from_file, "unhandledName"
         )
 
+    def test_ast_from_string(self):
+        filepath = unittest.__file__
+        dirname = os.path.dirname(filepath)
+        modname = os.path.basename(dirname)
+        with open(filepath, 'r') as file:
+            data = file.read()
+            ast = self.manager.ast_from_string(data, modname, filepath)
+            self.assertEqual(ast.name, "unittest")
+            self.assertEqual(ast.file, filepath)
+            self.assertIn("unittest", self.manager.astroid_cache)
+
     def test_do_not_expose_main(self):
         obj = self.manager.ast_from_module_name("__main__")
         self.assertEqual(obj.name, "__main__")

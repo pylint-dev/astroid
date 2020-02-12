@@ -99,7 +99,7 @@ class AstroidManager:
             "Unable to build an AST for {path}.", path=filepath
         )
 
-    def ast_from_string(self, data, modname, filepath):
+    def ast_from_string(self, data, modname="", filepath=None):
         """ Given some source code as a string, return its corresponding astroid object"""
         # pylint: disable=import-outside-toplevel; circular import
         from astroid.builder import AstroidBuilder
