@@ -123,6 +123,10 @@ Release Date: TBA
   ``Arguments.type_comment_posonlyargs`` and
   ``Arguments.type_comment_kwonlyargs`` attributes respectively.
 
+* Relax upper bound on `wrapt`
+
+  Close #755
+
 What's New in astroid 2.3.2?
 ============================
 Release Date: TBA
