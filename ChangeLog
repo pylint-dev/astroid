@@ -6,6 +6,10 @@ What's New in astroid 2.4.0?
 ============================
 Release Date: TBA
 
+* Infer qualified ``classmethod`` as a classmethod.
+
+  Close PyCQA/pylint#3417
+
 * Numpy `datetime64.astype` return value is inferred as a `ndarray`.
 
   Close PyCQA/pylint#3332

@@ -50,6 +50,9 @@ BUILTINS = builtins.__name__
 ITER_METHODS = ("__iter__", "__getitem__")
 EXCEPTION_BASE_CLASSES = frozenset({"Exception", "BaseException"})
 objects = util.lazy_import("objects")
+BUILTIN_DESCRIPTORS = frozenset(
+    {"classmethod", "staticmethod", "builtins.classmethod", "builtins.staticmethod"}
+)
 
 
 def _c3_merge(sequences, cls, context):
@@ -1423,17 +1426,17 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         return decorators
 
     @decorators_mod.cachedproperty
-    def type(self):  # pylint: disable=invalid-overridden-method
+    def type(
+        self
+    ):  # pylint: disable=invalid-overridden-method,too-many-return-statements
         """The function type for this node.
 
         Possible values are: method, function, staticmethod, classmethod.
 
         :type: str
         """
-        builtin_descriptors = {"classmethod", "staticmethod"}
-
         for decorator in self.extra_decorators:
-            if decorator.func.name in builtin_descriptors:
+            if decorator.func.name in BUILTIN_DESCRIPTORS:
                 return decorator.func.name
 
         frame = self.parent.frame()
@@ -1451,8 +1454,15 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
 
         for node in self.decorators.nodes:
             if isinstance(node, node_classes.Name):
-                if node.name in builtin_descriptors:
+                if node.name in BUILTIN_DESCRIPTORS:
                     return node.name
+            if (
+                isinstance(node, node_classes.Attribute)
+                and isinstance(node.expr, node_classes.Name)
+                and node.expr.name == BUILTINS
+                and node.attrname in BUILTIN_DESCRIPTORS
+            ):
+                return node.attrname
 
             if isinstance(node, node_classes.Call):
                 # Handle the following case:
