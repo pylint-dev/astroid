@@ -5534,5 +5534,26 @@ def test_inferaugassign_picking_parent_instead_of_stmt():
     assert inferred.name == "SomeClass"
 
 
+def test_classmethod_from_builtins_inferred_as_bound():
+    code = """
+    import builtins
+
+    class Foo():
+        @classmethod
+        def bar1(cls, text):
+            pass
+
+        @builtins.classmethod
+        def bar2(cls, text):
+            pass
+
+    Foo.bar1 #@
+    Foo.bar2 #@
+    """
+    first_node, second_node = extract_node(code)
+    assert isinstance(next(first_node.infer()), BoundMethod)
+    assert isinstance(next(second_node.infer()), BoundMethod)
+
+
 if __name__ == "__main__":
     unittest.main()
