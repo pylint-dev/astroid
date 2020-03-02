@@ -2,7 +2,7 @@ from astroid import MANAGER, arguments, nodes, inference_tip, UseInferenceDefaul
 
 
 def infer_namespace(node, context=None):
-    callsite = arguments.CallSite.from_call(node)
+    callsite = arguments.CallSite.from_call(node, context=context)
     if not callsite.keyword_arguments:
         # Cannot make sense of it.
         raise UseInferenceDefault()

@@ -597,7 +597,7 @@ def infer_issubclass(callnode, context=None):
     :rtype nodes.Const: Boolean Const value of the `issubclass` call
     :raises UseInferenceDefault: If the node cannot be inferred
     """
-    call = arguments.CallSite.from_call(callnode)
+    call = arguments.CallSite.from_call(callnode, context=context)
     if call.keyword_arguments:
         # issubclass doesn't support keyword arguments
         raise UseInferenceDefault("TypeError: issubclass() takes no keyword arguments")
@@ -644,7 +644,7 @@ def infer_isinstance(callnode, context=None):
 
     :raises UseInferenceDefault: If the node cannot be inferred
     """
-    call = arguments.CallSite.from_call(callnode)
+    call = arguments.CallSite.from_call(callnode, context=context)
     if call.keyword_arguments:
         # isinstance doesn't support keyword arguments
         raise UseInferenceDefault("TypeError: isinstance() takes no keyword arguments")
@@ -701,7 +701,7 @@ def infer_len(node, context=None):
     :param context.InferenceContext: node context
     :rtype nodes.Const: a Const node with the inferred length, if possible
     """
-    call = arguments.CallSite.from_call(node)
+    call = arguments.CallSite.from_call(node, context=context)
     if call.keyword_arguments:
         raise UseInferenceDefault("TypeError: len() must take no keyword arguments")
     if len(call.positional_arguments) != 1:
@@ -723,7 +723,7 @@ def infer_str(node, context=None):
     :param context.InferenceContext: node context
     :rtype nodes.Const: a Const containing an empty string
     """
-    call = arguments.CallSite.from_call(node)
+    call = arguments.CallSite.from_call(node, context=context)
     if call.keyword_arguments:
         raise UseInferenceDefault("TypeError: str() must take no keyword arguments")
     try:
@@ -739,7 +739,7 @@ def infer_int(node, context=None):
     :param context.InferenceContext: node context
     :rtype nodes.Const: a Const containing the integer value of the int() call
     """
-    call = arguments.CallSite.from_call(node)
+    call = arguments.CallSite.from_call(node, context=context)
     if call.keyword_arguments:
         raise UseInferenceDefault("TypeError: int() must take no keyword arguments")
 
@@ -782,7 +782,7 @@ def infer_dict_fromkeys(node, context=None):
         new_node.postinit(elements)
         return new_node
 
-    call = arguments.CallSite.from_call(node)
+    call = arguments.CallSite.from_call(node, context=context)
     if call.keyword_arguments:
         raise UseInferenceDefault("TypeError: int() must take no keyword arguments")
     if len(call.positional_arguments) not in {1, 2}:

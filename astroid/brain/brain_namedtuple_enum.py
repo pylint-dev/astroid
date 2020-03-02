@@ -167,7 +167,7 @@ def infer_named_tuple(node, context=None):
     class_node, name, attributes = infer_func_form(
         node, tuple_base_name, context=context
     )
-    call_site = arguments.CallSite.from_call(node)
+    call_site = arguments.CallSite.from_call(node, context=context)
     func = next(extract_node("import collections; collections.namedtuple").infer())
     try:
         rename = next(call_site.infer_argument(func, "rename", context)).bool_value()
