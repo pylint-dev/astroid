@@ -25,7 +25,7 @@ before_install:
 - lsb_release -a
 install:
 - python -m pip install pip -U
-- python -m pip install tox coverage coveralls
+- python -m pip install tox coverage<5 coveralls
 - python -m virtualenv --version
 - python -m easy_install --version
 - python -m pip --version
