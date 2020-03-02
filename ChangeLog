@@ -10,6 +10,10 @@ Release Date: TBA
 
   Close PyCQA/pylint#3417
 
+* Pass a context argument to ``astroid.Arguments`` to prevent recursion errors
+
+  Close PyCQA/pylint#3414
+
 * Numpy `datetime64.astype` return value is inferred as a `ndarray`.
 
   Close PyCQA/pylint#3332

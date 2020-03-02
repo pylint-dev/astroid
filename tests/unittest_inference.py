@@ -5555,5 +5555,16 @@ def test_classmethod_from_builtins_inferred_as_bound():
     assert isinstance(next(second_node.infer()), BoundMethod)
 
 
+def test_infer_dict_passes_context():
+    code = """
+    k = {}
+    (_ for k in __(dict(**k)))
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert isinstance(inferred, Instance)
+    assert inferred.qname() == "builtins.dict"
+
+
 if __name__ == "__main__":
     unittest.main()
