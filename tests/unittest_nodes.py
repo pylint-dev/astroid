@@ -22,6 +22,7 @@ import sys
 import textwrap
 import unittest
 import copy
+import platform
 
 import pytest
 import six
@@ -254,7 +255,12 @@ class D(metaclass=abc.ABCMeta):
         ast = abuilder.string_build(code)
         self.assertEqual(ast.as_string().strip(), code.strip())
 
-    @pytest.mark.skipif(sys.version_info[:2] < (3, 6), reason="needs f-string support")
+    # This test is disabled on PyPy because we cannot get a proper release on TravisCI that has
+    # proper support for f-strings (we need 7.2 at least)
+    @pytest.mark.skipif(
+        sys.version_info[:2] < (3, 6) or platform.python_implementation() == "PyPy",
+        reason="Needs f-string support.",
+    )
     def test_f_strings(self):
         code = r'''
 a = f"{'a'}"
