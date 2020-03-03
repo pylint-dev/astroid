@@ -1701,7 +1701,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 pass
         """
         )
-        self.assertIn("object", [base.name for base in klass.ancestors()])
+        ancestors = [base.name for base in klass.ancestors()]
+        expected_subset = ["datetime", "date"]
+        self.assertEqual(expected_subset, ancestors[:2])
 
     def test_stop_iteration_leak(self):
         code = """
