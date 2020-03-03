@@ -5566,5 +5566,83 @@ def test_infer_dict_passes_context():
     assert inferred.qname() == "builtins.dict"
 
 
+@pytest.mark.parametrize(
+    "code,obj,obj_type",
+    [
+        (
+            """
+            def klassmethod1(method):
+                @classmethod
+                def inner(cls):
+                    return method(cls)
+                return inner
+
+            class X(object):
+                @klassmethod1
+                def x(cls):
+                    return 'X'
+            X.x
+            """,
+            BoundMethod,
+            "classmethod",
+        ),
+        (
+            """
+            def staticmethod1(method):
+                @staticmethod
+                def inner(cls):
+                    return method(cls)
+                return inner
+
+            class X(object):
+                @staticmethod1
+                def x(cls):
+                    return 'X'
+            X.x
+            """,
+            nodes.FunctionDef,
+            "staticmethod",
+        ),
+        (
+            """
+            def klassmethod1(method):
+                def inner(cls):
+                    return method(cls)
+                return classmethod(inner)
+
+            class X(object):
+                @klassmethod1
+                def x(cls):
+                    return 'X'
+            X.x
+            """,
+            BoundMethod,
+            "classmethod",
+        ),
+        (
+            """
+            def staticmethod1(method):
+                def inner(cls):
+                    return method(cls)
+                return staticmethod(inner)
+
+            class X(object):
+                @staticmethod1
+                def x(cls):
+                    return 'X'
+            X.x
+            """,
+            nodes.FunctionDef,
+            "staticmethod",
+        ),
+    ],
+)
+def test_custom_decorators_for_classmethod_and_staticmethods(code, obj, obj_type):
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert isinstance(inferred, obj)
+    assert inferred.type == obj_type
+
+
 if __name__ == "__main__":
     unittest.main()

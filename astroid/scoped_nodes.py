@@ -1076,6 +1076,21 @@ def _infer_decorator_callchain(node):
             return "classmethod"
         if result.is_subtype_of("%s.staticmethod" % BUILTINS):
             return "staticmethod"
+    if isinstance(result, FunctionDef):
+        if not result.decorators:
+            return None
+        # Determine if this function is decorated with one of the builtin descriptors we want.
+        for decorator in result.decorators.nodes:
+            if isinstance(decorator, node_classes.Name):
+                if decorator.name in BUILTIN_DESCRIPTORS:
+                    return decorator.name
+            if (
+                isinstance(decorator, node_classes.Attribute)
+                and isinstance(decorator.expr, node_classes.Name)
+                and decorator.expr.name == BUILTINS
+                and decorator.attrname in BUILTIN_DESCRIPTORS
+            ):
+                return decorator.attrname
     return None
 
 
