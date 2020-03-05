@@ -5667,5 +5667,22 @@ def test_dataclasses_subscript_inference_recursion_error():
     assert helpers.safe_infer(node) is None
 
 
+def test_self_reference_infer_does_not_trigger_recursion_error():
+    # Prevents https://github.com/PyCQA/pylint/issues/1285
+    code = """
+    def func(elems):
+        return elems
+
+    class BaseModel(object):
+
+        def __init__(self, *args, **kwargs):
+            self._reference = func(*self._reference.split('.'))
+    BaseModel()._reference
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert inferred is util.Uninferable
+
+
 if __name__ == "__main__":
     unittest.main()

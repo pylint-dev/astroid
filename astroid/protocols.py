@@ -367,7 +367,7 @@ def arguments_assigned_stmts(self, node=None, context=None, assign_path=None):
         callcontext = context.callcontext
         context = contextmod.copy_context(context)
         context.callcontext = None
-        args = arguments.CallSite(callcontext)
+        args = arguments.CallSite(callcontext, context=context)
         return args.infer_argument(self.parent, node.name, context)
     return _arguments_infer_argname(self, node.name, context)
 

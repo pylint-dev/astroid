@@ -34,6 +34,10 @@ Release Date: TBA
 
   Close #762
 
+* Prevent a recursion error when inferring self-referential variables without definition
+
+  Close PyCQA/pylint#1285
+
 * Numpy `datetime64.astype` return value is inferred as a `ndarray`.
 
   Close PyCQA/pylint#3332
