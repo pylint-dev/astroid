@@ -737,7 +737,7 @@ class Module(LocalsDictNodeNG):
         """
         return [name for name in self.keys() if not name.startswith("_")]
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -823,7 +823,7 @@ class GeneratorExp(ComprehensionScope):
         else:
             self.generators = generators
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -903,7 +903,7 @@ class DictComp(ComprehensionScope):
         else:
             self.generators = generators
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -975,7 +975,7 @@ class SetComp(ComprehensionScope):
         else:
             self.generators = generators
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -1022,7 +1022,7 @@ class _ListComp(node_classes.NodeNG):
         self.elt = elt
         self.generators = generators
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -1261,7 +1261,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
             frame = self
         return frame._scope_lookup(node, name, offset)
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -1707,7 +1707,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                 except exceptions.InferenceError:
                     yield util.Uninferable
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -2862,7 +2862,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """
         return self._compute_mro(context=context)
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.

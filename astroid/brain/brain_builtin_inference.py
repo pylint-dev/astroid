@@ -527,7 +527,7 @@ def infer_bool(node, context=None):
     if inferred is util.Uninferable:
         return util.Uninferable
 
-    bool_value = inferred.bool_value()
+    bool_value = inferred.bool_value(context=context)
     if bool_value is util.Uninferable:
         return util.Uninferable
     return nodes.Const(bool_value)

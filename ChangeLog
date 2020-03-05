@@ -10,6 +10,15 @@ Release Date: TBA
 
   Close PyCQA/pylint#3417
 
+* ``NodeNG.bool_value()`` gained an optional ``context`` parameter
+
+  We need to pass an inference context downstream when inferring the boolean
+  value of a node in order to prevent recursion errors and double inference.
+
+  This fix prevents a recursion error with dask library.
+
+  Close PyCQA/pylint#2985
+
 * Pass a context argument to ``astroid.Arguments`` to prevent recursion errors
 
   Close PyCQA/pylint#3414
