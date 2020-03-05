@@ -18,6 +18,13 @@ Release Date: TBA
 
   Close PyCQA/pylint#3209
 
+* Reverse the order of decorators for `infer_subscript`
+
+  `path_wrapper` needs to come first, followed by `raise_if_nothing_inferred`,
+  otherwise we won't handle `StopIteration` correctly.
+
+  Close #762
+
 * Numpy `datetime64.astype` return value is inferred as a `ndarray`.
 
   Close PyCQA/pylint#3332

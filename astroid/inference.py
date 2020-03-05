@@ -350,7 +350,6 @@ nodes.Global._infer = infer_global
 _SUBSCRIPT_SENTINEL = object()
 
 
-@decorators.raise_if_nothing_inferred
 def infer_subscript(self, context=None):
     """Inference for subscripts
 
@@ -407,8 +406,10 @@ def infer_subscript(self, context=None):
     return None
 
 
-nodes.Subscript._infer = decorators.path_wrapper(infer_subscript)
-nodes.Subscript.infer_lhs = infer_subscript
+nodes.Subscript._infer = decorators.raise_if_nothing_inferred(
+    decorators.path_wrapper(infer_subscript)
+)
+nodes.Subscript.infer_lhs = decorators.raise_if_nothing_inferred(infer_subscript)
 
 
 @decorators.raise_if_nothing_inferred

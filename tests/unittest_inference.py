@@ -5646,5 +5646,26 @@ def test_custom_decorators_for_classmethod_and_staticmethods(code, obj, obj_type
     assert inferred.type == obj_type
 
 
+@pytest.mark.skipif(sys.version_info < (3, 8), reason="Needs dataclasses available")
+def test_dataclasses_subscript_inference_recursion_error():
+    code = """
+    from dataclasses import dataclass, replace
+
+    @dataclass
+    class ProxyConfig:
+        auth: str = "/auth"
+
+
+    a = ProxyConfig("")
+    test_dict = {"proxy" : {"auth" : "", "bla" : "f"}}
+
+    foo = test_dict['proxy']
+    replace(a, **test_dict['proxy']) # This fails
+    """
+    node = extract_node(code)
+    # Reproduces only with safe_infer()
+    assert helpers.safe_infer(node) is None
+
+
 if __name__ == "__main__":
     unittest.main()
