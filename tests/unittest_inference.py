@@ -5729,5 +5729,19 @@ def test_inferring_properties_multiple_time_does_not_mutate_locals_multiple_time
     assert len(a_locals) == 2
 
 
+def test_getattr_fails_on_empty_values():
+    code = """
+    import collections
+    collections
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    with pytest.raises(exceptions.InferenceError):
+        next(inferred.igetattr(""))
+
+    with pytest.raises(exceptions.AttributeInferenceError):
+        inferred.getattr("")
+
+
 if __name__ == "__main__":
     unittest.main()

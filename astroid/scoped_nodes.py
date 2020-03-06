@@ -527,6 +527,11 @@ class Module(LocalsDictNodeNG):
         return "Module"
 
     def getattr(self, name, context=None, ignore_locals=False):
+        if not name:
+            raise exceptions.AttributeInferenceError(
+                target=self, attribute=name, context=context
+            )
+
         result = []
         name_in_locals = name in self.locals
 
@@ -1551,6 +1556,10 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         """this method doesn't look in the instance_attrs dictionary since it's
         done by an Instance proxy at inference time.
         """
+        if not name:
+            raise exceptions.AttributeInferenceError(
+                target=self, attribute=name, context=context
+            )
         if name in self.instance_attrs:
             return self.instance_attrs[name]
         if name in self.special_attributes:
@@ -2406,6 +2415,11 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         :raises AttributeInferenceError: If the attribute cannot be inferred.
         """
+        if not name:
+            raise exceptions.AttributeInferenceError(
+                target=self, attribute=name, context=context
+            )
+
         values = self.locals.get(name, [])
         if name in self.special_attributes and class_context and not values:
             result = [self.special_attributes.lookup(name)]

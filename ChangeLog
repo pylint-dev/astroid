@@ -10,6 +10,10 @@ Release Date: TBA
 
   Close PyCQA/pylint#3417
 
+* Raise ``AttributeInferenceError`` when ``getattr()`` receives an empty name
+
+  Close PyCQA/pylint#2991
+
 * ``NodeNG.bool_value()`` gained an optional ``context`` parameter
 
   We need to pass an inference context downstream when inferring the boolean
