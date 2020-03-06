@@ -24,6 +24,7 @@
 """
 # pylint: disable=too-many-lines
 import platform
+import textwrap
 from functools import partial
 import unittest
 from unittest.mock import patch
@@ -5477,6 +5478,28 @@ def test_property_inference():
     for prop_func in prop_setter, prop_getter, prop_deleter:
         inferred = next(prop_func.infer())
         assert isinstance(inferred, nodes.FunctionDef)
+
+
+def test_property_as_string():
+    code = """
+    class A:
+        @property
+        def test(self):
+            return 42
+
+    A.test #@
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert isinstance(inferred, objects.Property)
+    property_body = textwrap.dedent(
+        """
+    @property
+    def test(self):
+        return 42
+    """
+    )
+    assert inferred.as_string().strip() == property_body.strip()
 
 
 def test_property_callable_inference():

@@ -544,6 +544,9 @@ class AsStringVisitor:
     def visit_uninferable(self, node):
         return str(node)
 
+    def visit_property(self, node):
+        return node.function.accept(self)
+
 
 class AsStringVisitor3(AsStringVisitor):
     """AsStringVisitor3 overwrites some AsStringVisitor methods"""
