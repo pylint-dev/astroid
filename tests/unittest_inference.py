@@ -5707,5 +5707,27 @@ def test_self_reference_infer_does_not_trigger_recursion_error():
     assert inferred is util.Uninferable
 
 
+def test_inferring_properties_multiple_time_does_not_mutate_locals_multiple_times():
+    code = """
+    class A:
+        @property
+        def a(self):
+            return 42
+
+    A()
+    """
+    node = extract_node(code)
+    # Infer the class
+    cls = next(node.infer())
+    prop, = cls.getattr("a")
+
+    # Try to infer the property function *multiple* times. `A.locals` should be modified only once
+    for _ in range(3):
+        prop.inferred()
+    a_locals = cls.locals["a"]
+    # [FunctionDef, Property]
+    assert len(a_locals) == 2
+
+
 if __name__ == "__main__":
     unittest.main()
