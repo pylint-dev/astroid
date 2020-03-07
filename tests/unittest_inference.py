@@ -5743,5 +5743,17 @@ def test_getattr_fails_on_empty_values():
         inferred.getattr("")
 
 
+def test_infer_first_argument_of_static_method_in_metaclass():
+    code = """
+    class My(type):
+        @staticmethod
+        def test(args):
+            args #@
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert inferred is util.Uninferable
+
+
 if __name__ == "__main__":
     unittest.main()

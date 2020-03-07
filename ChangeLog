@@ -14,6 +14,10 @@ Release Date: TBA
 
   Close PyCQA/pylint#2991
 
+* Do not infer the first argument of a staticmethod in a metaclass as the class itself
+
+  Close PyCQA/pylint#3032
+
 * ``NodeNG.bool_value()`` gained an optional ``context`` parameter
 
   We need to pass an inference context downstream when inferring the boolean
