@@ -5755,5 +5755,14 @@ def test_infer_first_argument_of_static_method_in_metaclass():
     assert inferred is util.Uninferable
 
 
+def test_recursion_error_metaclass_monkeypatching():
+    module = resources.build_file(
+        "data/metaclass_recursion/monkeypatch.py", "data.metaclass_recursion"
+    )
+    cls = next(module.igetattr("MonkeyPatchClass"))
+    assert isinstance(cls, nodes.ClassDef)
+    assert cls.declared_metaclass() is None
+
+
 if __name__ == "__main__":
     unittest.main()

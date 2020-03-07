@@ -2456,7 +2456,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """Search the given name in the implicit and the explicit metaclass."""
         attrs = set()
         implicit_meta = self.implicit_metaclass()
-        metaclass = self.metaclass()
+        context = contextmod.copy_context(context)
+        metaclass = self.metaclass(context=context)
         for cls in {implicit_meta, metaclass}:
             if cls and cls != self and isinstance(cls, ClassDef):
                 cls_attributes = self._get_attribute_from_metaclass(cls, name, context)

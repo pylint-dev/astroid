@@ -10,6 +10,10 @@ Release Date: TBA
 
   Close PyCQA/pylint#3417
 
+* Prevent a recursion error to happen when inferring the declared metaclass of a class
+
+  Close #749
+
 * Raise ``AttributeInferenceError`` when ``getattr()`` receives an empty name
 
   Close PyCQA/pylint#2991
