@@ -897,7 +897,7 @@ class NodeNG:
         _repr_tree(self, result, set())
         return "".join(result)
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         The boolean value of a node can have three
@@ -1021,7 +1021,7 @@ class _BaseContainer(
         """
         return self.elts
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -2624,7 +2624,7 @@ class Const(mixins.NoChildrenMixin, NodeNG, bases.Instance):
         """
         return self._proxied.qname()
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -2897,7 +2897,7 @@ class Dict(NodeNG, bases.Instance):
 
         raise exceptions.AstroidIndexError(index)
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -2952,7 +2952,7 @@ class Ellipsis(mixins.NoChildrenMixin, NodeNG):  # pylint: disable=redefined-bui
     <Ellipsis l.1 at 0x7f23b2e35160>
     """
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.

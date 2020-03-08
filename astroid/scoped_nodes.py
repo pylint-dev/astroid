@@ -50,6 +50,9 @@ BUILTINS = builtins.__name__
 ITER_METHODS = ("__iter__", "__getitem__")
 EXCEPTION_BASE_CLASSES = frozenset({"Exception", "BaseException"})
 objects = util.lazy_import("objects")
+BUILTIN_DESCRIPTORS = frozenset(
+    {"classmethod", "staticmethod", "builtins.classmethod", "builtins.staticmethod"}
+)
 
 
 def _c3_merge(sequences, cls, context):
@@ -524,6 +527,11 @@ class Module(LocalsDictNodeNG):
         return "Module"
 
     def getattr(self, name, context=None, ignore_locals=False):
+        if not name:
+            raise exceptions.AttributeInferenceError(
+                target=self, attribute=name, context=context
+            )
+
         result = []
         name_in_locals = name in self.locals
 
@@ -734,7 +742,7 @@ class Module(LocalsDictNodeNG):
         """
         return [name for name in self.keys() if not name.startswith("_")]
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -820,7 +828,7 @@ class GeneratorExp(ComprehensionScope):
         else:
             self.generators = generators
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -900,7 +908,7 @@ class DictComp(ComprehensionScope):
         else:
             self.generators = generators
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -972,7 +980,7 @@ class SetComp(ComprehensionScope):
         else:
             self.generators = generators
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -1019,7 +1027,7 @@ class _ListComp(node_classes.NodeNG):
         self.elt = elt
         self.generators = generators
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -1073,6 +1081,21 @@ def _infer_decorator_callchain(node):
             return "classmethod"
         if result.is_subtype_of("%s.staticmethod" % BUILTINS):
             return "staticmethod"
+    if isinstance(result, FunctionDef):
+        if not result.decorators:
+            return None
+        # Determine if this function is decorated with one of the builtin descriptors we want.
+        for decorator in result.decorators.nodes:
+            if isinstance(decorator, node_classes.Name):
+                if decorator.name in BUILTIN_DESCRIPTORS:
+                    return decorator.name
+            if (
+                isinstance(decorator, node_classes.Attribute)
+                and isinstance(decorator.expr, node_classes.Name)
+                and decorator.expr.name == BUILTINS
+                and decorator.attrname in BUILTIN_DESCRIPTORS
+            ):
+                return decorator.attrname
     return None
 
 
@@ -1243,7 +1266,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
             frame = self
         return frame._scope_lookup(node, name, offset)
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -1423,17 +1446,17 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         return decorators
 
     @decorators_mod.cachedproperty
-    def type(self):  # pylint: disable=invalid-overridden-method
+    def type(
+        self
+    ):  # pylint: disable=invalid-overridden-method,too-many-return-statements
         """The function type for this node.
 
         Possible values are: method, function, staticmethod, classmethod.
 
         :type: str
         """
-        builtin_descriptors = {"classmethod", "staticmethod"}
-
         for decorator in self.extra_decorators:
-            if decorator.func.name in builtin_descriptors:
+            if decorator.func.name in BUILTIN_DESCRIPTORS:
                 return decorator.func.name
 
         frame = self.parent.frame()
@@ -1451,8 +1474,15 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
 
         for node in self.decorators.nodes:
             if isinstance(node, node_classes.Name):
-                if node.name in builtin_descriptors:
+                if node.name in BUILTIN_DESCRIPTORS:
                     return node.name
+            if (
+                isinstance(node, node_classes.Attribute)
+                and isinstance(node.expr, node_classes.Name)
+                and node.expr.name == BUILTINS
+                and node.attrname in BUILTIN_DESCRIPTORS
+            ):
+                return node.attrname
 
             if isinstance(node, node_classes.Call):
                 # Handle the following case:
@@ -1526,6 +1556,10 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         """this method doesn't look in the instance_attrs dictionary since it's
         done by an Instance proxy at inference time.
         """
+        if not name:
+            raise exceptions.AttributeInferenceError(
+                target=self, attribute=name, context=context
+            )
         if name in self.instance_attrs:
             return self.instance_attrs[name]
         if name in self.special_attributes:
@@ -1682,7 +1716,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                 except exceptions.InferenceError:
                     yield util.Uninferable
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -2381,6 +2415,11 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         :raises AttributeInferenceError: If the attribute cannot be inferred.
         """
+        if not name:
+            raise exceptions.AttributeInferenceError(
+                target=self, attribute=name, context=context
+            )
+
         values = self.locals.get(name, [])
         if name in self.special_attributes and class_context and not values:
             result = [self.special_attributes.lookup(name)]
@@ -2417,7 +2456,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """Search the given name in the implicit and the explicit metaclass."""
         attrs = set()
         implicit_meta = self.implicit_metaclass()
-        metaclass = self.metaclass()
+        context = contextmod.copy_context(context)
+        metaclass = self.metaclass(context=context)
         for cls in {implicit_meta, metaclass}:
             if cls and cls != self and isinstance(cls, ClassDef):
                 cls_attributes = self._get_attribute_from_metaclass(cls, name, context)
@@ -2837,7 +2877,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """
         return self._compute_mro(context=context)
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.

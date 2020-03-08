@@ -291,8 +291,8 @@ class Property(scoped_nodes.FunctionDef):
     def __init__(
         self, function, name=None, doc=None, lineno=None, col_offset=None, parent=None
     ):
-        super().__init__(name, doc, lineno, col_offset, parent)
         self.function = function
+        super().__init__(name, doc, lineno, col_offset, parent)
 
     # pylint: disable=unnecessary-lambda
     special_attributes = util.lazy_descriptor(lambda: objectmodel.PropertyModel())

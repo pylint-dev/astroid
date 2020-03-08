@@ -288,7 +288,7 @@ class Instance(BaseInstance):
     def display_type(self):
         return "Instance of"
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Infer the truth value for an Instance
 
         The truth value of an instance is determined by these conditions:
@@ -301,7 +301,7 @@ class Instance(BaseInstance):
              nonzero. If a class defines neither __len__() nor __bool__(),
              all its instances are considered true.
         """
-        context = contextmod.InferenceContext()
+        context = context or contextmod.InferenceContext()
         context.callcontext = contextmod.CallContext(args=[])
         context.boundnode = self
 
@@ -376,7 +376,7 @@ class UnboundMethod(Proxy):
             return (Instance(x) if x is not util.Uninferable else x for x in infer)
         return self._proxied.infer_call_result(caller, context)
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         return True
 
 
@@ -481,7 +481,7 @@ class BoundMethod(UnboundMethod):
 
         return super(BoundMethod, self).infer_call_result(caller, context)
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         return True
 
 
@@ -507,7 +507,7 @@ class Generator(BaseInstance):
     def display_type(self):
         return "Generator"
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         return True
 
     def __repr__(self):

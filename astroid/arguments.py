@@ -20,20 +20,27 @@ class CallSite:
 
     It needs a call context, which contains the arguments and the
     keyword arguments that were passed into a given call site.
-    In order to infer what an argument represents, call
-    :meth:`infer_argument` with the corresponding function node
-    and the argument name.
+    In order to infer what an argument represents, call :meth:`infer_argument`
+    with the corresponding function node and the argument name.
+
+    :param callcontext:
+        An instance of :class:`astroid.context.CallContext`, that holds
+        the arguments for the call site.
+    :param argument_context_map:
+        Additional contexts per node, passed in from :attr:`astroid.context.Context.extra_context`
+    :param context:
+        An instance of :class:`astroid.context.Context`.
     """
 
-    def __init__(self, callcontext, argument_context_map=None):
+    def __init__(self, callcontext, argument_context_map=None, context=None):
         if argument_context_map is None:
             argument_context_map = {}
         self.argument_context_map = argument_context_map
         args = callcontext.args
         keywords = callcontext.keywords
         self.duplicated_keywords = set()
-        self._unpacked_args = self._unpack_args(args)
-        self._unpacked_kwargs = self._unpack_keywords(keywords)
+        self._unpacked_args = self._unpack_args(args, context=context)
+        self._unpacked_kwargs = self._unpack_keywords(keywords, context=context)
 
         self.positional_arguments = [
             arg for arg in self._unpacked_args if arg is not util.Uninferable
@@ -45,10 +52,18 @@ class CallSite:
         }
 
     @classmethod
-    def from_call(cls, call_node):
-        """Get a CallSite object from the given Call node."""
+    def from_call(cls, call_node, context=None):
+        """Get a CallSite object from the given Call node.
+
+        :param context:
+            An instance of :class:`astroid.context.Context` that will be used
+            to force a single inference path.
+        """
+
+        # Determine the callcontext from the given `context` object if any.
+        context = context or contextmod.InferenceContext()
         callcontext = contextmod.CallContext(call_node.args, call_node.keywords)
-        return cls(callcontext)
+        return cls(callcontext, context=context)
 
     def has_invalid_arguments(self):
         """Check if in the current CallSite were passed *invalid* arguments
@@ -70,9 +85,9 @@ class CallSite:
         """
         return len(self.keyword_arguments) != len(self._unpacked_kwargs)
 
-    def _unpack_keywords(self, keywords):
+    def _unpack_keywords(self, keywords, context=None):
         values = {}
-        context = contextmod.InferenceContext()
+        context = context or contextmod.InferenceContext()
         context.extra_context = self.argument_context_map
         for name, value in keywords:
             if name is None:
@@ -110,9 +125,9 @@ class CallSite:
                 values[name] = value
         return values
 
-    def _unpack_args(self, args):
+    def _unpack_args(self, args, context=None):
         values = []
-        context = contextmod.InferenceContext()
+        context = context or contextmod.InferenceContext()
         context.extra_context = self.argument_context_map
         for arg in args:
             if isinstance(arg, nodes.Starred):

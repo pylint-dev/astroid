@@ -10,6 +10,49 @@ Release Date: TBA
   source code as a string and return the corresponding astroid object
 
   Closes PyCQA/astroid#725
+* Infer qualified ``classmethod`` as a classmethod.
+
+  Close PyCQA/pylint#3417
+
+* Prevent a recursion error to happen when inferring the declared metaclass of a class
+
+  Close #749
+
+* Raise ``AttributeInferenceError`` when ``getattr()`` receives an empty name
+
+  Close PyCQA/pylint#2991
+
+* Do not infer the first argument of a staticmethod in a metaclass as the class itself
+
+  Close PyCQA/pylint#3032
+
+* ``NodeNG.bool_value()`` gained an optional ``context`` parameter
+
+  We need to pass an inference context downstream when inferring the boolean
+  value of a node in order to prevent recursion errors and double inference.
+
+  This fix prevents a recursion error with dask library.
+
+  Close PyCQA/pylint#2985
+
+* Pass a context argument to ``astroid.Arguments`` to prevent recursion errors
+
+  Close PyCQA/pylint#3414
+
+* Better inference of class and static methods decorated with custom methods
+
+  Close PyCQA/pylint#3209
+
+* Reverse the order of decorators for `infer_subscript`
+
+  `path_wrapper` needs to come first, followed by `raise_if_nothing_inferred`,
+  otherwise we won't handle `StopIteration` correctly.
+
+  Close #762
+
+* Prevent a recursion error when inferring self-referential variables without definition
+
+  Close PyCQA/pylint#1285
 
 * Numpy `datetime64.astype` return value is inferred as a `ndarray`.
 
@@ -127,6 +170,10 @@ Release Date: TBA
   The comments are accessed through through the new
   ``Arguments.type_comment_posonlyargs`` and
   ``Arguments.type_comment_kwonlyargs`` attributes respectively.
+
+* Relax upper bound on `wrapt`
+
+  Close #755
 
 What's New in astroid 2.3.2?
 ============================

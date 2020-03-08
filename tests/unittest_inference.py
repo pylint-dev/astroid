@@ -24,6 +24,7 @@
 """
 # pylint: disable=too-many-lines
 import platform
+import textwrap
 from functools import partial
 import unittest
 from unittest.mock import patch
@@ -1701,7 +1702,9 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 pass
         """
         )
-        self.assertIn("object", [base.name for base in klass.ancestors()])
+        ancestors = [base.name for base in klass.ancestors()]
+        expected_subset = ["datetime", "date"]
+        self.assertEqual(expected_subset, ancestors[:2])
 
     def test_stop_iteration_leak(self):
         code = """
@@ -5477,6 +5480,28 @@ def test_property_inference():
         assert isinstance(inferred, nodes.FunctionDef)
 
 
+def test_property_as_string():
+    code = """
+    class A:
+        @property
+        def test(self):
+            return 42
+
+    A.test #@
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert isinstance(inferred, objects.Property)
+    property_body = textwrap.dedent(
+        """
+    @property
+    def test(self):
+        return 42
+    """
+    )
+    assert inferred.as_string().strip() == property_body.strip()
+
+
 def test_property_callable_inference():
     code = """
     class A:
@@ -5532,6 +5557,211 @@ def test_inferaugassign_picking_parent_instead_of_stmt():
     inferred = next(node.infer())
     assert isinstance(inferred, Instance)
     assert inferred.name == "SomeClass"
+
+
+def test_classmethod_from_builtins_inferred_as_bound():
+    code = """
+    import builtins
+
+    class Foo():
+        @classmethod
+        def bar1(cls, text):
+            pass
+
+        @builtins.classmethod
+        def bar2(cls, text):
+            pass
+
+    Foo.bar1 #@
+    Foo.bar2 #@
+    """
+    first_node, second_node = extract_node(code)
+    assert isinstance(next(first_node.infer()), BoundMethod)
+    assert isinstance(next(second_node.infer()), BoundMethod)
+
+
+def test_infer_dict_passes_context():
+    code = """
+    k = {}
+    (_ for k in __(dict(**k)))
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert isinstance(inferred, Instance)
+    assert inferred.qname() == "builtins.dict"
+
+
+@pytest.mark.parametrize(
+    "code,obj,obj_type",
+    [
+        (
+            """
+            def klassmethod1(method):
+                @classmethod
+                def inner(cls):
+                    return method(cls)
+                return inner
+
+            class X(object):
+                @klassmethod1
+                def x(cls):
+                    return 'X'
+            X.x
+            """,
+            BoundMethod,
+            "classmethod",
+        ),
+        (
+            """
+            def staticmethod1(method):
+                @staticmethod
+                def inner(cls):
+                    return method(cls)
+                return inner
+
+            class X(object):
+                @staticmethod1
+                def x(cls):
+                    return 'X'
+            X.x
+            """,
+            nodes.FunctionDef,
+            "staticmethod",
+        ),
+        (
+            """
+            def klassmethod1(method):
+                def inner(cls):
+                    return method(cls)
+                return classmethod(inner)
+
+            class X(object):
+                @klassmethod1
+                def x(cls):
+                    return 'X'
+            X.x
+            """,
+            BoundMethod,
+            "classmethod",
+        ),
+        (
+            """
+            def staticmethod1(method):
+                def inner(cls):
+                    return method(cls)
+                return staticmethod(inner)
+
+            class X(object):
+                @staticmethod1
+                def x(cls):
+                    return 'X'
+            X.x
+            """,
+            nodes.FunctionDef,
+            "staticmethod",
+        ),
+    ],
+)
+def test_custom_decorators_for_classmethod_and_staticmethods(code, obj, obj_type):
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert isinstance(inferred, obj)
+    assert inferred.type == obj_type
+
+
+@pytest.mark.skipif(sys.version_info < (3, 8), reason="Needs dataclasses available")
+def test_dataclasses_subscript_inference_recursion_error():
+    code = """
+    from dataclasses import dataclass, replace
+
+    @dataclass
+    class ProxyConfig:
+        auth: str = "/auth"
+
+
+    a = ProxyConfig("")
+    test_dict = {"proxy" : {"auth" : "", "bla" : "f"}}
+
+    foo = test_dict['proxy']
+    replace(a, **test_dict['proxy']) # This fails
+    """
+    node = extract_node(code)
+    # Reproduces only with safe_infer()
+    assert helpers.safe_infer(node) is None
+
+
+def test_self_reference_infer_does_not_trigger_recursion_error():
+    # Prevents https://github.com/PyCQA/pylint/issues/1285
+    code = """
+    def func(elems):
+        return elems
+
+    class BaseModel(object):
+
+        def __init__(self, *args, **kwargs):
+            self._reference = func(*self._reference.split('.'))
+    BaseModel()._reference
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert inferred is util.Uninferable
+
+
+def test_inferring_properties_multiple_time_does_not_mutate_locals_multiple_times():
+    code = """
+    class A:
+        @property
+        def a(self):
+            return 42
+
+    A()
+    """
+    node = extract_node(code)
+    # Infer the class
+    cls = next(node.infer())
+    prop, = cls.getattr("a")
+
+    # Try to infer the property function *multiple* times. `A.locals` should be modified only once
+    for _ in range(3):
+        prop.inferred()
+    a_locals = cls.locals["a"]
+    # [FunctionDef, Property]
+    assert len(a_locals) == 2
+
+
+def test_getattr_fails_on_empty_values():
+    code = """
+    import collections
+    collections
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    with pytest.raises(exceptions.InferenceError):
+        next(inferred.igetattr(""))
+
+    with pytest.raises(exceptions.AttributeInferenceError):
+        inferred.getattr("")
+
+
+def test_infer_first_argument_of_static_method_in_metaclass():
+    code = """
+    class My(type):
+        @staticmethod
+        def test(args):
+            args #@
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert inferred is util.Uninferable
+
+
+def test_recursion_error_metaclass_monkeypatching():
+    module = resources.build_file(
+        "data/metaclass_recursion/monkeypatch.py", "data.metaclass_recursion"
+    )
+    cls = next(module.igetattr("MonkeyPatchClass"))
+    assert isinstance(cls, nodes.ClassDef)
+    assert cls.declared_metaclass() is None
 
 
 if __name__ == "__main__":

@@ -317,9 +317,14 @@ def _arguments_infer_argname(self, name, context):
     if not (self.arguments or self.vararg or self.kwarg):
         yield util.Uninferable
         return
+
+    functype = self.parent.type
     # first argument of instance/class method
-    if self.arguments and getattr(self.arguments[0], "name", None) == name:
-        functype = self.parent.type
+    if (
+        self.arguments
+        and getattr(self.arguments[0], "name", None) == name
+        and functype != "staticmethod"
+    ):
         cls = self.parent.parent.scope()
         is_metaclass = isinstance(cls, nodes.ClassDef) and cls.type == "metaclass"
         # If this is a metaclass, then the first argument will always
@@ -367,7 +372,7 @@ def arguments_assigned_stmts(self, node=None, context=None, assign_path=None):
         callcontext = context.callcontext
         context = contextmod.copy_context(context)
         context.callcontext = None
-        args = arguments.CallSite(callcontext)
+        args = arguments.CallSite(callcontext, context=context)
         return args.infer_argument(self.parent, node.name, context)
     return _arguments_infer_argname(self, node.name, context)
 
