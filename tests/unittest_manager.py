@@ -71,7 +71,7 @@ class AstroidManagerTest(
         filepath = unittest.__file__
         dirname = os.path.dirname(filepath)
         modname = os.path.basename(dirname)
-        with open(filepath, 'r') as file:
+        with open(filepath, "r") as file:
             data = file.read()
             ast = self.manager.ast_from_string(data, modname, filepath)
             self.assertEqual(ast.name, "unittest")
