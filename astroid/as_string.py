@@ -608,6 +608,9 @@ class AsStringVisitor:
     def visit_property(self, node):
         return node.function.accept(self)
 
+    def visit_evaluatedobject(self, node):
+        return node.original.accept(self)
+
 
 def _import_string(names):
     """return a list of (name, asname) formatted as a string"""

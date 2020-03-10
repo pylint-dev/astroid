@@ -4726,6 +4726,40 @@ class Unknown(mixins.AssignTypeMixin, NodeNG):
         yield util.Uninferable
 
 
+class EvaluatedObject(NodeNG):
+    """Contains an object that has already been inferred
+
+    This class is useful to pre-evaluate a particular node,
+    with the resulting class acting as the non-evaluated node.
+    """
+
+    name = "EvaluatedObject"
+    _astroid_fields = ("original",)
+    _other_fields = ("value",)
+
+    original = None
+    """The original node that has already been evaluated
+
+    :type: NodeNG
+    """
+
+    value = None
+    """The inferred value
+
+    :type: Union[Uninferable, NodeNG]
+    """
+
+    def __init__(self, original, value):
+        self.original = original
+        self.value = value
+        self.lineno = self.original.lineno
+        self.parent = self.original.parent
+        self.col_offset = self.original.col_offset
+
+    def infer(self, context=None, **kwargs):
+        yield self.value
+
+
 # constants ##############################################################
 
 CONST_CLS = {

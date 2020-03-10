@@ -177,9 +177,14 @@ def _container_generic_transform(arg, context, klass, iterables, build_elts):
             elts = [elt.value for elt in arg.elts]
         else:
             # TODO: Does not handle deduplication for sets.
-            elts = filter(
-                None, map(partial(helpers.safe_infer, context=context), arg.elts)
-            )
+            elts = []
+            for element in arg.elts:
+                inferred = helpers.safe_infer(element, context=context)
+                if inferred:
+                    evaluated_object = nodes.EvaluatedObject(
+                        original=element, value=inferred
+                    )
+                    elts.append(evaluated_object)
     elif isinstance(arg, nodes.Dict):
         # Dicts need to have consts as strings already.
         if not all(isinstance(elt[0], nodes.Const) for elt in arg.items):

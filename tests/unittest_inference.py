@@ -5171,10 +5171,25 @@ def test_builtin_inference_list_of_exceptions():
     inferred = next(node.infer())
     assert isinstance(inferred, nodes.Tuple)
     assert len(inferred.elts) == 2
-    assert isinstance(inferred.elts[0], nodes.ClassDef)
-    assert inferred.elts[0].name == "ValueError"
-    assert isinstance(inferred.elts[1], nodes.ClassDef)
-    assert inferred.elts[1].name == "TypeError"
+    assert isinstance(inferred.elts[0], nodes.EvaluatedObject)
+    assert isinstance(inferred.elts[0].value, nodes.ClassDef)
+    assert inferred.elts[0].value.name == "ValueError"
+    assert isinstance(inferred.elts[1], nodes.EvaluatedObject)
+    assert isinstance(inferred.elts[1].value, nodes.ClassDef)
+    assert inferred.elts[1].value.name == "TypeError"
+
+    # Test that inference of evaluated objects returns what is expected
+    first_elem = next(inferred.elts[0].infer())
+    assert isinstance(first_elem, nodes.ClassDef)
+    assert first_elem.name == "ValueError"
+
+    second_elem = next(inferred.elts[1].infer())
+    assert isinstance(second_elem, nodes.ClassDef)
+    assert second_elem.name == "TypeError"
+
+    # Test that as_string() also works
+    as_string = inferred.as_string()
+    assert as_string.strip() == "(ValueError, TypeError)"
 
 
 @test_utils.require_version(minver="3.6")

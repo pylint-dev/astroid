@@ -86,6 +86,7 @@ from astroid.node_classes import (
     # Node not present in the builtin ast module.
     DictUnpack,
     Unknown,
+    EvaluatedObject,
 )
 from astroid.scoped_nodes import (
     Module,
