@@ -96,28 +96,6 @@ class SuperTests(unittest.TestCase):
         self.assertIsInstance(second, bases.Instance)
         self.assertEqual(second.qname(), "%s.super" % bases.BUILTINS)
 
-    @test_utils.require_version(maxver="3.0")
-    def test_super_on_old_style_class(self):
-        # super doesn't work on old style class, but leave
-        # that as an error for pylint. We'll infer Super objects,
-        # but every call will result in a failure at some point.
-        node = builder.extract_node(
-            """
-        class OldStyle:
-            def __init__(self):
-                super(OldStyle, self) #@
-        """
-        )
-        old = next(node.infer())
-        self.assertIsInstance(old, objects.Super)
-        self.assertIsInstance(old.mro_pointer, nodes.ClassDef)
-        self.assertEqual(old.mro_pointer.name, "OldStyle")
-        with self.assertRaises(exceptions.SuperError) as cm:
-            old.super_mro()
-        self.assertEqual(
-            str(cm.exception), "Unable to call super on old-style classes."
-        )
-
     @test_utils.require_version(minver="3.0")
     def test_no_arguments_super(self):
         ast_nodes = builder.extract_node(

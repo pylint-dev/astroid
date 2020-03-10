@@ -144,30 +144,6 @@ class ClassModelTest(unittest.TestCase):
         self.assertIsInstance(inferred, astroid.Const)
         self.assertEqual(inferred.value, "first")
 
-    @test_utils.require_version(maxver="3.0")
-    def test__mro__old_style(self):
-        ast_node = builder.extract_node(
-            """
-        class A:
-            pass
-        A.__mro__
-        """
-        )
-        with self.assertRaises(exceptions.InferenceError):
-            next(ast_node.infer())
-
-    @test_utils.require_version(maxver="3.0")
-    def test__subclasses__old_style(self):
-        ast_node = builder.extract_node(
-            """
-        class A:
-            pass
-        A.__subclasses__
-        """
-        )
-        with self.assertRaises(exceptions.InferenceError):
-            next(ast_node.infer())
-
     def test_class_model_correct_mro_subclasses_proxied(self):
         ast_nodes = builder.extract_node(
             """
@@ -505,37 +481,6 @@ class FunctionModelTest(unittest.TestCase):
         kwdefaults = next(ast_node[1].infer())
         self.assertIsInstance(kwdefaults, astroid.Dict)
         # self.assertEqual(kwdefaults.getitem('f').value, 'lala')
-
-    @test_utils.require_version(maxver="3.0")
-    def test_function_model_for_python2(self):
-        ast_nodes = builder.extract_node(
-            """
-        def test(a=1):
-          "a"
-
-        test.func_name #@
-        test.func_doc #@
-        test.func_dict #@
-        test.func_globals #@
-        test.func_defaults #@
-        test.func_code #@
-        test.func_closure #@
-        """
-        )
-        name = next(ast_nodes[0].infer())
-        self.assertIsInstance(name, astroid.Const)
-        self.assertEqual(name.value, "test")
-        doc = next(ast_nodes[1].infer())
-        self.assertIsInstance(doc, astroid.Const)
-        self.assertEqual(doc.value, "a")
-        pydict = next(ast_nodes[2].infer())
-        self.assertIsInstance(pydict, astroid.Dict)
-        pyglobals = next(ast_nodes[3].infer())
-        self.assertIsInstance(pyglobals, astroid.Dict)
-        defaults = next(ast_nodes[4].infer())
-        self.assertIsInstance(defaults, astroid.Tuple)
-        for node in ast_nodes[5:]:
-            self.assertIs(next(node.infer()), astroid.Uninferable)
 
     @test_utils.require_version(minver="3.8")
     def test_annotation_positional_only(self):

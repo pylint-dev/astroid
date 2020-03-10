@@ -500,17 +500,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(inferred.name, "set")
         self.assertIn("remove", inferred._proxied.locals)
 
-    @test_utils.require_version(maxver="3.0")
-    def test_unicode_type(self):
-        code = '''u = u""'''
-        ast = parse(code, __name__)
-        n = ast["u"]
-        inferred = next(n.infer())
-        self.assertIsInstance(inferred, nodes.Const)
-        self.assertIsInstance(inferred, Instance)
-        self.assertEqual(inferred.name, "unicode")
-        self.assertIn("lower", inferred._proxied.locals)
-
     @pytest.mark.xfail(reason="Descriptors are not properly inferred as callable")
     def test_descriptor_are_callable(self):
         code = """
@@ -3860,19 +3849,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         with self.assertRaises(exceptions.NotFoundError):
             inferred.getattr("teta")
         inferred.getattr("a")
-
-    @test_utils.require_version(maxver="3.0")
-    def test_delayed_attributes_with_old_style_classes(self):
-        ast_node = extract_node(
-            """
-        class A:
-            __slots__ = ('a', )
-        a = A()
-        a.teta = 42
-        a #@
-        """
-        )
-        next(ast_node.infer()).getattr("teta")
 
     def test_lambda_as_methods(self):
         ast_node = extract_node(

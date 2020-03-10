@@ -192,21 +192,6 @@ class TestHelpers(unittest.TestCase):
         self.assertFalse(helpers.is_subtype(cls_a, cls_b))
         self.assertFalse(helpers.is_subtype(cls_a, cls_b))
 
-    @test_utils.require_version(maxver="3.0")
-    def test_is_subtype_supertype_old_style_classes(self):
-        cls_a, cls_b = builder.extract_node(
-            """
-        class A: #@
-            pass
-        class B(A): #@
-            pass
-        """
-        )
-        self.assertFalse(helpers.is_subtype(cls_a, cls_b))
-        self.assertFalse(helpers.is_subtype(cls_b, cls_a))
-        self.assertFalse(helpers.is_supertype(cls_a, cls_b))
-        self.assertFalse(helpers.is_supertype(cls_b, cls_a))
-
     def test_is_subtype_supertype_mro_error(self):
         cls_e, cls_f = builder.extract_node(
             """
