@@ -4752,9 +4752,11 @@ class EvaluatedObject(NodeNG):
     def __init__(self, original, value):
         self.original = original
         self.value = value
-        self.lineno = self.original.lineno
-        self.parent = self.original.parent
-        self.col_offset = self.original.col_offset
+        super(EvaluatedObject, self).__init__(
+            lineno=self.original.lineno,
+            col_offset=self.original.col_offset,
+            parent=self.original.parent,
+        )
 
     def infer(self, context=None, **kwargs):
         yield self.value
