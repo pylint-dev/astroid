@@ -58,7 +58,7 @@ class InstanceModelTest(unittest.TestCase):
         self.assertIsInstance(attr, astroid.Const)
         self.assertEqual(attr.value, 42)
 
-    @unittest.expectedFailure
+    @pytest.mark.xfail(reason="Instance lookup cannot override object model")
     def test_instance_local_attributes_overrides_object_model(self):
         # The instance lookup needs to be changed in order for this to work.
         ast_node = builder.extract_node(
@@ -354,7 +354,7 @@ class FunctionModelTest(unittest.TestCase):
         inferred = next(node.infer())
         assert inferred is util.Uninferable
 
-    @unittest.expectedFailure
+    @pytest.mark.xfail(reason="Descriptors cannot infer what self is")
     def test_descriptor_not_inferrring_self(self):
         # We can't infer __get__(X, Y)() when the bounded function
         # uses self, because of the tree's parent not being propagating good enough.

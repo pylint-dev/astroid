@@ -511,7 +511,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(inferred.name, "unicode")
         self.assertIn("lower", inferred._proxied.locals)
 
-    @unittest.expectedFailure
+    @pytest.mark.xfail(reason="Descriptors are not properly inferred as callable")
     def test_descriptor_are_callable(self):
         code = """
             class A:
@@ -3259,7 +3259,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, Instance)
         self.assertEqual(inferred.name, "B")
 
-    @unittest.expectedFailure
+    @pytest.mark.xfail(reason="String interpolation is incorrect for modulo formatting")
     def test_string_interpolation(self):
         ast_nodes = extract_node(
             """
@@ -3631,7 +3631,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         ]
         self.assertEqual(titles, ["Catch 22", "Ubik", "Grimus"])
 
-    @unittest.expectedFailure
+    @pytest.mark.xfail(reason="Does not support function metaclasses")
     def test_function_metaclasses(self):
         # These are not supported right now, although
         # they will be in the future.
@@ -3778,7 +3778,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         second = next(ast_nodes[1].infer())
         self.assertIsInstance(second, Instance)
 
-    @unittest.expectedFailure
+    @pytest.mark.xfail(reason="Metaclass arguments not inferred as classes")
     def test_metaclass_arguments_are_classes_not_instances(self):
         ast_node = extract_node(
             """
@@ -3908,7 +3908,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 25)
 
-    @unittest.expectedFailure
+    @pytest.mark.xfail(reason="Cannot reuse inner value due to inference context reuse")
     def test_inner_value_redefined_by_subclass_with_mro(self):
         # This might work, but it currently doesn't due to not being able
         # to reuse inference contexts.
