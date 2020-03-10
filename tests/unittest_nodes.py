@@ -148,21 +148,20 @@ def function(var):
         ast = abuilder.string_build(code)
         self.assertEqual(ast.as_string(), code)
 
-    @test_utils.require_version("3.0")
-    @unittest.expectedFailure
     def test_3k_annotations_and_metaclass(self):
-        code_annotations = textwrap.dedent(
-            '''
-        def function(var:int):
+        code = '''
+        def function(var: int):
             nonlocal counter
 
         class Language(metaclass=Natural):
             """natural language"""
         '''
-        )
 
+        code_annotations = textwrap.dedent(code)
+        # pylint: disable=line-too-long
+        expected = 'def function(var: int):\n    nonlocal counter\n\n\nclass Language(metaclass=Natural):\n    """natural language"""'
         ast = abuilder.string_build(code_annotations)
-        self.assertEqual(ast.as_string(), code_annotations)
+        self.assertEqual(ast.as_string().strip(), expected)
 
     def test_ellipsis(self):
         ast = abuilder.string_build("a[...]").body[0]
