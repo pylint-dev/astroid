@@ -2126,7 +2126,14 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         # Get the bases of the class.
         class_bases = next(caller.args[1].infer(context))
         if isinstance(class_bases, (node_classes.Tuple, node_classes.List)):
-            result.bases = class_bases.itered()
+            bases = []
+            for base in class_bases.itered():
+                inferred = next(base.infer(context=context))
+                if inferred:
+                    bases.append(
+                        node_classes.EvaluatedObject(original=base, value=inferred)
+                    )
+            result.bases = bases
         else:
             # There is currently no AST node that can represent an 'unknown'
             # node (Uninferable is not an AST node), therefore we simply return Uninferable here

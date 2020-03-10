@@ -18,6 +18,10 @@ Release Date: TBA
 
   Close PyCQA/pylint#2991
 
+* Prevent a recursion error for self reference variables and `type()` calls.
+
+  Close #199
+
 * Do not infer the first argument of a staticmethod in a metaclass as the class itself
 
   Close PyCQA/pylint#3032

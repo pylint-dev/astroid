@@ -5779,5 +5779,25 @@ def test_recursion_error_metaclass_monkeypatching():
     assert cls.declared_metaclass() is None
 
 
+@pytest.mark.xfail(reason="Cannot fully infer all the base classes properly.")
+def test_recursion_error_self_reference_type_call():
+    # Fix for https://github.com/PyCQA/astroid/issues/199
+    code = """
+    class A(object):
+        pass
+    class SomeClass(object):
+        route_class = A
+        def __init__(self):
+            self.route_class = type('B', (self.route_class, ), {})
+            self.route_class() #@
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert isinstance(inferred, Instance)
+    assert inferred.name == "B"
+    # TODO: Cannot infer [B, A, object] but at least the recursion error is gone.
+    assert [cls.name for cls in inferred.mro()] == ["B", "A", "object"]
+
+
 if __name__ == "__main__":
     unittest.main()
