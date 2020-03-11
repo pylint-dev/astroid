@@ -40,6 +40,7 @@ from distutils.errors import DistutilsPlatformError
 # distutils is replaced by virtualenv with a module that does
 # weird path manipulations in order to get to the
 # real distutils module.
+from typing import Optional, List
 
 from .interpreter._import import spec
 from .interpreter._import import util
@@ -198,16 +199,15 @@ def load_module_from_name(dotted_name, path=None, use_sys=True):
     return load_module_from_modpath(dotted_name.split("."), path, use_sys)
 
 
-def load_module_from_modpath(parts, path=None, use_sys=1):
+def load_module_from_modpath(parts, path: Optional[List[str]] = None, use_sys=1):
     """Load a python module from its split name.
 
     :type parts: list(str) or tuple(str)
     :param parts:
       python name of a module or package split on '.'
 
-    :type path: list or None
     :param path:
-      optional list of path where the module or package should be
+      Optional list of path where the module or package should be
       searched (use sys.path if nothing or None is given)
 
     :type use_sys: bool
@@ -254,22 +254,22 @@ def load_module_from_modpath(parts, path=None, use_sys=1):
     return module
 
 
-def load_module_from_file(filepath, path=None, use_sys=True):
+def load_module_from_file(
+    filepath: str, path: Optional[List[str]] = None, use_sys=True
+):
     """Load a Python module from it's path.
 
     :type filepath: str
     :param filepath: path to the python module or package
 
-    :type path: list or None
-    :param path:
-      optional list of path where the module or package should be
+    :param Optional[List[str]] path:
+      Optional list of path where the module or package should be
       searched (use sys.path if nothing or None is given)
 
     :type use_sys: bool
     :param use_sys:
       boolean indicating whether the sys.modules dictionary should be
       used or not
-
 
     :raise ImportError: if the module or package is not found
 
@@ -327,16 +327,18 @@ def _get_relative_base_path(filename, path_to_check):
     return None
 
 
-def modpath_from_file_with_callback(filename, is_package_cb=None):
+def modpath_from_file_with_callback(filename, path=None, is_package_cb=None):
     filename = os.path.expanduser(_path_from_filename(filename))
-    for path in itertools.chain(map(_canonicalize_path, sys.path), sys.path):
-        path = _cache_normalize_path(path)
-        if not path:
+    for pathname in itertools.chain(
+        path or [], map(_canonicalize_path, sys.path), sys.path
+    ):
+        pathname = _cache_normalize_path(pathname)
+        if not pathname:
             continue
-        modpath = _get_relative_base_path(filename, path)
+        modpath = _get_relative_base_path(filename, pathname)
         if not modpath:
             continue
-        if is_package_cb(path, modpath[:-1]):
+        if is_package_cb(pathname, modpath[:-1]):
             return modpath
 
     raise ImportError(
@@ -344,7 +346,7 @@ def modpath_from_file_with_callback(filename, is_package_cb=None):
     )
 
 
-def modpath_from_file(filename):
+def modpath_from_file(filename, path=None):
     """Get the corresponding split module's name from a filename
 
     This function will return the name of a module or package split on `.`.
@@ -352,6 +354,9 @@ def modpath_from_file(filename):
     :type filename: str
     :param filename: file's path for which we want the module's name
 
+    :type Optional[List[str]] path:
+      Optional list of path where the module or package should be
+      searched (use sys.path if nothing or None is given)
 
     :raise ImportError:
       if the corresponding module's name has not been found
@@ -359,7 +364,7 @@ def modpath_from_file(filename):
     :rtype: list(str)
     :return: the corresponding split module's name
     """
-    return modpath_from_file_with_callback(filename, check_modpath_has_init)
+    return modpath_from_file_with_callback(filename, path, check_modpath_has_init)
 
 
 def file_from_modpath(modpath, path=None, context_file=None):
