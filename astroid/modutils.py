@@ -254,7 +254,7 @@ def load_module_from_modpath(parts, path=None, use_sys=1):
     return module
 
 
-def load_module_from_file(filepath, path=None, use_sys=True, extrapath=None):
+def load_module_from_file(filepath, path=None, use_sys=True):
     """Load a Python module from it's path.
 
     :type filepath: str
@@ -276,7 +276,7 @@ def load_module_from_file(filepath, path=None, use_sys=True, extrapath=None):
     :rtype: module
     :return: the loaded module
     """
-    modpath = modpath_from_file(filepath, extrapath)
+    modpath = modpath_from_file(filepath)
     return load_module_from_modpath(modpath, path, use_sys)
 
 
@@ -327,20 +327,8 @@ def _get_relative_base_path(filename, path_to_check):
     return None
 
 
-def modpath_from_file_with_callback(filename, extrapath=None, is_package_cb=None):
+def modpath_from_file_with_callback(filename, is_package_cb=None):
     filename = os.path.expanduser(_path_from_filename(filename))
-
-    if extrapath is not None:
-        for path_ in itertools.chain(map(_canonicalize_path, extrapath), extrapath):
-            path = os.path.abspath(path_)
-            if not path:
-                continue
-            submodpath = _get_relative_base_path(filename, path)
-            if not submodpath:
-                continue
-            if is_package_cb(path, submodpath[:-1]):
-                return extrapath[path_].split(".") + submodpath
-
     for path in itertools.chain(map(_canonicalize_path, sys.path), sys.path):
         path = _cache_normalize_path(path)
         if not path:
@@ -356,18 +344,13 @@ def modpath_from_file_with_callback(filename, extrapath=None, is_package_cb=None
     )
 
 
-def modpath_from_file(filename, extrapath=None):
-    """given a file path return the corresponding split module's name
-    (i.e name of a module or package split on '.')
+def modpath_from_file(filename):
+    """Get the corresponding split module's name from a filename
+
+    This function will return the name of a module or package split on `.`.
 
     :type filename: str
     :param filename: file's path for which we want the module's name
-
-    :type extrapath: dict
-    :param extrapath:
-      optional extra search path, with path as key and package name for the path
-      as value. This is usually useful to handle package split in multiple
-      directories using __path__ trick.
 
 
     :raise ImportError:
@@ -376,7 +359,7 @@ def modpath_from_file(filename, extrapath=None):
     :rtype: list(str)
     :return: the corresponding split module's name
     """
-    return modpath_from_file_with_callback(filename, extrapath, check_modpath_has_init)
+    return modpath_from_file_with_callback(filename, check_modpath_has_init)
 
 
 def file_from_modpath(modpath, path=None, context_file=None):

@@ -127,14 +127,6 @@ class ModPathFromFileTest(unittest.TestCase):
             ["xml", "etree", "ElementTree"],
         )
 
-    def test_knownValues_modpath_from_file_2(self):
-        self.assertEqual(
-            modutils.modpath_from_file(
-                "unittest_modutils.py", {os.getcwd(): "arbitrary.pkg"}
-            ),
-            ["arbitrary", "pkg", "unittest_modutils"],
-        )
-
     def test_raise_modpath_from_file_Exception(self):
         self.assertRaises(Exception, modutils.modpath_from_file, "/turlututu")
 
