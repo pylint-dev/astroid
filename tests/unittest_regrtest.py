@@ -306,6 +306,18 @@ def test():
         )
         next(node.infer())
 
+    def test_regression_inference_of_self_in_lambda(self):
+        code = """
+        class A:
+            @b(lambda self: __(self))
+            def d(self):
+                pass
+        """
+        node = extract_node(code)
+        inferred = next(node.infer())
+        assert isinstance(inferred, Instance)
+        assert inferred.qname() == ".A"
+
 
 class Whatever:
     a = property(lambda x: x, lambda x: x)
