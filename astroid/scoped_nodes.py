@@ -2514,8 +2514,20 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         metaclass = self.declared_metaclass(context=context)
         try:
-            attr = self.getattr(name, context, class_context=class_context)[0]
-            for inferred in bases._infer_stmts([attr], context, frame=self):
+            attributes = self.getattr(name, context, class_context=class_context)
+            # If we have more than one attribute, make sure that those starting from
+            # the second one are from the same scope. This is to account for modifications
+            # to the attribute happening *after* the attribute's definition (e.g. AugAssigns on lists)
+            if len(attributes) > 1:
+                first_attr, attributes = attributes[0], attributes[1:]
+                first_scope = first_attr.scope()
+                attributes = [first_attr] + [
+                    attr
+                    for attr in attributes
+                    if attr.parent and attr.parent.scope() == first_scope
+                ]
+
+            for inferred in bases._infer_stmts(attributes, context, frame=self):
                 # yield Uninferable object instead of descriptors when necessary
                 if not isinstance(inferred, node_classes.Const) and isinstance(
                     inferred, bases.Instance
@@ -2815,7 +2827,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         if not all(slot is not None for slot in slots):
             return None
 
-        return sorted(slots, key=lambda item: item.value)
+        return sorted(set(slots), key=lambda item: item.value)
 
     def _inferred_bases(self, context=None):
         # Similar with .ancestors, but the difference is when one base is inferred,

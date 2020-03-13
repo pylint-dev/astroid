@@ -10,6 +10,11 @@ Release Date: TBA
   source code as a string and return the corresponding astroid object
 
   Closes PyCQA/astroid#725
+
+* Allow slots added dynamically to a class to still be inferred
+
+  Close PyCQA/pylint#2334
+
 * Infer qualified ``classmethod`` as a classmethod.
 
   Close PyCQA/pylint#3417

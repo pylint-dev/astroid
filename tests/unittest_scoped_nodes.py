@@ -1248,6 +1248,21 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         cls = module["B"]
         self.assertIsNone(cls.slots())
 
+    def test_slots_added_dynamically_still_inferred(self):
+        code = """
+        class NodeBase(object):
+            __slots__ = "a", "b"
+
+            if Options.isFullCompat():
+                __slots__ += ("c",)
+
+        """
+        node = builder.extract_node(code)
+        inferred = next(node.infer())
+        slots = inferred.slots()
+        assert len(slots) == 3, slots
+        assert [slot.value for slot in slots] == ["a", "b", "c"]
+
     def assertEqualMro(self, klass, expected_mro):
         self.assertEqual([member.name for member in klass.mro()], expected_mro)
 
