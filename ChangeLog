@@ -15,6 +15,10 @@ Release Date: TBA
 
   Close PyCQA/pylint#2334
 
+* Allow `FunctionDef.getattr` to look into both instance attrs and special attributes
+
+  Close PyCQA/pylint#1078
+
 * Infer qualified ``classmethod`` as a classmethod.
 
   Close PyCQA/pylint#3417

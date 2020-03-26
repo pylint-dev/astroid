@@ -1560,10 +1560,14 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
             raise exceptions.AttributeInferenceError(
                 target=self, attribute=name, context=context
             )
+
+        found_attrs = []
         if name in self.instance_attrs:
-            return self.instance_attrs[name]
+            found_attrs = self.instance_attrs[name]
         if name in self.special_attributes:
-            return [self.special_attributes.lookup(name)]
+            found_attrs.append(self.special_attributes.lookup(name))
+        if found_attrs:
+            return found_attrs
         raise exceptions.AttributeInferenceError(target=self, attribute=name)
 
     def igetattr(self, name, context=None):

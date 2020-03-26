@@ -5775,5 +5775,21 @@ def test_recursion_error_self_reference_type_call():
     assert [cls.name for cls in inferred.mro()] == ["B", "A", "object"]
 
 
+def test_allow_retrieving_instance_attrs_and_special_attrs_for_functions():
+    code = """
+    class A:
+        def test(self):
+            "a"
+        # Add `__doc__` to `FunctionDef.instance_attrs` via an `AugAssign`
+        test.__doc__ += 'b'
+        test #@
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    attrs = inferred.getattr("__doc__")
+    # One from the `AugAssign`, one from the special attributes
+    assert len(attrs) == 2
+
+
 if __name__ == "__main__":
     unittest.main()
