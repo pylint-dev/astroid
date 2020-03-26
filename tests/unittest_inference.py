@@ -5791,5 +5791,26 @@ def test_allow_retrieving_instance_attrs_and_special_attrs_for_functions():
     assert len(attrs) == 2
 
 
+def test_implicit_parameters_bound_method():
+    code = """
+    class A(type):
+        @classmethod
+        def test(cls, first): return first
+        def __new__(cls, name, bases, dictionary):
+            return super().__new__(cls, name, bases, dictionary)
+
+    A.test #@
+    A.__new__ #@
+    """
+    test, dunder_new = extract_node(code)
+    test = next(test.infer())
+    assert isinstance(test, BoundMethod)
+    assert test.implicit_parameters() == 1
+
+    dunder_new = next(dunder_new.infer())
+    assert isinstance(dunder_new, BoundMethod)
+    assert dunder_new.implicit_parameters() == 0
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -11,6 +11,10 @@ Release Date: TBA
 
   Closes PyCQA/astroid#725
 
+* ``BoundMethod.implicit_parameters`` returns a proper value for ``__new__``
+
+  Close PyCQA/pylint#2335
+
 * Allow slots added dynamically to a class to still be inferred
 
   Close PyCQA/pylint#2334

@@ -391,6 +391,9 @@ class BoundMethod(UnboundMethod):
         self.bound = bound
 
     def implicit_parameters(self):
+        if self.name == "__new__":
+            # __new__ acts as a classmethod but the class argument is not implicit.
+            return 0
         return 1
 
     def is_bound(self):
