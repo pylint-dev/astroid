@@ -1401,6 +1401,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         "defaults",
         "kwonlyargs",
         "posonlyargs",
+        "posonlyargs_annotations",
         "kw_defaults",
         "annotations",
         "varargannotation",
@@ -1733,6 +1734,11 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
 
     def get_children(self):
         yield from self.posonlyargs or ()
+
+        for elt in self.posonlyargs_annotations:
+            if elt is not None:
+                yield elt
+
         yield from self.args or ()
 
         yield from self.defaults
