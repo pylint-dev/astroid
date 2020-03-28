@@ -1644,7 +1644,13 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
             positional_only_defaults = self.defaults[: len(self.defaults) - len(args)]
 
         if self.posonlyargs:
-            result.append(_format_args(self.posonlyargs, positional_only_defaults))
+            result.append(
+                _format_args(
+                    self.posonlyargs,
+                    positional_only_defaults,
+                    self.posonlyargs_annotations,
+                )
+            )
             result.append("/")
         if self.args:
             result.append(
