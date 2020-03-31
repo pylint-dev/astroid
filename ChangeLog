@@ -192,6 +192,8 @@ Release Date: TBA
 
   Close #755
 
+* Properly analyze CFFI compiled extensions.
+
 What's New in astroid 2.3.2?
 ============================
 Release Date: TBA
