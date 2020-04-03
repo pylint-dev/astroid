@@ -354,7 +354,7 @@ class InspectBuilder:
                 # This should be called for Jython, where some builtin
                 # methods aren't caught by isbuiltin branch.
                 _build_from_function(node, name, member, self._module)
-            elif hasattr(member, '__all__'):
+            elif hasattr(member, "__all__"):
                 module = build_module(name)
                 _attach_local_node(node, module, name)
                 # recursion
