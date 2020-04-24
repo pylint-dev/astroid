@@ -374,6 +374,30 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIs(a2_ancestors[0], b)
         self.assertIs(a2_ancestors[1], a1)
 
+    @pytest.mark.skipif(sys.version_info < (3, 5), reason="Needs 'typing' module")
+    def test_ancestors_generic(self):
+        code = """
+            from typing import Generic, TypeVar
+
+            T = TypeVar('T')
+
+            class A(Generic[T]):  #@
+                pass
+
+            class B(A[T]):  #@
+                pass
+
+            class C(B[int]):  #@
+                pass
+        """
+        a, b, c = extract_node(code, __name__)
+        ancestors = list(c.ancestors())
+        self.assertEqual(len(ancestors), 4)
+        self.assertIs(ancestors[0], b)
+        self.assertIs(ancestors[1], a)
+        self.assertEqual(ancestors[2].name, "Generic")
+        self.assertEqual(ancestors[3].name, "object")
+
     def test_f_arg_f(self):
         code = """
             def f(f=1):

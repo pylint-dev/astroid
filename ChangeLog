@@ -21,6 +21,11 @@ Release Date: TBA
   Close PyCQA/pylint#3540
   Close #773
 
+* If a generic class is subscripted, infer that class itself
+
+  Closes PyCQA/pylint#3131
+  Closes PyCQA/pylint#3505
+
 
 What's New in astroid 2.4.0?
 ============================

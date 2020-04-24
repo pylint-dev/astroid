@@ -368,6 +368,10 @@ def infer_subscript(self, context=None):
         if value is util.Uninferable:
             yield util.Uninferable
             return None
+        if isinstance(value, nodes.ClassDef):
+            if value.is_subtype_of("typing.Generic"):
+                yield value
+                found_one = True
         for index in self.slice.infer(context):
             if index is util.Uninferable:
                 yield util.Uninferable
