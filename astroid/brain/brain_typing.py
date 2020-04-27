@@ -84,7 +84,9 @@ def infer_typing_attr(node, context=None):
     except InferenceError as exc:
         raise UseInferenceDefault from exc
 
-    node = extract_node(TYPING_TYPE_TEMPLATE.format(value.qname().split(".")[-1]))
+    node = extract_node(
+        TYPING_TYPE_TEMPLATE.format(value.qname().split(".")[-1]), "typing"
+    )
     return node.infer(context=context)
 
 

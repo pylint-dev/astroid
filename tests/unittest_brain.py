@@ -1080,6 +1080,17 @@ class TypingBrain(unittest.TestCase):
         inferred = next(node.infer())
         self.assertIsInstance(inferred, astroid.Instance)
 
+    def test_generic_subscript(self):
+        node = builder.extract_node(
+            """
+        from typing import Generic, TypeVar
+        T = TypeVar('T')
+        Generic[T]  #@
+        """
+        )
+        inferred = next(node.infer())
+        self.assertEqual(inferred.qname(), "typing.Generic")
+
 
 class ReBrainTest(unittest.TestCase):
     def test_regex_flags(self):
