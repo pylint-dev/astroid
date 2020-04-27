@@ -4,7 +4,7 @@ astroid's ChangeLog
 
 What's New in astroid 2.4.0?
 ============================
-Release Date: TBA
+Release Date: 2020-04-27
 
 * Expose a ast_from_string method in AstroidManager, which will accept
   source code as a string and return the corresponding astroid object
