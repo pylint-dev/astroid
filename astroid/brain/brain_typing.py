@@ -75,12 +75,14 @@ def _looks_like_typing_subscript(node):
 def infer_typing_attr(node, context=None):
     """Infer a typing.X[...] subscript"""
     try:
-        value = next(node.value.infer())
+        for value in node.value.infer():
+            if value.qname().startswith("typing."):
+                break
+        else:
+            raise UseInferenceDefault
+
     except InferenceError as exc:
         raise UseInferenceDefault from exc
-
-    if not value.qname().startswith("typing."):
-        raise UseInferenceDefault
 
     node = extract_node(TYPING_TYPE_TEMPLATE.format(value.qname().split(".")[-1]))
     return node.infer(context=context)
