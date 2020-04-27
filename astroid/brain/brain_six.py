@@ -50,7 +50,8 @@ input = input
 from sys import intern
 map = map
 range = range
-from imp import reload as reload_module
+from importlib import reload
+reload_module = reload
 from functools import reduce
 from shlex import quote as shlex_quote
 from io import StringIO
