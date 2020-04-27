@@ -51,7 +51,7 @@ from sys import intern
 map = map
 range = range
 from importlib import reload
-reload_module = reload
+reload_module = lambda module: reload(module)
 from functools import reduce
 from shlex import quote as shlex_quote
 from io import StringIO
