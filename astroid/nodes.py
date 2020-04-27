@@ -1,6 +1,6 @@
 # Copyright (c) 2006-2011, 2013 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2010 Daniel Harding <dharding@gmail.com>
-# Copyright (c) 2014-2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2014 Google, Inc.
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2016 Jared Garst <jgarst@users.noreply.github.com>

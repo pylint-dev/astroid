@@ -1,5 +1,6 @@
-# Copyright (c) 2015-2016, 2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2015-2016, 2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
+# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER

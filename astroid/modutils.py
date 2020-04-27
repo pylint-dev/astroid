@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2014-2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2014-2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2014 Google, Inc.
 # Copyright (c) 2014 Denis Laxalde <denis.laxalde@logilab.fr>
 # Copyright (c) 2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
@@ -9,9 +9,13 @@
 # Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
 # Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
 # Copyright (c) 2016 Ceridwen <ceridwenv@gmail.com>
+# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
 # Copyright (c) 2018 Mario Corchero <mcorcherojim@bloomberg.net>
 # Copyright (c) 2018 Mario Corchero <mariocj89@gmail.com>
 # Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
+# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
+# Copyright (c) 2019 markmcclain <markmcclain@users.noreply.github.com>
+# Copyright (c) 2019 BasPH <BasPH@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER

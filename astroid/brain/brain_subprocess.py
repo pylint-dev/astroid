@@ -1,6 +1,8 @@
-# Copyright (c) 2016-2017 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2016-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2017 Hugo <hugovk@users.noreply.github.com>
+# Copyright (c) 2018 Peter Talley <peterctalley@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
+# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER

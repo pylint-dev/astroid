@@ -1,4 +1,4 @@
-# Copyright (c) 2015-2016 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2015-2016, 2018 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2015 raylu <lurayl@gmail.com>
 # Copyright (c) 2016 Ceridwen <ceridwenv@gmail.com>
 

@@ -3,7 +3,7 @@
 # Copyright (c) 2010 Daniel Harding <dharding@gmail.com>
 # Copyright (c) 2012 FELD Boris <lothiraldan@gmail.com>
 # Copyright (c) 2013-2014 Google, Inc.
-# Copyright (c) 2014-2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2015 Florian Bruhin <me@the-compiler.org>
@@ -11,13 +11,17 @@
 # Copyright (c) 2016 Jared Garst <jgarst@users.noreply.github.com>
 # Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
 # Copyright (c) 2016 Dave Baum <dbaum@google.com>
-# Copyright (c) 2017-2018 Ashley Whetter <ashley@awhetter.co.uk>
-# Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
+# Copyright (c) 2017-2020 Ashley Whetter <ashley@awhetter.co.uk>
+# Copyright (c) 2017, 2019 Łukasz Rogalski <rogalski.91@gmail.com>
 # Copyright (c) 2017 rr- <rr-@sakuya.pl>
+# Copyright (c) 2018-2019 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
+# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2018 brendanator <brendan.maginnis@gmail.com>
-# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2018 HoverHell <hoverhell@gmail.com>
+# Copyright (c) 2019 kavins14 <kavin.singh@mail.utoronto.ca>
+# Copyright (c) 2019 kavins14 <kavinsingh@hotmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER

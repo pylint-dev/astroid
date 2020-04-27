@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2016 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2014-2016, 2018 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2014 Jeff Quast <contact@jeffquast.com>
 # Copyright (c) 2014 Google, Inc.
 # Copyright (c) 2016 Florian Bruhin <me@the-compiler.org>

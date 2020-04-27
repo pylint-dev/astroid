@@ -1,4 +1,6 @@
 # Copyright (c) 2016, 2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2018 David Poirier <david-poirier-csn@users.noreply.github.com>
+# Copyright (c) 2018 wgehalo <wgehalo@gmail.com>
 # Copyright (c) 2018 Ioana Tagirta <ioana.tagirta@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html

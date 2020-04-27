@@ -3,6 +3,7 @@
 # Copyright (c) 2016-2017 Łukasz Rogalski <rogalski.91@gmail.com>
 # Copyright (c) 2017 Derek Gustafson <degustaf@gmail.com>
 # Copyright (c) 2018 Ioana Tagirta <ioana.tagirta@gmail.com>
+# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER

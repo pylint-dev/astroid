@@ -1,6 +1,6 @@
 # Copyright (c) 2012-2013 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2014 Google, Inc.
-# Copyright (c) 2015-2016 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2015-2016, 2018 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2016 Ceridwen <ceridwenv@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html

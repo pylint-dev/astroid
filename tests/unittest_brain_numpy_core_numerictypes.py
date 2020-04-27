@@ -1,7 +1,8 @@
 # -*- encoding=utf-8 -*-
-# Copyright (c) 2017-2018 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2017 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2017-2020 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2017-2018 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
+# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -319,7 +320,7 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
         Test that the return of astype method of the datetime object
         is inferred as a ndarray.
 
-        PyCQA/pylint#3332 
+        PyCQA/pylint#3332
         """
         node = builder.extract_node(
             """

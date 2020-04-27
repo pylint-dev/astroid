@@ -5,6 +5,8 @@
 # Copyright (c) 2017 ioanatia <ioanatia@users.noreply.github.com>
 # Copyright (c) 2017 Calen Pennington <cale@edx.org>
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
+# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
+# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 
 import abc
 import collections
