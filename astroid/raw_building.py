@@ -276,6 +276,13 @@ def _build_from_function(node, name, member, module):
         object_build_function(node, member, name)
 
 
+def _safe_has_attribute(obj, member):
+    try:
+        return hasattr(obj, member)
+    except Exception:  # pylint: disable=broad-except
+        return False
+
+
 class InspectBuilder:
     """class for building nodes from living object
 
@@ -357,7 +364,7 @@ class InspectBuilder:
                 # This should be called for Jython, where some builtin
                 # methods aren't caught by isbuiltin branch.
                 _build_from_function(node, name, member, self._module)
-            elif hasattr(member, "__all__"):
+            elif _safe_has_attribute(member, "__all__"):
                 module = build_module(name)
                 _attach_local_node(node, module, name)
                 # recursion
