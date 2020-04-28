@@ -2,9 +2,19 @@
 astroid's ChangeLog
 ===================
 
+
 What's New in astroid 2.5.0?
 ============================
 Release Date: TBA
+
+
+What's New in astroid 2.4.1?
+============================
+Release Date: TBA
+
+* Handle the case where the raw builder fails to retrieve the ``__all__`` attribute
+
+  Close #772
 
 
 What's New in astroid 2.4.0?
