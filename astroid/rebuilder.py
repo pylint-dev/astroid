@@ -27,9 +27,10 @@ order to get a single Astroid representation
 """
 
 import sys
+from typing import Optional
 
 import astroid
-from astroid._ast import _parse, _get_parser_module, parse_function_type_comment
+from astroid._ast import parse_function_type_comment, get_parser_module, ParserModule
 from astroid import nodes
 
 
@@ -47,57 +48,6 @@ PY37 = sys.version_info >= (3, 7)
 PY38 = sys.version_info >= (3, 8)
 
 
-def _binary_operators_from_module(module):
-    binary_operators = {
-        module.Add: "+",
-        module.BitAnd: "&",
-        module.BitOr: "|",
-        module.BitXor: "^",
-        module.Div: "/",
-        module.FloorDiv: "//",
-        module.MatMult: "@",
-        module.Mod: "%",
-        module.Mult: "*",
-        module.Pow: "**",
-        module.Sub: "-",
-        module.LShift: "<<",
-        module.RShift: ">>",
-    }
-    return binary_operators
-
-
-def _bool_operators_from_module(module):
-    return {module.And: "and", module.Or: "or"}
-
-
-def _unary_operators_from_module(module):
-    return {module.UAdd: "+", module.USub: "-", module.Not: "not", module.Invert: "~"}
-
-
-def _compare_operators_from_module(module):
-    return {
-        module.Eq: "==",
-        module.Gt: ">",
-        module.GtE: ">=",
-        module.In: "in",
-        module.Is: "is",
-        module.IsNot: "is not",
-        module.Lt: "<",
-        module.LtE: "<=",
-        module.NotEq: "!=",
-        module.NotIn: "not in",
-    }
-
-
-def _contexts_from_module(module):
-    return {
-        module.Load: astroid.Load,
-        module.Store: astroid.Store,
-        module.Del: astroid.Del,
-        module.Param: astroid.Store,
-    }
-
-
 def _visit_or_none(node, attr, visitor, parent, visit="visit", **kws):
     """If the given node has an attribute, visits the attribute, and
     otherwise returns None.
@@ -113,32 +63,30 @@ def _visit_or_none(node, attr, visitor, parent, visit="visit", **kws):
 class TreeRebuilder:
     """Rebuilds the _ast tree to become an Astroid tree"""
 
-    def __init__(self, manager, parse_python_two: bool = False):
+    def __init__(self, manager, parser_module: Optional[ParserModule] = None):
         self._manager = manager
         self._global_names = []
         self._import_from_nodes = []
         self._delayed_assattr = []
         self._visit_meths = {}
 
-        # Configure the right classes for the right module
-        self._parser_module = _get_parser_module(parse_python_two=parse_python_two)
-        self._unary_op_classes = _unary_operators_from_module(self._parser_module)
-        self._cmp_op_classes = _compare_operators_from_module(self._parser_module)
-        self._bool_op_classes = _bool_operators_from_module(self._parser_module)
-        self._bin_op_classes = _binary_operators_from_module(self._parser_module)
-        self._context_classes = _contexts_from_module(self._parser_module)
+        if parser_module is None:
+            self._parser_module = get_parser_module()
+        else:
+            self._parser_module = parser_module
+        self._module = self._parser_module.module
 
     def _get_doc(self, node):
         try:
             if PY37 and hasattr(node, "docstring"):
                 doc = node.docstring
                 return node, doc
-            if node.body and isinstance(node.body[0], self._parser_module.Expr):
+            if node.body and isinstance(node.body[0], self._module.Expr):
 
                 first_value = node.body[0].value
-                if isinstance(first_value, self._parser_module.Str) or (
+                if isinstance(first_value, self._module.Str) or (
                     PY38
-                    and isinstance(first_value, self._parser_module.Constant)
+                    and isinstance(first_value, self._module.Constant)
                     and isinstance(first_value.value, str)
                 ):
                     doc = first_value.value if PY38 else first_value.s
@@ -149,7 +97,7 @@ class TreeRebuilder:
         return node, None
 
     def _get_context(self, node):
-        return self._context_classes.get(type(node.ctx), astroid.Load)
+        return self._parser_module.context_classes.get(type(node.ctx), astroid.Load)
 
     def visit_module(self, node, modname, modpath, package):
         """visit a Module node by returning a fresh instance of it"""
@@ -279,7 +227,7 @@ class TreeRebuilder:
             return None
 
         try:
-            type_comment_ast = _parse(type_comment)
+            type_comment_ast = self._parser_module.parse(type_comment)
         except SyntaxError:
             # Invalid type comment, just skip it.
             return None
@@ -362,7 +310,7 @@ class TreeRebuilder:
     def visit_augassign(self, node, parent):
         """visit a AugAssign node by returning a fresh instance of it"""
         newnode = nodes.AugAssign(
-            self._bin_op_classes[type(node.op)] + "=",
+            self._parser_module.bin_op_classes[type(node.op)] + "=",
             node.lineno,
             node.col_offset,
             parent,
@@ -381,7 +329,10 @@ class TreeRebuilder:
     def visit_binop(self, node, parent):
         """visit a BinOp node by returning a fresh instance of it"""
         newnode = nodes.BinOp(
-            self._bin_op_classes[type(node.op)], node.lineno, node.col_offset, parent
+            self._parser_module.bin_op_classes[type(node.op)],
+            node.lineno,
+            node.col_offset,
+            parent,
         )
         newnode.postinit(
             self.visit(node.left, newnode), self.visit(node.right, newnode)
@@ -391,7 +342,10 @@ class TreeRebuilder:
     def visit_boolop(self, node, parent):
         """visit a BoolOp node by returning a fresh instance of it"""
         newnode = nodes.BoolOp(
-            self._bool_op_classes[type(node.op)], node.lineno, node.col_offset, parent
+            self._parser_module.bool_op_classes[type(node.op)],
+            node.lineno,
+            node.col_offset,
+            parent,
         )
         newnode.postinit([self.visit(child, newnode) for child in node.values])
         return newnode
@@ -485,7 +439,10 @@ class TreeRebuilder:
         newnode.postinit(
             self.visit(node.left, newnode),
             [
-                (self._cmp_op_classes[op.__class__], self.visit(expr, newnode))
+                (
+                    self._parser_module.cmp_op_classes[op.__class__],
+                    self.visit(expr, newnode),
+                )
                 for (op, expr) in zip(node.ops, node.comparators)
             ],
         )
@@ -1002,7 +959,7 @@ class TreeRebuilder:
     def visit_unaryop(self, node, parent):
         """visit a UnaryOp node by returning a fresh instance of it"""
         newnode = nodes.UnaryOp(
-            self._unary_op_classes[node.op.__class__],
+            self._parser_module.unary_op_classes[node.op.__class__],
             node.lineno,
             node.col_offset,
             parent,
