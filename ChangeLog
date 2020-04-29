@@ -10,6 +10,11 @@ Release Date: TBA
 
   Close #772
 
+* Restructure the AST parsing heuristic to always pick the same module
+
+  Close PyCQA/pylint#3540
+  Close #773
+
 
 What's New in astroid 2.4.0?
 ============================
