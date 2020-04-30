@@ -5,3 +5,5 @@ include COPYING.LESSER
 include pytest.ini
 recursive-include tests *.py *.zip *.egg *.pth
 recursive-include astroid/brain *.py
+graft tests
+recursive-exclude tests *.pyc
