@@ -47,7 +47,7 @@ def install():
         python_requires=">=3.5.*",
         install_requires=install_requires,
         extras_require=extras_require,
-        packages=find_packages() + ["astroid.brain"],
+        packages=find_packages(exclude=["tests"]) + ["astroid.brain"],
         setup_requires=pytest_runner,
         test_suite="test",
         tests_require=["pytest"],
