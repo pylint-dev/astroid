@@ -8,13 +8,6 @@ What's New in astroid 2.5.0?
 Release Date: TBA
 
 
-What's New in astroid 2.4.2?
-============================
-Release Date: TBA
-
-* Changed setup.py to work with [distlib](https://pypi.org/project/distlib)
-
-
 What's New in astroid 2.4.1?
 ============================
 Release Date: TBA
@@ -27,6 +20,10 @@ Release Date: TBA
 
   Close PyCQA/pylint#3540
   Close #773
+
+* Changed setup.py to work with [distlib](https://pypi.org/project/distlib)
+
+  Close #779
 
 
 What's New in astroid 2.4.0?
