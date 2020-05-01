@@ -5818,5 +5818,33 @@ def test_implicit_parameters_bound_method():
     assert dunder_new.implicit_parameters() == 0
 
 
+def test_super_inference_of_abstract_property():
+    code = """
+    from abc import abstractmethod
+
+    class A:
+       @property
+       def test(self):
+           return "super"
+
+    class C:
+       @property
+       @abstractmethod
+       def test(self):
+           "abstract method"
+
+    class B(A, C):
+
+       @property
+       def test(self):
+            super() #@
+
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    test = inferred.getattr("test")
+    assert len(test) == 2
+
+
 if __name__ == "__main__":
     unittest.main()
