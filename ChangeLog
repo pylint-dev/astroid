@@ -23,6 +23,10 @@ Release Date: TBA
 
   Close PyCQA/pylint#3549
 
+* Protect against ``infer_call_result`` failing with `InferenceError` in `Super.getattr()`
+
+  Close PyCQA/pylint#3529
+
 
 What's New in astroid 2.4.0?
 ============================

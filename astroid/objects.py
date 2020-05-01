@@ -187,7 +187,12 @@ class Super(node_classes.NodeNG):
                     yield inferred
                 elif isinstance(inferred, Property):
                     function = inferred.function
-                    yield from function.infer_call_result(caller=self, context=context)
+                    try:
+                        yield from function.infer_call_result(
+                            caller=self, context=context
+                        )
+                    except exceptions.InferenceError:
+                        yield util.Uninferable
                 elif bases._is_property(inferred):
                     # TODO: support other descriptors as well.
                     try:
