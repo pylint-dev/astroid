@@ -19,6 +19,10 @@ Release Date: TBA
 
   Close #779
 
+* Do not crash with SyntaxError when parsing namedtuples with invalid label
+
+  Close PyCQA/pylint#3549
+
 
 What's New in astroid 2.4.0?
 ============================

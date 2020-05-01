@@ -123,6 +123,8 @@ def infer_func_form(node, base_type, context=None, enum=False):
     except (AttributeError, exceptions.InferenceError):
         raise UseInferenceDefault()
 
+    attributes = [attr for attr in attributes if " " not in attr]
+
     # If we can't infer the name of the class, don't crash, up to this point
     # we know it is a namedtuple anyway.
     name = name or "Uninferable"
