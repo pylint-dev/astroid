@@ -331,6 +331,18 @@ class NamedTupleTest(unittest.TestCase):
         self.assertIsInstance(inferred.bases[0], astroid.Name)
         self.assertEqual(inferred.bases[0].name, "tuple")
 
+    def test_invalid_label_does_not_crash_inference(self):
+        code = """
+        import collections
+        a = collections.namedtuple( 'a', ['b c'] )
+        a
+        """
+        node = builder.extract_node(code)
+        inferred = next(node.infer())
+        assert isinstance(inferred, astroid.ClassDef)
+        assert "b" not in inferred.locals
+        assert "c" not in inferred.locals
+
 
 class DefaultDictTest(unittest.TestCase):
     def test_1(self):
