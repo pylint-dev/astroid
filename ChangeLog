@@ -10,7 +10,7 @@ Release Date: TBA
 
 What's New in astroid 2.4.1?
 ============================
-Release Date: TBA
+Release Date: 2020-05-05
 
 * Handle the case where the raw builder fails to retrieve the ``__all__`` attribute
 
