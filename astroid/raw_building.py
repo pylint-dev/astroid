@@ -25,6 +25,7 @@ import inspect
 import os
 import sys
 import types
+import warnings
 
 from astroid import bases
 from astroid import manager
@@ -324,8 +325,10 @@ class InspectBuilder:
         self._done[obj] = node
         for name in dir(obj):
             try:
-                member = getattr(obj, name)
-            except AttributeError:
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("error")
+                    member = getattr(obj, name)
+            except (AttributeError, DeprecationWarning):
                 # damned ExtensionClass.Base, I know you're there !
                 attach_dummy_node(node, name)
                 continue
