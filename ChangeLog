@@ -7,6 +7,8 @@ What's New in astroid 2.5.0?
 ============================
 Release Date: TBA
 
+* Added a brain for ``sqlalchemy.orm.session``
+
 
 What's New in astroid 2.4.1?
 ============================
