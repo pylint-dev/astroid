@@ -1335,5 +1335,17 @@ def test_const_itered():
     assert [elem.value for elem in itered] == list("string")
 
 
+def test_is_generator_for_yield_in_while():
+    code = """
+    def paused_iter(iterable):
+        while True:
+            # Continue to yield the same item until `next(i)` or `i.send(False)`
+            while (yield value):
+                pass
+    """
+    node = astroid.extract_node(code)
+    assert bool(node.is_generator())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -6,6 +6,10 @@ What's New in astroid 2.4.2?
 ============================
 Release Date: TBA
 
+* `FunctionDef.is_generator` properly handles `yield` nodes in `While` tests
+
+  Close PyCQA/pylint#3519
+
 
 What's New in astroid 2.4.1?
 ============================
