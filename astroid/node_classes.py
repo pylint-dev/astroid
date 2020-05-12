@@ -4496,6 +4496,11 @@ class While(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
         yield from self.body
         yield from self.orelse
 
+    def _get_yield_nodes_skip_lambdas(self):
+        """A While node can contain a Yield node in the test"""
+        yield from self.test._get_yield_nodes_skip_lambdas()
+        yield from super()._get_yield_nodes_skip_lambdas()
+
 
 class With(
     mixins.MultiLineBlockMixin,

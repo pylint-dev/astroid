@@ -10,6 +10,16 @@ Release Date: TBA
 * Added a brain for ``sqlalchemy.orm.session``
 
 
+
+What's New in astroid 2.4.2?
+============================
+Release Date: TBA
+
+* `FunctionDef.is_generator` properly handles `yield` nodes in `While` tests
+
+  Close PyCQA/pylint#3519
+
+
 What's New in astroid 2.4.1?
 ============================
 Release Date: 2020-05-05
