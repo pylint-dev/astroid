@@ -990,7 +990,7 @@ class _BaseContainer(
         :type: list(NodeNG)
         """
 
-        super(_BaseContainer, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def postinit(self, elts):
         """Do some setup after initialisation.
@@ -1286,7 +1286,7 @@ class AssignName(
         :type: str or None
         """
 
-        super(AssignName, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
 
 class DelName(
@@ -1326,7 +1326,7 @@ class DelName(
         :type: str or None
         """
 
-        super(DelName, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
 
 class Name(mixins.NoChildrenMixin, LookupMixIn, NodeNG):
@@ -1367,7 +1367,7 @@ class Name(mixins.NoChildrenMixin, LookupMixIn, NodeNG):
         :type: str or None
         """
 
-        super(Name, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def _get_name_nodes(self):
         yield self
@@ -1439,7 +1439,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
         """
-        super(Arguments, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.vararg = vararg
         """The name of the variable length arguments.
 
@@ -1626,7 +1626,7 @@ class Arguments(mixins.AssignTypeMixin, NodeNG):
 
         :type: int or None
         """
-        lineno = super(Arguments, self).fromlineno
+        lineno = super().fromlineno
         return max(lineno, self.parent.fromlineno or 0)
 
     @decorators.cachedproperty
@@ -1846,7 +1846,7 @@ class AssignAttr(mixins.ParentAssignTypeMixin, NodeNG):
         :type: str or None
         """
 
-        super(AssignAttr, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def postinit(self, expr=None):
         """Do some setup after initialisation.
@@ -2065,7 +2065,7 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
         :type: str or None
         """
 
-        super(AugAssign, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def postinit(self, target=None, value=None):
         """Do some setup after initialisation.
@@ -2178,7 +2178,7 @@ class BinOp(NodeNG):
         :type: str or None
         """
 
-        super(BinOp, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def postinit(self, left=None, right=None):
         """Do some setup after initialisation.
@@ -2266,7 +2266,7 @@ class BoolOp(NodeNG):
         :type: str or None
         """
 
-        super(BoolOp, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def postinit(self, values=None):
         """Do some setup after initialisation.
@@ -2464,7 +2464,7 @@ class Comprehension(NodeNG):
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
         """
-        super(Comprehension, self).__init__()
+        super().__init__()
         self.parent = parent
 
     # pylint: disable=redefined-builtin; same name as builtin ast module.
@@ -2561,7 +2561,7 @@ class Const(mixins.NoChildrenMixin, NodeNG, bases.Instance):
         :type: object
         """
 
-        super(Const, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def __getattr__(self, name):
         # This is needed because of Proxy's __getattr__ method.
@@ -2742,7 +2742,7 @@ class DelAttr(mixins.ParentAssignTypeMixin, NodeNG):
         :type: str or None
         """
 
-        super(DelAttr, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def postinit(self, expr=None):
         """Do some setup after initialisation.
@@ -2815,7 +2815,7 @@ class Dict(NodeNG, bases.Instance):
         :type: list(tuple(NodeNG, NodeNG))
         """
 
-        super(Dict, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def postinit(self, items):
         """Do some setup after initialisation.
@@ -3347,7 +3347,7 @@ class ImportFrom(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
         :type: int
         """
 
-        super(ImportFrom, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
 
 class Attribute(NodeNG):
@@ -3382,7 +3382,7 @@ class Attribute(NodeNG):
         :type: str or None
         """
 
-        super(Attribute, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def postinit(self, expr=None):
         """Do some setup after initialisation.
@@ -3427,7 +3427,7 @@ class Global(mixins.NoChildrenMixin, Statement):
         :type: list(str)
         """
 
-        super(Global, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def _infer_name(self, frame, name):
         return name
@@ -3595,7 +3595,7 @@ class Import(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
         :type: list(tuple(str, str or None)) or None
         """
 
-        super(Import, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
 
 class Index(NodeNG):
@@ -3668,7 +3668,7 @@ class Keyword(NodeNG):
         :type: Name or None
         """
 
-        super(Keyword, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def postinit(self, value=None):
         """Do some setup after initialisation.
@@ -3713,7 +3713,7 @@ class List(_BaseContainer):
         :type: Context or None
         """
 
-        super(List, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def pytype(self):
         """Get the name of the type that this node represents.
@@ -3768,7 +3768,7 @@ class Nonlocal(mixins.NoChildrenMixin, Statement):
         :type: list(str)
         """
 
-        super(Nonlocal, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def _infer_name(self, frame, name):
         return name
@@ -3824,7 +3824,7 @@ class Print(Statement):
         :type: bool or None
         """
 
-        super(Print, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def postinit(self, dest=None, values=None):
         """Do some setup after initialisation.
@@ -4077,9 +4077,7 @@ class Starred(mixins.ParentAssignTypeMixin, NodeNG):
         :type: Context or None
         """
 
-        super(Starred, self).__init__(
-            lineno=lineno, col_offset=col_offset, parent=parent
-        )
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     def postinit(self, value=None):
         """Do some setup after initialisation.
@@ -4135,9 +4133,7 @@ class Subscript(NodeNG):
         :type: Context or None
         """
 
-        super(Subscript, self).__init__(
-            lineno=lineno, col_offset=col_offset, parent=parent
-        )
+        super().__init__(lineno=lineno, col_offset=col_offset, parent=parent)
 
     # pylint: disable=redefined-builtin; had to use the same name as builtin ast module.
     def postinit(self, value=None, slice=None):
@@ -4330,7 +4326,7 @@ class Tuple(_BaseContainer):
         :type: Context or None
         """
 
-        super(Tuple, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def pytype(self):
         """Get the name of the type that this node represents.
@@ -4386,7 +4382,7 @@ class UnaryOp(NodeNG):
         :type: str or None
         """
 
-        super(UnaryOp, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def postinit(self, operand=None):
         """Do some setup after initialisation.
@@ -4773,7 +4769,7 @@ class EvaluatedObject(NodeNG):
     def __init__(self, original, value):
         self.original = original
         self.value = value
-        super(EvaluatedObject, self).__init__(
+        super().__init__(
             lineno=self.original.lineno,
             col_offset=self.original.col_offset,
             parent=self.original.parent,

@@ -184,7 +184,7 @@ class ZipFinder(Finder):
     """Finder that knows how to find a module inside zip files."""
 
     def __init__(self, path):
-        super(ZipFinder, self).__init__(path)
+        super().__init__(path)
         self._zipimporters = _precache_zipimporters(path)
 
     def find_module(self, modname, module_parts, processed, submodule_path):

@@ -486,7 +486,7 @@ class BoundMethod(UnboundMethod):
             if new_cls:
                 return iter((new_cls,))
 
-        return super(BoundMethod, self).infer_call_result(caller, context)
+        return super().infer_call_result(caller, context)
 
     def bool_value(self, context=None):
         return True

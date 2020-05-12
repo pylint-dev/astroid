@@ -814,7 +814,7 @@ class GeneratorExp(ComprehensionScope):
         :type: dict(str, NodeNG)
         """
 
-        super(GeneratorExp, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def postinit(self, elt=None, generators=None):
         """Do some setup after initialisation.
@@ -890,7 +890,7 @@ class DictComp(ComprehensionScope):
         :type: dict(str, NodeNG)
         """
 
-        super(DictComp, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def postinit(self, key=None, value=None, generators=None):
         """Do some setup after initialisation.
@@ -966,7 +966,7 @@ class SetComp(ComprehensionScope):
         :type: dict(str, NodeNG)
         """
 
-        super(SetComp, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def postinit(self, elt=None, generators=None):
         """Do some setup after initialisation.
@@ -1062,7 +1062,7 @@ class ListComp(_ListComp, ComprehensionScope):
         :type: dict(str, NodeNG)
         """
 
-        super(ListComp, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
 
 def _infer_decorator_callchain(node):
@@ -1162,7 +1162,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         :type: list(NodeNG)
         """
 
-        super(Lambda, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def postinit(self, args, body):
         """Do some setup after initialisation.
@@ -1367,7 +1367,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         """
 
         self.instance_attrs = {}
-        super(FunctionDef, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
         if parent:
             frame = parent.frame()
             frame.set_local(name, self)
@@ -1974,7 +1974,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :type doc: str or None
         """
 
-        super(ClassDef, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
         if parent is not None:
             parent.frame().set_local(name, self)
 

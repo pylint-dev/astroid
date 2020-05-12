@@ -28,7 +28,7 @@ class AstroidError(Exception):
     """
 
     def __init__(self, message="", **kws):
-        super(AstroidError, self).__init__(message)
+        super().__init__(message)
         self.message = message
         for key, value in kws.items():
             setattr(self, key, value)
@@ -46,7 +46,7 @@ class AstroidBuildingError(AstroidError):
     """
 
     def __init__(self, message="Failed to import module {modname}.", **kws):
-        super(AstroidBuildingError, self).__init__(message, **kws)
+        super().__init__(message, **kws)
 
 
 class AstroidImportError(AstroidBuildingError):
@@ -69,7 +69,7 @@ class TooManyLevelsError(AstroidImportError):
         message="Relative import with too many levels " "({level}) for module {name!r}",
         **kws
     ):
-        super(TooManyLevelsError, self).__init__(message, **kws)
+        super().__init__(message, **kws)
 
 
 class AstroidSyntaxError(AstroidBuildingError):
@@ -89,7 +89,7 @@ class NoDefault(AstroidError):
     name = None
 
     def __init__(self, message="{func!r} has no default for {name!r}.", **kws):
-        super(NoDefault, self).__init__(message, **kws)
+        super().__init__(message, **kws)
 
 
 class ResolveError(AstroidError):
@@ -157,7 +157,7 @@ class InferenceError(ResolveError):
     context = None
 
     def __init__(self, message="Inference failed for {node!r}.", **kws):
-        super(InferenceError, self).__init__(message, **kws)
+        super().__init__(message, **kws)
 
 
 # Why does this inherit from InferenceError rather than ResolveError?
@@ -175,7 +175,7 @@ class NameInferenceError(InferenceError):
     scope = None
 
     def __init__(self, message="{name!r} not found in {scope!r}.", **kws):
-        super(NameInferenceError, self).__init__(message, **kws)
+        super().__init__(message, **kws)
 
 
 class AttributeInferenceError(ResolveError):
@@ -191,7 +191,7 @@ class AttributeInferenceError(ResolveError):
     attribute = None
 
     def __init__(self, message="{attribute!r} not found on {target!r}.", **kws):
-        super(AttributeInferenceError, self).__init__(message, **kws)
+        super().__init__(message, **kws)
 
 
 class UseInferenceDefault(Exception):
