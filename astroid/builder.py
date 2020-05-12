@@ -77,7 +77,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
 
     # pylint: disable=redefined-outer-name
     def __init__(self, manager=None, apply_transforms=True):
-        super(AstroidBuilder, self).__init__()
+        super().__init__()
         self._manager = manager or MANAGER
         self._apply_transforms = apply_transforms
 
