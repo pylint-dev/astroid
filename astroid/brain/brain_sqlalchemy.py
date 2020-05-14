@@ -2,7 +2,8 @@ import astroid
 
 
 def _session_transform():
-    return astroid.parse('''
+    return astroid.parse(
+        """
     from sqlalchemy.orm.session import Session
 
     class sessionmaker:
@@ -25,7 +26,10 @@ def _session_transform():
             return
 
         return Session()
-    ''')
+    """
+    )
 
 
-astroid.register_module_extender(astroid.MANAGER, 'sqlalchemy.orm.session', _session_transform)
+astroid.register_module_extender(
+    astroid.MANAGER, "sqlalchemy.orm.session", _session_transform
+)
