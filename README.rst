@@ -79,7 +79,8 @@ Python Versions
 ---------------
 
 astroid 2.0 is currently available for Python 3 only. If you want Python 2
-support, older versions of astroid will still supported until 2020.
+support, use an older version of astroid (though note that these versions
+are no longer supported).
 
 Test
 ----
