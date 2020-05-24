@@ -9,6 +9,9 @@ Release Date: TBA
 
 * Added a brain for ``sqlalchemy.orm.session``
 
+* Added missing methods to the brain for ``mechanize``, to fix pylint false positives
+
+  Close #793
 
 
 What's New in astroid 2.4.2?
