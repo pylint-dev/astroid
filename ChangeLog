@@ -9,6 +9,8 @@ Release Date: TBA
 
 * Added a brain for ``sqlalchemy.orm.session``
 
+* Added more supported parameters to ``subprocess.check_output``
+
 
 
 What's New in astroid 2.4.2?
