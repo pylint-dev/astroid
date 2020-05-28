@@ -743,6 +743,27 @@ class PropertyModel(ObjectModel):
     """Model for a builtin property"""
 
     # pylint: disable=import-outside-toplevel
+    def _init_function(self, name):
+        from astroid.node_classes import Arguments
+        from astroid.scoped_nodes import FunctionDef
+
+        args = Arguments()
+        args.postinit(
+            args=[],
+            defaults=[],
+            kwonlyargs=[],
+            kw_defaults=[],
+            annotations=[],
+            posonlyargs=[],
+            posonlyargs_annotations=[],
+            kwonlyargs_annotations=[],
+        )
+
+        function = FunctionDef(name=name, parent=self._instance)
+
+        function.postinit(args=args, body=[])
+        return function
+
     @property
     def attr_fget(self):
         from astroid.scoped_nodes import FunctionDef
@@ -767,20 +788,14 @@ class PropertyModel(ObjectModel):
 
     @property
     def attr_setter(self):
-        from astroid.scoped_nodes import FunctionDef
-
-        return FunctionDef(name="setter", parent=self._instance)
+        return self._init_function("setter")
 
     @property
     def attr_deleter(self):
-        from astroid.scoped_nodes import FunctionDef
-
-        return FunctionDef(name="deleter", parent=self._instance)
+        return self._init_function("deleter")
 
     @property
     def attr_getter(self):
-        from astroid.scoped_nodes import FunctionDef
-
-        return FunctionDef(name="getter", parent=self._instance)
+        return self._init_function("getter")
 
     # pylint: enable=import-outside-toplevel

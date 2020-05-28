@@ -5846,5 +5846,22 @@ def test_super_inference_of_abstract_property():
     assert len(test) == 2
 
 
+def test_infer_generated_setter():
+    code = """
+    class A:
+        @property
+        def test(self):
+            pass
+    A.test.setter
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.FunctionDef)
+    assert isinstance(inferred.args, nodes.Arguments)
+    # This line used to crash because property generated functions
+    # did not have args properly set
+    assert list(inferred.nodes_of_class(nodes.Const)) == []
+
+
 if __name__ == "__main__":
     unittest.main()
