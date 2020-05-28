@@ -10,6 +10,10 @@ Release Date: TBA
 
   Close PyCQA/pylint#3519
 
+* Properly construct the arguments of infered property descriptors
+
+  Close PyCQA/pylint#3648
+
 
 What's New in astroid 2.4.1?
 ============================
