@@ -77,6 +77,11 @@ def _subprocess_transform():
             preexec_fn=None,
             pass_fds=(),
             input=None,
+            bufsize=0,
+            executable=None,
+            close_fds=False,
+            startupinfo=None,
+            creationflags=0,
             start_new_session=False
         ):
         """.strip()
@@ -97,6 +102,11 @@ def _subprocess_transform():
             preexec_fn=None,
             pass_fds=(),
             input=None,
+            bufsize=0,
+            executable=None,
+            close_fds=False,
+            startupinfo=None,
+            creationflags=0,
             start_new_session=False
         ):
         """.strip()
