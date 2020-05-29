@@ -659,9 +659,16 @@ class ImportErrorInstanceModel(ExceptionInstanceModel):
         return node_classes.Const("")
 
 
+class UnicodeDecodeErrorInstanceModel(ExceptionInstanceModel):
+    @property
+    def attr_object(self):
+        return node_classes.Const("")
+
+
 BUILTIN_EXCEPTIONS = {
     "builtins.SyntaxError": SyntaxErrorInstanceModel,
     "builtins.ImportError": ImportErrorInstanceModel,
+    "builtins.UnicodeDecodeError": UnicodeDecodeErrorInstanceModel,
     # These are all similar to OSError in terms of attributes
     "builtins.OSError": OSErrorInstanceModel,
     "builtins.BlockingIOError": OSErrorInstanceModel,

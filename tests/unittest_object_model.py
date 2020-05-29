@@ -586,6 +586,17 @@ class ExceptionModelTest(unittest.TestCase):
             assert isinstance(inferred, astroid.Const)
             assert inferred.value == value
 
+    def test_unicodedecodeerror(self):
+        code = """
+        try:
+            raise UnicodeDecodeError("utf-8", "blob", 0, 1, "reason")
+        except UnicodeDecodeError as error:
+            error.object[:1] #@
+        """
+        node = builder.extract_node(code)
+        inferred = next(node.infer())
+        assert isinstance(inferred, astroid.Const)
+
     def test_import_error(self):
         ast_nodes = builder.extract_node(
             """

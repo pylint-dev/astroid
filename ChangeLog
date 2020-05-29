@@ -15,6 +15,10 @@ Release Date: TBA
 
 * Added more supported parameters to ``subprocess.check_output``
 
+* Added exception inference for `UnicodeDecodeError`
+
+  Close PyCQA/pylint#3639
+
 
 What's New in astroid 2.4.2?
 ============================
