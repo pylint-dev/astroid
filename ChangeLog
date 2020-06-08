@@ -22,7 +22,7 @@ Release Date: TBA
 
 What's New in astroid 2.4.2?
 ============================
-Release Date: TBA
+Release Date: 2020-06-08
 
 * `FunctionDef.is_generator` properly handles `yield` nodes in `While` tests
 
