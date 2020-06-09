@@ -1347,5 +1347,18 @@ def test_is_generator_for_yield_in_while():
     assert bool(node.is_generator())
 
 
+def test_is_generator_for_yield_in_if():
+    code = """
+    import asyncio
+
+    def paused_iter(iterable):
+        if (yield from asyncio.sleep(0.01)):
+            pass
+            return
+    """
+    node = astroid.extract_node(code)
+    assert bool(node.is_generator())
+
+
 if __name__ == "__main__":
     unittest.main()

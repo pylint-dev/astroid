@@ -3508,6 +3508,11 @@ class If(mixins.MultiLineBlockMixin, mixins.BlockRangeMixIn, Statement):
     def has_elif_block(self):
         return len(self.orelse) == 1 and isinstance(self.orelse[0], If)
 
+    def _get_yield_nodes_skip_lambdas(self):
+        """An If node can contain a Yield node in the test"""
+        yield from self.test._get_yield_nodes_skip_lambdas()
+        yield from super()._get_yield_nodes_skip_lambdas()
+
 
 class IfExp(NodeNG):
     """Class representing an :class:`ast.IfExp` node.
