@@ -190,9 +190,9 @@ def _type_check(type1, type2):
         return False
     try:
         return type1 in type2.mro()[:-1]
-    except exceptions.MroError:
+    except exceptions.MroError as e:
         # The MRO is invalid.
-        raise exceptions._NonDeducibleTypeHierarchy
+        raise exceptions._NonDeducibleTypeHierarchy from e
 
 
 def is_subtype(type1, type2):
@@ -261,10 +261,10 @@ def object_len(node, context=None):
 
     try:
         len_call = next(node_type.igetattr("__len__", context=context))
-    except exceptions.AttributeInferenceError:
+    except exceptions.AttributeInferenceError as e:
         raise exceptions.AstroidTypeError(
             "object of type '{}' has no len()".format(node_type.pytype())
-        )
+        ) from e
 
     result_of_len = next(len_call.infer_call_result(node, context))
     if (
