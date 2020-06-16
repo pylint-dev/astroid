@@ -324,5 +324,24 @@ class Whatever:
     a = property(lambda x: x, lambda x: x)
 
 
+def test_ancestor_looking_up_redefined_function():
+    code = """
+    class Foo:
+        def _format(self):
+            pass
+
+        def format(self):
+            self.format = self._format
+            self.format()
+    Foo
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    ancestor = next(inferred.ancestors())
+    _, found = ancestor.lookup("format")
+    assert len(found) == 1
+    assert isinstance(found[0], nodes.FunctionDef)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -24,6 +24,15 @@ Release Date: TBA
   Close PyCQA/pylint#3583
 
 
+What's New in astroid 2.4.3?
+============================
+Release Date: TBA
+
+* Fix a crash caused by a lookup of a monkey-patched method
+
+  Close PyCQA/pylint#3686
+
+
 What's New in astroid 2.4.2?
 ============================
 Release Date: 2020-06-08

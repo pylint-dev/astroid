@@ -1149,10 +1149,9 @@ class LookupMixIn:
         _stmts = []
         _stmt_parents = []
         statements = self._get_filtered_node_statements(stmts)
-
         for node, stmt in statements:
             # line filtering is on and we have reached our location, break
-            if stmt.fromlineno > mylineno > 0:
+            if stmt.fromlineno and stmt.fromlineno > mylineno > 0:
                 break
             # Ignore decorators with the same name as the
             # decorated function
