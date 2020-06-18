@@ -354,19 +354,37 @@ class NodeNG:
             # explicit_inference is not bound, give it self explicitly
             try:
                 # pylint: disable=not-callable
-                return self._explicit_inference(self, context, **kwargs)
+                yield from self._explicit_inference(self, context, **kwargs)
+                return
             except exceptions.UseInferenceDefault:
                 pass
 
         if not context:
-            return self._infer(context, **kwargs)
+            yield from self._infer(context, **kwargs)
+            return
 
         key = (self, context.lookupname, context.callcontext, context.boundnode)
         if key in context.inferred:
-            return iter(context.inferred[key])
+            yield from context.inferred[key]
+            return
 
-        gen = context.cache_generator(key, self._infer(context, **kwargs))
-        return util.limit_inference(gen, MANAGER.max_inferable_values)
+        generator = self._infer(context, **kwargs)
+        results = []
+
+        # Limit inference amount to help with performance issues with
+        # exponentially exploding possible results.
+        limit = MANAGER.max_inferable_values
+        for i, result in enumerate(generator):
+            if i >= limit:
+                yield util.Uninferable
+                break
+            results.append(result)
+            yield result
+
+        # Cache generated results for subsequent inferences of the
+        # same node using the same context
+        context.inferred[key] = tuple(results)
+        return
 
     def _repr_name(self):
         """Get a name for nice representation.

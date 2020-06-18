@@ -7,7 +7,6 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
 import warnings
-from itertools import islice
 
 import importlib
 import lazy_object_proxy
@@ -139,26 +138,3 @@ def proxy_alias(alias_name, node_type):
         },
     )
     return proxy(lambda: node_type)
-
-
-def limit_inference(iterator, size):
-    """Limit inference amount.
-
-    Limit inference amount to help with performance issues with
-    exponentially exploding possible results.
-
-    :param iterator: Inference generator to limit
-    :type iterator: Iterator(NodeNG)
-
-    :param size: Maximum mount of nodes yielded plus an
-        Uninferable at the end if limit reached
-    :type size: int
-
-    :yields: A possibly modified generator
-    :rtype param: Iterable
-    """
-    yield from islice(iterator, size)
-    has_more = next(iterator, False)
-    if has_more is not False:
-        yield Uninferable
-        return

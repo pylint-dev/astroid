@@ -15,6 +15,11 @@ Release Date: TBA
 
 * Added more supported parameters to ``subprocess.check_output``
 
+* Fix recursion errors with pandas
+
+  Fixes PyCQA/pylint#2843
+  Fixes PyCQA/pylint#2811
+
 * Added exception inference for `UnicodeDecodeError`
 
   Close PyCQA/pylint#3639

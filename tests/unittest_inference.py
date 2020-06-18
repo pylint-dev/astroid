@@ -428,7 +428,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             del undefined_attr
         """
         delete = extract_node(code, __name__)
-        self.assertRaises(InferenceError, delete.infer)
+        self.assertRaises(InferenceError, next, delete.infer())
 
     def test_del2(self):
         code = """
