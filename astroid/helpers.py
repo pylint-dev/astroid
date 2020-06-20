@@ -1,4 +1,4 @@
-# Copyright (c) 2015-2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2015-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 
@@ -190,9 +190,9 @@ def _type_check(type1, type2):
         return False
     try:
         return type1 in type2.mro()[:-1]
-    except exceptions.MroError:
+    except exceptions.MroError as e:
         # The MRO is invalid.
-        raise exceptions._NonDeducibleTypeHierarchy
+        raise exceptions._NonDeducibleTypeHierarchy from e
 
 
 def is_subtype(type1, type2):
@@ -254,13 +254,17 @@ def object_len(node, context=None):
         return len(inferred_node.elts)
     if isinstance(inferred_node, nodes.Dict):
         return len(inferred_node.items)
+
+    node_type = object_type(inferred_node, context=context)
+    if not node_type:
+        raise exceptions.InferenceError(node=node)
+
     try:
-        node_type = object_type(inferred_node, context=context)
         len_call = next(node_type.igetattr("__len__", context=context))
-    except exceptions.AttributeInferenceError:
+    except exceptions.AttributeInferenceError as e:
         raise exceptions.AstroidTypeError(
-            "object of type '{}' has no len()".format(len_call.pytype())
-        )
+            "object of type '{}' has no len()".format(node_type.pytype())
+        ) from e
 
     result_of_len = next(len_call.infer_call_result(node, context))
     if (
@@ -268,6 +272,11 @@ def object_len(node, context=None):
         and result_of_len.pytype() == "builtins.int"
     ):
         return result_of_len.value
+    if isinstance(result_of_len, bases.Instance) and result_of_len.is_subtype_of(
+        "builtins.int"
+    ):
+        # Fake a result as we don't know the arguments of the instance call.
+        return 0
     raise exceptions.AstroidTypeError(
         "'{}' object cannot be interpreted as an integer".format(result_of_len)
     )

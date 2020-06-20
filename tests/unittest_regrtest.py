@@ -1,12 +1,13 @@
 # Copyright (c) 2006-2008, 2010-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2007 Marien Zwart <marienz@gentoo.org>
 # Copyright (c) 2013-2014 Google, Inc.
-# Copyright (c) 2014-2016, 2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2014-2016, 2018-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
+# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -306,24 +307,40 @@ def test():
         )
         next(node.infer())
 
-    @require_version(maxver="3.0")
-    def test_reassignment_in_except_handler(self):
-        node = extract_node(
-            """
-        import exceptions
-        try:
-            {}["a"]
-        except KeyError, exceptions.IndexError:
-            pass
-
-        IndexError #@
+    def test_regression_inference_of_self_in_lambda(self):
+        code = """
+        class A:
+            @b(lambda self: __(self))
+            def d(self):
+                pass
         """
-        )
-        self.assertEqual(len(node.inferred()), 1)
+        node = extract_node(code)
+        inferred = next(node.infer())
+        assert isinstance(inferred, Instance)
+        assert inferred.qname() == ".A"
 
 
 class Whatever:
     a = property(lambda x: x, lambda x: x)
+
+
+def test_ancestor_looking_up_redefined_function():
+    code = """
+    class Foo:
+        def _format(self):
+            pass
+
+        def format(self):
+            self.format = self._format
+            self.format()
+    Foo
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    ancestor = next(inferred.ancestors())
+    _, found = ancestor.lookup("format")
+    assert len(found) == 1
+    assert isinstance(found[0], nodes.FunctionDef)
 
 
 if __name__ == "__main__":

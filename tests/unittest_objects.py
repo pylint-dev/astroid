@@ -1,6 +1,7 @@
-# Copyright (c) 2015-2016 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2015-2016, 2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
+# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -95,28 +96,6 @@ class SuperTests(unittest.TestCase):
         second = next(ast_nodes[1].infer())
         self.assertIsInstance(second, bases.Instance)
         self.assertEqual(second.qname(), "%s.super" % bases.BUILTINS)
-
-    @test_utils.require_version(maxver="3.0")
-    def test_super_on_old_style_class(self):
-        # super doesn't work on old style class, but leave
-        # that as an error for pylint. We'll infer Super objects,
-        # but every call will result in a failure at some point.
-        node = builder.extract_node(
-            """
-        class OldStyle:
-            def __init__(self):
-                super(OldStyle, self) #@
-        """
-        )
-        old = next(node.infer())
-        self.assertIsInstance(old, objects.Super)
-        self.assertIsInstance(old.mro_pointer, nodes.ClassDef)
-        self.assertEqual(old.mro_pointer.name, "OldStyle")
-        with self.assertRaises(exceptions.SuperError) as cm:
-            old.super_mro()
-        self.assertEqual(
-            str(cm.exception), "Unable to call super on old-style classes."
-        )
 
     @test_utils.require_version(minver="3.0")
     def test_no_arguments_super(self):

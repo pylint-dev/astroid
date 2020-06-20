@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2019-2020 hippo91 <guillaume.peillex@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -82,6 +82,11 @@ for method_name, function_src in METHODS_TO_BE_INFERRED.items():
     inference_function = functools.partial(infer_numpy_member, function_src)
     astroid.MANAGER.register_transform(
         astroid.Attribute,
+        astroid.inference_tip(inference_function),
+        functools.partial(looks_like_numpy_member, method_name),
+    )
+    astroid.MANAGER.register_transform(
+        astroid.Name,
         astroid.inference_tip(inference_function),
         functools.partial(looks_like_numpy_member, method_name),
     )

@@ -1,7 +1,8 @@
-# Copyright (c) 2015-2016, 2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2015-2016, 2018-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2015 Florian Bruhin <me@the-compiler.org>
 # Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
+# Copyright (c) 2018 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
@@ -186,7 +187,12 @@ class Super(node_classes.NodeNG):
                     yield inferred
                 elif isinstance(inferred, Property):
                     function = inferred.function
-                    yield from function.infer_call_result(caller=self, context=context)
+                    try:
+                        yield from function.infer_call_result(
+                            caller=self, context=context
+                        )
+                    except exceptions.InferenceError:
+                        yield util.Uninferable
                 elif bases._is_property(inferred):
                     # TODO: support other descriptors as well.
                     try:
@@ -291,8 +297,8 @@ class Property(scoped_nodes.FunctionDef):
     def __init__(
         self, function, name=None, doc=None, lineno=None, col_offset=None, parent=None
     ):
-        super().__init__(name, doc, lineno, col_offset, parent)
         self.function = function
+        super().__init__(name, doc, lineno, col_offset, parent)
 
     # pylint: disable=unnecessary-lambda
     special_attributes = util.lazy_descriptor(lambda: objectmodel.PropertyModel())

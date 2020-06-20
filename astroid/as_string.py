@@ -1,15 +1,19 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2009-2011, 2013-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2010 Daniel Harding <dharding@gmail.com>
-# Copyright (c) 2013-2016, 2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2013-2016, 2018-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2013-2014 Google, Inc.
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2016 Jared Garst <jgarst@users.noreply.github.com>
 # Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
-# Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
+# Copyright (c) 2017, 2019 Łukasz Rogalski <rogalski.91@gmail.com>
 # Copyright (c) 2017 rr- <rr-@sakuya.pl>
+# Copyright (c) 2018 Serhiy Storchaka <storchaka@gmail.com>
+# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
 # Copyright (c) 2018 brendanator <brendan.maginnis@gmail.com>
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
+# Copyright (c) 2019 Alex Hall <alex.mojaki@gmail.com>
+# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -79,6 +83,15 @@ class AsStringVisitor:
         return False
 
     ## visit_<node> methods ###########################################
+
+    def visit_await(self, node):
+        return "await %s" % node.value.accept(self)
+
+    def visit_asyncwith(self, node):
+        return "async %s" % self.visit_with(node)
+
+    def visit_asyncfor(self, node):
+        return "async %s" % self.visit_for(node)
 
     def visit_arguments(self, node):
         """return an astroid.Function node as string"""
@@ -180,11 +193,12 @@ class AsStringVisitor:
     def visit_comprehension(self, node):
         """return an astroid.Comprehension node as string"""
         ifs = "".join(" if %s" % n.accept(self) for n in node.ifs)
-        return "for %s in %s%s" % (
+        generated = "for %s in %s%s" % (
             node.target.accept(self),
             node.iter.accept(self),
             ifs,
         )
+        return "%s%s" % ("async " if node.is_async else "", generated)
 
     def visit_const(self, node):
         """return an astroid.Const node as string"""
@@ -248,7 +262,7 @@ class AsStringVisitor:
     def visit_excepthandler(self, node):
         if node.type:
             if node.name:
-                excs = "except %s, %s" % (
+                excs = "except %s as %s" % (
                     node.type.accept(self),
                     node.name.accept(self),
                 )
@@ -299,6 +313,41 @@ class AsStringVisitor:
             "." * (node.level or 0) + node.modname,
             _import_string(node.names),
         )
+
+    def visit_joinedstr(self, node):
+        string = "".join(
+            # Use repr on the string literal parts
+            # to get proper escapes, e.g. \n, \\, \"
+            # But strip the quotes off the ends
+            # (they will always be one character: ' or ")
+            repr(value.value)[1:-1]
+            # Literal braces must be doubled to escape them
+            .replace("{", "{{").replace("}", "}}")
+            # Each value in values is either a string literal (Const)
+            # or a FormattedValue
+            if type(value).__name__ == "Const" else value.accept(self)
+            for value in node.values
+        )
+
+        # Try to find surrounding quotes that don't appear at all in the string.
+        # Because the formatted values inside {} can't contain backslash (\)
+        # using a triple quote is sometimes necessary
+        for quote in ["'", '"', '"""', "'''"]:
+            if quote not in string:
+                break
+
+        return "f" + quote + string + quote
+
+    def visit_formattedvalue(self, node):
+        result = node.value.accept(self)
+        if node.conversion and node.conversion >= 0:
+            # e.g. if node.conversion == 114: result += "!r"
+            result += "!" + chr(node.conversion)
+        if node.format_spec:
+            # The format spec is itself a JoinedString, i.e. an f-string
+            # We strip the f and quotes of the ends
+            result += ":" + node.format_spec.accept(self)[2:-1]
+        return "{%s}" % result
 
     def handle_functiondef(self, node, keyword):
         """return a (possibly async) function definition node as string"""
@@ -401,6 +450,16 @@ class AsStringVisitor:
         """return an astroid.Name node as string"""
         return node.name
 
+    def visit_namedexpr(self, node):
+        """Return an assignment expression node as string"""
+        target = node.target.accept(self)
+        value = node.value.accept(self)
+        return "%s := %s" % (target, value)
+
+    def visit_nonlocal(self, node):
+        """return an astroid.Nonlocal node as string"""
+        return "nonlocal %s" % ", ".join(node.names)
+
     def visit_pass(self, node):
         """return an astroid.Pass node as string"""
         return "pass"
@@ -417,14 +476,11 @@ class AsStringVisitor:
     def visit_raise(self, node):
         """return an astroid.Raise node as string"""
         if node.exc:
-            if node.inst:
-                if node.tback:
-                    return "raise %s, %s, %s" % (
-                        node.exc.accept(self),
-                        node.inst.accept(self),
-                        node.tback.accept(self),
-                    )
-                return "raise %s, %s" % (node.exc.accept(self), node.inst.accept(self))
+            if node.cause:
+                return "raise %s from %s" % (
+                    node.exc.accept(self),
+                    node.cause.accept(self),
+                )
             return "raise %s" % node.exc.accept(self)
         return "raise"
 
@@ -529,6 +585,15 @@ class AsStringVisitor:
 
         return "(%s)" % (expr,)
 
+    def visit_yieldfrom(self, node):
+        """ Return an astroid.YieldFrom node as string. """
+        yi_val = (" " + node.value.accept(self)) if node.value else ""
+        expr = "yield from" + yi_val
+        if node.parent.is_statement:
+            return expr
+
+        return "(%s)" % (expr,)
+
     def visit_starred(self, node):
         """return Starred node as string"""
         return "*" + node.value.accept(self)
@@ -544,103 +609,11 @@ class AsStringVisitor:
     def visit_uninferable(self, node):
         return str(node)
 
+    def visit_property(self, node):
+        return node.function.accept(self)
 
-class AsStringVisitor3(AsStringVisitor):
-    """AsStringVisitor3 overwrites some AsStringVisitor methods"""
-
-    def visit_excepthandler(self, node):
-        if node.type:
-            if node.name:
-                excs = "except %s as %s" % (
-                    node.type.accept(self),
-                    node.name.accept(self),
-                )
-            else:
-                excs = "except %s" % node.type.accept(self)
-        else:
-            excs = "except"
-        return "%s:\n%s" % (excs, self._stmt_list(node.body))
-
-    def visit_nonlocal(self, node):
-        """return an astroid.Nonlocal node as string"""
-        return "nonlocal %s" % ", ".join(node.names)
-
-    def visit_raise(self, node):
-        """return an astroid.Raise node as string"""
-        if node.exc:
-            if node.cause:
-                return "raise %s from %s" % (
-                    node.exc.accept(self),
-                    node.cause.accept(self),
-                )
-            return "raise %s" % node.exc.accept(self)
-        return "raise"
-
-    def visit_yieldfrom(self, node):
-        """ Return an astroid.YieldFrom node as string. """
-        yi_val = (" " + node.value.accept(self)) if node.value else ""
-        expr = "yield from" + yi_val
-        if node.parent.is_statement:
-            return expr
-
-        return "(%s)" % (expr,)
-
-    def visit_await(self, node):
-        return "await %s" % node.value.accept(self)
-
-    def visit_asyncwith(self, node):
-        return "async %s" % self.visit_with(node)
-
-    def visit_asyncfor(self, node):
-        return "async %s" % self.visit_for(node)
-
-    def visit_joinedstr(self, node):
-        string = "".join(
-            # Use repr on the string literal parts
-            # to get proper escapes, e.g. \n, \\, \"
-            # But strip the quotes off the ends
-            # (they will always be one character: ' or ")
-            repr(value.value)[1:-1]
-            # Literal braces must be doubled to escape them
-            .replace("{", "{{").replace("}", "}}")
-            # Each value in values is either a string literal (Const)
-            # or a FormattedValue
-            if type(value).__name__ == "Const" else value.accept(self)
-            for value in node.values
-        )
-
-        # Try to find surrounding quotes that don't appear at all in the string.
-        # Because the formatted values inside {} can't contain backslash (\)
-        # using a triple quote is sometimes necessary
-        for quote in ["'", '"', '"""', "'''"]:
-            if quote not in string:
-                break
-
-        return "f" + quote + string + quote
-
-    def visit_formattedvalue(self, node):
-        result = node.value.accept(self)
-        if node.conversion and node.conversion >= 0:
-            # e.g. if node.conversion == 114: result += "!r"
-            result += "!" + chr(node.conversion)
-        if node.format_spec:
-            # The format spec is itself a JoinedString, i.e. an f-string
-            # We strip the f and quotes of the ends
-            result += ":" + node.format_spec.accept(self)[2:-1]
-        return "{%s}" % result
-
-    def visit_comprehension(self, node):
-        """return an astroid.Comprehension node as string"""
-        return "%s%s" % (
-            "async " if node.is_async else "",
-            super(AsStringVisitor3, self).visit_comprehension(node),
-        )
-
-    def visit_namedexpr(self, node):
-        """Return an assignment expression node as string"""
-        target = node.target.accept(self)
-        value = node.value.accept(self)
-        return "%s := %s" % (target, value)
+    def visit_evaluatedobject(self, node):
+        return node.original.accept(self)
 
 
 def _import_string(names):
@@ -653,8 +626,6 @@ def _import_string(names):
             _names.append(name)
     return ", ".join(_names)
 
-
-AsStringVisitor = AsStringVisitor3
 
 # This sets the default indent to 4 spaces.
 to_code = AsStringVisitor("    ")

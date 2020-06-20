@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2016-2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2016-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
 # Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
+# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
@@ -58,7 +59,7 @@ class InstanceModelTest(unittest.TestCase):
         self.assertIsInstance(attr, astroid.Const)
         self.assertEqual(attr.value, 42)
 
-    @unittest.expectedFailure
+    @pytest.mark.xfail(reason="Instance lookup cannot override object model")
     def test_instance_local_attributes_overrides_object_model(self):
         # The instance lookup needs to be changed in order for this to work.
         ast_node = builder.extract_node(
@@ -143,30 +144,6 @@ class ClassModelTest(unittest.TestCase):
         inferred = next(ast_node.infer())
         self.assertIsInstance(inferred, astroid.Const)
         self.assertEqual(inferred.value, "first")
-
-    @test_utils.require_version(maxver="3.0")
-    def test__mro__old_style(self):
-        ast_node = builder.extract_node(
-            """
-        class A:
-            pass
-        A.__mro__
-        """
-        )
-        with self.assertRaises(exceptions.InferenceError):
-            next(ast_node.infer())
-
-    @test_utils.require_version(maxver="3.0")
-    def test__subclasses__old_style(self):
-        ast_node = builder.extract_node(
-            """
-        class A:
-            pass
-        A.__subclasses__
-        """
-        )
-        with self.assertRaises(exceptions.InferenceError):
-            next(ast_node.infer())
 
     def test_class_model_correct_mro_subclasses_proxied(self):
         ast_nodes = builder.extract_node(
@@ -354,7 +331,7 @@ class FunctionModelTest(unittest.TestCase):
         inferred = next(node.infer())
         assert inferred is util.Uninferable
 
-    @unittest.expectedFailure
+    @pytest.mark.xfail(reason="Descriptors cannot infer what self is")
     def test_descriptor_not_inferrring_self(self):
         # We can't infer __get__(X, Y)() when the bounded function
         # uses self, because of the tree's parent not being propagating good enough.
@@ -506,37 +483,6 @@ class FunctionModelTest(unittest.TestCase):
         self.assertIsInstance(kwdefaults, astroid.Dict)
         # self.assertEqual(kwdefaults.getitem('f').value, 'lala')
 
-    @test_utils.require_version(maxver="3.0")
-    def test_function_model_for_python2(self):
-        ast_nodes = builder.extract_node(
-            """
-        def test(a=1):
-          "a"
-
-        test.func_name #@
-        test.func_doc #@
-        test.func_dict #@
-        test.func_globals #@
-        test.func_defaults #@
-        test.func_code #@
-        test.func_closure #@
-        """
-        )
-        name = next(ast_nodes[0].infer())
-        self.assertIsInstance(name, astroid.Const)
-        self.assertEqual(name.value, "test")
-        doc = next(ast_nodes[1].infer())
-        self.assertIsInstance(doc, astroid.Const)
-        self.assertEqual(doc.value, "a")
-        pydict = next(ast_nodes[2].infer())
-        self.assertIsInstance(pydict, astroid.Dict)
-        pyglobals = next(ast_nodes[3].infer())
-        self.assertIsInstance(pyglobals, astroid.Dict)
-        defaults = next(ast_nodes[4].infer())
-        self.assertIsInstance(defaults, astroid.Tuple)
-        for node in ast_nodes[5:]:
-            self.assertIs(next(node.infer()), astroid.Uninferable)
-
     @test_utils.require_version(minver="3.8")
     def test_annotation_positional_only(self):
         ast_node = builder.extract_node(
@@ -639,6 +585,17 @@ class ExceptionModelTest(unittest.TestCase):
             inferred = next(node.infer())
             assert isinstance(inferred, astroid.Const)
             assert inferred.value == value
+
+    def test_unicodedecodeerror(self):
+        code = """
+        try:
+            raise UnicodeDecodeError("utf-8", "blob", 0, 1, "reason")
+        except UnicodeDecodeError as error:
+            error.object[:1] #@
+        """
+        node = builder.extract_node(code)
+        inferred = next(node.infer())
+        assert isinstance(inferred, astroid.Const)
 
     def test_import_error(self):
         ast_nodes = builder.extract_node(

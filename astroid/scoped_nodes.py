@@ -2,7 +2,7 @@
 # Copyright (c) 2006-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2010 Daniel Harding <dharding@gmail.com>
 # Copyright (c) 2011, 2013-2015 Google, Inc.
-# Copyright (c) 2013-2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2013-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2013 Phil Schaf <flying-sheep@web.de>
 # Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
 # Copyright (c) 2015-2016 Florian Bruhin <me@the-compiler.org>
@@ -14,9 +14,12 @@
 # Copyright (c) 2017-2018 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
 # Copyright (c) 2017 David Euresti <david@dropbox.com>
-# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
+# Copyright (c) 2018-2019 Nick Drozd <nicholasdrozd@gmail.com>
+# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
 # Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
 # Copyright (c) 2018 HoverHell <hoverhell@gmail.com>
+# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
+# Copyright (c) 2019 Peter de Blanc <peter@standard.ai>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -50,6 +53,9 @@ BUILTINS = builtins.__name__
 ITER_METHODS = ("__iter__", "__getitem__")
 EXCEPTION_BASE_CLASSES = frozenset({"Exception", "BaseException"})
 objects = util.lazy_import("objects")
+BUILTIN_DESCRIPTORS = frozenset(
+    {"classmethod", "staticmethod", "builtins.classmethod", "builtins.staticmethod"}
+)
 
 
 def _c3_merge(sequences, cls, context):
@@ -524,6 +530,11 @@ class Module(LocalsDictNodeNG):
         return "Module"
 
     def getattr(self, name, context=None, ignore_locals=False):
+        if not name:
+            raise exceptions.AttributeInferenceError(
+                target=self, attribute=name, context=context
+            )
+
         result = []
         name_in_locals = name in self.locals
 
@@ -734,7 +745,7 @@ class Module(LocalsDictNodeNG):
         """
         return [name for name in self.keys() if not name.startswith("_")]
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -803,7 +814,7 @@ class GeneratorExp(ComprehensionScope):
         :type: dict(str, NodeNG)
         """
 
-        super(GeneratorExp, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def postinit(self, elt=None, generators=None):
         """Do some setup after initialisation.
@@ -820,7 +831,7 @@ class GeneratorExp(ComprehensionScope):
         else:
             self.generators = generators
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -879,7 +890,7 @@ class DictComp(ComprehensionScope):
         :type: dict(str, NodeNG)
         """
 
-        super(DictComp, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def postinit(self, key=None, value=None, generators=None):
         """Do some setup after initialisation.
@@ -900,7 +911,7 @@ class DictComp(ComprehensionScope):
         else:
             self.generators = generators
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -955,7 +966,7 @@ class SetComp(ComprehensionScope):
         :type: dict(str, NodeNG)
         """
 
-        super(SetComp, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def postinit(self, elt=None, generators=None):
         """Do some setup after initialisation.
@@ -972,7 +983,7 @@ class SetComp(ComprehensionScope):
         else:
             self.generators = generators
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -1019,7 +1030,7 @@ class _ListComp(node_classes.NodeNG):
         self.elt = elt
         self.generators = generators
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -1051,7 +1062,7 @@ class ListComp(_ListComp, ComprehensionScope):
         :type: dict(str, NodeNG)
         """
 
-        super(ListComp, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
 
 def _infer_decorator_callchain(node):
@@ -1073,6 +1084,21 @@ def _infer_decorator_callchain(node):
             return "classmethod"
         if result.is_subtype_of("%s.staticmethod" % BUILTINS):
             return "staticmethod"
+    if isinstance(result, FunctionDef):
+        if not result.decorators:
+            return None
+        # Determine if this function is decorated with one of the builtin descriptors we want.
+        for decorator in result.decorators.nodes:
+            if isinstance(decorator, node_classes.Name):
+                if decorator.name in BUILTIN_DESCRIPTORS:
+                    return decorator.name
+            if (
+                isinstance(decorator, node_classes.Attribute)
+                and isinstance(decorator.expr, node_classes.Name)
+                and decorator.expr.name == BUILTINS
+                and decorator.attrname in BUILTIN_DESCRIPTORS
+            ):
+                return decorator.attrname
     return None
 
 
@@ -1136,7 +1162,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
         :type: list(NodeNG)
         """
 
-        super(Lambda, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
 
     def postinit(self, args, body):
         """Do some setup after initialisation.
@@ -1243,7 +1269,7 @@ class Lambda(mixins.FilterStmtsMixin, LocalsDictNodeNG):
             frame = self
         return frame._scope_lookup(node, name, offset)
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -1341,7 +1367,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         """
 
         self.instance_attrs = {}
-        super(FunctionDef, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
         if parent:
             frame = parent.frame()
             frame.set_local(name, self)
@@ -1423,17 +1449,17 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         return decorators
 
     @decorators_mod.cachedproperty
-    def type(self):  # pylint: disable=invalid-overridden-method
+    def type(
+        self
+    ):  # pylint: disable=invalid-overridden-method,too-many-return-statements
         """The function type for this node.
 
         Possible values are: method, function, staticmethod, classmethod.
 
         :type: str
         """
-        builtin_descriptors = {"classmethod", "staticmethod"}
-
         for decorator in self.extra_decorators:
-            if decorator.func.name in builtin_descriptors:
+            if decorator.func.name in BUILTIN_DESCRIPTORS:
                 return decorator.func.name
 
         frame = self.parent.frame()
@@ -1451,8 +1477,15 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
 
         for node in self.decorators.nodes:
             if isinstance(node, node_classes.Name):
-                if node.name in builtin_descriptors:
+                if node.name in BUILTIN_DESCRIPTORS:
                     return node.name
+            if (
+                isinstance(node, node_classes.Attribute)
+                and isinstance(node.expr, node_classes.Name)
+                and node.expr.name == BUILTINS
+                and node.attrname in BUILTIN_DESCRIPTORS
+            ):
+                return node.attrname
 
             if isinstance(node, node_classes.Call):
                 # Handle the following case:
@@ -1526,10 +1559,18 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         """this method doesn't look in the instance_attrs dictionary since it's
         done by an Instance proxy at inference time.
         """
+        if not name:
+            raise exceptions.AttributeInferenceError(
+                target=self, attribute=name, context=context
+            )
+
+        found_attrs = []
         if name in self.instance_attrs:
-            return self.instance_attrs[name]
+            found_attrs = self.instance_attrs[name]
         if name in self.special_attributes:
-            return [self.special_attributes.lookup(name)]
+            found_attrs.append(self.special_attributes.lookup(name))
+        if found_attrs:
+            return found_attrs
         raise exceptions.AttributeInferenceError(target=self, attribute=name)
 
     def igetattr(self, name, context=None):
@@ -1620,7 +1661,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
         :returns: True is this is a generator function, False otherwise.
         :rtype: bool
         """
-        return next(self._get_yield_nodes_skip_lambdas(), False)
+        return bool(next(self._get_yield_nodes_skip_lambdas(), False))
 
     def infer_call_result(self, caller=None, context=None):
         """Infer what the function returns when called.
@@ -1682,7 +1723,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                 except exceptions.InferenceError:
                     yield util.Uninferable
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.
@@ -1933,7 +1974,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :type doc: str or None
         """
 
-        super(ClassDef, self).__init__(lineno, col_offset, parent)
+        super().__init__(lineno, col_offset, parent)
         if parent is not None:
             parent.frame().set_local(name, self)
 
@@ -2092,7 +2133,14 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         # Get the bases of the class.
         class_bases = next(caller.args[1].infer(context))
         if isinstance(class_bases, (node_classes.Tuple, node_classes.List)):
-            result.bases = class_bases.itered()
+            bases = []
+            for base in class_bases.itered():
+                inferred = next(base.infer(context=context))
+                if inferred:
+                    bases.append(
+                        node_classes.EvaluatedObject(original=base, value=inferred)
+                    )
+            result.bases = bases
         else:
             # There is currently no AST node that can represent an 'unknown'
             # node (Uninferable is not an AST node), therefore we simply return Uninferable here
@@ -2381,6 +2429,11 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         :raises AttributeInferenceError: If the attribute cannot be inferred.
         """
+        if not name:
+            raise exceptions.AttributeInferenceError(
+                target=self, attribute=name, context=context
+            )
+
         values = self.locals.get(name, [])
         if name in self.special_attributes and class_context and not values:
             result = [self.special_attributes.lookup(name)]
@@ -2417,7 +2470,8 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """Search the given name in the implicit and the explicit metaclass."""
         attrs = set()
         implicit_meta = self.implicit_metaclass()
-        metaclass = self.metaclass()
+        context = contextmod.copy_context(context)
+        metaclass = self.metaclass(context=context)
         for cls in {implicit_meta, metaclass}:
             if cls and cls != self and isinstance(cls, ClassDef):
                 cls_attributes = self._get_attribute_from_metaclass(cls, name, context)
@@ -2467,8 +2521,20 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         metaclass = self.declared_metaclass(context=context)
         try:
-            attr = self.getattr(name, context, class_context=class_context)[0]
-            for inferred in bases._infer_stmts([attr], context, frame=self):
+            attributes = self.getattr(name, context, class_context=class_context)
+            # If we have more than one attribute, make sure that those starting from
+            # the second one are from the same scope. This is to account for modifications
+            # to the attribute happening *after* the attribute's definition (e.g. AugAssigns on lists)
+            if len(attributes) > 1:
+                first_attr, attributes = attributes[0], attributes[1:]
+                first_scope = first_attr.scope()
+                attributes = [first_attr] + [
+                    attr
+                    for attr in attributes
+                    if attr.parent and attr.parent.scope() == first_scope
+                ]
+
+            for inferred in bases._infer_stmts(attributes, context, frame=self):
                 # yield Uninferable object instead of descriptors when necessary
                 if not isinstance(inferred, node_classes.Const) and isinstance(
                     inferred, bases.Instance
@@ -2768,7 +2834,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         if not all(slot is not None for slot in slots):
             return None
 
-        return sorted(slots, key=lambda item: item.value)
+        return sorted(set(slots), key=lambda item: item.value)
 
     def _inferred_bases(self, context=None):
         # Similar with .ancestors, but the difference is when one base is inferred,
@@ -2837,7 +2903,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         """
         return self._compute_mro(context=context)
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Determine the boolean value of this node.
 
         :returns: The boolean value of this node.

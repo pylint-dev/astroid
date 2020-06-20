@@ -2,7 +2,7 @@
 # Copyright (c) 2006-2011, 2013-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2012 FELD Boris <lothiraldan@gmail.com>
 # Copyright (c) 2013-2014 Google, Inc.
-# Copyright (c) 2014-2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2015 Dmitry Pribysh <dmand@yandex.ru>
@@ -10,10 +10,13 @@
 # Copyright (c) 2017 Michał Masłowski <m.maslowski@clearcode.cc>
 # Copyright (c) 2017 Calen Pennington <cale@edx.org>
 # Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
+# Copyright (c) 2018-2019 Nick Drozd <nicholasdrozd@gmail.com>
+# Copyright (c) 2018 Daniel Martin <daniel.martin@crowdstrike.com>
+# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2018 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2018 HoverHell <hoverhell@gmail.com>
+# Copyright (c) 2020 Leandro T. C. Melo <ltcmelo@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -25,6 +28,7 @@ import functools
 import itertools
 import operator
 
+import wrapt
 from astroid import bases
 from astroid import context as contextmod
 from astroid import exceptions
@@ -307,6 +311,8 @@ def infer_attribute(self, context=None):
                 except exceptions._NonDeducibleTypeHierarchy:
                     # Can't determine anything useful.
                     pass
+        elif not context:
+            context = contextmod.InferenceContext()
 
         try:
             context.boundnode = owner
@@ -348,7 +354,6 @@ nodes.Global._infer = infer_global
 _SUBSCRIPT_SENTINEL = object()
 
 
-@decorators.raise_if_nothing_inferred
 def infer_subscript(self, context=None):
     """Inference for subscripts
 
@@ -405,8 +410,10 @@ def infer_subscript(self, context=None):
     return None
 
 
-nodes.Subscript._infer = decorators.path_wrapper(infer_subscript)
-nodes.Subscript.infer_lhs = infer_subscript
+nodes.Subscript._infer = decorators.raise_if_nothing_inferred(
+    decorators.path_wrapper(infer_subscript)
+)
+nodes.Subscript.infer_lhs = decorators.raise_if_nothing_inferred(infer_subscript)
 
 
 @decorators.raise_if_nothing_inferred
@@ -837,9 +844,8 @@ def infer_assign(self, context=None):
     """infer a AssignName/AssignAttr: need to inspect the RHS part of the
     assign node
     """
-    stmt = self.statement()
-    if isinstance(stmt, nodes.AugAssign):
-        return stmt.infer(context)
+    if isinstance(self.parent, nodes.AugAssign):
+        return self.parent.infer(context)
 
     stmts = list(self.assigned_stmts(context=context))
     return bases._infer_stmts(stmts, context)
@@ -947,10 +953,30 @@ def infer_ifexp(self, context=None):
 nodes.IfExp._infer = infer_ifexp
 
 
+# pylint: disable=dangerous-default-value
+@wrapt.decorator
+def _cached_generator(func, instance, args, kwargs, _cache={}):
+    node = args[0]
+    try:
+        return iter(_cache[func, id(node)])
+    except KeyError:
+        result = func(*args, **kwargs)
+        # Need to keep an iterator around
+        original, copy = itertools.tee(result)
+        _cache[func, id(node)] = list(copy)
+        return original
+
+
+# When inferring a property, we instantiate a new `objects.Property` object,
+# which in turn, because it inherits from `FunctionDef`, sets itself in the locals
+# of the wrapping frame. This means that everytime we infer a property, the locals
+# are mutated with a new instance of the property. This is why we cache the result
+# of the function's inference.
+@_cached_generator
 def infer_functiondef(self, context=None):
     if not self.decorators or not bases._is_property(self):
         yield self
-        return
+        return dict(node=self, context=context)
 
     prop_func = objects.Property(
         function=self,
@@ -962,6 +988,7 @@ def infer_functiondef(self, context=None):
     )
     prop_func.postinit(body=[], args=self.args)
     yield prop_func
+    return dict(node=self, context=context)
 
 
 nodes.FunctionDef._infer = infer_functiondef

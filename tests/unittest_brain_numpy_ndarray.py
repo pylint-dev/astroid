@@ -1,7 +1,8 @@
 # -*- encoding=utf-8 -*-
-# Copyright (c) 2017-2018 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2017 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2017-2020 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2017-2018 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
+# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -117,6 +118,18 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
         )
         return node.infer()
 
+    def _inferred_ndarray_attribute(self, attr_name):
+        node = builder.extract_node(
+            """
+        import numpy as np
+        test_array = np.ndarray((2, 2))
+        test_array.{:s}
+        """.format(
+                attr_name
+            )
+        )
+        return node.infer()
+
     def test_numpy_function_calls_inferred_as_ndarray(self):
         """
         Test that some calls to numpy functions are inferred as numpy.ndarray
@@ -133,6 +146,25 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
                     inferred_values[-1].pytype() in licit_array_types,
                     msg="Illicit type for {:s} ({})".format(
                         func_, inferred_values[-1].pytype()
+                    ),
+                )
+
+    def test_numpy_ndarray_attribute_inferred_as_ndarray(self):
+        """
+        Test that some numpy ndarray attributes are inferred as numpy.ndarray
+        """
+        licit_array_types = ".ndarray"
+        for attr_ in ("real", "imag"):
+            with self.subTest(typ=attr_):
+                inferred_values = list(self._inferred_ndarray_attribute(attr_))
+                self.assertTrue(
+                    len(inferred_values) == 1,
+                    msg="Too much inferred value for {:s}".format(attr_),
+                )
+                self.assertTrue(
+                    inferred_values[-1].pytype() in licit_array_types,
+                    msg="Illicit type for {:s} ({})".format(
+                        attr_, inferred_values[-1].pytype()
                     ),
                 )
 

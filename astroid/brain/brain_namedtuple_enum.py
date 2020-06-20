@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2012-2015 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2013-2014 Google, Inc.
-# Copyright (c) 2014-2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2015 Dmitry Pribysh <dmand@yandex.ru>
@@ -11,6 +11,8 @@
 # Copyright (c) 2016 Mateusz Bysiek <mb@mbdev.pl>
 # Copyright (c) 2017 Hugo <hugovk@users.noreply.github.com>
 # Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
+# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
+# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -121,6 +123,8 @@ def infer_func_form(node, base_type, context=None, enum=False):
     except (AttributeError, exceptions.InferenceError):
         raise UseInferenceDefault()
 
+    attributes = [attr for attr in attributes if " " not in attr]
+
     # If we can't infer the name of the class, don't crash, up to this point
     # we know it is a namedtuple anyway.
     name = name or "Uninferable"
@@ -167,7 +171,7 @@ def infer_named_tuple(node, context=None):
     class_node, name, attributes = infer_func_form(
         node, tuple_base_name, context=context
     )
-    call_site = arguments.CallSite.from_call(node)
+    call_site = arguments.CallSite.from_call(node, context=context)
     func = next(extract_node("import collections; collections.namedtuple").infer())
     try:
         rename = next(call_site.infer_argument(func, "rename", context)).bool_value()
@@ -317,6 +321,8 @@ def infer_enum_class(node):
                     targets = stmt.targets
             elif isinstance(stmt, nodes.AnnAssign):
                 targets = [stmt.target]
+            else:
+                continue
 
             inferred_return_value = None
             if isinstance(stmt, nodes.Assign):

@@ -1,12 +1,17 @@
+# -*- coding: utf-8 -*-
 # Copyright (c) 2006, 2009-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2013 AndroWiiid <androwiiid@gmail.com>
-# Copyright (c) 2014-2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2014-2019 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2014 Google, Inc.
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2017 Chris Philip <chrisp533@gmail.com>
 # Copyright (c) 2017 Hugo <hugovk@users.noreply.github.com>
 # Copyright (c) 2017 ioanatia <ioanatia@users.noreply.github.com>
+# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
+# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
+# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
+# Copyright (c) 2020 Anubhav <35621759+anubh-v@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -66,6 +71,17 @@ class AstroidManagerTest(
         self.assertRaises(
             exceptions.AstroidBuildingError, self.manager.ast_from_file, "unhandledName"
         )
+
+    def test_ast_from_string(self):
+        filepath = unittest.__file__
+        dirname = os.path.dirname(filepath)
+        modname = os.path.basename(dirname)
+        with open(filepath, "r") as file:
+            data = file.read()
+            ast = self.manager.ast_from_string(data, modname, filepath)
+            self.assertEqual(ast.name, "unittest")
+            self.assertEqual(ast.file, filepath)
+            self.assertIn("unittest", self.manager.astroid_cache)
 
     def test_do_not_expose_main(self):
         obj = self.manager.ast_from_module_name("__main__")

@@ -1,5 +1,6 @@
-# Copyright (c) 2015-2016, 2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2015-2016, 2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
+# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -191,21 +192,6 @@ class TestHelpers(unittest.TestCase):
         self.assertTrue(helpers.is_subtype(cls_c, cls_a))
         self.assertFalse(helpers.is_subtype(cls_a, cls_b))
         self.assertFalse(helpers.is_subtype(cls_a, cls_b))
-
-    @test_utils.require_version(maxver="3.0")
-    def test_is_subtype_supertype_old_style_classes(self):
-        cls_a, cls_b = builder.extract_node(
-            """
-        class A: #@
-            pass
-        class B(A): #@
-            pass
-        """
-        )
-        self.assertFalse(helpers.is_subtype(cls_a, cls_b))
-        self.assertFalse(helpers.is_subtype(cls_b, cls_a))
-        self.assertFalse(helpers.is_supertype(cls_a, cls_b))
-        self.assertFalse(helpers.is_supertype(cls_b, cls_a))
 
     def test_is_subtype_supertype_mro_error(self):
         cls_e, cls_f = builder.extract_node(

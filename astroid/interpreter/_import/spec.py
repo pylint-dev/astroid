@@ -5,6 +5,8 @@
 # Copyright (c) 2017 ioanatia <ioanatia@users.noreply.github.com>
 # Copyright (c) 2017 Calen Pennington <cale@edx.org>
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
+# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
+# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 
 import abc
 import collections
@@ -182,7 +184,7 @@ class ZipFinder(Finder):
     """Finder that knows how to find a module inside zip files."""
 
     def __init__(self, path):
-        super(ZipFinder, self).__init__(path)
+        super().__init__(path)
         self._zipimporters = _precache_zipimporters(path)
 
     def find_module(self, modname, module_parts, processed, submodule_path):

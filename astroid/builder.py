@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2006-2011, 2013-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2013 Phil Schaf <flying-sheep@web.de>
-# Copyright (c) 2014-2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2014-2019 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2014-2015 Google, Inc.
 # Copyright (c) 2014 Alexander Presnyakov <flagist0@gmail.com>
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
@@ -22,7 +22,7 @@ import os
 import textwrap
 from tokenize import detect_encoding
 
-from astroid._ast import _parse
+from astroid._ast import get_parser_module
 from astroid import bases
 from astroid import exceptions
 from astroid import manager
@@ -42,7 +42,7 @@ _TRANSIENT_FUNCTION = "__"
 # The comment used to select a statement to be extracted
 # when calling extract_node.
 _STATEMENT_SELECTOR = "#@"
-
+MISPLACED_TYPE_ANNOTATION_ERROR = "misplaced type annotation"
 MANAGER = manager.AstroidManager()
 
 
@@ -77,7 +77,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
 
     # pylint: disable=redefined-outer-name
     def __init__(self, manager=None, apply_transforms=True):
-        super(AstroidBuilder, self).__init__()
+        super().__init__()
         self._manager = manager or MANAGER
         self._apply_transforms = apply_transforms
 
@@ -165,7 +165,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
     def _data_build(self, data, modname, path):
         """Build tree node from data and add some informations"""
         try:
-            node = _parse_string(data)
+            node, parser_module = _parse_string(data, type_comments=True)
         except (TypeError, ValueError, SyntaxError) as exc:
             raise exceptions.AstroidSyntaxError(
                 "Parsing Python code failed:\n{error}",
@@ -174,6 +174,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 path=path,
                 error=exc,
             ) from exc
+
         if path is not None:
             node_file = os.path.abspath(path)
         else:
@@ -186,7 +187,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
                 path is not None
                 and os.path.splitext(os.path.basename(path))[0] == "__init__"
             )
-        builder = rebuilder.TreeRebuilder(self._manager)
+        builder = rebuilder.TreeRebuilder(self._manager, parser_module)
         module = builder.visit_module(node, modname, node_file, package)
         module._import_from_nodes = builder._import_from_nodes
         module._delayed_assattr = builder._delayed_assattr
@@ -438,17 +439,17 @@ def extract_node(code, module_name=""):
     return extracted
 
 
-MISPLACED_TYPE_ANNOTATION_ERROR = "misplaced type annotation"
-
-
 def _parse_string(data, type_comments=True):
+    parser_module = get_parser_module(type_comments=type_comments)
     try:
-        node = _parse(data + "\n", type_comments=type_comments)
+        parsed = parser_module.parse(data + "\n", type_comments=type_comments)
     except SyntaxError as exc:
         # If the type annotations are misplaced for some reason, we do not want
         # to fail the entire parsing of the file, so we need to retry the parsing without
         # type comment support.
         if exc.args[0] != MISPLACED_TYPE_ANNOTATION_ERROR or not type_comments:
             raise
-        node = _parse(data + "\n", type_comments=False)
-    return node
+
+        parser_module = get_parser_module(type_comments=False)
+        parsed = parser_module.parse(data + "\n", type_comments=False)
+    return parsed, parser_module

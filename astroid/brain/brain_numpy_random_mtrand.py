@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2019 hippo91 <guillaume.peillex@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -40,7 +40,7 @@ def numpy_random_mtrand_transform():
     def poisson(lam=1.0, size=None): return uninferable
     def power(a, size=None): return uninferable
     def rand(*args): return uninferable
-    def randint(low, high=None, size=None, dtype='l'): 
+    def randint(low, high=None, size=None, dtype='l'):
         import numpy
         return numpy.ndarray((1,1))
     def randn(*args): return uninferable

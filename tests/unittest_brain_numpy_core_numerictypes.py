@@ -1,7 +1,8 @@
 # -*- encoding=utf-8 -*-
-# Copyright (c) 2017-2018 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2017 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2017-2020 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2017-2018 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
+# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -313,6 +314,34 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
                 for attr in unary_ops:
                     with self.subTest(attr=attr):
                         self.assertNotEqual(len(inferred.getattr(attr)), 0)
+
+    def test_datetime_astype_return(self):
+        """
+        Test that the return of astype method of the datetime object
+        is inferred as a ndarray.
+
+        PyCQA/pylint#3332
+        """
+        node = builder.extract_node(
+            """
+        import numpy as np
+        import datetime
+        test_array = np.datetime64(1, 'us')
+        test_array.astype(datetime.datetime)
+        """
+        )
+        licit_array_types = ".ndarray"
+        inferred_values = list(node.infer())
+        self.assertTrue(
+            len(inferred_values) == 1,
+            msg="Too much inferred value for {:s}".format("datetime64.astype"),
+        )
+        self.assertTrue(
+            inferred_values[-1].pytype() in licit_array_types,
+            msg="Illicit type for {:s} ({})".format(
+                "datetime64.astype", inferred_values[-1].pytype()
+            ),
+        )
 
 
 if __name__ == "__main__":

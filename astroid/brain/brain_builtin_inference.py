@@ -1,8 +1,14 @@
-# Copyright (c) 2014-2018 Claudiu Popa <pcmanticore@gmail.com>
+# -*- coding: utf-8 -*-
+# Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2014-2015 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2015 Rene Zhang <rz99@cornell.edu>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
+# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
+# Copyright (c) 2019 Stanislav Levin <slev@altlinux.org>
+# Copyright (c) 2019 David Liu <david@cs.toronto.edu>
+# Copyright (c) 2019 Bryce Guinta <bryce.guinta@protonmail.com>
+# Copyright (c) 2019 Frédéric Chapoton <fchapoton2@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -177,9 +183,14 @@ def _container_generic_transform(arg, context, klass, iterables, build_elts):
             elts = [elt.value for elt in arg.elts]
         else:
             # TODO: Does not handle deduplication for sets.
-            elts = filter(
-                None, map(partial(helpers.safe_infer, context=context), arg.elts)
-            )
+            elts = []
+            for element in arg.elts:
+                inferred = helpers.safe_infer(element, context=context)
+                if inferred:
+                    evaluated_object = nodes.EvaluatedObject(
+                        original=element, value=inferred
+                    )
+                    elts.append(evaluated_object)
     elif isinstance(arg, nodes.Dict):
         # Dicts need to have consts as strings already.
         if not all(isinstance(elt[0], nodes.Const) for elt in arg.items):
@@ -293,7 +304,7 @@ def infer_dict(node, context=None):
 
     If a case can't be inferred, we'll fallback to default inference.
     """
-    call = arguments.CallSite.from_call(node)
+    call = arguments.CallSite.from_call(node, context=context)
     if call.has_invalid_arguments() or call.has_invalid_keywords():
         raise UseInferenceDefault
 
@@ -527,7 +538,7 @@ def infer_bool(node, context=None):
     if inferred is util.Uninferable:
         return util.Uninferable
 
-    bool_value = inferred.bool_value()
+    bool_value = inferred.bool_value(context=context)
     if bool_value is util.Uninferable:
         return util.Uninferable
     return nodes.Const(bool_value)
@@ -597,7 +608,7 @@ def infer_issubclass(callnode, context=None):
     :rtype nodes.Const: Boolean Const value of the `issubclass` call
     :raises UseInferenceDefault: If the node cannot be inferred
     """
-    call = arguments.CallSite.from_call(callnode)
+    call = arguments.CallSite.from_call(callnode, context=context)
     if call.keyword_arguments:
         # issubclass doesn't support keyword arguments
         raise UseInferenceDefault("TypeError: issubclass() takes no keyword arguments")
@@ -644,7 +655,7 @@ def infer_isinstance(callnode, context=None):
 
     :raises UseInferenceDefault: If the node cannot be inferred
     """
-    call = arguments.CallSite.from_call(callnode)
+    call = arguments.CallSite.from_call(callnode, context=context)
     if call.keyword_arguments:
         # isinstance doesn't support keyword arguments
         raise UseInferenceDefault("TypeError: isinstance() takes no keyword arguments")
@@ -701,7 +712,7 @@ def infer_len(node, context=None):
     :param context.InferenceContext: node context
     :rtype nodes.Const: a Const node with the inferred length, if possible
     """
-    call = arguments.CallSite.from_call(node)
+    call = arguments.CallSite.from_call(node, context=context)
     if call.keyword_arguments:
         raise UseInferenceDefault("TypeError: len() must take no keyword arguments")
     if len(call.positional_arguments) != 1:
@@ -723,7 +734,7 @@ def infer_str(node, context=None):
     :param context.InferenceContext: node context
     :rtype nodes.Const: a Const containing an empty string
     """
-    call = arguments.CallSite.from_call(node)
+    call = arguments.CallSite.from_call(node, context=context)
     if call.keyword_arguments:
         raise UseInferenceDefault("TypeError: str() must take no keyword arguments")
     try:
@@ -739,7 +750,7 @@ def infer_int(node, context=None):
     :param context.InferenceContext: node context
     :rtype nodes.Const: a Const containing the integer value of the int() call
     """
-    call = arguments.CallSite.from_call(node)
+    call = arguments.CallSite.from_call(node, context=context)
     if call.keyword_arguments:
         raise UseInferenceDefault("TypeError: int() must take no keyword arguments")
 
@@ -782,7 +793,7 @@ def infer_dict_fromkeys(node, context=None):
         new_node.postinit(elements)
         return new_node
 
-    call = arguments.CallSite.from_call(node)
+    call = arguments.CallSite.from_call(node, context=context)
     if call.keyword_arguments:
         raise UseInferenceDefault("TypeError: int() must take no keyword arguments")
     if len(call.positional_arguments) not in {1, 2}:

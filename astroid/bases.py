@@ -1,15 +1,19 @@
+# -*- coding: utf-8 -*-
 # Copyright (c) 2009-2011, 2013-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2012 FELD Boris <lothiraldan@gmail.com>
-# Copyright (c) 2014-2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2014 Google, Inc.
 # Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2015 Florian Bruhin <me@the-compiler.org>
 # Copyright (c) 2016-2017 Derek Gustafson <degustaf@gmail.com>
 # Copyright (c) 2017 Calen Pennington <calen.pennington@gmail.com>
+# Copyright (c) 2018-2019 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2018 Daniel Colascione <dancol@dancol.org>
+# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -288,7 +292,7 @@ class Instance(BaseInstance):
     def display_type(self):
         return "Instance of"
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         """Infer the truth value for an Instance
 
         The truth value of an instance is determined by these conditions:
@@ -301,7 +305,7 @@ class Instance(BaseInstance):
              nonzero. If a class defines neither __len__() nor __bool__(),
              all its instances are considered true.
         """
-        context = contextmod.InferenceContext()
+        context = context or contextmod.InferenceContext()
         context.callcontext = contextmod.CallContext(args=[])
         context.boundnode = self
 
@@ -376,7 +380,7 @@ class UnboundMethod(Proxy):
             return (Instance(x) if x is not util.Uninferable else x for x in infer)
         return self._proxied.infer_call_result(caller, context)
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         return True
 
 
@@ -391,6 +395,9 @@ class BoundMethod(UnboundMethod):
         self.bound = bound
 
     def implicit_parameters(self):
+        if self.name == "__new__":
+            # __new__ acts as a classmethod but the class argument is not implicit.
+            return 0
         return 1
 
     def is_bound(self):
@@ -479,9 +486,9 @@ class BoundMethod(UnboundMethod):
             if new_cls:
                 return iter((new_cls,))
 
-        return super(BoundMethod, self).infer_call_result(caller, context)
+        return super().infer_call_result(caller, context)
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         return True
 
 
@@ -507,7 +514,7 @@ class Generator(BaseInstance):
     def display_type(self):
         return "Generator"
 
-    def bool_value(self):
+    def bool_value(self, context=None):
         return True
 
     def __repr__(self):

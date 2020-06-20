@@ -1,4 +1,5 @@
-# Copyright (c) 2016, 2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2016, 2018-2020 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2018 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 
 """Astroid hooks for understanding functools library module."""
@@ -62,7 +63,7 @@ def _transform_lru_cache(node, context=None):
 
 
 def _functools_partial_inference(node, context=None):
-    call = arguments.CallSite.from_call(node)
+    call = arguments.CallSite.from_call(node, context=context)
     number_of_positional = len(call.positional_arguments)
     if number_of_positional < 1:
         raise astroid.UseInferenceDefault(

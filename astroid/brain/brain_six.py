@@ -1,4 +1,4 @@
-# Copyright (c) 2014-2016, 2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2014-2016, 2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 
@@ -50,7 +50,8 @@ input = input
 from sys import intern
 map = map
 range = range
-from imp import reload as reload_module
+from importlib import reload
+reload_module = lambda module: reload(module)
 from functools import reduce
 from shlex import quote as shlex_quote
 from io import StringIO

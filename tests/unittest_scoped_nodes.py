@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2006-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2011, 2013-2015 Google, Inc.
-# Copyright (c) 2013-2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2013-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2013 Phil Schaf <flying-sheep@web.de>
 # Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
@@ -9,11 +9,16 @@
 # Copyright (c) 2015 Florian Bruhin <me@the-compiler.org>
 # Copyright (c) 2015 Philip Lorenz <philip@bithub.de>
 # Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
+# Copyright (c) 2017, 2019 Łukasz Rogalski <rogalski.91@gmail.com>
 # Copyright (c) 2017-2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
 # Copyright (c) 2017 Derek Gustafson <degustaf@gmail.com>
+# Copyright (c) 2018-2019 Ville Skyttä <ville.skytta@iki.fi>
 # Copyright (c) 2018 brendanator <brendan.maginnis@gmail.com>
 # Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
+# Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
+# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
+# Copyright (c) 2019 Peter de Blanc <peter@standard.ai>
+# Copyright (c) 2019 hippo91 <guillaume.peillex@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -1005,19 +1010,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(astroid["g2"].fromlineno, 9)
         self.assertEqual(astroid["g2"].tolineno, 10)
 
-    @test_utils.require_version(maxver="3.0")
-    def test_simple_metaclass(self):
-        astroid = builder.parse(
-            """
-            class Test(object):
-                __metaclass__ = type
-        """
-        )
-        klass = astroid["Test"]
-        metaclass = klass.metaclass()
-        self.assertIsInstance(metaclass, scoped_nodes.ClassDef)
-        self.assertEqual(metaclass.name, "type")
-
     def test_metaclass_error(self):
         astroid = builder.parse(
             """
@@ -1027,21 +1019,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         )
         klass = astroid["Test"]
         self.assertFalse(klass.metaclass())
-
-    @test_utils.require_version(maxver="3.0")
-    def test_metaclass_imported(self):
-        astroid = builder.parse(
-            """
-            from abc import ABCMeta
-            class Test(object):
-                __metaclass__ = ABCMeta
-        """
-        )
-        klass = astroid["Test"]
-
-        metaclass = klass.metaclass()
-        self.assertIsInstance(metaclass, scoped_nodes.ClassDef)
-        self.assertEqual(metaclass.name, "ABCMeta")
 
     def test_metaclass_yes_leak(self):
         astroid = builder.parse(
@@ -1055,100 +1032,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         )
         klass = astroid["Meta"]
         self.assertIsNone(klass.metaclass())
-
-    @test_utils.require_version(maxver="3.0")
-    def test_newstyle_and_metaclass_good(self):
-        astroid = builder.parse(
-            """
-            from abc import ABCMeta
-            class Test:
-                __metaclass__ = ABCMeta
-        """
-        )
-        klass = astroid["Test"]
-        self.assertTrue(klass.newstyle)
-        self.assertEqual(klass.metaclass().name, "ABCMeta")
-        astroid = builder.parse(
-            """
-            from abc import ABCMeta
-            __metaclass__ = ABCMeta
-            class Test:
-                pass
-        """
-        )
-        klass = astroid["Test"]
-        self.assertTrue(klass.newstyle)
-        self.assertEqual(klass.metaclass().name, "ABCMeta")
-
-    @test_utils.require_version(maxver="3.0")
-    def test_nested_metaclass(self):
-        astroid = builder.parse(
-            """
-            from abc import ABCMeta
-            class A(object):
-                __metaclass__ = ABCMeta
-                class B: pass
-
-            __metaclass__ = ABCMeta
-            class C:
-               __metaclass__ = type
-               class D: pass
-        """
-        )
-        a = astroid["A"]
-        b = a.locals["B"][0]
-        c = astroid["C"]
-        d = c.locals["D"][0]
-        self.assertEqual(a.metaclass().name, "ABCMeta")
-        self.assertFalse(b.newstyle)
-        self.assertIsNone(b.metaclass())
-        self.assertEqual(c.metaclass().name, "type")
-        self.assertEqual(d.metaclass().name, "ABCMeta")
-
-    @test_utils.require_version(maxver="3.0")
-    def test_parent_metaclass(self):
-        astroid = builder.parse(
-            """
-            from abc import ABCMeta
-            class Test:
-                __metaclass__ = ABCMeta
-            class SubTest(Test): pass
-        """
-        )
-        klass = astroid["SubTest"]
-        self.assertTrue(klass.newstyle)
-        metaclass = klass.metaclass()
-        self.assertIsInstance(metaclass, scoped_nodes.ClassDef)
-        self.assertEqual(metaclass.name, "ABCMeta")
-
-    @test_utils.require_version(maxver="3.0")
-    def test_metaclass_ancestors(self):
-        astroid = builder.parse(
-            """
-            from abc import ABCMeta
-
-            class FirstMeta(object):
-                __metaclass__ = ABCMeta
-
-            class SecondMeta(object):
-                __metaclass__ = type
-
-            class Simple(object):
-                pass
-
-            class FirstImpl(FirstMeta): pass
-            class SecondImpl(FirstImpl): pass
-            class ThirdImpl(Simple, SecondMeta):
-                pass
-        """
-        )
-        classes = {"ABCMeta": ("FirstImpl", "SecondImpl"), "type": ("ThirdImpl",)}
-        for metaclass, names in classes.items():
-            for name in names:
-                impl = astroid[name]
-                meta = impl.metaclass()
-                self.assertIsInstance(meta, nodes.ClassDef)
-                self.assertEqual(meta.name, metaclass)
 
     def test_metaclass_type(self):
         klass = builder.extract_node(
@@ -1314,33 +1197,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             else:
                 self.assertEqual(list(expected_value), [node.value for node in slots])
 
-    @test_utils.require_version(maxver="3.0")
-    def test_slots_py2(self):
-        module = builder.parse(
-            """
-        class UnicodeSlots(object):
-            __slots__ = (u"a", u"b", "c")
-        """
-        )
-        slots = module["UnicodeSlots"].slots()
-        self.assertEqual(len(slots), 3)
-        self.assertEqual(slots[0].value, "a")
-        self.assertEqual(slots[1].value, "b")
-        self.assertEqual(slots[2].value, "c")
-
-    @test_utils.require_version(maxver="3.0")
-    def test_slots_py2_not_implemented(self):
-        module = builder.parse(
-            """
-        class OldStyle:
-            __slots__ = ("a", "b")
-        """
-        )
-        msg = "The concept of slots is undefined for old-style classes."
-        with self.assertRaises(NotImplementedError) as cm:
-            module["OldStyle"].slots()
-        self.assertEqual(str(cm.exception), msg)
-
     def test_slots_for_dict_keys(self):
         module = builder.parse(
             """
@@ -1397,73 +1253,23 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         cls = module["B"]
         self.assertIsNone(cls.slots())
 
+    def test_slots_added_dynamically_still_inferred(self):
+        code = """
+        class NodeBase(object):
+            __slots__ = "a", "b"
+
+            if Options.isFullCompat():
+                __slots__ += ("c",)
+
+        """
+        node = builder.extract_node(code)
+        inferred = next(node.infer())
+        slots = inferred.slots()
+        assert len(slots) == 3, slots
+        assert [slot.value for slot in slots] == ["a", "b", "c"]
+
     def assertEqualMro(self, klass, expected_mro):
         self.assertEqual([member.name for member in klass.mro()], expected_mro)
-
-    @test_utils.require_version(maxver="3.0")
-    def test_no_mro_for_old_style(self):
-        node = builder.extract_node(
-            """
-        class Old: pass"""
-        )
-        with self.assertRaises(NotImplementedError) as cm:
-            node.mro()
-        self.assertEqual(
-            str(cm.exception), "Could not obtain mro for " "old-style classes."
-        )
-
-    @test_utils.require_version(maxver="3.0")
-    def test_mro_for_classes_with_old_style_in_mro(self):
-        node = builder.extract_node(
-            """
-        class Factory:
-            pass
-        class ClientFactory(Factory):
-            pass
-        class ReconnectingClientFactory(ClientFactory):
-            pass
-        class WebSocketAdapterFactory(object):
-            pass
-        class WebSocketClientFactory(WebSocketAdapterFactory, ClientFactory):
-            pass
-        class WampWebSocketClientFactory(WebSocketClientFactory):
-            pass
-        class RetryFactory(WampWebSocketClientFactory, ReconnectingClientFactory):
-            pas
-        """
-        )
-        self.assertEqualMro(
-            node,
-            [
-                "RetryFactory",
-                "WampWebSocketClientFactory",
-                "WebSocketClientFactory",
-                "WebSocketAdapterFactory",
-                "object",
-                "ReconnectingClientFactory",
-                "ClientFactory",
-                "Factory",
-            ],
-        )
-
-    @test_utils.require_version(maxver="3.0")
-    def test_combined_newstyle_oldstyle_in_mro(self):
-        node = builder.extract_node(
-            """
-        class Old:
-            pass
-        class New(object):
-            pass
-        class New1(object):
-            pass
-        class New2(New, New1):
-            pass
-        class NewOld(New2, Old): #@
-            pass
-        """
-        )
-        self.assertEqualMro(node, ["NewOld", "New2", "New", "New1", "object", "Old"])
-        self.assertTrue(node.newstyle)
 
     def test_with_metaclass_mro(self):
         astroid = builder.parse(
@@ -1741,15 +1547,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         static = next(acls.igetattr("static"))
         self.assertIsInstance(static, scoped_nodes.FunctionDef)
 
-    @test_utils.require_version(maxver="3.0")
-    def test_implicit_metaclass_is_none(self):
-        cls = builder.extract_node(
-            """
-        class A: pass
-        """
-        )
-        self.assertIsNone(cls.implicit_metaclass())
-
     def test_local_attr_invalid_mro(self):
         cls = builder.extract_node(
             """
@@ -2018,6 +1815,12 @@ def test_metaclass_cannot_infer_call_yields_an_instance():
         textwrap.dedent(
             """
     def __init__(self, other=(), /, **kw):
+        pass
+    """
+        ),
+        textwrap.dedent(
+            """
+    def __init__(self: int, other: float, /, **kw):
         pass
     """
         ),

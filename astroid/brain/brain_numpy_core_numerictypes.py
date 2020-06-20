@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2019 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2019-2020 hippo91 <guillaume.peillex@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -11,6 +11,10 @@ import astroid
 
 
 def numpy_core_numerictypes_transform():
+    # TODO: Uniformize the generic API with the ndarray one.
+    #       According to numpy doc the generic object should expose
+    #       the same API than ndarray. This has been done here partially
+    #       through the astype method.
     return astroid.parse(
         """
     # different types defined in numerictypes.py
@@ -35,7 +39,7 @@ def numpy_core_numerictypes_transform():
         def argmax(self): return uninferable
         def argmin(self): return uninferable
         def argsort(self): return uninferable
-        def astype(self): return uninferable
+        def astype(self, dtype, order='K', casting='unsafe', subok=True, copy=True): return np.ndarray([0, 0])
         def base(self): return uninferable
         def byteswap(self): return uninferable
         def choose(self): return uninferable

@@ -1,6 +1,6 @@
 # Copyright (c) 2006-2007, 2009-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2012 FELD Boris <lothiraldan@gmail.com>
-# Copyright (c) 2013-2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2013-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2014 Google, Inc.
 # Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
@@ -8,9 +8,13 @@
 # Copyright (c) 2016 Jakub Wilk <jwilk@jwilk.net>
 # Copyright (c) 2017 rr- <rr-@sakuya.pl>
 # Copyright (c) 2017 Derek Gustafson <degustaf@gmail.com>
+# Copyright (c) 2018 Serhiy Storchaka <storchaka@gmail.com>
 # Copyright (c) 2018 brendanator <brendan.maginnis@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
+# Copyright (c) 2019-2020 Ashley Whetter <ashley@awhetter.co.uk>
+# Copyright (c) 2019 Alex Hall <alex.mojaki@gmail.com>
+# Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -22,6 +26,7 @@ import sys
 import textwrap
 import unittest
 import copy
+import platform
 
 import pytest
 import six
@@ -147,21 +152,20 @@ def function(var):
         ast = abuilder.string_build(code)
         self.assertEqual(ast.as_string(), code)
 
-    @test_utils.require_version("3.0")
-    @unittest.expectedFailure
     def test_3k_annotations_and_metaclass(self):
-        code_annotations = textwrap.dedent(
-            '''
-        def function(var:int):
+        code = '''
+        def function(var: int):
             nonlocal counter
 
         class Language(metaclass=Natural):
             """natural language"""
         '''
-        )
 
+        code_annotations = textwrap.dedent(code)
+        # pylint: disable=line-too-long
+        expected = 'def function(var: int):\n    nonlocal counter\n\n\nclass Language(metaclass=Natural):\n    """natural language"""'
         ast = abuilder.string_build(code_annotations)
-        self.assertEqual(ast.as_string(), code_annotations)
+        self.assertEqual(ast.as_string().strip(), expected)
 
     def test_ellipsis(self):
         ast = abuilder.string_build("a[...]").body[0]
@@ -254,7 +258,12 @@ class D(metaclass=abc.ABCMeta):
         ast = abuilder.string_build(code)
         self.assertEqual(ast.as_string().strip(), code.strip())
 
-    @pytest.mark.skipif(sys.version_info[:2] < (3, 6), reason="needs f-string support")
+    # This test is disabled on PyPy because we cannot get a proper release on TravisCI that has
+    # proper support for f-strings (we need 7.2 at least)
+    @pytest.mark.skipif(
+        sys.version_info[:2] < (3, 6) or platform.python_implementation() == "PyPy",
+        reason="Needs f-string support.",
+    )
     def test_f_strings(self):
         code = r'''
 a = f"{'a'}"
@@ -1131,6 +1140,47 @@ def test_type_comments_arguments():
             assert actual_arg.as_string() == expected_arg
 
 
+@pytest.mark.skipif(
+    not PY38, reason="needs to be able to parse positional only arguments"
+)
+def test_type_comments_posonly_arguments():
+    module = builder.parse(
+        """
+    def f_arg_comment(
+        a,  # type: int
+        b,  # type: int
+        /,
+        c,  # type: Optional[int]
+        d,  # type: Optional[int]
+        *,
+        e,  # type: float
+        f,  # type: float
+    ):
+        # type: (...) -> None
+        pass
+    """
+    )
+    expected_annotations = [
+        [["int", "int"], ["Optional[int]", "Optional[int]"], ["float", "float"]]
+    ]
+    for node, expected_types in zip(module.body, expected_annotations):
+        assert len(node.type_comment_args) == 1
+        if PY38:
+            assert isinstance(node.type_comment_args[0], astroid.Const)
+            assert node.type_comment_args[0].value == Ellipsis
+        else:
+            assert isinstance(node.type_comment_args[0], astroid.Ellipsis)
+        type_comments = [
+            node.args.type_comment_posonlyargs,
+            node.args.type_comment_args,
+            node.args.type_comment_kwonlyargs,
+        ]
+        for expected_args, actual_args in zip(expected_types, type_comments):
+            assert len(expected_args) == len(actual_args)
+            for expected_arg, actual_arg in zip(expected_args, actual_args):
+                assert actual_arg.as_string() == expected_arg
+
+
 def test_is_generator_for_yield_assignments():
     node = astroid.extract_node(
         """
@@ -1283,6 +1333,31 @@ def test_const_itered():
     itered = node.itered()
     assert len(itered) == 6
     assert [elem.value for elem in itered] == list("string")
+
+
+def test_is_generator_for_yield_in_while():
+    code = """
+    def paused_iter(iterable):
+        while True:
+            # Continue to yield the same item until `next(i)` or `i.send(False)`
+            while (yield value):
+                pass
+    """
+    node = astroid.extract_node(code)
+    assert bool(node.is_generator())
+
+
+def test_is_generator_for_yield_in_if():
+    code = """
+    import asyncio
+
+    def paused_iter(iterable):
+        if (yield from asyncio.sleep(0.01)):
+            pass
+            return
+    """
+    node = astroid.extract_node(code)
+    assert bool(node.is_generator())
 
 
 if __name__ == "__main__":

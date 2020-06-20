@@ -1,5 +1,5 @@
 # Copyright (c) 2006-2011, 2013-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2014-2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2014-2019 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2014 BioGeek <jeroen.vangoey@gmail.com>
 # Copyright (c) 2014 Google, Inc.
 # Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
@@ -8,6 +8,9 @@
 # Copyright (c) 2017 Iva Miholic <ivamiho@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
+# Copyright (c) 2019 Raphael Gaschignard <raphael@makeleaps.com>
+# Copyright (c) 2020 Anubhav <35621759+anubh-v@users.noreply.github.com>
+# Copyright (c) 2020 Ashley Whetter <ashley@awhetter.co.uk>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -99,6 +102,13 @@ class AstroidManager:
             "Unable to build an AST for {path}.", path=filepath
         )
 
+    def ast_from_string(self, data, modname="", filepath=None):
+        """ Given some source code as a string, return its corresponding astroid object"""
+        # pylint: disable=import-outside-toplevel; circular import
+        from astroid.builder import AstroidBuilder
+
+        return AstroidBuilder(self).string_build(data, modname, filepath)
+
     def _build_stub_module(self, modname):
         # pylint: disable=import-outside-toplevel; circular import
         from astroid.builder import AstroidBuilder
@@ -168,6 +178,8 @@ class AstroidManager:
                 return self._build_namespace_module(
                     modname, found_spec.submodule_search_locations
                 )
+            elif found_spec.type == spec.ModuleType.PY_FROZEN:
+                return self._build_stub_module(modname)
 
             if found_spec.location is None:
                 raise exceptions.AstroidImportError(
