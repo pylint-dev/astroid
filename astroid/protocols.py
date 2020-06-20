@@ -498,8 +498,8 @@ def _infer_context_manager(self, mgr, context):
     elif isinstance(inferred, bases.Instance):
         try:
             enter = next(inferred.igetattr("__enter__", context=context))
-        except (exceptions.InferenceError, exceptions.AttributeInferenceError):
-            raise exceptions.InferenceError(node=inferred)
+        except (exceptions.InferenceError, exceptions.AttributeInferenceError) as exc:
+            raise exceptions.InferenceError(node=inferred) from exc
         if not isinstance(enter, bases.BoundMethod):
             raise exceptions.InferenceError(node=enter)
         yield from enter.infer_call_result(self, context)

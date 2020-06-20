@@ -51,8 +51,8 @@ def _infer_first(node, context):
             raise UseInferenceDefault()
         else:
             return value
-    except StopIteration:
-        raise InferenceError()
+    except StopIteration as exc:
+        raise InferenceError from exc
 
 
 def _find_func_form_arguments(node, context):
@@ -88,7 +88,7 @@ def infer_func_form(node, base_type, context=None, enum=False):
         name, names = _find_func_form_arguments(node, context)
         try:
             attributes = names.value.replace(",", " ").split()
-        except AttributeError:
+        except AttributeError as exc:
             if not enum:
                 attributes = [
                     _infer_first(const, context).value for const in names.elts
@@ -117,11 +117,11 @@ def infer_func_form(node, base_type, context=None, enum=False):
                             _infer_first(const, context).value for const in names.elts
                         ]
                 else:
-                    raise AttributeError
+                    raise AttributeError from exc
                 if not attributes:
-                    raise AttributeError
-    except (AttributeError, exceptions.InferenceError):
-        raise UseInferenceDefault()
+                    raise AttributeError from exc
+    except (AttributeError, exceptions.InferenceError) as exc:
+        raise UseInferenceDefault from exc
 
     attributes = [attr for attr in attributes if " " not in attr]
 
@@ -405,8 +405,8 @@ def infer_typing_namedtuple(node, context=None):
     # so we extract the args and infer a named tuple.
     try:
         func = next(node.func.infer())
-    except InferenceError:
-        raise UseInferenceDefault
+    except InferenceError as exc:
+        raise UseInferenceDefault from exc
 
     if func.qname() != "typing.NamedTuple":
         raise UseInferenceDefault

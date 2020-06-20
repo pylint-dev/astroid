@@ -23,6 +23,8 @@ Release Date: TBA
 
   Close PyCQA/pylint#3583
 
+* Fixed exception-chaining error messages.
+
 
 What's New in astroid 2.4.3?
 ============================

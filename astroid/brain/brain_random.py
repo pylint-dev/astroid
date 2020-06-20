@@ -47,8 +47,8 @@ def infer_random_sample(node, context=None):
 
     try:
         elts = random.sample(inferred_sequence.elts, length.value)
-    except ValueError:
-        raise astroid.UseInferenceDefault
+    except ValueError as exc:
+        raise astroid.UseInferenceDefault from exc
 
     new_node = astroid.List(
         lineno=node.lineno, col_offset=node.col_offset, parent=node.scope()
