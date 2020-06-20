@@ -145,8 +145,8 @@ def _six_fail_hook(modname):
         attribute = modname[start_index:].lstrip(".").replace(".", "_")
         try:
             import_attr = module.getattr(attribute)[0]
-        except AttributeInferenceError:
-            raise AstroidBuildingError(modname=modname)
+        except AttributeInferenceError as exc:
+            raise AstroidBuildingError(modname=modname) from exc
         if isinstance(import_attr, nodes.Import):
             submodule = MANAGER.ast_from_module_name(import_attr.names[0][0])
             return submodule

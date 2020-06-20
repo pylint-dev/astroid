@@ -165,13 +165,13 @@ def _container_generic_inference(node, context, node_type, transform):
     if not transformed:
         try:
             inferred = next(arg.infer(context=context))
-        except (InferenceError, StopIteration):
-            raise UseInferenceDefault()
+        except (InferenceError, StopIteration) as exc:
+            raise UseInferenceDefault from exc
         if inferred is util.Uninferable:
-            raise UseInferenceDefault()
+            raise UseInferenceDefault
         transformed = transform(inferred)
     if not transformed or transformed is util.Uninferable:
-        raise UseInferenceDefault()
+        raise UseInferenceDefault
     return transformed
 
 
@@ -267,8 +267,8 @@ def _get_elts(arg, context):
     is_iterable = lambda n: isinstance(n, (nodes.List, nodes.Tuple, nodes.Set))
     try:
         inferred = next(arg.infer(context))
-    except (InferenceError, NameInferenceError):
-        raise UseInferenceDefault()
+    except (InferenceError, NameInferenceError) as exc:
+        raise UseInferenceDefault from exc
     if isinstance(inferred, nodes.Dict):
         items = inferred.items
     elif is_iterable(inferred):
@@ -371,12 +371,12 @@ def infer_super(node, context=None):
     else:
         try:
             mro_pointer = next(node.args[0].infer(context=context))
-        except InferenceError:
-            raise UseInferenceDefault
+        except InferenceError as exc:
+            raise UseInferenceDefault from exc
         try:
             mro_type = next(node.args[1].infer(context=context))
-        except InferenceError:
-            raise UseInferenceDefault
+        except InferenceError as exc:
+            raise UseInferenceDefault from exc
 
     if mro_pointer is util.Uninferable or mro_type is util.Uninferable:
         # No way we could understand this.
@@ -397,8 +397,8 @@ def _infer_getattr_args(node, context):
     try:
         obj = next(node.args[0].infer(context=context))
         attr = next(node.args[1].infer(context=context))
-    except InferenceError:
-        raise UseInferenceDefault
+    except InferenceError as exc:
+        raise UseInferenceDefault from exc
 
     if obj is util.Uninferable or attr is util.Uninferable:
         # If one of the arguments is something we can't infer,
@@ -437,8 +437,8 @@ def infer_getattr(node, context=None):
             # Try to infer the default and return it instead.
             try:
                 return next(node.args[2].infer(context=context))
-            except InferenceError:
-                raise UseInferenceDefault
+            except InferenceError as exc:
+                raise UseInferenceDefault from exc
 
     raise UseInferenceDefault
 
@@ -505,8 +505,8 @@ def infer_property(node, context=None):
     getter = node.args[0]
     try:
         inferred = next(getter.infer(context=context))
-    except InferenceError:
-        raise UseInferenceDefault
+    except InferenceError as exc:
+        raise UseInferenceDefault from exc
 
     if not isinstance(inferred, (nodes.FunctionDef, nodes.Lambda)):
         raise UseInferenceDefault
@@ -673,12 +673,12 @@ def infer_isinstance(callnode, context=None):
         class_container = _class_or_tuple_to_container(
             class_or_tuple_node, context=context
         )
-    except InferenceError:
-        raise UseInferenceDefault
+    except InferenceError as exc:
+        raise UseInferenceDefault from exc
     try:
         isinstance_bool = helpers.object_isinstance(obj_node, class_container, context)
     except AstroidTypeError as exc:
-        raise UseInferenceDefault("TypeError: " + str(exc))
+        raise UseInferenceDefault("TypeError: " + str(exc)) from exc
     except MroError as exc:
         raise UseInferenceDefault from exc
     if isinstance_bool is util.Uninferable:

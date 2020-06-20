@@ -2571,7 +2571,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             else:
                 raise exceptions.InferenceError(
                     error.message, target=self, attribute=name, context=context
-                )
+                ) from error
 
     def has_dynamic_getattr(self, context=None):
         """Check if the class has a custom __getattr__ or __getattribute__.
