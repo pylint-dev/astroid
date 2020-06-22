@@ -13,6 +13,10 @@ Release Date: TBA
 
   Fixes PyCQA/pylint#3599
 
+* Prevent recursion error for self referential length calls
+
+  Close #777
+
 * Added missing methods to the brain for ``mechanize``, to fix pylint false positives
 
   Close #793

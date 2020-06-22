@@ -759,6 +759,7 @@ def infer_len(node, context=None):
             "({len}) given".format(len=len(call.positional_arguments))
         )
     [argument_node] = call.positional_arguments
+
     try:
         return nodes.Const(helpers.object_len(argument_node, context=context))
     except (AstroidTypeError, InferenceError) as exc:

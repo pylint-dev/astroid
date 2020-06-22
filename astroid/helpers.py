@@ -237,13 +237,31 @@ def object_len(node, context=None):
     :raises AstroidTypeError: If an invalid node is returned
         from __len__ method or no __len__ method exists
     :raises InferenceError: If the given node cannot be inferred
-        or if multiple nodes are inferred
+        or if multiple nodes are inferred or if the code executed in python
+        would result in a infinite recursive check for length
     :rtype int: Integer length of node
     """
     # pylint: disable=import-outside-toplevel; circular import
     from astroid.objects import FrozenSet
 
     inferred_node = safe_infer(node, context=context)
+
+    # prevent self referential length calls from causing a recursion error
+    # see https://github.com/PyCQA/astroid/issues/777
+    node_frame = node.frame()
+    if (
+        isinstance(node_frame, scoped_nodes.FunctionDef)
+        and node_frame.name == "__len__"
+        and inferred_node._proxied == node_frame.parent
+    ):
+        message = (
+            "Self referential __len__ function will "
+            "cause a RecursionError on line {} of {}".format(
+                node.lineno, node.root().file
+            )
+        )
+        raise exceptions.InferenceError(message)
+
     if inferred_node is None or inferred_node is util.Uninferable:
         raise exceptions.InferenceError(node=node)
     if isinstance(inferred_node, nodes.Const) and isinstance(
