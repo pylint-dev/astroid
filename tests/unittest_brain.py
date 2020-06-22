@@ -2035,5 +2035,21 @@ def test_str_and_bytes(code, expected_class, expected_value):
     assert inferred.value == expected_value
 
 
+def test_no_recursionerror_on_self_referential_length_check():
+    """
+    Regression test for https://github.com/PyCQA/astroid/issues/777
+    """
+    with pytest.raises(astroid.InferenceError):
+        node = astroid.extract_node(
+            """
+        class Crash:
+            def __len__(self) -> int:
+                return len(self)
+        len(Crash()) #@
+        """
+        )
+        node.inferred()
+
+
 if __name__ == "__main__":
     unittest.main()
