@@ -40,52 +40,90 @@ from astroid import util
 
 OBJECT_DUNDER_NEW = "object.__new__"
 
+STR_CLASS = """
+class whatever(object):
+    def join(self, iterable):
+        return {rvalue}
+    def replace(self, old, new, count=None):
+        return {rvalue}
+    def format(self, *args, **kwargs):
+        return {rvalue}
+    def encode(self, encoding='ascii', errors=None):
+        return b''
+    def decode(self, encoding='ascii', errors=None):
+        return u''
+    def capitalize(self):
+        return {rvalue}
+    def title(self):
+        return {rvalue}
+    def lower(self):
+        return {rvalue}
+    def upper(self):
+        return {rvalue}
+    def swapcase(self):
+        return {rvalue}
+    def index(self, sub, start=None, end=None):
+        return 0
+    def find(self, sub, start=None, end=None):
+        return 0
+    def count(self, sub, start=None, end=None):
+        return 0
+    def strip(self, chars=None):
+        return {rvalue}
+    def lstrip(self, chars=None):
+        return {rvalue}
+    def rstrip(self, chars=None):
+        return {rvalue}
+    def rjust(self, width, fillchar=None):
+        return {rvalue}
+    def center(self, width, fillchar=None):
+        return {rvalue}
+    def ljust(self, width, fillchar=None):
+        return {rvalue}
+"""
 
-def _extend_str(class_node, rvalue):
+
+BYTES_CLASS = """
+class whatever(object):
+    def join(self, iterable):
+        return {rvalue}
+    def replace(self, old, new, count=None):
+        return {rvalue}
+    def decode(self, encoding='ascii', errors=None):
+        return u''
+    def capitalize(self):
+        return {rvalue}
+    def title(self):
+        return {rvalue}
+    def lower(self):
+        return {rvalue}
+    def upper(self):
+        return {rvalue}
+    def swapcase(self):
+        return {rvalue}
+    def index(self, sub, start=None, end=None):
+        return 0
+    def find(self, sub, start=None, end=None):
+        return 0
+    def count(self, sub, start=None, end=None):
+        return 0
+    def strip(self, chars=None):
+        return {rvalue}
+    def lstrip(self, chars=None):
+        return {rvalue}
+    def rstrip(self, chars=None):
+        return {rvalue}
+    def rjust(self, width, fillchar=None):
+        return {rvalue}
+    def center(self, width, fillchar=None):
+        return {rvalue}
+    def ljust(self, width, fillchar=None):
+        return {rvalue}
+"""
+
+
+def _extend_string_class(class_node, code, rvalue):
     """function to extend builtin str/unicode class"""
-    code = dedent(
-        """
-    class whatever(object):
-        def join(self, iterable):
-            return {rvalue}
-        def replace(self, old, new, count=None):
-            return {rvalue}
-        def format(self, *args, **kwargs):
-            return {rvalue}
-        def encode(self, encoding='ascii', errors=None):
-            return ''
-        def decode(self, encoding='ascii', errors=None):
-            return u''
-        def capitalize(self):
-            return {rvalue}
-        def title(self):
-            return {rvalue}
-        def lower(self):
-            return {rvalue}
-        def upper(self):
-            return {rvalue}
-        def swapcase(self):
-            return {rvalue}
-        def index(self, sub, start=None, end=None):
-            return 0
-        def find(self, sub, start=None, end=None):
-            return 0
-        def count(self, sub, start=None, end=None):
-            return 0
-        def strip(self, chars=None):
-            return {rvalue}
-        def lstrip(self, chars=None):
-            return {rvalue}
-        def rstrip(self, chars=None):
-            return {rvalue}
-        def rjust(self, width, fillchar=None):
-            return {rvalue}
-        def center(self, width, fillchar=None):
-            return {rvalue}
-        def ljust(self, width, fillchar=None):
-            return {rvalue}
-    """
-    )
     code = code.format(rvalue=rvalue)
     fake = AstroidBuilder(MANAGER).string_build(code)["whatever"]
     for method in fake.mymethods():
@@ -106,8 +144,8 @@ def _extend_builtins(class_transforms):
 
 _extend_builtins(
     {
-        "bytes": partial(_extend_str, rvalue="b''"),
-        "str": partial(_extend_str, rvalue="''"),
+        "bytes": partial(_extend_string_class, code=BYTES_CLASS, rvalue="b''"),
+        "str": partial(_extend_string_class, code=STR_CLASS, rvalue="''"),
     }
 )
 
