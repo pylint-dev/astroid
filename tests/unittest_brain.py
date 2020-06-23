@@ -2020,5 +2020,20 @@ def test_dataclasses():
     assert isinstance(name[0], astroid.Unknown)
 
 
+@pytest.mark.parametrize(
+    "code,expected_class,expected_value",
+    [
+        ("'hey'.encode()", astroid.Const, b""),
+        ("b'hey'.decode()", astroid.Const, ""),
+        ("'hey'.encode().decode()", astroid.Const, ""),
+    ],
+)
+def test_str_and_bytes(code, expected_class, expected_value):
+    node = astroid.extract_node(code)
+    inferred = next(node.infer())
+    assert isinstance(inferred, expected_class)
+    assert inferred.value == expected_value
+
+
 if __name__ == "__main__":
     unittest.main()
