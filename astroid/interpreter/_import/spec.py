@@ -278,9 +278,10 @@ def _precache_zipimporters(path=None):
 def _search_zip(modpath, pic):
     for filepath, importer in list(pic.items()):
         if importer is not None:
-            found = importer.find_spec(modpath[0])
+            found = getattr(importer, 'find_spec', importer.find_module)(modpath[0])
             if found:
-                if not importer.find_spec(os.path.sep.join(modpath)):
+                name = os.path.sep.join(modpath)
+                if not getattr(importer, 'find_spec', importer.find_module)(name):
                     raise ImportError(
                         "No module named %s in %s/%s"
                         % (".".join(modpath[1:]), filepath, modpath)
