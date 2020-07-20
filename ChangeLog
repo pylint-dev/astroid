@@ -7,6 +7,8 @@ What's New in astroid 2.5.0?
 ============================
 Release Date: TBA
 
+* Added a brain for ``hypothesis.strategies.composite``
+
 * Added a brain for ``sqlalchemy.orm.session``
 
 * Separate string and bytes classes patching
