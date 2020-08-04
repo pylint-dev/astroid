@@ -2455,7 +2455,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         1 ** (lambda x: x) #@
         {} * {} #@
         {} - {} #@
-        {} | {} #@
         {} >> {} #@
         [] + () #@
         () + [] #@
@@ -2500,7 +2499,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             msg.format(op="**", lhs="int", rhs="function"),
             msg.format(op="*", lhs="dict", rhs="dict"),
             msg.format(op="-", lhs="dict", rhs="dict"),
-            msg.format(op="|", lhs="dict", rhs="dict"),
             msg.format(op=">>", lhs="dict", rhs="dict"),
             msg.format(op="+", lhs="list", rhs="tuple"),
             msg.format(op="+", lhs="tuple", rhs="list"),
@@ -2515,6 +2513,12 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             msg.format(op="+=", lhs="int", rhs="A"),
             msg.format(op="+=", lhs="int", rhs="list"),
         ]
+
+        # PEP-584 supports | for dictionary union
+        if sys.version_info < (3, 9):
+            ast_nodes.append(extract_node("{} | {} #@"))
+            expected.append(msg.format(op="|", lhs="dict", rhs="dict"))
+
         for node, expected_value in zip(ast_nodes, expected):
             errors = node.type_errors()
             self.assertEqual(len(errors), 1)
