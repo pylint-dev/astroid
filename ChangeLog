@@ -7,6 +7,10 @@ What's New in astroid 2.5.0?
 ============================
 Release Date: TBA
 
+* The transpose of a ``numpy.ndarray`` is also a ``numpy.ndarray``
+
+  Fixes PyCQA/pylint#3387
+
 * Added a brain for ``sqlalchemy.orm.session``
 
 * Separate string and bytes classes patching
