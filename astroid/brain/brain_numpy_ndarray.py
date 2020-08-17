@@ -71,7 +71,7 @@ def infer_numpy_ndarray(node, context=None):
         def __mul__(self, value): return numpy.ndarray([0, 0])
         def __ne__(self, value): return numpy.ndarray([0, 0])
         def __neg__(self): return numpy.ndarray([0, 0])
-        def __or__(self): return numpy.ndarray([0, 0])
+        def __or__(self, value): return numpy.ndarray([0, 0])
         def __pos__(self): return numpy.ndarray([0, 0])
         def __pow__(self): return numpy.ndarray([0, 0])
         def __repr__(self): return str()
