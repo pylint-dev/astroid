@@ -7,6 +7,11 @@ What's New in astroid 2.5.0?
 ============================
 Release Date: TBA
 
+* Fixes a bug in the signature of the ``ndarray.__or__`` method, 
+  in the ``brain_numpy_ndarray.py`` module.
+
+  Fixes #815
+
 * Added a brain for ``sqlalchemy.orm.session``
 
 * Separate string and bytes classes patching
