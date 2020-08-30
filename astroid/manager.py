@@ -39,6 +39,24 @@ def safe_repr(obj):
         return "???"
 
 
+class AstroidImportError:
+    """
+    Error class to keep track of when exceptions happened.
+
+    This error class avoids holding onto the initial exception to avoid
+    memory usage explosion
+    """
+
+    def __init__(self, modname, error):
+        self.modname = modname
+        self.error = str(error)
+
+    def __str__(self):
+        return "AstroidImportError: Failed to import module {modname} with error:\n{error}.".format(
+            modname=self.modname, error=self.error
+        )
+
+
 class AstroidManager:
     """the astroid manager, responsible to build astroid from files
      or modules.
@@ -233,14 +251,12 @@ class AstroidManager:
                     modname.split("."), context_file=contextfile
                 )
             except ImportError as ex:
-                value = exceptions.AstroidImportError(
-                    "Failed to import module {modname} with error:\n{error}.",
-                    modname=modname,
-                    error=ex,
-                )
+                value = AstroidImportError(modname=modname, error=ex)
             self._mod_file_cache[(modname, contextfile)] = value
-        if isinstance(value, exceptions.AstroidBuildingError):
-            raise value
+        if isinstance(value, AstroidImportError):
+            raise exceptions.AstroidImportError(
+                str(value), modname=value.modname, error=value.error
+            )
         return value
 
     def ast_from_module(self, module, modname=None):
