@@ -38,6 +38,8 @@ Release Date: TBA
 
 * Fixed exception-chaining error messages.
 
+* Extended attrs brain to support the provisional APIs
+
 
 What's New in astroid 2.4.3?
 ============================
