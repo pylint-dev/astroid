@@ -79,6 +79,10 @@ Release Date: TBA
 
   Fixes #843
 
+* Fix interpretation of ``six.with_metaclass`` class definitions.
+
+  Fixes #713
+
 * Reduce memory usage of astroid's module cache.
 
 * Remove dependency on `imp`.
