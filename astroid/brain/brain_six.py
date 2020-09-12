@@ -200,7 +200,7 @@ def _looks_like_nested_from_six_with_metaclass(node):
         func = next(base.func.infer())
     except InferenceError:
         return False
-    return func.qname() == 'six.with_metaclass'
+    return func.qname() == "six.with_metaclass"
 
 
 def transform_six_with_metaclass(node):
