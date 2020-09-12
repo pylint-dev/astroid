@@ -2997,6 +2997,23 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 24)
 
+    def test_with_metaclass__getitem__(self):
+        ast_node = extract_node(
+            """
+        class Meta(type):
+            def __getitem__(cls, arg):
+                return 24
+        import six
+        class A(six.with_metaclass(Meta)):
+            pass
+
+        A['Awesome'] #@
+        """
+        )
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 24)
+
     def test_bin_op_classes(self):
         ast_node = extract_node(
             """
@@ -3006,6 +3023,23 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         import six
         @six.add_metaclass(Meta)
         class A(object):
+            pass
+
+        A | A
+        """
+        )
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 24)
+
+    def test_bin_op_classes_with_metaclass(self):
+        ast_node = extract_node(
+            """
+        class Meta(type):
+            def __or__(self, other):
+                return 24
+        import six
+        class A(six.with_metaclass(Meta)):
             pass
 
         A | A
@@ -3346,6 +3380,22 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
                 return 42
         @six.add_metaclass(Meta)
         class A(object):
+            pass
+        ~A
+        """
+        )
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 42)
+
+    def test_unary_op_classes_with_metaclass(self):
+        ast_node = extract_node(
+            """
+        import six
+        class Meta(type):
+            def __invert__(self):
+                return 42
+        class A(six.with_metaclass(Meta)):
             pass
         ~A
         """
@@ -3740,6 +3790,23 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         import six
         @six.add_metaclass(A)
         class B(object):
+            pass
+
+        B.test() #@
+        """
+        )
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.ClassDef)
+        self.assertEqual(inferred.name, "B")
+
+    def test_With_metaclass_subclasses_arguments_are_classes_not_instances(self):
+        ast_node = extract_node(
+            """
+        class A(type):
+            def test(cls):
+                return cls
+        import six
+        class B(six.with_metaclass(A)):
             pass
 
         B.test() #@

@@ -190,6 +190,29 @@ def transform_six_add_metaclass(node):
             return node
 
 
+def _looks_like_nested_from_six_with_metaclass(node):
+    if len(node.bases) != 1:
+        return False
+    base = node.bases[0]
+    if not isinstance(base, nodes.Call):
+        return False
+    try:
+        func = next(base.func.infer())
+    except InferenceError:
+        return False
+    return func.qname() == 'six.with_metaclass'
+
+
+def transform_six_with_metaclass(node):
+    """Check if the given class node is defined with *six.with_metaclass*
+
+    If so, inject its argument as the metaclass of the underlying class.
+    """
+    call = node.bases[0]
+    node._metaclass = call.args[0]
+    node.bases = call.args[1:]
+
+
 register_module_extender(MANAGER, "six", six_moves_transform)
 register_module_extender(
     MANAGER, "requests.packages.urllib3.packages.six", six_moves_transform
@@ -199,4 +222,9 @@ MANAGER.register_transform(
     nodes.ClassDef,
     transform_six_add_metaclass,
     _looks_like_decorated_with_six_add_metaclass,
+)
+MANAGER.register_transform(
+    nodes.ClassDef,
+    transform_six_with_metaclass,
+    _looks_like_nested_from_six_with_metaclass,
 )
