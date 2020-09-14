@@ -17,7 +17,7 @@ def infer_numpy_ndarray(node, context=None):
     class ndarray(object):
         def __init__(self, shape, dtype=float, buffer=None, offset=0,
                      strides=None, order=None):
-            self.T = None
+            self.T = numpy.ndarray([0, 0])
             self.base = None
             self.ctypes = None
             self.data = None

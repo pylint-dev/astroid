@@ -20,7 +20,7 @@ def numpy_core_numerictypes_transform():
     # different types defined in numerictypes.py
     class generic(object):
         def __init__(self, value):
-            self.T = None
+            self.T = np.ndarray([0, 0])
             self.base = None
             self.data = None
             self.dtype = None
