@@ -11,6 +11,11 @@ Release Date: TBA
 
   Fixes PyCQA/pylint#3640
 
+* Fixes a bug in the signature of the ``ndarray.__or__`` method, 
+  in the ``brain_numpy_ndarray.py`` module.
+
+  Fixes #815
+
 * Added a brain for ``sqlalchemy.orm.session``
 
 * Separate string and bytes classes patching
