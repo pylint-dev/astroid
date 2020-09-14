@@ -6,6 +6,10 @@ astroid's ChangeLog
 What's New in astroid 2.5.0?
 ============================
 Release Date: TBA
+* The flat attribute of ``numpy.ndarray`` is now inferred as an ``numpy.ndarray`` itself.
+  It should be a ``numpy.flatiter`` instance, but this class is not yet available in the numpy brain.
+
+  Fixes PyCQA/pylint#3640
 
 * Added a brain for ``sqlalchemy.orm.session``
 
