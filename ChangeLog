@@ -16,6 +16,8 @@ Release Date: TBA
 
   Fixes #815
 
+* Added a brain for ``hypothesis.strategies.composite``
+
 * Added a brain for ``sqlalchemy.orm.session``
 
 * Separate string and bytes classes patching
