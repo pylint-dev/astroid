@@ -13,10 +13,13 @@ Release Date: TBA
 
   Fixes PyCQA/pylint#3640
 
-* Fixes a bug in the signature of the ``ndarray.__or__`` method, 
+* Fixes a bug in the signature of the ``ndarray.__or__`` method,
   in the ``brain_numpy_ndarray.py`` module.
 
   Fixes #815
+
+* Fixes a to-list cast bug in ``starred_assigned_stmts`` method,
+  in the ``protocols.py` module.
 
 * Added a brain for ``hypothesis.strategies.composite``
 
