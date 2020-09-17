@@ -686,11 +686,10 @@ def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
                     continue
 
                 # We're done unpacking.
-                elts = list(elts)
                 packed = nodes.List(
                     ctx=Store, parent=self, lineno=lhs.lineno, col_offset=lhs.col_offset
                 )
-                packed.postinit(elts=elts)
+                packed.postinit(elts=list(elts))
                 yield packed
                 break
 
