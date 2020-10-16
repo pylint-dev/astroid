@@ -1431,15 +1431,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             pass
         """
         )
-        self.assertEqualMro(
-            cls,
-            [
-                "C",
-                "A",
-                "B",
-                "object"
-            ]
-        )
+        self.assertEqualMro(cls, ["C", "A", "B", "object"])
 
     def test_generator_from_infer_call_result_parent(self):
         func = builder.extract_node(
