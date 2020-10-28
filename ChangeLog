@@ -38,6 +38,7 @@ Release Date: TBA
 
 * Fixed exception-chaining error messages.
 
+* Reduce memory usage of astroid's module cache.
 
 What's New in astroid 2.4.3?
 ============================
