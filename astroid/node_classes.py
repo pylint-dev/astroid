@@ -968,7 +968,7 @@ class Statement(NodeNG):
         try:
             return stmts[index + 1]
         except IndexError:
-            pass
+            return None
 
     def previous_sibling(self):
         """The previous sibling statement.
