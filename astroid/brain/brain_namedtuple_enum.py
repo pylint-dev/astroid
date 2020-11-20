@@ -23,6 +23,7 @@ import functools
 import keyword
 from textwrap import dedent
 
+from astroid.scoped_nodes import FunctionDef
 from astroid import MANAGER, UseInferenceDefault, inference_tip, InferenceError
 from astroid import arguments
 from astroid import exceptions
@@ -410,6 +411,17 @@ def infer_typing_namedtuple(node, context=None):
 
     if func.qname() != "typing.NamedTuple":
         raise UseInferenceDefault
+
+    if isinstance(func, FunctionDef):
+        fake_node = extract_node(
+            """
+            class NamedTuple(metaclass=NamedTupleMeta):
+                pass
+            """
+        )
+        func.parent.locals.pop('NamedTuple')
+        func.parent.add_local_node(fake_node)
+        return infer_typing_namedtuple(node, context)
 
     if len(node.args) != 2:
         raise UseInferenceDefault
