@@ -5667,6 +5667,7 @@ def test_custom_decorators_for_classmethod_and_staticmethods(code, obj, obj_type
 
 
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="Needs dataclasses available")
+@pytest.mark.skipif(sys.version_info >= (3, 9), reason="Exact inference with dataclasses (replace function) in python3.9")
 def test_dataclasses_subscript_inference_recursion_error():
     code = """
     from dataclasses import dataclass, replace
@@ -5686,6 +5687,27 @@ def test_dataclasses_subscript_inference_recursion_error():
     # Reproduces only with safe_infer()
     assert helpers.safe_infer(node) is None
 
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="Exact inference with dataclasses (replace function) in python3.9")
+def test_dataclasses_subscript_inference_recursion_error_39():
+    code = """
+    from dataclasses import dataclass, replace
+
+    @dataclass
+    class ProxyConfig:
+        auth: str = "/auth"
+
+
+    a = ProxyConfig("")
+    test_dict = {"proxy" : {"auth" : "", "bla" : "f"}}
+
+    foo = test_dict['proxy']
+    replace(a, **test_dict['proxy']) # This fails
+    """
+    node = extract_node(code)
+    infer_val = helpers.safe_infer(node)
+    assert isinstance(infer_val, Instance)
+    assert infer_val.pytype() == ".ProxyConfig"
 
 def test_self_reference_infer_does_not_trigger_recursion_error():
     # Prevents https://github.com/PyCQA/pylint/issues/1285
