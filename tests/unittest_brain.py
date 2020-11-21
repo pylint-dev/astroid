@@ -973,6 +973,8 @@ class TypingBrain(unittest.TestCase):
         base = next(base for base in klass.ancestors() if base.name == "X")
         self.assertSetEqual({"a", "b", "c"}, set(base.instance_attrs))
 
+    @pytest.mark.skipif(sys.version_info >= (3, 9),
+                        reason="""Before 3.9 NamedTuple was a class that is easy to infer""")
     def test_namedtuple_inference_nonliteral(self):
         # Note: NamedTuples in mypy only work with literals.
         klass = builder.extract_node(
@@ -987,6 +989,42 @@ class TypingBrain(unittest.TestCase):
         inferred = next(klass.infer())
         self.assertIsInstance(inferred, astroid.Instance)
         self.assertEqual(inferred.qname(), "typing.NamedTuple")
+
+    @pytest.mark.skipif(sys.version_info < (3, 9),
+                        reason="""Before 3.9 NamedTuple was a class, it is now a function"""
+                               """ much more difficult to infer""")
+    def test_namedtuple_inference_nonliteral_39(self):
+        # Note: NamedTuples in mypy only work with literals.
+        klass = builder.extract_node(
+            """
+        from typing import NamedTuple
+
+        name = "X"
+        fields = [("a", int), ("b", str), ("c", bytes)]
+        NamedTuple(name, fields)
+        """
+        )
+        inferred = next(klass.infer())
+        self.assertIsInstance(inferred, nodes.ClassDef)
+        self.assertSetEqual({"a", "b", "c"}, set(inferred.instance_attrs))
+
+    @pytest.mark.skipif(sys.version_info < (3, 9),
+                        reason="""Before 3.9 NamedTuple was a class, it is now a function"""
+                               """ much more difficult to infer""")
+    def test_namedtuple_inference_nonliteral_attrs_39(self):
+        # Note: NamedTuples in mypy only work with literals.
+        klass = builder.extract_node(
+            """
+        from typing import NamedTuple
+
+        name = "X"
+        fields = [("a", int), ("b", str), ("c", bytes)]
+        NamedTuple(name, fields)(1, 2, 3) #@
+        """
+        )
+        inferred = next(klass.infer())
+        for name, attr in inferred.instance_attrs.items():
+            self.assertEqual(attr[0].attrname, name)
 
     def test_namedtuple_instance_attrs(self):
         result = builder.extract_node(
@@ -1010,6 +1048,22 @@ class TypingBrain(unittest.TestCase):
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertSetEqual({"a", "b", "c"}, set(inferred.instance_attrs))
 
+    @pytest.mark.skipif(sys.version_info < (3, 9),
+                        reason="""Before 3.9 NamedTuple was a class, it is now a function"""
+                               """ much more difficult to infer""")
+    def test_namedtuple_few_args_39(self):
+        result = builder.extract_node(
+            """
+        from typing import NamedTuple
+        NamedTuple("A")
+        """
+        )
+        inferred = next(result.infer())
+        self.assertIsInstance(inferred, nodes.ClassDef)
+        self.assertSetEqual(set(), set(inferred.instance_attrs))
+
+    @pytest.mark.skipif(sys.version_info >= (3, 9),
+                        reason="""Before 3.9 NamedTuple was a class that is easy to infer""")
     def test_namedtuple_few_args(self):
         result = builder.extract_node(
             """
@@ -1021,6 +1075,8 @@ class TypingBrain(unittest.TestCase):
         self.assertIsInstance(inferred, astroid.Instance)
         self.assertEqual(inferred.qname(), "typing.NamedTuple")
 
+    @pytest.mark.skipif(sys.version_info >= (3, 9),
+                        reason="""Before 3.9 NamedTuple was a class that is easy to infer""")
     def test_namedtuple_few_fields(self):
         result = builder.extract_node(
             """
@@ -1031,6 +1087,19 @@ class TypingBrain(unittest.TestCase):
         inferred = next(result.infer())
         self.assertIsInstance(inferred, astroid.Instance)
         self.assertEqual(inferred.qname(), "typing.NamedTuple")
+
+    @pytest.mark.skipif(sys.version_info < (3, 9),
+                        reason="""Before 3.9 NamedTuple was a class that is easy to infer""")
+    def test_namedtuple_few_fields_39(self):
+        result = builder.extract_node(
+            """
+        from typing import NamedTuple
+        NamedTuple("A", [("a",), ("b", str), ("c", bytes)])
+        """
+        )
+        inferred = next(result.infer())
+        self.assertIsInstance(inferred, nodes.ClassDef)
+        self.assertSetEqual({"a", "b", "c"}, set(inferred.instance_attrs))
 
     def test_namedtuple_class_form(self):
         result = builder.extract_node(
