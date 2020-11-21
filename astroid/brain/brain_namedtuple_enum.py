@@ -404,6 +404,24 @@ def infer_typing_namedtuple(node, context=None):
     """Infer a typing.NamedTuple(...) call."""
     # This is essentially a namedtuple with different arguments
     # so we extract the args and infer a named tuple.
+    def _get_typename(node, func):
+        """
+        Just return the typename depending on the fact func is a FunctionDef or not
+        """
+        if isinstance(func, FunctionDef):
+            return node.args[0].inferred()[0].as_string()
+        return node.args[0].as_string()
+
+    def _get_fields_list(node, func):
+        """
+        Just return the fields list depending on the fact func is a FunctionDef or not
+        """
+        if len(node.args) == 2:
+            if isinstance(func, FunctionDef):
+                return node.args[1].inferred()[0]
+            return node.args[1]
+        return None
+
     try:
         func = next(node.func.infer())
     except InferenceError as exc:
@@ -412,32 +430,23 @@ def infer_typing_namedtuple(node, context=None):
     if func.qname() != "typing.NamedTuple":
         raise UseInferenceDefault
 
-    if isinstance(func, FunctionDef):
-        fake_node = extract_node(
-            """
-            class NamedTuple(metaclass=NamedTupleMeta):
-                pass
-            """
-        )
-        func.parent.locals.pop('NamedTuple')
-        func.parent.add_local_node(fake_node)
-        return infer_typing_namedtuple(node, context)
-
-    if len(node.args) != 2:
+    if not isinstance(func, FunctionDef) and len(node.args) != 2:
         raise UseInferenceDefault
 
-    if not isinstance(node.args[1], (nodes.List, nodes.Tuple)):
-        raise UseInferenceDefault
+    typename = _get_typename(node, func)
+    fields_list = _get_fields_list(node, func)
 
     names = []
-    for elt in node.args[1].elts:
-        if not isinstance(elt, (nodes.List, nodes.Tuple)):
+    if fields_list:
+        if not isinstance(fields_list, (nodes.List, nodes.Tuple)):
             raise UseInferenceDefault
-        if len(elt.elts) != 2:
-            raise UseInferenceDefault
-        names.append(elt.elts[0].as_string())
+        for elt in fields_list.elts:
+            if not isinstance(elt, (nodes.List, nodes.Tuple)):
+                raise UseInferenceDefault
+            if len(elt.elts) != 2 and not isinstance(func, FunctionDef):
+                raise UseInferenceDefault
+            names.append(elt.elts[0].as_string())
 
-    typename = node.args[0].as_string()
     if names:
         field_names = "({},)".format(",".join(names))
     else:
