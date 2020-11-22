@@ -60,7 +60,9 @@ def _deque_mock():
         def __iadd__(self, other): pass
         def __mul__(self, other): pass
         def __imul__(self, other): pass
-        def __rmul__(self, other): pass"""
+        def __rmul__(self, other): pass
+        @classmethod
+        def __class_getitem__(self, item): pass"""
     return base_deque_class
 
 
