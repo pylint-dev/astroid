@@ -173,7 +173,7 @@ class CallSite:
 
         # Too many arguments given and no variable arguments.
         if len(self.positional_arguments) > len(funcnode.args.args):
-            if not funcnode.args.vararg:
+            if not funcnode.args.vararg and not funcnode.args.posonlyargs:
                 raise exceptions.InferenceError(
                     "Too many positional arguments "
                     "passed to {func!r} that does "
