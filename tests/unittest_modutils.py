@@ -82,7 +82,7 @@ class LoadModuleFromNameTest(unittest.TestCase):
 
     def test_raise_load_module_from_name_1(self):
         self.assertRaises(
-            ImportError, modutils.load_module_from_name, "os.path", use_sys=0
+            ImportError, modutils.load_module_from_name, "_this_module_does_not_exist_"
         )
 
 
@@ -296,6 +296,23 @@ class IsRelativeTest(unittest.TestCase):
 
     def test_knownValues_is_relative_3(self):
         self.assertFalse(modutils.is_relative("astroid", astroid.__path__[0]))
+
+    def test_deep_relative(self):
+        self.assertTrue(modutils.is_relative("ElementTree", xml.etree.__path__[0]))
+
+    def test_deep_relative2(self):
+        self.assertFalse(modutils.is_relative("ElementTree", xml.__path__[0]))
+
+    def test_deep_relative3(self):
+        self.assertTrue(modutils.is_relative("etree.ElementTree", xml.__path__[0]))
+
+    def test_deep_relative4(self):
+        self.assertTrue(modutils.is_relative("etree.gibberish", xml.__path__[0]))
+
+    def test_is_relative_bad_path(self):
+        self.assertFalse(
+            modutils.is_relative("ElementTree", os.path.join(xml.__path__[0], "ftree"))
+        )
 
 
 class GetModuleFilesTest(unittest.TestCase):

@@ -541,18 +541,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(ancestor.root().name, BUILTINS)
         self.assertRaises(StopIteration, partial(next, ancestors))
 
-    def test_qqch(self):
-        code = """
-            from astroid.modutils import load_module_from_name
-            xxx = load_module_from_name('__pkginfo__')
-        """
-        ast = parse(code, __name__)
-        xxx = ast["xxx"]
-        self.assertSetEqual(
-            {n.__class__ for n in xxx.inferred()},
-            {nodes.Const, util.Uninferable.__class__},
-        )
-
     def test_method_argument(self):
         code = '''
             class ErudiEntitySchema:
