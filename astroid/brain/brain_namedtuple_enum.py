@@ -466,8 +466,9 @@ MANAGER.register_transform(
     nodes.ClassDef, inference_tip(infer_typing_namedtuple_class), _has_namedtuple_base
 )
 MANAGER.register_transform(
-    nodes.FunctionDef, inference_tip(infer_typing_namedtuple_function),
-    lambda node: node.name == "NamedTuple" and node.parent.name == "typing"
+    nodes.FunctionDef,
+    inference_tip(infer_typing_namedtuple_function),
+    lambda node: node.name == "NamedTuple" and node.parent.name == "typing",
 )
 MANAGER.register_transform(
     nodes.Call, inference_tip(infer_typing_namedtuple), _looks_like_typing_namedtuple
