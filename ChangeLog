@@ -55,6 +55,11 @@ Release Date: TBA
 
 * Reduce memory usage of astroid's module cache.
 
+* Updated deprecated importlib methods
+
+  Close #703
+
+
 What's New in astroid 2.4.3?
 ============================
 Release Date: TBA
