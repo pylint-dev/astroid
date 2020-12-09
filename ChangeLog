@@ -38,10 +38,6 @@ Release Date: TBA
 
 * Fixed exception-chaining error messages.
 
-* Updated deprecated importlib methods
-
-  Close #703
-
 
 What's New in astroid 2.4.3?
 ============================
