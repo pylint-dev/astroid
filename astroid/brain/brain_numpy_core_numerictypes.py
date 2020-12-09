@@ -20,12 +20,14 @@ def numpy_core_numerictypes_transform():
     # different types defined in numerictypes.py
     class generic(object):
         def __init__(self, value):
-            self.T = None
+            self.T = np.ndarray([0, 0])
             self.base = None
             self.data = None
             self.dtype = None
             self.flags = None
-            self.flat = None
+            # Should be a numpy.flatiter instance but not available for now
+            # Putting an array instead so that iteration and indexing are authorized
+            self.flat = np.ndarray([0, 0])
             self.imag = None
             self.itemsize = None
             self.nbytes = None

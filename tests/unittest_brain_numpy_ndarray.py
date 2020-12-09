@@ -154,7 +154,7 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
         Test that some numpy ndarray attributes are inferred as numpy.ndarray
         """
         licit_array_types = ".ndarray"
-        for attr_ in ("real", "imag"):
+        for attr_ in ("real", "imag", "shape", "T"):
             with self.subTest(typ=attr_):
                 inferred_values = list(self._inferred_ndarray_attribute(attr_))
                 self.assertTrue(

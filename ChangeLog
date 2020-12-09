@@ -6,6 +6,21 @@ astroid's ChangeLog
 What's New in astroid 2.5.0?
 ============================
 Release Date: TBA
+* The flat attribute of ``numpy.ndarray`` is now inferred as an ``numpy.ndarray`` itself.
+  It should be a ``numpy.flatiter`` instance, but this class is not yet available in the numpy brain.
+
+  Fixes PyCQA/pylint#3640
+
+* Fixes a bug in the signature of the ``ndarray.__or__`` method, 
+  in the ``brain_numpy_ndarray.py`` module.
+
+  Fixes #815
+
+* Added a brain for ``hypothesis.strategies.composite``
+
+* The transpose of a ``numpy.ndarray`` is also a ``numpy.ndarray``
+
+  Fixes PyCQA/pylint#3387
 
 * Added a brain for ``sqlalchemy.orm.session``
 
@@ -38,6 +53,7 @@ Release Date: TBA
 
 * Fixed exception-chaining error messages.
 
+* Reduce memory usage of astroid's module cache.
 
 What's New in astroid 2.4.3?
 ============================

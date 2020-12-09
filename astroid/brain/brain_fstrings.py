@@ -2,7 +2,7 @@
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
-import collections
+import collections.abc
 import sys
 
 import astroid
@@ -19,7 +19,7 @@ def _clone_node_with_lineno(node, parent, lineno):
     new_node = cls(**init_params)
     if hasattr(node, "postinit") and _astroid_fields:
         for param, child in postinit_params.items():
-            if child and not isinstance(child, collections.Sequence):
+            if child and not isinstance(child, collections.abc.Sequence):
                 cloned_child = _clone_node_with_lineno(
                     node=child, lineno=new_node.lineno, parent=new_node
                 )

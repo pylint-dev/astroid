@@ -240,7 +240,7 @@ def _is_setuptools_namespace(location):
         with open(os.path.join(location, "__init__.py"), "rb") as stream:
             data = stream.read(4096)
     except IOError:
-        pass
+        return None
     else:
         extend_path = b"pkgutil" in data and b"extend_path" in data
         declare_namespace = (
