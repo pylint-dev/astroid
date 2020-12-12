@@ -53,6 +53,10 @@ Release Date: TBA
 
 * Fixed exception-chaining error messages.
 
+* Fix failure to infer base class type with multiple inheritance and qualified names
+
+  Fixes #843
+
 * Reduce memory usage of astroid's module cache.
 
 What's New in astroid 2.4.3?
