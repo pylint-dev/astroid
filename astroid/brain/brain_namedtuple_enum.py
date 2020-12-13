@@ -399,6 +399,21 @@ def infer_typing_namedtuple_class(class_node, context=None):
     return iter((generated_class_node,))
 
 
+def infer_typing_namedtuple_function(node, context=None):
+    """
+    Starting with python3.9, NamedTuple is a function of the typing module.
+    The class NamedTuple is build dynamically through a call to `type` during
+    initialization of the `_NamedTuple` variable.
+    """
+    klass = extract_node(
+        """
+        from typing import _NamedTuple
+        _NamedTuple
+        """
+    )
+    return klass.infer(context)
+
+
 def infer_typing_namedtuple(node, context=None):
     """Infer a typing.NamedTuple(...) call."""
     # This is essentially a namedtuple with different arguments
@@ -449,6 +464,11 @@ MANAGER.register_transform(
 )
 MANAGER.register_transform(
     nodes.ClassDef, inference_tip(infer_typing_namedtuple_class), _has_namedtuple_base
+)
+MANAGER.register_transform(
+    nodes.FunctionDef,
+    inference_tip(infer_typing_namedtuple_function),
+    lambda node: node.name == "NamedTuple" and node.parent.name == "typing",
 )
 MANAGER.register_transform(
     nodes.Call, inference_tip(infer_typing_namedtuple), _looks_like_typing_namedtuple
