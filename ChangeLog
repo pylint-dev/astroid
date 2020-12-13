@@ -59,6 +59,11 @@ Release Date: TBA
 
 * Reduce memory usage of astroid's module cache.
 
+* Remove dependency on `imp`.
+
+  Close #594
+  Close #681
+
 What's New in astroid 2.4.3?
 ============================
 Release Date: TBA

@@ -1448,6 +1448,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                             decorators.append(assign.value)
         return decorators
 
+    # pylint: disable=invalid-overridden-method
     @decorators_mod.cachedproperty
     def type(
         self
