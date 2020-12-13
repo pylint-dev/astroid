@@ -1448,6 +1448,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
                             decorators.append(assign.value)
         return decorators
 
+    # pylint: disable=invalid-overridden-method
     @decorators_mod.cachedproperty
     def type(
         self
@@ -2858,7 +2859,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         for stmt in self.bases:
             try:
-                baseobj = next(stmt.infer(context=context))
+                baseobj = next(stmt.infer(context=context.clone()))
             except exceptions.InferenceError:
                 continue
             if isinstance(baseobj, bases.Instance):
