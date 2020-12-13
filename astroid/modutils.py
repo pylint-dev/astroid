@@ -31,7 +31,7 @@
 :type BUILTIN_MODULES: dict
 :var BUILTIN_MODULES: dictionary with builtin module names has key
 """
-import imp
+import importlib.util
 import os
 import platform
 import sys
@@ -44,7 +44,6 @@ from distutils.errors import DistutilsPlatformError
 # distutils is replaced by virtualenv with a module that does
 # weird path manipulations in order to get to the
 # real distutils module.
-from typing import Optional, List
 
 from .interpreter._import import spec
 from .interpreter._import import util
@@ -178,102 +177,45 @@ def _cache_normalize_path(path):
         return result
 
 
-def load_module_from_name(dotted_name, path=None, use_sys=True):
+def load_module_from_name(dotted_name):
     """Load a Python module from its name.
 
     :type dotted_name: str
     :param dotted_name: python name of a module or package
-
-    :type path: list or None
-    :param path:
-      optional list of path where the module or package should be
-      searched (use sys.path if nothing or None is given)
-
-    :type use_sys: bool
-    :param use_sys:
-      boolean indicating whether the sys.modules dictionary should be
-      used or not
-
 
     :raise ImportError: if the module or package is not found
 
     :rtype: module
     :return: the loaded module
     """
-    return load_module_from_modpath(dotted_name.split("."), path, use_sys)
+    try:
+        return sys.modules[dotted_name]
+    except KeyError:
+        pass
+
+    return importlib.import_module(dotted_name)
 
 
-def load_module_from_modpath(parts, path: Optional[List[str]] = None, use_sys=1):
+def load_module_from_modpath(parts):
     """Load a python module from its split name.
 
     :type parts: list(str) or tuple(str)
     :param parts:
       python name of a module or package split on '.'
 
-    :param path:
-      Optional list of path where the module or package should be
-      searched (use sys.path if nothing or None is given)
-
-    :type use_sys: bool
-    :param use_sys:
-      boolean indicating whether the sys.modules dictionary should be used or not
-
     :raise ImportError: if the module or package is not found
 
     :rtype: module
     :return: the loaded module
     """
-    if use_sys:
-        try:
-            return sys.modules[".".join(parts)]
-        except KeyError:
-            pass
-    modpath = []
-    prevmodule = None
-    for part in parts:
-        modpath.append(part)
-        curname = ".".join(modpath)
-        module = None
-        if len(modpath) != len(parts):
-            # even with use_sys=False, should try to get outer packages from sys.modules
-            module = sys.modules.get(curname)
-        elif use_sys:
-            # because it may have been indirectly loaded through a parent
-            module = sys.modules.get(curname)
-        if module is None:
-            mp_file, mp_filename, mp_desc = imp.find_module(part, path)
-            module = imp.load_module(curname, mp_file, mp_filename, mp_desc)
-            # mp_file still needs to be closed.
-            if mp_file:
-                mp_file.close()
-        if prevmodule:
-            setattr(prevmodule, part, module)
-        _file = getattr(module, "__file__", "")
-        prevmodule = module
-        if not _file and util.is_namespace(curname):
-            continue
-        if not _file and len(modpath) != len(parts):
-            raise ImportError("no module in %s" % ".".join(parts[len(modpath) :]))
-        path = [os.path.dirname(_file)]
-    return module
+    return load_module_from_name(".".join(parts))
 
 
-def load_module_from_file(
-    filepath: str, path: Optional[List[str]] = None, use_sys=True
-):
+def load_module_from_file(filepath: str):
     """Load a Python module from it's path.
 
     :type filepath: str
     :param filepath: path to the python module or package
-
-    :param Optional[List[str]] path:
-      Optional list of path where the module or package should be
-      searched (use sys.path if nothing or None is given)
-
-    :type use_sys: bool
-    :param use_sys:
-      boolean indicating whether the sys.modules dictionary should be
-      used or not
 
     :raise ImportError: if the module or package is not found
 
@@ -281,7 +223,7 @@ def load_module_from_file(
     :return: the loaded module
     """
     modpath = modpath_from_file(filepath)
-    return load_module_from_modpath(modpath, path, use_sys)
+    return load_module_from_modpath(modpath)
 
 
 def check_modpath_has_init(path, mod_path):
@@ -418,7 +360,9 @@ def file_info_from_modpath(modpath, path=None, context_file=None):
     elif modpath == ["os", "path"]:
         # FIXME: currently ignoring search_path...
         return spec.ModuleSpec(
-            name="os.path", location=os.path.__file__, module_type=imp.PY_SOURCE
+            name="os.path",
+            location=os.path.__file__,
+            module_type=spec.ModuleType.PY_SOURCE,
         )
     return _spec_from_modpath(modpath, path, context)
 
@@ -614,15 +558,21 @@ def is_relative(modname, from_file):
         from_file = os.path.dirname(from_file)
     if from_file in sys.path:
         return False
-    try:
-        stream, _, _ = imp.find_module(modname.split(".")[0], [from_file])
+    name = os.path.basename(from_file)
+    file_path = os.path.dirname(from_file)
+    parent_spec = importlib.util.find_spec(name, from_file)
+    while parent_spec is None and len(file_path) > 0:
+        name = os.path.basename(file_path) + "." + name
+        file_path = os.path.dirname(file_path)
+        parent_spec = importlib.util.find_spec(name, from_file)
 
-        # Close the stream to avoid ResourceWarnings.
-        if stream:
-            stream.close()
-        return True
-    except ImportError:
+    if parent_spec is None:
         return False
+
+    submodule_spec = importlib.util.find_spec(
+        name + "." + modname.split(".")[0], parent_spec.submodule_search_locations
+    )
+    return submodule_spec is not None
 
 
 # internal only functions #####################################################

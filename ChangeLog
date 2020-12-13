@@ -53,12 +53,20 @@ Release Date: TBA
 
 * Fixed exception-chaining error messages.
 
+* Fix failure to infer base class type with multiple inheritance and qualified names
+
+  Fixes #843
+
 * Reduce memory usage of astroid's module cache.
 
 * Updated deprecated importlib methods
 
   Close #703
 
+* Remove dependency on `imp`.
+
+  Close #594
+  Close #681
 
 What's New in astroid 2.4.3?
 ============================

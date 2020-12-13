@@ -1417,6 +1417,22 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             ],
         )
 
+    def test_mro_with_attribute_classes(self):
+        cls = builder.extract_node(
+            """
+        class A:
+            pass
+        class B:
+            pass
+        scope = object()
+        scope.A = A
+        scope.B = B
+        class C(scope.A, scope.B):
+            pass
+        """
+        )
+        self.assertEqualMro(cls, ["C", "A", "B", "object"])
+
     def test_generator_from_infer_call_result_parent(self):
         func = builder.extract_node(
             """
