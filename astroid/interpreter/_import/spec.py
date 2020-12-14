@@ -294,7 +294,9 @@ def _search_zip(modpath, pic):
             found = getattr(importer, "find_spec", importer.find_module)(modpath[0])
             if found:
                 module_path = os.path.sep.join(modpath)
-                if not getattr(importer, "find_spec", importer.find_module)(module_path):
+                if not getattr(importer, "find_spec", importer.find_module)(
+                    module_path
+                ):
                     raise ImportError(
                         "No module named %s in %s/%s"
                         % (".".join(modpath[1:]), filepath, modpath)
