@@ -32,6 +32,7 @@
 import io
 import queue
 import re
+import os
 
 try:
     import multiprocessing  # pylint: disable=unused-import
@@ -401,6 +402,12 @@ class NoseBrainTest(unittest.TestCase):
 
 @unittest.skipUnless(HAS_SIX, "These tests require the six library")
 class SixBrainTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        tox_env = os.environ.get("TOX_ENV_NAME")
+        if tox_env and not tox_env.endswith("-six") and HAS_SIX:
+            raise Exception("six was installed in a non-six testing environment.")
+
     def test_attribute_access(self):
         ast_nodes = builder.extract_node(
             """

@@ -10,17 +10,17 @@ jobs:
   - python: 3.6
     env: TOXENV=formatting
   - python: 3.5
-    env: TOXENV=py35
+    env: TOXENV=py35,py35-six
   - python: pypy3
     env: TOXENV=pypy
   - python: 3.6
-    env: TOXENV=py36
+    env: TOXENV=py36,py36-six
   - python: 3.7
-    env: TOXENV=py37
+    env: TOXENV=py37,py37-six
   - python: 3.8
-    env: TOXENV=py38
+    env: TOXENV=py38,py38-six
   - python: 3.9
-    env: TOXENV=py39
+    env: TOXENV=py39,py39-six
 before_install:
 - python --version
 - uname -a
