@@ -342,7 +342,6 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         func = self.module["four_args"]
         self.assertEqual(func.args.format_args(), "a, b, c, d")
 
-    @test_utils.require_version("3.0")
     def test_format_args_keyword_only_args(self):
         node = (
             builder.parse(
@@ -603,7 +602,6 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 42)
 
-    @test_utils.require_version(minver="3.0")
     def test_return_annotation_is_not_the_last(self):
         func = builder.extract_node(
             """
@@ -617,7 +615,6 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(last_child, nodes.Return)
         self.assertEqual(func.tolineno, 5)
 
-    @test_utils.require_version(minver="3.6")
     def test_method_init_subclass(self):
         klass = builder.extract_node(
             """
@@ -630,7 +627,6 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual([n.name for n in method.args.args], ["cls"])
         self.assertEqual(method.type, "classmethod")
 
-    @test_utils.require_version(minver="3.0")
     def test_dunder_class_local_to_method(self):
         node = builder.extract_node(
             """
@@ -643,7 +639,6 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "MyClass")
 
-    @test_utils.require_version(minver="3.0")
     def test_dunder_class_local_to_function(self):
         node = builder.extract_node(
             """
@@ -654,7 +649,6 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         with self.assertRaises(NameInferenceError):
             next(node.infer())
 
-    @test_utils.require_version(minver="3.0")
     def test_dunder_class_local_to_classmethod(self):
         node = builder.extract_node(
             """
@@ -1753,7 +1747,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         parent = bind.scope()
         self.assertEqual(len(parent.extra_decorators), 0)
 
-    @test_utils.require_version(minver="3.0")
     def test_class_keywords(self):
         data = """
             class TestKlass(object, metaclass=TestMetaKlass,

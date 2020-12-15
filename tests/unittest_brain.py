@@ -92,7 +92,6 @@ from astroid import bases
 from astroid import builder
 from astroid import nodes
 from astroid import util
-from astroid import test_utils
 import astroid
 
 
@@ -116,7 +115,6 @@ class HashlibTest(unittest.TestCase):
             class_obj = hashlib_module[class_name]
             self._assert_hashlib_class(class_obj)
 
-    @test_utils.require_version(minver="3.6")
     def test_hashlib_py36(self):
         hashlib_module = MANAGER.ast_from_module_name("hashlib")
         for class_name in ["sha3_224", "sha3_512", "shake_128"]:
@@ -142,7 +140,6 @@ class CollectionsDequeTests(unittest.TestCase):
         inferred = self._inferred_queue_instance()
         self.assertTrue(inferred.getattr("__len__"))
 
-    @test_utils.require_version(minver="3.5")
     def test_deque_py35methods(self):
         inferred = self._inferred_queue_instance()
         self.assertIn("copy", inferred.locals)
@@ -161,7 +158,6 @@ class OrderedDictTest(unittest.TestCase):
         )
         return next(node.infer())
 
-    @test_utils.require_version(minver="3.4")
     def test_ordered_dict_py34method(self):
         inferred = self._inferred_ordered_dict_instance()
         self.assertIn("move_to_end", inferred.locals)
@@ -818,7 +814,6 @@ class EnumBrainTest(unittest.TestCase):
         inferred_string = next(node.infer())
         assert inferred_string.value == "\N{NULL}"
 
-    @test_utils.require_version(minver="3.6")
     def test_dont_crash_on_for_loops_in_body(self):
         node = builder.extract_node(
             """
@@ -952,7 +947,6 @@ class IOBrainTest(unittest.TestCase):
             self.assertEqual(raw.name, "FileIO")
 
 
-@test_utils.require_version("3.6")
 class TypingBrain(unittest.TestCase):
     def test_namedtuple_base(self):
         klass = builder.extract_node(
@@ -1130,7 +1124,6 @@ class ReBrainTest(unittest.TestCase):
             self.assertEqual(next(re_ast[name].infer()).value, getattr(re, name))
 
 
-@test_utils.require_version("3.6")
 class BrainFStrings(unittest.TestCase):
     def test_no_crash_on_const_reconstruction(self):
         node = builder.extract_node(
@@ -1148,7 +1141,6 @@ class BrainFStrings(unittest.TestCase):
         self.assertIs(inferred, util.Uninferable)
 
 
-@test_utils.require_version("3.6")
 class BrainNamedtupleAnnAssignTest(unittest.TestCase):
     def test_no_crash_on_ann_assign_in_namedtuple(self):
         node = builder.extract_node(
@@ -1250,7 +1242,6 @@ class AttrsTest(unittest.TestCase):
         """
         next(astroid.extract_node(code).infer())
 
-    @test_utils.require_version(minver="3.6")
     def test_attrs_with_annotation(self):
         code = """
         import attr
