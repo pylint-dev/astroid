@@ -16,6 +16,7 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
+import builtins
 import os
 import platform
 import site
@@ -23,7 +24,6 @@ import sys
 import unittest
 
 import pkg_resources
-import six
 import time
 
 import astroid
@@ -32,7 +32,7 @@ from astroid import manager
 from . import resources
 
 
-BUILTINS = six.moves.builtins.__name__
+BUILTINS = builtins.__name__
 
 
 def _get_file_from_object(obj):

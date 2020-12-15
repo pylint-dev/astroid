@@ -7,8 +7,6 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 import sys
 
-import six
-
 import astroid
 
 PY36 = sys.version_info >= (3, 6)
@@ -55,12 +53,7 @@ def _hashlib_transform():
             {"blake2b": blake2b_signature, "blake2s": blake2s_signature}
         )
     classes = "".join(
-        template
-        % {
-            "name": hashfunc,
-            "digest": 'b""' if six.PY3 else '""',
-            "signature": signature,
-        }
+        template % {"name": hashfunc, "digest": 'b""', "signature": signature}
         for hashfunc, signature in algorithms_with_signature.items()
     )
     return astroid.parse(classes)

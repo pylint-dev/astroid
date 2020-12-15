@@ -54,8 +54,7 @@ def _multiprocessing_managers_transform():
     import array
     import threading
     import multiprocessing.pool as pool
-
-    import six
+    import queue
 
     class Namespace(object):
         pass
@@ -76,7 +75,7 @@ def _multiprocessing_managers_transform():
         return array.array(typecode, sequence)
 
     class SyncManager(object):
-        Queue = JoinableQueue = six.moves.queue.Queue
+        Queue = JoinableQueue = queue.Queue
         Event = threading.Event
         RLock = threading.RLock
         BoundedSemaphore = threading.BoundedSemaphore

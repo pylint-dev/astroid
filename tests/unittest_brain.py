@@ -79,6 +79,13 @@ try:
 except ImportError:
     HAS_ATTR = False
 
+try:
+    import six  # pylint: disable=unused-import
+
+    HAS_SIX = True
+except ImportError:
+    HAS_SIX = False
+
 from astroid import MANAGER
 from astroid import bases
 from astroid import builder
@@ -205,9 +212,9 @@ class NamedTupleTest(unittest.TestCase):
         # namedtuple call and a mixin as base classes
         result = builder.extract_node(
             """
-        import six
+        from urllib.parse import urlparse
 
-        result = __(six.moves.urllib.parse.urlparse('gopher://'))
+        result = __(urlparse('gopher://'))
         """
         )
         instance = next(result.infer())
@@ -392,6 +399,7 @@ class NoseBrainTest(unittest.TestCase):
         self.assertEqual(assert_equals.qname(), "unittest.case.TestCase.assertEqual")
 
 
+@unittest.skipUnless(HAS_SIX, "These tests require the six library")
 class SixBrainTest(unittest.TestCase):
     def test_attribute_access(self):
         ast_nodes = builder.extract_node(

@@ -21,6 +21,7 @@
 
 """tests for specific behaviour of astroid nodes
 """
+import builtins
 import os
 import sys
 import textwrap
@@ -29,7 +30,6 @@ import copy
 import platform
 
 import pytest
-import six
 
 import astroid
 from astroid import bases
@@ -46,7 +46,7 @@ from . import resources
 
 
 abuilder = builder.AstroidBuilder()
-BUILTINS = six.moves.builtins.__name__
+BUILTINS = builtins.__name__
 PY38 = sys.version_info[:2] >= (3, 8)
 try:
     import typed_ast  # pylint: disable=unused-import
@@ -399,20 +399,6 @@ class TryExceptFinallyNodeTest(_NodeTest):
         self.assertEqual(self.astroid.body[0].block_range(4), (4, 4))
         self.assertEqual(self.astroid.body[0].block_range(5), (5, 5))
         self.assertEqual(self.astroid.body[0].block_range(6), (6, 6))
-
-
-@unittest.skipIf(six.PY3, "Python 2 specific test.")
-class TryExcept2xNodeTest(_NodeTest):
-    CODE = """
-        try:
-            hello
-        except AttributeError, (retval, desc):
-            pass
-    """
-
-    def test_tuple_attribute(self):
-        handler = self.astroid.body[0].handlers[0]
-        self.assertIsInstance(handler.name, nodes.Tuple)
 
 
 class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):

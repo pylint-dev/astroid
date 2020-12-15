@@ -2985,9 +2985,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         class Meta(type):
             def __getitem__(cls, arg):
                 return 24
-        import six
-        @six.add_metaclass(Meta)
-        class A(object):
+        class A(object, metaclass=Meta):
             pass
 
         A['Awesome'] #@
@@ -3003,9 +3001,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         class Meta(type):
             def __or__(self, other):
                 return 24
-        import six
-        @six.add_metaclass(Meta)
-        class A(object):
+        class A(object, metaclass=Meta):
             pass
 
         A | A
@@ -3340,12 +3336,10 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
     def test_unary_op_classes(self):
         ast_node = extract_node(
             """
-        import six
         class Meta(type):
             def __invert__(self):
                 return 42
-        @six.add_metaclass(Meta)
-        class A(object):
+        class A(object, metaclass=Meta):
             pass
         ~A
         """
@@ -3624,16 +3618,13 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         # they will be in the future.
         ast_node = extract_node(
             """
-        import six
-
         class BookMeta(type):
             author = 'Rushdie'
 
         def metaclass_function(*args):
             return BookMeta
 
-        @six.add_metaclass(metaclass_function)
-        class Book(object):
+        class Book(object, metaclass=metaclass_function):
             pass
         Book #@
         """
@@ -3737,9 +3728,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         class A(type):
             def test(cls):
                 return cls
-        import six
-        @six.add_metaclass(A)
-        class B(object):
+        class B(object, metaclass=A):
             pass
 
         B.test() #@

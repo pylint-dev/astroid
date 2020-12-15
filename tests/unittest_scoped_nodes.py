@@ -54,6 +54,13 @@ from astroid.bases import BUILTINS, Instance, BoundMethod, UnboundMethod, Genera
 from astroid import test_utils
 from . import resources
 
+try:
+    import six  # pylint: disable=unused-import
+
+    HAS_SIX = True
+except ImportError:
+    HAS_SIX = False
+
 
 def _test_dict_interface(self, node, test_attr):
     self.assertIs(node[test_attr], node[test_attr])
@@ -1092,6 +1099,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         for klass in ast_nodes:
             self.assertEqual(None, klass.metaclass())
 
+    @unittest.skipUnless(HAS_SIX, "These tests require the six library")
     def test_metaclass_generator_hack(self):
         klass = builder.extract_node(
             """
@@ -1104,14 +1112,12 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(["object"], [base.name for base in klass.ancestors()])
         self.assertEqual("type", klass.metaclass().name)
 
-    def test_using_six_add_metaclass(self):
+    def test_add_metaclass(self):
         klass = builder.extract_node(
             """
-        import six
         import abc
 
-        @six.add_metaclass(abc.ABCMeta)
-        class WithMeta(object):
+        class WithMeta(object, metaclass=abc.ABCMeta):
             pass
         """
         )
@@ -1120,6 +1126,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(metaclass, scoped_nodes.ClassDef)
         self.assertIn(metaclass.qname(), ("abc.ABCMeta", "_py_abc.ABCMeta"))
 
+    @unittest.skipUnless(HAS_SIX, "These tests require the six library")
     def test_using_invalid_six_add_metaclass_call(self):
         klass = builder.extract_node(
             """
@@ -1272,6 +1279,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
     def assertEqualMro(self, klass, expected_mro):
         self.assertEqual([member.name for member in klass.mro()], expected_mro)
 
+    @unittest.skipUnless(HAS_SIX, "These tests require the six library")
     def test_with_metaclass_mro(self):
         astroid = builder.parse(
             """
@@ -1499,13 +1507,10 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
     def test_metaclass_lookup_inference_errors(self):
         module = builder.parse(
             """
-        import six
-
         class Metaclass(type):
             foo = lala
 
-        @six.add_metaclass(Metaclass)
-        class B(object): pass
+        class B(object, metaclass=Metaclass): pass
         """
         )
         cls = module["B"]
@@ -1514,8 +1519,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
     def test_metaclass_lookup(self):
         module = builder.parse(
             """
-        import six
-
         class Metaclass(type):
             foo = 42
             @classmethod
@@ -1530,8 +1533,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             def static():
                 pass
 
-        @six.add_metaclass(Metaclass)
-        class A(object):
+        class A(object, metaclass=Metaclass):
             pass
         """
         )
