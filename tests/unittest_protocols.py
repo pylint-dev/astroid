@@ -18,7 +18,6 @@ import sys
 
 import astroid
 from astroid import extract_node
-from astroid.test_utils import require_version
 from astroid import InferenceError
 from astroid import nodes
 from astroid import util
@@ -67,7 +66,6 @@ class ProtocolTests(unittest.TestCase):
         for2_assnode = next(assign_stmts[1].nodes_of_class(AssignName))
         self.assertRaises(InferenceError, list, for2_assnode.assigned_stmts())
 
-    @require_version(minver="3.0")
     def test_assigned_stmts_starred_for(self):
         assign_stmts = extract_node(
             """
@@ -101,7 +99,6 @@ class ProtocolTests(unittest.TestCase):
         starred = next(assign_stmt.nodes_of_class(Starred))
         self.assertRaises(InferenceError, list, starred.assigned_stmts())
 
-    @require_version(minver="3.0")
     def test_assigned_stmts_starred_assnames(self):
         self._helper_starred_expected_const("a, *b = (1, 2, 3, 4) #@", [2, 3, 4])
         self._helper_starred_expected_const("*a, b = (1, 2, 3) #@", [1, 2])
@@ -110,7 +107,6 @@ class ProtocolTests(unittest.TestCase):
         self._helper_starred_expected_const("*b, a = (1, 2) #@", [1])
         self._helper_starred_expected_const("[*b] = (1, 2) #@", [1, 2])
 
-    @require_version(minver="3.0")
     def test_assigned_stmts_starred_yes(self):
         # Not something iterable and known
         self._helper_starred_expected("a, *b = range(3) #@", util.Uninferable)
@@ -128,7 +124,6 @@ class ProtocolTests(unittest.TestCase):
             "a, (*b, c), d = (1, (2, 3, 4), 5) #@", util.Uninferable
         )
 
-    @require_version(minver="3.0")
     def test_assign_stmts_starred_fails(self):
         # Too many starred
         self._helper_starred_inference_error("a, *b, *c = (1, 2, 3) #@")
@@ -159,7 +154,6 @@ class ProtocolTests(unittest.TestCase):
         assigned = list(simple_mul_assnode_2.assigned_stmts())
         self.assertNameNodesEqual(["c"], assigned)
 
-    @require_version(minver="3.6")
     def test_assigned_stmts_annassignments(self):
         annassign_stmts = extract_node(
             """

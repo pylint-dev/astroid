@@ -27,7 +27,6 @@ class Python3TC(unittest.TestCase):
     def setUpClass(cls):
         cls.builder = AstroidBuilder()
 
-    @require_version("3.4")
     def test_starred_notation(self):
         astroid = self.builder.string_build("*a, b = [1, 2, 3]", "test", "test")
 
@@ -36,7 +35,6 @@ class Python3TC(unittest.TestCase):
 
         self.assertTrue(isinstance(node.assign_type(), Assign))
 
-    @require_version("3.4")
     def test_yield_from(self):
         body = dedent(
             """
@@ -53,7 +51,6 @@ class Python3TC(unittest.TestCase):
         self.assertIsInstance(yieldfrom_stmt.value, YieldFrom)
         self.assertEqual(yieldfrom_stmt.as_string(), "yield from iter([1, 2])")
 
-    @require_version("3.4")
     def test_yield_from_is_generator(self):
         body = dedent(
             """
@@ -66,7 +63,6 @@ class Python3TC(unittest.TestCase):
         self.assertIsInstance(func, FunctionDef)
         self.assertTrue(func.is_generator())
 
-    @require_version("3.4")
     def test_yield_from_as_string(self):
         body = dedent(
             """
@@ -81,7 +77,6 @@ class Python3TC(unittest.TestCase):
 
     # metaclass tests
 
-    @require_version("3.4")
     def test_simple_metaclass(self):
         astroid = self.builder.string_build("class Test(metaclass=type): pass")
         klass = astroid.body[0]
@@ -90,13 +85,11 @@ class Python3TC(unittest.TestCase):
         self.assertIsInstance(metaclass, ClassDef)
         self.assertEqual(metaclass.name, "type")
 
-    @require_version("3.4")
     def test_metaclass_error(self):
         astroid = self.builder.string_build("class Test(metaclass=typ): pass")
         klass = astroid.body[0]
         self.assertFalse(klass.metaclass())
 
-    @require_version("3.4")
     def test_metaclass_imported(self):
         astroid = self.builder.string_build(
             dedent(
@@ -111,7 +104,6 @@ class Python3TC(unittest.TestCase):
         self.assertIsInstance(metaclass, ClassDef)
         self.assertEqual(metaclass.name, "ABCMeta")
 
-    @require_version("3.4")
     def test_metaclass_multiple_keywords(self):
         astroid = self.builder.string_build(
             "class Test(magic=None, metaclass=type): pass"
@@ -122,7 +114,6 @@ class Python3TC(unittest.TestCase):
         self.assertIsInstance(metaclass, ClassDef)
         self.assertEqual(metaclass.name, "type")
 
-    @require_version("3.4")
     def test_as_string(self):
         body = dedent(
             """
@@ -136,7 +127,6 @@ class Python3TC(unittest.TestCase):
             klass.as_string(), "\n\nclass Test(metaclass=ABCMeta):\n    pass\n"
         )
 
-    @require_version("3.4")
     def test_old_syntax_works(self):
         astroid = self.builder.string_build(
             dedent(
@@ -151,7 +141,6 @@ class Python3TC(unittest.TestCase):
         metaclass = klass.metaclass()
         self.assertIsNone(metaclass)
 
-    @require_version("3.4")
     def test_metaclass_yes_leak(self):
         astroid = self.builder.string_build(
             dedent(
@@ -166,7 +155,6 @@ class Python3TC(unittest.TestCase):
         klass = astroid["Meta"]
         self.assertIsNone(klass.metaclass())
 
-    @require_version("3.4")
     def test_parent_metaclass(self):
         astroid = self.builder.string_build(
             dedent(
@@ -183,7 +171,6 @@ class Python3TC(unittest.TestCase):
         self.assertIsInstance(metaclass, ClassDef)
         self.assertEqual(metaclass.name, "ABCMeta")
 
-    @require_version("3.4")
     def test_metaclass_ancestors(self):
         astroid = self.builder.string_build(
             dedent(
@@ -212,7 +199,6 @@ class Python3TC(unittest.TestCase):
                 self.assertIsInstance(meta, ClassDef)
                 self.assertEqual(meta.name, metaclass)
 
-    @require_version("3.4")
     def test_annotation_support(self):
         astroid = self.builder.string_build(
             dedent(
@@ -255,7 +241,6 @@ class Python3TC(unittest.TestCase):
         self.assertEqual(func.args.annotations[1].name, "str")
         self.assertIsNone(func.returns)
 
-    @require_version("3.4")
     def test_kwonlyargs_annotations_supper(self):
         node = self.builder.string_build(
             dedent(
@@ -276,7 +261,6 @@ class Python3TC(unittest.TestCase):
         self.assertIsNone(arguments.kwonlyargs_annotations[3])
         self.assertIsNone(arguments.kwonlyargs_annotations[4])
 
-    @require_version("3.4")
     def test_annotation_as_string(self):
         code1 = dedent(
             """
@@ -292,7 +276,6 @@ class Python3TC(unittest.TestCase):
             func = extract_node(code)
             self.assertEqual(func.as_string(), code)
 
-    @require_version("3.5")
     def test_unpacking_in_dicts(self):
         code = "{'x': 1, **{'y': 2}}"
         node = extract_node(code)
@@ -301,13 +284,11 @@ class Python3TC(unittest.TestCase):
         self.assertIsInstance(keys[0], nodes.Const)
         self.assertIsInstance(keys[1], nodes.DictUnpack)
 
-    @require_version("3.5")
     def test_nested_unpacking_in_dicts(self):
         code = "{'x': 1, **{'y': 2, **{'z': 3}}}"
         node = extract_node(code)
         self.assertEqual(node.as_string(), code)
 
-    @require_version("3.5")
     def test_unpacking_in_dict_getitem(self):
         node = extract_node("{1:2, **{2:3, 3:4}, **{5: 6}}")
         for key, expected in ((1, 2), (2, 3), (3, 4), (5, 6)):
@@ -315,13 +296,11 @@ class Python3TC(unittest.TestCase):
             self.assertIsInstance(value, nodes.Const)
             self.assertEqual(value.value, expected)
 
-    @require_version("3.6")
     def test_format_string(self):
         code = "f'{greetings} {person}'"
         node = extract_node(code)
         self.assertEqual(node.as_string(), code)
 
-    @require_version("3.6")
     def test_underscores_in_numeral_literal(self):
         pairs = [("10_1000", 101000), ("10_000_000", 10000000), ("0x_FF_FF", 65535)]
         for value, expected in pairs:
@@ -330,7 +309,6 @@ class Python3TC(unittest.TestCase):
             self.assertIsInstance(inferred, nodes.Const)
             self.assertEqual(inferred.value, expected)
 
-    @require_version("3.6")
     def test_async_comprehensions(self):
         async_comprehensions = [
             extract_node(
@@ -379,7 +357,6 @@ class Python3TC(unittest.TestCase):
             node = extract_node(comp)
             self.assertTrue(node.generators[0].is_async)
 
-    @require_version("3.6")
     def test_async_comprehensions_as_string(self):
         func_bodies = [
             "return [i async for i in aiter() if condition(i)]",
