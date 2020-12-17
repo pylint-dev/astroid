@@ -66,6 +66,8 @@ Release Date: TBA
   Close #594
   Close #681
 
+* Fix a crash for some uninferable types
+
 What's New in astroid 2.4.3?
 ============================
 Release Date: TBA
