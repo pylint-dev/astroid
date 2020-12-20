@@ -291,6 +291,10 @@ def _precache_zipimporters(path=None):
 def _search_zip(modpath, pic):
     for filepath, importer in list(pic.items()):
         if importer is not None:
+            # Note: the importer object may be either an `importlib.machinery.FileFinder` or a
+            # `zipimport.zipimporter` instance. The following approach supports both while avoiding
+            # using the deprecated `find_module` method of `importlib.machinery.FileFinder`
+            # (see also the discussion in https://github.com/PyCQA/astroid/pull/811).
             found = getattr(importer, "find_spec", importer.find_module)(modpath[0])
             if found:
                 module_path = os.path.sep.join(modpath)
