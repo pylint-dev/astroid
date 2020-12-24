@@ -285,7 +285,7 @@ def _precache_zipimporters(path=None):
             pic[entry_path] = zipimport.zipimporter(entry_path)
         except zipimport.ZipImportError:
             continue
-    return pic
+    return {key: value for key, value in pic.items() if isinstance(value, zipimport.zipimporter)}
 
 
 def _search_zip(modpath, pic):
