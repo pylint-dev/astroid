@@ -270,6 +270,16 @@ def _cached_set_diff(left, right):
 
 
 def _precache_zipimporters(path=None):
+    """
+    For each path that has not been already cached 
+    in the sys.path_importer_cache, create a new zipimporter
+    instance and store it into the cache.
+    Return a dict associating all paths, stored into the cache, to corresponding
+    zipimporter instances
+
+    :param path: paths that has to be added into the cache
+    :return: association between paths stored into the cache and zipimporter instances
+    """
     pic = sys.path_importer_cache
 
     # When measured, despite having the same complexity (O(n)),
