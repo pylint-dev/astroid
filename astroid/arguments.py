@@ -292,7 +292,7 @@ class CallSite:
         except exceptions.NoDefault:
             pass
         raise exceptions.InferenceError(
-            "No value found for argument {name} to " "{func!r}",
+            "No value found for argument {arg} to {func!r}",
             call_site=self,
             func=funcnode,
             arg=name,
