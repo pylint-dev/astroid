@@ -312,7 +312,6 @@ def infer_enum_class(node):
             if any(not isinstance(value, nodes.AssignName) for value in values):
                 continue
 
-            targets = []
             stmt = values[0].statement()
             if isinstance(stmt, nodes.Assign):
                 if isinstance(stmt.targets[0], nodes.Tuple):
@@ -336,6 +335,8 @@ def infer_enum_class(node):
 
             new_targets = []
             for target in targets:
+                if isinstance(target, nodes.Starred):
+                    continue
                 # Replace all the assignments with our mocked class.
                 classdef = dedent(
                     """

@@ -841,6 +841,16 @@ class EnumBrainTest(unittest.TestCase):
         assert inferred_tuple_node.as_string() == "(1, 2)"
         assert inferred_list_node.as_string() == "[2, 4]"
 
+    def test_enum_starred_is_skipped(self):
+        code = """
+        from enum import Enum
+        class ContentType(Enum):
+            TEXT, PHOTO, VIDEO, GIF, YOUTUBE, *_ = [1, 2, 3, 4, 5, 6]
+        ContentType.TEXT #@
+        """
+        node = astroid.extract_node(code)
+        next(node.infer())
+
 
 @unittest.skipUnless(HAS_DATEUTIL, "This test requires the dateutil library.")
 class DateutilBrainTest(unittest.TestCase):
