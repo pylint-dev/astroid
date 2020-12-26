@@ -6,6 +6,8 @@ astroid's ChangeLog
 What's New in astroid 2.5.0?
 ============================
 Release Date: TBA
+
+
 * Add `python 3.9` support.
 
 * The flat attribute of ``numpy.ndarray`` is now inferred as an ``numpy.ndarray`` itself.
@@ -68,6 +70,10 @@ Release Date: TBA
 
   Close #594
   Close #681
+
+* Do not crash when encountering starred assignments in enums.
+
+  Close #835
 
 What's New in astroid 2.4.3?
 ============================
