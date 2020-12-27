@@ -75,6 +75,11 @@ Release Date: TBA
 
   Close #835
 
+* Fix a crash in functools.partial inference when the arguments cannot be determined
+
+  Close PyCQA/pylint#3776
+
+
 What's New in astroid 2.4.3?
 ============================
 Release Date: TBA
