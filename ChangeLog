@@ -5,8 +5,7 @@ astroid's ChangeLog
 
 What's New in astroid 2.5.0?
 ============================
-Release Date: TBA
-
+Release Date: 2020-12-27
 
 * Add `python 3.9` support.
 
@@ -78,11 +77,6 @@ Release Date: TBA
 * Fix a crash in functools.partial inference when the arguments cannot be determined
 
   Close PyCQA/pylint#3776
-
-
-What's New in astroid 2.4.3?
-============================
-Release Date: TBA
 
 * Fix a crash caused by a lookup of a monkey-patched method
 
