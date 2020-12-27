@@ -1,5 +1,5 @@
 # Copyright (c) 2006-2011, 2013-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
-# Copyright (c) 2014-2019 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2014 BioGeek <jeroen.vangoey@gmail.com>
 # Copyright (c) 2014 Google, Inc.
 # Copyright (c) 2014 Eevee (Alex Munroe) <amunroe@yelp.com>
@@ -9,6 +9,7 @@
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2019 Raphael Gaschignard <raphael@makeleaps.com>
+# Copyright (c) 2020 Raphael Gaschignard <raphael@rtpg.co>
 # Copyright (c) 2020 Anubhav <35621759+anubh-v@users.noreply.github.com>
 # Copyright (c) 2020 Ashley Whetter <ashley@awhetter.co.uk>
 

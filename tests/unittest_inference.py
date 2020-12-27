@@ -14,14 +14,18 @@
 # Copyright (c) 2017 Calen Pennington <calen.pennington@gmail.com>
 # Copyright (c) 2017 David Euresti <david@dropbox.com>
 # Copyright (c) 2017 Derek Gustafson <degustaf@gmail.com>
+# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2018 Daniel Martin <daniel.martin@crowdstrike.com>
 # Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
-# Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
 # Copyright (c) 2019 Stanislav Levin <slev@altlinux.org>
 # Copyright (c) 2019 David Liu <david@cs.toronto.edu>
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
+# Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
+# Copyright (c) 2020 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2020 Karthikeyan Singaravelan <tir.karthi@gmail.com>
+# Copyright (c) 2020 Bryce Guinta <bryce.guinta@protonmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER

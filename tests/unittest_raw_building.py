@@ -1,5 +1,5 @@
 # Copyright (c) 2013 AndroWiiid <androwiiid@gmail.com>
-# Copyright (c) 2014-2016, 2018-2019 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2014-2016, 2018-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2014 Google, Inc.
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
