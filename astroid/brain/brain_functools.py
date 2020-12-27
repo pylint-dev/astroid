@@ -86,11 +86,14 @@ def _functools_partial_inference(node, context=None):
 
     # Determine if the passed keywords into the callsite are supported
     # by the wrapped function.
-    function_parameters = chain(
-        inferred_wrapped_function.args.args or (),
-        inferred_wrapped_function.args.posonlyargs or (),
-        inferred_wrapped_function.args.kwonlyargs or (),
-    )
+    if not inferred_wrapped_function.args:
+        function_parameters = []
+    else:
+        function_parameters = chain(
+            inferred_wrapped_function.args.args or (),
+            inferred_wrapped_function.args.posonlyargs or (),
+            inferred_wrapped_function.args.kwonlyargs or (),
+        )
     parameter_names = set(
         param.name
         for param in function_parameters
