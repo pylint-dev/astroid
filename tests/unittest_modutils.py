@@ -264,8 +264,7 @@ class StandardLibModuleTest(resources.SysPathSetup, unittest.TestCase):
         self.assertFalse(modutils.is_standard_module("unknown"))
 
     def test_4(self):
-        modutils.is_standard_module("hashlib")
-        self.assertTrue(False)
+        self.assertTrue(modutils.is_standard_module("hashlib"))
         self.assertTrue(modutils.is_standard_module("pickle"))
         self.assertTrue(modutils.is_standard_module("email"))
         self.assertTrue(modutils.is_standard_module("io"))
