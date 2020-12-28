@@ -15,9 +15,13 @@
 """Setup script for astroid."""
 import os
 import sys
+import warnings
 from setuptools import find_packages, setup
 from setuptools.command import easy_install  # pylint: disable=unused-import
 from setuptools.command import install_lib  # pylint: disable=unused-import
+
+if sys.version_info.major == 3 and sys.version_info.minor <=5:
+    warnings.warn("You will soon need to upgrade to python 3.6 in order to use the latest version of Astroid.", DeprecationWarning)
 
 real_path = os.path.realpath(__file__)
 astroid_dir = os.path.dirname(real_path)
