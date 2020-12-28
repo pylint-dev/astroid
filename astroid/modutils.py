@@ -94,7 +94,7 @@ if platform.python_implementation() == "PyPy":
     STD_LIB_DIRS.add(_root)
     try:
         # real_prefix is defined when running inside virtualenv.
-        STD_LIB_DIRS.add(os.path.join(sys.real_prefix, "lib_pypy"))
+        STD_LIB_DIRS.add(os.path.join(sys.base_prefix, "lib_pypy"))
     except AttributeError:
         pass
     del _root
