@@ -91,16 +91,16 @@ if os.name == "nt":
             pass
 
 if platform.python_implementation() == "PyPy":
-    # The get_python_lib(standard_lib=True) function does not give valid
-    # result with pypy in a virtualenv.
-    # In a virtual environment, with CPython implementation the call to this function returns a path toward
-    # the binary (its libraries) which has been used to create the virtual environment.
-    # Not with pypy implementation.
-    # The only way to retrieve such information is to use the sys.base_prefix hint.
-    # It's worth noticing that under CPython implementation the return values of 
+    #  The get_python_lib(standard_lib=True) function does not give valid
+    #  result with pypy in a virtualenv.
+    #  In a virtual environment, with CPython implementation the call to this function returns a path toward
+    #  the binary (its libraries) which has been used to create the virtual environment.
+    #  Not with pypy implementation.
+    #  The only way to retrieve such information is to use the sys.base_prefix hint.
+    #  It's worth noticing that under CPython implementation the return values of
     # get_python_lib(standard_lib=True) and get_python_lib(santdard_lib=True, prefix=sys.base_prefix)
     # are the same.
-    # In the lines above, We could have replace the call to get_python_lib(standard=True)
+    #  In the lines above, We could have replace the call to get_python_lib(standard=True)
     # with the one using prefix=sys.base_prefix but we prefer modifying only what deals with pypy.
     STD_LIB_DIRS.add(get_python_lib(standard_lib=True, prefix=sys.base_prefix))
     _root = os.path.join(sys.prefix, "lib_pypy")
