@@ -90,6 +90,7 @@ if os.name == "nt":
             pass
 
 if platform.python_implementation() == "PyPy":
+    STD_LIB_DIRS.add(get_python_lib(standard_lib=True, prefix=sys.base_prefix))
     _root = os.path.join(sys.prefix, "lib_pypy")
     STD_LIB_DIRS.add(_root)
     try:
