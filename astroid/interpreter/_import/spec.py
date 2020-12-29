@@ -278,7 +278,7 @@ def _precache_zipimporters(path=None):
     in the sys.path_importer_cache, create a new zipimporter
     instance and add it into the cache.
     Return a dict associating all paths, stored in the cache, to corresponding
-    zipimporter instances
+    zipimporter instances.
 
     :param path: paths that has to be added into the cache
     :return: association between paths stored into the cache and zipimporter instances
