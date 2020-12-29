@@ -18,11 +18,12 @@
 # Copyright (c) 2018 Anthony Sottile <asottile@umich.edu>
 # Copyright (c) 2018 Ioana Tagirta <ioana.tagirta@gmail.com>
 # Copyright (c) 2018 Ahmed Azzaoui <ahmed.azzaoui@engie.com>
+# Copyright (c) 2019-2020 Bryce Guinta <bryce.guinta@protonmail.com>
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2019 Tomas Novak <ext.Tomas.Novak@skoda-auto.cz>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 # Copyright (c) 2019 Grygorii Iermolenko <gyermolenko@gmail.com>
-# Copyright (c) 2019 Bryce Guinta <bryce.guinta@protonmail.com>
+# Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER

@@ -1,6 +1,6 @@
 # -*- encoding=utf-8 -*-
+# Copyright (c) 2017-2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2017-2020 hippo91 <guillaume.peillex@gmail.com>
-# Copyright (c) 2017-2018 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 
