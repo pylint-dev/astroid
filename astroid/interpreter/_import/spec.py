@@ -281,7 +281,7 @@ def _precache_zipimporters(path=None):
     zipimporter instances.
 
     :param path: paths that has to be added into the cache
-    :return: association between paths stored into the cache and zipimporter instances
+    :return: association between paths stored in the cache and zipimporter instances
     """
     pic = sys.path_importer_cache
 
