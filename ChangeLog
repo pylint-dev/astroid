@@ -7,6 +7,9 @@ What's New in astroid 2.5.0?
 ============================
 Release Date: TBA
 
+* Adds `degrees`, `radians`, which are `numpy ufunc` functions, in the `numpy` brain. Adds `random` function in the `numpy.random` brain.
+
+  Fixes PyCQA/pylint#3856
 
 * Add `python 3.9` support.
 
