@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2016-2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
 # Copyright (c) 2017 Chris Philip <chrisp533@gmail.com>
 # Copyright (c) 2017 Hugo <hugovk@users.noreply.github.com>
@@ -8,6 +8,8 @@
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2020 Gergely Kalmar <GergelyKalmar@users.noreply.github.com>
+# Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
+# Copyright (c) 2020 Raphael Gaschignard <raphael@rtpg.co>
 
 import abc
 import collections

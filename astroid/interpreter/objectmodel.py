@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2016-2019 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2016-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2016 Derek Gustafson <degustaf@gmail.com>
 # Copyright (c) 2017-2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2017 Ceridwen <ceridwenv@gmail.com>

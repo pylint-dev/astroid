@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Copyright (c) 2006-2011, 2013-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2013 Phil Schaf <flying-sheep@web.de>
-# Copyright (c) 2014-2019 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2014-2015 Google, Inc.
 # Copyright (c) 2014 Alexander Presnyakov <flagist0@gmail.com>
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>

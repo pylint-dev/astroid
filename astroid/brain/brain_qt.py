@@ -1,4 +1,4 @@
-# Copyright (c) 2015-2016, 2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2015-2016, 2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2017 Roy Wright <roy@wright.org>
 # Copyright (c) 2018 Ashley Whetter <ashley@awhetter.co.uk>

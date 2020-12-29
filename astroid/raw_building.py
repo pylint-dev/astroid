@@ -11,6 +11,7 @@
 # Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
+# Copyright (c) 2020 Becker Awqatty <bawqatty@mide.com>
 # Copyright (c) 2020 Robin Jarry <robin.jarry@6wind.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
@@ -25,6 +26,7 @@ import inspect
 import os
 import sys
 import types
+import warnings
 
 from astroid import bases
 from astroid import manager
@@ -324,8 +326,10 @@ class InspectBuilder:
         self._done[obj] = node
         for name in dir(obj):
             try:
-                member = getattr(obj, name)
-            except AttributeError:
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("error")
+                    member = getattr(obj, name)
+            except (AttributeError, DeprecationWarning):
                 # damned ExtensionClass.Base, I know you're there !
                 attach_dummy_node(node, name)
                 continue

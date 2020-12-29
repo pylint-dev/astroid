@@ -13,6 +13,8 @@
 # Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
 # Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
+# Copyright (c) 2020 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2020 Ram Rachum <ram@rachum.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -312,7 +314,6 @@ def infer_enum_class(node):
             if any(not isinstance(value, nodes.AssignName) for value in values):
                 continue
 
-            targets = []
             stmt = values[0].statement()
             if isinstance(stmt, nodes.Assign):
                 if isinstance(stmt.targets[0], nodes.Tuple):
@@ -336,6 +337,8 @@ def infer_enum_class(node):
 
             new_targets = []
             for target in targets:
+                if isinstance(target, nodes.Starred):
+                    continue
                 # Replace all the assignments with our mocked class.
                 classdef = dedent(
                     """

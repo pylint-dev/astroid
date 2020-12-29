@@ -1,4 +1,4 @@
-# Copyright (c) 2016, 2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2016, 2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2019 Benjamin Elven <25181435+S3ntinelX@users.noreply.github.com>
 

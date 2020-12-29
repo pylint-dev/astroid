@@ -14,6 +14,8 @@
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2018 HoverHell <hoverhell@gmail.com>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
+# Copyright (c) 2020 Vilnis Termanis <vilnis.termanis@iotics.com>
+# Copyright (c) 2020 Ram Rachum <ram@rachum.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
@@ -686,11 +688,10 @@ def starred_assigned_stmts(self, node=None, context=None, assign_path=None):
                     continue
 
                 # We're done unpacking.
-                elts = list(elts)
                 packed = nodes.List(
                     ctx=Store, parent=self, lineno=lhs.lineno, col_offset=lhs.col_offset
                 )
-                packed.postinit(elts=elts)
+                packed.postinit(elts=list(elts))
                 yield packed
                 break
 

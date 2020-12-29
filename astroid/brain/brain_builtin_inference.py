@@ -5,10 +5,11 @@
 # Copyright (c) 2015 Rene Zhang <rz99@cornell.edu>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
+# Copyright (c) 2019-2020 Bryce Guinta <bryce.guinta@protonmail.com>
 # Copyright (c) 2019 Stanislav Levin <slev@altlinux.org>
 # Copyright (c) 2019 David Liu <david@cs.toronto.edu>
-# Copyright (c) 2019 Bryce Guinta <bryce.guinta@protonmail.com>
 # Copyright (c) 2019 Frédéric Chapoton <fchapoton2@gmail.com>
+# Copyright (c) 2020 Ram Rachum <ram@rachum.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER

@@ -1,6 +1,6 @@
 # Copyright (c) 2008-2010, 2013 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2014 Google, Inc.
-# Copyright (c) 2015-2016, 2018 Claudiu Popa <pcmanticore@gmail.com>
+# Copyright (c) 2015-2016, 2018, 2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2016 Dave Baum <dbaum@google.com>
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>

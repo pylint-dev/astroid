@@ -6,6 +6,7 @@ astroid's ChangeLog
 What's New in astroid 2.5.0?
 ============================
 Release Date: TBA
+
 * Fix deprecated importlib methods
 
   Closes #703
@@ -17,10 +18,13 @@ Release Date: TBA
 
   Fixes PyCQA/pylint#3640
 
-* Fixes a bug in the signature of the ``ndarray.__or__`` method, 
+* Fixes a bug in the signature of the ``ndarray.__or__`` method,
   in the ``brain_numpy_ndarray.py`` module.
 
   Fixes #815
+
+* Fixes a to-list cast bug in ``starred_assigned_stmts`` method,
+  in the ``protocols.py` module.
 
 * Added a brain for ``hypothesis.strategies.composite``
 
@@ -70,9 +74,13 @@ Release Date: TBA
   Close #594
   Close #681
 
-What's New in astroid 2.4.3?
-============================
-Release Date: TBA
+* Do not crash when encountering starred assignments in enums.
+
+  Close #835
+
+* Fix a crash in functools.partial inference when the arguments cannot be determined
+
+  Close PyCQA/pylint#3776
 
 * Fix a crash caused by a lookup of a monkey-patched method
 
