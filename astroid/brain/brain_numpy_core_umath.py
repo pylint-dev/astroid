@@ -4,7 +4,8 @@
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
-
+# Note: starting with version 1.18 numpy module has `__getattr__` method which prevent `pylint` to emit `no-member` message for 
+# all numpy's attributes. (see pylint's module typecheck in `_emit_no_member` function)
 """Astroid hooks for numpy.core.umath module."""
 
 import astroid
