@@ -7,6 +7,9 @@ What's New in astroid 2.5.0?
 ============================
 Release Date: TBA
 
+* Fix deprecated importlib methods
+
+  Closes #703
 
 * Add `python 3.9` support.
 

@@ -7,6 +7,7 @@
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
+# Copyright (c) 2020 Gergely Kalmar <GergelyKalmar@users.noreply.github.com>
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
 # Copyright (c) 2020 Raphael Gaschignard <raphael@rtpg.co>
 
@@ -272,6 +273,16 @@ def _cached_set_diff(left, right):
 
 
 def _precache_zipimporters(path=None):
+    """
+    For each path that has not been already cached 
+    in the sys.path_importer_cache, create a new zipimporter
+    instance and add it into the cache.
+    Return a dict associating all paths, stored in the cache, to corresponding
+    zipimporter instances.
+
+    :param path: paths that has to be added into the cache
+    :return: association between paths stored in the cache and zipimporter instances
+    """
     pic = sys.path_importer_cache
 
     # When measured, despite having the same complexity (O(n)),
@@ -287,7 +298,11 @@ def _precache_zipimporters(path=None):
             pic[entry_path] = zipimport.zipimporter(entry_path)
         except zipimport.ZipImportError:
             continue
-    return pic
+    return {
+        key: value
+        for key, value in pic.items()
+        if isinstance(value, zipimport.zipimporter)
+    }
 
 
 def _search_zip(modpath, pic):
