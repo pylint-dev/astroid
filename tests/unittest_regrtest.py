@@ -343,5 +343,16 @@ def test_ancestor_looking_up_redefined_function():
     assert isinstance(found[0], nodes.FunctionDef)
 
 
+def test_crash_in_dunder_inference_prevented():
+    code = """
+    class MyClass():
+        def fu(self, objects):
+            delitem = dict.__delitem__.__get__(self, dict)
+            delitem #@
+    """
+    inferred = next(extract_node(code).infer())
+    assert "builtins.dict.__delitem__" == inferred.qname()
+
+
 if __name__ == "__main__":
     unittest.main()

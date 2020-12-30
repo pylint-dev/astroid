@@ -15,6 +15,10 @@ Release Date: TBA
 
   Fixes PyCQA/pylint#3640
 
+* Fix a bug for dunder methods inference of function objects
+
+  Fixes #819
+
 * Fixes a bug in the signature of the ``ndarray.__or__`` method,
   in the ``brain_numpy_ndarray.py`` module.
 
