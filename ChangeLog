@@ -11,6 +11,10 @@ Release Date: TBA
 
   Fixes PyCQA/pylint#3856
 
+* Fix deprecated importlib methods
+
+  Closes #703
+
 * Add `python 3.9` support.
 
 * The flat attribute of ``numpy.ndarray`` is now inferred as an ``numpy.ndarray`` itself.
