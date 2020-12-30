@@ -324,6 +324,7 @@ class FunctionModel(ObjectModel):
                     doc=func.doc,
                     lineno=func.lineno,
                     col_offset=func.col_offset,
+                    parent=func.parent,
                 )
                 # pylint: disable=no-member
                 new_func.postinit(func.args, func.body, func.decorators, func.returns)
