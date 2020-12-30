@@ -56,6 +56,7 @@ class NumpyBrainRandomMtrandTest(unittest.TestCase):
         "rand": (["args"], []),
         "randint": (["low", "high", "size", "dtype"], [None, None, "l"]),
         "randn": (["args"], []),
+        "random": (["size"], [None]),
         "random_integers": (["low", "high", "size"], [None, None]),
         "random_sample": (["size"], [None]),
         "rayleigh": (["scale", "size"], [1.0, None]),

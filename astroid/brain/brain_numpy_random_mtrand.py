@@ -45,6 +45,7 @@ def numpy_random_mtrand_transform():
         import numpy
         return numpy.ndarray((1,1))
     def randn(*args): return uninferable
+    def random(size=None): return uninferable
     def random_integers(low, high=None, size=None): return uninferable
     def random_sample(size=None): return uninferable
     def rayleigh(scale=1.0, size=None): return uninferable
