@@ -2125,6 +2125,11 @@ class AugAssign(mixins.AssignTypeMixin, Statement):
         yield self.target
         yield self.value
 
+    def _get_yield_nodes_skip_lambdas(self):
+        """An AugAssign node can contain a Yield node in the value"""
+        yield from self.value._get_yield_nodes_skip_lambdas()
+        yield from super()._get_yield_nodes_skip_lambdas()
+
 
 class Repr(NodeNG):
     """Class representing an :class:`ast.Repr` node.
