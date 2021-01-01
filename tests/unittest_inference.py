@@ -5884,5 +5884,19 @@ def test_infer_generated_setter():
     assert list(inferred.nodes_of_class(nodes.Const)) == []
 
 
+def test_infer_list_of_uninferables_does_not_crash():
+    code = """
+    x = [A] * 1
+    f = [x, [A] * 2]
+    x = list(f) + [] # List[Uninferable]
+    tuple(x[0])
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.Tuple)
+    # Would not be able to infer the first element.
+    assert not inferred.elts
+
+
 if __name__ == "__main__":
     unittest.main()

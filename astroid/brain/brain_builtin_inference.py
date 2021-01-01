@@ -224,6 +224,8 @@ def _container_generic_transform(arg, context, klass, iterables, build_elts):
             # TODO: Does not handle deduplication for sets.
             elts = []
             for element in arg.elts:
+                if not element:
+                    continue
                 inferred = helpers.safe_infer(element, context=context)
                 if inferred:
                     evaluated_object = nodes.EvaluatedObject(
