@@ -98,6 +98,12 @@ Release Date: TBA
 
   Close PyCQA/pylint#3686
 
+* ``is_generator`` correctly considers `Yield` nodes in `AugAssign` nodes
+
+  This fixes a false positive with the `assignment-from-no-return` pylint check.
+
+  Close PyCQA/pylint#3904
+
 
 What's New in astroid 2.4.2?
 ============================

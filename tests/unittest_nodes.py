@@ -1360,5 +1360,16 @@ def test_is_generator_for_yield_in_if():
     assert bool(node.is_generator())
 
 
+def test_is_generator_for_yield_in_aug_assign():
+    code = """
+    def test():
+        buf = ''
+        while True:
+            buf += yield
+    """
+    node = astroid.extract_node(code)
+    assert bool(node.is_generator())
+
+
 if __name__ == "__main__":
     unittest.main()
