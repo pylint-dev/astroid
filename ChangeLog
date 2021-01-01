@@ -15,6 +15,10 @@ Release Date: TBA
 
   Closes #703
 
+* Fix a crash in inference caused by `Uninferable` container elements
+
+  Close #866
+
 * Add `python 3.9` support.
 
 * The flat attribute of ``numpy.ndarray`` is now inferred as an ``numpy.ndarray`` itself.
