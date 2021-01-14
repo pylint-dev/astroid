@@ -22,6 +22,7 @@ from astroid import nodes
 
 
 SIX_ADD_METACLASS = "six.add_metaclass"
+SIX_WITH_METACLASS = "six.with_metaclass"
 
 
 def _indent(text, prefix, predicate=None):
@@ -197,10 +198,20 @@ def _looks_like_nested_from_six_with_metaclass(node):
     if not isinstance(base, nodes.Call):
         return False
     try:
-        func = next(base.func.infer())
-    except InferenceError:
+        if hasattr(base.func, "expr"):
+            # format when explicit 'six.with_metaclass' is used
+            mod = base.func.expr.name
+            func = base.func.attrname
+            func = "{}.{}".format(mod, func)
+        else:
+            # format when 'with_metaclass' is used directly (local import from six)
+            # check reference module to avoid 'with_metaclass' name clashes
+            mod = base.parent.parent
+            import_from = mod.locals["with_metaclass"][0]
+            func = "{}.{}".format(import_from.modname, base.func.name)
+    except (AttributeError, KeyError, IndexError):
         return False
-    return func.qname() == "six.with_metaclass"
+    return func == SIX_WITH_METACLASS
 
 
 def transform_six_with_metaclass(node):

@@ -3816,6 +3816,23 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "B")
 
+    def test_With_metaclass_with_partial_imported_name(self):
+        ast_node = extract_node(
+            """
+        class A(type):
+            def test(cls):
+                return cls
+        from six import with_metaclass
+        class B(with_metaclass(A)):
+            pass
+
+        B.test() #@
+        """
+        )
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.ClassDef)
+        self.assertEqual(inferred.name, "B")
+
     def test_infer_cls_in_class_methods(self):
         ast_nodes = extract_node(
             """
