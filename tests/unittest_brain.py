@@ -937,6 +937,33 @@ class IOBrainTest(unittest.TestCase):
             self.assertEqual(raw.name, "FileIO")
 
 
+@test_utils.require_version("3.9")
+class TypeBrain(unittest.TestCase):
+    def test_type_subscript(self):
+        src = builder.extract_node(
+            """
+            a: type[int] = int
+            """
+        )
+        val_inf = src.annotation.value.inferred()[0]
+        self.assertIsInstance(val_inf, astroid.ClassDef)
+        self.assertEqual(val_inf.name, "type")
+        meth_inf = val_inf.getattr('__class_getitem__')[0]
+        self.assertIsInstance(meth_inf, astroid.FunctionDef)
+
+    def test_invalid_type_subscript(self):
+        src = builder.extract_node(
+            """
+            a: str[int] = "abc"
+            """
+        )
+        val_inf = src.annotation.value.inferred()[0]
+        self.assertIsInstance(val_inf, astroid.ClassDef)
+        self.assertEqual(val_inf.name, "str")
+        with self.assertRaises(astroid.exceptions.AttributeInferenceError):
+            meth_inf = val_inf.getattr('__class_getitem__')[0]
+
+
 @test_utils.require_version("3.6")
 class TypingBrain(unittest.TestCase):
     def test_namedtuple_base(self):
