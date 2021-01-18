@@ -14,6 +14,7 @@ import textwrap
 import astroid
 
 
+PY39 = sys.version_info >= (3, 9)
 PY37 = sys.version_info >= (3, 7)
 PY36 = sys.version_info >= (3, 6)
 
@@ -147,6 +148,12 @@ def _subprocess_transform():
             "py3_args": py3_args,
         }
     )
+    if PY39:
+        code += """
+    @classmethod
+    def __class_getitem__(cls, item):
+        pass
+        """
 
     init_lines = textwrap.dedent(init).splitlines()
     indented_init = "\n".join(" " * 4 + line for line in init_lines)
