@@ -940,6 +940,10 @@ class IOBrainTest(unittest.TestCase):
 @test_utils.require_version("3.9")
 class TypeBrain(unittest.TestCase):
     def test_type_subscript(self):
+        """
+        Check that type object has the __class_getitem__ method
+        when it is used as a subscript
+        """
         src = builder.extract_node(
             """
             a: type[int] = int
@@ -952,6 +956,11 @@ class TypeBrain(unittest.TestCase):
         self.assertIsInstance(meth_inf, astroid.FunctionDef)
 
     def test_invalid_type_subscript(self):
+        """
+        Check that a type (str for example) that inherits
+        from type does not have __class_getitem__ method even
+        when it is used as a subscript
+        """
         src = builder.extract_node(
             """
             a: str[int] = "abc"
