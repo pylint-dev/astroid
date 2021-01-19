@@ -3,12 +3,9 @@ import sys
 
 from astroid import (
     MANAGER,
-    UseInferenceDefault,
     extract_node,
     inference_tip,
     nodes,
-    InferenceError,
-    Name,
 )
 
 
