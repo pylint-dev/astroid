@@ -18,12 +18,7 @@ Thanks to Lukasz Langa for fruitful discussion.
 """
 import sys
 
-from astroid import (
-    MANAGER,
-    extract_node,
-    inference_tip,
-    nodes,
-)
+from astroid import MANAGER, extract_node, inference_tip, nodes
 
 
 def _looks_like_type_subscript(node):
@@ -58,7 +53,6 @@ def infer_type_sub(node, context=None):
      """
     node = extract_node(class_src)
     return node.infer(context=context)
-
 
 
 if sys.version_info[:2] == (3, 9):

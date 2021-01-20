@@ -952,7 +952,7 @@ class TypeBrain(unittest.TestCase):
         val_inf = src.annotation.value.inferred()[0]
         self.assertIsInstance(val_inf, astroid.ClassDef)
         self.assertEqual(val_inf.name, "type")
-        meth_inf = val_inf.getattr('__class_getitem__')[0]
+        meth_inf = val_inf.getattr("__class_getitem__")[0]
         self.assertIsInstance(meth_inf, astroid.FunctionDef)
 
     def test_invalid_type_subscript(self):
@@ -970,7 +970,7 @@ class TypeBrain(unittest.TestCase):
         self.assertIsInstance(val_inf, astroid.ClassDef)
         self.assertEqual(val_inf.name, "str")
         with self.assertRaises(astroid.exceptions.AttributeInferenceError):
-            meth_inf = val_inf.getattr('__class_getitem__')[0]
+            meth_inf = val_inf.getattr("__class_getitem__")[0]
 
 
 @test_utils.require_version("3.6")
