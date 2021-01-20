@@ -21,6 +21,9 @@ import sys
 from astroid import MANAGER, extract_node, inference_tip, nodes
 
 
+PY39 = sys.version_info >= (3, 9)
+
+
 def _looks_like_type_subscript(node):
     """
     Try to figure out if a Name node is used inside a type related subscript
@@ -55,7 +58,7 @@ def infer_type_sub(node, context=None):
     return node.infer(context=context)
 
 
-if sys.version_info[:2] == (3, 9):
+if PY39:
     MANAGER.register_transform(
         nodes.Name, inference_tip(infer_type_sub), _looks_like_type_subscript
     )
