@@ -6,6 +6,9 @@ astroid's ChangeLog
 What's New in astroid 2.5.0?
 ============================
 Release Date: TBA
+* Adds a brain for type object so that it is possible to write `type[int]` in annotation.
+
+  Fixes PyCQA/pylint#4001
 
 * Add ``__class_getitem__`` method to ``subprocess.Popen`` brain under Python 3.9 so that it is seen as subscriptable by pylint.
 
