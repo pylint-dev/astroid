@@ -1292,6 +1292,13 @@ class SubprocessTest(unittest.TestCase):
         assert isinstance(inferred, astroid.Const)
         assert isinstance(inferred.value, (str, bytes))
 
+    @test_utils.require_version("3.9")
+    def test_popen_does_not_have_class_getitem(self):
+        code = """import subprocess; subprocess.Popen"""
+        node = astroid.extract_node(code)
+        inferred = next(node.infer())
+        assert "__class_getitem__" in inferred
+
 
 class TestIsinstanceInference:
     """Test isinstance builtin inference"""

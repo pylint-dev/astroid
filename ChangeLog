@@ -7,6 +7,10 @@ What's New in astroid 2.5.0?
 ============================
 Release Date: TBA
 
+* Add ``__class_getitem__`` method to ``subprocess.Popen`` brain under Python 3.9 so that it is seen as subscriptable by pylint.
+
+  Fixes PyCQA/pylint#4034
+
 * Adds `degrees`, `radians`, which are `numpy ufunc` functions, in the `numpy` brain. Adds `random` function in the `numpy.random` brain.
 
   Fixes PyCQA/pylint#3856
