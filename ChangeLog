@@ -2,6 +2,10 @@
 astroid's ChangeLog
 ===================
 
+* The ``context.path`` is now a ``dict`` and the ``context.push`` method
+  returns ``True`` if the node has been visited a certain amount of times.
+
+  Close #669
 
 What's New in astroid 2.5.0?
 ============================
