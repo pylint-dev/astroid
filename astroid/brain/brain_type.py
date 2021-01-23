@@ -29,7 +29,7 @@ def _looks_like_type_subscript(node):
     Try to figure out if a Name node is used inside a type related subscript
 
     :param node: node to check
-    :type node: nodes.Name
+    :type node: astroid.node_classes.NodeNG
     :return: true if the node is a Name node inside a type related subscript
     :rtype: bool
     """
