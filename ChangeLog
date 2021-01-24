@@ -6,11 +6,14 @@ What's New in astroid 2.5.0?
 ============================
 Release Date: TBA
 
+* Enrich the ``brain_collection`` module so that ``__class_getitem__`` method is added to `deque` for
+  ``python`` version above 3.9.
+
 * The ``context.path`` is now a ``dict`` and the ``context.push`` method
   returns ``True`` if the node has been visited a certain amount of times.
 
   Close #669
-  
+
 * Adds a brain for type object so that it is possible to write `type[int]` in annotation.
 
   Fixes PyCQA/pylint#4001
