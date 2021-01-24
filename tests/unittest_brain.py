@@ -141,6 +141,17 @@ class CollectionsDequeTests(unittest.TestCase):
         self.assertIn("insert", inferred.locals)
         self.assertIn("index", inferred.locals)
 
+    @test_utils.require_version(maxver="3.8")
+    def test_deque_not_py39methods(self):
+        inferred = self._inferred_queue_instance()
+        with self.assertRaises(astroid.exceptions.AttributeInferenceError):
+            inferred.getattr("__class_getitem__")
+
+    @test_utils.require_version(minver="3.9")
+    def test_deque_py39methods(self):
+        inferred = self._inferred_queue_instance()
+        self.assertTrue(inferred.getattr("__class_getitem__"))
+
 
 class OrderedDictTest(unittest.TestCase):
     def _inferred_ordered_dict_instance(self):
