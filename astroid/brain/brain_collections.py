@@ -12,6 +12,9 @@ import sys
 import astroid
 
 
+PY39 = sys.version_info >= (3, 9)
+
+
 def _collections_transform():
     return astroid.parse(
         """
@@ -60,7 +63,9 @@ def _deque_mock():
         def __iadd__(self, other): pass
         def __mul__(self, other): pass
         def __imul__(self, other): pass
-        def __rmul__(self, other): pass
+        def __rmul__(self, other): pass"""
+    if PY39:
+        base_deque_class += """
         @classmethod
         def __class_getitem__(self, item): pass"""
     return base_deque_class
