@@ -1181,6 +1181,19 @@ def test_type_comments_posonly_arguments():
                 assert actual_arg.as_string() == expected_arg
 
 
+@pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
+def test_correct_function_type_comment_parent():
+    data = """
+        def f(a):
+            # type: (A) -> A
+            pass
+    """
+    astroid = builder.parse(data)
+    f = astroid.body[0]
+    assert f.type_comment_args[0].parent is f
+    assert f.type_comment_returns.parent is f
+
+
 def test_is_generator_for_yield_assignments():
     node = astroid.extract_node(
         """

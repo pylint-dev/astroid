@@ -119,6 +119,13 @@ Release Date: TBA
 
   Close PyCQA/pylint#3904
 
+* Corrected the parent of function type comment nodes.
+
+  These nodes used to be parented to their original ast.FunctionDef parent
+  but are now correctly parented to their astroid.FunctionDef parent.
+
+  Close PyCQA/astroid#851
+
 
 What's New in astroid 2.4.2?
 ============================
