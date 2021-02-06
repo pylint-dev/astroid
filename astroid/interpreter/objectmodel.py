@@ -797,9 +797,9 @@ class PropertyModel(ObjectModel):
     @property
     def attr_fset(self):
         from astroid.scoped_nodes import FunctionDef
+        from astroid.node_classes import Arguments, AssignName
 
         func = self._instance
-
         class PropertyFuncAccessor(FunctionDef):
             def infer_call_result(self, caller=None, context=None):
                 nonlocal func
@@ -813,7 +813,18 @@ class PropertyModel(ObjectModel):
                 )
 
         property_accessor = PropertyFuncAccessor(name="fset", parent=self._instance)
-        property_accessor.postinit(args=func.args, body=func.body)
+        l_args = Arguments()
+        l_args.postinit(
+            args=[AssignName(name="self"), AssignName(name="value")],
+            defaults=[],
+            kwonlyargs=[],
+            kw_defaults=[],
+            annotations=[],
+            posonlyargs=[],
+            posonlyargs_annotations=[],
+            kwonlyargs_annotations=[],
+        )
+        property_accessor.postinit(args=l_args, body=func.body)
         return property_accessor
 
     @property
