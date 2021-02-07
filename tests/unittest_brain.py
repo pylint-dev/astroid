@@ -93,6 +93,7 @@ from astroid import builder
 from astroid import nodes
 from astroid import util
 import astroid
+import astroid.test_utils as test_utils
 
 
 class HashlibTest(unittest.TestCase):
