@@ -5494,14 +5494,19 @@ def test_property_inference():
         def test(self):
             return 42
 
+        @test.setter
+        def test(self, value):
+            return "banco"
+
     A.test #@
     A().test #@
     A.test.fget(A) #@
+    A.test.fset(A, "a_value") #@
     A.test.setter #@
     A.test.getter #@
     A.test.deleter #@
     """
-    prop, prop_result, prop_fget_result, prop_setter, prop_getter, prop_deleter = extract_node(
+    prop, prop_result, prop_fget_result, prop_fset_result, prop_setter, prop_getter, prop_deleter = extract_node(
         code
     )
 
@@ -5518,6 +5523,10 @@ def test_property_inference():
     inferred = next(prop_fget_result.infer())
     assert isinstance(inferred, nodes.Const)
     assert inferred.value == 42
+
+    inferred = next(prop_fset_result.infer())
+    assert isinstance(inferred, nodes.Const)
+    assert inferred.value == "banco"
 
     for prop_func in prop_setter, prop_getter, prop_deleter:
         inferred = next(prop_func.infer())
