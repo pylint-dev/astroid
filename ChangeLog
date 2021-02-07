@@ -6,6 +6,10 @@ What's New in astroid 2.5.0?
 ============================
 Release Date: TBA
 
+* Adds `attr_fset` in the `PropertyModel` class.
+
+  Fixes PyCQA/pylint#3480
+
 * Remove support for Python 3.5.
 * Remove the runtime dependency on ``six``. The ``six`` brain remains in
   astroid.
