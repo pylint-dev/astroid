@@ -22,6 +22,7 @@ from astroid import nodes
 
 
 SIX_ADD_METACLASS = "six.add_metaclass"
+SIX_WITH_METACLASS = "six.with_metaclass"
 
 
 def _indent(text, prefix, predicate=None):
@@ -190,6 +191,39 @@ def transform_six_add_metaclass(node):
             return node
 
 
+def _looks_like_nested_from_six_with_metaclass(node):
+    if len(node.bases) != 1:
+        return False
+    base = node.bases[0]
+    if not isinstance(base, nodes.Call):
+        return False
+    try:
+        if hasattr(base.func, "expr"):
+            # format when explicit 'six.with_metaclass' is used
+            mod = base.func.expr.name
+            func = base.func.attrname
+            func = "{}.{}".format(mod, func)
+        else:
+            # format when 'with_metaclass' is used directly (local import from six)
+            # check reference module to avoid 'with_metaclass' name clashes
+            mod = base.parent.parent
+            import_from = mod.locals["with_metaclass"][0]
+            func = "{}.{}".format(import_from.modname, base.func.name)
+    except (AttributeError, KeyError, IndexError):
+        return False
+    return func == SIX_WITH_METACLASS
+
+
+def transform_six_with_metaclass(node):
+    """Check if the given class node is defined with *six.with_metaclass*
+
+    If so, inject its argument as the metaclass of the underlying class.
+    """
+    call = node.bases[0]
+    node._metaclass = call.args[0]
+    node.bases = call.args[1:]
+
+
 register_module_extender(MANAGER, "six", six_moves_transform)
 register_module_extender(
     MANAGER, "requests.packages.urllib3.packages.six", six_moves_transform
@@ -199,4 +233,9 @@ MANAGER.register_transform(
     nodes.ClassDef,
     transform_six_add_metaclass,
     _looks_like_decorated_with_six_add_metaclass,
+)
+MANAGER.register_transform(
+    nodes.ClassDef,
+    transform_six_with_metaclass,
+    _looks_like_nested_from_six_with_metaclass,
 )
