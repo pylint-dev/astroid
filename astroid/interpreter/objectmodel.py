@@ -39,6 +39,7 @@ from astroid import context as contextmod
 from astroid import exceptions
 from astroid import node_classes
 from astroid import util
+
 # Prevents circular imports
 objects = util.lazy_import("objects")
 
@@ -719,9 +720,6 @@ class DictModel(ObjectModel):
             elems.append(elem)
         obj.postinit(elts=elems)
 
-        # pylint: disable=import-outside-toplevel; circular import
-        from astroid import objects
-
         obj = objects.DictItems(obj)
         return self._generic_dict_attribute(obj, "items")
 
@@ -730,9 +728,6 @@ class DictModel(ObjectModel):
         keys = [key for (key, _) in self._instance.items]
         obj = node_classes.List(parent=self._instance)
         obj.postinit(elts=keys)
-
-        # pylint: disable=import-outside-toplevel; circular import
-        from astroid import objects
 
         obj = objects.DictKeys(obj)
         return self._generic_dict_attribute(obj, "keys")
@@ -743,9 +738,6 @@ class DictModel(ObjectModel):
         values = [value for (_, value) in self._instance.items]
         obj = node_classes.List(parent=self._instance)
         obj.postinit(values)
-
-        # pylint: disable=import-outside-toplevel; circular import
-        from astroid import objects
 
         obj = objects.DictValues(obj)
         return self._generic_dict_attribute(obj, "values")
@@ -801,7 +793,6 @@ class PropertyModel(ObjectModel):
     @property
     def attr_fset(self):
         from astroid.scoped_nodes import FunctionDef
-        from astroid.node_classes import Arguments, AssignName
 
         func = self._instance
 
@@ -812,7 +803,9 @@ class PropertyModel(ObjectModel):
             :param func: property for which the setter has to be found
             :return: the setter function or None
             """
-            for target in [t for t in func.parent.get_children() if t.name == func.function.name]:
+            for target in [
+                t for t in func.parent.get_children() if t.name == func.function.name
+            ]:
                 for dec_name in target.decoratornames():
                     if dec_name.endswith(func.function.name + ".setter"):
                         return target
@@ -821,7 +814,8 @@ class PropertyModel(ObjectModel):
         func_setter = find_setter(func)
         if not func_setter:
             raise exceptions.InferenceError(
-                f"Unable to find the setter of property {func.function.name}")
+                f"Unable to find the setter of property {func.function.name}"
+            )
 
         class PropertyFuncAccessor(FunctionDef):
             def infer_call_result(self, caller=None, context=None):
@@ -830,9 +824,7 @@ class PropertyModel(ObjectModel):
                     raise exceptions.InferenceError(
                         "fset() needs two arguments", target=self, context=context
                     )
-                yield from func_setter.infer_call_result(
-                    caller=caller, context=context
-                )
+                yield from func_setter.infer_call_result(caller=caller, context=context)
 
         property_accessor = PropertyFuncAccessor(name="fset", parent=self._instance)
         property_accessor.postinit(args=func_setter.args, body=func_setter.body)
