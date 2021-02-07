@@ -806,26 +806,30 @@ class PropertyModel(ObjectModel):
         func = self._instance
 
         def find_setter(func: objects.Property) -> Optional[astroid.FunctionDef]:
-            for target in func.parent.get_children():
-                if target.name == func.function.name:
-                    for dec_name in  target.decoratornames():
-                        if dec_name.endswith(func.function.name + ".setter"):
-                            return target
+            """
+            Given a property, find the corresponding setter function and returns it. 
+
+            :param func: property for which the setter has to be found
+            :return: the setter function or None
+            """
+            for target in [t for t in func.parent.get_children() if t.name == func.function.name]:
+                for dec_name in target.decoratornames():
+                    if dec_name.endswith(func.function.name + ".setter"):
+                        return target
             return None
 
         func_setter = find_setter(func)
+        if not func_setter:
+            raise exceptions.InferenceError(
+                f"Unable to find the setter of property {func.function.name}")
+
         class PropertyFuncAccessor(FunctionDef):
             def infer_call_result(self, caller=None, context=None):
-                nonlocal func
+                nonlocal func_setter
                 if caller and len(caller.args) != 2:
                     raise exceptions.InferenceError(
                         "fset() needs two arguments", target=self, context=context
                     )
-
-                func_setter = find_setter(func)
-                if not func_setter:
-                    raise exceptions.InferenceError(
-                        f"Unable to find the setter of property {func.function.name}")
                 yield from func_setter.infer_call_result(
                     caller=caller, context=context
                 )
