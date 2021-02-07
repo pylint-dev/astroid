@@ -106,6 +106,7 @@ def numpy_core_umath_transform():
     trunc = FakeUfuncOneArg()
 
     # Two args functions with optional kwargs
+    add = FakeUfuncTwoArgs()
     bitwise_and = FakeUfuncTwoArgs()
     bitwise_or = FakeUfuncTwoArgs()
     bitwise_xor = FakeUfuncTwoArgs()
@@ -133,6 +134,7 @@ def numpy_core_umath_transform():
     logical_xor = FakeUfuncTwoArgs()
     maximum = FakeUfuncTwoArgs()
     minimum = FakeUfuncTwoArgs()
+    multiply = FakeUfuncTwoArgs()
     nextafter = FakeUfuncTwoArgs()
     not_equal = FakeUfuncTwoArgs()
     power = FakeUfuncTwoArgs()

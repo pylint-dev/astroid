@@ -146,6 +146,17 @@ class CollectionsDequeTests(unittest.TestCase):
         self.assertIn("insert", inferred.locals)
         self.assertIn("index", inferred.locals)
 
+    @test_utils.require_version(maxver="3.8")
+    def test_deque_not_py39methods(self):
+        inferred = self._inferred_queue_instance()
+        with self.assertRaises(astroid.exceptions.AttributeInferenceError):
+            inferred.getattr("__class_getitem__")
+
+    @test_utils.require_version(minver="3.9")
+    def test_deque_py39methods(self):
+        inferred = self._inferred_queue_instance()
+        self.assertTrue(inferred.getattr("__class_getitem__"))
+
 
 class OrderedDictTest(unittest.TestCase):
     def _inferred_ordered_dict_instance(self):
@@ -947,6 +958,43 @@ class IOBrainTest(unittest.TestCase):
             self.assertEqual(raw.name, "FileIO")
 
 
+@test_utils.require_version("3.9")
+class TypeBrain(unittest.TestCase):
+    def test_type_subscript(self):
+        """
+        Check that type object has the __class_getitem__ method
+        when it is used as a subscript
+        """
+        src = builder.extract_node(
+            """
+            a: type[int] = int
+            """
+        )
+        val_inf = src.annotation.value.inferred()[0]
+        self.assertIsInstance(val_inf, astroid.ClassDef)
+        self.assertEqual(val_inf.name, "type")
+        meth_inf = val_inf.getattr("__class_getitem__")[0]
+        self.assertIsInstance(meth_inf, astroid.FunctionDef)
+
+    def test_invalid_type_subscript(self):
+        """
+        Check that a type (str for example) that inherits
+        from type does not have __class_getitem__ method even
+        when it is used as a subscript
+        """
+        src = builder.extract_node(
+            """
+            a: str[int] = "abc"
+            """
+        )
+        val_inf = src.annotation.value.inferred()[0]
+        self.assertIsInstance(val_inf, astroid.ClassDef)
+        self.assertEqual(val_inf.name, "str")
+        with self.assertRaises(astroid.exceptions.AttributeInferenceError):
+            meth_inf = val_inf.getattr("__class_getitem__")[0]
+
+
+@test_utils.require_version("3.6")
 class TypingBrain(unittest.TestCase):
     def test_namedtuple_base(self):
         klass = builder.extract_node(
@@ -1297,6 +1345,13 @@ class SubprocessTest(unittest.TestCase):
         # Can be either str or bytes
         assert isinstance(inferred, astroid.Const)
         assert isinstance(inferred.value, (str, bytes))
+
+    @test_utils.require_version("3.9")
+    def test_popen_does_not_have_class_getitem(self):
+        code = """import subprocess; subprocess.Popen"""
+        node = astroid.extract_node(code)
+        inferred = next(node.infer())
+        assert "__class_getitem__" in inferred
 
 
 class TestIsinstanceInference:

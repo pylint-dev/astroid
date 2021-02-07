@@ -1157,6 +1157,19 @@ def test_type_comments_posonly_arguments():
                 assert actual_arg.as_string() == expected_arg
 
 
+@pytest.mark.skipif(not HAS_TYPED_AST, reason="requires typed_ast")
+def test_correct_function_type_comment_parent():
+    data = """
+        def f(a):
+            # type: (A) -> A
+            pass
+    """
+    astroid = builder.parse(data)
+    f = astroid.body[0]
+    assert f.type_comment_args[0].parent is f
+    assert f.type_comment_returns.parent is f
+
+
 def test_is_generator_for_yield_assignments():
     node = astroid.extract_node(
         """
@@ -1329,6 +1342,17 @@ def test_is_generator_for_yield_in_if():
         if (yield from asyncio.sleep(0.01)):
             pass
             return
+    """
+    node = astroid.extract_node(code)
+    assert bool(node.is_generator())
+
+
+def test_is_generator_for_yield_in_aug_assign():
+    code = """
+    def test():
+        buf = ''
+        while True:
+            buf += yield
     """
     node = astroid.extract_node(code)
     assert bool(node.is_generator())

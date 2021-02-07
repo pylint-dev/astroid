@@ -238,7 +238,7 @@ class TreeRebuilder:
 
         return type_object.value
 
-    def check_function_type_comment(self, node):
+    def check_function_type_comment(self, node, parent):
         type_comment = getattr(node, "type_comment", None)
         if not type_comment:
             return None
@@ -251,10 +251,10 @@ class TreeRebuilder:
 
         returns = None
         argtypes = [
-            self.visit(elem, node) for elem in (type_comment_ast.argtypes or [])
+            self.visit(elem, parent) for elem in (type_comment_ast.argtypes or [])
         ]
         if type_comment_ast.returns:
-            returns = self.visit(type_comment_ast.returns, node)
+            returns = self.visit(type_comment_ast.returns, parent)
 
         return returns, argtypes
 
@@ -615,7 +615,7 @@ class TreeRebuilder:
             returns = None
 
         type_comment_args = type_comment_returns = None
-        type_comment_annotation = self.check_function_type_comment(node)
+        type_comment_annotation = self.check_function_type_comment(node, newnode)
         if type_comment_annotation:
             type_comment_returns, type_comment_args = type_comment_annotation
         newnode.postinit(
