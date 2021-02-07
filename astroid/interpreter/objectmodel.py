@@ -775,7 +775,6 @@ class PropertyModel(ObjectModel):
     @property
     def attr_fget(self):
         from astroid.scoped_nodes import FunctionDef
-        from astroid.node_classes import Arguments, AssignName
 
         func = self._instance
 
@@ -791,19 +790,8 @@ class PropertyModel(ObjectModel):
                     caller=caller, context=context
                 )
 
-        l_args = Arguments()
-        l_args.postinit(
-            args=[AssignName(name="self")],
-            defaults=[],
-            kwonlyargs=[],
-            kw_defaults=[],
-            annotations=[],
-            posonlyargs=[],
-            posonlyargs_annotations=[],
-            kwonlyargs_annotations=[],
-        )
         property_accessor = PropertyFuncAccessor(name="fget", parent=self._instance)
-        property_accessor.postinit(args=l_args, body=func.body)
+        property_accessor.postinit(args=func.args, body=func.body)
         return property_accessor
 
     @property
