@@ -1299,7 +1299,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         result = node.inferred()
         assert len(result) == 2
         assert isinstance(result[0], nodes.Dict)
-        assert result[1] is util.Uninferable
+        assert isinstance(result[1], nodes.Dict)
 
     def test_python25_no_relative_import(self):
         ast = resources.build_file("data/package/absimport.py")
@@ -2982,6 +2982,23 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 24)
 
+    def test_with_metaclass__getitem__(self):
+        ast_node = extract_node(
+            """
+        class Meta(type):
+            def __getitem__(cls, arg):
+                return 24
+        import six
+        class A(six.with_metaclass(Meta)):
+            pass
+
+        A['Awesome'] #@
+        """
+        )
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 24)
+
     def test_bin_op_classes(self):
         ast_node = extract_node(
             """
@@ -2989,6 +3006,23 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             def __or__(self, other):
                 return 24
         class A(object, metaclass=Meta):
+            pass
+
+        A | A
+        """
+        )
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 24)
+
+    def test_bin_op_classes_with_metaclass(self):
+        ast_node = extract_node(
+            """
+        class Meta(type):
+            def __or__(self, other):
+                return 24
+        import six
+        class A(six.with_metaclass(Meta)):
             pass
 
         A | A
@@ -3335,6 +3369,22 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 42)
 
+    def test_unary_op_classes_with_metaclass(self):
+        ast_node = extract_node(
+            """
+        import six
+        class Meta(type):
+            def __invert__(self):
+                return 42
+        class A(six.with_metaclass(Meta)):
+            pass
+        ~A
+        """
+        )
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.Const)
+        self.assertEqual(inferred.value, 42)
+
     def _slicing_test_helper(self, pairs, cls, get_elts):
         for code, expected in pairs:
             ast_node = extract_node(code)
@@ -3634,7 +3684,8 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         flow = AttributeDict()
         flow['app'] = AttributeDict()
         flow['app']['config'] = AttributeDict()
-        flow['app']['config']['doffing'] = AttributeDict() #@
+        flow['app']['config']['doffing'] = AttributeDict()
+        flow['app']['config']['doffing']['thinkto'] = AttributeDict() #@
         """
         )
         self.assertIsNone(helpers.safe_infer(ast_node.targets[0]))
@@ -3716,6 +3767,40 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             def test(cls):
                 return cls
         class B(object, metaclass=A):
+            pass
+
+        B.test() #@
+        """
+        )
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.ClassDef)
+        self.assertEqual(inferred.name, "B")
+
+    def test_With_metaclass_subclasses_arguments_are_classes_not_instances(self):
+        ast_node = extract_node(
+            """
+        class A(type):
+            def test(cls):
+                return cls
+        import six
+        class B(six.with_metaclass(A)):
+            pass
+
+        B.test() #@
+        """
+        )
+        inferred = next(ast_node.infer())
+        self.assertIsInstance(inferred, nodes.ClassDef)
+        self.assertEqual(inferred.name, "B")
+
+    def test_With_metaclass_with_partial_imported_name(self):
+        ast_node = extract_node(
+            """
+        class A(type):
+            def test(cls):
+                return cls
+        from six import with_metaclass
+        class B(with_metaclass(A)):
             pass
 
         B.test() #@
@@ -5852,6 +5937,20 @@ def test_infer_generated_setter():
     # This line used to crash because property generated functions
     # did not have args properly set
     assert list(inferred.nodes_of_class(nodes.Const)) == []
+
+
+def test_infer_list_of_uninferables_does_not_crash():
+    code = """
+    x = [A] * 1
+    f = [x, [A] * 2]
+    x = list(f) + [] # List[Uninferable]
+    tuple(x[0])
+    """
+    node = extract_node(code)
+    inferred = next(node.infer())
+    assert isinstance(inferred, nodes.Tuple)
+    # Would not be able to infer the first element.
+    assert not inferred.elts
 
 
 if __name__ == "__main__":

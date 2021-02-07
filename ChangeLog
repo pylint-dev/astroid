@@ -2,7 +2,6 @@
 astroid's ChangeLog
 ===================
 
-
 What's New in astroid 2.5.0?
 ============================
 Release Date: TBA
@@ -13,6 +12,23 @@ Release Date: TBA
 
   Fixes PyCQA/astroid#863
 
+* Enrich the ``brain_collection`` module so that ``__class_getitem__`` method is added to `deque` for
+  ``python`` version above 3.9.
+
+* The ``context.path`` is now a ``dict`` and the ``context.push`` method
+  returns ``True`` if the node has been visited a certain amount of times.
+
+  Close #669
+
+* Adds a brain for type object so that it is possible to write `type[int]` in annotation.
+
+  Fixes PyCQA/pylint#4001
+
+* Add ``__class_getitem__`` method to ``subprocess.Popen`` brain under Python 3.9 so that it is seen as subscriptable by pylint.
+
+  Fixes PyCQA/pylint#4034
+
+
 * Adds `degrees`, `radians`, which are `numpy ufunc` functions, in the `numpy` brain. Adds `random` function in the `numpy.random` brain.
 
   Fixes PyCQA/pylint#3856
@@ -20,6 +36,10 @@ Release Date: TBA
 * Fix deprecated importlib methods
 
   Closes #703
+
+* Fix a crash in inference caused by `Uninferable` container elements
+
+  Close #866
 
 * Add `python 3.9` support.
 
@@ -81,6 +101,10 @@ Release Date: TBA
 
   Fixes #843
 
+* Fix interpretation of ``six.with_metaclass`` class definitions.
+
+  Fixes #713
+
 * Reduce memory usage of astroid's module cache.
 
 * Remove dependency on `imp`.
@@ -99,6 +123,19 @@ Release Date: TBA
 * Fix a crash caused by a lookup of a monkey-patched method
 
   Close PyCQA/pylint#3686
+
+* ``is_generator`` correctly considers `Yield` nodes in `AugAssign` nodes
+
+  This fixes a false positive with the `assignment-from-no-return` pylint check.
+
+  Close PyCQA/pylint#3904
+
+* Corrected the parent of function type comment nodes.
+
+  These nodes used to be parented to their original ast.FunctionDef parent
+  but are now correctly parented to their astroid.FunctionDef parent.
+
+  Close PyCQA/astroid#851
 
 
 What's New in astroid 2.4.2?
