@@ -32,11 +32,15 @@ import pprint
 import os
 import types
 from functools import lru_cache
+from typing import Optional
 
 import astroid
 from astroid import context as contextmod
 from astroid import exceptions
 from astroid import node_classes
+from astroid import util
+# Prevents circular imports
+objects = util.lazy_import("objects")
 
 
 IMPL_PREFIX = "attr_"
@@ -800,6 +804,16 @@ class PropertyModel(ObjectModel):
         from astroid.node_classes import Arguments, AssignName
 
         func = self._instance
+
+        def find_setter(func: objects.Property) -> Optional[astroid.FunctionDef]:
+            for target in func.parent.get_children():
+                if target.name == func.function.name:
+                    for dec_name in  target.decoratornames():
+                        if dec_name.endswith(func.function.name + ".setter"):
+                            return target
+            return None
+
+        func_setter = find_setter(func)
         class PropertyFuncAccessor(FunctionDef):
             def infer_call_result(self, caller=None, context=None):
                 nonlocal func
@@ -808,23 +822,16 @@ class PropertyModel(ObjectModel):
                         "fset() needs two arguments", target=self, context=context
                     )
 
-                yield from func.function.infer_call_result(
+                func_setter = find_setter(func)
+                if not func_setter:
+                    raise exceptions.InferenceError(
+                        f"Unable to find the setter of property {func.function.name}")
+                yield from func_setter.infer_call_result(
                     caller=caller, context=context
                 )
 
         property_accessor = PropertyFuncAccessor(name="fset", parent=self._instance)
-        l_args = Arguments()
-        l_args.postinit(
-            args=[AssignName(name="self"), AssignName(name="value")],
-            defaults=[],
-            kwonlyargs=[],
-            kw_defaults=[],
-            annotations=[],
-            posonlyargs=[],
-            posonlyargs_annotations=[],
-            kwonlyargs_annotations=[],
-        )
-        property_accessor.postinit(args=l_args, body=func.body)
+        property_accessor.postinit(args=func_setter.args, body=func_setter.body)
         return property_accessor
 
     @property
