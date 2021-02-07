@@ -22,7 +22,6 @@ from astroid.builder import AstroidBuilder, extract_node
 from astroid import exceptions
 from astroid.raw_building import build_module
 from astroid.manager import AstroidManager
-from astroid.test_utils import require_version
 from astroid import transforms
 from . import resources
 
@@ -100,7 +99,6 @@ multiply([1, 2], [3, 4])
         inferred = callfunc.inferred()
         self.assertEqual(len(inferred), 1)
 
-    @require_version("3.0")
     def test_nameconstant(self):
         # used to fail for Python 3.4
         builder = AstroidBuilder()

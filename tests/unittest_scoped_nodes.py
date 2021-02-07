@@ -54,6 +54,13 @@ from astroid.bases import BUILTINS, Instance, BoundMethod, UnboundMethod, Genera
 from astroid import test_utils
 from . import resources
 
+try:
+    import six  # pylint: disable=unused-import
+
+    HAS_SIX = True
+except ImportError:
+    HAS_SIX = False
+
 
 def _test_dict_interface(self, node, test_attr):
     self.assertIs(node[test_attr], node[test_attr])
@@ -335,7 +342,6 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         func = self.module["four_args"]
         self.assertEqual(func.args.format_args(), "a, b, c, d")
 
-    @test_utils.require_version("3.0")
     def test_format_args_keyword_only_args(self):
         node = (
             builder.parse(
@@ -596,7 +602,6 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.Const)
         self.assertEqual(inferred.value, 42)
 
-    @test_utils.require_version(minver="3.0")
     def test_return_annotation_is_not_the_last(self):
         func = builder.extract_node(
             """
@@ -610,7 +615,6 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(last_child, nodes.Return)
         self.assertEqual(func.tolineno, 5)
 
-    @test_utils.require_version(minver="3.6")
     def test_method_init_subclass(self):
         klass = builder.extract_node(
             """
@@ -623,7 +627,6 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual([n.name for n in method.args.args], ["cls"])
         self.assertEqual(method.type, "classmethod")
 
-    @test_utils.require_version(minver="3.0")
     def test_dunder_class_local_to_method(self):
         node = builder.extract_node(
             """
@@ -636,7 +639,6 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "MyClass")
 
-    @test_utils.require_version(minver="3.0")
     def test_dunder_class_local_to_function(self):
         node = builder.extract_node(
             """
@@ -647,7 +649,6 @@ class FunctionNodeTest(ModuleLoader, unittest.TestCase):
         with self.assertRaises(NameInferenceError):
             next(node.infer())
 
-    @test_utils.require_version(minver="3.0")
     def test_dunder_class_local_to_classmethod(self):
         node = builder.extract_node(
             """
@@ -1092,6 +1093,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         for klass in ast_nodes:
             self.assertEqual(None, klass.metaclass())
 
+    @unittest.skipUnless(HAS_SIX, "These tests require the six library")
     def test_metaclass_generator_hack(self):
         klass = builder.extract_node(
             """
@@ -1104,14 +1106,12 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqual(["object"], [base.name for base in klass.ancestors()])
         self.assertEqual("type", klass.metaclass().name)
 
-    def test_using_six_add_metaclass(self):
+    def test_add_metaclass(self):
         klass = builder.extract_node(
             """
-        import six
         import abc
 
-        @six.add_metaclass(abc.ABCMeta)
-        class WithMeta(object):
+        class WithMeta(object, metaclass=abc.ABCMeta):
             pass
         """
         )
@@ -1120,6 +1120,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertIsInstance(metaclass, scoped_nodes.ClassDef)
         self.assertIn(metaclass.qname(), ("abc.ABCMeta", "_py_abc.ABCMeta"))
 
+    @unittest.skipUnless(HAS_SIX, "These tests require the six library")
     def test_using_invalid_six_add_metaclass_call(self):
         klass = builder.extract_node(
             """
@@ -1272,6 +1273,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
     def assertEqualMro(self, klass, expected_mro):
         self.assertEqual([member.name for member in klass.mro()], expected_mro)
 
+    @unittest.skipUnless(HAS_SIX, "These tests require the six library")
     def test_with_metaclass_mro(self):
         astroid = builder.parse(
             """
@@ -1499,13 +1501,10 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
     def test_metaclass_lookup_inference_errors(self):
         module = builder.parse(
             """
-        import six
-
         class Metaclass(type):
             foo = lala
 
-        @six.add_metaclass(Metaclass)
-        class B(object): pass
+        class B(object, metaclass=Metaclass): pass
         """
         )
         cls = module["B"]
@@ -1514,8 +1513,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
     def test_metaclass_lookup(self):
         module = builder.parse(
             """
-        import six
-
         class Metaclass(type):
             foo = 42
             @classmethod
@@ -1530,8 +1527,7 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
             def static():
                 pass
 
-        @six.add_metaclass(Metaclass)
-        class A(object):
+        class A(object, metaclass=Metaclass):
             pass
         """
         )
@@ -1751,7 +1747,6 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         parent = bind.scope()
         self.assertEqual(len(parent.extra_decorators), 0)
 
-    @test_utils.require_version(minver="3.0")
     def test_class_keywords(self):
         data = """
             class TestKlass(object, metaclass=TestMetaKlass,

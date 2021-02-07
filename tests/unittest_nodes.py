@@ -21,6 +21,7 @@
 
 """tests for specific behaviour of astroid nodes
 """
+import builtins
 import os
 import sys
 import textwrap
@@ -29,7 +30,6 @@ import copy
 import platform
 
 import pytest
-import six
 
 import astroid
 from astroid import bases
@@ -46,7 +46,7 @@ from . import resources
 
 
 abuilder = builder.AstroidBuilder()
-BUILTINS = six.moves.builtins.__name__
+BUILTINS = builtins.__name__
 PY38 = sys.version_info[:2] >= (3, 8)
 try:
     import typed_ast  # pylint: disable=unused-import
@@ -67,7 +67,6 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(build("(1, )").as_string(), "(1, )")
         self.assertEqual(build("1, 2, 3").as_string(), "(1, 2, 3)")
 
-    @test_utils.require_version(minver="3.0")
     def test_func_signature_issue_185(self):
         code = textwrap.dedent(
             """
@@ -136,7 +135,6 @@ cdd = {k for k in b}\n\n"""
         ast = abuilder.string_build(code)
         self.assertMultiLineEqual(ast.as_string(), code)
 
-    @test_utils.require_version("3.0")
     def test_3k_as_string(self):
         """check as_string for python 3k syntax"""
         code = """print()
@@ -401,20 +399,6 @@ class TryExceptFinallyNodeTest(_NodeTest):
         self.assertEqual(self.astroid.body[0].block_range(6), (6, 6))
 
 
-@unittest.skipIf(six.PY3, "Python 2 specific test.")
-class TryExcept2xNodeTest(_NodeTest):
-    CODE = """
-        try:
-            hello
-        except AttributeError, (retval, desc):
-            pass
-    """
-
-    def test_tuple_attribute(self):
-        handler = self.astroid.body[0].handlers[0]
-        self.assertIsInstance(handler.name, nodes.Tuple)
-
-
 class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
     def setUp(self):
         super(ImportNodeTest, self).setUp()
@@ -580,7 +564,6 @@ class NameNodeTest(unittest.TestCase):
 
 
 class AnnAssignNodeTest(unittest.TestCase):
-    @test_utils.require_version(minver="3.6")
     def test_primitive(self):
         code = textwrap.dedent(
             """
@@ -594,7 +577,6 @@ class AnnAssignNodeTest(unittest.TestCase):
         self.assertEqual(assign.value.value, 5)
         self.assertEqual(assign.simple, 1)
 
-    @test_utils.require_version(minver="3.6")
     def test_primitive_without_initial_value(self):
         code = textwrap.dedent(
             """
@@ -607,7 +589,6 @@ class AnnAssignNodeTest(unittest.TestCase):
         self.assertEqual(assign.annotation.name, "str")
         self.assertEqual(assign.value, None)
 
-    @test_utils.require_version(minver="3.6")
     def test_complex(self):
         code = textwrap.dedent(
             """
@@ -620,7 +601,6 @@ class AnnAssignNodeTest(unittest.TestCase):
         self.assertIsInstance(assign.annotation, astroid.Subscript)
         self.assertIsInstance(assign.value, astroid.Dict)
 
-    @test_utils.require_version(minver="3.6")
     def test_as_string(self):
         code = textwrap.dedent(
             """
@@ -654,7 +634,6 @@ class ArgumentsNodeTC(unittest.TestCase):
             "(no line number on function args)"
         )
 
-    @test_utils.require_version(minver="3.0")
     def test_kwoargs(self):
         ast = builder.parse(
             """
@@ -862,7 +841,6 @@ class AliasesTest(unittest.TestCase):
         self.assertIsInstance(module.body[6].value, nodes.GeneratorExp)
 
 
-@test_utils.require_version("3.5")
 class Python35AsyncTest(unittest.TestCase):
     def test_async_await_keywords(self):
         async_def, async_for, async_with, await_node = builder.extract_node(
@@ -962,13 +940,11 @@ class ContextTest(unittest.TestCase):
         with self.assertRaises(exceptions.AstroidSyntaxError):
             builder.extract_node("(1, ) = 3")
 
-    @test_utils.require_version(minver="3.5")
     def test_starred_load(self):
         node = builder.extract_node("a = *b")
         starred = node.value
         self.assertIs(starred.ctx, astroid.Load)
 
-    @test_utils.require_version(minver="3.0")
     def test_starred_store(self):
         node = builder.extract_node("a, *b = 1, 2")
         starred = node.targets[0].elts[1]
@@ -1213,7 +1189,6 @@ def test_is_generator_for_yield_assignments():
 
 
 class AsyncGeneratorTest:
-    @test_utils.require_version(minver="3.6")
     def test_async_generator(self):
         node = astroid.extract_node(
             """
@@ -1231,7 +1206,6 @@ class AsyncGeneratorTest:
         assert inferred.pytype() == "builtins.async_generator"
         assert inferred.display_type() == "AsyncGenerator"
 
-    @test_utils.require_version(maxver="3.5")
     def test_async_generator_is_generator_on_older_python(self):
         node = astroid.extract_node(
             """

@@ -19,7 +19,6 @@
 from functools import partial
 from textwrap import dedent
 
-import six
 from astroid import (
     MANAGER,
     UseInferenceDefault,
@@ -237,9 +236,7 @@ def _container_generic_transform(arg, context, klass, iterables, build_elts):
         if not all(isinstance(elt[0], nodes.Const) for elt in arg.items):
             raise UseInferenceDefault()
         elts = [item[0].value for item in arg.items]
-    elif isinstance(arg, nodes.Const) and isinstance(
-        arg.value, (six.string_types, six.binary_type)
-    ):
+    elif isinstance(arg, nodes.Const) and isinstance(arg.value, (str, bytes)):
         elts = arg.value
     else:
         return
@@ -447,9 +444,7 @@ def _infer_getattr_args(node, context):
         # which is unknown.
         return util.Uninferable, util.Uninferable
 
-    is_string = isinstance(attr, nodes.Const) and isinstance(
-        attr.value, six.string_types
-    )
+    is_string = isinstance(attr, nodes.Const) and isinstance(attr.value, str)
     if not is_string:
         raise UseInferenceDefault
 

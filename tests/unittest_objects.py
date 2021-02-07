@@ -14,7 +14,6 @@ from astroid import builder
 from astroid import exceptions
 from astroid import nodes
 from astroid import objects
-from astroid import test_utils
 
 
 class ObjectsTest(unittest.TestCase):
@@ -97,7 +96,6 @@ class SuperTests(unittest.TestCase):
         self.assertIsInstance(second, bases.Instance)
         self.assertEqual(second.qname(), "%s.super" % bases.BUILTINS)
 
-    @test_utils.require_version(minver="3.0")
     def test_no_arguments_super(self):
         ast_nodes = builder.extract_node(
             """
