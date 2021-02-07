@@ -431,7 +431,6 @@ class FunctionModelTest(unittest.TestCase):
         for ast_node in ast_nodes[7:9]:
             self.assertIs(next(ast_node.infer()), astroid.Uninferable)
 
-    @test_utils.require_version(minver="3.0")
     def test_empty_return_annotation(self):
         ast_node = builder.extract_node(
             """
@@ -443,7 +442,6 @@ class FunctionModelTest(unittest.TestCase):
         self.assertIsInstance(annotations, astroid.Dict)
         self.assertEqual(len(annotations.items), 0)
 
-    @test_utils.require_version(minver="3.0")
     def test_builtin_dunder_init_does_not_crash_when_accessing_annotations(self):
         ast_node = builder.extract_node(
             """
@@ -457,7 +455,6 @@ class FunctionModelTest(unittest.TestCase):
         self.assertIsInstance(inferred, astroid.Dict)
         self.assertEqual(len(inferred.items), 0)
 
-    @test_utils.require_version(minver="3.0")
     def test_annotations_kwdefaults(self):
         ast_node = builder.extract_node(
             """

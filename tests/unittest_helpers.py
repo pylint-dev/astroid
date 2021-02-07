@@ -14,7 +14,6 @@ from astroid import exceptions
 from astroid import helpers
 from astroid import manager
 from astroid import raw_building
-from astroid import test_utils
 from astroid import util
 
 
@@ -106,7 +105,6 @@ class TestHelpers(unittest.TestCase):
             expected_type = self._build_custom_builtin(expected)
             self.assert_classes_equal(node_type, expected_type)
 
-    @test_utils.require_version(minver="3.0")
     def test_object_type_metaclasses(self):
         module = builder.parse(
             """
@@ -123,7 +121,6 @@ class TestHelpers(unittest.TestCase):
         instance_type = helpers.object_type(meta_instance)
         self.assert_classes_equal(instance_type, module["Meta"])
 
-    @test_utils.require_version(minver="3.0")
     def test_object_type_most_derived(self):
         node = builder.extract_node(
             """

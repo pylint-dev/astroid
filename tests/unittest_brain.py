@@ -32,6 +32,7 @@
 import io
 import queue
 import re
+import os
 
 try:
     import multiprocessing  # pylint: disable=unused-import
@@ -79,13 +80,20 @@ try:
 except ImportError:
     HAS_ATTR = False
 
+try:
+    import six  # pylint: disable=unused-import
+
+    HAS_SIX = True
+except ImportError:
+    HAS_SIX = False
+
 from astroid import MANAGER
 from astroid import bases
 from astroid import builder
 from astroid import nodes
 from astroid import util
-from astroid import test_utils
 import astroid
+import astroid.test_utils as test_utils
 
 
 class HashlibTest(unittest.TestCase):
@@ -108,7 +116,6 @@ class HashlibTest(unittest.TestCase):
             class_obj = hashlib_module[class_name]
             self._assert_hashlib_class(class_obj)
 
-    @test_utils.require_version(minver="3.6")
     def test_hashlib_py36(self):
         hashlib_module = MANAGER.ast_from_module_name("hashlib")
         for class_name in ["sha3_224", "sha3_512", "shake_128"]:
@@ -134,7 +141,6 @@ class CollectionsDequeTests(unittest.TestCase):
         inferred = self._inferred_queue_instance()
         self.assertTrue(inferred.getattr("__len__"))
 
-    @test_utils.require_version(minver="3.5")
     def test_deque_py35methods(self):
         inferred = self._inferred_queue_instance()
         self.assertIn("copy", inferred.locals)
@@ -164,7 +170,6 @@ class OrderedDictTest(unittest.TestCase):
         )
         return next(node.infer())
 
-    @test_utils.require_version(minver="3.4")
     def test_ordered_dict_py34method(self):
         inferred = self._inferred_ordered_dict_instance()
         self.assertIn("move_to_end", inferred.locals)
@@ -216,9 +221,9 @@ class NamedTupleTest(unittest.TestCase):
         # namedtuple call and a mixin as base classes
         result = builder.extract_node(
             """
-        import six
+        from urllib.parse import urlparse
 
-        result = __(six.moves.urllib.parse.urlparse('gopher://'))
+        result = __(urlparse('gopher://'))
         """
         )
         instance = next(result.infer())
@@ -403,7 +408,14 @@ class NoseBrainTest(unittest.TestCase):
         self.assertEqual(assert_equals.qname(), "unittest.case.TestCase.assertEqual")
 
 
+@unittest.skipUnless(HAS_SIX, "These tests require the six library")
 class SixBrainTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        tox_env = os.environ.get("TOX_ENV_NAME")
+        if tox_env and not tox_env.endswith("-six") and HAS_SIX:
+            raise Exception("six was installed in a non-six testing environment.")
+
     def test_attribute_access(self):
         ast_nodes = builder.extract_node(
             """
@@ -814,7 +826,6 @@ class EnumBrainTest(unittest.TestCase):
         inferred_string = next(node.infer())
         assert inferred_string.value == "\N{NULL}"
 
-    @test_utils.require_version(minver="3.6")
     def test_dont_crash_on_for_loops_in_body(self):
         node = builder.extract_node(
             """
@@ -1162,7 +1173,6 @@ class ReBrainTest(unittest.TestCase):
             self.assertEqual(next(re_ast[name].infer()).value, getattr(re, name))
 
 
-@test_utils.require_version("3.6")
 class BrainFStrings(unittest.TestCase):
     def test_no_crash_on_const_reconstruction(self):
         node = builder.extract_node(
@@ -1180,7 +1190,6 @@ class BrainFStrings(unittest.TestCase):
         self.assertIs(inferred, util.Uninferable)
 
 
-@test_utils.require_version("3.6")
 class BrainNamedtupleAnnAssignTest(unittest.TestCase):
     def test_no_crash_on_ann_assign_in_namedtuple(self):
         node = builder.extract_node(
@@ -1282,7 +1291,6 @@ class AttrsTest(unittest.TestCase):
         """
         next(astroid.extract_node(code).infer())
 
-    @test_utils.require_version(minver="3.6")
     def test_attrs_with_annotation(self):
         code = """
         import attr

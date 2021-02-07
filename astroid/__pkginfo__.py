@@ -29,7 +29,6 @@ numversion = tuple(int(elem) for elem in version.split(".") if elem.isdigit())
 extras_require = {}
 install_requires = [
     "lazy_object_proxy>=1.4.0",
-    "six~=1.12",
     "wrapt>=1.11,<1.13",
     'typed-ast>=1.4.0,<1.5;implementation_name== "cpython" and python_version<"3.8"',
 ]
@@ -49,7 +48,6 @@ classifiers = [
     "Topic :: Software Development :: Quality Assurance",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.5",
     "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",

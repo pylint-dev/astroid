@@ -6,6 +6,12 @@ What's New in astroid 2.5.0?
 ============================
 Release Date: TBA
 
+* Remove support for Python 3.5.
+* Remove the runtime dependency on ``six``. The ``six`` brain remains in
+  astroid.
+
+  Fixes PyCQA/astroid#863
+
 * Enrich the ``brain_collection`` module so that ``__class_getitem__`` method is added to `deque` for
   ``python`` version above 3.9.
 
@@ -21,6 +27,7 @@ Release Date: TBA
 * Add ``__class_getitem__`` method to ``subprocess.Popen`` brain under Python 3.9 so that it is seen as subscriptable by pylint.
 
   Fixes PyCQA/pylint#4034
+
 
 * Adds `degrees`, `radians`, which are `numpy ufunc` functions, in the `numpy` brain. Adds `random` function in the `numpy.random` brain.
 
@@ -94,6 +101,10 @@ Release Date: TBA
 
   Fixes #843
 
+* Fix interpretation of ``six.with_metaclass`` class definitions.
+
+  Fixes #713
+
 * Reduce memory usage of astroid's module cache.
 
 * Remove dependency on `imp`.
@@ -118,6 +129,13 @@ Release Date: TBA
   This fixes a false positive with the `assignment-from-no-return` pylint check.
 
   Close PyCQA/pylint#3904
+
+* Corrected the parent of function type comment nodes.
+
+  These nodes used to be parented to their original ast.FunctionDef parent
+  but are now correctly parented to their astroid.FunctionDef parent.
+
+  Close PyCQA/astroid#851
 
 
 What's New in astroid 2.4.2?

@@ -21,7 +21,6 @@ from astroid.raw_building import (
     build_function,
     build_from_import,
 )
-from astroid import test_utils
 
 
 class RawBuildingTC(unittest.TestCase):
@@ -69,7 +68,6 @@ class RawBuildingTC(unittest.TestCase):
         self.assertEqual(len(names), len(node.names))
 
     @unittest.skipIf(platform.python_implementation() == "PyPy", "Only affects CPython")
-    @test_utils.require_version(minver="3.0")
     def test_io_is__io(self):
         # _io module calls itself io. This leads
         # to cyclic dependencies when astroid tries to resolve
