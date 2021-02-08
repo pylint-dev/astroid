@@ -14,7 +14,7 @@
 # Copyright (c) 2020 Anubhav <35621759+anubh-v@users.noreply.github.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
-# For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
+# For details: https://github.com/PyCQA/astroid/blob/master/COPYING
 
 import builtins
 import os
