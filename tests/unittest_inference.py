@@ -3793,34 +3793,6 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertIsInstance(inferred, nodes.ClassDef)
         self.assertEqual(inferred.name, "B")
 
-    def test_With_metaclass_subclasses_inheritance(self):
-        ast_node = extract_node(
-            """
-        class A(type):
-            def test(cls):
-                return cls
-
-        class C:
-            pass
-
-        import six
-        class B(six.with_metaclass(A, C)):
-            pass
-
-        B #@
-        """
-        )
-        inferred = next(ast_node.infer())
-        self.assertIsInstance(inferred, nodes.ClassDef)
-        self.assertEqual(inferred.name, "B")
-        bases = inferred.bases
-        self.assertIsInstance(bases[0], nodes.Call)
-        ancestors = tuple(inferred.ancestors())
-        self.assertIsInstance(ancestors[0], nodes.ClassDef)
-        self.assertEqual(ancestors[0].name, "C")
-        self.assertIsInstance(ancestors[1], nodes.ClassDef)
-        self.assertEqual(ancestors[1].name, "object")
-
     def test_With_metaclass_with_partial_imported_name(self):
         ast_node = extract_node(
             """
