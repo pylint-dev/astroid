@@ -1,6 +1,7 @@
 # Copyright (c) 2015-2020 Claudiu Popa <pcmanticore@gmail.com>
 # Copyright (c) 2015-2016 Ceridwen <ceridwenv@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
+# Copyright (c) 2020 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Simon Hewitt <si@sjhewitt.co.uk>
 # Copyright (c) 2020 Bryce Guinta <bryce.guinta@protonmail.com>
 # Copyright (c) 2020 Ram Rachum <ram@rachum.com>

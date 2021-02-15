@@ -1,5 +1,5 @@
 # -*- encoding=utf-8 -*-
-# Copyright (c) 2019 hippo91 <guillaume.peillex@gmail.com>
+# Copyright (c) 2019-2020 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2019 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2020 Claudiu Popa <pcmanticore@gmail.com>
 

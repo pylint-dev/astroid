@@ -2,9 +2,9 @@
 astroid's ChangeLog
 ===================
 
-What's New in astroid 2.5.0?
+What's New in astroid 2.5?
 ============================
-Release Date: TBA
+Release Date: 2021-02-15
 
 * Adds `attr_fset` in the `PropertyModel` class.
 

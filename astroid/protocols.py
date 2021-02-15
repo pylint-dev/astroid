@@ -14,6 +14,7 @@
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2018 HoverHell <hoverhell@gmail.com>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
+# Copyright (c) 2020 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Vilnis Termanis <vilnis.termanis@iotics.com>
 # Copyright (c) 2020 Ram Rachum <ram@rachum.com>
 

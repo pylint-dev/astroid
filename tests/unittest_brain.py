@@ -6,8 +6,8 @@
 # Copyright (c) 2015 raylu <lurayl@gmail.com>
 # Copyright (c) 2015 Philip Lorenz <philip@bithub.de>
 # Copyright (c) 2016 Florian Bruhin <me@the-compiler.org>
+# Copyright (c) 2017-2018, 2020-2021 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2017-2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2017-2018 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2017 Łukasz Rogalski <rogalski.91@gmail.com>
 # Copyright (c) 2017 David Euresti <github@euresti.com>
 # Copyright (c) 2017 Derek Gustafson <degustaf@gmail.com>
@@ -23,7 +23,9 @@
 # Copyright (c) 2019 Tomas Novak <ext.Tomas.Novak@skoda-auto.cz>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 # Copyright (c) 2019 Grygorii Iermolenko <gyermolenko@gmail.com>
+# Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
 # Copyright (c) 2020 Peter Kolbus <peter.kolbus@gmail.com>
+# Copyright (c) 2021 Damien Baty <damien@damienbaty.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER

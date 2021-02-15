@@ -11,6 +11,7 @@
 # Copyright (c) 2018 Ville Skyttä <ville.skytta@iki.fi>
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
+# Copyright (c) 2020 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Becker Awqatty <bawqatty@mide.com>
 # Copyright (c) 2020 Robin Jarry <robin.jarry@6wind.com>
 

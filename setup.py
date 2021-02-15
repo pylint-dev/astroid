@@ -6,6 +6,8 @@
 # Copyright (c) 2017 Hugo <hugovk@users.noreply.github.com>
 # Copyright (c) 2018-2019 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2019 Enji Cooper <yaneurabeya@gmail.com>
+# Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
+# Copyright (c) 2020 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Colin Kennedy <colinvfx@gmail.com>
 
 # Licensed under the LGPL: https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html

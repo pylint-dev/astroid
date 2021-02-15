@@ -15,7 +15,7 @@
 # Copyright (c) 2018 Serhiy Storchaka <storchaka@gmail.com>
 # Copyright (c) 2018 Nick Drozd <nicholasdrozd@gmail.com>
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
-# Copyright (c) 2019-2020 Ashley Whetter <ashley@awhetter.co.uk>
+# Copyright (c) 2019-2021 Ashley Whetter <ashley@awhetter.co.uk>
 # Copyright (c) 2019 Hugo van Kemenade <hugovk@users.noreply.github.com>
 # Copyright (c) 2019 Zbigniew Jędrzejewski-Szmek <zbyszek@in.waw.pl>
 
