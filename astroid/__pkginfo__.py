@@ -14,6 +14,8 @@
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 # Copyright (c) 2019 Uilian Ries <uilianries@gmail.com>
 # Copyright (c) 2019 Thomas Hisch <t.hisch@gmail.com>
+# Copyright (c) 2020 David Gilman <davidgilman1@gmail.com>
+# Copyright (c) 2020 hippo91 <guillaume.peillex@gmail.com>
 # Copyright (c) 2020 Konrad Weihmann <kweihmann@outlook.com>
 # Copyright (c) 2020 Felix Mölder <felix.moelder@uni-due.de>
 # Copyright (c) 2020 Michael <michael-k@users.noreply.github.com>
@@ -23,7 +25,7 @@
 
 """astroid packaging information"""
 
-version = "2.5.0"
+version = "2.5"
 numversion = tuple(int(elem) for elem in version.split(".") if elem.isdigit())
 
 extras_require = {}
