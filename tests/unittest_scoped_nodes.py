@@ -73,7 +73,7 @@ def _test_dict_interface(self, node, test_attr):
 
 class ModuleLoader(resources.SysPathSetup):
     def setUp(self):
-        super(ModuleLoader, self).setUp()
+        super().setUp()
         self.module = resources.build_file("data/module.py", "data.module")
         self.module2 = resources.build_file("data/module2.py", "data.module2")
         self.nonregr = resources.build_file("data/nonregr.py", "data.nonregr")

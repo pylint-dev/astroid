@@ -402,7 +402,7 @@ class TryExceptFinallyNodeTest(_NodeTest):
 
 class ImportNodeTest(resources.SysPathSetup, unittest.TestCase):
     def setUp(self):
-        super(ImportNodeTest, self).setUp()
+        super().setUp()
         self.module = resources.build_file("data/module.py", "data.module")
         self.module2 = resources.build_file("data/module2.py", "data.module2")
 
