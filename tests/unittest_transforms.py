@@ -9,8 +9,6 @@
 # For details: https://github.com/PyCQA/astroid/blob/master/COPYING.LESSER
 
 
-from __future__ import print_function
-
 import contextlib
 import time
 import unittest
