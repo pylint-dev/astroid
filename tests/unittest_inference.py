@@ -1301,7 +1301,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         result = node.inferred()
         assert len(result) == 2
         assert isinstance(result[0], nodes.Dict)
-        assert isinstance(result[1], nodes.Dict)
+        assert result[1] is util.Uninferable
 
     def test_python25_no_relative_import(self):
         ast = resources.build_file("data/package/absimport.py")
@@ -3686,8 +3686,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         flow = AttributeDict()
         flow['app'] = AttributeDict()
         flow['app']['config'] = AttributeDict()
-        flow['app']['config']['doffing'] = AttributeDict()
-        flow['app']['config']['doffing']['thinkto'] = AttributeDict() #@
+        flow['app']['config']['doffing'] = AttributeDict() #@
         """
         )
         self.assertIsNone(helpers.safe_infer(ast_node.targets[0]))
