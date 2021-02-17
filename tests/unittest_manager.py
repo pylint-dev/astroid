@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) 2006, 2009-2014 LOGILAB S.A. (Paris, FRANCE) <contact@logilab.fr>
 # Copyright (c) 2013 AndroWiiid <androwiiid@gmail.com>
 # Copyright (c) 2014-2020 Claudiu Popa <pcmanticore@gmail.com>
