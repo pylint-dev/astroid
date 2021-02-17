@@ -46,7 +46,7 @@ class AstroidManagerTest(
     resources.SysPathSetup, resources.AstroidCacheSetupMixin, unittest.TestCase
 ):
     def setUp(self):
-        super(AstroidManagerTest, self).setUp()
+        super().setUp()
         self.manager = manager.AstroidManager()
 
     def test_ast_from_file(self):

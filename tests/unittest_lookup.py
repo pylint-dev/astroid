@@ -24,7 +24,7 @@ from . import resources
 
 class LookupTest(resources.SysPathSetup, unittest.TestCase):
     def setUp(self):
-        super(LookupTest, self).setUp()
+        super().setUp()
         self.module = resources.build_file("data/module.py", "data.module")
         self.module2 = resources.build_file("data/module2.py", "data.module2")
         self.nonregr = resources.build_file("data/nonregr.py", "data.nonregr")

@@ -555,7 +555,7 @@ class BoundMethodModel(FunctionModel):
 class GeneratorModel(FunctionModel):
     def __new__(cls, *args, **kwargs):
         # Append the values from the GeneratorType unto this object.
-        ret = super(GeneratorModel, cls).__new__(cls, *args, **kwargs)
+        ret = super().__new__(cls, *args, **kwargs)
         generator = astroid.MANAGER.builtins_module["generator"]
         for name, values in generator.locals.items():
             method = values[0]
