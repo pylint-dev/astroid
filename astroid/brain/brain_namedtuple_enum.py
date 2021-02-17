@@ -182,7 +182,7 @@ def infer_named_tuple(node, context=None):
     if rename:
         attributes = _get_renamed_namedtuple_attributes(attributes)
 
-    replace_args = ", ".join("{arg}=None".format(arg=arg) for arg in attributes)
+    replace_args = ", ".join(f"{arg}=None" for arg in attributes)
     field_def = (
         "    {name} = property(lambda self: self[{index:d}], "
         "doc='Alias for field number {index:d}')"
@@ -447,9 +447,7 @@ def infer_typing_namedtuple(node, context=None):
         field_names = "({},)".format(",".join(names))
     else:
         field_names = "''"
-    node = extract_node(
-        "namedtuple({typename}, {fields})".format(typename=typename, fields=field_names)
-    )
+    node = extract_node(f"namedtuple({typename}, {field_names})")
     return infer_named_tuple(node, context)
 
 

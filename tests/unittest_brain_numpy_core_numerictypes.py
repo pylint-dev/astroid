@@ -80,11 +80,9 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
 
     def _inferred_numpy_attribute(self, attrib):
         node = builder.extract_node(
-            """
+            f"""
         import numpy.core.numerictypes as tested_module
-        missing_type = tested_module.{:s}""".format(
-                attrib
-            )
+        missing_type = tested_module.{attrib:s}"""
         )
         return next(node.value.infer())
 
@@ -334,7 +332,7 @@ class NumpyBrainCoreNumericTypesTest(unittest.TestCase):
         inferred_values = list(node.infer())
         self.assertTrue(
             len(inferred_values) == 1,
-            msg="Too much inferred value for {:s}".format("datetime64.astype"),
+            msg="Too much inferred value for datetime64.astype",
         )
         self.assertTrue(
             inferred_values[-1].pytype() in licit_array_types,

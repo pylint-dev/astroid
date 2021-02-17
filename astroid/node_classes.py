@@ -418,7 +418,7 @@ class NodeNG:
             inner = [lines[0]]
             for line in lines[1:]:
                 inner.append(" " * alignment + line)
-            result.append("%s=%s" % (field, "".join(inner)))
+            result.append("{}={}".format(field, "".join(inner)))
 
         return string % {
             "cname": cname,
@@ -874,7 +874,9 @@ class NodeNG:
             if node in done:
                 result.append(
                     indent
-                    + "<Recursion on %s with id=%s" % (type(node).__name__, id(node))
+                    + "<Recursion on {} with id={}".format(
+                        type(node).__name__, id(node)
+                    )
                 )
                 return False
             done.add(node)
@@ -885,7 +887,7 @@ class NodeNG:
             depth += 1
             cur_indent += indent
             if ids:
-                result.append("%s<0x%x>(\n" % (type(node).__name__, id(node)))
+                result.append("{}<0x{:x}>(\n".format(type(node).__name__, id(node)))
             else:
                 result.append("%s(" % type(node).__name__)
             fields = []
@@ -2631,7 +2633,7 @@ class Const(mixins.NoChildrenMixin, NodeNG, bases.Instance):
                 message="Type error {error!r}", node=self, index=index, context=context
             ) from exc
 
-        raise exceptions.AstroidTypeError("%r (value=%s)" % (self, self.value))
+        raise exceptions.AstroidTypeError(f"{self!r} (value={self.value})")
 
     def has_dynamic_getattr(self):
         """Check if the node has a custom __getattr__ or __getattribute__.

@@ -109,10 +109,7 @@ class AstroidManagerTest(
 
     def _test_ast_from_old_namespace_package_protocol(self, root):
         origpath = sys.path[:]
-        paths = [
-            resources.find("data/path_{}_{}".format(root, index))
-            for index in range(1, 4)
-        ]
+        paths = [resources.find(f"data/path_{root}_{index}") for index in range(1, 4)]
         sys.path.extend(paths)
         try:
             for name in ("foo", "bar", "baz"):
@@ -195,7 +192,7 @@ class AstroidManagerTest(
             self.assertEqual(module.name, "mypypa")
             end = os.path.join(archive, "mypypa")
             self.assertTrue(
-                module.file.endswith(end), "%s doesn't endswith %s" % (module.file, end)
+                module.file.endswith(end), f"{module.file} doesn't endswith {end}"
             )
         finally:
             # remove the module, else after importing egg, we don't get the zip

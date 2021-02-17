@@ -269,14 +269,12 @@ class Instance(BaseInstance):
     special_attributes = util.lazy_descriptor(lambda: objectmodel.InstanceModel())
 
     def __repr__(self):
-        return "<Instance of %s.%s at 0x%s>" % (
-            self._proxied.root().name,
-            self._proxied.name,
-            id(self),
+        return "<Instance of {}.{} at 0x{}>".format(
+            self._proxied.root().name, self._proxied.name, id(self)
         )
 
     def __str__(self):
-        return "Instance of %s.%s" % (self._proxied.root().name, self._proxied.name)
+        return f"Instance of {self._proxied.root().name}.{self._proxied.name}"
 
     def callable(self):
         try:
@@ -331,11 +329,8 @@ class UnboundMethod(Proxy):
 
     def __repr__(self):
         frame = self._proxied.parent.frame()
-        return "<%s %s of %s at 0x%s" % (
-            self.__class__.__name__,
-            self._proxied.name,
-            frame.qname(),
-            id(self),
+        return "<{} {} of {} at 0x{}".format(
+            self.__class__.__name__, self._proxied.name, frame.qname(), id(self)
         )
 
     def implicit_parameters(self):
@@ -517,10 +512,8 @@ class Generator(BaseInstance):
         return True
 
     def __repr__(self):
-        return "<Generator(%s) l.%s at 0x%s>" % (
-            self._proxied.name,
-            self.lineno,
-            id(self),
+        return "<Generator({}) l.{} at 0x{}>".format(
+            self._proxied.name, self.lineno, id(self)
         )
 
     def __str__(self):
@@ -537,10 +530,8 @@ class AsyncGenerator(Generator):
         return "AsyncGenerator"
 
     def __repr__(self):
-        return "<AsyncGenerator(%s) l.%s at 0x%s>" % (
-            self._proxied.name,
-            self.lineno,
-            id(self),
+        return "<AsyncGenerator({}) l.{} at 0x{}>".format(
+            self._proxied.name, self.lineno, id(self)
         )
 
     def __str__(self):

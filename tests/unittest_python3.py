@@ -376,11 +376,9 @@ class Python3TC(unittest.TestCase):
         ]
         for func_body in func_bodies:
             code = dedent(
-                """
+                f"""
             async def f():
-                {}""".format(
-                    func_body
-                )
+                {func_body}"""
             )
             func = extract_node(code)
             self.assertEqual(func.as_string().strip(), code.strip())

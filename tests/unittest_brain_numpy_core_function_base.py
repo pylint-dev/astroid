@@ -50,7 +50,7 @@ class BrainNumpyCoreFunctionBaseTest(unittest.TestCase):
                 inferred_values = list(self._inferred_numpy_func_call(*func_))
                 self.assertTrue(
                     len(inferred_values) == 1,
-                    msg="Too much inferred value for {:s}".format(func_[0]),
+                    msg=f"Too much inferred value for {func_[0]:s}",
                 )
                 self.assertTrue(
                     inferred_values[-1].pytype() in licit_array_types,

@@ -1733,7 +1733,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         for node in ast[8:]:
             inferred = next(node.infer())
             self.assertIsInstance(inferred, Instance)
-            self.assertEqual(inferred.qname(), "{}.tuple".format(BUILTINS))
+            self.assertEqual(inferred.qname(), f"{BUILTINS}.tuple")
 
     def test_starred_in_tuple_literal(self):
         code = """
@@ -1886,7 +1886,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         for node in ast[7:]:
             inferred = next(node.infer())
             self.assertIsInstance(inferred, Instance)
-            self.assertEqual(inferred.qname(), "{}.frozenset".format(BUILTINS))
+            self.assertEqual(inferred.qname(), f"{BUILTINS}.frozenset")
 
     def test_set_builtin_inference(self):
         code = """
@@ -1917,7 +1917,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         for node in ast[7:]:
             inferred = next(node.infer())
             self.assertIsInstance(inferred, Instance)
-            self.assertEqual(inferred.qname(), "{}.set".format(BUILTINS))
+            self.assertEqual(inferred.qname(), f"{BUILTINS}.set")
 
     def test_list_builtin_inference(self):
         code = """
@@ -1947,7 +1947,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         for node in ast[7:]:
             inferred = next(node.infer())
             self.assertIsInstance(inferred, Instance)
-            self.assertEqual(inferred.qname(), "{}.list".format(BUILTINS))
+            self.assertEqual(inferred.qname(), f"{BUILTINS}.list")
 
     def test_conversion_of_dict_methods(self):
         ast_nodes = extract_node(
@@ -2018,7 +2018,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         for node in ast[10:]:
             inferred = next(node.infer())
             self.assertIsInstance(inferred, Instance)
-            self.assertEqual(inferred.qname(), "{}.dict".format(BUILTINS))
+            self.assertEqual(inferred.qname(), f"{BUILTINS}.dict")
 
     def test_dict_inference_kwargs(self):
         ast_node = extract_node("""dict(a=1, b=2, **{'c': 3})""")
@@ -2058,7 +2058,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
             ast_node = extract_node(invalid)
             inferred = next(ast_node.infer())
             self.assertIsInstance(inferred, Instance)
-            self.assertEqual(inferred.qname(), "{}.dict".format(BUILTINS))
+            self.assertEqual(inferred.qname(), f"{BUILTINS}.dict")
 
     def test_str_methods(self):
         code = """
@@ -2665,12 +2665,12 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_bool_value_instances(self):
         instances = extract_node(
-            """
+            f"""
         class FalseBoolInstance(object):
-            def {bool}(self):
+            def {BOOL_SPECIAL_METHOD}(self):
                 return False
         class TrueBoolInstance(object):
-            def {bool}(self):
+            def {BOOL_SPECIAL_METHOD}(self):
                 return True
         class FalseLenInstance(object):
             def __len__(self):
@@ -2694,9 +2694,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         TrueLenInstance() #@
         AlwaysTrueInstance() #@
         ErrorInstance() #@
-        """.format(
-                bool=BOOL_SPECIAL_METHOD
-            )
+        """
         )
         expected = (False, True, False, True, True, util.Uninferable, util.Uninferable)
         for node, expected_value in zip(instances, expected):
@@ -2705,17 +2703,15 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
 
     def test_bool_value_variable(self):
         instance = extract_node(
-            """
+            f"""
         class VariableBoolInstance(object):
             def __init__(self, value):
                 self.value = value
-            def {bool}(self):
+            def {BOOL_SPECIAL_METHOD}(self):
                 return self.value
 
         not VariableBoolInstance(True)
-        """.format(
-                bool=BOOL_SPECIAL_METHOD
-            )
+        """
         )
         inferred = next(instance.infer())
         self.assertIs(inferred.bool_value(), util.Uninferable)
@@ -4337,20 +4333,20 @@ class TestBool(unittest.TestCase):
 
     def test_bool_bool_special_method(self):
         ast_nodes = extract_node(
-            """
+            f"""
         class FalseClass:
-           def {method}(self):
+           def {BOOL_SPECIAL_METHOD}(self):
                return False
         class TrueClass:
-           def {method}(self):
+           def {BOOL_SPECIAL_METHOD}(self):
                return True
         class C(object):
            def __call__(self):
                return False
         class B(object):
-           {method} = C()
+           {BOOL_SPECIAL_METHOD} = C()
         class LambdaBoolFalse(object):
-            {method} = lambda self: self.foo
+            {BOOL_SPECIAL_METHOD} = lambda self: self.foo
             @property
             def foo(self): return 0
         class FalseBoolLen(object):
@@ -4364,9 +4360,7 @@ class TestBool(unittest.TestCase):
         bool(B()) #@
         bool(LambdaBoolFalse()) #@
         bool(FalseBoolLen()) #@
-        """.format(
-                method=BOOL_SPECIAL_METHOD
-            )
+        """
         )
         expected = [True, True, False, True, False, False, False]
         for node, expected_value in zip(ast_nodes, expected):
@@ -4375,16 +4369,14 @@ class TestBool(unittest.TestCase):
 
     def test_bool_instance_not_callable(self):
         ast_nodes = extract_node(
-            """
+            f"""
         class BoolInvalid(object):
-           {method} = 42
+           {BOOL_SPECIAL_METHOD} = 42
         class LenInvalid(object):
            __len__ = "a"
         bool(BoolInvalid()) #@
         bool(LenInvalid()) #@
-        """.format(
-                method=BOOL_SPECIAL_METHOD
-            )
+        """
         )
         for node in ast_nodes:
             inferred = next(node.infer())
@@ -4662,7 +4654,7 @@ class SliceTest(unittest.TestCase):
             ("[1, 2, 3][slice(0, 3, 2)]", [1, 3]),
         ]
         for node, expected_value in ast_nodes:
-            ast_node = extract_node("__({})".format(node))
+            ast_node = extract_node(f"__({node})")
             inferred = next(ast_node.infer())
             self.assertIsInstance(inferred, nodes.List)
             self.assertEqual([elt.value for elt in inferred.elts], expected_value)

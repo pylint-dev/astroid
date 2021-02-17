@@ -210,7 +210,7 @@ def test():
         )
         ancestors = list(node.ancestors())
         self.assertEqual(len(ancestors), 1)
-        self.assertEqual(ancestors[0].qname(), "{}.object".format(BUILTINS))
+        self.assertEqual(ancestors[0].qname(), f"{BUILTINS}.object")
 
     def test_ancestors_missing_from_function(self):
         # Test for https://www.logilab.org/ticket/122793

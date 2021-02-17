@@ -301,7 +301,7 @@ def modpath_from_file_with_callback(filename, path=None, is_package_cb=None):
             return modpath
 
     raise ImportError(
-        "Unable to find module for %s in %s" % (filename, ", \n".join(sys.path))
+        "Unable to find module for {} in {}".format(filename, ", \n".join(sys.path))
     )
 
 
@@ -495,7 +495,7 @@ def get_source_file(filename, include_no_ext=False):
     filename = os.path.abspath(_path_from_filename(filename))
     base, orig_ext = os.path.splitext(filename)
     for ext in PY_SOURCE_EXTS:
-        source_path = "%s.%s" % (base, ext)
+        source_path = f"{base}.{ext}"
         if os.path.exists(source_path):
             return source_path
     if include_no_ext and not orig_ext and os.path.exists(base):

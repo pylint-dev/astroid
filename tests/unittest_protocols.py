@@ -81,7 +81,7 @@ class ProtocolTests(unittest.TestCase):
         assert assigned.as_string() == "[1, 2]"
 
     def _get_starred_stmts(self, code):
-        assign_stmt = extract_node("{} #@".format(code))
+        assign_stmt = extract_node(f"{code} #@")
         starred = next(assign_stmt.nodes_of_class(Starred))
         return next(starred.assigned_stmts())
 
@@ -96,7 +96,7 @@ class ProtocolTests(unittest.TestCase):
         self.assertEqual(expected, stmts)
 
     def _helper_starred_inference_error(self, code):
-        assign_stmt = extract_node("{} #@".format(code))
+        assign_stmt = extract_node(f"{code} #@")
         starred = next(assign_stmt.nodes_of_class(Starred))
         self.assertRaises(InferenceError, list, starred.assigned_stmts())
 

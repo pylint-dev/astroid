@@ -142,7 +142,7 @@ def object_issubclass(node, class_or_seq, context=None):
         or its type's mro doesn't work
     """
     if not isinstance(node, nodes.ClassDef):
-        raise TypeError("{node} needs to be a ClassDef node".format(node=node))
+        raise TypeError(f"{node} needs to be a ClassDef node")
     return _object_type_is_subclass(node, class_or_seq, context=context)
 
 
@@ -286,7 +286,7 @@ def object_len(node, context=None):
         len_call = next(node_type.igetattr("__len__", context=context))
     except exceptions.AttributeInferenceError as e:
         raise exceptions.AstroidTypeError(
-            "object of type '{}' has no len()".format(node_type.pytype())
+            f"object of type '{node_type.pytype()}' has no len()"
         ) from e
 
     result_of_len = next(len_call.infer_call_result(node, context))
@@ -301,5 +301,5 @@ def object_len(node, context=None):
         # Fake a result as we don't know the arguments of the instance call.
         return 0
     raise exceptions.AstroidTypeError(
-        "'{}' object cannot be interpreted as an integer".format(result_of_len)
+        f"'{result_of_len}' object cannot be interpreted as an integer"
     )
