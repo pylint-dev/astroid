@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Astroid documentation build configuration file, created by
 # sphinx-quickstart on Wed Jun 26 15:00:40 2013.
