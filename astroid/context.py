@@ -121,7 +121,7 @@ class InferenceContext:
             % (field, pprint.pformat(getattr(self, field), width=80 - len(field)))
             for field in self.__slots__
         )
-        return "%s(%s)" % (type(self).__name__, ",\n    ".join(state))
+        return "{}({})".format(type(self).__name__, ",\n    ".join(state))
 
 
 class CallContext:

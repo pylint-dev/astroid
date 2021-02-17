@@ -47,11 +47,11 @@ def require_version(minver=None, maxver=None):
         def new_f(*args, **kwargs):
             if minver is not None:
                 pytest.skip(
-                    "Needs Python > %s. Current version is %s." % (minver, str_version)
+                    f"Needs Python > {minver}. Current version is {str_version}."
                 )
             elif maxver is not None:
                 pytest.skip(
-                    "Needs Python <= %s. Current version is %s." % (maxver, str_version)
+                    f"Needs Python <= {maxver}. Current version is {str_version}."
                 )
 
         return new_f

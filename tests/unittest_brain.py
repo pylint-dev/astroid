@@ -568,10 +568,10 @@ class MultiprocessingBrainTest(unittest.TestCase):
         """
         )
         ast_queue = next(module["queue"].infer())
-        self.assertEqual(ast_queue.qname(), "{}.Queue".format(queue.__name__))
+        self.assertEqual(ast_queue.qname(), f"{queue.__name__}.Queue")
 
         joinable_queue = next(module["joinable_queue"].infer())
-        self.assertEqual(joinable_queue.qname(), "{}.Queue".format(queue.__name__))
+        self.assertEqual(joinable_queue.qname(), f"{queue.__name__}.Queue")
 
         event = next(module["event"].infer())
         event_name = "threading.Event"
@@ -591,7 +591,7 @@ class MultiprocessingBrainTest(unittest.TestCase):
 
         for attr in ("list", "dict"):
             obj = next(module[attr].infer())
-            self.assertEqual(obj.qname(), "{}.{}".format(bases.BUILTINS, attr))
+            self.assertEqual(obj.qname(), f"{bases.BUILTINS}.{attr}")
 
         # pypy's implementation of array.__spec__ return None. This causes problems for this inference.
         if not hasattr(sys, "pypy_version_info"):
@@ -632,12 +632,10 @@ class ThreadingBrainTest(unittest.TestCase):
 
     def _test_lock_object(self, object_name):
         lock_instance = builder.extract_node(
-            """
+            f"""
         import threading
-        threading.{}()
-        """.format(
-                object_name
-            )
+        threading.{object_name}()
+        """
         )
         inferred = next(lock_instance.infer())
         self.assert_is_valid_lock(inferred)
@@ -675,7 +673,7 @@ class EnumBrainTest(unittest.TestCase):
         one = enumeration["one"]
         self.assertEqual(one.pytype(), ".MyEnum.one")
 
-        property_type = "{}.property".format(bases.BUILTINS)
+        property_type = f"{bases.BUILTINS}.property"
         for propname in ("name", "value"):
             prop = next(iter(one.getattr(propname)))
             self.assertIn(property_type, prop.decoratornames())
@@ -747,7 +745,7 @@ class EnumBrainTest(unittest.TestCase):
         one = enumeration["one"]
 
         clazz = one.getattr("__class__")[0]
-        int_type = "{}.{}".format(bases.BUILTINS, "int")
+        int_type = f"{bases.BUILTINS}.int"
         self.assertTrue(
             clazz.is_subtype_of(int_type),
             "IntEnum based enums should be a subtype of int",
@@ -972,12 +970,10 @@ class IOBrainTest(unittest.TestCase):
     def test_sys_streams(self):
         for name in {"stdout", "stderr", "stdin"}:
             node = astroid.extract_node(
-                """
+                f"""
             import sys
-            sys.{}
-            """.format(
-                    name
-                )
+            sys.{name}
+            """
             )
             inferred = next(node.infer())
             buffer_attr = next(inferred.igetattr("buffer"))

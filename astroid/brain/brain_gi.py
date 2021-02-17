@@ -122,7 +122,7 @@ def _gi_build_stub(parent):
         strval = str(val)
         if isinstance(val, str):
             strval = '"%s"' % str(val).replace("\\", "\\\\")
-        ret += "%s = %s\n" % (name, strval)
+        ret += f"{name} = {strval}\n"
 
     if ret:
         ret += "\n\n"
@@ -148,7 +148,7 @@ def _gi_build_stub(parent):
         base = "object"
         if issubclass(obj, Exception):
             base = "Exception"
-        ret += "class %s(%s):\n" % (name, base)
+        ret += f"class {name}({base}):\n"
 
         classret = _gi_build_stub(obj)
         if not classret:

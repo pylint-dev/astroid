@@ -222,7 +222,7 @@ class ModuleNodeTest(ModuleLoader, unittest.TestCase):
 
             expected = (
                 "Relative import with too many levels "
-                "({level}) for module {name!r}".format(level=level - 1, name=mod.name)
+                f"({level-1}) for module {mod.name!r}"
             )
             self.assertEqual(expected, str(cm.exception))
 

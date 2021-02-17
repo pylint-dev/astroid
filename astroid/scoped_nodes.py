@@ -174,7 +174,7 @@ class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
         # pylint: disable=no-member; github.com/pycqa/astroid/issues/278
         if self.parent is None:
             return self.name
-        return "%s.%s" % (self.parent.frame().qname(), self.name)
+        return f"{self.parent.frame().qname()}.{self.name}"
 
     def frame(self):
         """The first parent frame node.
@@ -687,7 +687,7 @@ class Module(LocalsDictNodeNG):
         if package_name:
             if not modname:
                 return package_name
-            return "%s.%s" % (package_name, modname)
+            return f"{package_name}.{modname}"
         return modname
 
     def wildcard_import_names(self):
@@ -2167,10 +2167,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
     def infer_call_result(self, caller, context=None):
         """infer what a class is returning when called"""
-        if (
-            self.is_subtype_of("%s.type" % (BUILTINS,), context)
-            and len(caller.args) == 3
-        ):
+        if self.is_subtype_of(f"{BUILTINS}.type", context) and len(caller.args) == 3:
             result = self._infer_type_call(caller, context)
             yield result
             return

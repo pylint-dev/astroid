@@ -50,7 +50,7 @@ master_doc = 'index'
 # General information about the project.
 project = 'Astroid'
 current_year = datetime.utcnow().year
-copyright = '2003-{year}, Logilab, PyCQA and contributors'.format(year=current_year)
+copyright = f'2003-{current_year}, Logilab, PyCQA and contributors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

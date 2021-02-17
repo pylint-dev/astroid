@@ -107,25 +107,21 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
 
     def _inferred_ndarray_method_call(self, func_name):
         node = builder.extract_node(
-            """
+            f"""
         import numpy as np
         test_array = np.ndarray((2, 2))
-        test_array.{:s}()
-        """.format(
-                func_name
-            )
+        test_array.{func_name:s}()
+        """
         )
         return node.infer()
 
     def _inferred_ndarray_attribute(self, attr_name):
         node = builder.extract_node(
-            """
+            f"""
         import numpy as np
         test_array = np.ndarray((2, 2))
-        test_array.{:s}
-        """.format(
-                attr_name
-            )
+        test_array.{attr_name:s}
+        """
         )
         return node.infer()
 
@@ -139,7 +135,7 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
                 inferred_values = list(self._inferred_ndarray_method_call(func_))
                 self.assertTrue(
                     len(inferred_values) == 1,
-                    msg="Too much inferred value for {:s}".format(func_),
+                    msg=f"Too much inferred value for {func_:s}",
                 )
                 self.assertTrue(
                     inferred_values[-1].pytype() in licit_array_types,
@@ -158,7 +154,7 @@ class NumpyBrainNdarrayTest(unittest.TestCase):
                 inferred_values = list(self._inferred_ndarray_attribute(attr_))
                 self.assertTrue(
                     len(inferred_values) == 1,
-                    msg="Too much inferred value for {:s}".format(attr_),
+                    msg=f"Too much inferred value for {attr_:s}",
                 )
                 self.assertTrue(
                     inferred_values[-1].pytype() in licit_array_types,
