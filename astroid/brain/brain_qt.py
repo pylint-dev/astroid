@@ -86,6 +86,9 @@ MANAGER.register_transform(
     nodes.FunctionDef,
     transform_pyside_signal,
     lambda node: (
-        node.qname().partition(".")[0] == "PySide2" and
-        any(cls.qname() == "Signal" for cls in node.instance_attrs.get("__class__", [])))
+        node.qname().partition(".")[0] == "PySide2"
+        and any(
+            cls.qname() == "Signal" for cls in node.instance_attrs.get("__class__", [])
+        )
+    ),
 )
