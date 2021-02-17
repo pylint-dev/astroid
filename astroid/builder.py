@@ -49,7 +49,7 @@ MANAGER = manager.AstroidManager()
 def open_source_file(filename):
     with open(filename, "rb") as byte_stream:
         encoding = detect_encoding(byte_stream.readline)[0]
-    stream = open(filename, "r", newline=None, encoding=encoding)
+    stream = open(filename, newline=None, encoding=encoding)
     data = stream.read()
     return stream, encoding, data
 
