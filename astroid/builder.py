@@ -106,7 +106,7 @@ class AstroidBuilder(raw_building.InspectBuilder):
         """
         try:
             stream, encoding, data = open_source_file(path)
-        except IOError as exc:
+        except OSError as exc:
             raise exceptions.AstroidBuildingError(
                 "Unable to load file {path}:\n{error}",
                 modname=modname,
