@@ -19,6 +19,10 @@ Release Date: TBA
 
   Closes PyCQA/pylint#3202
 
+* Update qt brain to work with pylint2 5.15.2.
+
+  Fixes PyCQA/pylint#4040
+
 
 What's New in astroid 2.5.1?
 ============================

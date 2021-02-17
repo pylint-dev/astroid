@@ -82,3 +82,10 @@ MANAGER.register_transform(
     transform_pyside_signal,
     lambda node: node.qname() in ("PySide.QtCore.Signal", "PySide2.QtCore.Signal"),
 )
+MANAGER.register_transform(
+    nodes.FunctionDef,
+    transform_pyside_signal,
+    lambda node: (
+        node.qname().partition(".")[0] == "PySide2" and
+        any(cls.qname() == "Signal" for cls in node.instance_attrs.get("__class__", [])))
+)
