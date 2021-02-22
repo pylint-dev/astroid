@@ -35,7 +35,7 @@ install_requires = [
 ]
 
 # pylint: disable=redefined-builtin; why license is a builtin anyway?
-license = "LGPL"
+license = "LGPL-2.1-or-later"
 
 author = "Python Code Quality Authority"
 author_email = "code-quality@python.org"
