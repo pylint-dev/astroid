@@ -20,7 +20,7 @@ Release Process
    https://github.com/PyCQA/astroid
 
 6. Run
-   
+
    $ git clean -fd && find . -name '*.pyc' -delete
    $ rm dist/*
    $ python setup.py sdist --formats=gztar bdist_wheel

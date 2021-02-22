@@ -798,7 +798,7 @@ class PropertyModel(ObjectModel):
 
         def find_setter(func: objects.Property) -> Optional[astroid.FunctionDef]:
             """
-            Given a property, find the corresponding setter function and returns it. 
+            Given a property, find the corresponding setter function and returns it.
 
             :param func: property for which the setter has to be found
             :return: the setter function or None

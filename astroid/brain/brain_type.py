@@ -8,9 +8,9 @@ to write str[int].
 Guido Van Rossum proposed a hack to handle this in the interpreter:
 https://github.com/python/cpython/blob/master/Objects/abstract.c#L186-L189
 
-This brain follows the same logic. It is no wise to add permanently the __class_getitem__ method 
+This brain follows the same logic. It is no wise to add permanently the __class_getitem__ method
 to the type object. Instead we choose to add it only in the case of a subscript node
-which inside name node is type. 
+which inside name node is type.
 Doing this type[int] is allowed whereas str[int] is not.
 
 Thanks to Lukasz Langa for fruitful discussion.
