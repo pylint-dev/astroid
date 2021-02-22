@@ -21,7 +21,7 @@ from astroid import nodes
 
 
 def require_version(minver=None, maxver=None):
-    """ Compare version of python interpreter to the given one. Skip the test
+    """Compare version of python interpreter to the given one. Skip the test
     if older.
     """
 

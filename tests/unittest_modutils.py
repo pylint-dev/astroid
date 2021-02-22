@@ -330,8 +330,7 @@ class GetModuleFilesTest(unittest.TestCase):
         self.assertEqual(modules, {os.path.join(package, x) for x in expected})
 
     def test_get_all_files(self):
-        """test that list_all returns all Python files from given location
-        """
+        """test that list_all returns all Python files from given location"""
         non_package = resources.find("data/notamodule")
         modules = modutils.get_module_files(non_package, [], list_all=True)
         self.assertEqual(modules, [os.path.join(non_package, "file.py")])

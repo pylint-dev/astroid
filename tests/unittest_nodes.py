@@ -115,15 +115,13 @@ class AsStringTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(ast.as_string(), "raise_string(*args, **kwargs)")
 
     def test_module_as_string(self):
-        """check as_string on a whole module prepared to be returned identically
-        """
+        """check as_string on a whole module prepared to be returned identically"""
         module = resources.build_file("data/module.py", "data.module")
         with open(resources.find("data/module.py")) as fobj:
             self.assertMultiLineEqual(module.as_string(), fobj.read())
 
     def test_module2_as_string(self):
-        """check as_string on a whole module prepared to be returned identically
-        """
+        """check as_string on a whole module prepared to be returned identically"""
         module2 = resources.build_file("data/module2.py", "data.module2")
         with open(resources.find("data/module2.py")) as fobj:
             self.assertMultiLineEqual(module2.as_string(), fobj.read())

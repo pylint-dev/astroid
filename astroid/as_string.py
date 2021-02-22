@@ -61,8 +61,8 @@ class AsStringVisitor:
 
     def _should_wrap(self, node, child, is_left):
         """Wrap child if:
-            - it has lower precedence
-            - same precedence with position opposite to associativity direction
+        - it has lower precedence
+        - same precedence with position opposite to associativity direction
         """
         node_precedence = node.op_precedence()
         child_precedence = child.op_precedence()

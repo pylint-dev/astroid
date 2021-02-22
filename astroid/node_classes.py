@@ -259,7 +259,7 @@ OP_PRECEDENCE = {
 
 
 class NodeNG:
-    """ A node of the new Abstract Syntax Tree (AST).
+    """A node of the new Abstract Syntax Tree (AST).
 
     This is the base class for all Astroid node classes.
     """

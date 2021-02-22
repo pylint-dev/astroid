@@ -166,7 +166,7 @@ nodes.Dict._infer = infer_map
 
 
 def _higher_function_scope(node):
-    """ Search for the first function which encloses the given
+    """Search for the first function which encloses the given
     scope. This can be used for looking up in that function's
     scope, in case looking up in a lower scope for a particular
     name fails.

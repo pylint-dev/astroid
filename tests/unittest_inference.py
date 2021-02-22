@@ -1273,7 +1273,7 @@ class InferenceTest(resources.SysPathSetup, unittest.TestCase):
         self.assertEqual(cdef.col_offset, orig_offset)
 
     def test_no_runtime_error_in_repeat_inference(self):
-        """ Stop repeat inference attempt causing a RuntimeError in Python3.7
+        """Stop repeat inference attempt causing a RuntimeError in Python3.7
 
         See https://github.com/PyCQA/pylint/issues/2317
         """
@@ -5498,9 +5498,15 @@ def test_property_inference():
     A.test.getter #@
     A.test.deleter #@
     """
-    prop, prop_result, prop_fget_result, prop_fset_result, prop_setter, prop_getter, prop_deleter = extract_node(
-        code
-    )
+    (
+        prop,
+        prop_result,
+        prop_fget_result,
+        prop_fset_result,
+        prop_setter,
+        prop_getter,
+        prop_deleter,
+    ) = extract_node(code)
 
     inferred = next(prop.infer())
     assert isinstance(inferred, objects.Property)
@@ -5793,7 +5799,7 @@ def test_inferring_properties_multiple_time_does_not_mutate_locals_multiple_time
     node = extract_node(code)
     # Infer the class
     cls = next(node.infer())
-    prop, = cls.getattr("a")
+    (prop,) = cls.getattr("a")
 
     # Try to infer the property function *multiple* times. `A.locals` should be modified only once
     for _ in range(3):

@@ -80,8 +80,7 @@ class ImportFromMixin(FilterStmtsMixin):
         return name
 
     def do_import_module(self, modname=None):
-        """return the ast for a module whose name is <modname> imported by <self>
-        """
+        """return the ast for a module whose name is <modname> imported by <self>"""
         # handle special case where we are on a package node importing a module
         # using the same name as the package, which may end in an infinite loop
         # on relative imports

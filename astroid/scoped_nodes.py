@@ -150,7 +150,7 @@ def builtin_lookup(name):
 
 # TODO move this Mixin to mixins.py; problem: 'FunctionDef' in _scope_lookup
 class LocalsDictNodeNG(node_classes.LookupMixIn, node_classes.NodeNG):
-    """ this class provides locals handling common to Module, FunctionDef
+    """this class provides locals handling common to Module, FunctionDef
     and ClassDef nodes, including a dict like interface for direct access
     to locals information
     """
@@ -1454,7 +1454,7 @@ class FunctionDef(mixins.MultiLineBlockMixin, node_classes.Statement, Lambda):
     # pylint: disable=invalid-overridden-method
     @decorators_mod.cachedproperty
     def type(
-        self
+        self,
     ):  # pylint: disable=invalid-overridden-method,too-many-return-statements
         """The function type for this node.
 
@@ -1791,7 +1791,7 @@ def _rec_get_names(args, names=None):
 
 
 def _is_metaclass(klass, seen=None):
-    """ Return if the given class can be
+    """Return if the given class can be
     used as a metaclass.
     """
     if klass.name == "type":
