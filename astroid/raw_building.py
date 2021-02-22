@@ -319,7 +319,7 @@ class InspectBuilder:
 
     def object_build(self, node, obj):
         """recursive method which create a partial ast from real objects
-         (only function, class, and method are handled)
+        (only function, class, and method are handled)
         """
         if obj in self._done:
             return self._done[obj]

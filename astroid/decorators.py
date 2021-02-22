@@ -38,7 +38,7 @@ def cached(func, instance, args, kwargs):
 
 
 class cachedproperty:
-    """ Provides a cached property equivalent to the stacking of
+    """Provides a cached property equivalent to the stacking of
     @cached and @property, but more efficient.
 
     After first usage, the <property_name> becomes part of the object's
