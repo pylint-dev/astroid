@@ -11,6 +11,10 @@ Release Date: TBA
 
   Closes #895 #899
 
+* Fixed duplicate bases error for "typing._GenericAlias" (false-positive)
+
+  Closes #905
+
 What's New in astroid 2.5?
 ============================
 Release Date: 2021-02-15

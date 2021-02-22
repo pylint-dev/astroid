@@ -105,7 +105,12 @@ def clean_duplicates_mro(sequences, cls, context):
             (node.lineno, node.qname()) if node.name else None for node in sequence
         ]
         last_index = dict(map(reversed, enumerate(names)))
-        if names and names[0] is not None and last_index[names[0]] != 0:
+        if (
+            names
+            and names[0] is not None
+            and last_index[names[0]] != 0
+            and names[0][1] != "typing._GenericAlias"
+        ):
             raise exceptions.DuplicateBasesError(
                 message="Duplicates found in MROs {mros} for {cls!r}.",
                 mros=sequences,
