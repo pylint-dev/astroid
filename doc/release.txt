@@ -28,4 +28,3 @@ Release Process
 
 
    to release a new version to PyPI.
-  

@@ -27,4 +27,3 @@ astroid (1.0.0-1) unstable; urgency=low
   * new upstream release, project renamed to astroid instead of logilab-astng
 
  -- Sylvain Thénault <sylvain.thenault@logilab.fr>  Mon, 29 Jul 2013 16:32:51 +0200
-
