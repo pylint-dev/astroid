@@ -1436,6 +1436,62 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         )
         self.assertEqualMro(cls, ["C", "A", "B", "object"])
 
+    @test_utils.require_version("3.7", "3.9")
+    def test_mro_with_duplicate_generic_alias(self):
+        """Catch false positive. Assert no error is thrown."""
+        cls = builder.extract_node(
+            """
+        import abc
+        from typing import Sized, Iterable
+        class AbstractRoute(abc.ABC):
+            pass
+        class AbstractResource(Sized, Iterable["AbstractRoute"]):
+            pass
+        class IndexView(AbstractResource):
+            def __init__(self):
+                self.var = 1
+        """
+        )
+        self.assertEqualMro(
+            cls,
+            [
+                "IndexView",
+                "AbstractResource",
+                "_GenericAlias",
+                "_Final",
+                "_GenericAlias",
+                "object",
+            ],
+        )
+
+    @test_utils.require_version("3.9")
+    def test_mro_with_duplicate_generic_alias_2(self):
+        cls = builder.extract_node(
+            """
+        import abc
+        from typing import Sized, Iterable
+        class AbstractRoute(abc.ABC):
+            pass
+        class AbstractResource(Sized, Iterable["AbstractRoute"]):
+            pass
+        class IndexView(AbstractResource):
+            def __init__(self):
+                self.var = 1
+        """
+        )
+        self.assertEqualMro(
+            cls,
+            [
+                "IndexView",
+                "AbstractResource",
+                "_SpecialGenericAlias",
+                "_BaseGenericAlias",
+                "_Final",
+                "_SpecialGenericAlias",
+                "object",
+            ],
+        )
+
     def test_generator_from_infer_call_result_parent(self):
         func = builder.extract_node(
             """
