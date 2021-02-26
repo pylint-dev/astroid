@@ -3313,7 +3313,7 @@ class Await(NodeNG):
         yield self.value
 
 
-class ImportFrom(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
+class ImportFrom(mixins.ImportFromMixin, Statement):
     """Class representing an :class:`ast.ImportFrom` node.
 
     >>> node = astroid.extract_node('from my_package import my_module')
@@ -3321,10 +3321,15 @@ class ImportFrom(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
     <ImportFrom l.1 at 0x7f23b2e415c0>
     """
 
+    _astroid_fields = ("aliases",)
+    aliases = None
+    """
+    :type: list(Alias) or None
+    """
     _other_fields = ("modname", "names", "level")
 
     def __init__(
-        self, fromname, names, level=0, lineno=None, col_offset=None, parent=None
+        self, fromname, level=0, lineno=None, col_offset=None, parent=None
     ):
         """
         :param fromname: The module that is being imported from.
@@ -3353,16 +3358,6 @@ class ImportFrom(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
 
         :type: str or None
         """
-
-        self.names = names
-        """What is being imported from the module.
-
-        Each entry is a :class:`tuple` of the name being imported,
-        and the alias that the name is assigned to (if any).
-
-        :type: list(tuple(str, str or None))
-        """
-
         self.level = level
         """The level of relative import.
 
@@ -3373,6 +3368,29 @@ class ImportFrom(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
         """
 
         super().__init__(lineno, col_offset, parent)
+
+    def postinit(self, aliases=None):
+        """Do some setup after initialisation.
+
+        :param aliases: The names being imported.
+        :type aliases: list(Alias) or None
+        """
+        self.aliases = aliases
+        """The names being imported.
+
+        :type: list(Alias) or None
+        """
+        self.names = [(a.name, a.asname) for a in aliases or []]
+        """What is being imported from the module.
+
+        Each entry is a :class:`tuple` of the name being imported,
+        and the alias that the name is assigned to (if any).
+
+        :type: list(tuple(str, str or None))
+        """
+
+    def get_children(self):
+      yield from self.aliases or []
 
 
 class Attribute(NodeNG):
@@ -3591,20 +3609,24 @@ class IfExp(NodeNG):
         return False
 
 
-class Import(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
-    """Class representing an :class:`ast.Import` node.
+class Alias(mixins.NoChildrenMixin, NodeNG):
+    """Class representing an :class:`ast.alias` node.
 
     >>> node = astroid.extract_node('import astroid')
     >>> node
     <Import l.1 at 0x7f23b2e4e5c0>
+    >>> node.aliases[0]
+    <alias l.2 at 0x7f23b2e4e5c0>
     """
+    _other_fields = ("name", "asname")
 
-    _other_fields = ("names",)
-
-    def __init__(self, names=None, lineno=None, col_offset=None, parent=None):
+    def __init__(self, name=None, asname=None, lineno=None, col_offset=None, parent=None):
         """
-        :param names: The names being imported.
-        :type names: list(tuple(str, str or None)) or None
+        :param name: The name being imported.
+        :type name: str or None
+
+        :param asname: The alias of the imported name.
+        :type asname: str or None
 
         :param lineno: The line that this node appears on in the source code.
         :type lineno: int or None
@@ -3616,7 +3638,47 @@ class Import(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
         :param parent: The parent node in the syntax tree.
         :type parent: NodeNG or None
         """
-        self.names = names
+        self.name = name
+        """The names being imported.
+
+        :type: str or None
+        """
+        self.asname = asname
+        """The alias of the imported name.
+
+        :type: str or None
+        """
+
+        super().__init__(lineno, col_offset, parent)
+
+
+class Import(mixins.ImportFromMixin, Statement):
+    """Class representing an :class:`ast.Import` node.
+
+    >>> node = astroid.extract_node('import astroid')
+    >>> node
+    <Import l.1 at 0x7f23b2e4e5c0>
+    """
+
+    _astroid_fields = ("aliases",)
+    aliases = None
+    """
+    :type: list(Alias) or None
+    """
+    _other_fields = ("names",)
+
+    def postinit(self, aliases=None):
+        """Do some setup after initialisation.
+
+        :param aliases: The names being imported.
+        :type aliases: list(Alias) or None
+        """
+        self.aliases = aliases
+        """The names being imported.
+
+        :type: list(Alias) or None
+        """
+        self.names = [(a.name, a.asname) for a in aliases or []]
         """The names being imported.
 
         Each entry is a :class:`tuple` of the name being imported,
@@ -3625,7 +3687,8 @@ class Import(mixins.NoChildrenMixin, mixins.ImportFromMixin, Statement):
         :type: list(tuple(str, str or None)) or None
         """
 
-        super().__init__(lineno, col_offset, parent)
+    def get_children(self):
+      yield from self.aliases or []
 
 
 class Index(NodeNG):

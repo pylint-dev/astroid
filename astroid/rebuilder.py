@@ -572,17 +572,31 @@ class TreeRebuilder:
     def visit_for(self, node, parent):
         return self._visit_for(nodes.For, node, parent)
 
+    # def visit_alias(self, node, parent):
+    #         return nodes.Alias(
+    #             node.name,
+    #             nodw.asname,
+    #             getattr(node, "lineno", None),
+    #             getattr(node, "col_offset", None),
+    #             parent)
+
     def visit_importfrom(self, node, parent):
         """visit an ImportFrom node by returning a fresh instance of it"""
-        names = [(alias.name, alias.asname) for alias in node.names]
         newnode = nodes.ImportFrom(
             node.module or "",
-            names,
             node.level or None,
             getattr(node, "lineno", None),
             getattr(node, "col_offset", None),
             parent,
         )
+        newnode.postinit([
+            nodes.Alias(
+                alias.name,
+                alias.asname,
+                getattr(alias, "lineno", None),
+                getattr(alias, "col_offset", None),
+                newnode)
+            for alias in node.names])
         # store From names to add them to locals after building
         self._import_from_nodes.append(newnode)
         return newnode
@@ -692,13 +706,19 @@ class TreeRebuilder:
 
     def visit_import(self, node, parent):
         """visit a Import node by returning a fresh instance of it"""
-        names = [(alias.name, alias.asname) for alias in node.names]
         newnode = nodes.Import(
-            names,
             getattr(node, "lineno", None),
             getattr(node, "col_offset", None),
             parent,
         )
+        newnode.postinit([
+            nodes.Alias(
+                alias.name,
+                alias.asname,
+                getattr(alias, "lineno", None),
+                getattr(alias, "col_offset", None),
+                newnode)
+            for alias in node.names])
         # save import names in parent's locals:
         for (name, asname) in newnode.names:
             name = asname or name
