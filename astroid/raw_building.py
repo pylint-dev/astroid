@@ -103,7 +103,7 @@ def attach_import_node(node, modname, membername):
     node with the specified name
     """
     from_node = nodes.ImportFrom(modname)
-    from_node.postinit([nodes.Alias(membername, None)])
+    from_node.postinit([nodes.ImportAlias(membername, None)])
     _attach_local_node(node, from_node, membername)
 
 
@@ -157,7 +157,7 @@ def build_function(name, args=None, posonlyargs=None, defaults=None, doc=None):
 def build_from_import(fromname, names):
     """create and initialize an astroid ImportFrom import statement"""
     node = nodes.ImportFrom(fromname)
-    node.postinit([nodes.Alias(name, None) for name in names])
+    node.postinit([nodes.ImportAlias(name, None) for name in names])
     return node
 
 

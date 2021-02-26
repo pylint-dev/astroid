@@ -3324,7 +3324,7 @@ class ImportFrom(mixins.ImportFromMixin, Statement):
     _astroid_fields = ("aliases",)
     aliases = None
     """
-    :type: list(Alias) or None
+    :type: list(ImportAlias) or None
     """
     _other_fields = ("modname", "names", "level")
 
@@ -3373,12 +3373,12 @@ class ImportFrom(mixins.ImportFromMixin, Statement):
         """Do some setup after initialisation.
 
         :param aliases: The names being imported.
-        :type aliases: list(Alias) or None
+        :type aliases: list(ImportAlias) or None
         """
         self.aliases = aliases
         """The names being imported.
 
-        :type: list(Alias) or None
+        :type: list(ImportAlias) or None
         """
         self.names = [(a.name, a.asname) for a in aliases or []]
         """What is being imported from the module.
@@ -3609,7 +3609,7 @@ class IfExp(NodeNG):
         return False
 
 
-class Alias(mixins.NoChildrenMixin, NodeNG):
+class ImportAlias(mixins.NoChildrenMixin, NodeNG):
     """Class representing an :class:`ast.alias` node.
 
     >>> node = astroid.extract_node('import astroid')
@@ -3663,7 +3663,7 @@ class Import(mixins.ImportFromMixin, Statement):
     _astroid_fields = ("aliases",)
     aliases = None
     """
-    :type: list(Alias) or None
+    :type: list(ImportAlias) or None
     """
     _other_fields = ("names",)
 
@@ -3671,12 +3671,12 @@ class Import(mixins.ImportFromMixin, Statement):
         """Do some setup after initialisation.
 
         :param aliases: The names being imported.
-        :type aliases: list(Alias) or None
+        :type aliases: list(ImportAlias) or None
         """
         self.aliases = aliases
         """The names being imported.
 
-        :type: list(Alias) or None
+        :type: list(ImportAlias) or None
         """
         self.names = [(a.name, a.asname) for a in aliases or []]
         """The names being imported.

@@ -572,14 +572,6 @@ class TreeRebuilder:
     def visit_for(self, node, parent):
         return self._visit_for(nodes.For, node, parent)
 
-    # def visit_alias(self, node, parent):
-    #         return nodes.Alias(
-    #             node.name,
-    #             nodw.asname,
-    #             getattr(node, "lineno", None),
-    #             getattr(node, "col_offset", None),
-    #             parent)
-
     def visit_importfrom(self, node, parent):
         """visit an ImportFrom node by returning a fresh instance of it"""
         newnode = nodes.ImportFrom(
@@ -590,7 +582,7 @@ class TreeRebuilder:
             parent,
         )
         newnode.postinit([
-            nodes.Alias(
+            nodes.ImportAlias(
                 alias.name,
                 alias.asname,
                 getattr(alias, "lineno", None),
@@ -712,7 +704,7 @@ class TreeRebuilder:
             parent,
         )
         newnode.postinit([
-            nodes.Alias(
+            nodes.ImportAlias(
                 alias.name,
                 alias.asname,
                 getattr(alias, "lineno", None),
