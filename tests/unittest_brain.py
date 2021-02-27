@@ -2092,6 +2092,8 @@ def test_dataclasses():
     code = """
     import dataclasses
     from dataclasses import dataclass
+    import typing
+    from typing import ClassVar
 
     @dataclass
     class InventoryItem:
@@ -2101,6 +2103,8 @@ def test_dataclasses():
     @dataclasses.dataclass
     class Other:
         name: str
+        CONST_1: ClassVar[int] = 42
+        CONST_2: typing.ClassVar[int] = 42
     """
 
     module = astroid.parse(code)
@@ -2118,6 +2122,14 @@ def test_dataclasses():
     name = second.getattr("name")
     assert len(name) == 1
     assert isinstance(name[0], astroid.Unknown)
+
+    const_1 = second.getattr("CONST_1")
+    assert len(const_1) == 1
+    assert isinstance(const_1[0], astroid.AssignName)
+
+    const_2 = second.getattr("CONST_2")
+    assert len(const_2) == 1
+    assert isinstance(const_2[0], astroid.AssignName)
 
 
 @pytest.mark.parametrize(
