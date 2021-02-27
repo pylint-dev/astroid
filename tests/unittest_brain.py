@@ -36,6 +36,7 @@ import io
 import queue
 import re
 import os
+from typing import Collection, MutableSet
 
 try:
     import multiprocessing  # pylint: disable=unused-import
@@ -1205,6 +1206,41 @@ class TypingBrain(unittest.TestCase):
         typing_module = inferred_base.root()
         assert len(typing_module.locals["TypedDict"]) == 1
         assert inferred_base == typing_module.locals["TypedDict"][0]
+
+    def test_typing_alias_type(self):
+        """
+        Test that the type aliased thanks to typing._alias function are
+        correctly inferred.
+        """
+        node = builder.extract_node(
+        """
+        from typing import TypeVar, MutableSet
+
+        T = TypeVar("T")
+        MutableSet[T]
+
+        class V(MutableSet[T]):
+            pass
+        """
+        )
+        inferred = next(node.infer())
+        mro_entries = list(inferred.mro())
+        self.assertIsInstance(mro_entries[0], astroid.ClassDef)
+        self.assertEqual(mro_entries[0].name, "V")
+        self.assertIsInstance(mro_entries[1], astroid.ClassDef)
+        self.assertEqual(mro_entries[1].name, "MutableSet")
+        self.assertIsInstance(mro_entries[2], astroid.ClassDef)
+        self.assertEqual(mro_entries[2].name, "Set")
+        self.assertIsInstance(mro_entries[3], astroid.ClassDef)
+        self.assertEqual(mro_entries[3].name, "Collection")
+        self.assertIsInstance(mro_entries[4], astroid.ClassDef)
+        self.assertEqual(mro_entries[4].name, "Sized")
+        self.assertIsInstance(mro_entries[5], astroid.ClassDef)
+        self.assertEqual(mro_entries[5].name, "Iterable")
+        self.assertIsInstance(mro_entries[6], astroid.ClassDef)
+        self.assertEqual(mro_entries[6].name, "Container")
+        self.assertIsInstance(mro_entries[7], astroid.ClassDef)
+        self.assertEqual(mro_entries[7].name, "object")
 
 
 class ReBrainTest(unittest.TestCase):
