@@ -84,6 +84,12 @@ def infer_typing_attr(node, context=None):
     node = extract_node(TYPING_TYPE_TEMPLATE.format(value.qname().split(".")[-1]))
     return node.infer(context=context)
 
+GET_ITEM_TEMPLATE = """
+@classmethod
+def __getitem__(cls, value):
+    return cls
+"""
+
 
 def _looks_like_typing_alias(node):
     if isinstance(node, nodes.Call) and isinstance(node.func, nodes.Name):
@@ -96,9 +102,10 @@ def _looks_like_typing_alias(node):
 def infer_typing_alias(node, context=None):
     if not isinstance(node, nodes.Call):
         return
-    node = extract_node(TYPING_TYPE_TEMPLATE.format(node.args[0].attrname))
-    res = next(node.infer(context=context))
-    # breakpoint()
+    res = next(node.args[0].infer(context=context))
+    func_to_add = extract_node(GET_ITEM_TEMPLATE)
+    if res.metaclass():
+        res.metaclass().locals['__getitem__'] = [func_to_add]
     return res
 
 
