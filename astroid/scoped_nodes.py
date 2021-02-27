@@ -99,17 +99,19 @@ def _c3_merge(sequences, cls, context):
     return None
 
 
-def clean_duplicates_mro(sequences, cls, context):
+def clean_duplicates_mro(
+    sequences, cls, context, raise_duplicate_bases_error: bool = True
+):
     for sequence in sequences:
         names = [
             (node.lineno, node.qname()) if node.name else None for node in sequence
         ]
         last_index = dict(map(reversed, enumerate(names)))
         if (
-            names
+            raise_duplicate_bases_error is True
+            and names
             and names[0] is not None
             and last_index[names[0]] != 0
-            and names[0][1] != "typing._GenericAlias"
         ):
             raise exceptions.DuplicateBasesError(
                 message="Duplicates found in MROs {mros} for {cls!r}.",
@@ -2821,7 +2823,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
 
         def grouped_slots():
             # Not interested in object, since it can't have slots.
-            for cls in self.mro()[:-1]:
+            for cls in self.mro(raise_duplicate_bases_error=False)[:-1]:
                 try:
                     cls_slots = cls._slots()
                 except NotImplementedError:
@@ -2876,7 +2878,7 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
             else:
                 yield from baseobj.bases
 
-    def _compute_mro(self, context=None):
+    def _compute_mro(self, context=None, raise_duplicate_bases_error: bool = True):
         inferred_bases = list(self._inferred_bases(context=context))
         bases_mro = []
         for base in inferred_bases:
@@ -2884,7 +2886,10 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                 continue
 
             try:
-                mro = base._compute_mro(context=context)
+                mro = base._compute_mro(
+                    context=context,
+                    raise_duplicate_bases_error=raise_duplicate_bases_error,
+                )
                 bases_mro.append(mro)
             except NotImplementedError:
                 # Some classes have in their ancestors both newstyle and
@@ -2896,10 +2901,16 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
                 bases_mro.append(ancestors)
 
         unmerged_mro = [[self]] + bases_mro + [inferred_bases]
-        unmerged_mro = list(clean_duplicates_mro(unmerged_mro, self, context))
+        unmerged_mro = list(
+            clean_duplicates_mro(
+                unmerged_mro, self, context, raise_duplicate_bases_error
+            )
+        )
         return _c3_merge(unmerged_mro, self, context)
 
-    def mro(self, context=None) -> List["ClassDef"]:
+    def mro(
+        self, context=None, raise_duplicate_bases_error: bool = True
+    ) -> List["ClassDef"]:
         """Get the method resolution order, using C3 linearization.
 
         :returns: The list of ancestors, sorted by the mro.
@@ -2907,7 +2918,9 @@ class ClassDef(mixins.FilterStmtsMixin, LocalsDictNodeNG, node_classes.Statement
         :raises DuplicateBasesError: Duplicate bases in the same class base
         :raises InconsistentMroError: A class' MRO is inconsistent
         """
-        return self._compute_mro(context=context)
+        return self._compute_mro(
+            context=context, raise_duplicate_bases_error=raise_duplicate_bases_error
+        )
 
     def bool_value(self, context=None):
         """Determine the boolean value of this node.

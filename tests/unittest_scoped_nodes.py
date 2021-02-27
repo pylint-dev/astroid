@@ -1270,8 +1270,18 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         assert len(slots) == 3, slots
         assert [slot.value for slot in slots] == ["a", "b", "c"]
 
-    def assertEqualMro(self, klass, expected_mro):
-        self.assertEqual([member.name for member in klass.mro()], expected_mro)
+    def assertEqualMro(
+        self, klass, expected_mro, raise_duplicate_bases_error: bool = True
+    ):
+        self.assertEqual(
+            [
+                member.name
+                for member in klass.mro(
+                    raise_duplicate_bases_error=raise_duplicate_bases_error
+                )
+            ],
+            expected_mro,
+        )
 
     @unittest.skipUnless(HAS_SIX, "These tests require the six library")
     def test_with_metaclass_mro(self):
@@ -1441,40 +1451,24 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         """Catch false positive. Assert no error is thrown."""
         cls = builder.extract_node(
             """
-        import abc
-        from typing import Sized, Iterable
-        class AbstractRoute(abc.ABC):
-            pass
-        class AbstractResource(Sized, Iterable["AbstractRoute"]):
-            pass
-        class IndexView(AbstractResource):
+        from typing import Sized, Hashable
+        class Derived(Sized, Hashable):
             def __init__(self):
                 self.var = 1
         """
         )
         self.assertEqualMro(
             cls,
-            [
-                "IndexView",
-                "AbstractResource",
-                "_GenericAlias",
-                "_Final",
-                "_GenericAlias",
-                "object",
-            ],
+            ["Derived", "_GenericAlias", "_Final", "object"],
+            raise_duplicate_bases_error=False,
         )
 
     @test_utils.require_version("3.9")
     def test_mro_with_duplicate_generic_alias_2(self):
         cls = builder.extract_node(
             """
-        import abc
-        from typing import Sized, Iterable
-        class AbstractRoute(abc.ABC):
-            pass
-        class AbstractResource(Sized, Iterable["AbstractRoute"]):
-            pass
-        class IndexView(AbstractResource):
+        from typing import Sized, Hashable
+        class Derived(Sized, Hashable):
             def __init__(self):
                 self.var = 1
         """
@@ -1482,14 +1476,13 @@ class ClassNodeTest(ModuleLoader, unittest.TestCase):
         self.assertEqualMro(
             cls,
             [
-                "IndexView",
-                "AbstractResource",
+                "Derived",
                 "_SpecialGenericAlias",
                 "_BaseGenericAlias",
                 "_Final",
-                "_SpecialGenericAlias",
                 "object",
             ],
+            raise_duplicate_bases_error=False,
         )
 
     def test_generator_from_infer_call_result_parent(self):

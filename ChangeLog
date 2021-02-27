@@ -11,7 +11,7 @@ Release Date: TBA
 
   Closes #895 #899
 
-* Fixed duplicate bases error for "typing._GenericAlias" (false-positive)
+* Use flag to guard DuplicateBasesError
 
   Closes #905
 
