@@ -112,6 +112,23 @@ def infer_typedDict(  # pylint: disable=invalid-name
     node.root().locals["TypedDict"] = [class_def]
 
 
+def _looks_like_typing_alias(node):
+    if isinstance(node, nodes.Call) and isinstance(node.func, nodes.Name):
+        if node.func.name == "_alias":
+            if isinstance(node.args[0], nodes.Attribute):
+                return True
+    return False
+
+
+def infer_typing_alias(node, context=None):
+    if not isinstance(node, nodes.Call):
+        return
+    node = extract_node(TYPING_TYPE_TEMPLATE.format(node.args[0].attrname))
+    res = next(node.infer(context=context))
+    # breakpoint()
+    return res
+
+
 MANAGER.register_transform(
     nodes.Call,
     inference_tip(infer_typing_typevar_or_newtype),
@@ -125,3 +142,7 @@ if PY39:
     MANAGER.register_transform(
         nodes.FunctionDef, infer_typedDict, _looks_like_typedDict
     )
+
+MANAGER.register_transform(
+    nodes.Call, infer_typing_alias, _looks_like_typing_alias
+)
