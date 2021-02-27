@@ -136,7 +136,9 @@ def _looks_like_typing_alias(node: nodes.Call) -> bool:
     return False
 
 
-def infer_typing_alias(node: nodes.Call, context: context.InferenceContext = None) -> node_classes.NodeNG:
+def infer_typing_alias(
+    node: nodes.Call, context: context.InferenceContext = None
+) -> node_classes.NodeNG:
     """
     Infers the call to _alias function
 
@@ -146,11 +148,11 @@ def infer_typing_alias(node: nodes.Call, context: context.InferenceContext = Non
     if not isinstance(node, nodes.Call):
         return
     res = next(node.args[0].infer(context=context))
-    # Needs to mock the __getitem__ class method so that
-    # MutableSet[T] is acceptable
+    #  Needs to mock the __getitem__ class method so that
+    #  MutableSet[T] is acceptable
     func_to_add = extract_node(GET_ITEM_TEMPLATE)
     if res.metaclass():
-        res.metaclass().locals['__getitem__'] = [func_to_add]
+        res.metaclass().locals["__getitem__"] = [func_to_add]
     return res
 
 
@@ -168,6 +170,4 @@ if PY39:
         nodes.FunctionDef, infer_typedDict, _looks_like_typedDict
     )
 
-MANAGER.register_transform(
-    nodes.Call, infer_typing_alias, _looks_like_typing_alias
-)
+MANAGER.register_transform(nodes.Call, infer_typing_alias, _looks_like_typing_alias)

@@ -1213,7 +1213,7 @@ class TypingBrain(unittest.TestCase):
         correctly inferred.
         """
         node = builder.extract_node(
-        """
+            """
         from typing import TypeVar, MutableSet
 
         T = TypeVar("T")
