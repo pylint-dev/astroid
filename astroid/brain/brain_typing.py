@@ -85,6 +85,23 @@ def infer_typing_attr(node, context=None):
     return node.infer(context=context)
 
 
+def _looks_like_typing_alias(node):
+    if isinstance(node, nodes.Call) and isinstance(node.func, nodes.Name):
+        if node.func.name == "_alias":
+            if isinstance(node.args[0], nodes.Attribute):
+                return True
+    return False
+
+
+def infer_typing_alias(node, context=None):
+    if not isinstance(node, nodes.Call):
+        return
+    node = extract_node(TYPING_TYPE_TEMPLATE.format(node.args[0].attrname))
+    res = next(node.infer(context=context))
+    # breakpoint()
+    return res
+
+
 MANAGER.register_transform(
     nodes.Call,
     inference_tip(infer_typing_typevar_or_newtype),
@@ -92,4 +109,7 @@ MANAGER.register_transform(
 )
 MANAGER.register_transform(
     nodes.Subscript, inference_tip(infer_typing_attr), _looks_like_typing_subscript
+)
+MANAGER.register_transform(
+    nodes.Call, infer_typing_alias, _looks_like_typing_alias
 )
