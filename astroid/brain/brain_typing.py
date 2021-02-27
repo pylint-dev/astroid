@@ -11,9 +11,12 @@ from astroid import (
     UseInferenceDefault,
     extract_node,
     inference_tip,
+    node_classes,
     nodes,
+    context,
     InferenceError,
 )
+import astroid
 
 
 TYPING_NAMEDTUPLE_BASENAMES = {"NamedTuple", "typing.NamedTuple"}
@@ -84,6 +87,7 @@ def infer_typing_attr(node, context=None):
     node = extract_node(TYPING_TYPE_TEMPLATE.format(value.qname().split(".")[-1]))
     return node.infer(context=context)
 
+
 GET_ITEM_TEMPLATE = """
 @classmethod
 def __getitem__(cls, value):
@@ -91,18 +95,33 @@ def __getitem__(cls, value):
 """
 
 
-def _looks_like_typing_alias(node):
+def _looks_like_typing_alias(node: nodes.Call) -> bool:
+    """
+    Returns True if the node corresponds to a call to _alias function.
+    For example :
+
+    MutableSet = _alias(collections.abc.MutableSet, T)
+
+    :param node: call node
+    """
     if isinstance(node, nodes.Call) and isinstance(node.func, nodes.Name):
-        if node.func.name == "_alias":
-            if isinstance(node.args[0], nodes.Attribute):
-                return True
+        if node.func.name == "_alias" and isinstance(node.args[0], nodes.Attribute):
+            return True
     return False
 
 
-def infer_typing_alias(node, context=None):
+def infer_typing_alias(node: nodes.Call, context: context.InferenceContext = None) -> node_classes.NodeNG:
+    """
+    Infers the call to _alias function
+
+    :param node: call node
+    :param context: inference context
+    """
     if not isinstance(node, nodes.Call):
         return
     res = next(node.args[0].infer(context=context))
+    # Needs to mock the __getitem__ class method so that
+    # MutableSet[T] is acceptable
     func_to_add = extract_node(GET_ITEM_TEMPLATE)
     if res.metaclass():
         res.metaclass().locals['__getitem__'] = [func_to_add]
