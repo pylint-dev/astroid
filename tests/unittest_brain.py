@@ -1195,7 +1195,7 @@ class TypingBrain(unittest.TestCase):
         correctly inferred.
         """
         node = builder.extract_node(
-        """
+            """
         from typing import TypeVar, MutableSet
 
         T = TypeVar("T")
@@ -1223,7 +1223,7 @@ class TypingBrain(unittest.TestCase):
         self.assertEqual(mro_entries[6].name, "Container")
         self.assertIsInstance(mro_entries[7], astroid.ClassDef)
         self.assertEqual(mro_entries[7].name, "object")
-        
+
 
 class ReBrainTest(unittest.TestCase):
     def test_regex_flags(self):
