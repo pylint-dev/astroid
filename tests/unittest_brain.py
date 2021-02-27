@@ -34,7 +34,6 @@ import io
 import queue
 import re
 import os
-from typing import Collection, MutableSet
 
 try:
     import multiprocessing  # pylint: disable=unused-import
