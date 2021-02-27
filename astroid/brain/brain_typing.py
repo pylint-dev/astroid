@@ -8,6 +8,7 @@
 """Astroid hooks for typing.py support."""
 import sys
 import typing
+from functools import lru_cache
 
 from astroid import (
     MANAGER,
@@ -99,6 +100,31 @@ def __getitem__(cls, value):
     return cls
 """
 
+ABC_METACLASS_TEMPLATE = """
+from abc import ABCMeta
+ABCMeta
+"""
+
+
+@lru_cache()
+def create_typing_metaclass():
+    #  Needs to mock the __getitem__ class method so that
+    #  MutableSet[T] is acceptable
+    func_to_add = extract_node(GET_ITEM_TEMPLATE)
+
+    abc_meta = next(extract_node(ABC_METACLASS_TEMPLATE).infer())
+    typing_meta = nodes.ClassDef(
+        name="ABCMeta_typing",
+        lineno=abc_meta.lineno,
+        col_offset=abc_meta.col_offset,
+        parent=abc_meta.parent,
+    )
+    typing_meta.postinit(
+        bases=[extract_node(ABC_METACLASS_TEMPLATE)], body=[], decorators=None
+    )
+    typing_meta.locals["__getitem__"] = [func_to_add]
+    return typing_meta
+
 
 def _looks_like_typedDict(  # pylint: disable=invalid-name
     node: nodes.FunctionDef,
@@ -140,8 +166,8 @@ def _looks_like_typing_alias(node: nodes.Call) -> bool:
 
 
 def infer_typing_alias(
-    node: nodes.Call, context: context.InferenceContext = None
-) -> node_classes.NodeNG:
+    node: nodes.Call, ctx: context.InferenceContext = None
+) -> typing.Optional[node_classes.NodeNG]:
     """
     Infers the call to _alias function
 
@@ -149,14 +175,37 @@ def infer_typing_alias(
     :param context: inference context
     """
     if not isinstance(node, nodes.Call):
-        return
-    res = next(node.args[0].infer(context=context))
-    #  Needs to mock the __getitem__ class method so that
-    #  MutableSet[T] is acceptable
-    func_to_add = extract_node(GET_ITEM_TEMPLATE)
-    if res.metaclass():
-        res.metaclass().locals["__getitem__"] = [func_to_add]
-    return res
+        return None
+    res = next(node.args[0].infer(context=ctx))
+
+    if res != astroid.Uninferable and isinstance(res, nodes.ClassDef):
+        class_def = nodes.ClassDef(
+            name=res.name,
+            lineno=res.lineno,
+            col_offset=res.col_offset,
+            parent=res.parent,
+        )
+        class_def.postinit(
+            bases=res.bases,
+            body=res.body,
+            decorators=res.decorators,
+            metaclass=create_typing_metaclass(),
+        )
+        return class_def
+
+    if len(node.args) == 2 and isinstance(node.args[0], nodes.Attribute):
+        class_def = nodes.ClassDef(
+            name=node.args[0].attrname,
+            lineno=node.lineno,
+            col_offset=node.col_offset,
+            parent=node.parent,
+        )
+        class_def.postinit(
+            bases=[], body=[], decorators=None, metaclass=create_typing_metaclass()
+        )
+        return class_def
+
+    return None
 
 
 MANAGER.register_transform(
