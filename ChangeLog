@@ -11,6 +11,8 @@ Release Date: TBA
 
   Closes #895 #899
 
+* Don't transform dataclass ClassVars
+
 * Improve typing.TypedDict inference
 
 
