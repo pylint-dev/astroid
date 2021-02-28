@@ -21,6 +21,7 @@ from astroid import (
 )
 import astroid
 
+PY37 = sys.version_info[:2] >= (3, 7)
 PY39 = sys.version_info[:2] >= (3, 9)
 
 TYPING_NAMEDTUPLE_BASENAMES = {"NamedTuple", "typing.NamedTuple"}
@@ -131,9 +132,9 @@ def _looks_like_typing_alias(node: nodes.Call) -> bool:
     :param node: call node
     """
     return (
-        isinstance(node, nodes.Call) and 
+        isinstance(node, nodes.Call) and
         isinstance(node.func, nodes.Name) and
-        node.func.name == "_alias" and 
+        node.func.name == "_alias" and
         isinstance(node.args[0], nodes.Attribute)
     )
 
@@ -172,4 +173,5 @@ if PY39:
         nodes.FunctionDef, infer_typedDict, _looks_like_typedDict
     )
 
-MANAGER.register_transform(nodes.Call, infer_typing_alias, _looks_like_typing_alias)
+if PY37:
+    MANAGER.register_transform(nodes.Call, infer_typing_alias, _looks_like_typing_alias)

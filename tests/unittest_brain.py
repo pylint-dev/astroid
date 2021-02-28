@@ -1206,6 +1206,7 @@ class TypingBrain(unittest.TestCase):
         assert len(typing_module.locals["TypedDict"]) == 1
         assert inferred_base == typing_module.locals["TypedDict"][0]
 
+    @test_utils.require_version("3.7")
     def test_typing_alias_type(self):
         """
         Test that the type aliased thanks to typing._alias function are
