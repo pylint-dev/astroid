@@ -11,6 +11,9 @@ Release Date: TBA
 
   Closes #895 #899
 
+* Improve typing.TypedDict inference
+
+
 What's New in astroid 2.5?
 ============================
 Release Date: 2021-02-15
