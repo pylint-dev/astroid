@@ -99,6 +99,11 @@ import astroid
 import astroid.test_utils as test_utils
 
 
+def assertEqualMro(klass, expected_mro):
+    """Check mro names."""
+    assert [member.name for member in klass.mro()] == expected_mro
+
+
 class HashlibTest(unittest.TestCase):
     def _assert_hashlib_class(self, class_obj):
         self.assertIn("update", class_obj)
@@ -1212,6 +1217,22 @@ class TypingBrain(unittest.TestCase):
         Test that the type aliased thanks to typing._alias function are
         correctly inferred.
         """
+
+        def check_metaclass(node: nodes.ClassDef):
+            meta = node.metaclass()
+            assert (
+                isinstance(meta, nodes.ClassDef)
+                and meta.name == "ABCMeta_typing"
+                and "ABCMeta" == meta.basenames[0]
+                and meta.locals.get("__getitem__") is not None
+            )
+            abc_meta = next(meta.bases[0].infer())
+            assert (
+                isinstance(abc_meta, nodes.ClassDef)
+                and abc_meta.name == "ABCMeta"
+                and abc_meta.locals.get("__getitem__") is None
+            )
+
         node = builder.extract_node(
             """
         from typing import TypeVar, MutableSet
@@ -1219,28 +1240,62 @@ class TypingBrain(unittest.TestCase):
         T = TypeVar("T")
         MutableSet[T]
 
-        class V(MutableSet[T]):
+        class Derived(MutableSet[T]):
             pass
         """
         )
         inferred = next(node.infer())
-        mro_entries = list(inferred.mro())
-        self.assertIsInstance(mro_entries[0], astroid.ClassDef)
-        self.assertEqual(mro_entries[0].name, "V")
-        self.assertIsInstance(mro_entries[1], astroid.ClassDef)
-        self.assertEqual(mro_entries[1].name, "MutableSet")
-        self.assertIsInstance(mro_entries[2], astroid.ClassDef)
-        self.assertEqual(mro_entries[2].name, "Set")
-        self.assertIsInstance(mro_entries[3], astroid.ClassDef)
-        self.assertEqual(mro_entries[3].name, "Collection")
-        self.assertIsInstance(mro_entries[4], astroid.ClassDef)
-        self.assertEqual(mro_entries[4].name, "Sized")
-        self.assertIsInstance(mro_entries[5], astroid.ClassDef)
-        self.assertEqual(mro_entries[5].name, "Iterable")
-        self.assertIsInstance(mro_entries[6], astroid.ClassDef)
-        self.assertEqual(mro_entries[6].name, "Container")
-        self.assertIsInstance(mro_entries[7], astroid.ClassDef)
-        self.assertEqual(mro_entries[7].name, "object")
+        check_metaclass(inferred)
+        assertEqualMro(
+            inferred,
+            [
+                "Derived",
+                "MutableSet",
+                "Set",
+                "Collection",
+                "Sized",
+                "Iterable",
+                "Container",
+                "object",
+            ],
+        )
+
+        node = builder.extract_node(
+            """
+        import typing
+        class Derived(typing.OrderedDict[int, str]):
+            pass
+        """
+        )
+        inferred = next(node.infer())
+        check_metaclass(inferred)
+        assertEqualMro(
+            inferred,
+            [
+                "Derived",
+                "OrderedDict",
+                "dict",
+                "object",
+            ],
+        )
+
+        node = builder.extract_node(
+            """
+        import typing
+        class Derived(typing.Pattern[str]):
+            pass
+        """
+        )
+        inferred = next(node.infer())
+        check_metaclass(inferred)
+        assertEqualMro(
+            inferred,
+            [
+                "Derived",
+                "Pattern",
+                "object",
+            ],
+        )
 
 
 class ReBrainTest(unittest.TestCase):
