@@ -91,9 +91,7 @@ def _looks_like_typedDict(  # pylint: disable=invalid-name
     node: nodes.FunctionDef,
 ) -> bool:
     """Check if node is TypedDict FunctionDef."""
-    if isinstance(node, nodes.FunctionDef) and node.name == "TypedDict":
-        return True
-    return False
+    return isinstance(node, nodes.FunctionDef) and node.name == "TypedDict"
 
 
 def infer_typedDict(  # pylint: disable=invalid-name
