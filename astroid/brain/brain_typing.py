@@ -4,6 +4,7 @@
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 
 """Astroid hooks for typing.py support."""
+import sys
 import typing
 
 from astroid import (
@@ -18,6 +19,7 @@ from astroid import (
 )
 import astroid
 
+PY37 = sys.version_info[:2] >= (3, 7)
 
 TYPING_NAMEDTUPLE_BASENAMES = {"NamedTuple", "typing.NamedTuple"}
 TYPING_TYPEVARS = {"TypeVar", "NewType"}
@@ -140,4 +142,6 @@ MANAGER.register_transform(
 MANAGER.register_transform(
     nodes.Subscript, inference_tip(infer_typing_attr), _looks_like_typing_subscript
 )
-MANAGER.register_transform(nodes.Call, infer_typing_alias, _looks_like_typing_alias)
+
+if PY37:
+    MANAGER.register_transform(nodes.Call, infer_typing_alias, _looks_like_typing_alias)
