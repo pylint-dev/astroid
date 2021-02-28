@@ -104,10 +104,12 @@ def _looks_like_typing_alias(node: nodes.Call) -> bool:
 
     :param node: call node
     """
-    if isinstance(node, nodes.Call) and isinstance(node.func, nodes.Name):
-        if node.func.name == "_alias" and isinstance(node.args[0], nodes.Attribute):
-            return True
-    return False
+    return (
+        isinstance(node, nodes.Call) and 
+        isinstance(node.func, nodes.Name) and
+        node.func.name == "_alias" and 
+        isinstance(node.args[0], nodes.Attribute)
+    )
 
 
 def infer_typing_alias(

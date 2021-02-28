@@ -14,10 +14,11 @@ Release Date: TBA
 * Fix the `Duplicates found in MROs` false positive.
 
   Closes #905
+  Closes PyCQA/pylint#2717
+  Closes PyCQA/pylint#3247
   Closes PyCQA/pylint#4093 
   Closes PyCQA/pylint#4131
   Closes PyCQA/pylint#4145
-  Closes PyCQA/pylint#3247
 
 What's New in astroid 2.5?
 ============================
