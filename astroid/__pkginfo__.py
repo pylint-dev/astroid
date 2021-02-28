@@ -27,8 +27,8 @@
 """astroid packaging information"""
 
 # For an official release, use dev_version = None
-numversion = (2, 5, 1)
-dev_version = None
+numversion = (2, 5, 2)
+dev_version = 1
 
 version = ".".join(str(num) for num in numversion)
 if dev_version is not None:
