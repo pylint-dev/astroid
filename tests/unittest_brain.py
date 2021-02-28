@@ -1188,6 +1188,9 @@ class TypingBrain(unittest.TestCase):
         inferred = next(node.infer())
         self.assertIsInstance(inferred, astroid.Instance)
 
+    @pytest.mark.skipif(
+        sys.version_info < (3, 8), reason="TypedDict changed from version 3.8 to 3.9"
+    )
     def test_typedDict(self):
         node = builder.extract_node(
             """

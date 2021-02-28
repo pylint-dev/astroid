@@ -4,6 +4,7 @@
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 
 """Astroid hooks for typing.py support."""
+import sys
 import typing
 
 from astroid import (
@@ -96,9 +97,11 @@ def _looks_like_typedDict(  # pylint: disable=invalid-name
 
 
 def infer_typedDict(  # pylint: disable=invalid-name
-    node: nodes.FunctionDef, context: context.InferenceContext = None
+    node: nodes.FunctionDef, ctx: context.InferenceContext = None
 ) -> None:
     """Replace TypedDict FunctionDef with ClassDef."""
+    if sys.version_info < (3, 9):
+        return
     class_def = nodes.ClassDef(
         name="TypedDict",
         doc=node.doc,
@@ -108,7 +111,6 @@ def infer_typedDict(  # pylint: disable=invalid-name
     )
     class_def.postinit(bases=[], body=[], decorators=None)
     node.root().locals["TypedDict"] = [class_def]
-    return None
 
 
 MANAGER.register_transform(
