@@ -94,6 +94,28 @@ def infer_typing_attr(node, context=None):
     return node.infer(context=context)
 
 
+def _looks_like_typedDict(  # pylint: disable=invalid-name
+    node: nodes.FunctionDef,
+) -> bool:
+    """Check if node is TypedDict FunctionDef."""
+    return isinstance(node, nodes.FunctionDef) and node.name == "TypedDict"
+
+
+def infer_typedDict(  # pylint: disable=invalid-name
+    node: nodes.FunctionDef, ctx: context.InferenceContext = None
+) -> None:
+    """Replace TypedDict FunctionDef with ClassDef."""
+    class_def = nodes.ClassDef(
+        name="TypedDict",
+        doc=node.doc,
+        lineno=node.lineno,
+        col_offset=node.col_offset,
+        parent=node.parent,
+    )
+    class_def.postinit(bases=[], body=[], decorators=None)
+    node.root().locals["TypedDict"] = [class_def]
+
+
 GET_ITEM_TEMPLATE = """
 @classmethod
 def __getitem__(cls, value):
@@ -124,28 +146,6 @@ def create_typing_metaclass():
     )
     typing_meta.locals["__getitem__"] = [func_to_add]
     return typing_meta
-
-
-def _looks_like_typedDict(  # pylint: disable=invalid-name
-    node: nodes.FunctionDef,
-) -> bool:
-    """Check if node is TypedDict FunctionDef."""
-    return isinstance(node, nodes.FunctionDef) and node.name == "TypedDict"
-
-
-def infer_typedDict(  # pylint: disable=invalid-name
-    node: nodes.FunctionDef, ctx: context.InferenceContext = None
-) -> None:
-    """Replace TypedDict FunctionDef with ClassDef."""
-    class_def = nodes.ClassDef(
-        name="TypedDict",
-        doc=node.doc,
-        lineno=node.lineno,
-        col_offset=node.col_offset,
-        parent=node.parent,
-    )
-    class_def.postinit(bases=[], body=[], decorators=None)
-    node.root().locals["TypedDict"] = [class_def]
 
 
 def _looks_like_typing_alias(node: nodes.Call) -> bool:
