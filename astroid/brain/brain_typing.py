@@ -17,6 +17,7 @@ from astroid import (
     InferenceError,
 )
 
+PY39 = sys.version_info[:2] >= (3, 9)
 
 TYPING_NAMEDTUPLE_BASENAMES = {"NamedTuple", "typing.NamedTuple"}
 TYPING_TYPEVARS = {"TypeVar", "NewType"}
@@ -98,8 +99,6 @@ def infer_typedDict(  # pylint: disable=invalid-name
     node: nodes.FunctionDef, ctx: context.InferenceContext = None
 ) -> None:
     """Replace TypedDict FunctionDef with ClassDef."""
-    if sys.version_info < (3, 9):
-        return
     class_def = nodes.ClassDef(
         name="TypedDict",
         doc=node.doc,
@@ -120,4 +119,7 @@ MANAGER.register_transform(
     nodes.Subscript, inference_tip(infer_typing_attr), _looks_like_typing_subscript
 )
 
-MANAGER.register_transform(nodes.FunctionDef, infer_typedDict, _looks_like_typedDict)
+if PY39:
+    MANAGER.register_transform(
+        nodes.FunctionDef, infer_typedDict, _looks_like_typedDict
+    )
