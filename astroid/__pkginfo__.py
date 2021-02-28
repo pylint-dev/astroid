@@ -24,8 +24,13 @@
 
 """astroid packaging information"""
 
-version = "2.6.0-dev"
-numversion = tuple(int(elem) for elem in version.split(".") if elem.isdigit())
+# For an official release, use dev_version = None
+numversion = (2, 6, 0)
+dev_version = 1
+
+version = ".".join(str(num) for num in numversion)
+if dev_version is not None:
+    version += "-dev" + str(dev_version)
 
 extras_require = {}
 install_requires = [
