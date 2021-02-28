@@ -4,6 +4,7 @@
 # Copyright (c) 2018 Bryce Guinta <bryce.paul.guinta@gmail.com>
 
 """Astroid hooks for typing.py support."""
+import sys
 import typing
 
 from astroid import (
@@ -12,9 +13,11 @@ from astroid import (
     extract_node,
     inference_tip,
     nodes,
+    context,
     InferenceError,
 )
 
+PY39 = sys.version_info[:2] >= (3, 9)
 
 TYPING_NAMEDTUPLE_BASENAMES = {"NamedTuple", "typing.NamedTuple"}
 TYPING_TYPEVARS = {"TypeVar", "NewType"}
@@ -85,6 +88,28 @@ def infer_typing_attr(node, context=None):
     return node.infer(context=context)
 
 
+def _looks_like_typedDict(  # pylint: disable=invalid-name
+    node: nodes.FunctionDef,
+) -> bool:
+    """Check if node is TypedDict FunctionDef."""
+    return isinstance(node, nodes.FunctionDef) and node.name == "TypedDict"
+
+
+def infer_typedDict(  # pylint: disable=invalid-name
+    node: nodes.FunctionDef, ctx: context.InferenceContext = None
+) -> None:
+    """Replace TypedDict FunctionDef with ClassDef."""
+    class_def = nodes.ClassDef(
+        name="TypedDict",
+        doc=node.doc,
+        lineno=node.lineno,
+        col_offset=node.col_offset,
+        parent=node.parent,
+    )
+    class_def.postinit(bases=[], body=[], decorators=None)
+    node.root().locals["TypedDict"] = [class_def]
+
+
 MANAGER.register_transform(
     nodes.Call,
     inference_tip(infer_typing_typevar_or_newtype),
@@ -93,3 +118,8 @@ MANAGER.register_transform(
 MANAGER.register_transform(
     nodes.Subscript, inference_tip(infer_typing_attr), _looks_like_typing_subscript
 )
+
+if PY39:
+    MANAGER.register_transform(
+        nodes.FunctionDef, infer_typedDict, _looks_like_typedDict
+    )

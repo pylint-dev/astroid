@@ -1188,6 +1188,22 @@ class TypingBrain(unittest.TestCase):
         inferred = next(node.infer())
         self.assertIsInstance(inferred, astroid.Instance)
 
+    @test_utils.require_version("3.8")
+    def test_typedDict(self):
+        node = builder.extract_node(
+            """
+        from typing import TypedDict
+        class CustomTD(TypedDict):
+            var: int
+        """
+        )
+        assert len(node.bases) == 1
+        inferred_base = next(node.bases[0].infer())
+        self.assertIsInstance(inferred_base, nodes.ClassDef, node.as_string())
+        typing_module = inferred_base.root()
+        assert len(typing_module.locals["TypedDict"]) == 1
+        assert inferred_base == typing_module.locals["TypedDict"][0]
+
 
 class ReBrainTest(unittest.TestCase):
     def test_regex_flags(self):

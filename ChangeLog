@@ -6,12 +6,14 @@ What's New in astroid 2.5.1?
 ============================
 Release Date: TBA
 
-* The ``context.path`` is reverted to a set because otherwise it leds to false positives 
+* The ``context.path`` is reverted to a set because otherwise it leds to false positives
   for non `numpy` functions.
 
   Closes #895 #899
 
 * Don't transform dataclass ClassVars
+
+* Improve typing.TypedDict inference
 
 
 What's New in astroid 2.5?
