@@ -12,6 +12,7 @@ from astroid import (
     extract_node,
     inference_tip,
     nodes,
+    context,
     InferenceError,
 )
 
@@ -85,6 +86,31 @@ def infer_typing_attr(node, context=None):
     return node.infer(context=context)
 
 
+def _looks_like_typedDict(  # pylint: disable=invalid-name
+    node: nodes.FunctionDef,
+) -> bool:
+    """Check if node is TypedDict FunctionDef."""
+    if isinstance(node, nodes.FunctionDef) and node.name == "TypedDict":
+        return True
+    return False
+
+
+def infer_typedDict(  # pylint: disable=invalid-name
+    node: nodes.FunctionDef, context: context.InferenceContext = None
+) -> None:
+    """Replace TypedDict FunctionDef with ClassDef."""
+    class_def = nodes.ClassDef(
+        name="TypedDict",
+        doc=node.doc,
+        lineno=node.lineno,
+        col_offset=node.col_offset,
+        parent=node.parent,
+    )
+    class_def.postinit(bases=[], body=[], decorators=None)
+    node.root().locals["TypedDict"] = [class_def]
+    return None
+
+
 MANAGER.register_transform(
     nodes.Call,
     inference_tip(infer_typing_typevar_or_newtype),
@@ -93,3 +119,5 @@ MANAGER.register_transform(
 MANAGER.register_transform(
     nodes.Subscript, inference_tip(infer_typing_attr), _looks_like_typing_subscript
 )
+
+MANAGER.register_transform(nodes.FunctionDef, infer_typedDict, _looks_like_typedDict)
