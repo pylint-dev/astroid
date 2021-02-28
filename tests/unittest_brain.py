@@ -1240,7 +1240,7 @@ class TypingBrain(unittest.TestCase):
         T = TypeVar("T")
         MutableSet[T]
 
-        class Derived(MutableSet[T]):
+        class Derived1(MutableSet[T]):
             pass
         """
         )
@@ -1249,7 +1249,7 @@ class TypingBrain(unittest.TestCase):
         assertEqualMro(
             inferred,
             [
-                "Derived",
+                "Derived1",
                 "MutableSet",
                 "Set",
                 "Collection",
@@ -1263,7 +1263,7 @@ class TypingBrain(unittest.TestCase):
         node = builder.extract_node(
             """
         import typing
-        class Derived(typing.OrderedDict[int, str]):
+        class Derived2(typing.OrderedDict[int, str]):
             pass
         """
         )
@@ -1272,7 +1272,7 @@ class TypingBrain(unittest.TestCase):
         assertEqualMro(
             inferred,
             [
-                "Derived",
+                "Derived2",
                 "OrderedDict",
                 "dict",
                 "object",
@@ -1282,7 +1282,7 @@ class TypingBrain(unittest.TestCase):
         node = builder.extract_node(
             """
         import typing
-        class Derived(typing.Pattern[str]):
+        class Derived3(typing.Pattern[str]):
             pass
         """
         )
@@ -1291,7 +1291,7 @@ class TypingBrain(unittest.TestCase):
         assertEqualMro(
             inferred,
             [
-                "Derived",
+                "Derived3",
                 "Pattern",
                 "object",
             ],
