@@ -25,15 +25,14 @@ git --aliases=.copyrite_aliases . --jobs=8
    https://travis-ci.org/PyCQA/astroid/
 
 3. Do the actual release by tagging the master with ``astroid-X.Y.Z`` (ie  ``astroid-1.6.12``
-   for example). Travis should deal with the release process once the tag is pushed
-   with `git push origin --tags`
+   for example).
 
-## Manual Release
 
-Following the previous steps, for a manual release run the following commands:
+Until the release is done via Travis or github actions on tag, run the following commands:
 
 ```bash
 git clean -fdx && find . -name '*.pyc' -delete
+pip3 install twine wheel setuptools
 python setup.py sdist --formats=gztar bdist_wheel
 twine upload dist/*
 # don't forget to tag it as well
