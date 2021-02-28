@@ -99,6 +99,11 @@ import astroid
 import astroid.test_utils as test_utils
 
 
+def assertEqualMro(klass, expected_mro):
+    """Check mro names."""
+    assert [member.name for member in klass.mro()] == expected_mro
+
+
 class HashlibTest(unittest.TestCase):
     def _assert_hashlib_class(self, class_obj):
         self.assertIn("update", class_obj)
@@ -1205,6 +1210,116 @@ class TypingBrain(unittest.TestCase):
         typing_module = inferred_base.root()
         assert len(typing_module.locals["TypedDict"]) == 1
         assert inferred_base == typing_module.locals["TypedDict"][0]
+
+    @test_utils.require_version("3.8")
+    def test_typing_alias_type(self):
+        """
+        Test that the type aliased thanks to typing._alias function are
+        correctly inferred.
+        """
+
+        def check_metaclass(node: nodes.ClassDef):
+            meta = node.metaclass()
+            assert isinstance(meta, nodes.ClassDef)
+            assert meta.name == "ABCMeta_typing"
+            assert "ABCMeta" == meta.basenames[0]
+            assert meta.locals.get("__getitem__") is not None
+
+            abc_meta = next(meta.bases[0].infer())
+            assert isinstance(abc_meta, nodes.ClassDef)
+            assert abc_meta.name == "ABCMeta"
+            assert abc_meta.locals.get("__getitem__") is None
+
+        node = builder.extract_node(
+            """
+        from typing import TypeVar, MutableSet
+
+        T = TypeVar("T")
+        MutableSet[T]
+
+        class Derived1(MutableSet[T]):
+            pass
+        """
+        )
+        inferred = next(node.infer())
+        check_metaclass(inferred)
+        assertEqualMro(
+            inferred,
+            [
+                "Derived1",
+                "MutableSet_typing",
+                "MutableSet",
+                "Set",
+                "Collection",
+                "Sized",
+                "Iterable",
+                "Container",
+                "object",
+            ],
+        )
+
+        node = builder.extract_node(
+            """
+        import typing
+        class Derived2(typing.OrderedDict[int, str]):
+            pass
+        """
+        )
+        inferred = next(node.infer())
+        check_metaclass(inferred)
+        assertEqualMro(
+            inferred,
+            [
+                "Derived2",
+                "OrderedDict_typing",
+                "OrderedDict",
+                "dict",
+                "object",
+            ],
+        )
+
+        node = builder.extract_node(
+            """
+        import typing
+        class Derived3(typing.Pattern[str]):
+            pass
+        """
+        )
+        inferred = next(node.infer())
+        check_metaclass(inferred)
+        assertEqualMro(
+            inferred,
+            [
+                "Derived3",
+                "Pattern",
+                "object",
+            ],
+        )
+
+    @test_utils.require_version("3.8")
+    def test_typing_alias_side_effects(self):
+        """Test that typing._alias changes doesn't have unwanted consequences."""
+        node = builder.extract_node(
+            """
+        import typing
+        import collections.abc
+
+        class Derived(collections.abc.Iterator[int]):
+            pass
+        """
+        )
+        inferred = next(node.infer())
+        assert inferred.metaclass() is None  # Should this be ABCMeta?
+        assertEqualMro(
+            inferred,
+            [
+                "Derived",
+                # Should this be more?
+                # "Iterator_typing"?
+                # "Iterator",
+                # "object",
+            ],
+        )
 
 
 class ReBrainTest(unittest.TestCase):
