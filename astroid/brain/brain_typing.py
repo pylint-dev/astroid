@@ -180,13 +180,13 @@ def infer_typing_alias(
 
     if res != astroid.Uninferable and isinstance(res, nodes.ClassDef):
         class_def = nodes.ClassDef(
-            name=res.name,
-            lineno=res.lineno,
-            col_offset=res.col_offset,
+            name=f"{res.name}_typing",
+            lineno=0,
+            col_offset=0,
             parent=res.parent,
         )
         class_def.postinit(
-            bases=res.bases,
+            bases=[res],
             body=res.body,
             decorators=res.decorators,
             metaclass=create_typing_metaclass(),
@@ -196,8 +196,8 @@ def infer_typing_alias(
     if len(node.args) == 2 and isinstance(node.args[0], nodes.Attribute):
         class_def = nodes.ClassDef(
             name=node.args[0].attrname,
-            lineno=node.lineno,
-            col_offset=node.col_offset,
+            lineno=0,
+            col_offset=0,
             parent=node.parent,
         )
         class_def.postinit(

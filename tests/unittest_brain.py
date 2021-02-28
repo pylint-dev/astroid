@@ -1220,18 +1220,15 @@ class TypingBrain(unittest.TestCase):
 
         def check_metaclass(node: nodes.ClassDef):
             meta = node.metaclass()
-            assert (
-                isinstance(meta, nodes.ClassDef)
-                and meta.name == "ABCMeta_typing"
-                and "ABCMeta" == meta.basenames[0]
-                and meta.locals.get("__getitem__") is not None
-            )
+            assert isinstance(meta, nodes.ClassDef)
+            assert meta.name == "ABCMeta_typing"
+            assert "ABCMeta" == meta.basenames[0]
+            assert meta.locals.get("__getitem__") is not None
+
             abc_meta = next(meta.bases[0].infer())
-            assert (
-                isinstance(abc_meta, nodes.ClassDef)
-                and abc_meta.name == "ABCMeta"
-                and abc_meta.locals.get("__getitem__") is None
-            )
+            assert isinstance(abc_meta, nodes.ClassDef)
+            assert abc_meta.name == "ABCMeta"
+            assert abc_meta.locals.get("__getitem__") is None
 
         node = builder.extract_node(
             """
@@ -1250,6 +1247,7 @@ class TypingBrain(unittest.TestCase):
             inferred,
             [
                 "Derived1",
+                "MutableSet_typing",
                 "MutableSet",
                 "Set",
                 "Collection",
@@ -1273,6 +1271,7 @@ class TypingBrain(unittest.TestCase):
             inferred,
             [
                 "Derived2",
+                "OrderedDict_typing",
                 "OrderedDict",
                 "dict",
                 "object",
